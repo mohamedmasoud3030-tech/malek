@@ -207,6 +207,23 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['communication_records']['Row']>;
         Relationships: [];
       };
+      contract_documents: {
+        Row: {
+          id: string;
+          contract_id: string;
+          file_name: string;
+          file_url: string;
+          storage_path: string;
+          file_size: number | null;
+          mime_type: string | null;
+          uploaded_by: string | null;
+          created_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['contract_documents']['Row']> & Pick<Database['public']['Tables']['contract_documents']['Row'], 'contract_id' | 'file_name' | 'file_url' | 'storage_path'>;
+        Update: Partial<Database['public']['Tables']['contract_documents']['Row']>;
+        Relationships: [];
+      };
       properties: {
         Row: {
           id: string;

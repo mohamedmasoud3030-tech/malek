@@ -32,6 +32,12 @@ vi.mock('./useContractPayments', () => ({
   useContractPayments: () => contractsMocks.paymentsQuery,
 }));
 
+vi.mock('./useContractDocuments', () => ({
+  useContractDocuments: () => ({ data: [], isLoading: false, isError: false, error: null }),
+  useUploadContractDocument: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteContractDocument: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 function expectMarkupToContain(html: string, snippets: readonly string[]) {
   snippets.forEach((snippet) => {
     expect(html).toContain(snippet);
