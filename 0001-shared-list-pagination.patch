@@ -1,0 +1,220 @@
+From 6be0948c31c3423c66d1d6193f4e6f6ce565e15f Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Fri, 3 Jul 2026 04:53:09 +0000
+Subject: [PATCH] refactor(ui): extract shared ListPagination component
+
+Adopts a single shared pagination footer (src/components/layout/list-pagination.tsx)
+in place of three near-identical inline implementations duplicated across
+Properties, Tenants, and Contracts list pages.
+
+- Supports both existing visual variants (centered slash-style label used by
+  Properties, split words-style label used by Tenants/Contracts) so no visual
+  regression.
+- No change to business logic, query params, or persistence -- purely a UI
+  extraction of prev/next + page label markup and disabled-state logic.
+- Removed now-unused Button import in ContractsListPage.
+
+Part of the bounded Shared Components Adoption phase.
+---
+ .../src/components/layout/list-pagination.tsx | 76 +++++++++++++++++++
+ .../features/contracts/ContractsListPage.tsx  | 24 +-----
+ .../properties/properties-list-page.tsx       | 23 +-----
+ .../src/features/tenants/TenantsPage.tsx      |  9 +--
+ 4 files changed, 84 insertions(+), 48 deletions(-)
+ create mode 100644 rentrix-app/src/components/layout/list-pagination.tsx
+
+diff --git a/rentrix-app/src/components/layout/list-pagination.tsx b/rentrix-app/src/components/layout/list-pagination.tsx
+new file mode 100644
+index 0000000..4d1c59c
+--- /dev/null
++++ b/rentrix-app/src/components/layout/list-pagination.tsx
+@@ -0,0 +1,76 @@
++import { Button } from '@/components/ui/button';
++import { cn } from '@/lib/utils';
++
++interface ListPaginationProps {
++  readonly page: number;
++  readonly totalPages: number;
++  readonly onPageChange: (page: number) => void;
++  /** 'split' places the label on the start and controls on the end (default). 'center' centers everything together. */
++  readonly variant?: 'split' | 'center';
++  /** 'الصفحة {page} من {totalPages}' (default) or '{page} / {totalPages}' */
++  readonly labelStyle?: 'words' | 'slash';
++  readonly className?: string;
++}
++
++export function ListPagination({
++  page,
++  totalPages,
++  onPageChange,
++  variant = 'split',
++  labelStyle = 'words',
++  className,
++}: Readonly<ListPaginationProps>) {
++  if (totalPages <= 1) return null;
++
++  const label =
++    labelStyle === 'slash' ? (
++      <span className="text-sm font-bold text-muted-foreground">
++        {page} / {totalPages}
++      </span>
++    ) : (
++      <span>
++        الصفحة {page} من {totalPages}
++      </span>
++    );
++
++  const prevButton = (
++    <Button
++      variant="secondary"
++      className={cn(variant === 'center' && 'rounded-xl')}
++      disabled={page <= 1}
++      onClick={() => onPageChange(Math.max(1, page - 1))}
++    >
++      السابق
++    </Button>
++  );
++  const nextButton = (
++    <Button
++      variant="secondary"
++      className={cn(variant === 'center' && 'rounded-xl')}
++      disabled={page >= totalPages}
++      onClick={() => onPageChange(Math.min(totalPages, page + 1))}
++    >
++      التالي
++    </Button>
++  );
++
++  if (variant === 'center') {
++    return (
++      <div className={cn('flex items-center justify-center gap-2', className)}>
++        {prevButton}
++        {label}
++        {nextButton}
++      </div>
++    );
++  }
++
++  return (
++    <div className={cn('flex items-center justify-between text-sm text-muted-foreground', className)}>
++      {label}
++      <div className="flex gap-2">
++        {prevButton}
++        {nextButton}
++      </div>
++    </div>
++  );
++}
+diff --git a/rentrix-app/src/features/contracts/ContractsListPage.tsx b/rentrix-app/src/features/contracts/ContractsListPage.tsx
+index 6a6b1c7..5df1a62 100644
+--- a/rentrix-app/src/features/contracts/ContractsListPage.tsx
++++ b/rentrix-app/src/features/contracts/ContractsListPage.tsx
+@@ -6,7 +6,7 @@ import { ContractListState } from './components/ContractListState';
+ import { ContractResults } from './components/ContractResults';
+ import { ContractFormModal } from './contract-form-modal';
+ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+-import { Button } from '@/components/ui/button';
++import { ListPagination } from '@/components/layout/list-pagination';
+ import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractListExport';
+ import { useCompanySettingsContract } from '../settings/useCompanySettings';
+ import { useContractFilters } from './hooks/useContractFilters';
+@@ -122,26 +122,8 @@ export function ContractsListPage() {
+           setExpandedId={setExpandedId}
+         />
+ 
+-        {!hasClientFilter && totalPages > 1 && (
+-          <div className="flex items-center justify-between text-sm text-muted-foreground">
+-            <span>الصفحة {page} من {totalPages}</span>
+-            <div className="flex gap-2">
+-              <Button
+-                variant="secondary"
+-                disabled={page <= 1}
+-                onClick={() => setPage((value) => Math.max(1, value - 1))}
+-              >
+-                السابق
+-              </Button>
+-              <Button
+-                variant="secondary"
+-                disabled={page >= totalPages}
+-                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+-              >
+-                التالي
+-              </Button>
+-            </div>
+-          </div>
++        {!hasClientFilter && (
++          <ListPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+         )}
+       </div>
+ 
+diff --git a/rentrix-app/src/features/properties/properties-list-page.tsx b/rentrix-app/src/features/properties/properties-list-page.tsx
+index ce5f6d0..2873d3c 100644
+--- a/rentrix-app/src/features/properties/properties-list-page.tsx
++++ b/rentrix-app/src/features/properties/properties-list-page.tsx
+@@ -3,6 +3,7 @@ import { Building2, Edit, Plus, Trash2 } from 'lucide-react';
+ import { useMemo, useState } from 'react';
+ import { PropertyFormModal } from './property-form-modal';
+ import { AsyncContentState } from '@/components/async-content-state';
++import { ListPagination } from '@/components/layout/list-pagination';
+ import { PageHeader } from '@/components/layout/page-header';
+ import { Button } from '@/components/ui/button';
+ import { Card, CardContent } from '@/components/ui/card';
+@@ -155,26 +156,8 @@ export function PropertiesListPage() {
+       </AsyncContentState>
+ 
+       {/* Pagination */}
+-      {!propertiesQuery.isLoading && !propertiesQuery.isError && totalPages > 1 && (
+-        <div className="flex items-center justify-center gap-2">
+-          <Button
+-            variant="secondary"
+-            className="rounded-xl"
+-            disabled={page <= 1}
+-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+-          >
+-            السابق
+-          </Button>
+-          <span className="text-sm font-bold text-muted-foreground">{page} / {totalPages}</span>
+-          <Button
+-            variant="secondary"
+-            className="rounded-xl"
+-            disabled={page >= totalPages}
+-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+-          >
+-            التالي
+-          </Button>
+-        </div>
++      {!propertiesQuery.isLoading && !propertiesQuery.isError && (
++        <ListPagination page={page} totalPages={totalPages} onPageChange={setPage} variant="center" labelStyle="slash" />
+       )}
+     </div>
+     <PropertyFormModal
+diff --git a/rentrix-app/src/features/tenants/TenantsPage.tsx b/rentrix-app/src/features/tenants/TenantsPage.tsx
+index 16b1e3e..c902f6c 100644
+--- a/rentrix-app/src/features/tenants/TenantsPage.tsx
++++ b/rentrix-app/src/features/tenants/TenantsPage.tsx
+@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
+ import { FileText, Mail, Phone, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+ import { useMemo, useState } from 'react';
+ import { ListFilterBar } from '../../components/layout/list-filter-bar';
++import { ListPagination } from '../../components/layout/list-pagination';
+ import { ListStateBody } from '../../components/layout/list-state-body';
+ import { Button } from '@/components/ui/button';
+ import { Card, CardContent } from '@/components/ui/card';
+@@ -156,13 +157,7 @@ export function TenantsPage() {
+ 
+       <TenantWorkspaceContent isError={tenantsQuery.isError} isLoading={tenantsQuery.isLoading} onRetry={() => tenantsQuery.refetch()} rows={rows} />
+ 
+-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+-        <span>الصفحة {page} من {totalPages}</span>
+-        <div className="flex gap-2">
+-          <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>السابق</Button>
+-          <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>التالي</Button>
+-        </div>
+-      </div>
++      <ListPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+     </div>
+   );
+ }
+-- 
+2.43.0
+
