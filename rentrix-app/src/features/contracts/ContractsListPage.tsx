@@ -5,8 +5,8 @@ import { ContractListHeader } from './components/ContractListHeader';
 import { ContractListState } from './components/ContractListState';
 import { ContractResults } from './components/ContractResults';
 import { ContractFormModal } from './contract-form-modal';
+import { ListPagination } from '@/components/layout/list-pagination';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Button } from '@/components/ui/button';
 import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractListExport';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContractFilters } from './hooks/useContractFilters';
@@ -122,26 +122,8 @@ export function ContractsListPage() {
           setExpandedId={setExpandedId}
         />
 
-        {!hasClientFilter && totalPages > 1 && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>الصفحة {page} من {totalPages}</span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                disabled={page <= 1}
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-              >
-                السابق
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={page >= totalPages}
-                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-              >
-                التالي
-              </Button>
-            </div>
-          </div>
+        {!hasClientFilter && (
+          <ListPagination page={page} totalPages={totalPages} onPageChange={setPage} />
         )}
       </div>
 
