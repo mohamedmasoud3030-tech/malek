@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { FileText, Mail, Phone, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ListFilterBar } from '../../components/layout/list-filter-bar';
+import { ListPagination } from '../../components/layout/list-pagination';
 import { ListStateBody } from '../../components/layout/list-state-body';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -156,13 +157,7 @@ export function TenantsPage() {
 
       <TenantWorkspaceContent isError={tenantsQuery.isError} isLoading={tenantsQuery.isLoading} onRetry={() => tenantsQuery.refetch()} rows={rows} />
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>الصفحة {page} من {totalPages}</span>
-        <div className="flex gap-2">
-          <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>السابق</Button>
-          <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>التالي</Button>
-        </div>
-      </div>
+      <ListPagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }
