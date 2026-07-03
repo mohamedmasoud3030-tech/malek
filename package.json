@@ -22,5 +22,10 @@
   },
   "dependencies": {
     "@vercel/speed-insights": "^2.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "dompurify": "^3.4.11"
+    }
   }
 }
