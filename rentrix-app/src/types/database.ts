@@ -567,6 +567,10 @@ export type Database = {
         Args: { payload: Json };
         Returns: { success: boolean; voided_at: string };
       };
+      resolve_maintenance_with_expense: {
+        Args: { p_request_id: string; p_cost: number; p_notes?: string | null };
+        Returns: { maintenance: Json; expense_id: string | null };
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

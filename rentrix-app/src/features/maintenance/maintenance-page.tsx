@@ -6,6 +6,7 @@ import { AlertCircle, CheckCircle2, Clock, Flame, PlusCircle, Wrench } from 'luc
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AsyncContentState } from '@/components/async-content-state';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
@@ -16,7 +17,8 @@ import { EntityTable } from '@/components/ui/entity-table';
 import { Textarea } from '@/components/ui/textarea';
 import { useProperties } from '@/features/properties/use-properties';
 import { useAllUnits, useUnits } from '@/features/units/use-units';
-import { useMaintenance, useCreateMaintenance, useUpdateMaintenanceStatus } from './use-maintenance';
+import { useMaintenance, useCreateMaintenance, useUpdateMaintenanceStatus, useResolveMaintenanceWithExpense } from './use-maintenance';
+import type { Maintenance } from './maintenance-service';
 import {
   buildMaintenanceLocationLabel,
   filterMaintenanceRequests,
@@ -35,6 +37,13 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+
+const resolveSchema = z.object({
+  cost: z.coerce.number({ invalid_type_error: 'أدخل تكلفة صحيحة' }).min(0, 'التكلفة لا يمكن أن تكون سالبة'),
+  notes: z.string().nullable().optional(),
+});
+
+type ResolveFormValues = z.infer<typeof resolveSchema>;
 
 const maintenanceStatusLabels = {
   open: 'مفتوح',
@@ -94,6 +103,26 @@ export function MaintenancePage() {
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 200 });
   const createMutation = useCreateMaintenance();
   const updateStatusMutation = useUpdateMaintenanceStatus();
+  const resolveMutation = useResolveMaintenanceWithExpense();
+  const [resolveTarget, setResolveTarget] = useState<Maintenance | null>(null);
+  const resolveForm = useForm<ResolveFormValues>({ resolver: zodResolver(resolveSchema), defaultValues: { cost: 0, notes: '' } });
+
+  const handleStatusAction = (row: Maintenance, status: Exclude<MaintenanceStatusFilter, 'all'>) => {
+    if (status === 'resolved') {
+      resolveForm.reset({ cost: 0, notes: '' });
+      setResolveTarget(row);
+      return;
+    }
+    updateStatusMutation.mutate({ requestId: row.id, status });
+  };
+
+  const submitResolve = (values: ResolveFormValues) => {
+    if (!resolveTarget) return;
+    resolveMutation.mutate(
+      { requestId: resolveTarget.id, cost: values.cost, notes: values.notes?.trim() ? values.notes.trim() : null },
+      { onSuccess: () => setResolveTarget(null) },
+    );
+  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -297,8 +326,8 @@ export function MaintenancePage() {
                             type="button"
                             variant="secondary"
                             className="min-h-8 px-3 text-xs"
-                            disabled={updateStatusMutation.isPending}
-                            onClick={() => updateStatusMutation.mutate({ requestId: row.id, status: action.status })}
+                            disabled={updateStatusMutation.isPending || resolveMutation.isPending}
+                            onClick={() => handleStatusAction(row, action.status)}
                           >
                             {action.label}
                           </Button>
@@ -342,8 +371,8 @@ export function MaintenancePage() {
                     <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                       {actions.map((action) => (
                         <Button key={`${row.id}-${action.status}`} type="button" variant="secondary" className="min-h-8 px-3 text-xs"
-                          disabled={updateStatusMutation.isPending}
-                          onClick={() => updateStatusMutation.mutate({ requestId: row.id, status: action.status })}>
+                          disabled={updateStatusMutation.isPending || resolveMutation.isPending}
+                          onClick={() => handleStatusAction(row, action.status)}>
                           {action.label}
                         </Button>
                       ))}
@@ -358,6 +387,34 @@ export function MaintenancePage() {
           </div>
         </>
       </AsyncContentState>
+
+      <Dialog open={resolveTarget != null} onOpenChange={(open) => !open && setResolveTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>تم الحل — تسجيل التكلفة</DialogTitle>
+            <DialogDescription>سيتم إغلاق الطلب وتسجيل التكلفة الفعلية كمصروف صيانة في التقارير المالية.</DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={resolveForm.handleSubmit(submitResolve)}>
+            <label className="grid gap-2 text-sm font-bold">
+              التكلفة الفعلية (ر.ع)
+              <Input dir="ltr" type="number" min="0" step="0.01" {...resolveForm.register('cost')} />
+              {resolveForm.formState.errors.cost && (
+                <p className="text-xs text-destructive">{resolveForm.formState.errors.cost.message}</p>
+              )}
+            </label>
+            <label className="grid gap-2 text-sm font-bold">
+              ملاحظات (اختياري)
+              <Textarea className="min-h-16" {...resolveForm.register('notes')} />
+            </label>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setResolveTarget(null)}>إلغاء</Button>
+              <Button type="submit" disabled={resolveMutation.isPending}>
+                {resolveMutation.isPending ? 'جارٍ الحفظ...' : 'تأكيد الإغلاق'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
