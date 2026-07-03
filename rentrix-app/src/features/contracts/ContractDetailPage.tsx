@@ -17,6 +17,7 @@ import type { Person, Property, Unit } from '@/types/domain';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { formatContractDate, formatContractDateTime, formatContractDayCount, formatContractMoney, getContractInclusiveDays, getContractRemainingDays } from './contractDisplayFormatters';
 import { contractStatusLabels, contractStatusTone, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
+import { ContractDocumentsShell } from './contractDocumentsShell';
 import { ContractPaymentsTab } from './contractPaymentsTab';
 import type { ContractDetail } from './services/contractService';
 import { useContract, useRenewContract } from './useContracts';
@@ -140,6 +141,8 @@ export function ContractDetailPage() {
 
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><WalletCards className="size-5 text-primary" />الخط الزمني المالي</CardTitle><CardDescription>ملخص من بيانات العقد الحالية.</CardDescription></CardHeader><CardContent className="pt-6"><DetailFields columns={3} fields={[{ label: 'قيمة الإيجار', value: formatContractMoney(companySettings, contract.rent_amount) }, { label: 'الوحدة المؤجرة', value: contract.units?.unit_number }, { label: 'العقار', value: contract.properties?.title }]} /></CardContent></Card>
       <Card><CardHeader><CardTitle className="flex items-center gap-2"><CalendarDays className="size-5 text-primary" />الخط الزمني</CardTitle></CardHeader><CardContent className="space-y-3">{timeline.map((item) => <TimelineRow item={item} key={item.title} />)}</CardContent></Card>
+
+      <ContractDocumentsShell contractId={contract.id} />
 
       <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>تجديد العقد</DialogTitle><DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد.</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={form.handleSubmit(submitRenewal)}><label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('new_start')} />{fieldError(form.formState.errors.new_start?.message)}</label><label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('new_end')} />{fieldError(form.formState.errors.new_end?.message)}</label><label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" min="0" {...form.register('new_amount')} />{fieldError(form.formState.errors.new_amount?.message)}</label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setOpen(false)}>إلغاء</Button><Button type="submit" disabled={renewMutation.isPending}>تجديد العقد</Button></div></form></DialogContent></Dialog>
     </div>
