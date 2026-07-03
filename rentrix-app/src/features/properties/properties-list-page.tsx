@@ -3,6 +3,7 @@ import { Building2, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
 import { AsyncContentState } from '@/components/async-content-state';
+import { ListPagination } from '@/components/layout/list-pagination';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -155,26 +156,8 @@ export function PropertiesListPage() {
       </AsyncContentState>
 
       {/* Pagination */}
-      {!propertiesQuery.isLoading && !propertiesQuery.isError && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="secondary"
-            className="rounded-xl"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            السابق
-          </Button>
-          <span className="text-sm font-bold text-muted-foreground">{page} / {totalPages}</span>
-          <Button
-            variant="secondary"
-            className="rounded-xl"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          >
-            التالي
-          </Button>
-        </div>
+      {!propertiesQuery.isLoading && !propertiesQuery.isError && (
+        <ListPagination page={page} totalPages={totalPages} onPageChange={setPage} variant="center" labelStyle="slash" />
       )}
     </div>
     <PropertyFormModal
