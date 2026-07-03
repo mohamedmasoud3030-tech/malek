@@ -1,1 +1,1 @@
-export { Phase3OwnerHubPage as OwnersRouteComponent } from '@/features/owners/phase3-owner-hub';
+export { OwnersPage as OwnersRouteComponent } from '@/features/owners/OwnersPage';
