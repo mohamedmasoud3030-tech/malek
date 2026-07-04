@@ -16,6 +16,7 @@ interface ListPageProps {
   filters?: ReactNode;
   children: ReactNode;
   className?: string;
+  dir?: "rtl" | "ltr";
 }
 
 /**
@@ -42,9 +43,10 @@ export function ListPage({
   filters,
   children,
   className,
+  dir,
 }: ListPageProps) {
   return (
-    <PageLayout className={className}>
+    <PageLayout className={className} dir={dir}>
       <PageHeader title={title} description={description} action={action} />
 
       {(search || filters) && (

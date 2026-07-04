@@ -1,9 +1,9 @@
-import { Link, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { Building2, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
 import { AsyncContentState } from '@/components/async-content-state';
-import { PageHeader } from '@/components/layout/page-header';
+import { ListPage } from '@/components/layout/list-page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -51,9 +51,8 @@ export function PropertiesListPage() {
 
   return (
     <>
-    <div className="space-y-5" dir="rtl">
-      {/* Header */}
-      <PageHeader
+      <ListPage
+        dir="rtl"
         title="العقارات"
         description="إدارة المحفظة العقارية والتشغيلية"
         action={
@@ -61,136 +60,135 @@ export function PropertiesListPage() {
             <Plus className="size-4" />إضافة عقار
           </Button>
         }
-      />
-
-      {/* Filters */}
-      <Card className="rounded-2xl">
-        <CardContent className="pt-4 pb-4">
-          <div className="flex gap-2">
-            <SearchInput
-              value={search}
-              onChange={(value) => { setSearch(value); setPage(1); }}
-              placeholder="بحث بالاسم أو العنوان..."
-              className="flex-1"
-            />
-            <Select
-              aria-label="الحالة"
-              value={status}
-              onChange={(e) => { setStatus(e.target.value as PropertyStatusFilter); setPage(1); }}
-              className="w-36 rounded-xl"
-            >
-              <option value="all">كل الحالات</option>
-              {propertyStatusValues.map((s) => <option key={s} value={s}>{propertyStatusLabels[s]}</option>)}
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <AsyncContentState
-        status={
-          propertiesQuery.isLoading ? 'loading'
-          : propertiesQuery.isError ? 'error'
-          : properties.length === 0 ? 'empty'
-          : 'ready'
+        filters={
+          <Card className="rounded-2xl">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex gap-2">
+                <SearchInput
+                  value={search}
+                  onChange={(value) => { setSearch(value); setPage(1); }}
+                  placeholder="بحث بالاسم أو العنوان..."
+                  className="flex-1"
+                />
+                <Select
+                  aria-label="الحالة"
+                  value={status}
+                  onChange={(e) => { setStatus(e.target.value as PropertyStatusFilter); setPage(1); }}
+                  className="w-36 rounded-xl"
+                >
+                  <option value="all">كل الحالات</option>
+                  {propertyStatusValues.map((s) => <option key={s} value={s}>{propertyStatusLabels[s]}</option>)}
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
         }
-        error={propertiesQuery.error}
-        errorTitle="تعذر تحميل قائمة العقارات"
-        errorAction={<Button onClick={() => propertiesQuery.refetch()} className="rounded-2xl">إعادة المحاولة</Button>}
-        emptyTitle={hasFilterValues ? 'لا توجد نتائج مطابقة للبحث' : 'لم تُضف عقارات بعد'}
-        emptyDescription={hasFilterValues ? 'جرّب تغيير عوامل البحث أو إزالة الفلتر.' : 'ابدأ بإضافة أول عقار لك.'}
-        emptyAction={!hasFilterValues ? (
-          <Button className="rounded-2xl" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
-            <Building2 className="me-2 size-4" />إضافة أول عقار
-          </Button>
-        ) : undefined}
       >
+        <AsyncContentState
+          status={
+            propertiesQuery.isLoading ? 'loading'
+            : propertiesQuery.isError ? 'error'
+            : properties.length === 0 ? 'empty'
+            : 'ready'
+          }
+          error={propertiesQuery.error}
+          errorTitle="تعذر تحميل قائمة العقارات"
+          errorAction={<Button onClick={() => propertiesQuery.refetch()} className="rounded-2xl">إعادة المحاولة</Button>}
+          emptyTitle={hasFilterValues ? 'لا توجد نتائج مطابقة للبحث' : 'لم تُضف عقارات بعد'}
+          emptyDescription={hasFilterValues ? 'جرّب تغيير عوامل البحث أو إزالة الفلتر.' : 'ابدأ بإضافة أول عقار لك.'}
+          emptyAction={!hasFilterValues ? (
+            <Button className="rounded-2xl" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
+              <Building2 className="me-2 size-4" />إضافة أول عقار
+            </Button>
+          ) : undefined}
+        >
 
-      {/* Pure responsive table utilizing EntityTable's built-in renderMobileCard */}
-      <EntityTable
-        aria-label="جدول العقارات"
-        rows={properties}
-        keyOf={(p) => p.id}
-        onRowClick={(p) => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
-        columns={[
-          { key: 'title', header: 'العقار', render: (p) => <EntityCell icon={Building2} title={p.title ?? '—'} /> },
-          { key: 'status', header: 'الحالة', render: (p) => (
-            <StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'}>
-              {propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}
-            </StatusBadge>
-          )},
-          { key: 'address', header: 'العنوان', render: (p) => <span className="text-muted-foreground text-sm">{p.address ?? '—'}</span> },
-          { key: 'actions', header: 'إجراءات', render: (p) => (
-            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-              <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
-                <Edit className="size-3" />تعديل
-              </Button>
-              <Button variant="danger" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
-                <Trash2 className="size-3" />أرشفة
-              </Button>
+        {/* Pure responsive table utilizing EntityTable's built-in renderMobileCard */}
+        <EntityTable
+          aria-label="جدول العقارات"
+          rows={properties}
+          keyOf={(p) => p.id}
+          onRowClick={(p) => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
+          columns={[
+            { key: 'title', header: 'العقار', render: (p) => <EntityCell icon={Building2} title={p.title ?? '—'} /> },
+            { key: 'status', header: 'الحالة', render: (p) => (
+              <StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'}>
+                {propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}
+              </StatusBadge>
+            )},
+            { key: 'address', header: 'العنوان', render: (p) => <span className="text-muted-foreground text-sm">{p.address ?? '—'}</span> },
+            { key: 'actions', header: 'إجراءات', render: (p) => (
+              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                  <Edit className="size-3" />تعديل
+                </Button>
+                <Button variant="danger" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
+                  <Trash2 className="size-3" />أرشفة
+                </Button>
+              </div>
+            )},
+          ]}
+          renderMobileCard={(p) => (
+            <div className="space-y-2">
+              <PropertyCard
+                id={p.id}
+                title={p.title ?? 'عقار'}
+                address={p.address}
+                status={p.status}
+                formatMoney={(v) => money(v)}
+                onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                  <Edit className="size-3.5" />تعديل
+                </Button>
+                <Button variant="danger" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
+                  <Trash2 className="size-3.5" />أرشفة
+                </Button>
+              </div>
             </div>
-          )},
-        ]}
-        renderMobileCard={(p) => (
-          <div className="space-y-2">
-            <PropertyCard
-              id={p.id}
-              title={p.title ?? 'عقار'}
-              address={p.address}
-              status={p.status}
-              formatMoney={(v) => money(v)}
-              onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="secondary" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
-                <Edit className="size-3.5" />تعديل
-              </Button>
-              <Button variant="danger" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
-                <Trash2 className="size-3.5" />أرشفة
-              </Button>
-            </div>
+          )}
+        />
+
+        </AsyncContentState>
+
+        {/* Pagination */}
+        {!propertiesQuery.isLoading && !propertiesQuery.isError && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="secondary"
+              className="rounded-xl"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              السابق
+            </Button>
+            <span className="text-sm font-bold text-muted-foreground">{page} / {totalPages}</span>
+            <Button
+              variant="secondary"
+              className="rounded-xl"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              التالي
+            </Button>
           </div>
         )}
+      </ListPage>
+      <PropertyFormModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditPropertyId(undefined); }}
+        propertyId={editPropertyId}
       />
-
-      </AsyncContentState>
-
-      {/* Pagination */}
-      {!propertiesQuery.isLoading && !propertiesQuery.isError && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="secondary"
-            className="rounded-xl"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            السابق
-          </Button>
-          <span className="text-sm font-bold text-muted-foreground">{page} / {totalPages}</span>
-          <Button
-            variant="secondary"
-            className="rounded-xl"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          >
-            التالي
-          </Button>
-        </div>
-      )}
-    </div>
-    <PropertyFormModal
-      open={modalOpen}
-      onClose={() => { setModalOpen(false); setEditPropertyId(undefined); }}
-      propertyId={editPropertyId}
-    />
-    <ConfirmDialog
-      open={Boolean(archiveTarget)}
-      onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}
-      title={`أرشفة العقار "${archiveTarget?.title ?? ''}"؟`}
-      description="سيتم إخفاء العقار من القوائم النشطة. يمكن التراجع عن هذا لاحقاً من سجل الأرشيف."
-      confirmLabel="أرشفة"
-      isLoading={deleteMutation.isPending}
-      onConfirm={handleArchiveProperty}
-    />
+      <ConfirmDialog
+        open={Boolean(archiveTarget)}
+        onOpenChange={(open) => { if (!open) setArchiveTarget(null); }}
+        title={`أرشفة العقار "${archiveTarget?.title ?? ''}"؟`}
+        description="سيتم إخفاء العقار من القوائم النشطة. يمكن التراجع عن هذا لاحقاً من سجل الأرشيف."
+        confirmLabel="أرشفة"
+        isLoading={deleteMutation.isPending}
+        onConfirm={handleArchiveProperty}
+      />
     </>
   );
 }
