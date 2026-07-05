@@ -24,7 +24,7 @@ Core types live in `rentrix-app/src/domain/types.ts` (Supabase-independent) and 
 - Cash flow reporting (`add_rpt_cash_flow` migration, `features/financials/reports/financialReportsService.ts`)
 - Leads (`features/leads/`, backed by a `leads` table per `Database['public']['Tables']['leads']`)
 - Lands (`features/lands/`)
-- Commissions (`features/commissions/`) — described in navigation as an operational tracking view of office commissions, not a full payout/accounting module; confirm scope against `features/commissions/services/commissions-service.ts` before assuming it drives financial postings.
+- Commissions (`features/commissions/`) — confirmed from the current navigation copy, UI, service layer, tests, and captured `commissions` table shape as an operational tracking view of office/staff/broker commissions, not a full payout/accounting module. The app can create/edit/cancel tracking records and mark a record as paid operationally, but it does not create payment orders, expenses, ledger entries, owner settlements, or reconciliation records. The captured table includes an `expense_id` column, but the frontend service does not read or write it today; treat it as inactive/placeholder schema until a dedicated payout/accounting design, migration, and atomic backend flow are added.
 
 ## Authorization roles
 
@@ -32,4 +32,4 @@ Core types live in `rentrix-app/src/domain/types.ts` (Supabase-independent) and 
 
 ## Areas not yet found in the domain model
 
-Based on migrations and `src/features` at the time of this check, there is no dedicated modeling for: security deposits, deferred revenue, multi-currency amounts, or bank reconciliation. Treat any assumption about these as unconfirmed until verified against a current schema check.
+Based on migrations and `src/features` at the time of this check, there is no dedicated modeling for: security deposits, deferred revenue, or multi-currency amounts. Bank reconciliation has an initial foundation for bank accounts, statement lines, manual matches, CSV paste import, and basic suggested matches by date/amount; bank-file upload/format mapping, duplicate detection, and advanced reconciliation rules are not yet implemented. Treat any assumption about the remaining areas as unconfirmed until verified against a current schema check.

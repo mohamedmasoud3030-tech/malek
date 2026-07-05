@@ -5,13 +5,24 @@ const money = z.preprocess(
   z.number({ invalid_type_error: 'قيمة الإيجار مطلوبة' }).positive('قيمة الإيجار يجب أن تكون أكبر من صفر'),
 );
 
+function isValidDateInput(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+  const [yearText, monthText, dayText] = value.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const parsedDate = new Date(year, month - 1, day);
+
+  return parsedDate.getFullYear() === year
+    && parsedDate.getMonth() === month - 1
+    && parsedDate.getDate() === day;
+}
+
 const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'التاريخ يجب أن يكون بصيغة YYYY-MM-DD')
-  .refine((value) => {
-    const parsedDate = new Date(`${value}T00:00:00Z`);
-    return !Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === value;
-  }, 'أدخل تاريخًا صحيحًا');
+  .refine(isValidDateInput, 'أدخل تاريخًا صحيحًا');
 
 export const contractStatusValues = ['draft', 'active', 'expired', 'terminated'] as const;
 export const paymentCycleValues = ['monthly', 'quarterly', 'semi_annual', 'annual'] as const;

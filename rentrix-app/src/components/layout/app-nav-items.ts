@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Building2, ClipboardList, ContactRound, DoorOpen, FileText, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Building2, ClipboardList, ContactRound, DoorOpen, FileText, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -43,6 +43,7 @@ export const navGroups = [
     ['/receipts', 'collectionsReceipts', 'التحصيلات والإيصالات', ReceiptText],
     ['/expenses', 'expenses', 'مصاريف العقارات التشغيلية', WalletCards],
     ['/arrears', 'arrears', 'متابعة المبالغ المتأخرة', ClipboardList],
+    ['/bank-reconciliation', 'bankReconciliation', 'مطابقة حركات كشف البنك مع السجلات المالية', Landmark],
   ]],
   ['التقارير والتحليلات', [
     [

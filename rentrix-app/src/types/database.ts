@@ -3,6 +3,70 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      bank_accounts: {
+        Row: {
+          id: string;
+          account_name: string;
+          account_code: string | null;
+          currency: string;
+          opening_balance: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['bank_accounts']['Row']> & Pick<Database['public']['Tables']['bank_accounts']['Row'], 'account_name'>;
+        Update: Partial<Database['public']['Tables']['bank_accounts']['Row']>;
+        Relationships: [];
+      };
+      bank_statement_imports: {
+        Row: {
+          id: string;
+          bank_account_id: string;
+          statement_name: string;
+          statement_from: string | null;
+          statement_to: string | null;
+          imported_at: string;
+          created_by: string | null;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['bank_statement_imports']['Row']> & Pick<Database['public']['Tables']['bank_statement_imports']['Row'], 'bank_account_id' | 'statement_name'>;
+        Update: Partial<Database['public']['Tables']['bank_statement_imports']['Row']>;
+        Relationships: [];
+      };
+      bank_statement_lines: {
+        Row: {
+          id: string;
+          import_id: string | null;
+          bank_account_id: string;
+          transaction_date: string;
+          description: string;
+          reference: string | null;
+          amount: number;
+          status: 'unmatched' | 'matched' | 'ignored';
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['bank_statement_lines']['Row']> & Pick<Database['public']['Tables']['bank_statement_lines']['Row'], 'bank_account_id' | 'transaction_date' | 'amount'>;
+        Update: Partial<Database['public']['Tables']['bank_statement_lines']['Row']>;
+        Relationships: [];
+      };
+      bank_reconciliation_matches: {
+        Row: {
+          id: string;
+          statement_line_id: string;
+          matched_entity_type: 'payment' | 'receipt' | 'expense' | 'manual_adjustment';
+          matched_entity_id: string;
+          matched_amount: number;
+          notes: string | null;
+          matched_at: string;
+          matched_by: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['bank_reconciliation_matches']['Row']> & Pick<Database['public']['Tables']['bank_reconciliation_matches']['Row'], 'statement_line_id' | 'matched_entity_type' | 'matched_entity_id' | 'matched_amount'>;
+        Update: Partial<Database['public']['Tables']['bank_reconciliation_matches']['Row']>;
+        Relationships: [];
+      };
       company_settings: {
         Row: {
           id: string;
