@@ -30,6 +30,7 @@ const requiredOperationalRoutes = [
   '/receipts',
   '/expenses',
   '/arrears',
+  '/bank-reconciliation',
   '/reports',
   '/maintenance',
   '/commissions',

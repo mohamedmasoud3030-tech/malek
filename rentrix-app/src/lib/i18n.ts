@@ -38,6 +38,7 @@ const sharedTranslationEntries = [
   ['lands', 'الأراضي', 'Lands'],
   ['leads', 'العملاء المحتملون', 'Leads'],
   ['commissions', 'العمولات', 'Commissions'],
+  ['bankReconciliation', 'مطابقة البنك', 'Bank reconciliation'],
   ['communication', 'التواصل', 'Communication'],
   ['contracts', 'العقود', 'Contracts'],
   ['financials', 'المالية', 'Financials'],

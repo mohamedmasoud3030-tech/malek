@@ -4,7 +4,7 @@
 
 - `rentrix-app/` — the application (Vite + React + TypeScript). This is the only workspace package (see `pnpm-workspace.yaml`).
 - `supabase/migrations/` — SQL migrations: schema, RLS policies, functions/triggers/RPCs, and later feature/fix migrations. Intended as the source of truth for the database, but as of 2026-07-05 it is known to be incomplete relative to the live `nnggcnpcuomwfuupupwg` project (~31 live tables have no corresponding migration file, and 2 committed migrations were never applied live) — see `supabase/migrations/README.md` and `docs/CURRENT_STATE.md` before assuming a file reflects live reality.
-- `scripts/collect-supabase-migration-evidence.sh` — a local, read-only preflight script that checks migration file naming/ordering and reports whether Supabase credentials/CLI are available. Run via `pnpm supabase:migration-evidence`. It does not apply or verify migrations against a live database.
+- `scripts/collect-supabase-migration-evidence.sh` — a read-only preflight script that checks migration file naming/ordering and reports whether Supabase credentials/CLI are available. Run via `pnpm supabase:migration-evidence`. If `SUPABASE_DB_URL` and `psql` are available, it also reconciles local migration filenames against the live `supabase_migrations.schema_migrations` ledger without mutating the database.
 - `.github/workflows/ci.yml` — CI pipeline (see `docs/TESTING.md` for the commands it runs).
 - Root `package.json` — workspace-level scripts (`build`, `typecheck`, `lint`, `supabase:migration-evidence`) that delegate into `rentrix-app` via `pnpm --filter`.
 - `tsconfig.base.json` / `tsconfig.json` — shared TypeScript compiler options; `rentrix-app` extends these.
@@ -35,7 +35,7 @@ TanStack Router routes are declared programmatically in `routeTree.ts`. Each rou
 
 ## Tests
 
-Tests are colocated with the code they cover (`*.test.ts(x)`, `*.spec.ts`) and run with Vitest (`happy-dom` environment, configured in `vite.config.ts`). `rentrix-app/package.json`'s `test` script lists an explicit set of test files rather than a glob; `test:financials` instead runs everything under `src/features/financials` via `--dir`. See `docs/TESTING.md` for exact commands.
+Tests are colocated with the code they cover (`*.test.ts(x)`, `*.spec.ts`) and run with Vitest (`happy-dom` environment, configured in `vite.config.ts`). `rentrix-app/package.json`'s `test` script uses Vitest's default test-file discovery so new colocated tests are picked up automatically; `test:financials` remains an explicit financials-only suite via `--dir src/features/financials`. See `docs/TESTING.md` for exact commands.
 
 ## CI
 

@@ -80,6 +80,12 @@ else
   printf 'SUPABASE_ACCESS_TOKEN: missing\n'
 fi
 
+if [[ -n "${SUPABASE_DB_URL:-}" ]]; then
+  printf 'SUPABASE_DB_URL: present (value redacted)\n'
+else
+  printf 'SUPABASE_DB_URL: missing\n'
+fi
+
 if command -v supabase >/dev/null 2>&1; then
   printf 'Supabase CLI: %s\n' "$(supabase --version)"
 else
@@ -88,6 +94,50 @@ fi
 printf '\n'
 
 printf 'Live migration-state reconciliation\n'
+if [[ -n "${SUPABASE_DB_URL:-}" ]]; then
+  if ! command -v psql >/dev/null 2>&1; then
+    printf 'Status: BLOCKED - SUPABASE_DB_URL is present but psql is unavailable\n'
+    printf 'Operation: read-only supabase_migrations.schema_migrations reconciliation\n'
+    printf 'Category: unsupported\n'
+    printf 'Repeated call: no\n'
+    printf 'Next action: install psql in the operator environment or unset SUPABASE_DB_URL for preflight-only mode\n'
+    exit 0
+  fi
+
+  live_tmp="$(mktemp)"
+  local_tmp="$(mktemp)"
+  missing_tmp="$(mktemp)"
+  cleanup_live_reconciliation() {
+    rm -f "$live_tmp" "$local_tmp" "$missing_tmp"
+  }
+  trap cleanup_live_reconciliation EXIT
+
+  printf '%s\n' "${migration_files[@]%.sql}" > "$local_tmp"
+
+  if ! psql "$SUPABASE_DB_URL" -X -A -t -c "select version || '_' || name from supabase_migrations.schema_migrations order by version, name" > "$live_tmp"; then
+    printf 'Status: BLOCKED - failed to read supabase_migrations.schema_migrations\n'
+    printf 'Operation: read-only supabase_migrations.schema_migrations reconciliation\n'
+    printf 'Category: database_access\n'
+    printf 'Repeated call: no\n'
+    printf 'Next action: verify SUPABASE_DB_URL allows read-only access to the migration ledger\n'
+    exit 0
+  fi
+
+  comm -23 "$local_tmp" "$live_tmp" > "$missing_tmp"
+  missing_count="$(wc -l < "$missing_tmp" | tr -d ' ')"
+  printf 'Operation: read-only supabase_migrations.schema_migrations reconciliation\n'
+  printf 'Live migration ledger entries read: %s\n' "$(wc -l < "$live_tmp" | tr -d ' ')"
+  printf 'Local migrations absent from live ledger: %s\n' "$missing_count"
+  if [[ "$missing_count" != "0" ]]; then
+    sed 's/^/Missing live migration: /' "$missing_tmp"
+    printf 'Status: FAILED - one or more local migrations are absent from the live ledger\n'
+    exit 1
+  fi
+
+  printf 'Status: PASS - every local migration is present in the live ledger\n'
+  exit 0
+fi
+
 if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
   printf 'Status: BLOCKED - authenticated Supabase access token is unavailable\n'
   printf 'Operation: read-only migration history and branch failure-state lookup\n'
