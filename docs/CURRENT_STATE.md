@@ -17,7 +17,7 @@ The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single
 - Owner agreements (`supabase/migrations/20260628100000_owner_agreements_core.sql`), cost centers, VAT support, payment terms, and a cash-flow report migration all exist under `supabase/migrations/`.
 - Maintenance cost resolution (`supabase/migrations/20260703000000_resolve_maintenance_with_expense.sql`) and contract document management (`supabase/migrations/20260703010000_contract_documents.sql`) exist as recent migrations, with matching frontend services/tests.
 - Running `pnpm --filter ./rentrix-app run test` and `pnpm --filter ./rentrix-app run test:financials` locally with placeholder Supabase env vars passes (60 test files / 319 tests, and 20 test files / 77 tests, respectively, at the time of this check).
-- `pnpm typecheck`, `pnpm lint` (which runs `tsc` project-wide, not ESLint, despite an `eslint.config.js` existing in `rentrix-app/`), and `pnpm build` all pass locally.
+- `pnpm typecheck`, `pnpm lint` (an alias that also runs `tsc` project-wide; there is no ESLint dependency or config in the project), and `pnpm build` all pass locally.
 
 ## Known gaps or unknowns
 
@@ -25,7 +25,6 @@ The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single
 - No security deposit management, deferred revenue handling, or multi-currency support was found in migrations or `src/features`.
 - `dexie` dependency's purpose is unverified — confirm whether it is dead weight or planned for an unbuilt feature before removing or building on it.
 - The Supabase migration-evidence script (`scripts/collect-supabase-migration-evidence.sh`, run in CI via `pnpm supabase:migration-evidence`) only performs local, read-only checks (file ordering, presence of env vars); it does not verify that migrations have actually been applied to any live Supabase project. Live schema state must be checked separately via the Supabase project directly before relying on any migration as "deployed."
-- `rentrix-app/eslint.config.js` exists but is not wired into `pnpm lint`; whether ESLint should run separately or was intentionally left out is unconfirmed.
 
 ## Before claiming a feature is complete
 

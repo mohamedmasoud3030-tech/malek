@@ -4,7 +4,6 @@ Short list of follow-up work, derived from gaps found while reviewing migrations
 
 ## Ready now
 
-- Reconcile `pnpm lint`: it currently runs a duplicate `tsc` typecheck rather than ESLint, despite `rentrix-app/eslint.config.js` existing. Decide whether to wire ESLint into `lint` or remove the unused config, and update `docs/TESTING.md` accordingly.
 - Confirm whether `dexie` (in `rentrix-app/package.json` dependencies) is still needed. No import usages were found under `rentrix-app/src`. Remove it if unused, or document what it's for if it's reserved for planned work.
 
 ## Needs investigation
