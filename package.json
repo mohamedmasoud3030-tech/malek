@@ -13,7 +13,8 @@
     "build": "pnpm --filter @workspace/rentrix run build",
     "typecheck": "tsc -b && pnpm --filter @workspace/rentrix run typecheck",
     "lint": "pnpm --filter @workspace/rentrix run lint",
-    "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh"
+    "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh",
+    "governance:check": "bash scripts/validate-ai-governance.sh"
   },
   "devDependencies": {
     "prettier": "^3.8.1",

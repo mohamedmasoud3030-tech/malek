@@ -1,130 +1,39 @@
 # Rentrix Documentation Index
 
-**Navigation guide: which documents to read and when. Not authoritative for roadmap (see `docs/RENTRIX_MASTER_PLAN.md`), product (see `docs/FINAL_PRODUCT_BLUEPRINT.md`), or execution (see `docs/ai/CURRENT_EXECUTION_CONTEXT.md`).**
+This is a navigation guide, not a source of truth. Use the specific documents below for product, roadmap, execution, runtime evidence, and policy decisions.
 
----
+## Quick entry points
 
-## Entry Points (Start Here)
+| Need | Read |
+| --- | --- |
+| Current dynamic status / next work | `docs/ai/CURRENT_EXECUTION_CONTEXT.md` |
+| Shared agent rules | `docs/ai/AGENT_OPERATING_PROTOCOL.md` |
+| Product scope | `docs/FINAL_PRODUCT_BLUEPRINT.md` |
+| Ordered roadmap / phase gates | `docs/RENTRIX_MASTER_PLAN.md` |
+| Runtime facts and contradictions | `docs/RUNTIME_TRUTH_AND_GAPS.md` |
+| Root layout and runtime boundary | `docs/ROOT_LAYOUT.md` |
+| Agent onboarding snapshot | `docs/ai/ONBOARDING.md` |
+| ADRs / durable decisions | `docs/decisions/README.md` |
 
-| Document | Purpose | When to Read |
-|----------|---------|--------------|
-| **`QUICK_STATUS.md`** | 2-minute overview of current work and status | First if you're new; before anything else |
-| **`AGENTS.md`** (repo root) | Agent working rules, constraints, boundaries | First time as an agent; before writing code |
-| **`README.md`** (repo root) | Repository orientation and runtime structure | Second; overview of folder layout and tech choices |
-| **`docs/ROADMAP.md`** | Current phase status, completed phases, next work | Third; understand what's done/current/next |
+For simple edits, read only the entry point and task-relevant policy. For non-trivial implementation, read `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, follow `docs/ai/AGENT_OPERATING_PROTOCOL.md`, inspect active code with `rg`/`rg --files`, and run relevant verification.
 
----
+## Active runtime boundary
 
-## Core Documents (Read in Order)
+- Active app: `rentrix-app/`
+- Shared libraries: `lib/`
+- Canonical backend assets: `supabase/`
 
-| Document | Contains | Audience | Page |
-|----------|----------|----------|------|
-| **`docs/ai/CURRENT_EXECUTION_CONTEXT.md`** | What's blocked, next PR, scope limits, contradictions, rules for future agents | Agents + stakeholders | Before implementation |
-| **`docs/RENTRIX_MASTER_PLAN.md`** | Final product shape, baseline, release status, all decisions, verification checklist | Agents + product leads | Planning & design decisions |
-| **`docs/FIRST_CLIENT_DELIVERY_PLAN.md`** | Client scope, acceptance criteria, rollout sequence | Agents + client managers | Before client work |
-| **`docs/ai/ONBOARDING.md`** | Current app snapshot, navigation routes, module status (live/hidden/deferred), permissions model | Agents | After master plan |
+Do not treat historical reports, archives, promotional artifacts, or agent-tooling directories as active runtime code.
 
----
+## Policy references
 
-## Policy & Domain Documents
+- Engineering: `docs/ai/engineering-policy.md`
+- Security: `docs/ai/security-policy.md`
+- Release: `docs/ai/release-policy.md`
+- Testing: `docs/ai/testing-guide.md`
+- Git: `docs/ai/GIT_TOOLING_POLICY.md`
+- Capabilities/skills: `docs/ai/AGENT_CAPABILITIES.md`
 
-| Document | Contains | When to Read |
-|----------|----------|--------------|
-| **`docs/ai/domain-rules.md`** | Property/unit/contract/tenant/payment invariants | Before data/finance work |
-| **`docs/ai/engineering-policy.md`** | Code style, testing, architecture patterns | Before writing code |
-| **`docs/ai/security-policy.md`** | Auth flow, RLS model, permission boundaries | Before auth/RLS work |
-| **`docs/ai/release-policy.md`** | Git workflow, PR gates, merge strategy | Before git operations |
-| **`docs/ai/testing-guide.md`** | Unit tests, integration tests, what to test | Before writing tests |
-| **`docs/decisions/README.md`** | Architecture decisions (ADRs), approved constraints | When making design choices |
+## Maintenance
 
----
-
-## Technical Reference Documents
-
-| Document | Contains | When to Consult |
-|----------|----------|-----------------|
-| **`docs/ROOT_LAYOUT.md`** | Folder structure, ownership, dependency rules | Before moving files or creating new folders |
-| **`docs/ai/AGENT_CAPABILITIES.md`** | What agents can do, task-to-skill mapping | When unsure about task scope |
-| **`docs/ai/GIT_TOOLING_POLICY.md`** | Branch naming, PR conventions, merge rules | Before git operations |
-| **`docs/ai/CODEBASE_AUDIT_2026-06-27.md`** | Full component/engine/tech-debt audit — what exists, what's dead, what needs building, priority order | Before starting any new component or refactor work |
-| **`docs/ai/UI_COMPONENT_GUIDE.md`** | Unified table/card component system, dual-view pattern, adoption status | Before any UI/list page work |
-| **`docs/ai/PRINT_AND_EXPORT_READINESS.md`** | Print/PDF state, export formats, known limitations | Before receipt/export work |
-| **`docs/ai/REPORTING_DEFINITIONS.md`** | Report definitions, metrics, calculations | Before reports work |
-| **`docs/ai/SECURE_OPERATOR_RUNBOOK.md`** | Deployment, environment, backup, runbook | Before production tasks |
-
----
-
-## Blockers & Evidence Documents
-
-| Document | Contains | Purpose |
-|----------|----------|---------|
-| **`docs/ai/FINAL_DELIVERY_GATE_QA_EVIDENCE.md`** | Why production is BLOCKED, what QA evidence is needed | Understand production blockers |
-| **`docs/ai/V05_COMMERCIAL_HARDENING_PREP.md`** | v0.5 repo prep (not production claims) | Commercial planning only |
-
----
-
-## Document Relationships
-
-```
-QUICK_STATUS.md
-    ↓
-README.md + AGENTS.md
-    ↓
-ROADMAP.md (phase clarity)
-    ↓
-CURRENT_EXECUTION_CONTEXT.md (scope + blockers)
-    ↓
-RENTRIX_MASTER_PLAN.md (full product shape + decisions)
-    ↓
-FIRST_CLIENT_DELIVERY_PLAN.md (client scope)
-    ↓
-ONBOARDING.md (route snapshot + permissions)
-    ↓
-[Policy & Reference docs as needed]
-```
-
----
-
-## What NOT to Do
-
-❌ **Don't read** if you don't need it:
-- Old audit reports (use git history if needed)
-- Recovery notes (already integrated, not needed)
-- Superseded roadmaps (trust the active roadmap)
-- Release threads (old status, check CURRENT_EXECUTION_CONTEXT instead)
-
-❌ **Don't copy forward** stale status:
-- Always verify against active code in `artifacts/rentrix/`
-- Always check `CURRENT_EXECUTION_CONTEXT.md` for updates
-- Always read git commit messages for latest changes
-
----
-
-## Maintenance & Updates
-
-- **After each major phase:** Update `ROADMAP.md` completed/next sections
-- **After each PR merge:** Check if `CURRENT_EXECUTION_CONTEXT.md` needs scope/blocker updates
-- **When doc conflicts arise:** Inspect active code; update docs to match reality
-- **When removing docs:** Keep git history; don't copy old status forward
-
----
-
-## Quick Answer Guide
-
-| Question | Where to Look |
-|----------|-----------------|
-| "What's the current phase?" | `ROADMAP.md` or `QUICK_STATUS.md` |
-| "What's blocked?" | `CURRENT_EXECUTION_CONTEXT.md` |
-| "What's in scope for my task?" | `ROADMAP.md` + `AGENT_CAPABILITIES.md` |
-| "How do I structure code?" | `ROOT_LAYOUT.md` + `engineering-policy.md` |
-| "How do I git?" | `GIT_TOOLING_POLICY.md` |
-| "What's a payment?" | `domain-rules.md` + `RENTRIX_MASTER_PLAN.md` section 1 |
-| "Is X approved?" | `decisions/README.md` |
-| "Why is production blocked?" | `FINAL_DELIVERY_GATE_QA_EVIDENCE.md` |
-| "How do I test?" | `testing-guide.md` |
-| "How do I deploy?" | `SECURE_OPERATOR_RUNBOOK.md` |
-
----
-
-**Last maintained:** June 18, 2026  
-**Purpose:** Single source of truth for documentation; avoid stale or conflicting docs
+When document conflicts appear, inspect current code, migrations, tests, and CI before updating active docs. Keep dynamic phase status in `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, not in this index.

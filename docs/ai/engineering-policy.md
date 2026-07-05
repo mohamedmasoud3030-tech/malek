@@ -2,7 +2,7 @@
 
 ## Source-first workflow
 
-- Inspect the repository root and `artifacts/rentrix/` before editing.
+- Inspect the repository root and `rentrix-app/` before editing.
 - Use `rg --files` and `rg` when available.
 - Verify the active route, service, schema, migration, and test paths from code.
 - Do not assume that legacy, backup, archive, or PR code is active.
@@ -17,7 +17,7 @@
 
 ## Architecture constraints
 
-- Keep the active application under `artifacts/rentrix/`.
+- Keep the active application under `rentrix-app/`.
 - Preserve TanStack Router, React Query, Supabase, i18n, RTL, and PWA direction.
 - Do not restore incompatible legacy `react-router-dom`, `useApp`, `AppContext`, `dataService`, or local DB flows.
 - Do not introduce a second state-management or balance-calculation path without an explicit architecture decision.

@@ -62,9 +62,9 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm lint
 pnpm build
-pnpm --filter ./artifacts/rentrix run typecheck:test
-pnpm --filter ./artifacts/rentrix test
-pnpm --filter ./artifacts/rentrix run test:financials
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app test
+pnpm --filter ./rentrix-app run test:financials
 ```
 
 For database work, also run the approved local or preview validation flow when available.
