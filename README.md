@@ -18,6 +18,10 @@ pnpm --filter ./rentrix-app test
 pnpm --filter ./rentrix-app run test:financials
 ```
 
+## Documentation
+
+See [`docs/`](docs) for product, architecture, domain, testing, and current-state notes. Start with [`AGENTS.md`](AGENTS.md) if you are a new contributor or agent.
+
 ## Contributing
 
 Keep changes focused, run the relevant checks, and avoid committing generated build output or secrets.
