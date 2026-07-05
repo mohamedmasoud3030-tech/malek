@@ -8,8 +8,7 @@
 --    would fail at apply time: "foreign key constraint cannot be implemented: property_id (uuid)
 --    vs properties.id (text)". Fixed to use text ids matching the established convention.
 -- 2) Original CREATE POLICY / CREATE TRIGGER statements were not idempotent (no DROP IF EXISTS),
---    breaking the project's "Migration SQL must be idempotent" rule
---    (docs/ERPNEXT_MIGRATION_PLAN.md §6). Fixed.
+--    breaking the project's migration idempotency requirement. Fixed.
 -- 3) Original created a duplicate `update_updated_at_column()` trigger function. The project
 --    already has `public.update_updated_at()` used by other tables' updated_at triggers. Reused
 --    it instead of duplicating.
