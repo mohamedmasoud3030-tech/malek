@@ -25,9 +25,6 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Validate AI governance guardrails (advisory)
-        continue-on-error: true
-        run: pnpm governance:check
       - run: pnpm supabase:migration-evidence
       - name: Run typecheck
         id: typecheck

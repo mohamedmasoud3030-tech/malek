@@ -4,8 +4,7 @@
 -- the live database first. The problem it describes ("find_payment_account_id miscasts
 -- 1111/1201 to uuid; cash-role regex matches more than one account") was already fixed and
 -- verified live by PR #896 (20260615000100_fix_invoice_payment_account_resolution) and
--- hardened further by PR #911 (20260615000300, REVOKE anon). See
--- docs/ai/CURRENT_EXECUTION_CONTEXT.md → "Known Contradictions Resolved".
+-- hardened further by PR #911 (20260615000300, REVOKE anon). See the migration history for the earlier corrected implementation.
 --
 -- The live function is a text-based lookup with schema-existence guards, a regex fallback,
 -- explicit ambiguity errors (RAISE EXCEPTION on multiple matches), and
