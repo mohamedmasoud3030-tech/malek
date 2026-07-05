@@ -1,10 +1,8 @@
 # Rentrix GitHub Copilot Instructions
 
-- The active application is `rentrix-app/`.
-- Before non-trivial edits, read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` and follow `docs/ai/AGENT_OPERATING_PROTOCOL.md`.
-- Keep Rentrix single-office, Arabic-first with safe English/LTR behavior.
-- Do not add SaaS multi-tenancy, organizations, memberships, subscriptions, a general ledger, standalone payments, receipts without posted payments, direct posted-payment edits, or a second outstanding-balance path.
-- Do not reintroduce `react-router-dom`, `useApp`, `AppContext`, or `dataService` into runtime.
-- Do not expand scope or change Supabase, production configuration, migrations, RLS, RPCs, auth, environment variables, secrets, or credentials without explicit approval.
-- Use `rg` and `rg --files` for repository inspection.
-- Review the final diff and run relevant verification before stating work is complete.
+- The active application currently lives in `rentrix-app/`.
+- For non-trivial edits, review `docs/ai/CURRENT_EXECUTION_CONTEXT.md` and `docs/ai/AGENT_OPERATING_PROTOCOL.md`.
+- Use current code, tests, migrations, and CI configuration as runtime evidence.
+- Use `rg` and `rg --files` for repository inspection when available.
+- Treat legacy patterns or agent-tooling imports as review signals: explain intent, impact, and verification if they appear.
+- Review the final diff, run appropriate checks, and document risks and impact before stating work is complete.

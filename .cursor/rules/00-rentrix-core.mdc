@@ -4,11 +4,9 @@ alwaysApply: true
 
 # Rentrix Core Rule
 
-- The active application is `rentrix-app/`.
-- Before any non-trivial edit, read `docs/ai/CURRENT_EXECUTION_CONTEXT.md`.
-- Follow `docs/ai/AGENT_OPERATING_PROTOCOL.md` as the unified shared operating protocol.
-- Keep Rentrix single-office, Arabic-first with safe English/LTR behavior.
-- Do not expand scope or change Supabase, production configuration, credentials, migrations, RLS, RPCs, auth, or environment behavior without explicit approval.
-- Do not reintroduce `react-router-dom`, `useApp`, `AppContext`, or `dataService` into runtime.
-- Use `rg` and `rg --files` for inspection.
-- Review the diff and run relevant verification before claiming completion.
+- The active application currently lives in `rentrix-app/`.
+- For non-trivial edits, review `docs/ai/CURRENT_EXECUTION_CONTEXT.md`.
+- Follow `docs/ai/AGENT_OPERATING_PROTOCOL.md` for source, context, risk, and verification guidance.
+- Use current code, tests, migrations, and CI configuration as runtime evidence.
+- Use `rg` and `rg --files` for inspection when available.
+- Review the final diff, run appropriate checks, and document risks and impact before handoff.
