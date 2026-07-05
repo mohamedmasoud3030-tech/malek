@@ -1,9 +1,15 @@
--- STATUS AS OF 2026-07-05: NOT YET APPLIED to nnggcnpcuomwfuupupwg (production).
--- Confirmed via information_schema.tables that public.contract_documents does
--- not exist live, even though the PR #1036 frontend feature (contract
--- document upload/list/delete) depends on it. Applying this is a deliberate
--- operator action (via apply_migration), not something this consolidation
--- pass does silently. See supabase/migrations/README.md.
+-- STATUS AS OF 2026-07-05: APPLIED to nnggcnpcuomwfuupupwg (production) via
+-- apply_migration. Confirmed via information_schema.tables that
+-- public.contract_documents now exists live, unblocking the PR #1036
+-- frontend feature (contract document upload/list/delete).
+--
+-- SCHEMA DRIFT FIX (2026-07-05): the original version of this file declared
+-- contract_id as uuid, referencing public.contracts(id). Applying it against
+-- production failed with "Key columns contract_id and id are of incompatible
+-- types: uuid and text" — live public.contracts.id is text, not uuid
+-- (confirmed via information_schema.columns). Corrected below to text to
+-- match the live column and keep the foreign key valid. See
+-- supabase/migrations/README.md.
 
 begin;
 
@@ -12,7 +18,7 @@ begin;
 -- no-op; this closes that gap with real persistence + RLS.
 create table if not exists public.contract_documents (
   id uuid primary key default gen_random_uuid(),
-  contract_id uuid not null references public.contracts(id) on delete cascade,
+  contract_id text not null references public.contracts(id) on delete cascade,
   file_name text not null,
   file_url text not null,
   storage_path text not null,

@@ -29,22 +29,26 @@ captured in any migration file. That gap is being closed by three files dated
 the 4 live-data tables, then the 27 empty/scaffolding tables — see
 `docs/CURRENT_STATE.md`, "Baseline capture strategy and ordering", for why
 they're split and ordered this way). A related finding from the same pass:
-9 enum types exist live but aren't created by any migration and aren't used
-by any column either — intentionally left uncaptured for now, see the same
-doc section. Always verify against the live project (via Supabase MCP
+9 enum types existed live but weren't created by any migration and weren't
+used by any column either — confirmed zero usage anywhere on 2026-07-05
+(see `docs/CURRENT_STATE.md`) and dropped from production the same day via
+`20260705000003_drop_orphaned_enum_types.sql`. Always verify against the
+live project (via Supabase MCP
 `list_tables` / `execute_sql` on `information_schema`) before assuming a
 table, column, function, or type does or doesn't exist.
 
-## Files that are NOT yet applied live
+## Files applied live on 2026-07-05
 
 - `20260616090000_complete_planned_product_modules.sql` (creates
-  `communication_records`)
-- `20260703010000_contract_documents.sql` (creates `contract_documents`)
-
-Confirmed missing from `nnggcnpcuomwfuupupwg` on 2026-07-05. These are
-committed and reviewed but were never run against production. Do not remove
-or edit them to "fix" this — the fix is running them (via `apply_migration`)
-against the live project as a deliberate, separate operator action.
+  `communication_records`) — applied via `apply_migration`, confirmed live.
+- `20260703010000_contract_documents.sql` (creates `contract_documents`) —
+  applied via `apply_migration`, confirmed live. The file's `contract_id`
+  column was corrected from `uuid` to `text` before applying, to match the
+  live `public.contracts.id` column type (see the file's own header comment
+  for the drift detail).
+- `20260705000003_drop_orphaned_enum_types.sql` (drops the 9 orphaned enum
+  types documented below and in `docs/CURRENT_STATE.md`) — applied via
+  `apply_migration`, confirmed dropped from `pg_type`.
 
 ## `20260628000000_fix_find_payment_account_id.sql`
 
