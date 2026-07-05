@@ -23,12 +23,17 @@ live).
 `nnggcnpcuomwfuupupwg` project has 54 tables in `public`; these files plus the
 13 files after them account for 23 of them. The remaining ~31 tables
 (`tenants`, `sessions`, `automation_jobs`, `leads`, `commissions`, etc. — full
-list in `docs/CURRENT_STATE.md`) exist live but were never captured in any
-migration file. Do not treat this directory as a complete source of truth for
-the live schema until that gap is closed in a dedicated follow-up. Always
-verify against the live project (via Supabase MCP `list_tables` /
-`execute_sql` on `information_schema`) before assuming a table, column, or
-function does or doesn't exist.
+list in `docs/CURRENT_STATE.md`) exist live but were, until this pass, never
+captured in any migration file. That gap is being closed by three files dated
+`20260705000000`–`20260705000002` (enum types + `users` compatibility, then
+the 4 live-data tables, then the 27 empty/scaffolding tables — see
+`docs/CURRENT_STATE.md`, "Baseline capture strategy and ordering", for why
+they're split and ordered this way). A related finding from the same pass:
+9 enum types exist live but aren't created by any migration and aren't used
+by any column either — intentionally left uncaptured for now, see the same
+doc section. Always verify against the live project (via Supabase MCP
+`list_tables` / `execute_sql` on `information_schema`) before assuming a
+table, column, function, or type does or doesn't exist.
 
 ## Files that are NOT yet applied live
 
