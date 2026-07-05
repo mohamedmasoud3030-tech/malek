@@ -3,7 +3,7 @@
 ## Repository layout
 
 - `rentrix-app/` — the application (Vite + React + TypeScript). This is the only workspace package (see `pnpm-workspace.yaml`).
-- `supabase/migrations/` — SQL migrations: schema, RLS policies, functions/triggers/RPCs, and later feature/fix migrations. This is the source of truth for the database.
+- `supabase/migrations/` — SQL migrations: schema, RLS policies, functions/triggers/RPCs, and later feature/fix migrations. Intended as the source of truth for the database, but as of 2026-07-05 it is known to be incomplete relative to the live `nnggcnpcuomwfuupupwg` project (~31 live tables have no corresponding migration file, and 2 committed migrations were never applied live) — see `supabase/migrations/README.md` and `docs/CURRENT_STATE.md` before assuming a file reflects live reality.
 - `scripts/collect-supabase-migration-evidence.sh` — a local, read-only preflight script that checks migration file naming/ordering and reports whether Supabase credentials/CLI are available. Run via `pnpm supabase:migration-evidence`. It does not apply or verify migrations against a live database.
 - `.github/workflows/ci.yml` — CI pipeline (see `docs/TESTING.md` for the commands it runs).
 - Root `package.json` — workspace-level scripts (`build`, `typecheck`, `lint`, `supabase:migration-evidence`) that delegate into `rentrix-app` via `pnpm --filter`.

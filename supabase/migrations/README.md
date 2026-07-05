@@ -1,0 +1,57 @@
+# supabase/migrations
+
+## Filename convention
+
+Every file must be named `<14-digit-timestamp>_<snake_case_name>.sql`, matching
+`^[0-9]{14}_.+\.sql$`. This is enforced by evidence-gathering in
+`scripts/collect-supabase-migration-evidence.sh` (run in CI via
+`pnpm supabase:migration-evidence`), which flags any file that doesn't match.
+
+## The `20250101000001`–`20250101000005` baseline
+
+These 5 files are a **reconstructed snapshot** of the schema as it stood after
+PR #916 ("rebuild migrations as code-first clean baseline"), not a literal
+replay of the individual migrations that were actually run against production
+up to that point. They were originally named `0001`–`0005`, which broke the
+timestamp convention above; they were renamed to `20250101...` (a date
+guaranteed to sort before every real migration in the live ledger) and
+registered as already-applied in `supabase_migrations.schema_migrations`
+(metadata-only insert, no DDL re-run — the schema they describe is already
+live).
+
+**They do not cover the full live schema.** As of 2026-07-05, the live
+`nnggcnpcuomwfuupupwg` project has 54 tables in `public`; these files plus the
+13 files after them account for 23 of them. The remaining ~31 tables
+(`tenants`, `sessions`, `automation_jobs`, `leads`, `commissions`, etc. — full
+list in `docs/CURRENT_STATE.md`) exist live but were never captured in any
+migration file. Do not treat this directory as a complete source of truth for
+the live schema until that gap is closed in a dedicated follow-up. Always
+verify against the live project (via Supabase MCP `list_tables` /
+`execute_sql` on `information_schema`) before assuming a table, column, or
+function does or doesn't exist.
+
+## Files that are NOT yet applied live
+
+- `20260616090000_complete_planned_product_modules.sql` (creates
+  `communication_records`)
+- `20260703010000_contract_documents.sql` (creates `contract_documents`)
+
+Confirmed missing from `nnggcnpcuomwfuupupwg` on 2026-07-05. These are
+committed and reviewed but were never run against production. Do not remove
+or edit them to "fix" this — the fix is running them (via `apply_migration`)
+against the live project as a deliberate, separate operator action.
+
+## `20260628000000_fix_find_payment_account_id.sql`
+
+Intentional no-op (`SELECT 1;`). See the file's own header comment — the bug
+it targets was already fixed live under a different migration name. Left in
+place for changelog continuity; do not delete or "restore" its original body.
+
+## Historical ledger noise
+
+The live `supabase_migrations.schema_migrations` table has a small number of
+duplicate-named rows from past incidents (same migration applied twice under
+different generated versions, some with a `_dup1` suffix). This is a fact of
+production history and is not rewritten — see `docs/CURRENT_STATE.md` for the
+specific entries. It has no effect on the current schema; the migrations were
+idempotent or corrective and simply ran more than once.

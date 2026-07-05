@@ -180,11 +180,11 @@ describe('owner read helpers', () => {
 
 describe('owner relationship migration protections', () => {
   const coreSchemaSql = readFileSync(
-    new URL('../../../../supabase/migrations/0001_core_schema.sql', import.meta.url),
+    new URL('../../../../supabase/migrations/20250101000001_core_schema.sql', import.meta.url),
     'utf8',
   );
   const functionsSql = readFileSync(
-    new URL('../../../../supabase/migrations/0003_functions_triggers_and_rpcs.sql', import.meta.url),
+    new URL('../../../../supabase/migrations/20250101000003_functions_triggers_and_rpcs.sql', import.meta.url),
     'utf8',
   );
 
