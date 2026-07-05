@@ -1,3 +1,9 @@
+-- STATUS AS OF 2026-07-05: NOT YET APPLIED to nnggcnpcuomwfuupupwg (production).
+-- Confirmed via information_schema.tables that public.communication_records
+-- does not exist live. Committed and reviewed, but never run. Applying this
+-- is a deliberate operator action (via apply_migration), not something this
+-- consolidation pass does silently. See supabase/migrations/README.md.
+
 begin;
 
 -- Product-expansion support for the approved internal communication module.
