@@ -4,8 +4,7 @@ Short list of follow-up work, derived from gaps found while reviewing migrations
 
 ## Ready now
 
-- **Apply the 2 committed-but-unapplied migrations to production** (deliberate operator action, not a code change): `20260616090000_complete_planned_product_modules.sql` (creates `communication_records`) and `20260703010000_contract_documents.sql` (creates `contract_documents`). Confirmed missing from `nnggcnpcuomwfuupupwg` as of 2026-07-05. The PR #1036 contract-document-upload feature will fail live until `contract_documents` is applied. Run via `apply_migration` against the live project — see `supabase/migrations/README.md`.
-- **Decide on the 9 orphaned enum types** (`contract_status`, `invoice_status`, `invoice_type`, `journal_entry_type`, `maintenance_status`, `payment_method`, `property_status`, `transaction_status`, `unit_status`): audit complete (2026-07-05) — confirmed zero usage in columns, function signatures, function bodies (actual `::type` casts, not string-literal false positives), views, RLS policies, composite types, domains, or index expressions. `units.status`, `contracts.status`, `invoices.status`, `maintenance_records.status` are all plain `text` with string values that happen to match enum labels, not real enum usage. Since nothing references them, either action is safe: drop them from `nnggcnpcuomwfuupupwg` to reduce clutter, or leave them as unused scaffolding for a possible future migration to proper enum columns. Needs a product-owner call — no code risk either way. See `docs/CURRENT_STATE.md`, "Orphaned live-schema enum types" for the full audit trail.
+_Both items previously listed here — applying the 2 committed-but-unapplied migrations, and dropping the 9 orphaned enum types — were completed on production (`nnggcnpcuomwfuupupwg`) on 2026-07-05. See `docs/CURRENT_STATE.md` for details._
 
 ## Needs investigation
 
