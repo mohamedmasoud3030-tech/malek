@@ -1,20 +1,11 @@
 # Rentrix Claude Code Entry Point
 
-Primary entrypoint for Claude Code.
+Claude Code starts here, then follows the shared Rentrix guidance in `docs/ai/AGENT_OPERATING_PROTOCOL.md` and Claude-specific notes in `docs/ai/CLAUDE_AGENT_GUIDE.md`.
 
-Claude Code must follow the operating model from:
+Before non-trivial edits:
 
-```text
-https://github.com/shanraisshan/claude-code-best-practice
-```
-
-Then apply the Rentrix-specific rules in:
-
-```text
-docs/ai/AGENT_OPERATING_PROTOCOL.md
-docs/ai/CLAUDE_AGENT_GUIDE.md
-```
-
-Read `README.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/ai/ONBOARDING.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/ai/AGENT_CAPABILITIES.md`, and `docs/ai/GIT_TOOLING_POLICY.md` before non-trivial edits.
-
-Keep Rentrix Arabic-first, single-office, locally verified where possible, and bounded to the approved roadmap phase. Do not use Supabase Cloud or Vercel production without explicit approval, and never ask for secrets in chat.
+- Confirm the active application is currently `rentrix-app/`.
+- Review `docs/ai/CURRENT_EXECUTION_CONTEXT.md` for current dynamic status.
+- Review `docs/ai/AGENT_OPERATING_PROTOCOL.md` for source, context, risk, and verification guidance.
+- Use `rg` and `rg --files` for inspection when available.
+- Review the diff, run appropriate checks, and document risks and impact before handoff.

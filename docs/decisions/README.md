@@ -14,7 +14,7 @@ Do not wire a general accounting ledger during stabilization and release-readine
 
 ### ADR-003 — Active app boundary
 
-The active application lives under `artifacts/rentrix/`. Legacy or archived code is a review source only. Reuse requires deliberate adaptation to the current architecture. `.migration-backup/`, `artifacts/rentrix/legacy-src/`, and `archive/recovery-reference/` are not present in the current checkout; use git history for removed historical references.
+The active application lives under `rentrix-app/`. Legacy or archived code is a review source only. Reuse requires deliberate adaptation to the current architecture. `.migration-backup/`, `artifacts/rentrix/legacy-src/`, and `archive/recovery-reference/` are not present in the current checkout; use git history for removed historical references.
 
 ### ADR-004 — Canonical financial calculations
 

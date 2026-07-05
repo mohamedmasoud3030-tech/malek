@@ -1,6 +1,6 @@
 # Rentrix Agent Onboarding
 
-This is the canonical onboarding sequence and current application snapshot for coding agents. Read `AGENTS.md` first, then read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before this file, roadmap notes, payment reports, migration reports, or any older audit.
+This is a deep onboarding snapshot for coding agents when route, module, or release context is needed. Read `AGENTS.md` first, then read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` before this file, roadmap notes, payment reports, migration reports, or any older audit.
 
 When documentation and code disagree, `docs/ai/CURRENT_EXECUTION_CONTEXT.md` is the current execution source of truth. Inspect the active code and migrations, report the mismatch, and update stale documentation through a reviewed change. Do not guess from historical reports, recovery folders, or old pull requests.
 
@@ -8,7 +8,7 @@ For reporting or document-output work, also read `docs/ai/REPORTING_DEFINITIONS.
 
 ## Docs map
 
-Read first: `QUICK_STATUS.md` (if new), `AGENTS.md`, `README.md`, `docs/ROADMAP.md`, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, `docs/RENTRIX_MASTER_PLAN.md`, `docs/FIRST_CLIENT_DELIVERY_PLAN.md`, and this onboarding snapshot.
+For non-trivial work, start with the applicable agent entry file, `docs/ai/CURRENT_EXECUTION_CONTEXT.md`, and `docs/ai/AGENT_OPERATING_PROTOCOL.md`; then use this onboarding snapshot only when route, module, permission, or release context is relevant.
 
 Active policy docs: `docs/ai/domain-rules.md`, `docs/ai/engineering-policy.md`, `docs/ai/security-policy.md`, `docs/ai/release-policy.md`, `docs/ai/testing-guide.md`, and `docs/decisions/README.md`.
 

@@ -18,13 +18,12 @@ The active application code remains the source of truth. Agent tooling must neve
 
 Before every non-trivial task:
 
-1. read `.codex/vendor/selected-agent-skills/superpowers-selected/skills/using-superpowers/SKILL.md`;
-2. identify the active roadmap release and first ready item;
-3. choose one primary workflow from `.ai/workflows/README.md`;
-4. load only the task-relevant skills from the matrix below;
-5. follow `GIT_TOOLING_POLICY.md` for branch, PR, CI, and merge work;
-6. run fresh verification before claiming completion;
-7. update roadmap evidence after reviewed work changes status.
+1. read `docs/ai/CURRENT_EXECUTION_CONTEXT.md` and `docs/ai/AGENT_OPERATING_PROTOCOL.md`;
+2. choose one primary workflow from `.ai/workflows/README.md`;
+3. load only task-relevant skills from the matrix below;
+4. follow `GIT_TOOLING_POLICY.md` for branch, PR, CI, and merge work;
+5. run fresh verification before claiming completion;
+6. update roadmap evidence only when reviewed work actually changes status.
 
 Do not inject every skill into every task.
 
@@ -194,4 +193,4 @@ Run a sync script only when files are missing or an explicit refresh is approved
 
 ## 10. Runtime boundary
 
-All files listed here are guidance, source locks, sync helpers, or generated analysis support. Never import them into `artifacts/rentrix/src/` or the shipped production bundle.
+All files listed here are guidance, source locks, sync helpers, or generated analysis support. Never import them into `rentrix-app/src/` or the shipped production bundle.

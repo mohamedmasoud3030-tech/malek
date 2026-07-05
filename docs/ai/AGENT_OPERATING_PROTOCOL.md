@@ -1,83 +1,64 @@
 # Rentrix Agent Operating Protocol
 
-Shared operating rules for Codex CLI, Claude Code, and generic coding agents working in Rentrix.
+Shared operating guidance for Codex CLI, Claude Code, GitHub Copilot, Cursor, and generic coding agents working in Rentrix. This protocol is advisory: it helps agents load context, explain risk, and verify work without creating product-scope or architecture blockers.
 
-## 1. Read before editing
+## 1. Source and context model
 
-Before non-trivial edits, read:
+Use these references to understand the repository before making decisions:
 
-1. `AGENTS.md` for Codex CLI and generic agents, or `CLAUDE.md` for Claude Code.
-2. `README.md`.
-3. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`.
-4. `docs/ai/ONBOARDING.md`.
-5. `docs/RENTRIX_MASTER_PLAN.md`.
-6. `docs/ai/AGENT_CAPABILITIES.md`.
-7. `docs/ai/GIT_TOOLING_POLICY.md`.
-8. `.ai/workflows/README.md`.
+- **Runtime evidence:** inspect current code, migrations, generated contracts, tests, and CI configuration in this checkout before describing active behavior.
+- **Current execution context:** `docs/ai/CURRENT_EXECUTION_CONTEXT.md` records dynamic status, current work, and recent blockers.
+- **Product and execution plan:** `docs/RENTRIX_MASTER_PLAN.md` describes roadmap sequencing and phase intent. Confirm implementation status from code before treating planned capability as live.
+- **Runtime truth and gaps register:** `docs/RUNTIME_TRUTH_AND_GAPS.md` records verified facts, contradictions, and gaps.
+- **Historical references:** archived reports, old notes, and previous PRs can be useful context, but should be compared with current code before use.
 
-Then load only task-relevant references and skills. Use active code, migrations, and tests as the source of truth.
+When sources disagree, explain the disagreement, cite the inspected evidence, and describe the risk or follow-up needed.
 
-## 2. Follow the next documented phase
+## 2. Suggested reading flow
 
-Use `docs/RENTRIX_MASTER_PLAN.md` and `docs/ai/CURRENT_EXECUTION_CONTEXT.md` to identify the active release, blocked gates, and next ready work.
+Before non-trivial edits, start from the relevant entry file for your tool (`AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, or `.cursor/rules/00-rentrix-core.mdc`), then read:
 
-Do not invent a new roadmap lane when a documented next phase exists. If the requested work conflicts with the roadmap, report the conflict and ask for explicit product direction.
+1. `docs/ai/CURRENT_EXECUTION_CONTEXT.md`.
+2. This protocol.
+3. `docs/ROOT_LAYOUT.md` when creating or moving files.
+4. `docs/RENTRIX_MASTER_PLAN.md` when roadmap or phase context matters.
+5. Task-specific policy, ADR, domain, testing, or release references as needed.
 
-## 3. Work as one coherent phase-sized task
+Use `rg` and `rg --files` for repository inspection when available.
 
-Keep each branch and pull request focused on one coherent phase-sized objective.
+## 3. Current repository orientation
 
-Do not create scattered micro-tasks, unrelated cleanup, opportunistic refactors, or multiple loosely connected PR slices. Split only when a real safety, review, or ownership boundary requires it.
+- The active application currently lives in `rentrix-app/`.
+- Shared workspace libraries currently live under `lib/`.
+- Canonical backend assets currently live under `supabase/`.
+- Rentrix is currently Arabic-first with RTL support, and English/LTR should be checked when relevant.
+- Existing runtime architecture currently uses TanStack Router, React Query, Supabase, PWA support, and i18n direction handling.
 
-Use one coherent branch and one pull request per phase.
+These are current-orientation facts for this checkout. Future product or architecture changes can be proposed or implemented when requested; document their impact and verification.
 
-## 4. Environment and secret safety
+## 4. Change documentation expectations
 
-Do not use Supabase Cloud, Vercel production, live SQL, live production data, or production configuration without explicit approval.
+For any meaningful change, include in the PR or handoff:
 
-Do not ask for secrets, tokens, passwords, admin credentials, Supabase keys, Vercel keys, service-role keys, or operator credentials in chat. If verification needs protected access, report the exact blocker and provide a safe local or operator-run alternative.
+- Objective and scope.
+- Files changed and why.
+- Architecture, domain, security, data, and environment impact when relevant.
+- User-facing RTL/LTR and mobile impact when relevant.
+- Tests and checks run, with actual results.
+- Known risks, skipped checks, blockers, or follow-up work.
 
-Do not mutate production configuration from an agent session.
+## 5. Legacy and tooling references
 
-## 5. Product boundaries
+If work touches or references legacy patterns such as `react-router-dom`, `useApp`, `AppContext`, `dataService`, or agent-tooling directories, treat that as a review signal. Explain why the reference is appropriate, how it affects runtime, and what verification was run.
 
-Rentrix is an Arabic-first, single-office property operations system. English/LTR behavior must remain safe.
+## 6. Sensitive areas
 
-Do not introduce SaaS, shared-database multi-tenancy, organizations, memberships, invitations, subscriptions, or organization-scoped runtime behavior.
+Supabase, migrations, RLS, RPCs, auth, financial workflows, environment configuration, production deployment, and credentials are high-impact areas. Changes in these areas should describe the impact, validation performed, and any operator or environment assumptions. If a check needs protected access, report the limitation and provide a safe local or operator-run alternative.
 
-Do not introduce ledger/accounting finality, profit, net income, payout readiness, owner settlement claims, or accounting-grade tax claims unless the capability is fully implemented, calculation-backed, tested, and explicitly approved.
+## 7. Verification guidance
 
-Do not use `/accounting` as permission to build a general ledger; it currently redirects to `/financials`.
+Run the smallest meaningful checks while editing and broader checks before handoff when runtime behavior, financial behavior, schema/auth, or release readiness is affected. Report passed, failed, skipped, and blocked checks honestly.
 
-## 6. Domain invariants
+## 8. Git and PR guidance
 
-Preserve these invariants:
-
-- A property owns units.
-- A contract references exactly one unit and one tenant.
-- A payment belongs to exactly one contract.
-- Standalone payments are not allowed.
-- A receipt is generated only from a posted payment.
-- Active contracts for the same unit must not overlap.
-- Orphan chains are not allowed.
-- Posted payments are immutable.
-- Corrections use reversal and replacement.
-- Outstanding balance is derived through one canonical calculation path and is never edited manually.
-
-## 7. Local-first verification
-
-Prefer local verification. Run the smallest meaningful checks for the change, then broader gates when runtime behavior, schema, RLS, financial posting, or release readiness is affected.
-
-For docs-only changes, `git diff --check` plus targeted file inspection is usually sufficient unless the docs change commands, generated references, or release evidence.
-
-For runtime pull requests, use the full gate in `.github/workflows/ci.yml` and mirrored in `README.md`.
-
-Report verification honestly. Distinguish passed checks, failed checks, skipped checks, and environment limitations.
-
-## 8. Git and PR discipline
-
-Follow `docs/ai/GIT_TOOLING_POLICY.md` for branch, diff, CI, PR, and merge work.
-
-Preserve dirty worktrees. Avoid destructive Git operations unless the user explicitly approves a documented branch refresh.
-
-Before handoff, review the final diff and confirm it only contains intended files.
+Follow `docs/ai/GIT_TOOLING_POLICY.md` for branch, diff, CI, PR, and merge work. Keep PRs focused, review the final diff, and avoid claiming production readiness, Supabase verification, or branch-protection status without evidence.
