@@ -4,7 +4,7 @@ Short list of follow-up work, derived from gaps found while reviewing migrations
 
 ## Ready now
 
-- Confirm whether `dexie` (in `rentrix-app/package.json` dependencies) is still needed. No import usages were found under `rentrix-app/src`. Remove it if unused, or document what it's for if it's reserved for planned work.
+(none currently — see "Needs investigation" and "Later" below)
 
 ## Needs investigation
 

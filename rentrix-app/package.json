@@ -86,7 +86,6 @@
     "@supabase/supabase-js": "^2.105.1",
     "@tanstack/react-router": "^1.139.3",
     "@tanstack/react-router-devtools": "^1.139.3",
-    "dexie": "^4.2.1",
     "i18next": "^26.0.8",
     "jspdf": "^4.2.1",
     "react-i18next": "^17.0.6",

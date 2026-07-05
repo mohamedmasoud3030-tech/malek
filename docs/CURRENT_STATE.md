@@ -11,7 +11,6 @@ The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single
 
 - All feature service files under `rentrix-app/src/features/**` that read or write domain data (properties, units, people, owners, owner agreements, tenants, contracts, invoices, payments, receipts, expenses, maintenance, leads, lands, commissions, communication, settings, cost centers, payment terms, audit log, data integrity) import and call the Supabase client — none of the checked feature services persist domain data to `localStorage`, IndexedDB, or an in-memory store.
 - `zustand` is used only for local UI state (`rentrix-app/src/store/ui-store.ts`: sidebar/theme/sync-status), not for domain data.
-- `dexie` is listed as a dependency but has no import usages under `rentrix-app/src` at the time of this check — treat as unused/unverified rather than as an active persistence layer.
 - Route guards (`rentrix-app/src/features/auth/route-guards.ts`, `rentrix-app/src/routeTree.ts`) check a Supabase session and, for permission-gated routes, an app permission (`rentrix-app/src/features/auth/permissions.ts`) before rendering.
 - `supabase/migrations/` contains a migration (`0003_functions_triggers_and_rpcs.sql`) defining `record_invoice_payment_atomic` and `find_payment_account_id`, and a contract test (`rentrix-app/src/features/financials/payment-account-resolution-migration-contract.test.ts`) that asserts the function is text-based (not casting to `uuid`) and revokes public execute access on the helper function. This indicates the previously-known account-resolution bug has a code-level fix in the migration; live-database behavior still needs verification against the actual deployed Supabase project.
 - Owner agreements (`supabase/migrations/20260628100000_owner_agreements_core.sql`), cost centers, VAT support, payment terms, and a cash-flow report migration all exist under `supabase/migrations/`.
@@ -23,7 +22,6 @@ The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single
 
 - No dedicated bank reconciliation feature (matching bank statement lines against recorded transactions) was found in migrations or `src/features`.
 - No security deposit management, deferred revenue handling, or multi-currency support was found in migrations or `src/features`.
-- `dexie` dependency's purpose is unverified — confirm whether it is dead weight or planned for an unbuilt feature before removing or building on it.
 - The Supabase migration-evidence script (`scripts/collect-supabase-migration-evidence.sh`, run in CI via `pnpm supabase:migration-evidence`) only performs local, read-only checks (file ordering, presence of env vars); it does not verify that migrations have actually been applied to any live Supabase project. Live schema state must be checked separately via the Supabase project directly before relying on any migration as "deployed."
 
 ## Before claiming a feature is complete
