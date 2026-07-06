@@ -120,8 +120,8 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
     });
 
-    // Locate the rendered mobile card button in the DOM
-    const cardButton = container?.querySelector('[role="listitem"] button') as HTMLButtonElement;
+    // Locate the rendered mobile entity card in the DOM
+    const cardButton = container?.querySelector('[role="listitem"] [role="button"]') as HTMLElement;
     expect(cardButton).not.toBeNull();
 
     // Trigger a real user click on the mobile card

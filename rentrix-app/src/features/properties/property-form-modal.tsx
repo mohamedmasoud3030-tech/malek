@@ -2,9 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RouteLoadingState } from '@/components/loading-state';
@@ -172,7 +171,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
   });
 
   return (
-    <ResponsiveFormOverlay
+    <EntityForm.Overlay
       open={open}
       onOpenChange={(v) => {
         if (!v) onClose();
@@ -180,15 +179,8 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       title="إضافة عقار جديد"
       className="max-w-2xl"
     >
-      <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-        {submitError && (
-          <div
-            className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2"
-            role="alert"
-          >
-            {submitError}
-          </div>
-        )}
+      <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit}>
+        <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
 
         {/* Property fields */}
         <label className="grid gap-2 text-sm font-bold">
@@ -289,16 +281,9 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
           <Textarea {...form.register('notes')} placeholder="أي تفاصيل إضافية" />
         </label>
 
-        <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0 md:col-span-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            إلغاء
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'جار الحفظ...' : 'حفظ العقار'}
-          </Button>
-        </div>
-      </form>
-    </ResponsiveFormOverlay>
+        <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ العقار'} />
+      </EntityForm.Root>
+    </EntityForm.Overlay>
   );
 }
 
@@ -354,7 +339,7 @@ function PropertyEditModal({
   });
 
   return (
-    <ResponsiveFormOverlay
+    <EntityForm.Overlay
       open={open}
       onOpenChange={(v) => {
         if (!v) onClose();
@@ -365,15 +350,8 @@ function PropertyEditModal({
       {propertyQuery.isLoading ? (
         <RouteLoadingState />
       ) : (
-        <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-          {submitError && (
-            <div
-              className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2"
-              role="alert"
-            >
-              {submitError}
-            </div>
-          )}
+        <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit}>
+        <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
           <label className="grid gap-2 text-sm font-bold">
             اسم العقار
             <Input {...form.register('title')} autoFocus />
@@ -412,16 +390,9 @@ function PropertyEditModal({
             ملاحظات
             <Textarea {...form.register('notes')} />
           </label>
-          <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0 md:col-span-2">
-            <Button type="button" variant="secondary" onClick={onClose}>
-              إلغاء
-            </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? 'جار الحفظ...' : 'حفظ'}
-            </Button>
-          </div>
-        </form>
+          <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={updateMutation.isPending} submitLabel={updateMutation.isPending ? 'جار الحفظ...' : 'حفظ'} />
+        </EntityForm.Root>
       )}
-    </ResponsiveFormOverlay>
+    </EntityForm.Overlay>
   );
 }

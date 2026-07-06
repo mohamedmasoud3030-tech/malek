@@ -10,7 +10,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EntityTable } from '@/components/ui/entity-table';
-import { UnitCard } from '@/components/ui/unit-card';
+import { EntityCard } from '@/components/ui/entity-card';
 import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
@@ -175,20 +175,25 @@ export function UnitsPage() {
             })}
             renderMobileCard={(unit) => {
               const property = propertyById.get(unit.property_id);
+              const unitStatus = getUnitPageStatus(unit);
               return (
                 <div className="space-y-1">
-                  <UnitCard
+                  <EntityCard
                     id={unit.id}
-                    unitNumber={unit.unit_number}
-                    floor={unit.floor}
-                    status={getUnitPageStatus(unit)}
-                    rentAmount={unit.rent_amount}
-                    notes={unit.notes}
-                    formatMoney={(value) => formatCompanyMoney(defaultCompanyLocalSettings, value)}
+                    name={`وحدة ${unit.unit_number}`}
+                    subtitle={unit.floor ? `الدور: ${unit.floor}` : undefined}
+                    avatarIcon={DoorOpen}
+                    badge={<StatusBadge tone={unitStatusTone[unitStatus]} className="shrink-0">{unitStatusLabels[unitStatus]}</StatusBadge>}
                     onClick={() => navigate({
                       to: '/properties/$propertyId/units/$unitId',
                       params: { propertyId: unit.property_id, unitId: unit.id },
                     })}
+                    stats={(
+                      <div className="flex items-center justify-between gap-3">
+                        {unit.notes ? <p className="flex-1 text-xs leading-relaxed text-muted-foreground">{unit.notes}</p> : <span />}
+                        {unit.rent_amount != null ? <p className="whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCompanyMoney(defaultCompanyLocalSettings, unit.rent_amount)}</p> : null}
+                      </div>
+                    )}
                   />
                   {property && (
                     <div className="px-2 pb-2 flex justify-between items-center text-xs text-muted-foreground border-b border-border/20">

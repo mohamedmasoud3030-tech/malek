@@ -6,7 +6,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FormSection } from '@/components/ui/form-section';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { useAgreementCoverage } from '@/features/owners/useOwnerAgreements';
 import { Select } from '@/components/ui/select';
@@ -73,8 +73,8 @@ export function ContractFormPage() {
       />
       <Card>
         <CardContent className="pt-6">
-          <FormSection>
-            <form className="grid gap-5 md:grid-cols-2" onSubmit={form.handleSubmit(async (values) => { const payload = contractSchema.parse(values); const unitIssue = getContractUnitSelectionIssue({ units: unitsQuery.data ?? [], propertyId: payload.property_id, unitId: payload.unit_id, currentLinkedUnitId }); if (unitIssue) { form.setError('unit_id', { type: 'validate', message: unitIssue }); return; } const agreementId = agreementCoverageQuery.data?.id ?? null; const finalPayload = { ...payload, agreement_id: agreementId }; try { if (isEdit && contractId) await updateMutation.mutateAsync(finalPayload); else await createMutation.mutateAsync(finalPayload); await navigate({ to: '/contracts' }); } catch (err) { form.setError('root', { type: 'server', message: err instanceof Error ? err.message : 'تعذر حفظ العقد، حاول مرة أخرى.' }); } })}>
+          <EntityForm.Section>
+            <EntityForm.Root className="gap-5 md:grid-cols-2" onSubmit={form.handleSubmit(async (values) => { const payload = contractSchema.parse(values); const unitIssue = getContractUnitSelectionIssue({ units: unitsQuery.data ?? [], propertyId: payload.property_id, unitId: payload.unit_id, currentLinkedUnitId }); if (unitIssue) { form.setError('unit_id', { type: 'validate', message: unitIssue }); return; } const agreementId = agreementCoverageQuery.data?.id ?? null; const finalPayload = { ...payload, agreement_id: agreementId }; try { if (isEdit && contractId) await updateMutation.mutateAsync(finalPayload); else await createMutation.mutateAsync(finalPayload); await navigate({ to: '/contracts' }); } catch (err) { form.setError('root', { type: 'server', message: err instanceof Error ? err.message : 'تعذر حفظ العقد، حاول مرة أخرى.' }); } })}>
               <label className="grid gap-2 text-sm font-bold">العقار<Select {...form.register('property_id')}><option value="">اختر العقار</option>{propertiesQuery.data?.rows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select>{fieldError(form.formState.errors.property_id?.message)}</label>
               <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id')} disabled={!propertyId}><option value="">اختر الوحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id} disabled={!isUnitSelectableForContract({ unit, currentLinkedUnitId })}>{buildContractUnitOptionLabel({ unit, property: selectedProperty })}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
               <label className="grid gap-2 text-sm font-bold">المستأجر<Select {...form.register('tenant_id')}><option value="">اختر المستأجر</option>{peopleQuery.data?.rows.map((person) => <option key={person.id} value={person.id}>{person.full_name}</option>)}</Select>{fieldError(form.formState.errors.tenant_id?.message)}</label>
@@ -88,8 +88,8 @@ export function ContractFormPage() {
               <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea {...form.register('notes')} placeholder="ملاحظات العقد" /></label>
               {form.formState.errors.root && <div className="md:col-span-2 rounded-md bg-destructive/10 px-4 py-2 text-sm font-bold text-destructive">{form.formState.errors.root.message}</div>}
               <div className="flex justify-end gap-3 md:col-span-2"><Button variant="secondary" asChild><Link to="/contracts">إلغاء</Link></Button><Button type="submit" disabled={submitting}>{submitting ? 'جار الحفظ...' : 'حفظ العقد'}</Button></div>
-            </form>
-          </FormSection>
+            </EntityForm.Root>
+          </EntityForm.Section>
         </CardContent>
       </Card>
     </div>

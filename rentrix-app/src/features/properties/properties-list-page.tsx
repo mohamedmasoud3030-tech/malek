@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Building2, Edit, Plus, Trash2 } from 'lucide-react';
+import { Building2, DoorOpen, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -12,7 +12,9 @@ import { Select } from '@/components/ui/select';
 import { SearchInput } from '@/components/ui/search-input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EntityTable } from '@/components/ui/entity-table';
-import { PropertyCard } from '@/components/ui/property-card';
+import { EntityCard } from '@/components/ui/entity-card';
+import { cn } from '@/lib/utils';
+import { formatPropertyUnitSummary } from './property-card-utils';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
@@ -128,26 +130,37 @@ export function PropertiesListPage() {
               </div>
             )},
           ]}
-          renderMobileCard={(p) => (
-            <div className="space-y-2">
-              <PropertyCard
-                id={p.id}
-                title={p.title ?? 'عقار'}
-                address={p.address}
-                status={p.status}
-                formatMoney={(v) => money(v)}
-                onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
-                  <Edit className="size-3.5" />تعديل
-                </Button>
-                <Button variant="danger" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
-                  <Trash2 className="size-3.5" />أرشفة
-                </Button>
+          renderMobileCard={(p) => {
+            const unitSummary = formatPropertyUnitSummary(undefined, undefined);
+            return (
+              <div className="space-y-2">
+                <EntityCard
+                  id={p.id}
+                  name={p.title ?? 'عقار'}
+                  subtitle={p.address}
+                  avatarIcon={Building2}
+                  badge={<StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'} dot>{propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}</StatusBadge>}
+                  onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
+                  stats={(
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <DoorOpen className="size-3.5" />
+                        <span className={cn('font-semibold', unitSummary.hasCount ? 'text-foreground' : 'text-muted-foreground')}>{unitSummary.text}</span>
+                      </div>
+                    </div>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="secondary" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
+                    <Edit className="size-3.5" />تعديل
+                  </Button>
+                  <Button variant="danger" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
+                    <Trash2 className="size-3.5" />أرشفة
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            );
+          }}
         />
 
         </AsyncContentState>

@@ -3,10 +3,9 @@ import { useEffect } from 'react';
 import { useForm, useWatch, Controller } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { RouteLoadingState } from '@/components/loading-state';
-import { Button } from '@/components/ui/button';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
-import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { listPeople } from '@/features/people/people-service';
@@ -103,7 +102,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
   });
 
   return (
-    <ResponsiveFormOverlay
+    <EntityForm.Overlay
       open={open}
       onOpenChange={(v) => { if (!v) onClose(); }}
       title={isEdit ? 'تعديل عقد' : 'إنشاء عقد'}
@@ -112,7 +111,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
         {isEdit && contractQuery.isLoading ? (
           <RouteLoadingState />
         ) : (
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+          <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit}>
             <label className="grid gap-2 text-sm font-bold">
               العقار
               <Select {...form.register('property_id')} autoFocus>
@@ -209,14 +208,9 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
                 )}
               />
             </div>
-            <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0 md:col-span-2">
-              <Button type="button" variant="secondary" onClick={onClose}>إلغاء</Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? 'جار الحفظ...' : 'حفظ العقد'}
-              </Button>
-            </div>
-          </form>
+            <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={submitting} submitLabel={submitting ? 'جار الحفظ...' : 'حفظ العقد'} />
+          </EntityForm.Root>
         )}
-    </ResponsiveFormOverlay>
+    </EntityForm.Overlay>
   );
 }

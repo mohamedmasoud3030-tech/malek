@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getResponsiveFormSurface } from './responsive-form-overlay';
+import { getResponsiveFormSurface } from './entity-form';
 
 describe('responsive form overlay surface selection', () => {
   it('uses a bottom sheet for mobile form workflows', () => {

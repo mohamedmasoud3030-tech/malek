@@ -6,6 +6,9 @@ Short list of follow-up work, derived from gaps found while reviewing migrations
 
 _Both items previously listed here — applying the 2 committed-but-unapplied migrations, and dropping the 9 orphaned enum types — were completed on production (`nnggcnpcuomwfuupupwg`) on 2026-07-05. See `docs/CURRENT_STATE.md` for details._
 
+- Phase -1 shared-components implementation is complete: the custom `contract-card.tsx`, `property-card.tsx`, `unit-card.tsx`, and `receipt-card.tsx` components were replaced by `EntityCard` and deleted; `EntityForm` now unifies Root/Section/ErrorSummary/Actions/Overlay form behavior; `formatPropertyUnitSummary` moved to `features/properties/property-card-utils.ts`; receipt mobile cards and table badges now render the actual receipt status instead of a hard-coded posted label. Phase 0 (Settings + Auth) is the next required phase.
+- Phase 0 Settings + Auth code/migration audit is documented in `docs/PHASE_0_SETTINGS_AUTH_AUDIT.md`; implementation remains blocked until the required live `information_schema` / `pg_get_functiondef(oid)` verification can be completed from an operator environment using `scripts/collect-phase0-settings-auth-evidence.sh`.
+
 ## Needs investigation
 
 - Commissions scope investigation is complete: `features/commissions/` is confirmed as an operational tracking view only, not a payout/accounting feature. See `docs/DOMAIN.md` for the documented assumptions and the inactive/placeholder `expense_id` note.

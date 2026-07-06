@@ -1,9 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { Unit } from '@/types/domain';
@@ -52,15 +51,15 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <ResponsiveFormOverlay
+    <EntityForm.Overlay
       open={open}
       onOpenChange={onOpenChange}
       title={unit ? 'تعديل وحدة' : 'إضافة وحدة'}
       description="الوحدات مرتبطة بالعقار الحالي وتُحذف أرشيفياً عند الإزالة."
       className="max-w-2xl"
     >
-        <form
-          className="grid gap-4 md:grid-cols-2"
+        <EntityForm.Root
+          className="md:grid-cols-2"
           onSubmit={form.handleSubmit(async (values) => {
             setSubmitError(null);
             const payload = unitSchema.parse(values);
@@ -76,9 +75,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
             }
           })}
         >
-          {submitError ? (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div>
-          ) : null}
+          <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
           <label className="grid gap-2 text-sm font-bold">
             رقم الوحدة
             <Input {...form.register('unit_number')} />
@@ -103,11 +100,8 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
             ملاحظات
             <Textarea {...form.register('notes')} />
           </label>
-          <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0 md:col-span-2">
-            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isSubmitting}>إلغاء</Button>
-            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'}</Button>
-          </div>
-        </form>
-    </ResponsiveFormOverlay>
+          <EntityForm.Actions className="md:col-span-2" onCancel={() => onOpenChange(false)} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'} />
+        </EntityForm.Root>
+    </EntityForm.Overlay>
   );
 }

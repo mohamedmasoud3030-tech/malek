@@ -100,8 +100,8 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       root.render(<UnitsPage />);
     });
 
-    // Locate the first mobile card button
-    const cardButton = container?.querySelector('[role="listitem"] button') as HTMLButtonElement;
+    // Locate the first mobile entity card
+    const cardButton = container?.querySelector('[role="listitem"] [role="button"]') as HTMLElement;
     expect(cardButton).not.toBeNull();
 
     // Click the mobile card
