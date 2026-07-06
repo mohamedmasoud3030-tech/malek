@@ -24,3 +24,7 @@ Each area above corresponds to a route under `rentrix-app/src/routes/` and a fea
 ## What the product is for
 
 The application exists to give a property management office one system of record for contracts and money movement, instead of spreadsheets or disconnected tools — so that invoices, payments, expenses, and owner payouts stay consistent and auditable.
+
+## Product decision: receipts and collections
+
+Until a product decision changes it, collection reporting is based on posted payments. Voided receipts/payments are retained as history but are not revenue/collection. Owner settlements, multi-currency, deposits, and deferred revenue remain separate product decisions and should not be inferred from receipt reporting work.

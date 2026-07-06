@@ -25,3 +25,7 @@ See [`docs/`](docs) for product, architecture, domain, testing, and current-stat
 ## Contributing
 
 Keep changes focused, run the relevant checks, and avoid committing generated build output or secrets.
+
+## Financial reporting source of truth
+
+Receipts in the current application are payment-backed: the Receipts UI reads `public.payments`, and reporting totals should use posted, non-deleted payments as the collection source. VOID payments may be displayed as receipt history, but they must not be included in collection, cash-flow, or payment-total reports.

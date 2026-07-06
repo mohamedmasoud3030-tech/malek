@@ -99,27 +99,25 @@ Cross-referenced every `.rpc(...)` and `.from(...)` call in `rentrix-app/src` ag
 3. Run the relevant test command(s) from `docs/TESTING.md` and confirm they pass.
 4. Check CI (`.github/workflows/ci.yml`) status on the branch/PR.
 
-## 🔴 CRITICAL — voidReceipt is broken in production (found 2026-07-06, not yet fixed)
+## Recently fixed in code — live verification pending: voidReceipt payment-backed void path
 
-Traced the full receipt/payment write and void path live:
+The stale `voidReceipt` incident is **not** documented as an active/current production incident in this checkout. PR #1064 merged a code fix for the payment-backed receipt void path on 2026-07-06, including migrations/tests that make `record_invoice_payment_atomic` and `void_receipt_atomic(jsonb)` resolve payment-backed receipt ids consistently.
 
-1. The "Receipts" UI feature (`rentrix-app/src/features/financials/receipts/receiptService.ts`) reads and writes exclusively via the **`payments`** table (`listReceipts`, `getReceiptDetail`, etc. all call `.from('payments')`). It never queries `public.receipts` or `public.receipt_allocations` directly.
-2. Recording a payment (`record_invoice_payment_atomic`, called from the frontend) internally calls `post_receipt_atomic`, which inserts a row into `public.receipts` (`id = v_receipt_id`, a fresh UUID) and `public.receipt_allocations`. `record_invoice_payment_atomic` then **also** inserts a separate row into `public.payments` with a **different** fresh UUID (`v_payment_id`) via a dynamic `EXECUTE format('INSERT INTO public.payments ...')` fallback (this fallback always runs, since `post_receipt_atomic`'s return payload never contains a `payment_id` key).
-3. **There is no column linking `payments.id` to the corresponding `receipts.id`.** They are two independently-generated UUIDs for what the user perceives as a single transaction.
-4. `receiptService.ts`'s `voidReceipt()` sends `{ payload: { receipt_id: <payments.id>, ... } }` to `void_receipt_atomic`, which does `SELECT * FROM public.receipts WHERE id = p_receipt_id`. Since `payments.id` never equals any `receipts.id`, this always raises `'سند القبض غير موجود: %'` (receipt not found).
+What was previously found from the live receipt/payment write and void path:
 
-**Net effect: every "void receipt" action in the UI fails with an error, unconditionally.** This is the primary path, not an edge case.
+1. The "Receipts" UI feature (`rentrix-app/src/features/financials/receipts/receiptService.ts`) reads and writes primarily via the **`payments`** table (`listReceipts`, `getReceiptDetail`, etc. all call `.from('payments')`).
+2. Before PR #1064, recording a payment (`record_invoice_payment_atomic`, called from the frontend) could create separate `public.receipts` and `public.payments` rows with independently generated ids for what the user perceives as a single transaction.
+3. Before PR #1064, `receiptService.ts`'s `voidReceipt()` sent `{ payload: { receipt_id: <payments.id>, ... } }` to `void_receipt_atomic`, which looked up `public.receipts.id` directly and could fail when the supplied id was a payment id rather than the corresponding receipt id.
 
-**Not yet fixed — needs a decision on approach before touching code:**
-- **Option A**: Have `record_invoice_payment_atomic` reuse the same UUID for both `payments.id` and `receipts.id` (pass `v_payment_id` as the receipt's `id` into the internal payload sent to `post_receipt_atomic`), so voiding by `payments.id` finds the right `receipts` row. Smallest change, and zero data-migration risk since `payments`/`receipts`/`invoices`/`contracts` are all empty in production right now.
-- **Option B**: Add a `receipt_id` column on `payments`, populate it from `post_receipt_atomic`'s return value, and have the frontend read/send that column instead of `payments.id` when voiding. More explicit, slightly more invasive.
-- Either way, `receiptService.ts`'s `voidReceipt` needs to send the correct id, and needs a test that actually posts a payment then voids it end-to-end (current test suite apparently doesn't catch this).
+**Precise status after PR #1064:** the code fix is merged, but live Supabase verification and real end-to-end production-path verification have **not** yet been performed. Do not claim the fix is live or verified in production until both are done and documented.
+
+**Required warning for future receipt/payment work:** before relying on this fix, verify the live `void_receipt_atomic` / `record_invoice_payment_atomic` RPC definitions and the live `supabase_migrations.schema_migrations` ledger against the target Supabase project, then run a real production-path end-to-end check that records a payment and voids it through the app path.
 
 ## Reports page RPC wiring — audit done, implementation paused (2026-07-06)
 
 Per the earlier "10 live RPCs with zero frontend callers" finding: confirmed 3 of them (`rpt_daily_collection`, `rpt_overdue_invoices`, `rpt_aged_receivables`) have a live client-side reimplementation in `financialReportsService.ts` that could in principle be swapped for the RPC call (same pattern already used for `rpt_cash_flow`/`rpt_vat_return` — see `getCashFlowStatementReport`/`getVatReturnReport`).
 
-**Blocker found before implementing the swap**: `rpt_daily_collection` reads from `public.receipts`, but the actual production payment-recording UI displays data sourced from `public.payments` (see the void-receipt bug above — the two tables are only loosely, indirectly connected). Swapping `getDailyCollectionReport` to call `rpt_daily_collection` as-is would silently start reporting off a different dataset (`receipts.channel`: CASH/BANK/POS vs. `payments.payment_method`) — needs to be verified against real data after the void-receipt bug is fixed, not assumed safe.
+**Blocker found before implementing the swap**: `rpt_daily_collection` reads from `public.receipts`, but the actual production payment-recording UI displays data sourced from `public.payments` (see the voidReceipt status above — PR #1064 merged a code fix, but live Supabase and real end-to-end production-path verification are still pending). Swapping `getDailyCollectionReport` to call `rpt_daily_collection` as-is would silently start reporting off a different dataset (`receipts.channel`: CASH/BANK/POS vs. `payments.payment_method`) — needs to be verified against real data after the receipt/payment path is live-verified, not assumed safe.
 
 `rpt_overdue_invoices` and `rpt_aged_receivables` read from `invoices`/`contracts`/`tenants` directly (no receipts/payments involved) — these two are lower-risk to swap and were not blocked by the above; not yet implemented, pending this session's wrap-up.
 
@@ -128,3 +126,7 @@ Per the earlier "10 live RPCs with zero frontend callers" finding: confirmed 3 o
 **rpt_income_statement / rpt_balance_sheet / rpt_trial_balance / rpt_rent_roll**: no current frontend equivalent at all (not even a client-side one). Scoped but not started.
 
 Dead overloads (`get_financial_summary` × 2, `void_receipt_atomic(text,bigint,jsonb,jsonb)`): left alone per explicit decision, documented only, not dropped.
+
+## Financial consistency update (2026-07-06)
+
+The payment/receipt voiding fix from commit `198d0e039653ddb5991bd6efbb757405fcfcd6cc` is present in this checkout. This PR adds a defensive report-layer rule: payment-backed reports exclude `payments.status = 'VOID'` as well as `deleted_at IS NOT NULL`. A new migration, `20260706101000_align_payment_receipt_reporting_source.sql`, defines `rpt_daily_collection` on `public.payments` so the guarded backend RPC source matches the Receipts UI source. The current frontend still does not call `rpt_daily_collection`; this is a backend-consistency improvement only. The migration has not been applied to production in this PR.

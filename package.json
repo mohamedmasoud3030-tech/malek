@@ -16,6 +16,7 @@
     "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
     "prettier": "^3.8.1",
     "supabase": "^2.105.0",
     "typescript": "~5.9.2"
