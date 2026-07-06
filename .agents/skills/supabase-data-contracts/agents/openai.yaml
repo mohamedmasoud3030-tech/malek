@@ -1,0 +1,4 @@
+interface:
+  display_name: "supabase-data-contracts"
+  short_description: "Rentrix supabase-data-contracts workflow"
+  default_prompt: "Use the supabase-data-contracts skill for Rentrix work."
