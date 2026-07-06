@@ -4,11 +4,11 @@ This file is a starting point for any developer or agent picking up work in this
 
 ## Before you start
 
-1. Read `README.md` for install and command basics.
-2. Read `docs/CURRENT_STATE.md` before any task that is not a trivial, isolated fix. It is the single source of truth for what has been verified in the current checkout.
-3. Read `docs/ARCHITECTURE.md` and `docs/DOMAIN.md` when your task touches routing, data flow, or business entities.
-4. Read `docs/NEXT.md` if you are looking for something useful to work on.
-5. Read `docs/agent-context/CONTEXT_MAP.md` to find the minimal file set for your specific task type, `docs/agent-context/WORKFLOW.md` for the step-by-step process to follow, and `docs/agent-context/DOMAIN.md` for a tagged (Verified/Inferred/Unknown) list of invariants you must not break. Use `docs/decisions/` for past architectural decisions and their rules before writing a new one.
+1. Read this file (`AGENTS.md`) — it's short, read it in full.
+2. Go to `docs/agent-context/CONTEXT_MAP.md` and find your task's row. **The map decides what else is mandatory for your specific task** — don't read every document in this repo for every task.
+3. `docs/agent-context/WORKFLOW.md` is conditional, not automatic: read it only for non-trivial or high-risk work (the map will point you to it when relevant).
+4. `docs/agent-context/DOMAIN.md` is also conditional: read the sections the map points you to for your task row, not the whole file, unless your task is broad enough that the map says so.
+5. `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/DOMAIN.md`, and `docs/NEXT.md` remain useful background — the map will tell you when a task needs one of them.
 
 
 ## Repo-scoped Agent Skills
