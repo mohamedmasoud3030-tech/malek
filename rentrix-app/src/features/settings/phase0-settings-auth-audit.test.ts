@@ -49,4 +49,23 @@ describe('Phase 0 Settings + Auth audit invariants', () => {
     expect(sqlBody).toMatch(/pg_get_functiondef\(p\.oid\)/);
     expect(sqlBody).not.toMatch(/\b(insert|update|delete|alter|drop|create|truncate|grant|revoke)\b/i);
   });
+
+  it('F0-6: keeps custom_access_token_hook reading role from public.users, not public.profiles', () => {
+    // public.profiles.role is constrained to ('ADMIN','USER') only
+    // (profiles_role_check) and cannot represent MANAGER, while
+    // public.users.role is the full user_role enum (ADMIN, MANAGER, USER)
+    // that RLS (is_admin_or_manager(), is_app_user()) already trusts.
+    // Before the fix in 20260706014138, the JWT claim the frontend reads
+    // came from profiles.role, so a MANAGER could never appear in
+    // app_metadata.user_role even though RLS would have allowed it.
+    // This test locks the fix so a future edit can't silently reintroduce
+    // the drift by pointing the hook back at profiles.
+    const migration = readRepoFile(
+      'supabase/migrations/20260706014138_fix_custom_access_token_hook_role_source.sql',
+    );
+    const functionBody = migration.slice(migration.indexOf('CREATE OR REPLACE FUNCTION'));
+
+    expect(functionBody).toMatch(/FROM\s+public\.users/i);
+    expect(functionBody).not.toMatch(/FROM\s+public\.profiles/i);
+  });
 });
