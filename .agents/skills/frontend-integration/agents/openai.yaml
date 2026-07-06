@@ -1,0 +1,4 @@
+interface:
+  display_name: "frontend-integration"
+  short_description: "Rentrix frontend-integration workflow"
+  default_prompt: "Use the frontend-integration skill for Rentrix work."

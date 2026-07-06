@@ -9,6 +9,18 @@ This file is a starting point for any developer or agent picking up work in this
 3. Read `docs/ARCHITECTURE.md` and `docs/DOMAIN.md` when your task touches routing, data flow, or business entities.
 4. Read `docs/NEXT.md` if you are looking for something useful to work on.
 
+
+## Repo-scoped Agent Skills
+
+Before modifying Rentrix, check `.agents/skills/README.md` and read every skill that applies to the task. The current repo-scoped skills are:
+
+- `.agents/skills/frontend-integration/SKILL.md` for any user-facing screen, route, component, or workflow.
+- `.agents/skills/supabase-data-contracts/SKILL.md` for Supabase migrations, RLS, RPCs, views, database services, or UI/database contract alignment.
+- `.agents/skills/financial-reporting/SKILL.md` for collections, payments, receipts, settlements, bank reconciliation, reports, or financial totals.
+- `.agents/skills/testing-release-readiness/SKILL.md` before claiming a feature, fix, refactor, or release candidate is complete, verified, or release-ready.
+
+When domains overlap, apply all relevant skills together; do not choose only one. Do not claim a feature with a user-facing interface is complete until the route/screen exists, is connected to the real service/data source, and the frontend flow has been tested and documented.
+
 ## While you work
 
 - Inspect the current code before making a decision. Do not assume a past description of the project (including anything in this doc set) still matches the code — verify.
