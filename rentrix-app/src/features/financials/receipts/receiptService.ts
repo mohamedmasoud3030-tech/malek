@@ -15,7 +15,7 @@ export type ReceiptRecord = {
   payment_method: Payment['payment_method'];
   reference_number: string | null;
   created_at: string;
-  status: 'posted';
+  status: 'posted' | 'void';
   tenant_name: string | null;
   unit_number: string | null;
   property_title: string | null;
@@ -63,7 +63,7 @@ function toReceiptRecord(
     payment_method: payment.payment_method ?? '',
     reference_number: payment.reference_number,
     created_at: payment.created_at,
-    status: 'posted',
+    status: payment.status === 'VOID' ? 'void' : 'posted',
     tenant_name: tenant?.full_name ?? null,
     unit_number: unit?.unit_number ?? null,
     property_title: property?.title ?? null,

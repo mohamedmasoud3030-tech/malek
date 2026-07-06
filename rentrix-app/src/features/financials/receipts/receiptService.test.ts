@@ -20,7 +20,7 @@ const basePayment: Payment = {
   contract_id: null,
   date_time: null,
   channel: null,
-  status: null,
+  status: 'POSTED',
   notes: null,
   receipt_id: null,
   created_by: null,
@@ -199,7 +199,7 @@ describe('receiptService', () => {
     ]);
   });
 
-  it('keeps browser receipt lookup payment-backed when the RPC also returns an internal ledger receipt id', async () => {
+  it('keeps browser receipt lookup payment-backed when the RPC returns the same ledger receipt id', async () => {
     mockSupabaseTables({
       payments: [createPaymentFixture({ id: 'payment_123', invoice_id: 'inv_1' })],
       invoices: [{ id: 'inv_1', contract_id: null, status: 'paid' }],
@@ -212,7 +212,7 @@ describe('receiptService', () => {
       request_id: 'request-1',
       invoice_id: 'inv_1',
       payment_id: 'payment_123',
-      receipt_id: 'ledger_receipt_123',
+      receipt_id: 'payment_123',
     });
 
     await expect(getReceiptDetail(uiResult.receipt_id)).resolves.toMatchObject({
@@ -220,7 +220,17 @@ describe('receiptService', () => {
       payment_id: 'payment_123',
       invoice_id: 'inv_1',
     });
-    await expect(getReceiptDetail(uiResult.ledger_receipt_id)).rejects.toThrow('Receipt not found');
+    expect(uiResult.ledger_receipt_id).toBe('payment_123');
+  });
+
+  it('projects voided payment rows as void receipts so the UI does not show them as posted', async () => {
+    mockSupabaseTables({
+      payments: [createPaymentFixture({ id: 'payment_void', status: 'VOID' })],
+      invoices: [{ id: 'inv_1', contract_id: null, status: 'unpaid' }],
+    });
+    const { listReceipts } = await import('./receiptService');
+
+    await expect(listReceipts()).resolves.toMatchObject([{ id: 'payment_void', status: 'void' }]);
   });
 
   it('uses posted payment amounts as receipt truth without deriving balances', async () => {
