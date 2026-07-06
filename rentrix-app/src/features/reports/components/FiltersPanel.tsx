@@ -3,12 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import type { ContractListItem } from '@/features/contracts/services/contractService';
+import type { Owner } from '@/features/owners/ownerService';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import type { FilterState } from '../reports-page.helpers';
 
-export function FiltersPanel({ filters, costCenterRows, onChange, onResetCurrentMonth }: Readonly<{
+export function FiltersPanel({ filters, costCenterRows, ownerRows, contractRows, onChange, onResetCurrentMonth }: Readonly<{
   filters: FilterState;
   costCenterRows: CostCenterRecord[];
+  ownerRows: Owner[];
+  contractRows: ContractListItem[];
   onChange: (filters: FilterState) => void;
   onResetCurrentMonth: () => void;
 }>) {
@@ -21,7 +25,7 @@ export function FiltersPanel({ filters, costCenterRows, onChange, onResetCurrent
             <CardDescription>حدد من/إلى لاحتساب الفترة، وتاريخ "الاحتساب" لحساب المتأخرات وأعمار الذمم.</CardDescription>
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_auto]">
           <label className="space-y-1 text-sm font-bold">
             <span>من تاريخ</span>
             <Input type="date" value={filters.from} onChange={(event) => onChange({ ...filters, from: event.target.value })} />
@@ -40,6 +44,27 @@ export function FiltersPanel({ filters, costCenterRows, onChange, onResetCurrent
               <option value="">كل مراكز التكلفة</option>
               {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => (
                 <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>
+              ))}
+            </Select>
+          </label>
+
+          <label className="space-y-1 text-sm font-bold">
+            <span>المالك للكشف</span>
+            <Select value={filters.ownerId} onChange={(event) => onChange({ ...filters, ownerId: event.target.value })}>
+              <option value="">اختر مالكًا</option>
+              {ownerRows.map((owner) => (
+                <option key={owner.id} value={owner.id}>{owner.display_name ?? owner.full_name}</option>
+              ))}
+            </Select>
+          </label>
+          <label className="space-y-1 text-sm font-bold">
+            <span>العقد لكشف المستأجر</span>
+            <Select value={filters.contractId} onChange={(event) => onChange({ ...filters, contractId: event.target.value })}>
+              <option value="">اختر عقدًا</option>
+              {contractRows.map((contract) => (
+                <option key={contract.id} value={contract.id}>
+                  {(contract.people?.full_name ?? 'مستأجر غير محدد')} · {(contract.properties?.title ?? 'عقار غير محدد')} · {contract.id.slice(0, 8)}
+                </option>
               ))}
             </Select>
           </label>
