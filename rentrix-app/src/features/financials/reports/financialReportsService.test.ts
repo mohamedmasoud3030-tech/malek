@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const supabaseMock = vi.hoisted(() => ({
   from: vi.fn(),
+  rpc: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase', () => ({
@@ -260,6 +261,58 @@ describe('financialReportsService aggregation helpers', () => {
     });
   });
 
+
+
+  it('normalizes owner and tenant statement RPC payloads', async () => {
+    const { normalizeOwnerStatementReport, normalizeTenantStatementReport } = await import('./financialReportsService');
+
+    expect(normalizeTenantStatementReport({
+      contract_id: 'contract_1',
+      tenant_name: 'Tenant One',
+      tenant_phone: '555',
+      unit_name: '101',
+      property_name: 'Building A',
+      start_date: '2026-01-01',
+      end_date: '2026-12-31',
+      lines: [{ date: '2026-06-01', description: 'فاتورة', type: 'invoice', debit: '1000', credit: 0, balance: '1000' }],
+      final_balance: '1000',
+    })).toEqual({
+      contractId: 'contract_1',
+      tenantName: 'Tenant One',
+      tenantPhone: '555',
+      unitName: '101',
+      propertyName: 'Building A',
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
+      lines: [{ date: '2026-06-01', description: 'فاتورة', type: 'invoice', debit: 1000, credit: 0, balance: 1000 }],
+      finalBalance: 1000,
+      error: null,
+    });
+
+    expect(normalizeOwnerStatementReport({
+      owner_name: 'Owner One',
+      commission_type: 'RATE',
+      commission_value: '5',
+      transactions: [{ date: '2026-06-02', details: 'تحصيل', type: 'receipt', property_name: 'Building A', gross: '1000', deduction: '50', net: '950' }],
+      total_gross: '1000',
+      total_deductions: '50',
+      total_net: '950',
+      period_from: '2026-06-01',
+      period_to: '2026-06-30',
+    })).toEqual({
+      ownerName: 'Owner One',
+      commissionType: 'RATE',
+      commissionValue: 5,
+      transactions: [{ date: '2026-06-02', details: 'تحصيل', type: 'receipt', propertyName: 'Building A', gross: 1000, deduction: 50, net: 950 }],
+      totalGross: 1000,
+      totalDeductions: 50,
+      totalNet: 950,
+      periodFrom: '2026-06-01',
+      periodTo: '2026-06-30',
+      error: null,
+    });
+  });
+
   it('groups expenses by category and property using safe numeric totals', async () => {
     const { summarizeExpenseBreakdownReport } = await import('./financialReportsService');
     const properties = new Map([
@@ -511,6 +564,19 @@ describe('financialReportsService Supabase queries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
+
+  it('calls statement RPCs with selected frontend identifiers and date filters', async () => {
+    const { getOwnerStatementReport, getTenantStatementReport } = await import('./financialReportsService');
+    supabaseMock.rpc.mockResolvedValueOnce({ data: { contract_id: 'contract_1', lines: [] }, error: null });
+    await expect(getTenantStatementReport('contract_1')).resolves.toMatchObject({ contractId: 'contract_1' });
+    expect(supabaseMock.rpc).toHaveBeenLastCalledWith('rpt_tenant_statement', { p_contract_id: 'contract_1' });
+
+    supabaseMock.rpc.mockResolvedValueOnce({ data: { owner_name: 'Owner One', transactions: [] }, error: null });
+    await expect(getOwnerStatementReport({ ownerId: 'owner_1', dateFrom: '2026-06-01', dateTo: '2026-06-30' })).resolves.toMatchObject({ ownerName: 'Owner One' });
+    expect(supabaseMock.rpc).toHaveBeenLastCalledWith('rpt_owner_statement', { p_owner_id: 'owner_1', p_from: '2026-06-01', p_to: '2026-06-30' });
+  });
+
   it('loads daily collection with date, deleted_at, and context filters while preserving payment method totals', async () => {
     const log = mockSupabaseTables({
       payments: [

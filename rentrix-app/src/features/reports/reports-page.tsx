@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { useContracts } from '@/features/contracts/useContracts';
+import { useOwners } from '@/features/owners/useOwners';
 import { getErrorMessage } from '@/features/financials/components/financials-formatters';
 import { useReceipts } from '@/features/financials/receipts/useReceipts';
 import {
@@ -12,6 +13,8 @@ import {
   useFinancialCashflowReport,
   useFinancialPeriodSummaryReport,
   useOverdueInvoicesReport,
+  useOwnerStatementReport,
+  useTenantStatementReport,
   useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
 import { useCostCenters } from '@/features/settings/useCostCenters';
@@ -56,6 +59,9 @@ export function ReportsPage() {
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
+  const ownersQuery = useOwners();
+  const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined);
+  const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters);
   const unitsQuery = useAllUnits();
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit });
   const costCentersQuery = useCostCenters();
@@ -95,6 +101,7 @@ export function ReportsPage() {
     ?? overdueInvoicesQuery.error
     ?? agedReceivablesQuery.error
     ?? contractsQuery.error
+    ?? ownersQuery.error
     ?? unitsQuery.error
     ?? receiptsQuery.error;
 
@@ -104,7 +111,7 @@ export function ReportsPage() {
     <div className="space-y-5 pb-6" dir="rtl">
       <ReportsHero summary={financialSummaryQuery.data} today={today} isLoading={financialSummaryQuery.isLoading} />
 
-        <FiltersPanel filters={filters} costCenterRows={costCentersQuery.data ?? []} onChange={setFilters} onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())} />
+        <FiltersPanel filters={filters} costCenterRows={costCentersQuery.data ?? []} ownerRows={ownersQuery.data ?? []} contractRows={contracts} onChange={setFilters} onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())} />
 
       <SectionTabs items={reportSections} activeId={activeSection} onChange={setActiveSection} ariaLabel="أقسام التقارير" />
 
@@ -132,7 +139,7 @@ export function ReportsPage() {
         <OccupancySection occupancyRows={occupancyRows} expiringRows={expiringRows} isLoading={unitsQuery.isLoading || contractsQuery.isLoading} />
       </SectionTabPanel>
       <SectionTabPanel id="statements" activeId={activeSection}>
-        <StatementsSection agedReport={agedReceivablesQuery.data} receiptRows={receiptRows} financialSummary={financialSummaryQuery.data} expenseBreakdown={expenseBreakdownQuery.data} dailyRows={dailyCollectionQuery.data?.rows ?? []} cashFlowStatement={cashFlowStatementQuery.data} vatReturn={vatReturnQuery.data} isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading || cashFlowStatementQuery.isLoading || vatReturnQuery.isLoading} />
+        <StatementsSection agedReport={agedReceivablesQuery.data} receiptRows={receiptRows} financialSummary={financialSummaryQuery.data} expenseBreakdown={expenseBreakdownQuery.data} dailyRows={dailyCollectionQuery.data?.rows ?? []} cashFlowStatement={cashFlowStatementQuery.data} vatReturn={vatReturnQuery.data} tenantStatement={tenantStatementQuery.data} ownerStatement={ownerStatementQuery.data} selectedContractId={filters.contractId} selectedOwnerId={filters.ownerId} tenantStatementError={tenantStatementQuery.error} ownerStatementError={ownerStatementQuery.error} isTenantStatementLoading={tenantStatementQuery.isLoading} isOwnerStatementLoading={ownerStatementQuery.isLoading} isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading || cashFlowStatementQuery.isLoading || vatReturnQuery.isLoading} />
       </SectionTabPanel>
     </div>
   );

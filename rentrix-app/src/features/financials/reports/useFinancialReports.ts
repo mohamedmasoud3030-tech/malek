@@ -11,8 +11,10 @@ import {
   getFinancialPeriodSummaryReport,
   getInvoiceTotalsReport,
   getOverdueInvoicesReport,
+  getOwnerStatementReport,
   getOutstandingBalanceReport,
   getPaymentTotalsReport,
+  getTenantStatementReport,
   getVatReturnReport,
   type ArrearsReportFilters,
   type ExpenseBreakdownReportFilters,
@@ -35,6 +37,8 @@ export const financialReportKeys = {
   expenseTotals: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'expenseTotals', filters] as const,
   expenseBreakdown: (filters: ExpenseBreakdownReportFilters) => [...financialReportKeys.all, 'expenseBreakdown', filters] as const,
   outstandingBalance: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'outstandingBalance', filters] as const,
+  tenantStatement: (contractId: string) => [...financialReportKeys.all, 'tenantStatement', contractId] as const,
+  ownerStatement: (ownerId: string, filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'ownerStatement', ownerId, filters] as const,
 };
 
 function hasRequiredDateRange(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
@@ -154,5 +158,22 @@ export function useArrearsSummaryReport(filters: ArrearsReportFilters) {
     queryKey: financialReportKeys.arrearsSummary(filters),
     queryFn: () => getArrearsSummaryReport(filters),
     enabled: hasRequiredAsOf(filters),
+  });
+}
+
+
+export function useTenantStatementReport(contractId: string | undefined) {
+  return useQuery({
+    queryKey: financialReportKeys.tenantStatement(contractId ?? ''),
+    queryFn: () => getTenantStatementReport(contractId!),
+    enabled: Boolean(contractId),
+  });
+}
+
+export function useOwnerStatementReport(ownerId: string | undefined, filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
+  return useQuery({
+    queryKey: financialReportKeys.ownerStatement(ownerId ?? '', filters),
+    queryFn: () => getOwnerStatementReport({ ownerId: ownerId!, ...filters }),
+    enabled: Boolean(ownerId) && hasRequiredDateRange(filters),
   });
 }
