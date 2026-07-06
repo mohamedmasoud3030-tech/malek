@@ -16,7 +16,7 @@ _Both items previously listed here — applying the 2 committed-but-unapplied mi
 
 ## Data correctness follow-ups
 
-- Sessions RLS ownership is fixed for future applies by `20260705000004_fix_sessions_rls_user_id.sql`; apply and verify it on production to close the live `sessions.*_own` policy bug.
+- Sessions RLS ownership is fixed and applied to production: `sessions_select_own`, `sessions_insert_own`, `sessions_delete_own` now compare `auth.uid()` to `sessions.user_id` instead of `sessions.id`. Live `pg_policies` verified post-apply. Closed.
 - Date-only input defaults have been hardened away from `toISOString().slice(0, 10)` UTC slicing, including the financial expense-date flow; a regression test now scans production source files so future date-only values use local calendar parts instead.
 
 ## Later
