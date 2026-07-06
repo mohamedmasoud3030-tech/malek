@@ -248,7 +248,7 @@ type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'> & { un
 type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & Partial<Pick<Invoice, 'tax_amount'>> & {
   contracts?: ContractContext | null;
 };
-type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'payment_method' | 'deleted_at'>;
+type PaymentReportRow = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'payment_method' | 'status' | 'deleted_at'>;
 type ExpenseReportRow = Pick<Expense, 'id' | 'property_id' | 'category' | 'amount' | 'expense_date' | 'cost_center_id' | 'deleted_at'>;
 type PropertyContext = Pick<Property, 'id' | 'title'>;
 type PersonContext = Pick<Person, 'id' | 'full_name'>;
@@ -267,7 +267,7 @@ type PaymentWithInvoiceContext = PaymentReportRow & {
 // views/RPCs or typed nested relational selects once those relationships are
 // confirmed.
 const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id, unit_id)';
-const paymentReportSelect = 'id, invoice_id, amount, payment_date, payment_method, deleted_at';
+const paymentReportSelect = 'id, invoice_id, amount, payment_date, payment_method, status, deleted_at';
 const expenseReportSelect = 'id, property_id, category, amount, expense_date, deleted_at';
 
 function hasStatusFilter(status: FinancialReportFilters['status']): status is Invoice['status'] {
@@ -373,6 +373,7 @@ export function filterInvoicesForReport(invoices: InvoiceReportRow[], filters: F
 export function filterPaymentsForReport(payments: PaymentWithInvoiceContext[], filters: FinancialReportFilters) {
   return payments.filter((payment) => {
     if (payment.deleted_at) return false;
+    if (payment.status?.toUpperCase() === 'VOID') return false;
     if (!isWithinDateRange(payment.payment_date, filters)) return false;
     return matchesPaymentContext(payment, filters);
   });

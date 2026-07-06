@@ -101,3 +101,7 @@ Per the earlier "10 live RPCs with zero frontend callers" finding: confirmed 3 o
 **rpt_income_statement / rpt_balance_sheet / rpt_trial_balance / rpt_rent_roll**: no current frontend equivalent at all (not even a client-side one). Scoped but not started.
 
 Dead overloads (`get_financial_summary` × 2, `void_receipt_atomic(text,bigint,jsonb,jsonb)`): left alone per explicit decision, documented only, not dropped.
+
+## Financial consistency update (2026-07-06)
+
+The payment/receipt voiding fix from commit `198d0e039653ddb5991bd6efbb757405fcfcd6cc` is present in this checkout. This PR adds a defensive report-layer rule: payment-backed reports exclude `payments.status = 'VOID'` as well as `deleted_at IS NOT NULL`. A new migration, `20260706101000_align_payment_receipt_reporting_source.sql`, defines `rpt_daily_collection` on `public.payments` so the guarded backend RPC source matches the Receipts UI source. The current frontend still does not call `rpt_daily_collection`; this is a backend-consistency improvement only. The migration has not been applied to production in this PR.

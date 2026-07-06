@@ -1,0 +1,13 @@
+# Feature Gap Register
+
+This register tracks gaps found during the 2026-07-06 readiness pass. A gap is only **Closed** when code exists, tests pass, migrations are applied when needed, browser/live verification is complete for financial or permission flows, and documentation is updated.
+
+| ID | Title | Status | Priority | Affected files/RPCs | PR/Commit | Tests run | Production/Browser verified | Next step |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| FGR-001 | Payment-backed receipts and collection reports must exclude VOID from financial totals | In progress | High | `payments`, `receipts`, `rpt_daily_collection`, `receiptService.ts`, `financialReportsService.ts` | This PR; builds on `198d0e039653ddb5991bd6efbb757405fcfcd6cc` | Unit/contract tests in this PR | Not verified live; migration not applied by this PR | Apply migration to non-production first, then production with approval; verify invoice → payment → receipt → void → report in browser. |
+| FGR-002 | Reports page still has RPCs without UI wiring | Open | High | `rpt_overdue_invoices`, `rpt_aged_receivables`, `rpt_owner_statement`, `rpt_tenant_statement`, `rpt_income_statement`, `rpt_balance_sheet`, `rpt_trial_balance`, `rpt_rent_roll` | TBD | Contract coverage started for `rpt_daily_collection` only | No | Wire existing report screens to validated RPCs or mark deferred per report. |
+| FGR-003 | Owner and tenant statement screens are not complete | Open | Medium | `rpt_owner_statement`, `rpt_tenant_statement`, reports routes | TBD | None | No | Add owner/tenant pickers and statement pages after RPC payload contract is finalized. |
+| FGR-004 | Contract update/termination lifecycle may bypass atomic rules | Open | High | `contractService.ts`, contract RPCs | TBD | None | No | Audit direct update/delete paths and add `update_contract_atomic` / `terminate_contract_atomic` if needed. |
+| FGR-005 | Owner settlement rules are product-blocked | Blocked by product decision | Medium | `owner_settlements`, `financial-settlements.ts` | TBD | Existing domain tests only | No | Product owner must decide collected-vs-invoiced basis, commissions, expenses, approval/payment lifecycle, and reversals. |
+| FGR-006 | Bank reconciliation is foundational but incomplete | Open | Medium | `/bank-reconciliation`, `bank_*` tables | TBD | Existing checks only | No browser verification in this PR | Plan CSV/OFX/XLSX import, mapping, duplicate detection, advanced match suggestions, match statuses, and audit log. |
+| FGR-007 | Browser/E2E release readiness is missing | Open | High | Playwright/E2E suite | TBD | Not run | No | Add Playwright with seeded test environment; do not claim pass until credentials and fixtures exist. |

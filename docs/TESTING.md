@@ -34,3 +34,7 @@ This is the same sequence `.github/workflows/ci.yml` runs (plus a `pnpm supabase
 ## Manual checks
 
 There is no automated visual regression or E2E suite in this repository at the time of writing. For UI changes, manually verify in a running `pnpm --filter ./rentrix-app dev` session, including RTL layout and Arabic text rendering, before considering the change complete.
+
+## Financial consistency checks
+
+When touching receipts, payments, or collection reports, run the full app checks plus `pnpm --filter ./rentrix-app run test:financials`. Tests should prove that posted payments appear in receipts and reports, voided receipts remain visible as void history where applicable, and VOID amounts are excluded from financial totals.

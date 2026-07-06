@@ -44,3 +44,7 @@ Tests are colocated with the code they cover (`*.test.ts(x)`, `*.spec.ts`) and r
 ## Deployment
 
 `rentrix-app/vercel.json` configures the Vercel build (`pnpm install --frozen-lockfile`, `pnpm --filter @workspace/rentrix run build`, output directory `dist/public`) and sets security headers (CSP, `X-Frame-Options`, etc.) scoped to the Supabase origin.
+
+## Financial reporting architecture note
+
+Payment-backed receipt screens and collection reports must use the same source: `public.payments` filtered to non-deleted, non-VOID rows for financial totals. The `rpt_daily_collection` RPC is expected to follow that same rule to avoid frontend/RPC drift.

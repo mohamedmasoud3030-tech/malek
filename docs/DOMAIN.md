@@ -33,3 +33,7 @@ Core types live in `rentrix-app/src/domain/types.ts` (Supabase-independent) and 
 ## Areas not yet found in the domain model
 
 Based on migrations and `src/features` at the time of this check, there is no dedicated modeling for: security deposits, deferred revenue, or multi-currency amounts. Bank reconciliation has an initial foundation for bank accounts, statement lines, manual matches, CSV paste import, and basic suggested matches by date/amount; bank-file upload/format mapping, duplicate detection, and advanced reconciliation rules are not yet implemented. Treat any assumption about the remaining areas as unconfirmed until verified against a current schema check.
+
+## Payment and receipt reporting rule
+
+The current financial source of truth for collections is `payments`. Receipts are the user-facing history/projection for recorded payments. A VOID payment/receipt remains useful for audit/history display, but VOID amounts are excluded from daily collection, cash-flow revenue, payment totals, and collection summaries.

@@ -515,6 +515,38 @@ describe('financialReportsService aggregation helpers', () => {
   });
 
 
+
+  it('excludes VOID payments from payment-backed collection totals even when they are not soft-deleted', async () => {
+    const {
+      filterPaymentsForReport,
+      summarizeCollectionReport,
+      summarizeDailyCollectionReport,
+      summarizeExpenseTotals,
+      summarizeInvoiceTotals,
+      summarizeOutstandingBalance,
+      summarizePaymentTotals,
+    } = await import('./financialReportsService');
+    const filters = { dateFrom: '2026-05-01', dateTo: '2026-05-31' };
+    const payments = [
+      { id: 'payment_posted', invoice_id: 'invoice_1', amount: 300, payment_date: '2026-05-10', payment_method: 'cash' as const, status: 'POSTED' as const, deleted_at: null, invoice: { id: 'invoice_1', contract_id: 'contract_1' }, contract: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' } },
+      { id: 'payment_void', invoice_id: 'invoice_1', amount: 300, payment_date: '2026-05-10', payment_method: 'cash' as const, status: 'VOID' as const, deleted_at: null, invoice: { id: 'invoice_1', contract_id: 'contract_1' }, contract: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' } },
+    ];
+
+    const reportPayments = filterPaymentsForReport(payments, filters);
+    const invoiceTotals = summarizeInvoiceTotals([createReportInvoiceFixture({ amount: 300, paid_amount: 300 })]);
+    const paymentTotals = summarizePaymentTotals(reportPayments);
+    const outstandingBalance = summarizeOutstandingBalance([createReportInvoiceFixture({ amount: 300, paid_amount: 300 })]);
+    const expenseTotals = summarizeExpenseTotals([]);
+    const collection = summarizeCollectionReport({ invoiceTotals, paymentTotals, outstandingBalance, expenseTotals });
+    const daily = summarizeDailyCollectionReport(reportPayments);
+
+    expect(reportPayments.map((payment) => payment.id)).toEqual(['payment_posted']);
+    expect(collection.paid).toBe(300);
+    expect(collection.receiptsCount).toBe(1);
+    expect(daily.grandTotal).toBe(collection.paid);
+    expect(daily.paymentsCount).toBe(collection.receiptsCount);
+  });
+
   it('reconciles collection, period, and daily receipt totals from the same payment evidence', async () => {
     const {
       summarizeCollectionReport,
@@ -580,10 +612,11 @@ describe('financialReportsService Supabase queries', () => {
   it('loads daily collection with date, deleted_at, and context filters while preserving payment method totals', async () => {
     const log = mockSupabaseTables({
       payments: [
-        { id: 'payment_1', invoice_id: 'invoice_1', amount: 100, payment_date: '2026-05-14', payment_method: 'cash', deleted_at: null },
-        { id: 'payment_2', invoice_id: 'invoice_2', amount: 75, payment_date: '2026-05-14', payment_method: 'card', deleted_at: null },
-        { id: 'payment_deleted', invoice_id: 'invoice_1', amount: 200, payment_date: '2026-05-14', payment_method: 'cash', deleted_at: '2026-05-15' },
-        { id: 'payment_outside_range', invoice_id: 'invoice_1', amount: 300, payment_date: '2026-06-01', payment_method: 'check', deleted_at: null },
+        { id: 'payment_1', invoice_id: 'invoice_1', amount: 100, payment_date: '2026-05-14', payment_method: 'cash', status: 'POSTED', deleted_at: null },
+        { id: 'payment_2', invoice_id: 'invoice_2', amount: 75, payment_date: '2026-05-14', payment_method: 'card', status: 'POSTED', deleted_at: null },
+        { id: 'payment_deleted', invoice_id: 'invoice_1', amount: 200, payment_date: '2026-05-14', payment_method: 'cash', status: 'POSTED', deleted_at: '2026-05-15' },
+        { id: 'payment_outside_range', invoice_id: 'invoice_1', amount: 300, payment_date: '2026-06-01', payment_method: 'check', status: 'POSTED', deleted_at: null },
+        { id: 'payment_void', invoice_id: 'invoice_1', amount: 500, payment_date: '2026-05-14', payment_method: 'cash', status: 'VOID', deleted_at: null },
       ],
       invoices: [
         { id: 'invoice_1', contract_id: 'contract_1', deleted_at: null },
