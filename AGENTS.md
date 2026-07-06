@@ -4,10 +4,11 @@ This file is a starting point for any developer or agent picking up work in this
 
 ## Before you start
 
-1. Read `README.md` for install and command basics.
-2. Read `docs/CURRENT_STATE.md` before any task that is not a trivial, isolated fix. It is the single source of truth for what has been verified in the current checkout.
-3. Read `docs/ARCHITECTURE.md` and `docs/DOMAIN.md` when your task touches routing, data flow, or business entities.
-4. Read `docs/NEXT.md` if you are looking for something useful to work on.
+1. Read this file (`AGENTS.md`) — it's short, read it in full.
+2. Go to `docs/agent-context/CONTEXT_MAP.md` and find your task's row. **The map decides what else is mandatory for your specific task** — don't read every document in this repo for every task.
+3. `docs/agent-context/WORKFLOW.md` is conditional, not automatic: read it only for non-trivial or high-risk work (the map will point you to it when relevant).
+4. `docs/agent-context/DOMAIN.md` is also conditional: read the sections the map points you to for your task row, not the whole file, unless your task is broad enough that the map says so.
+5. `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/DOMAIN.md`, and `docs/NEXT.md` remain useful background — the map will tell you when a task needs one of them.
 
 
 ## Repo-scoped Agent Skills
@@ -29,6 +30,34 @@ When domains overlap, apply all relevant skills together; do not choose only one
 - Run the checks relevant to what you changed (see `docs/TESTING.md`). Prefer running the narrowest relevant check first, then the full suite before finishing.
 - If you touch financial code (`rentrix-app/src/features/financials/**`), also run the financial test command.
 - If you touch database schema or RPCs, verify the live Supabase schema before writing a migration — do not rely on generated TypeScript types alone, since they can drift from the database.
+
+## Precedence when docs and reality disagree
+
+Documentation — including everything under `docs/agent-context/` — describes
+a point-in-time understanding. If a doc disagrees with the actual code or
+the live database, **the code and the live database win.** Fix the doc in
+the same PR when you find a mismatch; don't proceed on the doc's word alone.
+
+## When to stop and ask instead of assuming
+
+- The task would require a production mutation that wasn't specifically
+  approved for this exact change (see `docs/GOVERNANCE.md`).
+- A migration file and the live schema disagree, and the task's correctness
+  depends on which one is right.
+- You'd need to invent a business rule to proceed and can't find evidence
+  for it in code, tests, migrations, or a live check — say it's unknown and
+  ask, don't guess.
+- The task, as described, would require touching more of the codebase than
+  it states (a wider refactor, a shared component/hook/RPC used elsewhere).
+  Confirm the wider scope is actually wanted before doing it.
+
+## Scope discipline
+
+Keep the diff to what the task actually requires. Don't fold in unrelated
+refactors, formatting sweeps, or "while I'm here" cleanups — even ones that
+seem clearly beneficial — unless asked. A small, reviewable diff plus
+passing tests plus a verified live check (where relevant) is the goal, not
+a maximally thorough rewrite.
 
 ## When you finish
 

@@ -3,6 +3,31 @@
 This document describes the current checked-out repository state.
 Verify code, migrations, tests, and CI before relying on it.
 
+## Agent-context layer (2026-07-06, revised)
+
+`docs/agent-context/` holds a task-routing supplement for coding agents.
+`CONTEXT_MAP.md` is the routing authority — it decides, per task type, what's
+mandatory to read (including whether `WORKFLOW.md` or specific `DOMAIN.md`
+sections apply); nothing in this layer is mandatory reading for every task.
+`DOMAIN.md` separates durable verified invariants from currently-active
+violations from open unknowns, with per-claim tags distinguishing what this
+pass verified directly (file-level, not live) from what was previously
+verified elsewhere. `docs/decisions/README.md` defines the format and rules
+for future architecture decision records; none exist yet.
+
+This layer doesn't change any fact in this document — it only adds
+navigation and evidence tagging. No live Supabase mutation was made while
+creating it, and no live read-only query was run either; all evidence
+gathered for this layer is file-level (`rg`/`view` against the checked-out
+repo). One drift was noticed but not corrected here (out of this task's
+scope): a migration file,
+`supabase/migrations/20260706090000_fix_record_invoice_payment_void_receipt_shared_id.sql`,
+appears to implement the "Option A" fix for the "🔴 CRITICAL — voidReceipt is
+broken in production" section below, but that section's "not yet fixed"
+wording hasn't been updated to reflect it, and whether the fix is applied
+live was not checked. Whoever next touches that area should confirm and
+update this document's own section accordingly.
+
 ## Application
 
 The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single-page app using TanStack Router (`rentrix-app/src/routeTree.ts`, `src/app/router.tsx`) and TanStack Query (`src/lib/query-client.ts`). It talks to Supabase (Postgres + Auth) as its backend via `src/lib/supabase.ts`.
