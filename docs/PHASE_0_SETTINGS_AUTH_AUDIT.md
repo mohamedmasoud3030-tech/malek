@@ -115,6 +115,72 @@ If live checks differ from migrations:
 
 `rentrix-app/src/features/settings/phase0-settings-auth-audit.test.ts` locks the local Phase 0 audit invariants that can be verified without production access: settings services remain RPC-free, `settings.manage` stays limited to admin/manager frontend roles, payment-term interval values stay aligned with the local migration check constraint, and the operator evidence script remains read-only.
 
+## Live verification results (completed 2026-07-06, via Claude + Supabase MCP)
+
+The live checks blocked in this container (`ENETUNREACH`) were completed from
+an operator environment with direct Supabase MCP access to
+`nnggcnpcuomwfuupupwg`. Results:
+
+- **`company_settings`, `cost_centers`, `payment_terms_templates` columns**:
+  match the local migrations exactly (VAT fields, `contract_prefix`,
+  `default_vat_rate`, notification columns, soft-delete columns all present
+  as expected). No drift found.
+- **RLS policies** on `company_settings`, `cost_centers`,
+  `payment_terms_templates`, `users`: match the code's assumptions exactly.
+  `is_admin_or_manager()` and `is_app_user()` gate writes/reads as the
+  service layer expects. **F0-2 and F0-3 are closed — no drift.**
+- **`payment_terms_templates.interval_type`**: local migration and live
+  schema agree (`monthly`, `quarterly`, `biannual`, `annual`, `custom`).
+  This is a separate vocabulary from contract payment cycles
+  (`semi_annual` vs `biannual`) by design, not drift — **F0-4 confirmed as
+  intentional, no fix required**, but worth a one-line note in
+  `docs/DOMAIN.md` if not already there so it isn't re-flagged later.
+- **F0-5 / F0-6 — confirmed as a real drift, now fixed:**
+  - `app_private.is_admin_or_manager()` and `app_private.is_app_user()` (the
+    functions actually enforcing RLS) read role from **`public.users.role`**
+    — a proper enum (`ADMIN`, `MANAGER`, `USER`).
+  - `custom_access_token_hook` (which populates the JWT
+    `app_metadata.user_role` claim the frontend's `permissions.ts` reads)
+    instead read from **`public.profiles.role`** — a plain `text` column
+    with `CHECK (role = ANY (ARRAY['ADMIN','USER']))`. `MANAGER` was
+    structurally impossible in `profiles`.
+  - Net effect: RLS could correctly authorize a MANAGER at the database
+    layer, but the frontend could never see a MANAGER claim in the token,
+    so a MANAGER user would silently behave as USER in the UI (missing
+    `settings.manage` and other manager-only permissions) despite RLS being
+    willing to allow it.
+  - **Fix applied to production** (migration
+    `20260706014138_fix_custom_access_token_hook_role_source.sql`):
+    `custom_access_token_hook` now reads role from `public.users.role`
+    (filtered to `status = 'ACTIVE'`, falling back to `'USER'` for
+    inactive/missing users) instead of `public.profiles.role`. This makes
+    `public.users` the single source of truth for both RLS and the JWT
+    claim.
+  - **Verified no-op for all current sessions**: every existing row in both
+    `users` and `profiles` is `role = 'ADMIN'` today, and the hook was
+    tested directly against a real user id post-change, confirming
+    `app_metadata.user_role` still resolves to `"ADMIN"`. The fallback path
+    was also tested against a non-existent user id and correctly resolves
+    to `"USER"`.
+  - Approved and applied per `docs/GOVERNANCE.md` sign-off; recorded in
+    `docs/GOVERNANCE_LOG.md`.
+  - **Follow-up confirmed closed**: a repo-wide search of
+    `rentrix-app/src` found zero references to a `profiles` table anywhere
+    in application code (`grep -rn "from('profiles')"` and role/permission
+    combinations both return nothing). `public.profiles` had no live
+    frontend authorization read path even before this fix — its only
+    effect on authorization was through `custom_access_token_hook`, which
+    is now fixed. No further action needed on `profiles.role` for Phase 0.
+
 ## Phase 0 status
 
-Phase 0 is **not closed**. The code/migration audit and local regression coverage are complete, but live Supabase parity verification is blocked by network access from this environment.
+Phase 0 findings are now fully resolved: F0-1 (live verification) is
+complete, F0-2/F0-3/F0-4 confirmed as no drift, F0-5/F0-6 confirmed as real
+drift and fixed and verified on production, and the `profiles.role`
+follow-up is confirmed closed (no live authorization read path exists).
+No frontend/backend code changes beyond the `custom_access_token_hook` SQL
+fix are required — the settings/auth service layer and permission logic
+already matched live schema and RLS. Phase 0 is **ready to close**: run
+regression tests + typecheck + build once more against this state, then
+document closure in `docs/NEXT.md` and move to Phase 1 (Financials).
+
