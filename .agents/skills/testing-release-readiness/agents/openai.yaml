@@ -1,0 +1,4 @@
+interface:
+  display_name: "testing-release-readiness"
+  short_description: "Rentrix testing-release-readiness workflow"
+  default_prompt: "Use the testing-release-readiness skill for Rentrix work."

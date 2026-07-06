@@ -11,10 +11,17 @@ RETURNS TABLE(
   total_amount numeric,
   payments_count bigint
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+BEGIN
+  IF NOT public.is_app_user() THEN
+    RAISE EXCEPTION 'Authenticated app user is required to run daily collection reports'
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
   SELECT
     p.payment_date::date AS collection_date,
     COALESCE(NULLIF(p.payment_method, ''), 'other')::text AS payment_method,
@@ -26,6 +33,7 @@ AS $$
     AND p.payment_date::date BETWEEN p_from AND p_to
   GROUP BY p.payment_date::date, COALESCE(NULLIF(p.payment_method, ''), 'other')
   ORDER BY collection_date, payment_method;
+END;
 $$;
 
 REVOKE ALL ON FUNCTION public.rpt_daily_collection(date, date) FROM public, anon;

@@ -1,0 +1,4 @@
+interface:
+  display_name: "financial-reporting"
+  short_description: "Rentrix financial-reporting workflow"
+  default_prompt: "Use the financial-reporting skill for Rentrix work."

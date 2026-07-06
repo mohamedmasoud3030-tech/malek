@@ -8,7 +8,7 @@ The repository is **not yet release-ready for financial workflows**. The current
 
 - The Receipts UI remains payment-backed.
 - Financial report helpers now defensively exclude payments where `status = 'VOID'`, even if a historical row is not soft-deleted.
-- A new migration defines `rpt_daily_collection` on `public.payments` rather than `public.receipts`.
+- A new migration defines `rpt_daily_collection` on `public.payments` rather than `public.receipts`, but the current frontend still reads payments directly and does not call this RPC.
 - Contract tests assert the reporting RPC source and VOID/deleted exclusion rules.
 
 ## Not verified in this PR

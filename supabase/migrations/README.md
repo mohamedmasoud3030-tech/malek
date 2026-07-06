@@ -67,4 +67,4 @@ idempotent or corrective and simply ran more than once.
 
 ## 2026-07-06 payment/receipt reporting alignment
 
-`20260706100000_align_payment_receipt_reporting_source.sql` defines `rpt_daily_collection` on `public.payments`, excluding soft-deleted and VOID rows. Do not apply it to production without explicit approval and staging verification.
+`20260706101000_align_payment_receipt_reporting_source.sql` defines `rpt_daily_collection` on `public.payments`, requires an authenticated app user via `public.is_app_user()`, and excludes soft-deleted and VOID rows. Do not apply it to production without explicit approval and staging verification.

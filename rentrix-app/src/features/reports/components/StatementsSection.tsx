@@ -1,9 +1,9 @@
-import { Inbox, WalletCards } from 'lucide-react';
+import { AlertCircle, Inbox, WalletCards } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
-import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
+import { formatMoney, formatShortId, getErrorMessage } from '@/features/financials/components/financials-formatters';
+import type { DailyCollectionReportRow, OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import {
   useAgedReceivablesReport,
   useCashFlowStatementReport,
@@ -13,7 +13,7 @@ import {
 } from '@/features/financials/reports/useFinancialReports';
 import { createReceiptPrintHref } from '../reports-page.helpers';
 
-export function StatementsSection({ agedReport, receiptRows, financialSummary, expenseBreakdown, cashFlowStatement, vatReturn, dailyRows, isLoading }: Readonly<{
+export function StatementsSection({ agedReport, receiptRows, financialSummary, expenseBreakdown, cashFlowStatement, vatReturn, dailyRows, tenantStatement, ownerStatement, selectedContractId, selectedOwnerId, tenantStatementError, ownerStatementError, isTenantStatementLoading, isOwnerStatementLoading, isLoading }: Readonly<{
   agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
   receiptRows: Array<{ id: string; receipt_number: string; payment_date: string; amount: number; tenant_name: string | null }>;
   financialSummary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
@@ -21,6 +21,14 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
   cashFlowStatement: NonNullable<ReturnType<typeof useCashFlowStatementReport>['data']> | undefined;
   vatReturn: NonNullable<ReturnType<typeof useVatReturnReport>['data']> | undefined;
   dailyRows: DailyCollectionReportRow[];
+  tenantStatement: TenantStatementReport | undefined;
+  ownerStatement: OwnerStatementReport | undefined;
+  selectedContractId: string;
+  selectedOwnerId: string;
+  tenantStatementError: unknown;
+  ownerStatementError: unknown;
+  isTenantStatementLoading: boolean;
+  isOwnerStatementLoading: boolean;
   isLoading: boolean;
 }>) {
   const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
@@ -53,28 +61,42 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
             <CardDescription>ذمم ومتأخرات المستأجرين من تقرير receivables، مع أحدث إيصالات متاحة من السجل.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 p-4 sm:p-5">
-            {isLoading ? (
+            {selectedContractId ? (
+              isTenantStatementLoading ? (
+                <Skeleton className="h-32" />
+              ) : tenantStatementError ? (
+                <div className="flex min-h-24 items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertCircle className="size-5" />
+                  {getErrorMessage(tenantStatementError, 'تعذر تحميل كشف المستأجر من rpt_tenant_statement.')}
+                </div>
+              ) : tenantStatement?.error ? (
+                <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground">
+                  <Inbox className="size-5 text-muted-foreground/70" />
+                  {tenantStatement.error}
+                </div>
+              ) : tenantStatement && tenantStatement.lines.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="rounded-xl bg-muted/30 p-3 text-sm">
+                    <p className="font-medium">{tenantStatement.tenantName ?? 'مستأجر غير محدد'}</p>
+                    <p className="text-xs text-muted-foreground">{tenantStatement.propertyName ?? '—'} · {tenantStatement.unitName ?? '—'}</p>
+                    <div className="mt-1 flex items-center justify-between gap-2"><span>الرصيد النهائي</span><span className="font-black" dir="ltr">{formatMoney(tenantStatement.finalBalance)}</span></div>
+                  </div>
+                  {tenantStatement.lines.slice(0, 5).map((line, index) => (
+                    <div key={`${line.date}-${index}`} className="rounded-xl border p-3 text-xs">
+                      <p className="font-bold">{line.description ?? line.type ?? 'حركة'}</p>
+                      <div className="mt-1 grid grid-cols-3 gap-2 text-muted-foreground"><span>{line.date ?? '—'}</span><span>مدين: {formatMoney(line.debit)}</span><span>دائن: {formatMoney(line.credit)}</span></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />لا توجد حركات في كشف المستأجر لهذا العقد.</div>
+              )
+            ) : isLoading ? (
               <Skeleton className="h-32" />
             ) : tenantRows.length === 0 ? (
-              <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground">
-                <Inbox className="size-5 text-muted-foreground/70" />
-                لا توجد ذمم مستأجرين حسب تاريخ as-of.
-              </div>
+              <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />اختر عقدًا من الفلاتر لعرض كشف المستأجر الحقيقي من RPC، أو لا توجد ذمم حسب تاريخ as-of.</div>
             ) : (
-              tenantRows.map((row) => (
-                <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm">
-                  <p className="font-medium">{row.tenantName ?? 'مستأجر غير محدد'}</p>
-                  <div className="mt-1 flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">ذمم</span>
-                    <span className="font-black" dir="ltr">{formatMoney(row.totalOutstanding)}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">متأخر</span>
-                    <span className="font-black text-destructive" dir="ltr">{formatMoney(row.totalOverdue)}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{row.invoiceCount.toLocaleString('ar')} فواتير مرتبطة</p>
-                </div>
-              ))
+              tenantRows.map((row) => <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm"><p className="font-medium">{row.tenantName ?? 'مستأجر غير محدد'}</p><div className="mt-1 flex items-center justify-between gap-2"><span className="text-muted-foreground">ذمم</span><span className="font-black" dir="ltr">{formatMoney(row.totalOutstanding)}</span></div><div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">متأخر</span><span className="font-black text-destructive" dir="ltr">{formatMoney(row.totalOverdue)}</span></div><p className="mt-1 text-xs text-muted-foreground">{row.invoiceCount.toLocaleString('ar')} فواتير مرتبطة</p></div>)
             )}
             {receiptRows.slice(0, 3).map((receipt) => (
               <a key={`receipt-${receipt.id}`} className="block rounded-xl border p-3 text-sm hover:border-primary/40" href={createReceiptPrintHref(receipt.id)}>
@@ -90,7 +112,19 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
             <CardDescription>ملخص حركة عقار مدعوم بالمصروفات المرتبطة به. ليس كشف تسوية مالك.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 p-4 sm:p-5">
-            {isLoading ? (
+            {selectedOwnerId ? (
+              isOwnerStatementLoading ? (
+                <Skeleton className="h-32" />
+              ) : ownerStatementError ? (
+                <div className="flex min-h-24 items-center gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"><AlertCircle className="size-5" />{getErrorMessage(ownerStatementError, 'تعذر تحميل كشف المالك من rpt_owner_statement.')}</div>
+              ) : ownerStatement?.error ? (
+                <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />{ownerStatement.error}</div>
+              ) : ownerStatement && ownerStatement.transactions.length > 0 ? (
+                <div className="space-y-2"><div className="rounded-xl bg-muted/30 p-3 text-sm"><p className="font-medium">{ownerStatement.ownerName ?? 'مالك غير محدد'}</p><div className="mt-1 flex items-center justify-between gap-2"><span>صافي الحركة</span><span className="font-black" dir="ltr">{formatMoney(ownerStatement.totalNet)}</span></div><p className="text-xs text-muted-foreground">الإجمالي {formatMoney(ownerStatement.totalGross)} · الاستقطاعات {formatMoney(ownerStatement.totalDeductions)}</p></div>{ownerStatement.transactions.slice(0, 5).map((tx, index) => <div key={`${tx.date}-${index}`} className="rounded-xl border p-3 text-xs"><p className="font-bold">{tx.details ?? tx.type ?? 'حركة'}</p><div className="mt-1 flex justify-between gap-2 text-muted-foreground"><span>{tx.date ?? '—'}</span><span dir="ltr">{formatMoney(tx.net)}</span></div></div>)}</div>
+              ) : (
+                <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />لا توجد حركات في كشف المالك للفترة المحددة.</div>
+              )
+            ) : isLoading ? (
               <Skeleton className="h-32" />
             ) : ownerMovementRows.length === 0 ? (
               <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground">
