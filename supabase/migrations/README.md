@@ -64,3 +64,7 @@ different generated versions, some with a `_dup1` suffix). This is a fact of
 production history and is not rewritten — see `docs/CURRENT_STATE.md` for the
 specific entries. It has no effect on the current schema; the migrations were
 idempotent or corrective and simply ran more than once.
+
+## 2026-07-06 payment/receipt reporting alignment
+
+`20260706100000_align_payment_receipt_reporting_source.sql` defines `rpt_daily_collection` on `public.payments`, excluding soft-deleted and VOID rows. Do not apply it to production without explicit approval and staging verification.

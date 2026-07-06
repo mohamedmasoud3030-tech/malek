@@ -25,3 +25,10 @@ _Both items previously listed here — applying the 2 committed-but-unapplied mi
 - Security deposit management — not found in migrations or `src/features`.
 - Deferred revenue handling — not found in migrations or `src/features`.
 - Multi-currency support — not found in migrations or `src/features`; current `Invoice`/`Expense`/`PaymentReceipt` types use a single unqualified `amount` number.
+
+## Ready now — financial data consistency follow-ups
+
+1. Apply `20260706100000_align_payment_receipt_reporting_source.sql` in staging, then production only after approval.
+2. Browser-verify invoice → payment → receipt → void → report totals.
+3. Wire validated report RPCs one screen at a time; do not swap financial calculations without parity tests.
+4. Continue contract lifecycle audit for sensitive direct updates/deletes.
