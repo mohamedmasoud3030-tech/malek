@@ -3,6 +3,19 @@
 This document describes the current checked-out repository state.
 Verify code, migrations, tests, and CI before relying on it.
 
+## Agent-context layer (2026-07-06)
+
+`docs/agent-context/` holds a task-routing supplement for coding agents:
+`CONTEXT_MAP.md` (minimal file set per task type), `WORKFLOW.md` (step-by-step
+process and high-risk-task rules), and `DOMAIN.md` (a tagged
+Verified/Inferred/Unknown list of financial and authorization invariants,
+supplementing the entity list in `docs/DOMAIN.md`). `docs/decisions/README.md`
+defines the format and rules for future architecture decision records; no
+decision records exist yet (see that file for when to write the first one).
+This layer doesn't change any existing fact in this document — it only adds
+navigation and evidence tagging on top of what was already documented here.
+No live Supabase mutation was made while creating it.
+
 ## Application
 
 The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single-page app using TanStack Router (`rentrix-app/src/routeTree.ts`, `src/app/router.tsx`) and TanStack Query (`src/lib/query-client.ts`). It talks to Supabase (Postgres + Auth) as its backend via `src/lib/supabase.ts`.
