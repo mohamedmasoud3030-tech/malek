@@ -1,5 +1,14 @@
 -- Bank reconciliation foundation: bank accounts, statement imports/lines,
 -- and one-to-one matches against recorded financial entities.
+--
+-- STATUS NOTE (2026-07-06): this file existed in the repo since 2026-07-05 but was never
+-- actually applied to nnggcnpcuomwfuupupwg — a live frontend/backend reconciliation audit
+-- found the /bank-reconciliation UI querying bank_accounts / bank_statement_imports /
+-- bank_statement_lines / bank_reconciliation_matches, none of which existed live
+-- (confirmed via information_schema.tables). Applied live on 2026-07-06 via apply_migration
+-- (registered in supabase_migrations.schema_migrations under version 20260706081635, since
+-- the ledger version differs from this file's timestamp). Content unchanged from the
+-- original file. Tables, indexes, RLS, and grants below are now confirmed live.
 
 create table if not exists public.bank_accounts (
   id uuid primary key default gen_random_uuid(),
