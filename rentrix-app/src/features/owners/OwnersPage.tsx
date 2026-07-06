@@ -9,7 +9,7 @@ import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { EntityCard, entityCardContactMeta } from '@/components/ui/entity-card';
-import { ResponsiveFormOverlay } from '@/components/ui/responsive-form-overlay';
+import { EntityForm } from '@/components/ui/entity-form';
 import { SearchInput } from '@/components/ui/search-input';
 import { AsyncContentState } from '@/components/async-content-state';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -114,9 +114,9 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
   };
 
   return (
-    <ResponsiveFormOverlay open={open} onOpenChange={onOpenChange} title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'} description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية." className="max-w-2xl">
-      <form className="grid gap-4" onSubmit={handleSubmit}>
-        {error ? <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
+    <EntityForm.Overlay open={open} onOpenChange={onOpenChange} title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'} description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية." className="max-w-2xl">
+      <EntityForm.Root onSubmit={handleSubmit}>
+        <EntityForm.ErrorSummary message={error} />
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="اسم المالك *"><Input value={values.full_name} onChange={(e) => setField('full_name', e.target.value)} /></Field>
           <Field label="الاسم المختصر"><Input value={values.display_name} onChange={(e) => setField('display_name', e.target.value)} /></Field>
@@ -128,12 +128,9 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
         <Field label="العنوان"><Textarea value={values.address} onChange={(e) => setField('address', e.target.value)} /></Field>
         <Field label="ملاحظات"><Textarea value={values.notes} onChange={(e) => setField('notes', e.target.value)} /></Field>
         <OwnerCheckbox checked={values.is_active} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
-        <div className="safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0">
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button>
-          <Button type="submit" disabled={isPending}>{isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'}</Button>
-        </div>
-      </form>
-    </ResponsiveFormOverlay>
+        <EntityForm.Actions onCancel={() => onOpenChange(false)} isSubmitting={isPending} submitLabel={isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'} />
+      </EntityForm.Root>
+    </EntityForm.Overlay>
   );
 }
 

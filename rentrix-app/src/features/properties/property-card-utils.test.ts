@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { formatPropertyUnitSummary } from './property-card';
+import { formatPropertyUnitSummary } from './property-card-utils';
 
-describe('PropertyCard formatPropertyUnitSummary helper', () => {
+describe('formatPropertyUnitSummary helper', () => {
   it('does not display developer wording when units are undefined', () => {
     const result = formatPropertyUnitSummary(undefined, undefined);
     

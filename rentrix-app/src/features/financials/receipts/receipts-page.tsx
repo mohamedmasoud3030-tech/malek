@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Ban, CalendarDays, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { ArrowRight, Ban, CalendarDays, CheckCircle2, Printer, ReceiptText, Wallet, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { ReceiptCard } from '@/components/ui/receipt-card';
+import { EntityCard } from '@/components/ui/entity-card';
 import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,6 +35,14 @@ function isWithinDate(receipt: ReceiptRecord, from: string, to: string) {
 
 export function canVoidReceipts(authorization: AuthorizationContext | null | undefined) {
   return authorization?.role === 'ADMIN' || authorization?.role === 'MANAGER';
+}
+
+
+function receiptStatusTone(status: string): 'green' | 'gray' | 'red' | 'gold' {
+  if (status === 'posted') return 'green';
+  if (status === 'void' || status === 'voided' || status === 'cancelled') return 'red';
+  if (status === 'draft') return 'gray';
+  return 'gold';
 }
 
 export function createReceiptPrintHref(receiptId: string) {
@@ -220,18 +228,26 @@ function ReceiptsHistoryContent() {
               <div className="grid gap-3 sm:grid-cols-2 md:hidden">
                 {filteredReceipts.map((receipt) => (
                   <div key={receipt.id} className="space-y-1.5">
-                    <ReceiptCard
+                    <EntityCard
                       id={receipt.id}
-                      receiptNumber={receipt.receipt_number}
-                      paymentDate={receipt.payment_date}
-                      amount={receipt.amount}
-                      paymentMethod={paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}
-                      context={formatReceiptContext(receipt)}
-                      invoiceId={formatShortId(receipt.invoice_id)}
-                      status={receipt.status}
+                      name={`إيصال #${receipt.receipt_number}`}
+                      subtitle={formatDate(receipt.payment_date)}
+                      avatarIcon={Printer}
+                      badge={<StatusBadge tone={receiptStatusTone(receipt.status)} className="shrink-0"><CheckCircle2 className="size-3" />{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge>}
                       onClick={() => setSelectedReceiptId(receipt.id)}
-                      formatDate={formatDate}
-                      formatMoney={formatMoney}
+                      stats={(
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Wallet className="size-3.5 shrink-0" />
+                              <span>{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span>
+                            </div>
+                            <div className="truncate">{formatReceiptContext(receipt)}</div>
+                            <div className="text-[10px] text-muted-foreground/70">ف#{formatShortId(receipt.invoice_id)}</div>
+                          </div>
+                          <p className="whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatMoney(receipt.amount)}</p>
+                        </div>
+                      )}
                     />
                     <div className="flex flex-wrap gap-2 px-1">
                       <Button variant="secondary" className="h-9" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
@@ -260,7 +276,7 @@ function ReceiptsHistoryContent() {
                     { key: 'method', header: 'طريقة الدفع', render: (r) => paymentMethodLabels[r.payment_method] ?? r.payment_method },
                     { key: 'invoice_id', header: 'الفاتورة', render: (r) => formatShortId(r.invoice_id) },
                     { key: 'context', header: 'السياق', render: (r) => formatReceiptContext(r) },
-                    { key: 'status', header: 'الحالة', render: (r) => <StatusBadge tone="green">{receiptStatusLabels[r.status] ?? r.status}</StatusBadge> },
+                    { key: 'status', header: 'الحالة', render: (r) => <StatusBadge tone={receiptStatusTone(r.status)}>{receiptStatusLabels[r.status] ?? r.status}</StatusBadge> },
                     { key: 'actions', header: 'الإجراءات', render: (r) => (
                       <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(r.id)}>عرض</Button>

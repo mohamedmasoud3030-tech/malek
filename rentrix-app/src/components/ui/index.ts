@@ -2,7 +2,7 @@
 export { Button } from "./button";
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card";
 export { DetailFields, type DetailField } from "./detail-fields";
-export { FormSection } from "./form-section";
+export { EntityForm, getResponsiveFormSurface, type ResponsiveFormSurface } from "./entity-form";
 export { Input } from "./input";
 export { Select } from "./select";
 export { Skeleton } from "./skeleton";
