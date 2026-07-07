@@ -47,6 +47,11 @@ const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
 const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
 const timezoneOptions = supportedTimezones;
 
+export function preventSettingsUnload(event: BeforeUnloadEvent) {
+  event.preventDefault();
+  event.returnValue = '';
+}
+
 type BaseFieldProps = Readonly<{
   label: string;
   field: CompanySettingsDraftField;
