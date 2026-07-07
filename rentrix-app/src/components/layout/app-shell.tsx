@@ -146,7 +146,7 @@ export function AppShell() {
   };
 
   return (
-    <div className="min-h-dvh overflow-x-hidden bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.055),transparent_28%),hsl(var(--background))] text-foreground" dir={appLanguage.direction}>
+    <div className="min-h-screen min-h-dvh overflow-x-hidden bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.055),transparent_28%),hsl(var(--background))] text-foreground" dir={appLanguage.direction}>
       <a href="#main-content" className="sr-only z-[100] rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground focus:not-sr-only focus:fixed focus:right-4 focus:top-4">
         تخطي إلى المحتوى الرئيسي
       </a>
