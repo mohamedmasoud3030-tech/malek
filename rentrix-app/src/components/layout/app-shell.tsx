@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Bell, ChevronLeft, LogOut, Menu, Moon, Plus, ShieldCheck, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
@@ -53,19 +54,16 @@ function MobileNavigationDrawer({
   onLogout: () => void;
   onQuickLink: (to: QuickLinkRoute) => void;
 }>) {
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-
-    document.addEventListener('keydown', closeOnEscape);
-    return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [onClose]);
-
   return (
-    <dialog open aria-modal="true" aria-label="القائمة الرئيسية" className="fixed inset-0 z-[90] m-0 h-dvh w-screen max-w-none overflow-hidden border-0 bg-transparent p-0 lg:hidden">
-      <button type="button" className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px]" aria-label="إغلاق القائمة" onClick={onClose} />
-      <aside className="animate-panel-in absolute inset-y-0 right-0 flex w-[min(22rem,90vw)] flex-col overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar">
+    <Dialog open onOpenChange={(isOpen) => {
+      if (!isOpen) onClose();
+    }}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="animate-panel-in fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(22rem,90vw)] max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar p-0 text-sidebar-foreground shadow-sidebar sm:max-h-none sm:w-[min(22rem,90vw)] sm:p-0 lg:hidden"
+      >
+        <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="h-[3px] w-full bg-accent" />
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
           <Brand expanded />
@@ -91,8 +89,8 @@ function MobileNavigationDrawer({
             <span>{sharedLabel('logout')}</span>
           </Button>
         </div>
-      </aside>
-    </dialog>
+      </DialogContent>
+    </Dialog>
   );
 }
 
