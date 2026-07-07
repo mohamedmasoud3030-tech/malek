@@ -45,7 +45,15 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm gap-0 p-5 sm:p-6">
+      <DialogContent
+        className="max-w-sm gap-0 p-5 sm:p-6"
+        onEscapeKeyDown={(event) => {
+          if (isLoading) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => {
+          if (isLoading) event.preventDefault();
+        }}
+      >
         <div className="mb-4 flex items-start gap-3 pe-10">
           <div className={
             variant === 'danger'

@@ -63,7 +63,7 @@ export function PageHeader({
             {backTo ? (
               <Button variant="secondary" asChild>
                 <Link to={backTo}>
-                  <ArrowLeft className="me-2 size-4" />
+                  <ArrowLeft className="me-2 size-4 rtl:rotate-180" />
                   {backLabel}
                 </Link>
               </Button>
