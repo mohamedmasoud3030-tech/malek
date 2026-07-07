@@ -18,13 +18,9 @@ Before modifying Rentrix, check `.agents/skills/README.md` and read every skill 
 
 Required startup rule for agents:
 
-1. Open `.agents/skills/README.md`.
-2. Match the task against the skill table.
-3. Read each matching `.agents/skills/<skill-name>/SKILL.md`.
-4. State which skills apply before making changes.
-5. Use all matching skills together when domains overlap; do not choose only one.
+Additional curated external skills live in `agentskills/`. Use `agentskills/README.md` to pick a relevant upstream skill for general development workflows such as implementation planning, frontend design/testing, architecture review, code review, debugging, TDD, triage, research, and completion verification. Repo-specific skills in `.agents/skills/` take precedence when they overlap.
 
-Do not claim a feature with a user-facing interface is complete until the route/screen exists, is connected to the real service/data source, and the frontend flow has been tested and documented.
+When domains overlap, apply all relevant skills together; do not choose only one. Do not claim a feature with a user-facing interface is complete until the route/screen exists, is connected to the real service/data source, and the frontend flow has been tested and documented.
 
 ## While you work
 
