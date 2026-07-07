@@ -53,21 +53,21 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
       {tenant.primaryContractId !== null && (
         <Button variant="secondary" className="min-h-11 px-3" asChild>
           <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}>
-            <FileText className="ml-1 size-4" />العقد
+            <FileText className="me-1 size-4" />العقد
           </Link>
         </Button>
       )}
       {tenant.hasInvoices && (
         <Button variant="secondary" className="min-h-11 px-3" asChild>
           <Link to="/invoices">
-            <ReceiptText className="ml-1 size-4" />الفواتير
+            <ReceiptText className="me-1 size-4" />الفواتير
           </Link>
         </Button>
       )}
       {tenant.hasArrears && (
         <Button variant="secondary" className="min-h-11 px-3 text-amber-700" asChild>
           <Link to="/arrears">
-            <TriangleAlert className="ml-1 size-4" />المتأخرات
+            <TriangleAlert className="me-1 size-4" />المتأخرات
           </Link>
         </Button>
       )}

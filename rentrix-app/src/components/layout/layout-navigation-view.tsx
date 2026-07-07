@@ -119,7 +119,7 @@ export function WorkspaceCard({
         >
           <Icon className="size-4 shrink-0 text-primary transition-transform group-hover:scale-110" />
           <span>{title}</span>
-          <Plus className="mr-auto size-3.5 shrink-0 opacity-50" />
+          <Plus className="ms-auto size-3.5 shrink-0 opacity-50" />
         </button>
       ))}
     </section>
