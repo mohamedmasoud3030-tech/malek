@@ -92,7 +92,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
         </div>
         {!unitsQuery.isError ? (
-          <Button onClick={openForCreate}><Plus className="ml-2 size-4" />إضافة وحدة</Button>
+          <Button onClick={openForCreate}><Plus className="me-2 size-4" />إضافة وحدة</Button>
         ) : null}
       </CardHeader>
 
