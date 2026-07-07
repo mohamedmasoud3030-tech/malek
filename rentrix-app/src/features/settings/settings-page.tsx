@@ -595,7 +595,7 @@ export function SettingsPage() {
           </details>
         </SectionCard>
 
-        <div className="sticky bottom-20 z-10 -mx-3 rounded-2xl border bg-card/95 px-3 py-3 shadow-lg backdrop-blur sm:bottom-24 sm:mx-0 sm:px-5 lg:bottom-6">
+        <div className="sticky z-10 -mx-3 rounded-2xl border bg-card/95 px-3 py-3 shadow-lg backdrop-blur bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] sm:mx-0 sm:px-5 sm:bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] lg:bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={!isDirty || isSaving}>
               <Save className="me-2 size-4" />
