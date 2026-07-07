@@ -65,7 +65,8 @@ function MobileNavigationDrawer({
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="h-[3px] w-full bg-accent" />
-        <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
+        {/* Brand bar with top safe-area inset for notch/status-bar */}
+        <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/10 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
           <Brand expanded />
           <Button autoFocus variant="ghost" className="size-10 shrink-0 px-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onClose} aria-label="إغلاق القائمة">
             <X className="size-5" />
@@ -83,7 +84,7 @@ function MobileNavigationDrawer({
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
           <WorkspaceCard compact onQuickLink={onQuickLink} />
         </nav>
-        <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           <Button variant="ghost" className="min-h-11 w-full justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white" onClick={onLogout}>
             <LogOut className="size-5" />
             <span>{sharedLabel('logout')}</span>
@@ -145,7 +146,7 @@ export function AppShell() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.055),transparent_28%),hsl(var(--background))] text-foreground" dir={appLanguage.direction}>
+    <div className="min-h-screen min-h-dvh overflow-x-hidden bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.055),transparent_28%),hsl(var(--background))] text-foreground" dir={appLanguage.direction}>
       <a href="#main-content" className="sr-only z-[100] rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground focus:not-sr-only focus:fixed focus:right-4 focus:top-4">
         تخطي إلى المحتوى الرئيسي
       </a>
@@ -176,7 +177,8 @@ export function AppShell() {
       </aside>
 
       <div className={cn('w-full transition-all duration-300 lg:pe-80', sidebarCollapsed && 'lg:pe-20')}>
-        <header className="sticky top-0 z-20 border-b border-border bg-background/82 backdrop-blur-2xl">
+        {/* Sticky header with top safe-area inset for notch */}
+        <header className="sticky top-0 z-20 border-b border-border bg-background/82 pt-[env(safe-area-inset-top,0px)] backdrop-blur-2xl">
           <div className="flex min-h-16 items-center gap-2 px-3 py-2 sm:min-h-20 sm:px-5">
             <Button variant="ghost" className="size-10 shrink-0 px-0 lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label="فتح القائمة"><Menu className="size-5" /></Button>
             <Button variant="ghost" className="hidden size-10 shrink-0 px-0 lg:inline-flex" onClick={toggleSidebar} aria-label={sharedLabel('collapseMenu')}><Menu className="size-5" /></Button>
@@ -196,7 +198,8 @@ export function AppShell() {
             </div>
           </div>
         </header>
-        <main id="main-content" tabIndex={-1} className="animate-route-in overflow-x-hidden p-3 pb-24 outline-none sm:p-4 sm:pb-28 lg:p-6 lg:pb-6"><Outlet /></main>
+        {/* Main content with safe-area-aware bottom padding on mobile */}
+        <main id="main-content" tabIndex={-1} className="animate-route-in safe-bottom-app overflow-x-hidden p-3 outline-none sm:p-4 lg:p-6 lg:pb-6"><Outlet /></main>
       </div>
 
       <MobileBottomNav authorization={authorization} sharedLabel={sharedLabel} />

@@ -42,6 +42,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
           'shadow-2xl ring-1 ring-border/30',
           'animate-in slide-in-from-bottom duration-300',
           'max-h-[calc(100dvh-0.75rem)] overflow-y-auto overscroll-contain',
+          'pb-[env(safe-area-inset-bottom,0px)] ps-[env(safe-area-inset-left,0px)] pe-[env(safe-area-inset-right,0px)]',
           className,
         )}
       >
@@ -52,7 +53,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
 
         {/* Header */}
         {title && (
-          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border/60 bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border/60 bg-background/95 px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] backdrop-blur sm:px-5">
             <h2 className="min-w-0 text-base font-bold leading-7">{title}</h2>
             <button
               type="button"
@@ -66,7 +67,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         )}
 
         {/* Content */}
-        <div className="safe-bottom-overlay px-4 pt-4 sm:px-5">{children}</div>
+        <div className="px-4 pb-5 pt-4 sm:px-5">{children}</div>
       </div>
     </div>
   );
