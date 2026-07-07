@@ -135,6 +135,10 @@
   }
 }
 
+/* ============================================
+   Base layer: viewport, overflow, safe-area
+   ============================================ */
+
 @layer base {
   * {
     border-color: hsl(var(--border));
@@ -143,13 +147,28 @@
   html {
     direction: rtl;
     font-family: var(--font-sans);
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     margin: 0;
-    min-width: 320px;
+    min-width: 0;
+    min-height: 100dvh;
+    overflow-x: hidden;
     background: hsl(var(--background));
     color: hsl(var(--foreground));
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Root mount point must fill dynamic viewport */
+  #root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
   }
 
   button,
@@ -369,12 +388,21 @@
     background: hsl(var(--sidebar-foreground)/0.22);
   }
 
+  /* Safe-area utilities for fixed/sticky UI */
+  .safe-top-header {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .safe-bottom-app {
-    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   .safe-bottom-overlay {
-    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .safe-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .mobile-scroll-x {
@@ -467,4 +495,3 @@
     display: none !important;
   }
 }
-
