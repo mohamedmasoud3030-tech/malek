@@ -70,9 +70,9 @@ export const navGroups = [
 export const mobileNavItems = [
   ['/', 'dashboard', LayoutDashboard],
   ['/properties', 'properties', Building2],
+  ['/people', 'people', Users],
   ['/contracts', 'contracts', FileText],
   ['/financials', 'financials', WalletCards],
-  ['/arrears', 'arrears', ClipboardList],
 ] as const satisfies readonly MobileNavItem[];
 
 export const quickLinks = [

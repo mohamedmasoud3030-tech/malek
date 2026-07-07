@@ -25,13 +25,13 @@ function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
     <div className={cn('flex min-w-0 items-center gap-3', !expanded && 'justify-center')}>
       <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg">
         R
-        <span className="absolute -bottom-1 -left-1 size-3 rounded-full border-2 border-sidebar bg-emerald-400" />
+        <span className="absolute -bottom-1 -left-1 size-3 rounded-full border-2 border-sidebar bg-success" />
       </div>
       {expanded ? (
         <div className="min-w-0">
           <p className="truncate text-xl font-black text-white">Rentrix</p>
           <p className="truncate text-xs font-bold text-sidebar-foreground/65">إدارة عقارية بوضوح وسرعة</p>
-          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-300">
+          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-success">
             <ShieldCheck className="size-3" />
             مساحة عمل آمنة
           </p>
@@ -73,9 +73,9 @@ function MobileNavigationDrawer({
         </div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-3">
           {authorization === null && (
-            <div className="mb-4 rounded-2xl border border-amber-600/30 bg-amber-50/10 px-3 py-2.5">
-              <p className="text-xs font-bold text-amber-600/90">الصلاحيات غير مكتملة</p>
-              <p className="mt-1 text-[11px] font-bold text-amber-600/80">
+            <div className="mb-4 rounded-2xl border border-[hsl(var(--color-warning-text)/0.3)] bg-[hsl(var(--color-warning-bg)/0.12)] px-3 py-2.5">
+              <p className="text-xs font-bold text-warning">الصلاحيات غير مكتملة</p>
+              <p className="mt-1 text-[11px] font-bold text-warning/90">
                 يرجى التواصل مع مسؤول النظام لاستكمال إعداد صلاحيات حسابك.
               </p>
             </div>
