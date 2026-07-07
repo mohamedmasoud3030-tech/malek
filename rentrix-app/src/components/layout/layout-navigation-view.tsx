@@ -128,7 +128,7 @@ export function WorkspaceCard({
 
 export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden">
       <div className="grid h-16 grid-cols-5">
         {mobileNavItems.map(([to, labelKey, Icon]) => {
           if (!canShowNavigationItem(authorization, undefined)) return null;
