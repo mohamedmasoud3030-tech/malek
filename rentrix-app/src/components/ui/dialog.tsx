@@ -24,8 +24,8 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 export const DialogContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
-  ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+  ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { showCloseButton?: boolean }
+>(({ className, children, showCloseButton = true, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -37,13 +37,15 @@ export const DialogContent = forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close
-        className="absolute end-3 top-3 grid size-10 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 sm:end-4 sm:top-4"
-        aria-label="إغلاق"
-      >
-        <X className="size-4" />
-        <span className="sr-only">إغلاق</span>
-      </DialogPrimitive.Close>
+      {showCloseButton ? (
+        <DialogPrimitive.Close
+          className="absolute end-3 top-3 grid size-10 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/20 sm:end-4 sm:top-4"
+          aria-label="إغلاق"
+        >
+          <X className="size-4" />
+          <span className="sr-only">إغلاق</span>
+        </DialogPrimitive.Close>
+      ) : null}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));
