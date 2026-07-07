@@ -5,20 +5,18 @@ This file is a starting point for any developer or agent picking up work in this
 ## Before you start
 
 1. Read this file (`AGENTS.md`) — it's short, read it in full.
-2. Go to `docs/agent-context/CONTEXT_MAP.md` and find your task's row. **The map decides what else is mandatory for your specific task** — don't read every document in this repo for every task.
-3. `docs/agent-context/WORKFLOW.md` is conditional, not automatic: read it only for non-trivial or high-risk work (the map will point you to it when relevant).
-4. `docs/agent-context/DOMAIN.md` is also conditional: read the sections the map points you to for your task row, not the whole file, unless your task is broad enough that the map says so.
-5. `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/DOMAIN.md`, and `docs/NEXT.md` remain useful background — the map will tell you when a task needs one of them.
+2. **Before any code or doc change, open `.agents/skills/README.md`, identify every skill whose trigger matches the task, then read and apply those `SKILL.md` files first.** This repository's local agent skills live under `.agents/skills/`.
+3. Go to `docs/agent-context/CONTEXT_MAP.md` and find your task's row. **The map decides what else is mandatory for your specific task** — don't read every document in this repo for every task.
+4. `docs/agent-context/WORKFLOW.md` is conditional, not automatic: read it only for non-trivial or high-risk work (the map will point you to it when relevant).
+5. `docs/agent-context/DOMAIN.md` is also conditional: read the sections the map points you to for your task row, not the whole file, unless your task is broad enough that the map says so.
+6. `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/DOMAIN.md`, and `docs/NEXT.md` remain useful background — the map will tell you when a task needs one of them.
 
 
 ## Repo-scoped Agent Skills
 
-Before modifying Rentrix, check `.agents/skills/README.md` and read every skill that applies to the task. The current repo-scoped skills are:
+Before modifying Rentrix, check `.agents/skills/README.md` and read every skill that applies to the task. The skill index is the source of truth for available local skills, including both Rentrix-specific skills and imported ECC skills.
 
-- `.agents/skills/frontend-integration/SKILL.md` for any user-facing screen, route, component, or workflow.
-- `.agents/skills/supabase-data-contracts/SKILL.md` for Supabase migrations, RLS, RPCs, views, database services, or UI/database contract alignment.
-- `.agents/skills/financial-reporting/SKILL.md` for collections, payments, receipts, settlements, bank reconciliation, reports, or financial totals.
-- `.agents/skills/testing-release-readiness/SKILL.md` before claiming a feature, fix, refactor, or release candidate is complete, verified, or release-ready.
+Required startup rule for agents:
 
 Additional curated external skills live in `agentskills/`. Use `agentskills/README.md` to pick a relevant upstream skill for general development workflows such as implementation planning, frontend design/testing, architecture review, code review, debugging, TDD, triage, research, and completion verification. Repo-specific skills in `.agents/skills/` take precedence when they overlap.
 

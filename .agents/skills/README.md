@@ -1,6 +1,6 @@
 # Rentrix repo-scoped Agent Skills
 
-These skills are local to this repository under `.agents/skills/`. Apply every relevant skill when work crosses multiple domains.
+These skills are local to this repository under `.agents/skills/`. Every agent starting work in Rentrix must read this index first, then open and apply every matching `SKILL.md` before changing code or docs. Apply every relevant skill when work crosses multiple domains.
 
 | Skill | Use when | Path |
 | --- | --- | --- |
