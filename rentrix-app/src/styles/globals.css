@@ -141,7 +141,6 @@
 
 @layer base {
   * {
-    min-width: 0;
     border-color: hsl(var(--border));
   }
 

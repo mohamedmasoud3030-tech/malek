@@ -43,10 +43,16 @@ export function ConfirmDialog({
   isLoading = false,
   onConfirm,
 }: ConfirmDialogProps) {
+  function handleOpenChange(nextOpen: boolean) {
+    if (isLoading && !nextOpen) return;
+    onOpenChange(nextOpen);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="max-w-sm gap-0 p-5 sm:p-6"
+        showCloseButton={!isLoading}
         onEscapeKeyDown={(event) => {
           if (isLoading) event.preventDefault();
         }}
@@ -76,7 +82,7 @@ export function ConfirmDialog({
           <Button
             variant="secondary"
             className="sm:min-w-28"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             disabled={isLoading}
           >
             {cancelLabel}
