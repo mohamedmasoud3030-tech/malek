@@ -20,6 +20,8 @@ Before modifying Rentrix, check `.agents/skills/README.md` and read every skill 
 - `.agents/skills/financial-reporting/SKILL.md` for collections, payments, receipts, settlements, bank reconciliation, reports, or financial totals.
 - `.agents/skills/testing-release-readiness/SKILL.md` before claiming a feature, fix, refactor, or release candidate is complete, verified, or release-ready.
 
+Additional curated external skills live in `agentskills/`. Use `agentskills/README.md` to pick a relevant upstream skill for general development workflows such as implementation planning, frontend design/testing, architecture review, code review, debugging, TDD, triage, research, and completion verification. Repo-specific skills in `.agents/skills/` take precedence when they overlap.
+
 When domains overlap, apply all relevant skills together; do not choose only one. Do not claim a feature with a user-facing interface is complete until the route/screen exists, is connected to the real service/data source, and the frontend flow has been tested and documented.
 
 ## While you work
