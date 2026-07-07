@@ -12,7 +12,7 @@
  * - Accessibility: aria-label, keyboard navigation, aria-sort
  */
 
-import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronsUpDown, ListRestart } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -181,6 +181,24 @@ function PaginationBar({ pagination }: { pagination: PaginationState }) {
   );
 }
 
+
+function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
+  const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
+
+  return (
+    <EmptyState
+      title="هذه الصفحة لا تحتوي على نتائج"
+      description={`يوجد ${pagination.total} سجل في النتائج الحالية، لكن الصفحة ${pagination.page} خارج نطاق الصفحات المتاحة (${totalPages}).`}
+      action={(
+        <Button onClick={() => pagination.onPageChange(1)}>
+          <ListRestart className="me-2 size-4" aria-hidden="true" />
+          العودة إلى الصفحة الأولى
+        </Button>
+      )}
+    />
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function EntityTable<T>({
@@ -230,6 +248,10 @@ export function EntityTable<T>({
 
   // ── Empty ────────────────────────────────────────────────
   if (rows.length === 0) {
+    if (pagination !== undefined && pagination.total > 0 && pagination.page > 1) {
+      return <PaginationRecovery pagination={pagination} />;
+    }
+
     return (
       <EmptyState
         title={emptyTitle}

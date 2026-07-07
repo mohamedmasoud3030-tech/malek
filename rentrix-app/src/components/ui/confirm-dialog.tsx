@@ -43,9 +43,23 @@ export function ConfirmDialog({
   isLoading = false,
   onConfirm,
 }: ConfirmDialogProps) {
+  function handleOpenChange(nextOpen: boolean) {
+    if (isLoading && !nextOpen) return;
+    onOpenChange(nextOpen);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm gap-0 p-5 sm:p-6">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="max-w-sm gap-0 p-5 sm:p-6"
+        showCloseButton={!isLoading}
+        onEscapeKeyDown={(event) => {
+          if (isLoading) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => {
+          if (isLoading) event.preventDefault();
+        }}
+      >
         <div className="mb-4 flex items-start gap-3 pe-10">
           <div className={
             variant === 'danger'
@@ -68,7 +82,7 @@ export function ConfirmDialog({
           <Button
             variant="secondary"
             className="sm:min-w-28"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             disabled={isLoading}
           >
             {cancelLabel}

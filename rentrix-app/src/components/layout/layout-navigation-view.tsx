@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Lock, Plus, Sparkles } from 'lucide-react';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext } from '@/features/auth/permissions';
 import { cn } from '@/lib/utils';
@@ -130,41 +131,83 @@ export function WorkspaceCard({
 export function CollapsedWorkspaceMenu({
   onQuickLink,
 }: Readonly<{ onQuickLink: (to: QuickLinkRoute) => void }>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (menuRef.current?.contains(event.target as Node)) return;
+      setIsOpen(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  function handleQuickLink(to: QuickLinkRoute) {
+    setIsOpen(false);
+    onQuickLink(to);
+  }
+
   return (
-    <details className="group relative mb-2">
-      <summary
+    <div ref={menuRef} className="relative mb-2">
+      <button
+        ref={triggerRef}
+        type="button"
         className={cn(
-          'flex min-h-11 w-full cursor-pointer list-none items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] px-0 py-2 text-sidebar-foreground transition',
+          'flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] px-0 py-2 text-sidebar-foreground transition',
           'hover:-translate-y-0.5 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
-          '[&::-webkit-details-marker]:hidden',
         )}
-        aria-label="فتح اختصارات الإنشاء"
+        aria-label={isOpen ? 'إغلاق اختصارات الإنشاء' : 'فتح اختصارات الإنشاء'}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? menuId : undefined}
+        aria-haspopup="dialog"
         title="اختصارات الإنشاء"
+        onClick={() => setIsOpen((current) => !current)}
       >
         <Plus className="size-5" aria-hidden="true" />
-      </summary>
-      <div className="absolute end-full top-0 z-50 me-2 w-56 rounded-2xl border border-white/10 bg-sidebar p-2 text-sidebar-foreground shadow-sidebar">
-        <div className="border-b border-white/10 px-2 pb-2">
-          <p className="text-xs font-black text-white">إنشاء سريع</p>
-          <p className="text-[10px] font-bold text-sidebar-foreground/55">اختر العملية المطلوبة</p>
+      </button>
+      {isOpen ? (
+        <div
+          id={menuId}
+          className="absolute end-full top-0 z-50 me-2 w-56 rounded-2xl border border-white/10 bg-sidebar p-2 text-sidebar-foreground shadow-sidebar"
+        >
+          <div className="border-b border-white/10 px-2 pb-2">
+            <p className="text-xs font-black text-white">إنشاء سريع</p>
+            <p className="text-[10px] font-bold text-sidebar-foreground/55">اختر العملية المطلوبة</p>
+          </div>
+          <div className="mt-2 space-y-1" aria-label="اختصارات الإنشاء">
+            {quickLinks.map(([to, title, Icon]) => (
+              <button
+                key={to}
+                type="button"
+                onClick={() => handleQuickLink(to)}
+                className="group/item flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-right text-[12px] font-black text-sidebar-foreground/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Icon className="size-4 shrink-0 text-primary transition-transform group-hover/item:scale-110" aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate">{title}</span>
+                <Plus className="size-3.5 shrink-0 opacity-50" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="mt-2 space-y-1" role="menu" aria-label="اختصارات الإنشاء">
-          {quickLinks.map(([to, title, Icon]) => (
-            <button
-              key={to}
-              type="button"
-              role="menuitem"
-              onClick={() => onQuickLink(to)}
-              className="group/item flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-right text-[12px] font-black text-sidebar-foreground/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Icon className="size-4 shrink-0 text-primary transition-transform group-hover/item:scale-110" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">{title}</span>
-              <Plus className="size-3.5 shrink-0 opacity-50" aria-hidden="true" />
-            </button>
-          ))}
-        </div>
-      </div>
-    </details>
+      ) : null}
+    </div>
   );
 }
 
