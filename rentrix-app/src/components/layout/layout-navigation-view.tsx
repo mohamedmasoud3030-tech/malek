@@ -52,7 +52,7 @@ export function NavigationLinks({
                       <span className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="block truncate text-[13px] font-bold">{sharedLabel(labelKey)}</span>
-                          <Lock className="size-3 shrink-0 text-amber-600/80" />
+                          <Lock className="size-3 shrink-0 text-warning/80" />
                         </div>
                         <span className="block truncate text-[10px] font-bold text-sidebar-foreground/45">
                           {description}
