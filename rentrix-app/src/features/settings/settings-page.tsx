@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
+import { useBeforeUnloadGuard } from '@/hooks/use-unsaved-changes-guard';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import {
   normalizeCompanyLocale,
@@ -45,11 +46,6 @@ const countryOptions = supportedCountries;
 const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
 const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
 const timezoneOptions = supportedTimezones;
-
-export function preventSettingsUnload(event: BeforeUnloadEvent) {
-  event.preventDefault();
-  event.returnValue = '';
-}
 
 type BaseFieldProps = Readonly<{
   label: string;
@@ -238,6 +234,8 @@ export function SettingsPage() {
   const isDirty = !areCompanySettingsDraftsEqual(draft, baseDraft);
   const isSaving = updateCompanySettingsMutation.isPending;
 
+  useBeforeUnloadGuard(isDirty);
+
   useEffect(() => {
     if (!companySettingsQuery.data) return;
 
@@ -263,13 +261,6 @@ export function SettingsPage() {
   const pageLanguage = getAppLanguageState(previewSettings?.defaultLanguage);
   const formattedPreviewDate = previewSettings ? formatCompanyDate(previewSettings, new Date()) : '—';
   const formattedPreviewMoney = previewSettings ? formatCompanyMoney(previewSettings, 1234.56) : '—';
-
-  useEffect(() => {
-    if (!isDirty) return undefined;
-
-    window.addEventListener('beforeunload', preventSettingsUnload);
-    return () => window.removeEventListener('beforeunload', preventSettingsUnload);
-  }, [isDirty]);
 
   const handleDraftChange = (field: CompanySettingsDraftField, value: string) => {
     setDraft((currentDraft) => {
