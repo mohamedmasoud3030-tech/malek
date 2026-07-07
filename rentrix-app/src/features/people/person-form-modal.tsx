@@ -2,10 +2,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { RouteLoadingState } from '@/components/loading-state';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
 import { personSchema, personTypeLabels, personTypeValues, type PersonFormValues } from './person-schema';
 import { useCreatePerson, usePerson, useUpdatePerson } from './use-people';
 
@@ -26,6 +28,8 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   const createMutation = useCreatePerson();
   const updateMutation = useUpdatePerson(personId ?? '');
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const { busy: isSubmittingGuard, run: runSubmit } = useSubmitGuard();
   const form = useForm<PersonFormValues>({
     resolver: zodResolver(personSchema),
     defaultValues: {
@@ -38,6 +42,8 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
       notes: '',
     },
   });
+
+  useBeforeUnloadGuard(form.formState.isDirty && open);
 
   useEffect(() => {
     if (!open) {
@@ -58,36 +64,63 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
     }
   }, [form, personQuery.data, open, defaultType]);
 
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isMutationPending = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting = isSubmittingGuard || isMutationPending;
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    setSubmitError(null);
-    const payload = personSchema.parse(values);
-    try {
-      if (isEdit && personId) {
-        await updateMutation.mutateAsync(payload);
-      } else {
-        await createMutation.mutateAsync(payload);
+    await runSubmit(async () => {
+      setSubmitError(null);
+      const payload = personSchema.parse(values);
+      try {
+        if (isEdit && personId) {
+          await updateMutation.mutateAsync(payload);
+        } else {
+          await createMutation.mutateAsync(payload);
+        }
+        // Clear dirty state before closing so the guard does not block.
+        form.reset(undefined, { keepValues: true });
+        onClose();
+      } catch (error) {
+        setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ بيانات الشخص. تحقق من الصلاحيات وحاول مرة أخرى.');
       }
-      onClose();
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ بيانات الشخص. تحقق من الصلاحيات وحاول مرة أخرى.');
-    }
+    });
   });
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      // Attempting to close — check for unsaved changes first
+      if (form.formState.isDirty && !isSubmitting) {
+        setShowDiscardDialog(true);
+        return;
+      }
+    }
+    onClose();
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowDiscardDialog(false);
+    form.reset(undefined, { keepValues: true });
+    onClose();
+  };
+
+  const handleCancelDiscard = () => {
+    setShowDiscardDialog(false);
+  };
 
   const title = isEdit ? 'تعديل شخص' : (defaultType === 'owner' ? 'إضافة مالك' : 'إضافة شخص');
 
   return (
-    <EntityForm.Overlay
-      open={open}
-      onOpenChange={(v) => { if (!v) onClose(); }}
-      title={title}
-      className="max-w-2xl"
-    >
+    <>
+      <EntityForm.Overlay
+        open={open}
+        onOpenChange={handleOpenChange}
+        title={title}
+        className="max-w-2xl"
+      >
         {isEdit && personQuery.isLoading ? (
           <RouteLoadingState />
         ) : (
-          <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit}>
+          <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
             <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
             <label className="grid gap-2 text-sm font-bold">
               الاسم الكامل
@@ -124,9 +157,21 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
               ملاحظات
               <Textarea {...form.register('notes')} />
             </label>
-            <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'} />
+            <EntityForm.Actions className="md:col-span-2" onCancel={() => handleOpenChange(false)} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'} />
           </EntityForm.Root>
         )}
-    </EntityForm.Overlay>
+      </EntityForm.Overlay>
+
+      <ConfirmDialog
+        open={showDiscardDialog}
+        onOpenChange={(open) => { if (!open) handleCancelDiscard(); }}
+        title="تغييرات غير محفوظة"
+        description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
+        confirmLabel="تجاهل التغييرات"
+        cancelLabel="مواصلة التعديل"
+        variant="warning"
+        onConfirm={handleConfirmDiscard}
+      />
+    </>
   );
 }
