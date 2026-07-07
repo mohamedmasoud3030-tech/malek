@@ -31,7 +31,10 @@ function useMediaQuery(query: string) {
   return matches;
 }
 
-type EntityFormRootProps = Readonly<ComponentPropsWithoutRef<'form'> & { onSubmit?: FormEventHandler<HTMLFormElement> }>;
+type EntityFormRootProps = Readonly<ComponentPropsWithoutRef<'form'> & {
+  onSubmit?: FormEventHandler<HTMLFormElement>;
+  'aria-busy'?: boolean | 'true' | 'false';
+}>;
 
 function Root({ className, children, ...props }: EntityFormRootProps) {
   return <form className={cn('grid gap-4', className)} {...props}>{children}</form>;
