@@ -159,7 +159,6 @@
     overflow-x: hidden;
     background: hsl(var(--background));
     color: hsl(var(--foreground));
-    overflow-wrap: break-word;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -388,21 +387,13 @@
     background: hsl(var(--sidebar-foreground)/0.22);
   }
 
-  /* Safe-area utilities for fixed/sticky UI */
-  .safe-top-header {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
+  /* Safe-area utilities for fixed/sticky UI — used by main content and overlays */
   .safe-bottom-app {
     padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   .safe-bottom-overlay {
     padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  .safe-bottom-nav {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .mobile-scroll-x {
