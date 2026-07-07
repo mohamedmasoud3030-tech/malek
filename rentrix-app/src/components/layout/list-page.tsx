@@ -7,7 +7,12 @@ import { cn } from "@/lib/utils";
 interface ListPageProps {
   title: string;
   description?: string;
+  count?: number | string;
   action?: ReactNode;
+  primaryAction?: ReactNode;
+  secondaryActions?: ReactNode;
+  backTo?: string;
+  backLabel?: string;
   search?: {
     value: string;
     onChange: (v: string) => void;
@@ -38,7 +43,12 @@ interface ListPageProps {
 export function ListPage({
   title,
   description,
+  count,
   action,
+  primaryAction,
+  secondaryActions,
+  backTo,
+  backLabel,
   search,
   filters,
   children,
@@ -47,7 +57,16 @@ export function ListPage({
 }: ListPageProps) {
   return (
     <PageLayout className={className} dir={dir}>
-      <PageHeader title={title} description={description} action={action} />
+      <PageHeader
+        title={title}
+        description={description}
+        count={count}
+        action={action}
+        primaryAction={primaryAction}
+        secondaryActions={secondaryActions}
+        backTo={backTo}
+        backLabel={backLabel}
+      />
 
       {(search || filters) && (
         <div className="space-y-2">

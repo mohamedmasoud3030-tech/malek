@@ -45,8 +45,8 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm gap-0 p-6">
-        <div className="mb-4 flex items-center gap-3">
+      <DialogContent className="max-w-sm gap-0 p-5 sm:p-6">
+        <div className="mb-4 flex items-start gap-3 pe-10">
           <div className={
             variant === 'danger'
               ? 'grid size-10 place-items-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'
@@ -64,9 +64,10 @@ export function ConfirmDialog({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-4 sm:flex-row sm:justify-end">
           <Button
-            variant="ghost"
+            variant="secondary"
+            className="sm:min-w-28"
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
@@ -74,6 +75,7 @@ export function ConfirmDialog({
           </Button>
           <Button
             variant={variant === 'danger' ? 'danger' : 'primary'}
+            className="sm:min-w-32"
             onClick={onConfirm}
             disabled={isLoading}
           >

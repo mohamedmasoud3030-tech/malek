@@ -3,13 +3,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { PersonFormModal } from './person-form-modal';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
+import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { EntityCard, entityCardContactMeta, entityCardTypeMap } from '@/components/ui/entity-card';
-import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
+import { ListPage } from '@/components/layout/list-page';
 import { useDebounce } from '@/hooks/useDebounce';
 import { cn } from '@/lib/utils';
 import { personTypeLabels, personTypeValues } from './person-schema';
@@ -51,6 +51,13 @@ export function PeopleListPage() {
   const confirmDelete = () => {
     if (deleteId) deleteMutation.mutate(deleteId, { onSettled: () => setDeleteId(null) });
   };
+
+  const hasFilterValues = search.trim().length > 0 || type !== 'all';
+  const activeFilters: ActiveFilterItem[] = [
+    ...(search.trim() ? [{ key: 'search', label: 'بحث', value: search.trim(), onRemove: () => { setSearch(''); setPage(1); } }] : []),
+    ...(type !== 'all' ? [{ key: 'type', label: 'النوع', value: personTypeLabels[type as Exclude<PersonTypeFilter, 'all'>], onRemove: () => { setType('all'); setPage(1); } }] : []),
+  ];
+  const clearFilters = () => { setSearch(''); setType('all'); setPage(1); };
 
   const columns: ColumnDef<Person>[] = [
     {
@@ -104,22 +111,19 @@ export function PeopleListPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-black">الأشخاص</h2>
-            <p className="text-sm text-muted-foreground">جدول موحد للمستأجرين والملاك وجهات الاتصال.</p>
-          </div>
-          <Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة شخص</Button>
-        </div>
-
-        <Card>
-          <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_14rem]">
-            <SearchInput
-              value={search}
-              onChange={(value) => { setSearch(value); setPage(1); }}
-              placeholder="بحث بالاسم أو الهاتف أو الهوية"
-            />
+      <ListPage
+        dir="rtl"
+        title="الأشخاص"
+        description="جدول موحد للمستأجرين والملاك وجهات الاتصال."
+        count={peopleQuery.data?.count ?? undefined}
+        primaryAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة شخص</Button>}
+        search={{
+          value: search,
+          onChange: (value) => { setSearch(value); setPage(1); },
+          placeholder: 'بحث بالاسم أو الهاتف أو الهوية',
+        }}
+        filters={(
+          <div className="space-y-3">
             <Select
               aria-label="تصفية الأشخاص حسب النوع"
               value={type}
@@ -128,9 +132,10 @@ export function PeopleListPage() {
               <option value="all">كل الأنواع</option>
               {personTypeValues.map((item) => <option key={item} value={item}>{personTypeLabels[item]}</option>)}
             </Select>
-          </CardContent>
-        </Card>
-
+            <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
+          </div>
+        )}
+      >
         <EntityTable
           aria-label="جدول الأشخاص"
           rows={peopleQuery.data?.rows ?? []}
@@ -140,9 +145,9 @@ export function PeopleListPage() {
           error={peopleQuery.isError ? peopleQuery.error : null}
           errorTitle="تعذر تحميل الأشخاص"
           onRetry={() => peopleQuery.refetch()}
-          emptyTitle="لا توجد سجلات أشخاص"
-          emptyDescription="أضف مستأجراً أو مالكاً أو جهة اتصال."
-          emptyAction={<Button onClick={openCreate}>إضافة شخص</Button>}
+          emptyTitle={hasFilterValues ? "لا توجد نتائج مطابقة للفلاتر" : "لا توجد سجلات أشخاص"}
+          emptyDescription={hasFilterValues ? "غيّر البحث أو النوع أو امسح الفلاتر لعرض سجلات أخرى." : "أضف مستأجراً أو مالكاً أو جهة اتصال."}
+          emptyAction={hasFilterValues ? <Button variant="secondary" onClick={clearFilters}>مسح الفلاتر</Button> : <Button onClick={openCreate}>إضافة شخص</Button>}
           pagination={{
             page,
             pageSize,
@@ -168,7 +173,7 @@ export function PeopleListPage() {
             />
           )}
         />
-      </div>
+      </ListPage>
 
       <PersonFormModal open={modalOpen} onClose={closeModal} personId={editPersonId} />
 

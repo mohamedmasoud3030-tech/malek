@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RouteLoadingState } from '@/components/loading-state';
-import { useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
+import { DirtyRouteNavigationGuard, useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
 import { propertySchema, propertyStatusLabels, propertyStatusValues, type PropertyFormValues } from './property-schema';
 import { useCreateProperty, useProperty, useUpdateProperty } from './use-properties';
 
@@ -85,7 +85,11 @@ export function PropertyFormPage() {
   });
 
   const requestNavigate = (to: string) => {
-    if (form.formState.isDirty && !isSubmitting) {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (form.formState.isDirty) {
       setPendingNavigateTo(to);
       setShowDiscardDialog(true);
       return;
@@ -131,7 +135,7 @@ export function PropertyFormPage() {
             <CardTitle>{isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}</CardTitle>
             <CardDescription>أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك.</CardDescription>
           </div>
-          <Button variant="secondary" onClick={() => requestNavigate('/properties')}>
+          <Button variant="secondary" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
             <ArrowLeft className="me-2 size-4" />
             العودة
           </Button>
@@ -195,6 +199,12 @@ export function PropertyFormPage() {
           </form>
         </CardContent>
       </Card>
+
+      <DirtyRouteNavigationGuard
+        isDirty={form.formState.isDirty}
+        disabled={isSubmitting || showDiscardDialog}
+        onDiscard={() => form.reset(undefined, { keepValues: true })}
+      />
 
       <ConfirmDialog
         open={showDiscardDialog}

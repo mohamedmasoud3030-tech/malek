@@ -126,6 +126,48 @@ export function WorkspaceCard({
   );
 }
 
+
+export function CollapsedWorkspaceMenu({
+  onQuickLink,
+}: Readonly<{ onQuickLink: (to: QuickLinkRoute) => void }>) {
+  return (
+    <details className="group relative mb-2">
+      <summary
+        className={cn(
+          'flex min-h-11 w-full cursor-pointer list-none items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] px-0 py-2 text-sidebar-foreground transition',
+          'hover:-translate-y-0.5 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
+          '[&::-webkit-details-marker]:hidden',
+        )}
+        aria-label="فتح اختصارات الإنشاء"
+        title="اختصارات الإنشاء"
+      >
+        <Plus className="size-5" aria-hidden="true" />
+      </summary>
+      <div className="absolute end-full top-0 z-50 me-2 w-56 rounded-2xl border border-white/10 bg-sidebar p-2 text-sidebar-foreground shadow-sidebar">
+        <div className="border-b border-white/10 px-2 pb-2">
+          <p className="text-xs font-black text-white">إنشاء سريع</p>
+          <p className="text-[10px] font-bold text-sidebar-foreground/55">اختر العملية المطلوبة</p>
+        </div>
+        <div className="mt-2 space-y-1" role="menu" aria-label="اختصارات الإنشاء">
+          {quickLinks.map(([to, title, Icon]) => (
+            <button
+              key={to}
+              type="button"
+              role="menuitem"
+              onClick={() => onQuickLink(to)}
+              className="group/item flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-right text-[12px] font-black text-sidebar-foreground/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Icon className="size-4 shrink-0 text-primary transition-transform group-hover/item:scale-110" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{title}</span>
+              <Plus className="size-3.5 shrink-0 opacity-50" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </details>
+  );
+}
+
 export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden">

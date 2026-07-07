@@ -141,6 +141,7 @@
 
 @layer base {
   * {
+    min-width: 0;
     border-color: hsl(var(--border));
   }
 
@@ -165,8 +166,10 @@
 
   /* Root mount point must fill dynamic viewport */
   #root {
-    min-height: 100dvh;
     display: flex;
+    min-height: 100dvh;
+    min-width: 0;
+    width: 100%;
     flex-direction: column;
   }
 
@@ -175,6 +178,13 @@
   textarea,
   select {
     font: inherit;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
   }
 
   main {
@@ -397,6 +407,7 @@
   }
 
   .mobile-scroll-x {
+    max-width: 100%;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     -webkit-overflow-scrolling: touch;

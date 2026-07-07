@@ -1,4 +1,6 @@
+import { useBlocker } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 /**
  * Mounts a `beforeunload` listener only while `isDirty` is true, and removes
@@ -66,4 +68,54 @@ export function useSubmitGuard(): SubmitGuardResult {
   }, []);
 
   return { busy, run };
+}
+
+
+type DirtyRouteNavigationGuardProps = Readonly<{
+  isDirty: boolean;
+  disabled?: boolean;
+  onDiscard?: () => void;
+}>;
+
+/**
+ * Blocks in-app TanStack Router navigation while a meaningful form is dirty.
+ * Uses the router's official blocker resolver instead of patching browser
+ * history, and leaves hard browser/tab close prompts to `useBeforeUnloadGuard`.
+ */
+export function DirtyRouteNavigationGuard({
+  isDirty,
+  disabled = false,
+  onDiscard,
+}: DirtyRouteNavigationGuardProps) {
+  const blocker = useBlocker({
+    shouldBlockFn: ({ current, next }) => current.pathname !== next.pathname && isDirty,
+    enableBeforeUnload: false,
+    disabled: disabled || !isDirty,
+    withResolver: true,
+  });
+
+  const handleContinueEditing = () => {
+    if (blocker.status === 'blocked') {
+      blocker.reset();
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    if (blocker.status !== 'blocked') return;
+    onDiscard?.();
+    blocker.proceed();
+  };
+
+  return (
+    <ConfirmDialog
+      open={blocker.status === 'blocked'}
+      onOpenChange={(open) => { if (!open) handleContinueEditing(); }}
+      title="تغييرات غير محفوظة"
+      description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
+      confirmLabel="تجاهل التغييرات"
+      cancelLabel="مواصلة التعديل"
+      variant="warning"
+      onConfirm={handleDiscardChanges}
+    />
+  );
 }

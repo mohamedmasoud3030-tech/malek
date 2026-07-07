@@ -10,7 +10,7 @@ import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import type { SyncStatus } from '@/types/domain';
-import { MobileBottomNav, NavigationLinks, WorkspaceCard, type SharedLabel } from './layout-navigation-view';
+import { CollapsedWorkspaceMenu, MobileBottomNav, NavigationLinks, WorkspaceCard, type SharedLabel } from './layout-navigation-view';
 import type { QuickLinkRoute } from './app-nav-items';
 
 function statusLabel(status: SyncStatus) {
@@ -146,7 +146,7 @@ export function AppShell() {
         />
       ) : null}
 
-      <aside className={cn('fixed inset-y-0 right-0 z-30 hidden overflow-hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20' : 'w-80')}>
+      <aside className={cn('fixed inset-y-0 right-0 z-30 hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20 overflow-visible' : 'w-80 overflow-hidden')}>
         <div className="h-[3px] w-full bg-accent" />
         <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} /></div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
@@ -154,6 +154,7 @@ export function AppShell() {
           {isSidebarExpanded ? <WorkspaceCard onQuickLink={navigateToQuickLink} /> : null}
         </nav>
         <div className="border-t border-white/10 p-3">
+          {sidebarCollapsed ? <CollapsedWorkspaceMenu onQuickLink={navigateToQuickLink} /> : null}
           <Button variant="ghost" className={cn('w-full gap-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-white', sidebarCollapsed ? 'justify-center px-0' : 'justify-start')} onClick={handleLogout}>
             <LogOut className="size-5" />
             {sidebarCollapsed ? null : <span>{sharedLabel('logout')}</span>}

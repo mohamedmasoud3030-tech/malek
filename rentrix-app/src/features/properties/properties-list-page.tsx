@@ -11,6 +11,7 @@ import { EntityCell } from '@/components/ui/entity-cell';
 import { Select } from '@/components/ui/select';
 import { SearchInput } from '@/components/ui/search-input';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { EntityTable } from '@/components/ui/entity-table';
 import { EntityCard } from '@/components/ui/entity-card';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,11 @@ export function PropertiesListPage() {
   const navigate = useNavigate();
   const totalPages = Math.max(1, Math.ceil((propertiesQuery.data?.count ?? 0) / pageSize));
   const hasFilterValues = search.trim().length > 0 || status !== 'all';
+  const activeFilters: ActiveFilterItem[] = [
+    ...(search.trim() ? [{ key: 'search', label: 'بحث', value: search.trim(), onRemove: () => { setSearch(''); setPage(1); } }] : []),
+    ...(status !== 'all' ? [{ key: 'status', label: 'الحالة', value: propertyStatusLabels[status as Exclude<PropertyStatusFilter, 'all'>], onRemove: () => { setStatus('all'); setPage(1); } }] : []),
+  ];
+  const clearFilters = () => { setSearch(''); setStatus('all'); setPage(1); };
 
   const handleArchiveProperty = async () => {
     if (!archiveTarget) return;
@@ -57,20 +63,20 @@ export function PropertiesListPage() {
         dir="rtl"
         title="العقارات"
         description="إدارة المحفظة العقارية والتشغيلية"
-        action={
+        count={propertiesQuery.data?.count ?? undefined}
+        primaryAction={
           <Button className="rounded-2xl gap-2" onClick={() => { setEditPropertyId(undefined); setModalOpen(true); }}>
             <Plus className="size-4" />إضافة عقار
           </Button>
         }
         filters={
           <Card className="rounded-2xl">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex gap-2">
+            <CardContent className="space-y-3 pt-4 pb-4">
+              <div className="grid gap-2 md:grid-cols-[1fr_9rem]">
                 <SearchInput
                   value={search}
                   onChange={(value) => { setSearch(value); setPage(1); }}
                   placeholder="بحث بالاسم أو العنوان..."
-                  className="flex-1"
                 />
                 <Select
                   aria-label="الحالة"
@@ -82,6 +88,7 @@ export function PropertiesListPage() {
                   {propertyStatusValues.map((s) => <option key={s} value={s}>{propertyStatusLabels[s]}</option>)}
                 </Select>
               </div>
+              <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} className="md:col-span-2" />
             </CardContent>
           </Card>
         }
