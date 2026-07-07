@@ -87,23 +87,33 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   });
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      // Attempting to close — check for unsaved changes first
-      if (form.formState.isDirty && !isSubmitting) {
-        setShowDiscardDialog(true);
-        return;
-      }
+    if (nextOpen || isSubmitting) {
+      return;
     }
+
+    if (form.formState.isDirty) {
+      setShowDiscardDialog(true);
+      return;
+    }
+
     onClose();
   };
 
   const handleConfirmDiscard = () => {
+    if (isSubmitting) {
+      return;
+    }
+
     setShowDiscardDialog(false);
     form.reset(undefined, { keepValues: true });
     onClose();
   };
 
   const handleCancelDiscard = () => {
+    if (isSubmitting) {
+      return;
+    }
+
     setShowDiscardDialog(false);
   };
 

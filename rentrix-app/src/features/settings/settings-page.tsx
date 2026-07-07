@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
-import { useBeforeUnloadGuard } from '@/hooks/use-unsaved-changes-guard';
+import { DirtyRouteNavigationGuard, useBeforeUnloadGuard } from '@/hooks/use-unsaved-changes-guard';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import {
   normalizeCompanyLocale,
@@ -46,6 +46,11 @@ const countryOptions = supportedCountries;
 const numberFormatOptions = ['ar-OM', 'en-OM', 'ar', 'en-US'];
 const dateFormatOptions = ['dd/MM/yyyy', 'yyyy-MM-dd', 'MM/dd/yyyy'];
 const timezoneOptions = supportedTimezones;
+
+export function preventSettingsUnload(event: BeforeUnloadEvent) {
+  event.preventDefault();
+  event.returnValue = '';
+}
 
 type BaseFieldProps = Readonly<{
   label: string;
@@ -235,6 +240,14 @@ export function SettingsPage() {
   const isSaving = updateCompanySettingsMutation.isPending;
 
   useBeforeUnloadGuard(isDirty);
+
+  const discardDraft = () => {
+    const currentBaseDraft = baseDraftRef.current;
+    if (!currentBaseDraft) return;
+    draftRef.current = currentBaseDraft;
+    setDraft(currentBaseDraft);
+    setErrors({});
+  };
 
   useEffect(() => {
     if (!companySettingsQuery.data) return;
@@ -601,6 +614,12 @@ export function SettingsPage() {
           </div>
         </div>
       </form>
+
+      <DirtyRouteNavigationGuard
+        isDirty={isDirty}
+        disabled={isSaving}
+        onDiscard={discardDraft}
+      />
     </div>
   );
 }

@@ -23,7 +23,7 @@ export function Button({ asChild = false, className, variant = 'primary', type =
   return (
     <Component
       className={cn(
-        'pressable inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-bold shadow-sm outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+        'pressable inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl px-4 py-2 text-sm font-bold shadow-sm outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
         variants[variant],
         className,
       )}

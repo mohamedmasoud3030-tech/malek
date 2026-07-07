@@ -108,10 +108,10 @@ function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function TableSkeleton({ rows, cols }: { rows: number; cols: number }) {
+function TableSkeleton({ rows, cols, hasMobileCards }: { rows: number; cols: number; hasMobileCards: boolean }) {
   return (
-    <Card className="hidden overflow-hidden md:block">
-      <div className="overflow-x-auto">
+    <Card className={cn('overflow-hidden', hasMobileCards && 'hidden md:block')}>
+      <div className="mobile-scroll-x">
         <Table>
           <TableHeader>
             <TableRow>
@@ -152,14 +152,14 @@ function PaginationBar({ pagination }: { pagination: PaginationState }) {
   const { page, onPageChange } = pagination;
 
   return (
-    <div className="flex items-center justify-between text-sm text-muted-foreground">
+    <nav className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-3 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between" aria-label="ترقيم الصفحات">
       <span>
         الصفحة {page} من {totalPages}
         {pagination.total > 0 && (
           <span className="ms-2 text-xs opacity-60">({pagination.total} سجل)</span>
         )}
       </span>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex">
         <Button
           variant="secondary"
           disabled={page <= 1}
@@ -177,7 +177,7 @@ function PaginationBar({ pagination }: { pagination: PaginationState }) {
           التالي
         </Button>
       </div>
-    </div>
+    </nav>
   );
 }
 
@@ -211,7 +211,7 @@ export function EntityTable<T>({
     return (
       <div className={cn('space-y-4', className)}>
         {renderMobileCard && <MobileSkeleton rows={skeletonRows} />}
-        <TableSkeleton rows={skeletonRows} cols={columns.length} />
+        <TableSkeleton rows={skeletonRows} cols={columns.length} hasMobileCards={renderMobileCard !== undefined} />
       </div>
     );
   }
@@ -267,7 +267,7 @@ export function EntityTable<T>({
 
       {/* Desktop table */}
       <Card className={cn('overflow-hidden', renderMobileCard !== undefined ? 'hidden md:block' : '')}>
-        <div className="overflow-x-auto">
+        <div className={renderMobileCard !== undefined ? "overflow-x-auto" : "mobile-scroll-x"}>
           <Table aria-label={ariaLabel}>
             <TableHeader>
               <TableRow>

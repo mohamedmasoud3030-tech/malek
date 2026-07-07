@@ -24,7 +24,7 @@ type SectionTabsProps<TId extends string> = Readonly<{
  */
 export function SectionTabs<TId extends string>({ items, activeId, onChange, ariaLabel }: SectionTabsProps<TId>) {
   return (
-    <nav aria-label={ariaLabel} className="-mx-1 mb-2 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav aria-label={ariaLabel} role="tablist" className="-mx-1 mb-2 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((item) => {
         const isActive = activeId === item.id;
         return (
@@ -32,7 +32,10 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
             key={item.id}
             type="button"
             onClick={() => onChange(item.id)}
-            aria-current={isActive ? 'true' : undefined}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={`section-panel-${item.id}`}
+            id={`section-tab-${item.id}`}
             className={cn(
               'flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition min-h-11',
               isActive
@@ -58,7 +61,7 @@ type SectionTabPanelProps<TId extends string> = Readonly<{
 /** Renders children only when id === activeId; otherwise sets `hidden`. */
 export function SectionTabPanel<TId extends string>({ id, activeId, children }: SectionTabPanelProps<TId>) {
   return (
-    <div id={id} role="tabpanel" hidden={activeId !== id}>
+    <div id={`section-panel-${id}`} role="tabpanel" aria-labelledby={`section-tab-${id}`} hidden={activeId !== id}>
       {children}
     </div>
   );

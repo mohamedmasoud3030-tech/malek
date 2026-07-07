@@ -11,6 +11,7 @@ interface FilterTabsProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   className?: string;
+  ariaLabel?: string;
 }
 
 /**
@@ -33,21 +34,22 @@ export function FilterTabs<T extends string>({
   value,
   onChange,
   className,
+  ariaLabel = "خيارات التصفية",
 }: FilterTabsProps<T>) {
   return (
     <div
       className={cn("flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar", className)}
-      role="tablist"
+      role="group"
+      aria-label={ariaLabel}
     >
       {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
-          role="tab"
-          aria-selected={value === opt.value}
+          aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
           className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all",
+            "flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20",
             value === opt.value
               ? "bg-primary text-primary-foreground shadow-sm"
               : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
