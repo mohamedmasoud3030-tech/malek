@@ -1,6 +1,6 @@
 import { Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Bell, ChevronLeft, LogOut, Menu, Moon, Plus, ShieldCheck, Sun, X } from 'lucide-react';
+import { Bell, ChevronLeft, LogOut, Menu, Moon, ShieldCheck, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -101,7 +101,6 @@ export function AppShell() {
   const { authorization, logout, user } = useAuth();
   const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const appLanguage = getAppLanguageState();
   const isSidebarExpanded = sidebarCollapsed === false;
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
@@ -115,21 +114,7 @@ export function AppShell() {
     document.title = `${pageTitle} | Rentrix`;
   }, [pageTitle]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setQuickActionsOpen((isOpen) => !isOpen);
-      }
-      if (event.key === 'Escape') setQuickActionsOpen(false);
-    };
-
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
   const navigateToQuickLink = async (to: QuickLinkRoute) => {
-    setQuickActionsOpen(false);
     setMobileNavOpen(false);
     await router.navigate({ to });
   };
@@ -188,10 +173,6 @@ export function AppShell() {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="hidden rounded-2xl border border-border bg-card px-3 py-2 text-[11px] font-bold text-muted-foreground sm:inline-flex">{statusLabel(syncStatus)}{lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}` : ''}</span>
-              <div className="relative">
-                <Button variant="secondary" className="size-10 px-0" onClick={() => setQuickActionsOpen((isOpen) => !isOpen)} aria-label="فتح الإجراءات السريعة"><Plus className="size-4" /></Button>
-                {quickActionsOpen ? <div className="animate-panel-in absolute left-0 top-[calc(100%+0.65rem)] z-50 w-72 rounded-2xl border border-border bg-sidebar p-3 text-sidebar-foreground shadow-2xl"><WorkspaceCard compact onQuickLink={navigateToQuickLink} /></div> : null}
-              </div>
               <Button variant="secondary" className="size-10 px-0" onClick={showNotifications} aria-label="الإشعارات"><Bell className="size-4" /></Button>
               <Button variant="secondary" className="size-10 px-0" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={sharedLabel('toggleTheme')}>{theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}</Button>
               <span className="hidden size-9 place-items-center rounded-xl bg-primary text-xs font-black text-primary-foreground xl:grid" title={user?.email}>{user?.email?.charAt(0).toUpperCase() || 'R'}</span>
