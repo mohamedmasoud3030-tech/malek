@@ -115,6 +115,14 @@ describe('app route and navigation parity', () => {
 
   it('keeps mobile bottom navigation concise while the drawer carries the full route inventory', () => {
     expect(mobileNavItems).toHaveLength(5);
-    expect(mobileNavItems.map(([to]) => to)).toEqual(['/', '/properties', '/contracts', '/financials', '/arrears']);
+    expect(mobileNavItems.map(([to]) => to)).toEqual(['/', '/properties', '/people', '/contracts', '/financials']);
+  });
+
+  it('keeps arrears out of bottom navigation while still reachable from the financials group in the drawer', () => {
+    const mobileNavPaths = mobileNavItems.map(([to]) => to);
+    const financialsGroup = navGroups.find(([sectionTitle]) => sectionTitle === 'الماليات والتحصيل');
+
+    expect(mobileNavPaths).not.toContain('/arrears');
+    expect(financialsGroup?.[1].map(([to]) => to)).toContain('/arrears');
   });
 });
