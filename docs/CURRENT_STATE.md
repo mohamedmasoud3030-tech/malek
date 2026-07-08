@@ -19,14 +19,10 @@ This layer doesn't change any fact in this document — it only adds
 navigation and evidence tagging. No live Supabase mutation was made while
 creating it, and no live read-only query was run either; all evidence
 gathered for this layer is file-level (`rg`/`view` against the checked-out
-repo). One drift was noticed but not corrected here (out of this task's
-scope): a migration file,
-`supabase/migrations/20260706090000_fix_record_invoice_payment_void_receipt_shared_id.sql`,
-appears to implement the "Option A" fix for the "🔴 CRITICAL — voidReceipt is
-broken in production" section below, but that section's "not yet fixed"
-wording hasn't been updated to reflect it, and whether the fix is applied
-live was not checked. Whoever next touches that area should confirm and
-update this document's own section accordingly.
+repo). A later receipt/payment fix is now documented below as code-fixed but
+not yet live/E2E verified; whoever next touches that area should confirm the
+live RPC definitions, migration ledger, and app path before calling it
+production-verified.
 
 ## Application
 
@@ -52,7 +48,7 @@ The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single
 Cross-referenced every `.rpc(...)` and `.from(...)` call in `rentrix-app/src` against the live `public` schema (functions via `pg_proc`, tables via `information_schema.tables`):
 
 - **Bank reconciliation tables were missing live** — see correction above. Now fixed.
-- **10 live RPCs have zero frontend callers**: `rpt_aged_receivables`, `rpt_balance_sheet`, `rpt_daily_collection`, `rpt_income_statement`, `rpt_overdue_invoices`, `rpt_owner_statement`, `rpt_rent_roll`, `rpt_tenant_statement`, `rpt_trial_balance`, `verify_login`. In particular, `rentrix-app/src/features/reports/reports-page.helpers.ts` computes statements/overdue/collections data by pulling raw tables client-side and recalculating, instead of calling the dedicated `rpt_owner_statement` / `rpt_tenant_statement` / `rpt_overdue_invoices` RPCs. Practical effect: the `rpt_owner_statement` property-matching bug fixed live on 2026-07-06 (see finding above) has **no visible effect on any current screen**, since the Reports page never calls it. Decision needed: wire the Reports page to these RPCs (retiring the client-side recalculation), or confirm the RPCs are for a different/future consumer and should stay unused for now.
+- **Reports RPC wiring has changed since the original 2026-07-06 audit.** Current code now calls `rpt_owner_statement` and `rpt_tenant_statement` from the Reports page when owner/contract filters are selected, and also calls `rpt_cash_flow` / `rpt_vat_return`. Still-unwired report RPC sources include `rpt_daily_collection`, `rpt_overdue_invoices`, `rpt_aged_receivables`, `rpt_income_statement`, `rpt_balance_sheet`, `rpt_trial_balance`, and `rpt_rent_roll`; current UI/service code still computes daily collection/overdue/aged/rent-roll style outputs through service/client aggregation.
 - **Two live function overloads have zero frontend callers**: `get_financial_summary(date,date)` and `get_financial_summary(date,date,date,date)` (neither overload is called anywhere in `rentrix-app/src`), and the legacy `void_receipt_atomic(text, bigint, jsonb, jsonb)` overload (frontend only calls the `void_receipt_atomic(jsonb)` facade). Candidates for `DROP FUNCTION`, pending confirmation these aren't reserved for planned-but-unbuilt screens.
 - No security deposit management, deferred revenue handling, or multi-currency support was found in migrations or `src/features`.
 - The Supabase migration-evidence script (`scripts/collect-supabase-migration-evidence.sh`, run in CI via `pnpm supabase:migration-evidence`) performs local, read-only checks by default (file ordering, presence of env vars). When `SUPABASE_DB_URL` and `psql` are available, it also performs a read-only reconciliation that fails if any local migration file is absent from `supabase_migrations.schema_migrations`; otherwise live schema state must still be checked separately before relying on a migration as deployed.
@@ -113,17 +109,17 @@ What was previously found from the live receipt/payment write and void path:
 
 **Required warning for future receipt/payment work:** before relying on this fix, verify the live `void_receipt_atomic` / `record_invoice_payment_atomic` RPC definitions and the live `supabase_migrations.schema_migrations` ledger against the target Supabase project, then run a real production-path end-to-end check that records a payment and voids it through the app path.
 
-## Reports page RPC wiring — audit done, implementation paused (2026-07-06)
+## Reports page RPC wiring — current code audit (2026-07-08)
 
-Per the earlier "10 live RPCs with zero frontend callers" finding: confirmed 3 of them (`rpt_daily_collection`, `rpt_overdue_invoices`, `rpt_aged_receivables`) have a live client-side reimplementation in `financialReportsService.ts` that could in principle be swapped for the RPC call (same pattern already used for `rpt_cash_flow`/`rpt_vat_return` — see `getCashFlowStatementReport`/`getVatReturnReport`).
+The reports page is no longer accurately described as having no owner/tenant statement UI. Current code has report filters for owner and contract selection, and `ReportsPage` calls `useOwnerStatementReport` / `useTenantStatementReport`; those hooks call `rpt_owner_statement` and `rpt_tenant_statement` through `financialReportsService.ts`, and `StatementsSection` renders RPC results, loading states, and RPC error messages. This is **partial statement wiring**, not a full accounting statement lifecycle.
 
-**Blocker found before implementing the swap**: `rpt_daily_collection` reads from `public.receipts`, but the actual production payment-recording UI displays data sourced from `public.payments` (see the voidReceipt status above — PR #1064 merged a code fix, but live Supabase and real end-to-end production-path verification are still pending). Swapping `getDailyCollectionReport` to call `rpt_daily_collection` as-is would silently start reporting off a different dataset (`receipts.channel`: CASH/BANK/POS vs. `payments.payment_method`) — needs to be verified against real data after the receipt/payment path is live-verified, not assumed safe.
+Current source split from the checked-out code:
 
-`rpt_overdue_invoices` and `rpt_aged_receivables` read from `invoices`/`contracts`/`tenants` directly (no receipts/payments involved) — these two are lower-risk to swap and were not blocked by the above; not yet implemented, pending this session's wrap-up.
+- **Client/service aggregation remains the source for** daily collection, period summary, financial cashflow, overdue invoices, aged receivables, expense breakdown, occupancy, rent-roll display, and expiring contracts. Payment-backed collection aggregation reads `public.payments`, excludes `deleted_at`, and excludes `status = 'VOID'`.
+- **Direct report RPC calls exist for** `rpt_owner_statement`, `rpt_tenant_statement`, `rpt_cash_flow`, and `rpt_vat_return`.
+- **Still not wired as report-page RPC sources**: `rpt_daily_collection`, `rpt_overdue_invoices`, `rpt_aged_receivables`, `rpt_income_statement`, `rpt_balance_sheet`, `rpt_trial_balance`, and `rpt_rent_roll`. `rpt_daily_collection` has an alignment migration that defines it on `public.payments`, but this checkout still does not call it from the frontend.
 
-**rpt_owner_statement / rpt_tenant_statement**: no existing frontend concept of "view one owner's / one tenant's statement" — wiring these needs new UI (an owner/tenant picker + statement view), not just a data-source swap. Scoped but not started.
-
-**rpt_income_statement / rpt_balance_sheet / rpt_trial_balance / rpt_rent_roll**: no current frontend equivalent at all (not even a client-side one). Scoped but not started.
+Practical effect: owner/tenant statement RPC fixes can now affect the Reports screen when the corresponding owner/contract filter is selected, but the statements remain read-only operational views. They do not yet cover security deposits, utility bills, tenant maintenance chargebacks, owner payout approval/payment lifecycle, opening balances, or export/print-ready accounting statements.
 
 Dead overloads (`get_financial_summary` × 2, `void_receipt_atomic(text,bigint,jsonb,jsonb)`): left alone per explicit decision, documented only, not dropped.
 
