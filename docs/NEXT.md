@@ -2,15 +2,16 @@
 
 Short list of follow-up work, derived from gaps found while reviewing migrations, `src/features`, and test coverage. No TODO/FIXME/HACK markers or skipped tests were found in `rentrix-app/src` at the time of this check — the items below come from feature-area comparisons instead.
 
-## Ready now
+## Recently completed
 
-_Both items previously listed here — applying the 2 committed-but-unapplied migrations, and dropping the 9 orphaned enum types — were completed on production (`nnggcnpcuomwfuupupwg`) on 2026-07-05. See `docs/CURRENT_STATE.md` for details._
+- Production migration cleanup from the earlier readiness pass is complete: the 2 committed-but-unapplied migrations were applied and the 9 orphaned enum types were dropped on `nnggcnpcuomwfuupupwg` on 2026-07-05. See `docs/CURRENT_STATE.md` for details.
+- Phase -1 shared-components implementation is complete: the custom contract/property/unit/receipt cards were replaced by shared `EntityCard` patterns, `EntityForm` now unifies form structure, `formatPropertyUnitSummary` moved into the properties feature, and receipt mobile/table status rendering no longer hard-codes posted status.
+- Phase 0 Settings + Auth verification is complete: production policy/function checks found no drift for F0-2/F0-3/F0-4, and F0-6 was fixed by moving the custom access-token hook role source to `public.users.role`. Keep `public.profiles.role` out of authorization logic unless a future schema change deliberately redefines it.
 
-- Phase -1 shared-components implementation is complete: the custom `contract-card.tsx`, `property-card.tsx`, `unit-card.tsx`, and `receipt-card.tsx` components were replaced by `EntityCard` and deleted; `EntityForm` now unifies Root/Section/ErrorSummary/Actions/Overlay form behavior; `formatPropertyUnitSummary` moved to `features/properties/property-card-utils.ts`; receipt mobile cards and table badges now render the actual receipt status instead of a hard-coded posted label. Phase 0 (Settings + Auth) is the next required phase.
-- Phase 0 Settings + Auth: live `information_schema`/`pg_policies`/`pg_get_functiondef(oid)` verification against production is now complete (via Supabase MCP, since direct network access from the sandbox container is blocked). F0-2, F0-3, F0-4 confirmed as no drift. F0-6 confirmed as a real drift — `custom_access_token_hook` read the JWT role claim from `public.profiles.role` (which structurally cannot be `MANAGER`) instead of `public.users.role` (the enum RLS already trusts) — and is now fixed on production via `20260706014138_fix_custom_access_token_hook_role_source.sql`, verified as a no-op for all current ADMIN users. See `docs/PHASE_0_SETTINGS_AUTH_AUDIT.md` for full detail. Remaining before Phase 0 closes: confirm `public.profiles.role` (still capped at ADMIN/USER by `profiles_role_check`) has no live authorization read path left, then document closure and move to Phase 1 (Financials).
+## Documentation and UX tracking
 
-## Needs investigation
-
+- `docs/agent-context/CONTEXT_MAP.md` is the canonical task-routing map for agents; keep it in sync when adding new high-risk task categories.
+- `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md` remains the active UI/navigation audit for sidebar, mobile drawer, viewport/safe-area, responsive, and RTL work. Use it for related UI branches instead of creating another one-off audit.
 - Commissions scope investigation is complete: `features/commissions/` is confirmed as an operational tracking view only, not a payout/accounting feature. See `docs/DOMAIN.md` for the documented assumptions and the inactive/placeholder `expense_id` note.
 - Test-script glob/discovery review is complete: `rentrix-app/package.json` now lets Vitest discover colocated `*.test.ts(x)` / `*.spec.ts(x)` files automatically, so new tests no longer need manual registration in the main test script.
 
@@ -18,6 +19,18 @@ _Both items previously listed here — applying the 2 committed-but-unapplied mi
 
 - Sessions RLS ownership is fixed and applied to production: `sessions_select_own`, `sessions_insert_own`, `sessions_delete_own` now compare `auth.uid()` to `sessions.user_id` instead of `sessions.id`. Live `pg_policies` verified post-apply. Closed.
 - Date-only input defaults have been hardened away from `toISOString().slice(0, 10)` UTC slicing, including the financial expense-date flow; a regression test now scans production source files so future date-only values use local calendar parts instead.
+
+## Product/accounting decisions required before full property-management readiness
+
+These are the highest-impact gaps from the Arabic workflow audit and the feature gap register. Treat them as design blockers before claiming 100% operational or financial accuracy.
+
+1. Decide how office fees are calculated for `property_management`: collected-vs-invoiced basis, percentage vs fixed fee, expense deductions, reversals, approvals, and owner payout lifecycle.
+2. Define `master_lease` as a fixed owner obligation schedule that is independent of tenant collections, including monthly/quarterly cadence and how office profit/loss is reported.
+3. Add daily and open-ended tenant contract rules only after the billing cadence, end conditions, invoicing behavior, and reporting treatment are explicit.
+4. Design utility-bill posting rules for water/electricity/internet/sewage: tenant invoice, owner/office expense, or utility subledger with generated financial records.
+5. Extend maintenance resolution so costs can be assigned to owner, tenant, office, or shared responsibility and then posted to the correct invoice/expense/statement path.
+6. Decide deposit ledger and cash-vs-accrual/deferred-revenue policies before completing tenant balances and annual/prepaid rent reporting.
+7. Harden operation-level financial permissions for payment creation, receipt voiding, settlement approval/payment, and report export.
 
 ## Later
 

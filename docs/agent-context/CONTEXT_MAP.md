@@ -8,7 +8,9 @@ lists — not the whole table, and not every file in the repo.
 
 Each row tells you: what to read in `docs/agent-context/DOMAIN.md` (if
 anything applies), when `docs/agent-context/WORKFLOW.md` is worth reading in
-full, which code/backend/test files to check, and any known live caveat.
+full, which code/backend/test files to check, and any known live caveat. For
+UI/navigation work, also check `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md`
+when changing sidebar, mobile navigation, safe-area, responsive, or RTL behavior.
 
 ## Financial change (invoice / payment / receipt / expense / settlement)
 
@@ -33,15 +35,11 @@ full, which code/backend/test files to check, and any known live caveat.
 - Tests: colocated tests in the same feature folder, plus the whole
   `test:financials` suite (`docs/TESTING.md`) — always run this one for any
   financial change, even one that looks unrelated on the surface.
-- **Live caveat**: `docs/CURRENT_STATE.md` has a section titled "🔴 CRITICAL
-  — voidReceipt is broken in production" describing payments/receipts using
-  two unlinked UUIDs. A later migration file,
-  `supabase/migrations/20260706090000_fix_record_invoice_payment_void_receipt_shared_id.sql`,
-  implements the fix described there as "Option A" (shared id). Whether that
-  fix is applied to the live project and whether `docs/CURRENT_STATE.md` has
-  been updated to reflect it were **not verified live** as part of this
-  routing layer — check both before assuming either the bug or the fix is
-  current.
+- **Live caveat**: `docs/CURRENT_STATE.md` now documents the receipt/payment
+  void path as code-fixed but not live/E2E verified. Before financial work
+  relies on that path, verify the target project's `record_invoice_payment_atomic`
+  and `void_receipt_atomic(jsonb)` definitions, the live migration ledger, and
+  an app-path payment → receipt → void → report flow.
 
 ## Contract / tenant / owner change
 
@@ -87,8 +85,8 @@ full, which code/backend/test files to check, and any known live caveat.
 ## Reports change
 
 - Domain context: `docs/CURRENT_STATE.md` → "Reports page RPC wiring"
-  section (which RPCs exist live, which have zero frontend callers, and the
-  status of swapping client-side calculations for them).
+  section (which report RPCs are wired, which remain service/client aggregation,
+  and the status of swapping calculations safely).
 - Workflow: read `docs/agent-context/WORKFLOW.md`'s high-risk section for
   RPCs if you're touching a `rpt_*` function.
 - Code: `rentrix-app/src/features/financials/reports/financialReportsService.ts`
@@ -133,7 +131,9 @@ full, which code/backend/test files to check, and any known live caveat.
 
 - Domain context: none required.
 - Workflow: `docs/agent-context/WORKFLOW.md` not required — this is a
-  trivial/low-risk task type.
+  trivial/low-risk task type. If the change affects navigation, mobile layout,
+  responsive shell behavior, safe areas, or RTL ergonomics, also read
+  `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md`.
 - Start: the specific feature folder's page component; `docs/PRODUCT.md` if
   you need to confirm what a section is for.
 - Code: `rentrix-app/src/components/ui/` and `components/layout/` if the
