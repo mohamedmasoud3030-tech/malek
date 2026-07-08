@@ -72,10 +72,39 @@ export async function createContract(payload: ContractPayload): Promise<Contract
 }
 
 export async function updateContract(contractId: string, payload: ContractPayload): Promise<Contract> {
-  const updatePayload: ContractUpdate = { ...payload, unit_id: payload.unit_id ?? null };
-  const { data, error } = await supabase.from('contracts').update(updatePayload).eq('id', contractId).is('deleted_at', null).select('*').single().returns<Contract>();
+  // Routed through update_contract_atomic (not a raw table update) so that
+  // property/unit-overlap and owner-agreement-coverage invariants are
+  // re-validated on edit, matching create_contract_atomic's checks. See
+  // supabase/migrations/20260708044657_contract_lifecycle_atomic_rpcs.sql.
+  const { data, error } = await supabase.rpc('update_contract_atomic', {
+    p_contract_id: contractId,
+    p_property_id: payload.property_id,
+    p_unit_id: payload.unit_id ?? null,
+    p_tenant_id: payload.tenant_id,
+    p_agreement_id: payload.agreement_id ?? null,
+    p_start_date: payload.start_date,
+    p_end_date: payload.end_date,
+    p_rent_amount: payload.rent_amount,
+    p_payment_cycle: payload.payment_cycle,
+    p_payment_terms_id: payload.payment_terms_id ?? null,
+    p_status: payload.status,
+    p_cancellation_reason: payload.cancellation_reason ?? null,
+    p_notes: payload.notes ?? null,
+    p_attachment_url: payload.attachment_url ?? null,
+  });
   if (error) throw error;
-  return data;
+  return data as Contract;
+}
+
+export type TerminateContractResult = { status: 'terminated'; contract_id: string; cancelled_invoice_ids: string[] };
+
+export async function terminateContract(contractId: string, reason: string): Promise<TerminateContractResult> {
+  const { data, error } = await supabase.rpc('terminate_contract_atomic', {
+    p_contract_id: contractId,
+    p_reason: reason,
+  });
+  if (error) throw error;
+  return data as TerminateContractResult;
 }
 
 export async function softDeleteContract(contractId: string): Promise<void> {
