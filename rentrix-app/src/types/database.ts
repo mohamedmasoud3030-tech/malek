@@ -632,6 +632,29 @@ export type Database = {
         Args: { old_contract_id: string; new_contract_data: Json };
         Returns: { status: 'renewed'; old_contract_id: string; new_contract_id: string };
       };
+      update_contract_atomic: {
+        Args: {
+          p_contract_id: string;
+          p_property_id: string;
+          p_unit_id: string | null;
+          p_tenant_id: string;
+          p_agreement_id: string | null;
+          p_start_date: string;
+          p_end_date: string;
+          p_rent_amount: number;
+          p_payment_cycle: string;
+          p_payment_terms_id: string | null;
+          p_status: string;
+          p_cancellation_reason: string | null;
+          p_notes: string | null;
+          p_attachment_url: string | null;
+        };
+        Returns: Json;
+      };
+      terminate_contract_atomic: {
+        Args: { p_contract_id: string; p_reason: string };
+        Returns: { status: 'terminated'; contract_id: string; cancelled_invoice_ids: string[] };
+      };
       record_invoice_payment_atomic: {
         Args: { payload: Json };
         Returns: { status: 'recorded'; request_id: string; invoice_id: string; payment_id: string; receipt_id: string; receipt_no?: string; success?: boolean; idempotent?: boolean };
