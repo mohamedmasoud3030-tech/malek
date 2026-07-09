@@ -13,6 +13,7 @@ type InvoiceFiltersProps = {
   status: InvoiceStatusFilter;
   invoiceSearch: string;
   isGenerating: boolean;
+  canGenerateInvoices: boolean;
   onStatusChange: (status: InvoiceStatusFilter) => void;
   onInvoiceSearchChange: (search: string) => void;
   onGenerateInvoices: () => void;
@@ -22,6 +23,7 @@ export function InvoiceFilters({
   status,
   invoiceSearch,
   isGenerating,
+  canGenerateInvoices,
   onStatusChange,
   onInvoiceSearchChange,
   onGenerateInvoices,
@@ -43,7 +45,7 @@ export function InvoiceFilters({
           value={invoiceSearch}
           onChange={(event) => onInvoiceSearchChange(event.target.value)}
         />
-        <Button className="min-h-12" onClick={onGenerateInvoices} disabled={isGenerating}>
+        <Button className="min-h-12" onClick={onGenerateInvoices} disabled={!canGenerateInvoices || isGenerating} title={canGenerateInvoices ? undefined : 'ليس لديك صلاحية توليد الفواتير'}>
           {isGenerating ? 'جارٍ التوليد...' : 'توليد الفواتير'}
         </Button>
       </div>

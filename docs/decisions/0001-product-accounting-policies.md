@@ -1,0 +1,28 @@
+# 0001. Product accounting policies for owner fees and rental revenue
+
+## Context
+Rentrix readiness work had open product/accounting blockers for office fees, master leases, daily/open-ended contracts, utilities, maintenance allocation, tenant deposits, and deferred revenue. These choices affect collections, owner settlements, statements, reports, future migrations/RPCs, and browser release evidence.
+
+## Decision
+The product owner made the following policies the source of truth until superseded by a new written decision:
+
+- Office fees default to a collected-cash basis, not an invoiced basis. Contract-specific rules may override the default by owner, property, or contract.
+- Office fees must support percentage and fixed-fee rules, may be extended later, and must not apply to deposits, refunds, or utility pass-through amounts unless a contract rule explicitly enables that treatment.
+- Office fees are recognized when payment is actually collected, become due to the office at collection time, and are deducted in owner settlement when the settlement is approved.
+- Voids, refunds, and payment reversals must automatically reverse the related office fee at the same linked rate or fixed allocation and must write an audit trail.
+- Office fees must appear in owner statements, income reports, and settlement reports. VAT/tax treatment is configurable, disabled by default unless the company/environment has an explicit tax rule, and shown separately from the base office fee when enabled.
+- Master leases create a fixed owner obligation independent of tenant collection unless a specific contract states otherwise. The default cadence is monthly, but cadence is contract-configurable. Vacancy does not remove the obligation while the master lease is active. Master-lease profit is tenant collection minus owner obligation minus related expenses, and master-lease settlements require approval before payment.
+- Daily contracts are a distinct contract type. Default billing is checkout invoicing, with daily or weekly billing available by contract configuration. Proration uses the configured daily rate times actual counted days/nights. Open-ended contracts have no end date, renew according to billing cadence, and end only by manual termination or notice/end-date recording.
+- Utility bills must have an explicit charge target before posting: tenant charge, owner expense, office expense, or utility suspense/subledger until allocation. Tenant-consumption utilities default to tenant invoices; owner-responsibility utilities default to owner expenses; office operations utilities default to office expenses. Manual meter entry, amount/percentage splits, threshold approval, independent due dates, reversals/corrections, statements, and reports are required.
+- Maintenance requests must end with a charge responsibility of tenant, owner, office, or split. Expected responsibility can be entered at request creation, but the final financial responsibility is selected at resolution before posting. Posting to tenant invoice, owner expense, or office expense requires approval, especially above configured thresholds, and corrections/reversals require reason and audit trail.
+- Tenant deposits are tenant liabilities separate from rent. Each contract needs an independent deposit ledger, while tenant accounts show an aggregate deposit balance. Offsets to rent, maintenance, penalties, utilities, or other charges require an approved offset workflow. Refunds require manual approval, forfeitures require a reason and audit trail, installments are supported, interest is disabled by default unless required by law or contract, and deposits appear in tenant statements and balance sheet liability reporting.
+- Rentrix uses a dual reporting model: collection reports are cash basis, while accounting financial reports are accrual/deferred basis. Annual/prepaid rent is deferred in accounting reports and recognized over the contract period, while collection reports show the cash at receipt time. Tenant statements show prepayments as credits consumed by invoices or contract period. Voids/refunds must reverse deferred revenue automatically, and a deferred revenue schedule/report is required.
+
+## Alternatives rejected
+An invoiced-basis default for owner settlements and office fees was rejected because it can recognize commission before cash is received. Applying VAT by default was rejected because tax treatment must be environment/company specific. Treating master leases as ordinary percentage management agreements was rejected because master leases create fixed owner obligations even without tenant collection. Treating deposits as rent or automatically offsetting them was rejected because deposits are liabilities requiring approval, audit, and separate statement treatment.
+
+## Consequences
+Future schema, RPC, service, UI, report, and export work must implement these rules rather than re-opening the accounting basis. Product decisions are no longer the blocker for these gates, but implementation, live Supabase verification, browser/staging golden-path evidence, backend authorization evidence, and release sign-off remain blockers before a 99.9% readiness claim. Any future change to these rules must add a superseding decision record instead of silently changing tests or implementation.
+
+## Evidence
+This decision records the explicit product-owner instruction supplied in the current task on 2026-07-09. It resolves the policy blockers previously listed in `docs/PRODUCT_ACCOUNTING_DECISION_GATES.md` and `docs/FEATURE_GAP_REGISTER.md` for FGR-005 and FGR-008 through FGR-013. The implementation proof still depends on the release gates in `docs/RELEASE_EVIDENCE_LEDGER.md` and `docs/SEEDED_STAGING_READINESS_RUNBOOK.md`.

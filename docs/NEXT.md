@@ -20,17 +20,17 @@ Short list of follow-up work, derived from gaps found while reviewing migrations
 - Sessions RLS ownership is fixed and applied to production: `sessions_select_own`, `sessions_insert_own`, `sessions_delete_own` now compare `auth.uid()` to `sessions.user_id` instead of `sessions.id`. Live `pg_policies` verified post-apply. Closed.
 - Date-only input defaults have been hardened away from `toISOString().slice(0, 10)` UTC slicing, including the financial expense-date flow; a regression test now scans production source files so future date-only values use local calendar parts instead.
 
-## Product/accounting decisions required before full property-management readiness
+## Product/accounting implementation required before full property-management readiness
 
-These are the highest-impact gaps from the Arabic workflow audit and the feature gap register. Treat them as design blockers before claiming 100% operational or financial accuracy.
+The former product/accounting decision blockers are now documented in `docs/decisions/0001-product-accounting-policies.md`, `docs/decisions/0002-staging-live-verification-and-release-evidence.md`, and `docs/decisions/0003-financial-security-ux-reporting-and-reconciliation-scope.md`. Treat those decision records as source of truth, but do not claim 100% operational or financial accuracy until the implementation and evidence below are complete.
 
-1. Decide how office fees are calculated for `property_management`: collected-vs-invoiced basis, percentage vs fixed fee, expense deductions, reversals, approvals, and owner payout lifecycle.
-2. Define `master_lease` as a fixed owner obligation schedule that is independent of tenant collections, including monthly/quarterly cadence and how office profit/loss is reported.
-3. Add daily and open-ended tenant contract rules only after the billing cadence, end conditions, invoicing behavior, and reporting treatment are explicit.
-4. Design utility-bill posting rules for water/electricity/internet/sewage: tenant invoice, owner/office expense, or utility subledger with generated financial records.
-5. Extend maintenance resolution so costs can be assigned to owner, tenant, office, or shared responsibility and then posted to the correct invoice/expense/statement path.
-6. Decide deposit ledger and cash-vs-accrual/deferred-revenue policies before completing tenant balances and annual/prepaid rent reporting.
-7. Harden operation-level financial permissions for payment creation, receipt voiding, settlement approval/payment, and report export.
+1. Implement office-fee rules for `property_management`: collected-basis default, contract overrides, percentage/fixed fees, exclusions for deposits/refunds/pass-through utilities unless enabled, VAT configurability, reversals, approvals, and owner payout lifecycle.
+2. Implement `master_lease` fixed owner obligation schedules independent of tenant collections, including monthly default cadence, vacancy behavior, liability tracking, approval/payment lifecycle, and office profit/loss reporting.
+3. Add daily and open-ended tenant contract support using the decided checkout invoicing, configurable daily/weekly billing, proration, renewal/termination, overdue, deposit, and report-segmentation rules.
+4. Implement utility-bill posting for water/electricity/internet/sewage with explicit tenant/owner/office/suspense targets, meter entry, split allocation, approval thresholds, due dates, reversals, statements, and reports.
+5. Extend maintenance resolution so costs can be assigned to owner, tenant, office, or split responsibility at resolution and then posted to the correct invoice/expense/statement path with approval and audit evidence.
+6. Implement tenant deposit ledgers and dual cash/accrual-deferred reporting before completing tenant balances and annual/prepaid rent reporting.
+7. Harden operation-level financial permissions for payment creation, receipt voiding, settlement approval/payment, report export, bank reconciliation, backend RLS/RPC/grants, and denied-action UX.
 
 ## Later
 

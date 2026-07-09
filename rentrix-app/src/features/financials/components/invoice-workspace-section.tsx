@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
+import { useAuth } from '@/hooks/use-auth';
 import { useContracts } from '@/features/contracts/useContracts';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
@@ -151,6 +153,7 @@ export function InvoiceWorkspaceSection() {
   const receiptQuery = useReceipt(selectedReceiptId);
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
   const companySettings = useCompanySettingsContract();
+  const { authorization } = useAuth();
 
   const invoices = invoicesQuery.data ?? [];
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
@@ -165,24 +168,27 @@ export function InvoiceWorkspaceSection() {
     () => getAmountValidationMessage({ amount, amountValue, invoiceDetail, paymentDate, rawAmountValue, selectedInvoiceId }),
     [amount, amountValue, invoiceDetail, paymentDate, rawAmountValue, selectedInvoiceId],
   );
-  const isPaymentDisabled = quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
+  const canGenerateInvoices = canAccess(authorization, financialOperationPermissions.generateInvoices);
+  const canCreatePayment = canAccess(authorization, financialOperationPermissions.createPayment);
+  const canExportInvoices = canAccess(authorization, financialOperationPermissions.exportInvoices);
+  const isPaymentDisabled = !canCreatePayment || quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
   const pdfSettings = {
     general: { company: { name: companySettings.companyName } },
     operational: { currency: companySettings.defaultCurrency },
   };
-  const canExportInvoiceDocument = Boolean(
+  const canExportInvoiceDocument = canExportInvoices && Boolean(
     invoiceDetail && contractsQuery.data?.rows.some((contract) => contract.id === invoiceDetail.contract_id),
   );
 
   const onConfirmGenerateInvoices = () => {
-    if (generate.isPending) return;
+    if (!canGenerateInvoices || generate.isPending) return;
     generate.mutate(undefined, {
       onSuccess: () => setGenerateDialogOpen(false),
     });
   };
 
   const onPostPayment = () => {
-    if (quickPaySubmitRef.current || postPayment.isPending) return;
+    if (!canCreatePayment || quickPaySubmitRef.current || postPayment.isPending) return;
     if (!selectedInvoiceId || !invoiceDetail || invoiceDetail.id !== selectedInvoiceId) return;
 
     const currentRemaining = getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount);
@@ -217,6 +223,8 @@ export function InvoiceWorkspaceSection() {
   };
 
   const exportInvoiceDocument = (invoice: Invoice) => {
+    if (!canExportInvoices) return;
+
     const contract = contractsQuery.data?.rows.find((candidate) => candidate.id === invoice.contract_id);
     if (!contract) return;
 
@@ -257,13 +265,16 @@ export function InvoiceWorkspaceSection() {
         isError={invoicesQuery.isError}
         error={invoicesQuery.error}
         isGenerating={generate.isPending}
+        canGenerateInvoices={canGenerateInvoices}
         hasInvoiceFilter={status !== 'all' || invoiceSearch.trim().length > 0}
         onStatusChange={setStatus}
         onInvoiceSearchChange={setInvoiceSearch}
-        onGenerateInvoices={() => setGenerateDialogOpen(true)}
+        onGenerateInvoices={() => {
+          if (canGenerateInvoices) setGenerateDialogOpen(true);
+        }}
         onSelectInvoice={setSelectedInvoiceId}
-        onPrintInvoice={onPrintInvoice}
-        onExportInvoice={onExportInvoiceList}
+        onPrintInvoice={canExportInvoices ? onPrintInvoice : undefined}
+        onExportInvoice={canExportInvoices ? onExportInvoiceList : undefined}
       />
 
       <GenerateInvoicesDialog
@@ -284,7 +295,7 @@ export function InvoiceWorkspaceSection() {
         method={paymentMethod}
         paymentDate={paymentDate}
         reference={paymentReference}
-        amountValidationMessage={amountValidationMessage}
+        amountValidationMessage={canCreatePayment ? amountValidationMessage : 'ليس لديك صلاحية تسجيل دفعة مالية.'}
         isPaymentPending={postPayment.isPending}
         isPaymentDisabled={isPaymentDisabled}
         onAmountChange={setAmount}

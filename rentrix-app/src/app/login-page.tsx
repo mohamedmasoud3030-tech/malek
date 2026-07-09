@@ -73,10 +73,10 @@ export function LoginPage() {
               <ShieldCheck className="size-4" />
               مساحة تشغيل مصممة لليوم العملي
             </span>
-            <h1 className="mt-5 text-4xl font-black leading-[1.35] tracking-tight xl:text-5xl">
+            <h2 className="mt-5 text-4xl font-black leading-[1.35] tracking-tight xl:text-5xl">
               كل ما تحتاجه لإدارة عقاراتك
               <span className="mt-1 block text-accent">في واجهة واحدة هادئة وواضحة.</span>
-            </h1>
+            </h2>
             <p className="mt-5 max-w-lg text-sm font-bold leading-7 text-white/60">
               ادخل إلى مساحة عملك وتابع العقارات والعقود والتحصيل والتشغيل بخطوات أسرع وتركيز أكبر.
             </p>
@@ -122,7 +122,7 @@ export function LoginPage() {
               <LockKeyhole className="size-4" />
               دخول آمن لمساحة العمل
             </span>
-            <h2 className="mt-4 text-3xl font-black tracking-tight text-foreground">مرحباً بعودتك</h2>
+            <h1 className="mt-4 text-3xl font-black tracking-tight text-foreground">مرحباً بعودتك</h1>
             <p className="mt-2 text-sm font-bold leading-6 text-muted-foreground">
               سجل الدخول للمتابعة من حيث توقفت وإدارة يومك من لوحة واحدة.
             </p>

@@ -18,6 +18,7 @@ type InvoiceListSectionProps = {
   isError: boolean;
   error: unknown;
   isGenerating: boolean;
+  canGenerateInvoices: boolean;
   hasInvoiceFilter: boolean;
   onStatusChange: (status: InvoiceStatusFilter) => void;
   onInvoiceSearchChange: (search: string) => void;
@@ -37,6 +38,7 @@ export function InvoiceListSection({
   isError,
   error,
   isGenerating,
+  canGenerateInvoices,
   hasInvoiceFilter,
   onStatusChange,
   onInvoiceSearchChange,
@@ -57,6 +59,7 @@ export function InvoiceListSection({
           status={status}
           invoiceSearch={invoiceSearch}
           isGenerating={isGenerating}
+          canGenerateInvoices={canGenerateInvoices}
           onStatusChange={onStatusChange}
           onInvoiceSearchChange={onInvoiceSearchChange}
           onGenerateInvoices={onGenerateInvoices}

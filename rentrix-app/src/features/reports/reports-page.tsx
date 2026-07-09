@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
+import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
+import { useAuth } from '@/hooks/use-auth';
 import { useContracts } from '@/features/contracts/useContracts';
 import { useOwners } from '@/features/owners/useOwners';
 import { getErrorMessage } from '@/features/financials/components/financials-formatters';
@@ -47,6 +49,7 @@ export { buildReportCsvFilename, getTodayLocalDateString, toDateInputValue } fro
 export function ReportsPage() {
   const [filters, setFilters] = useState(() => getCurrentMonthFilters());
   const [activeSection, setActiveSection] = useState<ReportSectionId>('overview');
+  const { authorization } = useAuth();
   const financialFilters = useMemo(() => ({ dateFrom: filters.from, dateTo: filters.to, costCenterId: filters.costCenterId || undefined }), [filters.costCenterId, filters.from, filters.to]);
   const arrearsFilters = useMemo(() => ({ asOf: filters.asOf }), [filters.asOf]);
 
@@ -106,6 +109,7 @@ export function ReportsPage() {
     ?? receiptsQuery.error;
 
   const today = getTodayLocalDateString();
+  const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
 
   return (
     <div className="space-y-5 pb-6" dir="rtl">
@@ -124,16 +128,16 @@ export function ReportsPage() {
       ) : null}
 
       <SectionTabPanel id="overview" activeId={activeSection}>
-        <OverviewSection summary={financialSummaryQuery.data} cashflowRows={financialCashflowQuery.data?.rows ?? []} isLoading={financialSummaryQuery.isLoading || financialCashflowQuery.isLoading} />
+        <OverviewSection summary={financialSummaryQuery.data} cashflowRows={financialCashflowQuery.data?.rows ?? []} canExportReports={canExportReports} isLoading={financialSummaryQuery.isLoading || financialCashflowQuery.isLoading} />
       </SectionTabPanel>
       <SectionTabPanel id="collections" activeId={activeSection}>
-        <CollectionsSection rows={dailyCollectionQuery.data?.rows ?? []} receiptRows={receiptRows} rentRollRows={rentRollRows} isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading || contractsQuery.isLoading} />
+        <CollectionsSection rows={dailyCollectionQuery.data?.rows ?? []} receiptRows={receiptRows} rentRollRows={rentRollRows} canExportReports={canExportReports} isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading || contractsQuery.isLoading} />
       </SectionTabPanel>
       <SectionTabPanel id="overdue" activeId={activeSection}>
-        <OverdueSection rows={overdueInvoicesQuery.data?.rows ?? []} agedReport={agedReceivablesQuery.data} isLoading={overdueInvoicesQuery.isLoading || agedReceivablesQuery.isLoading} />
+        <OverdueSection rows={overdueInvoicesQuery.data?.rows ?? []} agedReport={agedReceivablesQuery.data} canExportReports={canExportReports} isLoading={overdueInvoicesQuery.isLoading || agedReceivablesQuery.isLoading} />
       </SectionTabPanel>
       <SectionTabPanel id="expenses" activeId={activeSection}>
-        <ExpensesSection report={expenseBreakdownQuery.data} isLoading={expenseBreakdownQuery.isLoading} />
+        <ExpensesSection report={expenseBreakdownQuery.data} canExportReports={canExportReports} isLoading={expenseBreakdownQuery.isLoading} />
       </SectionTabPanel>
       <SectionTabPanel id="occupancy" activeId={activeSection}>
         <OccupancySection occupancyRows={occupancyRows} expiringRows={expiringRows} isLoading={unitsQuery.isLoading || contractsQuery.isLoading} />

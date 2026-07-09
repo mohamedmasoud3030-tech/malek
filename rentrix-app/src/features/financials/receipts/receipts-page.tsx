@@ -14,7 +14,7 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import type { AuthorizationContext } from '@/features/auth/permissions';
+import { canAccess, financialOperationPermissions, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { formatDate, formatMoney, formatShortId, getErrorMessage } from '../components/financials-formatters';
 import { ReceiptDetailCard } from '../components/receipt-detail-card';
@@ -34,7 +34,7 @@ function isWithinDate(receipt: ReceiptRecord, from: string, to: string) {
 }
 
 export function canVoidReceipts(authorization: AuthorizationContext | null | undefined) {
-  return authorization?.role === 'ADMIN' || authorization?.role === 'MANAGER';
+  return canAccess(authorization, financialOperationPermissions.voidReceipt);
 }
 
 

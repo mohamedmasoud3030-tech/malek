@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
@@ -87,5 +87,8 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+  },
+  test: {
+    exclude: ["e2e/**", "node_modules/**", "dist/**"],
   },
 });

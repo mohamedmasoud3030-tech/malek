@@ -11,10 +11,11 @@ import { ReportCard, SafeAnchor } from './common';
 
 type RentRollRow = RentRollReportRow;
 
-export function CollectionsSection({ rows, receiptRows, rentRollRows, isLoading }: Readonly<{
+export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportReports, isLoading }: Readonly<{
   rows: DailyCollectionReportRow[];
   receiptRows: Array<{ id: string; receipt_number: string; payment_date: string; amount: number; tenant_name: string | null }>;
   rentRollRows: RentRollRow[];
+  canExportReports: boolean;
   isLoading: boolean;
 }>) {
   return (
@@ -22,7 +23,7 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, isLoading 
       <ReportCard
         title="التحصيل اليومي للفترة"
         description="تفصيل يومي للتحصيل مع تفصيل طرق الدفع لكل يوم."
-        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
+        action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
         isLoading={isLoading}
       >
         {/* Mobile cards */}
@@ -91,7 +92,7 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, isLoading 
       <ReportCard
         title="قائمة العقود الإيجارية (Rent Roll)"
         description="عقود الإيجار الحالية فقط، مع روابط آمنة لتفاصيل العقود."
-        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
+        action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
         isLoading={isLoading}
       >
         {/* Mobile cards */}

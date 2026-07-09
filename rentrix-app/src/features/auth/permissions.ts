@@ -18,9 +18,28 @@ export const appPermissions = [
   'communication.view',
   'auth.password.change',
   'settings.manage',
+  'financial.invoices.generate',
+  'financial.invoices.export',
+  'financial.payments.create',
+  'financial.receipts.void',
+  'financial.reports.export',
+  'financial.bank_reconciliation.match',
+  'financial.owner_settlements.approve',
+  'financial.owner_settlements.pay',
 ] as const;
 
 export type AppPermission = (typeof appPermissions)[number];
+
+export const financialOperationPermissions = {
+  generateInvoices: 'financial.invoices.generate',
+  exportInvoices: 'financial.invoices.export',
+  createPayment: 'financial.payments.create',
+  voidReceipt: 'financial.receipts.void',
+  exportReports: 'financial.reports.export',
+  matchBankReconciliation: 'financial.bank_reconciliation.match',
+  approveOwnerSettlement: 'financial.owner_settlements.approve',
+  payOwnerSettlement: 'financial.owner_settlements.pay',
+} as const satisfies Record<string, AppPermission>;
 
 export type AuthorizationContext = Readonly<{
   userId: string;
@@ -54,6 +73,14 @@ const rolePermissions = {
     'communication.view',
     'auth.password.change',
     'settings.manage',
+    'financial.invoices.generate',
+    'financial.invoices.export',
+    'financial.payments.create',
+    'financial.receipts.void',
+    'financial.reports.export',
+    'financial.bank_reconciliation.match',
+    'financial.owner_settlements.approve',
+    'financial.owner_settlements.pay',
   ]),
   MANAGER: new Set<AppPermission>([
     'app.dashboard.view',
@@ -65,6 +92,12 @@ const rolePermissions = {
     'communication.view',
     'auth.password.change',
     'settings.manage',
+    'financial.invoices.generate',
+    'financial.invoices.export',
+    'financial.payments.create',
+    'financial.receipts.void',
+    'financial.reports.export',
+    'financial.bank_reconciliation.match',
   ]),
   USER: new Set<AppPermission>(['app.dashboard.view', 'auth.password.change']),
 } satisfies Record<AuthorizationRole, ReadonlySet<AppPermission>>;

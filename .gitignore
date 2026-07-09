@@ -20,3 +20,7 @@ supabase/.temp/
 # TypeScript incremental build info
 *.tsbuildinfo
 x
+
+# Playwright artifacts
+rentrix-app/test-results/
+rentrix-app/playwright-report/

@@ -5,6 +5,8 @@ import {
   canAccess,
   canAccessRoute,
   canShowNavigationItem,
+  financialOperationPermissions,
+  appPermissions,
   getAuthorizationContextFromUser,
   getAuthorizationDiagnosticsFromUser,
   hasRole,
@@ -87,6 +89,28 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(userContext, 'owners.hub.view')).toBe(false);
     expect(canAccess(userContext, 'leads.view')).toBe(false);
     expect(canAccess(userContext, 'settings.manage')).toBe(false);
+  });
+
+
+  it('enforces explicit financial operation permissions by role', () => {
+    const adminContext = getAuthorizationContextFromUser(userWithRole('ADMIN'));
+    const managerContext = getAuthorizationContextFromUser(userWithRole('MANAGER'));
+    const userContext = getAuthorizationContextFromUser(userWithRole('USER'));
+    const allFinancialPermissions = Object.values(financialOperationPermissions);
+
+    expect(allFinancialPermissions.every((permission) => appPermissions.includes(permission))).toBe(true);
+    expect(allFinancialPermissions.every((permission) => canAccess(adminContext, permission))).toBe(true);
+
+    expect(canAccess(managerContext, financialOperationPermissions.generateInvoices)).toBe(true);
+    expect(canAccess(managerContext, financialOperationPermissions.exportInvoices)).toBe(true);
+    expect(canAccess(managerContext, financialOperationPermissions.createPayment)).toBe(true);
+    expect(canAccess(managerContext, financialOperationPermissions.voidReceipt)).toBe(true);
+    expect(canAccess(managerContext, financialOperationPermissions.exportReports)).toBe(true);
+    expect(canAccess(managerContext, financialOperationPermissions.matchBankReconciliation)).toBe(true);
+    expect(canAccess(managerContext, financialOperationPermissions.approveOwnerSettlement)).toBe(false);
+    expect(canAccess(managerContext, financialOperationPermissions.payOwnerSettlement)).toBe(false);
+
+    expect(allFinancialPermissions.every((permission) => !canAccess(userContext, permission))).toBe(true);
   });
 
   it('normalizes roles safely', () => {
