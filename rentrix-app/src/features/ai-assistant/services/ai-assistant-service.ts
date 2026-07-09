@@ -9,11 +9,13 @@ import type {
   AiAssistantRequest,
   AiAssistantResponse,
 } from '../types';
+import { AiAssistantConfigurationError, looksLikeRawSqlPrompt } from './ai-assistant-guardrails';
+
+export { AiAssistantConfigurationError, isAiAssistantConfigurationError, looksLikeRawSqlPrompt } from './ai-assistant-guardrails';
 
 const sampleLimit = 500;
 const topListLimit = 25;
 const renewalLookaheadDays = 90;
-const sqlStatementPattern = /\b(select|insert|update|delete|drop|alter|truncate|create|grant|revoke)\b[\s\S]*(\bfrom\b|\binto\b|\btable\b|\bset\b|;)/i;
 
 type InvoiceContextRow = Pick<Invoice, 'id' | 'contract_id' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'>;
 type ContractRenewalRow = Pick<Contract, 'id' | 'property_id' | 'tenant_id' | 'unit_id' | 'end_date' | 'rent_amount' | 'status' | 'deleted_at'>;
@@ -32,23 +34,6 @@ type FunctionErrorBody = {
 type FunctionSuccessBody = {
   reply?: string;
 };
-
-export class AiAssistantConfigurationError extends Error {
-  readonly code = 'AI_CONFIG_MISSING';
-
-  constructor(message = 'إعدادات الذكاء الاصطناعي غير مكتملة') {
-    super(message);
-    this.name = 'AiAssistantConfigurationError';
-  }
-}
-
-export function isAiAssistantConfigurationError(error: unknown): error is AiAssistantConfigurationError {
-  return error instanceof AiAssistantConfigurationError;
-}
-
-export function looksLikeRawSqlPrompt(prompt: string): boolean {
-  return sqlStatementPattern.test(prompt.trim());
-}
 
 function toDateOnly(date: Date): string {
   return date.toISOString().slice(0, 10);
