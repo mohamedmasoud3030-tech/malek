@@ -1,4 +1,4 @@
-import { ArrowLeft, Building2, DoorOpen, FileText, UserRoundCog, WalletCards } from 'lucide-react';
+import { Building2, DoorOpen, FileText, UserRoundCog, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,8 +57,11 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
       <PageHeader
         title={getOwnerDisplayName(owner)}
         description="ملف تعريف قراءة فقط للمالك يعرض بيانات التعريف والروابط المتاحة فقط."
-        backTo="/owners"
-        backLabel="العودة لإدارة الملاك"
+        secondaryActions={(
+          <Button asChild variant="secondary">
+            <a href="/owners">العودة لإدارة الملاك</a>
+          </Button>
+        )}
       />
 
       <Card>
