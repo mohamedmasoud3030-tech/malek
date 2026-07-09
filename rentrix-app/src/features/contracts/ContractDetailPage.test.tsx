@@ -21,11 +21,13 @@ const contractsMocks = vi.hoisted(() => ({
   contractQuery: { data: null as unknown, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   paymentsQuery: { data: null as unknown, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   renewMutation: { isPending: false, mutateAsync: vi.fn() },
+  terminateMutation: { isPending: false, mutateAsync: vi.fn() },
 }));
 
 vi.mock('./useContracts', () => ({
   useContract: () => contractsMocks.contractQuery,
   useRenewContract: () => contractsMocks.renewMutation,
+  useTerminateContract: () => contractsMocks.terminateMutation,
 }));
 
 vi.mock('./useContractPayments', () => ({
@@ -125,7 +127,7 @@ describe('ContractDetailPage load and money states', () => {
 
     expectMarkupToContain(html, [
       'إجراءات التجديد والإنهاء',
-      'تعديل الحالة وسبب الإلغاء',
+      'إنهاء العقد بسبب',
       'لا يوجد عقد سابق مرتبط بهذا العقد',
       'سبب الإلغاء',
       'الخط الزمني المالي',

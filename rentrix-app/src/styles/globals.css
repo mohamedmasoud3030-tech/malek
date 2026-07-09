@@ -398,7 +398,23 @@
 
   /* Safe-area utilities for fixed/sticky UI — used by main content and overlays */
   .safe-bottom-app {
-    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--app-bottom-nav-height, 4rem) + 1.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .safe-top-app {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .app-container {
+    width: 100%;
+    min-width: 0;
+    max-width: 80rem;
+    margin-inline: auto;
   }
 
   .safe-bottom-overlay {

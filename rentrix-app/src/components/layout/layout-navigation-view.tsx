@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Lock, Plus, Sparkles } from 'lucide-react';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext } from '@/features/auth/permissions';
 import { cn } from '@/lib/utils';
-import { mobileNavItems, navGroups, quickLinks, type QuickLinkRoute } from './app-nav-items';
+import { mobileNavItems, navGroups, quickLinks, type MobileNavItem, type QuickLinkRoute } from './app-nav-items';
 
 export type SharedLabel = (key: string) => string;
 
@@ -215,8 +215,10 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden">
       <div className="grid h-16 grid-cols-5">
-        {mobileNavItems.map(([to, labelKey, Icon]) => {
-          if (!canShowNavigationItem(authorization, undefined)) return null;
+        {mobileNavItems.map((item) => {
+          const [to, labelKey, Icon] = item;
+          const permission = (item as MobileNavItem)[3];
+          if (!canShowNavigationItem(authorization, permission)) return null;
 
           return (
             <Link
