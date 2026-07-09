@@ -20,6 +20,14 @@ type ProviderResponse = {
   };
 };
 
+type ProviderUrlResult = {
+  url: string;
+} | {
+  error: Response;
+};
+
+const defaultProviderUrl = 'https://api.openai.com/v1/chat/completions';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -27,6 +35,7 @@ const corsHeaders = {
 };
 
 const sqlStatementPattern = /\b(select|insert|update|delete|drop|alter|truncate|create|grant|revoke)\b[\s\S]*(\bfrom\b|\binto\b|\btable\b|\bset\b|;)/i;
+const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -94,6 +103,59 @@ async function readJsonBody(request: Request): Promise<unknown> {
   }
 }
 
+function isPrivateIpv4(hostname: string): boolean {
+  const match = hostname.match(ipv4Pattern);
+  if (!match) return false;
+
+  const octets = match.slice(1).map(Number);
+  if (octets.some((octet) => octet < 0 || octet > 255)) return true;
+
+  const [first, second] = octets;
+  return (
+    first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168)
+  );
+}
+
+function isPrivateHostname(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  return (
+    normalized === 'localhost' ||
+    normalized.endsWith('.localhost') ||
+    normalized === '::1' ||
+    normalized === '[::1]' ||
+    normalized === '0.0.0.0' ||
+    isPrivateIpv4(normalized)
+  );
+}
+
+function readProviderUrl(): ProviderUrlResult {
+  const rawProviderUrl = Deno.env.get('AI_PROVIDER_BASE_URL')?.trim() || defaultProviderUrl;
+  let parsedUrl: URL;
+
+  try {
+    parsedUrl = new URL(rawProviderUrl);
+  } catch {
+    return { error: errorResponse('AI_PROVIDER_URL_INVALID', 'إعدادات مزود الذكاء الاصطناعي غير صحيحة.', 500) };
+  }
+
+  if (
+    parsedUrl.protocol !== 'https:' ||
+    parsedUrl.username !== '' ||
+    parsedUrl.password !== '' ||
+    parsedUrl.hash !== '' ||
+    isPrivateHostname(parsedUrl.hostname)
+  ) {
+    return { error: errorResponse('AI_PROVIDER_URL_INVALID', 'إعدادات مزود الذكاء الاصطناعي غير صحيحة.', 500) };
+  }
+
+  return { url: parsedUrl.toString() };
+}
+
 async function assertAuthenticated(request: Request): Promise<Response | null> {
   const authHeader = request.headers.get('Authorization') ?? '';
   if (!authHeader.startsWith('Bearer ')) {
@@ -124,13 +186,16 @@ Deno.serve(async (request: Request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return errorResponse('METHOD_NOT_ALLOWED', 'طريقة الطلب غير مدعومة.', 405);
 
+  const authError = await assertAuthenticated(request);
+  if (authError) return authError;
+
   const apiKey = Deno.env.get('AI_PROVIDER_API_KEY')?.trim();
   if (!apiKey) {
     return errorResponse('AI_CONFIG_MISSING', 'إعدادات الذكاء الاصطناعي غير مكتملة', 503);
   }
 
-  const authError = await assertAuthenticated(request);
-  if (authError) return authError;
+  const providerUrlResult = readProviderUrl();
+  if ('error' in providerUrlResult) return providerUrlResult.error;
 
   const body = await readJsonBody(request);
   if (!isRecord(body)) return errorResponse('INVALID_REQUEST', 'صيغة الطلب غير صحيحة.', 400);
@@ -145,7 +210,6 @@ Deno.serve(async (request: Request) => {
   const context = stringifyForPrompt(body.context, 9000);
   const history = readHistory(body.history);
   const model = Deno.env.get('AI_PROVIDER_MODEL')?.trim() || 'gpt-4o-mini';
-  const providerUrl = Deno.env.get('AI_PROVIDER_BASE_URL')?.trim() || 'https://api.openai.com/v1/chat/completions';
 
   const messages: ChatMessage[] = [
     {
@@ -164,7 +228,7 @@ Deno.serve(async (request: Request) => {
     },
   ];
 
-  const providerResponse = await fetch(providerUrl, {
+  const providerResponse = await fetch(providerUrlResult.url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
