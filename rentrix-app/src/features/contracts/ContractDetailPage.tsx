@@ -16,11 +16,12 @@ import { exportContractToPdf } from '@/services/pdfService';
 import type { Person, Property, Unit } from '@/types/domain';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { formatContractDate, formatContractDateTime, formatContractDayCount, formatContractMoney, getContractInclusiveDays, getContractRemainingDays } from './contractDisplayFormatters';
+import { Textarea } from '@/components/ui/textarea';
 import { contractStatusLabels, contractStatusTone, paymentCycleLabels, renewalSchema, type RenewalPayload } from './contractSchema';
 import { ContractDocumentsShell } from './contractDocumentsShell';
 import { ContractPaymentsTab } from './contractPaymentsTab';
 import type { ContractDetail } from './services/contractService';
-import { useContract, useRenewContract } from './useContracts';
+import { useContract, useRenewContract, useTerminateContract } from './useContracts';
 
 type TimelineTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
 type TimelineItem = Readonly<{ title: string; value: string; description: string; tone: TimelineTone }>;
@@ -31,6 +32,7 @@ const toDateInputValue = (date: Date) => `${date.getFullYear()}-${String(date.ge
 const addDays = (value: string, days: number) => { const date = new Date(`${value}T00:00:00`); date.setDate(date.getDate() + days); return date; };
 const addYear = (date: Date) => { const nextDate = new Date(date); nextDate.setFullYear(nextDate.getFullYear() + 1); nextDate.setDate(nextDate.getDate() - 1); return nextDate; };
 const canRenewContract = (contract: ContractDetail) => contract.status === 'active' || contract.status === 'expired';
+const canTerminateContract = (contract: ContractDetail) => contract.status === 'active' || contract.status === 'draft';
 const getRenewalDefaults = (contract: ContractDetail): RenewalPayload => { const nextStart = addDays(contract.end_date, 1); return { new_start: toDateInputValue(nextStart), new_end: toDateInputValue(addYear(nextStart)), new_amount: contract.rent_amount }; };
 
 const toPdfTenant = (person: ContractDetail['people']): Person | null => person ? { ...person, type: 'tenant', address: null, notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
@@ -60,7 +62,10 @@ export function ContractDetailPage() {
   const contractQuery = useContract(contractId);
   const companySettings = useCompanySettingsContract();
   const renewMutation = useRenewContract(contractId);
+  const terminateMutation = useTerminateContract(contractId);
   const [open, setOpen] = useState(false);
+  const [terminateOpen, setTerminateOpen] = useState(false);
+  const [terminateReason, setTerminateReason] = useState('');
   const form = useForm<RenewalPayload>({ resolver: zodResolver(renewalSchema), defaultValues: { new_start: '', new_end: '', new_amount: 0 } });
 
   if (contractQuery.isLoading || contractQuery.isError || !contractQuery.data) {
@@ -99,6 +104,12 @@ export function ContractDetailPage() {
     await navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } });
   };
 
+  const submitTermination = async () => {
+    await terminateMutation.mutateAsync(terminateReason);
+    setTerminateOpen(false);
+    setTerminateReason('');
+  };
+
   return (
     <div className="space-y-6">
       <EntityDetailHeader
@@ -108,6 +119,9 @@ export function ContractDetailPage() {
         actions={
           <>
             <Button variant="secondary" disabled={!renewalAllowed} onClick={() => { form.reset(getRenewalDefaults(contract)); setOpen(true); }}><RefreshCw className="me-2 size-4" />تجديد</Button>
+            {canTerminateContract(contract) && (
+              <Button variant="destructive" onClick={() => { setTerminateReason(''); setTerminateOpen(true); }}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>
+            )}
             <Button variant="secondary" onClick={exportContractPdf}>تصدير PDF</Button>
             <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
           </>
@@ -135,7 +149,7 @@ export function ContractDetailPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-primary/20 bg-primary/5"><CardHeader className="bg-background/80"><CardTitle className="flex items-center gap-2"><ShieldAlert className="size-5 text-primary" />إجراءات التجديد والإنهاء</CardTitle><CardDescription>{getExpiryDescription(companySettings, contract)}</CardDescription></CardHeader><CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6"><p className="text-sm text-muted-foreground">{contract.renewed_from ? 'هذا العقد مجدد من عقد سابق.' : 'لا يوجد عقد سابق مرتبط بهذا العقد.'}</p><Button variant="secondary" asChild><Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }}>تعديل الحالة وسبب الإلغاء</Link></Button></CardContent></Card>
+      <Card className="overflow-hidden border-primary/20 bg-primary/5"><CardHeader className="bg-background/80"><CardTitle className="flex items-center gap-2"><ShieldAlert className="size-5 text-primary" />إجراءات التجديد والإنهاء</CardTitle><CardDescription>{getExpiryDescription(companySettings, contract)}</CardDescription></CardHeader><CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6"><p className="text-sm text-muted-foreground">{contract.renewed_from ? 'هذا العقد مجدد من عقد سابق.' : 'لا يوجد عقد سابق مرتبط بهذا العقد.'}</p>{canTerminateContract(contract) ? <Button variant="destructive" onClick={() => { setTerminateReason(''); setTerminateOpen(true); }}>إنهاء العقد بسبب</Button> : <Button variant="secondary" asChild><Link to="/contracts/$contractId/edit" params={{ contractId: contract.id }}>تعديل الحالة وسبب الإلغاء</Link></Button>}</CardContent></Card>
 
       <ContractPaymentsTab contractId={contract.id} />
 
@@ -145,6 +159,38 @@ export function ContractDetailPage() {
       <ContractDocumentsShell contractId={contract.id} />
 
       <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>تجديد العقد</DialogTitle><DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد.</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={form.handleSubmit(submitRenewal)}><label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('new_start')} />{fieldError(form.formState.errors.new_start?.message)}</label><label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('new_end')} />{fieldError(form.formState.errors.new_end?.message)}</label><label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" min="0" {...form.register('new_amount')} />{fieldError(form.formState.errors.new_amount?.message)}</label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setOpen(false)}>إلغاء</Button><Button type="submit" disabled={renewMutation.isPending}>تجديد العقد</Button></div></form></DialogContent></Dialog>
+
+      <Dialog open={terminateOpen} onOpenChange={setTerminateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>إنهاء العقد</DialogTitle>
+            <DialogDescription>سيتم تعيين حالة العقد إلى "منتهٍ" وإلغاء أي فواتير مستقبلية غير مدفوعة مرتبطة به. هذا الإجراء لا يمكن التراجع عنه من هنا.</DialogDescription>
+          </DialogHeader>
+          <form
+            className="grid gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void submitTermination();
+            }}
+          >
+            <label className="grid gap-2 text-sm font-bold">
+              سبب الإنهاء (إلزامي)
+              <Textarea
+                value={terminateReason}
+                onChange={(e) => setTerminateReason(e.target.value)}
+                placeholder="اذكر سبب إنهاء العقد..."
+                required
+              />
+            </label>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setTerminateOpen(false)}>إلغاء</Button>
+              <Button type="submit" variant="destructive" disabled={terminateMutation.isPending || terminateReason.trim() === ''}>
+                تأكيد الإنهاء
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

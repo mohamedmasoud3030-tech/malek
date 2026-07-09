@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { ContractPayload, RenewalPayload } from './contractSchema';
-import { createContract, getContract, listContracts, renewContract, softDeleteContract, updateContract, type ContractListParams } from './services/contractService';
+import { createContract, getContract, listContracts, renewContract, softDeleteContract, terminateContract, updateContract, type ContractListParams } from './services/contractService';
 
 export const contractKeys = {
   all: ['contracts'] as const,
@@ -47,6 +47,19 @@ export function useSoftDeleteContract() {
     mutationFn: (contractId: string) => softDeleteContract(contractId),
     onSuccess: async (_data, contractId) => { await queryClient.invalidateQueries({ queryKey: contractKeys.lists() }); queryClient.removeQueries({ queryKey: contractKeys.detail(contractId) }); toast.success('تم حذف العقد أرشيفياً'); },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر حذف العقد'),
+  });
+}
+
+export function useTerminateContract(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reason: string) => terminateContract(contractId, reason),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
+      queryClient.removeQueries({ queryKey: contractKeys.detail(contractId) });
+      toast.success('تم إنهاء العقد');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنهاء العقد'),
   });
 }
 
