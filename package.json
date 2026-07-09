@@ -13,7 +13,10 @@
     "build": "pnpm --filter @workspace/rentrix run build",
     "typecheck": "tsc -b && pnpm --filter @workspace/rentrix run typecheck",
     "lint": "pnpm --filter @workspace/rentrix run lint",
-    "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh"
+    "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh",
+    "e2e": "pnpm --filter @workspace/rentrix run e2e",
+    "e2e:install": "pnpm --filter @workspace/rentrix exec playwright install --with-deps chromium",
+    "supabase:live-readiness": "bash scripts/verify-supabase-live-readiness.sh"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",

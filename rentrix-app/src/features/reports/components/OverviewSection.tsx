@@ -7,9 +7,10 @@ import { useFinancialCashflowReport, useFinancialPeriodSummaryReport } from '@/f
 import { buildReportCsvFilename, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
 import { ReportCard } from './common';
 
-export function OverviewSection({ summary, cashflowRows, isLoading }: Readonly<{
+export function OverviewSection({ summary, cashflowRows, canExportReports, isLoading }: Readonly<{
   summary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
   cashflowRows: NonNullable<ReturnType<typeof useFinancialCashflowReport>['data']>['rows'];
+  canExportReports: boolean;
   isLoading: boolean;
 }>) {
   const emptySummary = { invoiced: 0, paid: 0, outstanding: 0, expenses: 0, netCash: 0, invoicesCount: 0, paymentsCount: 0, expensesCount: 0 };
@@ -19,7 +20,7 @@ export function OverviewSection({ summary, cashflowRows, isLoading }: Readonly<{
     <ReportCard
       title="نظرة عامة على الفترة"
       description="ملخص الفواتير والتحصيل والمصروفات المسجلة للفترة المحددة."
-      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
+      action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
       isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">

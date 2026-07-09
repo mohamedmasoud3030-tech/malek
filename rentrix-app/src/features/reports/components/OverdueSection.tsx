@@ -10,9 +10,10 @@ import { agingBucketKeys, buildReportCsvFilename, downloadCsv } from '../reports
 import { buildAgingBucketChartRows } from '../reports-page.helpers';
 import { ReportCard, SafeAnchor } from './common';
 
-export function OverdueSection({ rows, agedReport, isLoading }: Readonly<{
+export function OverdueSection({ rows, agedReport, canExportReports, isLoading }: Readonly<{
   rows: OverdueInvoiceReportRow[];
   agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
+  canExportReports: boolean;
   isLoading: boolean;
 }>) {
   const bucketRows = buildAgingBucketChartRows(agedReport?.buckets, agingBucketKeys);
@@ -22,7 +23,7 @@ export function OverdueSection({ rows, agedReport, isLoading }: Readonly<{
       <ReportCard
         title="الفواتير المتأخرة حسب as-of"
         description="الفواتير المتأخرة المحسوبة من خدمة arrears الحالية حسب تاريخ الاحتساب."
-        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
+        action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
         isLoading={isLoading}
       >
         {/* Mobile cards */}
@@ -66,7 +67,7 @@ export function OverdueSection({ rows, agedReport, isLoading }: Readonly<{
       <ReportCard
         title="تقادم الذمم حسب الفئة العمرية"
         description="ملخص أعمار الذمم والفواتير المتراكمة في كل فئة عمرية."
-        action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
+        action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
         isLoading={isLoading}
       >
         <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">

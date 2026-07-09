@@ -6,8 +6,9 @@ import { useExpenseBreakdownReport } from '@/features/financials/reports/useFina
 import { buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
 import { ReportCard } from './common';
 
-export function ExpensesSection({ report, isLoading }: Readonly<{
+export function ExpensesSection({ report, canExportReports, isLoading }: Readonly<{
   report: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
+  canExportReports: boolean;
   isLoading: boolean;
 }>) {
   const categoryRows = report?.byCategory ?? [];
@@ -17,7 +18,7 @@ export function ExpensesSection({ report, isLoading }: Readonly<{
     <ReportCard
       title="تحليل المصروفات للفترة"
       description="تفصيل المصروفات حسب التصنيف والعقار من تقرير المصروفات الموجود."
-      action={<Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button>}
+      action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
       isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 sm:grid-cols-3">
