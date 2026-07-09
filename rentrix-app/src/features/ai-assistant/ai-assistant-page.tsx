@@ -53,9 +53,17 @@ const initialMessage: AiAssistantMessage = {
   createdAt: new Date().toISOString(),
 };
 
+function createMessageId(role: AiAssistantMessage['role']): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${role}-${crypto.randomUUID()}`;
+  }
+
+  return `${role}-${Date.now()}`;
+}
+
 function createMessage(role: AiAssistantMessage['role'], content: string, action?: AiAssistantAction): AiAssistantMessage {
   return {
-    id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    id: createMessageId(role),
     role,
     content,
     action,
