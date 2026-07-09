@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useParams, useRouter } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
+import { useParams, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -114,33 +115,35 @@ export function PropertyFormPage() {
   if (isEdit && propertyQuery.isLoading) return <RouteLoadingState />;
   if (isEdit && propertyQuery.isError) {
     return (
-      <Card className="mx-auto max-w-3xl" role="alert" aria-live="assertive">
-        <CardHeader>
-          <CardTitle>تعذر تحميل العقار للتعديل</CardTitle>
-          <CardDescription>{propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>
-          <Button variant="secondary" asChild><Link to="/properties">العودة للعقارات</Link></Button>
-        </CardContent>
-      </Card>
+      <PageLayout>
+        <Card className="mx-auto max-w-3xl" role="alert" aria-live="assertive">
+          <CardHeader>
+            <CardTitle>تعذر تحميل العقار للتعديل</CardTitle>
+            <CardDescription>{propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>
+            <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')}>العودة للعقارات</Button>
+          </CardContent>
+        </Card>
+      </PageLayout>
     );
   }
 
   return (
-    <>
-      <Card className="mx-auto max-w-5xl">
-        <CardHeader className="flex flex-row items-start justify-between gap-4">
-          <div>
-            <CardTitle>{isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}</CardTitle>
-            <CardDescription>أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك.</CardDescription>
-          </div>
-          <Button variant="secondary" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
-            <ArrowLeft className="me-2 size-4" />
-            العودة
+    <PageLayout size="wide">
+      <PageHeader
+        title={isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}
+        description="أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك."
+        secondaryActions={(
+          <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
+            العودة للعقارات
           </Button>
-        </CardHeader>
-        <CardContent>
+        )}
+      />
+
+      <Card>
+        <CardContent className="pt-6">
           <form
             className="grid gap-5 md:grid-cols-2"
             onSubmit={handleSubmit}
@@ -216,6 +219,6 @@ export function PropertyFormPage() {
         variant="warning"
         onConfirm={handleConfirmDiscard}
       />
-    </>
+    </PageLayout>
   );
 }
