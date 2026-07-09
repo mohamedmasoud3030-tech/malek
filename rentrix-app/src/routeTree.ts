@@ -74,6 +74,7 @@ const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '
 const bankReconciliationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/bank-reconciliation', component: lazyRouteComponent(() => import('@/routes/_protected.bank-reconciliation'), 'BankReconciliationRouteComponent'), staticData: { title: 'مطابقة البنك' } });
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', beforeLoad: () => { throw redirect({ to: '/financials' }); }, staticData: { title: 'المالية' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: lazyRouteComponent(() => import('@/routes/_protected.reports'), 'ReportsRouteComponent'), staticData: { title: 'التقارير' } });
+const aiAssistantRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/ai-assistant', component: lazyRouteComponent(() => import('@/routes/_protected.ai-assistant'), 'AiAssistantRouteComponent'), staticData: { title: 'مساعد الذكاء الاصطناعي' } });
 const systemRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/system',
@@ -151,6 +152,7 @@ export const routeTree = rootRoute.addChildren([
     bankReconciliationRoute,
     accountingRoute,
     reportsRoute,
+    aiAssistantRoute,
     communicationRoute,
     systemRoute,
     auditLogRoute,
