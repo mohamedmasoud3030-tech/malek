@@ -3,7 +3,7 @@ import {
   AiAssistantConfigurationError,
   isAiAssistantConfigurationError,
   looksLikeRawSqlPrompt,
-} from './ai-assistant-service';
+} from './ai-assistant-guardrails';
 
 describe('ai assistant service guardrails', () => {
   it('rejects raw SQL-looking prompts before sending them to the backend', () => {
