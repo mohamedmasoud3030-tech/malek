@@ -5,17 +5,19 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { EmptyState } from '@/components/empty-state';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { useProperties } from '@/features/properties/use-properties';
 import { useCostCenters } from '@/features/settings/useCostCenters';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
+import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import { OPERATIONAL_EXPENSE_CATEGORIES, summarizeOperationalExpenses, type OperationalExpenseFilterValues } from './operational-expenses';
 import { useCreateExpense, useExpenses } from './useExpenses';
+import { PageHeader } from '@/components/layout/page-header';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -42,7 +44,6 @@ export function ExpensesPage() {
   const propertyRows = propertiesQuery.data?.rows ?? [];
   const expenses = expensesQuery.data ?? [];
   const summary = summarizeOperationalExpenses(expenses);
-  const locale = getCompanyLocale(defaultCompanyLocalSettings);
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
@@ -65,24 +66,23 @@ export function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-black text-primary">المصاريف التشغيلية</p>
-          <h2 className="text-3xl font-black tracking-tight">المصاريف</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">تسجيل ومراجعة مصاريف العقارات من مصدر البيانات الحالي مع فلاتر للعقار والتصنيف والتاريخ.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/financials"><ArrowLeft className="me-2 size-4" />المالية</Link></Button>
-          <Button variant="secondary" asChild><Link to="/reports"><ReceiptText className="me-2 size-4" />التقارير</Link></Button>
-        </div>
-      </div>
+    <PageLayout dir="rtl">
+      <PageHeader
+        title="المصاريف"
+        description="تسجيل ومراجعة مصاريف العقارات من مصدر البيانات الحالي مع فلاتر للعقار والتصنيف والتاريخ."
+        secondaryActions={(
+          <>
+            <Button variant="secondary" asChild><Link to="/financials"><ArrowLeft className="me-2 size-4" />المالية</Link></Button>
+            <Button variant="secondary" asChild><Link to="/reports"><ReceiptText className="me-2 size-4" />التقارير</Link></Button>
+          </>
+        )}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="عدد المصاريف" value={summary.visibleCount.toLocaleString(locale)} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
+        <KpiCard label="عدد المصاريف" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.visibleCount)} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
         <KpiCard label="إجمالي المبلغ" value={formatCompanyMoney(defaultCompanyLocalSettings, summary.visibleAmount)} sub="للمصاريف المعروضة" icon={Banknote} accent="primary" />
-        <KpiCard label="العقارات المتأثرة" value={summary.byPropertyCount.toLocaleString(locale)} sub="عقارات لديها مصاريف" icon={WalletCards} accent="primary" />
-        <KpiCard label="التصنيفات" value={summary.byCategoryCount.toLocaleString(locale)} sub="تصنيفات مستخدمة" icon={CalendarDays} accent="primary" />
+        <KpiCard label="العقارات المتأثرة" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byPropertyCount)} sub="عقارات لديها مصاريف" icon={WalletCards} accent="primary" />
+        <KpiCard label="التصنيفات" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byCategoryCount)} sub="تصنيفات مستخدمة" icon={CalendarDays} accent="primary" />
       </div>
 
       {propertiesQuery.isError ? <EmptyState title="تعذر تحميل العقارات" description="يمكنك إعادة المحاولة بعد لحظات قبل تسجيل مصروف جديد." role="alert" ariaLive="assertive" /> : null}
@@ -98,6 +98,6 @@ export function ExpensesPage() {
         isCreateExpensePending={createExpense.isPending || propertiesQuery.isLoading}
         onCreateExpense={onCreateExpense}
       />
-    </div>
+    </PageLayout>
   );
 }

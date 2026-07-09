@@ -1,4 +1,4 @@
-import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatCompanyDateTime, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 
 export const CONTRACT_DAY_IN_MS = 86_400_000;
@@ -18,15 +18,11 @@ export function formatContractDate(settings: CompanySettingsContract, value: str
 }
 
 export function formatContractDateTime(settings: CompanySettingsContract, value: string): string {
-  return new Date(value).toLocaleString(settings.locale, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: settings.timezone,
-  });
+  return formatCompanyDateTime(settings, value);
 }
 
 export function formatContractDayCount(settings: CompanySettingsContract, value: number): string {
-  return value.toLocaleString(settings.locale);
+  return formatCompanyNumber(settings, value);
 }
 
 export function getContractInclusiveDays(startDate: string, endDate: string): number {

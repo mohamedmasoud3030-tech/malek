@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
@@ -112,7 +113,7 @@ export function ReportsPage() {
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
 
   return (
-    <div className="space-y-5 pb-6" dir="rtl">
+    <PageLayout dir="rtl" size="wide">
       <ReportsHero summary={financialSummaryQuery.data} today={today} isLoading={financialSummaryQuery.isLoading} />
 
         <FiltersPanel filters={filters} costCenterRows={costCentersQuery.data ?? []} ownerRows={ownersQuery.data ?? []} contractRows={contracts} onChange={setFilters} onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())} />
@@ -145,6 +146,6 @@ export function ReportsPage() {
       <SectionTabPanel id="statements" activeId={activeSection}>
         <StatementsSection agedReport={agedReceivablesQuery.data} receiptRows={receiptRows} financialSummary={financialSummaryQuery.data} expenseBreakdown={expenseBreakdownQuery.data} dailyRows={dailyCollectionQuery.data?.rows ?? []} cashFlowStatement={cashFlowStatementQuery.data} vatReturn={vatReturnQuery.data} tenantStatement={tenantStatementQuery.data} ownerStatement={ownerStatementQuery.data} selectedContractId={filters.contractId} selectedOwnerId={filters.ownerId} tenantStatementError={tenantStatementQuery.error} ownerStatementError={ownerStatementQuery.error} isTenantStatementLoading={tenantStatementQuery.isLoading} isOwnerStatementLoading={ownerStatementQuery.isLoading} isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading || cashFlowStatementQuery.isLoading || vatReturnQuery.isLoading} />
       </SectionTabPanel>
-    </div>
+    </PageLayout>
   );
 }

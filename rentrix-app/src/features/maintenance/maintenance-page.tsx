@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -174,7 +175,7 @@ export function MaintenancePage() {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="طلبات الصيانة"
         description="تتبع وإدارة طلبات الصيانة لجميع العقارات والوحدات."
@@ -415,7 +416,7 @@ export function MaintenancePage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   );
 }
 

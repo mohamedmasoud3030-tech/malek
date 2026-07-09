@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -391,7 +392,7 @@ export function OwnersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="إدارة الملاك"
         description="إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية."
@@ -445,6 +446,6 @@ export function OwnersPage() {
       </div>
 
       <OwnerFormDialog owner={editingOwner} open={formOpen} onOpenChange={setFormOpen} />
-    </div>
+    </PageLayout>
   );
 }

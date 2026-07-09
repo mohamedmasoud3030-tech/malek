@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Lock, Plus, Sparkles } from 'lucide-react';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext } from '@/features/auth/permissions';
 import { cn } from '@/lib/utils';
-import { mobileNavItems, navGroups, quickLinks, type QuickLinkRoute } from './app-nav-items';
+import { mobileNavItems, navGroups, quickLinks, type MobileNavItem, type QuickLinkRoute } from './app-nav-items';
 
 export type SharedLabel = (key: string) => string;
 
@@ -14,7 +14,7 @@ export function NavigationLinks({
   onNavigate,
 }: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {navGroups.map(([sectionTitle, items]) => {
         const visibleItems = items.filter(([, , , , permission]) => {
           if (canShowNavigationItem(authorization, permission)) return true;
@@ -213,10 +213,12 @@ export function CollapsedWorkspaceMenu({
 
 export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_30px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:hidden">
       <div className="grid h-16 grid-cols-5">
-        {mobileNavItems.map(([to, labelKey, Icon]) => {
-          if (!canShowNavigationItem(authorization, undefined)) return null;
+        {mobileNavItems.map((item) => {
+          const [to, labelKey, Icon] = item;
+          const permission = (item as MobileNavItem)[3];
+          if (!canShowNavigationItem(authorization, permission)) return null;
 
           return (
             <Link
@@ -224,7 +226,7 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
               to={to}
               activeOptions={{ exact: to === '/' }}
               aria-label={sharedLabel(labelKey)}
-              className="flex min-h-14 flex-col items-center justify-center gap-1 text-muted-foreground transition-colors [&.active]:text-primary"
+              className="mx-1 my-1 flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl text-muted-foreground transition-colors [&.active]:bg-primary/10 [&.active]:text-primary"
             >
               <Icon className="size-5" />
               <span className="text-[10px] font-bold leading-none">{sharedLabel(labelKey)}</span>

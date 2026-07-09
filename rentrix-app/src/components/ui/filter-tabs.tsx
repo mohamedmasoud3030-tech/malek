@@ -38,7 +38,7 @@ export function FilterTabs<T extends string>({
 }: FilterTabsProps<T>) {
   return (
     <div
-      className={cn("flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar", className)}
+      className={cn("-mx-3 flex scroll-px-3 gap-1.5 overflow-x-auto px-3 pb-0.5 no-scrollbar sm:mx-0 sm:px-0", className)}
       role="group"
       aria-label={ariaLabel}
     >

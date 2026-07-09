@@ -2,14 +2,17 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CURRENCY,
   currencyMetadata,
+  formatDate,
+  formatDateTime,
   formatMoney,
+  formatNumber,
   getCurrencyMetadata,
   getCurrencyMinorUnit,
   normalizeCurrency,
   supportedCurrencies,
 } from './formatters';
 
-describe('money formatter currency metadata', () => {
+describe('shared formatter design-system utilities', () => {
   it('keeps the required supported currencies and OMR default', () => {
     expect(supportedCurrencies).toEqual(['OMR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'USD', 'EGP']);
     expect(DEFAULT_CURRENCY).toBe('OMR');
@@ -44,5 +47,16 @@ describe('money formatter currency metadata', () => {
 
   it('safely formats invalid amounts as zero using the default currency', () => {
     expect(formatMoney({ amount: Number.NaN, currency: null, locale: 'en' }).replaceAll('\u00a0', ' ')).toBe('OMR 0.000');
+  });
+
+  it('formats numbers and dates through the shared locale-safe formatters', () => {
+    expect(formatNumber({ value: 1234, locale: 'ar-EG' })).toMatch(/1,234|١٬٢٣٤/);
+    expect(formatDate({ value: '2026-07-01T00:00:00Z', locale: 'en-GB', timeZone: 'UTC' })).toBe('1 Jul 2026');
+    expect(formatDateTime({ value: '2026-07-01T09:30:00Z', locale: 'en-GB', timeZone: 'UTC' })).toContain('1 Jul 2026');
+  });
+
+  it('uses an em dash for invalid date values instead of broken locale output', () => {
+    expect(formatDate({ value: 'not-a-date' })).toBe('—');
+    expect(formatDateTime({ value: null })).toBe('—');
   });
 });

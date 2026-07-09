@@ -24,7 +24,7 @@ type SectionTabsProps<TId extends string> = Readonly<{
  */
 export function SectionTabs<TId extends string>({ items, activeId, onChange, ariaLabel }: SectionTabsProps<TId>) {
   return (
-    <nav aria-label={ariaLabel} role="tablist" className="-mx-1 mb-2 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav aria-label={ariaLabel} role="tablist" className="-mx-3 mb-2 flex scroll-px-3 gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:-mx-1 sm:px-1 [&::-webkit-scrollbar]:hidden">
       {items.map((item) => {
         const isActive = activeId === item.id;
         return (
@@ -37,7 +37,7 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
             aria-controls={`section-panel-${item.id}`}
             id={`section-tab-${item.id}`}
             className={cn(
-              'flex shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition min-h-11',
+              'flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition',
               isActive
                 ? 'border-primary bg-primary text-primary-foreground shadow-md scale-[1.02]'
                 : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',

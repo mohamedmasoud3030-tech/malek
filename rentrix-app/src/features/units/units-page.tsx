@@ -2,6 +2,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Building2, DoorOpen, Home } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ import { EntityTable } from '@/components/ui/entity-table';
 import { EntityCard } from '@/components/ui/entity-card';
 import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
+import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import type { Property, Unit } from '@/types/domain';
 import { normalizeUnitStatus, unitStatusLabels, unitStatusValues, type UnitStatus } from './unit-schema';
 import { useAllUnits } from './use-units';
@@ -60,7 +61,6 @@ export function UnitsPage() {
   const units = unitsQuery.data ?? [];
   const properties = propertiesQuery.data?.rows ?? [];
   const propertyById = useMemo(() => buildPropertyMap(properties), [properties]);
-  const locale = getCompanyLocale(defaultCompanyLocalSettings);
 
   const filteredUnits = useMemo(() => units.filter((unit) => {
     const unitStatus = getUnitPageStatus(unit);
@@ -78,7 +78,7 @@ export function UnitsPage() {
   const { occupiedCount, availableCount, expectedRent } = summarizeUnitsForUnitsPage(units);
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="الوحدات"
         description="عرض تشغيلي لكل الوحدات المسجلة مع روابط مباشرة للعقارات، مع إبقاء إضافة وتعديل الوحدات داخل صفحة العقار المرتبط."
@@ -86,9 +86,9 @@ export function UnitsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="إجمالي الوحدات" value={units.length.toLocaleString(locale)} sub="كل الوحدات النشطة" icon={DoorOpen} accent="primary" />
-        <KpiCard label="الوحدات المشغولة" value={occupiedCount.toLocaleString(locale)} sub="حسب حالة الوحدة" icon={Home} accent="sky" />
-        <KpiCard label="الوحدات المتاحة" value={availableCount.toLocaleString(locale)} sub="جاهزة للتأجير" icon={DoorOpen} accent="emerald" />
+        <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(defaultCompanyLocalSettings, units.length)} sub="كل الوحدات النشطة" icon={DoorOpen} accent="primary" />
+        <KpiCard label="الوحدات المشغولة" value={formatCompanyNumber(defaultCompanyLocalSettings, occupiedCount)} sub="حسب حالة الوحدة" icon={Home} accent="sky" />
+        <KpiCard label="الوحدات المتاحة" value={formatCompanyNumber(defaultCompanyLocalSettings, availableCount)} sub="جاهزة للتأجير" icon={DoorOpen} accent="emerald" />
         <KpiCard label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, expectedRent)} sub="من قيم الإيجار المسجلة" icon={Building2} accent="amber" />
       </div>
 
@@ -130,7 +130,7 @@ export function UnitsPage() {
       <Card>
         <CardHeader>
           <CardTitle>سجل الوحدات</CardTitle>
-          <CardDescription>{filteredUnits.length.toLocaleString(locale)} وحدة ضمن الفلاتر الحالية.</CardDescription>
+          <CardDescription>{formatCompanyNumber(defaultCompanyLocalSettings, filteredUnits.length)} وحدة ضمن الفلاتر الحالية.</CardDescription>
         </CardHeader>
         <CardContent>
           <EntityTable
@@ -214,6 +214,6 @@ export function UnitsPage() {
           />
         </CardContent>
       </Card>
-    </div>
+    </PageLayout>
   );
 }

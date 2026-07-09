@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent 
 import { Link } from '@tanstack/react-router';
 import { Building2, FileSignature, FolderTree, KeyRound, Lock, RefreshCcw, Save, ShieldCheck, Sparkles, Cog, Bell, User, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -404,7 +405,7 @@ export function SettingsPage() {
   const sessionTone = authorizationDiagnostics.metadataMismatch ? 'gold' : 'green';
 
   return (
-    <div className="space-y-5 pb-6" dir={pageLanguage.direction} lang={pageLanguage.locale}>
+    <PageLayout dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-5">
       <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
 
       <OverviewRow
@@ -620,6 +621,6 @@ export function SettingsPage() {
         disabled={isSaving}
         onDiscard={discardDraft}
       />
-    </div>
+    </PageLayout>
   );
 }

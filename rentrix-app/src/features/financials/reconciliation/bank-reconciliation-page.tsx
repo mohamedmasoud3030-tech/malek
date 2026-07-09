@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InlineStatCard } from '@/components/ui/inline-stat-card';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Select } from '@/components/ui/select';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
@@ -12,7 +13,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import { summarizeReconciliation } from './bankReconciliationService';
 import type { BankMatchCandidate, BankReconciliationFilters, BankReconciliationMatchValues, BankStatementImportValues, BankStatementLine, BankStatementLineFormValues } from './types';
@@ -25,8 +26,8 @@ const emptyLineDraft: BankStatementLineFormValues = { bank_account_id: '', trans
 const emptyMatchDraft: BankReconciliationMatchValues = { statement_line_id: '', matched_entity_type: 'payment', matched_entity_id: '', matched_amount: '', notes: '' };
 const emptyImportDraft: BankStatementImportValues = { bank_account_id: '', statement_name: '', csv: '' };
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ar-OM', { dateStyle: 'medium' }).format(new Date(`${value}T00:00:00`));
+function formatDate(value: string | null | undefined) {
+  return formatCompanyDate(defaultCompanyLocalSettings, value ? `${value}T00:00:00` : value);
 }
 
 export function BankReconciliationPage() {
@@ -50,7 +51,7 @@ export function BankReconciliationPage() {
   const writeError = createLine.error ?? importCsv.error ?? matchLine.error ?? ignoreLine.error;
 
   return (
-    <section className="space-y-5" dir="rtl">
+    <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="مطابقة البنك"
         description="أساس تشغيلي لمراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات المسجلة. يدعم لصق CSV مبدئياً مع اقتراحات مطابقة حسب التاريخ والمبلغ."
@@ -125,7 +126,7 @@ export function BankReconciliationPage() {
       </Card>
 
       {lines.length === 0 && !linesQuery.isLoading ? <PageStateCard title="لا توجد حركات كشف ضمن الفلاتر" description="أضف حركة يدوية أو غيّر الفلاتر لبدء المطابقة." /> : <BankStatementLinesTable lines={lines} onIgnore={(id) => { if (canManageReconciliation) ignoreLine.mutate(id); }} isIgnoring={!canManageReconciliation || ignoreLine.isPending} />}
-    </section>
+    </PageLayout>
   );
 }
 
