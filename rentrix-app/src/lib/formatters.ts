@@ -59,3 +59,54 @@ export function formatMoney({ amount, currency = DEFAULT_CURRENCY, locale = DEFA
     maximumFractionDigits: metadata.minorUnit,
   }).format(safeAmount);
 }
+
+export type NumberFormatOptions = {
+  value: number | null | undefined;
+  locale?: string;
+  maximumFractionDigits?: number;
+  minimumFractionDigits?: number;
+};
+
+export function formatNumber({
+  value,
+  locale = DEFAULT_LOCALE,
+  maximumFractionDigits = 0,
+  minimumFractionDigits,
+}: NumberFormatOptions) {
+  const safeValue = normalizeMoneyNumber(value);
+  return new Intl.NumberFormat(locale, {
+    maximumFractionDigits,
+    minimumFractionDigits,
+  }).format(safeValue);
+}
+
+export type DateFormatOptions = {
+  value: string | number | Date | null | undefined;
+  locale?: string;
+  timeZone?: string;
+  dateStyle?: Intl.DateTimeFormatOptions['dateStyle'];
+};
+
+export function formatDate({ value, locale = DEFAULT_LOCALE, timeZone, dateStyle = 'medium' }: DateFormatOptions) {
+  if (value === null || value === undefined || value === '') return '—';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat(locale, { dateStyle, timeZone }).format(date);
+}
+
+export type DateTimeFormatOptions = DateFormatOptions & {
+  timeStyle?: Intl.DateTimeFormatOptions['timeStyle'];
+};
+
+export function formatDateTime({
+  value,
+  locale = DEFAULT_LOCALE,
+  timeZone,
+  dateStyle = 'medium',
+  timeStyle = 'short',
+}: DateTimeFormatOptions) {
+  if (value === null || value === undefined || value === '') return '—';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat(locale, { dateStyle, timeStyle, timeZone }).format(date);
+}

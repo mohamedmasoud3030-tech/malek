@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
@@ -111,7 +112,7 @@ export function ContractDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <PageLayout dir="rtl" size="wide">
       <EntityDetailHeader
         title="تفاصيل العقد"
         subtitle={`العقد رقم #${contract.id.slice(0, 8)} — عرض كامل للعقد وسجل مراحله.`}
@@ -191,7 +192,7 @@ export function ContractDetailPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   );
 }
 

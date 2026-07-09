@@ -4,6 +4,8 @@ import { FileText, ReceiptText, WalletCards } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useProperties } from '@/features/properties/use-properties';
@@ -100,21 +102,18 @@ export function FinancialsPage() {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-black text-primary">مركز التحصيل</p>
-          <h2 className="text-3xl font-black tracking-tight">المالية</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-7 text-muted-foreground">
-            تبويبات مختصرة للفواتير والإيصالات والمصاريف حتى لا تظهر كل أدوات التحصيل مكدسة على شاشة واحدة، خصوصاً على الجوال.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" asChild><Link to="/invoices">صفحة الفواتير</Link></Button>
-          <Button variant="secondary" asChild><Link to="/receipts">سجل الإيصالات</Link></Button>
-          <Button variant="secondary" asChild><Link to="/expenses">صفحة المصاريف</Link></Button>
-        </div>
-      </div>
+    <PageLayout dir="rtl" size="wide">
+      <PageHeader
+        title="المالية"
+        description="تبويبات مختصرة للفواتير والإيصالات والمصاريف حتى لا تظهر كل أدوات التحصيل مكدسة على شاشة واحدة، خصوصاً على الجوال."
+        secondaryActions={(
+          <>
+            <Button variant="secondary" asChild><Link to="/invoices">صفحة الفواتير</Link></Button>
+            <Button variant="secondary" asChild><Link to="/receipts">سجل الإيصالات</Link></Button>
+            <Button variant="secondary" asChild><Link to="/expenses">صفحة المصاريف</Link></Button>
+          </>
+        )}
+      />
 
       <FinancialReportsPreviewSection
         reportFilters={reportFilters}
@@ -185,6 +184,6 @@ export function FinancialsPage() {
       </Card>
 
       <ArrearsWorkspaceSection />
-    </div>
+    </PageLayout>
   );
 }

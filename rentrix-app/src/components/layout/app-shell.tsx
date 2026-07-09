@@ -61,7 +61,7 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="animate-panel-in fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(22rem,90vw)] max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar p-0 text-sidebar-foreground shadow-sidebar sm:max-h-none sm:w-[min(22rem,90vw)] sm:p-0 lg:hidden"
+        className="animate-panel-in fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,86vw)] max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar p-0 text-sidebar-foreground shadow-sidebar sm:max-h-none sm:w-[min(20rem,86vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="h-[3px] w-full bg-accent" />
@@ -72,7 +72,7 @@ function MobileNavigationDrawer({
             <X className="size-5" />
           </Button>
         </div>
-        <nav className="sidebar-scroll flex-1 overflow-y-auto p-3">
+        <nav className="sidebar-scroll flex-1 overflow-y-auto overscroll-contain p-3">
           {authorization === null && (
             <div className="mb-4 rounded-2xl border border-[hsl(var(--color-warning-text)/0.3)] bg-[hsl(var(--color-warning-bg)/0.12)] px-3 py-2.5">
               <p className="text-xs font-bold text-warning">الصلاحيات غير مكتملة</p>

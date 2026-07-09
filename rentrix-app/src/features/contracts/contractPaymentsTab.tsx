@@ -5,13 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatDefaultCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { invoiceStatusLabels } from '@/features/financials/components/invoice-status-labels';
 import { paymentMethodLabels } from '@/features/financials/components/receipt-formatters';
 import type { ContractPaymentsSnapshot } from './services/contractPaymentService';
 import { useContractPayments } from './useContractPayments';
 
-const arabicDateFormatter = new Intl.DateTimeFormat('ar', { dateStyle: 'medium' });
 const invoiceStatusTone: Record<string, string> = {
   draft: 'gray', issued: 'blue', UNPAID: 'blue',
   partial: 'gold', PARTIALLY_PAID: 'gold',
@@ -21,7 +20,7 @@ const invoiceStatusTone: Record<string, string> = {
 };
 
 function formatDate(value: string): string {
-  return arabicDateFormatter.format(new Date(value));
+  return formatCompanyDate(null, value);
 }
 
 function getPaymentsErrorMessage(error: unknown): string {
@@ -34,8 +33,8 @@ type Payment = ContractPaymentsSnapshot['payments'][number];
 function ContractPaymentsSummary({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      <KpiCard label="عدد الفواتير" value={snapshot.summary.invoiceCount.toLocaleString('ar')} icon={ReceiptText} accent="primary" compact />
-      <KpiCard label="عدد الدفعات" value={snapshot.summary.paymentCount.toLocaleString('ar')} icon={WalletCards} accent="sky" compact />
+      <KpiCard label="عدد الفواتير" value={formatCompanyNumber(null, snapshot.summary.invoiceCount)} icon={ReceiptText} accent="primary" compact />
+      <KpiCard label="عدد الدفعات" value={formatCompanyNumber(null, snapshot.summary.paymentCount)} icon={WalletCards} accent="sky" compact />
       <KpiCard label="إجمالي الفواتير" value={formatDefaultCompanyMoney(snapshot.summary.totalInvoiced)} icon={WalletCards} accent="primary" compact />
       <KpiCard label="إجمالي المدفوع" value={formatDefaultCompanyMoney(snapshot.summary.totalPaid)} icon={WalletCards} accent="emerald" compact />
       <KpiCard label="المتبقي" value={formatDefaultCompanyMoney(snapshot.summary.totalRemaining)} icon={WalletCards} accent="amber" compact />

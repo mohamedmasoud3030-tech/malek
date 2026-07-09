@@ -2,6 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { FileText, Mail, Phone, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ListFilterBar } from '../../components/layout/list-filter-bar';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { ListStateBody } from '../../components/layout/list-state-body';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -126,21 +128,12 @@ export function TenantsPage() {
   const totalPages = Math.max(1, Math.ceil((tenantsQuery.data?.count ?? 0) / pageSize));
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <Card className="overflow-hidden border-primary/10 bg-gradient-to-l from-primary/10 via-background to-background">
-        <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary"><Users className="size-4" />مساحة عمل مسترجعة</div>
-            <div>
-              <h2 className="text-2xl font-black">المستأجرين</h2>
-              <p className="text-sm text-muted-foreground">عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية.</p>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm font-bold text-muted-foreground">
-            إجمالي النتائج: <span className="text-foreground">{tenantsQuery.data?.count ?? 0}</span>
-          </div>
-        </CardContent>
-      </Card>
+    <PageLayout dir="rtl" size="wide">
+      <PageHeader
+        title="المستأجرين"
+        description="عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية."
+        count={tenantsQuery.data?.count ?? 0}
+      />
 
       <Card>
         <CardContent className="pt-6">
@@ -163,7 +156,7 @@ export function TenantsPage() {
           <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>التالي</Button>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 export default TenantsPage;

@@ -5,6 +5,7 @@ import { ContractListHeader } from './components/ContractListHeader';
 import { ContractListState } from './components/ContractListState';
 import { ContractResults } from './components/ContractResults';
 import { ContractFormModal } from './contract-form-modal';
+import { PageLayout } from '@/components/layout/page-layout';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractListExport';
@@ -81,7 +82,7 @@ export function ContractsListPage() {
 
   return (
     <>
-      <div className="space-y-6">
+      <PageLayout dir="rtl" size="wide">
         <ContractListHeader
           canExport={Boolean(filteredContracts.length)}
           onCreate={openCreate}
@@ -143,7 +144,7 @@ export function ContractsListPage() {
             </div>
           </div>
         )}
-      </div>
+      </PageLayout>
 
       <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />
 

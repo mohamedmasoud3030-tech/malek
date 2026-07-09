@@ -2,13 +2,14 @@ import { Link, useParams, Outlet, useNavigate, useLocation } from '@tanstack/rea
 import { Edit, DoorOpen } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitsList } from '@/features/units/units-list';
 import { useUnits } from '@/features/units/use-units';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyDate, formatCompanyMoney, getCompanyLocale } from '@/lib/companyFormatters';
+import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { propertyStatusLabels } from './property-schema';
 import { summarizePropertyUnits } from './property-unit-summary';
 import { useProperty } from './use-properties';
@@ -16,7 +17,6 @@ import { unitStatusLabels } from '../units/unit-schema';
 
 const propertyStatusTone = { active: 'green', inactive: 'gray', maintenance: 'gold', sold: 'blue' } as const;
 const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
-const companyLocale = getCompanyLocale(defaultCompanyLocalSettings);
 
 function money(value: number | null) {
   if (value === null) return '—';
@@ -24,7 +24,7 @@ function money(value: number | null) {
 }
 
 function count(value: number) {
-  return value.toLocaleString(companyLocale);
+  return formatCompanyNumber(defaultCompanyLocalSettings, value);
 }
 
 const propertyTypeAliases: Readonly<Record<string, string>> = {
@@ -70,7 +70,7 @@ export function PropertyDetailPage() {
       emptyDescription="ربما تم حذف العقار أو لا تملك صلاحية الوصول إليه."
     >
       {property && (
-        <div className="space-y-6">
+        <PageLayout dir="rtl" size="wide">
           <EntityDetailHeader
             title={property.title ?? 'عقار'}
             subtitle={property.address ?? undefined}
@@ -108,7 +108,7 @@ export function PropertyDetailPage() {
 
           {/* Sub-View Render Outlet */}
           <Outlet />
-        </div>
+        </PageLayout>
       )}
     </AsyncContentState>
   );

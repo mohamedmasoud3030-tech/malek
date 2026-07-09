@@ -3,6 +3,7 @@ import { ArrowRight, Ban, CalendarDays, CheckCircle2, Printer, ReceiptText, Wall
 import { useDeferredValue, useMemo, useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -156,7 +157,7 @@ function ReceiptsHistoryContent() {
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="الإيصالات"
         description="مراجعة إيصالات الدفعات المنشورة، فتح تفاصيل الإيصال، واستخدام أمر الطباعة عند الحاجة."
@@ -319,7 +320,7 @@ function ReceiptsHistoryContent() {
         onConfirm={handleConfirmVoid}
         onReasonChange={(reason) => setVoidDialog((v) => ({ ...v, reason }))}
       />
-    </div>
+    </PageLayout>
   );
 }
 
