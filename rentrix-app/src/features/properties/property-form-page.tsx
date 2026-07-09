@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useParams, useRouter } from '@tanstack/react-router';
+import { useParams, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { PageHeader } from '@/components/layout/page-header';
@@ -123,7 +123,7 @@ export function PropertyFormPage() {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>
-            <Button variant="secondary" asChild><Link to="/properties">العودة للعقارات</Link></Button>
+            <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')}>العودة للعقارات</Button>
           </CardContent>
         </Card>
       </PageLayout>
@@ -135,8 +135,11 @@ export function PropertyFormPage() {
       <PageHeader
         title={isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}
         description="أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك."
-        backTo="/properties"
-        backLabel="العودة للعقارات"
+        secondaryActions={(
+          <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
+            العودة للعقارات
+          </Button>
+        )}
       />
 
       <Card>
