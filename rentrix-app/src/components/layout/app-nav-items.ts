@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Building2, ClipboardList, ContactRound, DoorOpen, FileText, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileText, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -51,6 +51,12 @@ export const navGroups = [
       'reportsAndStatements',
       'تحصيلات، متأخرات، إشغال، وكشوف قراءة فقط',
       BarChart3,
+    ],
+    [
+      '/ai-assistant',
+      'aiAssistant',
+      'مساعد قراءة فقط لتلخيص المتأخرات والتجديدات واللقطات المالية',
+      Bot,
     ],
   ]],
   ['المبيعات والعمولات', [
