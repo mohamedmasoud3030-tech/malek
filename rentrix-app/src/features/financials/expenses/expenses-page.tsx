@@ -47,7 +47,7 @@ export function ExpensesPage() {
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: { property_id: '', category: 'صيانة', cost_center_id: '', amount: 0, expense_date: toLocalDateInputValue(), description: '', attachment_url: null },
+    defaultValues: { property_id: '', category: 'صيانة', cost_center_id: '', expense_date: toLocalDateInputValue(), description: '', attachment_url: null },
   });
 
   const onCreateExpense = (values: ExpenseFormValues) => {
@@ -61,7 +61,7 @@ export function ExpensesPage() {
         description: values.description?.trim() ? values.description.trim() : null,
         attachment_url: values.attachment_url ?? null,
       },
-      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', amount: 0, expense_date: toLocalDateInputValue(), description: '', attachment_url: null }) },
+      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', expense_date: toLocalDateInputValue(), description: '', attachment_url: null }) },
     );
   };
 
