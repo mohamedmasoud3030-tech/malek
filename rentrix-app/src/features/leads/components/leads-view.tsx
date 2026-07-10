@@ -1,7 +1,8 @@
 import { Archive, Edit, Plus, UserCheck, Users, UsersRound } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { WriteErrorCard } from '@/components/page-state-card';
@@ -80,6 +81,7 @@ export function LeadsView(props: Props) {
     onArchive,
     onRetry,
   } = props;
+  const [archiveCandidate, setArchiveCandidate] = useState<LeadRecord | null>(null);
   const followUpLeads = rows.filter((row) => ['new', 'contacted'].includes(row.status ?? '')).length;
   const qualifiedLeads = rows.filter((row) => row.status === 'qualified').length;
   const convertedLeads = rows.filter((row) => row.status === 'converted').length;
@@ -167,7 +169,7 @@ export function LeadsView(props: Props) {
         emptyDescription={hasFilters ? 'غيّر البحث أو الحالة أو المصدر لعرض عملاء محتملين آخرين.' : 'أضف أول عميل محتمل من بيانات تواصل حقيقية؛ لن ينشئ النظام مستأجراً أو مالكاً تلقائياً.'}
         emptyAction={hasFilters ? undefined : <Button onClick={onCreate}>إضافة عميل محتمل</Button>}
       >
-        <LeadRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />
+        <LeadRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={setArchiveCandidate} />
       </AsyncContentState>
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
@@ -193,19 +195,34 @@ export function LeadsView(props: Props) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={archiveCandidate != null}
+        onOpenChange={(open) => { if (!open) setArchiveCandidate(null); }}
+        title={`أرشفة العميل ${archiveCandidate?.name ?? ''}؟`}
+        description="سيتم نقل العميل المحتمل إلى الأرشيف ولن يظهر في القوائم النشطة."
+        confirmLabel="تأكيد الأرشفة"
+        isLoading={isArchiving}
+        onConfirm={() => {
+          if (archiveCandidate) {
+            onArchive(archiveCandidate.id);
+            setArchiveCandidate(null);
+          }
+        }}
+      />
     </PageLayout>
   );
 }
 
-function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
+function Field({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
 }
 
-function LeadRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: LeadRecord[]; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchive: (id: string) => void }>) {
+function LeadRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: LeadRecord[]; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchiveClick: (row: LeadRecord) => void }>) {
   return (
     <Card className="overflow-hidden">
       <div className="grid gap-3 p-4 md:hidden">
-        {rows.map((row) => <LeadCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />)}
+        {rows.map((row) => <LeadCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}
       </div>
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[760px] text-sm">
@@ -228,7 +245,7 @@ function LeadRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: Lea
                 <td className="p-3">{sourceLabels[row.source ?? ''] ?? row.source ?? '—'}</td>
                 <td className="p-3">{row.min_budget ?? '—'} - {row.max_budget ?? '—'}</td>
                 <td className="p-3"><StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td>
-                <td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></td>
+                <td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td>
               </tr>
             ))}
           </tbody>
@@ -238,7 +255,7 @@ function LeadRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: Lea
   );
 }
 
-function LeadCard({ row, isArchiving, onEdit, onArchive }: Readonly<{ row: LeadRecord; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchive: (id: string) => void }>) {
+function LeadCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: LeadRecord; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchiveClick: (row: LeadRecord) => void }>) {
   return (
     <div className="rounded-2xl border bg-background p-4">
       <div className="flex items-start justify-between gap-3">
@@ -249,16 +266,16 @@ function LeadCard({ row, isArchiving, onEdit, onArchive }: Readonly<{ row: LeadR
         <StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>
       </div>
       <p className="mt-3 text-sm">المصدر: {sourceLabels[row.source ?? ''] ?? row.source ?? '—'}</p>
-      <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} />
+      <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />
     </div>
   );
 }
 
-function RowActions({ id, disabled, onEdit, onArchive }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchive: (id: string) => void }>) {
+function RowActions({ id, disabled, onEdit, onArchiveClick }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchiveClick: () => void }>) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       <Button className="min-h-11" variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button>
-      <Button className="min-h-11" variant="danger" disabled={disabled} onClick={() => onArchive(id)}><Archive className="me-2 size-4" />أرشفة</Button>
+      <Button className="min-h-11" variant="danger" disabled={disabled} onClick={onArchiveClick}><Archive className="me-2 size-4" />أرشفة</Button>
     </div>
   );
 }
