@@ -1,9 +1,9 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 import { Download } from 'lucide-react';
-import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityTable } from '@/components/ui/entity-table';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -152,54 +152,48 @@ export function ExpensesSection({ expenses, propertyRows, costCenterRows, filter
           {hasFilters ? <Button variant="secondary" className="sm:col-span-2 lg:col-span-5" onClick={clearFilters}>مسح الفلاتر</Button> : null}
         </div>
 
-        {expenses.length === 0 ? (
-          <EmptyState
-            title={hasFilters ? 'لا توجد مصاريف مطابقة' : 'لا توجد مصاريف بعد'}
-            description={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'سجّل أول مصروف تشغيلي من النموذج أدناه.'}
-          />
-        ) : (
-          <div className="divide-y divide-border rounded-xl border border-border">
-            {expenses.map((expense) => {
+        <EntityTable
+          aria-label="جدول المصاريف"
+          rows={expenses}
+          keyOf={(expense) => expense.id}
+          emptyTitle={hasFilters ? 'لا توجد مصاريف مطابقة' : 'لا توجد مصاريف بعد'}
+          emptyDescription={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'سجّل أول مصروف تشغيلي من النموذج أدناه.'}
+          columns={[
+            { key: 'expense_date', header: 'التاريخ', render: (expense) => <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span> },
+            { key: 'label', header: 'العقار والتصنيف', render: (expense) => {
               const label = buildExpensePropertyLabel(expense, propertyById);
-              const costCenterLabel = expense.cost_center_id
-                ? costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف'
-                : null;
-              return (
-                <div key={expense.id} className="px-4 py-3 text-sm">
-                  {/* Mobile: stacked card */}
-                  <div className="space-y-2 sm:hidden">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="font-bold leading-tight">{label}</span>
-                      <span className="font-bold tabular-nums shrink-0">{formatMoney(expense.amount)}</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                      <span>{formatDate(expense.expense_date)}</span>
-                      <span>·</span>
-                      <span>{expense.category}</span>
-                      {costCenterLabel ? (<><span>·</span><span>{costCenterLabel}</span></>) : null}
-                    </div>
-                    <Button type="button" variant="secondary" className="h-9 w-full px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
-                      <Download className="me-2 size-4" />PDF
-                    </Button>
-                  </div>
-
-                  {/* Desktop: compact row */}
-                  <div className="hidden sm:grid sm:grid-cols-[7rem_1fr_auto_auto] sm:items-center sm:gap-3">
-                    <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>
-                    <span className="min-w-0 truncate">
-                      {label} — {expense.category}
-                      {costCenterLabel ? ` — ${costCenterLabel}` : ''}
-                    </span>
-                    <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>
-                    <Button type="button" variant="secondary" className="h-9 px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
-                      <Download className="me-2 size-4" />PDF
-                    </Button>
-                  </div>
+              const costCenterLabel = expense.cost_center_id ? costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف' : null;
+              return <span className="min-w-0 truncate">{label} — {expense.category}{costCenterLabel ? ` — ${costCenterLabel}` : ''}</span>;
+            } },
+            { key: 'amount', header: 'المبلغ', render: (expense) => <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span> },
+            { key: 'actions', header: 'إجراءات', render: (expense) => (
+              <Button type="button" variant="secondary" className="h-9 px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
+                <Download className="me-2 size-4" />PDF
+              </Button>
+            ) },
+          ]}
+          renderMobileCard={(expense) => {
+            const label = buildExpensePropertyLabel(expense, propertyById);
+            const costCenterLabel = expense.cost_center_id ? costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف' : null;
+            return (
+              <div className="rounded-2xl border bg-background p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-bold leading-tight">{label}</span>
+                  <span className="font-bold tabular-nums shrink-0">{formatMoney(expense.amount)}</span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                  <span>{formatDate(expense.expense_date)}</span>
+                  <span>·</span>
+                  <span>{expense.category}</span>
+                  {costCenterLabel ? (<><span>·</span><span>{costCenterLabel}</span></>) : null}
+                </div>
+                <Button type="button" variant="secondary" className="h-9 w-full px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
+                  <Download className="me-2 size-4" />PDF
+                </Button>
+              </div>
+            );
+          }}
+        />
 
         <form className="grid gap-3 rounded-2xl border border-border p-4 sm:grid-cols-2" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
           <label className="space-y-1 text-sm font-bold">
