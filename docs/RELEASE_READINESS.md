@@ -172,3 +172,14 @@ This pass treats feature development as frozen and only tracks production blocke
 ### Go / No-Go recommendation
 
 **NO-GO for release sign-off today.** There are no additional code-only BLOCKER/HIGH issues confirmed in this pass after the commission validation fix, but critical production evidence is still missing. Recommend moving to release-candidate evidence collection and manual/staging QA before any GO decision.
+
+### RPC authorization fixes (2026-07-10)
+
+Direct live-DB verification of financial/maintenance RPCs surfaced two authorization gaps, both applied to the live database and now synced as migrations:
+
+| RPC | Issue | Severity | Fix |
+|---|---|---|---|
+| `resolve_maintenance_with_expense` | Only checked `auth.uid() IS NOT NULL`; any authenticated USER-role account (normally restricted to dashboard-view) could post an arbitrary-amount expense row directly via RPC call. | HIGH | Added ADMIN/MANAGER role check, matching `post_receipt_atomic` / `record_invoice_payment_atomic` / `void_receipt_atomic`. Migration: `20260710120000_resolve_maintenance_with_expense_role_check.sql`. |
+| `recalculate_all_balances` | `SECURITY INVOKER`, relying solely on table RLS (which grants ALL to any `app_private.is_app_user()` with no role distinction) to protect a full delete+rebuild of `contract_balances`, `tenant_balances`, `owner_balances`. | MEDIUM | Switched to `SECURITY DEFINER` with the same ADMIN/MANAGER role check, so the authorization boundary no longer depends on RLS alone. Migration: `20260710120001_recalculate_all_balances_security_definer.sql`. |
+
+No frontend call sites invoke `recalculate_all_balances`, so this fix carries no UI risk. Frontend unit tests mock the RPC layer and are unaffected by either change.
