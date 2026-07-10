@@ -10,6 +10,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -185,32 +186,51 @@ function Field({ label, children }: Readonly<{ label: string; children: ReactNod
 }
 
 function LandRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: LandRecord[]; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchiveClick: (row: LandRecord) => void }>) {
+  const columns: ColumnDef<LandRecord>[] = [
+    {
+      key: 'name',
+      header: 'الأرض',
+      className: 'max-w-56',
+      render: (row) => (
+        <>
+          <p className="whitespace-normal break-words font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}</p>
+          <p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p>
+        </>
+      ),
+    },
+    {
+      key: 'location',
+      header: 'الموقع',
+      className: 'max-w-72',
+      render: (row) => <span className="whitespace-normal break-words">{row.location ?? '—'}</span>,
+    },
+    {
+      key: 'value',
+      header: 'القيمة',
+      render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'الحالة',
+      render: (row) => <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>,
+    },
+    {
+      key: 'actions',
+      header: 'إجراءات',
+      render: (row) => <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />,
+    },
+  ];
+
   return (
-    <>
-      <div className="grid gap-3 md:hidden">
-        {rows.map((row) => <LandCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}
-      </div>
-      <Card className="hidden overflow-hidden md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead className="bg-muted/50 text-muted-foreground">
-              <tr><th className="p-3 text-right">الأرض</th><th className="p-3 text-right">الموقع</th><th className="p-3 text-right">القيمة</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t">
-                  <td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}<p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p></td>
-                  <td className="max-w-72 whitespace-normal break-words p-3">{row.location ?? '—'}</td>
-                  <td className="p-3" dir="ltr">{money(row.owner_price ?? row.purchase_price)}</td>
-                  <td className="p-3"><StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td>
-                  <td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-    </>
+    <EntityTable
+      rows={rows}
+      columns={columns}
+      keyOf={(row) => row.id}
+      aria-label="قائمة الأراضي"
+      renderMobileCard={(row) => (
+        <LandCard row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />
+      )}
+    />
   );
 }
 
