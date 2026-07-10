@@ -16,7 +16,7 @@ const typeLabels: Record<string, string> = { contract: 'عقد', payment: 'تح�
 const statusTone: Record<string, 'blue' | 'green' | 'red' | 'gray' | 'gold'> = { pending: 'gold', approved: 'blue', paid: 'green', cancelled: 'red' };
 
 function money(value: number | null) {
-  return value == null ? '—' : new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP', maximumFractionDigits: 0 }).format(value);
+  return value == null ? '—' : new Intl.NumberFormat('ar-OM', { style: 'currency', currency: 'OMR', maximumFractionDigits: 3 }).format(value);
 }
 
 type Props = Readonly<{
