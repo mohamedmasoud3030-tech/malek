@@ -1,7 +1,17 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { OwnerDetailView } from './components/owner-detail-view';
 import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './ownerService';
+
+vi.mock('../settings/useCompanySettings', async () => {
+  const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
+
+  return { useCompanySettingsContract: () => testCompanySettingsContract };
+});
+
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to }: Readonly<{ children: React.ReactNode; to: string }>) => <a href={to}>{children}</a>,
+}));
 
 const owner: Owner = {
   id: 'owner-1',
