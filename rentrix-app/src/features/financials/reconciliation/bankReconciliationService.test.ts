@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseBankStatementCsv, summarizeReconciliation } from './bankReconciliationService';
+import { parseBankStatementCsv, summarizeReconciliation, toBankReconciliationMatchPayload, toBankStatementLinePayload } from './bankReconciliationService';
 
 describe('bank reconciliation helpers', () => {
   it('summarizes unmatched, matched, and ignored statement lines', () => {
@@ -29,4 +29,45 @@ describe('bank reconciliation helpers', () => {
     expect(() => parseBankStatementCsv('2026-02-30,تحصيل,REC-1,250', 'bank-1')).toThrow('تاريخ غير صحيح');
     expect(() => parseBankStatementCsv('2026-07-01,تحصيل,REC-1,0', 'bank-1')).toThrow('مبلغ غير صحيح');
   });
+
+  it('normalizes manual bank statement line values before insert', () => {
+    expect(toBankStatementLinePayload({
+      bank_account_id: ' bank-1 ',
+      transaction_date: '2026-07-10',
+      description: '  رسوم بنك  ',
+      reference: ' REF-1 ',
+      amount: ' -12.500 ',
+    })).toEqual({
+      bank_account_id: 'bank-1',
+      transaction_date: '2026-07-10',
+      description: 'رسوم بنك',
+      reference: 'REF-1',
+      amount: -12.5,
+      status: 'unmatched',
+    });
+  });
+
+  it('rejects invalid manual statement line dates and zero amounts before insert', () => {
+    expect(() => toBankStatementLinePayload({ bank_account_id: 'bank-1', transaction_date: '2026-02-30', description: '', reference: '', amount: '10' })).toThrow('تاريخاً صحيحاً');
+    expect(() => toBankStatementLinePayload({ bank_account_id: 'bank-1', transaction_date: '2026-07-10', description: '', reference: '', amount: '0' })).toThrow('مبلغ الحركة');
+  });
+
+  it('normalizes match payloads and rejects missing matched records before insert', () => {
+    expect(toBankReconciliationMatchPayload({
+      statement_line_id: ' line-1 ',
+      matched_entity_type: 'payment',
+      matched_entity_id: ' payment-1 ',
+      matched_amount: '250.500',
+      notes: '  مطابق آلياً ',
+    })).toEqual({
+      statement_line_id: 'line-1',
+      matched_entity_type: 'payment',
+      matched_entity_id: 'payment-1',
+      matched_amount: 250.5,
+      notes: 'مطابق آلياً',
+    });
+
+    expect(() => toBankReconciliationMatchPayload({ statement_line_id: 'line-1', matched_entity_type: 'payment', matched_entity_id: ' ', matched_amount: '250', notes: '' })).toThrow('معرف الحركة');
+  });
+
 });

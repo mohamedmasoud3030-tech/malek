@@ -3,6 +3,7 @@ import { Landmark, Link2, Plus, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { InlineStatCard } from '@/components/ui/inline-stat-card';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
@@ -36,6 +37,7 @@ export function BankReconciliationPage() {
   const [lineDraft, setLineDraft] = useState<BankStatementLineFormValues>(emptyLineDraft);
   const [matchDraft, setMatchDraft] = useState<BankReconciliationMatchValues>(emptyMatchDraft);
   const [importDraft, setImportDraft] = useState<BankStatementImportValues>(emptyImportDraft);
+  const [pendingIgnoreLineId, setPendingIgnoreLineId] = useState<string | null>(null);
   const accountsQuery = useBankAccounts();
   const linesQuery = useBankStatementLines(filters);
   const createLine = useCreateBankStatementLine();
@@ -50,6 +52,7 @@ export function BankReconciliationPage() {
   const suggestionsQuery = useSuggestedBankMatches(selectedLine);
   const canManageReconciliation = canAccess(authorization, financialOperationPermissions.matchBankReconciliation);
   const writeError = createLine.error ?? importCsv.error ?? matchLine.error ?? ignoreLine.error;
+  const pendingIgnoreLine = lines.find((line) => line.id === pendingIgnoreLineId) ?? null;
 
   return (
     <PageLayout dir="rtl" size="wide">
@@ -126,7 +129,21 @@ export function BankReconciliationPage() {
         </CardContent>
       </Card>
 
-      {lines.length === 0 && !linesQuery.isLoading ? <PageStateCard title="لا توجد حركات كشف ضمن الفلاتر" description="أضف حركة يدوية أو غيّر الفلاتر لبدء المطابقة." /> : <BankStatementLinesTable lines={lines} onIgnore={(id) => { if (canManageReconciliation) ignoreLine.mutate(id); }} isIgnoring={!canManageReconciliation || ignoreLine.isPending} />}
+      {lines.length === 0 && !linesQuery.isLoading ? <PageStateCard title="لا توجد حركات كشف ضمن الفلاتر" description="أضف حركة يدوية أو غيّر الفلاتر لبدء المطابقة." /> : <BankStatementLinesTable lines={lines} onIgnore={(id) => { if (canManageReconciliation) setPendingIgnoreLineId(id); }} isIgnoring={!canManageReconciliation || ignoreLine.isPending} />}
+
+      <ConfirmDialog
+        open={Boolean(pendingIgnoreLine)}
+        onOpenChange={(open) => { if (!open) setPendingIgnoreLineId(null); }}
+        title="تجاهل حركة كشف البنك؟"
+        description={pendingIgnoreLine ? `سيتم استبعاد حركة ${pendingIgnoreLine.description} بمبلغ ${formatCompanyMoney(defaultCompanyLocalSettings, pendingIgnoreLine.amount)} من قائمة الحركات غير المطابقة. يمكن مراجعتها لاحقاً عبر فلتر المتجاهلة.` : undefined}
+        confirmLabel="تجاهل الحركة"
+        variant="warning"
+        isLoading={ignoreLine.isPending}
+        onConfirm={() => {
+          if (!pendingIgnoreLineId || !canManageReconciliation) return;
+          ignoreLine.mutate(pendingIgnoreLineId, { onSuccess: () => setPendingIgnoreLineId(null) });
+        }}
+      />
     </PageLayout>
   );
 }

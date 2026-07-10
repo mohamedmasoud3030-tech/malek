@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
@@ -7,6 +8,51 @@ type BankStatementImportInsert = Database['public']['Tables']['bank_statement_im
 type BankStatementLineInsert = Database['public']['Tables']['bank_statement_lines']['Insert'];
 type BankReconciliationMatchInsert = Database['public']['Tables']['bank_reconciliation_matches']['Insert'];
 
+
+const matchEntityTypes = ['payment', 'receipt', 'expense', 'manual_adjustment'] as const;
+
+const bankAccountIdSchema = z.string().trim().min(1, 'اختر الحساب البنكي.');
+const dateInputSchema = z.string().trim().refine(isValidDateInput, 'اختر تاريخاً صحيحاً بصيغة YYYY-MM-DD.');
+const requiredNonZeroNumberSchema = (label: string) => z.string().trim().transform((value, context) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed === 0) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: `${label} مطلوب ويجب ألا يساوي صفر.` });
+    return z.NEVER;
+  }
+  return parsed;
+});
+
+const bankStatementLineSchema = z.object({
+  bank_account_id: bankAccountIdSchema,
+  transaction_date: dateInputSchema,
+  description: z.string().trim().optional(),
+  reference: z.string().trim().optional(),
+  amount: requiredNonZeroNumberSchema('مبلغ الحركة'),
+});
+
+const bankStatementImportSchema = z.object({
+  bank_account_id: bankAccountIdSchema,
+  statement_name: z.string().trim().optional(),
+  csv: z.string().trim().min(1, 'ملف CSV فارغ.'),
+});
+
+const bankReconciliationMatchSchema = z.object({
+  statement_line_id: z.string().trim().min(1, 'اختر حركة كشف البنك.'),
+  matched_entity_type: z.enum(matchEntityTypes, { message: 'اختر نوع السجل المطابق.' }),
+  matched_entity_id: z.string().trim().min(1, 'أدخل معرف الحركة المسجلة المطابقة.'),
+  matched_amount: requiredNonZeroNumberSchema('مبلغ المطابقة'),
+  notes: z.string().trim().optional(),
+});
+
+function getValidationMessage(error: z.ZodError) {
+  return error.issues[0]?.message ?? 'تحقق من البيانات المدخلة.';
+}
+
+function parseOrThrow<T extends z.ZodTypeAny>(schema: T, values: unknown): z.output<T> {
+  const parsed = schema.safeParse(values);
+  if (!parsed.success) throw new Error(getValidationMessage(parsed.error));
+  return parsed.data;
+}
 
 function parseCsvRow(row: string) {
   const cells: string[] = [];
@@ -43,8 +89,8 @@ function isValidDateInput(value: string) {
 }
 
 export function parseBankStatementCsv(csv: string, bankAccountId: string): BankStatementLineInsert[] {
-  if (!bankAccountId) throw new Error('اختر الحساب البنكي قبل الاستيراد.');
-  const rows = csv.split(/\r?\n/).map((row) => row.trim()).filter(Boolean);
+  const normalizedAccountId = parseOrThrow(bankAccountIdSchema, bankAccountId);
+  const rows = csv.trim().split(/\r?\n/).map((row) => row.trim()).filter(Boolean);
   if (rows.length === 0) throw new Error('ملف CSV فارغ.');
   const firstCells = parseCsvRow(rows[0]).map((cell) => cell.toLowerCase());
   const hasHeader = firstCells.some((cell) => ['date', 'transaction_date', 'amount', 'description', 'reference'].includes(cell));
@@ -55,7 +101,7 @@ export function parseBankStatementCsv(csv: string, bankAccountId: string): BankS
     const amount = normalizeCsvAmount(amountText);
     if (!Number.isFinite(amount) || amount === 0) throw new Error(`مبلغ غير صحيح في صف CSV رقم ${index + 1}.`);
     return {
-      bank_account_id: bankAccountId,
+      bank_account_id: normalizedAccountId,
       transaction_date: transactionDate,
       description: description || 'حركة مستوردة',
       reference: reference || null,
@@ -71,11 +117,29 @@ function toCandidate(entity_type: BankMatchCandidate['entity_type'], row: { id: 
   return { entity_type, entity_id: row.id, amount: row.amount, date: row.date, label: row.label };
 }
 
-function requiredNumber(value: string, label: string) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed === 0) throw new Error(`${label} مطلوب ويجب ألا يساوي صفر.`);
-  return parsed;
+export function toBankStatementLinePayload(values: BankStatementLineFormValues): BankStatementLineInsert {
+  const parsed = parseOrThrow(bankStatementLineSchema, values);
+  return {
+    bank_account_id: parsed.bank_account_id,
+    transaction_date: parsed.transaction_date,
+    description: parsed.description || 'حركة بنكية',
+    reference: parsed.reference || null,
+    amount: parsed.amount,
+    status: 'unmatched',
+  };
 }
+
+export function toBankReconciliationMatchPayload(values: BankReconciliationMatchValues): BankReconciliationMatchInsert {
+  const parsed = parseOrThrow(bankReconciliationMatchSchema, values);
+  return {
+    statement_line_id: parsed.statement_line_id,
+    matched_entity_type: parsed.matched_entity_type,
+    matched_entity_id: parsed.matched_entity_id,
+    matched_amount: parsed.matched_amount,
+    notes: parsed.notes || null,
+  };
+}
+
 
 export function summarizeReconciliation(lines: readonly Pick<BankStatementLine, 'amount' | 'status'>[]): ReconciliationSummary {
   return lines.reduce<ReconciliationSummary>((summary, line) => ({
@@ -105,16 +169,7 @@ export async function listBankStatementLines(filters: BankReconciliationFilters)
 }
 
 export async function createBankStatementLine(values: BankStatementLineFormValues): Promise<BankStatementLine> {
-  if (!values.bank_account_id) throw new Error('اختر الحساب البنكي.');
-  if (!values.transaction_date) throw new Error('اختر تاريخ الحركة.');
-  const payload: BankStatementLineInsert = {
-    bank_account_id: values.bank_account_id,
-    transaction_date: values.transaction_date,
-    description: values.description.trim() || 'حركة بنكية',
-    reference: values.reference.trim() || null,
-    amount: requiredNumber(values.amount, 'مبلغ الحركة'),
-    status: 'unmatched',
-  };
+  const payload = toBankStatementLinePayload(values);
   const { data, error } = await supabase.from('bank_statement_lines').insert(payload).select('*').single().returns<BankStatementLine>();
   if (error) handleSupabaseError(error, 'تعذر إضافة حركة كشف البنك');
   if (!data) throw new Error('لم يتم إرجاع حركة البنك بعد الحفظ.');
@@ -123,11 +178,12 @@ export async function createBankStatementLine(values: BankStatementLineFormValue
 
 
 export async function createBankStatementImportFromCsv(values: BankStatementImportValues): Promise<BankStatementLine[]> {
-  const lines = parseBankStatementCsv(values.csv, values.bank_account_id);
+  const parsedImport = parseOrThrow(bankStatementImportSchema, values);
+  const lines = parseBankStatementCsv(parsedImport.csv, parsedImport.bank_account_id);
   const dates = lines.map((line) => line.transaction_date).sort();
   const importPayload: BankStatementImportInsert = {
-    bank_account_id: values.bank_account_id,
-    statement_name: values.statement_name.trim() || `استيراد ${getTodayForImportName()}`,
+    bank_account_id: parsedImport.bank_account_id,
+    statement_name: parsedImport.statement_name || `استيراد ${getTodayForImportName()}`,
     statement_from: dates[0] ?? null,
     statement_to: dates[dates.length - 1] ?? null,
   };
@@ -183,18 +239,10 @@ export async function listSuggestedBankMatches(line: Pick<BankStatementLine, 'am
 }
 
 export async function matchBankStatementLine(values: BankReconciliationMatchValues): Promise<BankReconciliationMatch> {
-  if (!values.statement_line_id) throw new Error('اختر حركة كشف البنك.');
-  if (!values.matched_entity_id.trim()) throw new Error('أدخل معرف الحركة المسجلة المطابقة.');
-  const payload: BankReconciliationMatchInsert = {
-    statement_line_id: values.statement_line_id,
-    matched_entity_type: values.matched_entity_type,
-    matched_entity_id: values.matched_entity_id.trim(),
-    matched_amount: requiredNumber(values.matched_amount, 'مبلغ المطابقة'),
-    notes: values.notes.trim() || null,
-  };
+  const payload = toBankReconciliationMatchPayload(values);
   const { data, error } = await supabase.from('bank_reconciliation_matches').insert(payload).select('*').single().returns<BankReconciliationMatch>();
   if (error) handleSupabaseError(error, 'تعذر تسجيل المطابقة البنكية');
-  const { error: lineError } = await supabase.from('bank_statement_lines').update({ status: 'matched', updated_at: new Date().toISOString() }).eq('id', values.statement_line_id);
+  const { error: lineError } = await supabase.from('bank_statement_lines').update({ status: 'matched', updated_at: new Date().toISOString() }).eq('id', payload.statement_line_id);
   if (lineError) handleSupabaseError(lineError, 'تم تسجيل المطابقة لكن تعذر تحديث حالة حركة كشف البنك');
   if (!data) throw new Error('لم يتم إرجاع سجل المطابقة بعد الحفظ.');
   return data;

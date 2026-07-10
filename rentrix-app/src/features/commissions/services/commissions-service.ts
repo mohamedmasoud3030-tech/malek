@@ -6,29 +6,41 @@ import type { CommissionFilters, CommissionFormValues, CommissionRecord } from '
 type CommissionInsert = Database['public']['Tables']['commissions']['Insert'];
 type CommissionUpdate = Database['public']['Tables']['commissions']['Update'];
 
-function numberOrNull(value: string) {
+const commissionTypeValues = new Set(['contract', 'payment', 'owner', 'lead', 'land']);
+const commissionStatusValues = new Set(['pending', 'approved', 'paid', 'cancelled']);
+
+function numberOrNull(value: string, label: string) {
   const trimmed = value.trim();
-  return trimmed ? Number(trimmed) : null;
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) throw new Error(`${label} يجب أن يكون رقماً موجباً أو صفراً.`);
+  return parsed;
+}
+
+function percentageOrNull(value: string) {
+  const percentage = numberOrNull(value, 'نسبة العمولة');
+  if (percentage !== null && percentage > 100) throw new Error('نسبة العمولة يجب ألا تتجاوز 100%.');
+  return percentage;
 }
 
 function deriveAmount(values: CommissionFormValues) {
-  const amount = numberOrNull(values.amount);
+  const amount = numberOrNull(values.amount, 'مبلغ العمولة');
   if (amount !== null) return amount;
-  const dealValue = numberOrNull(values.deal_value);
-  const percentage = numberOrNull(values.percentage);
+  const dealValue = numberOrNull(values.deal_value, 'قيمة الصفقة');
+  const percentage = percentageOrNull(values.percentage);
   if (dealValue !== null && percentage !== null) return Number((dealValue * (percentage / 100)).toFixed(2));
   return null;
 }
 
-function commissionPayload(values: CommissionFormValues): CommissionInsert {
+export function commissionPayload(values: CommissionFormValues): CommissionInsert {
   return {
     id: crypto.randomUUID(),
     staff_name: values.staff_name.trim(),
     type: values.type,
     status: values.status,
     source_id: values.source_id.trim() || null,
-    deal_value: numberOrNull(values.deal_value),
-    percentage: numberOrNull(values.percentage),
+    deal_value: numberOrNull(values.deal_value, 'قيمة الصفقة'),
+    percentage: percentageOrNull(values.percentage),
     amount: deriveAmount(values),
     paid_at: values.status === 'paid' ? Date.now() : null,
   };
@@ -48,17 +60,23 @@ export async function listCommissions(filters: CommissionFilters) {
   return data ?? [];
 }
 
-export async function createCommission(values: CommissionFormValues) {
+function validateCommission(values: CommissionFormValues) {
   if (!values.staff_name.trim()) throw new Error('اسم الموظف أو الوسيط مطلوب.');
-  if (deriveAmount(values) === null) throw new Error('أدخل قيمة العمولة أو قيمة الصفقة والنسبة.');
+  if (!commissionTypeValues.has(values.type)) throw new Error('نوع مصدر العمولة غير صحيح.');
+  if (!commissionStatusValues.has(values.status)) throw new Error('حالة العمولة غير صحيحة.');
+  const amount = deriveAmount(values);
+  if (amount === null || amount <= 0) throw new Error('أدخل قيمة عمولة أكبر من صفر أو قيمة الصفقة والنسبة.');
+}
+
+export async function createCommission(values: CommissionFormValues) {
+  validateCommission(values);
   const { data, error } = await supabase.from('commissions').insert(commissionPayload(values)).select('*').single().returns<CommissionRecord>();
   if (error) handleSupabaseError(error, 'تعذر حفظ العمولة');
   return data;
 }
 
 export async function updateCommission(id: string, values: CommissionFormValues) {
-  if (!values.staff_name.trim()) throw new Error('اسم الموظف أو الوسيط مطلوب.');
-  if (deriveAmount(values) === null) throw new Error('أدخل قيمة العمولة أو قيمة الصفقة والنسبة.');
+  validateCommission(values);
   const { id: _newId, ...basePayload } = commissionPayload(values);
   const payload: CommissionUpdate = { ...basePayload, updated_at: new Date().toISOString() };
   const { data, error } = await supabase.from('commissions').update(payload).eq('id', id).select('*').single().returns<CommissionRecord>();
