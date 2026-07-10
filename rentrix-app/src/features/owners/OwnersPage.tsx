@@ -16,6 +16,8 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EntityTable } from '@/components/ui/entity-table';
 import { Textarea } from '@/components/ui/textarea';
+import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { formatCompanyNumber } from '@/lib/companyFormatters';
 import { OwnerCheckbox } from './OwnerCheckbox';
 import { OwnerPropertySelect } from './OwnerPropertySelect';
 import type { Owner, PropertyOwner, PropertyWithOwners } from './ownerService';
@@ -193,10 +195,10 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
               />
             )},
             { key: 'contact', header: 'الهاتف والإيميل', render: (row) => <OwnerContact owner={row.owner} /> },
-            { key: 'property_count', header: 'عدد العقارات', render: (row) => row.propertyCount.toLocaleString('ar') },
+            { key: 'property_count', header: 'عدد العقارات', render: (row) => formatCompanyNumber(defaultCompanyLocalSettings, row.propertyCount) },
             { key: 'property_links', header: 'أسماء العقارات', render: (row) => <OwnerPropertyLinks row={row} /> },
             { key: 'ownership', header: 'نسبة الملكية/الدور', render: (row) => <OwnershipSummary row={row} /> },
-            { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? row.activeContractCount.toLocaleString('ar') : '—' },
+            { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? formatCompanyNumber(defaultCompanyLocalSettings, row.activeContractCount) : '—' },
             { key: 'actions', header: 'روابط آمنة', render: (row) => (
               <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button type="button" variant="secondary" className="min-h-9 px-3 text-xs gap-1" onClick={() => onSelectOwner(row.owner.id)}><Eye className="size-4" />العلاقات</Button>
@@ -223,11 +225,11 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-1.5">
                     <Building2 className="size-3.5" />
-                    <span>{row.propertyCount.toLocaleString('ar')} عقار</span>
+                    <span>{formatCompanyNumber(defaultCompanyLocalSettings, row.propertyCount)} عقار</span>
                   </div>
                   {row.activeContractCount > 0 ? (
                     <div className="flex items-center gap-1.5 font-bold text-primary">
-                      <span>{row.activeContractCount.toLocaleString('ar')} عقد نشط</span>
+                      <span>{formatCompanyNumber(defaultCompanyLocalSettings, row.activeContractCount)} عقد نشط</span>
                     </div>
                   ) : null}
                 </div>
