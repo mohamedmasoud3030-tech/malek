@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Landmark, Link2, Plus, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { InlineStatCard } from '@/components/ui/inline-stat-card';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
@@ -130,8 +131,77 @@ export function BankReconciliationPage() {
   );
 }
 
+function statusTone(status: BankStatementLine['status']): 'green' | 'gray' | 'gold' {
+  if (status === 'matched') return 'green';
+  if (status === 'ignored') return 'gray';
+  return 'gold';
+}
+
 function BankStatementLinesTable({ lines, onIgnore, isIgnoring }: Readonly<{ lines: BankStatementLine[]; onIgnore: (id: string) => void; isIgnoring: boolean }>) {
-  return <Card className="overflow-hidden"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">التاريخ</th><th className="p-3 text-right">الوصف</th><th className="p-3 text-right">المرجع</th><th className="p-3 text-right">المبلغ</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراء</th></tr></thead><tbody>{lines.map((line) => <tr key={line.id} className="border-t"><td className="p-3">{formatDate(line.transaction_date)}</td><td className="p-3 font-bold">{line.description}</td><td className="p-3">{line.reference ?? '—'}</td><td className="p-3">{formatCompanyMoney(defaultCompanyLocalSettings, line.amount)}</td><td className="p-3"><StatusBadge tone={line.status === 'matched' ? 'green' : line.status === 'ignored' ? 'gray' : 'gold'}>{statusLabels[line.status]}</StatusBadge></td><td className="p-3">{line.status === 'unmatched' ? <Button variant="secondary" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>تجاهل</Button> : '—'}</td></tr>)}</tbody></table></div></Card>;
+  const columns: ColumnDef<BankStatementLine>[] = [
+    { key: 'date', header: 'التاريخ', render: (line) => formatDate(line.transaction_date) },
+    { key: 'description', header: 'الوصف', render: (line) => <span className="font-bold">{line.description}</span> },
+    { key: 'reference', header: 'المرجع', render: (line) => line.reference ?? '—' },
+    { key: 'amount', header: 'المبلغ', render: (line) => formatCompanyMoney(defaultCompanyLocalSettings, line.amount) },
+    { key: 'status', header: 'الحالة', render: (line) => <StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge> },
+    {
+      key: 'action',
+      header: 'إجراء',
+      render: (line) =>
+        line.status === 'unmatched' ? (
+          <Button variant="secondary" className="min-h-8 px-3 text-xs" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>
+            تجاهل
+          </Button>
+        ) : (
+          '—'
+        ),
+    },
+  ];
+
+  return (
+    <EntityTable
+      aria-label="جدول حركات كشف البنك"
+      rows={lines}
+      columns={columns}
+      keyOf={(line) => line.id}
+      emptyTitle="لا توجد حركات كشف"
+      emptyDescription="لا توجد حركات تطابق الفلاتر الحالية."
+      renderMobileCard={(line) => (
+        <div className="rounded-2xl border bg-background p-4 space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-bold leading-tight">{line.description}</p>
+            <StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <p className="text-xs text-muted-foreground">التاريخ</p>
+              <p className="font-medium">{formatDate(line.transaction_date)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">المرجع</p>
+              <p className="font-medium">{line.reference ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">المبلغ</p>
+              <p className="font-black">{formatCompanyMoney(defaultCompanyLocalSettings, line.amount)}</p>
+            </div>
+          </div>
+          {line.status === 'unmatched' && (
+            <div className="pt-1">
+              <Button
+                variant="secondary"
+                className="min-h-8 w-full px-3 text-xs"
+                disabled={isIgnoring}
+                onClick={() => onIgnore(line.id)}
+              >
+                تجاهل
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    />
+  );
 }
 
 
