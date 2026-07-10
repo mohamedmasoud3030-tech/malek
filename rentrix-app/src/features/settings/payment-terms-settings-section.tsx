@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -33,6 +33,10 @@ function toFormValues(record: PaymentTermsRecord): PaymentTermsFormValues {
   };
 }
 
+function shouldSaveOnEnter(event: KeyboardEvent<HTMLElement>) {
+  return event.key === 'Enter' && !event.shiftKey && !(event.target instanceof HTMLTextAreaElement);
+}
+
 export function PaymentTermsSettingsSection() {
   const paymentTermsQuery = usePaymentTerms();
   const savePaymentTerms = useSavePaymentTerms();
@@ -45,14 +49,20 @@ export function PaymentTermsSettingsSection() {
     setDraft(defaultFormValues);
   };
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const saveDraft = () => {
+    if (savePaymentTerms.isPending) return;
     savePaymentTerms.mutate({ id: editingId, values: draft }, { onSuccess: resetDraft });
+  };
+
+  const handleEditorKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!shouldSaveOnEnter(event)) return;
+    event.preventDefault();
+    saveDraft();
   };
 
   return (
     <div className="space-y-4">
-      <form className="grid gap-3 rounded-2xl border bg-muted/20 p-3 md:grid-cols-2" onSubmit={submit}>
+      <div className="grid gap-3 rounded-2xl border bg-muted/20 p-3 md:grid-cols-2" onKeyDown={handleEditorKeyDown}>
         <label className="space-y-1 text-sm font-medium">
           <span>اسم شرط السداد</span>
           <Input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="مثال: ربع سنوي" />
@@ -88,12 +98,12 @@ export function PaymentTermsSettingsSection() {
           <Textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} placeholder="ملاحظات داخلية اختيارية" />
         </label>
         <div className="flex flex-wrap gap-2 md:col-span-2">
-          <Button type="submit" disabled={savePaymentTerms.isPending}>
+          <Button type="button" onClick={saveDraft} disabled={savePaymentTerms.isPending}>
             {editingId ? 'تحديث شرط السداد' : 'إضافة شرط سداد'}
           </Button>
           {editingId ? <Button type="button" variant="secondary" onClick={resetDraft}>إلغاء التعديل</Button> : null}
         </div>
-      </form>
+      </div>
 
       <div className="space-y-2">
         {(paymentTermsQuery.data ?? []).map((term) => (
