@@ -3,6 +3,9 @@ import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatCompanyDateTime } from '@/lib/companyFormatters';
+import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { AuditLogResult } from '../types';
 
 export type AuditLogViewState =
@@ -10,12 +13,14 @@ export type AuditLogViewState =
   | Readonly<{ status: 'error'; error: unknown }>
   | Readonly<{ status: 'ready'; result: AuditLogResult }>;
 
-function formatAuditDate(value: string): string {
+function formatAuditDate(settings: CompanySettingsContract, value: string): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('ar-OM');
+  return Number.isNaN(date.getTime()) ? value : formatCompanyDateTime(settings, date);
 }
 
 export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) {
+  const companySettings = useCompanySettingsContract();
+
   if (state.status === 'loading') return <RouteLoadingState />;
 
   if (state.status === 'error') {
@@ -44,7 +49,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
               <div key={record.id} className="rounded-2xl border border-border bg-background p-4 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-black text-primary">{record.action}</span>
-                  <span className="text-xs text-muted-foreground">{formatAuditDate(record.occurredAt)}</span>
+                  <span className="text-xs text-muted-foreground">{formatAuditDate(companySettings, record.occurredAt)}</span>
                 </div>
                 <p className="text-sm font-bold">{record.actor}</p>
                 <p className="text-xs text-muted-foreground">{record.entityType}{record.entityId ? ` / ${record.entityId}` : ''}</p>
@@ -68,7 +73,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
               <tbody className="divide-y divide-border">
                 {state.result.records.map((record) => (
                   <tr key={record.id}>
-                    <td className="px-4 py-3 font-bold">{formatAuditDate(record.occurredAt)}</td>
+                    <td className="px-4 py-3 font-bold">{formatAuditDate(companySettings, record.occurredAt)}</td>
                     <td className="px-4 py-3">{record.actor}</td>
                     <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-black text-primary">{record.action}</span></td>
                     <td className="px-4 py-3 text-muted-foreground">{record.entityType}{record.entityId ? ` / ${record.entityId}` : ''}</td>

@@ -1,12 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useParams, useRouter } from '@tanstack/react-router';
+import { Link, useParams, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -115,93 +114,92 @@ export function PropertyFormPage() {
   if (isEdit && propertyQuery.isLoading) return <RouteLoadingState />;
   if (isEdit && propertyQuery.isError) {
     return (
-      <PageLayout>
-        <Card className="mx-auto max-w-3xl" role="alert" aria-live="assertive">
-          <CardHeader>
-            <CardTitle>تعذر تحميل العقار للتعديل</CardTitle>
-            <CardDescription>{propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            <Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>
-            <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')}>العودة للعقارات</Button>
-          </CardContent>
-        </Card>
-      </PageLayout>
+      <Card className="mx-auto max-w-3xl" role="alert" aria-live="assertive">
+        <CardHeader>
+          <CardTitle>تعذر تحميل العقار للتعديل</CardTitle>
+          <CardDescription>{propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>
+          <Button variant="secondary" asChild><Link to="/properties">العودة للعقارات</Link></Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <PageLayout size="wide">
-      <PageHeader
-        title={isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}
-        description="أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك."
-        secondaryActions={(
-          <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
-            العودة للعقارات
-          </Button>
-        )}
-      />
-
-      <Card>
-        <CardContent className="pt-6">
-          <form
-            className="grid gap-5 md:grid-cols-2"
-            onSubmit={handleSubmit}
-            aria-busy={isSubmitting}
-          >
-            {submitError ? (
-              <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div>
-            ) : null}
-            <label className="grid gap-2 text-sm font-bold">
-              اسم العقار
-              <Input {...form.register('title')} placeholder="مثال: عمارة الندى" />
-              {fieldError(form.formState.errors.title?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              نوع العقار
-              <Input {...form.register('type')} placeholder="سكني، تجاري، أرض..." />
-              {fieldError(form.formState.errors.type?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold md:col-span-2">
-              العنوان
-              <Input {...form.register('address')} placeholder="المدينة، الحي، الشارع" />
-              {fieldError(form.formState.errors.address?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              اسم المالك للعرض
-              <Input {...form.register('owner_name')} placeholder="اسم عرض اختياري يظهر في قائمة وتفاصيل العقار" />
-              <p className="text-xs font-medium text-muted-foreground">حقل نصي خفيف للعرض فقط، ولا ينشئ حساب مالك أو نسب ملكية.</p>
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              الحالة
-              <Select {...form.register('status')}>
-                {propertyStatusValues.map((status) => <option key={status} value={status}>{propertyStatusLabels[status]}</option>)}
-              </Select>
-              {fieldError(form.formState.errors.status?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              قيمة الشراء
-              <Input type="number" step="0.01" min="0" {...form.register('purchase_value')} />
-              {fieldError(form.formState.errors.purchase_value?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              القيمة الحالية
-              <Input type="number" step="0.01" min="0" {...form.register('current_value')} />
-              {fieldError(form.formState.errors.current_value?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold md:col-span-2">
-              ملاحظات
-              <Textarea {...form.register('notes')} placeholder="أي تفاصيل إضافية" />
-            </label>
-            <div className="flex justify-end gap-3 md:col-span-2">
-              <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
-                إلغاء
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ'}</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+    <>
+      <div className="mx-auto max-w-5xl space-y-5">
+        <EntityDetailHeader
+          title={isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}
+          subtitle="أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك."
+          actions={
+            <Button variant="secondary" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
+              العودة
+            </Button>
+          }
+        />
+        <Card>
+          <CardContent>
+            <form
+              className="grid gap-5 md:grid-cols-2"
+              onSubmit={handleSubmit}
+              aria-busy={isSubmitting}
+            >
+              {submitError ? (
+                <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div>
+              ) : null}
+              <label className="grid gap-2 text-sm font-bold">
+                اسم العقار
+                <Input {...form.register('title')} placeholder="مثال: عمارة الندى" />
+                {fieldError(form.formState.errors.title?.message)}
+              </label>
+              <label className="grid gap-2 text-sm font-bold">
+                نوع العقار
+                <Input {...form.register('type')} placeholder="سكني، تجاري، أرض..." />
+                {fieldError(form.formState.errors.type?.message)}
+              </label>
+              <label className="grid gap-2 text-sm font-bold md:col-span-2">
+                العنوان
+                <Input {...form.register('address')} placeholder="المدينة، الحي، الشارع" />
+                {fieldError(form.formState.errors.address?.message)}
+              </label>
+              <label className="grid gap-2 text-sm font-bold">
+                اسم المالك للعرض
+                <Input {...form.register('owner_name')} placeholder="اسم عرض اختياري يظهر في قائمة وتفاصيل العقار" />
+                <p className="text-xs font-medium text-muted-foreground">حقل نصي خفيف للعرض فقط، ولا ينشئ حساب مالك أو نسب ملكية.</p>
+              </label>
+              <label className="grid gap-2 text-sm font-bold">
+                الحالة
+                <Select {...form.register('status')}>
+                  {propertyStatusValues.map((status) => <option key={status} value={status}>{propertyStatusLabels[status]}</option>)}
+                </Select>
+                {fieldError(form.formState.errors.status?.message)}
+              </label>
+              <label className="grid gap-2 text-sm font-bold">
+                قيمة الشراء
+                <Input type="number" step="0.01" min="0" {...form.register('purchase_value')} />
+                {fieldError(form.formState.errors.purchase_value?.message)}
+              </label>
+              <label className="grid gap-2 text-sm font-bold">
+                القيمة الحالية
+                <Input type="number" step="0.01" min="0" {...form.register('current_value')} />
+                {fieldError(form.formState.errors.current_value?.message)}
+              </label>
+              <label className="grid gap-2 text-sm font-bold md:col-span-2">
+                ملاحظات
+                <Textarea {...form.register('notes')} placeholder="أي تفاصيل إضافية" />
+              </label>
+              <div className="flex justify-end gap-3 md:col-span-2">
+                <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
+                  إلغاء
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ'}</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
 
       <DirtyRouteNavigationGuard
         isDirty={form.formState.isDirty}
@@ -219,6 +217,6 @@ export function PropertyFormPage() {
         variant="warning"
         onConfirm={handleConfirmDiscard}
       />
-    </PageLayout>
+    </>
   );
 }

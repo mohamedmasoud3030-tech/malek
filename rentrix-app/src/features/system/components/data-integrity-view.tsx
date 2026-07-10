@@ -3,6 +3,8 @@ import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import type { DataIntegrityResult } from '../types';
 
 export type DataIntegrityViewState =
@@ -11,6 +13,8 @@ export type DataIntegrityViewState =
   | Readonly<{ status: 'ready'; result: DataIntegrityResult }>;
 
 export function DataIntegrityView({ state }: Readonly<{ state: DataIntegrityViewState }>) {
+  const companySettings = useCompanySettingsContract();
+
   if (state.status === 'loading') return <RouteLoadingState />;
 
   if (state.status === 'error') {
@@ -26,7 +30,7 @@ export function DataIntegrityView({ state }: Readonly<{ state: DataIntegrityView
   }
 
   const issueCount = state.result.snapshot.checks.reduce((total, check) => total + check.count, 0);
-  const checkedAt = new Date(state.result.snapshot.checkedAt).toLocaleString('ar-OM');
+  const checkedAt = formatCompanyDateTime(companySettings, state.result.snapshot.checkedAt);
 
   return (
     <section className="space-y-4">
