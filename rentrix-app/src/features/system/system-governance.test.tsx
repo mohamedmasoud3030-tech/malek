@@ -10,6 +10,12 @@ import { DataIntegrityView } from './components/data-integrity-view';
 import { DATA_INTEGRITY_MAX_PAGES, DATA_INTEGRITY_PAGE_SIZE, buildDataIntegritySnapshot, fetchPaginatedRows } from './services/data-integrity-service';
 import { navGroups, type NavItem } from '@/components/layout/app-nav-items';
 
+vi.mock('@/features/settings/useCompanySettings', async () => {
+  const { testCompanySettingsContract } = await import('@/test/companySettingsContractMock');
+
+  return { useCompanySettingsContract: () => testCompanySettingsContract };
+});
+
 vi.mock('@/lib/runtime-diagnostics', () => ({
   getEnvDiagnostics: vi.fn(() => []),
   parseSupabaseDiagnostics: vi.fn(() => []),
