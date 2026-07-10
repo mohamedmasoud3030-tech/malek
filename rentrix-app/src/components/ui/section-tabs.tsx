@@ -24,31 +24,37 @@ type SectionTabsProps<TId extends string> = Readonly<{
  */
 export function SectionTabs<TId extends string>({ items, activeId, onChange, ariaLabel }: SectionTabsProps<TId>) {
   return (
-    <nav aria-label={ariaLabel} role="tablist" className="-mx-3 mb-2 flex scroll-px-3 gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:-mx-1 sm:px-1 [&::-webkit-scrollbar]:hidden">
-      {items.map((item) => {
-        const isActive = activeId === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onChange(item.id)}
-            role="tab"
-            aria-selected={isActive}
-            aria-controls={`section-panel-${item.id}`}
-            id={`section-tab-${item.id}`}
-            className={cn(
-              'flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition',
-              isActive
-                ? 'border-primary bg-primary text-primary-foreground shadow-md scale-[1.02]'
-                : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',
-            )}
-          >
-            <item.icon className="size-4" />
-            {item.label}
-          </button>
-        );
-      })}
-    </nav>
+    <div className="relative -mx-3 mb-2 sm:-mx-1">
+      <nav
+        aria-label={ariaLabel}
+        role="tablist"
+        className="flex scroll-px-3 gap-2 overflow-x-auto px-3 pb-1 [mask-image:linear-gradient(to_left,transparent,black_16px,black_calc(100%-16px),transparent)] [scrollbar-width:none] sm:px-1 [&::-webkit-scrollbar]:hidden"
+      >
+        {items.map((item) => {
+          const isActive = activeId === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onChange(item.id)}
+              role="tab"
+              aria-selected={isActive}
+              aria-controls={`section-panel-${item.id}`}
+              id={`section-tab-${item.id}`}
+              className={cn(
+                'flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition',
+                isActive
+                  ? 'border-primary bg-primary text-primary-foreground shadow-md scale-[1.02]'
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',
+              )}
+            >
+              <item.icon className="size-4" />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
 
