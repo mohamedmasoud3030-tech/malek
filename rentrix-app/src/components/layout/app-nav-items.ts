@@ -36,7 +36,7 @@ export const navGroups = [
   ['التشغيل والصيانة', [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
-    ['/communication', 'communication', 'سجل التواصل الداخلي والمتابعات', MessageSquareText, 'communication.view'],
+    ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
   ]],
   ['الماليات والتحصيل', [
     ['/invoices', 'invoices', 'الفواتير المستحقة', ReceiptText],
@@ -61,7 +61,7 @@ export const navGroups = [
   ]],
   ['المبيعات والعمولات', [
     ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
-    ['/commissions', 'commissions', 'تتبع عمولات المكتب كحالة تشغيلية فقط', BadgeDollarSign, 'commissions.view'],
+    ['/commissions', 'commissions', 'تتبع عمولات المكتب وحالات الاستحقاق', BadgeDollarSign, 'commissions.view'],
   ]],
   ['الإعدادات والحساب', [
     ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، والحساب', Settings, 'settings.manage'],
