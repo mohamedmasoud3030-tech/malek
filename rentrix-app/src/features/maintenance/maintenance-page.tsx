@@ -210,21 +210,33 @@ export function MaintenancePage() {
 
       {/* Filters */}
       <div className="grid gap-3 sm:grid-cols-3">
-          <Select value={String(statusFilter)} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
+          <Select
+            aria-label="تصفية حسب الحالة"
+            value={String(statusFilter)}
+            onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}
+          >
             <option value="all">كل الحالات</option>
             <option value="open">مفتوح</option>
             <option value="in_progress">قيد التنفيذ</option>
             <option value="resolved">تم الحل</option>
             <option value="closed">مغلق</option>
           </Select>
-          <Select value={String(priorityFilter)} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
+          <Select
+            aria-label="تصفية حسب الأولوية"
+            value={String(priorityFilter)}
+            onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}
+          >
             <option value="all">كل الأولويات</option>
             <option value="low">منخفضة</option>
             <option value="medium">متوسطة</option>
             <option value="high">عالية</option>
             <option value="urgent">عاجلة</option>
           </Select>
-          <Select value={propertyFilterId} onChange={(e) => setPropertyFilterId(e.target.value)}>
+          <Select
+            aria-label="تصفية حسب العقار"
+            value={propertyFilterId}
+            onChange={(e) => setPropertyFilterId(e.target.value)}
+          >
             <option value="">كل العقارات</option>
             {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
           </Select>
