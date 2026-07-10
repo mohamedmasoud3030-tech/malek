@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { DataErrorScreen } from '@/components/data-error-screen';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +14,6 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 import type { LandFilters, LandFormValues, LandRecord } from '../types';
 
 const statusLabels: Record<string, string> = {
@@ -75,64 +76,24 @@ export function LandsView(props: Props) {
   const hasFilters = filters.query.trim().length > 0 || filters.status !== 'all';
 
   return (
-    <div className="space-y-5 pb-6">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 sm:p-6 text-white">
-        <div className="pointer-events-none absolute -left-8 -top-8 size-40 rounded-full bg-primary/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-8 -right-4 size-32 rounded-full bg-emerald-500/20 blur-3xl" />
-        <div className="relative">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-2 text-sm font-bold text-slate-400">
-                <MapPinned className="size-4" />
-                إدارة الأراضي
-              </p>
-              <h1 className="mt-0.5 text-xl font-black">قطع الأراضي التشغيلية</h1>
-            </div>
-            <Button
-              onClick={onCreate}
-              className="shrink-0 bg-white text-slate-900 hover:bg-white/90"
-            >
-              <Plus className="me-2 size-4" />
-              إضافة أرض
-            </Button>
+    <PageLayout dir="rtl" lang="ar">
+      <PageHeader
+        title="قطع الأراضي التشغيلية"
+        description="إدارة الأراضي ومتابعة حالتها ومساحاتها وقيمها التشغيلية من واجهة موحدة."
+        count={isLoading ? '...' : rows.length}
+        secondaryActions={
+          <div className="flex min-w-max items-center gap-2 rounded-2xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground">
+            <Layers className="size-4" />
+            <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${money(totalArea)} م²`}</span>
           </div>
-
-          <div className="mt-4 flex items-end gap-3">
-            <div>
-              {isLoading ? (
-                <Skeleton className="h-10 w-16 bg-white/10" />
-              ) : (
-                <p className="text-4xl font-black tabular-nums">{rows.length}</p>
-              )}
-              <p className="text-sm font-semibold text-slate-400">إجمالي السجلات</p>
-            </div>
-            <div className="mb-1 ms-4 h-10 w-px bg-white/20" />
-            <div>
-              {isLoading ? (
-                <Skeleton className="h-6 w-20 bg-white/10" />
-              ) : (
-                <p className="text-lg font-black">{money(totalArea)} م²</p>
-              )}
-              <p className="text-xs font-semibold text-slate-400">إجمالي المساحة</p>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <div className={cn(
-              'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold',
-              availableRows > 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-slate-300',
-            )}>
-              <TrendingUp className="size-3" />
-              {availableRows > 0 ? `${availableRows} متاحة` : 'لا أراضٍ متاحة'}
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-slate-300">
-              <Layers className="size-3" />
-              {activeRows} نشطة
-            </div>
-          </div>
-        </div>
-      </div>
+        }
+        primaryAction={
+          <Button onClick={onCreate}>
+            <Plus className="me-2 size-4" />
+            إضافة أرض
+          </Button>
+        }
+      />
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -258,9 +219,6 @@ export function LandsView(props: Props) {
             <Field label="الموقع">
               <Input value={draft.location} onChange={(e) => onDraftChange({ ...draft, location: e.target.value })} />
             </Field>
-            <Field label="المساحة (م²)">
-              <Input type="number" min="0" value={draft.area} onChange={(e) => onDraftChange({ ...draft, area: e.target.value })} />
-            </Field>
             <Field label="التصنيف">
               <Select value={draft.category} onChange={(e) => onDraftChange({ ...draft, category: e.target.value })}>
                 {Object.entries(categoryLabels).map(([value, label]) => (
@@ -302,7 +260,7 @@ export function LandsView(props: Props) {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageLayout>
   );
 }
 
@@ -376,8 +334,8 @@ function LandCard({
     <div className="rounded-2xl border border-border/60 bg-card p-4 transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-black truncate">{row.name ?? row.plot_no ?? 'بدون اسم'}</p>
-          <p className="text-sm text-muted-foreground mt-0.5 truncate">{row.location ?? 'بدون موقع'}</p>
+          <p className="truncate font-black">{row.name ?? row.plot_no ?? 'بدون اسم'}</p>
+          <p className="mt-0.5 truncate text-sm text-muted-foreground">{row.location ?? 'بدون موقع'}</p>
           {row.category ? (
             <p className="mt-1 text-xs text-muted-foreground/70">
               {categoryLabels[row.category] ?? row.category}
