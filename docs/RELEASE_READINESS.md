@@ -1,67 +1,97 @@
 # Release Readiness
 
-## Current readiness status
+This document separates code readiness from production evidence and external release blockers. Do not use readiness percentages as a release signal; a release recommendation must be based on objective evidence for the exact release candidate.
 
-The repository is **not yet release-ready for financial workflows**. The current PR narrows one critical consistency gap by aligning `rpt_daily_collection` with the payment-backed receipt source of truth and by excluding VOID payments from collection totals.
+## Code readiness
 
-## Verified in this PR
+- Core app build, typecheck, unit tests, and focused financial tests are available through the commands in `docs/TESTING.md`.
+- Financial receipt/report correctness has local contract and unit coverage, but the payment → receipt → void → report flow still needs authenticated browser and live/staging evidence before release sign-off.
+- Bank reconciliation now requires confirmation before ignoring a statement line and normalizes/validates manual line and match payloads before writes.
 
-- The Receipts UI remains payment-backed.
-- Financial report helpers now defensively exclude payments where `status = 'VOID'`, even if a historical row is not soft-deleted.
-- A new migration defines `rpt_daily_collection` on `public.payments` rather than `public.receipts`, but the current frontend still reads payments directly and does not call this RPC.
-- Contract tests assert the reporting RPC source and VOID/deleted exclusion rules.
+## Production evidence
 
-## Not verified in this PR
+### Completed
 
-- No production migration was applied.
-- No browser/E2E run was completed.
-- No live Supabase data was modified.
-- Owner/tenant statement pages and accounting-statement screens remain incomplete.
-- Contract lifecycle hardening and owner settlement engine work remain follow-up items.
+- Local code-level financial tests cover bank reconciliation helpers, receipt services, report services, financial math, and migration-contract expectations.
+- Local build/typecheck/test commands can be run without production credentials.
 
-## Release gate before financial launch
+### Missing
 
-1. Apply pending migrations in a staging environment first.
-2. Verify invoice → payment → receipt → void receipt → invoice balance → collection report in the browser.
-3. Run the full command set in `docs/TESTING.md`.
-4. Confirm role permissions for ADMIN, MANAGER, and USER on financial routes.
-5. Record production verification evidence in `docs/CURRENT_STATE.md` after approved deployment.
+- Authenticated browser verification for critical workflows.
+- Role/permission verification with real seeded users.
+- Staging invoice lifecycle evidence.
+- Staging payment lifecycle evidence.
+- Staging receipt lifecycle evidence.
+- Staging void receipt lifecycle evidence.
+- Staging bank reconciliation evidence.
+- Staging reports evidence.
+- Printing/PDF/export evidence on the release candidate.
+- Arabic RTL, mobile, desktop, and responsive layout evidence on real browser runs.
+- Currency and timezone/date formatting evidence using configured company settings.
+- Error/loading/empty-state evidence for critical pages.
+- Live Supabase read-only evidence for migration ledger, RPC definitions, RLS policies, and grants.
 
-## 2026-07-10 production sweep update
+## Release blockers
 
-### Fresh audit scope
+- Seeded staging credentials and/or an approved authenticated browser environment are still required for production evidence.
+- Approved read-only Supabase access is still required for live/staging schema, RPC, RLS, and grant evidence.
+- Production data mutations remain out of scope unless specifically approved through the governance process.
 
-Performed a repository/code-first sweep of `rentrix-app/src` after PR #1100, #1101, and #1102 were assumed merged into the baseline. The sweep checked route inventory, destructive actions, forms, currency/date formatter usage, loading/empty/error states, mobile/RTL table/dialog surfaces, search/filter forms, report pages, financial calculations, and targeted code-smell searches for `TODO`, `FIXME`, `HACK`, `XXX`, `console.log`, `debugger`, `any`, `@ts-ignore`, unvalidated forms, and destructive actions without confirmation.
+## Fresh production audit — 2026-07-10
 
-### Ranked remaining production issues
+### Audit scope
 
-| Priority | Issue | Severity | User impact | Production risk | Effort | Recommended priority |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | Bank reconciliation “ignore” action changed statement-line status immediately from the table/mobile card without a confirmation step. | High | Operators can accidentally remove an unmatched bank movement from the active reconciliation queue. | Financial operations may miss or delay reconciliation of a real bank movement until someone reviews ignored lines. | Small | Fixed in the 2026-07-10 PR. |
-| 2 | Bank reconciliation import/manual/match forms still rely on inline state plus service-side validation rather than a shared form schema/resolver. | Medium | Users receive errors late and field-level guidance is limited. | Invalid operational inputs are blocked by service checks, but UX is weaker and duplicate validation can drift. | Medium | Next small PR. |
-| 3 | Several non-financial workflow forms (`commissions`, `communication`, `leads`, `lands`, owner detail quick form) use local draft state and submit handlers rather than shared schema-backed form patterns. | Medium | Inconsistent validation and submit feedback across operational screens. | Bad inputs are more likely to reach service/API boundaries or produce generic failures. | Medium | Work through one feature at a time. |
-| 4 | Formatter usage is mostly centralized, but document generation and some feature-specific display helpers still use direct `toLocale*`/`Intl.NumberFormat` calls. | Medium | Users may see inconsistent date/currency formatting across app screens vs generated documents. | Financial documents may not match configured company locale/currency expectations. | Medium | Prioritize document output after bank reconciliation forms. |
-| 5 | Test files contain `console.log` debugging output in governance tests. | Low | No end-user impact. | CI logs are noisy and can hide meaningful warnings. | Small | Cleanup-only if bundled with a test-readability PR; not a standalone production PR. |
-| 6 | Live Supabase/read-only verification and seeded authenticated browser journeys remain evidence blockers. | High | Release managers cannot prove production/staging parity or authenticated workflow readiness from local tests alone. | Production readiness cannot be claimed with high confidence without operator evidence. | External/operator | Blocked on credentials/operator environment, not code-only. |
+Performed a code-first sweep of `rentrix-app/src` after PR #1100, #1101, #1102, and the bank reconciliation confirmation PR were treated as merged baseline. The sweep checked route coverage, destructive actions, forms, formatter usage, loading/empty/error states, mobile/RTL table and dialog surfaces, search/filter forms, report pages, financial calculations, and targeted searches for `TODO`, `FIXME`, `HACK`, `XXX`, `console.log`, `debugger`, `any`, `@ts-ignore`, unvalidated forms, and destructive actions without confirmation.
 
-### Completed work
+### Category A — Must fix before July 20 QA
 
-- Added a confirmation dialog before a bank statement line can be marked ignored, including the movement description and formatted amount so the operator can verify the target before changing reconciliation status.
+| Issue | Impact | User risk | Production risk | Implementation effort | Release blocker |
+| --- | --- | --- | --- | --- | --- |
+| Bank reconciliation manual-line and match submissions had incomplete service-level normalization/validation for malformed dates, blank identifiers, whitespace-only values, and zero/non-finite amounts. | Prevents invalid reconciliation rows and invalid match records from being submitted to Supabase. | Operators could submit malformed operational finance data and receive late or inconsistent failures. | Invalid or ambiguous bank reconciliation records can undermine financial close and audit review. | Small | No — fixed in this PR with tested payload builders. |
 
-### Remaining issues
+### Category B — Should fix before release
 
-- Schema-backed validation for bank reconciliation forms remains the recommended next code PR.
-- Live Supabase readiness, seeded browser validation, and financial invoice/payment/receipt/void/report proof remain release evidence requirements.
+| Issue | Impact | User risk | Production risk | Implementation effort | Release blocker |
+| --- | --- | --- | --- | --- | --- |
+| Bank reconciliation forms still use local state instead of field-level schema resolver UI. | Users get less precise inline guidance than schema-backed forms. | More correction cycles for operators. | Service validation protects writes, so remaining risk is UX and support friction. | Medium | No |
+| Generated document formatting still has direct date/money formatting helpers separate from company formatters. | App screens and generated documents can display date/currency values differently. | Users may distrust documents if formatting differs from the UI. | Financial document presentation inconsistency can create review friction. | Medium | No, if values are numerically correct and release QA covers generated documents. |
+| Authenticated browser evidence is missing for critical financial and operational workflows. | Release managers lack objective proof of complete user journeys. | Bugs can escape local unit/component coverage. | Critical workflow regressions may be missed until QA/staging. | External/operator plus test work | Yes for release, not a code-only blocker. |
+| Live Supabase read-only evidence is missing for migration ledger, RPCs, RLS, and grants. | Release managers cannot prove deployed backend contracts match the code. | Role or RPC drift can surprise users in staging/production. | Backend contract drift can break financial workflows even when local tests pass. | External/operator | Yes for release, not a code-only blocker. |
 
-### Blockers
+### Category C — Safe to postpone after v1.0
 
-- No approved read-only `SUPABASE_DB_URL` or seeded staging credentials were available in this environment, so live database readiness and authenticated E2E evidence still require operator follow-up.
+| Issue | Impact | User risk | Production risk | Implementation effort | Release blocker |
+| --- | --- | --- | --- | --- | --- |
+| Debug `console.log` calls remain in governance tests. | CI output noise only. | No end-user risk. | Could hide meaningful warnings in test logs, but does not affect production runtime. | Small | No |
+| Non-financial draft-state forms in commissions, communication, leads, lands, and owner detail quick forms are not all schema-backed. | Inconsistent validation ergonomics across lower-risk operational screens. | Users may see generic errors on these screens. | Lower than financial workflows because they do not directly alter accounting totals. | Medium per feature | No |
+| Design and consistency cleanups that do not change validation, correctness, accessibility, performance, or safety. | Cosmetic polish. | Minimal. | Minimal. | Variable | No |
 
-### Estimated readiness
+## Manual QA checklist
 
-- Estimated production readiness: **86%**.
-- Estimated confidence for the July 20 QA freeze: **medium-high (about 75%)** if the next PRs stay focused on bank reconciliation validation, formatter consistency for generated financial documents, and release evidence collection.
+- Authenticated login/logout and protected-route redirects.
+- Role permissions for ADMIN, MANAGER, and USER, including denied financial actions.
+- Invoice create/view/update status lifecycle.
+- Payment recording and invoice balance update.
+- Receipt creation, listing, printing, and PDF generation.
+- Void receipt flow and report total reconciliation.
+- Bank reconciliation import/manual line/match/ignore flows.
+- Reports: collections, overdue, expenses, occupancy, owner statements, tenant statements, and VAT summaries.
+- CSV exports and generated document downloads.
+- Arabic RTL layout across dashboard, list pages, forms, dialogs, bottom sheets, and reports.
+- Mobile, tablet, and desktop responsive behavior.
+- Currency formatting using configured company currency and decimals.
+- Timezone/date formatting using configured company timezone/date settings.
+- Loading, empty, and error states for critical routes.
 
-### Recommended next PR
+## Staging verification checklist
 
-- Add schema-backed validation and field-level errors to the bank reconciliation import/manual-line/match forms without changing database contracts or reconciliation accounting behavior.
+- Run the full command suite from `docs/TESTING.md` for the exact release candidate.
+- Run authenticated browser smoke tests against seeded staging credentials.
+- Capture screenshots or traces for critical workflows and responsive breakpoints.
+- Run read-only Supabase readiness checks against the intended staging/live project.
+- Archive RPC definitions, RLS policy/grant checks, migration ledger status, and denied-action evidence.
+- Record workflow identifiers used during invoice/payment/receipt/void/report verification.
+
+## Go / No-Go recommendation
+
+**No-Go until production evidence is complete.** The codebase can continue through focused Category A fixes, but release sign-off requires objective staging/browser/live-readiness evidence for critical financial workflows, permissions, formatting, and responsive RTL behavior.
