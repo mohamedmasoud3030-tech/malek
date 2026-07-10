@@ -17,6 +17,8 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
+import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
+import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import type { LandFilters, LandFormValues, LandRecord } from '../types';
 
 const statusLabels: Record<string, string> = {
@@ -34,7 +36,12 @@ const categoryLabels: Record<string, string> = {
 
 function money(value: number | null | undefined) {
   if (value == null) return '—';
-  return new Intl.NumberFormat('ar-OM', { maximumFractionDigits: 0 }).format(value);
+  return formatCompanyMoney(defaultCompanyLocalSettings, value);
+}
+
+function area(value: number | null | undefined) {
+  if (value == null) return '—';
+  return `${formatCompanyNumber(defaultCompanyLocalSettings, value)} م²`;
 }
 
 function tone(status: string | null | undefined) {
@@ -87,7 +94,7 @@ export function LandsView(props: Props) {
         secondaryActions={
           <div className="flex min-w-max items-center gap-2 rounded-2xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground">
             <Layers className="size-4" />
-            <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${money(totalArea)} م²`}</span>
+            <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${area(totalArea)}`}</span>
           </div>
         }
         primaryAction={
@@ -108,7 +115,7 @@ export function LandsView(props: Props) {
             <KpiCard label="إجمالي السجلات" value={rows.length} icon={MapPinned} accent="primary" sub={`${activeRows} نشطة`} />
             <KpiCard label="متاحة" value={availableRows} icon={TrendingUp} accent="emerald" sub="قطع قابلة للتعامل" trend={availableRows > 0 ? 'up' : 'neutral'} trendValue={String(availableRows)} />
             <KpiCard label="محجوزة" value={rows.filter((r) => r.status === 'reserved').length} icon={Tag} accent="amber" sub="قيد التفاوض" />
-            <KpiCard label="إجمالي المساحة" value={`${money(totalArea)} م²`} icon={Layers} accent="sky" sub="مجموع المساحات المدخلة" />
+            <KpiCard label="إجمالي المساحة" value={area(totalArea)} icon={Layers} accent="sky" sub="مجموع المساحات المدخلة" />
           </>
         )}
       </div>
