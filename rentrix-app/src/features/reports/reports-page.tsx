@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { PageLayout } from '@/components/layout/page-layout';
+import { AccessDenied } from '@/components/layout/access-denied';
 import { Card, CardContent } from '@/components/ui/card';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
@@ -111,6 +112,11 @@ export function ReportsPage() {
 
   const today = getTodayLocalDateString();
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
+  const canViewReports = canAccess(authorization, financialOperationPermissions.exportReports);
+
+  if (!canViewReports) {
+    return <AccessDenied message="عرض التقارير المالية متاح فقط للمدير أو المسؤول." />;
+  }
 
   return (
     <PageLayout dir="rtl" size="wide">
