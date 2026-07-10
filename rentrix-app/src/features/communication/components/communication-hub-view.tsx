@@ -1,6 +1,8 @@
 import { Archive, Edit, MessageSquareText, Plus, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -38,8 +40,11 @@ type Props = Readonly<{
 
 export function CommunicationHubView(props: Props) {
   const { rows, filters, draft, editingRecord, formOpen, isLoading, isSaving, isArchiving, error, writeError, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
+  const [archiveCandidate, setArchiveCandidate] = useState<CommunicationRecord | null>(null);
   const followUps = rows.filter((row) => row.status === 'follow_up').length;
   const hasFilters = filters.query.trim().length > 0 || filters.channel !== 'all' || filters.status !== 'all';
+  const showRows = !isLoading && !error && rows.length > 0;
+  const showEmpty = !isLoading && !error && rows.length === 0;
 
   return (
     <section className="space-y-5">
@@ -56,8 +61,8 @@ export function CommunicationHubView(props: Props) {
       {error ? <ErrorCard message="تعذر تحميل سجل التواصل" onRetry={onRetry} /> : null}
       {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل التواصل. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
       {isLoading ? <PageStateCard title="جارٍ تحميل سجل التواصل..." /> : null}
-      {!isLoading && !error && rows.length === 0 ? <PageStateCard title={hasFilters ? 'لا توجد سجلات تواصل ضمن الفلاتر الحالية' : 'لا توجد سجلات تواصل بعد'} description={hasFilters ? 'غيّر البحث أو القناة أو الحالة لعرض سجلات تواصل أخرى.' : 'أضف أول سجل داخلي عند حدوث اتصال أو اجتماع أو ملاحظة. لا يتم إرسال أي رسالة خارجية.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة سجل تواصل</Button>} /> : null}
-      {rows.length > 0 ? <CommunicationRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} /> : null}
+      {showEmpty ? <PageStateCard title={hasFilters ? 'لا توجد سجلات تواصل ضمن الفلاتر الحالية' : 'لا توجد سجلات تواصل بعد'} description={hasFilters ? 'غيّر البحث أو القناة أو الحالة لعرض سجلات تواصل أخرى.' : 'أضف أول سجل داخلي عند حدوث اتصال أو اجتماع أو ملاحظة. لا يتم إرسال أي رسالة خارجية.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة سجل تواصل</Button>} /> : null}
+      {showRows ? <CommunicationRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={setArchiveCandidate} /> : null}
 
       <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
@@ -77,6 +82,16 @@ export function CommunicationHubView(props: Props) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={archiveCandidate != null}
+        onOpenChange={(open) => { if (!open) setArchiveCandidate(null); }}
+        title={`أرشفة سجل التواصل مع ${archiveCandidate?.contact_name ?? ''}؟`}
+        description="سيتم نقل سجل التواصل إلى الأرشيف ولن يظهر في القوائم النشطة."
+        confirmLabel="تأكيد الأرشفة"
+        isLoading={isArchiving}
+        onConfirm={() => { if (archiveCandidate) { onArchive(archiveCandidate.id); setArchiveCandidate(null); } }}
+      />
     </section>
   );
 }
@@ -93,14 +108,14 @@ function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: ()
   return <Card role="alert"><CardHeader><CardTitle>{message}</CardTitle><CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription><Button variant="secondary" onClick={onRetry}><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button></CardHeader></Card>;
 }
 
-function CommunicationRows({ rows, isArchiving, onEdit, onArchive }: Readonly<{ rows: CommunicationRecord[]; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchive: (id: string) => void }>) {
-  return <Card className="overflow-hidden"><div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <CommunicationCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchive={onArchive} />)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">جهة التواصل</th><th className="p-3 text-right">القناة</th><th className="p-3 text-right">الموضوع</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.contact_name}<p className="text-xs text-muted-foreground">{row.contact_phone ?? row.contact_email ?? 'بدون بيانات اتصال'}</p></td><td className="p-3">{channelLabels[row.channel] ?? row.channel}</td><td className="max-w-72 whitespace-normal break-words p-3">{row.subject ?? row.body.slice(0, 48)}</td><td className="p-3"><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></td></tr>)}</tbody></table></div></Card>;
+function CommunicationRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: CommunicationRecord[]; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchiveClick: (row: CommunicationRecord) => void }>) {
+  return <Card className="overflow-hidden"><div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <CommunicationCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">جهة التواصل</th><th className="p-3 text-right">القناة</th><th className="p-3 text-right">الموضوع</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.contact_name}<p className="text-xs text-muted-foreground">{row.contact_phone ?? row.contact_email ?? 'بدون بيانات اتصال'}</p></td><td className="p-3">{channelLabels[row.channel] ?? row.channel}</td><td className="max-w-72 whitespace-normal break-words p-3">{row.subject ?? row.body.slice(0, 48)}</td><td className="p-3"><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td></tr>)}</tbody></table></div></Card>;
 }
 
-function CommunicationCard({ row, isArchiving, onEdit, onArchive }: Readonly<{ row: CommunicationRecord; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchive: (id: string) => void }>) {
-  return <div className="rounded-2xl border bg-background p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">{row.contact_name}</p><p className="text-sm text-muted-foreground">{channelLabels[row.channel] ?? row.channel} · {directionLabels[row.direction] ?? row.direction}</p></div><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></div><p className="mt-3 line-clamp-2 text-sm">{row.subject ?? row.body}</p><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchive={onArchive} /></div>;
+function CommunicationCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: CommunicationRecord; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchiveClick: (row: CommunicationRecord) => void }>) {
+  return <div className="rounded-2xl border bg-background p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">{row.contact_name}</p><p className="text-sm text-muted-foreground">{channelLabels[row.channel] ?? row.channel} · {directionLabels[row.direction] ?? row.direction}</p></div><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></div><p className="mt-3 line-clamp-2 text-sm">{row.subject ?? row.body}</p><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></div>;
 }
 
-function RowActions({ id, disabled, onEdit, onArchive }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchive: (id: string) => void }>) {
-  return <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button className="min-h-11" variant="danger" disabled={disabled} onClick={() => onArchive(id)}><Archive className="me-2 size-4" />أرشفة</Button></div>;
+function RowActions({ id, disabled, onEdit, onArchiveClick }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchiveClick: () => void }>) {
+  return <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button className="min-h-11" variant="danger" disabled={disabled} onClick={onArchiveClick}><Archive className="me-2 size-4" />أرشفة</Button></div>;
 }
