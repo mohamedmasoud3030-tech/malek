@@ -159,36 +159,77 @@ export function ExpensesSection({ expenses, propertyRows, costCenterRows, filter
           />
         ) : (
           <div className="divide-y divide-border rounded-xl border border-border">
-            {expenses.map((expense) => (
-              <div key={expense.id} className="grid gap-1 px-4 py-3 text-sm sm:grid-cols-[7rem_1fr_auto_auto] sm:items-center sm:gap-3">
-                <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>
-                <span className="min-w-0 truncate">
-                  {buildExpensePropertyLabel(expense, propertyById)} — {expense.category}
-                  {expense.cost_center_id ? ` — ${costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف'}` : ''}
-                </span>
-                <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>
-                <Button type="button" variant="secondary" className="h-9 px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
-                  <Download className="me-2 size-4" />PDF
-                </Button>
-              </div>
-            ))}
+            {expenses.map((expense) => {
+              const label = buildExpensePropertyLabel(expense, propertyById);
+              const costCenterLabel = expense.cost_center_id
+                ? costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف'
+                : null;
+              return (
+                <div key={expense.id} className="px-4 py-3 text-sm">
+                  {/* Mobile: stacked card */}
+                  <div className="space-y-2 sm:hidden">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-bold leading-tight">{label}</span>
+                      <span className="font-bold tabular-nums shrink-0">{formatMoney(expense.amount)}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      <span>{formatDate(expense.expense_date)}</span>
+                      <span>·</span>
+                      <span>{expense.category}</span>
+                      {costCenterLabel ? (<><span>·</span><span>{costCenterLabel}</span></>) : null}
+                    </div>
+                    <Button type="button" variant="secondary" className="h-9 w-full px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
+                      <Download className="me-2 size-4" />PDF
+                    </Button>
+                  </div>
+
+                  {/* Desktop: compact row */}
+                  <div className="hidden sm:grid sm:grid-cols-[7rem_1fr_auto_auto] sm:items-center sm:gap-3">
+                    <span className="text-muted-foreground">{formatDate(expense.expense_date)}</span>
+                    <span className="min-w-0 truncate">
+                      {label} — {expense.category}
+                      {costCenterLabel ? ` — ${costCenterLabel}` : ''}
+                    </span>
+                    <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span>
+                    <Button type="button" variant="secondary" className="h-9 px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
+                      <Download className="me-2 size-4" />PDF
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
         <form className="grid gap-3 rounded-2xl border border-border p-4 sm:grid-cols-2" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
-          <Select {...expenseForm.register('property_id')}>
-            <option value="">اختر العقار</option>
-            {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-          </Select>
-          <Select {...expenseForm.register('category')}>
-            {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </Select>
-          <Select {...expenseForm.register('cost_center_id')}>
-            <option value="">بدون مركز تكلفة</option>
-            {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
-          </Select>
-          <Input type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
-          <Input type="date" {...expenseForm.register('expense_date')} />
+          <label className="space-y-1 text-sm font-bold">
+            <span>العقار</span>
+            <Select {...expenseForm.register('property_id')}>
+              <option value="">اختر العقار</option>
+              {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </Select>
+          </label>
+          <label className="space-y-1 text-sm font-bold">
+            <span>التصنيف</span>
+            <Select {...expenseForm.register('category')}>
+              {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          </label>
+          <label className="space-y-1 text-sm font-bold">
+            <span>مركز التكلفة</span>
+            <Select {...expenseForm.register('cost_center_id')}>
+              <option value="">بدون مركز تكلفة</option>
+              {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
+            </Select>
+          </label>
+          <label className="space-y-1 text-sm font-bold">
+            <span>المبلغ</span>
+            <Input type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
+          </label>
+          <label className="space-y-1 text-sm font-bold">
+            <span>التاريخ</span>
+            <Input type="date" {...expenseForm.register('expense_date')} />
+          </label>
           <div className="sm:col-span-2">
             <Textarea placeholder="الوصف (اختياري)" className="min-h-16" {...expenseForm.register('description')} />
           </div>
