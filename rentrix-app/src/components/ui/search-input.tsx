@@ -11,7 +11,9 @@ interface SearchInputProps {
 
 /**
  * Consistent search input used across all list pages.
- * Includes a clear (×) button when there is text.
+ * Includes a clear button when there is text.
+ * Uses a 16px mobile font size to avoid iOS input zoom, then compacts on larger screens.
+ * The clear button keeps a 44px touch target while preserving the visual icon size.
  *
  * @example
  * <SearchInput value={query} onChange={setQuery} placeholder="ابحث عن عقد..." />
@@ -29,7 +31,7 @@ export function SearchInput({ value, onChange, placeholder = 'بحث...', classN
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(
-          'h-11 w-full rounded-xl border border-input bg-background pe-9 ps-3 text-sm',
+          'h-11 w-full rounded-xl border border-input bg-background pe-9 ps-3 text-base sm:text-sm',
           'outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10',
           'placeholder:text-muted-foreground',
           value && 'pe-16',
@@ -39,7 +41,7 @@ export function SearchInput({ value, onChange, placeholder = 'بحث...', classN
         <button
           type="button"
           onClick={() => { onChange(''); inputRef.current?.focus(); }}
-          className="absolute end-8 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"
+          className="absolute end-5 top-1/2 grid min-h-11 min-w-11 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10"
           aria-label="مسح البحث"
         >
           <X className="size-3.5" />
