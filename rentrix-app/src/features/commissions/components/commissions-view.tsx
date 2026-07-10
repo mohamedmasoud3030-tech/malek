@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EntityTable } from '@/components/ui/entity-table';
 import { InlineStatCard } from '@/components/ui/inline-stat-card';
 import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
@@ -109,11 +110,42 @@ function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: ()
 }
 
 function CommissionRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: CommissionRecord[]; isArchiving: boolean; onEdit: (row: CommissionRecord) => void; onArchiveClick: (row: CommissionRecord) => void }>) {
-  return <Card className="overflow-hidden"><div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <CommissionCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">المستفيد</th><th className="p-3 text-right">النوع</th><th className="p-3 text-right">المبلغ</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.staff_name ?? '—'}<p className="text-xs text-muted-foreground">{row.source_id ?? 'بدون مصدر'}</p></td><td className="p-3">{typeLabels[row.type ?? ''] ?? row.type ?? '—'}</td><td className="p-3">{money(row.amount)}</td><td className="p-3"><StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td></tr>)}</tbody></table></div></Card>;
-}
-
-function CommissionCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: CommissionRecord; isArchiving: boolean; onEdit: (row: CommissionRecord) => void; onArchiveClick: (row: CommissionRecord) => void }>) {
-  return <div className="rounded-2xl border bg-background p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">{row.staff_name ?? '—'}</p><p className="text-sm text-muted-foreground">{typeLabels[row.type ?? ''] ?? row.type ?? '—'}</p></div><StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></div><p className="mt-3 text-sm">المبلغ: {money(row.amount)}</p><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></div>;
+  return (
+    <EntityTable
+      aria-label="جدول العمولات"
+      rows={rows}
+      keyOf={(row) => row.id}
+      columns={[
+        { key: 'staff_name', header: 'المستفيد', render: (row) => (
+          <span className="max-w-56 whitespace-normal break-words">
+            <span className="font-bold">{row.staff_name ?? '—'}</span>
+            <p className="text-xs text-muted-foreground">{row.source_id ?? 'بدون مصدر'}</p>
+          </span>
+        ) },
+        { key: 'type', header: 'النوع', render: (row) => typeLabels[row.type ?? ''] ?? row.type ?? '—' },
+        { key: 'amount', header: 'المبلغ', render: (row) => money(row.amount) },
+        { key: 'status', header: 'الحالة', render: (row) => (
+          <StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>
+        ) },
+        { key: 'actions', header: 'إجراءات', render: (row) => (
+          <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />
+        ) },
+      ]}
+      renderMobileCard={(row) => (
+        <div className="rounded-2xl border bg-background p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-black">{row.staff_name ?? '—'}</p>
+              <p className="text-sm text-muted-foreground">{typeLabels[row.type ?? ''] ?? row.type ?? '—'}</p>
+            </div>
+            <StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>
+          </div>
+          <p className="mt-3 text-sm">المبلغ: {money(row.amount)}</p>
+          <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />
+        </div>
+      )}
+    />
+  );
 }
 
 function RowActions({ id, disabled, onEdit, onArchiveClick }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchiveClick: () => void }>) {
