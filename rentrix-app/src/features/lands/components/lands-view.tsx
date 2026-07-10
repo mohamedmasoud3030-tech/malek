@@ -212,6 +212,11 @@ function LandRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows
       render: (row) => <span className="whitespace-normal break-words">{row.location ?? '—'}</span>,
     },
     {
+      key: 'area',
+      header: 'المساحة',
+      render: (row) => <span dir="ltr">{area(row.area)}</span>,
+    },
+    {
       key: 'value',
       header: 'القيمة',
       render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span>,
@@ -252,7 +257,10 @@ function LandCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: 
         </div>
         <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>
       </div>
-      {(row.owner_price ?? row.purchase_price) != null ? <p className="mt-3 text-sm font-bold" dir="ltr">{money(row.owner_price ?? row.purchase_price)}</p> : null}
+      <div className="mt-3 flex items-center gap-4 text-sm font-bold">
+        {row.area != null ? <span className="text-muted-foreground" dir="ltr">{area(row.area)}</span> : null}
+        {(row.owner_price ?? row.purchase_price) != null ? <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> : null}
+      </div>
       <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />
     </div>
   );
