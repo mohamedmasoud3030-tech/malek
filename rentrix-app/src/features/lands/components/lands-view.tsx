@@ -10,12 +10,15 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
+import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
+import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import type { LandFilters, LandFormValues, LandRecord } from '../types';
 
 const statusLabels: Record<string, string> = {
@@ -33,7 +36,12 @@ const categoryLabels: Record<string, string> = {
 
 function money(value: number | null | undefined) {
   if (value == null) return '—';
-  return new Intl.NumberFormat('ar-OM', { maximumFractionDigits: 0 }).format(value);
+  return formatCompanyMoney(defaultCompanyLocalSettings, value);
+}
+
+function area(value: number | null | undefined) {
+  if (value == null) return '—';
+  return `${formatCompanyNumber(defaultCompanyLocalSettings, value)} م²`;
 }
 
 function tone(status: string | null | undefined) {
@@ -86,7 +94,7 @@ export function LandsView(props: Props) {
         secondaryActions={
           <div className="flex min-w-max items-center gap-2 rounded-2xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground">
             <Layers className="size-4" />
-            <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${money(totalArea)} م²`}</span>
+            <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${area(totalArea)}`}</span>
           </div>
         }
         primaryAction={
@@ -107,7 +115,7 @@ export function LandsView(props: Props) {
             <KpiCard label="إجمالي السجلات" value={rows.length} icon={MapPinned} accent="primary" sub={`${activeRows} نشطة`} />
             <KpiCard label="متاحة" value={availableRows} icon={TrendingUp} accent="emerald" sub="قطع قابلة للتعامل" trend={availableRows > 0 ? 'up' : 'neutral'} trendValue={String(availableRows)} />
             <KpiCard label="محجوزة" value={rows.filter((r) => r.status === 'reserved').length} icon={Tag} accent="amber" sub="قيد التفاوض" />
-            <KpiCard label="إجمالي المساحة" value={`${money(totalArea)} م²`} icon={Layers} accent="sky" sub="مجموع المساحات المدخلة" />
+            <KpiCard label="إجمالي المساحة" value={area(totalArea)} icon={Layers} accent="sky" sub="مجموع المساحات المدخلة" />
           </>
         )}
       </div>
@@ -185,32 +193,56 @@ function Field({ label, children }: Readonly<{ label: string; children: ReactNod
 }
 
 function LandRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: LandRecord[]; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchiveClick: (row: LandRecord) => void }>) {
+  const columns: ColumnDef<LandRecord>[] = [
+    {
+      key: 'name',
+      header: 'الأرض',
+      className: 'max-w-56',
+      render: (row) => (
+        <>
+          <p className="whitespace-normal break-words font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}</p>
+          <p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p>
+        </>
+      ),
+    },
+    {
+      key: 'location',
+      header: 'الموقع',
+      className: 'max-w-72',
+      render: (row) => <span className="whitespace-normal break-words">{row.location ?? '—'}</span>,
+    },
+    {
+      key: 'area',
+      header: 'المساحة',
+      render: (row) => <span dir="ltr">{area(row.area)}</span>,
+    },
+    {
+      key: 'value',
+      header: 'القيمة',
+      render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'الحالة',
+      render: (row) => <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>,
+    },
+    {
+      key: 'actions',
+      header: 'إجراءات',
+      render: (row) => <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />,
+    },
+  ];
+
   return (
-    <>
-      <div className="grid gap-3 md:hidden">
-        {rows.map((row) => <LandCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}
-      </div>
-      <Card className="hidden overflow-hidden md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead className="bg-muted/50 text-muted-foreground">
-              <tr><th className="p-3 text-right">الأرض</th><th className="p-3 text-right">الموقع</th><th className="p-3 text-right">القيمة</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t">
-                  <td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}<p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p></td>
-                  <td className="max-w-72 whitespace-normal break-words p-3">{row.location ?? '—'}</td>
-                  <td className="p-3" dir="ltr">{money(row.owner_price ?? row.purchase_price)}</td>
-                  <td className="p-3"><StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td>
-                  <td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-    </>
+    <EntityTable
+      rows={rows}
+      columns={columns}
+      keyOf={(row) => row.id}
+      aria-label="قائمة الأراضي"
+      renderMobileCard={(row) => (
+        <LandCard row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />
+      )}
+    />
   );
 }
 
@@ -225,7 +257,10 @@ function LandCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: 
         </div>
         <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>
       </div>
-      {(row.owner_price ?? row.purchase_price) != null ? <p className="mt-3 text-sm font-bold" dir="ltr">{money(row.owner_price ?? row.purchase_price)}</p> : null}
+      <div className="mt-3 flex items-center gap-4 text-sm font-bold">
+        {row.area != null ? <span className="text-muted-foreground" dir="ltr">{area(row.area)}</span> : null}
+        {(row.owner_price ?? row.purchase_price) != null ? <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> : null}
+      </div>
       <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />
     </div>
   );
