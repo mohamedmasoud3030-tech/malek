@@ -16,6 +16,9 @@ import {
   getPaymentTotalsReport,
   getTenantStatementReport,
   getVatReturnReport,
+  getTrialBalanceReport,
+  getIncomeStatementReport,
+  getBalanceSheetReport,
   type ArrearsReportFilters,
   type ExpenseBreakdownReportFilters,
   type FinancialReportFilters,
@@ -39,6 +42,9 @@ export const financialReportKeys = {
   outstandingBalance: (filters: FinancialReportFilters) => [...financialReportKeys.all, 'outstandingBalance', filters] as const,
   tenantStatement: (contractId: string) => [...financialReportKeys.all, 'tenantStatement', contractId] as const,
   ownerStatement: (ownerId: string, filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'ownerStatement', ownerId, filters] as const,
+  trialBalance: (asOf: string) => [...financialReportKeys.all, 'trialBalance', asOf] as const,
+  incomeStatement: (filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) => [...financialReportKeys.all, 'incomeStatement', filters] as const,
+  balanceSheet: (asOf: string) => [...financialReportKeys.all, 'balanceSheet', asOf] as const,
 };
 
 function hasRequiredDateRange(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
@@ -175,5 +181,29 @@ export function useOwnerStatementReport(ownerId: string | undefined, filters: Pi
     queryKey: financialReportKeys.ownerStatement(ownerId ?? '', filters),
     queryFn: () => getOwnerStatementReport({ ownerId: ownerId!, ...filters }),
     enabled: Boolean(ownerId) && hasRequiredDateRange(filters),
+  });
+}
+
+export function useTrialBalanceReport(asOf: string | undefined) {
+  return useQuery({
+    queryKey: financialReportKeys.trialBalance(asOf ?? ''),
+    queryFn: () => getTrialBalanceReport(asOf!),
+    enabled: Boolean(asOf),
+  });
+}
+
+export function useIncomeStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
+  return useQuery({
+    queryKey: financialReportKeys.incomeStatement(filters),
+    queryFn: () => getIncomeStatementReport(filters),
+    enabled: hasRequiredDateRange(filters),
+  });
+}
+
+export function useBalanceSheetReport(asOf: string | undefined) {
+  return useQuery({
+    queryKey: financialReportKeys.balanceSheet(asOf ?? ''),
+    queryFn: () => getBalanceSheetReport(asOf!),
+    enabled: Boolean(asOf),
   });
 }

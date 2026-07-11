@@ -12,11 +12,12 @@ import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types
 import { getTodayLocalDateString, isValidDateInput } from '../financials-date-utils';
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 import { summarizeInvoices, type InvoiceDetail, type InvoiceStatusFilter } from '../invoices/invoiceService';
-import { useGenerateInvoices, useInvoice, useInvoices } from '../invoices/useInvoices';
+import { useGenerateInvoices, useInvoice, useInvoicesPaginated } from '../invoices/useInvoices';
 import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/paymentService';
 import { usePostPayment } from '../payments/usePayments';
 import { useReceipt, useReceipts } from '../receipts/useReceipts';
 import { InvoiceDetailSection } from './invoice-detail-section';
+import { type InvoiceFilterOption } from './invoice-filters';
 import { InvoiceListSection } from './invoice-list-section';
 import { ReceiptsSection } from './receipts-section';
 
@@ -132,9 +133,16 @@ function contractContextForDocument(contract: ContractListItem) {
   };
 }
 
+const INVOICE_PAGE_SIZE = 10;
+
 export function InvoiceWorkspaceSection() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('unpaid');
   const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [tenantId, setTenantId] = useState('');
+  const [propertyId, setPropertyId] = useState('');
+  const [page, setPage] = useState(1);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [amount, setAmount] = useState('');
@@ -145,17 +153,40 @@ export function InvoiceWorkspaceSection() {
   const quickPaySubmitRef = useRef(false);
   const quickPayRequestIdRef = useRef<string | null>(null);
 
-  const invoicesQuery = useInvoices({ status, search: invoiceSearch });
+  const invoicesQuery = useInvoicesPaginated({ status, search: invoiceSearch, dateFrom, dateTo, tenantId, propertyId, page, pageSize: INVOICE_PAGE_SIZE });
   const invoiceQuery = useInvoice(selectedInvoiceId);
   const generate = useGenerateInvoices();
   const postPayment = usePostPayment();
   const receiptsQuery = useReceipts({ limit: 10 });
   const receiptQuery = useReceipt(selectedReceiptId);
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
+  const contractRows = contractsQuery.data?.rows ?? [];
+  const tenantOptions = useMemo<InvoiceFilterOption[]>(() => {
+    const map = new Map<string, string>();
+    for (const contract of contractRows) {
+      if (contract.tenant_id && contract.people?.full_name) map.set(contract.tenant_id, contract.people.full_name);
+    }
+    return Array.from(map, ([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label, 'ar'));
+  }, [contractRows]);
+  const propertyOptions = useMemo<InvoiceFilterOption[]>(() => {
+    const map = new Map<string, string>();
+    for (const contract of contractRows) {
+      if (contract.property_id && contract.properties?.title) map.set(contract.property_id, contract.properties.title);
+    }
+    return Array.from(map, ([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label, 'ar'));
+  }, [contractRows]);
+
+  const resetPage = () => setPage(1);
+  const changeStatus = (next: InvoiceStatusFilter) => { setStatus(next); resetPage(); };
+  const changeSearch = (next: string) => { setInvoiceSearch(next); resetPage(); };
+  const changeDateFrom = (next: string) => { setDateFrom(next); resetPage(); };
+  const changeDateTo = (next: string) => { setDateTo(next); resetPage(); };
+  const changeTenant = (next: string) => { setTenantId(next); resetPage(); };
+  const changeProperty = (next: string) => { setPropertyId(next); resetPage(); };
   const companySettings = useCompanySettingsContract();
   const { authorization } = useAuth();
 
-  const invoices = invoicesQuery.data ?? [];
+  const invoices = invoicesQuery.data?.rows ?? [];
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
   const invoiceDetail = invoiceQuery.data;
   const remaining = useMemo(
@@ -266,15 +297,29 @@ export function InvoiceWorkspaceSection() {
         error={invoicesQuery.error}
         isGenerating={generate.isPending}
         canGenerateInvoices={canGenerateInvoices}
-        hasInvoiceFilter={status !== 'all' || invoiceSearch.trim().length > 0}
-        onStatusChange={setStatus}
-        onInvoiceSearchChange={setInvoiceSearch}
+        hasInvoiceFilter={status !== 'all' || invoiceSearch.trim().length > 0 || Boolean(dateFrom) || Boolean(dateTo) || Boolean(tenantId) || Boolean(propertyId)}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        tenantId={tenantId}
+        propertyId={propertyId}
+        tenantOptions={tenantOptions}
+        propertyOptions={propertyOptions}
+        page={page}
+        pageSize={INVOICE_PAGE_SIZE}
+        total={invoicesQuery.data?.total ?? 0}
+        onStatusChange={changeStatus}
+        onInvoiceSearchChange={changeSearch}
         onGenerateInvoices={() => {
           if (canGenerateInvoices) setGenerateDialogOpen(true);
         }}
         onSelectInvoice={setSelectedInvoiceId}
         onPrintInvoice={canExportInvoices ? onPrintInvoice : undefined}
         onExportInvoice={canExportInvoices ? onExportInvoiceList : undefined}
+        onDateFromChange={changeDateFrom}
+        onDateToChange={changeDateTo}
+        onTenantChange={changeTenant}
+        onPropertyChange={changeProperty}
+        onPageChange={setPage}
       />
 
       <GenerateInvoicesDialog

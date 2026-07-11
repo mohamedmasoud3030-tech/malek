@@ -68,3 +68,75 @@ export async function generateInvoicesFromActiveContracts(): Promise<number> {
   if (error) throw error;
   return data ?? 0;
 }
+
+export type InvoicePaginationParams = {
+  status: InvoiceStatusFilter;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  tenantId?: string;
+  propertyId?: string;
+  page: number;
+  pageSize: number;
+};
+
+export type InvoicePage = {
+  rows: InvoiceListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+/**
+ * Resolve contracts matching tenant/property filters so invoices can be
+ * server-filtered by tenant or property (invoices reference contracts, not
+ * tenants/properties directly). Returns null when no tenant/property filter is
+ * active, and a non-matching sentinel when filters match no contract so the
+ * caller's `.in('contract_id', ...)` returns an empty page rather than all rows.
+ */
+async function resolveContractIds(filters: { tenantId?: string; propertyId?: string }): Promise<string[] | null> {
+  if (!filters.tenantId && !filters.propertyId) return null;
+
+  let query = supabase.from('contracts').select('id').is('deleted_at', null);
+  if (filters.tenantId) query = query.eq('tenant_id', filters.tenantId);
+  if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
+
+  const { data, error } = await query.returns<{ id: string }[]>();
+  if (error) throw error;
+  const ids = (data ?? []).map((row) => row.id);
+  return ids.length > 0 ? ids : ['__no_matching_contract__'];
+}
+
+/**
+ * Server-paginated invoice loader with optional date, status, tenant, and
+ * property filters. Range queries run against the filtered set so the returned
+ * `total` reflects the full filtered result, enabling correct pagination.
+ */
+export async function listInvoicesPaginated(params: InvoicePaginationParams): Promise<InvoicePage> {
+  const { status, search, dateFrom, dateTo, tenantId, propertyId, page, pageSize } = params;
+  const from = Math.max(0, (page - 1) * pageSize);
+  const to = from + pageSize - 1;
+
+  const contractIds = await resolveContractIds({ tenantId, propertyId });
+
+  let query = supabase
+    .from('invoices')
+    .select(invoiceSelect, { count: 'exact' })
+    .is('deleted_at', null)
+    .order('due_date', { ascending: false });
+
+  query = applyStatusFilter(query, status);
+  if (dateFrom) query = query.gte('issue_date', dateFrom);
+  if (dateTo) query = query.lte('issue_date', dateTo);
+  if (contractIds) query = query.in('contract_id', contractIds);
+
+  if (search) {
+    const escaped = search.replaceAll('%', '\\%').replaceAll('_', '\\_');
+    const term = `"%${escaped}%"`;
+    query = query.or(`id.ilike.${term},status.ilike.${term}`);
+  }
+
+  const { data, error, count } = await query.range(from, to).returns<InvoiceListItem[]>();
+  if (error) throw error;
+  return { rows: data ?? [], total: count ?? 0, page, pageSize };
+}

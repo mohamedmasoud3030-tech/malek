@@ -294,3 +294,49 @@ export const CATEGORY_LABELS: Record<AutomationCategory, string> = {
   maintenance: 'الصيانة',
   collections: 'التحصيل',
 };
+
+// ============================================================
+// Provider-neutral dispatch (architecture only — no external send)
+// ============================================================
+//
+// The four foundational automations are: contract-expiry reminders, rent
+// reminders, overdue escalation, and owner monthly statements. These builders
+// assemble a structured, ready-to-send payload from domain context WITHOUT
+// touching any notification provider. A future worker/gateway consumes
+// AutomationDispatch; nothing here sends a message.
+
+export type AutomationDispatchKind =
+  | 'contract_expiry'
+  | 'rent_reminder'
+  | 'overdue_escalation'
+  | 'owner_monthly_statement';
+
+export type AutomationRecipientType = 'tenant' | 'owner' | 'user';
+
+export interface AutomationRecipient {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  type: AutomationRecipientType;
+}
+
+export type AutomationDispatchAttachmentKind = 'invoice' | 'owner_statement' | 'statement';
+
+export interface AutomationDispatchAttachment {
+  kind: AutomationDispatchAttachmentKind;
+  refId: string;
+}
+
+export interface AutomationDispatch {
+  kind: AutomationDispatchKind;
+  ruleId: string;
+  channel: AutomationChannel;
+  recipients: AutomationRecipient[];
+  templateVariables: Record<string, string | number>;
+  attachments: AutomationDispatchAttachment[];
+  /** ISO timestamp when the dispatch was prepared (never sent by this layer). */
+  preparedAt: string;
+  /** Always false: this layer only prepares; a gateway sends. */
+  sent: false;
+}

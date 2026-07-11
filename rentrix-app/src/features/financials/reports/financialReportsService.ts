@@ -1122,3 +1122,154 @@ export async function getExpenseBreakdownReport(filters: ExpenseBreakdownReportF
 
   return summarizeExpenseBreakdownReport(expenses, propertiesById, includePropertyBreakdown);
 }
+
+// ---------------------------------------------------------------------------
+// Accounting foundation reports (Trial Balance / Income Statement / Balance Sheet)
+//
+// These are OPERATIONAL accounting views derived from the live operational
+// source tables. They are not a formal posted general ledger. The accounting
+// basis is documented in the migration files that define rpt_trial_balance,
+// rpt_income_statement, and rpt_balance_sheet.
+// ---------------------------------------------------------------------------
+
+export type TrialBalanceAccount = {
+  code: string;
+  name: string;
+  type: string;
+  balanceType: 'debit' | 'credit';
+  balance: number;
+};
+
+export type TrialBalanceReport = {
+  asOf: string | null;
+  accounts: TrialBalanceAccount[];
+  totalDebits: number;
+  totalCredits: number;
+  isBalanced: boolean;
+};
+
+export type IncomeStatementLine = {
+  label: string;
+  amount: number;
+};
+
+export type IncomeStatementReport = {
+  period: { from: string | null; to: string | null };
+  revenue: IncomeStatementLine[];
+  totalRevenue: number;
+  expenses: IncomeStatementLine[];
+  totalExpenses: number;
+  netIncome: number;
+};
+
+export type BalanceSheetSectionItem = {
+  code: string;
+  name: string;
+  amount: number;
+};
+
+export type BalanceSheetReport = {
+  asOf: string | null;
+  assets: BalanceSheetSectionItem[];
+  totalAssets: number;
+  liabilities: BalanceSheetSectionItem[];
+  totalLiabilities: number;
+  equity: BalanceSheetSectionItem[];
+  totalEquity: number;
+  isBalanced: boolean;
+};
+
+export function normalizeTrialBalanceReport(payload: unknown): TrialBalanceReport {
+  const root = getJsonRecord(payload);
+  const accounts = getJsonArray(root.accounts).map((account) => {
+    const row = getJsonRecord(account);
+    const balanceType = getJsonString(row.balance_type);
+    return {
+      code: getJsonString(row.code) ?? '',
+      name: getJsonString(row.name) ?? '',
+      type: getJsonString(row.type) ?? '',
+      balanceType: balanceType === 'credit' ? 'credit' : 'debit',
+      balance: getJsonNumber(row.balance),
+    } satisfies TrialBalanceAccount;
+  });
+
+  return {
+    asOf: getJsonString(root.as_of),
+    accounts,
+    totalDebits: getJsonNumber(root.total_debits),
+    totalCredits: getJsonNumber(root.total_credits),
+    isBalanced: Boolean(root.is_balanced),
+  };
+}
+
+export function normalizeIncomeStatementReport(payload: unknown): IncomeStatementReport {
+  const root = getJsonRecord(payload);
+  const period = getJsonRecord(root.period);
+
+  const normalizeLines = (value: unknown): IncomeStatementLine[] =>
+    getJsonArray(value).map((line) => {
+      const row = getJsonRecord(line);
+      return {
+        label: getJsonString(row.label) ?? '',
+        amount: getJsonNumber(row.amount),
+      };
+    });
+
+  return {
+    period: {
+      from: getJsonString(period.from),
+      to: getJsonString(period.to),
+    },
+    revenue: normalizeLines(root.revenue),
+    totalRevenue: getJsonNumber(root.total_revenue),
+    expenses: normalizeLines(root.expenses),
+    totalExpenses: getJsonNumber(root.total_expenses),
+    netIncome: getJsonNumber(root.net_income),
+  };
+}
+
+export function normalizeBalanceSheetReport(payload: unknown): BalanceSheetReport {
+  const root = getJsonRecord(payload);
+
+  const normalizeSection = (value: unknown): BalanceSheetSectionItem[] =>
+    getJsonArray(value).map((item) => {
+      const row = getJsonRecord(item);
+      return {
+        code: getJsonString(row.code) ?? '',
+        name: getJsonString(row.name) ?? '',
+        amount: getJsonNumber(row.amount),
+      };
+    });
+
+  return {
+    asOf: getJsonString(root.as_of),
+    assets: normalizeSection(root.assets),
+    totalAssets: getJsonNumber(root.total_assets),
+    liabilities: normalizeSection(root.liabilities),
+    totalLiabilities: getJsonNumber(root.total_liabilities),
+    equity: normalizeSection(root.equity),
+    totalEquity: getJsonNumber(root.total_equity),
+    isBalanced: Boolean(root.is_balanced),
+  };
+}
+
+export async function getTrialBalanceReport(asOf: string): Promise<TrialBalanceReport> {
+  const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('rpt_trial_balance', { p_as_of: asOf });
+  if (error) throw error;
+  return normalizeTrialBalanceReport(data);
+}
+
+export async function getIncomeStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>): Promise<IncomeStatementReport> {
+  const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('rpt_income_statement', {
+    p_from: filters.dateFrom,
+    p_to: filters.dateTo,
+  });
+  if (error) throw error;
+  return normalizeIncomeStatementReport(data);
+}
+
+export async function getBalanceSheetReport(asOf: string): Promise<BalanceSheetReport> {
+  const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('rpt_balance_sheet', { p_as_of: asOf });
+  if (error) throw error;
+  return normalizeBalanceSheetReport(data);
+}

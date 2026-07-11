@@ -11,18 +11,22 @@ import { getErrorMessage } from '@/features/financials/components/financials-for
 import { useReceipts } from '@/features/financials/receipts/useReceipts';
 import {
   useAgedReceivablesReport,
+  useBalanceSheetReport,
   useCashFlowStatementReport,
   useDailyCollectionReport,
   useExpenseBreakdownReport,
   useFinancialCashflowReport,
   useFinancialPeriodSummaryReport,
+  useIncomeStatementReport,
   useOverdueInvoicesReport,
   useOwnerStatementReport,
   useTenantStatementReport,
+  useTrialBalanceReport,
   useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
 import { useCostCenters } from '@/features/settings/useCostCenters';
 import { useAllUnits } from '@/features/units/use-units';
+import { AccountingReportsSection } from './components/AccountingReportsSection';
 import { CollectionsSection } from './components/CollectionsSection';
 import { ExpensesSection } from './components/ExpensesSection';
 import { FiltersPanel } from './components/FiltersPanel';
@@ -68,6 +72,9 @@ export function ReportsPage() {
   const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined);
   const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters);
   const unitsQuery = useAllUnits();
+  const trialBalanceQuery = useTrialBalanceReport(filters.asOf);
+  const incomeStatementQuery = useIncomeStatementReport(financialFilters);
+  const balanceSheetQuery = useBalanceSheetReport(filters.asOf);
   const receiptsQuery = useReceipts({ limit: latestReceiptLimit });
   const costCentersQuery = useCostCenters();
   const propertyTitlesQuery = usePropertyTitles();
@@ -105,6 +112,9 @@ export function ReportsPage() {
     ?? expenseBreakdownQuery.error
     ?? overdueInvoicesQuery.error
     ?? agedReceivablesQuery.error
+    ?? trialBalanceQuery.error
+    ?? incomeStatementQuery.error
+    ?? balanceSheetQuery.error
     ?? contractsQuery.error
     ?? ownersQuery.error
     ?? unitsQuery.error
@@ -149,6 +159,24 @@ export function ReportsPage() {
       <SectionTabPanel id="occupancy" activeId={activeSection}>
         <OccupancySection occupancyRows={occupancyRows} expiringRows={expiringRows} isLoading={unitsQuery.isLoading || contractsQuery.isLoading} />
       </SectionTabPanel>
+      <SectionTabPanel id="accounting" activeId={activeSection}>
+        <AccountingReportsSection
+          asOf={filters.asOf}
+          from={filters.from}
+          to={filters.to}
+          trialBalance={trialBalanceQuery.data}
+          incomeStatement={incomeStatementQuery.data}
+          balanceSheet={balanceSheetQuery.data}
+          isTrialBalanceLoading={trialBalanceQuery.isLoading}
+          isIncomeStatementLoading={incomeStatementQuery.isLoading}
+          isBalanceSheetLoading={balanceSheetQuery.isLoading}
+          trialBalanceError={trialBalanceQuery.error}
+          incomeStatementError={incomeStatementQuery.error}
+          balanceSheetError={balanceSheetQuery.error}
+          isLoading={financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading}
+        />
+      </SectionTabPanel>
+
       <SectionTabPanel id="statements" activeId={activeSection}>
         <StatementsSection agedReport={agedReceivablesQuery.data} receiptRows={receiptRows} financialSummary={financialSummaryQuery.data} expenseBreakdown={expenseBreakdownQuery.data} dailyRows={dailyCollectionQuery.data?.rows ?? []} cashFlowStatement={cashFlowStatementQuery.data} vatReturn={vatReturnQuery.data} tenantStatement={tenantStatementQuery.data} ownerStatement={ownerStatementQuery.data} selectedContractId={filters.contractId} selectedOwnerId={filters.ownerId} tenantStatementError={tenantStatementQuery.error} ownerStatementError={ownerStatementQuery.error} isTenantStatementLoading={tenantStatementQuery.isLoading} isOwnerStatementLoading={ownerStatementQuery.isLoading} isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading || cashFlowStatementQuery.isLoading || vatReturnQuery.isLoading} />
       </SectionTabPanel>

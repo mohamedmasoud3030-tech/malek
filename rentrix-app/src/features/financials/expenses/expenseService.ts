@@ -45,3 +45,58 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
     throw error instanceof Error ? error : new Error('تعذر تعديل المصروف');
   }
 }
+
+/**
+ * Atomic expense creation that records the expense together with its journal
+ * entry and audit-log row in a single RPC. Mirrors the payment atomic: same
+ * user-facing fields/result as `createExpense`, but the accounting and audit
+ * trail are guaranteed by the database. `requestId` enables idempotent retries.
+ */
+export type ExpenseWithJournalPayload = {
+  requestId?: string;
+  propertyId: string;
+  category: string;
+  amount: number;
+  expenseDate: string;
+  description?: string | null;
+  costCenterId?: string | null;
+  contractId?: string | null;
+  chargedTo?: string | null;
+  attachmentUrl?: string | null;
+};
+
+export type ExpenseWithJournalResult = {
+  expenseId: string;
+  expenseNo: string;
+  requestId: string;
+  idempotent: boolean;
+};
+
+export async function createExpenseWithJournal(payload: ExpenseWithJournalPayload): Promise<ExpenseWithJournalResult> {
+  const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)(
+    'create_expense_with_journal_atomic',
+    {
+      p_payload: {
+        request_id: payload.requestId ?? null,
+        property_id: payload.propertyId,
+        category: payload.category,
+        amount: payload.amount,
+        expense_date: payload.expenseDate,
+        description: payload.description ?? null,
+        cost_center_id: payload.costCenterId ?? null,
+        contract_id: payload.contractId ?? null,
+        charged_to: payload.chargedTo ?? null,
+        attachment_url: payload.attachmentUrl ?? null,
+      },
+    },
+  );
+  if (error) throw error;
+
+  const result = (data ?? {}) as { expense_id?: string; expense_no?: string; request_id?: string; idempotent?: boolean };
+  return {
+    expenseId: result.expense_id ?? '',
+    expenseNo: result.expense_no ?? '',
+    requestId: result.request_id ?? payload.requestId ?? '',
+    idempotent: Boolean(result.idempotent),
+  };
+}

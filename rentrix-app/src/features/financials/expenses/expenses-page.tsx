@@ -16,7 +16,7 @@ import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters
 import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import { OPERATIONAL_EXPENSE_CATEGORIES, summarizeOperationalExpenses, type OperationalExpenseFilterValues } from './operational-expenses';
-import { useCreateExpense, useExpenses } from './useExpenses';
+import { useCreateExpenseAtomic, useExpenses } from './useExpenses';
 import { PageHeader } from '@/components/layout/page-header';
 
 const expenseSchema = z.object({
@@ -40,7 +40,7 @@ export function ExpensesPage() {
   const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });
   const costCentersQuery = useCostCenters();
   const expensesQuery = useExpenses(filters);
-  const createExpense = useCreateExpense();
+  const createExpense = useCreateExpenseAtomic();
   const propertyRows = propertiesQuery.data?.rows ?? [];
   const expenses = expensesQuery.data ?? [];
   const summary = summarizeOperationalExpenses(expenses);
@@ -53,13 +53,14 @@ export function ExpensesPage() {
   const onCreateExpense = (values: ExpenseFormValues) => {
     createExpense.mutate(
       {
-        property_id: values.property_id,
+        requestId: crypto.randomUUID(),
+        propertyId: values.property_id,
         category: values.category,
         amount: values.amount,
-        expense_date: values.expense_date,
-        cost_center_id: values.cost_center_id?.trim() || null,
+        expenseDate: values.expense_date,
+        costCenterId: values.cost_center_id?.trim() || null,
         description: values.description?.trim() ? values.description.trim() : null,
-        attachment_url: values.attachment_url ?? null,
+        attachmentUrl: values.attachment_url ?? null,
       },
       { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', expense_date: toLocalDateInputValue(), description: '', attachment_url: null }) },
     );

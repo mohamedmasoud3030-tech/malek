@@ -5,7 +5,7 @@ import { EntityTable } from '@/components/ui/entity-table';
 import { getSafeRemainingAmount } from '../financialMath';
 import { getInvoiceGrossAmount, type InvoiceListItem, type InvoiceStatusFilter, type InvoiceSummary } from '../invoices/invoiceService';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
-import { InvoiceFilters } from './invoice-filters';
+import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
 import { InvoiceSummaryCards } from './invoice-summary-cards';
 
 type InvoiceListSectionProps = {
@@ -20,12 +20,26 @@ type InvoiceListSectionProps = {
   isGenerating: boolean;
   canGenerateInvoices: boolean;
   hasInvoiceFilter: boolean;
+  dateFrom: string;
+  dateTo: string;
+  tenantId: string;
+  propertyId: string;
+  tenantOptions: InvoiceFilterOption[];
+  propertyOptions: InvoiceFilterOption[];
+  page: number;
+  pageSize: number;
+  total: number;
   onStatusChange: (status: InvoiceStatusFilter) => void;
   onInvoiceSearchChange: (search: string) => void;
   onGenerateInvoices: () => void;
   onSelectInvoice: (invoiceId: string) => void;
   onPrintInvoice?: (invoiceId: string) => void;
   onExportInvoice?: (invoiceId: string) => void;
+  onDateFromChange: (value: string) => void;
+  onDateToChange: (value: string) => void;
+  onTenantChange: (value: string) => void;
+  onPropertyChange: (value: string) => void;
+  onPageChange: (page: number) => void;
 };
 
 export function InvoiceListSection({
@@ -40,13 +54,29 @@ export function InvoiceListSection({
   isGenerating,
   canGenerateInvoices,
   hasInvoiceFilter,
+  dateFrom,
+  dateTo,
+  tenantId,
+  propertyId,
+  tenantOptions,
+  propertyOptions,
+  page,
+  pageSize,
+  total,
   onStatusChange,
   onInvoiceSearchChange,
   onGenerateInvoices,
   onSelectInvoice,
   onPrintInvoice,
   onExportInvoice,
+  onDateFromChange,
+  onDateToChange,
+  onTenantChange,
+  onPropertyChange,
+  onPageChange,
 }: InvoiceListSectionProps) {
+  const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+
   return (
     <Card>
       <CardHeader>
@@ -60,9 +90,19 @@ export function InvoiceListSection({
           invoiceSearch={invoiceSearch}
           isGenerating={isGenerating}
           canGenerateInvoices={canGenerateInvoices}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          tenantId={tenantId}
+          propertyId={propertyId}
+          tenantOptions={tenantOptions}
+          propertyOptions={propertyOptions}
           onStatusChange={onStatusChange}
           onInvoiceSearchChange={onInvoiceSearchChange}
           onGenerateInvoices={onGenerateInvoices}
+          onDateFromChange={onDateFromChange}
+          onDateToChange={onDateToChange}
+          onTenantChange={onTenantChange}
+          onPropertyChange={onPropertyChange}
         />
 
         <EntityTable
@@ -172,6 +212,20 @@ export function InvoiceListSection({
             );
           }}
         />
+
+        <div className="flex flex-col gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            إجمالي {total.toLocaleString('ar')} فاتورة · صفحة {page.toLocaleString('ar')} من {totalPages.toLocaleString('ar')}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" className="h-9" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+              السابق
+            </Button>
+            <Button variant="outline" className="h-9" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+              التالي
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
