@@ -72,10 +72,20 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(adminContext, 'leads.view')).toBe(true);
     expect(canAccess(adminContext, 'commissions.view')).toBe(true);
     expect(canAccess(adminContext, 'communication.view')).toBe(true);
+    expect(canAccess(adminContext, 'properties.write')).toBe(true);
+    expect(canAccess(adminContext, 'contracts.write')).toBe(true);
+    expect(canAccess(adminContext, 'expenses.write')).toBe(true);
+    expect(canAccess(adminContext, 'arrears.view')).toBe(true);
+    expect(canAccess(adminContext, 'financial.bank_reconciliation.view')).toBe(true);
     expect(canAccess(managerContext, 'system.view')).toBe(false);
     expect(canAccess(managerContext, 'integrity.view')).toBe(false);
-    expect(canAccess(managerContext, 'maintenance.view')).toBe(false);
+    expect(canAccess(managerContext, 'maintenance.view')).toBe(true);
     expect(canAccess(managerContext, 'owners.hub.view')).toBe(true);
+    expect(canAccess(managerContext, 'properties.write')).toBe(true);
+    expect(canAccess(managerContext, 'contracts.write')).toBe(true);
+    expect(canAccess(managerContext, 'expenses.write')).toBe(true);
+    expect(canAccess(managerContext, 'arrears.view')).toBe(true);
+    expect(canAccess(managerContext, 'financial.bank_reconciliation.view')).toBe(true);
     expect(canAccess(managerContext, 'owners.detail.view')).toBe(true);
     expect(canAccess(managerContext, 'lands.view')).toBe(true);
     expect(canAccess(managerContext, 'leads.view')).toBe(true);
@@ -89,6 +99,11 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(userContext, 'owners.hub.view')).toBe(false);
     expect(canAccess(userContext, 'leads.view')).toBe(false);
     expect(canAccess(userContext, 'settings.manage')).toBe(false);
+    expect(canAccess(userContext, 'properties.write')).toBe(false);
+    expect(canAccess(userContext, 'contracts.write')).toBe(false);
+    expect(canAccess(userContext, 'expenses.write')).toBe(false);
+    expect(canAccess(userContext, 'arrears.view')).toBe(false);
+    expect(canAccess(userContext, 'financial.bank_reconciliation.view')).toBe(false);
   });
 
 
