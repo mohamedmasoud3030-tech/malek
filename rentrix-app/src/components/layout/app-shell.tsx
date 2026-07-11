@@ -17,7 +17,7 @@ function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
   if (status === 'offline') return 'وضع دون اتصال';
   if (status === 'error') return 'تحتاج المزامنة إلى مراجعة';
-  return 'جاهز للعمل';
+  return 'متصل';
 }
 
 function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
@@ -127,7 +127,7 @@ export function AppShell() {
   };
 
   const showNotifications = () => {
-    toast.success('لا توجد إشعارات جديدة', { description: 'مساحة العمل جاهزة ومحدثة.' });
+    toast.success('لا توجد إشعارات جديدة', { description: 'آخر تحديثات مساحة العمل معروضة.' });
   };
 
   return (

@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { CommunicationHubView } from './components/communication-hub-view';
+import { CommunicationOutboundPanel } from './components/communication-outbound-panel';
 import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from './types';
 import { useArchiveCommunicationRecord, useCommunicationRecords, useSaveCommunicationRecord } from './use-communication';
 
@@ -30,25 +33,32 @@ export function CommunicationPage() {
   const archiveRecord = useArchiveCommunicationRecord();
 
   return (
-    <CommunicationHubView
-      rows={recordsQuery.data ?? []}
-      filters={filters}
-      draft={draft}
-      editingRecord={editingRecord}
-      formOpen={formOpen}
-      isLoading={recordsQuery.isLoading}
-      isSaving={saveRecord.isPending}
-      isArchiving={archiveRecord.isPending}
-      error={recordsQuery.error}
-      writeError={saveRecord.error ?? archiveRecord.error}
-      onFiltersChange={setFilters}
-      onDraftChange={setDraft}
-      onCreate={() => { setEditingRecord(null); setDraft(emptyForm); setFormOpen(true); }}
-      onEdit={(record) => { setEditingRecord(record); setDraft(formFromRecord(record)); setFormOpen(true); }}
-      onFormOpenChange={setFormOpen}
-      onSubmit={(values) => saveRecord.mutate({ id: editingRecord?.id, values }, { onSuccess: () => setFormOpen(false) })}
-      onArchive={(id) => archiveRecord.mutate(id)}
-      onRetry={() => void recordsQuery.refetch()}
-    />
+    <PageLayout>
+      <PageHeader
+        title="مركز التواصل"
+        description="سجل تشغيلي للتواصل مع الأطراف، مع واجهة قوالب وواتساب وبريد قابلة للتوسعة دون ربط مزود خارجي داخل الواجهة."
+      />
+      <CommunicationOutboundPanel />
+      <CommunicationHubView
+        rows={recordsQuery.data ?? []}
+        filters={filters}
+        draft={draft}
+        editingRecord={editingRecord}
+        formOpen={formOpen}
+        isLoading={recordsQuery.isLoading}
+        isSaving={saveRecord.isPending}
+        isArchiving={archiveRecord.isPending}
+        error={recordsQuery.error}
+        writeError={saveRecord.error ?? archiveRecord.error}
+        onFiltersChange={setFilters}
+        onDraftChange={setDraft}
+        onCreate={() => { setEditingRecord(null); setDraft(emptyForm); setFormOpen(true); }}
+        onEdit={(record) => { setEditingRecord(record); setDraft(formFromRecord(record)); setFormOpen(true); }}
+        onFormOpenChange={setFormOpen}
+        onSubmit={(values) => saveRecord.mutate({ id: editingRecord?.id, values }, { onSuccess: () => setFormOpen(false) })}
+        onArchive={(id) => archiveRecord.mutate(id)}
+        onRetry={() => void recordsQuery.refetch()}
+      />
+    </PageLayout>
   );
 }

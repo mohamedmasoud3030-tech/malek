@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 
 interface SectionHeaderProps {
   title: string;
+  description?: string;
   action?: ReactNode;
   className?: string;
 }
@@ -17,11 +18,16 @@ interface SectionHeaderProps {
  *   action={<Link to="/contracts">عرض الكل</Link>}
  * />
  */
-export function SectionHeader({ title, action, className }: SectionHeaderProps) {
+export function SectionHeader({ title, description, action, className }: SectionHeaderProps) {
   return (
-    <div className={cn('mb-3 flex items-center justify-between gap-2', className)}>
-      <p className="text-sm font-bold">{title}</p>
-      {action && <div className="text-xs font-bold text-primary">{action}</div>}
+    <div className={cn('mb-3 flex items-start justify-between gap-2', className)}>
+      <div className="min-w-0">
+        <p className="text-sm font-bold">{title}</p>
+        {description ? (
+          <p className="mt-0.5 text-xs font-bold leading-5 text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {action && <div className="shrink-0 text-xs font-bold text-primary">{action}</div>}
     </div>
   );
 }

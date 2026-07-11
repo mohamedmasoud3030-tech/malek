@@ -21,11 +21,36 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: false,
+      includeAssets: ["offline.html", "icon-rentrix.png", "favicon.svg"],
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],
+        // Offline shell only — never cache authenticated API/financial payloads.
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "rentrix-pages",
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 },
+            },
+          },
+          {
+            urlPattern: ({ request }) =>
+              request.destination === "style" ||
+              request.destination === "script" ||
+              request.destination === "worker" ||
+              request.destination === "font",
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "rentrix-assets",
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
+        ],
       },
     }),
     ...(process.env.NODE_ENV !== "production" &&

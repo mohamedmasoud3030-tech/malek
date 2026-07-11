@@ -67,6 +67,7 @@ const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, pa
 const financialsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/financials', component: lazyRouteComponent(() => import('@/routes/_protected.financials'), 'FinancialsRouteComponent'), staticData: { title: 'المالية' } });
 const commissionsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/commissions', beforeLoad: requirePermission('commissions.view'), component: lazyRouteComponent(() => import('@/routes/_protected.commissions'), 'CommissionsRouteComponent'), staticData: { title: 'العمولات' } });
 const communicationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/communication', beforeLoad: requirePermission('communication.view'), component: lazyRouteComponent(() => import('@/routes/_protected.communication'), 'CommunicationRouteComponent'), staticData: { title: 'التواصل' } });
+const automationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/automation', beforeLoad: requirePermission('communication.view'), component: lazyRouteComponent(() => import('@/routes/_protected.automation'), 'AutomationRouteComponent'), staticData: { title: 'مركز الأتمتة' } });
 const receiptsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/receipts', component: lazyRouteComponent(() => import('@/routes/_protected.receipts'), 'ReceiptsRouteComponent'), staticData: { title: 'إيصال الدفع' } });
 const expensesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/expenses', component: lazyRouteComponent(() => import('@/routes/_protected.expenses'), 'ExpensesRouteComponent'), staticData: { title: 'المصاريف' } });
 const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', component: lazyRouteComponent(() => import('@/routes/_protected.invoices'), 'InvoicesRouteComponent'), staticData: { title: 'الفواتير' } });
@@ -154,6 +155,7 @@ export const routeTree = rootRoute.addChildren([
     reportsRoute,
     aiAssistantRoute,
     communicationRoute,
+    automationRoute,
     systemRoute,
     auditLogRoute,
     dataIntegrityRoute,

@@ -40,6 +40,7 @@ const sharedTranslationEntries = [
   ['commissions', 'العمولات', 'Commissions'],
   ['bankReconciliation', 'مطابقة البنك', 'Bank reconciliation'],
   ['communication', 'التواصل', 'Communication'],
+  ['automation', 'الأتمتة', 'Automation'],
   ['contracts', 'العقود', 'Contracts'],
   ['financials', 'المالية', 'Financials'],
   ['invoices', 'الفواتير', 'Invoices'],

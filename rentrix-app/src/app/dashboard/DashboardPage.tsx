@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { DataErrorScreen } from '@/components/data-error-screen';
+import { ErrorState } from '@/components/ui/error-state';
 import { PageLayout } from '@/components/layout/page-layout';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { getDashboardSnapshot } from '../dashboardSnapshot';
@@ -12,6 +11,7 @@ import { ExpiringContractsSection } from './ExpiringContractsSection';
 import { OverdueSection } from './OverdueSection';
 import { FinancialSummary } from './FinancialSummary';
 import { ArrearsBreakdown } from './ArrearsBreakdown';
+import { DashboardCharts } from './DashboardCharts';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard.utils';
 
 export function DashboardPage() {
@@ -24,7 +24,9 @@ export function DashboardPage() {
     queryFn: () => getDashboardSnapshot(now),
   });
 
-  const retryDashboard = useCallback(() => { refetch().catch(() => undefined); }, [refetch]);
+  const retryDashboard = useCallback(() => {
+    refetch().catch(() => undefined);
+  }, [refetch]);
 
   const expiringContracts = useMemo(
     () => buildExpiringContracts(snapshot?.activeContracts, now),
@@ -36,20 +38,21 @@ export function DashboardPage() {
   );
 
   return (
-    <PageLayout>
+    <PageLayout className="space-y-5">
       <HeroBanner snapshot={snapshot} isLoading={isLoading} settings={settings} today={today} />
 
-      {isError && (
-        <div className="space-y-3">
-          <DataErrorScreen title="تعذر تحميل لوحة التحكم" error={error} />
-          <Button variant="secondary" onClick={retryDashboard} className="rounded-2xl">
-            إعادة المحاولة
-          </Button>
-        </div>
-      )}
+      {isError ? (
+        <ErrorState
+          title="تعذر تحميل لوحة التحكم"
+          description="لم نتمكن من جلب مؤشرات الأداء الحالية. تحقق من الاتصال ثم أعد المحاولة."
+          error={error}
+          onRetry={retryDashboard}
+        />
+      ) : null}
 
       <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
       <QuickActions />
+      <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <ExpiringContractsSection rows={expiringContracts} isLoading={isLoading} settings={settings} />

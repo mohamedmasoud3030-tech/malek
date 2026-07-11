@@ -1,6 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { FileSpreadsheet, WalletCards } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useFinancialCashflowReport, useFinancialPeriodSummaryReport } from '@/features/financials/reports/useFinancialReports';
@@ -20,7 +19,7 @@ export function OverviewSection({ summary, cashflowRows, canExportReports, isLoa
     <ReportCard
       title="نظرة عامة على الفترة"
       description="ملخص الفواتير والتحصيل والمصروفات المسجلة للفترة المحددة."
-      action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
+      onExportCsv={canExportReports ? () => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report)) : undefined}
       isLoading={isLoading}
     >
       <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -1,15 +1,18 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CalendarDays, Edit, RefreshCw, ShieldAlert, WalletCards } from 'lucide-react';
+import { CalendarDays, Edit, MessageCircle, Printer, RefreshCw, Share2, ShieldAlert, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { buildContractActions } from '@/components/ui/entity-action-presets';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsContract } from '@/lib/companySettings';
@@ -99,6 +102,56 @@ export function ContractDetailPage() {
     });
   };
 
+  const printContract = () => {
+    window.print();
+  };
+
+  const shareContract = async () => {
+    const shareUrl = window.location.href;
+    const title = `عقد #${contract.id.slice(0, 8)}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url: shareUrl });
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('تم نسخ رابط العقد');
+    } catch {
+      toast.error('تعذر مشاركة رابط العقد');
+    }
+  };
+
+  const openWhatsApp = () => {
+    const phone = contract.people?.phone?.replace(/[^\d+]/g, '') ?? '';
+    const digits = phone.startsWith('+') ? phone.slice(1) : phone;
+    const message = `مرحباً${contract.people?.full_name ? ` ${contract.people.full_name}` : ''}، بخصوص عقد #${contract.id.slice(0, 8)} على ${contract.properties?.title ?? 'العقار'} / ${contract.units?.unit_number ?? 'الوحدة'}.`;
+    const url = digits
+      ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const contractMenuActions = buildContractActions({
+    onPrint: printContract,
+    onPdf: exportContractPdf,
+    onWhatsApp: openWhatsApp,
+    onShare: () => {
+      void shareContract();
+    },
+    onRenew: renewalAllowed
+      ? () => {
+          form.reset(getRenewalDefaults(contract));
+          setOpen(true);
+        }
+      : undefined,
+    onTerminate: canTerminateContract(contract)
+      ? () => {
+          setTerminateReason('');
+          setTerminateOpen(true);
+        }
+      : undefined,
+  });
+
   const submitRenewal = async (values: RenewalPayload) => {
     const result = await renewMutation.mutateAsync(values);
     setOpen(false);
@@ -119,11 +172,15 @@ export function ContractDetailPage() {
         backTo="/contracts"
         actions={
           <>
-            <Button variant="secondary" disabled={!renewalAllowed} onClick={() => { form.reset(getRenewalDefaults(contract)); setOpen(true); }}><RefreshCw className="me-2 size-4" />تجديد</Button>
+            <Button variant="secondary" className="hidden sm:inline-flex" disabled={!renewalAllowed} onClick={() => { form.reset(getRenewalDefaults(contract)); setOpen(true); }}><RefreshCw className="me-2 size-4" />تجديد</Button>
             {canTerminateContract(contract) && (
-              <Button variant="destructive" onClick={() => { setTerminateReason(''); setTerminateOpen(true); }}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>
+              <Button variant="destructive" className="hidden sm:inline-flex" onClick={() => { setTerminateReason(''); setTerminateOpen(true); }}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>
             )}
-            <Button variant="secondary" onClick={exportContractPdf}>تصدير PDF</Button>
+            <Button variant="secondary" className="hidden md:inline-flex" onClick={printContract}><Printer className="me-2 size-4" />طباعة</Button>
+            <Button variant="secondary" className="hidden md:inline-flex" onClick={exportContractPdf}>تصدير PDF</Button>
+            <Button variant="secondary" className="hidden lg:inline-flex" onClick={openWhatsApp}><MessageCircle className="me-2 size-4" />واتساب</Button>
+            <Button variant="secondary" className="hidden lg:inline-flex" onClick={() => { void shareContract(); }}><Share2 className="me-2 size-4" />مشاركة</Button>
+            <ActionMenu items={contractMenuActions} label="إجراءات العقد" />
             <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>
           </>
         }

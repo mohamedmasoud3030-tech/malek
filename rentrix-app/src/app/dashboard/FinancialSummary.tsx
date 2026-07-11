@@ -2,8 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LoadingState } from '@/components/ui/loading-state';
 import { StatCard } from '@/components/ui/stat-card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { DashboardSnapshot } from '../dashboardSnapshot';
@@ -18,39 +18,40 @@ export function FinancialSummary({ snapshot, isLoading, settings }: FinancialSum
   const money = (v: number | null | undefined) => formatCompanyMoney(settings, v);
 
   const items = [
-    { label: 'المفوتر',                value: snapshot?.financial.rentDue,         tone: 'default'  as const },
-    { label: 'المحصّل',                value: snapshot?.financial.collectedRent,    tone: 'success'  as const },
-    { label: 'المتبقي',                value: snapshot?.financial.outstandingRent,  tone: 'warning'  as const },
-    { label: 'المحصل بعد المصروفات',   value: snapshot?.financial.netPosition,      tone: 'info'     as const },
+    { label: 'المفوتر', value: snapshot?.financial.rentDue, tone: 'default' as const },
+    { label: 'المحصّل', value: snapshot?.financial.collectedRent, tone: 'success' as const },
+    { label: 'المتبقي', value: snapshot?.financial.outstandingRent, tone: 'warning' as const },
+    { label: 'المصروفات', value: snapshot?.financial.expenses, tone: 'danger' as const },
+    { label: 'صافي الدخل', value: snapshot?.financial.netPosition, tone: 'info' as const },
   ];
 
   return (
     <Card className="rounded-3xl border-border/60">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-sm font-bold">النظرة المالية للشهر</CardTitle>
           <Link to="/financials">
-            <Button variant="secondary" className="h-7 rounded-xl text-xs px-3 gap-1">
-              <WalletCards className="size-3" /> المالية
+            <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1">
+              <WalletCards className="size-3.5" /> المالية
             </Button>
           </Link>
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading
-          ? <Skeleton className="h-28 rounded-2xl" />
-          : (
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-              {items.map((item) => (
-                <StatCard
-                  key={item.label}
-                  label={item.label}
-                  value={money(item.value ?? 0)}
-                  tone={item.tone}
-                />
-              ))}
-            </div>
-          )}
+        {isLoading ? (
+          <LoadingState variant="cards" rows={5} label="جارٍ تحميل الملخص المالي" />
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+            {items.map((item) => (
+              <StatCard
+                key={item.label}
+                label={item.label}
+                value={money(item.value ?? 0)}
+                tone={item.tone}
+              />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

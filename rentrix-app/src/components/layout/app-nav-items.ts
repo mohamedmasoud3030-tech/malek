@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileText, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileText, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -37,6 +37,7 @@ export const navGroups = [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
     ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
+    ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'communication.view'],
   ]],
   ['الماليات والتحصيل', [
     ['/invoices', 'invoices', 'الفواتير المستحقة', ReceiptText],
@@ -76,8 +77,8 @@ export const navGroups = [
 export const mobileNavItems = [
   ['/', 'dashboard', LayoutDashboard],
   ['/properties', 'properties', Building2],
-  ['/people', 'people', Users],
   ['/contracts', 'contracts', FileText],
+  ['/invoices', 'invoices', ReceiptText],
   ['/financials', 'financials', WalletCards],
 ] as const satisfies readonly MobileNavItem[];
 
@@ -85,6 +86,7 @@ export const quickLinks = [
   ['/properties/new', 'إضافة عقار', Building2],
   ['/people/new', 'إضافة شخص', Users],
   ['/contracts/new', 'إنشاء عقد', FileText],
+  ['/invoices', 'قبض دفعة', ReceiptText],
 ] as const;
 
 export type QuickLinkRoute = (typeof quickLinks)[number][0];

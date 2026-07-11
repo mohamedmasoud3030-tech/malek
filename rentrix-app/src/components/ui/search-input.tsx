@@ -7,6 +7,7 @@ interface SearchInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  'aria-label'?: string;
 }
 
 /**
@@ -18,7 +19,13 @@ interface SearchInputProps {
  * @example
  * <SearchInput value={query} onChange={setQuery} placeholder="ابحث عن عقد..." />
  */
-export function SearchInput({ value, onChange, placeholder = 'بحث...', className }: SearchInputProps) {
+export function SearchInput({
+  value,
+  onChange,
+  placeholder = 'بحث...',
+  className,
+  'aria-label': ariaLabel = 'بحث',
+}: SearchInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -30,6 +37,7 @@ export function SearchInput({ value, onChange, placeholder = 'بحث...', classN
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        aria-label={ariaLabel}
         className={cn(
           'h-11 w-full rounded-xl border border-input bg-background pe-9 ps-3 text-base sm:text-sm',
           'outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10',

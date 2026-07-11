@@ -35,6 +35,7 @@ const requiredOperationalRoutes = [
   '/maintenance',
   '/commissions',
   '/communication',
+  '/automation',
   '/system',
   '/audit-log',
   '/data-integrity',
@@ -55,6 +56,7 @@ const approvedExpansionRoutes = [
   '/leads',
   '/commissions',
   '/communication',
+  '/automation',
 ] as const;
 
 const routePathList = Array.from(routePaths);
@@ -115,7 +117,7 @@ describe('app route and navigation parity', () => {
 
   it('keeps mobile bottom navigation concise while the drawer carries the full route inventory', () => {
     expect(mobileNavItems).toHaveLength(5);
-    expect(mobileNavItems.map(([to]) => to)).toEqual(['/', '/properties', '/people', '/contracts', '/financials']);
+    expect(mobileNavItems.map(([to]) => to)).toEqual(['/', '/properties', '/contracts', '/invoices', '/financials']);
   });
 
   it('keeps arrears out of bottom navigation while still reachable from the financials group in the drawer', () => {
