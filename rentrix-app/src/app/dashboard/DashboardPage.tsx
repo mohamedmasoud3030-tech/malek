@@ -12,7 +12,11 @@ import { OverdueSection } from './OverdueSection';
 import { FinancialSummary } from './FinancialSummary';
 import { ArrearsBreakdown } from './ArrearsBreakdown';
 import { DashboardCharts } from './DashboardCharts';
+import { AlertCenter } from '@/features/dashboard/components/AlertCenter';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard.utils';
+import type { ContractListItem } from '@/features/contracts/services/contractService';
+import type { Invoice } from '@/features/financials/invoices/invoiceService';
+import type { Maintenance } from '@/features/maintenance/maintenance-service';
 
 export function DashboardPage() {
   const now = useMemo(() => new Date(), []);
@@ -49,6 +53,13 @@ export function DashboardPage() {
           onRetry={retryDashboard}
         />
       ) : null}
+
+      {/* Alert Center - Critical alerts for managers */}
+      <AlertCenter
+        expiringContracts={(snapshot?.activeContracts ?? []) as ContractListItem[]}
+        overdueInvoices={(snapshot?.arrears.overdueInvoices ?? []) as Invoice[]}
+        urgentMaintenance={(snapshot?.maintenance?.urgentRequests ?? []) as Maintenance[]}
+      />
 
       <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
       <QuickActions />

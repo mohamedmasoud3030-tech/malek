@@ -10,6 +10,7 @@ import {
   type OverdueInvoicesReport,
 } from '@/features/financials/reports/financialReportsService';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+import type { Maintenance } from '@/features/maintenance/maintenance-service';
 import { getDashboardOverview, type DashboardOverview } from './dashboardService';
 
 export type DashboardPeriod = {
@@ -63,6 +64,11 @@ export type DashboardSnapshot = {
   operational: DashboardOperationalMetrics;
   arrears: DashboardArrearsMetrics;
   activeContracts: ContractListItem[];
+  maintenance: {
+    urgentRequests: Maintenance[];
+    totalOpen: number;
+    totalInProgress: number;
+  };
   deferred: DashboardDeferredMetric[];
 };
 
@@ -167,6 +173,11 @@ export async function getDashboardSnapshot(date = new Date()): Promise<Dashboard
     operational: summarizeDashboardOperationalMetrics(overview, []),
     arrears: summarizeDashboardArrearsMetrics({ overdueInvoices, arrearsSummary, agedReceivables }),
     activeContracts: [],
+    maintenance: {
+      urgentRequests: [],
+      totalOpen: 0,
+      totalInProgress: 0,
+    },
     deferred: dashboardDeferredMetrics,
   };
 }
