@@ -32,7 +32,16 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
       {/* Backdrop */}
       <div
         className="absolute inset-0 touch-none bg-black/50 backdrop-blur-[2px]"
+        role="button"
+        tabIndex={0}
+        aria-label="إغلاق اللوحة"
         onClick={onClose}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onClose();
+          }
+        }}
       />
 
       {/* Sheet */}

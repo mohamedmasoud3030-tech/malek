@@ -203,7 +203,7 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
             { key: 'ownership', header: 'نسبة الملكية/الدور', render: (row) => <OwnershipSummary row={row} /> },
             { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? formatCompanyNumber(defaultCompanyLocalSettings, row.activeContractCount) : '—' },
             { key: 'actions', header: 'روابط آمنة', render: (row) => (
-              <div className="flex" onClick={(e) => e.stopPropagation()}>
+              <div className="flex" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                 <ActionMenu
                   label="إجراءات المالك"
                   items={[

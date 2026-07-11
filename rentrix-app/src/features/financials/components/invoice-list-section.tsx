@@ -139,7 +139,7 @@ export function InvoiceListSection({
             ) },
             { key: 'actions', header: 'إجراءات', render: (invoice) => (
               (onPrintInvoice || onExportInvoice) ? (
-                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                   {onPrintInvoice && (
                     <Button variant="outline" className="h-8" onClick={() => onPrintInvoice(invoice.id)} title="طباعة الفاتورة">
                       <Printer className="size-4 me-1" />طباعة

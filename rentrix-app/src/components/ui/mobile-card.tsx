@@ -237,12 +237,20 @@ export function ListItemCard({
   className,
 }: ListItemCardProps) {
   const interactive = typeof onClick === 'function';
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!interactive) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClick?.();
+    }
+  };
 
   return (
     <div
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
       className={cn(
         'flex items-center justify-between gap-3 rounded-xl border bg-card p-3 transition-colors',
         interactive && 'cursor-pointer hover:bg-muted/50 active:bg-muted',

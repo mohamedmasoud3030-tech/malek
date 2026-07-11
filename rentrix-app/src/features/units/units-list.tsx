@@ -66,7 +66,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
       key: 'actions',
       header: 'إجراءات',
       render: (unit) => (
-        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}>
             <Edit className="size-4" />
           </Button>

@@ -136,7 +136,7 @@ export function EntityCard({
       {stats ? <div className="mt-3 border-t border-border/40 pt-3 text-xs text-muted-foreground">{stats}</div> : null}
 
       {actions?.length ? (
-        <div className="mt-3 flex flex-wrap justify-end gap-2" onClick={(event) => event.stopPropagation()}>
+        <div className="mt-3 flex flex-wrap justify-end gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
           {actions.map((action, index) => {
             const ActionIcon = action.icon;
             return (

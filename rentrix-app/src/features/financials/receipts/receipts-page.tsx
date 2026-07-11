@@ -279,7 +279,7 @@ function ReceiptsHistoryContent() {
                     { key: 'context', header: 'السياق', render: (r) => formatReceiptContext(r) },
                     { key: 'status', header: 'الحالة', render: (r) => <StatusBadge tone={receiptStatusTone(r.status)}>{receiptStatusLabels[r.status] ?? r.status}</StatusBadge> },
                     { key: 'actions', header: 'الإجراءات', render: (r) => (
-                      <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                         <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(r.id)}>عرض</Button>
                         <Button variant="secondary" className="min-h-10 px-3" asChild>
                           <a href={createReceiptPrintHref(r.id)}><Printer className="me-2 size-4" />طباعة</a>

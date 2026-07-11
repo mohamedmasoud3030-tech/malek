@@ -112,7 +112,7 @@ export function ContractTable({
       header: 'إجراءات',
       className: 'w-52',
       render: (contract) => (
-        <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <Button variant="secondary" className="min-h-11 px-3" asChild>
             <Link to="/contracts/$contractId" params={{ contractId: contract.id }} aria-label={`عرض تفاصيل العقد ${getContractNumber(contract)}`}>
               <Eye className="size-4" />

@@ -355,7 +355,7 @@ export function MaintenancePage() {
                   return !actions.length ? (
                     <span className="flex items-center gap-1 text-muted-foreground text-xs"><CheckCircle2 className="size-3.5" />مكتمل</span>
                   ) : (
-                    <div className="flex" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                       <ActionMenu
                         label="تحديث الطلب"
                         items={actions.map((action) => ({

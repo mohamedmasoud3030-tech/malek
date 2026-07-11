@@ -181,7 +181,7 @@ export async function createBankStatementLine(values: BankStatementLineFormValue
 export async function createBankStatementImportFromCsv(values: BankStatementImportValues): Promise<BankStatementLine[]> {
   const parsedImport = parseOrThrow(bankStatementImportSchema, values);
   const lines = parseBankStatementCsv(parsedImport.csv, parsedImport.bank_account_id);
-  const dates = lines.map((line) => line.transaction_date).sort();
+  const dates = lines.map((line) => line.transaction_date).sort((left, right) => left.localeCompare(right));
   const importPayload: BankStatementImportInsert = {
     bank_account_id: parsedImport.bank_account_id,
     statement_name: parsedImport.statement_name || `استيراد ${getTodayForImportName()}`,

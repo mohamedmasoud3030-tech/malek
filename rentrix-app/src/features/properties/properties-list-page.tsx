@@ -125,7 +125,7 @@ export function PropertiesListPage() {
             )},
             { key: 'address', header: 'العنوان', render: (p) => <span className="text-muted-foreground text-sm">{p.address ?? '—'}</span> },
             { key: 'actions', header: 'إجراءات', render: (p) => (
-              <div className="flex" onClick={(e) => e.stopPropagation()}>
+              <div className="flex" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                 <ActionMenu
                   label="إجراءات العقار"
                   items={[

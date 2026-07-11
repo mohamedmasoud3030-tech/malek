@@ -25,7 +25,7 @@ BEGIN
   END IF;
 
   -- contract_balances
-  DELETE FROM contract_balances;
+  DELETE FROM contract_balances WHERE true;
   INSERT INTO contract_balances (contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at)
   SELECT
     c.id,
@@ -40,7 +40,7 @@ BEGIN
   GROUP BY c.id, c.tenant_id, c.unit_id;
 
   -- tenant_balances
-  DELETE FROM tenant_balances;
+  DELETE FROM tenant_balances WHERE true;
   INSERT INTO tenant_balances (tenant_id, balance_due, updated_at)
   SELECT
     c.tenant_id,
@@ -51,7 +51,7 @@ BEGIN
   GROUP BY c.tenant_id;
 
   -- owner_balances
-  DELETE FROM owner_balances;
+  DELETE FROM owner_balances WHERE true;
   INSERT INTO owner_balances (owner_id, total_income, total_expenses, commission, net_balance, updated_at)
   SELECT
     p.owner_id::text,

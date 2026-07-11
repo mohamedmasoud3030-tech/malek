@@ -7,6 +7,13 @@ export type ContractDocumentRecord = Database['public']['Tables']['contract_docu
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
+function createDocumentStorageId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 export async function listContractDocuments(contractId: string) {
   const { data, error } = await supabase
     .from('contract_documents')
@@ -30,7 +37,7 @@ export async function uploadContractDocument(contractId: string, file: File) {
   }
 
   const ext = file.name.split('.').pop() ?? 'bin';
-  const uniqueId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const uniqueId = createDocumentStorageId();
   const storagePath = `contracts/${contractId}/${Date.now()}-${uniqueId}.${ext}`;
 
   const { error: uploadError } = await supabase.storage

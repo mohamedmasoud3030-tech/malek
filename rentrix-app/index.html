@@ -6,7 +6,7 @@
     <title>Rentrix — نظام إدارة العقارات الذكي</title>
     <meta name="description" content="Rentrix نظام إدارة العقارات الذكي — إدارة شاملة للعقود والمستأجرين والمالية والتقارير." />
     <meta name="robots" content="index, follow" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https: wss:; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'nonce-rentrix-static' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https: wss:; base-uri 'self'; form-action 'self'" />
 
     <!-- Favicon & Icons -->
     <link rel="icon" href="/icon-rentrix.png" type="image/png" />
@@ -32,25 +32,12 @@
     <meta name="twitter:title" content="Rentrix — نظام إدارة العقارات الذكي" />
     <meta name="twitter:description" content="نظام إدارة العقارات الذكي للشركات والمكاتب العقارية" />
 
-    <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Rentrix",
-      "description": "نظام إدارة العقارات الذكي للشركات والمكاتب العقارية",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "inLanguage": "ar"
-    }
-    </script>
-
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
-    <style>
+    <style nonce="rentrix-static">
       :root {
         --color-bg: 224 20% 97%;
         --color-card: 0 0% 100%;

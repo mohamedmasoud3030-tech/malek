@@ -92,7 +92,7 @@ export function PeopleListPage() {
       header: 'إجراءات',
       className: 'w-40',
       render: (person) => (
-        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(person.id)}>
             <Edit className="size-4" />
           </Button>
