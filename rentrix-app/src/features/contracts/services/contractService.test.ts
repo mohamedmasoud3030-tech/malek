@@ -155,5 +155,4 @@ describe('softDeleteContract', () => {
 
     await expect(softDeleteContract('contract-1')).rejects.toThrow('غير مصرح');
   });
-  });
 });

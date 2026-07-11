@@ -657,10 +657,7 @@ export type Database = {
       };
       soft_delete_contract_atomic: {
         Args: { p_contract_id: string };
-      soft_delete_contract_atomic: {
-        Args: { p_contract_id: string };
         Returns: { status: string; contract_id: string; success?: boolean; cancelled_invoice_ids?: string[] };
-      };
       };
       record_invoice_payment_atomic: {
         Args: { payload: Json };

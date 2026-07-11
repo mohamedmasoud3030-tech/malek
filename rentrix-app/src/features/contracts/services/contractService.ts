@@ -22,11 +22,6 @@ export type PaginatedContracts = {
   rows: ContractListItem[];
   count: number;
 };
-export type PaginatedContracts = {
-  rows: ContractListItem[];
-  count: number;
-};
-export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
 const contractSelect =
