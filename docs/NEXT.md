@@ -2,6 +2,19 @@
 
 Short list of follow-up work, derived from gaps found while reviewing migrations, `src/features`, and test coverage. No TODO/FIXME/HACK markers or skipped tests were found in `rentrix-app/src` at the time of this check — the items below come from feature-area comparisons instead.
 
+## Critical — production staging QA findings (2026-07-11)
+
+First-ever end-to-end financial cycle test (contract → invoice → payment → receipt) run against live production data (isolated `TEST-QA` / `00000000-0000-4000-900X`-prefixed rows) surfaced 4 previously-unknown production bugs, all fixed live via `apply_migration` on `nnggcnpcuomwfuupupwg` and now also committed as migration files:
+
+1. `is_admin_or_manager()` / `is_app_user()` wrapper functions were missing `GRANT EXECUTE TO authenticated`, silently blocking all RLS-gated access to 8 tables (commissions, communication_records, contract_documents, cost_centers, lands, leads, owner_agreements, payment_terms_templates).
+2. `create_contract_atomic` compared `text` columns to `date` parameters without a cast — **no contract had ever been successfully created via this RPC in production** before this fix.
+3. `update_owner_balance_on_expense()` trigger unconditionally referenced `NEW.property_id`, which doesn't exist on `receipts` — **no receipt had ever been successfully posted in production**.
+4. `update_tenant_balance()` trigger unconditionally referenced `NEW.contract_id`, which doesn't exist on `receipt_allocations` — broke `post_receipt_atomic` end-to-end.
+
+**Unresolved architectural issue found during the same test:** `tenant_balances.tenant_id` has an FK to the legacy `tenants` table (40 rows), while `contracts.tenant_id` actually points to `people.id` (the documented source of truth per `DOMAIN.md`). Every existing `tenants` row happens to share an id with a `people` row, but any *new* tenant created only in `people` (the current official flow) will fail its first invoice/receipt against this FK. Needs a decision: drop the FK and standardize on `people`, or add sync. See `docs/CURRENT_STATE.md`.
+
+QA cycle is still in progress — permission-boundary testing (non-admin role rejection), `void_receipt_atomic`, and report reconciliation checks remain, followed by full `TEST-QA` data cleanup.
+
 ## Recently completed
 
 - Production migration cleanup from the earlier readiness pass is complete: the 2 committed-but-unapplied migrations were applied and the 9 orphaned enum types were dropped on `nnggcnpcuomwfuupupwg` on 2026-07-05. See `docs/CURRENT_STATE.md` for details.

@@ -126,3 +126,11 @@ Dead overloads (`get_financial_summary` × 2, `void_receipt_atomic(text,bigint,j
 ## Financial consistency update (2026-07-06)
 
 The payment/receipt voiding fix from commit `198d0e039653ddb5991bd6efbb757405fcfcd6cc` is present in this checkout. This PR adds a defensive report-layer rule: payment-backed reports exclude `payments.status = 'VOID'` as well as `deleted_at IS NOT NULL`. A new migration, `20260706101000_align_payment_receipt_reporting_source.sql`, defines `rpt_daily_collection` on `public.payments` so the guarded backend RPC source matches the Receipts UI source. The current frontend still does not call `rpt_daily_collection`; this is a backend-consistency improvement only. The migration has not been applied to production in this PR.
+
+## First live end-to-end financial cycle test — 4 critical bugs found and fixed (2026-07-11)
+
+All financial tables (`contracts`, `invoices`, `receipts`, `payments`, `expenses`, `maintenance_records`) were empty prior to this test, meaning the full contract → invoice → payment → receipt cycle had never been exercised end-to-end against live production. A test run using isolated `TEST-QA` / `00000000-0000-4000-900X`-prefixed rows found and fixed 4 real production bugs — see `docs/NEXT.md` for the full list and `docs/RELEASE_READINESS.md` for the updated Go/No-Go impact. Migrations: `20260711013008`, `20260711013116`, `20260711013304`, `20260711013339`.
+
+Also surfaced but **not fixed**: `tenant_balances.tenant_id` FKs to the legacy `tenants` table rather than to `people` (the documented tenant source of truth per `DOMAIN.md`). Existing `tenants` rows happen to share ids with `people` rows, but this will break the first invoice/receipt for any tenant created only in `people` going forward. Needs an explicit decision — drop the FK in favor of `people`, or add a sync mechanism — before this is considered closed.
+
+QA cycle in progress as of this entry: permission-boundary tests (non-admin role rejection), `void_receipt_atomic`, and report reconciliation checks remain, followed by cleanup of all `TEST-QA` rows.
