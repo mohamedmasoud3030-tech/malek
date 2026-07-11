@@ -96,6 +96,15 @@ Performed a code-first sweep of `rentrix-app/src` after PR #1100, #1101, #1102, 
 
 **No-Go until production evidence is complete.** The codebase can continue through focused Category A fixes, but release sign-off requires objective staging/browser/live-readiness evidence for critical financial workflows, permissions, formatting, and responsive RTL behavior.
 
+**Update (2026-07-11):** The premise that no code-level blockers existed has been overturned. A first-ever live end-to-end financial cycle test (isolated `TEST-QA` rows on production) found that **3 of 4 newly-discovered issues were real, previously-undetected release blockers**, not just missing evidence:
+
+- `create_contract_atomic` could never successfully create a contract in production (type-mismatch bug).
+- No receipt could ever be successfully posted in production (owner-balance trigger bug).
+- `post_receipt_atomic` was broken end-to-end via `receipt_allocations` (tenant-balance trigger bug).
+- (The 4th finding, missing `EXECUTE` grants on role-check wrappers, was a permissions/access gap rather than a financial-correctness bug.)
+
+All 4 are now fixed in production and committed as migrations (`20260711013008`–`20260711013339`). This means prior "financial workflows have no code-only blocker" conclusions in this document were based on workflows that had never actually been exercised end-to-end against live data. See `docs/NEXT.md` for full details and the still-open `tenant_balances` → `tenants` vs `people` FK question this test also surfaced. QA cycle (permission-boundary tests, void, report reconciliation) is still in progress as of this update.
+
 ## Release Captain audit — module verification pass
 
 This pass treats feature development as frozen and only tracks production blockers and high-risk release issues. Each module was reviewed from the current codebase for CRUD surface, validation, mobile/RTL behavior, loading/empty/error state handling, confirmation dialogs, currency/date formatting, search/filter behavior, accessibility indicators, performance-sensitive query patterns, and permission boundaries where applicable.
