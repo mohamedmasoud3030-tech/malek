@@ -313,6 +313,7 @@ export function MaintenancePage() {
               const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
               return (
                 <MobileCard
+                  key={row.id}
                   title={row.title}
                   subtitle={buildMaintenanceLocationLabel(row, properties, allUnits)}
                   badge={<StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>{maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}</StatusBadge>}
