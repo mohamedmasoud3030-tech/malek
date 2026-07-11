@@ -14,6 +14,10 @@ const paymentSql = readFileSync(
   join(process.cwd(), '..', 'supabase', 'migrations', '20260706090000_fix_record_invoice_payment_void_receipt_shared_id.sql'),
   'utf8',
 );
+const contractLifecycleHardeningSql = readFileSync(
+  join(process.cwd(), '..', 'supabase', 'migrations', '20260712000000_contract_lifecycle_hardening.sql'),
+  'utf8',
+);
 
 describe('production hardening migration contract', () => {
   it('blocks updates/deletes only for posted journal entries', () => {
@@ -88,5 +92,25 @@ describe('production hardening migration contract', () => {
     expect(softDeleteSql).toContain('ALTER FUNCTION public.soft_delete_contract_atomic(text) OWNER TO postgres;');
     expect(softDeleteSql).toContain('REVOKE ALL ON FUNCTION public.soft_delete_contract_atomic(text) FROM PUBLIC, anon;');
     expect(softDeleteSql).toContain('GRANT EXECUTE ON FUNCTION public.soft_delete_contract_atomic(text) TO authenticated, service_role;');
+  });
+
+  it('creates atomic contract soft delete and renewal RPCs with permission validation and invoice protection', () => {
+    expect(contractLifecycleHardeningSql).toContain('CREATE OR REPLACE FUNCTION public.soft_delete_contract_atomic(p_contract_id uuid)');
+    expect(contractLifecycleHardeningSql).toContain('SECURITY DEFINER');
+    expect(contractLifecycleHardeningSql).toContain("SET search_path TO 'public', 'pg_temp'");
+    expect(contractLifecycleHardeningSql).toContain('IF auth.uid() IS NULL OR NOT public.is_admin_or_manager() THEN');
+    expect(contractLifecycleHardeningSql).toContain("RAISE EXCEPTION 'غير مصرح: يجب أن تكون مديراً أو مشرفاً لحذف عقد' USING ERRCODE = '42501';");
+    expect(contractLifecycleHardeningSql).toContain('REVOKE ALL ON FUNCTION public.soft_delete_contract_atomic(uuid) FROM PUBLIC, anon;');
+    expect(contractLifecycleHardeningSql).toContain('GRANT EXECUTE ON FUNCTION public.soft_delete_contract_atomic(uuid) TO authenticated, service_role;');
+    expect(contractLifecycleHardeningSql).toContain('UPDATE public.invoices');
+    expect(contractLifecycleHardeningSql).toContain("SET status = 'CANCELLED'");
+    expect(contractLifecycleHardeningSql).toContain('paid_amount = 0');
+    expect(contractLifecycleHardeningSql).toContain("status NOT IN ('CANCELLED', 'PAID')");
+    expect(contractLifecycleHardeningSql).toContain('due_date::date > current_date');
+
+    expect(contractLifecycleHardeningSql).toContain('CREATE OR REPLACE FUNCTION public.renew_contract_atomic(old_contract_id text, new_contract_data jsonb)');
+    expect(contractLifecycleHardeningSql).toContain("status IN ('active', 'expired', 'ACTIVE')");
+    expect(contractLifecycleHardeningSql).toContain("SET status = 'expired'");
+    expect(contractLifecycleHardeningSql).toContain("'active',");
   });
 });
