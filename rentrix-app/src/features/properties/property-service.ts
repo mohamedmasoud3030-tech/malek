@@ -75,6 +75,20 @@ export async function getProperty(propertyId: string): Promise<Property> {
   return data;
 }
 
+export type PropertyTitleRow = Readonly<{ id: string; title: string }>;
+
+export async function listPropertyTitles(): Promise<PropertyTitleRow[]> {
+  const { data, error } = await supabase
+    .from('properties')
+    .select('id, title')
+    .is('deleted_at', null)
+    .returns<Array<Pick<Property, 'id' | 'title'>>>();
+  if (error) throw error;
+  return (data ?? [])
+    .map((row) => ({ id: row.id, title: (row.title ?? '').trim() }))
+    .filter((row) => row.title.length > 0);
+}
+
 export async function createProperty(payload: PropertyPayload): Promise<Property> {
   const insertPayload = normalizePropertyPayload(payload);
   const { data, error } = await supabase.from('properties').insert(insertPayload).select('*').single().returns<Property>();

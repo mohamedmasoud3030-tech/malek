@@ -4,10 +4,10 @@ import type {
   DailyCollectionReportRow,
   OverdueInvoicesReport,
 } from '@/features/financials/reports/financialReportsService';
-import type { Property, Unit } from '@/types/domain';
+import { listPropertyTitles, type PropertyTitleRow } from '@/features/properties/property-service';
+import type { Unit } from '@/types/domain';
 import { buildCsv, withUtf8Bom, type CsvRow } from '@/lib/csvExport';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 
 export type FilterState = Readonly<{ from: string; to: string; asOf: string; costCenterId: string; ownerId: string; contractId: string }>;
 
@@ -165,17 +165,7 @@ export function buildExpiringContractsRows(contracts: ContractListItem[], fromDa
 export function usePropertyTitles() {
   return useQuery({
     queryKey: ['reports', 'propertyTitles'],
-    queryFn: async (): Promise<Array<{ id: string; title: string }>> => {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('id, title')
-        .is('deleted_at', null)
-        .returns<Array<Pick<Property, 'id' | 'title'>>>();
-      if (error) throw error;
-      return (data ?? [])
-        .map((row) => ({ id: row.id, title: (row.title ?? '').trim() }))
-        .filter((row) => row.title.length > 0);
-    },
+    queryFn: async (): Promise<PropertyTitleRow[]> => listPropertyTitles(),
     staleTime: 60_000,
   });
 }
