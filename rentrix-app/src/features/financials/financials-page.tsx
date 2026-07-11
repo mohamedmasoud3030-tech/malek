@@ -16,7 +16,7 @@ import { ExpensesSection, type ExpenseFormValues } from './components/expenses-s
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { InvoiceWorkspaceSection } from './components/invoice-workspace-section';
 import { OPERATIONAL_EXPENSE_CATEGORIES, type OperationalExpenseFilterValues } from './expenses/operational-expenses';
-import { useCreateExpense, useExpenses } from './expenses/useExpenses';
+import { useCreateExpenseAtomic, useExpenses } from './expenses/useExpenses';
 import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
 
@@ -58,7 +58,7 @@ export function FinancialsPage() {
   const { data: costCenterRows = [] } = useCostCenters();
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
   const collectionReport = useCollectionSummaryReport(reportFilters);
-  const createExpense = useCreateExpense();
+  const createExpense = useCreateExpenseAtomic();
   const propertyRows = properties?.rows ?? [];
 
   const expenseForm = useForm<ExpenseFormValues>({
@@ -77,13 +77,14 @@ export function FinancialsPage() {
   const onCreateExpense = (values: ExpenseFormValues) => {
     createExpense.mutate(
       {
-        property_id: values.property_id,
+        requestId: crypto.randomUUID(),
+        propertyId: values.property_id,
         category: values.category,
-        cost_center_id: values.cost_center_id?.trim() || null,
+        costCenterId: values.cost_center_id?.trim() || null,
         amount: values.amount,
-        expense_date: values.expense_date,
+        expenseDate: values.expense_date,
         description: values.description?.trim() ? values.description.trim() : null,
-        attachment_url: values.attachment_url ?? null,
+        attachmentUrl: values.attachment_url ?? null,
       },
       {
         onSuccess: () => {

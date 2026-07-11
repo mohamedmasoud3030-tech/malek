@@ -22,18 +22,6 @@ export async function listExpenses(filters: ExpenseFilters): Promise<Expense[]> 
   }
 }
 
-export async function createExpense(payload: ExpensePayload): Promise<Expense> {
-  try {
-    const { data, error } = await supabase.from('expenses').insert(payload).select('*').single().returns<Expense>();
-    if (error) handleSupabaseError(error);
-    if (!data) throw new Error('No expense returned after create');
-    return data;
-  } catch (error) {
-    handleSupabaseError(error, 'تعذر إنشاء المصروف');
-    throw error instanceof Error ? error : new Error('تعذر إنشاء المصروف');
-  }
-}
-
 export async function updateExpense(id: string, payload: ExpensePayload): Promise<Expense> {
   try {
     const { data, error } = await supabase.from('expenses').update(payload).eq('id', id).is('deleted_at', null).select('*').single().returns<Expense>();
@@ -49,8 +37,8 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
 /**
  * Atomic expense creation that records the expense together with its journal
  * entry and audit-log row in a single RPC. Mirrors the payment atomic: same
- * user-facing fields/result as `createExpense`, but the accounting and audit
- * trail are guaranteed by the database. `requestId` enables idempotent retries.
+ * user-facing fields/result, but the accounting and audit trail are guaranteed
+ * by the database. `requestId` enables idempotent retries.
  */
 export type ExpenseWithJournalPayload = {
   requestId?: string;

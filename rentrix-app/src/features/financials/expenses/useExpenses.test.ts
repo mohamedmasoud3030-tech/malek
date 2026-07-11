@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { financialReportKeys } from '../reports/useFinancialReports';
-import { expenseKeys, useCreateExpense, useUpdateExpense } from './useExpenses';
+import { expenseKeys, useCreateExpenseAtomic, useUpdateExpense } from './useExpenses';
 
 const mutationMock = vi.hoisted(() => ({
   invalidateQueries: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('./expenseService', () => ({
-  createExpense: vi.fn(),
+  createExpenseWithJournal: vi.fn(),
   listExpenses: vi.fn(),
   updateExpense: vi.fn(),
 }));
@@ -35,14 +35,14 @@ describe('expense report invalidation', () => {
     mutationMock.invalidateQueries.mockResolvedValue(undefined);
   });
 
-  it('invalidates expense and financial report queries after creating an expense', async () => {
-    const mutationOptions = useCreateExpense() as unknown as { onSuccess: () => Promise<void> };
+  it('invalidates expense and financial report queries after creating an expense atomically', async () => {
+    const mutationOptions = useCreateExpenseAtomic() as unknown as { onSuccess: () => Promise<void> };
     await mutationOptions.onSuccess();
 
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: expenseKeys.all });
     expect(mutationMock.invalidateQueries).toHaveBeenCalledWith({ queryKey: financialReportKeys.all });
     expect(mutationMock.invalidateQueries).toHaveBeenCalledTimes(2);
-    expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم إضافة المصروف');
+    expect(mutationMock.toastSuccess).toHaveBeenCalledWith('تم إضافة المصروف وترحيله محاسبياً');
   });
 
   it('invalidates expense and financial report queries after updating an expense', async () => {
