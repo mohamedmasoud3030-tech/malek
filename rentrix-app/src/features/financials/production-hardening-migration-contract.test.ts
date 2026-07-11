@@ -6,6 +6,10 @@ const hardeningSql = readFileSync(
   join(process.cwd(), '..', 'supabase', 'migrations', '20260711123000_bank_reconciliation_atomic_and_journal_status_hardening.sql'),
   'utf8',
 );
+const softDeleteSql = readFileSync(
+  join(process.cwd(), '..', 'supabase', 'migrations', '20260712010000_soft_delete_contract_atomic.sql'),
+  'utf8',
+);
 const paymentSql = readFileSync(
   join(process.cwd(), '..', 'supabase', 'migrations', '20260706090000_fix_record_invoice_payment_void_receipt_shared_id.sql'),
   'utf8',
@@ -70,5 +74,19 @@ describe('production hardening migration contract', () => {
     expect(paymentSql).toContain('v_internal_result := public.post_receipt_atomic(v_internal_payload);');
     expect(paymentSql).toContain("'allocations', jsonb_build_array");
     expect(paymentSql).toContain("'journal_entries', jsonb_build_array");
+  });
+
+  it('soft_delete_contract_atomic enforces role validation, blocks deletion when paid invoices or receipts exist, and cancels future unpaid invoices', () => {
+    expect(softDeleteSql).toContain('CREATE OR REPLACE FUNCTION public.soft_delete_contract_atomic(');
+    expect(softDeleteSql).toContain('SECURITY DEFINER');
+    expect(softDeleteSql).toContain('SET search_path = public, pg_temp');
+    expect(softDeleteSql).toContain('IF auth.uid() IS NULL OR NOT public.is_admin_or_manager() THEN');
+    expect(softDeleteSql).toContain('COALESCE(paid_amount, 0) > 0');
+    expect(softDeleteSql).toContain('SELECT 1 FROM public.receipts');
+    expect(softDeleteSql).toContain("SET status = 'CANCELLED'");
+    expect(softDeleteSql).toContain('SET deleted_at = now(),');
+    expect(softDeleteSql).toContain('ALTER FUNCTION public.soft_delete_contract_atomic(text) OWNER TO postgres;');
+    expect(softDeleteSql).toContain('REVOKE ALL ON FUNCTION public.soft_delete_contract_atomic(text) FROM PUBLIC, anon;');
+    expect(softDeleteSql).toContain('GRANT EXECUTE ON FUNCTION public.soft_delete_contract_atomic(text) TO authenticated, service_role;');
   });
 });

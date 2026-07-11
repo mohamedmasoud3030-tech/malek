@@ -131,3 +131,29 @@ describe('terminateContract', () => {
     await expect(terminateContract('contract-1', 'reason')).rejects.toThrow('لا يمكن إنهاء عقد');
   });
 });
+
+describe('softDeleteContract', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls soft_delete_contract_atomic instead of a raw table update', async () => {
+    const result = { status: 'deleted', contract_id: 'contract-1' };
+    supabaseMock.rpc.mockResolvedValue({ data: result, error: null });
+    const { softDeleteContract } = await import('./contractService');
+
+    await expect(softDeleteContract('contract-1')).resolves.toBeUndefined();
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('soft_delete_contract_atomic', {
+      p_contract_id: 'contract-1',
+    });
+  });
+
+  it('keeps soft deletion RPC errors visible (e.g. paid invoices exist)', async () => {
+    const error = new Error('لا يمكن حذف عقد يحتوي على فواتير مدفوعة أو دفعات مسجلة');
+    supabaseMock.rpc.mockResolvedValue({ data: null, error });
+    const { softDeleteContract } = await import('./contractService');
+
+    await expect(softDeleteContract('contract-1')).rejects.toThrow('لا يمكن حذف عقد يحتوي على فواتير مدفوعة');
+  });
+});

@@ -655,6 +655,10 @@ export type Database = {
         Args: { p_contract_id: string; p_reason: string };
         Returns: { status: 'terminated'; contract_id: string; cancelled_invoice_ids: string[] };
       };
+      soft_delete_contract_atomic: {
+        Args: { p_contract_id: string };
+        Returns: { status: 'deleted'; contract_id: string };
+      };
       record_invoice_payment_atomic: {
         Args: { payload: Json };
         Returns: { status: 'recorded'; request_id: string; invoice_id: string; payment_id: string; receipt_id: string; receipt_no?: string; success?: boolean; idempotent?: boolean };

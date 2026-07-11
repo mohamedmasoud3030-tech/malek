@@ -22,6 +22,7 @@ export type PaginatedContracts = {
   rows: ContractListItem[];
   count: number;
 };
+// Candidate for future cleanup (previously used by direct softDeleteContract update)
 type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
@@ -108,8 +109,7 @@ export async function terminateContract(contractId: string, reason: string): Pro
 }
 
 export async function softDeleteContract(contractId: string): Promise<void> {
-  const updatePayload: ContractUpdate = { deleted_at: new Date().toISOString() };
-  const { error } = await supabase.from('contracts').update(updatePayload).eq('id', contractId).is('deleted_at', null);
+  const { error } = await supabase.rpc('soft_delete_contract_atomic', { p_contract_id: contractId });
   if (error) throw error;
 }
 
