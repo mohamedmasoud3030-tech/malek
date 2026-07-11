@@ -31,7 +31,7 @@ TanStack Router routes are declared programmatically in `routeTree.ts`. Each rou
 
 - `lib/supabase.ts` creates a typed Supabase client (`createClient<Database>`) using `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from `lib/env.ts`. `env.ts` treats known placeholder URLs/keys (used in CI) as "not configured" and surfaces that state to the UI via runtime diagnostics rather than crashing.
 - Each feature's `*Service.ts` file wraps Supabase queries/RPCs for that domain; hooks (`use*.ts`) wrap those services with TanStack Query for caching, loading, and error states.
-- Some multi-step operations are implemented as atomic Postgres RPCs (e.g. `create_contract_atomic`, `resolve_maintenance_with_expense`, `record_invoice_payment_atomic`) rather than multiple client-side writes, to keep related writes consistent.
+- All contract write operations are implemented as atomic Postgres RPCs (`create_contract_atomic`, `update_contract_atomic`, `renew_contract_atomic`, `terminate_contract_atomic`, and `soft_delete_contract_atomic`) rather than direct client-side table writes against `contracts`. Other multi-step domain operations are likewise atomic RPCs (e.g. `resolve_maintenance_with_expense`, `record_invoice_payment_atomic`, `void_receipt_atomic`), keeping related writes and financial/accounting invariants consistent.
 
 ## Tests
 
