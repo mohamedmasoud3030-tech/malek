@@ -1,0 +1,11 @@
+-- Future organization-isolation migration placeholder (no-op by design).
+-- Do NOT implement multi-tenant isolation in this pass.
+-- Required future expand-contract sequence:
+-- 1. Create public.organizations with immutable ids and display metadata.
+-- 2. Add nullable organization_id columns to organization-scoped tables.
+-- 3. Backfill existing single-office data to one verified organization in a separate data migration.
+-- 4. Add FK constraints and then NOT NULL constraints after validation.
+-- 5. Add JWT organization claims through the custom access token hook/session context.
+-- 6. Replace app-role-only RLS policies with organization_id predicates.
+-- 7. Add two-organization RLS tests proving cross-organization reads/writes are denied.
+SELECT 1;

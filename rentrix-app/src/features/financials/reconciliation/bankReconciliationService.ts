@@ -7,6 +7,7 @@ import type { BankAccount, BankMatchCandidate, BankReconciliationFilters, BankRe
 type BankStatementImportInsert = Database['public']['Tables']['bank_statement_imports']['Insert'];
 type BankStatementLineInsert = Database['public']['Tables']['bank_statement_lines']['Insert'];
 type BankReconciliationMatchInsert = Database['public']['Tables']['bank_reconciliation_matches']['Insert'];
+type ProcessBankReconciliationMatchAtomicResult = Database['public']['Functions']['process_bank_reconciliation_match_atomic']['Returns'];
 
 
 const matchEntityTypes = ['payment', 'receipt', 'expense', 'manual_adjustment'] as const;
@@ -240,10 +241,10 @@ export async function listSuggestedBankMatches(line: Pick<BankStatementLine, 'am
 
 export async function matchBankStatementLine(values: BankReconciliationMatchValues): Promise<BankReconciliationMatch> {
   const payload = toBankReconciliationMatchPayload(values);
-  const { data, error } = await supabase.from('bank_reconciliation_matches').insert(payload).select('*').single().returns<BankReconciliationMatch>();
+  const { data, error } = await supabase
+    .rpc('process_bank_reconciliation_match_atomic', { payload })
+    .returns<ProcessBankReconciliationMatchAtomicResult>();
   if (error) handleSupabaseError(error, 'تعذر تسجيل المطابقة البنكية');
-  const { error: lineError } = await supabase.from('bank_statement_lines').update({ status: 'matched', updated_at: new Date().toISOString() }).eq('id', payload.statement_line_id);
-  if (lineError) handleSupabaseError(lineError, 'تم تسجيل المطابقة لكن تعذر تحديث حالة حركة كشف البنك');
   if (!data) throw new Error('لم يتم إرجاع سجل المطابقة بعد الحفظ.');
   return data;
 }

@@ -663,8 +663,13 @@ export type Database = {
         Args: { payload: Json };
         Returns: Json;
       };
+      process_bank_reconciliation_match_atomic: {
+        Args: { payload: Json };
+        Returns: Database['public']['Tables']['bank_reconciliation_matches']['Row'];
+      };
       generate_invoices_from_active_contracts: { Args: Record<string, never>; Returns: number };
       rpt_financial_summary: { Args: { p_from: string; p_to: string }; Returns: { collected: number; expenses: number; net: number; revenue: number; net_income: number; overdue_amount: number; overdue_count: number; active_contracts: number; total_units: number; occupied_units: number; occupancy_rate: number; pending_invoices: number; period_from: string; period_to: string } };
+      rpt_dashboard_overview: { Args: { p_from: string; p_to: string; p_as_of?: string }; Returns: Json };
       rpt_cash_flow: { Args: { p_from_date: string; p_to_date: string }; Returns: Json };
       rpt_vat_return: { Args: { p_from_date: string; p_to_date: string }; Returns: Json };
       void_receipt_atomic: {
