@@ -22,8 +22,11 @@ export type PaginatedContracts = {
   rows: ContractListItem[];
   count: number;
 };
-// Candidate for future cleanup (previously used by direct softDeleteContract update)
-type ContractUpdate = Database['public']['Tables']['contracts']['Update'];
+export type PaginatedContracts = {
+  rows: ContractListItem[];
+  count: number;
+};
+export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
 const contractSelect =
