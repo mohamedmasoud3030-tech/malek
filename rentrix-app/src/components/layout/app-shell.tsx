@@ -1,5 +1,5 @@
 import { Outlet, useMatches, useRouter } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Bell, ChevronLeft, LogOut, Menu, Moon, ShieldCheck, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ function statusLabel(status: SyncStatus) {
 function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
   return (
     <div className={cn('flex min-w-0 items-center gap-3', !expanded && 'justify-center')}>
-      <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg">
+      <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg" aria-hidden="true">
         R
         <span className="absolute -bottom-1 -left-1 size-3 rounded-full border-2 border-sidebar bg-success" />
       </div>
@@ -32,7 +32,7 @@ function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
           <p className="truncate text-xl font-black text-white">Rentrix</p>
           <p className="truncate text-xs font-bold text-sidebar-foreground/65">إدارة عقارية بوضوح وسرعة</p>
           <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-success">
-            <ShieldCheck className="size-3" />
+            <ShieldCheck className="size-3" aria-hidden="true" />
             مساحة عمل آمنة
           </p>
         </div>
@@ -127,13 +127,39 @@ export function AppShell() {
   };
 
   const showNotifications = () => {
-    toast.success('لا توجد إشعارات جديدة', { description: 'آخر تحديثات مساحة العمل معروضة.' });
+    // UX-005: replaced fake toast with a dedicated popover. The full
+    // notifications center is delivered in Phase 3 (UX-050).
+    setNotificationsOpen((open) => !open);
   };
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsTriggerRef = useRef<HTMLButtonElement>(null);
+  const notificationsMenuRef = useRef<HTMLDivElement>(null);
+  const notificationsMenuId = useId();
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (notificationsMenuRef.current?.contains(event.target as Node)) return;
+      setNotificationsOpen(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setNotificationsOpen(false);
+        notificationsTriggerRef.current?.focus();
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [notificationsOpen]);
 
   return (
     <div className="min-h-screen min-h-dvh overflow-x-hidden bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.055),transparent_28%),hsl(var(--background))] text-foreground" dir={appLanguage.direction}>
       <a href="#main-content" className="sr-only z-[100] rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground focus:not-sr-only focus:fixed focus:right-4 focus:top-4">
-        تخطي إلى المحتوى الرئيسي
+        {sharedLabel('skipToContent')}
       </a>
 
       {mobileNavOpen ? (
@@ -166,17 +192,42 @@ export function AppShell() {
         {/* Sticky header with top safe-area inset for notch */}
         <header className="sticky top-0 z-20 border-b border-border bg-background/82 pt-[env(safe-area-inset-top,0px)] backdrop-blur-2xl">
           <div className="flex min-h-16 items-center gap-2 px-3 py-2 sm:min-h-20 sm:px-5">
-            <Button variant="ghost" className="size-10 shrink-0 px-0 lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label="فتح القائمة"><Menu className="size-5" /></Button>
-            <Button variant="ghost" className="hidden size-10 shrink-0 px-0 lg:inline-flex" onClick={toggleSidebar} aria-label={sharedLabel('collapseMenu')}><Menu className="size-5" /></Button>
+            <Button variant="ghost" className="size-10 shrink-0 px-0 lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label={sharedLabel('openMenu')}><Menu className="size-5" aria-hidden="true" /></Button>
+            <Button variant="ghost" className="hidden size-10 shrink-0 px-0 lg:inline-flex" onClick={toggleSidebar} aria-label={sharedLabel('collapseMenu')}><Menu className="size-5" aria-hidden="true" /></Button>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1 truncate text-[11px] font-bold text-muted-foreground"><span>{sharedLabel('home')}</span><ChevronLeft className="size-3" /><span>{pageTitle}</span></div>
+              <div className="flex items-center gap-1 truncate text-[11px] font-bold text-muted-foreground"><span>{sharedLabel('home')}</span><ChevronLeft className="size-3" aria-hidden="true" /><span>{pageTitle}</span></div>
               <h1 className="truncate text-lg font-black tracking-tight sm:text-2xl">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="hidden rounded-2xl border border-border bg-card px-3 py-2 text-[11px] font-bold text-muted-foreground sm:inline-flex">{statusLabel(syncStatus)}{lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}` : ''}</span>
-              <Button variant="secondary" className="size-10 px-0" onClick={showNotifications} aria-label="الإشعارات"><Bell className="size-4" /></Button>
-              <Button variant="secondary" className="size-10 px-0" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={sharedLabel('toggleTheme')}>{theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}</Button>
-              <span className="hidden size-9 place-items-center rounded-xl bg-primary text-xs font-black text-primary-foreground xl:grid" title={user?.email}>{user?.email?.charAt(0).toUpperCase() || 'R'}</span>
+              <div className="relative">
+                <button
+                  ref={notificationsTriggerRef}
+                  type="button"
+                  onClick={showNotifications}
+                  aria-label={sharedLabel('notificationsNone')}
+                  aria-haspopup="dialog"
+                  aria-expanded={notificationsOpen}
+                  aria-controls={notificationsOpen ? notificationsMenuId : undefined}
+                  className="pressable inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary font-bold text-secondary-foreground shadow-sm outline-none transition hover:bg-secondary/80 focus-visible:ring-4 focus-visible:ring-primary/20"
+                >
+                  <Bell className="size-4" aria-hidden="true" />
+                </button>
+                {notificationsOpen ? (
+                  <div
+                    ref={notificationsMenuRef}
+                    id={notificationsMenuId}
+                    role="dialog"
+                    aria-label={sharedLabel('notificationsNone')}
+                    className="absolute end-0 top-12 z-50 w-72 rounded-2xl border border-border bg-card p-3 text-start text-card-foreground shadow-xl"
+                  >
+                    <p className="text-xs font-black">{sharedLabel('notificationsNone')}</p>
+                    <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{sharedLabel('notificationsHint')}</p>
+                  </div>
+                ) : null}
+              </div>
+              <Button variant="secondary" className="size-10 px-0" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label={sharedLabel('toggleTheme')}>{theme === 'dark' ? <Sun className="size-4" aria-hidden="true" /> : <Moon className="size-4" aria-hidden="true" />}</Button>
+              <span className="hidden size-9 place-items-center rounded-xl bg-primary text-xs font-black text-primary-foreground xl:grid" title={user?.email} aria-label={user?.email ?? undefined}>{user?.email?.charAt(0).toUpperCase() || 'R'}</span>
             </div>
           </div>
         </header>

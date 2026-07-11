@@ -4,7 +4,7 @@ import type { AppPermission } from '@/features/auth/permissions';
 
 export type NavItem = readonly [to: string, labelKey: string, description: string, Icon: LucideIcon, permission?: AppPermission];
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
-export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]];
+export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
 /**
  * The primary sidebar / mobile drawer navigation.
@@ -71,7 +71,7 @@ export const navGroups = [
     ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],
     ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck, 'integrity.view'],
     ['/system', 'system', 'إدارة حوكمة النظام', ShieldCheck, 'system.view'],
-  ]],
+  ], true],
 ] as const satisfies readonly NavGroup[];
 
 export const mobileNavItems = [

@@ -7,11 +7,13 @@ import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { listPeople } from '@/features/people/people-service';
 import { listProperties } from '@/features/properties/property-service';
 import { usePaymentTerms } from '@/features/settings/usePaymentTerms';
 import { listUnitsByProperty } from '@/features/units/unit-service';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { buildContractUnitOptionLabel, getContractUnitSelectionIssue, isUnitSelectableForContract } from './contract-unit-options';
 import { contractSchema, contractStatusLabels, contractStatusValues, paymentCycleLabels, paymentCycleValues, type ContractFormValues } from './contractSchema';
 import { useContract, useCreateContract, useUpdateContract } from './useContracts';
@@ -107,6 +109,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
       onOpenChange={(v) => { if (!v) onClose(); }}
       title={isEdit ? 'تعديل عقد' : 'إنشاء عقد'}
       className="max-w-2xl"
+      headerExtra={form.formState.isDirty && !submitting ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
         {isEdit && contractQuery.isLoading ? (
           <RouteLoadingState />
@@ -169,7 +172,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
             </label>
             <label className="grid gap-2 text-sm font-bold">
               قيمة الإيجار
-              <Input type="number" step="0.01" min="0.01" {...form.register('rent_amount')} />
+              <Input type="number" step="0.01" inputMode="decimal" min="0.01" {...form.register('rent_amount')} />
               {fieldError(form.formState.errors.rent_amount?.message)}
             </label>
             <label className="grid gap-2 text-sm font-bold">

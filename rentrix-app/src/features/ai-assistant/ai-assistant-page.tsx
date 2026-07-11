@@ -1,5 +1,6 @@
 import { AlertTriangle, Bot, Loader2, Send, Sparkles } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
+import { Link } from '@tanstack/react-router';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { env } from '@/lib/env';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { AiAssistantAction, AiAssistantContext, AiAssistantMessage } from './types';
 import { useSmartAssistant } from './use-smart-assistant';
@@ -158,10 +160,15 @@ export function AiAssistantPage() {
       {configurationMissing ? (
         <Card role="alert" aria-live="assertive" variant="outlined" className="border-warning/50 bg-warning/10">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-warning-foreground"><AlertTriangle className="size-5" />إعدادات الذكاء الاصطناعي غير مكتملة</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-warning-foreground"><AlertTriangle className="size-5" aria-hidden="true" />{translateSharedLabel('aiUnavailable', getAppLanguageState().language)}</CardTitle>
             <CardDescription>
               اضبط دالة Supabase Edge Function باسم <span dir="ltr">ai-assistant</span> ومتغير <span dir="ltr">AI_PROVIDER_API_KEY</span>، ثم أعد تحميل الصفحة. لا يتم استخدام أي مفتاح مزود من الواجهة الأمامية.
             </CardDescription>
+            <div className="pt-2">
+              <Button asChild variant="secondary">
+                <Link to="/settings">{translateSharedLabel('configureAiAssistant', getAppLanguageState().language)}</Link>
+              </Button>
+            </div>
           </CardHeader>
         </Card>
       ) : null}
@@ -204,9 +211,10 @@ export function AiAssistantPage() {
               <Textarea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="مثال: ما أهم المتأخرات التي تحتاج متابعة هذا الأسبوع؟"
+                placeholder={configurationMissing ? translateSharedLabel('aiUnavailable', getAppLanguageState().language) : 'مثال: ما أهم المتأخرات التي تحتاج متابعة هذا الأسبوع؟'}
                 disabled={pending || configurationMissing}
                 aria-label="رسالة مساعد الذكاء الاصطناعي"
+                aria-describedby={configurationMissing ? 'ai-assistant-disabled-hint' : undefined}
               />
               <div className="flex flex-wrap justify-end gap-2">
                 <Button type="submit" disabled={pending || configurationMissing || !input.trim()}>
@@ -228,8 +236,13 @@ export function AiAssistantPage() {
                 key={item.action}
                 type="button"
                 variant="outline"
-                className="h-auto w-full justify-start whitespace-normal rounded-2xl p-3 text-start"
+                className={cn(
+                  'h-auto w-full justify-start whitespace-normal rounded-2xl p-3 text-start',
+                  configurationMissing && 'cursor-not-allowed opacity-50',
+                )}
                 disabled={pending || configurationMissing}
+                aria-disabled={pending || configurationMissing}
+                title={configurationMissing ? translateSharedLabel('aiUnavailable', getAppLanguageState().language) : undefined}
                 onClick={() => submitPrompt(item.prompt, item.action)}
               >
                 <span className="space-y-1">

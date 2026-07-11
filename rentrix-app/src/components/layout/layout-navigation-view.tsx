@@ -15,7 +15,13 @@ export function NavigationLinks({
 }: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
   return (
     <div className="space-y-3">
-      {navGroups.map(([sectionTitle, items]) => {
+      {navGroups.map(([sectionTitle, items, adminOnly]) => {
+        // UX-019: hide the entire admin group when the user has no admin-style permission
+        // across any of its entries.
+        if (adminOnly) {
+          const hasAnyAdminPermission = items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission));
+          if (!hasAnyAdminPermission) return null;
+        }
         const visibleItems = items.filter(([, , , , permission]) => {
           if (canShowNavigationItem(authorization, permission)) return true;
           if (permission && !canAccessRoute(authorization, permission)) return true;
@@ -48,12 +54,12 @@ export function NavigationLinks({
                     className="group flex min-h-11 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sidebar-foreground/55 opacity-70"
                     title={`${sharedLabel(labelKey)} — تتطلب صلاحية`}
                   >
-                    <Icon className="size-5 shrink-0" />
+                    <Icon className="size-5 shrink-0" aria-hidden="true" />
                     {expanded ? (
                       <span className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="block truncate text-[13px] font-bold">{sharedLabel(labelKey)}</span>
-                          <Lock className="size-3 shrink-0 text-warning/80" />
+                          <Lock className="size-3 shrink-0 text-warning/80" aria-hidden="true" />
                         </div>
                         <span className="block truncate text-[10px] font-bold text-sidebar-foreground/45">
                           {description}
@@ -79,7 +85,7 @@ export function NavigationLinks({
                     '[&.active]:before:absolute [&.active]:before:-end-1 [&.active]:before:top-1/2 [&.active]:before:size-2 [&.active]:before:-translate-y-1/2 [&.active]:before:rounded-full [&.active]:before:bg-white',
                   )}
                 >
-                  <Icon className="size-5 shrink-0 transition-transform group-hover:scale-110" />
+                  <Icon className="size-5 shrink-0 transition-transform group-hover:scale-110" aria-hidden="true" />
                   {expanded ? (
                     <span className="min-w-0">
                       <span className="block truncate text-[13px] font-black">{sharedLabel(labelKey)}</span>

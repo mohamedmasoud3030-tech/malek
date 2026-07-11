@@ -11,7 +11,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -150,30 +150,30 @@ export function LandsView(props: Props) {
         <LandRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={setArchiveCandidate} />
       </AsyncContentState>
 
-      <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingLand ? 'تعديل أرض' : 'إضافة أرض'}</DialogTitle>
-            <DialogDescription>الحقول تحفظ سجل أرض تشغيلي وتربطه بالمالك عند توفر معرفه.</DialogDescription>
-          </DialogHeader>
-          <form className="grid gap-3 md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); onSubmit(draft); }}>
-            <Field label="اسم الأرض"><Input required value={draft.name} onChange={(e) => onDraftChange({ ...draft, name: e.target.value })} /></Field>
-            <Field label="رقم القطعة"><Input value={draft.plot_no} onChange={(e) => onDraftChange({ ...draft, plot_no: e.target.value })} /></Field>
-            <Field label="الموقع"><Input value={draft.location} onChange={(e) => onDraftChange({ ...draft, location: e.target.value })} /></Field>
-            <Field label="التصنيف"><Select value={draft.category} onChange={(e) => onDraftChange({ ...draft, category: e.target.value })}>{Object.entries(categoryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="الحالة"><Select value={draft.status} onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="معرف المالك"><Input value={draft.owner_id} onChange={(e) => onDraftChange({ ...draft, owner_id: e.target.value })} placeholder="اختياري: معرف مالك موجود فقط" /></Field>
-            <Field label="سعر المالك"><Input type="number" min="0" value={draft.owner_price} onChange={(e) => onDraftChange({ ...draft, owner_price: e.target.value })} /></Field>
-            <Field label="سعر الشراء"><Input type="number" min="0" value={draft.purchase_price} onChange={(e) => onDraftChange({ ...draft, purchase_price: e.target.value })} /></Field>
-            <Field label="عمولة تقديرية مسجلة"><Input type="number" min="0" value={draft.commission} onChange={(e) => onDraftChange({ ...draft, commission: e.target.value })} /></Field>
-            <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(e) => onDraftChange({ ...draft, notes: e.target.value })} /></label>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end md:col-span-2">
-              <Button type="button" variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button>
-              <Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <EntityForm.Overlay
+        open={formOpen}
+        onOpenChange={onFormOpenChange}
+        title={editingLand ? 'تعديل أرض' : 'إضافة أرض'}
+        description="الحقول تحفظ سجل أرض تشغيلي وتربطه بالمالك عند توفر معرفه."
+        className="max-w-2xl"
+      >
+        <EntityForm.Root
+          className="md:grid-cols-2"
+          onSubmit={(e) => { e.preventDefault(); onSubmit(draft); }}
+        >
+          <Field label="اسم الأرض"><Input required value={draft.name} onChange={(e) => onDraftChange({ ...draft, name: e.target.value })} /></Field>
+          <Field label="رقم القطعة"><Input value={draft.plot_no} onChange={(e) => onDraftChange({ ...draft, plot_no: e.target.value })} /></Field>
+          <Field label="الموقع"><Input value={draft.location} onChange={(e) => onDraftChange({ ...draft, location: e.target.value })} /></Field>
+          <Field label="التصنيف"><Select value={draft.category} onChange={(e) => onDraftChange({ ...draft, category: e.target.value })}>{Object.entries(categoryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+          <Field label="الحالة"><Select value={draft.status} onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+          <Field label="معرف المالك"><Input value={draft.owner_id} onChange={(e) => onDraftChange({ ...draft, owner_id: e.target.value })} placeholder="اختياري: معرف مالك موجود فقط" /></Field>
+          <Field label="سعر المالك"><Input type="number" min="0" inputMode="decimal" value={draft.owner_price} onChange={(e) => onDraftChange({ ...draft, owner_price: e.target.value })} /></Field>
+          <Field label="سعر الشراء"><Input type="number" min="0" inputMode="decimal" value={draft.purchase_price} onChange={(e) => onDraftChange({ ...draft, purchase_price: e.target.value })} /></Field>
+          <Field label="عمولة تقديرية مسجلة"><Input type="number" min="0" inputMode="decimal" value={draft.commission} onChange={(e) => onDraftChange({ ...draft, commission: e.target.value })} /></Field>
+          <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(e) => onDraftChange({ ...draft, notes: e.target.value })} /></label>
+          <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
 
       <ConfirmDialog
         open={archiveCandidate != null}

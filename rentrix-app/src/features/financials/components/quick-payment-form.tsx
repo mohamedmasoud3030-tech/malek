@@ -35,7 +35,7 @@ export function QuickPaymentForm({ amount, method, paymentDate, reference, amoun
       <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-start">
         <div>
           <label className="mb-1 block text-xs font-bold text-muted-foreground">المبلغ</label>
-          <Input type="number" min="0.01" step="0.01" placeholder="المبلغ" value={amount} onChange={(event) => onAmountChange(event.target.value)} />
+          <Input type="number" min="0.01" inputMode="decimal" step="0.01" placeholder="المبلغ" value={amount} onChange={(event) => onAmountChange(event.target.value)} />
           {amountValidationMessage ? <p className="mt-2 text-sm text-destructive">{amountValidationMessage}</p> : null}
         </div>
         <div>

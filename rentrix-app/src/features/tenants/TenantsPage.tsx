@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { FileText, Mail, Phone, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { FileText, Mail, Phone, Plus, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/layout/page-header';
@@ -108,6 +108,13 @@ function TenantWorkspaceContent({ isError, isLoading, onRetry, rows }: Readonly<
       errorTitle="تعذر تحميل المستأجرين"
       emptyTitle="لا توجد سجلات مستأجرين"
       emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
+      emptyAction={
+        <Button asChild>
+          <Link to="/people/new">
+            <Plus className="me-2 size-4" />إضافة شخص كمستأجر
+          </Link>
+        </Button>
+      }
       errorAction={<Button onClick={onRetry}>إعادة المحاولة</Button>}
     >
       <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>

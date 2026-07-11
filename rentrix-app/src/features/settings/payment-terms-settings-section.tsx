@@ -73,6 +73,7 @@ export function PaymentTermsSettingsSection() {
             type="number"
             min="1"
             step="1"
+            inputMode="numeric"
             value={draft.installments}
             onChange={(event) => setDraft({ ...draft, installments: Number(event.target.value) })}
           />

@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Building2, Edit, Plus, Trash2 } from 'lucide-react';
+import { Building2, Download, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -17,6 +17,9 @@ import { ActionMenu } from '@/components/ui/action-menu';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
+import { toast } from 'sonner';
+import { buildPropertiesCsvBlob, buildPropertiesCsvFilename } from './property-list-export';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
 import type { PropertyStatusFilter } from './property-service';
@@ -54,6 +57,25 @@ export function PropertiesListPage() {
     setArchiveTarget(null);
   };
 
+  const handleExportCsv = () => {
+    if (properties.length === 0) {
+      toast.error(translateSharedLabel('noResultsHint', getAppLanguageState().language));
+      return;
+    }
+    try {
+      const url = URL.createObjectURL(buildPropertiesCsvBlob(properties));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = buildPropertiesCsvFilename(new Date());
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      toast.success(translateSharedLabel('exportCsv', getAppLanguageState().language));
+    } catch (error) {
+      console.error('Failed to export properties CSV:', error);
+      toast.error('تعذر تصدير الملف');
+    }
+  };
+
   const properties = propertiesQuery.data?.rows ?? [];
 
   return (
@@ -68,6 +90,18 @@ export function PropertiesListPage() {
             <Plus className="size-4" />إضافة عقار
           </Button>
         }
+        secondaryActions={(
+          <Button
+            type="button"
+            variant="secondary"
+            className="rounded-2xl gap-2"
+            onClick={handleExportCsv}
+            disabled={properties.length === 0}
+            aria-label="تصدير العقارات كملف CSV"
+          >
+            <Download className="size-4" />تصدير CSV
+          </Button>
+        )}
         filters={
           <div className="space-y-2">
             <FilterBar

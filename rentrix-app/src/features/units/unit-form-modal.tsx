@@ -4,7 +4,9 @@ import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import type { Unit } from '@/types/domain';
 import { unitSchema, unitStatusLabels, unitStatusValues, type UnitFormValues } from './unit-schema';
 import { useCreateUnit, useUpdateUnit } from './use-units';
@@ -57,6 +59,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
       title={unit ? 'تعديل وحدة' : 'إضافة وحدة'}
       description="الوحدات مرتبطة بالعقار الحالي وتُحذف أرشيفياً عند الإزالة."
       className="max-w-2xl"
+      headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
         <EntityForm.Root
           className="md:grid-cols-2"
@@ -93,7 +96,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
           </label>
           <label className="grid gap-2 text-sm font-bold">
             قيمة الإيجار
-            <Input type="number" step="0.01" min="0" {...form.register('rent_amount')} />
+            <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('rent_amount')} />
             {fieldError(form.formState.errors.rent_amount?.message)}
           </label>
           <label className="grid gap-2 text-sm font-bold md:col-span-2">

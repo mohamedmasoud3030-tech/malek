@@ -345,7 +345,11 @@ export function EntityTable<T>({
                     >
                       {hasExpansion && (
                         <TableCell onClick={(e) => { e.stopPropagation(); }}>
-                          <span className="text-xs text-muted-foreground">{isExpanded ? '▲' : '▼'}</span>
+                          {isExpanded ? (
+                            <ChevronUp className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                          ) : (
+                            <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                          )}
                         </TableCell>
                       )}
                       {columns.map((col) => (

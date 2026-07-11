@@ -178,12 +178,12 @@ export function PropertyFormPage() {
               </label>
               <label className="grid gap-2 text-sm font-bold">
                 قيمة الشراء
-                <Input type="number" step="0.01" min="0" {...form.register('purchase_value')} />
+                <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('purchase_value')} />
                 {fieldError(form.formState.errors.purchase_value?.message)}
               </label>
               <label className="grid gap-2 text-sm font-bold">
                 القيمة الحالية
-                <Input type="number" step="0.01" min="0" {...form.register('current_value')} />
+                <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('current_value')} />
                 {fieldError(form.formState.errors.current_value?.message)}
               </label>
               <label className="grid gap-2 text-sm font-bold md:col-span-2">

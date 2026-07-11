@@ -81,15 +81,20 @@ function Actions({ submitLabel, cancelLabel = 'إلغاء', onCancel, isSubmitti
   );
 }
 
-type EntityFormOverlayProps = Readonly<{ open: boolean; onOpenChange: (open: boolean) => void; title: string; description?: string; children: ReactNode; className?: string }>;
+type EntityFormOverlayProps = Readonly<{ open: boolean; onOpenChange: (open: boolean) => void; title: string; description?: string; headerExtra?: ReactNode; children: ReactNode; className?: string }>;
 
-function Overlay({ open, onOpenChange, title, description, children, className }: EntityFormOverlayProps) {
+function Overlay({ open, onOpenChange, title, description, headerExtra, children, className }: EntityFormOverlayProps) {
   const surface = getResponsiveFormSurface(useMediaQuery(mobileFormQuery));
 
   if (surface === 'bottom-sheet') {
     return (
       <BottomSheet open={open} onClose={() => onOpenChange(false)} title={title} className={className}>
-        {description ? <p className="mb-4 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+        {(description || headerExtra) ? (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {description ? <p className="flex-1 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+            {headerExtra}
+          </div>
+        ) : null}
         {children}
       </BottomSheet>
     );
@@ -99,7 +104,10 @@ function Overlay({ open, onOpenChange, title, description, children, className }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={className}>
         <DialogHeader className="pe-10">
-          <DialogTitle>{title}</DialogTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <DialogTitle>{title}</DialogTitle>
+            {headerExtra}
+          </div>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
         {children}

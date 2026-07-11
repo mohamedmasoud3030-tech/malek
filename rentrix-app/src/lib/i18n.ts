@@ -61,6 +61,22 @@ const sharedTranslationEntries = [
   ['settings', 'الإعدادات', 'Settings'],
   ['collapseMenu', 'طي القائمة', 'Collapse menu'],
   ['toggleTheme', 'تبديل الوضع', 'Toggle theme'],
+  ['notificationsNone', 'لا توجد إشعارات حالياً', 'No notifications right now'],
+  ['notificationsHint', 'ستظهر هنا تنبيهات العقود القريبة من الانتهاء والفواتير المتأخرة.', 'Contract expiry and overdue invoice alerts will appear here.'],
+  ['configureAiAssistant', 'ضبط إعدادات الذكاء الاصطناعي', 'Configure AI assistant'],
+  ['unsavedChanges', 'تغييرات غير محفوظة', 'Unsaved changes'],
+  ['newContract', 'عقد جديد', 'New contract'],
+  ['exportCsv', 'تصدير CSV', 'Export CSV'],
+  ['noResultsHint', 'لا توجد نتائج مطابقة — جرّب كلمات أخرى أو امسح الفلاتر.', 'No matching results — try different words or clear filters.'],
+  ['clearFilters', 'مسح الفلاتر', 'Clear filters'],
+  ['aiUnavailable', 'المساعد غير مهيأ — راجع الإعدادات', 'Assistant not configured — review settings'],
+  ['adminGroup', 'إدارة النظام', 'System administration'],
+  ['ariaCurrentPage', 'الصفحة الحالية', 'Current page'],
+  ['skipToContent', 'تخطي إلى المحتوى الرئيسي', 'Skip to main content'],
+  ['openMenu', 'فتح القائمة', 'Open menu'],
+  ['closeMenu', 'إغلاق القائمة', 'Close menu'],
+  ['confirm', 'تأكيد', 'Confirm'],
+  ['cancel', 'إلغاء', 'Cancel'],
 ] as const satisfies ReadonlyArray<SharedTranslationEntry>;
 
 function getEntryLabel(entry: SharedTranslationEntry, language: SupportedLanguage): string {

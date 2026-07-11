@@ -28,6 +28,7 @@ export function DatePicker({
       <input
         id={inputId}
         type="date"
+        lang="en-GB"
         disabled={disabled}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}

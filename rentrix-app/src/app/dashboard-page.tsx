@@ -71,9 +71,16 @@ function money(settings: CompanySettingsContract, value: number | null | undefin
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return 'صباح الخير 🌤';
-  if (hour < 17) return 'مساء الخير ☀️';
-  return 'مساء النور 🌙';
+  if (hour < 12) return 'صباح الخير';
+  if (hour < 17) return 'مساء الخير';
+  return 'مساء النور';
+}
+
+function getGreetingEmoji() {
+  const hour = new Date().getHours();
+  if (hour < 12) return '🌤';
+  if (hour < 17) return '☀️';
+  return '🌙';
 }
 
 type ExpiringContractRow = {
@@ -152,7 +159,7 @@ function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
         {/* Greeting row */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-bold text-slate-400">{getGreeting()}</p>
+            <p className="text-sm font-bold text-slate-400">{getGreeting()} <span aria-hidden="true">{getGreetingEmoji()}</span></p>
             <h1 className="mt-0.5 text-xl font-black">لوحة التحكم</h1>
           </div>
           <div className="rounded-2xl bg-white/10 px-3 py-2 text-xs font-bold text-slate-300 backdrop-blur-sm">

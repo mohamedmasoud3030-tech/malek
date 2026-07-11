@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable } from '@/components/ui/entity-table';
 import { InlineStatCard } from '@/components/ui/inline-stat-card';
 import { Input } from '@/components/ui/input';
@@ -71,21 +71,27 @@ export function CommissionsView(props: Props) {
       {!isLoading && !error && rows.length === 0 ? <PageStateCard title={hasFilters ? 'لا توجد عمولات ضمن الفلاتر الحالية' : 'لا توجد عمولات بعد'} description={hasFilters ? 'غيّر البحث أو الحالة أو النوع لعرض سجلات عمولات أخرى.' : 'أضف عمولة تشغيلية عند توفر مصدر ومبلغ حقيقيين. هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة عمولة</Button>} /> : null}
       {rows.length > 0 ? <CommissionRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={setArchiveCandidate} /> : null}
 
-      <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader><DialogTitle>{editingCommission ? 'تعديل عمولة' : 'إضافة عمولة'}</DialogTitle><DialogDescription>يمكن إدخال مبلغ مباشر أو تركه ليُحسب من قيمة الصفقة ونسبة العمولة للتتبع التشغيلي فقط.</DialogDescription></DialogHeader>
-          <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}>
-            <Field label="اسم الموظف / الوسيط"><Input required value={draft.staff_name} onChange={(event) => onDraftChange({ ...draft, staff_name: event.target.value })} /></Field>
-            <Field label="نوع المصدر"><Select value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value })}>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="معرف المصدر"><Input value={draft.source_id} onChange={(event) => onDraftChange({ ...draft, source_id: event.target.value })} /></Field>
-            <Field label="قيمة الصفقة"><Input type="number" min="0" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} /></Field>
-            <Field label="النسبة %"><Input type="number" min="0" step="0.01" value={draft.percentage} onChange={(event) => onDraftChange({ ...draft, percentage: event.target.value })} /></Field>
-            <Field label="مبلغ مباشر"><Input type="number" min="0" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} /></Field>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-end sm:justify-end md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <EntityForm.Overlay
+        open={formOpen}
+        onOpenChange={onFormOpenChange}
+        title={editingCommission ? 'تعديل عمولة' : 'إضافة عمولة'}
+        description="يمكن إدخال مبلغ مباشر أو تركه ليُحسب من قيمة الصفقة ونسبة العمولة للتتبع التشغيلي فقط."
+        className="max-w-2xl"
+      >
+        <EntityForm.Root
+          className="md:grid-cols-2"
+          onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}
+        >
+          <Field label="اسم الموظف / الوسيط"><Input required value={draft.staff_name} onChange={(event) => onDraftChange({ ...draft, staff_name: event.target.value })} /></Field>
+          <Field label="نوع المصدر"><Select value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value })}>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+          <Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+          <Field label="معرف المصدر"><Input value={draft.source_id} onChange={(event) => onDraftChange({ ...draft, source_id: event.target.value })} /></Field>
+          <Field label="قيمة الصفقة"><Input type="number" min="0" inputMode="decimal" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} /></Field>
+          <Field label="النسبة %"><Input type="number" min="0" inputMode="decimal" step="0.01" value={draft.percentage} onChange={(event) => onDraftChange({ ...draft, percentage: event.target.value })} /></Field>
+          <Field label="مبلغ مباشر"><Input type="number" min="0" inputMode="decimal" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} /></Field>
+          <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
 
       <ConfirmDialog
         open={archiveCandidate != null}

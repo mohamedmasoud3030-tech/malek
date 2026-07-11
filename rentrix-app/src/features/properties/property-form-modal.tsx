@@ -5,10 +5,13 @@ import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { RouteLoadingState } from '@/components/loading-state';
 import { useOwners } from '@/features/owners/useOwners';
 import { useCreatePropertyWithAgreement } from '@/features/owners/useOwnerAgreements';
+import { translateSharedLabel } from '@/lib/i18n';
+import { getAppLanguageState } from '@/lib/i18n';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useUpdateProperty, useProperty } from './use-properties';
 
@@ -178,6 +181,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       }}
       title="إضافة عقار جديد"
       className="max-w-2xl"
+      headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
       <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit}>
         <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
@@ -235,6 +239,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
           <Input
             type="number"
             step="0.01"
+            inputMode="decimal"
             min="0.01"
             max={commissionType === 'RATE' ? 100 : undefined}
             {...form.register('commission_value')}
@@ -268,12 +273,12 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
         {/* Optional valuation */}
         <label className="grid gap-2 text-sm font-bold">
           قيمة الشراء
-          <Input type="number" step="0.01" min="0" {...form.register('purchase_value')} />
+          <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('purchase_value')} />
           <FieldError message={form.formState.errors.purchase_value?.message} />
         </label>
         <label className="grid gap-2 text-sm font-bold">
           القيمة الحالية
-          <Input type="number" step="0.01" min="0" {...form.register('current_value')} />
+          <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('current_value')} />
           <FieldError message={form.formState.errors.current_value?.message} />
         </label>
         <label className="grid gap-2 text-sm font-bold md:col-span-2">
@@ -346,6 +351,7 @@ function PropertyEditModal({
       }}
       title="تعديل عقار"
       className="max-w-2xl"
+      headerExtra={form.formState.isDirty && !updateMutation.isPending ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
       {propertyQuery.isLoading ? (
         <RouteLoadingState />
@@ -380,11 +386,11 @@ function PropertyEditModal({
           </label>
           <label className="grid gap-2 text-sm font-bold">
             قيمة الشراء
-            <Input type="number" step="0.01" min="0" {...form.register('purchase_value')} />
+            <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('purchase_value')} />
           </label>
           <label className="grid gap-2 text-sm font-bold">
             القيمة الحالية
-            <Input type="number" step="0.01" min="0" {...form.register('current_value')} />
+            <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('current_value')} />
           </label>
           <label className="grid gap-2 text-sm font-bold md:col-span-2">
             ملاحظات

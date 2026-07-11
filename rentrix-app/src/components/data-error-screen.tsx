@@ -16,7 +16,7 @@ export function DataErrorScreen({ title, fallbackMessage, error, action }: DataE
   return (
     <Card className="border-destructive/40 bg-destructive/5" role="alert" aria-live="assertive">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="size-5" />{title}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="size-5" aria-hidden="true" />{title}</CardTitle>
         <CardDescription>{diagnostics[0]?.messageAr ?? fallbackMessage}</CardDescription>
       </CardHeader>
       {action && <CardContent>{action}</CardContent>}

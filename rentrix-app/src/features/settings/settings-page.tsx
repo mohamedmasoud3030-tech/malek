@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Building2, FileSignature, FolderTree, KeyRound, Lock, RefreshCcw, Save, ShieldCheck, Sparkles, Cog, Bell, User, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
@@ -65,21 +65,28 @@ type BaseFieldProps = Readonly<{
 type FormFieldProps = BaseFieldProps & Readonly<{
   placeholder?: string;
   type?: string;
+  inputMode?: 'decimal' | 'numeric' | 'text';
 }>;
 
-function FormField({ label, field, draft, errors, disabled, placeholder, type = 'text', onChange }: FormFieldProps) {
+function FormField({ label, field, draft, errors, disabled, placeholder, type = 'text', inputMode, onChange }: FormFieldProps) {
+  const inputId = useId();
+  const errorId = `${inputId}-error`;
+  const isInvalid = Boolean(errors[field]);
   return (
-    <label className="space-y-1 text-sm font-medium text-foreground">
+    <label htmlFor={inputId} className="space-y-1 text-sm font-medium text-foreground">
       <span>{label}</span>
       <Input
+        id={inputId}
         type={type}
+        inputMode={inputMode}
         value={draft[field]}
         placeholder={placeholder}
         disabled={disabled}
-        aria-invalid={Boolean(errors[field])}
+        aria-invalid={isInvalid}
+        aria-describedby={isInvalid ? errorId : undefined}
         onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(field, event.target.value)}
       />
-      {errors[field] ? <span className="block text-xs text-destructive">{errors[field]}</span> : null}
+      {isInvalid ? <span id={errorId} className="block text-xs text-destructive" role="alert">{errors[field]}</span> : null}
     </label>
   );
 }
@@ -89,18 +96,23 @@ type SelectFieldProps = BaseFieldProps & Readonly<{
 }>;
 
 function SelectField({ label, field, draft, errors, disabled, options, onChange }: SelectFieldProps) {
+  const selectId = useId();
+  const errorId = `${selectId}-error`;
+  const isInvalid = Boolean(errors[field]);
   return (
-    <label className="space-y-1 text-sm font-medium text-foreground">
+    <label htmlFor={selectId} className="space-y-1 text-sm font-medium text-foreground">
       <span>{label}</span>
       <Select
+        id={selectId}
         value={draft[field]}
         disabled={disabled}
-        aria-invalid={Boolean(errors[field])}
+        aria-invalid={isInvalid}
+        aria-describedby={isInvalid ? errorId : undefined}
         onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(field, event.target.value)}
       >
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </Select>
-      {errors[field] ? <span className="block text-xs text-destructive">{errors[field]}</span> : null}
+      {isInvalid ? <span id={errorId} className="block text-xs text-destructive" role="alert">{errors[field]}</span> : null}
     </label>
   );
 }
@@ -458,8 +470,14 @@ export function SettingsPage() {
             <FormField label="رابط الشعار" field="logo_url" draft={draft} errors={errors} disabled={isSaving} type="url" placeholder="https://example.com/logo.png" onChange={handleDraftChange} />
           </div>
           <label className="space-y-2 text-sm font-medium text-foreground">
-            <span>رفع شعار الشركة</span>
-            <Input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={isSaving} onChange={handleLogoFileChange} />
+            <span id="settings-logo-upload-label">رفع شعار الشركة</span>
+            <Input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              disabled={isSaving}
+              onChange={handleLogoFileChange}
+              aria-labelledby="settings-logo-upload-label"
+            />
             <span className="block text-[11px] text-muted-foreground">يُحفظ الشعار كقيمة مضمنة صغيرة للحفاظ على المعاينة والمستندات بدون إعداد Storage إضافي.</span>
           </label>
           <div className="grid gap-3 rounded-2xl border bg-muted/20 p-3 md:grid-cols-3">
@@ -488,8 +506,8 @@ export function SettingsPage() {
             <FormField label="بادئة الفواتير" field="invoice_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <FormField label="بادئة العقود" field="contract_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <FormField label="بادئة الإيصالات" field="receipt_prefix" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
-            <FormField label="ضريبة القيمة المضافة الافتراضية %" field="default_vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" onChange={handleDraftChange} />
-            <FormField label="نسبة VAT التشغيلية %" field="vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" onChange={handleDraftChange} />
+            <FormField label="ضريبة القيمة المضافة الافتراضية %" field="default_vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" inputMode="decimal" onChange={handleDraftChange} />
+            <FormField label="نسبة VAT التشغيلية %" field="vat_rate" draft={draft} errors={errors} disabled={isSaving} type="number" inputMode="decimal" onChange={handleDraftChange} />
             <FormField label="رقم تسجيل VAT" field="vat_registration_number" draft={draft} errors={errors} disabled={isSaving} onChange={handleDraftChange} />
             <label className="flex items-center gap-2 rounded-xl border bg-background/70 p-3 text-sm font-medium md:col-span-2">
               <input

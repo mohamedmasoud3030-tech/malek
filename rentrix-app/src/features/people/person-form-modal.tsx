@@ -6,8 +6,10 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { personSchema, personTypeLabels, personTypeValues, type PersonFormValues } from './person-schema';
 import { useCreatePerson, usePerson, useUpdatePerson } from './use-people';
 
@@ -126,6 +128,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         onOpenChange={handleOpenChange}
         title={title}
         className="max-w-2xl"
+        headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
       >
         {isEdit && personQuery.isLoading ? (
           <RouteLoadingState />

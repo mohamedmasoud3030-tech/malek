@@ -67,17 +67,22 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
       header: 'إجراءات',
       render: (unit) => (
         <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-          <Button variant="secondary" className="min-h-9 px-3" onClick={() => openForEdit(unit)}>
-            <Edit className="size-4" />
+          <Button
+            variant="secondary"
+            className="min-h-9 px-3"
+            aria-label={`تعديل وحدة ${unit.unit_number}`}
+            onClick={() => openForEdit(unit)}
+          >
+            <Edit className="size-4" aria-hidden="true" />
           </Button>
           <Button
             variant="danger"
             className="min-h-9 px-3"
-            aria-label="أرشفة الوحدة"
+            aria-label={`أرشفة وحدة ${unit.unit_number}`}
             onClick={() => setArchiveCandidate(unit)}
             disabled={deleteMutation.isPending}
           >
-            <Archive className="size-4" />
+            <Archive className="size-4" aria-hidden="true" />
           </Button>
         </div>
       ),

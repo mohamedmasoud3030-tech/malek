@@ -20,6 +20,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { OwnerCheckbox } from './OwnerCheckbox';
 import { OwnerPropertySelect } from './OwnerPropertySelect';
 import type { Owner, PropertyOwner, PropertyWithOwners } from './ownerService';
@@ -100,6 +101,14 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
     setError(null);
   };
 
+  const initialValues = useMemo(() => ownerToFormValues(owner), [owner]);
+  const isDirty = useMemo(() => {
+    return Object.keys(initialValues).some((key) => {
+      const field = key as keyof OwnerFormValues;
+      return (initialValues[field] ?? '') !== (values[field] ?? '');
+    });
+  }, [initialValues, values]);
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const validationError = validateOwnerForm(values);
@@ -119,7 +128,7 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
   };
 
   return (
-    <EntityForm.Overlay open={open} onOpenChange={onOpenChange} title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'} description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية." className="max-w-2xl">
+    <EntityForm.Overlay open={open} onOpenChange={onOpenChange} title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'} description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية." className="max-w-2xl" headerExtra={isDirty && !isPending ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}>
       <EntityForm.Root onSubmit={handleSubmit}>
         <EntityForm.ErrorSummary message={error} />
         <div className="grid gap-4 md:grid-cols-2">
@@ -296,7 +305,7 @@ function OwnershipLinkForm({ values, availableProperties, editingLink, error, is
       {error ? <div className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_8rem]">
         <OwnerPropertySelect value={values.property_id} onValueChange={(propertyId) => onValueChange('property_id', propertyId)} disabled={isEditing || !availableProperties.length} properties={availableProperties} />
-        <Input type="number" min="0.01" max="100" step="0.01" value={values.ownership_percentage} onChange={(e) => onValueChange('ownership_percentage', e.target.value)} aria-label="نسبة الملكية" />
+        <Input type="number" min="0.01" inputMode="decimal" max="100" step="0.01" value={values.ownership_percentage} onChange={(e) => onValueChange('ownership_percentage', e.target.value)} aria-label="نسبة الملكية" />
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <Field label="تاريخ البداية"><Input type="date" value={values.starts_on} onChange={(e) => onValueChange('starts_on', e.target.value)} /></Field>

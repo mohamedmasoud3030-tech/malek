@@ -109,7 +109,7 @@ export function BankReconciliationPage() {
             <Input required type="date" value={lineDraft.transaction_date} onChange={(event) => setLineDraft({ ...lineDraft, transaction_date: event.target.value })} />
             <Input value={lineDraft.description} onChange={(event) => setLineDraft({ ...lineDraft, description: event.target.value })} placeholder="الوصف" />
             <Input value={lineDraft.reference} onChange={(event) => setLineDraft({ ...lineDraft, reference: event.target.value })} placeholder="المرجع" />
-            <div className="flex gap-2"><Input required type="number" step="0.01" value={lineDraft.amount} onChange={(event) => setLineDraft({ ...lineDraft, amount: event.target.value })} placeholder="المبلغ +/-" /><Button disabled={!canManageReconciliation || createLine.isPending}>حفظ</Button></div>
+            <div className="flex gap-2"><Input required type="number" step="0.01" inputMode="decimal" value={lineDraft.amount} onChange={(event) => setLineDraft({ ...lineDraft, amount: event.target.value })} placeholder="المبلغ +/-" /><Button disabled={!canManageReconciliation || createLine.isPending}>حفظ</Button></div>
           </form>
         </CardContent>
       </Card>
@@ -121,7 +121,7 @@ export function BankReconciliationPage() {
             <Select required value={matchDraft.statement_line_id} onChange={(event) => { const line = lines.find((item) => item.id === event.target.value); setMatchDraft({ ...matchDraft, statement_line_id: event.target.value, matched_amount: line?.amount.toString() ?? matchDraft.matched_amount }); }}><option value="">اختر حركة غير مطابقة</option>{lines.filter((line) => line.status === 'unmatched').map((line) => <option key={line.id} value={line.id}>{formatDate(line.transaction_date)} — {line.description} — {formatCompanyMoney(defaultCompanyLocalSettings, line.amount)}</option>)}</Select>
             <Select value={matchDraft.matched_entity_type} onChange={(event) => setMatchDraft({ ...matchDraft, matched_entity_type: event.target.value as BankReconciliationMatchValues['matched_entity_type'] })}>{Object.entries(entityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
             <Input required value={matchDraft.matched_entity_id} onChange={(event) => setMatchDraft({ ...matchDraft, matched_entity_id: event.target.value })} placeholder="معرف السجل" />
-            <Input required type="number" step="0.01" value={matchDraft.matched_amount} onChange={(event) => setMatchDraft({ ...matchDraft, matched_amount: event.target.value })} placeholder="مبلغ المطابقة" />
+            <Input required type="number" step="0.01" inputMode="decimal" value={matchDraft.matched_amount} onChange={(event) => setMatchDraft({ ...matchDraft, matched_amount: event.target.value })} placeholder="مبلغ المطابقة" />
             <Input value={matchDraft.notes} onChange={(event) => setMatchDraft({ ...matchDraft, notes: event.target.value })} placeholder="ملاحظات" />
             <Button disabled={!canManageReconciliation || matchLine.isPending || !selectedLine}><ShieldCheck className="me-2 size-4" />مطابقة</Button>
           </form>

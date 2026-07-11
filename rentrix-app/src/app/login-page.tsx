@@ -49,11 +49,11 @@ export function LoginPage() {
 
   return (
     <section className="animate-panel-in grid w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-[hsl(var(--card)/0.96)] shadow-[0_30px_90px_-45px_rgba(15,23,42,0.7)] backdrop-blur-2xl lg:grid-cols-[1.08fr_0.92fr]">
-      <aside className="auth-grid relative hidden min-h-[650px] overflow-hidden bg-sidebar p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-12">
+      <aside aria-hidden="true" className="auth-grid relative hidden min-h-[650px] overflow-hidden bg-sidebar p-10 text-white lg:flex lg:flex-col lg:justify-between xl:p-12">
         <div className="pointer-events-none absolute -left-20 -top-20 size-72 rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -right-20 size-80 rounded-full bg-accent/20 blur-3xl" />
         <div className="animate-float-soft pointer-events-none absolute left-16 top-28 grid size-16 place-items-center rounded-[1.4rem] border border-white/10 bg-white/[0.08] text-accent shadow-xl backdrop-blur">
-          <Sparkles className="size-7" />
+          <Sparkles className="size-7" aria-hidden="true" />
         </div>
 
         <div className="relative">

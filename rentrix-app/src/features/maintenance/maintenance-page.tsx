@@ -386,7 +386,7 @@ export function MaintenancePage() {
           <form className="grid gap-4" onSubmit={resolveForm.handleSubmit(submitResolve)}>
             <label className="grid gap-2 text-sm font-bold">
               التكلفة الفعلية (ر.ع)
-              <Input dir="ltr" type="number" min="0" step="0.01" {...resolveForm.register('cost')} />
+              <Input dir="ltr" type="number" min="0" step="0.01" inputMode="decimal" {...resolveForm.register('cost')} />
               {resolveForm.formState.errors.cost && (
                 <p className="text-xs text-destructive">{resolveForm.formState.errors.cost.message}</p>
               )}

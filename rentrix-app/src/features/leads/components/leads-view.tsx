@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { Select } from '@/components/ui/select';
@@ -172,29 +172,29 @@ export function LeadsView(props: Props) {
         <LeadRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={setArchiveCandidate} />
       </AsyncContentState>
 
-      <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingLead ? 'تعديل عميل محتمل' : 'إضافة عميل محتمل'}</DialogTitle>
-            <DialogDescription>لا يتم إنشاء مستأجر أو مالك تلقائياً؛ التحويل يبقى قراراً تشغيلياً منظماً.</DialogDescription>
-          </DialogHeader>
-          <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}>
-            <Field label="الاسم"><Input required value={draft.name} onChange={(event) => onDraftChange({ ...draft, name: event.target.value })} /></Field>
-            <Field label="الهاتف"><Input value={draft.phone} onChange={(event) => onDraftChange({ ...draft, phone: event.target.value })} /></Field>
-            <Field label="البريد الإلكتروني"><Input type="email" value={draft.email} onChange={(event) => onDraftChange({ ...draft, email: event.target.value })} /></Field>
-            <Field label="نوع الوحدة المطلوب"><Input value={draft.desired_unit_type} onChange={(event) => onDraftChange({ ...draft, desired_unit_type: event.target.value })} /></Field>
-            <Field label="المصدر"><Select value={draft.source} onChange={(event) => onDraftChange({ ...draft, source: event.target.value })}>{Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="أقل ميزانية"><Input type="number" min="0" value={draft.min_budget} onChange={(event) => onDraftChange({ ...draft, min_budget: event.target.value })} /></Field>
-            <Field label="أعلى ميزانية"><Input type="number" min="0" value={draft.max_budget} onChange={(event) => onDraftChange({ ...draft, max_budget: event.target.value })} /></Field>
-            <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></label>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end md:col-span-2">
-              <Button type="button" variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button>
-              <Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <EntityForm.Overlay
+        open={formOpen}
+        onOpenChange={onFormOpenChange}
+        title={editingLead ? 'تعديل عميل محتمل' : 'إضافة عميل محتمل'}
+        description="لا يتم إنشاء مستأجر أو مالك تلقائياً؛ التحويل يبقى قراراً تشغيلياً منظماً."
+        className="max-w-2xl"
+      >
+        <EntityForm.Root
+          className="md:grid-cols-2"
+          onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}
+        >
+          <Field label="الاسم"><Input required value={draft.name} onChange={(event) => onDraftChange({ ...draft, name: event.target.value })} /></Field>
+          <Field label="الهاتف"><Input value={draft.phone} onChange={(event) => onDraftChange({ ...draft, phone: event.target.value })} /></Field>
+          <Field label="البريد الإلكتروني"><Input type="email" value={draft.email} onChange={(event) => onDraftChange({ ...draft, email: event.target.value })} /></Field>
+          <Field label="نوع الوحدة المطلوب"><Input value={draft.desired_unit_type} onChange={(event) => onDraftChange({ ...draft, desired_unit_type: event.target.value })} /></Field>
+          <Field label="المصدر"><Select value={draft.source} onChange={(event) => onDraftChange({ ...draft, source: event.target.value })}>{Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+          <Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
+          <Field label="أقل ميزانية"><Input type="number" min="0" inputMode="decimal" value={draft.min_budget} onChange={(event) => onDraftChange({ ...draft, min_budget: event.target.value })} /></Field>
+          <Field label="أعلى ميزانية"><Input type="number" min="0" inputMode="decimal" value={draft.max_budget} onChange={(event) => onDraftChange({ ...draft, max_budget: event.target.value })} /></Field>
+          <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></label>
+          <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
 
       <ConfirmDialog
         open={archiveCandidate != null}

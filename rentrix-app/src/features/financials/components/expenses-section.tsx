@@ -216,7 +216,7 @@ export function ExpensesSection({ expenses, propertyRows, costCenterRows, filter
           </label>
           <label className="space-y-1 text-sm font-bold">
             <span>المبلغ</span>
-            <Input type="number" min="0.01" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
+            <Input type="number" min="0.01" inputMode="decimal" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
           </label>
           <label className="space-y-1 text-sm font-bold">
             <span>التاريخ</span>

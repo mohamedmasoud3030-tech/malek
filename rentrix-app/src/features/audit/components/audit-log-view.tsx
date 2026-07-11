@@ -2,6 +2,7 @@ import { ShieldCheck } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
@@ -32,7 +33,17 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
   }
 
   if (state.result.records.length === 0) {
-    return <EmptyState title="لا توجد أحداث تدقيق" description="لم يرجع مصدر سجل التدقيق أي أحداث للعرض." />;
+    return (
+      <EmptyState
+        title="لا توجد أحداث تدقيق"
+        description="لم يرجع مصدر سجل التدقيق أي أحداث للعرض."
+        action={
+          <Button asChild>
+            <a href="/">العودة إلى لوحة التحكم</a>
+          </Button>
+        }
+      />
+    );
   }
 
   return (
