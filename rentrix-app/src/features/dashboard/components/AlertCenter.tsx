@@ -12,19 +12,18 @@ export interface AlertCenterProps {
   expiringContracts: ContractListItem[];
   overdueInvoices: Array<{
     id: string;
-    contract_id: string;
     amount: number;
     paid_amount?: number;
     due_date: string;
-    tenant_name?: string;
-    invoice_number?: string;
+    tenant_name?: string | null;
+    invoice_number?: string | null;
   }>;
   urgentMaintenance: Array<{
     id: string;
-    title: string;
-    priority: string;
-    property_id?: string;
-    unit_id?: string;
+    title: string | null;
+    priority: string | null;
+    property_id?: string | null;
+    unit_id?: string | null;
     property_title?: string;
     unit_number?: string;
   }>;
@@ -167,7 +166,7 @@ export function AlertCenter({
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-black text-red-600">
-                    {formatMoney(settings, invoice.amount - (invoice.paid_amount ?? 0))}
+                    {formatMoney(invoice.amount - (invoice.paid_amount ?? 0))}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     مستحق منذ{' '}
@@ -204,7 +203,7 @@ export function AlertCenter({
                 className="flex items-center justify-between rounded-xl border border-orange-200 bg-white p-3 dark:border-orange-800 dark:bg-orange-950/50"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold">{item.title}</p>
+                  <p className="truncate font-bold">{item.title ?? 'طلب صيانة'}</p>
                   <p className="truncate text-xs text-muted-foreground">
                     {item.property_title ?? 'عقار'} / {item.unit_number ?? 'وحدة'}
                   </p>

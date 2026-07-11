@@ -26,6 +26,28 @@ export type OutboundMessageResult = Readonly<{
   message: string;
 }>;
 
+export type OutboundProviderAdapter = Readonly<{
+  id: string;
+  channel: OutboundChannel;
+  mode: 'preview' | 'external';
+  prepare: (request: OutboundMessageRequest, body: string) => OutboundMessageResult;
+}>;
+
+export const outboundProviderCapabilities: readonly Readonly<{
+  channel: OutboundChannel;
+  provider: string;
+  mode: 'preview' | 'external';
+  configured: boolean;
+}>[] = [
+  { channel: 'whatsapp', provider: 'local-preview', mode: 'preview', configured: true },
+  { channel: 'email', provider: 'local-preview', mode: 'preview', configured: true },
+  { channel: 'sms', provider: 'sms-provider', mode: 'external', configured: false },
+];
+
+export function getOutboundProviderCapability(channel: OutboundChannel) {
+  return outboundProviderCapabilities.find((capability) => capability.channel === channel);
+}
+
 export type NotificationTemplate = Readonly<{
   id: string;
   name: string;

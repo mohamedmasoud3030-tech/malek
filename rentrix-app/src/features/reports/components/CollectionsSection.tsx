@@ -1,7 +1,8 @@
 import { FileSpreadsheet, ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { EntityTable } from '@/components/ui/entity-table';
+import { DataTable } from '@/components/ui/data-table';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { formatDate, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { buildReportCsvFilename, downloadCsv, latestReceiptLimit, toDailyCollectionCsv } from '../reports-page.helpers';
@@ -29,24 +30,25 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
         {/* Mobile cards */}
         <div className="grid gap-3 p-4 md:hidden">
           {rows.map((row) => (
-            <div key={row.paymentDate} className="rounded-2xl border bg-background p-4 space-y-2 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium">{formatDate(row.paymentDate)}</span>
-                <span className="font-black" dir="ltr">{formatMoney(row.totalPaid)}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-                <span>نقداً: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.cash)}</span></span>
-                <span>تحويل: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.bank_transfer)}</span></span>
-                <span>بطاقة: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.card)}</span></span>
-                <span>شيك: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.check)}</span></span>
-              </div>
-            </div>
+            <MobileCard
+              key={row.paymentDate}
+              title={formatDate(row.paymentDate)}
+              stats={<span className="text-base font-black" dir="ltr">{formatMoney(row.totalPaid)}</span>}
+              meta={(
+                <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                  <span>نقداً: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.cash)}</span></span>
+                  <span>تحويل: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.bank_transfer)}</span></span>
+                  <span>بطاقة: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.card)}</span></span>
+                  <span>شيك: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.check)}</span></span>
+                </div>
+              )}
+            />
           ))}
           {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد تحصيلات في الفترة المحددة.</p> : null}
         </div>
         {/* Desktop table */}
         <div className="hidden md:block px-4 pb-4">
-          <EntityTable
+          <DataTable
             aria-label="جدول التحصيل اليومي"
             rows={rows}
             columns={[
@@ -98,25 +100,20 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
         {/* Mobile cards */}
         <div className="grid gap-3 p-4 md:hidden">
           {rentRollRows.map((row) => (
-            <div key={row.contractId} className="rounded-2xl border bg-background p-4 space-y-2 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} />
-                <StatusBadge tone="green">{row.statusLabel}</StatusBadge>
-              </div>
-              <p className="font-medium">{row.tenantName}</p>
-              <p className="text-muted-foreground">{row.propertyTitle} · {row.unitNumber}</p>
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-black" dir="ltr">{formatMoney(row.rentAmount)}</span>
-                <span className="text-xs text-muted-foreground">{row.paymentCycle}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">{formatDate(row.startDate)} — {formatDate(row.endDate)}</p>
-            </div>
+            <MobileCard
+              key={row.contractId}
+              title={row.tenantName}
+              subtitle={`${row.propertyTitle} · ${row.unitNumber}`}
+              badge={<StatusBadge tone="green">{row.statusLabel}</StatusBadge>}
+              meta={<span className="text-xs text-muted-foreground">{row.paymentCycle} · {formatDate(row.startDate)} — {formatDate(row.endDate)}</span>}
+              stats={<div className="flex items-center justify-between gap-2"><SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /><span className="font-black" dir="ltr">{formatMoney(row.rentAmount)}</span></div>}
+            />
           ))}
           {rentRollRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عقود ضمن البيانات الحالية.</p> : null}
         </div>
         {/* Desktop table */}
         <div className="hidden md:block px-4 pb-4">
-          <EntityTable
+          <DataTable
             aria-label="جدول عقود الإيجار"
             rows={rentRollRows}
             columns={[

@@ -96,6 +96,9 @@ export function ExpensesPage() {
         onFiltersChange={setFilters}
         expenseForm={expenseForm}
         isCreateExpensePending={createExpense.isPending || propertiesQuery.isLoading}
+        isLoading={expensesQuery.isLoading || propertiesQuery.isLoading}
+        error={expensesQuery.error ?? propertiesQuery.error}
+        onRetry={() => { void Promise.all([expensesQuery.refetch(), propertiesQuery.refetch()]); }}
         onCreateExpense={onCreateExpense}
       />
     </PageLayout>

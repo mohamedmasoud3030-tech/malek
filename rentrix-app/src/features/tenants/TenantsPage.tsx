@@ -1,12 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { FileText, Mail, Phone, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { ListFilterBar } from '../../components/layout/list-filter-bar';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { ListStateBody } from '../../components/layout/list-state-body';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { EntityActions } from '../../components/ui/entity-actions';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
@@ -79,29 +79,25 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
 
 function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="space-y-4 p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="text-xs font-black text-primary">مستأجر</p>
-            <h3 className="mt-1 text-xl font-black">{tenant.person.full_name}</h3>
-          </div>
-          <div className="rounded-full border bg-card px-3 py-1 text-xs font-black text-muted-foreground">
-            عقود نشطة: <span className="text-foreground">{tenant.activeContractCount}</span>
-          </div>
-        </div>
-        <div className="grid gap-3 md:grid-cols-3">
+    <MobileCard
+      title={tenant.person.full_name}
+      subtitle={`عقود نشطة: ${tenant.activeContractCount}`}
+      badge={<span className="shrink-0 rounded-full border bg-card px-2.5 py-1 text-[11px] font-black text-muted-foreground">مستأجر</span>}
+      meta={(
+        <div className="grid gap-2 sm:grid-cols-3">
           <InfoPill icon={Phone} label="الهاتف" value={tenant.person.phone} dir="ltr" />
           <InfoPill icon={Mail} label="الإيميل" value={tenant.person.email} dir="ltr" />
           <InfoPill icon={ShieldCheck} label="رقم الهوية" value={tenant.person.national_id} />
         </div>
-        <TenantLocation tenant={tenant} />
-        <div className="rounded-2xl border border-dashed p-3">
+      )}
+      stats={<TenantLocation tenant={tenant} />}
+      actions={(
+        <div className="w-full rounded-2xl border border-dashed p-3">
           <p className="mb-2 text-xs font-bold text-muted-foreground">روابط آمنة</p>
           <TenantSafeLinks tenant={tenant} />
         </div>
-      </CardContent>
-    </Card>
+      )}
+    />
   );
 }
 
@@ -135,17 +131,12 @@ export function TenantsPage() {
         count={tenantsQuery.data?.count ?? 0}
       />
 
-      <Card>
-        <CardContent className="pt-6">
-          <ListFilterBar
-            search={{
-              value: search,
-              onChange: (value: string) => { setSearch(value); setPage(1); },
-              placeholder: "بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
-            }}
-          />
-        </CardContent>
-      </Card>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={(value) => { setSearch(value); setPage(1); }}
+        searchPlaceholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
+        searchAriaLabel="بحث في المستأجرين"
+      />
 
       <TenantWorkspaceContent isError={tenantsQuery.isError} isLoading={tenantsQuery.isLoading} onRetry={() => tenantsQuery.refetch()} rows={rows} />
 

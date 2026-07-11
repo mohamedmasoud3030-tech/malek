@@ -2,7 +2,8 @@ import { AlertTriangle, FileSpreadsheet, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { EntityTable } from '@/components/ui/entity-table';
+import { DataTable } from '@/components/ui/data-table';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { useAgedReceivablesReport } from '@/features/financials/reports/useFinancialReports';
@@ -29,23 +30,19 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
         {/* Mobile cards */}
         <div className="grid gap-3 p-4 md:hidden">
           {rows.slice(0, 20).map((row) => (
-            <div key={row.invoiceId} className="rounded-2xl border bg-background p-4 space-y-2 text-sm">
-              <div className="flex items-center justify-between gap-2">
-                <SafeAnchor href="/invoices" label={row.shortInvoiceId} />
-                <span className="text-xs font-bold text-destructive">{row.daysOverdue.toLocaleString('ar')} يوم</span>
-              </div>
-              <p className="font-medium">{row.tenantName ?? '—'}</p>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">{formatDate(row.dueDate)}</span>
-                <span className="font-black text-destructive" dir="ltr">{formatMoney(row.remainingAmount)}</span>
-              </div>
-            </div>
+            <MobileCard
+              key={row.invoiceId}
+              title={row.tenantName ?? '—'}
+              subtitle={formatDate(row.dueDate)}
+              badge={<span className="shrink-0 text-xs font-bold text-destructive">{row.daysOverdue.toLocaleString('ar')} يوم</span>}
+              stats={<div className="flex items-center justify-between gap-2"><SafeAnchor href="/invoices" label={row.shortInvoiceId} /><span className="font-black text-destructive" dir="ltr">{formatMoney(row.remainingAmount)}</span></div>}
+            />
           ))}
           {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد فواتير متأخرة حسب تاريخ as-of.</p> : null}
         </div>
         {/* Desktop table */}
         <div className="hidden md:block px-4 pb-4">
-          <EntityTable
+          <DataTable
             aria-label="جدول الفواتير المتأخرة"
             rows={rows}
             columns={[

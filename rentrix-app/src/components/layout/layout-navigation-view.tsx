@@ -214,7 +214,7 @@ export function CollapsedWorkspaceMenu({
 export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_30px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:hidden">
-      <div className="grid h-16 grid-cols-5">
+      <div className="grid h-16 min-w-0 grid-cols-5 gap-0.5 px-1">
         {mobileNavItems.map((item) => {
           const [to, labelKey, Icon] = item;
           const permission = (item as MobileNavItem)[3];
@@ -226,10 +226,10 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
               to={to}
               activeOptions={{ exact: to === '/' }}
               aria-label={sharedLabel(labelKey)}
-              className="mx-1 my-1 flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl text-muted-foreground transition-colors [&.active]:bg-primary/10 [&.active]:text-primary"
+              className="mx-0.5 my-1 flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl px-1 text-muted-foreground transition-colors [&.active]:bg-primary/10 [&.active]:text-primary"
             >
-              <Icon className="size-5" />
-              <span className="text-[10px] font-bold leading-none">{sharedLabel(labelKey)}</span>
+              <Icon className="size-5 shrink-0" aria-hidden="true" />
+              <span className="max-w-full truncate text-[10px] font-bold leading-none">{sharedLabel(labelKey)}</span>
             </Link>
           );
         })}

@@ -16,6 +16,7 @@ import { buildContractActions } from '@/components/ui/entity-action-presets';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsContract } from '@/lib/companySettings';
+import { openWhatsApp, printCurrentView, shareOrCopy } from '@/services/action-service';
 import { exportContractToPdf } from '@/services/pdfService';
 import type { Person, Property, Unit } from '@/types/domain';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
@@ -102,39 +103,28 @@ export function ContractDetailPage() {
     });
   };
 
-  const printContract = () => {
-    window.print();
-  };
+  const printContract = () => printCurrentView();
 
   const shareContract = async () => {
-    const shareUrl = window.location.href;
     const title = `عقد #${contract.id.slice(0, 8)}`;
     try {
-      if (navigator.share) {
-        await navigator.share({ title, url: shareUrl });
-        return;
-      }
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success('تم نسخ رابط العقد');
+      const result = await shareOrCopy({ title, url: window.location.href });
+      if (result === 'copied') toast.success('تم نسخ رابط العقد');
+      if (result === 'unavailable') toast.error('تعذر مشاركة رابط العقد من هذا المتصفح');
     } catch {
       toast.error('تعذر مشاركة رابط العقد');
     }
   };
 
-  const openWhatsApp = () => {
-    const phone = contract.people?.phone?.replace(/[^\d+]/g, '') ?? '';
-    const digits = phone.startsWith('+') ? phone.slice(1) : phone;
+  const openContractWhatsApp = () => {
     const message = `مرحباً${contract.people?.full_name ? ` ${contract.people.full_name}` : ''}، بخصوص عقد #${contract.id.slice(0, 8)} على ${contract.properties?.title ?? 'العقار'} / ${contract.units?.unit_number ?? 'الوحدة'}.`;
-    const url = digits
-      ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
-      : `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    openWhatsApp(contract.people?.phone, message);
   };
 
   const contractMenuActions = buildContractActions({
     onPrint: printContract,
     onPdf: exportContractPdf,
-    onWhatsApp: openWhatsApp,
+    onWhatsApp: openContractWhatsApp,
     onShare: () => {
       void shareContract();
     },
@@ -178,7 +168,7 @@ export function ContractDetailPage() {
             )}
             <Button variant="secondary" className="hidden md:inline-flex" onClick={printContract}><Printer className="me-2 size-4" />طباعة</Button>
             <Button variant="secondary" className="hidden md:inline-flex" onClick={exportContractPdf}>تصدير PDF</Button>
-            <Button variant="secondary" className="hidden lg:inline-flex" onClick={openWhatsApp}><MessageCircle className="me-2 size-4" />واتساب</Button>
+            <Button variant="secondary" className="hidden lg:inline-flex" onClick={openContractWhatsApp}><MessageCircle className="me-2 size-4" />واتساب</Button>
             <Button variant="secondary" className="hidden lg:inline-flex" onClick={() => { void shareContract(); }}><Share2 className="me-2 size-4" />مشاركة</Button>
             <ActionMenu items={contractMenuActions} label="إجراءات العقد" />
             <Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button>

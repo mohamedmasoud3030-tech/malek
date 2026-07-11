@@ -10,8 +10,9 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { EntityTable } from '@/components/ui/entity-table';
-import { EntityCard } from '@/components/ui/entity-card';
+import { DataTable } from '@/components/ui/data-table';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { useProperties } from '@/features/properties/use-properties';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
@@ -92,40 +93,38 @@ export function UnitsPage() {
         <KpiCard label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, expectedRent)} sub="من قيم الإيجار المسجلة" icon={Building2} accent="amber" />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>البحث والتصفية</CardTitle>
-          <CardDescription>صفّ الوحدات حسب العقار، الحالة، أو الإشغال دون تغيير البيانات.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <label className="space-y-1 text-sm font-bold xl:col-span-2">
-            <span>بحث</span>
-            <SearchInput value={search} onChange={setSearch} placeholder="رقم الوحدة، الدور، العقار" />
-          </label>
-          <label className="space-y-1 text-sm font-bold">
-            <span>العقار</span>
-            <Select value={propertyId} onChange={(event) => setPropertyId(event.target.value)}>
-              <option value="all">كل العقارات</option>
-              {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
-            </Select>
-          </label>
-          <label className="space-y-1 text-sm font-bold">
-            <span>الحالة</span>
-            <Select value={status} onChange={(event) => setStatus(event.target.value as 'all' | UnitStatus)}>
-              <option value="all">كل الحالات</option>
-              {unitStatusValues.map((value) => <option key={value} value={value}>{unitStatusLabels[value]}</option>)}
-            </Select>
-          </label>
-          <label className="space-y-1 text-sm font-bold">
-            <span>الإشغال</span>
-            <Select value={occupancy} onChange={(event) => setOccupancy(event.target.value as OccupancyFilter)}>
-              <option value="all">كل الوحدات</option>
-              <option value="occupied">مشغولة فقط</option>
-              <option value="open">غير مشغولة</option>
-            </Select>
-          </label>
-        </CardContent>
-      </Card>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="رقم الوحدة، الدور، العقار"
+        searchAriaLabel="بحث في الوحدات"
+        filters={(
+          <>
+            <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-36">
+              <span className="sr-only">العقار</span>
+              <Select aria-label="العقار" value={propertyId} onChange={(event) => setPropertyId(event.target.value)}>
+                <option value="all">كل العقارات</option>
+                {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
+              </Select>
+            </label>
+            <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-32">
+              <span className="sr-only">الحالة</span>
+              <Select aria-label="الحالة" value={status} onChange={(event) => setStatus(event.target.value as 'all' | UnitStatus)}>
+                <option value="all">كل الحالات</option>
+                {unitStatusValues.map((value) => <option key={value} value={value}>{unitStatusLabels[value]}</option>)}
+              </Select>
+            </label>
+            <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-32">
+              <span className="sr-only">الإشغال</span>
+              <Select aria-label="الإشغال" value={occupancy} onChange={(event) => setOccupancy(event.target.value as OccupancyFilter)}>
+                <option value="all">كل الوحدات</option>
+                <option value="occupied">مشغولة فقط</option>
+                <option value="open">غير مشغولة</option>
+              </Select>
+            </label>
+          </>
+        )}
+      />
 
       <Card>
         <CardHeader>
@@ -133,7 +132,7 @@ export function UnitsPage() {
           <CardDescription>{formatCompanyNumber(defaultCompanyLocalSettings, filteredUnits.length)} وحدة ضمن الفلاتر الحالية.</CardDescription>
         </CardHeader>
         <CardContent>
-          <EntityTable
+          <DataTable
             aria-label="جدول الوحدات"
             rows={filteredUnits}
             columns={[
@@ -177,30 +176,28 @@ export function UnitsPage() {
               const property = propertyById.get(unit.property_id);
               const unitStatus = getUnitPageStatus(unit);
               return (
-                <div className="space-y-1">
-                  <EntityCard
-                    id={unit.id}
-                    name={`وحدة ${unit.unit_number}`}
-                    subtitle={unit.floor ? `الدور: ${unit.floor}` : undefined}
-                    avatarIcon={DoorOpen}
-                    badge={<StatusBadge tone={unitStatusTone[unitStatus]} className="shrink-0">{unitStatusLabels[unitStatus]}</StatusBadge>}
-                    onClick={() => navigate({
-                      to: '/properties/$propertyId/units/$unitId',
-                      params: { propertyId: unit.property_id, unitId: unit.id },
-                    })}
-                    stats={(
-                      <div className="flex items-center justify-between gap-3">
-                        {unit.notes ? <p className="flex-1 text-xs leading-relaxed text-muted-foreground">{unit.notes}</p> : <span />}
-                        {unit.rent_amount != null ? <p className="whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCompanyMoney(defaultCompanyLocalSettings, unit.rent_amount)}</p> : null}
-                      </div>
-                    )}
-                  />
-                  {property && (
-                    <div className="px-2 pb-2 flex justify-between items-center text-xs text-muted-foreground border-b border-border/20">
-                      <span>العقار: <Link className="font-bold text-primary hover:underline" to="/properties/$propertyId" params={{ propertyId: property.id }} onClick={(e) => e.stopPropagation()}>{property.title}</Link></span>
+                <MobileCard
+                  title={`وحدة ${unit.unit_number}`}
+                  subtitle={property ? `${property.title}${unit.floor ? ` · الدور ${unit.floor}` : ''}` : (unit.floor ? `الدور: ${unit.floor}` : 'العقار غير محدد')}
+                  badge={<StatusBadge tone={unitStatusTone[unitStatus]} className="shrink-0">{unitStatusLabels[unitStatus]}</StatusBadge>}
+                  stats={(
+                    <div className="flex items-center justify-between gap-3">
+                      {unit.notes ? <p className="min-w-0 flex-1 truncate text-xs leading-relaxed text-muted-foreground">{unit.notes}</p> : <span className="text-xs text-muted-foreground">بدون ملاحظات</span>}
+                      {unit.rent_amount != null ? <p className="shrink-0 whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCompanyMoney(defaultCompanyLocalSettings, unit.rent_amount)}</p> : null}
                     </div>
                   )}
-                </div>
+                  onClick={() => navigate({
+                    to: '/properties/$propertyId/units/$unitId',
+                    params: { propertyId: unit.property_id, unitId: unit.id },
+                  })}
+                  actions={property ? (
+                    <Button variant="secondary" className="min-h-11 w-full" asChild>
+                      <Link to="/properties/$propertyId/units/$unitId" params={{ propertyId: property.id, unitId: unit.id }}>
+                        فتح التفاصيل
+                      </Link>
+                    </Button>
+                  ) : undefined}
+                />
               );
             }}
             keyOf={(unit) => unit.id}

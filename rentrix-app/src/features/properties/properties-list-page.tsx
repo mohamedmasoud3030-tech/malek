@@ -1,21 +1,20 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Building2, DoorOpen, Edit, Plus, Trash2 } from 'lucide-react';
+import { Building2, Edit, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PropertyFormModal } from './property-form-modal';
 import { AsyncContentState } from '@/components/async-content-state';
 import { ListPage } from '@/components/layout/list-page';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Select } from '@/components/ui/select';
 import { SearchInput } from '@/components/ui/search-input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
-import { EntityTable } from '@/components/ui/entity-table';
-import { EntityCard } from '@/components/ui/entity-card';
-import { cn } from '@/lib/utils';
-import { formatPropertyUnitSummary } from './property-card-utils';
+import { DataTable } from '@/components/ui/data-table';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { ActionMenu } from '@/components/ui/action-menu';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
@@ -70,27 +69,26 @@ export function PropertiesListPage() {
           </Button>
         }
         filters={
-          <Card className="rounded-2xl">
-            <CardContent className="space-y-3 pt-4 pb-4">
-              <div className="grid gap-2 md:grid-cols-[1fr_9rem]">
-                <SearchInput
-                  value={search}
-                  onChange={(value) => { setSearch(value); setPage(1); }}
-                  placeholder="بحث بالاسم أو العنوان..."
-                />
+          <div className="space-y-2">
+            <FilterBar
+              searchValue={search}
+              onSearchChange={(value) => { setSearch(value); setPage(1); }}
+              searchPlaceholder="بحث بالاسم أو العنوان..."
+              searchAriaLabel="بحث في العقارات"
+              filters={(
                 <Select
                   aria-label="الحالة"
                   value={status}
                   onChange={(e) => { setStatus(e.target.value as PropertyStatusFilter); setPage(1); }}
-                  className="w-36 rounded-xl"
+                  className="w-full sm:w-36 rounded-xl"
                 >
                   <option value="all">كل الحالات</option>
                   {propertyStatusValues.map((s) => <option key={s} value={s}>{propertyStatusLabels[s]}</option>)}
                 </Select>
-              </div>
-              <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} className="md:col-span-2" />
-            </CardContent>
-          </Card>
+              )}
+            />
+            <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
+          </div>
         }
       >
         <AsyncContentState
@@ -113,7 +111,7 @@ export function PropertiesListPage() {
         >
 
         {/* Pure responsive table utilizing EntityTable's built-in renderMobileCard */}
-        <EntityTable
+        <DataTable
           aria-label="جدول العقارات"
           rows={properties}
           keyOf={(p) => p.id}
@@ -127,37 +125,26 @@ export function PropertiesListPage() {
             )},
             { key: 'address', header: 'العنوان', render: (p) => <span className="text-muted-foreground text-sm">{p.address ?? '—'}</span> },
             { key: 'actions', header: 'إجراءات', render: (p) => (
-              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                <Button variant="secondary" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
-                  <Edit className="size-3" />تعديل
-                </Button>
-                <Button variant="danger" className="min-h-11 rounded-xl px-3 text-xs gap-1" onClick={() => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' })}>
-                  <Trash2 className="size-3" />أرشفة
-                </Button>
+              <div className="flex" onClick={(e) => e.stopPropagation()}>
+                <ActionMenu
+                  label="إجراءات العقار"
+                  items={[
+                    { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => { setEditPropertyId(p.id); setModalOpen(true); } },
+                    { id: 'archive', label: 'أرشفة', icon: Trash2, variant: 'destructive', onClick: () => setArchiveTarget({ id: p.id, title: p.title ?? 'عقار' }) },
+                  ]}
+                />
               </div>
             )},
           ]}
-          renderMobileCard={(p) => {
-            const unitSummary = formatPropertyUnitSummary(undefined, undefined);
-            return (
-              <div className="space-y-2">
-                <EntityCard
-                  id={p.id}
-                  name={p.title ?? 'عقار'}
-                  subtitle={p.address}
-                  avatarIcon={Building2}
-                  badge={<StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'} dot>{propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}</StatusBadge>}
-                  onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
-                  stats={(
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <DoorOpen className="size-3.5" />
-                        <span className={cn('font-semibold', unitSummary.hasCount ? 'text-foreground' : 'text-muted-foreground')}>{unitSummary.text}</span>
-                      </div>
-                    </div>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-2">
+          renderMobileCard={(p) => (
+            <MobileCard
+              title={p.title ?? 'عقار'}
+              subtitle={p.address ?? 'العنوان غير محدد'}
+              badge={<StatusBadge tone={propertyStatusTone[p.status as keyof typeof propertyStatusTone] ?? 'gray'} dot>{propertyStatusLabels[p.status as keyof typeof propertyStatusLabels] ?? p.status}</StatusBadge>}
+              stats={<span className="text-xs text-muted-foreground">اضغط لفتح تفاصيل العقار</span>}
+              onClick={() => navigate({ to: '/properties/$propertyId', params: { propertyId: p.id } })}
+              actions={(
+                <div className="grid w-full grid-cols-2 gap-2">
                   <Button variant="secondary" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => { setEditPropertyId(p.id); setModalOpen(true); }}>
                     <Edit className="size-3.5" />تعديل
                   </Button>
@@ -165,9 +152,9 @@ export function PropertiesListPage() {
                     <Trash2 className="size-3.5" />أرشفة
                   </Button>
                 </div>
-              </div>
-            );
-          }}
+              )}
+            />
+          )}
         />
 
         </AsyncContentState>

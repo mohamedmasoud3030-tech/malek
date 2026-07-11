@@ -14,7 +14,10 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { EntityTable } from '@/components/ui/entity-table';
+import { DataTable } from '@/components/ui/data-table';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { ActionMenu } from '@/components/ui/action-menu';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { Textarea } from '@/components/ui/textarea';
 import { useProperties } from '@/features/properties/use-properties';
 import { useAllUnits, useUnits } from '@/features/units/use-units';
@@ -209,38 +212,30 @@ export function MaintenancePage() {
       </div>
 
       {/* Filters */}
-      <div className="grid gap-3 sm:grid-cols-3">
-          <Select
-            aria-label="تصفية حسب الحالة"
-            value={String(statusFilter)}
-            onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}
-          >
-            <option value="all">كل الحالات</option>
-            <option value="open">مفتوح</option>
-            <option value="in_progress">قيد التنفيذ</option>
-            <option value="resolved">تم الحل</option>
-            <option value="closed">مغلق</option>
-          </Select>
-          <Select
-            aria-label="تصفية حسب الأولوية"
-            value={String(priorityFilter)}
-            onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}
-          >
-            <option value="all">كل الأولويات</option>
-            <option value="low">منخفضة</option>
-            <option value="medium">متوسطة</option>
-            <option value="high">عالية</option>
-            <option value="urgent">عاجلة</option>
-          </Select>
-          <Select
-            aria-label="تصفية حسب العقار"
-            value={propertyFilterId}
-            onChange={(e) => setPropertyFilterId(e.target.value)}
-          >
-            <option value="">كل العقارات</option>
-            {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-          </Select>
-      </div>
+      <FilterBar
+        filters={(
+          <>
+            <Select aria-label="تصفية حسب الحالة" value={String(statusFilter)} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
+              <option value="all">كل الحالات</option>
+              <option value="open">مفتوح</option>
+              <option value="in_progress">قيد التنفيذ</option>
+              <option value="resolved">تم الحل</option>
+              <option value="closed">مغلق</option>
+            </Select>
+            <Select aria-label="تصفية حسب الأولوية" value={String(priorityFilter)} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
+              <option value="all">كل الأولويات</option>
+              <option value="low">منخفضة</option>
+              <option value="medium">متوسطة</option>
+              <option value="high">عالية</option>
+              <option value="urgent">عاجلة</option>
+            </Select>
+            <Select aria-label="تصفية حسب العقار" value={propertyFilterId} onChange={(e) => setPropertyFilterId(e.target.value)}>
+              <option value="">كل العقارات</option>
+              {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </Select>
+          </>
+        )}
+      />
 
       {/* Create form */}
       {showForm && (
@@ -252,7 +247,7 @@ export function MaintenancePage() {
           <CardContent>
             <form className="grid gap-3 sm:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="space-y-1">
-                <Select {...form.register('property_id')}>
+                <Select aria-label="العقار" {...form.register('property_id')}>
                   <option value="">اختر العقار</option>
                   {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
                 </Select>
@@ -261,20 +256,20 @@ export function MaintenancePage() {
                 )}
               </div>
 
-              <Select {...form.register('unit_id')}>
+              <Select aria-label="الوحدة" {...form.register('unit_id')}>
                 <option value="">بدون وحدة</option>
                 {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_number}</option>)}
               </Select>
 
               <div className="space-y-1 sm:col-span-2">
-                <Input placeholder="عنوان الطلب" {...form.register('title')} />
+                <Input aria-label="عنوان الطلب" placeholder="عنوان الطلب" {...form.register('title')} />
                 {form.formState.errors.title && (
                   <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
                 )}
               </div>
 
               <div className="sm:col-span-2">
-                <Textarea placeholder="الوصف (اختياري)" className="min-h-20" {...form.register('description')} />
+                <Textarea aria-label="وصف الطلب" placeholder="الوصف (اختياري)" className="min-h-20" {...form.register('description')} />
               </div>
 
               <div className="sm:col-span-2">
@@ -287,7 +282,7 @@ export function MaintenancePage() {
                 />
               </div>
 
-              <Select {...form.register('priority')}>
+              <Select aria-label="الأولوية" {...form.register('priority')}>
                 <option value="low">منخفضة</option>
                 <option value="medium">متوسطة</option>
                 <option value="high">عالية</option>
@@ -317,50 +312,28 @@ export function MaintenancePage() {
             {filteredMaintenanceRows.map((row) => {
               const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
               return (
-                <Card key={row.id} className="rounded-2xl">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold leading-tight">{row.title}</p>
-                      <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
-                        {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}
-                      </StatusBadge>
+                <MobileCard
+                  title={row.title}
+                  subtitle={buildMaintenanceLocationLabel(row, properties, allUnits)}
+                  badge={<StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>{maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}</StatusBadge>}
+                  meta={<StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>{maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}</StatusBadge>}
+                  actions={actions.length > 0 ? (
+                    <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+                      {actions.map((action) => (
+                        <Button key={`${row.id}-${action.status}`} type="button" variant="secondary" className="min-h-11 px-3 text-xs" disabled={updateStatusMutation.isPending || resolveMutation.isPending} onClick={() => handleStatusAction(row, action.status)}>
+                          {action.label}
+                        </Button>
+                      ))}
                     </div>
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-muted-foreground">{buildMaintenanceLocationLabel(row, properties, allUnits)}</span>
-                      <StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>
-                        {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}
-                      </StatusBadge>
-                    </div>
-                    {actions.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {actions.map((action) => (
-                          <Button
-                            key={`${row.id}-${action.status}`}
-                            type="button"
-                            variant="secondary"
-                            className="min-h-8 px-3 text-xs"
-                            disabled={updateStatusMutation.isPending || resolveMutation.isPending}
-                            onClick={() => handleStatusAction(row, action.status)}
-                          >
-                            {action.label}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                    {!actions.length && (
-                      <span className="flex items-center gap-1 text-muted-foreground text-xs">
-                        <CheckCircle2 className="size-3.5" />مكتمل
-                      </span>
-                    )}
-                  </CardContent>
-                </Card>
+                  ) : <span className="flex items-center gap-1 text-muted-foreground text-xs"><CheckCircle2 className="size-3.5" />مكتمل</span>}
+                />
               );
             })}
           </div>
 
           {/* Desktop table */}
           <div className="hidden md:block">
-            <EntityTable
+            <DataTable
               aria-label="جدول طلبات الصيانة"
               rows={filteredMaintenanceRows}
               columns={[
@@ -381,14 +354,16 @@ export function MaintenancePage() {
                   return !actions.length ? (
                     <span className="flex items-center gap-1 text-muted-foreground text-xs"><CheckCircle2 className="size-3.5" />مكتمل</span>
                   ) : (
-                    <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                      {actions.map((action) => (
-                        <Button key={`${row.id}-${action.status}`} type="button" variant="secondary" className="min-h-8 px-3 text-xs"
-                          disabled={updateStatusMutation.isPending || resolveMutation.isPending}
-                          onClick={() => handleStatusAction(row, action.status)}>
-                          {action.label}
-                        </Button>
-                      ))}
+                    <div className="flex" onClick={(e) => e.stopPropagation()}>
+                      <ActionMenu
+                        label="تحديث الطلب"
+                        items={actions.map((action) => ({
+                          id: String(action.status),
+                          label: action.label,
+                          onClick: () => handleStatusAction(row, action.status),
+                          disabled: updateStatusMutation.isPending || resolveMutation.isPending,
+                        }))}
+                      />
                     </div>
                   );
                 }},

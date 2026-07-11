@@ -9,12 +9,14 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { EntityCard, entityCardContactMeta } from '@/components/ui/entity-card';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { ActionMenu } from '@/components/ui/action-menu';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { EntityForm } from '@/components/ui/entity-form';
 import { SearchInput } from '@/components/ui/search-input';
 import { AsyncContentState } from '@/components/async-content-state';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { EntityTable } from '@/components/ui/entity-table';
+import { DataTable } from '@/components/ui/data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
@@ -175,13 +177,14 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
 
   return (
     <div className="space-y-4">
-      <SearchInput
-        value={search}
-        onChange={onSearchChange}
-        placeholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار"
+      <FilterBar
+        searchValue={search}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="بحث باسم المالك أو الهاتف أو الإيميل أو العقار"
+        searchAriaLabel="بحث في الملاك"
       />
       {rows.length > 0 ? (
-        <EntityTable
+        <DataTable
           aria-label="جدول الملاك"
           rows={rows}
           onRowClick={(row) => onSelectOwner(row.owner.id)}
@@ -200,9 +203,14 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
             { key: 'ownership', header: 'نسبة الملكية/الدور', render: (row) => <OwnershipSummary row={row} /> },
             { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? formatCompanyNumber(defaultCompanyLocalSettings, row.activeContractCount) : '—' },
             { key: 'actions', header: 'روابط آمنة', render: (row) => (
-              <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                <Button type="button" variant="secondary" className="min-h-9 px-3 text-xs gap-1" onClick={() => onSelectOwner(row.owner.id)}><Eye className="size-4" />العلاقات</Button>
-                <Button type="button" variant="secondary" className="min-h-9 px-3 text-xs gap-1" onClick={() => onEditOwner(row.owner)}><Pencil className="size-4" />تعديل</Button>
+              <div className="flex" onClick={(e) => e.stopPropagation()}>
+                <ActionMenu
+                  label="إجراءات المالك"
+                  items={[
+                    { id: 'relationships', label: 'العلاقات', icon: Eye, onClick: () => onSelectOwner(row.owner.id) },
+                    { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
+                  ]}
+                />
               </div>
             )},
           ]}
@@ -210,34 +218,28 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
           emptyTitle="لا يوجد ملاك"
           emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
           renderMobileCard={(row) => (
-            <EntityCard
-              id={row.owner.id}
-              name={getOwnerDisplayLabel(row.owner)}
-              subtitle={row.owner.display_name ? row.owner.full_name : null}
-              supportingText={<span dir="ltr">معرّف السجل: #{row.owner.id.slice(0, 8)}</span>}
-              type="owner"
-              avatarIcon={Users}
-              meta={[
-                ...(row.owner.phone ? [entityCardContactMeta.phone(row.owner.phone)] : []),
-                ...(row.owner.email ? [entityCardContactMeta.email(row.owner.email)] : []),
-              ]}
-              stats={(
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="size-3.5" />
-                    <span>{formatCompanyNumber(defaultCompanyLocalSettings, row.propertyCount)} عقار</span>
-                  </div>
-                  {row.activeContractCount > 0 ? (
-                    <div className="flex items-center gap-1.5 font-bold text-primary">
-                      <span>{formatCompanyNumber(defaultCompanyLocalSettings, row.activeContractCount)} عقد نشط</span>
-                    </div>
-                  ) : null}
+            <MobileCard
+              title={getOwnerDisplayLabel(row.owner)}
+              subtitle={row.owner.display_name ? row.owner.full_name : 'مالك'}
+              badge={<span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">مالك</span>}
+              meta={(
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  {row.owner.phone ? <p dir="ltr">{row.owner.phone}</p> : null}
+                  {row.owner.email ? <p dir="ltr" className="truncate">{row.owner.email}</p> : null}
                 </div>
               )}
-              actions={[
-                { label: 'العلاقات', icon: Eye, onClick: () => onSelectOwner(row.owner.id) },
-                { label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
-              ]}
+              stats={(
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span><Building2 className="me-1 inline size-3.5" />{formatCompanyNumber(defaultCompanyLocalSettings, row.propertyCount)} عقار</span>
+                  <span className="font-bold text-primary">{formatCompanyNumber(defaultCompanyLocalSettings, row.activeContractCount)} عقد نشط</span>
+                </div>
+              )}
+              actions={(
+                <div className="grid w-full grid-cols-2 gap-2">
+                  <Button type="button" variant="secondary" className="min-h-11 text-xs" onClick={() => onSelectOwner(row.owner.id)}><Eye className="me-1 size-4" />العلاقات</Button>
+                  <Button type="button" variant="secondary" className="min-h-11 text-xs" onClick={() => onEditOwner(row.owner)}><Pencil className="me-1 size-4" />تعديل</Button>
+                </div>
+              )}
               onClick={() => onSelectOwner(row.owner.id)}
             />
           )}

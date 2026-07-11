@@ -1,13 +1,22 @@
-import { useState, useRef, useEffect } from 'react';
+import { createElement, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dropdown } from '@/components/ui/dropdown';
 import { cn } from '@/lib/utils';
 
+export interface ActionMenuItem {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  disabled?: boolean;
+  destructive?: boolean;
+  onSelect: () => void;
+}
+
 export interface ActionItem {
   id: string;
   label: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
   variant?: 'default' | 'destructive';
   disabled?: boolean;
   shortcut?: string;
@@ -15,32 +24,45 @@ export interface ActionItem {
   onClick: () => void;
 }
 
+type ActionMenuEntry = ActionMenuItem | ActionItem;
+
 export interface ActionMenuProps {
-  items: ActionItem[];
+  items: ActionMenuEntry[];
   label?: string;
   align?: 'start' | 'center' | 'end';
   className?: string;
 }
 
-export function ActionMenu({ items, label = 'الإجراءات', align = 'end', className }: ActionMenuProps) {
+function isActionMenuItem(item: ActionMenuEntry): item is ActionMenuItem {
+  return 'onSelect' in item;
+}
+
+function getIcon(item: ActionMenuEntry): ReactNode {
+  if (!item.icon) return null;
+  return typeof item.icon === 'function' ? createElement(item.icon, { className: 'size-4' }) : item.icon;
+}
+
+function selectItem(item: ActionMenuEntry): void {
+  if (isActionMenuItem(item)) item.onSelect();
+  else item.onClick();
+}
+
+export function ActionMenu({ items, label = 'الإجراءات', className }: ActionMenuProps) {
   const visibleItems = items.filter((item) => !item.disabled);
-  
-  if (visibleItems.length === 0) {
-    return null;
-  }
+  if (visibleItems.length === 0) return null;
 
   if (visibleItems.length === 1) {
     const item = visibleItems[0];
-    const Icon = item.icon;
     return (
       <Button
         variant="ghost"
         size="sm"
-        onClick={item.onClick}
+        onClick={() => selectItem(item)}
         className={cn('h-9 min-w-9 px-2', className)}
         aria-label={item.label}
+        title={item.label}
       >
-        {Icon && <Icon className="size-4" />}
+        {getIcon(item) ?? <MoreVertical className="size-4" aria-hidden="true" />}
       </Button>
     );
   }
@@ -48,20 +70,18 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
   const options = visibleItems.map((item) => ({
     id: item.id,
     label: item.label,
-    icon: item.icon,
+    icon: getIcon(item),
     disabled: item.disabled,
   }));
 
-  const handleChange = (id: string) => {
-    const item = visibleItems.find((item) => item.id === id);
-    item?.onClick();
-  };
-
   return (
-    <div className={cn('w-32', className)}>
+    <div className={cn('w-32 min-w-0', className)}>
       <Dropdown
         options={options}
-        onChange={handleChange}
+        onChange={(id) => {
+          const item = visibleItems.find((candidate) => candidate.id === id);
+          if (item) selectItem(item);
+        }}
         placeholder={label}
         label=""
       />
@@ -69,14 +89,10 @@ export function ActionMenu({ items, label = 'الإجراءات', align = 'end',
   );
 }
 
-// ============================================================
-// Quick Action Bar for Entity Pages
-// ============================================================
-
 export interface QuickAction {
   id: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   variant?: 'primary' | 'secondary' | 'destructive' | 'ghost';
   onClick: () => void;
   disabled?: boolean;
@@ -90,11 +106,7 @@ export interface QuickActionBarProps {
 }
 
 export function QuickActionBar({ actions, className }: QuickActionBarProps) {
-  const visibleActions = actions.filter((a) => !a.disabled && !a.loading);
-
-  if (visibleActions.length === 0) {
-    return null;
-  }
+  if (actions.every((action) => action.disabled)) return null;
 
   return (
     <div className={cn('flex flex-wrap gap-2', className)}>
@@ -112,7 +124,7 @@ export function QuickActionBar({ actions, className }: QuickActionBarProps) {
             {action.loading ? (
               <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
-              Icon && <Icon className="size-4" />
+              <Icon className="size-4" aria-hidden="true" />
             )}
             {action.label}
           </Button>
@@ -122,21 +134,14 @@ export function QuickActionBar({ actions, className }: QuickActionBarProps) {
   );
 }
 
-// ============================================================
-// Mobile-Friendly Action Grid
-// ============================================================
-
 export interface MobileActionGridProps {
   actions: QuickAction[];
   className?: string;
 }
 
 export function MobileActionGrid({ actions, className }: MobileActionGridProps) {
-  const visibleActions = actions.filter((a) => !a.disabled);
-
-  if (visibleActions.length === 0) {
-    return null;
-  }
+  const visibleActions = actions.filter((action) => !action.disabled);
+  if (visibleActions.length === 0) return null;
 
   return (
     <div className={cn('grid grid-cols-2 gap-2 sm:grid-cols-4', className)}>
@@ -150,7 +155,7 @@ export function MobileActionGrid({ actions, className }: MobileActionGridProps) 
             disabled={action.disabled}
             className="min-h-14 flex-col gap-1.5 py-3"
           >
-            {Icon && <Icon className="size-5" />}
+            <Icon className="size-5" aria-hidden="true" />
             <span className="text-xs font-bold">{action.label}</span>
           </Button>
         );

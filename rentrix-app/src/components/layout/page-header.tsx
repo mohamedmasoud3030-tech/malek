@@ -51,9 +51,9 @@ export function PageHeader({
         </div>
 
         {hasActions ? (
-          <div className="flex w-full min-w-0 flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex w-full min-w-0 flex-col-reverse gap-2 overflow-hidden sm:w-auto sm:flex-row sm:items-center sm:justify-end">
             {secondaryActions ? (
-              <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 sm:overflow-visible sm:pb-0" aria-label="إجراءات ثانوية">
+              <div className="flex min-w-0 flex-wrap gap-2 overflow-x-auto pb-1 sm:flex-nowrap sm:overflow-visible sm:pb-0" aria-label="إجراءات ثانوية">
                 {secondaryActions}
               </div>
             ) : null}

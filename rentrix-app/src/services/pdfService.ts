@@ -1,12 +1,12 @@
 import type { Contract, Expense, Invoice, Person, Property, Receipt, Unit } from '@/types/domain';
-import { DocumentController } from './documents/DocumentController';
+import { documentService } from './documents/DocumentService';
 
 type AppLikeDb = { settings: Record<string, unknown>; contracts: Contract[]; tenants: Person[]; units: Unit[]; properties: Property[]; receipts?: Receipt[] };
 
 type TrialBalanceInput = { lines: Array<{ no: string; name: string; debit: number; credit: number }>; totalDebit: number; totalCredit: number };
 type PdfRow = { label: string; amount: number };
 
-const render = (type: string, payload: unknown) => void DocumentController.renderToPDF({ type, payload });
+const render = (type: string, payload: unknown) => void documentService.renderPdf({ type, payload });
 
 export const exportInvoiceToPdf = (invoice: Invoice, db: AppLikeDb): void => render('invoice', { invoice, db });
 export const exportContractToPdf = (contract: Contract, db: AppLikeDb): void => render('contract', { contract, db });

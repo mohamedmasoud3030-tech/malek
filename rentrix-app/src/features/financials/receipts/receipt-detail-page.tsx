@@ -10,6 +10,7 @@ import { useReceipt } from './useReceipts';
 import { formatDate, formatMoney, getErrorMessage } from '../components/financials-formatters';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import { toast } from 'sonner';
+import { openWhatsApp, printCurrentView, shareOrCopy } from '@/services/action-service';
 
 export function ReceiptDetailPage() {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
@@ -23,43 +24,28 @@ export function ReceiptDetailPage() {
 
   const handlePrint = useCallback(() => {
     setIsPrinting(true);
-    window.print();
-    setTimeout(() => setIsPrinting(false), 1000);
+    printCurrentView();
+    window.setTimeout(() => setIsPrinting(false), 1000);
   }, []);
 
   const handleWhatsApp = useCallback(() => {
     if (!receipt) return;
-    
-    const phone = receipt.tenant_phone?.replace(/[^\d+]/g, '') ?? '';
-    const digits = phone.startsWith('+') ? phone.slice(1) : phone;
     const message = `إيصال استلام\nرقم: ${receipt.receipt_number}\nالتاريخ: ${formatDate(receipt.payment_date)}\nالمبلغ: ${formatMoney(receipt.amount)}\nطريقة الدفع: ${paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}`;
-    
-    const url = digits
-      ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
-      : `https://wa.me/?text=${encodeURIComponent(message)}`;
-    
-    window.open(url, '_blank', 'noopener,noreferrer');
+    openWhatsApp(null, message);
   }, [receipt]);
 
   const handleShare = useCallback(async () => {
     setIsSharing(true);
-    const shareUrl = window.location.href;
-    
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `إيصال ${receipt?.receipt_number ?? ''}`,
-          text: `إيصال استلام رقم ${receipt?.receipt_number}`,
-          url: shareUrl,
-        });
-      } else {
-        await navigator.clipboard.writeText(shareUrl);
-        toast.success('تم نسخ رابط الإيصال');
-      }
+      const result = await shareOrCopy({
+        title: `إيصال ${receipt?.receipt_number ?? ''}`,
+        text: `إيصال استلام رقم ${receipt?.receipt_number}`,
+        url: window.location.href,
+      });
+      if (result === 'copied') toast.success('تم نسخ رابط الإيصال');
+      if (result === 'unavailable') toast.error('تعذر مشاركة الإيصال من هذا المتصفح');
     } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        toast.error('تعذر مشاركة الإيصال');
-      }
+      if ((error as Error).name !== 'AbortError') toast.error('تعذر مشاركة الإيصال');
     } finally {
       setIsSharing(false);
     }
@@ -108,7 +94,7 @@ export function ReceiptDetailPage() {
     );
   }
 
-  const statusTone = receipt.status === 'posted' ? 'green' : receipt.status === 'voided' ? 'red' : 'gold';
+  const statusTone = receipt.status === 'posted' ? 'green' : receipt.status === 'void' ? 'red' : 'gold';
 
   return (
     <div className="space-y-4 p-4 print:space-y-0 print:p-0 md:p-6" dir="rtl">
@@ -170,15 +156,7 @@ export function ReceiptDetailPage() {
             <div className="rounded-2xl border bg-background p-4">
               <p className="text-xs font-bold text-muted-foreground">المستأجر</p>
               <p className="mt-1 text-lg font-black">{receipt.tenant_name ?? '—'}</p>
-              {receipt.tenant_phone && (
-                <a
-                  href={`tel:${receipt.tenant_phone}`}
-                  className="text-sm text-primary hover:underline"
-                  dir="ltr"
-                >
-                  {receipt.tenant_phone}
-                </a>
-              )}
+              <p className="text-xs text-muted-foreground">يمكن تجهيز مشاركة الإيصال عبر واتساب من شريط الإجراءات.</p>
             </div>
             <div className="rounded-2xl border bg-background p-4">
               <p className="text-xs font-bold text-muted-foreground">العقار / الوحدة</p>
@@ -234,12 +212,12 @@ export function ReceiptDetailPage() {
           )}
 
           {/* Context */}
-          {receipt.context && (
+          {receipt.reference_number ? (
             <div className="rounded-2xl border bg-muted/30 p-4">
               <p className="text-xs font-bold text-muted-foreground">السياق</p>
               <p className="mt-1">{formatReceiptContext(receipt)}</p>
             </div>
-          )}
+          ) : null}
 
           {/* Print Footer - Only visible on print */}
           <div className="hidden print:block mt-8 pt-8 border-t">
