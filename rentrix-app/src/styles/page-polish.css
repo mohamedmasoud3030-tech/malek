@@ -1,0 +1,206 @@
+/* Rentrix shared UX surface system.
+ *
+ * This file is intentionally loaded after globals.css. It normalises every
+ * AppShell route without introducing a second component library or changing
+ * feature behaviour.
+ */
+
+@layer components {
+  #main-content {
+    --ux-page-gap: 1rem;
+    --ux-radius: 1.35rem;
+    --ux-surface-shadow: 0 10px 30px hsl(var(--foreground) / 0.05);
+    position: relative;
+    isolation: isolate;
+  }
+
+  #main-content::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 8% 4%, hsl(var(--primary) / 0.075), transparent 25rem),
+      radial-gradient(circle at 92% 16%, hsl(var(--accent) / 0.05), transparent 23rem),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted) / 0.16));
+  }
+
+  #main-content > * {
+    width: 100%;
+    max-width: 96rem;
+    margin-inline: auto;
+  }
+
+  #main-content [data-page-layout] {
+    container-type: inline-size;
+  }
+
+  #main-content :is(.card, [data-slot='card']) {
+    min-width: 0;
+    border-color: hsl(var(--border) / 0.75);
+    background: linear-gradient(180deg, hsl(var(--card) / 0.985), hsl(var(--card) / 0.95));
+    box-shadow: var(--ux-surface-shadow);
+  }
+
+  /* Nested cards are supporting surfaces, not a second hierarchy level. */
+  #main-content :is(.card, [data-slot='card']) :is(.card, [data-slot='card']) {
+    background: hsl(var(--background) / 0.72);
+    box-shadow: none;
+  }
+
+  #main-content :is(.card, [data-slot='card']):focus-within {
+    border-color: hsl(var(--primary) / 0.24);
+  }
+
+  #main-content :is(input, textarea, select) {
+    min-width: 0;
+    border-color: hsl(var(--border) / 0.86);
+    background-color: hsl(var(--background) / 0.86);
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background-color 160ms ease;
+  }
+
+  #main-content :is(input, textarea, select):focus {
+    border-color: hsl(var(--primary) / 0.48);
+    background-color: hsl(var(--card));
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.1);
+  }
+
+  #main-content :is(input, textarea, select)[aria-invalid='true'] {
+    border-color: hsl(var(--destructive) / 0.62);
+    box-shadow: 0 0 0 3px hsl(var(--destructive) / 0.08);
+  }
+
+  #main-content label {
+    min-width: 0;
+  }
+
+  #main-content table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  #main-content thead th {
+    position: relative;
+    background-color: hsl(var(--muted) / 0.72);
+    color: hsl(var(--foreground) / 0.72);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
+  #main-content tbody td {
+    vertical-align: middle;
+  }
+
+  #main-content tbody tr {
+    transition: background-color 150ms ease;
+  }
+
+  #main-content tbody tr:hover {
+    background-color: hsl(var(--primary) / 0.035);
+  }
+
+  #main-content :is(h1, h2, h3) {
+    text-wrap: balance;
+  }
+
+  #main-content :is(p, dd, td) {
+    overflow-wrap: anywhere;
+  }
+
+  #main-content :is(button, [role='button'], a) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #main-content :is(button, [role='button']):focus-visible,
+  #main-content a:focus-visible,
+  #main-content :is(input, textarea, select):focus-visible {
+    outline: 2px solid hsl(var(--primary) / 0.58);
+    outline-offset: 2px;
+  }
+
+  #main-content [role='alert'] {
+    scroll-margin-top: 6rem;
+  }
+
+  #main-content .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  #main-content .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (pointer: coarse) {
+    #main-content :is(button, [role='button'], a[role='button']) {
+      min-height: 44px;
+    }
+
+    #main-content :is(button, [role='button']):hover {
+      transform: none;
+    }
+  }
+
+  @media (max-width: 767px) {
+    #main-content {
+      --ux-page-gap: 0.75rem;
+      --ux-radius: 1.2rem;
+      --ux-surface-shadow: 0 7px 22px hsl(var(--foreground) / 0.042);
+      padding-inline: 0.75rem;
+    }
+
+    #main-content > * {
+      max-width: 100%;
+    }
+
+    #main-content :is(.card, [data-slot='card']) {
+      border-radius: var(--ux-radius);
+    }
+
+    #main-content :is(input, textarea, select, button) {
+      min-height: 44px;
+      font-size: max(1rem, 16px);
+    }
+
+    #main-content :is(input[type='date'], input[type='number']) {
+      inline-size: 100%;
+    }
+
+    #main-content [role='dialog'] {
+      max-width: calc(100vw - 0.5rem);
+    }
+
+    #main-content [data-filter-bar] {
+      position: relative;
+      z-index: 1;
+    }
+
+    #main-content [data-kpi-card] {
+      min-height: 8.75rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    #main-content {
+      --ux-page-gap: 1.25rem;
+      --ux-radius: 1.5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #main-content *,
+    #main-content *::before,
+    #main-content *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}

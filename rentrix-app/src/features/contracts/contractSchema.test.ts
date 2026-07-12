@@ -20,6 +20,10 @@ describe('contract date validation', () => {
     expect(renewalSchema.safeParse({ new_start: '2027-07-01', new_end: '2028-06-30', new_amount: 13000 }).success).toBe(true);
   });
 
+  it('accepts the text property identifiers used by the live contract RPC', () => {
+    expect(contractSchema.safeParse({ ...validContract, property_id: 'PROP-001' }).success).toBe(true);
+  });
+
   it('rejects non-existent calendar dates before they reach Supabase', () => {
     expect(contractSchema.safeParse({ ...validContract, start_date: '2026-02-30' }).success).toBe(false);
     expect(renewalSchema.safeParse({ new_start: '2027-02-29', new_end: '2028-06-30', new_amount: 13000 }).success).toBe(false);

@@ -1,9 +1,9 @@
 import type { ComponentPropsWithoutRef, FormEventHandler, ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
 
 const mobileFormQuery = '(max-width: 767px)';
 
@@ -37,21 +37,26 @@ type EntityFormRootProps = Readonly<ComponentPropsWithoutRef<'form'> & {
 }>;
 
 function Root({ className, children, ...props }: EntityFormRootProps) {
-  return <form className={cn('grid gap-4', className)} {...props}>{children}</form>;
+  return <form className={cn('grid min-w-0 gap-5', className)} noValidate {...props}>{children}</form>;
 }
 
-type EntityFormSectionProps = Readonly<{ title?: string; description?: string; children: ReactNode; className?: string }>;
+type EntityFormSectionProps = Readonly<{
+  title?: ReactNode;
+  description?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}>;
 
 function Section({ title, description, children, className }: EntityFormSectionProps) {
   return (
-    <section className={cn('space-y-4', className)}>
-      {(title || description) ? (
-        <div>
-          {title ? <h2 className="text-sm font-black">{title}</h2> : null}
-          {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+    <section className={cn('min-w-0 space-y-4 rounded-2xl border border-border/60 bg-muted/15 p-3.5 sm:p-4', className)}>
+      {title || description ? (
+        <div className="border-b border-border/50 pb-3">
+          {title ? <h2 className="text-sm font-black leading-6">{title}</h2> : null}
+          {description ? <p className="mt-0.5 text-xs font-medium leading-5 text-muted-foreground">{description}</p> : null}
         </div>
       ) : null}
-      {children}
+      <div className="grid min-w-0 gap-4">{children}</div>
     </section>
   );
 }
@@ -60,7 +65,15 @@ type EntityFormErrorSummaryProps = Readonly<{ message?: ReactNode; className?: s
 
 function ErrorSummary({ message, className }: EntityFormErrorSummaryProps) {
   if (!message) return null;
-  return <div className={cn('rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive', className)} role="alert">{message}</div>;
+  return (
+    <div
+      className={cn('rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold leading-6 text-destructive', className)}
+      role="alert"
+      aria-live="assertive"
+    >
+      {message}
+    </div>
+  );
 }
 
 type EntityFormActionsProps = Readonly<{
@@ -74,14 +87,33 @@ type EntityFormActionsProps = Readonly<{
 
 function Actions({ submitLabel, cancelLabel = 'إلغاء', onCancel, isSubmitting, submitDisabled, className }: EntityFormActionsProps) {
   return (
-    <div className={cn('safe-bottom-overlay -mx-4 flex flex-col-reverse gap-3 border-t border-border/60 px-4 pt-4 sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:px-0 sm:pb-0', className)}>
-      {onCancel ? <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting}>{cancelLabel}</Button> : null}
-      <Button type="submit" disabled={submitDisabled ?? isSubmitting}>{submitLabel}</Button>
+    <div
+      className={cn(
+        'sticky bottom-0 z-10 -mx-4 grid grid-cols-1 gap-2 border-t border-border/70 bg-background/96 px-4 pb-[max(0.25rem,env(safe-area-inset-bottom,0px))] pt-3 backdrop-blur sm:static sm:mx-0 sm:flex sm:flex-row-reverse sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0',
+        className,
+      )}
+    >
+      <Button type="submit" disabled={submitDisabled ?? isSubmitting} className="min-h-11 w-full sm:w-auto">
+        {submitLabel}
+      </Button>
+      {onCancel ? (
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting} className="min-h-11 w-full sm:w-auto">
+          {cancelLabel}
+        </Button>
+      ) : null}
     </div>
   );
 }
 
-type EntityFormOverlayProps = Readonly<{ open: boolean; onOpenChange: (open: boolean) => void; title: string; description?: string; headerExtra?: ReactNode; children: ReactNode; className?: string }>;
+type EntityFormOverlayProps = Readonly<{
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description?: ReactNode;
+  headerExtra?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}>;
 
 function Overlay({ open, onOpenChange, title, description, headerExtra, children, className }: EntityFormOverlayProps) {
   const surface = getResponsiveFormSurface(useMediaQuery(mobileFormQuery));
@@ -89,9 +121,9 @@ function Overlay({ open, onOpenChange, title, description, headerExtra, children
   if (surface === 'bottom-sheet') {
     return (
       <BottomSheet open={open} onClose={() => onOpenChange(false)} title={title} className={className}>
-        {(description || headerExtra) ? (
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            {description ? <p className="flex-1 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+        {description || headerExtra ? (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-muted/35 p-3">
+            {description ? <p className="min-w-0 flex-1 text-sm font-medium leading-6 text-muted-foreground">{description}</p> : null}
             {headerExtra}
           </div>
         ) : null}
@@ -102,15 +134,15 @@ function Overlay({ open, onOpenChange, title, description, headerExtra, children
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={className}>
-        <DialogHeader className="pe-10">
+      <DialogContent className={cn('max-h-[min(90dvh,54rem)] max-w-2xl overflow-y-auto p-0', className)}>
+        <DialogHeader className="sticky top-0 z-10 border-b border-border/60 bg-background/96 px-6 py-5 pe-14 backdrop-blur">
           <div className="flex flex-wrap items-center gap-2">
             <DialogTitle>{title}</DialogTitle>
             {headerExtra}
           </div>
-          {description ? <DialogDescription>{description}</DialogDescription> : null}
+          {description ? <DialogDescription className="leading-6">{description}</DialogDescription> : null}
         </DialogHeader>
-        {children}
+        <div className="px-6 pb-6">{children}</div>
       </DialogContent>
     </Dialog>
   );

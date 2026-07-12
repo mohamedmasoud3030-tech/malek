@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { applyDocumentLanguageDirection } from '@/lib/i18n';
 import '@/styles/globals.css';
+import '@/styles/page-polish.css';
 
 applyDocumentLanguageDirection();
 

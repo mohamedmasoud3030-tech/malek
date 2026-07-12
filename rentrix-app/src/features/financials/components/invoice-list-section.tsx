@@ -1,12 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, ReceiptText } from 'lucide-react';
 import { EntityTable } from '@/components/ui/entity-table';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { getSafeRemainingAmount } from '../financialMath';
 import { getInvoiceGrossAmount, type InvoiceListItem, type InvoiceStatusFilter, type InvoiceSummary } from '../invoices/invoiceService';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
 import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
 import { InvoiceSummaryCards } from './invoice-summary-cards';
+
+const invoiceStatusTone = {
+  paid: 'green',
+  partially_paid: 'gold',
+  overdue: 'red',
+  unpaid: 'blue',
+  cancelled: 'gray',
+  void: 'gray',
+} as const;
 
 type InvoiceListSectionProps = {
   summary: InvoiceSummary;
@@ -78,32 +89,42 @@ export function InvoiceListSection({
   const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>الفواتير</CardTitle>
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <ReceiptText className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <CardTitle>الفواتير</CardTitle>
+            <p className="mt-1 text-xs font-bold text-muted-foreground">عرض واضح للمستحق والمدفوع والمتبقي من مكان واحد.</p>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5 p-3 sm:p-6">
         <InvoiceSummaryCards summary={summary} />
 
-        <InvoiceFilters
-          status={status}
-          invoiceSearch={invoiceSearch}
-          isGenerating={isGenerating}
-          canGenerateInvoices={canGenerateInvoices}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          tenantId={tenantId}
-          propertyId={propertyId}
-          tenantOptions={tenantOptions}
-          propertyOptions={propertyOptions}
-          onStatusChange={onStatusChange}
-          onInvoiceSearchChange={onInvoiceSearchChange}
-          onGenerateInvoices={onGenerateInvoices}
-          onDateFromChange={onDateFromChange}
-          onDateToChange={onDateToChange}
-          onTenantChange={onTenantChange}
-          onPropertyChange={onPropertyChange}
-        />
+        <div className="rounded-3xl border border-border/70 bg-muted/20 p-3 sm:p-4">
+          <InvoiceFilters
+            status={status}
+            invoiceSearch={invoiceSearch}
+            isGenerating={isGenerating}
+            canGenerateInvoices={canGenerateInvoices}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            tenantId={tenantId}
+            propertyId={propertyId}
+            tenantOptions={tenantOptions}
+            propertyOptions={propertyOptions}
+            onStatusChange={onStatusChange}
+            onInvoiceSearchChange={onInvoiceSearchChange}
+            onGenerateInvoices={onGenerateInvoices}
+            onDateFromChange={onDateFromChange}
+            onDateToChange={onDateToChange}
+            onTenantChange={onTenantChange}
+            onPropertyChange={onPropertyChange}
+          />
+        </div>
 
         <EntityTable
           aria-label="جدول الفواتير"
@@ -133,21 +154,21 @@ export function InvoiceListSection({
               return formatMoney(getSafeRemainingAmount(grossAmount, invoice.paid_amount));
             } },
             { key: 'status', header: 'الحالة', render: (invoice) => (
-              <span className="inline-flex h-fit rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
+              <StatusBadge tone={invoiceStatusTone[invoice.status as keyof typeof invoiceStatusTone] ?? 'gray'}>
                 {formatInvoiceStatusLabel(invoice.status)}
-              </span>
+              </StatusBadge>
             ) },
             { key: 'actions', header: 'إجراءات', render: (invoice) => (
               (onPrintInvoice || onExportInvoice) ? (
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                   {onPrintInvoice && (
                     <Button variant="outline" className="h-8" onClick={() => onPrintInvoice(invoice.id)} title="طباعة الفاتورة">
-                      <Printer className="size-4 me-1" />طباعة
+                      <Printer className="me-1 size-4" />طباعة
                     </Button>
                   )}
                   {onExportInvoice && (
                     <Button variant="outline" className="h-8" onClick={() => onExportInvoice(invoice.id)} title="تنزيل PDF">
-                      <Download className="size-4 me-1" />PDF
+                      <Download className="me-1 size-4" />PDF
                     </Button>
                   )}
                 </div>
@@ -158,70 +179,61 @@ export function InvoiceListSection({
             const grossAmount = getInvoiceGrossAmount(invoice);
             const rowRemaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
             const isSelected = selectedInvoiceId === invoice.id;
+            const tone = invoiceStatusTone[invoice.status as keyof typeof invoiceStatusTone] ?? 'gray';
             return (
-              <div
-                className={`rounded-2xl border bg-background p-4 space-y-3 ${isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : ''}`}
-              >
-                <button
-                  className="w-full text-start grid gap-3 grid-cols-2"
-                  onClick={() => onSelectInvoice(invoice.id)}
-                  aria-pressed={isSelected}
-                  aria-label={`عرض تفاصيل الفاتورة ${invoice.id.slice(0, 8)}`}
-                >
-                  <span>
-                    <span className="block text-xs text-muted-foreground">رقم الفاتورة</span>
-                    <span className="font-black">#{invoice.id.slice(0, 8)}</span>
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">تاريخ الاستحقاق</span>
-                    <span>{formatDate(invoice.due_date)}</span>
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">الإجمالي شامل VAT</span>
-                    <span>{formatMoney(grossAmount)}</span>
-                    {invoice.tax_amount ? <span className="block text-[11px] text-muted-foreground">VAT {formatMoney(invoice.tax_amount)}</span> : null}
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">المدفوع</span>
-                    <span>{formatMoney(invoice.paid_amount)}</span>
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">المتبقي</span>
-                    <span>{formatMoney(rowRemaining)}</span>
-                  </span>
-                  <span className="inline-flex h-fit rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
-                    {formatInvoiceStatusLabel(invoice.status)}
-                  </span>
-                </button>
-
-                {(onPrintInvoice || onExportInvoice) && (
-                  <div className="flex gap-2 border-t pt-2">
+              <MobileCard
+                variant={isSelected ? 'elevated' : 'default'}
+                accent={invoice.status === 'overdue' ? 'danger' : rowRemaining > 0 ? 'warning' : 'success'}
+                className={isSelected ? 'ring-2 ring-primary/20' : undefined}
+                title={`فاتورة #${invoice.id.slice(0, 8)}`}
+                subtitle={`استحقاق ${formatDate(invoice.due_date)}`}
+                badge={<StatusBadge tone={tone}>{formatInvoiceStatusLabel(invoice.status)}</StatusBadge>}
+                onClick={() => onSelectInvoice(invoice.id)}
+                stats={(
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-xl bg-muted/50 p-2">
+                      <p className="text-[10px] font-bold text-muted-foreground">الإجمالي</p>
+                      <p className="mt-1 text-sm font-black">{formatMoney(grossAmount)}</p>
+                    </div>
+                    <div className="rounded-xl bg-muted/50 p-2">
+                      <p className="text-[10px] font-bold text-muted-foreground">المدفوع</p>
+                      <p className="mt-1 text-sm font-black text-success">{formatMoney(invoice.paid_amount)}</p>
+                    </div>
+                    <div className="rounded-xl bg-muted/50 p-2">
+                      <p className="text-[10px] font-bold text-muted-foreground">المتبقي</p>
+                      <p className="mt-1 text-sm font-black text-danger">{formatMoney(rowRemaining)}</p>
+                    </div>
+                  </div>
+                )}
+                footer={invoice.tax_amount ? `ضريبة القيمة المضافة: ${formatMoney(invoice.tax_amount)}` : undefined}
+                actions={(onPrintInvoice || onExportInvoice) ? (
+                  <div className="grid w-full grid-cols-2 gap-2">
                     {onPrintInvoice && (
-                      <Button variant="outline" className="h-8" onClick={() => onPrintInvoice(invoice.id)} title="طباعة الفاتورة">
-                        <Printer className="size-4 me-1" />طباعة
+                      <Button variant="secondary" className="min-h-11 rounded-xl text-xs" onClick={() => onPrintInvoice(invoice.id)}>
+                        <Printer className="me-1 size-4" />طباعة
                       </Button>
                     )}
                     {onExportInvoice && (
-                      <Button variant="outline" className="h-8" onClick={() => onExportInvoice(invoice.id)} title="تنزيل PDF">
-                        <Download className="size-4 me-1" />PDF
+                      <Button variant="secondary" className="min-h-11 rounded-xl text-xs" onClick={() => onExportInvoice(invoice.id)}>
+                        <Download className="me-1 size-4" />PDF
                       </Button>
                     )}
                   </div>
-                )}
-              </div>
+                ) : undefined}
+              />
             );
           }}
         />
 
-        <div className="flex flex-col gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground" aria-live="polite">
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
             إجمالي {total.toLocaleString('ar')} فاتورة · صفحة {page.toLocaleString('ar')} من {totalPages.toLocaleString('ar')}
           </p>
-          <div className="flex gap-2">
-            <Button variant="outline" className="h-9" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <Button variant="outline" className="min-h-11 rounded-xl" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
               السابق
             </Button>
-            <Button variant="outline" className="h-9" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+            <Button variant="outline" className="min-h-11 rounded-xl" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
               التالي
             </Button>
           </div>

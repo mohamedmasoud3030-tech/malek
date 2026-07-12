@@ -8,7 +8,6 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { EntityCard } from '@/components/ui/entity-card';
 import { formatMoney } from '@/hooks/useCompanyFormatters';
 import type { Unit } from '@/types/domain';
 import { unitStatusLabels } from './unit-schema';
@@ -32,70 +31,26 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
   };
 
   const columns: ColumnDef<Unit>[] = [
-    {
-      key: 'unit_number',
-      header: 'رقم الوحدة',
-      render: (unit) => (
-        <EntityCell icon={DoorOpen} title={`وحدة ${unit.unit_number}`} subtitle={unit.floor ? `الدور: ${unit.floor}` : null} />
-      ),
-    },
-    {
-      key: 'status',
-      header: 'الحالة',
-      render: (unit) => (
-        <StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge>
-      ),
-    },
-    {
-      key: 'rent_amount',
-      header: 'الإيجار',
-      render: (unit) => <span dir="ltr" className="block font-bold">{formatMoney(unit.rent_amount)}</span>,
-    },
-    {
-      key: 'notes',
-      header: 'ملاحظات',
-      render: (unit) => unit.notes ?? '—',
-    },
-    {
-      key: 'actions',
-      header: 'إجراءات',
-      render: (unit) => (
-        <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-          <Button
-            variant="secondary"
-            className="min-h-9 px-3"
-            aria-label={`تعديل وحدة ${unit.unit_number}`}
-            onClick={() => openForEdit(unit)}
-          >
-            <Edit className="size-4" aria-hidden="true" />
-          </Button>
-          <Button
-            variant="danger"
-            className="min-h-9 px-3"
-            aria-label={`أرشفة وحدة ${unit.unit_number}`}
-            onClick={() => setArchiveCandidate(unit)}
-            disabled={deleteMutation.isPending}
-          >
-            <Archive className="size-4" aria-hidden="true" />
-          </Button>
-        </div>
-      ),
-    },
+    { key: 'unit_number', header: 'رقم الوحدة', render: (unit) => <EntityCell icon={DoorOpen} title={`وحدة ${unit.unit_number}`} subtitle={unit.floor ? `الدور: ${unit.floor}` : null} /> },
+    { key: 'status', header: 'الحالة', render: (unit) => <StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge> },
+    { key: 'rent_amount', header: 'الإيجار', render: (unit) => <span dir="ltr" className="block font-bold">{formatMoney(unit.rent_amount)}</span> },
+    { key: 'notes', header: 'ملاحظات', render: (unit) => unit.notes ?? '—' },
+    { key: 'actions', header: 'إجراءات', render: (unit) => (
+      <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <Button variant="secondary" className="min-h-9 px-3" aria-label={`تعديل وحدة ${unit.unit_number}`} onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
+        <Button variant="danger" className="min-h-9 px-3" aria-label={`أرشفة وحدة ${unit.unit_number}`} onClick={() => setArchiveCandidate(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
+      </div>
+    ) },
   ];
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div>
-          <CardTitle>الوحدات</CardTitle>
-          <CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription>
-        </div>
-        {!unitsQuery.isError ? (
-          <Button onClick={openForCreate}><Plus className="me-2 size-4" />إضافة وحدة</Button>
-        ) : null}
+        <div><CardTitle>الوحدات</CardTitle><CardDescription>إدارة وحدات العقار الحالي فقط.</CardDescription></div>
+        {!unitsQuery.isError ? <Button onClick={openForCreate}><Plus className="me-2 size-4" />إضافة وحدة</Button> : null}
       </CardHeader>
 
-      <div className="px-6 pb-6">
+      <div className="px-3 pb-4 sm:px-6 sm:pb-6">
         <EntityTable
           aria-label="جدول وحدات العقار"
           rows={unitsQuery.data ?? []}
@@ -108,42 +63,25 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           emptyTitle="لا توجد وحدات"
           emptyDescription="أضف الوحدات التابعة لهذا العقار من هنا."
           emptyAction={<Button onClick={openForCreate}>إضافة وحدة</Button>}
-          onRowClick={(unit) => navigate({
-            to: '/properties/$propertyId/units/$unitId',
-            params: { propertyId, unitId: unit.id }
-          })}
+          onRowClick={(unit) => navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}
           renderMobileCard={(unit) => (
-            <div className="space-y-1.5">
-              <EntityCard
-                id={unit.id}
-                name={`وحدة ${unit.unit_number}`}
-                subtitle={unit.floor ? `الدور: ${unit.floor}` : undefined}
-                avatarIcon={DoorOpen}
-                badge={<StatusBadge tone={unitStatusTone[unit.status]} className="shrink-0">{unitStatusLabels[unit.status]}</StatusBadge>}
-                onClick={() => navigate({
-                  to: '/properties/$propertyId/units/$unitId',
-                  params: { propertyId, unitId: unit.id }
-                })}
-                stats={(
-                  <div className="flex items-center justify-between gap-3">
-                    {unit.notes ? <p className="flex-1 text-xs leading-relaxed text-muted-foreground">{unit.notes}</p> : <span />}
-                    {unit.rent_amount != null ? <p className="whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatMoney(unit.rent_amount)}</p> : null}
+            <div className="rounded-2xl border border-border/60 bg-card p-4 transition-shadow hover:shadow-md">
+              <button className="w-full text-start" onClick={() => navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-black">وحدة {unit.unit_number}</p>
+                    <p className="mt-0.5 truncate text-sm text-muted-foreground">{unit.floor ? `الدور ${unit.floor}` : 'الدور غير محدد'}</p>
+                    {unit.notes ? <p className="mt-1 line-clamp-1 text-xs text-muted-foreground/70">{unit.notes}</p> : null}
                   </div>
-                )}
-              />
-              <div className="flex gap-2 px-1">
-                <Button variant="secondary" className="h-9 flex-1" onClick={() => openForEdit(unit)}>
-                  <Edit className="me-1 size-3.5" />تعديل
-                </Button>
-                <Button
-                  variant="danger"
-                  className="h-9 flex-1"
-                  aria-label="أرشفة الوحدة"
-                  onClick={() => setArchiveCandidate(unit)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Archive className="me-1 size-3.5" />أرشفة
-                </Button>
+                  <StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge>
+                </div>
+                <div className="mt-3 flex items-center gap-4 text-sm font-bold">
+                  {unit.rent_amount != null ? <span dir="ltr">{formatMoney(unit.rent_amount)}</span> : null}
+                </div>
+              </button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button className="min-h-11" variant="secondary" onClick={() => openForEdit(unit)}><Edit className="me-2 size-4" />تعديل</Button>
+                <Button className="min-h-11" variant="danger" disabled={deleteMutation.isPending} onClick={() => setArchiveCandidate(unit)}><Archive className="me-2 size-4" />أرشفة</Button>
               </div>
             </div>
           )}
@@ -151,16 +89,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
       </div>
 
       <UnitFormModal propertyId={propertyId} unit={editingUnit} open={modalOpen} onOpenChange={setModalOpen} />
-
-      <ConfirmDialog
-        open={Boolean(archiveCandidate)}
-        onOpenChange={(open) => { if (!open) setArchiveCandidate(null); }}
-        title={`أرشفة الوحدة ${archiveCandidate?.unit_number ?? ''}؟`}
-        description="ستبقى بيانات الوحدة محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة."
-        confirmLabel="تأكيد الأرشفة"
-        isLoading={deleteMutation.isPending}
-        onConfirm={confirmArchive}
-      />
+      <ConfirmDialog open={Boolean(archiveCandidate)} onOpenChange={(open) => { if (!open) setArchiveCandidate(null); }} title={`أرشفة الوحدة ${archiveCandidate?.unit_number ?? ''}؟`} description="ستبقى بيانات الوحدة محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة." confirmLabel="تأكيد الأرشفة" isLoading={deleteMutation.isPending} onConfirm={confirmArchive} />
     </Card>
   );
 }

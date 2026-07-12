@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { BarChart3, SlidersHorizontal } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { Card, CardContent } from '@/components/ui/card';
@@ -101,7 +102,6 @@ export function ReportsPage() {
       tenant_name: receipt.tenant_name,
     })), [filters, receiptsQuery.data]);
 
-  // Kept as a private data-availability signal; no visible combined chart is rendered.
   void paymentsTrendRows;
 
   const firstError = financialSummaryQuery.error
@@ -129,57 +129,91 @@ export function ReportsPage() {
   }
 
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" size="wide" className="space-y-6">
       <ReportsHero summary={financialSummaryQuery.data} today={today} isLoading={financialSummaryQuery.isLoading} />
 
-        <FiltersPanel filters={filters} costCenterRows={costCentersQuery.data ?? []} ownerRows={ownersQuery.data ?? []} contractRows={contracts} onChange={setFilters} onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())} />
+      <Card className="overflow-hidden border-primary/10">
+        <div className="flex items-center gap-3 border-b border-border/60 bg-muted/25 px-4 py-4 sm:px-6">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <SlidersHorizontal className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="text-sm font-black sm:text-base">فلترة نطاق التقرير</h2>
+            <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">حدد الفترة أو المالك أو العقد ثم راجع النتائج في القسم المطلوب.</p>
+          </div>
+        </div>
+        <CardContent className="p-3 sm:p-5">
+          <FiltersPanel
+            filters={filters}
+            costCenterRows={costCentersQuery.data ?? []}
+            ownerRows={ownersQuery.data ?? []}
+            contractRows={contracts}
+            onChange={setFilters}
+            onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())}
+          />
+        </CardContent>
+      </Card>
 
-      <SectionTabs items={reportSections} activeId={activeSection} onChange={setActiveSection} ariaLabel="أقسام التقارير" />
+      <Card className="overflow-hidden">
+        <div className="flex items-center gap-3 border-b border-border/60 bg-muted/20 px-4 py-4 sm:px-6">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <BarChart3 className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="text-sm font-black sm:text-base">مركز التقارير</h2>
+            <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">تنقل بين الملخص والتحصيل والمتأخرات والمحاسبة والقوائم بدون ازدحام الصفحة.</p>
+          </div>
+        </div>
+        <div className="no-scrollbar overflow-x-auto border-b border-border/60 bg-background px-3 py-3 sm:px-5">
+          <div className="min-w-max">
+            <SectionTabs items={reportSections} activeId={activeSection} onChange={setActiveSection} ariaLabel="أقسام التقارير" />
+          </div>
+        </div>
 
-      {firstError ? (
-        <Card>
-          <CardContent className="p-4 text-sm text-destructive">
-            {getErrorMessage(firstError, 'تعذر تحميل بعض التقارير. يمكنك تحديث الصفحة أو إعادة المحاولة بأمان دون تعديل أي بيانات.')}
-          </CardContent>
-        </Card>
-      ) : null}
+        <CardContent className="space-y-5 p-3 sm:p-6">
+          {firstError ? (
+            <div className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm font-bold leading-6 text-destructive">
+              {getErrorMessage(firstError, 'تعذر تحميل بعض التقارير. يمكنك تحديث الصفحة أو إعادة المحاولة بأمان دون تعديل أي بيانات.')}
+            </div>
+          ) : null}
 
-      <SectionTabPanel id="overview" activeId={activeSection}>
-        <OverviewSection summary={financialSummaryQuery.data} cashflowRows={financialCashflowQuery.data?.rows ?? []} canExportReports={canExportReports} isLoading={financialSummaryQuery.isLoading || financialCashflowQuery.isLoading} />
-      </SectionTabPanel>
-      <SectionTabPanel id="collections" activeId={activeSection}>
-        <CollectionsSection rows={dailyCollectionQuery.data?.rows ?? []} receiptRows={receiptRows} rentRollRows={rentRollRows} canExportReports={canExportReports} isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading || contractsQuery.isLoading} />
-      </SectionTabPanel>
-      <SectionTabPanel id="overdue" activeId={activeSection}>
-        <OverdueSection rows={overdueInvoicesQuery.data?.rows ?? []} agedReport={agedReceivablesQuery.data} canExportReports={canExportReports} isLoading={overdueInvoicesQuery.isLoading || agedReceivablesQuery.isLoading} />
-      </SectionTabPanel>
-      <SectionTabPanel id="expenses" activeId={activeSection}>
-        <ExpensesSection report={expenseBreakdownQuery.data} canExportReports={canExportReports} isLoading={expenseBreakdownQuery.isLoading} />
-      </SectionTabPanel>
-      <SectionTabPanel id="occupancy" activeId={activeSection}>
-        <OccupancySection occupancyRows={occupancyRows} expiringRows={expiringRows} isLoading={unitsQuery.isLoading || contractsQuery.isLoading} />
-      </SectionTabPanel>
-      <SectionTabPanel id="accounting" activeId={activeSection}>
-        <AccountingReportsSection
-          asOf={filters.asOf}
-          from={filters.from}
-          to={filters.to}
-          trialBalance={trialBalanceQuery.data}
-          incomeStatement={incomeStatementQuery.data}
-          balanceSheet={balanceSheetQuery.data}
-          isTrialBalanceLoading={trialBalanceQuery.isLoading}
-          isIncomeStatementLoading={incomeStatementQuery.isLoading}
-          isBalanceSheetLoading={balanceSheetQuery.isLoading}
-          trialBalanceError={trialBalanceQuery.error}
-          incomeStatementError={incomeStatementQuery.error}
-          balanceSheetError={balanceSheetQuery.error}
-          isLoading={financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading}
-        />
-      </SectionTabPanel>
-
-      <SectionTabPanel id="statements" activeId={activeSection}>
-        <StatementsSection agedReport={agedReceivablesQuery.data} receiptRows={receiptRows} financialSummary={financialSummaryQuery.data} expenseBreakdown={expenseBreakdownQuery.data} dailyRows={dailyCollectionQuery.data?.rows ?? []} cashFlowStatement={cashFlowStatementQuery.data} vatReturn={vatReturnQuery.data} tenantStatement={tenantStatementQuery.data} ownerStatement={ownerStatementQuery.data} selectedContractId={filters.contractId} selectedOwnerId={filters.ownerId} tenantStatementError={tenantStatementQuery.error} ownerStatementError={ownerStatementQuery.error} isTenantStatementLoading={tenantStatementQuery.isLoading} isOwnerStatementLoading={ownerStatementQuery.isLoading} isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading || cashFlowStatementQuery.isLoading || vatReturnQuery.isLoading} />
-      </SectionTabPanel>
+          <SectionTabPanel id="overview" activeId={activeSection}>
+            <OverviewSection summary={financialSummaryQuery.data} cashflowRows={financialCashflowQuery.data?.rows ?? []} canExportReports={canExportReports} isLoading={financialSummaryQuery.isLoading || financialCashflowQuery.isLoading} />
+          </SectionTabPanel>
+          <SectionTabPanel id="collections" activeId={activeSection}>
+            <CollectionsSection rows={dailyCollectionQuery.data?.rows ?? []} receiptRows={receiptRows} rentRollRows={rentRollRows} canExportReports={canExportReports} isLoading={dailyCollectionQuery.isLoading || receiptsQuery.isLoading || contractsQuery.isLoading} />
+          </SectionTabPanel>
+          <SectionTabPanel id="overdue" activeId={activeSection}>
+            <OverdueSection rows={overdueInvoicesQuery.data?.rows ?? []} agedReport={agedReceivablesQuery.data} canExportReports={canExportReports} isLoading={overdueInvoicesQuery.isLoading || agedReceivablesQuery.isLoading} />
+          </SectionTabPanel>
+          <SectionTabPanel id="expenses" activeId={activeSection}>
+            <ExpensesSection report={expenseBreakdownQuery.data} canExportReports={canExportReports} isLoading={expenseBreakdownQuery.isLoading} />
+          </SectionTabPanel>
+          <SectionTabPanel id="occupancy" activeId={activeSection}>
+            <OccupancySection occupancyRows={occupancyRows} expiringRows={expiringRows} isLoading={unitsQuery.isLoading || contractsQuery.isLoading} />
+          </SectionTabPanel>
+          <SectionTabPanel id="accounting" activeId={activeSection}>
+            <AccountingReportsSection
+              asOf={filters.asOf}
+              from={filters.from}
+              to={filters.to}
+              trialBalance={trialBalanceQuery.data}
+              incomeStatement={incomeStatementQuery.data}
+              balanceSheet={balanceSheetQuery.data}
+              isTrialBalanceLoading={trialBalanceQuery.isLoading}
+              isIncomeStatementLoading={incomeStatementQuery.isLoading}
+              isBalanceSheetLoading={balanceSheetQuery.isLoading}
+              trialBalanceError={trialBalanceQuery.error}
+              incomeStatementError={incomeStatementQuery.error}
+              balanceSheetError={balanceSheetQuery.error}
+              isLoading={financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading}
+            />
+          </SectionTabPanel>
+          <SectionTabPanel id="statements" activeId={activeSection}>
+            <StatementsSection agedReport={agedReceivablesQuery.data} receiptRows={receiptRows} financialSummary={financialSummaryQuery.data} expenseBreakdown={expenseBreakdownQuery.data} dailyRows={dailyCollectionQuery.data?.rows ?? []} cashFlowStatement={cashFlowStatementQuery.data} vatReturn={vatReturnQuery.data} tenantStatement={tenantStatementQuery.data} ownerStatement={ownerStatementQuery.data} selectedContractId={filters.contractId} selectedOwnerId={filters.ownerId} tenantStatementError={tenantStatementQuery.error} ownerStatementError={ownerStatementQuery.error} isTenantStatementLoading={tenantStatementQuery.isLoading} isOwnerStatementLoading={ownerStatementQuery.isLoading} isLoading={agedReceivablesQuery.isLoading || receiptsQuery.isLoading || financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading || dailyCollectionQuery.isLoading || cashFlowStatementQuery.isLoading || vatReturnQuery.isLoading} />
+          </SectionTabPanel>
+        </CardContent>
+      </Card>
     </PageLayout>
   );
 }

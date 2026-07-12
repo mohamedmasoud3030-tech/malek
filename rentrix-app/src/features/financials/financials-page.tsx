@@ -170,6 +170,7 @@ export function FinancialsPage() {
                 onFiltersChange={setFilters}
                 expenseForm={expenseForm}
                 isCreateExpensePending={createExpense.isPending}
+                isCreateExpenseSuccess={createExpense.isSuccess}
                 onCreateExpense={onCreateExpense}
               />
             ) : null}

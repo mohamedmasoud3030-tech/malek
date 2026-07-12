@@ -39,6 +39,8 @@ vi.mock('./use-units', () => ({
     isLoading: false,
     isError: false,
   }),
+  useCreateUnit: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useUpdateUnit: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 vi.mock('@/features/properties/use-properties', () => ({
