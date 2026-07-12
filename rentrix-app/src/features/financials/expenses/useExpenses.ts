@@ -24,10 +24,14 @@ export function useCreateExpenseAtomic() {
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إضافة المصروف'),
   });
 }
-export function useUpdateExpense(id: string) {
+export function useUpdateExpense(expenseId?: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (p: ExpensePayload) => updateExpense(id, p),
+    mutationFn: (input: ExpensePayload | { id: string; payload: ExpensePayload }) => {
+      if ('payload' in input) return updateExpense(input.id, input.payload);
+      if (!expenseId) throw new Error('معرّف المصروف مطلوب');
+      return updateExpense(expenseId, input);
+    },
     onSuccess: async () => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: expenseKeys.all }),
@@ -35,5 +39,6 @@ export function useUpdateExpense(id: string) {
       ]);
       toast.success('تم تحديث المصروف');
     },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث المصروف'),
   });
 }

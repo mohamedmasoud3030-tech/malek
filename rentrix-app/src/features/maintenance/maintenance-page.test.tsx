@@ -8,6 +8,7 @@ const maintenanceMocks = vi.hoisted(() => ({
   propertiesQuery: { data: { rows: [] as unknown[] }, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   allUnitsQuery: { data: [] as unknown[], isLoading: false },
   unitsQuery: { data: [] as unknown[], isLoading: false },
+  updateRequestMutation: { isPending: false, mutate: vi.fn() },
   updateStatusMutation: { isPending: false, mutate: vi.fn() },
   resolveMutation: { isPending: false, mutate: vi.fn() },
 }));
@@ -24,6 +25,7 @@ vi.mock('@/features/units/use-units', () => ({
 vi.mock('./use-maintenance', () => ({
   useCreateMaintenance: () => maintenanceMocks.createMutation,
   useMaintenance: () => maintenanceMocks.maintenanceQuery,
+  useUpdateMaintenance: () => maintenanceMocks.updateRequestMutation,
   useUpdateMaintenanceStatus: () => maintenanceMocks.updateStatusMutation,
   useResolveMaintenanceWithExpense: () => maintenanceMocks.resolveMutation,
 }));

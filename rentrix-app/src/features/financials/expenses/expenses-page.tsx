@@ -17,7 +17,7 @@ import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters
 import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import { OPERATIONAL_EXPENSE_CATEGORIES, summarizeOperationalExpenses, type OperationalExpenseFilterValues } from './operational-expenses';
-import { useCreateExpenseAtomic, useExpenses } from './useExpenses';
+import { useCreateExpenseAtomic, useExpenses, useUpdateExpense } from './useExpenses';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -39,6 +39,7 @@ export function ExpensesPage() {
   const costCentersQuery = useCostCenters();
   const expensesQuery = useExpenses(filters);
   const createExpense = useCreateExpenseAtomic();
+  const updateExpense = useUpdateExpense();
   const propertyRows = propertiesQuery.data?.rows ?? [];
   const expenses = expensesQuery.data ?? [];
   const summary = summarizeOperationalExpenses(expenses);
@@ -82,6 +83,22 @@ export function ExpensesPage() {
     );
   };
 
+
+  const onUpdateExpense = (expenseId: string, values: ExpenseFormValues) => {
+    updateExpense.mutate({
+      id: expenseId,
+      payload: {
+        property_id: values.property_id,
+        category: values.category,
+        amount: values.amount,
+        expense_date: values.expense_date,
+        cost_center_id: values.cost_center_id?.trim() || null,
+        description: values.description?.trim() ? values.description.trim() : null,
+        attachment_url: values.attachment_url ?? null,
+      },
+    });
+  };
+
   return (
     <PageLayout dir="rtl">
       <PageHeader
@@ -118,6 +135,8 @@ export function ExpensesPage() {
         error={expensesQuery.error ?? propertiesQuery.error}
         onRetry={() => { void Promise.all([expensesQuery.refetch(), propertiesQuery.refetch()]); }}
         onCreateExpense={onCreateExpense}
+        onUpdateExpense={onUpdateExpense}
+        isUpdateExpensePending={updateExpense.isPending}
       />
     </PageLayout>
   );

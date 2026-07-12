@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { z } from 'zod';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, CheckCircle2, Clock, Flame, PlusCircle, Wrench } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, Edit, Eye, Flame, PlusCircle, Wrench } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -25,6 +25,7 @@ import {
   useCreateMaintenance,
   useMaintenance,
   useResolveMaintenanceWithExpense,
+  useUpdateMaintenance,
   useUpdateMaintenanceStatus,
 } from './use-maintenance';
 import type { Maintenance } from './maintenance-service';
@@ -42,6 +43,8 @@ const schema = z.object({
   title: z.string().min(1, 'أدخل عنوان الطلب'),
   description: z.string().nullable().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
+  assigned_to: z.string().nullable().optional(),
+  scheduled_date: z.string().nullable().optional(),
   attachment_url: z.string().nullable().optional(),
 });
 
@@ -109,11 +112,14 @@ export function MaintenancePage() {
   const [priorityFilter, setPriorityFilter] = useState<MaintenancePriorityFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<Maintenance | null>(null);
+  const [detailsRequest, setDetailsRequest] = useState<Maintenance | null>(null);
   const [resolveTarget, setResolveTarget] = useState<Maintenance | null>(null);
 
   const maintenanceQuery = useMaintenance(statusFilter, propertyFilterId);
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 200 });
   const createMutation = useCreateMaintenance();
+  const updateRequestMutation = useUpdateMaintenance();
   const updateStatusMutation = useUpdateMaintenanceStatus();
   const resolveMutation = useResolveMaintenanceWithExpense();
   const resolveForm = useForm<ResolveFormValues>({
@@ -129,6 +135,8 @@ export function MaintenancePage() {
       title: '',
       description: '',
       priority: 'medium',
+      assigned_to: '',
+      scheduled_date: '',
       attachment_url: null,
     },
   });
@@ -169,6 +177,27 @@ export function MaintenancePage() {
     await Promise.all([maintenanceQuery.refetch(), propertiesQuery.refetch()]);
   };
 
+  const openCreateForm = () => {
+    setEditingRequest(null);
+    form.reset({ property_id: '', unit_id: null, title: '', description: '', priority: 'medium', assigned_to: '', scheduled_date: '', attachment_url: null });
+    setShowForm(true);
+  };
+
+  const openEditForm = (row: Maintenance) => {
+    setEditingRequest(row);
+    form.reset({
+      property_id: row.property_id ?? '',
+      unit_id: row.unit_id ?? null,
+      title: row.title ?? '',
+      description: row.description ?? '',
+      priority: (row.priority ?? 'medium') as FormValues['priority'],
+      assigned_to: row.assigned_to ?? row.technician_name ?? '',
+      scheduled_date: row.scheduled_date ?? '',
+      attachment_url: row.attachment_url ?? null,
+    });
+    setShowForm(true);
+  };
+
   const handleStatusAction = (row: Maintenance, status: Exclude<MaintenanceStatusFilter, 'all'>) => {
     if (status === 'resolved') {
       resolveForm.reset({ cost: 0, notes: '' });
@@ -191,33 +220,25 @@ export function MaintenancePage() {
   };
 
   const onSubmit = (values: FormValues) => {
-    createMutation.mutate(
-      {
+    const payload = {
         property_id: values.property_id,
         unit_id: values.unit_id,
         title: values.title,
         description: values.description ?? null,
         priority: values.priority,
         status: 'open',
-        assigned_to: null,
         cost: 0,
         resolved_at: null,
+        assigned_to: values.assigned_to?.trim() ? values.assigned_to.trim() : null,
+        technician_name: values.assigned_to?.trim() ? values.assigned_to.trim() : null,
+        scheduled_date: values.scheduled_date || null,
         attachment_url: values.attachment_url ?? null,
-      },
-      {
-        onSuccess: () => {
-          form.reset({
-            property_id: '',
-            unit_id: null,
-            title: '',
-            description: '',
-            priority: 'medium',
-            attachment_url: null,
-          });
-          setShowForm(false);
-        },
-      },
-    );
+      };
+    if (editingRequest) {
+      updateRequestMutation.mutate({ requestId: editingRequest.id, payload }, { onSuccess: () => { setEditingRequest(null); setShowForm(false); } });
+      return;
+    }
+    createMutation.mutate(payload, { onSuccess: () => { form.reset({ property_id: '', unit_id: null, title: '', description: '', priority: 'medium', assigned_to: '', scheduled_date: '', attachment_url: null }); setShowForm(false); } });
   };
 
   return (
@@ -226,7 +247,7 @@ export function MaintenancePage() {
         title="طلبات الصيانة"
         description="تتبع طلبات الصيانة حسب الحالة والأولوية والعقار، مع إجراءات واضحة للموبايل والديسكتوب."
         primaryAction={(
-          <Button type="button" onClick={() => setShowForm(true)}>
+          <Button type="button" onClick={openCreateForm} className="min-h-11">
             <PlusCircle className="me-2 size-4" aria-hidden="true" />
             طلب صيانة جديد
           </Button>
@@ -316,6 +337,8 @@ export function MaintenancePage() {
                   )}
                   actions={actions.length > 0 ? (
                     <div className="grid w-full grid-cols-1 gap-2">
+                      <Button type="button" variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => setDetailsRequest(row)}><Eye className="me-2 size-4" aria-hidden="true" />التفاصيل</Button>
+                      <Button type="button" variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => openEditForm(row)}><Edit className="me-2 size-4" aria-hidden="true" />تعديل</Button>
                       {actions.map((action) => (
                         <Button
                           key={`${row.id}-${action.status}`}
@@ -364,12 +387,12 @@ export function MaintenancePage() {
                     <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
                       <ActionMenu
                         label="تحديث الطلب"
-                        items={actions.map((action) => ({
+                        items={[{ id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => setDetailsRequest(row) }, { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEditForm(row) }, ...actions.map((action) => ({
                           id: String(action.status),
                           label: action.label,
                           onClick: () => handleStatusAction(row, action.status),
                           disabled: updateStatusMutation.isPending || resolveMutation.isPending,
-                        }))}
+                        }))]}
                       />
                     </div>
                   );
@@ -385,11 +408,11 @@ export function MaintenancePage() {
 
       <EntityForm.Overlay
         open={showForm}
-        onOpenChange={(open) => { if (!createMutation.isPending) setShowForm(open); }}
-        title="طلب صيانة جديد"
-        description="حدد الموقع والأولوية وأضف وصفاً واضحاً يساعد فريق الصيانة على بدء العمل."
+        onOpenChange={(open) => { if (!createMutation.isPending && !updateRequestMutation.isPending) setShowForm(open); }}
+        title={editingRequest ? 'تعديل طلب صيانة' : 'طلب صيانة جديد'}
+        description="حدد الموقع والأولوية والمسؤول والموعد المجدول إن وجد."
       >
-        <EntityForm.Root aria-busy={createMutation.isPending} onSubmit={form.handleSubmit(onSubmit)}>
+        <EntityForm.Root aria-busy={createMutation.isPending || updateRequestMutation.isPending} onSubmit={form.handleSubmit(onSubmit)}>
           <EntityForm.ErrorSummary message={firstCreateError} />
 
           <EntityForm.Section title="الموقع" description="اختر العقار، ويمكن ربط الطلب بوحدة محددة.">
@@ -425,6 +448,7 @@ export function MaintenancePage() {
               <Textarea aria-label="وصف الطلب" placeholder="الوصف (اختياري)" className="min-h-24" {...form.register('description')} />
             </label>
 
+            <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-1.5 text-sm font-bold">
               <span>الأولوية</span>
               <Select aria-label="الأولوية" {...form.register('priority')}>
@@ -434,6 +458,9 @@ export function MaintenancePage() {
                 <option value="urgent">عاجلة</option>
               </Select>
             </label>
+            <label className="space-y-1.5 text-sm font-bold"><span>المسؤول/الفني</span><Input placeholder="اسم الفني أو المسؤول" {...form.register('assigned_to')} /></label>
+            <label className="space-y-1.5 text-sm font-bold sm:col-span-2"><span>تاريخ الجدولة</span><Input type="date" {...form.register('scheduled_date')} /></label>
+            </div>
 
             <Controller
               control={form.control}
@@ -445,12 +472,28 @@ export function MaintenancePage() {
           </EntityForm.Section>
 
           <EntityForm.Actions
-            submitLabel={createMutation.isPending ? 'جارٍ الحفظ...' : 'حفظ الطلب'}
+            submitLabel={(createMutation.isPending || updateRequestMutation.isPending) ? 'جارٍ الحفظ...' : editingRequest ? 'حفظ التعديل' : 'حفظ الطلب'}
             onCancel={() => setShowForm(false)}
-            isSubmitting={createMutation.isPending}
+            isSubmitting={createMutation.isPending || updateRequestMutation.isPending}
             submitDisabled={properties.length === 0}
           />
         </EntityForm.Root>
+      </EntityForm.Overlay>
+
+      <EntityForm.Overlay
+        open={detailsRequest != null}
+        onOpenChange={(open) => { if (!open) setDetailsRequest(null); }}
+        title="تفاصيل طلب الصيانة"
+        description={detailsRequest?.title ?? undefined}
+      >
+        {detailsRequest ? (
+          <div className="space-y-3 text-sm">
+            <p className="rounded-2xl border p-3"><strong>الحالة:</strong> {maintenanceStatusLabels[detailsRequest.status as keyof typeof maintenanceStatusLabels] ?? detailsRequest.status}</p>
+            <p className="rounded-2xl border p-3"><strong>الوصف:</strong> {detailsRequest.description || '—'}</p>
+            <p className="rounded-2xl border p-3"><strong>الفني:</strong> {detailsRequest.assigned_to || detailsRequest.technician_name || '—'}</p>
+            <p className="rounded-2xl border p-3"><strong>التكلفة:</strong> {detailsRequest.cost ?? 0}</p>
+          </div>
+        ) : null}
       </EntityForm.Overlay>
 
       <EntityForm.Overlay

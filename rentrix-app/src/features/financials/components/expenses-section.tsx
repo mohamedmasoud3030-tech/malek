@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
-import { Download, Plus, Printer } from 'lucide-react';
+import { Download, Edit, Eye, Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
@@ -52,6 +52,8 @@ type ExpensesSectionProps = Readonly<{
   error?: unknown;
   onRetry?: () => void;
   onCreateExpense: (values: ExpenseFormValues) => void;
+  onUpdateExpense?: (expenseId: string, values: ExpenseFormValues) => void;
+  isUpdateExpensePending?: boolean;
 }>;
 
 function escapeCsvCell(value: string | number | null | undefined) {
@@ -92,8 +94,12 @@ export function ExpensesSection({
   error,
   onRetry,
   onCreateExpense,
+  onUpdateExpense,
+  isUpdateExpensePending = false,
 }: ExpensesSectionProps) {
   const [formOpen, setFormOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [detailsExpense, setDetailsExpense] = useState<Expense | null>(null);
   const propertyById = new Map(propertyRows.map((property) => [property.id, property]));
   const costCenterById = new Map(costCenterRows.map((costCenter) => [costCenter.id, costCenter]));
   const summary = summarizeOperationalExpenses(expenses);
@@ -116,8 +122,41 @@ export function ExpensesSection({
   };
 
   useEffect(() => {
-    if (isCreateExpenseSuccess) setFormOpen(false);
+    if (isCreateExpenseSuccess) {
+      setFormOpen(false);
+      setEditingExpense(null);
+    }
   }, [isCreateExpenseSuccess]);
+
+  const openCreateForm = () => {
+    setEditingExpense(null);
+    expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', amount: 0, expense_date: getTodayLocalDateString(), description: '', attachment_url: null });
+    setFormOpen(true);
+  };
+
+  const openEditForm = (expense: Expense) => {
+    setEditingExpense(expense);
+    expenseForm.reset({
+      property_id: expense.property_id,
+      category: expense.category as OperationalExpenseCategory,
+      cost_center_id: expense.cost_center_id ?? '',
+      amount: Number(expense.amount ?? 0),
+      expense_date: expense.expense_date,
+      description: expense.description ?? '',
+      attachment_url: expense.attachment_url ?? null,
+    });
+    setFormOpen(true);
+  };
+
+  const submitExpenseForm = (values: ExpenseFormValues) => {
+    if (editingExpense && onUpdateExpense) {
+      onUpdateExpense(editingExpense.id, values);
+      return;
+    }
+    onCreateExpense(values);
+  };
+
+  const isSavingExpense = isCreateExpensePending || isUpdateExpensePending;
 
   const firstFormError = Object.values(expenseForm.formState.errors)
     .map((fieldError) => fieldError?.message)
@@ -135,7 +174,7 @@ export function ExpensesSection({
             <Download className="me-2 size-4" aria-hidden="true" />
             تصدير CSV
           </Button>
-          <Button onClick={() => setFormOpen(true)} disabled={propertyRows.length === 0}>
+          <Button onClick={openCreateForm} disabled={propertyRows.length === 0}>
             <Plus className="me-2 size-4" aria-hidden="true" />
             إضافة مصروف
           </Button>
@@ -206,6 +245,8 @@ export function ExpensesSection({
               <ActionMenu
                 label="إجراءات المصروف"
                 items={[
+                  { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => setDetailsExpense(expense) },
+                  { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEditForm(expense), disabled: !onUpdateExpense },
                   { id: 'pdf', label: 'تصدير PDF', icon: Download, onClick: () => exportExpenseVoucher(expense) },
                   { id: 'print', label: 'طباعة', icon: Printer, onClick: printCurrentView },
                 ]}
@@ -221,8 +262,8 @@ export function ExpensesSection({
                 subtitle={`${formatDate(expense.expense_date)} · ${expense.category}${costCenterLabel ? ` · ${costCenterLabel}` : ''}`}
                 stats={<span className="text-base font-black tabular-nums" dir="ltr">{formatMoney(expense.amount)}</span>}
                 actions={(
-                  <Button type="button" variant="secondary" className="min-h-11 w-full px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
-                    <Download className="me-2 size-4" aria-hidden="true" />PDF
+                  <Button type="button" variant="secondary" className="min-h-11 w-full px-3 text-xs" onClick={() => openEditForm(expense)}>
+                    <Edit className="me-2 size-4" aria-hidden="true" />تعديل
                   </Button>
                 )}
               />
@@ -233,13 +274,13 @@ export function ExpensesSection({
 
       <EntityForm.Overlay
         open={formOpen}
-        onOpenChange={(open) => { if (!isCreateExpensePending) setFormOpen(open); }}
-        title="إضافة مصروف"
+        onOpenChange={(open) => { if (!isSavingExpense) setFormOpen(open); }}
+        title={editingExpense ? 'تعديل مصروف' : 'إضافة مصروف'}
         description="سجّل المصروف وربطه بالعقار ومركز التكلفة. الحقول المطلوبة موضحة داخل النموذج."
       >
         <EntityForm.Root
-          aria-busy={isCreateExpensePending}
-          onSubmit={expenseForm.handleSubmit(onCreateExpense)}
+          aria-busy={isSavingExpense}
+          onSubmit={expenseForm.handleSubmit(submitExpenseForm)}
         >
           <EntityForm.ErrorSummary message={firstFormError} />
 
@@ -294,12 +335,28 @@ export function ExpensesSection({
           </EntityForm.Section>
 
           <EntityForm.Actions
-            submitLabel={isCreateExpensePending ? 'جارٍ الحفظ...' : 'حفظ المصروف'}
+            submitLabel={isSavingExpense ? 'جارٍ الحفظ...' : editingExpense ? 'حفظ التعديل' : 'حفظ المصروف'}
             onCancel={() => setFormOpen(false)}
-            isSubmitting={isCreateExpensePending}
+            isSubmitting={isSavingExpense}
             submitDisabled={propertyRows.length === 0}
           />
         </EntityForm.Root>
+      </EntityForm.Overlay>
+
+      <EntityForm.Overlay
+        open={detailsExpense != null}
+        onOpenChange={(open) => { if (!open) setDetailsExpense(null); }}
+        title="تفاصيل المصروف"
+        description={detailsExpense ? `${formatDate(detailsExpense.expense_date)} · ${detailsExpense.category}` : undefined}
+      >
+        {detailsExpense ? (
+          <div className="space-y-3 text-sm">
+            <p className="rounded-2xl border p-3"><strong>العقار:</strong> {buildExpensePropertyLabel(detailsExpense, propertyById)}</p>
+            <p className="rounded-2xl border p-3"><strong>المبلغ:</strong> <span dir="ltr">{formatMoney(detailsExpense.amount)}</span></p>
+            <p className="rounded-2xl border p-3"><strong>الوصف:</strong> {detailsExpense.description || '—'}</p>
+            {detailsExpense.attachment_url ? <a className="inline-flex min-h-11 items-center rounded-xl border px-4 font-bold" href={detailsExpense.attachment_url}>فتح المرفق</a> : null}
+          </div>
+        ) : null}
       </EntityForm.Overlay>
     </Card>
   );
