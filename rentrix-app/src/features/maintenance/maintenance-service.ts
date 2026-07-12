@@ -20,6 +20,19 @@ export async function createMaintenance(payload: MaintenancePayload) {
   return data;
 }
 
+export async function updateMaintenance(requestId: string, payload: MaintenanceUpdate) {
+  const { data, error } = await supabase
+    .from('maintenance_records')
+    .update(payload)
+    .eq('id', requestId)
+    .is('deleted_at', null)
+    .select('*')
+    .single()
+    .returns<Maintenance>();
+  if (error) handleSupabaseError(error, 'تعذر تعديل طلب الصيانة');
+  return data;
+}
+
 export async function updateMaintenanceStatus(requestId: string, status: Exclude<MaintenanceStatus, 'all'>) {
   if (status === 'resolved') {
     throw new Error('استخدم resolveMaintenanceWithExpense لإغلاق طلب الصيانة مع تسجيل التكلفة');
