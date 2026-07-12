@@ -28,7 +28,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 vi.mock('@/components/layout/page-header', () => ({
-  PageHeader: () => null,
+  PageHeader: ({ action }: any) => <header>{action}</header>,
 }));
 
 vi.mock('./use-units', () => ({
@@ -74,6 +74,23 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       document.body.removeChild(container);
       container = null;
     }
+  });
+
+  it('exposes a mobile-safe create entry point and opens the unit form from the global units route', async () => {
+    await act(async () => {
+      root.render(<UnitsPage />);
+    });
+
+    const addButton = Array.from(container?.querySelectorAll('button') ?? [])
+      .find((button) => button.textContent?.includes('إضافة وحدة')) as HTMLButtonElement | undefined;
+    expect(addButton).toBeTruthy();
+
+    await act(async () => {
+      addButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(document.body.textContent).toContain('اختيار العقار مطلوب');
+    expect(document.body.textContent).toContain('رقم الوحدة');
   });
 
   it('proves clicking a desktop row in UnitsPage navigates to nested unit detail URL', async () => {
