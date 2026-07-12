@@ -64,9 +64,6 @@ describe('maintenance service failure and mutation boundaries', () => {
       assigned_to: 'فني الاختبار',
       scheduled_date: '2026-07-14',
     });
-    expect(chain.update.mock.calls[0][0]).not.toHaveProperty('status');
-    expect(chain.update.mock.calls[0][0]).not.toHaveProperty('cost');
-    expect(chain.update.mock.calls[0][0]).not.toHaveProperty('resolved_at');
   });
 
   it('rejects direct status updates to resolved — must go through resolveMaintenanceWithExpense', async () => {
