@@ -10,41 +10,42 @@ interface KpiCardProps {
   trendValue?: string;
   accent?: 'primary' | 'emerald' | 'amber' | 'rose' | 'violet' | 'sky';
   compact?: boolean;
+  className?: string;
 }
 
 const accentMap = {
   primary: {
-    bg: 'bg-primary/8',
+    surface: 'bg-primary/[0.055]',
     icon: 'bg-primary text-primary-foreground',
     trend_up: 'text-emerald-600 dark:text-emerald-400',
     trend_down: 'text-rose-600 dark:text-rose-400',
   },
   emerald: {
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+    surface: 'bg-emerald-50/75 dark:bg-emerald-950/25',
     icon: 'bg-emerald-500 text-white',
     trend_up: 'text-emerald-600 dark:text-emerald-400',
     trend_down: 'text-rose-600 dark:text-rose-400',
   },
   amber: {
-    bg: 'bg-amber-50 dark:bg-amber-950/30',
+    surface: 'bg-amber-50/75 dark:bg-amber-950/25',
     icon: 'bg-amber-500 text-white',
     trend_up: 'text-emerald-600 dark:text-emerald-400',
     trend_down: 'text-rose-600 dark:text-rose-400',
   },
   rose: {
-    bg: 'bg-rose-50 dark:bg-rose-950/30',
+    surface: 'bg-rose-50/75 dark:bg-rose-950/25',
     icon: 'bg-rose-500 text-white',
     trend_up: 'text-emerald-600 dark:text-emerald-400',
     trend_down: 'text-rose-600 dark:text-rose-400',
   },
   violet: {
-    bg: 'bg-violet-50 dark:bg-violet-950/30',
+    surface: 'bg-violet-50/75 dark:bg-violet-950/25',
     icon: 'bg-violet-500 text-white',
     trend_up: 'text-emerald-600 dark:text-emerald-400',
     trend_down: 'text-rose-600 dark:text-rose-400',
   },
   sky: {
-    bg: 'bg-sky-50 dark:bg-sky-950/30',
+    surface: 'bg-sky-50/75 dark:bg-sky-950/25',
     icon: 'bg-sky-500 text-white',
     trend_up: 'text-emerald-600 dark:text-emerald-400',
     trend_down: 'text-rose-600 dark:text-rose-400',
@@ -60,40 +61,46 @@ export function KpiCard({
   trendValue,
   accent = 'primary',
   compact = false,
+  className,
 }: KpiCardProps) {
   const colors = accentMap[accent];
 
   return (
-    <div
+    <article
+      data-kpi-card
       className={cn(
-        'rounded-2xl border border-border/60 bg-card p-4 transition-all',
-        'hover:shadow-md hover:-translate-y-0.5 active:translate-y-0',
+        'relative min-w-0 overflow-hidden rounded-[1.35rem] border border-border/65 bg-card p-4 shadow-[0_8px_24px_hsl(var(--foreground)/0.045)] transition-[transform,border-color,box-shadow] sm:rounded-2xl',
+        'hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_14px_32px_hsl(var(--foreground)/0.07)]',
+        colors.surface,
         compact ? 'p-3' : 'p-4',
+        className,
       )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl', compact && 'size-8', colors.icon)}>
-          <Icon className={cn('size-4', compact && 'size-3.5')} />
+      <div className="flex items-start justify-between gap-3">
+        <div className={cn('grid size-10 shrink-0 place-items-center rounded-2xl shadow-sm', compact && 'size-9 rounded-xl', colors.icon)}>
+          <Icon className={cn('size-4.5', compact && 'size-4')} aria-hidden="true" />
         </div>
-        {trend && trendValue && (
+        {trend && trendValue ? (
           <span
             className={cn(
-              'rounded-full px-2 py-0.5 text-[10px] font-bold',
+              'inline-flex min-h-7 items-center rounded-full px-2 py-1 text-[10px] font-black tabular-nums',
               trend === 'up' && `${colors.trend_up} bg-emerald-100 dark:bg-emerald-900/40`,
               trend === 'down' && `${colors.trend_down} bg-rose-100 dark:bg-rose-900/40`,
-              trend === 'neutral' && 'text-muted-foreground bg-muted',
+              trend === 'neutral' && 'bg-muted text-muted-foreground',
             )}
           >
             {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '–'} {trendValue}
           </span>
-        )}
+        ) : null}
       </div>
 
-      <div className="mt-3">
-        <p className={cn('font-black tabular-nums leading-none', compact ? 'text-xl' : 'text-2xl')}>{value}</p>
-        <p className={cn('mt-1 font-semibold text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>{label}</p>
-        {sub && <p className="mt-0.5 text-[10px] text-muted-foreground/70">{sub}</p>}
+      <div className="mt-3 min-w-0">
+        <p className={cn('break-words font-black tabular-nums leading-tight tracking-tight', compact ? 'text-xl' : 'text-[1.65rem] sm:text-2xl')}>
+          {value}
+        </p>
+        <p className={cn('mt-1 font-bold text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>{label}</p>
+        {sub ? <p className="mt-1 line-clamp-2 text-[10px] font-medium leading-4 text-muted-foreground/80">{sub}</p> : null}
       </div>
-    </div>
+    </article>
   );
 }
