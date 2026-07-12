@@ -41,8 +41,8 @@ function Root({ className, children, ...props }: EntityFormRootProps) {
 }
 
 type EntityFormSectionProps = Readonly<{
-  title?: string;
-  description?: string;
+  title?: ReactNode;
+  description?: ReactNode;
   children: ReactNode;
   className?: string;
 }>;
@@ -109,7 +109,7 @@ type EntityFormOverlayProps = Readonly<{
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description?: string;
+  description?: ReactNode;
   headerExtra?: ReactNode;
   children: ReactNode;
   className?: string;
