@@ -2,29 +2,66 @@
 
 ## What Rentrix is
 
-Rentrix is a web application for managing rental property operations for a single real-estate office: properties, units, owners, tenants, contracts, invoicing, payments/receipts, expenses, maintenance, and reporting. The UI is Arabic-first (route titles and navigation labels are in Arabic; see `rentrix-app/src/components/layout/app-nav-items.ts`).
+Rentrix is an Arabic-first rental-property management system for a single real-estate office. It connects portfolio operations, people, contracts, money movement, maintenance, reporting, and governance in one Supabase-backed application.
+
+The product is intended to replace disconnected spreadsheets and manual records with an auditable operational and financial system.
 
 ## Intended users
 
-Office staff who operate day-to-day property management tasks: recording contracts, tracking invoices and collections, handling maintenance requests, and reviewing owner/tenant/financial reports. The permission model (`rentrix-app/src/features/auth/permissions.ts`) distinguishes `ADMIN`, `MANAGER`, and `USER` roles, with specific view permissions gating sections such as owners, maintenance, leads, commissions, and system administration.
+- **ADMIN** — full administration and sensitive operational/financial control.
+- **MANAGER** — management workflows and authorized financial operations.
+- **USER** — limited operational access according to named permissions.
 
-## Areas of the product (as reflected in navigation and routes)
+Frontend visibility is permission-gated, but the database authorization boundary remains RLS, grants, constraints, and guarded RPCs.
 
-- **Portfolio**: Properties, Units, Lands
-- **People & relationships**: People directory, Owners (with owner agreements), Tenants
-- **Operations**: Contracts, Maintenance, Communication log
-- **Financials & collections**: Invoices, Receipts, Expenses, Arrears
-- **Reporting**: Reports (collections, occupancy, overdue, statements, overview)
-- **Sales**: Leads, Commissions
-- **Settings**: Company settings, cost centers, payment terms, role simulation
-- **System**: Audit log, data integrity checks, system governance
+## Product areas
 
-Each area above corresponds to a route under `rentrix-app/src/routes/` and a feature folder under `rentrix-app/src/features/`. Treat this list as a map to the code, not a claim about completeness of any one area — check `docs/CURRENT_STATE.md` and the relevant feature folder before relying on specific behavior.
+| Area | Current scope |
+| --- | --- |
+| Portfolio | Properties, units, lands, occupancy and location data |
+| People | People directory, tenants, owners and owner agreements |
+| Contracts | Create, update, renew, terminate, soft delete and documents |
+| Billing | Invoices, payment cycles, arrears and balances |
+| Collections | Payments, payment-backed receipts, void history |
+| Expenses | Property/unit expenses, cost centers and atomic journal updates |
+| Accounting | Chart of accounts, journal entries, VAT and balanced invoice/payment flows |
+| Maintenance | Requests, resolution and expense creation |
+| Reports | Collections, cash flow, VAT, overdue, occupancy, owner/tenant statements and financial summaries |
+| Banking | Bank accounts, statement lines, matching and reconciliation foundation |
+| Sales/operations | Leads, commissions, communications |
+| Administration | Company settings, payment terms, audit log, integrity checks and governance |
+| Assistance | AI assistant surface, subject to configured provider and release evidence |
 
-## What the product is for
+This table describes the intended operational surface. It is not a release claim; check `docs/CURRENT_STATE.md` and `docs/RELEASE_READINESS.md`.
 
-The application exists to give a property management office one system of record for contracts and money movement, instead of spreadsheets or disconnected tools — so that invoices, payments, expenses, and owner payouts stay consistent and auditable.
+## Product invariants
 
-## Product decision: receipts and collections
+- `public.people` is the canonical tenant identity source.
+- Contracts and their destructive lifecycle operations use atomic backend paths.
+- Invoice generation creates balanced accounting entries.
+- Payments and receipts are linked through the payment-backed collection model.
+- VOID/CANCELLED history is retained but excluded from applicable totals.
+- Posted journal entries are immutable and corrected through reversals.
+- Company-facing reports must agree with the underlying invoice/payment/expense lifecycle.
+- Sensitive financial operations require backend authorization, not only hidden buttons.
 
-Until a product decision changes it, collection reporting is based on posted payments. Voided receipts/payments are retained as history but are not revenue/collection. Owner settlements, multi-currency, deposits, and deferred revenue remain separate product decisions and should not be inferred from receipt reporting work.
+## Current product boundary
+
+The core product includes real Supabase-backed modules, but full release sign-off still depends on exact-candidate staging/browser/backend evidence.
+
+The following remain planned or incomplete product/accounting depth:
+
+- full office management-fee and owner payout lifecycle,
+- master-lease fixed owner obligations,
+- daily/weekly/open-ended contract billing,
+- full utility responsibility and posting,
+- tenant security-deposit ledger,
+- deferred-revenue reporting,
+- multi-currency,
+- advanced bank-file ingestion and reconciliation rules.
+
+Approved accounting policies are recorded under `docs/decisions/`; implementation should follow those decisions instead of inventing new rules.
+
+## Release objective
+
+Rentrix is ready for release only when one immutable release-candidate SHA passes the code, migration, backend, role, financial reconciliation, browser, RTL/responsive, document/export, and formatting gates in `docs/RELEASE_READINESS.md`.
