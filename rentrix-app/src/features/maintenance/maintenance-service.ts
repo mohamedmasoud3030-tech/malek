@@ -15,6 +15,7 @@ export type MaintenanceUpdate = Pick<Database['public']['Tables']['maintenance_r
   | 'technician_name'
   | 'scheduled_date'
   | 'attachment_url'>;
+type MaintenanceStatusUpdate = Pick<Database['public']['Tables']['maintenance_records']['Update'], 'status' | 'resolved_at'>;
 export async function listMaintenance(status: MaintenanceStatus, propertyId: string) {
   let q = supabase.from('maintenance_records').select('*').is('deleted_at', null).order('created_at', { ascending: false });
   if (status !== 'all' && status != null) q = q.eq('status', status as string);
@@ -46,7 +47,7 @@ export async function updateMaintenanceStatus(requestId: string, status: Exclude
   if (status === 'resolved') {
     throw new Error('استخدم resolveMaintenanceWithExpense لإغلاق طلب الصيانة مع تسجيل التكلفة');
   }
-  const updatePayload: MaintenanceUpdate = {
+  const updatePayload: MaintenanceStatusUpdate = {
     status,
     resolved_at: status === 'closed' ? new Date().toISOString() : null,
   };
