@@ -5,9 +5,9 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { useProperties } from '@/features/properties/use-properties';
 import { useCostCenters } from '@/features/settings/useCostCenters';
@@ -17,7 +17,6 @@ import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-
 import { getTodayLocalDateString } from '../financials-date-utils';
 import { OPERATIONAL_EXPENSE_CATEGORIES, summarizeOperationalExpenses, type OperationalExpenseFilterValues } from './operational-expenses';
 import { useCreateExpenseAtomic, useExpenses } from './useExpenses';
-import { PageHeader } from '@/components/layout/page-header';
 
 const expenseSchema = z.object({
   property_id: z.string().uuid('اختر العقار'),
@@ -28,8 +27,6 @@ const expenseSchema = z.object({
   description: z.string().optional(),
   attachment_url: z.string().nullable().optional(),
 });
-
-
 
 export function toLocalDateInputValue(date: Date = new Date()) {
   return getTodayLocalDateString(date);
@@ -47,7 +44,15 @@ export function ExpensesPage() {
 
   const expenseForm = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: { property_id: '', category: 'صيانة', cost_center_id: '', expense_date: toLocalDateInputValue(), description: '', attachment_url: null },
+    defaultValues: {
+      property_id: '',
+      category: 'صيانة',
+      cost_center_id: '',
+      amount: 0,
+      expense_date: toLocalDateInputValue(),
+      description: '',
+      attachment_url: null,
+    },
   });
 
   const onCreateExpense = (values: ExpenseFormValues) => {
@@ -62,7 +67,17 @@ export function ExpensesPage() {
         description: values.description?.trim() ? values.description.trim() : null,
         attachmentUrl: values.attachment_url ?? null,
       },
-      { onSuccess: () => expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', expense_date: toLocalDateInputValue(), description: '', attachment_url: null }) },
+      {
+        onSuccess: () => expenseForm.reset({
+          property_id: '',
+          category: 'صيانة',
+          cost_center_id: '',
+          amount: 0,
+          expense_date: toLocalDateInputValue(),
+          description: '',
+          attachment_url: null,
+        }),
+      },
     );
   };
 
@@ -79,11 +94,11 @@ export function ExpensesPage() {
         )}
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <KpiCard label="عدد المصاريف" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.visibleCount)} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
-        <KpiCard label="إجمالي المبلغ" value={formatCompanyMoney(defaultCompanyLocalSettings, summary.visibleAmount)} sub="للمصاريف المعروضة" icon={Banknote} accent="primary" />
-        <KpiCard label="العقارات المتأثرة" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byPropertyCount)} sub="عقارات لديها مصاريف" icon={WalletCards} accent="primary" />
-        <KpiCard label="التصنيفات" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byCategoryCount)} sub="تصنيفات مستخدمة" icon={CalendarDays} accent="primary" />
+        <KpiCard label="إجمالي المبلغ" value={formatCompanyMoney(defaultCompanyLocalSettings, summary.visibleAmount)} sub="للمصاريف المعروضة" icon={Banknote} accent="rose" />
+        <KpiCard label="العقارات المتأثرة" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byPropertyCount)} sub="عقارات لديها مصاريف" icon={WalletCards} accent="amber" />
+        <KpiCard label="التصنيفات" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byCategoryCount)} sub="تصنيفات مستخدمة" icon={CalendarDays} accent="sky" />
       </div>
 
       {propertiesQuery.isError ? <EmptyState title="تعذر تحميل العقارات" description="يمكنك إعادة المحاولة بعد لحظات قبل تسجيل مصروف جديد." role="alert" ariaLive="assertive" /> : null}
@@ -97,6 +112,7 @@ export function ExpensesPage() {
         onFiltersChange={setFilters}
         expenseForm={expenseForm}
         isCreateExpensePending={createExpense.isPending || propertiesQuery.isLoading}
+        isCreateExpenseSuccess={createExpense.isSuccess}
         isLoading={expensesQuery.isLoading || propertiesQuery.isLoading}
         error={expensesQuery.error ?? propertiesQuery.error}
         onRetry={() => { void Promise.all([expensesQuery.refetch(), propertiesQuery.refetch()]); }}
