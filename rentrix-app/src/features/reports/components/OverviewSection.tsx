@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useFinancialCashflowReport, useFinancialPeriodSummaryReport } from '@/features/financials/reports/useFinancialReports';
 import { buildReportCsvFilename, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
@@ -22,12 +23,12 @@ export function OverviewSection({ summary, cashflowRows, canExportReports, isLoa
       onExportCsv={canExportReports ? () => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report)) : undefined}
       isLoading={isLoading}
     >
-      <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ResponsiveCardGrid className="p-4" desktopColumns={4}>
         <KpiCard label="إجمالي الفواتير" value={formatMoney(report.invoiced)} icon={WalletCards} accent="sky" sub={`${report.invoicesCount} فواتير`} />
         <KpiCard label="إجمالي التحصيل" value={formatMoney(report.paid)} icon={WalletCards} accent="emerald" sub={`${report.paymentsCount} مدفوعات`} />
         <KpiCard label="الرصيد المستحق" value={formatMoney(report.outstanding)} icon={WalletCards} accent="amber" sub="من فواتير الفترة" />
         <KpiCard label="إجمالي المصروفات" value={formatMoney(report.expenses)} icon={WalletCards} accent="rose" sub={`${report.expensesCount} مصروفات`} />
-      </div>
+      </ResponsiveCardGrid>
       <div className="h-72 p-4 pt-0">
         {cashflowRows.length === 0 ? (
           <p className="grid h-full place-items-center text-sm text-muted-foreground">لا توجد بيانات شهرية كافية لعرض التدفق النقدي للفترة.</p>

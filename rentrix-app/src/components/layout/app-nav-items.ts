@@ -40,6 +40,7 @@ export const navGroups = [
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'communication.view'],
   ]],
   ['الماليات والتحصيل', [
+    ['/financials', 'financials', 'لوحة الماليات والتحصيل', WalletCards],
     ['/invoices', 'invoices', 'الفواتير المستحقة', ReceiptText],
     ['/receipts', 'collectionsReceipts', 'التحصيلات والإيصالات', ReceiptText],
     ['/expenses', 'expenses', 'مصاريف العقارات التشغيلية', WalletCards],
@@ -79,7 +80,7 @@ export const mobileNavItems = [
   ['/properties', 'properties', Building2],
   ['/contracts', 'contracts', FileText],
   ['/invoices', 'invoices', ReceiptText],
-  ['/financials', 'financials', WalletCards],
+  ['/reports', 'reports', BarChart3],
 ] as const satisfies readonly MobileNavItem[];
 
 export const quickLinks = [

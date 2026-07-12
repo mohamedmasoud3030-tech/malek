@@ -1,5 +1,6 @@
 import { AlertTriangle, Clock, FileWarning, TrendingDown, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { toFinancialNumber } from '../financialMath';
 import type { AgedReceivablesBucket, AgedReceivablesReport, AgingBucketKey, ArrearsSummaryReport, OverdueInvoicesReport } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, OVER_90_BUCKET_KEY } from './arrears-workflow-helpers';
@@ -24,7 +25,7 @@ export function ArrearsSummaryCards({ overdueReport, agedReceivablesReport, arre
   const totalOutstanding = agedReceivablesReport?.totalOutstanding ?? 0;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <ResponsiveCardGrid desktopColumns={5}>
       <KpiCard label="إجمالي المتأخرات" value={formatMoney(totalOverdue)} icon={AlertTriangle} accent="rose" />
       <KpiCard label="فواتير متأخرة" value={overdueInvoiceCount} icon={FileWarning} accent="amber" />
       <KpiCard
@@ -35,6 +36,6 @@ export function ArrearsSummaryCards({ overdueReport, agedReceivablesReport, arre
       />
       <KpiCard label="متأخرات 90+ يوم" value={formatMoney(over90Amount)} icon={TrendingDown} accent="rose" />
       <KpiCard label="إجمالي المتبقي الموجب" value={formatMoney(totalOutstanding)} icon={WalletCards} accent="primary" />
-    </div>
+    </ResponsiveCardGrid>
   );
 }

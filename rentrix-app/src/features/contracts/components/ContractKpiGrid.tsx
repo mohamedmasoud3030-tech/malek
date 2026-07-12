@@ -1,5 +1,6 @@
 import { CalendarClock, FileText, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { formatContractMoney } from '../contractDisplayFormatters';
 import type { ContractListItem } from '../services/contractService';
@@ -30,11 +31,11 @@ export function ContractKpiGrid({
   const visibleSummary = summarizeContracts(filteredContracts);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <ResponsiveCardGrid desktopColumns={4}>
       <KpiCard label="إجمالي العقود" value={listSummary.total} sub="حسب فلتر الحالة الحالي" icon={FileText} accent="primary" />
       <KpiCard label="العقود النشطة" value={listSummary.active} sub="من إجمالي العقود المحملة" icon={WalletCards} accent="emerald" />
       <KpiCard label="تنتهي قريبًا" value={listSummary.expiringSoon} sub="خلال 30 يومًا" icon={CalendarClock} accent="amber" />
       <KpiCard label="إيجار الظاهرة" value={formatContractMoney(companySettings, visibleSummary.rentTotal)} sub="بعد البحث والفلاتر" icon={WalletCards} accent="sky" />
-    </div>
+    </ResponsiveCardGrid>
   );
 }

@@ -14,6 +14,7 @@ import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -232,7 +233,7 @@ export function MaintenancePage() {
         )}
       />
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <ResponsiveCardGrid desktopColumns={4}>
         {summaryCards.map((card) => (
           <KpiCard
             key={card.key}
@@ -243,7 +244,7 @@ export function MaintenancePage() {
             accent={card.accent}
           />
         ))}
-      </div>
+      </ResponsiveCardGrid>
 
       <FilterBar
         filters={(
