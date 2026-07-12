@@ -6,10 +6,11 @@ This file is a starting point for any developer or agent picking up work in this
 
 1. Read this file (`AGENTS.md`) — it's short, read it in full.
 2. **Before any code or doc change, open `.agents/skills/README.md`, identify every skill whose trigger matches the task, then read and apply those `SKILL.md` files first.** This repository's local agent skills live under `.agents/skills/`.
-3. Go to `docs/agent-context/CONTEXT_MAP.md` and find your task's row. **The map decides what else is mandatory for your specific task** — don't read every document in this repo for every task.
-4. `docs/agent-context/WORKFLOW.md` is conditional, not automatic: read it only for non-trivial or high-risk work (the map will point you to it when relevant).
-5. `docs/agent-context/DOMAIN.md` is also conditional: read the sections the map points you to for your task row, not the whole file, unless your task is broad enough that the map says so.
-6. `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/DOMAIN.md`, and `docs/NEXT.md` remain useful background — the map will tell you when a task needs one of them.
+3. Read `docs/ENGINEERING_GOVERNANCE.md` before any schema, migration, RPC, production, deployment, or release-readiness work. It is mandatory policy for those scopes.
+4. Go to `docs/agent-context/CONTEXT_MAP.md` and find your task's row. **The map decides what else is mandatory for your specific task** — don't read every document in this repo for every task.
+5. `docs/agent-context/WORKFLOW.md` is conditional, not automatic: read it only for non-trivial or high-risk work (the map will point you to it when relevant).
+6. `docs/agent-context/DOMAIN.md` is also conditional: read the sections the map points you to for your task row, not the whole file, unless your task is broad enough that the map says so.
+7. `docs/CURRENT_STATE.md`, `docs/ARCHITECTURE.md`, `docs/DOMAIN.md`, `docs/NEXT.md`, and `docs/RELEASE_READINESS.md` remain useful background — the map will tell you when a task needs one of them.
 
 
 ## Repo-scoped Agent Skills
@@ -29,7 +30,7 @@ When domains overlap, apply all relevant skills together; do not choose only one
 
 ## Precedence when docs and reality disagree
 
-Documentation — including everything under `docs/agent-context/` — describes
+`docs/ENGINEERING_GOVERNANCE.md` and `docs/GOVERNANCE.md` define policy and authorization. Other documentation — including everything under `docs/agent-context/` — describes
 a point-in-time understanding. If a doc disagrees with the actual code or
 the live database, **the code and the live database win.** Fix the doc in
 the same PR when you find a mismatch; don't proceed on the doc's word alone.
