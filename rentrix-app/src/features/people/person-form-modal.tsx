@@ -152,6 +152,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
             <label className="grid gap-2 text-sm font-bold">
               الهاتف
               <Input {...form.register('phone')} dir="ltr" />
+              {fieldError(form.formState.errors.phone?.message)}
             </label>
             <label className="grid gap-2 text-sm font-bold">
               البريد الإلكتروني
@@ -161,6 +162,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
             <label className="grid gap-2 text-sm font-bold">
               رقم الهوية
               <Input {...form.register('national_id')} />
+              {fieldError(form.formState.errors.national_id?.message)}
             </label>
             <label className="grid gap-2 text-sm font-bold">
               العنوان

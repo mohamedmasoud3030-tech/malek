@@ -6,6 +6,8 @@ import { UnitsPage } from './units-page';
 
 // Global navigation spy
 const mockNavigate = vi.fn();
+const createUnitMock = vi.fn();
+const updateUnitMock = vi.fn();
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
@@ -28,7 +30,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 vi.mock('@/components/layout/page-header', () => ({
-  PageHeader: () => null,
+  PageHeader: ({ action }: any) => <header>{action}</header>,
 }));
 
 vi.mock('./use-units', () => ({
@@ -39,8 +41,8 @@ vi.mock('./use-units', () => ({
     isLoading: false,
     isError: false,
   }),
-  useCreateUnit: () => ({ isPending: false, mutateAsync: vi.fn() }),
-  useUpdateUnit: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useCreateUnit: () => ({ isPending: false, mutateAsync: createUnitMock }),
+  useUpdateUnit: () => ({ isPending: false, mutateAsync: updateUnitMock }),
 }));
 
 vi.mock('@/features/properties/use-properties', () => ({
@@ -61,6 +63,8 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    createUnitMock.mockResolvedValue(undefined);
+    updateUnitMock.mockResolvedValue(undefined);
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -74,6 +78,41 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
       document.body.removeChild(container);
       container = null;
     }
+  });
+
+  it('exposes a mobile-safe create entry point and opens the unit form from the global units route', async () => {
+    await act(async () => {
+      root.render(<UnitsPage />);
+    });
+
+    const addButton = Array.from(container?.querySelectorAll('button') ?? [])
+      .find((button) => button.textContent?.includes('إضافة وحدة')) as HTMLButtonElement | undefined;
+    expect(addButton).toBeTruthy();
+
+    await act(async () => {
+      addButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(document.body.textContent).toContain('اختيار العقار مطلوب');
+    expect(document.body.textContent).toContain('رقم الوحدة');
+  });
+
+  it('opens the edit form from the mobile card without requiring property selection again', async () => {
+    await act(async () => {
+      root.render(<UnitsPage />);
+    });
+
+    const editButton = Array.from(container?.querySelectorAll('button') ?? [])
+      .find((button) => button.textContent?.includes('تعديل')) as HTMLButtonElement | undefined;
+    expect(editButton).toBeTruthy();
+
+    await act(async () => {
+      editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(document.body.textContent).toContain('تعديل وحدة');
+    expect(document.body.textContent).toContain('رقم الوحدة');
+    expect(document.body.textContent).not.toContain('اختيار العقار مطلوب');
   });
 
   it('proves clicking a desktop row in UnitsPage navigates to nested unit detail URL', async () => {

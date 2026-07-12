@@ -6,6 +6,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
+import { useProperties } from '@/features/properties/use-properties';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import type { Unit } from '@/types/domain';
 import { unitSchema, unitStatusLabels, unitStatusValues, type UnitFormValues } from './unit-schema';
@@ -23,8 +24,11 @@ function fieldError(message?: string) {
 }
 
 export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitFormModalProps) {
-  const createMutation = useCreateUnit(propertyId);
-  const updateMutation = useUpdateUnit(propertyId);
+  const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });
+  const [selectedPropertyId, setSelectedPropertyId] = useState(propertyId);
+  const effectivePropertyId = unit?.property_id ?? selectedPropertyId;
+  const createMutation = useCreateUnit(effectivePropertyId);
+  const updateMutation = useUpdateUnit(effectivePropertyId);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<UnitFormValues>({
     resolver: zodResolver(unitSchema),
@@ -40,6 +44,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
   useEffect(() => {
     if (open) {
       setSubmitError(null);
+      setSelectedPropertyId(unit?.property_id ?? propertyId);
       form.reset({
         unit_number: unit?.unit_number ?? '',
         floor: unit?.floor ?? '',
@@ -48,7 +53,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
         notes: unit?.notes ?? '',
       });
     }
-  }, [form, open, unit]);
+  }, [form, open, propertyId, unit]);
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
@@ -61,50 +66,72 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
       className="max-w-2xl"
       headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
-        <EntityForm.Root
-          className="md:grid-cols-2"
-          onSubmit={form.handleSubmit(async (values) => {
-            setSubmitError(null);
-            const payload = unitSchema.parse(values);
-            try {
-              if (unit) {
-                await updateMutation.mutateAsync({ unitId: unit.id, payload });
-              } else {
-                await createMutation.mutateAsync(payload);
+      <EntityForm.Root
+        className="md:grid-cols-2"
+        onSubmit={form.handleSubmit(async (values) => {
+          setSubmitError(null);
+          const payload = unitSchema.parse(values);
+          try {
+            if (unit) {
+              await updateMutation.mutateAsync({ unitId: unit.id, payload });
+            } else {
+              if (!effectivePropertyId) {
+                setSubmitError('اختر العقار قبل حفظ الوحدة.');
+                return;
               }
-              onOpenChange(false);
-            } catch (error) {
-              setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ الوحدة. تحقق من الصلاحيات ثم أعد المحاولة.');
+              await createMutation.mutateAsync(payload);
             }
-          })}
-        >
-          <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-          <label className="grid gap-2 text-sm font-bold">
-            رقم الوحدة
-            <Input {...form.register('unit_number')} />
-            {fieldError(form.formState.errors.unit_number?.message)}
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            الدور
-            <Input {...form.register('floor')} />
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            الحالة
-            <Select {...form.register('status')}>
-              {unitStatusValues.map((status) => <option key={status} value={status}>{unitStatusLabels[status]}</option>)}
-            </Select>
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            قيمة الإيجار
-            <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('rent_amount')} />
-            {fieldError(form.formState.errors.rent_amount?.message)}
-          </label>
+            onOpenChange(false);
+          } catch (error) {
+            setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ الوحدة. تحقق من الصلاحيات ثم أعد المحاولة.');
+          }
+        })}
+      >
+        <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
+        {!unit ? (
           <label className="grid gap-2 text-sm font-bold md:col-span-2">
-            ملاحظات
-            <Textarea {...form.register('notes')} />
+            العقار
+            <Select
+              value={selectedPropertyId}
+              onChange={(event) => setSelectedPropertyId(event.target.value)}
+              disabled={propertiesQuery.isLoading}
+              aria-invalid={!selectedPropertyId}
+            >
+              <option value="">اختر العقار</option>
+              {(propertiesQuery.data?.rows ?? []).map((property) => (
+                <option key={property.id} value={property.id}>{property.title}</option>
+              ))}
+            </Select>
+            {!selectedPropertyId ? <p className="text-xs font-bold text-destructive">اختيار العقار مطلوب</p> : null}
+            {propertiesQuery.isError ? <p className="text-xs font-bold text-destructive">تعذر تحميل العقارات. أعد المحاولة قبل الحفظ.</p> : null}
           </label>
-          <EntityForm.Actions className="md:col-span-2" onCancel={() => onOpenChange(false)} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'} />
-        </EntityForm.Root>
+        ) : null}
+        <label className="grid gap-2 text-sm font-bold">
+          رقم الوحدة
+          <Input {...form.register('unit_number')} />
+          {fieldError(form.formState.errors.unit_number?.message)}
+        </label>
+        <label className="grid gap-2 text-sm font-bold">
+          الدور
+          <Input {...form.register('floor')} />
+        </label>
+        <label className="grid gap-2 text-sm font-bold">
+          الحالة
+          <Select {...form.register('status')}>
+            {unitStatusValues.map((status) => <option key={status} value={status}>{unitStatusLabels[status]}</option>)}
+          </Select>
+        </label>
+        <label className="grid gap-2 text-sm font-bold">
+          قيمة الإيجار
+          <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('rent_amount')} />
+          {fieldError(form.formState.errors.rent_amount?.message)}
+        </label>
+        <label className="grid gap-2 text-sm font-bold md:col-span-2">
+          ملاحظات
+          <Textarea {...form.register('notes')} />
+        </label>
+        <EntityForm.Actions className="md:col-span-2" onCancel={() => onOpenChange(false)} isSubmitting={isSubmitting} submitDisabled={!unit && (!effectivePropertyId || propertiesQuery.isLoading || propertiesQuery.isError)} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ الوحدة'} />
+      </EntityForm.Root>
     </EntityForm.Overlay>
   );
 }

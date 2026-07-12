@@ -1,13 +1,14 @@
 import { Link } from '@tanstack/react-router';
-import { FileText, Mail, Phone, Plus, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { Edit, FileText, Mail, Phone, Plus, ReceiptText, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { FilterBar } from '@/components/ui/filter-bar';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { ListStateBody } from '../../components/layout/list-state-body';
+import { ListStateBody } from '@/components/layout/list-state-body';
 import { Button } from '@/components/ui/button';
+import { EntityActions } from '@/components/ui/entity-actions';
+import { FilterBar } from '@/components/ui/filter-bar';
 import { MobileCard } from '@/components/ui/mobile-card';
-import { EntityActions } from '../../components/ui/entity-actions';
+import { PersonFormModal } from '@/features/people/person-form-modal';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
 
@@ -47,11 +48,17 @@ function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   );
 }
 
-function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
-  const hasLinks = tenant.primaryContractId !== null || tenant.hasInvoices || tenant.hasArrears;
-  if (!hasLinks) return <p className="text-sm text-muted-foreground">لا توجد روابط متاحة حتى الآن</p>;
+function TenantSafeLinks({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void }>) {
   return (
     <EntityActions className="flex flex-wrap gap-2">
+      <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
+        <Edit className="me-1 size-4" />تعديل
+      </Button>
+      <Button variant="secondary" className="min-h-11 px-3" asChild>
+        <Link to="/reports">
+          <ReceiptText className="me-1 size-4" />كشف الحساب
+        </Link>
+      </Button>
       {tenant.primaryContractId !== null && (
         <Button variant="secondary" className="min-h-11 px-3" asChild>
           <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}>
@@ -77,7 +84,7 @@ function TenantSafeLinks({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   );
 }
 
-function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
+function TenantCard({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void }>) {
   return (
     <MobileCard
       title={tenant.person.full_name}
@@ -94,30 +101,29 @@ function TenantCard({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
       actions={(
         <div className="w-full rounded-2xl border border-dashed p-3">
           <p className="mb-2 text-xs font-bold text-muted-foreground">روابط آمنة</p>
-          <TenantSafeLinks tenant={tenant} />
+          <TenantSafeLinks tenant={tenant} onEdit={onEdit} />
         </div>
       )}
+      onClick={() => onEdit(tenant.person.id)}
     />
   );
 }
 
-function TenantWorkspaceContent({ isError, isLoading, onRetry, rows }: Readonly<{ isError: boolean; isLoading: boolean; onRetry: () => void; rows: TenantWorkspaceRow[] }>) {
+function TenantWorkspaceContent({ isError, isLoading, onCreate, onEdit, onRetry, rows }: Readonly<{ isError: boolean; isLoading: boolean; onCreate: () => void; onEdit: (personId: string) => void; onRetry: () => void; rows: TenantWorkspaceRow[] }>) {
   return (
     <ListStateBody
       status={isLoading ? 'loading' : isError ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
       errorTitle="تعذر تحميل المستأجرين"
       emptyTitle="لا توجد سجلات مستأجرين"
       emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
-      emptyAction={
-        <Button asChild>
-          <Link to="/people/new">
-            <Plus className="me-2 size-4" />إضافة شخص كمستأجر
-          </Link>
+      emptyAction={(
+        <Button onClick={onCreate}>
+          <Plus className="me-2 size-4" />إضافة مستأجر
         </Button>
-      }
+      )}
       errorAction={<Button onClick={onRetry}>إعادة المحاولة</Button>}
     >
-      <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} />)}</div>
+      <div className="grid gap-4">{rows.map((tenant) => <TenantCard key={tenant.person.id} tenant={tenant} onEdit={onEdit} />)}</div>
     </ListStateBody>
   );
 }
@@ -125,36 +131,46 @@ function TenantWorkspaceContent({ isError, isLoading, onRetry, rows }: Readonly<
 export function TenantsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
   const params = useMemo(() => ({ search, page, pageSize }), [page, search]);
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
   const totalPages = Math.max(1, Math.ceil((tenantsQuery.data?.count ?? 0) / pageSize));
 
+  const openCreate = () => { setEditingPersonId(undefined); setFormOpen(true); };
+  const openEdit = (personId: string) => { setEditingPersonId(personId); setFormOpen(true); };
+  const closeForm = () => { setFormOpen(false); setEditingPersonId(undefined); tenantsQuery.refetch(); };
+
   return (
-    <PageLayout dir="rtl" size="wide">
-      <PageHeader
-        title="المستأجرين"
-        description="عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية."
-        count={tenantsQuery.data?.count ?? 0}
-      />
+    <>
+      <PageLayout dir="rtl" size="wide">
+        <PageHeader
+          title="المستأجرين"
+          description="عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية."
+          count={tenantsQuery.data?.count ?? 0}
+          action={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
+        />
 
-      <FilterBar
-        searchValue={search}
-        onSearchChange={(value) => { setSearch(value); setPage(1); }}
-        searchPlaceholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
-        searchAriaLabel="بحث في المستأجرين"
-      />
+        <FilterBar
+          searchValue={search}
+          onSearchChange={(value) => { setSearch(value); setPage(1); }}
+          searchPlaceholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
+          searchAriaLabel="بحث في المستأجرين"
+        />
 
-      <TenantWorkspaceContent isError={tenantsQuery.isError} isLoading={tenantsQuery.isLoading} onRetry={() => tenantsQuery.refetch()} rows={rows} />
+        <TenantWorkspaceContent isError={tenantsQuery.isError} isLoading={tenantsQuery.isLoading} onCreate={openCreate} onEdit={openEdit} onRetry={() => tenantsQuery.refetch()} rows={rows} />
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>الصفحة {page} من {totalPages}</span>
-        <div className="flex gap-2">
-          <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>السابق</Button>
-          <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>التالي</Button>
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>الصفحة {page} من {totalPages}</span>
+          <div className="flex gap-2">
+            <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>السابق</Button>
+            <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>التالي</Button>
+          </div>
         </div>
-      </div>
-    </PageLayout>
+      </PageLayout>
+      <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
+    </>
   );
 }
 export default TenantsPage;

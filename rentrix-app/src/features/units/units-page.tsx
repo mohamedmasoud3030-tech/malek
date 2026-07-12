@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Building2, DoorOpen, Edit, Home } from 'lucide-react';
+import { Building2, DoorOpen, Edit, Home, Plus } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -54,6 +54,7 @@ export function UnitsPage() {
   const [status, setStatus] = useState<'all' | UnitStatus>('all');
   const [occupancy, setOccupancy] = useState<OccupancyFilter>('all');
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
   const navigate = useNavigate();
 
@@ -81,7 +82,12 @@ export function UnitsPage() {
       <PageHeader
         title="الوحدات"
         description="عرض تشغيلي لكل الوحدات المسجلة مع تعديل مباشر وروابط تفصيل العقارات."
-        action={<Button asChild><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>}
+        action={(
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button onClick={() => setIsCreateOpen(true)}><Plus className="me-2 size-4" />إضافة وحدة</Button>
+            <Button asChild variant="secondary"><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>
+          </div>
+        )}
       />
 
       <ResponsiveCardGrid desktopColumns={4} gap="lg">
@@ -213,11 +219,18 @@ export function UnitsPage() {
             errorTitle="تعذر تحميل الوحدات"
             onRetry={() => { unitsQuery.refetch(); propertiesQuery.refetch(); }}
             emptyTitle="لا توجد وحدات مطابقة"
-            emptyDescription="غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة من صفحة العقار المرتبط."
-            emptyAction={<Button asChild><Link to="/properties">فتح العقارات</Link></Button>}
+            emptyDescription="غيّر البحث أو الفلاتر لعرض وحدات أخرى، أو أضف وحدة مرتبطة بعقار قائم."
+            emptyAction={<Button onClick={() => setIsCreateOpen(true)}><Plus className="me-2 size-4" />إضافة وحدة</Button>}
           />
         </CardContent>
       </Card>
+
+      <UnitFormModal
+        propertyId=""
+        unit={null}
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+      />
 
       <UnitFormModal
         propertyId={editingUnit?.property_id ?? ''}
