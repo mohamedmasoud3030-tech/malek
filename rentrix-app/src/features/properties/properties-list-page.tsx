@@ -15,8 +15,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { FilterBar } from '@/components/ui/filter-bar';
-import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatMoney } from '@/hooks/useCompanyFormatters';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { buildPropertiesCsvBlob, buildPropertiesCsvFilename } from './property-list-export';
@@ -26,11 +25,6 @@ import type { PropertyStatusFilter } from './property-service';
 
 const pageSize = 10;
 const propertyStatusTone = { active: 'green', inactive: 'gray', maintenance: 'gold', sold: 'blue' } as const;
-
-function money(value: number | null) {
-  if (value === null) return '—';
-  return formatCompanyMoney(defaultCompanyLocalSettings, value);
-}
 
 export function PropertiesListPage() {
   const [search, setSearch] = useState('');

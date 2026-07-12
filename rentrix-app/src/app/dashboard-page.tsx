@@ -1,29 +1,34 @@
 import { Link } from '@tanstack/react-router';
 import {
-  AlertTriangle, ArrowLeft, Banknote, Building2, CalendarClock,
+  AlertTriangle, Building2, CalendarClock,
   FileText, Home, Plus, ReceiptText, TrendingUp, Users, WalletCards,
-  BarChart3, Clock,
+  BarChart3,
 } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataErrorScreen } from '@/components/data-error-screen';
-import { EmptyState } from '@/components/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
-import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
-import type { CompanySettingsContract } from '@/lib/companySettings';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { cn } from '@/lib/utils';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { getDashboardSnapshot, type DashboardSnapshot } from './dashboardSnapshot';
-
-const dashboardWindowDays = 30;
-const maxExpiringContracts = 5;
-const maxOverdueTenantRows = 5;
+import { ExpiringContractsSection } from './dashboard/ExpiringContractsSection';
+import { OverdueSection } from './dashboard/OverdueSection';
+import {
+  DASHBOARD_WINDOW_DAYS,
+  MAX_EXPIRING_ROWS,
+  MAX_OVERDUE_ROWS,
+  toDateInputValue,
+  addDays,
+  buildExpiringContracts,
+  buildOverdueTenantRows,
+  type ExpiringContractRow,
+  type OverdueTenantRow,
+} from './dashboard/dashboard.utils';
 
 const quickActions = [
   { label: 'إنشاء عقد',  to: '/contracts/new', icon: FileText,    accent: 'bg-primary/10 text-primary' },
@@ -41,34 +46,6 @@ const arrearsBucketLabels: Record<(typeof arrearsBucketOrder)[number], string> =
   days_90_plus: 'أكثر من 90 يوم',
 };
 
-function toDateInputValue(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function addDays(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate;
-}
-
-function calculateDaysRemaining(endDate: string, today: Date) {
-  const todayTimestamp = Date.parse(`${toDateInputValue(today)}T00:00:00.000Z`);
-  const endTimestamp = Date.parse(`${endDate}T00:00:00.000Z`);
-  if (!Number.isFinite(todayTimestamp) || !Number.isFinite(endTimestamp)) return 0;
-  return Math.max(0, Math.ceil((endTimestamp - todayTimestamp) / (24 * 60 * 60 * 1000)));
-}
-
-function fmt(settings: CompanySettingsContract, value: string) {
-  return formatCompanyDate(settings, `${value}T00:00:00`);
-}
-
-function money(settings: CompanySettingsContract, value: number | null | undefined) {
-  return formatCompanyMoney(settings, value);
-}
-
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return 'صباح الخير';
@@ -83,67 +60,14 @@ function getGreetingEmoji() {
   return '🌙';
 }
 
-type ExpiringContractRow = {
-  id: string; contractNumber: string; tenantName: string;
-  location: string; endDate: string; daysRemaining: number;
-};
-type OverdueTenantRow = {
-  invoiceId: string; tenantName: string; location: string;
-  dueDate: string; daysOverdue: number; remainingAmount: number;
-};
-
-function getContractLocation(contract: ContractListItem) {
-  const propertyTitle = contract.properties?.title ?? 'عقار غير محدد';
-  const unitNumber = contract.units?.unit_number;
-  return unitNumber ? `${propertyTitle} / وحدة ${unitNumber}` : propertyTitle;
-}
-
-function getInvoiceLocation(row: OverdueInvoiceReportRow) {
-  const propertyTitle = row.propertyTitle ?? 'عقار غير محدد';
-  return row.unitNumber ? `${propertyTitle} / وحدة ${row.unitNumber}` : propertyTitle;
-}
-
-function buildExpiringContracts(contracts: ContractListItem[] | undefined, today: Date): ExpiringContractRow[] {
-  const cutoff = addDays(today, dashboardWindowDays);
-  return (contracts ?? [])
-    .filter((c) => {
-      if (!c.end_date) return false;
-      const d = Date.parse(`${c.end_date}T00:00:00.000Z`);
-      return Number.isFinite(d) && d >= Date.now() && d <= cutoff.getTime();
-    })
-    .slice(0, maxExpiringContracts)
-    .map((c) => ({
-      id: c.id,
-      contractNumber: c.id.slice(0,8),
-      tenantName: c.people?.full_name ?? 'مستأجر',
-      location: getContractLocation(c),
-      endDate: c.end_date ?? '',
-      daysRemaining: calculateDaysRemaining(c.end_date ?? '', today),
-    }));
-}
-
-export function buildOverdueTenantRows(rows: OverdueInvoiceReportRow[] | undefined): OverdueTenantRow[] {
-  return (rows ?? [])
-    .slice()
-    .sort((a, b) => b.daysOverdue - a.daysOverdue)
-    .slice(0, maxOverdueTenantRows)
-    .map((row) => ({
-      invoiceId: row.invoiceId,
-      tenantName: row.tenantName ?? 'مستأجر غير محدد',
-      location: getInvoiceLocation(row),
-      dueDate: row.dueDate,
-      daysOverdue: row.daysOverdue,
-      remainingAmount: row.remainingAmount,
-    }));
-}
-
 // ── Hero Banner ───────────────────────────────────────────────────────────────
 function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
   snapshot: DashboardSnapshot | undefined;
   isLoading: boolean;
-  settings: CompanySettingsContract;
+  settings: ReturnType<typeof useCompanyFormatters>;
   today: string;
 }>) {
+  const { money, date } = settings;
   const activeContracts = snapshot?.operational.activeContracts ?? 0;
   const vacantUnits = snapshot?.operational.vacantUnits ?? 0;
   const collected = snapshot?.financial.collectedRent ?? 0;
@@ -163,7 +87,7 @@ function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
             <h1 className="mt-0.5 text-xl font-black">لوحة التحكم</h1>
           </div>
           <div className="rounded-2xl bg-white/10 px-3 py-2 text-xs font-bold text-slate-300 backdrop-blur-sm">
-            {fmt(settings, snapshot?.period.dateTo ?? today)}
+            {date(snapshot?.period.dateTo ?? today)}
           </div>
         </div>
 
@@ -184,7 +108,7 @@ function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
             {isLoading ? (
               <Skeleton className="h-6 w-20 bg-white/10" />
             ) : (
-              <p className="text-lg font-black" dir="ltr">{money(settings, collected)}</p>
+              <p className="text-lg font-black" dir="ltr">{money(collected)}</p>
             )}
             <p className="text-xs font-semibold text-slate-400">محصّل هذا الشهر</p>
           </div>
@@ -206,7 +130,7 @@ function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
             collectedAfterExpenses >= 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300',
           )}>
             <TrendingUp className="size-3" />
-            محصل بعد المصروفات {money(settings, collectedAfterExpenses)}
+            محصل بعد المصروفات {money(collectedAfterExpenses)}
           </div>
         </div>
       </div>
@@ -218,8 +142,9 @@ function HeroBanner({ snapshot, isLoading, settings, today }: Readonly<{
 function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
   snapshot: DashboardSnapshot | undefined;
   isLoading: boolean;
-  settings: CompanySettingsContract;
+  settings: ReturnType<typeof useCompanyFormatters>;
 }>) {
+  const { money } = settings;
   const items = [
     {
       label: 'عقارات',
@@ -241,12 +166,12 @@ function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
     },
     {
       label: 'المتأخرات',
-      value: money(settings, snapshot?.arrears.totalOverdue ?? 0),
+      value: money(snapshot?.arrears.totalOverdue ?? 0),
       icon: AlertTriangle,
       accent: (snapshot?.arrears.totalOverdue ?? 0) > 0 ? 'rose' as const : 'emerald' as const,
       sub: `${snapshot?.arrears.overdueInvoiceCount ?? 0} فاتورة`,
       trend: (snapshot?.arrears.totalOverdue ?? 0) > 0 ? 'down' as const : 'neutral' as const,
-      trendValue: money(settings, snapshot?.arrears.totalOverdue ?? 0),
+      trendValue: money(snapshot?.arrears.totalOverdue ?? 0),
       description: 'أموال معلقة للتحصيل',
     },
     {
@@ -254,7 +179,7 @@ function KpiGrid({ snapshot, isLoading, settings }: Readonly<{
       value: snapshot?.operational.expiringContracts30Days ?? 0,
       icon: CalendarClock,
       accent: (snapshot?.operational.expiringContracts30Days ?? 0) > 0 ? 'amber' as const : 'emerald' as const,
-      sub: `خلال ${dashboardWindowDays} يوم`,
+      sub: `خلال ${DASHBOARD_WINDOW_DAYS} يوم`,
       trend: (snapshot?.operational.expiringContracts30Days ?? 0) > 0 ? 'down' as const : 'neutral' as const,
       trendValue: `${snapshot?.operational.expiringContracts30Days ?? 0}`,
       description: 'عقود بحاجة للتجديد',
@@ -300,120 +225,13 @@ function QuickActions() {
   );
 }
 
-// ── Expiring Contracts ────────────────────────────────────────────────────────
-function ExpiringContractsSection({ rows, isLoading, settings }: Readonly<{
-  rows: ExpiringContractRow[];
-  isLoading: boolean;
-  settings: CompanySettingsContract;
-}>) {
-  return (
-    <div>
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-bold">العقود المنتهية قريباً</p>
-        <Link to="/contracts" className="text-xs font-bold text-primary hover:underline">عرض الكل</Link>
-      </div>
-
-      {isLoading && <Skeleton className="h-36 rounded-2xl" />}
-
-      {!isLoading && rows.length === 0 && (
-        <EmptyState
-          title={`لا توجد عقود تنتهي خلال ${dashboardWindowDays} يوماً`}
-          description="ستظهر هنا العقود القريبة من الانتهاء عند توفرها ضمن بيانات لوحة التحكم."
-        />
-      )}
-
-      {!isLoading && rows.length > 0 && (
-        <div className="space-y-2.5">
-          {rows.map((row) => {
-            const urgency = row.daysRemaining <= 7 ? 'rose' : row.daysRemaining <= 14 ? 'amber' : 'emerald';
-            return (
-              <Link key={row.id} to="/contracts/$contractId" params={{ contractId: row.id }}>
-                <div className={cn(
-                  'rounded-2xl border border-border/60 bg-card p-4 hover:shadow-md transition-all',
-                  row.daysRemaining <= 7 && 'border-rose-300 dark:border-rose-800/60',
-                )}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-bold text-sm truncate">{row.tenantName}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{row.location}</p>
-                    </div>
-                    <span className={cn(
-                      'shrink-0 flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold min-h-[32px]',
-                      urgency === 'rose'    && 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300',
-                      urgency === 'amber'   && 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
-                      urgency === 'emerald' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
-                    )}>
-                      <Clock className="size-4" />
-                      {row.daysRemaining} يوم
-                    </span>
-                  </div>
-                  <p className="mt-2 text-[11px] text-muted-foreground/70">ينتهي: {fmt(settings, row.endDate)}</p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Overdue Tenants ───────────────────────────────────────────────────────────
-function OverdueSection({ rows, isLoading, settings }: Readonly<{
-  rows: OverdueTenantRow[];
-  isLoading: boolean;
-  settings: CompanySettingsContract;
-}>) {
-  return (
-    <div>
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-bold">أعلى المتأخرات</p>
-        <Link to="/arrears" className="text-xs font-bold text-primary hover:underline">عرض الكل</Link>
-      </div>
-
-      {isLoading && <Skeleton className="h-36 rounded-2xl" />}
-
-      {!isLoading && rows.length === 0 && (
-        <EmptyState
-          title="لا توجد فواتير متأخرة"
-          description="ستظهر أعلى المتأخرات هنا عند وجود فواتير مستحقة غير مسددة."
-        />
-      )}
-
-      {!isLoading && rows.length > 0 && (
-        <div className="space-y-2.5">
-          {rows.map((row) => (
-            <div key={row.invoiceId} className="rounded-2xl border border-border/60 bg-card p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-bold text-sm truncate">{row.tenantName}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{row.location}</p>
-                </div>
-                <StatusBadge tone={row.daysOverdue > 90 ? 'red' : 'gold'}>{row.daysOverdue} يوم</StatusBadge>
-              </div>
-              <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/40">
-                <span className="text-xs text-muted-foreground">تاريخ الاستحقاق: {fmt(settings, row.dueDate)}</span>
-                <span className="font-black text-sm text-rose-600 dark:text-rose-400" dir="ltr">
-                  {money(settings, row.remainingAmount)}
-                </span>
-              </div>
-            </div>
-          ))}
-          <Button asChild variant="secondary" className="w-full rounded-2xl">
-            <Link to="/arrears">فتح المتأخرات</Link>
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Financial Summary ─────────────────────────────────────────────────────────
 function FinancialSummary({ snapshot, isLoading, settings }: Readonly<{
   snapshot: DashboardSnapshot | undefined;
   isLoading: boolean;
-  settings: CompanySettingsContract;
+  settings: ReturnType<typeof useCompanyFormatters>;
 }>) {
+  const { money } = settings;
   const items = [
     { label: 'المفوتر',    value: snapshot?.financial.rentDue,      color: 'text-foreground' },
     { label: 'المحصّل',    value: snapshot?.financial.collectedRent, color: 'text-emerald-600 dark:text-emerald-400' },
@@ -442,7 +260,7 @@ function FinancialSummary({ snapshot, isLoading, settings }: Readonly<{
               <div key={item.label} className="rounded-2xl bg-muted/60 p-3">
                 <p className="text-[11px] font-bold text-muted-foreground">{item.label}</p>
                 <p className={cn('mt-1.5 text-base font-black tabular-nums leading-none', item.color)} dir="ltr">
-                  {money(settings, item.value ?? 0)}
+                  {money(item.value ?? 0)}
                 </p>
               </div>
             ))}
@@ -466,7 +284,7 @@ function DashboardErrorCard({ onRetry, error }: Readonly<{ onRetry: () => void; 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export function DashboardPage() {
   const now = useMemo(() => new Date(), []);
-  const settings = useCompanySettingsContract();
+  const settings = useCompanyFormatters();
   const today = toDateInputValue(now);
 
   const dashboardQuery = useQuery({
@@ -519,7 +337,7 @@ export function DashboardPage() {
                 <span className="text-xs font-bold text-muted-foreground">{bucket.label}</span>
                 <div className="flex items-center gap-3 text-xs font-black">
                   <span className="text-muted-foreground">{bucket.invoiceCount} فاتورة</span>
-                  <span dir="ltr">{money(settings, bucket.total)}</span>
+                  <span dir="ltr">{settings.money(bucket.total)}</span>
                 </div>
               </div>
             ))}
@@ -538,17 +356,18 @@ export type DashboardSummaryCard = {
 
 export function buildDashboardSummaryCards(
   snapshot: DashboardSnapshot | undefined,
-  settings: CompanySettingsContract,
+  settings: ReturnType<typeof useCompanyFormatters>,
   _hasError = false,
 ): DashboardSummaryCard[] {
+  const { money } = settings;
   const fin = snapshot?.financial;
   const op = snapshot?.operational;
   return [
-    { title: 'الإيجار المستحق',     value: money(settings, fin?.rentDue ?? 0),        isMoney: true  },
-    { title: 'المحصل هذا الشهر',    value: money(settings, fin?.collectedRent ?? 0),   isMoney: true  },
-    { title: 'الرصيد المتبقي',      value: money(settings, fin?.outstandingRent ?? 0), isMoney: true  },
-    { title: 'المصروفات',           value: money(settings, fin?.expenses ?? 0),        isMoney: true  },
-    { title: 'المحصل بعد المصروفات', value: money(settings, fin?.netPosition ?? 0),     isMoney: true  },
+    { title: 'الإيجار المستحق',     value: money(fin?.rentDue ?? 0),        isMoney: true  },
+    { title: 'المحصل هذا الشهر',    value: money(fin?.collectedRent ?? 0),   isMoney: true  },
+    { title: 'الرصيد المتبقي',      value: money(fin?.outstandingRent ?? 0), isMoney: true  },
+    { title: 'المصروفات',           value: money(fin?.expenses ?? 0),        isMoney: true  },
+    { title: 'المحصل بعد المصروفات', value: money(fin?.netPosition ?? 0),     isMoney: true  },
     { title: 'الإشغال',             value: `${op?.occupancyRate ?? 0}%`,               isMoney: false },
     { title: 'تنتهي خلال 30 يوم',   value: op?.expiringContracts30Days ?? 0,           isMoney: false },
   ];

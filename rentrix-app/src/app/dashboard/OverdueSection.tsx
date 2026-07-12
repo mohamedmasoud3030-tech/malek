@@ -4,17 +4,17 @@ import { EmptyState } from '@/components/empty-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
-import type { CompanySettingsContract } from '@/lib/companySettings';
+import { formatDate, formatMoney } from '@/hooks/useCompanyFormatters';
 import type { OverdueTenantRow } from './dashboard.utils';
 
 interface OverdueSectionProps {
   rows: OverdueTenantRow[];
   isLoading: boolean;
-  settings: CompanySettingsContract;
+  settings: ReturnType<typeof import('@/hooks/useCompanyFormatters').useCompanyFormatters>;
 }
 
 export function OverdueSection({ rows, isLoading, settings }: OverdueSectionProps) {
+  const { date, money } = settings;
   return (
     <div>
       <SectionHeader
@@ -41,10 +41,10 @@ export function OverdueSection({ rows, isLoading, settings }: OverdueSectionProp
               </div>
               <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/40">
                 <span className="text-xs text-muted-foreground">
-                  استحقاق: {formatCompanyDate(settings, `${row.dueDate}T00:00:00`)}
+                  استحقاق: {date(row.dueDate)}
                 </span>
                 <span className="font-black text-sm text-rose-600 dark:text-rose-400" dir="ltr">
-                  {formatCompanyMoney(settings, row.remainingAmount)}
+                  {money(row.remainingAmount)}
                 </span>
               </div>
             </div>

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { formatMoney } from '@/hooks/useCompanyFormatters';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from '../types';
 
 const statusLabels: Record<string, string> = { pending: 'قيد المراجعة', approved: 'معتمدة للتتبع', paid: 'مسجلة كمدفوعة', cancelled: 'ملغاة' };
@@ -19,7 +20,8 @@ const typeLabels: Record<string, string> = { contract: 'عقد', payment: 'تح�
 const statusTone: Record<string, 'blue' | 'green' | 'red' | 'gray' | 'gold'> = { pending: 'gold', approved: 'blue', paid: 'green', cancelled: 'red' };
 
 function money(value: number | null) {
-  return value == null ? '—' : new Intl.NumberFormat('ar-OM', { style: 'currency', currency: 'OMR', maximumFractionDigits: 3 }).format(value);
+  if (value == null) return '—';
+  return formatMoney(value);
 }
 
 type Props = Readonly<{

@@ -4,17 +4,17 @@ import { EmptyState } from '@/components/empty-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { formatCompanyDate } from '@/lib/companyFormatters';
-import type { CompanySettingsContract } from '@/lib/companySettings';
+import { formatDate } from '@/hooks/useCompanyFormatters';
 import { DASHBOARD_WINDOW_DAYS, type ExpiringContractRow } from './dashboard.utils';
 
 interface ExpiringContractsSectionProps {
   rows: ExpiringContractRow[];
   isLoading: boolean;
-  settings: CompanySettingsContract;
+  settings: ReturnType<typeof import('@/hooks/useCompanyFormatters').useCompanyFormatters>;
 }
 
 export function ExpiringContractsSection({ rows, isLoading, settings }: ExpiringContractsSectionProps) {
+  const { date } = settings;
   return (
     <div>
       <SectionHeader
@@ -57,7 +57,7 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
                     </span>
                   </div>
                   <p className="mt-2 text-[11px] text-muted-foreground/70">
-                    ينتهي: {formatCompanyDate(settings, `${row.endDate}T00:00:00`)}
+                    ينتهي: {date(row.endDate)}
                   </p>
                 </div>
               </Link>

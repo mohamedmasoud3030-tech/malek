@@ -9,19 +9,13 @@ import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { EntityCard } from '@/components/ui/entity-card';
-import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatMoney } from '@/hooks/useCompanyFormatters';
 import type { Unit } from '@/types/domain';
 import { unitStatusLabels } from './unit-schema';
 import { UnitFormModal } from './unit-form-modal';
 import { useSoftDeleteUnit } from './use-units';
 
 const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
-
-function money(value: number | null) {
-  if (value === null) return '—';
-  return formatCompanyMoney(defaultCompanyLocalSettings, value);
-}
 
 export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: string; unitsQuery: UseQueryResult<Unit[]> }>) {
   const deleteMutation = useSoftDeleteUnit(propertyId);
@@ -55,7 +49,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
     {
       key: 'rent_amount',
       header: 'الإيجار',
-      render: (unit) => <span dir="ltr" className="block font-bold">{money(unit.rent_amount)}</span>,
+      render: (unit) => <span dir="ltr" className="block font-bold">{formatMoney(unit.rent_amount)}</span>,
     },
     {
       key: 'notes',
@@ -133,7 +127,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
                 stats={(
                   <div className="flex items-center justify-between gap-3">
                     {unit.notes ? <p className="flex-1 text-xs leading-relaxed text-muted-foreground">{unit.notes}</p> : <span />}
-                    {unit.rent_amount != null ? <p className="whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCompanyMoney(defaultCompanyLocalSettings, unit.rent_amount)}</p> : null}
+                    {unit.rent_amount != null ? <p className="whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatMoney(unit.rent_amount)}</p> : null}
                   </div>
                 )}
               />

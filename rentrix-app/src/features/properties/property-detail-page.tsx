@@ -8,8 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitsList } from '@/features/units/units-list';
 import { useUnits } from '@/features/units/use-units';
-import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
+import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
 import { propertyStatusLabels } from './property-schema';
 import { summarizePropertyUnits } from './property-unit-summary';
 import { useProperty } from './use-properties';
@@ -17,15 +16,6 @@ import { unitStatusLabels } from '../units/unit-schema';
 
 const propertyStatusTone = { active: 'green', inactive: 'gray', maintenance: 'gold', sold: 'blue' } as const;
 const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
-
-function money(value: number | null) {
-  if (value === null) return '—';
-  return formatCompanyMoney(defaultCompanyLocalSettings, value);
-}
-
-function count(value: number) {
-  return formatCompanyNumber(defaultCompanyLocalSettings, value);
-}
 
 const propertyTypeAliases: Readonly<Record<string, string>> = {
   'building': 'مبنى',
@@ -146,9 +136,9 @@ export function PropertyOverview() {
                 </div>
               </div>
               <InfoItem label="اسم المالك للعرض" value={property.owner_name ?? '—'} />
-              <InfoItem label="قيمة الشراء" value={money(property.purchase_value)} />
-              <InfoItem label="القيمة الحالية" value={money(property.current_value)} />
-              <InfoItem label="تاريخ الإنشاء" value={formatCompanyDate(defaultCompanyLocalSettings, property.created_at)} />
+              <InfoItem label="قيمة الشراء" value={formatMoney(property.purchase_value)} />
+              <InfoItem label="القيمة الحالية" value={formatMoney(property.current_value)} />
+              <InfoItem label="تاريخ الإنشاء" value={formatDate(property.created_at)} />
               <div className="rounded-2xl border border-border bg-background p-4 md:col-span-2">
                 <p className="text-xs font-bold text-muted-foreground">ملاحظات</p>
                 <p className="mt-1 leading-7">{property.notes ?? '—'}</p>
@@ -166,12 +156,12 @@ export function PropertyOverview() {
                 const unitSummary = summarizePropertyUnits(unitsQuery.data ?? []);
                 return (
                   <>
-                    <InfoItem label="إجمالي الوحدات" value={count(unitSummary.totalUnits)} />
-                    <InfoItem label="الوحدات المتاحة" value={count(unitSummary.availableUnits)} />
-                    <InfoItem label="الوحدات المشغولة" value={count(unitSummary.occupiedUnits)} />
-                    <InfoItem label="وحدات الصيانة" value={count(unitSummary.maintenanceUnits)} />
-                    <InfoItem label="الوحدات المحجوزة" value={count(unitSummary.reservedUnits)} />
-                    <InfoItem label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, unitSummary.expectedRentTotal)} />
+                    <InfoItem label="إجمالي الوحدات" value={formatNumber(unitSummary.totalUnits)} />
+                    <InfoItem label="الوحدات المتاحة" value={formatNumber(unitSummary.availableUnits)} />
+                    <InfoItem label="الوحدات المشغولة" value={formatNumber(unitSummary.occupiedUnits)} />
+                    <InfoItem label="وحدات الصيانة" value={formatNumber(unitSummary.maintenanceUnits)} />
+                    <InfoItem label="الوحدات المحجوزة" value={formatNumber(unitSummary.reservedUnits)} />
+                    <InfoItem label="إجمالي الإيجار المتوقع" value={formatMoney(unitSummary.expectedRentTotal)} />
                   </>
                 );
               })()}
@@ -264,7 +254,7 @@ export function PropertyUnitDetailPage() {
                   </StatusBadge>
                 </div>
               </div>
-              <InfoItem label="قيمة الإيجار المسجلة" value={money(unit.rent_amount)} />
+              <InfoItem label="قيمة الإيجار المسجلة" value={formatMoney(unit.rent_amount)} />
               <div className="rounded-2xl border border-border bg-background p-4 md:col-span-2">
                 <p className="text-xs font-bold text-muted-foreground">العقار التابع له</p>
                 <p className="mt-1">

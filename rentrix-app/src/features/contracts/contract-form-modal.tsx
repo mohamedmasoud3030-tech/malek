@@ -1,7 +1,5 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
-import { useForm, useWatch, Controller } from 'react-hook-form';
-import { useQuery } from '@tanstack/react-query';
+import { Controller } from 'react-hook-form';
 import { RouteLoadingState } from '@/components/loading-state';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
@@ -9,14 +7,8 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
-import { listPeople } from '@/features/people/people-service';
-import { listProperties } from '@/features/properties/property-service';
-import { usePaymentTerms } from '@/features/settings/usePaymentTerms';
-import { listUnitsByProperty } from '@/features/units/unit-service';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
-import { buildContractUnitOptionLabel, getContractUnitSelectionIssue, isUnitSelectableForContract } from './contract-unit-options';
-import { contractSchema, contractStatusLabels, contractStatusValues, paymentCycleLabels, paymentCycleValues, type ContractFormValues } from './contractSchema';
-import { useContract, useCreateContract, useUpdateContract } from './useContracts';
+import { useContractForm, contractStatusLabels, contractStatusValues, paymentCycleLabels, paymentCycleValues, buildContractUnitOptionLabel, isUnitSelectableForContract, getContractUnitSelectionIssue, type ContractFormValues } from './useContractForm';
 
 function fieldError(message?: string) {
   return message ? <span className="text-xs font-bold text-destructive">{message}</span> : null;
@@ -29,62 +21,56 @@ interface ContractFormModalProps {
 }
 
 export function ContractFormModal({ open, onClose, contractId }: ContractFormModalProps) {
-  const isEdit = Boolean(contractId);
-  const contractQuery = useContract(contractId ?? '');
-  const createMutation = useCreateContract();
-  const updateMutation = useUpdateContract(contractId ?? '');
-  const form = useForm<ContractFormValues>({
-    resolver: zodResolver(contractSchema),
-    defaultValues: {
-      property_id: '',
-      unit_id: '',
-      tenant_id: '',
-      start_date: '',
-      end_date: '',
-      rent_amount: 0,
-      payment_cycle: 'monthly',
-      payment_terms_id: '',
-      status: 'draft',
-      cancellation_reason: '',
-      notes: '',
-      attachment_url: null,
-    },
+  const {
+    form,
+    isEdit,
+    submitting,
+    contractQuery,
+    propertiesQuery,
+    peopleQuery,
+    paymentTermsQuery,
+    unitsQuery,
+    agreementCoverageQuery,
+    selectedProperty,
+    currentLinkedUnitId,
+    handleSubmit,
+  } = useContractForm({
+    contractId,
+    onClose,
+    onSuccess: onClose,
   });
 
-  const propertyId = useWatch({ control: form.control, name: 'property_id' });
-  const propertiesQuery = useQuery({ queryKey: ['contracts', 'properties-options'], queryFn: () => listProperties({ search: '', status: 'all', page: 1, pageSize: 200 }) });
-  const peopleQuery = useQuery({ queryKey: ['contracts', 'tenant-options'], queryFn: () => listPeople({ search: '', type: 'tenant', page: 1, pageSize: 200 }) });
-  const paymentTermsQuery = usePaymentTerms();
-  const unitsQuery = useQuery({ queryKey: ['contracts', 'unit-options', propertyId], queryFn: () => listUnitsByProperty(propertyId || ''), enabled: Boolean(propertyId) });
-  const selectedProperty = propertiesQuery.data?.rows.find((property) => property.id === propertyId);
-  const currentLinkedUnitId = isEdit ? contractQuery.data?.unit_id ?? null : null;
-
+  // Reset form when modal closes
   useEffect(() => {
     if (!open) {
       form.reset();
-      return;
     }
-    if (!contractQuery.data) return;
-    form.reset({
-      property_id: contractQuery.data.property_id,
-      unit_id: contractQuery.data.unit_id ?? '',
-      tenant_id: contractQuery.data.tenant_id,
-      start_date: contractQuery.data.start_date,
-      end_date: contractQuery.data.end_date,
-      rent_amount: contractQuery.data.rent_amount,
-      payment_cycle: contractQuery.data.payment_cycle,
-      payment_terms_id: contractQuery.data.payment_terms_id ?? '',
-      status: contractQuery.data.status,
-      cancellation_reason: contractQuery.data.cancellation_reason ?? '',
-      notes: contractQuery.data.notes ?? '',
-      attachment_url: contractQuery.data.attachment_url ?? null,
-    });
-  }, [contractQuery.data, form, open]);
+  }, [open, form]);
 
-  const submitting = createMutation.isPending || updateMutation.isPending;
+  // The shared hook handles loading contract data via its own useEffect
+  // We need to also reset when open changes to true for edit mode
+  useEffect(() => {
+    if (open && isEdit && contractQuery.data) {
+      form.reset({
+        property_id: contractQuery.data.property_id,
+        unit_id: contractQuery.data.unit_id ?? '',
+        tenant_id: contractQuery.data.tenant_id,
+        start_date: contractQuery.data.start_date,
+        end_date: contractQuery.data.end_date,
+        rent_amount: contractQuery.data.rent_amount,
+        payment_cycle: contractQuery.data.payment_cycle,
+        payment_terms_id: contractQuery.data.payment_terms_id ?? '',
+        status: contractQuery.data.status,
+        cancellation_reason: contractQuery.data.cancellation_reason ?? '',
+        notes: contractQuery.data.notes ?? '',
+        attachment_url: contractQuery.data.attachment_url ?? null,
+      });
+    }
+  }, [open, isEdit, contractQuery.data, form]);
 
-  const handleSubmit = form.handleSubmit(async (values) => {
-    const payload = contractSchema.parse(values);
+  // Override handleSubmit to include agreement_id from coverage query
+  const handleModalSubmit = form.handleSubmit(async (values: ContractFormValues) => {
+    const payload = values; // Already validated by zodResolver in hook
     const unitIssue = getContractUnitSelectionIssue({
       units: unitsQuery.data ?? [],
       propertyId: payload.property_id,
@@ -95,12 +81,13 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
       form.setError('unit_id', { type: 'validate', message: unitIssue });
       return;
     }
-    if (isEdit && contractId) {
-      await updateMutation.mutateAsync(payload);
-    } else {
-      await createMutation.mutateAsync(payload);
+    const agreementId = agreementCoverageQuery.data?.id ?? null;
+    const finalPayload = { ...payload, agreement_id: agreementId };
+    try {
+      await handleSubmit(finalPayload);
+    } catch (err) {
+      form.setError('root', { type: 'server', message: err instanceof Error ? err.message : 'تعذر حفظ العقد، حاول مرة أخرى.' });
     }
-    onClose();
   });
 
   return (
@@ -114,7 +101,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
         {isEdit && contractQuery.isLoading ? (
           <RouteLoadingState />
         ) : (
-          <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit}>
+          <EntityForm.Root className="md:grid-cols-2" onSubmit={handleModalSubmit}>
             <label className="grid gap-2 text-sm font-bold">
               العقار
               <Select {...form.register('property_id')} autoFocus>
@@ -127,7 +114,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
             </label>
             <label className="grid gap-2 text-sm font-bold">
               الوحدة
-              <Select {...form.register('unit_id')} disabled={!propertyId}>
+              <Select {...form.register('unit_id')} disabled={!form.watch('property_id')}>
                 <option value="">اختر الوحدة</option>
                 {unitsQuery.data?.map((unit) => (
                   <option

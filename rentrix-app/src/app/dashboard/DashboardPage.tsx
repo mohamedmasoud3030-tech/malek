@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState } from '@/components/ui/error-state';
 import { PageLayout } from '@/components/layout/page-layout';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { getDashboardSnapshot } from '../dashboardSnapshot';
 import { HeroBanner } from './HeroBanner';
 import { KpiGrid } from './KpiGrid';
@@ -18,7 +18,7 @@ import type { ContractListItem } from '@/features/contracts/services/contractSer
 
 export function DashboardPage() {
   const now = useMemo(() => new Date(), []);
-  const settings = useCompanySettingsContract();
+  const settings = useCompanyFormatters();
   const today = toDateInputValue(now);
 
   const { data: snapshot, isLoading, isError, error, refetch } = useQuery({

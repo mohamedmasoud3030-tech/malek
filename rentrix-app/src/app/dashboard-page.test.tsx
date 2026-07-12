@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildDashboardSummaryCards, buildOverdueTenantRows } from './dashboard-page';
+import { buildDashboardSummaryCards } from './dashboard-page';
+import { buildOverdueTenantRows } from './dashboard/dashboard.utils';
 import type { DashboardSnapshot } from './dashboardSnapshot';
+import { useCompanyFormattersWith, formatMoney } from '@/hooks/useCompanyFormatters';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
+
+const formatters = useCompanyFormattersWith(defaultCompanySettingsContract);
 
 const snapshot = {
   financial: {
@@ -28,7 +32,7 @@ const snapshot = {
 
 describe('buildDashboardSummaryCards', () => {
   it('maps dashboard snapshot metrics into summary cards with company-aware formatted money', () => {
-    const cards = buildDashboardSummaryCards(snapshot, defaultCompanySettingsContract);
+    const cards = buildDashboardSummaryCards(snapshot, formatters);
 
     expect(cards.map((card) => card.title)).toEqual([
       'الإيجار المستحق',
@@ -52,7 +56,7 @@ describe('buildDashboardSummaryCards', () => {
   });
 
   it('falls back to zero metrics when the snapshot is not loaded yet', () => {
-    const cards = buildDashboardSummaryCards(undefined, defaultCompanySettingsContract);
+    const cards = buildDashboardSummaryCards(undefined, formatters);
 
     expect(cards.map((card) => card.value)).toEqual([
       '‏٠٫٠٠٠ OMR',

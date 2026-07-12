@@ -24,17 +24,18 @@ export type PaginatedContracts = {
 };
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
-const contractSelect =
+// Shared select clauses - single source of truth for contract relations
+export const CONTRACT_BASE_SELECT =
   '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id)';
-const contractDetailSelect =
-  '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id), renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
+export const CONTRACT_DETAIL_SELECT =
+  CONTRACT_BASE_SELECT + ', renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
 
 export async function listContracts(params: ContractListParams): Promise<PaginatedContracts> {
   const from = (params.page - 1) * params.pageSize;
   const to = from + params.pageSize - 1;
   let query = supabase
     .from('contracts')
-    .select(contractSelect, { count: 'exact' })
+    .select(CONTRACT_BASE_SELECT, { count: 'exact' })
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -45,7 +46,7 @@ export async function listContracts(params: ContractListParams): Promise<Paginat
 }
 
 export async function getContract(contractId: string): Promise<ContractDetail> {
-  const { data, error } = await supabase.from('contracts').select(contractDetailSelect).eq('id', contractId).is('deleted_at', null).single().returns<ContractDetail>();
+  const { data, error } = await supabase.from('contracts').select(CONTRACT_DETAIL_SELECT).eq('id', contractId).is('deleted_at', null).single().returns<ContractDetail>();
   if (error) throw error;
   return data;
 }

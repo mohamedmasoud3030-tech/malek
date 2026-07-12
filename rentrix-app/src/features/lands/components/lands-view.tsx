@@ -17,8 +17,7 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
-import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
-import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
 import type { LandFilters, LandFormValues, LandRecord } from '../types';
 
 const statusLabels: Record<string, string> = {
@@ -36,12 +35,12 @@ const categoryLabels: Record<string, string> = {
 
 function money(value: number | null | undefined) {
   if (value == null) return '—';
-  return formatCompanyMoney(defaultCompanyLocalSettings, value);
+  return formatMoney(value);
 }
 
 function area(value: number | null | undefined) {
   if (value == null) return '—';
-  return `${formatCompanyNumber(defaultCompanyLocalSettings, value)} م²`;
+  return `${formatNumber(value)} م²`;
 }
 
 function tone(status: string | null | undefined) {

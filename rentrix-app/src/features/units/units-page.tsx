@@ -14,8 +14,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { useProperties } from '@/features/properties/use-properties';
-import { defaultCompanyLocalSettings } from '@/lib/companySettings';
-import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
+import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
 import type { Property, Unit } from '@/types/domain';
 import { normalizeUnitStatus, unitStatusLabels, unitStatusValues, type UnitStatus } from './unit-schema';
 import { useAllUnits } from './use-units';
@@ -28,10 +27,6 @@ const unitStatusTone: Record<UnitStatus, 'green' | 'blue' | 'gold' | 'gray'> = {
   maintenance: 'gold',
   reserved: 'gray',
 };
-
-function money(value: number | null) {
-  return value === null ? '—' : formatCompanyMoney(defaultCompanyLocalSettings, value);
-}
 
 export function getUnitPageStatus(unit: Pick<Unit, 'status'>): UnitStatus {
   return normalizeUnitStatus(String(unit.status));
@@ -87,10 +82,10 @@ export function UnitsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(defaultCompanyLocalSettings, units.length)} sub="كل الوحدات النشطة" icon={DoorOpen} accent="primary" />
-        <KpiCard label="الوحدات المشغولة" value={formatCompanyNumber(defaultCompanyLocalSettings, occupiedCount)} sub="حسب حالة الوحدة" icon={Home} accent="sky" />
-        <KpiCard label="الوحدات المتاحة" value={formatCompanyNumber(defaultCompanyLocalSettings, availableCount)} sub="جاهزة للتأجير" icon={DoorOpen} accent="emerald" />
-        <KpiCard label="إجمالي الإيجار المتوقع" value={formatCompanyMoney(defaultCompanyLocalSettings, expectedRent)} sub="من قيم الإيجار المسجلة" icon={Building2} accent="amber" />
+        <KpiCard label="إجمالي الوحدات" value={formatNumber(units.length)} sub="كل الوحدات النشطة" icon={DoorOpen} accent="primary" />
+        <KpiCard label="الوحدات المشغولة" value={formatNumber(occupiedCount)} sub="حسب حالة الوحدة" icon={Home} accent="sky" />
+        <KpiCard label="الوحدات المتاحة" value={formatNumber(availableCount)} sub="جاهزة للتأجير" icon={DoorOpen} accent="emerald" />
+        <KpiCard label="إجمالي الإيجار المتوقع" value={formatMoney(expectedRent)} sub="من قيم الإيجار المسجلة" icon={Building2} accent="amber" />
       </div>
 
       <FilterBar
@@ -129,7 +124,7 @@ export function UnitsPage() {
       <Card>
         <CardHeader>
           <CardTitle>سجل الوحدات</CardTitle>
-          <CardDescription>{formatCompanyNumber(defaultCompanyLocalSettings, filteredUnits.length)} وحدة ضمن الفلاتر الحالية.</CardDescription>
+          <CardDescription>{formatNumber(filteredUnits.length)} وحدة ضمن الفلاتر الحالية.</CardDescription>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -155,7 +150,7 @@ export function UnitsPage() {
                 const unitStatus = getUnitPageStatus(unit);
                 return <StatusBadge tone={unitStatusTone[unitStatus]}>{unitStatusLabels[unitStatus]}</StatusBadge>;
               }},
-              { key: 'rent', header: 'الإيجار', render: (unit) => <span dir="ltr" className="block font-bold">{money(unit.rent_amount)}</span> },
+              { key: 'rent', header: 'الإيجار', render: (unit) => <span dir="ltr" className="block font-bold">{formatMoney(unit.rent_amount)}</span> },
               { key: 'notes', header: 'ملاحظات', render: (unit) => unit.notes ?? '—' },
               { key: 'action', header: 'إجراء', render: (unit) => {
                 const property = propertyById.get(unit.property_id);
@@ -183,7 +178,7 @@ export function UnitsPage() {
                   stats={(
                     <div className="flex items-center justify-between gap-3">
                       {unit.notes ? <p className="min-w-0 flex-1 truncate text-xs leading-relaxed text-muted-foreground">{unit.notes}</p> : <span className="text-xs text-muted-foreground">بدون ملاحظات</span>}
-                      {unit.rent_amount != null ? <p className="shrink-0 whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatCompanyMoney(defaultCompanyLocalSettings, unit.rent_amount)}</p> : null}
+                      {unit.rent_amount != null ? <p className="shrink-0 whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatMoney(unit.rent_amount)}</p> : null}
                     </div>
                   )}
                   onClick={() => navigate({
