@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Printer } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Download, Printer, ReceiptText } from 'lucide-react';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { StatusBadge } from '@/components/ui/status-badge';
 import type { ReceiptRecord } from '../receipts/receiptService';
 import { formatDate, formatMoney, formatShortId, getErrorMessage } from './financials-formatters';
 import { ReceiptDetailCard } from './receipt-detail-card';
@@ -37,87 +38,65 @@ export function ReceiptsSection({
   onExportReceipt,
 }: ReceiptsSectionProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>الإيصالات</CardTitle>
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <ReceiptText className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <CardTitle>الإيصالات</CardTitle>
+            <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">راجع تفاصيل التحصيل وطريقة الدفع والفاتورة المرتبطة بوضوح.</p>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          {isReceiptsLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل الإيصالات...</div> : null}
-          {isReceiptsError ? <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">{getErrorMessage(receiptsError, 'تعذر تحميل الإيصالات')}</div> : null}
+      <CardContent className="space-y-5 p-3 sm:p-6">
+        <div className="space-y-3">
+          {isReceiptsLoading ? <div className="rounded-3xl border border-dashed p-8 text-center font-bold text-muted-foreground">جارٍ تحميل الإيصالات...</div> : null}
+          {isReceiptsError ? <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 text-center font-bold text-destructive">{getErrorMessage(receiptsError, 'تعذر تحميل الإيصالات')}</div> : null}
           {!isReceiptsLoading && !isReceiptsError && receipts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">لا توجد إيصالات من مدفوعات مرحلة حتى الآن</div>
+            <div className="rounded-3xl border border-dashed p-8 text-center font-bold text-muted-foreground">لا توجد إيصالات حتى الآن</div>
           ) : null}
           {!isReceiptsLoading && !isReceiptsError && receipts.map((receipt) => {
             const isSelected = selectedReceiptId === receipt.id;
+            const isVoid = receipt.status === 'VOID';
             return (
-              <div
+              <MobileCard
                 key={receipt.id}
-                className={cn(
-                  'flex flex-col gap-3 rounded-2xl border p-4 transition',
-                  isSelected ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'bg-background hover:border-primary/60 hover:bg-muted/40',
+                variant={isSelected ? 'elevated' : 'default'}
+                accent={isVoid ? 'danger' : 'success'}
+                className={isSelected ? 'ring-2 ring-primary/20' : undefined}
+                title={`إيصال ${receipt.receipt_number}`}
+                subtitle={`${formatDate(receipt.payment_date)} · ${paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}`}
+                badge={<StatusBadge tone={isVoid ? 'red' : 'green'}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge>}
+                onClick={() => onSelectReceipt(receipt.id)}
+                meta={(
+                  <div className="space-y-1">
+                    <p><span className="font-black text-foreground">الفاتورة:</span> {formatShortId(receipt.invoice_id)}</p>
+                    <p><span className="font-black text-foreground">السياق:</span> {formatReceiptContext(receipt)}</p>
+                  </div>
                 )}
-              >
-                <button
-                  className="w-full text-start grid gap-3 lg:grid-cols-[1.1fr_1fr_1fr_1fr_1fr_1.3fr_auto]"
-                  onClick={() => onSelectReceipt(receipt.id)}
-                >
-                  <span>
-                    <span className="block text-xs text-muted-foreground">رقم الإيصال</span>
-                    <span className="font-black">{receipt.receipt_number}</span>
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">تاريخ الدفع</span>
-                    <span>{formatDate(receipt.payment_date)}</span>
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">المبلغ</span>
-                    <span>{formatMoney(receipt.amount)}</span>
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">طريقة الدفع</span>
-                    <span>{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span>
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">الفاتورة</span>
-                    <span>{formatShortId(receipt.invoice_id)}</span>
-                  </span>
-                  <span>
-                    <span className="block text-xs text-muted-foreground">السياق</span>
-                    <span>{formatReceiptContext(receipt)}</span>
-                  </span>
-                  <span className="inline-flex h-fit rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
-                    {receiptStatusLabels[receipt.status] ?? receipt.status}
-                  </span>
-                </button>
-
-                {(onPrintReceipt || onExportReceipt) && (
-                  <div className="flex gap-2 border-t pt-2">
+                stats={(
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-bold text-muted-foreground">المبلغ المحصل</span>
+                    <span className="text-xl font-black text-success">{formatMoney(receipt.amount)}</span>
+                  </div>
+                )}
+                actions={(onPrintReceipt || onExportReceipt) ? (
+                  <div className="grid w-full grid-cols-2 gap-2">
                     {onPrintReceipt && (
-                      <Button
-                        variant="outline"
-                        className="h-8"
-                        onClick={() => onPrintReceipt(receipt.id)}
-                        title="طباعة الإيصال"
-                      >
-                        <Printer className="size-4 me-1" />
-                        طباعة
+                      <Button variant="secondary" className="min-h-11 rounded-xl text-xs" onClick={() => onPrintReceipt(receipt.id)}>
+                        <Printer className="me-1 size-4" />طباعة
                       </Button>
                     )}
                     {onExportReceipt && (
-                      <Button
-                        variant="outline"
-                        className="h-8"
-                        onClick={() => onExportReceipt(receipt.id)}
-                        title="تنزيل PDF"
-                      >
-                        <Download className="size-4 me-1" />
-                        PDF
+                      <Button variant="secondary" className="min-h-11 rounded-xl text-xs" onClick={() => onExportReceipt(receipt.id)}>
+                        <Download className="me-1 size-4" />PDF
                       </Button>
                     )}
                   </div>
-                )}
-              </div>
+                ) : undefined}
+              />
             );
           })}
         </div>
