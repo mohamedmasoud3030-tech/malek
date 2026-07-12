@@ -1,70 +1,96 @@
-# supabase/migrations
+# Active Supabase migrations
 
-## Filename convention
+This directory is the **only active migration source** for Rentrix.
 
-Every file must be named `<14-digit-timestamp>_<snake_case_name>.sql`, matching
-`^[0-9]{14}_.+\.sql$`. This is enforced by evidence-gathering in
-`scripts/collect-supabase-migration-evidence.sh` (run in CI via
-`pnpm supabase:migration-evidence`), which flags any file that doesn't match.
+`supabase/migrations_consolidated/` is a read-only historical/rebuild archive. Do not add active migrations there and do not edit its SQL files to represent new work.
 
-## The `20250101000001`–`20250101000005` baseline
+## Naming and immutability
 
-These 5 files are a **reconstructed snapshot** of the schema as it stood after
-PR #916 ("rebuild migrations as code-first clean baseline"), not a literal
-replay of the individual migrations that were actually run against production
-up to that point. They were originally named `0001`–`0005`, which broke the
-timestamp convention above; they were renamed to `20250101...` (a date
-guaranteed to sort before every real migration in the live ledger) and
-registered as already-applied in `supabase_migrations.schema_migrations`
-(metadata-only insert, no DDL re-run — the schema they describe is already
-live).
+Every active file must match:
 
-**They do not cover the full live schema.** As of 2026-07-05, the live
-`nnggcnpcuomwfuupupwg` project has 54 tables in `public`; these files plus the
-13 files after them account for 23 of them. The remaining ~31 tables
-(`tenants`, `sessions`, `automation_jobs`, `leads`, `commissions`, etc. — full
-list in `docs/CURRENT_STATE.md`) exist live but were, until this pass, never
-captured in any migration file. That gap is being closed by three files dated
-`20260705000000`–`20260705000002` (enum types + `users` compatibility, then
-the 4 live-data tables, then the 27 empty/scaffolding tables — see
-`docs/CURRENT_STATE.md`, "Baseline capture strategy and ordering", for why
-they're split and ordered this way). A related finding from the same pass:
-9 enum types existed live but weren't created by any migration and weren't
-used by any column either — confirmed zero usage anywhere on 2026-07-05
-(see `docs/CURRENT_STATE.md`) and dropped from production the same day via
-`20260705000003_drop_orphaned_enum_types.sql`. Always verify against the
-live project (via Supabase MCP
-`list_tables` / `execute_sql` on `information_schema`) before assuming a
-table, column, function, or type does or doesn't exist.
+```text
+<14-digit-timestamp>_<snake_case_name>.sql
+```
 
-## Files applied live on 2026-07-05
+Once a migration is merged to `main`, treat it as immutable. Corrections are new forward-only migrations.
 
-- `20260616090000_complete_planned_product_modules.sql` (creates
-  `communication_records`) — applied via `apply_migration`, confirmed live.
-- `20260703010000_contract_documents.sql` (creates `contract_documents`) —
-  applied via `apply_migration`, confirmed live. The file's `contract_id`
-  column was corrected from `uuid` to `text` before applying, to match the
-  live `public.contracts.id` column type (see the file's own header comment
-  for the drift detail).
-- `20260705000003_drop_orphaned_enum_types.sql` (drops the 9 orphaned enum
-  types documented below and in `docs/CURRENT_STATE.md`) — applied via
-  `apply_migration`, confirmed dropped from `pg_type`.
+## Baselines
 
-## `20260628000000_fix_find_payment_account_id.sql`
+Two different artifacts exist for different purposes:
 
-Intentional no-op (`SELECT 1;`). See the file's own header comment — the bug
-it targets was already fixed live under a different migration name. Left in
-place for changelog continuity; do not delete or "restore" its original body.
+- `20250101000001`–`20250101000005` are the reconstructed application baseline registered as already applied.
+- `20260705000000`–`20260705000002` capture the formerly untracked live enums/tables and close the historical schema-capture gap identified on 2026-07-05.
 
-## Historical ledger noise
+The baseline capture is complete in repository history. It does not remove the need to verify a specific target environment before deployment.
 
-The live `supabase_migrations.schema_migrations` table has a small number of
-duplicate-named rows from past incidents (same migration applied twice under
-different generated versions, some with a `_dup1` suffix). This is a fact of
-production history and is not rewritten — see `docs/CURRENT_STATE.md` for the
-specific entries. It has no effect on the current schema; the migrations were
-idempotent or corrective and simply ran more than once.
+## Current reconciliation model
 
-## 2026-07-06 payment/receipt reporting alignment
+Repository history also contains:
 
-`20260706101000_align_payment_receipt_reporting_source.sql` defines `rpt_daily_collection` on `public.payments`, requires an authenticated app user via `public.is_app_user()`, and excludes soft-deleted and VOID rows. Do not apply it to production without explicit approval and staging verification.
+- executable forward fixes,
+- intentional no-op continuity migrations,
+- comment-only stubs for migrations whose effects already existed under out-of-band/timestamped ledger versions,
+- guarded QA cleanup and reversal migrations.
+
+A comment-only stub documents ledger history; it must not replay an already-applied effect.
+
+Known examples include the reconciliation stubs for `20260712081006` and `20260712081017`, plus the timestamped QA reversal history captured around `20260712080434`.
+
+## Important special cases
+
+### Intentional no-op
+
+`20260628000000_fix_find_payment_account_id.sql` is intentionally a no-op. The underlying correction was applied under a different production version and the file remains for changelog continuity.
+
+### Payment-backed collection reporting
+
+`20260706101000_align_payment_receipt_reporting_source.sql` defines daily collection from `public.payments`, requires an authenticated app user, and excludes deleted/VOID rows. Confirm whether it is applied to the intended target before relying on it.
+
+### Tenant identity
+
+The canonical tenant identity is `public.people`. The guarded foreign-key repair is represented by:
+
+```text
+20260712020000_fix_tenant_balances_people_fk.sql
+```
+
+Do not create new financial relationships against the legacy `public.tenants` table.
+
+### QA accounting cleanup
+
+Posted journal history is immutable. QA cleanup that reaches posted accounting rows must use balanced reversal entries, not deletion or mutation of posted rows.
+
+## Required workflow
+
+Before a schema/RPC/RLS change:
+
+1. Read `docs/ENGINEERING_GOVERNANCE.md`.
+2. Confirm the active branch and latest `main`.
+3. Run read-only target inspection.
+4. Compare the local migration list with `supabase_migrations.schema_migrations`.
+5. Check live column types, constraints, indexes, policies, grants, triggers, and function definitions relevant to the change.
+6. Write one focused forward migration.
+7. Obtain the specific production approval required by `docs/GOVERNANCE.md`.
+8. Apply through the approved migration path.
+9. Regenerate database types when schema contracts changed.
+10. Run the full quality suite and record the mutation in `docs/GOVERNANCE_LOG.md`.
+
+## Evidence commands
+
+```bash
+pnpm supabase:migration-evidence
+pnpm supabase:live-readiness
+```
+
+The live-readiness command requires `SUPABASE_DB_URL` and `psql`. Without them, do not claim target-environment parity.
+
+## Never infer deployment from files
+
+A migration file proves that a change is represented in source control. It does not prove:
+
+- that it was applied to staging or production,
+- that the ledger version matches the intended filename,
+- that the live function body matches the file,
+- or that RLS/grants are correct.
+
+Release proof must be captured for the exact release-candidate SHA. See `docs/RELEASE_READINESS.md`.
