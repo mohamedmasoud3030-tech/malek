@@ -5,7 +5,16 @@ import type { Database } from '@/types/database';
 export type Maintenance = Database['public']['Tables']['maintenance_records']['Row'];
 export type MaintenanceStatus = Maintenance['status'] | 'all';
 export type MaintenancePayload = Database['public']['Tables']['maintenance_records']['Insert'];
-export type MaintenanceUpdate = Database['public']['Tables']['maintenance_records']['Update'];
+export type MaintenanceUpdate = Pick<Database['public']['Tables']['maintenance_records']['Update'],
+  | 'property_id'
+  | 'unit_id'
+  | 'title'
+  | 'description'
+  | 'priority'
+  | 'assigned_to'
+  | 'technician_name'
+  | 'scheduled_date'
+  | 'attachment_url'>;
 export async function listMaintenance(status: MaintenanceStatus, propertyId: string) {
   let q = supabase.from('maintenance_records').select('*').is('deleted_at', null).order('created_at', { ascending: false });
   if (status !== 'all' && status != null) q = q.eq('status', status as string);
