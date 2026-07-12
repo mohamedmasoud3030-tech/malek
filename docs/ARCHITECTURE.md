@@ -1,50 +1,94 @@
 # Architecture
 
-## Repository layout
+## System shape
 
-- `rentrix-app/` — the application (Vite + React + TypeScript). This is the only workspace package (see `pnpm-workspace.yaml`).
-- `supabase/migrations/` — SQL migrations: schema, RLS policies, functions/triggers/RPCs, and later feature/fix migrations. Intended as the source of truth for the database, but as of 2026-07-05 it is known to be incomplete relative to the live `nnggcnpcuomwfuupupwg` project (~31 live tables have no corresponding migration file, and 2 committed migrations were never applied live) — see `supabase/migrations/README.md` and `docs/CURRENT_STATE.md` before assuming a file reflects live reality.
-- `scripts/collect-supabase-migration-evidence.sh` — a read-only preflight script that checks migration file naming/ordering and reports whether Supabase credentials/CLI are available. Run via `pnpm supabase:migration-evidence`. If `SUPABASE_DB_URL` and `psql` are available, it also reconciles local migration filenames against the live `supabase_migrations.schema_migrations` ledger without mutating the database.
-- `.github/workflows/ci.yml` — CI pipeline (see `docs/TESTING.md` for the commands it runs).
-- Root `package.json` — workspace-level scripts (`build`, `typecheck`, `lint`, `supabase:migration-evidence`) that delegate into `rentrix-app` via `pnpm --filter`.
-- `tsconfig.base.json` / `tsconfig.json` — shared TypeScript compiler options; `rentrix-app` extends these.
+Rentrix is a single-office rental-property management system.
 
-There is no separate `lib/` package at the workspace root; the prompt referenced one, but the workspace's only package is `rentrix-app`.
+- Frontend: React + TypeScript + Vite in `rentrix-app/`.
+- Routing: TanStack Router.
+- Server-state/cache: TanStack Query.
+- Local UI state: Zustand.
+- Backend: Supabase Auth + PostgreSQL.
+- Database behavior: migrations, RLS, triggers, views, and RPCs under `supabase/migrations/`.
+- Deployment: Vercel configuration in `rentrix-app/vercel.json`.
+- Tests: colocated Vitest suites plus a financial-focused suite.
 
-## Frontend structure (`rentrix-app/src/`)
+## Repository sources of truth
 
-- `routes/` and `routeTree.ts` — TanStack Router route definitions. `routeTree.ts` builds the route tree in code (not file-based routing) using `createRoute`/`createRootRoute`. Routes are grouped under `_auth` (login) and `_protected` (everything requiring a session).
-- `app/` — app shell, providers (`providers.tsx` wraps `QueryClientProvider`), the dashboard page, and the router provider (`router.tsx`).
-- `features/<domain>/` — one folder per business area (e.g. `contracts`, `owners`, `financials`, `maintenance`, `leads`, `lands`, `settings`, `audit`, `system`, `communication`, `commissions`, `people`, `properties`, `tenants`, `units`). Each typically contains a page component, a `*Service.ts` (Supabase calls), a `use*` hook (TanStack Query wiring), and colocated tests.
-- `components/` — shared UI: layout primitives (`components/layout/`) and design-system primitives (`components/ui/`), following shadcn/ui conventions with Tailwind.
-- `domain/` — pure, Supabase-independent domain types and logic (`types.ts`, `financial-settlements.ts`, `validators.ts`).
-- `lib/` — cross-cutting utilities: `supabase.ts` (client), `query-client.ts` (TanStack Query client), `env.ts` (env validation/placeholder detection), `i18n.ts`, `formatters.ts`, `csvExport.ts`, `moneyNormalization.ts`.
-- `services/` — cross-feature services not tied to one domain folder (e.g. `services/documents/` for PDF/document generation, `services/auth-service.ts`).
-- `store/ui-store.ts` — Zustand store for local UI-only state (theme, sidebar, sync status). Not a data-persistence layer.
-- `types/database.ts` — generated Supabase database types; `types/domain.ts` — shared domain-adjacent types used across features.
+| Concern | Source |
+| --- | --- |
+| Active application | `rentrix-app/` |
+| Active database history | `supabase/migrations/` |
+| Historical rebuild archive | `supabase/migrations_consolidated/` (read-only) |
+| Product description | `docs/PRODUCT.md` |
+| Current operational snapshot | `docs/CURRENT_STATE.md` |
+| Domain rules | `docs/DOMAIN.md` and decision records |
+| Pending work | `docs/NEXT.md` |
+| Release gates | `docs/RELEASE_READINESS.md` |
+| Engineering policy | `docs/ENGINEERING_GOVERNANCE.md` |
+| Production authorization | `docs/GOVERNANCE.md` |
+| CI commands | `.github/workflows/ci.yml` and `docs/TESTING.md` |
 
-## Routing
+## Data flow
 
-TanStack Router routes are declared programmatically in `routeTree.ts`. Each route has `beforeLoad` guards that check `supabase.auth.getSession()` and, where relevant, call `assertSessionPermission` (`features/auth/route-guards.ts`) against permissions defined in `features/auth/permissions.ts`. Route `staticData.title` values are in Arabic and drive page titles/breadcrumbs.
+1. Auth establishes a Supabase session and role claims.
+2. Route guards control frontend visibility and navigation.
+3. Feature services call Supabase tables or RPCs.
+4. RLS and guarded RPCs enforce the backend authorization boundary.
+5. Database constraints and triggers preserve relational and financial invariants.
+6. TanStack Query refreshes server state after successful mutations.
 
-## Data layer
+Frontend guards are usability controls; they do not replace RLS, grants, or RPC authorization.
 
-- `lib/supabase.ts` creates a typed Supabase client (`createClient<Database>`) using `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from `lib/env.ts`. `env.ts` treats known placeholder URLs/keys (used in CI) as "not configured" and surfaces that state to the UI via runtime diagnostics rather than crashing.
-- Each feature's `*Service.ts` file wraps Supabase queries/RPCs for that domain; hooks (`use*.ts`) wrap those services with TanStack Query for caching, loading, and error states.
-- All contract write operations are implemented as atomic Postgres RPCs (`create_contract_atomic`, `update_contract_atomic`, `renew_contract_atomic`, `terminate_contract_atomic`, and `soft_delete_contract_atomic`) rather than direct client-side table writes against `contracts`. Other multi-step domain operations are likewise atomic RPCs (e.g. `resolve_maintenance_with_expense`, `record_invoice_payment_atomic`, `void_receipt_atomic`), keeping related writes and financial/accounting invariants consistent.
+## Domain identity
 
-## Tests
+- `public.people` is the canonical identity source for tenants.
+- Properties, units, owners, contracts, invoices, payments, expenses, and maintenance records remain Supabase-backed.
+- The legacy `public.tenants` table must not be used as the canonical target for new financial relationships.
 
-Tests are colocated with the code they cover (`*.test.ts(x)`, `*.spec.ts`) and run with Vitest (`happy-dom` environment, configured in `vite.config.ts`). `rentrix-app/package.json`'s `test` script uses Vitest's default test-file discovery so new colocated tests are picked up automatically; `test:financials` remains an explicit financials-only suite via `--dir src/features/financials`. See `docs/TESTING.md` for exact commands.
+## Contract lifecycle
 
-## CI
+Contract writes use atomic RPCs for create, update, renew, terminate, and soft delete behavior. The database path protects associated invoices and accounting state, including cancellation of eligible future unpaid invoices while preserving paid history.
 
-`.github/workflows/ci.yml` runs on push/PR to `main`: install, migration-evidence check, typecheck (with diagnostics uploaded on failure), lint, build, test-file typecheck, the main test suite, and the financial test suite (with diagnostics uploaded on failure). It sets placeholder `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` values so the app can build without real credentials.
+## Financial architecture
 
-## Deployment
+- Invoice generation creates double-entry journal rows.
+- Tenant receivables are debited; rental revenue and VAT payable are credited where applicable.
+- Payments debit cash and credit tenant receivables.
+- Posted journal entries are immutable.
+- Corrections use explicit reversal entries.
+- Receipt screens are backed by `public.payments`.
+- Collection reports exclude deleted and VOID payments.
+- Contract and tenant balance summaries are maintained through guarded database behavior.
 
-`rentrix-app/vercel.json` configures the Vercel build (`pnpm install --frozen-lockfile`, `pnpm --filter @workspace/rentrix run build`, output directory `dist/public`) and sets security headers (CSP, `X-Frame-Options`, etc.) scoped to the Supabase origin.
+Financial correctness belongs in database transactions and RPCs, not a sequence of unrelated client writes.
 
-## Financial reporting architecture note
+## Reporting
 
-Payment-backed receipt screens and collection reports must use the same source: `public.payments` filtered to non-deleted, non-VOID rows for financial totals. The `rpt_daily_collection` RPC is expected to follow that same rule to avoid frontend/RPC drift.
+The reports area currently combines backend RPC-backed reports with service/client aggregation. Any migration from client aggregation to an RPC requires seeded parity tests before the source is switched. Owner/tenant statements, cash flow, VAT, daily collection, arrears, and accounting reports must use status filters consistent with the underlying financial lifecycle.
+
+## Migration architecture
+
+- New active migrations use `<14-digit-timestamp>_<snake_case_name>.sql`.
+- Once merged to `main`, migration files are immutable.
+- Forward fixes use new migrations.
+- Out-of-band history reconciliation uses documented comment-only stubs when the effect already exists.
+- A file in the repository is not proof it is applied to a target environment.
+- Before release, compare the active directory with `supabase_migrations.schema_migrations` and inspect live definitions.
+- `supabase/migrations_consolidated/` is never an active migration destination.
+
+## Quality architecture
+
+The standard verification sequence is:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm supabase:migration-evidence
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm --filter ./rentrix-app test
+pnpm --filter ./rentrix-app run test:financials
+```
+
+Database or release work also requires read-only target-environment evidence and authenticated browser verification. See `docs/RELEASE_READINESS.md`.
