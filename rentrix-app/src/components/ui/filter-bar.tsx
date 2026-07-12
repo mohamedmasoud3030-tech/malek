@@ -13,8 +13,11 @@ type FilterBarProps = {
 };
 
 /**
- * Unified list toolbar: search + filter controls + trailing actions.
- * Keeps list pages visually consistent across the product.
+ * Unified list toolbar: search, compact filters and trailing actions.
+ *
+ * Controls stack into a full-width mobile grid instead of shrinking desktop
+ * controls into an unusable row. At desktop widths the same content returns to
+ * a compact toolbar.
  */
 export function FilterBar({
   searchValue,
@@ -28,14 +31,17 @@ export function FilterBar({
   const showSearch = typeof onSearchChange === 'function';
 
   return (
-    <div
+    <section
+      data-filter-bar
       className={cn(
-        'flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/80 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4',
+        'grid min-w-0 gap-3 rounded-[1.35rem] border border-border/70 bg-card/88 p-3 shadow-sm sm:rounded-2xl sm:p-4 lg:grid-cols-[minmax(15rem,1fr)_auto_auto] lg:items-center',
+        !showSearch && 'lg:grid-cols-[minmax(0,1fr)_auto]',
         className,
       )}
+      aria-label="البحث والتصفية"
     >
       {showSearch ? (
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           <SearchInput
             value={searchValue ?? ''}
             onChange={onSearchChange}
@@ -46,12 +52,16 @@ export function FilterBar({
       ) : null}
 
       {filters ? (
-        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:shrink-0">{filters}</div>
+        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center lg:justify-end [&>*]:min-w-0 [&_input]:w-full [&_select]:w-full lg:[&_input]:w-auto lg:[&_select]:w-auto">
+          {filters}
+        </div>
       ) : null}
 
       {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:ms-auto">{actions}</div>
+        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex lg:shrink-0 lg:flex-wrap lg:items-center lg:justify-end [&>*]:w-full lg:[&>*]:w-auto">
+          {actions}
+        </div>
       ) : null}
-    </div>
+    </section>
   );
 }

@@ -1,11 +1,13 @@
+import { useEffect, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
-import { Download, Printer } from 'lucide-react';
+import { Download, Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { ActionMenu } from '@/components/ui/action-menu';
+import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
@@ -45,6 +47,7 @@ type ExpensesSectionProps = Readonly<{
   onFiltersChange: (nextFilters: OperationalExpenseFilterValues) => void;
   expenseForm: UseFormReturn<ExpenseFormValues>;
   isCreateExpensePending: boolean;
+  isCreateExpenseSuccess?: boolean;
   isLoading?: boolean;
   error?: unknown;
   onRetry?: () => void;
@@ -76,7 +79,21 @@ function downloadCsv(filename: string, csv: string) {
   downloadTextFile(filename, withUtf8Bom(csv), 'text/csv;charset=utf-8');
 }
 
-export function ExpensesSection({ expenses, propertyRows, costCenterRows, filters, onFiltersChange, expenseForm, isCreateExpensePending, isLoading = false, error, onRetry, onCreateExpense }: ExpensesSectionProps) {
+export function ExpensesSection({
+  expenses,
+  propertyRows,
+  costCenterRows,
+  filters,
+  onFiltersChange,
+  expenseForm,
+  isCreateExpensePending,
+  isCreateExpenseSuccess = false,
+  isLoading = false,
+  error,
+  onRetry,
+  onCreateExpense,
+}: ExpensesSectionProps) {
+  const [formOpen, setFormOpen] = useState(false);
   const propertyById = new Map(propertyRows.map((property) => [property.id, property]));
   const costCenterById = new Map(costCenterRows.map((costCenter) => [costCenter.id, costCenter]));
   const summary = summarizeOperationalExpenses(expenses);
@@ -98,54 +115,74 @@ export function ExpensesSection({ expenses, propertyRows, costCenterRows, filter
     });
   };
 
+  useEffect(() => {
+    if (isCreateExpenseSuccess) setFormOpen(false);
+  }, [isCreateExpenseSuccess]);
+
+  const firstFormError = Object.values(expenseForm.formState.errors)
+    .map((fieldError) => fieldError?.message)
+    .find((message): message is string => typeof message === 'string' && message.length > 0);
+
   return (
-    <Card className="rounded-2xl">
-      <CardHeader className="gap-3 sm:flex sm:flex-row sm:items-start sm:justify-between">
+    <Card className="overflow-hidden rounded-[1.4rem] sm:rounded-3xl">
+      <CardHeader className="gap-4 border-b border-border/60 bg-muted/20 sm:flex sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle>المصاريف التشغيلية</CardTitle>
-          <CardDescription>فلترة المصاريف وتصدير النتائج الظاهرة أو تسجيل مصروف جديد مرتبط بعقار.</CardDescription>
+          <CardDescription className="mt-1 leading-6">فلترة المصاريف وتصدير النتائج أو تسجيل مصروف جديد دون ازدحام الصفحة.</CardDescription>
         </div>
-        <Button variant="secondary" onClick={exportVisibleExpenses} disabled={expenses.length === 0}>تصدير CSV</Button>
+        <div className="grid grid-cols-1 gap-2 sm:flex sm:shrink-0">
+          <Button variant="secondary" onClick={exportVisibleExpenses} disabled={expenses.length === 0}>
+            <Download className="me-2 size-4" aria-hidden="true" />
+            تصدير CSV
+          </Button>
+          <Button onClick={() => setFormOpen(true)} disabled={propertyRows.length === 0}>
+            <Plus className="me-2 size-4" aria-hidden="true" />
+            إضافة مصروف
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">تكلفة طلبات الصيانة في قسم الصيانة تبقى تقديرية ولا يتم تحويلها تلقائياً إلى مصروف.</p>
 
-        <div className="grid gap-2 rounded-xl border border-border bg-muted/30 p-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          <p>عدد المصاريف: <strong>{summary.visibleCount}</strong></p>
-          <p>الإجمالي: <strong>{formatMoney(summary.visibleAmount)}</strong></p>
-          <p>العقارات: <strong>{summary.byPropertyCount}</strong></p>
-          <p>التصنيفات: <strong>{summary.byCategoryCount}</strong></p>
+      <CardContent className="space-y-5 p-3 sm:p-5">
+        <p className="rounded-2xl border border-border/60 bg-muted/25 p-3 text-xs font-medium leading-5 text-muted-foreground">
+          تكلفة طلبات الصيانة في قسم الصيانة تقديرية ولا تتحول تلقائياً إلى مصروف.
+        </p>
+
+        <div className="grid grid-cols-2 gap-2 text-sm lg:grid-cols-4">
+          <div className="rounded-2xl border border-border/60 bg-background p-3"><span className="block text-xs text-muted-foreground">عدد المصاريف</span><strong className="mt-1 block text-lg tabular-nums">{summary.visibleCount}</strong></div>
+          <div className="rounded-2xl border border-border/60 bg-background p-3"><span className="block text-xs text-muted-foreground">الإجمالي</span><strong className="mt-1 block text-lg tabular-nums">{formatMoney(summary.visibleAmount)}</strong></div>
+          <div className="rounded-2xl border border-border/60 bg-background p-3"><span className="block text-xs text-muted-foreground">العقارات</span><strong className="mt-1 block text-lg tabular-nums">{summary.byPropertyCount}</strong></div>
+          <div className="rounded-2xl border border-border/60 bg-background p-3"><span className="block text-xs text-muted-foreground">التصنيفات</span><strong className="mt-1 block text-lg tabular-nums">{summary.byCategoryCount}</strong></div>
         </div>
 
         <FilterBar
           filters={(
             <>
-              <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-36">
+              <label className="min-w-0 space-y-1 text-sm font-bold">
                 <span className="sr-only">العقار</span>
-                <Select aria-label="العقار" value={filters.propertyId} onChange={(e) => onFiltersChange({ ...filters, propertyId: e.target.value })}>
+                <Select aria-label="العقار" value={filters.propertyId} onChange={(event) => onFiltersChange({ ...filters, propertyId: event.target.value })}>
                   <option value="">كل العقارات</option>
-                  {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+                  {propertyRows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
                 </Select>
               </label>
-              <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-32">
+              <label className="min-w-0 space-y-1 text-sm font-bold">
                 <span className="sr-only">التصنيف</span>
-                <Select aria-label="التصنيف" value={filters.category} onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}>
+                <Select aria-label="التصنيف" value={filters.category} onChange={(event) => onFiltersChange({ ...filters, category: event.target.value })}>
                   <option value="">كل التصنيفات</option>
-                  {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {OPERATIONAL_EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                 </Select>
               </label>
-              <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-36">
+              <label className="min-w-0 space-y-1 text-sm font-bold">
                 <span className="sr-only">مركز التكلفة</span>
-                <Select aria-label="مركز التكلفة" value={filters.costCenterId} onChange={(e) => onFiltersChange({ ...filters, costCenterId: e.target.value })}>
+                <Select aria-label="مركز التكلفة" value={filters.costCenterId} onChange={(event) => onFiltersChange({ ...filters, costCenterId: event.target.value })}>
                   <option value="">كل مراكز التكلفة</option>
                   {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
                 </Select>
               </label>
-              <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-32"><span className="sr-only">من تاريخ</span><Input aria-label="من تاريخ" type="date" value={filters.from} onChange={(e) => onFiltersChange({ ...filters, from: e.target.value })} /></label>
-              <label className="min-w-0 flex-1 space-y-1 text-sm font-bold sm:min-w-32"><span className="sr-only">إلى تاريخ</span><Input aria-label="إلى تاريخ" type="date" value={filters.to} onChange={(e) => onFiltersChange({ ...filters, to: e.target.value })} /></label>
-              {hasFilters ? <Button variant="secondary" className="w-full sm:w-auto" onClick={clearFilters}>مسح الفلاتر</Button> : null}
+              <label className="min-w-0 space-y-1 text-sm font-bold"><span className="sr-only">من تاريخ</span><Input aria-label="من تاريخ" type="date" value={filters.from} onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })} /></label>
+              <label className="min-w-0 space-y-1 text-sm font-bold"><span className="sr-only">إلى تاريخ</span><Input aria-label="إلى تاريخ" type="date" value={filters.to} onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })} /></label>
             </>
           )}
+          actions={hasFilters ? <Button variant="secondary" onClick={clearFilters}>مسح الفلاتر</Button> : undefined}
         />
 
         <DataTable
@@ -153,7 +190,7 @@ export function ExpensesSection({ expenses, propertyRows, costCenterRows, filter
           rows={expenses}
           keyOf={(expense) => expense.id}
           emptyTitle={hasFilters ? 'لا توجد مصاريف مطابقة' : 'لا توجد مصاريف بعد'}
-          emptyDescription={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'سجّل أول مصروف تشغيلي من النموذج أدناه.'}
+          emptyDescription={hasFilters ? 'غيّر الفلاتر أو امسحها لعرض نتائج أخرى.' : 'اضغط إضافة مصروف لتسجيل أول مصروف تشغيلي.'}
           isLoading={isLoading}
           error={error}
           onRetry={onRetry}
@@ -185,47 +222,68 @@ export function ExpensesSection({ expenses, propertyRows, costCenterRows, filter
                 stats={<span className="text-base font-black tabular-nums" dir="ltr">{formatMoney(expense.amount)}</span>}
                 actions={(
                   <Button type="button" variant="secondary" className="min-h-11 w-full px-3 text-xs" onClick={() => exportExpenseVoucher(expense)}>
-                    <Download className="me-2 size-4" />PDF
+                    <Download className="me-2 size-4" aria-hidden="true" />PDF
                   </Button>
                 )}
               />
             );
           }}
         />
+      </CardContent>
 
-        <form className="grid gap-3 rounded-2xl border border-border p-4 sm:grid-cols-2" onSubmit={expenseForm.handleSubmit(onCreateExpense)}>
-          <label className="space-y-1 text-sm font-bold">
-            <span>العقار</span>
-            <Select {...expenseForm.register('property_id')}>
-              <option value="">اختر العقار</option>
-              {propertyRows.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-            </Select>
-          </label>
-          <label className="space-y-1 text-sm font-bold">
-            <span>التصنيف</span>
-            <Select {...expenseForm.register('category')}>
-              {OPERATIONAL_EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </Select>
-          </label>
-          <label className="space-y-1 text-sm font-bold">
-            <span>مركز التكلفة</span>
-            <Select {...expenseForm.register('cost_center_id')}>
-              <option value="">بدون مركز تكلفة</option>
-              {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
-            </Select>
-          </label>
-          <label className="space-y-1 text-sm font-bold">
-            <span>المبلغ</span>
-            <Input type="number" min="0.01" inputMode="decimal" step="0.01" placeholder="المبلغ" {...expenseForm.register('amount')} />
-          </label>
-          <label className="space-y-1 text-sm font-bold">
-            <span>التاريخ</span>
-            <Input type="date" {...expenseForm.register('expense_date')} />
-          </label>
-          <div className="sm:col-span-2">
-            <Textarea placeholder="الوصف (اختياري)" className="min-h-16" {...expenseForm.register('description')} />
-          </div>
-          <div className="sm:col-span-2">
+      <EntityForm.Overlay
+        open={formOpen}
+        onOpenChange={(open) => { if (!isCreateExpensePending) setFormOpen(open); }}
+        title="إضافة مصروف"
+        description="سجّل المصروف وربطه بالعقار ومركز التكلفة. الحقول المطلوبة موضحة داخل النموذج."
+      >
+        <EntityForm.Root
+          aria-busy={isCreateExpensePending}
+          onSubmit={expenseForm.handleSubmit(onCreateExpense)}
+        >
+          <EntityForm.ErrorSummary message={firstFormError} />
+
+          <EntityForm.Section title="بيانات المصروف" description="اختر العقار والتصنيف ثم أدخل المبلغ والتاريخ.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-1.5 text-sm font-bold">
+                <span>العقار</span>
+                <Select {...expenseForm.register('property_id')} aria-invalid={Boolean(expenseForm.formState.errors.property_id)}>
+                  <option value="">اختر العقار</option>
+                  {propertyRows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
+                </Select>
+                {expenseForm.formState.errors.property_id?.message ? <span className="text-xs text-destructive">{expenseForm.formState.errors.property_id.message}</span> : null}
+              </label>
+
+              <label className="space-y-1.5 text-sm font-bold">
+                <span>التصنيف</span>
+                <Select {...expenseForm.register('category')} aria-invalid={Boolean(expenseForm.formState.errors.category)}>
+                  {OPERATIONAL_EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                </Select>
+              </label>
+
+              <label className="space-y-1.5 text-sm font-bold">
+                <span>مركز التكلفة</span>
+                <Select {...expenseForm.register('cost_center_id')}>
+                  <option value="">بدون مركز تكلفة</option>
+                  {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
+                </Select>
+              </label>
+
+              <label className="space-y-1.5 text-sm font-bold">
+                <span>المبلغ</span>
+                <Input type="number" min="0.01" inputMode="decimal" step="0.01" placeholder="0.000" {...expenseForm.register('amount')} aria-invalid={Boolean(expenseForm.formState.errors.amount)} />
+                {expenseForm.formState.errors.amount?.message ? <span className="text-xs text-destructive">{expenseForm.formState.errors.amount.message}</span> : null}
+              </label>
+
+              <label className="space-y-1.5 text-sm font-bold sm:col-span-2">
+                <span>التاريخ</span>
+                <Input type="date" {...expenseForm.register('expense_date')} aria-invalid={Boolean(expenseForm.formState.errors.expense_date)} />
+              </label>
+            </div>
+          </EntityForm.Section>
+
+          <EntityForm.Section title="تفاصيل إضافية" description="أضف وصفاً أو إيصالاً عند الحاجة.">
+            <Textarea placeholder="الوصف (اختياري)" className="min-h-24" {...expenseForm.register('description')} />
             <Controller
               control={expenseForm.control}
               name="attachment_url"
@@ -233,12 +291,16 @@ export function ExpensesSection({ expenses, propertyRows, costCenterRows, filter
                 <FileAttachmentField label="إيصال مرفق (اختياري)" value={field.value ?? null} onChange={field.onChange} />
               )}
             />
-          </div>
-          <Button type="submit" disabled={isCreateExpensePending} className="sm:col-span-2">
-            {isCreateExpensePending ? 'جارٍ الحفظ...' : 'إضافة مصروف'}
-          </Button>
-        </form>
-      </CardContent>
+          </EntityForm.Section>
+
+          <EntityForm.Actions
+            submitLabel={isCreateExpensePending ? 'جارٍ الحفظ...' : 'حفظ المصروف'}
+            onCancel={() => setFormOpen(false)}
+            isSubmitting={isCreateExpensePending}
+            submitDisabled={propertyRows.length === 0}
+          />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
     </Card>
   );
 }

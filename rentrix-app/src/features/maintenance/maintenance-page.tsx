@@ -1,27 +1,31 @@
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
-import { useForm, Controller } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, CheckCircle2, Clock, Flame, PlusCircle, Wrench } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AsyncContentState } from '@/components/async-content-state';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileAttachmentField } from '@/components/ui/file-attachment-field';
-import { Input } from '@/components/ui/input';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Select } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { DataTable } from '@/components/ui/data-table';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { ActionMenu } from '@/components/ui/action-menu';
+import { Button } from '@/components/ui/button';
+import { DataTable } from '@/components/ui/data-table';
+import { EntityForm } from '@/components/ui/entity-form';
+import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { FilterBar } from '@/components/ui/filter-bar';
+import { Input } from '@/components/ui/input';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { Select } from '@/components/ui/select';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { useProperties } from '@/features/properties/use-properties';
 import { useAllUnits, useUnits } from '@/features/units/use-units';
-import { useMaintenance, useCreateMaintenance, useUpdateMaintenanceStatus, useResolveMaintenanceWithExpense } from './use-maintenance';
+import {
+  useCreateMaintenance,
+  useMaintenance,
+  useResolveMaintenanceWithExpense,
+  useUpdateMaintenanceStatus,
+} from './use-maintenance';
 import type { Maintenance } from './maintenance-service';
 import {
   buildMaintenanceLocationLabel,
@@ -33,7 +37,7 @@ import {
 
 const schema = z.object({
   property_id: z.string().uuid('اختر العقار'),
-  unit_id: z.string().nullable().optional().transform((val) => (val === '' ? null : val)),
+  unit_id: z.string().nullable().optional().transform((value) => (value === '' ? null : value)),
   title: z.string().min(1, 'أدخل عنوان الطلب'),
   description: z.string().nullable().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
@@ -81,13 +85,15 @@ function getLoadErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+void getLoadErrorMessage;
+
 type MaintenanceAction = Readonly<{ label: string; status: Exclude<MaintenanceStatusFilter, 'all'> }>;
 
 const summaryCards = [
-  { key: 'total', label: 'إجمالي الطلبات', icon: Wrench, color: 'text-primary' },
-  { key: 'open', label: 'طلبات مفتوحة', icon: AlertCircle, color: 'text-blue-500' },
-  { key: 'inProgress', label: 'قيد التنفيذ', icon: Clock, color: 'text-amber-500' },
-  { key: 'urgent', label: 'عاجلة', icon: Flame, color: 'text-red-500' },
+  { key: 'total', label: 'إجمالي الطلبات', sub: 'ضمن الفلاتر الحالية', icon: Wrench, accent: 'primary' },
+  { key: 'open', label: 'طلبات مفتوحة', sub: 'تحتاج إلى بدء المتابعة', icon: AlertCircle, accent: 'sky' },
+  { key: 'inProgress', label: 'قيد التنفيذ', sub: 'طلبات يعمل عليها الفريق', icon: Clock, accent: 'amber' },
+  { key: 'urgent', label: 'طلبات عاجلة', sub: 'أولوية فورية', icon: Flame, accent: 'rose' },
 ] as const;
 
 function getMaintenanceStatusActions(status: keyof typeof maintenanceStatusLabels): MaintenanceAction[] {
@@ -102,14 +108,65 @@ export function MaintenancePage() {
   const [priorityFilter, setPriorityFilter] = useState<MaintenancePriorityFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [resolveTarget, setResolveTarget] = useState<Maintenance | null>(null);
 
   const maintenanceQuery = useMaintenance(statusFilter, propertyFilterId);
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 200 });
   const createMutation = useCreateMaintenance();
   const updateStatusMutation = useUpdateMaintenanceStatus();
   const resolveMutation = useResolveMaintenanceWithExpense();
-  const [resolveTarget, setResolveTarget] = useState<Maintenance | null>(null);
-  const resolveForm = useForm<ResolveFormValues>({ resolver: zodResolver(resolveSchema), defaultValues: { cost: 0, notes: '' } });
+  const resolveForm = useForm<ResolveFormValues>({
+    resolver: zodResolver(resolveSchema),
+    defaultValues: { cost: 0, notes: '' },
+  });
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      property_id: '',
+      unit_id: null,
+      title: '',
+      description: '',
+      priority: 'medium',
+      attachment_url: null,
+    },
+  });
+
+  const formPropertyId = form.watch('property_id');
+  const unitsQuery = useUnits(formPropertyId);
+  const allUnitsQuery = useAllUnits();
+
+  const properties = propertiesQuery.data?.rows ?? [];
+  const units = unitsQuery.data ?? [];
+  const allUnits = allUnitsQuery.data ?? [];
+  const maintenanceRows = maintenanceQuery.data ?? [];
+  const filteredMaintenanceRows = useMemo(
+    () => filterMaintenanceRequests(maintenanceRows, {
+      status: statusFilter,
+      priority: priorityFilter,
+      propertyId: propertyFilterId,
+    }),
+    [maintenanceRows, priorityFilter, propertyFilterId, statusFilter],
+  );
+  const maintenanceSummary = useMemo(
+    () => summarizeMaintenanceRequests(filteredMaintenanceRows),
+    [filteredMaintenanceRows],
+  );
+  const loadError = maintenanceQuery.error ?? propertiesQuery.error;
+  const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError;
+  const isLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading;
+  const hasFilters = statusFilter !== 'all' || priorityFilter !== 'all' || propertyFilterId.length > 0;
+
+  const firstCreateError = Object.values(form.formState.errors)
+    .map((fieldError) => fieldError?.message)
+    .find((message): message is string => typeof message === 'string' && message.length > 0);
+  const firstResolveError = Object.values(resolveForm.formState.errors)
+    .map((fieldError) => fieldError?.message)
+    .find((message): message is string => typeof message === 'string' && message.length > 0);
+
+  const retryMaintenanceWorkspace = async () => {
+    await Promise.all([maintenanceQuery.refetch(), propertiesQuery.refetch()]);
+  };
 
   const handleStatusAction = (row: Maintenance, status: Exclude<MaintenanceStatusFilter, 'all'>) => {
     if (status === 'resolved') {
@@ -123,35 +180,13 @@ export function MaintenancePage() {
   const submitResolve = (values: ResolveFormValues) => {
     if (!resolveTarget) return;
     resolveMutation.mutate(
-      { requestId: resolveTarget.id, cost: values.cost, notes: values.notes?.trim() ? values.notes.trim() : null },
+      {
+        requestId: resolveTarget.id,
+        cost: values.cost,
+        notes: values.notes?.trim() ? values.notes.trim() : null,
+      },
       { onSuccess: () => setResolveTarget(null) },
     );
-  };
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { property_id: '', unit_id: null, title: '', description: '', priority: 'medium', attachment_url: null },
-  });
-
-  const formPropertyId = form.watch('property_id');
-  const unitsQuery = useUnits(formPropertyId);
-  const allUnitsQuery = useAllUnits();
-
-  const properties = propertiesQuery.data?.rows ?? [];
-  const units = unitsQuery.data ?? [];
-  const allUnits = allUnitsQuery.data ?? [];
-  const maintenanceRows = maintenanceQuery.data ?? [];
-  const filteredMaintenanceRows = useMemo(
-    () => filterMaintenanceRequests(maintenanceRows, { status: statusFilter, priority: priorityFilter, propertyId: propertyFilterId }),
-    [maintenanceRows, priorityFilter, propertyFilterId, statusFilter],
-  );
-  const maintenanceSummary = useMemo(() => summarizeMaintenanceRequests(filteredMaintenanceRows), [filteredMaintenanceRows]);
-  const loadError = maintenanceQuery.error ?? propertiesQuery.error;
-  const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError;
-  const isLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading;
-
-  const retryMaintenanceWorkspace = async () => {
-    await Promise.all([maintenanceQuery.refetch(), propertiesQuery.refetch()]);
   };
 
   const onSubmit = (values: FormValues) => {
@@ -170,7 +205,14 @@ export function MaintenancePage() {
       },
       {
         onSuccess: () => {
-          form.reset({ property_id: '', unit_id: null, title: '', description: '', priority: 'medium' });
+          form.reset({
+            property_id: '',
+            unit_id: null,
+            title: '',
+            description: '',
+            priority: 'medium',
+            attachment_url: null,
+          });
           setShowForm(false);
         },
       },
@@ -181,134 +223,76 @@ export function MaintenancePage() {
     <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="طلبات الصيانة"
-        description="تتبع وإدارة طلبات الصيانة لجميع العقارات والوحدات."
-        action={
-          <Button type="button" onClick={() => setShowForm((v) => !v)}>
-            <PlusCircle className="me-2 size-4" />
-            {showForm ? 'إلغاء' : 'طلب صيانة جديد'}
+        description="تتبع طلبات الصيانة حسب الحالة والأولوية والعقار، مع إجراءات واضحة للموبايل والديسكتوب."
+        primaryAction={(
+          <Button type="button" onClick={() => setShowForm(true)}>
+            <PlusCircle className="me-2 size-4" aria-hidden="true" />
+            طلب صيانة جديد
           </Button>
-        }
+        )}
       />
-      {/* Summary cards */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Card key={card.key} className="rounded-2xl">
-              <CardContent className="pt-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-muted-foreground">{card.label}</p>
-                    <p className="mt-1 text-3xl font-black">
-                      {isLoading ? <Skeleton className="mt-2 h-8 w-12" /> : maintenanceSummary[card.key]}
-                    </p>
-                  </div>
-                  <Icon className={`size-8 opacity-20 ${card.color}`} />
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {summaryCards.map((card) => (
+          <KpiCard
+            key={card.key}
+            label={card.label}
+            value={isLoading ? '—' : maintenanceSummary[card.key]}
+            sub={card.sub}
+            icon={card.icon}
+            accent={card.accent}
+          />
+        ))}
       </div>
 
-      {/* Filters */}
       <FilterBar
         filters={(
           <>
-            <Select aria-label="تصفية حسب الحالة" value={String(statusFilter)} onChange={(e) => setStatusFilter(e.target.value as MaintenanceStatusFilter)}>
+            <Select aria-label="تصفية حسب الحالة" value={String(statusFilter)} onChange={(event) => setStatusFilter(event.target.value as MaintenanceStatusFilter)}>
               <option value="all">كل الحالات</option>
               <option value="open">مفتوح</option>
               <option value="in_progress">قيد التنفيذ</option>
               <option value="resolved">تم الحل</option>
               <option value="closed">مغلق</option>
             </Select>
-            <Select aria-label="تصفية حسب الأولوية" value={String(priorityFilter)} onChange={(e) => setPriorityFilter(e.target.value as MaintenancePriorityFilter)}>
+            <Select aria-label="تصفية حسب الأولوية" value={String(priorityFilter)} onChange={(event) => setPriorityFilter(event.target.value as MaintenancePriorityFilter)}>
               <option value="all">كل الأولويات</option>
               <option value="low">منخفضة</option>
               <option value="medium">متوسطة</option>
               <option value="high">عالية</option>
               <option value="urgent">عاجلة</option>
             </Select>
-            <Select aria-label="تصفية حسب العقار" value={propertyFilterId} onChange={(e) => setPropertyFilterId(e.target.value)}>
+            <Select aria-label="تصفية حسب العقار" value={propertyFilterId} onChange={(event) => setPropertyFilterId(event.target.value)}>
               <option value="">كل العقارات</option>
-              {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+              {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
             </Select>
           </>
         )}
+        actions={hasFilters ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setStatusFilter('all');
+              setPriorityFilter('all');
+              setPropertyFilterId('');
+            }}
+          >
+            مسح الفلاتر
+          </Button>
+        ) : undefined}
       />
 
-      {/* Create form */}
-      {showForm && (
-        <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-base">طلب صيانة جديد</CardTitle>
-            <CardDescription>أدخل تفاصيل الطلب ثم اضغط حفظ.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="grid gap-3 sm:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="space-y-1">
-                <Select aria-label="العقار" {...form.register('property_id')}>
-                  <option value="">اختر العقار</option>
-                  {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-                </Select>
-                {form.formState.errors.property_id && (
-                  <p className="text-xs text-destructive">{form.formState.errors.property_id.message}</p>
-                )}
-              </div>
-
-              <Select aria-label="الوحدة" {...form.register('unit_id')}>
-                <option value="">بدون وحدة</option>
-                {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_number}</option>)}
-              </Select>
-
-              <div className="space-y-1 sm:col-span-2">
-                <Input aria-label="عنوان الطلب" placeholder="عنوان الطلب" {...form.register('title')} />
-                {form.formState.errors.title && (
-                  <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
-                )}
-              </div>
-
-              <div className="sm:col-span-2">
-                <Textarea aria-label="وصف الطلب" placeholder="الوصف (اختياري)" className="min-h-20" {...form.register('description')} />
-              </div>
-
-              <div className="sm:col-span-2">
-                <Controller
-                  control={form.control}
-                  name="attachment_url"
-                  render={({ field }) => (
-                    <FileAttachmentField label="صورة مرفقة (اختياري)" value={field.value ?? null} onChange={field.onChange} />
-                  )}
-                />
-              </div>
-
-              <Select aria-label="الأولوية" {...form.register('priority')}>
-                <option value="low">منخفضة</option>
-                <option value="medium">متوسطة</option>
-                <option value="high">عالية</option>
-                <option value="urgent">عاجلة</option>
-              </Select>
-
-              <Button type="submit" disabled={createMutation.isPending} className="sm:self-end">
-                {createMutation.isPending ? 'جارٍ الحفظ...' : 'حفظ الطلب'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Requests list */}
       <AsyncContentState
         status={isLoading ? 'loading' : hasLoadError ? 'error' : filteredMaintenanceRows.length === 0 ? 'empty' : 'ready'}
         error={loadError}
         errorTitle="تعذر تحميل طلبات الصيانة"
         errorAction={<Button type="button" onClick={retryMaintenanceWorkspace}>إعادة المحاولة</Button>}
         emptyTitle="لا توجد طلبات صيانة"
-        emptyDescription="غيّر عوامل التصفية أو أضف طلب صيانة جديد للبدء."
+        emptyDescription={hasFilters ? 'لا توجد طلبات تطابق الفلاتر الحالية.' : 'أضف طلب صيانة جديد للبدء.'}
       >
         <>
-          {/* Mobile cards */}
-          <div className="grid gap-3 md:hidden">
+          <div className="grid gap-3 sm:grid-cols-2 md:hidden">
             {filteredMaintenanceRows.map((row) => {
               const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
               return (
@@ -316,23 +300,44 @@ export function MaintenancePage() {
                   key={row.id}
                   title={row.title}
                   subtitle={buildMaintenanceLocationLabel(row, properties, allUnits)}
-                  badge={<StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>{maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}</StatusBadge>}
-                  meta={<StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>{maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}</StatusBadge>}
+                  badge={(
+                    <StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>
+                      {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}
+                    </StatusBadge>
+                  )}
+                  meta={(
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-muted-foreground">الأولوية</span>
+                      <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
+                        {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}
+                      </StatusBadge>
+                    </div>
+                  )}
                   actions={actions.length > 0 ? (
-                    <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="grid w-full grid-cols-1 gap-2">
                       {actions.map((action) => (
-                        <Button key={`${row.id}-${action.status}`} type="button" variant="secondary" className="min-h-11 px-3 text-xs" disabled={updateStatusMutation.isPending || resolveMutation.isPending} onClick={() => handleStatusAction(row, action.status)}>
+                        <Button
+                          key={`${row.id}-${action.status}`}
+                          type="button"
+                          variant="secondary"
+                          className="min-h-11 px-3 text-xs"
+                          disabled={updateStatusMutation.isPending || resolveMutation.isPending}
+                          onClick={() => handleStatusAction(row, action.status)}
+                        >
                           {action.label}
                         </Button>
                       ))}
                     </div>
-                  ) : <span className="flex items-center gap-1 text-muted-foreground text-xs"><CheckCircle2 className="size-3.5" />مكتمل</span>}
+                  ) : (
+                    <span className="flex min-h-11 items-center gap-1 text-xs font-bold text-muted-foreground">
+                      <CheckCircle2 className="size-3.5" aria-hidden="true" />مكتمل
+                    </span>
+                  )}
                 />
               );
             })}
           </div>
 
-          {/* Desktop table */}
           <div className="hidden md:block">
             <DataTable
               aria-label="جدول طلبات الصيانة"
@@ -344,18 +349,18 @@ export function MaintenancePage() {
                   <StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>
                     {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}
                   </StatusBadge>
-                )},
+                ) },
                 { key: 'priority', header: 'الأولوية', render: (row) => (
                   <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
                     {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}
                   </StatusBadge>
-                )},
+                ) },
                 { key: 'action', header: 'الإجراء', render: (row) => {
                   const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
-                  return !actions.length ? (
-                    <span className="flex items-center gap-1 text-muted-foreground text-xs"><CheckCircle2 className="size-3.5" />مكتمل</span>
+                  return actions.length === 0 ? (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground"><CheckCircle2 className="size-3.5" />مكتمل</span>
                   ) : (
-                    <div className="flex" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                    <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
                       <ActionMenu
                         label="تحديث الطلب"
                         items={actions.map((action) => ({
@@ -367,7 +372,7 @@ export function MaintenancePage() {
                       />
                     </div>
                   );
-                }},
+                } },
               ]}
               keyOf={(row) => row.id}
               emptyTitle="لا توجد طلبات صيانة"
@@ -377,33 +382,102 @@ export function MaintenancePage() {
         </>
       </AsyncContentState>
 
-      <Dialog open={resolveTarget != null} onOpenChange={(open) => !open && setResolveTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>تم الحل — تسجيل التكلفة</DialogTitle>
-            <DialogDescription>سيتم إغلاق الطلب وتسجيل التكلفة الفعلية كمصروف صيانة في التقارير المالية.</DialogDescription>
-          </DialogHeader>
-          <form className="grid gap-4" onSubmit={resolveForm.handleSubmit(submitResolve)}>
-            <label className="grid gap-2 text-sm font-bold">
-              التكلفة الفعلية (ر.ع)
-              <Input dir="ltr" type="number" min="0" step="0.01" inputMode="decimal" {...resolveForm.register('cost')} />
-              {resolveForm.formState.errors.cost && (
-                <p className="text-xs text-destructive">{resolveForm.formState.errors.cost.message}</p>
-              )}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              ملاحظات (اختياري)
-              <Textarea className="min-h-16" {...resolveForm.register('notes')} />
-            </label>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setResolveTarget(null)}>إلغاء</Button>
-              <Button type="submit" disabled={resolveMutation.isPending}>
-                {resolveMutation.isPending ? 'جارٍ الحفظ...' : 'تأكيد الإغلاق'}
-              </Button>
+      <EntityForm.Overlay
+        open={showForm}
+        onOpenChange={(open) => { if (!createMutation.isPending) setShowForm(open); }}
+        title="طلب صيانة جديد"
+        description="حدد الموقع والأولوية وأضف وصفاً واضحاً يساعد فريق الصيانة على بدء العمل."
+      >
+        <EntityForm.Root aria-busy={createMutation.isPending} onSubmit={form.handleSubmit(onSubmit)}>
+          <EntityForm.ErrorSummary message={firstCreateError} />
+
+          <EntityForm.Section title="الموقع" description="اختر العقار، ويمكن ربط الطلب بوحدة محددة.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-1.5 text-sm font-bold">
+                <span>العقار</span>
+                <Select aria-label="العقار" {...form.register('property_id')} aria-invalid={Boolean(form.formState.errors.property_id)}>
+                  <option value="">اختر العقار</option>
+                  {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
+                </Select>
+                {form.formState.errors.property_id?.message ? <span className="text-xs text-destructive">{form.formState.errors.property_id.message}</span> : null}
+              </label>
+
+              <label className="space-y-1.5 text-sm font-bold">
+                <span>الوحدة</span>
+                <Select aria-label="الوحدة" {...form.register('unit_id')} disabled={!formPropertyId || unitsQuery.isLoading}>
+                  <option value="">بدون وحدة</option>
+                  {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_number}</option>)}
+                </Select>
+              </label>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </EntityForm.Section>
+
+          <EntityForm.Section title="تفاصيل الطلب" description="اكتب عنواناً قصيراً ثم أضف الوصف والأولوية.">
+            <label className="space-y-1.5 text-sm font-bold">
+              <span>عنوان الطلب</span>
+              <Input aria-label="عنوان الطلب" placeholder="مثال: تسريب مياه في المطبخ" {...form.register('title')} aria-invalid={Boolean(form.formState.errors.title)} />
+              {form.formState.errors.title?.message ? <span className="text-xs text-destructive">{form.formState.errors.title.message}</span> : null}
+            </label>
+
+            <label className="space-y-1.5 text-sm font-bold">
+              <span>الوصف</span>
+              <Textarea aria-label="وصف الطلب" placeholder="الوصف (اختياري)" className="min-h-24" {...form.register('description')} />
+            </label>
+
+            <label className="space-y-1.5 text-sm font-bold">
+              <span>الأولوية</span>
+              <Select aria-label="الأولوية" {...form.register('priority')}>
+                <option value="low">منخفضة</option>
+                <option value="medium">متوسطة</option>
+                <option value="high">عالية</option>
+                <option value="urgent">عاجلة</option>
+              </Select>
+            </label>
+
+            <Controller
+              control={form.control}
+              name="attachment_url"
+              render={({ field }) => (
+                <FileAttachmentField label="صورة مرفقة (اختياري)" value={field.value ?? null} onChange={field.onChange} />
+              )}
+            />
+          </EntityForm.Section>
+
+          <EntityForm.Actions
+            submitLabel={createMutation.isPending ? 'جارٍ الحفظ...' : 'حفظ الطلب'}
+            onCancel={() => setShowForm(false)}
+            isSubmitting={createMutation.isPending}
+            submitDisabled={properties.length === 0}
+          />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
+
+      <EntityForm.Overlay
+        open={resolveTarget != null}
+        onOpenChange={(open) => { if (!open && !resolveMutation.isPending) setResolveTarget(null); }}
+        title="إغلاق طلب الصيانة"
+        description="أدخل التكلفة الفعلية. سيتم تسجيلها كمصروف صيانة وفق منطق النظام الحالي."
+      >
+        <EntityForm.Root aria-busy={resolveMutation.isPending} onSubmit={resolveForm.handleSubmit(submitResolve)}>
+          <EntityForm.ErrorSummary message={firstResolveError} />
+          <EntityForm.Section title="التكلفة الفعلية" description={resolveTarget ? resolveTarget.title : undefined}>
+            <label className="grid gap-2 text-sm font-bold">
+              <span>التكلفة الفعلية (ر.ع)</span>
+              <Input dir="ltr" type="number" min="0" step="0.01" inputMode="decimal" {...resolveForm.register('cost')} aria-invalid={Boolean(resolveForm.formState.errors.cost)} />
+              {resolveForm.formState.errors.cost?.message ? <span className="text-xs text-destructive">{resolveForm.formState.errors.cost.message}</span> : null}
+            </label>
+            <label className="grid gap-2 text-sm font-bold">
+              <span>ملاحظات (اختياري)</span>
+              <Textarea className="min-h-20" {...resolveForm.register('notes')} />
+            </label>
+          </EntityForm.Section>
+          <EntityForm.Actions
+            submitLabel={resolveMutation.isPending ? 'جارٍ الحفظ...' : 'تأكيد الإغلاق'}
+            onCancel={() => setResolveTarget(null)}
+            isSubmitting={resolveMutation.isPending}
+          />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
     </PageLayout>
   );
 }

@@ -2,7 +2,7 @@ import { Slot } from '@radix-ui/react-slot';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'destructive' | 'outline';
+type ButtonVariant = 'primary' | 'default' | 'secondary' | 'ghost' | 'danger' | 'destructive' | 'outline';
 type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -14,6 +14,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
+  default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
   secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
   ghost: 'hover:bg-muted text-foreground',
   danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
