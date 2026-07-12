@@ -31,6 +31,7 @@ export default defineConfig({
         env: {
           VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? 'https://example.supabase.co',
           VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ?? 'test-anon-key',
+          VITE_E2E: 'true',
         },
       },
   projects: [
