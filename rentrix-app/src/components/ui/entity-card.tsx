@@ -58,21 +58,35 @@ function getActionClassName(variant: EntityCardAction['variant'] = 'secondary') 
 function handleCardKeyDown(event: KeyboardEvent<HTMLElement>, onClick?: () => void) {
   if (!onClick) return;
   if (event.key !== 'Enter' && event.key !== ' ') return;
+  if ((event.target as HTMLElement).closest('button, a, input, select, textarea')) return;
   event.preventDefault();
   onClick();
 }
 
-function EntityCardShell({ id, clickable, onClick, className, children }: Readonly<{ id: string; clickable: boolean; onClick?: () => void; className?: string; children: ReactNode }>) {
+function EntityCardShell({
+  id,
+  clickable,
+  onClick,
+  className,
+  children,
+}: Readonly<{
+  id: string;
+  clickable: boolean;
+  onClick?: () => void;
+  className?: string;
+  children: ReactNode;
+}>) {
   return (
     <article
+      data-entity-card
       data-entity-id={id}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
-        'w-full rounded-2xl border border-border/60 bg-card p-4 text-start transition-all duration-150',
-        clickable && 'cursor-pointer hover:border-primary/30 hover:shadow-md active:scale-[0.98]',
+        'relative w-full min-w-0 overflow-hidden rounded-[1.35rem] border border-border/70 bg-card p-4 text-start shadow-[0_8px_24px_hsl(var(--foreground)/0.045)] transition-[transform,border-color,box-shadow] sm:rounded-3xl',
+        clickable && 'cursor-pointer hover:border-primary/25 hover:shadow-[0_14px_32px_hsl(var(--foreground)/0.075)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
         className,
       )}
     >
@@ -95,48 +109,52 @@ export function EntityCard({
   className,
   avatarIcon,
 }: EntityCardProps) {
-  const tone = entityCardTypeMap[type] ?? entityCardTypeMap['contact']!;
+  const tone = entityCardTypeMap[type] ?? entityCardTypeMap.contact!;
   const AvatarIcon = avatarIcon ?? tone.icon ?? Users;
 
   return (
     <EntityCardShell id={id} clickable={Boolean(onClick)} onClick={onClick} className={className}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl', tone.bg)}>
-            <AvatarIcon className={cn('size-4', tone.text)} />
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className={cn('grid size-10 shrink-0 place-items-center rounded-2xl shadow-sm', tone.bg)}>
+            <AvatarIcon className={cn('size-4.5', tone.text)} aria-hidden="true" />
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold leading-snug">{name}</p>
-            {subtitle ? <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{subtitle}</p> : null}
-            {supportingText ? <p className="mt-0.5 text-[10px] font-bold text-muted-foreground/70">{supportingText}</p> : null}
+          <div className="min-w-0 flex-1">
+            <p className="line-clamp-2 text-sm font-black leading-6">{name}</p>
+            {subtitle ? <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-5 text-muted-foreground">{subtitle}</p> : null}
+            {supportingText ? <p className="mt-1 text-[10px] font-bold leading-4 text-muted-foreground/75">{supportingText}</p> : null}
           </div>
         </div>
         {badge ?? (
-          <span className={cn('shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold', tone.bg, tone.text)}>
+          <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold', tone.bg, tone.text)}>
             {tone.label}
           </span>
         )}
       </div>
 
       {meta?.length ? (
-        <div className="mt-3 flex flex-col gap-1.5 border-t border-border/40 pt-3 text-xs text-muted-foreground">
+        <div className="mt-3 grid gap-2 rounded-2xl bg-muted/40 p-3 text-xs text-muted-foreground">
           {meta.map((item, index) => {
             const MetaIcon = item.icon;
             return (
-              <div key={index} className={cn('flex items-center gap-1.5', item.className)}>
-                {MetaIcon ? <MetaIcon className="size-3.5 shrink-0" /> : null}
-                {item.label ? <span className="font-bold text-foreground/80">{item.label}</span> : null}
-                <span dir={item.dir} className="truncate">{item.value}</span>
+              <div key={index} className={cn('flex min-w-0 items-center gap-2', item.className)}>
+                {MetaIcon ? <MetaIcon className="size-3.5 shrink-0" aria-hidden="true" /> : null}
+                {item.label ? <span className="shrink-0 font-bold text-foreground/80">{item.label}</span> : null}
+                <span dir={item.dir} className="min-w-0 flex-1 truncate">{item.value}</span>
               </div>
             );
           })}
         </div>
       ) : null}
 
-      {stats ? <div className="mt-3 border-t border-border/40 pt-3 text-xs text-muted-foreground">{stats}</div> : null}
+      {stats ? <div className="mt-3 rounded-2xl border border-border/60 bg-background/60 p-3 text-xs text-muted-foreground">{stats}</div> : null}
 
       {actions?.length ? (
-        <div className="mt-3 flex flex-wrap justify-end gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <div
+          className="mt-4 grid grid-cols-1 gap-2 border-t border-border/60 pt-3 sm:grid-cols-2"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
           {actions.map((action, index) => {
             const ActionIcon = action.icon;
             return (
@@ -144,11 +162,14 @@ export function EntityCard({
                 key={index}
                 type="button"
                 aria-label={action.ariaLabel}
-                className={cn('inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-colors', getActionClassName(action.variant))}
+                className={cn(
+                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
+                  getActionClassName(action.variant),
+                )}
                 onClick={action.onClick}
               >
-                {ActionIcon ? <ActionIcon className="size-3.5" /> : null}
-                {action.label}
+                {ActionIcon ? <ActionIcon className="size-4 shrink-0" aria-hidden="true" /> : null}
+                <span className="truncate">{action.label}</span>
               </button>
             );
           })}
