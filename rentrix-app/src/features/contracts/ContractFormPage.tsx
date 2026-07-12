@@ -78,7 +78,7 @@ export function ContractFormPage() {
                 className="md:col-span-2"
                 onCancel={() => navigate({ to: '/contracts' })}
                 isSubmitting={submitting}
-                submitDisabled={prerequisitesLoading || Boolean(coverageError)}
+                submitDisabled={submitting || prerequisitesLoading || Boolean(coverageError)}
                 submitLabel={prerequisitesLoading ? 'جار تجهيز بيانات العقد...' : submitting ? 'جار الحفظ...' : 'حفظ العقد'}
               />
             </EntityForm.Root>
