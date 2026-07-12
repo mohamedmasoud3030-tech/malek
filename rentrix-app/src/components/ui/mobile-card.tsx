@@ -39,10 +39,10 @@ const accentColors: Record<NonNullable<MobileCardProps['accent']>, string> = {
 };
 
 const variantStyles: Record<NonNullable<MobileCardProps['variant']>, string> = {
-  default: 'border bg-card shadow-sm',
+  default: 'border border-border/80 bg-card shadow-[0_8px_24px_hsl(var(--foreground)/0.055)]',
   outlined: 'border-2 border-border bg-transparent',
-  filled: 'bg-muted/30 border-transparent',
-  elevated: 'border bg-card shadow-lg',
+  filled: 'border border-transparent bg-muted/40',
+  elevated: 'border border-border/70 bg-card shadow-[0_16px_38px_hsl(var(--foreground)/0.09)]',
 };
 
 /**
@@ -80,11 +80,11 @@ export function MobileCard({
 
   if (loading) {
     return (
-      <div className={cn('rounded-2xl border bg-card p-4', className)}>
+      <div className={cn('rounded-3xl border bg-card p-4 shadow-sm', className)}>
         <div className="animate-pulse space-y-3">
           <div className="h-5 w-2/3 rounded bg-muted" />
           <div className="h-3 w-1/3 rounded bg-muted" />
-          <div className="h-12 rounded bg-muted" />
+          <div className="h-12 rounded-2xl bg-muted" />
         </div>
       </div>
     );
@@ -97,40 +97,33 @@ export function MobileCard({
       onClick={onClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        'rounded-2xl p-4 transition-all duration-150',
+        'relative overflow-hidden rounded-3xl p-4 transition-all duration-150',
         variantStyles[variant],
         accent !== 'none' && 'border-l-4',
         accentColors[accent],
-        interactive && 'cursor-pointer hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.99]',
+        interactive && 'cursor-pointer hover:border-primary/20 hover:shadow-[0_14px_32px_hsl(var(--foreground)/0.08)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 active:scale-[0.99]',
         className,
       )}
     >
-      {/* Header: Title + Badge */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-black text-foreground">{title}</div>
+          <div className="line-clamp-2 text-[15px] font-black leading-6 text-foreground">{title}</div>
           {subtitle && (
-            <div className="mt-0.5 truncate text-xs font-bold text-muted-foreground">
+            <div className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-muted-foreground">
               {subtitle}
             </div>
           )}
         </div>
-        {badge && <div className="shrink-0">{badge}</div>}
+        {badge && <div className="shrink-0 pt-0.5">{badge}</div>}
       </div>
 
-      {/* Meta: Details and tags */}
-      {meta && <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">{meta}</div>}
-
-      {/* Stats: Financial figures and numbers */}
-      {stats && <div className="mt-3">{stats}</div>}
-
-      {/* Custom children */}
+      {meta && <div className="mt-3 rounded-2xl bg-muted/45 p-3 text-xs leading-5 text-muted-foreground">{meta}</div>}
+      {stats && <div className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-3">{stats}</div>}
       {children}
 
-      {/* Actions: Buttons row with proper touch targets */}
       {actions && (
         <div
-          className="mt-3 flex flex-wrap gap-2 border-t border-border/60 pt-3"
+          className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-3"
           onClick={stopActions}
           onKeyDown={stopActions}
           role="presentation"
@@ -139,9 +132,8 @@ export function MobileCard({
         </div>
       )}
 
-      {/* Footer: Subtle text */}
       {footer && (
-        <div className="mt-3 text-[11px] font-bold text-muted-foreground">{footer}</div>
+        <div className="mt-3 text-[11px] font-bold leading-5 text-muted-foreground">{footer}</div>
       )}
     </div>
   );
@@ -252,25 +244,25 @@ export function ListItemCard({
       onClick={onClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        'flex items-center justify-between gap-3 rounded-xl border bg-card p-3 transition-colors',
+        'flex items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-sm transition-colors',
         interactive && 'cursor-pointer hover:bg-muted/50 active:bg-muted',
         className,
       )}
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex min-w-0 items-center gap-3">
         {leftIcon && (
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             {leftIcon}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-bold text-sm">{title}</p>
+          <p className="line-clamp-2 text-sm font-bold">{title}</p>
           {subtitle && (
-            <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+            <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{subtitle}</p>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex shrink-0 items-center gap-2">
         {badge}
         {rightElement}
       </div>
