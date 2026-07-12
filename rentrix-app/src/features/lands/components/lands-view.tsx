@@ -85,44 +85,69 @@ export function LandsView(props: Props) {
   const hasFilters = filters.query.trim().length > 0 || filters.status !== 'all';
 
   return (
-    <PageLayout dir="rtl" lang="ar">
+    <PageLayout dir="rtl" lang="ar" className="space-y-4">
       <PageHeader
         title="قطع الأراضي التشغيلية"
-        description="إدارة الأراضي ومتابعة حالتها ومساحاتها وقيمها التشغيلية من واجهة موحدة."
+        description="إدارة الأراضي ومتابعة حالتها ومساحاتها وقيمها التشغيلية."
         count={isLoading ? '...' : rows.length}
         secondaryActions={
-          <div className="flex min-w-max items-center gap-2 rounded-2xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground">
+          <div className="hidden min-w-max items-center gap-2 rounded-2xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
             <Layers className="size-4" />
             <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${area(totalArea)}`}</span>
           </div>
         }
         primaryAction={
-          <Button onClick={onCreate}>
+          <Button onClick={onCreate} className="min-h-11 rounded-2xl">
             <Plus className="me-2 size-4" />
             إضافة أرض
           </Button>
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl" />
-          ))
+          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl sm:h-28" />)
         ) : (
           <>
             <KpiCard label="إجمالي السجلات" value={rows.length} icon={MapPinned} accent="primary" sub={`${activeRows} نشطة`} />
-            <KpiCard label="متاحة" value={availableRows} icon={TrendingUp} accent="emerald" sub="قطع قابلة للتعامل" trend={availableRows > 0 ? 'up' : 'neutral'} trendValue={String(availableRows)} />
+            <KpiCard label="متاحة" value={availableRows} icon={TrendingUp} accent="emerald" sub="قابلة للتعامل" trend={availableRows > 0 ? 'up' : 'neutral'} trendValue={String(availableRows)} />
             <KpiCard label="محجوزة" value={rows.filter((r) => r.status === 'reserved').length} icon={Tag} accent="amber" sub="قيد التفاوض" />
-            <KpiCard label="إجمالي المساحة" value={area(totalArea)} icon={Layers} accent="sky" sub="مجموع المساحات المدخلة" />
+            <KpiCard label="إجمالي المساحة" value={area(totalArea)} icon={Layers} accent="sky" sub="مجموع المساحات" />
           </>
         )}
       </div>
 
       <Card>
-        <CardContent className="grid gap-3 pt-5 md:grid-cols-[1fr_12rem]">
-          <Input value={filters.query} onChange={(e) => onFiltersChange({ ...filters, query: e.target.value })} placeholder="بحث بالاسم، رقم القطعة، الموقع، التصنيف" aria-label="بحث الأراضي" />
-          <Select value={filters.status} onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })} aria-label="حالة الأرض">
+        <CardContent className="space-y-3 p-3 sm:p-5">
+          <Input
+            value={filters.query}
+            onChange={(e) => onFiltersChange({ ...filters, query: e.target.value })}
+            placeholder="بحث بالاسم، رقم القطعة، الموقع، التصنيف"
+            aria-label="بحث الأراضي"
+          />
+          <div className="grid grid-cols-3 gap-2 sm:hidden">
+            {[
+              ['all', 'الكل'],
+              ['available', 'متاحة'],
+              ['reserved', 'محجوزة'],
+            ].map(([value, label]) => (
+              <Button
+                key={value}
+                type="button"
+                variant={filters.status === value ? 'default' : 'secondary'}
+                className="min-h-10 rounded-xl px-2 text-xs"
+                onClick={() => onFiltersChange({ ...filters, status: value })}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <Select
+            value={filters.status}
+            onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })}
+            aria-label="حالة الأرض"
+            className="hidden sm:block"
+          >
             <option value="all">كل الحالات</option>
             {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
@@ -140,7 +165,9 @@ export function LandsView(props: Props) {
 
       <AsyncContentState
         status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
-        error={error} errorTitle="تعذر تحميل الأراضي" errorFallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."
+        error={error}
+        errorTitle="تعذر تحميل الأراضي"
+        errorFallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."
         errorAction={<Button variant="secondary" onClick={onRetry} className="rounded-2xl"><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button>}
         emptyTitle={hasFilters ? 'لا توجد أراضٍ ضمن الفلاتر الحالية' : 'لا توجد سجلات أراضٍ بعد'}
         emptyDescription={hasFilters ? 'غيّر البحث أو الحالة لعرض سجلات أراضٍ أخرى.' : 'أضف أول سجل أرض تشغيلي عند توفر بيانات قطعة أرض حقيقية.'}
@@ -156,10 +183,7 @@ export function LandsView(props: Props) {
         description="الحقول تحفظ سجل أرض تشغيلي وتربطه بالمالك عند توفر معرفه."
         className="max-w-2xl"
       >
-        <EntityForm.Root
-          className="md:grid-cols-2"
-          onSubmit={(e) => { e.preventDefault(); onSubmit(draft); }}
-        >
+        <EntityForm.Root className="md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); onSubmit(draft); }}>
           <Field label="اسم الأرض"><Input required value={draft.name} onChange={(e) => onDraftChange({ ...draft, name: e.target.value })} /></Field>
           <Field label="رقم القطعة"><Input value={draft.plot_no} onChange={(e) => onDraftChange({ ...draft, plot_no: e.target.value })} /></Field>
           <Field label="الموقع"><Input value={draft.location} onChange={(e) => onDraftChange({ ...draft, location: e.target.value })} /></Field>
@@ -193,56 +217,15 @@ function Field({ label, children }: Readonly<{ label: string; children: ReactNod
 
 function LandRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: LandRecord[]; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchiveClick: (row: LandRecord) => void }>) {
   const columns: ColumnDef<LandRecord>[] = [
-    {
-      key: 'name',
-      header: 'الأرض',
-      className: 'max-w-56',
-      render: (row) => (
-        <>
-          <p className="whitespace-normal break-words font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}</p>
-          <p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p>
-        </>
-      ),
-    },
-    {
-      key: 'location',
-      header: 'الموقع',
-      className: 'max-w-72',
-      render: (row) => <span className="whitespace-normal break-words">{row.location ?? '—'}</span>,
-    },
-    {
-      key: 'area',
-      header: 'المساحة',
-      render: (row) => <span dir="ltr">{area(row.area)}</span>,
-    },
-    {
-      key: 'value',
-      header: 'القيمة',
-      render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span>,
-    },
-    {
-      key: 'status',
-      header: 'الحالة',
-      render: (row) => <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>,
-    },
-    {
-      key: 'actions',
-      header: 'إجراءات',
-      render: (row) => <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />,
-    },
+    { key: 'name', header: 'الأرض', className: 'max-w-56', render: (row) => <><p className="whitespace-normal break-words font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}</p><p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p></> },
+    { key: 'location', header: 'الموقع', className: 'max-w-72', render: (row) => <span className="whitespace-normal break-words">{row.location ?? '—'}</span> },
+    { key: 'area', header: 'المساحة', render: (row) => <span dir="ltr">{area(row.area)}</span> },
+    { key: 'value', header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
+    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge> },
+    { key: 'actions', header: 'إجراءات', render: (row) => <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /> },
   ];
 
-  return (
-    <EntityTable
-      rows={rows}
-      columns={columns}
-      keyOf={(row) => row.id}
-      aria-label="قائمة الأراضي"
-      renderMobileCard={(row) => (
-        <LandCard row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />
-      )}
-    />
-  );
+  return <EntityTable rows={rows} columns={columns} keyOf={(row) => row.id} aria-label="قائمة الأراضي" renderMobileCard={(row) => <LandCard row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />} />;
 }
 
 function LandCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: LandRecord; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchiveClick: (row: LandRecord) => void }>) {
