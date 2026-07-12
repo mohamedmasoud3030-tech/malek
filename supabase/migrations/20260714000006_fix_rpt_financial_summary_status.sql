@@ -71,6 +71,11 @@
 -- $$;
 -- ============================================================================
 
+-- Return table shape changed in this pending version; PostgreSQL cannot change
+-- an existing function's return type via CREATE OR REPLACE, so drop the old
+-- signature first and recreate it with the intended output columns.
+DROP FUNCTION IF EXISTS public.rpt_financial_summary(date, date);
+
 CREATE OR REPLACE FUNCTION public.rpt_financial_summary(p_from date, p_to date)
 RETURNS TABLE (
   collected numeric,
@@ -127,7 +132,7 @@ AS $$
         FROM public.invoices 
         WHERE deleted_at IS NULL 
           AND status IN ('UNPAID', 'PARTIALLY_PAID', 'OVERDUE') 
-          AND due_date < current_date
+          AND NULLIF(due_date, '')::date < current_date
           AND COALESCE(UPPER(status), '') NOT IN ('VOID', 'CANCELLED')
       ), 0) AS overdue_amount,
       
@@ -136,7 +141,7 @@ AS $$
         FROM public.invoices 
         WHERE deleted_at IS NULL 
           AND status IN ('UNPAID', 'PARTIALLY_PAID', 'OVERDUE') 
-          AND due_date < current_date
+          AND NULLIF(due_date, '')::date < current_date
           AND COALESCE(UPPER(status), '') NOT IN ('VOID', 'CANCELLED')
       ), 0) AS overdue_count,
       

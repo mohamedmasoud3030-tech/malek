@@ -1,0 +1,22 @@
+-- =============================================================================
+-- Migration: drop_stale_soft_delete_contract_uuid_overload
+-- Date: 2026-07-15
+-- Risk: LOW
+--
+-- Purpose:
+--   Remove the stale public.soft_delete_contract_atomic(uuid) overload while
+--   preserving the active public.soft_delete_contract_atomic(text) RPC used by
+--   the frontend.
+--
+-- Safety:
+--   - Idempotent: DROP FUNCTION IF EXISTS.
+--   - Does not touch the text overload body, owner, or grants.
+--   - Re-applying is a no-op if the uuid overload is already absent.
+--
+-- Rollback note:
+--   Rollback would require re-creating the historical uuid overload from
+--   20260712000000_contract_lifecycle_hardening.sql. It is intentionally not
+--   recreated here because the overload is stale and weaker than the text RPC.
+-- =============================================================================
+
+DROP FUNCTION IF EXISTS public.soft_delete_contract_atomic(uuid);

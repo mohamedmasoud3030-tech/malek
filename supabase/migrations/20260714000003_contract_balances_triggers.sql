@@ -38,11 +38,14 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  v_contract_id uuid;
+  -- Production schema uses text for contracts.id, invoices.contract_id, and
+  -- contract_balances.contract_id. Keep all local ID variables text to avoid
+  -- invalid text = uuid comparisons inside invoice/allocation triggers.
+  v_contract_id text;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id uuid;
-  v_unit_id uuid;
+  v_tenant_id text;
+  v_unit_id text;
 BEGIN
   -- Determine which contract_id to update
   IF TG_OP = 'DELETE' THEN
@@ -51,17 +54,30 @@ BEGIN
     v_contract_id := NEW.contract_id;
   END IF;
 
+  -- Invoices may allow a NULL contract_id. Do not fail or create a balance
+  -- row when the invoice is not linked to a contract.
+  IF v_contract_id IS NULL THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
   -- Calculate totals for this contract
   SELECT 
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
     c.tenant_id,
-    c.unit_id
+    c.unit_id::text
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
   WHERE c.id = v_contract_id
   GROUP BY c.tenant_id, c.unit_id;
+
+  -- If the referenced contract cannot be found, do not fail invoice/allocation
+  -- writes. This should not happen with valid FK data, but keeps the trigger
+  -- defensive and avoids accidental write outages.
+  IF NOT FOUND THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
 
   -- Upsert contract_balances
   INSERT INTO public.contract_balances (
@@ -97,11 +113,14 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  v_contract_id uuid;
+  -- Production schema uses text for contracts.id, invoices.contract_id, and
+  -- contract_balances.contract_id. Keep all local ID variables text to avoid
+  -- invalid text = uuid comparisons inside invoice/allocation triggers.
+  v_contract_id text;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id uuid;
-  v_unit_id uuid;
+  v_tenant_id text;
+  v_unit_id text;
 BEGIN
   -- Get contract_id from the invoice referenced by this allocation
   IF TG_OP = 'DELETE' THEN
@@ -123,12 +142,19 @@ BEGIN
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
     c.tenant_id,
-    c.unit_id
+    c.unit_id::text
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
   WHERE c.id = v_contract_id
   GROUP BY c.tenant_id, c.unit_id;
+
+  -- If the referenced contract cannot be found, do not fail invoice/allocation
+  -- writes. This should not happen with valid FK data, but keeps the trigger
+  -- defensive and avoids accidental write outages.
+  IF NOT FOUND THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
 
   -- Upsert contract_balances
   INSERT INTO public.contract_balances (
@@ -178,7 +204,7 @@ INSERT INTO public.contract_balances (
 SELECT
   c.id,
   c.tenant_id,
-  c.unit_id,
+  c.unit_id::text,
   COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
   COALESCE(SUM(i.paid_amount), 0),
   COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0) - COALESCE(SUM(i.paid_amount), 0),

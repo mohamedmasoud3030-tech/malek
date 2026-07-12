@@ -44,7 +44,9 @@ SET search_path TO 'public', 'pg_temp'
 AS $$
 DECLARE
   v_request_id text := nullif(p_payload->>'request_id', '');
-  v_expense_id uuid := nullif(p_payload->>'expense_id', '')::uuid;
+  -- Production schema uses text IDs for expenses.id. Keep this as text to
+  -- avoid invalid text = uuid comparisons at runtime.
+  v_expense_id text := nullif(p_payload->>'expense_id', '');
   v_new_amount numeric := nullif(p_payload->>'amount', '')::numeric;
   v_new_category text := nullif(p_payload->>'category', '');
   v_new_description text := p_payload->>'description';
@@ -83,7 +85,7 @@ BEGIN
   END IF;
 
   -- Advisory lock to prevent concurrent updates to the same expense
-  PERFORM pg_advisory_xact_lock(hashtextextended('update_expense:' || v_expense_id::text, 0));
+  PERFORM pg_advisory_xact_lock(hashtextextended('update_expense:' || v_expense_id, 0));
 
   -- Lock the expense row
   SELECT * INTO v_expense
@@ -126,32 +128,32 @@ BEGIN
       RAISE EXCEPTION 'Expense accounting accounts are not configured';
     END IF;
 
-    v_reversal_no := 'EXP-REV-' || to_char(now(), 'YYYYMMDD') || '-' || substr(replace(v_expense_id::text, '-', ''), 1, 6);
-    v_new_entry_no := 'EXP-UPD-' || to_char(now(), 'YYYYMMDD') || '-' || substr(replace(v_expense_id::text, '-', ''), 1, 6);
+    v_reversal_no := 'EXP-REV-' || to_char(now(), 'YYYYMMDD') || '-' || substr(replace(v_expense_id, '-', ''), 1, 6);
+    v_new_entry_no := 'EXP-UPD-' || to_char(now(), 'YYYYMMDD') || '-' || substr(replace(v_expense_id, '-', ''), 1, 6);
 
     -- Reversing entries: reverse the original journal entries
     -- Original was: DEBIT expense (6100), CREDIT cash (1111)
     -- Reversal is:  CREDIT expense (6100), DEBIT cash (1111)
     INSERT INTO public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, created_at)
     VALUES
-      (gen_random_uuid(), v_reversal_no || '-D', v_expense.expense_date, v_expense_account_id, v_old_amount, 'CREDIT', v_expense_id, 'expense_reversal', v_expense_id::text, now()),
-      (gen_random_uuid(), v_reversal_no || '-C', v_expense.expense_date, v_cash_account_id, v_old_amount, 'DEBIT', v_expense_id, 'expense_reversal', v_expense_id::text, now());
+      (gen_random_uuid()::text, v_reversal_no || '-D', v_expense.expense_date, v_expense_account_id, v_old_amount, 'CREDIT', v_expense_id, 'expense_reversal', v_expense_id, now()),
+      (gen_random_uuid()::text, v_reversal_no || '-C', v_expense.expense_date, v_cash_account_id, v_old_amount, 'DEBIT', v_expense_id, 'expense_reversal', v_expense_id, now());
 
     -- New entries: record the updated amount
     INSERT INTO public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, created_at)
     VALUES
-      (gen_random_uuid(), v_new_entry_no || '-D', v_expense.expense_date, v_expense_account_id, v_new_amount, 'DEBIT', v_expense_id, 'expense_update', v_expense_id::text, now()),
-      (gen_random_uuid(), v_new_entry_no || '-C', v_expense.expense_date, v_cash_account_id, v_new_amount, 'CREDIT', v_expense_id, 'expense_update', v_expense_id::text, now());
+      (gen_random_uuid()::text, v_new_entry_no || '-D', v_expense.expense_date, v_expense_account_id, v_new_amount, 'DEBIT', v_expense_id, 'expense_update', v_expense_id, now()),
+      (gen_random_uuid()::text, v_new_entry_no || '-C', v_expense.expense_date, v_cash_account_id, v_new_amount, 'CREDIT', v_expense_id, 'expense_update', v_expense_id, now());
   END IF;
 
   -- Audit trail
   INSERT INTO public.audit_log (id, ts, user_id, username, action, entity, entity_id, note, "table", details, created_at)
   VALUES (
-    gen_random_uuid(),
+    gen_random_uuid()::text,
     extract(epoch from now())::bigint,
     auth.uid(),
     (SELECT email FROM auth.users WHERE id = auth.uid()),
-    'UPDATE', 'expenses', v_expense_id::text,
+    'UPDATE', 'expenses', v_expense_id,
     CASE
       WHEN v_amount_diff <> 0 THEN format('Expense amount updated from %s to %s with journal adjustment', v_old_amount, v_new_amount)
       ELSE 'Expense updated (no amount change)'

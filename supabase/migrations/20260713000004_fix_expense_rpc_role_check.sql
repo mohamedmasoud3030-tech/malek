@@ -55,7 +55,7 @@ DECLARE
   v_result jsonb;
   v_cached jsonb;
 BEGIN
-  -- CHANGED: was is_app_user(), now is_admin_or_manager()
+  -- Auth check tightened to ADMIN/MANAGER only.
   IF auth.uid() IS NULL OR NOT public.is_admin_or_manager() THEN
     RAISE EXCEPTION 'ADMIN or MANAGER role is required to create expenses.' USING ERRCODE = '42501';
   END IF;
