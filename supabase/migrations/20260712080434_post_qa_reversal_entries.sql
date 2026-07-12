@@ -1,0 +1,5 @@
+-- Migration 20260712080434: post_qa_reversal_entries
+-- This migration was already applied directly to production.
+-- This stub file exists solely to synchronize the repository migration history
+-- with the production database ledger (supabase_migrations.schema_migrations).
+-- No executable SQL, no schema changes, no data changes.
