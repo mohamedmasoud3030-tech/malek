@@ -24,7 +24,7 @@ export default defineConfig({
   webServer: isExternalTarget
     ? undefined
     : {
-        command: 'pnpm dev',
+        command: 'pnpm build && pnpm serve',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
