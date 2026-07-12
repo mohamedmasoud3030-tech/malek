@@ -236,7 +236,7 @@ export function MaintenancePage() {
       updateRequestMutation.mutate({ requestId: editingRequest.id, payload }, { onSuccess: () => { setEditingRequest(null); setShowForm(false); } });
       return;
     }
-    createMutation.mutate(payload, { onSuccess: () => { form.reset({ property_id: '', unit_id: null, title: '', description: '', priority: 'medium', assigned_to: '', scheduled_date: '', attachment_url: null }); setShowForm(false); } });
+    createMutation.mutate({ ...payload, status: 'open', cost: 0, resolved_at: null }, { onSuccess: () => { form.reset({ property_id: '', unit_id: null, title: '', description: '', priority: 'medium', assigned_to: '', scheduled_date: '', attachment_url: null }); setShowForm(false); } });
   };
 
   return (
