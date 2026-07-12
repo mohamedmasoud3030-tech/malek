@@ -68,6 +68,22 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
     }
   }, [open, isEdit, contractQuery.data, form]);
 
+  const propertyId = form.watch('property_id');
+  const startDate = form.watch('start_date');
+  const endDate = form.watch('end_date');
+  const prerequisitesLoading = propertiesQuery.isLoading || peopleQuery.isLoading || unitsQuery.isLoading || agreementCoverageQuery.isLoading;
+  const hasSelectedPeriod = Boolean(propertyId && startDate && endDate);
+  const coverageError = agreementCoverageQuery.isError
+    ? 'تعذر التحقق من اتفاقية المالك. أعد المحاولة قبل حفظ العقد.'
+    : hasSelectedPeriod && !agreementCoverageQuery.isLoading && !agreementCoverageQuery.data
+      ? 'لا توجد اتفاقية مالك نشطة تغطي فترة العقد. أنشئ أو حدّث اتفاقية المالك أولاً.'
+      : null;
+  const dependencyError = propertiesQuery.isError || peopleQuery.isError
+    ? 'تعذر تحميل بيانات العقارات أو المستأجرين. أعد تحميل الصفحة ثم حاول مرة أخرى.'
+    : unitsQuery.isError
+      ? 'تعذر تحميل وحدات العقار المحدد. أعد المحاولة قبل حفظ العقد.'
+      : null;
+
   // Override handleSubmit to include agreement_id from coverage query
   const handleModalSubmit = form.handleSubmit(async (values: ContractFormValues) => {
     const payload = values; // Already validated by zodResolver in hook
@@ -102,6 +118,9 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
           <RouteLoadingState />
         ) : (
           <EntityForm.Root className="md:grid-cols-2" onSubmit={handleModalSubmit}>
+            {dependencyError ? <EntityForm.ErrorSummary className="md:col-span-2" message={dependencyError} /> : null}
+            {coverageError ? <EntityForm.ErrorSummary className="md:col-span-2" message={coverageError} /> : null}
+            {form.formState.errors.root ? <EntityForm.ErrorSummary className="md:col-span-2" message={form.formState.errors.root.message} /> : null}
             <label className="grid gap-2 text-sm font-bold">
               العقار
               <Select {...form.register('property_id')} autoFocus>
@@ -198,7 +217,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
                 )}
               />
             </div>
-            <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={submitting} submitLabel={submitting ? 'جار الحفظ...' : 'حفظ العقد'} />
+            <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={submitting} submitDisabled={submitting || prerequisitesLoading || Boolean(coverageError) || Boolean(dependencyError)} submitLabel={prerequisitesLoading ? 'جار تجهيز بيانات العقد...' : submitting ? 'جار الحفظ...' : 'حفظ العقد'} />
           </EntityForm.Root>
         )}
     </EntityForm.Overlay>

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { personSchema } from './person-schema';
 import { normalizePersonPayload } from './people-service';
 
 function createQueryMock(result: unknown) {
@@ -24,6 +25,31 @@ const supabaseMock = vi.hoisted(() => ({
 vi.mock("@/lib/supabase", () => ({
   supabase: supabaseMock,
 }));
+
+describe('people form validation', () => {
+  it('validates phone, email, identity and type with Arabic field messages', () => {
+    const result = personSchema.safeParse({
+      full_name: 'أ',
+      phone: 'abc',
+      email: 'wrong-email',
+      national_id: '@@',
+      type: 'tenant',
+      address: '',
+      notes: '',
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const messages = result.error.issues.map((issue) => issue.message);
+      expect(messages).toEqual(expect.arrayContaining([
+        'الاسم الكامل مطلوب',
+        'رقم الهاتف غير صحيح',
+        'البريد الإلكتروني غير صحيح',
+        'رقم الهوية غير صحيح',
+      ]));
+    }
+  });
+});
 
 describe('people service write workflow', () => {
   beforeEach(() => {

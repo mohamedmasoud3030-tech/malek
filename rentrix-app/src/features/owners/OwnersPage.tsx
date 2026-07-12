@@ -155,7 +155,7 @@ function OwnerContact({ owner }: Readonly<{ owner: Owner }>) {
 
 function OwnerPropertyLinks({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
   if (!row.properties.length) return <span className="text-muted-foreground">—</span>;
-  return <div className="flex flex-wrap gap-2">{row.properties.map((p) => <Button key={`${row.owner.id}-${p.id}`} variant="secondary" className="min-h-8 px-3 text-xs" asChild><Link to="/properties/$propertyId" params={{ propertyId: p.id }}>{p.title}</Link></Button>)}</div>;
+  return <div className="flex flex-wrap gap-2">{row.properties.map((p) => <Button key={`${row.owner.id}-${p.id}`} variant="secondary" className="min-h-11 px-3 text-xs" asChild><Link to="/properties/$propertyId" params={{ propertyId: p.id }}>{p.title}</Link></Button>)}</div>;
 }
 
 function OwnershipSummary({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
@@ -217,7 +217,7 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
                 <ActionMenu
                   label="إجراءات المالك"
                   items={[
-                    { id: 'relationships', label: 'العلاقات', icon: Eye, onClick: () => onSelectOwner(row.owner.id) },
+                    { id: 'relationships', label: 'العلاقات', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
                     { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
                   ]}
                 />
@@ -246,7 +246,9 @@ function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner, onEdi
               )}
               actions={(
                 <div className="grid w-full grid-cols-2 gap-2">
-                  <Button type="button" variant="secondary" className="min-h-11 text-xs" onClick={() => onSelectOwner(row.owner.id)}><Eye className="me-1 size-4" />العلاقات</Button>
+                  <Button type="button" variant="secondary" className="min-h-11 text-xs" asChild><Link to="/owners/$ownerId" params={{ ownerId: row.owner.id }}><Eye className="me-1 size-4" />التفاصيل</Link></Button>
+                  <Button type="button" variant="secondary" className="min-h-11 text-xs" asChild><Link to="/reports"><Eye className="me-1 size-4" />كشف الحساب</Link></Button>
+                  <Button type="button" variant="secondary" className="min-h-11 text-xs" onClick={() => onSelectOwner(row.owner.id)}><LinkIcon className="me-1 size-4" />العلاقات</Button>
                   <Button type="button" variant="secondary" className="min-h-11 text-xs" onClick={() => onEditOwner(row.owner)}><Pencil className="me-1 size-4" />تعديل</Button>
                 </div>
               )}
@@ -276,8 +278,8 @@ function OwnerRelationshipsList({ linkedProperties, endLinkPending, onEditLink, 
               <span>إلى: <b className="text-foreground">{link.ends_on ?? '—'}</b></span>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" className="min-h-9 px-3" onClick={() => onEditLink(link)}>تعديل العلاقة</Button>
-              <Button type="button" variant="danger" className="min-h-9 px-3" disabled={endLinkPending} onClick={() => onEndLink(link)}>إنهاء العلاقة</Button>
+              <Button type="button" variant="secondary" className="min-h-11 px-3" onClick={() => onEditLink(link)}>تعديل العلاقة</Button>
+              <Button type="button" variant="danger" className="min-h-11 px-3" disabled={endLinkPending} onClick={() => onEndLink(link)}>إنهاء العلاقة</Button>
             </div>
           </div>
         ))
