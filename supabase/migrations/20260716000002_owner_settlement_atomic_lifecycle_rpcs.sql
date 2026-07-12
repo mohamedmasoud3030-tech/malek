@@ -6,9 +6,9 @@
 
 begin;
 
-insert into public.accounts (id, no, name, type, balance)
-select gen_random_uuid()::text, '2000', 'Owner Payables', 'LIABILITY', 0
-where not exists (select 1 from public.accounts where no = '2000');
+insert into public.accounts (id, no, name)
+values ('2000', '2000', 'Owner Payables')
+on conflict (id) do nothing;
 
 create or replace function public.create_owner_settlement_draft_atomic(p_payload jsonb)
 returns jsonb
@@ -38,19 +38,13 @@ begin
   if v_owner_id is null or v_period_start is null or v_period_end is null or v_request_id is null then
     raise exception 'owner_id, period_start, period_end, and request_id are required.';
   end if;
-  if v_period_start > v_period_end then
-    raise exception 'period_start must be on or before period_end.';
-  end if;
-  if least(v_gross, v_fee, v_expenses, v_tax) < 0 then
-    raise exception 'Settlement amounts cannot be negative.';
-  end if;
+  if v_period_start > v_period_end then raise exception 'period_start must be on or before period_end.'; end if;
+  if least(v_gross, v_fee, v_expenses, v_tax) < 0 then raise exception 'Settlement amounts cannot be negative.'; end if;
 
   select response_payload into v_cached
   from public.financial_operation_idempotency
   where operation_name = 'create_owner_settlement_draft_atomic' and request_id = v_request_id;
-  if v_cached is not null then
-    return v_cached || jsonb_build_object('idempotent', true);
-  end if;
+  if v_cached is not null then return v_cached || jsonb_build_object('idempotent', true); end if;
 
   perform pg_advisory_xact_lock(hashtextextended(
     'owner_settlement:' || v_owner_id || ':' || coalesce(v_property_id, '*') || ':' || v_period_start || ':' || v_period_end,
@@ -84,7 +78,7 @@ begin
 
   insert into public.audit_log (id, ts, user_id, username, action, entity, entity_id, note, "table", details, created_at)
   values (
-    gen_random_uuid()::text, extract(epoch from now())::bigint, auth.uid(),
+    gen_random_uuid(), extract(epoch from now())::bigint, auth.uid(),
     (select email from auth.users where id = auth.uid()),
     'CREATE', 'owner_settlements', v_id, 'Owner settlement draft created',
     'owner_settlements', left(p_payload::text, 4000), now()
@@ -132,9 +126,9 @@ begin
    where id = v_id;
 
   insert into public.audit_log (id, ts, user_id, username, action, entity, entity_id, note, "table", details, created_at)
-  values (gen_random_uuid()::text, extract(epoch from now())::bigint, auth.uid(),
+  values (gen_random_uuid(), extract(epoch from now())::bigint, auth.uid(),
     (select email from auth.users where id = auth.uid()), 'APPROVE', 'owner_settlements', v_id,
-    'Owner settlement approved; owner payable is now recognized operationally', 'owner_settlements', left(p_payload::text, 4000), now());
+    'Owner settlement approved; owner payable is recognized operationally', 'owner_settlements', left(p_payload::text, 4000), now());
 
   v_result := jsonb_build_object('success', true, 'idempotent', false, 'settlement_id', v_id, 'status', 'APPROVED', 'net_payable', v_row.net_payable, 'request_id', v_request_id);
   insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
@@ -185,8 +179,8 @@ begin
   v_entry_no := 'OST-PAY-' || upper(substr(replace(v_id, '-', ''), 1, 10));
   insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, batch_id, created_at)
   values
-    (gen_random_uuid()::text, v_entry_no || '-D', current_date::text, v_owner_payable_account, v_row.net_payable, 'DEBIT', v_id, 'owner_settlement_payment', v_id, v_batch_id, now()),
-    (gen_random_uuid()::text, v_entry_no || '-C', current_date::text, v_cash_account, v_row.net_payable, 'CREDIT', v_id, 'owner_settlement_payment', v_id, v_batch_id, now());
+    (gen_random_uuid(), v_entry_no || '-D', current_date, v_owner_payable_account, v_row.net_payable, 'DEBIT', v_id::uuid, 'owner_settlement_payment', v_id, v_batch_id, now()),
+    (gen_random_uuid(), v_entry_no || '-C', current_date, v_cash_account, v_row.net_payable, 'CREDIT', v_id::uuid, 'owner_settlement_payment', v_id, v_batch_id, now());
 
   update public.owner_settlements
      set status = 'PAID', method = v_method, payment_reference = v_reference,
@@ -194,7 +188,7 @@ begin
    where id = v_id;
 
   insert into public.audit_log (id, ts, user_id, username, action, entity, entity_id, note, "table", details, created_at)
-  values (gen_random_uuid()::text, extract(epoch from now())::bigint, auth.uid(),
+  values (gen_random_uuid(), extract(epoch from now())::bigint, auth.uid(),
     (select email from auth.users where id = auth.uid()), 'PAY', 'owner_settlements', v_id,
     'Owner settlement paid with balanced owner-payable/cash journal batch', 'owner_settlements', left(p_payload::text, 4000), now());
 
@@ -229,14 +223,16 @@ begin
 
   select * into v_row from public.owner_settlements where id = v_id for update;
   if not found then raise exception 'Owner settlement not found.'; end if;
-  if v_row.status not in ('DRAFT', 'APPROVED') then raise exception 'Only DRAFT or APPROVED settlements can be cancelled; paid settlements require a controlled reversal.'; end if;
+  if v_row.status not in ('DRAFT', 'APPROVED') then
+    raise exception 'Only DRAFT or APPROVED settlements can be cancelled; paid settlements require a controlled reversal.';
+  end if;
 
   update public.owner_settlements
      set status = 'CANCELLED', cancelled_at = now(), cancelled_by = auth.uid(), cancellation_reason = v_reason, updated_at = now()
    where id = v_id;
 
   insert into public.audit_log (id, ts, user_id, username, action, entity, entity_id, note, "table", details, created_at)
-  values (gen_random_uuid()::text, extract(epoch from now())::bigint, auth.uid(),
+  values (gen_random_uuid(), extract(epoch from now())::bigint, auth.uid(),
     (select email from auth.users where id = auth.uid()), 'CANCEL', 'owner_settlements', v_id,
     'Owner settlement cancelled: ' || v_reason, 'owner_settlements', left(p_payload::text, 4000), now());
 
