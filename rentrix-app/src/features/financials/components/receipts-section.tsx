@@ -59,7 +59,7 @@ export function ReceiptsSection({
           ) : null}
           {!isReceiptsLoading && !isReceiptsError && receipts.map((receipt) => {
             const isSelected = selectedReceiptId === receipt.id;
-            const isVoid = receipt.status === 'VOID';
+            const isVoid = receipt.status === 'void';
             return (
               <MobileCard
                 key={receipt.id}
