@@ -30,11 +30,12 @@ describe('owner settlement lifecycle migration contract', () => {
     expect(migrationSql).toContain('owner_settlements_cancellation_state_check');
   });
 
-  it('requires approval evidence before paid state and payment evidence for paid rows', () => {
+  it('requires approval evidence and a positive payable before payment', () => {
     expect(migrationSql).toContain("status in ('APPROVED', 'PAID')");
     expect(migrationSql).toContain('approved_at is not null');
     expect(migrationSql).toContain('approved_by is not null');
     expect(migrationSql).toContain("status <> 'PAID'");
+    expect(migrationSql).toContain('net_payable > 0');
     expect(migrationSql).toContain('paid_at is not null');
     expect(migrationSql).toContain('paid_by is not null');
   });
