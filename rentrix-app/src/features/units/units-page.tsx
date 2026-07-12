@@ -79,7 +79,7 @@ export function UnitsPage() {
     <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="الوحدات"
-        description="عرض تشغيلي لكل الوحدات المسجلة مع روابط مباشرة للعقارات، مع إبقاء إضافة وتعديل الوحدات داخل صفحة العقار المرتبط."
+        description="عرض تشغيلي لكل الوحدات المسجلة مع تعديل مباشر وروابط تفصيل العقارات."
         action={<Button asChild><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>}
       />
 
