@@ -11,7 +11,7 @@ First-ever end-to-end financial cycle test (contract → invoice → payment →
 3. `update_owner_balance_on_expense()` trigger unconditionally referenced `NEW.property_id`, which doesn't exist on `receipts` — **no receipt had ever been successfully posted in production**.
 4. `update_tenant_balance()` trigger unconditionally referenced `NEW.contract_id`, which doesn't exist on `receipt_allocations` — broke `post_receipt_atomic` end-to-end.
 
-**Unresolved architectural issue found during the same test:** `tenant_balances.tenant_id` has an FK to the legacy `tenants` table (40 rows), while `contracts.tenant_id` actually points to `people.id` (the documented source of truth per `DOMAIN.md`). Every existing `tenants` row happens to share an id with a `people` row, but any *new* tenant created only in `people` (the current official flow) will fail its first invoice/receipt against this FK. Needs a decision: drop the FK and standardize on `people`, or add sync. See `docs/CURRENT_STATE.md`.
+**Resolved follow-up (live re-verified 2026-07-12):** migration `20260712020000_fix_tenant_balances_people_fk` is registered in production. `tenant_balances.tenant_id` now has the validated `tenant_balances_tenant_id_people_fkey` constraint to canonical `people(id)` with `ON DELETE RESTRICT`; the legacy `tenants` FK is gone. Read-only verification also found 10 `people` rows with no legacy `tenants` counterpart, confirming that the corrected constraint supports the official tenant flow.
 
 QA cycle is still in progress — permission-boundary testing (non-admin role rejection), `void_receipt_atomic`, and report reconciliation checks remain, followed by full `TEST-QA` data cleanup.
 
