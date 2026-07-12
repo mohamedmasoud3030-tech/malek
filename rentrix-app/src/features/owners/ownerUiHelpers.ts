@@ -99,15 +99,29 @@ export function ownerToFormValues(owner: Owner | null): OwnerFormValues {
 }
 
 export function validateOwnerForm(values: OwnerFormValues): string | null {
+  return Object.values(validateOwnerFormFields(values)).find(Boolean) ?? null;
+}
+
+export function validateOwnerFormFields(values: OwnerFormValues): Partial<Record<keyof OwnerFormValues, string>> {
+  const errors: Partial<Record<keyof OwnerFormValues, string>> = {};
+
   if (!values.full_name.trim()) {
-    return 'اسم المالك مطلوب';
+    errors.full_name = 'اسم المالك مطلوب';
   }
 
   if (values.email.trim() && !values.email.includes('@')) {
-    return 'البريد الإلكتروني غير صالح';
+    errors.email = 'البريد الإلكتروني غير صالح';
   }
 
-  return null;
+  if (values.phone.trim() && !/^[+\d][\d\s-]{6,19}$/.test(values.phone.trim())) {
+    errors.phone = 'رقم الهاتف غير صحيح';
+  }
+
+  if (values.national_id.trim() && !/^[A-Za-z0-9\-/]{4,32}$/.test(values.national_id.trim())) {
+    errors.national_id = 'رقم الهوية غير صحيح';
+  }
+
+  return errors;
 }
 
 export function getOwnerDisplayLabel(owner: Pick<Owner, 'full_name' | 'display_name'>): string {

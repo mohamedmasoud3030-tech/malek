@@ -48,6 +48,7 @@ import {
   propertyOwnershipLinkFormToPayload,
   summarizeOwners,
   validateOwnerForm,
+  validateOwnerFormFields,
   validatePropertyOwnershipLinkForm,
   type OwnerFormValues,
   type OwnerWorkspaceRow,
@@ -62,6 +63,10 @@ type LinkedPropertyItem = Readonly<{ property: PropertyWithOwners; links: Proper
 
 function Field({ label, children }: FieldProps) {
   return <label className="space-y-2 text-sm font-bold"><span>{label}</span>{children}</label>;
+}
+
+function FieldError({ message }: Readonly<{ message?: string }>) {
+  return message ? <p className="text-xs font-bold text-destructive">{message}</p> : null;
 }
 
 function getOwnerPageErrorMessage(error: unknown, fallback: string): string {
@@ -88,18 +93,20 @@ type OwnerFormDialogProps = Readonly<{ owner: Owner | null; open: boolean; onOpe
 function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
   const [values, setValues] = useState<OwnerFormValues>(emptyOwnerFormValues);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof OwnerFormValues, string>>>({});
   const createOwner = useCreateOwner();
   const updateOwner = useUpdateOwner(owner?.id ?? '');
   const isEditing = Boolean(owner);
   const isPending = createOwner.isPending || updateOwner.isPending;
 
   useEffect(() => {
-    if (open) { setValues(ownerToFormValues(owner)); setError(null); }
+    if (open) { setValues(ownerToFormValues(owner)); setError(null); setFieldErrors({}); }
   }, [open, owner]);
 
   const setField = <K extends keyof OwnerFormValues>(field: K, value: OwnerFormValues[K]) => {
     setValues((cur) => ({ ...cur, [field]: value }));
     setError(null);
+    setFieldErrors((cur) => ({ ...cur, [field]: undefined }));
   };
 
   const initialValues = useMemo(() => ownerToFormValues(owner), [owner]);
@@ -112,7 +119,9 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    const nextFieldErrors = validateOwnerFormFields(values);
     const validationError = validateOwnerForm(values);
+    setFieldErrors(nextFieldErrors);
     if (validationError) { setError(validationError); return; }
     const payload = {
       full_name: values.full_name, display_name: values.display_name, phone: values.phone,
@@ -133,11 +142,11 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
       <EntityForm.Root onSubmit={handleSubmit}>
         <EntityForm.ErrorSummary message={error} />
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="اسم المالك *"><Input value={values.full_name} onChange={(e) => setField('full_name', e.target.value)} /></Field>
+          <Field label="اسم المالك *"><Input value={values.full_name} onChange={(e) => setField('full_name', e.target.value)} /><FieldError message={fieldErrors.full_name} /></Field>
           <Field label="الاسم المختصر"><Input value={values.display_name} onChange={(e) => setField('display_name', e.target.value)} /></Field>
-          <Field label="الهاتف"><Input value={values.phone} onChange={(e) => setField('phone', e.target.value)} /></Field>
-          <Field label="البريد الإلكتروني"><Input dir="ltr" value={values.email} onChange={(e) => setField('email', e.target.value)} /></Field>
-          <Field label="الرقم المدني"><Input value={values.national_id} onChange={(e) => setField('national_id', e.target.value)} /></Field>
+          <Field label="الهاتف"><Input value={values.phone} onChange={(e) => setField('phone', e.target.value)} /><FieldError message={fieldErrors.phone} /></Field>
+          <Field label="البريد الإلكتروني"><Input dir="ltr" value={values.email} onChange={(e) => setField('email', e.target.value)} /><FieldError message={fieldErrors.email} /></Field>
+          <Field label="الرقم المدني"><Input value={values.national_id} onChange={(e) => setField('national_id', e.target.value)} /><FieldError message={fieldErrors.national_id} /></Field>
           <Field label="الرقم الضريبي"><Input value={values.tax_number} onChange={(e) => setField('tax_number', e.target.value)} /></Field>
         </div>
         <Field label="العنوان"><Textarea value={values.address} onChange={(e) => setField('address', e.target.value)} /></Field>
