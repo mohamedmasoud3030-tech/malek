@@ -7,6 +7,7 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm lint
 pnpm build
+pnpm supabase:migration-evidence
 pnpm --filter ./rentrix-app run typecheck:test
 pnpm --filter ./rentrix-app test
 pnpm --filter ./rentrix-app run test:financials
@@ -34,7 +35,7 @@ This is the same core sequence `.github/workflows/ci.yml` runs (plus a `pnpm sup
 
 - Small, isolated change with no schema/type impact: run `pnpm --filter ./rentrix-app test` (and `test:financials` if it touches financials) before opening a PR; run the full sequence above before merging.
 - Any change to Supabase migrations, RPCs, or RLS policies: in addition to the standard suite, inspect the live Supabase project schema directly (see `docs/ARCHITECTURE.md` and `docs/CURRENT_STATE.md`). If `SUPABASE_DB_URL` is available, run `pnpm supabase:migration-evidence` to reconcile local migration filenames against the live ledger; passing local tests alone does not confirm a migration was applied correctly to a live database.
-- Any change to routing, permissions, or navigation: run the full `test` suite, since route-guard and permission tests are part of the fixed file list.
+- Any change to routing, permissions, or navigation: run the full `test` suite so Vitest discovers and executes all colocated route-guard and permission tests.
 - Any change to shared UI primitives (`components/ui/`, `components/layout/`): run the full `test` suite, since many features share these components.
 - Any change that affects route reachability, auth/session UX, visual layout, RTL behavior, or release readiness should also run `pnpm e2e`.
 - Any production-readiness claim involving Supabase schema, RLS, grants, or RPC definitions should run `pnpm supabase:live-readiness` in an approved read-only operator environment.
@@ -46,3 +47,10 @@ The repository now has a Playwright browser-smoke foundation, but it is not a fu
 ## Financial consistency checks
 
 When touching receipts, payments, or collection reports, run the full app checks plus `pnpm --filter ./rentrix-app run test:financials`. Tests should prove that posted payments appear in receipts and reports, voided receipts remain visible as void history where applicable, and VOID amounts are excluded from financial totals.
+
+
+## Release-candidate rule
+
+Historical passing results do not transfer automatically to a new commit. For release sign-off, run every required command against one immutable release-candidate SHA and archive the output with the evidence described in `docs/RELEASE_READINESS.md`.
+
+Documentation-only changes may skip application tests when they cannot affect executable behavior, but they still require link/path review, internal-consistency review, and a branch-to-main diff review.
