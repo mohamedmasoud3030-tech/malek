@@ -165,6 +165,7 @@ export function MaintenancePage() {
   const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError;
   const isLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading;
   const hasFilters = statusFilter !== 'all' || priorityFilter !== 'all' || propertyFilterId.length > 0;
+  const isEditingResolvedRequest = editingRequest?.status === 'resolved' || editingRequest?.status === 'closed';
 
   const firstCreateError = Object.values(form.formState.errors)
     .map((fieldError) => fieldError?.message)
@@ -226,9 +227,6 @@ export function MaintenancePage() {
         title: values.title,
         description: values.description ?? null,
         priority: values.priority,
-        status: 'open',
-        cost: 0,
-        resolved_at: null,
         assigned_to: values.assigned_to?.trim() ? values.assigned_to.trim() : null,
         technician_name: values.assigned_to?.trim() ? values.assigned_to.trim() : null,
         scheduled_date: values.scheduled_date || null,
@@ -419,7 +417,7 @@ export function MaintenancePage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-1.5 text-sm font-bold">
                 <span>العقار</span>
-                <Select aria-label="العقار" {...form.register('property_id')} aria-invalid={Boolean(form.formState.errors.property_id)}>
+                <Select aria-label="العقار" {...form.register('property_id')} disabled={isEditingResolvedRequest} aria-invalid={Boolean(form.formState.errors.property_id)}>
                   <option value="">اختر العقار</option>
                   {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
                 </Select>
@@ -428,13 +426,14 @@ export function MaintenancePage() {
 
               <label className="space-y-1.5 text-sm font-bold">
                 <span>الوحدة</span>
-                <Select aria-label="الوحدة" {...form.register('unit_id')} disabled={!formPropertyId || unitsQuery.isLoading}>
+                <Select aria-label="الوحدة" {...form.register('unit_id')} disabled={isEditingResolvedRequest || !formPropertyId || unitsQuery.isLoading}>
                   <option value="">بدون وحدة</option>
                   {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_number}</option>)}
                 </Select>
               </label>
             </div>
           </EntityForm.Section>
+          {isEditingResolvedRequest ? <p className="rounded-xl border border-amber-300/70 bg-amber-50/70 p-3 text-xs font-medium text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">لا يمكن تغيير موقع طلب تم حله أو إغلاقه حتى يبقى مرتبطاً بالمصروف المسجل.</p> : null}
 
           <EntityForm.Section title="تفاصيل الطلب" description="اكتب عنواناً قصيراً ثم أضف الوصف والأولوية.">
             <label className="space-y-1.5 text-sm font-bold">
