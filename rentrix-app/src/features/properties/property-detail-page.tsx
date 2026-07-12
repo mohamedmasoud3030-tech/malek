@@ -1,11 +1,13 @@
 import { Link, useParams, Outlet, useNavigate, useLocation } from '@tanstack/react-router';
 import { Edit, DoorOpen } from 'lucide-react';
+import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { UnitFormModal } from '@/features/units/unit-form-modal';
 import { UnitsList } from '@/features/units/units-list';
 import { useUnits } from '@/features/units/use-units';
 import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
@@ -220,6 +222,7 @@ export function PropertyUnitDetailPage() {
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
   const navigate = useNavigate();
+  const [editOpen, setEditOpen] = useState(false);
 
   const property = propertyQuery.data;
   const unit = unitsQuery.data?.find((u) => u.id === unitId);
@@ -239,9 +242,15 @@ export function PropertyUnitDetailPage() {
                 <CardTitle className="text-lg">تفاصيل وحدة {unit.unit_number}</CardTitle>
                 <CardDescription>البيانات والمواصفات الفنية للوحدة التابعة للعقار الحالي.</CardDescription>
               </div>
-              <Button variant="secondary" className="rounded-xl h-9" onClick={() => navigate({ to: '/properties/$propertyId/units', params: { propertyId } })}>
-                العودة لقائمة الوحدات
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="secondary" className="min-h-10" onClick={() => setEditOpen(true)}>
+                  <Edit className="me-1 size-4" aria-hidden="true" />
+                  تعديل الوحدة
+                </Button>
+                <Button variant="ghost" className="min-h-10" onClick={() => navigate({ to: '/properties/$propertyId/units', params: { propertyId } })}>
+                  العودة للقائمة
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <InfoItem label="رقم الوحدة" value={`وحدة ${unit.unit_number}`} />
@@ -271,6 +280,8 @@ export function PropertyUnitDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          <UnitFormModal propertyId={propertyId} unit={unit} open={editOpen} onOpenChange={setEditOpen} />
         </div>
       )}
     </AsyncContentState>
