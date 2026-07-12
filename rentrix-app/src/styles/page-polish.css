@@ -1,0 +1,109 @@
+/* Shared visual polish for Rentrix application pages.
+ * Loaded after globals.css so existing feature markup benefits without
+ * duplicating styles across every route.
+ */
+
+@layer components {
+  #main-content {
+    position: relative;
+    isolation: isolate;
+  }
+
+  #main-content::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 8%, hsl(var(--primary) / 0.06), transparent 24rem),
+      radial-gradient(circle at 88% 18%, hsl(var(--accent) / 0.045), transparent 22rem);
+  }
+
+  #main-content > * {
+    width: 100%;
+    max-width: 88rem;
+    margin-inline: auto;
+  }
+
+  #main-content :is(.card, [data-slot='card']) {
+    border-color: hsl(var(--border) / 0.82);
+    background: linear-gradient(180deg, hsl(var(--card) / 0.98), hsl(var(--card) / 0.94));
+    box-shadow:
+      0 1px 2px hsl(var(--foreground) / 0.025),
+      0 12px 34px hsl(var(--foreground) / 0.055);
+  }
+
+  #main-content :is(.card, [data-slot='card']):hover {
+    border-color: hsl(var(--primary) / 0.18);
+  }
+
+  #main-content :is(input, textarea, select) {
+    background-color: hsl(var(--background) / 0.82);
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background-color 160ms ease;
+  }
+
+  #main-content :is(input, textarea, select):focus {
+    background-color: hsl(var(--card));
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.1);
+  }
+
+  #main-content table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  #main-content thead th {
+    background-color: hsl(var(--muted) / 0.72);
+    color: hsl(var(--foreground) / 0.72);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+
+  #main-content tbody tr {
+    transition: background-color 150ms ease;
+  }
+
+  #main-content tbody tr:hover {
+    background-color: hsl(var(--primary) / 0.035);
+  }
+
+  #main-content :is(h1, h2, h3) {
+    text-wrap: balance;
+  }
+
+  #main-content :is(button, [role='button']) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #main-content :is(button, [role='button']):focus-visible,
+  #main-content a:focus-visible {
+    outline: 2px solid hsl(var(--primary) / 0.55);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 639px) {
+    #main-content {
+      padding-inline: 0.75rem;
+    }
+
+    #main-content :is(.card, [data-slot='card']) {
+      border-radius: 1rem;
+      box-shadow:
+        0 1px 2px hsl(var(--foreground) / 0.02),
+        0 8px 24px hsl(var(--foreground) / 0.045);
+    }
+
+    #main-content :is(input, textarea, select, button) {
+      min-height: 44px;
+    }
+
+    #main-content [role='dialog'] {
+      max-width: calc(100vw - 1rem);
+    }
+  }
+}
