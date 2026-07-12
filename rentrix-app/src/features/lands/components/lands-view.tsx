@@ -118,36 +118,9 @@ export function LandsView(props: Props) {
       </div>
 
       <Card>
-        <CardContent className="space-y-3 p-3 sm:p-5">
-          <Input
-            value={filters.query}
-            onChange={(e) => onFiltersChange({ ...filters, query: e.target.value })}
-            placeholder="بحث بالاسم، رقم القطعة، الموقع، التصنيف"
-            aria-label="بحث الأراضي"
-          />
-          <div className="grid grid-cols-3 gap-2 sm:hidden">
-            {[
-              ['all', 'الكل'],
-              ['available', 'متاحة'],
-              ['reserved', 'محجوزة'],
-            ].map(([value, label]) => (
-              <Button
-                key={value}
-                type="button"
-                variant={filters.status === value ? 'default' : 'secondary'}
-                className="min-h-10 rounded-xl px-2 text-xs"
-                onClick={() => onFiltersChange({ ...filters, status: value })}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-          <Select
-            value={filters.status}
-            onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })}
-            aria-label="حالة الأرض"
-            className="hidden sm:block"
-          >
+        <CardContent className="grid gap-3 p-3 sm:p-5 md:grid-cols-[1fr_12rem]">
+          <Input value={filters.query} onChange={(e) => onFiltersChange({ ...filters, query: e.target.value })} placeholder="بحث بالاسم، رقم القطعة، الموقع، التصنيف" aria-label="بحث الأراضي" />
+          <Select value={filters.status} onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })} aria-label="حالة الأرض">
             <option value="all">كل الحالات</option>
             {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </Select>
@@ -180,19 +153,32 @@ export function LandsView(props: Props) {
         open={formOpen}
         onOpenChange={onFormOpenChange}
         title={editingLand ? 'تعديل أرض' : 'إضافة أرض'}
-        description="الحقول تحفظ سجل أرض تشغيلي وتربطه بالمالك عند توفر معرفه."
+        description="أدخل بيانات الأرض ثم احفظ السجل."
         className="max-w-2xl"
       >
         <EntityForm.Root className="md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); onSubmit(draft); }}>
           <Field label="اسم الأرض"><Input required value={draft.name} onChange={(e) => onDraftChange({ ...draft, name: e.target.value })} /></Field>
           <Field label="رقم القطعة"><Input value={draft.plot_no} onChange={(e) => onDraftChange({ ...draft, plot_no: e.target.value })} /></Field>
           <Field label="الموقع"><Input value={draft.location} onChange={(e) => onDraftChange({ ...draft, location: e.target.value })} /></Field>
-          <Field label="التصنيف"><Select value={draft.category} onChange={(e) => onDraftChange({ ...draft, category: e.target.value })}>{Object.entries(categoryLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-          <Field label="الحالة"><Select value={draft.status} onChange={(e) => onDraftChange({ ...draft, status: e.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-          <Field label="معرف المالك"><Input value={draft.owner_id} onChange={(e) => onDraftChange({ ...draft, owner_id: e.target.value })} placeholder="اختياري: معرف مالك موجود فقط" /></Field>
+
+          <ChoiceField
+            label="التصنيف"
+            value={draft.category}
+            options={categoryLabels}
+            onChange={(category) => onDraftChange({ ...draft, category })}
+          />
+
+          <ChoiceField
+            label="الحالة"
+            value={draft.status}
+            options={statusLabels}
+            onChange={(status) => onDraftChange({ ...draft, status })}
+          />
+
+          <Field label="معرف المالك"><Input value={draft.owner_id} onChange={(e) => onDraftChange({ ...draft, owner_id: e.target.value })} placeholder="اختياري" /></Field>
           <Field label="سعر المالك"><Input type="number" min="0" inputMode="decimal" value={draft.owner_price} onChange={(e) => onDraftChange({ ...draft, owner_price: e.target.value })} /></Field>
           <Field label="سعر الشراء"><Input type="number" min="0" inputMode="decimal" value={draft.purchase_price} onChange={(e) => onDraftChange({ ...draft, purchase_price: e.target.value })} /></Field>
-          <Field label="عمولة تقديرية مسجلة"><Input type="number" min="0" inputMode="decimal" value={draft.commission} onChange={(e) => onDraftChange({ ...draft, commission: e.target.value })} /></Field>
+          <Field label="عمولة تقديرية"><Input type="number" min="0" inputMode="decimal" value={draft.commission} onChange={(e) => onDraftChange({ ...draft, commission: e.target.value })} /></Field>
           <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(e) => onDraftChange({ ...draft, notes: e.target.value })} /></label>
           <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
         </EntityForm.Root>
@@ -213,6 +199,28 @@ export function LandsView(props: Props) {
 
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
   return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
+}
+
+function ChoiceField({ label, value, options, onChange }: Readonly<{ label: string; value: string; options: Record<string, string>; onChange: (value: string) => void }>) {
+  return (
+    <fieldset className="grid gap-2">
+      <legend className="text-sm font-bold">{label}</legend>
+      <div className="grid grid-cols-2 gap-2">
+        {Object.entries(options).map(([optionValue, optionLabel]) => (
+          <Button
+            key={optionValue}
+            type="button"
+            variant={value === optionValue ? 'default' : 'secondary'}
+            className="min-h-11 rounded-xl text-sm"
+            aria-pressed={value === optionValue}
+            onClick={() => onChange(optionValue)}
+          >
+            {optionLabel}
+          </Button>
+        ))}
+      </div>
+    </fieldset>
+  );
 }
 
 function LandRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: LandRecord[]; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchiveClick: (row: LandRecord) => void }>) {
