@@ -1,0 +1,23 @@
+-- =============================================================================
+-- STUB: repair_register_20260715000003_as_applied
+-- =============================================================================
+-- This migration was applied out-of-band via the Supabase MCP tool and is
+-- recorded in supabase_migrations.schema_migrations in production.
+--
+-- PURPOSE:
+--   Inserted a row for version 20260715000003
+--   (purge_qa_journal_entries_residuals) into schema_migrations to mark it as
+--   applied, preventing supabase db push from attempting to re-run it.
+--
+-- BACKGROUND:
+--   Migration 20260715000003 exists in the repository but failed when first
+--   executed because it attempted to DELETE posted journal entries, which is
+--   blocked by a trigger ("Posted journal entries are immutable. Use reverse
+--   entry."). The intended data effect was subsequently achieved by migrations
+--   20260715000004 and 20260712080434.
+--
+--   Registering the version as applied ensures the ledger stays consistent and
+--   the failed migration is never re-attempted.
+--
+-- NO EXECUTABLE SQL — history reconciliation only.
+-- =============================================================================

@@ -1,0 +1,22 @@
+-- =============================================================================
+-- STUB: repair_register_20260715000005_as_applied
+-- =============================================================================
+-- This migration was applied out-of-band via the Supabase MCP tool and is
+-- recorded in supabase_migrations.schema_migrations in production.
+--
+-- PURPOSE:
+--   Inserted a row for version 20260715000005 (post_qa_reversal_entries) into
+--   schema_migrations to mark it as applied, preventing supabase db push from
+--   attempting to re-run it.
+--
+-- BACKGROUND:
+--   Migration 20260715000005 exists in the repository but its data effect was
+--   already applied to production under version 20260712080434, because the
+--   Supabase MCP tool auto-stamps the execution timestamp as the version when
+--   running migrations directly. Registering 20260715000005 here aligns the
+--   repository filename with the database ledger and avoids a spurious re-run
+--   (which would hit the idempotency guard and exit cleanly, but is cleaner to
+--   skip entirely).
+--
+-- NO EXECUTABLE SQL — history reconciliation only.
+-- =============================================================================
