@@ -1,14 +1,13 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RouteLoadingState } from '@/components/loading-state';
-import { useContractForm, contractStatusLabels, contractStatusValues, paymentCycleLabels, paymentCycleValues, buildContractUnitOptionLabel, isUnitSelectableForContract, type ContractFormValues } from './useContractForm';
+import { useContractForm, contractStatusLabels, contractStatusValues, paymentCycleLabels, paymentCycleValues, buildContractUnitOptionLabel, isUnitSelectableForContract } from './useContractForm';
 
 function fieldError(message?: string) { return message ? <span className="text-xs font-bold text-destructive">{message}</span> : null; }
 
