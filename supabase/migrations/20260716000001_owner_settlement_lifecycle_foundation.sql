@@ -115,7 +115,8 @@ begin
       check (
         status <> 'PAID'
         or (
-          paid_at is not null
+          net_payable > 0
+          and paid_at is not null
           and paid_by is not null
           and nullif(btrim(coalesce(method, '')), '') is not null
         )
