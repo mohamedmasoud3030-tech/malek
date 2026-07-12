@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { BarChart3, SlidersHorizontal } from 'lucide-react';
+import { BarChart3, FileSpreadsheet, ReceiptText, SlidersHorizontal, WalletCards } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
+import { PageHeader } from '@/components/layout/page-header';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { Card, CardContent } from '@/components/ui/card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
@@ -130,7 +132,18 @@ export function ReportsPage() {
 
   return (
     <PageLayout dir="rtl" size="wide" className="space-y-6">
+      <PageHeader
+        title="مركز التقارير والكشوف"
+        description="Workspace واحد للتقارير المالية، التحصيلات، المتأخرات، الإشغال، والكشوف مع نفس مصادر البيانات الحالية."
+      />
+
       <ReportsHero summary={financialSummaryQuery.data} today={today} isLoading={financialSummaryQuery.isLoading} />
+
+      <ResponsiveCardGrid desktopColumns={3}>
+        <ReportWorkspaceCue icon={<WalletCards className="size-5" aria-hidden="true" />} title="نطاق موحّد" description="الفترة ومركز التكلفة يطبقان على التقارير المالية دون تغيير طريقة الحساب." />
+        <ReportWorkspaceCue icon={<ReceiptText className="size-5" aria-hidden="true" />} title="تحصيلات ومتأخرات" description="التحصيلات من مصدر payments الحالي والمتأخرات من تقارير الذمم الحالية." />
+        <ReportWorkspaceCue icon={<FileSpreadsheet className="size-5" aria-hidden="true" />} title="تصدير وقراءة فقط" description="أزرار CSV/PDF/Print تبقى داخل كل قسم ولا تنشئ أي بيانات جديدة." />
+      </ResponsiveCardGrid>
 
       <Card className="overflow-hidden border-primary/10">
         <div className="flex items-center gap-3 border-b border-border/60 bg-muted/25 px-4 py-4 sm:px-6">
@@ -164,7 +177,7 @@ export function ReportsPage() {
             <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">تنقل بين الملخص والتحصيل والمتأخرات والمحاسبة والقوائم بدون ازدحام الصفحة.</p>
           </div>
         </div>
-        <div className="no-scrollbar overflow-x-auto border-b border-border/60 bg-background px-3 py-3 sm:px-5">
+        <div className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-background/95 px-3 py-3 backdrop-blur sm:px-5">
           <div className="min-w-max">
             <SectionTabs items={reportSections} activeId={activeSection} onChange={setActiveSection} ariaLabel="أقسام التقارير" />
           </div>
@@ -215,5 +228,19 @@ export function ReportsPage() {
         </CardContent>
       </Card>
     </PageLayout>
+  );
+}
+
+function ReportWorkspaceCue({ icon, title, description }: Readonly<{ icon: React.ReactNode; title: string; description: string }>) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card p-4">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">{icon}</span>
+        <div className="min-w-0">
+          <p className="font-black">{title}</p>
+          <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">{description}</p>
+        </div>
+      </div>
+    </div>
   );
 }

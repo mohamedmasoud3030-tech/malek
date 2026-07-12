@@ -5,6 +5,7 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { UnitFormModal } from '@/features/units/unit-form-modal';
@@ -13,6 +14,7 @@ import { useUnits } from '@/features/units/use-units';
 import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
 import { propertyStatusLabels } from './property-schema';
 import { summarizePropertyUnits } from './property-unit-summary';
+import { useOwnerAgreements } from '@/features/owners/useOwnerAgreements';
 import { useProperty } from './use-properties';
 import { unitStatusLabels } from '../units/unit-schema';
 
@@ -114,8 +116,10 @@ export function PropertyOverview() {
   const propertyId = typeof params.propertyId === 'string' ? params.propertyId : '';
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
+  const agreementsQuery = useOwnerAgreements(propertyId);
 
   const property = propertyQuery.data;
+  const activeAgreement = (agreementsQuery.data ?? [])[0] ?? null;
 
   return (
     <AsyncContentState
@@ -129,7 +133,8 @@ export function PropertyOverview() {
               <CardTitle>معلومات العقار</CardTitle>
               <CardDescription>البيانات الأساسية للعقار مع معلومات المالك وقيم الشراء والتقييم.</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <CardContent>
+              <ResponsiveCardGrid desktopColumns={4} gap="lg">
               <InfoItem label="النوع" value={translatePropertyType(property.type)} />
               <div className="rounded-2xl border border-border bg-background p-4">
                 <p className="text-xs font-bold text-muted-foreground">الحالة</p>
@@ -145,6 +150,7 @@ export function PropertyOverview() {
                 <p className="text-xs font-bold text-muted-foreground">ملاحظات</p>
                 <p className="mt-1 leading-7">{property.notes ?? '—'}</p>
               </div>
+              </ResponsiveCardGrid>
             </CardContent>
           </Card>
 
@@ -153,7 +159,8 @@ export function PropertyOverview() {
               <CardTitle>ملخص الوحدات</CardTitle>
               <CardDescription>مؤشرات قراءة فقط محسوبة من الوحدات المسجلة لهذا العقار.</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <CardContent>
+              <ResponsiveCardGrid desktopColumns={6} gap="lg">
               {(() => {
                 const unitSummary = summarizePropertyUnits(unitsQuery.data ?? []);
                 return (
@@ -167,6 +174,7 @@ export function PropertyOverview() {
                   </>
                 );
               })()}
+              </ResponsiveCardGrid>
             </CardContent>
           </Card>
 
@@ -176,8 +184,23 @@ export function PropertyOverview() {
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-xs font-bold text-muted-foreground">اتفاقية تشغيل المالك</CardTitle>
               </CardHeader>
-              <CardContent className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
-                ستظهر اتفاقية التشغيل هنا عند توفر بياناتها.
+              <CardContent className="space-y-2 px-4 pb-4 text-sm leading-relaxed">
+                {agreementsQuery.isLoading ? (
+                  <p className="text-muted-foreground">جارٍ تحميل اتفاقيات المالك...</p>
+                ) : activeAgreement ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge tone={activeAgreement.ends_on ? 'blue' : 'green'}>{activeAgreement.ends_on ? 'محددة المدة' : 'مفتوحة'}</StatusBadge>
+                      <span className="font-black">{activeAgreement.agreement_type === 'master_lease' ? 'Master lease' : 'Property management'}</span>
+                    </div>
+                    <p className="text-muted-foreground">التغطية: {formatDate(activeAgreement.starts_on)} — {activeAgreement.ends_on ? formatDate(activeAgreement.ends_on) : 'مفتوحة'}</p>
+                    <p className="text-muted-foreground">العمولة: {activeAgreement.commission_type === 'RATE' ? `${formatNumber(activeAgreement.commission_value)}%` : formatMoney(activeAgreement.commission_value)}</p>
+                  </>
+                ) : agreementsQuery.isError ? (
+                  <p className="text-destructive">تعذر تحميل اتفاقيات المالك لهذا العقار.</p>
+                ) : (
+                  <p className="text-muted-foreground">لا توجد اتفاقية مالك مسجلة لهذا العقار حالياً.</p>
+                )}
               </CardContent>
             </Card>
 

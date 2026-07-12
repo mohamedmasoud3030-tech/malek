@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DataTable } from '@/components/ui/data-table';
 import { MobileCard } from '@/components/ui/mobile-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatDate, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { buildReportCsvFilename, downloadCsv, latestReceiptLimit, toDailyCollectionCsv } from '../reports-page.helpers';
@@ -73,7 +74,7 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
             </div>
             <ReceiptText className="size-5 text-primary" />
           </div>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          <ResponsiveCardGrid desktopColumns={3} gap="sm">
             {receiptRows.map((receipt) => (
               <a key={receipt.id} className="rounded-2xl border border-border bg-background/80 p-3 transition hover:border-primary/40" href={createReceiptPrintHref(receipt.id)}>
                 <div className="flex items-center justify-between gap-2">
@@ -87,7 +88,7 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
               </a>
             ))}
             {receiptRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد إيصالات متاحة ضمن الفترة المحددة.</p> : null}
-          </div>
+          </ResponsiveCardGrid>
         </div>
       </ReportCard>
 

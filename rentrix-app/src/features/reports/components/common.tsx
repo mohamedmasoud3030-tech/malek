@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { buildReportActions } from '@/components/ui/entity-action-presets';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 
 type ReportCardProps = Readonly<{
   id?: string;
@@ -34,12 +35,12 @@ export function SafeAnchor({ href, label }: SafeLinkProps) {
 function SectionSkeleton() {
   return (
     <div className="space-y-4 p-4" role="status" aria-live="polite" aria-label="جارٍ تحميل هذا التقرير">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ResponsiveCardGrid desktopColumns={4}>
         <Skeleton className="h-24" />
         <Skeleton className="h-24" />
         <Skeleton className="h-24" />
         <Skeleton className="h-24" />
-      </div>
+      </ResponsiveCardGrid>
       <Skeleton className="h-40" />
     </div>
   );

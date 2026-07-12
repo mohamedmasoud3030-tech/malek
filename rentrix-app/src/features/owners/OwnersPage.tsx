@@ -9,6 +9,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -413,12 +414,12 @@ export function OwnersPage() {
       />
 
       {/* KPI grid */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="إجمالي الملاك" value={summary.totalOwners} icon={Users} accent="primary" />
         <KpiCard label="الملاك النشطون" value={summary.activeOwners} icon={Users} accent="emerald" />
         <KpiCard label="عقارات مرتبطة" value={summary.linkedPropertiesCount} icon={Building2} accent="sky" />
         <KpiCard label="عقارات بلا مالك" value={summary.propertiesWithoutLinkedOwner} icon={LinkIcon} accent="amber" />
-      </div>
+      </ResponsiveCardGrid>
 
       {/* Workspace */}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(24rem,0.9fr)]">

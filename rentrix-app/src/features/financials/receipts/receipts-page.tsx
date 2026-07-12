@@ -11,6 +11,7 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { canAccess, financialOperationPermissions, type AuthorizationContext } from '@/features/auth/permissions';
@@ -188,12 +189,12 @@ function ReceiptsHistoryContent() {
         ) : undefined}
       />
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="الإيصالات المعروضة" value={filteredReceipts.length} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
         <KpiCard label="إجمالي التحصيل" value={formatMoney(totalAmount)} sub="من الإيصالات المعروضة" icon={WalletCards} accent="emerald" />
         <KpiCard label="أحدث النتائج" value={receipts.length} sub="آخر 100 إيصال" icon={CalendarDays} accent="sky" />
         <KpiCard label="الإيصال المحدد" value={selectedReceipt?.receipt_number ?? '—'} sub="جاهز للعرض والطباعة" icon={Printer} accent="violet" />
-      </div>
+      </ResponsiveCardGrid>
 
       <FilterBar
         searchValue={query}

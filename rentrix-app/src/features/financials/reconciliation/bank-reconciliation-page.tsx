@@ -20,6 +20,7 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -182,12 +183,12 @@ export function BankReconciliationPage() {
         )}
       />
 
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="إجمالي الحركات" value={summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
         <KpiCard label="غير مطابقة" value={summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="amber" />
         <KpiCard label="مطابقة" value={summary.matchedCount} sub="تم ربطها بسجلات النظام" icon={CheckCircle2} accent="emerald" />
         <KpiCard label="صافي غير مطابق" value={formatCompanyMoney(defaultCompanyLocalSettings, summary.unmatchedAmount)} sub="إجمالي المبالغ غير المحسومة" icon={Banknote} accent="rose" />
-      </div>
+      </ResponsiveCardGrid>
 
       <FilterBar
         filters={(

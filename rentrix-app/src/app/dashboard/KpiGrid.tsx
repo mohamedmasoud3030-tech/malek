@@ -8,6 +8,7 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { LoadingState } from '@/components/ui/loading-state';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
@@ -92,10 +93,10 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+    <ResponsiveCardGrid desktopColumns={7}>
       {items.map((item) => (
         <KpiCard key={item.label} {...item} />
       ))}
-    </div>
+    </ResponsiveCardGrid>
   );
 }
