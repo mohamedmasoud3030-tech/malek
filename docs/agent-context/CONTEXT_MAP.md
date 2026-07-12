@@ -29,17 +29,11 @@ when changing sidebar, mobile navigation, safe-area, responsive, or RTL behavior
   defines the original `record_invoice_payment_atomic`/`void_receipt_atomic`/
   `find_payment_account_id`; search `supabase/migrations/` for later
   filenames containing `payment`, `receipt`, or `invoice` for fixes applied
-  since (the directory is not guaranteed complete or in sync with
-  production — verify live before relying on any one file, see
-  `docs/CURRENT_STATE.md`).
+  since (repository history includes baseline and reconciliation work, but target-environment parity still requires a fresh read-only ledger/schema check; see `docs/CURRENT_STATE.md`).
 - Tests: colocated tests in the same feature folder, plus the whole
   `test:financials` suite (`docs/TESTING.md`) — always run this one for any
   financial change, even one that looks unrelated on the surface.
-- **Live caveat**: `docs/CURRENT_STATE.md` now documents the receipt/payment
-  void path as code-fixed but not live/E2E verified. Before financial work
-  relies on that path, verify the target project's `record_invoice_payment_atomic`
-  and `void_receipt_atomic(jsonb)` definitions, the live migration ledger, and
-  an app-path payment → receipt → void → report flow.
+- **Release caveat**: the repository now includes the receipt/payment, financial hardening, report-filter, tenant-identity, and QA-reversal fixes. Do not rely on their presence alone as release proof. Verify the exact target environment's RPC definitions, grants, RLS, migration ledger, and an authenticated contract → invoice → payment → receipt → void → report flow against the release-candidate SHA.
 
 ## Contract / tenant / owner change
 
@@ -109,9 +103,7 @@ when changing sidebar, mobile navigation, safe-area, responsive, or RTL behavior
   read this before assuming either source is correct without a live check).
 - Workflow: read `docs/agent-context/WORKFLOW.md` in full — most of its
   high-risk rules apply here.
-- Start: `supabase/migrations/README.md`, `docs/CURRENT_STATE.md` (current
-  live-vs-file drift status — check whether the tables/functions you're
-  touching are even accurately represented in a migration file today).
+- Start: `docs/ENGINEERING_GOVERNANCE.md`, `supabase/migrations/README.md`, and `docs/CURRENT_STATE.md`. Treat `supabase/migrations/` as the only active migration source and verify the target environment before relying on deployment claims.
 - Before writing DDL: verify the live schema directly (`information_schema`,
   `pg_constraint`, `pg_indexes`, `pg_policies`, `pg_get_functiondef`) — do
   not infer column types from generated TypeScript (`types/database.ts`) or
