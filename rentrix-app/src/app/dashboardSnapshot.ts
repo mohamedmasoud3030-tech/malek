@@ -9,8 +9,8 @@ import {
   type FinancialPeriodSummaryReport,
   type OverdueInvoicesReport,
 } from '@/features/financials/reports/financialReportsService';
-import type { ContractListItem } from '@/features/contracts/services/contractService';
-import type { Maintenance } from '@/features/maintenance/maintenance-service';
+import { listContracts, type ContractListItem } from '@/features/contracts/services/contractService';
+import { listMaintenance, type Maintenance } from '@/features/maintenance/maintenance-service';
 import { getDashboardOverview, type DashboardOverview } from './dashboardService';
 
 export type DashboardPeriod = {
@@ -158,25 +158,42 @@ export async function getDashboardSnapshot(date = new Date()): Promise<Dashboard
   const periodFilters = { dateFrom: period.dateFrom, dateTo: period.dateTo };
   const arrearsFilters = { asOf: period.asOf };
 
-  const [overview, periodSummary, overdueInvoices, arrearsSummary, agedReceivables] = await Promise.all([
+  const [
+    overview,
+    periodSummary,
+    overdueInvoices,
+    arrearsSummary,
+    agedReceivables,
+    activeContractsResult,
+    maintenanceRows,
+  ] = await Promise.all([
     getDashboardOverview(date),
     getFinancialPeriodSummaryReport(periodFilters),
     getOverdueInvoicesReport(arrearsFilters),
     getArrearsSummaryReport(arrearsFilters),
     getAgedReceivablesReport(arrearsFilters),
+    listContracts({ status: 'active', page: 1, pageSize: 500 }),
+    listMaintenance('all', ''),
   ]);
+
+  const activeContracts = activeContractsResult.rows;
+  const urgentRequests = maintenanceRows.filter(
+    (request) => request.priority === 'urgent' && (request.status === 'open' || request.status === 'in_progress'),
+  );
+  const totalOpen = maintenanceRows.filter((request) => request.status === 'open').length;
+  const totalInProgress = maintenanceRows.filter((request) => request.status === 'in_progress').length;
 
   return {
     period,
     overview,
     financial: summarizeDashboardFinancialMetrics(periodSummary),
-    operational: summarizeDashboardOperationalMetrics(overview, []),
+    operational: summarizeDashboardOperationalMetrics(overview, activeContracts),
     arrears: summarizeDashboardArrearsMetrics({ overdueInvoices, arrearsSummary, agedReceivables }),
-    activeContracts: [],
+    activeContracts,
     maintenance: {
-      urgentRequests: [],
-      totalOpen: 0,
-      totalInProgress: 0,
+      urgentRequests,
+      totalOpen,
+      totalInProgress,
     },
     deferred: dashboardDeferredMetrics,
   };
