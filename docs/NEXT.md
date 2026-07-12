@@ -1,60 +1,69 @@
 # Next
 
-Short list of follow-up work, derived from gaps found while reviewing migrations, `src/features`, and test coverage. No TODO/FIXME/HACK markers or skipped tests were found in `rentrix-app/src` at the time of this check — the items below come from feature-area comparisons instead.
+This is the prioritized work list after the 2026-07-12 financial, migration, frontend-hardening, and governance updates.
 
-## Critical — production staging QA findings (2026-07-11)
+## Priority 0 — release-candidate evidence
 
-First-ever end-to-end financial cycle test (contract → invoice → payment → receipt) run against live production data (isolated `TEST-QA` / `00000000-0000-4000-900X`-prefixed rows) surfaced 4 previously-unknown production bugs, all fixed live via `apply_migration` on `nnggcnpcuomwfuupupwg` and now also committed as migration files:
+1. Freeze one release-candidate SHA and run the complete CI-equivalent suite.
+2. Reconcile `supabase/migrations/` with the target environment's migration ledger using read-only checks; confirm zero unexplained versions and zero unintended pending migrations.
+3. Verify live definitions and privileges for financial RPCs, report RPCs, RLS policies, triggers, foreign keys, and helper-function grants.
+4. Run authenticated role-boundary tests for ADMIN, MANAGER, and USER, including direct denied RPC calls.
+5. Browser-verify the full financial journey:
+   - create/activate contract,
+   - generate invoice and balanced journal entries,
+   - record payment,
+   - display payment-backed receipt,
+   - void the receipt,
+   - reconcile invoice, contract balance, tenant balance, cash flow, VAT, and financial summary.
+6. Verify that QA cleanup/reversal entries are complete, balanced, and limited to their intended QA identifiers.
+7. Archive command output, database evidence, browser traces/screenshots, test record IDs, and expected totals against the release-candidate SHA.
 
-1. `is_admin_or_manager()` / `is_app_user()` wrapper functions were missing `GRANT EXECUTE TO authenticated`, silently blocking all RLS-gated access to 8 tables (commissions, communication_records, contract_documents, cost_centers, lands, leads, owner_agreements, payment_terms_templates).
-2. `create_contract_atomic` compared `text` columns to `date` parameters without a cast — **no contract had ever been successfully created via this RPC in production** before this fix.
-3. `update_owner_balance_on_expense()` trigger unconditionally referenced `NEW.property_id`, which doesn't exist on `receipts` — **no receipt had ever been successfully posted in production**.
-4. `update_tenant_balance()` trigger unconditionally referenced `NEW.contract_id`, which doesn't exist on `receipt_allocations` — broke `post_receipt_atomic` end-to-end.
+## Priority 1 — production UX evidence
 
-**Unresolved architectural issue found during the same test:** `tenant_balances.tenant_id` has an FK to the legacy `tenants` table (40 rows), while `contracts.tenant_id` actually points to `people.id` (the documented source of truth per `DOMAIN.md`). Every existing `tenants` row happens to share an id with a `people` row, but any *new* tenant created only in `people` (the current official flow) will fail its first invoice/receipt against this FK. Needs a decision: drop the FK and standardize on `people`, or add sync. See `docs/CURRENT_STATE.md`.
+- Verify every critical route with real authenticated data.
+- Complete Arabic RTL checks across navigation, tables, forms, dialogs, sheets, reports, and generated documents.
+- Complete mobile, tablet, and desktop responsive checks.
+- Verify loading, empty, permission-denied, validation, and backend-error states.
+- Verify configured company currency, decimals, locale, timezone, and date formatting.
+- Verify receipt/invoice printing, PDF generation, and CSV exports.
+- Verify bank-account, statement-line, import, match, suggested-match, and ignore flows.
 
-QA cycle is still in progress — permission-boundary testing (non-admin role rejection), `void_receipt_atomic`, and report reconciliation checks remain, followed by full `TEST-QA` data cleanup.
+## Priority 2 — reporting convergence
 
-## Recently completed
+- Wire validated report RPCs one screen at a time.
+- Add parity tests before replacing client/service aggregation.
+- Keep `public.payments` as the receipt/collection source and exclude deleted/VOID rows.
+- Validate daily collection, overdue, aged receivables, income statement, balance sheet, trial balance, rent roll, owner statement, and tenant statement totals against seeded scenarios.
+- Remove or formally retain unused RPC overloads only after caller and dependency proof.
 
-- Production migration cleanup from the earlier readiness pass is complete: the 2 committed-but-unapplied migrations were applied and the 9 orphaned enum types were dropped on `nnggcnpcuomwfuupupwg` on 2026-07-05. See `docs/CURRENT_STATE.md` for details.
-- Phase -1 shared-components implementation is complete: the custom contract/property/unit/receipt cards were replaced by shared `EntityCard` patterns, `EntityForm` now unifies form structure, `formatPropertyUnitSummary` moved into the properties feature, and receipt mobile/table status rendering no longer hard-codes posted status.
-- Phase 0 Settings + Auth verification is complete: production policy/function checks found no drift for F0-2/F0-3/F0-4, and F0-6 was fixed by moving the custom access-token hook role source to `public.users.role`. Keep `public.profiles.role` out of authorization logic unless a future schema change deliberately redefines it.
+## Priority 3 — accounting/product completion
 
-## Documentation and UX tracking
+Implement the approved policies in the decision records before claiming complete property-management accounting:
 
-- `docs/agent-context/CONTEXT_MAP.md` is the canonical task-routing map for agents; keep it in sync when adding new high-risk task categories.
-- `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md` remains the active UI/navigation audit for sidebar, mobile drawer, viewport/safe-area, responsive, and RTL work. Use it for related UI branches instead of creating another one-off audit.
-- Commissions scope investigation is complete: `features/commissions/` is confirmed as an operational tracking view only, not a payout/accounting feature. See `docs/DOMAIN.md` for the documented assumptions and the inactive/placeholder `expense_id` note.
-- Test-script glob/discovery review is complete: `rentrix-app/package.json` now lets Vitest discover colocated `*.test.ts(x)` / `*.spec.ts(x)` files automatically, so new tests no longer need manual registration in the main test script.
+1. Office management-fee calculation, VAT, exclusions, overrides, approvals, reversals, and owner payout lifecycle.
+2. Master-lease fixed owner obligations independent of tenant collections.
+3. Daily, weekly, and open-ended contracts with checkout invoicing and proration.
+4. Utility posting and split responsibility across tenant, owner, office, and suspense.
+5. Maintenance cost assignment to tenant, owner, office, or split paths.
+6. Tenant deposit ledger and deferred/accrual treatment.
+7. Operation-level permissions and denied-action UX for all sensitive financial operations.
 
-## Data correctness follow-ups
+## Priority 4 — later enhancements
 
-- Sessions RLS ownership is fixed and applied to production: `sessions_select_own`, `sessions_insert_own`, `sessions_delete_own` now compare `auth.uid()` to `sessions.user_id` instead of `sessions.id`. Live `pg_policies` verified post-apply. Closed.
-- Date-only input defaults have been hardened away from `toISOString().slice(0, 10)` UTC slicing, including the financial expense-date flow; a regression test now scans production source files so future date-only values use local calendar parts instead.
+- Bank-file upload and format mapping.
+- Duplicate-detection and advanced reconciliation rules.
+- Security-deposit management UI and statements.
+- Deferred-revenue reporting.
+- Multi-currency support.
+- Lower-risk form-validation consistency and cosmetic cleanup.
 
-## Product/accounting implementation required before full property-management readiness
+## Closed or superseded
 
-The former product/accounting decision blockers are now documented in `docs/decisions/0001-product-accounting-policies.md`, `docs/decisions/0002-staging-live-verification-and-release-evidence.md`, and `docs/decisions/0003-financial-security-ux-reporting-and-reconciliation-scope.md`. Treat those decision records as source of truth, but do not claim 100% operational or financial accuracy until the implementation and evidence below are complete.
+Do not reopen these as current blockers without new evidence:
 
-1. Implement office-fee rules for `property_management`: collected-basis default, contract overrides, percentage/fixed fees, exclusions for deposits/refunds/pass-through utilities unless enabled, VAT configurability, reversals, approvals, and owner payout lifecycle.
-2. Implement `master_lease` fixed owner obligation schedules independent of tenant collections, including monthly default cadence, vacancy behavior, liability tracking, approval/payment lifecycle, and office profit/loss reporting.
-3. Add daily and open-ended tenant contract support using the decided checkout invoicing, configurable daily/weekly billing, proration, renewal/termination, overdue, deposit, and report-segmentation rules.
-4. Implement utility-bill posting for water/electricity/internet/sewage with explicit tenant/owner/office/suspense targets, meter entry, split allocation, approval thresholds, due dates, reversals, statements, and reports.
-5. Extend maintenance resolution so costs can be assigned to owner, tenant, office, or split responsibility at resolution and then posted to the correct invoice/expense/statement path with approval and audit evidence.
-6. Implement tenant deposit ledgers and dual cash/accrual-deferred reporting before completing tenant balances and annual/prepaid rent reporting.
-7. Harden operation-level financial permissions for payment creation, receipt voiding, settlement approval/payment, report export, bank reconciliation, backend RLS/RPC/grants, and denied-action UX.
-
-## Later
-
-- Bank reconciliation follow-up: foundation schema/UI plus CSV paste import and basic date/amount suggestions exist; add bank-file upload/format mapping, duplicate detection, advanced reconciliation rules, and production apply/verification.
-- Security deposit management — not found in migrations or `src/features`.
-- Deferred revenue handling — not found in migrations or `src/features`.
-- Multi-currency support — not found in migrations or `src/features`; current `Invoice`/`Expense`/`PaymentReceipt` types use a single unqualified `amount` number.
-
-## Ready now — financial data consistency follow-ups
-
-1. Apply `20260706101000_align_payment_receipt_reporting_source.sql` in staging, then production only after approval.
-2. Browser-verify invoice → payment → receipt → void → report totals.
-3. Wire validated report RPCs one screen at a time; do not swap financial calculations without parity tests.
-4. Continue contract lifecycle audit for sensitive direct updates/deletes.
+- The legacy `tenant_balances → tenants` foreign-key issue: the repository now contains the guarded `people(id)` repair.
+- Missing role-helper grants and the three first-cycle RPC/trigger failures: repair migrations are present.
+- Sessions RLS ownership: corrected to `sessions.user_id`.
+- Orphaned enum cleanup and baseline capture: completed and documented.
+- Contract lifecycle direct-write gap: guarded atomic lifecycle RPCs are now represented.
+- QA posted-ledger deletion: handled through financially neutral reversal entries rather than mutation of posted history.
