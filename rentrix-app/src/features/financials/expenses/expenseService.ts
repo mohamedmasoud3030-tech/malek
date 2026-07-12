@@ -22,12 +22,53 @@ export async function listExpenses(filters: ExpenseFilters): Promise<Expense[]> 
   }
 }
 
+/**
+ * Atomic expense update that adjusts the expense row and, if the amount
+ * changed, creates reversing + new journal entries to maintain double-entry
+ * consistency. Uses update_expense_with_journal_atomic RPC.
+ */
+export type UpdateExpenseResult = {
+  expenseId: string;
+  amountChanged: boolean;
+  oldAmount: number;
+  newAmount: number;
+  requestId: string;
+  idempotent: boolean;
+};
+
 export async function updateExpense(id: string, payload: ExpensePayload): Promise<Expense> {
   try {
-    const { data, error } = await supabase.from('expenses').update(payload).eq('id', id).is('deleted_at', null).select('*').single().returns<Expense>();
-    if (error) handleSupabaseError(error);
-    if (!data) throw new Error('No expense returned after update');
-    return data;
+    const requestId = crypto.randomUUID();
+
+    const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)(
+      'update_expense_with_journal_atomic',
+      {
+        p_payload: {
+          request_id: requestId,
+          expense_id: id,
+          amount: payload.amount,
+          category: payload.category,
+          description: payload.description ?? null,
+          attachment_url: payload.attachment_url ?? null,
+        },
+      },
+    );
+    if (error) throw error;
+
+    const result = (data ?? {}) as { success?: boolean };
+    if (!result.success) throw new Error('Expense update failed');
+
+    // Fetch the updated expense row to return to the caller
+    const { data: expense, error: fetchError } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single()
+      .returns<Expense>();
+    if (fetchError) throw fetchError;
+    if (!expense) throw new Error('Expense not found after update');
+    return expense;
   } catch (error) {
     handleSupabaseError(error, 'تعذر تعديل المصروف');
     throw error instanceof Error ? error : new Error('تعذر تعديل المصروف');
