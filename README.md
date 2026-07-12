@@ -20,7 +20,15 @@ pnpm --filter ./rentrix-app run test:financials
 
 ## Documentation
 
-See [`docs/`](docs) for product, architecture, domain, testing, and current-state notes. Start with [`AGENTS.md`](AGENTS.md) if you are a new contributor or agent.
+See [`docs/`](docs) for product, architecture, domain, testing, current-state, and release-readiness notes. Start with [`AGENTS.md`](AGENTS.md) if you are a new contributor or agent.
+
+Key operational documents:
+
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — current repository snapshot.
+- [`docs/NEXT.md`](docs/NEXT.md) — prioritized remaining work.
+- [`docs/RELEASE_READINESS.md`](docs/RELEASE_READINESS.md) — objective release gates and recommendation.
+- [`docs/ENGINEERING_GOVERNANCE.md`](docs/ENGINEERING_GOVERNANCE.md) — mandatory engineering and migration policy.
+- [`docs/GOVERNANCE.md`](docs/GOVERNANCE.md) — production mutation authorization.
 
 ## Contributing
 
