@@ -51,7 +51,8 @@ export const paymentCycleLabels: Record<(typeof paymentCycleValues)[number], str
 };
 
 export const contractSchema = z.object({
-  property_id: z.string().uuid('اختر العقار'),
+  // Live properties use text ids; validate selection without narrowing the id format to UUID.
+  property_id: z.string().trim().min(1, 'اختر العقار'),
   unit_id: z.string().uuid('اختر الوحدة'),
   tenant_id: z.string().uuid('اختر المستأجر'),
   agreement_id: z.string().uuid('لا توجد اتفاقية مالك تغطي فترة العقد').optional().nullable(),

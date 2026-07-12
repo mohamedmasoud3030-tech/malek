@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Building2, DoorOpen, Home } from 'lucide-react';
+import { Building2, DoorOpen, Edit, Home } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -17,6 +17,7 @@ import { useProperties } from '@/features/properties/use-properties';
 import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
 import type { Property, Unit } from '@/types/domain';
 import { normalizeUnitStatus, unitStatusLabels, unitStatusValues, type UnitStatus } from './unit-schema';
+import { UnitFormModal } from './unit-form-modal';
 import { useAllUnits } from './use-units';
 
 type OccupancyFilter = 'all' | 'occupied' | 'open';
@@ -51,6 +52,7 @@ export function UnitsPage() {
   const [propertyId, setPropertyId] = useState('all');
   const [status, setStatus] = useState<'all' | UnitStatus>('all');
   const [occupancy, setOccupancy] = useState<OccupancyFilter>('all');
+  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
   const navigate = useNavigate();
 
@@ -77,7 +79,7 @@ export function UnitsPage() {
     <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="الوحدات"
-        description="عرض تشغيلي لكل الوحدات المسجلة مع روابط مباشرة للعقارات، مع إبقاء إضافة وتعديل الوحدات داخل صفحة العقار المرتبط."
+        description="عرض تشغيلي لكل الوحدات المسجلة مع تعديل مباشر وروابط تفصيل العقارات."
         action={<Button asChild><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>}
       />
 
@@ -152,16 +154,19 @@ export function UnitsPage() {
               }},
               { key: 'rent', header: 'الإيجار', render: (unit) => <span dir="ltr" className="block font-bold">{formatMoney(unit.rent_amount)}</span> },
               { key: 'notes', header: 'ملاحظات', render: (unit) => unit.notes ?? '—' },
-              { key: 'action', header: 'إجراء', render: (unit) => {
-                const property = propertyById.get(unit.property_id);
-                return property ? (
-                  <Button variant="secondary" asChild onClick={(e) => e.stopPropagation()}>
-                    <Link to="/properties/$propertyId/units/$unitId" params={{ propertyId: property.id, unitId: unit.id }}>
-                      فتح التفاصيل
+              { key: 'action', header: 'إجراء', render: (unit) => (
+                <div className="flex gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+                  <Button variant="secondary" onClick={() => setEditingUnit(unit)}>
+                    <Edit className="me-1 size-4" aria-hidden="true" />
+                    تعديل
+                  </Button>
+                  <Button variant="ghost" asChild>
+                    <Link to="/properties/$propertyId/units/$unitId" params={{ propertyId: unit.property_id, unitId: unit.id }}>
+                      التفاصيل
                     </Link>
                   </Button>
-                ) : '—';
-              }},
+                </div>
+              )},
             ]}
             onRowClick={(unit) => navigate({
               to: '/properties/$propertyId/units/$unitId',
@@ -185,13 +190,19 @@ export function UnitsPage() {
                     to: '/properties/$propertyId/units/$unitId',
                     params: { propertyId: unit.property_id, unitId: unit.id },
                   })}
-                  actions={property ? (
-                    <Button variant="secondary" className="min-h-11 w-full" asChild>
-                      <Link to="/properties/$propertyId/units/$unitId" params={{ propertyId: property.id, unitId: unit.id }}>
-                        فتح التفاصيل
-                      </Link>
-                    </Button>
-                  ) : undefined}
+                  actions={(
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="secondary" className="min-h-11" onClick={(event) => { event.stopPropagation(); setEditingUnit(unit); }}>
+                        <Edit className="me-1 size-4" aria-hidden="true" />
+                        تعديل
+                      </Button>
+                      <Button variant="ghost" className="min-h-11" asChild>
+                        <Link to="/properties/$propertyId/units/$unitId" params={{ propertyId: unit.property_id, unitId: unit.id }}>
+                          التفاصيل
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
                 />
               );
             }}
@@ -206,6 +217,13 @@ export function UnitsPage() {
           />
         </CardContent>
       </Card>
+
+      <UnitFormModal
+        propertyId={editingUnit?.property_id ?? ''}
+        unit={editingUnit}
+        open={editingUnit !== null}
+        onOpenChange={(open) => { if (!open) setEditingUnit(null); }}
+      />
     </PageLayout>
   );
 }

@@ -9,7 +9,7 @@ export function RootRouteComponent() {
     <AppCatchBoundary>
       <Outlet />
       <Toaster richColors position="top-left" dir={getAppLanguageState().direction} />
-      {import.meta.env.DEV ? <TanStackRouterDevtools position="bottom-left" /> : null}
+      {import.meta.env.DEV && !import.meta.env.VITE_E2E ? <TanStackRouterDevtools position="bottom-left" /> : null}
     </AppCatchBoundary>
   );
 }

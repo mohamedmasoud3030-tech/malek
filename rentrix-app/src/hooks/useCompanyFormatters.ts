@@ -26,12 +26,16 @@ export function useCompanyFormatters(): CompanySettingsContract & {
  * Hook that provides formatters without React Query dependency.
  * Use when settings are already available via context or props.
  */
-export function useCompanyFormattersWith(settings: CompanySettingsContract) {
+export function useCompanyFormattersWith(settings: CompanySettingsContract): CompanySettingsContract & {
+  money: (value: number | null | undefined) => string;
+  date: (value: string) => string;
+  number: (value: number | null | undefined) => string;
+} {
   const money = (value: number | null | undefined) => formatCompanyMoney(settings, value);
   const date = (value: string) => formatCompanyDate(settings, `${value}T00:00:00`);
   const number = (value: number | null | undefined) => formatCompanyNumber(settings, value);
 
-  return { money, date, number };
+  return { ...settings, money, date, number };
 }
 
 /**
