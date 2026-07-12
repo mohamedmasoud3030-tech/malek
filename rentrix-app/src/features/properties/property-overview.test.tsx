@@ -38,15 +38,24 @@ vi.mock('@/features/units/use-units', () => ({
   }),
 }));
 
+vi.mock('@/features/owners/useOwnerAgreements', () => ({
+  useOwnerAgreements: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
 describe('PropertyOverview Component Rendering and Copy Integrity', () => {
-  it('renders accurate, future-facing Arabic placeholder copy for agreement and financial details', () => {
+  it('renders accurate Arabic agreement and financial empty copy', () => {
     const html = renderToStaticMarkup(<PropertyOverview />);
 
-    // Renders the correct future-facing, evidence-based Arabic copy
-    expect(html).toContain('ستظهر اتفاقية التشغيل هنا عند توفر بياناتها.');
+    // Renders the current service-backed empty state for owner agreements
+    expect(html).toContain('لا توجد اتفاقية مالك مسجلة لهذا العقار حالياً.');
     expect(html).toContain('سيظهر الملخص المالي هنا عند توفر بيانات مالية مرتبطة بالعقار.');
 
-    // DOES NOT render unsupported negative claims
+    // DOES NOT render unsupported legacy wording
+    expect(html).not.toContain('ستظهر اتفاقية التشغيل هنا عند توفر بياناتها.');
     expect(html).not.toContain('لا توجد اتفاقية تشغيل نشطة مسجلة حالياً لهذا العقار.');
     expect(html).not.toContain('لا تتوفر حركات مالية أو تصفية محاسبية نشطة مسجلة لهذا العقار حالياً.');
   });

@@ -66,7 +66,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           onRowClick={(unit) => navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}
           renderMobileCard={(unit) => (
             <div className="rounded-2xl border border-border/60 bg-card p-4 transition-shadow hover:shadow-md">
-              <button className="w-full text-start" onClick={() => navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}>
+              <button data-entity-card role="button" className="w-full text-start" onClick={() => navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate font-black">وحدة {unit.unit_number}</p>

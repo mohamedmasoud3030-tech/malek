@@ -1,5 +1,6 @@
 import { AlertCircle, Inbox, WalletCards } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatMoney, formatShortId, getErrorMessage } from '@/features/financials/components/financials-formatters';
@@ -46,12 +47,18 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
     <div className="space-y-4">
       <Card className="scroll-mt-28 border-border/60 bg-muted/20">
         <CardHeader className="px-4 py-3 sm:px-5">
-          <CardTitle className="text-sm font-black">كشوف الحساب</CardTitle>
+          <CardTitle className="text-sm font-black">Workspace كشوف الحساب</CardTitle>
           <CardDescription>
-            كشوف حركة تشغيلية للقراءة فقط. لا تعرض هذه الصفحة أرصدة جارية ولا تسويات نهائية ولا دفتر أستاذ محاسبي.
-            إذا لم تتوفر بيانات كافية، تظهر رسالة توضيح بدلاً من أرقام مُقدَّرة.
+            اختر المالك أو العقد والفترة من فلاتر الصفحة أعلاه. الكشوف قراءة فقط ولا تعرض أرصدة جارية أو تسويات نهائية أو دفتر أستاذ محاسبي.
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <ResponsiveCardGrid desktopColumns={3}>
+            <StatementWorkspaceCue title="كشف مستأجر" value={selectedContractId ? 'عقد محدد' : 'اختر عقدًا من الفلاتر'} tone={selectedContractId ? 'ready' : 'muted'} />
+            <StatementWorkspaceCue title="كشف مالك" value={selectedOwnerId ? 'مالك محدد' : 'اختر مالكًا من الفلاتر'} tone={selectedOwnerId ? 'ready' : 'muted'} />
+            <StatementWorkspaceCue title="الفترة" value="من فلاتر نطاق التقرير" tone="ready" />
+          </ResponsiveCardGrid>
+        </CardContent>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -151,11 +158,13 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
             <CardTitle className="text-sm font-black">ملخص حركة المكتب</CardTitle>
             <CardDescription>ملخص فواتير وتحصيلات ومصروفات للفترة، وليس قائمة دخل أو دفتر حسابات.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-2 p-4 sm:p-5">
+          <CardContent className="p-4 sm:p-5">
+            <ResponsiveCardGrid desktopColumns={4} gap="sm">
             <KpiCard label="فواتير الفترة" value={formatMoney(totalInvoiced)} icon={WalletCards} accent="sky" sub={`${totalInvoicesCount} فواتير`} compact />
             <KpiCard label="تحصيلات الفترة" value={formatMoney(totalCollections)} icon={WalletCards} accent="emerald" sub={`${totalPayments} مدفوعات`} compact />
             <KpiCard label="مصروفات الفترة" value={formatMoney(totalExpenses)} icon={WalletCards} accent="rose" sub={`${totalExpensesCount} مصروفات`} compact />
             <KpiCard label="رصيد مستحق (قراءة فقط)" value={formatMoney(totalOutstanding)} icon={WalletCards} accent="amber" sub={`${totalReceiptsCount} إيصالات متاحة للطباعة`} compact />
+            </ResponsiveCardGrid>
           </CardContent>
         </Card>
       </div>
@@ -197,6 +206,15 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
           </CardContent>
         </Card>
       </div>
+    </div>
+  );
+}
+
+function StatementWorkspaceCue({ title, value, tone }: Readonly<{ title: string; value: string; tone: 'ready' | 'muted' }>) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-background p-3">
+      <p className="text-xs font-black text-muted-foreground">{title}</p>
+      <p className={tone === 'ready' ? 'mt-1 font-black text-primary' : 'mt-1 font-black text-muted-foreground'}>{value}</p>
     </div>
   );
 }

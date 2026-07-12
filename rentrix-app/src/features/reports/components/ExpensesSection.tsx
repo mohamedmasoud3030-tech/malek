@@ -1,6 +1,7 @@
 import { Building2, ClipboardList, FileSpreadsheet, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import { useExpenseBreakdownReport } from '@/features/financials/reports/useFinancialReports';
 import { buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
@@ -21,11 +22,11 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
       action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
       isLoading={isLoading}
     >
-      <div className="grid gap-3 p-4 sm:grid-cols-3">
+      <ResponsiveCardGrid className="p-4" desktopColumns={3}>
         <KpiCard label="إجمالي المصروفات" value={formatMoney(report?.totalExpenses ?? 0)} icon={WalletCards} accent="rose" sub={`${report?.expensesCount ?? 0} مصروفات`} />
         <KpiCard label="تصنيفات المصروفات" value={(categoryRows.length).toLocaleString('ar')} icon={ClipboardList} accent="amber" sub="حسب category المحفوظ" />
         <KpiCard label="عقارات بها مصروفات" value={(propertyRows.length).toLocaleString('ar')} icon={Building2} accent="sky" sub="حسب معرّف العقار المحفوظ" />
-      </div>
+      </ResponsiveCardGrid>
       <div className="grid gap-4 p-4 pt-0 lg:grid-cols-2">
         <div className="rounded-2xl border bg-background/80 p-3">
           <p className="mb-2 font-black">حسب التصنيف</p>

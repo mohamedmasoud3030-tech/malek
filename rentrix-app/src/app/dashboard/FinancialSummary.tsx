@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { StatCard } from '@/components/ui/stat-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { DashboardSnapshot } from '../dashboardSnapshot';
@@ -41,7 +42,7 @@ export function FinancialSummary({ snapshot, isLoading, settings }: FinancialSum
         {isLoading ? (
           <LoadingState variant="cards" rows={5} label="جارٍ تحميل الملخص المالي" />
         ) : (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+          <ResponsiveCardGrid desktopColumns={5} gap="sm">
             {items.map((item) => (
               <StatCard
                 key={item.label}
@@ -50,7 +51,7 @@ export function FinancialSummary({ snapshot, isLoading, settings }: FinancialSum
                 tone={item.tone}
               />
             ))}
-          </div>
+          </ResponsiveCardGrid>
         )}
       </CardContent>
     </Card>

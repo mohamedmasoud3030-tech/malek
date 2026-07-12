@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { KeyRound, ListChecks, SearchCheck, Settings, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Button } from '@/components/ui/button';
 import { canAccess, type AppPermission } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
@@ -46,7 +47,7 @@ export function SystemPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <ResponsiveCardGrid desktopColumns={4}>
             {governancePrinciples.map((p) => (
               <div key={p.label} className="rounded-2xl border border-border bg-muted/30 p-4">
                 <p className="text-xs font-bold text-muted-foreground">{p.label}</p>
@@ -54,7 +55,7 @@ export function SystemPage() {
                 <p className="mt-0.5 text-xs text-muted-foreground">{p.description}</p>
               </div>
             ))}
-          </div>
+          </ResponsiveCardGrid>
         </CardContent>
       </Card>
 

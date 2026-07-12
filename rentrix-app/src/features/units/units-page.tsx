@@ -7,6 +7,7 @@ import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SearchInput } from '@/components/ui/search-input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -83,12 +84,12 @@ export function UnitsPage() {
         action={<Button asChild><Link to="/properties"><Building2 className="me-2 size-4" />العقارات</Link></Button>}
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <ResponsiveCardGrid desktopColumns={4} gap="lg">
         <KpiCard label="إجمالي الوحدات" value={formatNumber(units.length)} sub="كل الوحدات النشطة" icon={DoorOpen} accent="primary" />
         <KpiCard label="الوحدات المشغولة" value={formatNumber(occupiedCount)} sub="حسب حالة الوحدة" icon={Home} accent="sky" />
         <KpiCard label="الوحدات المتاحة" value={formatNumber(availableCount)} sub="جاهزة للتأجير" icon={DoorOpen} accent="emerald" />
         <KpiCard label="إجمالي الإيجار المتوقع" value={formatMoney(expectedRent)} sub="من قيم الإيجار المسجلة" icon={Building2} accent="amber" />
-      </div>
+      </ResponsiveCardGrid>
 
       <FilterBar
         searchValue={search}

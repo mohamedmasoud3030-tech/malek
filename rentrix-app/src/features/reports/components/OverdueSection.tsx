@@ -1,6 +1,7 @@
 import { AlertTriangle, FileSpreadsheet, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DataTable } from '@/components/ui/data-table';
 import { MobileCard } from '@/components/ui/mobile-card';
@@ -67,7 +68,7 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
         action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
         isLoading={isLoading}
       >
-        <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
+        <ResponsiveCardGrid className="p-4" desktopColumns={5}>
           {bucketRows.map((row) => {
             const isCurrent = row.bucket === agingBucketKeys[0];
             return (
@@ -81,7 +82,7 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
               />
             );
           })}
-        </div>
+        </ResponsiveCardGrid>
       </ReportCard>
     </div>
   );

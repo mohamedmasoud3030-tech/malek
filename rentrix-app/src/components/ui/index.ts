@@ -31,6 +31,7 @@ export { FilterTabs } from "./filter-tabs";
 export { FilterBar } from "./filter-bar";
 export { KpiCard } from "./kpi-card";
 export { InlineStatCard } from "./inline-stat-card";
+export { ResponsiveCardGrid } from "./responsive-card-grid";
 export { MobileCard } from "./mobile-card";
 export { DatePicker } from "./date-picker";
 export { Drawer } from "./drawer";

@@ -109,13 +109,55 @@ function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: ()
 }
 
 function CommunicationRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: CommunicationRecord[]; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchiveClick: (row: CommunicationRecord) => void }>) {
-  return <Card className="overflow-hidden"><div className="grid gap-3 p-4 md:hidden">{rows.map((row) => <CommunicationCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}</div><div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-sm"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 text-right">جهة التواصل</th><th className="p-3 text-right">القناة</th><th className="p-3 text-right">الموضوع</th><th className="p-3 text-right">الحالة</th><th className="p-3 text-right">إجراءات</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-t"><td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.contact_name}<p className="text-xs text-muted-foreground">{row.contact_phone ?? row.contact_email ?? 'بدون بيانات اتصال'}</p></td><td className="p-3">{channelLabels[row.channel] ?? row.channel}</td><td className="max-w-72 whitespace-normal break-words p-3">{row.subject ?? row.body.slice(0, 48)}</td><td className="p-3"><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></td><td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td></tr>)}</tbody></table></div></Card>;
+  return (
+    <Card className="overflow-hidden">
+      <div className="grid gap-3 p-4 md:hidden" role="list" aria-label="سجلات التواصل">
+        {rows.map((row) => <CommunicationCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[860px] text-sm">
+          <thead className="bg-muted/50 text-muted-foreground">
+            <tr>
+              <th className="p-3 text-right">جهة التواصل</th>
+              <th className="p-3 text-right">النوع والاتجاه</th>
+              <th className="p-3 text-right">السياق</th>
+              <th className="p-3 text-right">آخر تحديث</th>
+              <th className="p-3 text-right">الحالة</th>
+              <th className="p-3 text-right">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className="border-t">
+                <td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.contact_name}<p className="text-xs text-muted-foreground">{row.contact_phone ?? row.contact_email ?? 'بدون بيانات اتصال'}</p></td>
+                <td className="p-3">{channelLabels[row.channel] ?? row.channel}<p className="text-xs text-muted-foreground">{directionLabels[row.direction] ?? row.direction}</p></td>
+                <td className="max-w-72 whitespace-normal break-words p-3">{row.subject ?? row.body.slice(0, 48)}<p className="text-xs text-muted-foreground">{formatRelatedContext(row)}</p></td>
+                <td className="p-3 tabular-nums" dir="ltr">{formatCommunicationTimestamp(row.updated_at ?? row.created_at)}</td>
+                <td className="p-3"><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></td>
+                <td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
 }
 
 function CommunicationCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: CommunicationRecord; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchiveClick: (row: CommunicationRecord) => void }>) {
-  return <div className="rounded-2xl border bg-background p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">{row.contact_name}</p><p className="text-sm text-muted-foreground">{channelLabels[row.channel] ?? row.channel} · {directionLabels[row.direction] ?? row.direction}</p></div><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></div><p className="mt-3 line-clamp-2 text-sm">{row.subject ?? row.body}</p><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></div>;
+  return <div className="rounded-2xl border bg-background p-4" role="listitem"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate font-black">{row.contact_name}</p><p className="text-sm text-muted-foreground">{channelLabels[row.channel] ?? row.channel} · {directionLabels[row.direction] ?? row.direction}</p></div><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></div><p className="mt-3 line-clamp-2 text-sm">{row.subject ?? row.body}</p><div className="mt-3 grid gap-1 text-xs font-bold text-muted-foreground"><span>{formatRelatedContext(row)}</span><time dateTime={row.updated_at ?? row.created_at} dir="ltr">{formatCommunicationTimestamp(row.updated_at ?? row.created_at)}</time></div><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></div>;
 }
 
 function RowActions({ id, disabled, onEdit, onArchiveClick }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchiveClick: () => void }>) {
   return <div className="mt-3 flex flex-wrap gap-2"><Button className="min-h-11" variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button><Button className="min-h-11" variant="danger" disabled={disabled} onClick={onArchiveClick}><Archive className="me-2 size-4" />أرشفة</Button></div>;
+}
+
+function formatRelatedContext(row: CommunicationRecord) {
+  if (!row.related_entity_type && !row.related_entity_id) return 'بدون ربط بملف محدد';
+  return [row.related_entity_type, row.related_entity_id].filter(Boolean).join(' · ');
+}
+
+function formatCommunicationTimestamp(value: string | null | undefined) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('ar', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
