@@ -1,4 +1,4 @@
-import { useNavigate, useParams, Link } from '@tanstack/react-router';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
