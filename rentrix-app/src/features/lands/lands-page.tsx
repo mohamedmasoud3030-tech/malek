@@ -1,3 +1,4 @@
+import { useCrudFormState } from '@/hooks/use-crud-form-state';
 import { useState } from 'react';
 import { LandsView } from './components/lands-view';
 import { useArchiveLand, useLands, useSaveLand } from './use-lands';
@@ -23,9 +24,7 @@ function formFromLand(land: LandRecord): LandFormValues {
 
 export function LandsPage() {
   const [filters, setFilters] = useState<LandFilters>({ query: '', status: 'all' });
-  const [editingLand, setEditingLand] = useState<LandRecord | null>(null);
-  const [draft, setDraft] = useState<LandFormValues>(emptyForm);
-  const [formOpen, setFormOpen] = useState(false);
+  const formState = useCrudFormState<LandRecord, LandFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLand });
   const landsQuery = useLands(filters);
   const saveLand = useSaveLand();
   const archiveLand = useArchiveLand();
@@ -34,20 +33,20 @@ export function LandsPage() {
     <LandsView
       rows={landsQuery.data ?? []}
       filters={filters}
-      draft={draft}
-      editingLand={editingLand}
-      formOpen={formOpen}
+      draft={formState.draft}
+      editingLand={formState.editingRecord}
+      formOpen={formState.formOpen}
       isLoading={landsQuery.isLoading}
       isSaving={saveLand.isPending}
       isArchiving={archiveLand.isPending}
       error={landsQuery.error}
       writeError={saveLand.error ?? archiveLand.error}
       onFiltersChange={setFilters}
-      onDraftChange={setDraft}
-      onCreate={() => { setEditingLand(null); setDraft(emptyForm); setFormOpen(true); }}
-      onEdit={(land) => { setEditingLand(land); setDraft(formFromLand(land)); setFormOpen(true); }}
-      onFormOpenChange={setFormOpen}
-      onSubmit={(values) => saveLand.mutate({ id: editingLand?.id, values }, { onSuccess: () => setFormOpen(false) })}
+      onDraftChange={formState.setDraft}
+      onCreate={formState.openCreate}
+      onEdit={formState.openEdit}
+      onFormOpenChange={formState.setFormOpen}
+      onSubmit={(values) => saveLand.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
       onArchive={(id) => archiveLand.mutate(id)}
       onRetry={() => void landsQuery.refetch()}
     />

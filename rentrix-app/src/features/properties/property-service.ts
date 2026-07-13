@@ -1,3 +1,4 @@
+import { getCrudWriteErrorMessage } from '@/lib/data/crud-write-error';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Property } from '@/types/domain';
@@ -16,19 +17,6 @@ export type PaginatedResult<T> = {
   rows: T[];
   count: number;
 };
-
-function getWriteErrorMessage(action: 'create' | 'update' | 'archive', error: unknown) {
-  const fallback = action === 'create' ? 'تعذر إنشاء العقار' : action === 'update' ? 'تعذر تحديث العقار' : 'تعذر أرشفة العقار';
-  const message = error instanceof Error ? error.message : String(error ?? '');
-  const lower = message.toLowerCase();
-
-  if (lower.includes('permission denied') || lower.includes('rls') || lower.includes('row-level security') || lower.includes('not authorized')) {
-    return `${fallback}: لا تملك صلاحية الكتابة على العقارات. تواصل مع المسؤول أو استخدم حساباً بصلاحيات أعلى.`;
-  }
-
-  if (message) return `${fallback}: ${message}`;
-  return fallback;
-}
 
 export function normalizePropertyPayload(payload: PropertyPayload): PropertyInsert {
   return { ...payload };
@@ -92,7 +80,7 @@ export async function listPropertyTitles(): Promise<PropertyTitleRow[]> {
 export async function createProperty(payload: PropertyPayload): Promise<Property> {
   const insertPayload = normalizePropertyPayload(payload);
   const { data, error } = await supabase.from('properties').insert(insertPayload).select('*').single().returns<Property>();
-  if (error) throw new Error(getWriteErrorMessage('create', error));
+  if (error) throw new Error(getCrudWriteErrorMessage({ action: 'create', entityPlural: 'العقارات', error }));
   return data;
 }
 
@@ -106,12 +94,12 @@ export async function updateProperty(propertyId: string, payload: PropertyPayloa
     .select('*')
     .single()
     .returns<Property>();
-  if (error) throw new Error(getWriteErrorMessage('update', error));
+  if (error) throw new Error(getCrudWriteErrorMessage({ action: 'update', entityPlural: 'العقارات', error }));
   return data;
 }
 
 export async function softDeleteProperty(propertyId: string): Promise<void> {
   const updatePayload: PropertyUpdate = { deleted_at: new Date().toISOString() };
   const { error } = await supabase.from('properties').update(updatePayload).eq('id', propertyId).is('deleted_at', null);
-  if (error) throw new Error(getWriteErrorMessage('archive', error));
+  if (error) throw new Error(getCrudWriteErrorMessage({ action: 'archive', entityPlural: 'العقارات', error }));
 }

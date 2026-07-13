@@ -1,3 +1,4 @@
+import { useCrudFormState } from '@/hooks/use-crud-form-state';
 import { useState } from 'react';
 import { CommissionsView } from './components/commissions-view';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from './types';
@@ -19,9 +20,7 @@ function formFromCommission(commission: CommissionRecord): CommissionFormValues 
 
 export function CommissionsPage() {
   const [filters, setFilters] = useState<CommissionFilters>({ query: '', status: 'all', type: 'all' });
-  const [editingCommission, setEditingCommission] = useState<CommissionRecord | null>(null);
-  const [draft, setDraft] = useState<CommissionFormValues>(emptyForm);
-  const [formOpen, setFormOpen] = useState(false);
+  const formState = useCrudFormState<CommissionRecord, CommissionFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromCommission });
   const commissionsQuery = useCommissions(filters);
   const saveCommission = useSaveCommission();
   const archiveCommission = useArchiveCommission();
@@ -30,20 +29,20 @@ export function CommissionsPage() {
     <CommissionsView
       rows={commissionsQuery.data ?? []}
       filters={filters}
-      draft={draft}
-      editingCommission={editingCommission}
-      formOpen={formOpen}
+      draft={formState.draft}
+      editingCommission={formState.editingRecord}
+      formOpen={formState.formOpen}
       isLoading={commissionsQuery.isLoading}
       isSaving={saveCommission.isPending}
       isArchiving={archiveCommission.isPending}
       error={commissionsQuery.error}
       writeError={saveCommission.error ?? archiveCommission.error}
       onFiltersChange={setFilters}
-      onDraftChange={setDraft}
-      onCreate={() => { setEditingCommission(null); setDraft(emptyForm); setFormOpen(true); }}
-      onEdit={(commission) => { setEditingCommission(commission); setDraft(formFromCommission(commission)); setFormOpen(true); }}
-      onFormOpenChange={setFormOpen}
-      onSubmit={(values) => saveCommission.mutate({ id: editingCommission?.id, values }, { onSuccess: () => setFormOpen(false) })}
+      onDraftChange={formState.setDraft}
+      onCreate={formState.openCreate}
+      onEdit={formState.openEdit}
+      onFormOpenChange={formState.setFormOpen}
+      onSubmit={(values) => saveCommission.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
       onArchive={(id) => archiveCommission.mutate(id)}
       onRetry={() => void commissionsQuery.refetch()}
     />

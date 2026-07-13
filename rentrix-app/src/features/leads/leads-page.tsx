@@ -1,3 +1,4 @@
+import { useCrudFormState } from '@/hooks/use-crud-form-state';
 import { useState } from 'react';
 import { LeadsView } from './components/leads-view';
 import type { LeadFilters, LeadFormValues, LeadRecord } from './types';
@@ -21,9 +22,7 @@ function formFromLead(lead: LeadRecord): LeadFormValues {
 
 export function LeadsPage() {
   const [filters, setFilters] = useState<LeadFilters>({ query: '', status: 'all', source: 'all' });
-  const [editingLead, setEditingLead] = useState<LeadRecord | null>(null);
-  const [draft, setDraft] = useState<LeadFormValues>(emptyForm);
-  const [formOpen, setFormOpen] = useState(false);
+  const formState = useCrudFormState<LeadRecord, LeadFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLead });
   const leadsQuery = useLeads(filters);
   const saveLead = useSaveLead();
   const archiveLead = useArchiveLead();
@@ -32,20 +31,20 @@ export function LeadsPage() {
     <LeadsView
       rows={leadsQuery.data ?? []}
       filters={filters}
-      draft={draft}
-      editingLead={editingLead}
-      formOpen={formOpen}
+      draft={formState.draft}
+      editingLead={formState.editingRecord}
+      formOpen={formState.formOpen}
       isLoading={leadsQuery.isLoading}
       isSaving={saveLead.isPending}
       isArchiving={archiveLead.isPending}
       error={leadsQuery.error}
       writeError={saveLead.error ?? archiveLead.error}
       onFiltersChange={setFilters}
-      onDraftChange={setDraft}
-      onCreate={() => { setEditingLead(null); setDraft(emptyForm); setFormOpen(true); }}
-      onEdit={(lead) => { setEditingLead(lead); setDraft(formFromLead(lead)); setFormOpen(true); }}
-      onFormOpenChange={setFormOpen}
-      onSubmit={(values) => saveLead.mutate({ id: editingLead?.id, values }, { onSuccess: () => setFormOpen(false) })}
+      onDraftChange={formState.setDraft}
+      onCreate={formState.openCreate}
+      onEdit={formState.openEdit}
+      onFormOpenChange={formState.setFormOpen}
+      onSubmit={(values) => saveLead.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
       onArchive={(id) => archiveLead.mutate(id)}
       onRetry={() => void leadsQuery.refetch()}
     />
