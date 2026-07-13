@@ -137,6 +137,7 @@ export function ExpensesPage() {
         onCreateExpense={onCreateExpense}
         onUpdateExpense={onUpdateExpense}
         isUpdateExpensePending={updateExpense.isPending}
+        isUpdateExpenseSuccess={updateExpense.isSuccess}
       />
     </PageLayout>
   );

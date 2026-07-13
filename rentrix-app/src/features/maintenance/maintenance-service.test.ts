@@ -46,6 +46,26 @@ describe('maintenance service failure and mutation boundaries', () => {
     await expect(createMaintenance({ property_id: 'property-1', title: 'Test', priority: 'medium', status: 'open', cost: 0 })).rejects.toThrow('insert rejected');
   });
 
+  it('updates only non-financial request fields', async () => {
+    const chain = createQueryMock({ data: { id: 'maintenance-1' }, error: null });
+    supabaseMock.from.mockReturnValue(chain);
+    const { updateMaintenance } = await import('./maintenance-service');
+
+    await updateMaintenance('maintenance-1', {
+      title: 'إصلاح المضخة',
+      priority: 'high',
+      assigned_to: 'فني الاختبار',
+      scheduled_date: '2026-07-14',
+    });
+
+    expect(chain.update).toHaveBeenCalledWith({
+      title: 'إصلاح المضخة',
+      priority: 'high',
+      assigned_to: 'فني الاختبار',
+      scheduled_date: '2026-07-14',
+    });
+  });
+
   it('rejects direct status updates to resolved — must go through resolveMaintenanceWithExpense', async () => {
     const { updateMaintenanceStatus } = await import('./maintenance-service');
     await expect(updateMaintenanceStatus('maintenance-1', 'resolved')).rejects.toThrow('resolveMaintenanceWithExpense');

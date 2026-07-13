@@ -54,6 +54,7 @@ type ExpensesSectionProps = Readonly<{
   onCreateExpense: (values: ExpenseFormValues) => void;
   onUpdateExpense?: (expenseId: string, values: ExpenseFormValues) => void;
   isUpdateExpensePending?: boolean;
+  isUpdateExpenseSuccess?: boolean;
 }>;
 
 function escapeCsvCell(value: string | number | null | undefined) {
@@ -96,6 +97,7 @@ export function ExpensesSection({
   onCreateExpense,
   onUpdateExpense,
   isUpdateExpensePending = false,
+  isUpdateExpenseSuccess = false,
 }: ExpensesSectionProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -122,11 +124,11 @@ export function ExpensesSection({
   };
 
   useEffect(() => {
-    if (isCreateExpenseSuccess) {
+    if (isCreateExpenseSuccess || isUpdateExpenseSuccess) {
       setFormOpen(false);
       setEditingExpense(null);
     }
-  }, [isCreateExpenseSuccess]);
+  }, [isCreateExpenseSuccess, isUpdateExpenseSuccess]);
 
   const openCreateForm = () => {
     setEditingExpense(null);
@@ -288,7 +290,7 @@ export function ExpensesSection({
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-1.5 text-sm font-bold">
                 <span>العقار</span>
-                <Select {...expenseForm.register('property_id')} aria-invalid={Boolean(expenseForm.formState.errors.property_id)}>
+                <Select {...expenseForm.register('property_id')} disabled={Boolean(editingExpense)} aria-invalid={Boolean(expenseForm.formState.errors.property_id)}>
                   <option value="">اختر العقار</option>
                   {propertyRows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
                 </Select>
@@ -304,7 +306,7 @@ export function ExpensesSection({
 
               <label className="space-y-1.5 text-sm font-bold">
                 <span>مركز التكلفة</span>
-                <Select {...expenseForm.register('cost_center_id')}>
+                <Select {...expenseForm.register('cost_center_id')} disabled={Boolean(editingExpense)}>
                   <option value="">بدون مركز تكلفة</option>
                   {costCenterRows.filter((costCenter) => costCenter.is_active !== false).map((costCenter) => <option key={costCenter.id} value={costCenter.id}>{costCenter.name}</option>)}
                 </Select>
@@ -318,7 +320,7 @@ export function ExpensesSection({
 
               <label className="space-y-1.5 text-sm font-bold sm:col-span-2">
                 <span>التاريخ</span>
-                <Input type="date" {...expenseForm.register('expense_date')} aria-invalid={Boolean(expenseForm.formState.errors.expense_date)} />
+                <Input type="date" {...expenseForm.register('expense_date')} disabled={Boolean(editingExpense)} aria-invalid={Boolean(expenseForm.formState.errors.expense_date)} />
               </label>
             </div>
           </EntityForm.Section>
