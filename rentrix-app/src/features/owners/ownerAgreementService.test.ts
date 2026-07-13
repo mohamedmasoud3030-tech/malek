@@ -54,3 +54,14 @@ describe('formatAgreementError', () => {
     expect(formatAgreementError('contract is outside the agreement period')).toContain('عقداً محفوظاً');
   });
 });
+
+
+describe('owner agreement data boundary', () => {
+  it('queries owner_agreements directly instead of the property_owners ownership-link table', async () => {
+    const source = await import('node:fs/promises').then((fs) => fs.readFile(new URL('./ownerAgreementService.ts', import.meta.url), 'utf8'));
+
+    expect(source).toContain("from('owner_agreements')");
+    expect(source).not.toContain("from('property_owners')");
+    expect(source).not.toContain('property_owners!inner');
+  });
+});

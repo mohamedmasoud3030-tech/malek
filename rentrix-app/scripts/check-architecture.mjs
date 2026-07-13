@@ -5,6 +5,10 @@ const sourceRoot = resolve('src');
 const sourceFiles = collectSourceFiles(sourceRoot);
 const sourceSet = new Set(sourceFiles);
 const violations = [];
+const focusedFeatureAllowList = new Map([
+  ['properties', new Set(['owners', 'units', 'financials'])],
+  ['units', new Set(['properties'])],
+]);
 
 for (const file of sourceFiles) {
   const content = readFileSync(file, 'utf8');
@@ -15,8 +19,15 @@ for (const file of sourceFiles) {
     violations.push(`${displayPath}: presentation components must not import Supabase directly`);
   }
 
-  if (isPresentationComponent(file) && imports.some((specifier) => specifier.startsWith('@/services/'))) {
+  if (isPresentationComponent(file) && imports.some((specifier) => specifier.startsWith('@/services/') || (isFocusedPropertyArchitectureFile(file) && /(?:^|\/)services\//.test(specifier)))) {
     violations.push(`${displayPath}: presentation components must use a hook instead of importing a service`);
+  }
+
+  if (isFocusedPropertyArchitectureFile(file)) {
+    for (const specifier of imports) {
+      const dependencyViolation = getFocusedPropertyDependencyViolation(file, specifier);
+      if (dependencyViolation) violations.push(`${displayPath}: ${dependencyViolation}`);
+    }
   }
 
   if (isPage(file) && lineCount(content) > 650) {
@@ -75,4 +86,31 @@ function resolveImport(file, specifier) {
   return ['.ts', '.tsx', '/index.ts', '/index.tsx']
     .map((suffix) => `${absoluteBase}${suffix}`)
     .filter((candidate) => sourceSet.has(candidate));
+}
+
+
+function isFocusedPropertyArchitectureFile(file) {
+  const normalized = relative(process.cwd(), file).split(sep).join('/');
+  return normalized.startsWith('src/features/properties/') || normalized.startsWith('src/features/units/');
+}
+
+function getFocusedPropertyDependencyViolation(file, specifier) {
+  const sourceFeature = getFeatureNameFromPath(file);
+  const targetFeature = getFeatureNameFromSpecifier(specifier);
+  if (!sourceFeature || !targetFeature || sourceFeature === targetFeature) return null;
+  const allowedTargets = focusedFeatureAllowList.get(sourceFeature) ?? new Set();
+  if (allowedTargets.has(targetFeature)) return null;
+  return `unexpected cross-feature import from ${sourceFeature} to ${targetFeature}; move shared-neutral code to a real shared module or add a narrow allow-list entry`;
+}
+
+function getFeatureNameFromPath(file) {
+  const parts = relative(sourceRoot, file).split(sep);
+  return parts[0] === 'features' ? parts[1] : null;
+}
+
+function getFeatureNameFromSpecifier(specifier) {
+  const aliasMatch = specifier.match(/^@\/features\/([^/]+)/);
+  if (aliasMatch) return aliasMatch[1];
+  if (!specifier.startsWith('.')) return null;
+  return null;
 }
