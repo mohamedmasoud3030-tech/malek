@@ -2,6 +2,14 @@
 
 Short list of follow-up work, derived from gaps found while reviewing migrations, `src/features`, and test coverage. No TODO/FIXME/HACK markers or skipped tests were found in `rentrix-app/src` at the time of this check — the items below come from feature-area comparisons instead.
 
+## Architecture automation queue
+
+Use [`docs/ARCHITECTURE_EXECUTION_PLAN.md`](./ARCHITECTURE_EXECUTION_PLAN.md) as the
+single ordered queue for code-tree, shared-component, large-file, and documentation
+consolidation work. Recurring automation must complete its first ready phase and
+update the evidence there instead of selecting an unrelated refactor from this
+product/data backlog.
+
 ## Critical — production staging QA findings (2026-07-11)
 
 First-ever end-to-end financial cycle test (contract → invoice → payment → receipt) run against live production data (isolated `TEST-QA` / `00000000-0000-4000-900X`-prefixed rows) surfaced 4 previously-unknown production bugs, all fixed live via `apply_migration` on `nnggcnpcuomwfuupupwg` and now also committed as migration files:

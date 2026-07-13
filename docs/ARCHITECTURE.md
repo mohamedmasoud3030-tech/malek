@@ -13,8 +13,8 @@ There is no separate `lib/` package at the workspace root; the prompt referenced
 
 ## Frontend structure (`rentrix-app/src/`)
 
-- `routes/` and `routeTree.ts` — TanStack Router route definitions. `routeTree.ts` builds the route tree in code (not file-based routing) using `createRoute`/`createRootRoute`. Routes are grouped under `_auth` (login) and `_protected` (everything requiring a session).
-- `app/` — app shell, providers (`providers.tsx` wraps `QueryClientProvider`), the dashboard page, and the router provider (`router.tsx`).
+- `routes/` and `app/router/route-tree.ts` — thin TanStack Router adapters and the programmatic route tree. Routes are grouped under `_auth` (login) and `_protected` (everything requiring a session).
+- `app/` — composition infrastructure only: app shell/layout, navigation, providers, router, and the app-level not-found boundary. Business pages and services belong to `features/`; this boundary is enforced by `scripts/check-architecture.mjs`.
 - `features/<domain>/` — one folder per business area (e.g. `contracts`, `owners`, `financials`, `maintenance`, `leads`, `lands`, `settings`, `audit`, `system`, `communication`, `commissions`, `people`, `properties`, `tenants`, `units`). Each typically contains a page component, a `*Service.ts` (Supabase calls), a `use*` hook (TanStack Query wiring), and colocated tests.
 - `components/` — shared UI: layout primitives (`components/layout/`) and design-system primitives (`components/ui/`), following shadcn/ui conventions with Tailwind.
 - `domain/` — pure, Supabase-independent domain types and logic (`types.ts`, `financial-settlements.ts`, `validators.ts`).
@@ -22,6 +22,10 @@ There is no separate `lib/` package at the workspace root; the prompt referenced
 - `services/` — cross-feature services not tied to one domain folder (e.g. `services/documents/` for PDF/document generation, `services/auth-service.ts`).
 - `store/ui-store.ts` — Zustand store for local UI-only state (theme, sidebar, sync status). Not a data-persistence layer.
 - `types/database.ts` — generated Supabase database types; `types/domain.ts` — shared domain-adjacent types used across features.
+
+The ordered refactor queue and measured hotspots live in
+[`ARCHITECTURE_EXECUTION_PLAN.md`](./ARCHITECTURE_EXECUTION_PLAN.md). Keep that
+plan aligned with code so recurring automation has one unambiguous next phase.
 
 ## Routing
 
