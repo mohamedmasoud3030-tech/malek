@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { createEntityQueryKeys } from '@/lib/data/query-keys';
 import { archiveLead, createLead, listLeads, updateLead } from './services/leads-service';
 import type { LeadFilters, LeadFormValues } from './types';
 
-export const leadKeys = { all: ['leads'] as const, list: (filters: LeadFilters) => [...leadKeys.all, filters] as const };
+export const leadKeys = createEntityQueryKeys<LeadFilters>('leads');
 
 export function useLeads(filters: LeadFilters) {
   return useQuery({ queryKey: leadKeys.list(filters), queryFn: () => listLeads(filters) });
