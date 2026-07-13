@@ -11,8 +11,16 @@ describe('owner agreement temporal controls migration', () => {
 
   it('protects shared ownership percentages and primary-owner periods by date range', () => {
     expect(migrationSql).toContain('assert_property_owner_temporal_integrity');
-    expect(migrationSql).toContain('v_overlap_total + NEW.ownership_percentage > 100');
+    expect(migrationSql).toContain('pg_advisory_xact_lock');
+    expect(migrationSql).toContain('candidate_dates');
+    expect(migrationSql).toContain('NEW.ownership_percentage + COALESCE');
     expect(migrationSql).toContain('لا يمكن وجود أكثر من مالك أساسي');
+  });
+
+  it('validates ownership inputs before evaluating temporal totals', () => {
+    expect(migrationSql).toContain('NEW.ownership_percentage <= 0');
+    expect(migrationSql).toContain('NEW.ends_on < NEW.starts_on');
+    expect(migrationSql).toContain('نسبة الملكية يجب أن تكون أكبر من صفر');
   });
 
   it('blocks agreement edits that would leave existing contracts outside the new period', () => {
