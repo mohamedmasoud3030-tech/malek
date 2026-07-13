@@ -1,1 +1,1 @@
-export { LoginPage as LoginRouteComponent } from '@/app/login-page';
+export { LoginPage as LoginRouteComponent } from '@/features/auth/login-page';

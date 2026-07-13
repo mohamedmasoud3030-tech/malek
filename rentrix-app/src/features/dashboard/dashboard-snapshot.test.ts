@@ -5,8 +5,8 @@ import {
   summarizeDashboardArrearsMetrics,
   summarizeDashboardFinancialMetrics,
   summarizeDashboardOperationalMetrics,
-} from './dashboardSnapshot';
-import type { DashboardOverview } from './dashboardService';
+} from './dashboard-snapshot';
+import type { DashboardOverview } from './dashboard-service';
 import type { AgedReceivablesReport, ArrearsSummaryReport, OverdueInvoicesReport } from '@/features/financials/reports/financialReportsService';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 

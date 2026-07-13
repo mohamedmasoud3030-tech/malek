@@ -2,7 +2,7 @@ import { Home, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { CompanySettingsContract } from '@/lib/companySettings';
-import type { DashboardSnapshot } from '../dashboardSnapshot';
+import type { DashboardSnapshot } from '../dashboard-snapshot';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
 
 interface HeroBannerProps {

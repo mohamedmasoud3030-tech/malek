@@ -3,17 +3,17 @@ import { useQuery } from '@tanstack/react-query';
 import { ErrorState } from '@/components/ui/error-state';
 import { PageLayout } from '@/components/layout/page-layout';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
-import { getDashboardSnapshot } from '../dashboardSnapshot';
-import { HeroBanner } from './HeroBanner';
-import { KpiGrid } from './KpiGrid';
-import { QuickActions } from './QuickActions';
-import { ExpiringContractsSection } from './ExpiringContractsSection';
-import { OverdueSection } from './OverdueSection';
-import { FinancialSummary } from './FinancialSummary';
-import { ArrearsBreakdown } from './ArrearsBreakdown';
-import { DashboardCharts } from './DashboardCharts';
-import { AlertCenter } from '@/features/dashboard/components/AlertCenter';
-import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard.utils';
+import { getDashboardSnapshot } from './dashboard-snapshot';
+import { HeroBanner } from './components/hero-banner';
+import { KpiGrid } from './components/kpi-grid';
+import { QuickActions } from './components/quick-actions';
+import { ExpiringContractsSection } from './components/expiring-contracts-section';
+import { OverdueSection } from './components/overdue-section';
+import { FinancialSummary } from './components/financial-summary';
+import { ArrearsBreakdown } from './components/arrears-breakdown';
+import { DashboardCharts } from './components/dashboard-charts';
+import { AlertCenter } from './components/alert-center';
+import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 
 export function DashboardPage() {

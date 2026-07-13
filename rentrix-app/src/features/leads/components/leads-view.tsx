@@ -191,14 +191,14 @@ export function LeadsView(props: Props) {
           className="md:grid-cols-2"
           onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}
         >
-          <Field label="الاسم"><Input required value={draft.name} onChange={(event) => onDraftChange({ ...draft, name: event.target.value })} /></Field>
-          <Field label="الهاتف"><Input value={draft.phone} onChange={(event) => onDraftChange({ ...draft, phone: event.target.value })} /></Field>
-          <Field label="البريد الإلكتروني"><Input type="email" value={draft.email} onChange={(event) => onDraftChange({ ...draft, email: event.target.value })} /></Field>
-          <Field label="نوع الوحدة المطلوب"><Input value={draft.desired_unit_type} onChange={(event) => onDraftChange({ ...draft, desired_unit_type: event.target.value })} /></Field>
-          <Field label="المصدر"><Select value={draft.source} onChange={(event) => onDraftChange({ ...draft, source: event.target.value })}>{Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-          <Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-          <Field label="أقل ميزانية"><Input type="number" min="0" inputMode="decimal" value={draft.min_budget} onChange={(event) => onDraftChange({ ...draft, min_budget: event.target.value })} /></Field>
-          <Field label="أعلى ميزانية"><Input type="number" min="0" inputMode="decimal" value={draft.max_budget} onChange={(event) => onDraftChange({ ...draft, max_budget: event.target.value })} /></Field>
+          <EntityForm.Field label="الاسم"><Input required value={draft.name} onChange={(event) => onDraftChange({ ...draft, name: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="الهاتف"><Input value={draft.phone} onChange={(event) => onDraftChange({ ...draft, phone: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="البريد الإلكتروني"><Input type="email" value={draft.email} onChange={(event) => onDraftChange({ ...draft, email: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="نوع الوحدة المطلوب"><Input value={draft.desired_unit_type} onChange={(event) => onDraftChange({ ...draft, desired_unit_type: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="المصدر"><Select value={draft.source} onChange={(event) => onDraftChange({ ...draft, source: event.target.value })}>{Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+          <EntityForm.Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+          <EntityForm.Field label="أقل ميزانية"><Input type="number" min="0" inputMode="decimal" value={draft.min_budget} onChange={(event) => onDraftChange({ ...draft, min_budget: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="أعلى ميزانية"><Input type="number" min="0" inputMode="decimal" value={draft.max_budget} onChange={(event) => onDraftChange({ ...draft, max_budget: event.target.value })} /></EntityForm.Field>
           <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></label>
           <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
         </EntityForm.Root>
@@ -220,10 +220,6 @@ export function LeadsView(props: Props) {
       />
     </PageLayout>
   );
-}
-
-function Field({ label, children }: Readonly<{ label: string; children: React.ReactNode }>) {
-  return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
 }
 
 function LeadRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: LeadRecord[]; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchiveClick: (row: LeadRecord) => void }>) {

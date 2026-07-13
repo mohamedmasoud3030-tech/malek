@@ -1,6 +1,5 @@
 import { Archive, BadgeDollarSign, CheckCircle2, Clock3, Edit, Plus, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
@@ -87,13 +86,13 @@ export function CommissionsView(props: Props) {
           className="md:grid-cols-2"
           onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}
         >
-          <Field label="اسم الموظف / الوسيط"><Input required value={draft.staff_name} onChange={(event) => onDraftChange({ ...draft, staff_name: event.target.value })} /></Field>
-          <Field label="نوع المصدر"><Select value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value })}>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-          <Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-          <Field label="معرف المصدر"><Input value={draft.source_id} onChange={(event) => onDraftChange({ ...draft, source_id: event.target.value })} /></Field>
-          <Field label="قيمة الصفقة"><Input type="number" min="0" inputMode="decimal" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} /></Field>
-          <Field label="النسبة %"><Input type="number" min="0" inputMode="decimal" step="0.01" value={draft.percentage} onChange={(event) => onDraftChange({ ...draft, percentage: event.target.value })} /></Field>
-          <Field label="مبلغ مباشر"><Input type="number" min="0" inputMode="decimal" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} /></Field>
+          <EntityForm.Field label="اسم الموظف / الوسيط"><Input required value={draft.staff_name} onChange={(event) => onDraftChange({ ...draft, staff_name: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="نوع المصدر"><Select value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value })}>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+          <EntityForm.Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+          <EntityForm.Field label="معرف المصدر"><Input value={draft.source_id} onChange={(event) => onDraftChange({ ...draft, source_id: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="قيمة الصفقة"><Input type="number" min="0" inputMode="decimal" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="النسبة %"><Input type="number" min="0" inputMode="decimal" step="0.01" value={draft.percentage} onChange={(event) => onDraftChange({ ...draft, percentage: event.target.value })} /></EntityForm.Field>
+          <EntityForm.Field label="مبلغ مباشر"><Input type="number" min="0" inputMode="decimal" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} /></EntityForm.Field>
           <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
         </EntityForm.Root>
       </EntityForm.Overlay>
@@ -111,10 +110,6 @@ export function CommissionsView(props: Props) {
   );
 }
 
-
-function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
-  return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
-}
 
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {
   return <Card role="alert"><CardHeader><CardTitle>{message}</CardTitle><CardDescription>راجع الاتصال والصلاحيات ثم أعد المحاولة.</CardDescription><Button variant="secondary" onClick={onRetry}><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button></CardHeader></Card>;

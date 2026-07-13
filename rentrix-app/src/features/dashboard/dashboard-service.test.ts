@@ -9,7 +9,7 @@ vi.mock('@/lib/supabase', () => ({
   supabase: supabaseMock,
 }));
 
-describe('dashboardService database aggregation boundary', () => {
+describe('dashboard service database aggregation boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -35,7 +35,7 @@ describe('dashboardService database aggregation boundary', () => {
       error: null,
     });
 
-    const { getDashboardOverview } = await import('./dashboardService');
+    const { getDashboardOverview } = await import('./dashboard-service');
     await expect(getDashboardOverview(new Date(2026, 6, 11))).resolves.toEqual({
       financial: {
         total_collected: 100,

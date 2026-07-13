@@ -16,6 +16,9 @@ const focusedFeatureAllowList = new Map([
   ['contracts', new Set(['properties', 'units', 'owners', 'people', 'settings', 'financials'])],
 ]);
 
+const allowedAppDirectories = new Set(['layout', 'navigation', 'providers', 'router']);
+const allowedAppFiles = new Set(['not-found-page.tsx']);
+
 const graph = new Map();
 
 for (const file of sourceFiles) {
@@ -23,6 +26,9 @@ for (const file of sourceFiles) {
   const displayPath = relative(cwd, file);
   const imports = getImportSpecifiers(content);
   const runtimeImports = getRuntimeImportSpecifiers(content);
+
+  const appBoundaryViolation = getAppBoundaryViolation(file);
+  if (appBoundaryViolation) violations.push(`${displayPath}: ${appBoundaryViolation}`);
 
   if (isPresentationComponent(file) && imports.some((specifier) => specifier === '@/lib/supabase')) {
     violations.push(`${displayPath}: presentation components must not import Supabase directly`);
@@ -76,6 +82,15 @@ function getRuntimeImportSpecifiers(content) {
 function isPresentationComponent(file) { return file.split(sep).includes('components'); }
 function isPage(file) { return /(?:page|Page)\.tsx$/.test(file); }
 function lineCount(content) { return content.split('\n').length; }
+
+function getAppBoundaryViolation(file) {
+  const normalized = relative(sourceRoot, file).split(sep).join('/');
+  const match = normalized.match(/^app\/([^/]+)(?:\/|$)/);
+  if (!match) return null;
+  const entry = match[1];
+  if (allowedAppDirectories.has(entry) || allowedAppFiles.has(entry)) return null;
+  return 'app/ is reserved for composition infrastructure; move business pages, services, snapshots, and domain logic to features/<domain>';
+}
 
 function resolveImports(file, specifiers = getImportSpecifiers(readFileSync(file, 'utf8'))) {
   return specifiers.flatMap((specifier) => resolveImport(file, specifier));

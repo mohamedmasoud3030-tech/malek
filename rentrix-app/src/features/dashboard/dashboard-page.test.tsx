@@ -3,8 +3,8 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { DashboardPage } from './DashboardPage';
-import { getDashboardSnapshot } from '../dashboardSnapshot';
+import { DashboardPage } from './dashboard-page';
+import { getDashboardSnapshot } from './dashboard-snapshot';
 
 // Mock TanStack Router
 vi.mock('@tanstack/react-router', () => ({
@@ -23,7 +23,7 @@ vi.mock('@/features/settings/useCompanySettings', () => ({
 }));
 
 // Mock getDashboardSnapshot service boundary
-vi.mock('../dashboardSnapshot', () => ({
+vi.mock('./dashboard-snapshot', () => ({
   getDashboardSnapshot: vi.fn(),
 }));
 

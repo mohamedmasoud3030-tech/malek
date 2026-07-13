@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
-import type { DashboardSnapshot } from '../dashboardSnapshot';
+import type { DashboardSnapshot } from '../dashboard-snapshot';
 
 const BUCKET_ORDER = ['days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'] as const;
 const BUCKET_LABELS: Record<typeof BUCKET_ORDER[number], string> = {
