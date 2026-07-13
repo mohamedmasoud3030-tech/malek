@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { EntityTable } from '@/components/ui/entity-table';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
@@ -65,12 +67,12 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card><CardContent className="flex items-center justify-between pt-6"><div><p className="text-sm font-bold text-muted-foreground">العقارات</p><p className="text-3xl font-black">{formatCompanyNumber(companySettings, properties.length)}</p></div><Building2 className="size-7 text-primary" /></CardContent></Card>
-        <Card><CardContent className="flex items-center justify-between pt-6"><div><p className="text-sm font-bold text-muted-foreground">الوحدات</p><p className="text-3xl font-black">{formatCompanyNumber(companySettings, units.length)}</p></div><DoorOpen className="size-7 text-primary" /></CardContent></Card>
-        <Card><CardContent className="flex items-center justify-between pt-6"><div><p className="text-sm font-bold text-muted-foreground">العقود النشطة</p><p className="text-3xl font-black">{formatCompanyNumber(companySettings, activeContractsCount)}</p><p className="text-xs text-muted-foreground">من أصل {formatCompanyNumber(companySettings, contracts.length)} عقود</p></div><FileText className="size-7 text-primary" /></CardContent></Card>
-        <Card><CardContent className="flex items-center justify-between pt-6"><div><p className="text-sm font-bold text-muted-foreground">الرصيد المستحق</p><p className="text-2xl font-black" dir="ltr">{formatMoney(financialSummary.outstandingBalance)}</p><p className="text-xs text-muted-foreground">{formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة</p></div><WalletCards className="size-7 text-primary" /></CardContent></Card>
-      </div>
+      <ResponsiveCardGrid>
+        <KpiCard label="العقارات" value={formatCompanyNumber(companySettings, properties.length)} icon={Building2} accent="primary" />
+        <KpiCard label="الوحدات" value={formatCompanyNumber(companySettings, units.length)} icon={DoorOpen} accent="sky" />
+        <KpiCard label="العقود النشطة" value={formatCompanyNumber(companySettings, activeContractsCount)} sub={`من أصل ${formatCompanyNumber(companySettings, contracts.length)} عقود`} icon={FileText} accent="emerald" />
+        <KpiCard label="الرصيد المستحق" value={formatMoney(financialSummary.outstandingBalance)} sub={`${formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
+      </ResponsiveCardGrid>
 
       <Card>
         <CardHeader><CardTitle>العقارات المرتبطة</CardTitle><CardDescription>تظهر فقط العلاقات النشطة الموجودة في `property_owners` مع عدد الوحدات والعقود لكل عقار.</CardDescription></CardHeader>

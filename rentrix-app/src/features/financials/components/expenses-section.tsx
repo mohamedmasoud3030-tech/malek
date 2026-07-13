@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
-import { Download, Edit, Eye, Plus, Printer } from 'lucide-react';
+import { Building2, Download, Edit, Eye, Plus, Printer, ReceiptText, Tags, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
@@ -11,6 +11,8 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
@@ -174,12 +176,12 @@ export function ExpensesSection({
           تكلفة طلبات الصيانة في قسم الصيانة تقديرية ولا تتحول تلقائياً إلى مصروف.
         </p>
 
-        <div className="grid grid-cols-2 gap-2 text-sm lg:grid-cols-4">
-          <div className="rounded-2xl border border-border/60 bg-background p-3"><span className="block text-xs text-muted-foreground">عدد المصاريف</span><strong className="mt-1 block text-lg tabular-nums">{summary.visibleCount}</strong></div>
-          <div className="rounded-2xl border border-border/60 bg-background p-3"><span className="block text-xs text-muted-foreground">الإجمالي</span><strong className="mt-1 block text-lg tabular-nums">{formatMoney(summary.visibleAmount)}</strong></div>
-          <div className="rounded-2xl border border-border/60 bg-background p-3"><span className="block text-xs text-muted-foreground">العقارات</span><strong className="mt-1 block text-lg tabular-nums">{summary.byPropertyCount}</strong></div>
-          <div className="rounded-2xl border border-border/60 bg-background p-3"><span className="block text-xs text-muted-foreground">التصنيفات</span><strong className="mt-1 block text-lg tabular-nums">{summary.byCategoryCount}</strong></div>
-        </div>
+        <ResponsiveCardGrid gap="sm">
+          <KpiCard label="عدد المصاريف" value={summary.visibleCount} icon={ReceiptText} accent="primary" compact />
+          <KpiCard label="الإجمالي" value={formatMoney(summary.visibleAmount)} icon={WalletCards} accent="amber" compact />
+          <KpiCard label="العقارات" value={summary.byPropertyCount} icon={Building2} accent="sky" compact />
+          <KpiCard label="التصنيفات" value={summary.byCategoryCount} icon={Tags} accent="violet" compact />
+        </ResponsiveCardGrid>
 
         <FilterBar
           filters={(
