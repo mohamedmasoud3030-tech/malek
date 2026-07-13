@@ -1,3 +1,4 @@
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { Owner, PropertyOwner, PropertyOwnerUpdatePayload, PropertyWithOwners } from './ownerService';
 
 export type OwnerFormValues = {
@@ -128,8 +129,15 @@ export function getOwnerDisplayLabel(owner: Pick<Owner, 'full_name' | 'display_n
   return owner.display_name?.trim() || owner.full_name;
 }
 
-export function isActivePropertyOwnerLink(link: Pick<PropertyOwner, 'ends_on'>): boolean {
-  return !link.ends_on;
+/**
+ * A dated ownership link stays active through its end date.  Treating every
+ * non-null end date as already ended made scheduled handovers disappear early.
+ */
+export function isActivePropertyOwnerLink(
+  link: Pick<PropertyOwner, 'ends_on'>,
+  asOf = getTodayLocalDateString(),
+): boolean {
+  return !link.ends_on || link.ends_on >= asOf;
 }
 
 function getActivePropertyOwnerLinks(property: Pick<PropertyWithOwners, 'property_owners'>): PropertyOwner[] {
