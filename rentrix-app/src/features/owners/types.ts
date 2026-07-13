@@ -1,4 +1,4 @@
-import type { OwnerDetailSnapshot, OwnerHubSnapshot } from './ownerService';
+import type { OwnerDetailSnapshot, OwnerHubSnapshot } from './services/owner-service';
 
 export type OwnersHubState =
   | Readonly<{ status: 'loading' }>

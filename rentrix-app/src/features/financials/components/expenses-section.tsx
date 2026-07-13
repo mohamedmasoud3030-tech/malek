@@ -15,9 +15,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
-import { escapeCsvValue, withUtf8Bom } from '@/lib/csvExport';
-import { downloadTextFile, printCurrentView } from '@/services/action-service';
-import { exportExpenseToPdf } from '@/services/pdfService';
+import { escapeCsvValue } from '@/lib/csvExport';
 import type { Expense, Property } from '@/types/domain';
 import { formatDate, formatMoney } from './financials-formatters';
 import {
@@ -27,6 +25,7 @@ import {
   type OperationalExpenseCategory,
   type OperationalExpenseFilterValues,
 } from '../expenses/operational-expenses';
+import { downloadExpenseCsv, exportExpenseVoucher as exportExpenseVoucherPdf, printExpenses } from '../expenses/expense-actions';
 import { getTodayLocalDateString } from '../financials-date-utils';
 
 export type ExpenseFormValues = {
@@ -78,10 +77,6 @@ export function buildExpensesCsv(expenses: readonly Expense[], propertyRows: rea
   ].join('\n');
 }
 
-function downloadCsv(filename: string, csv: string) {
-  downloadTextFile(filename, withUtf8Bom(csv), 'text/csv;charset=utf-8');
-}
-
 export function ExpensesSection({
   expenses,
   propertyRows,
@@ -108,19 +103,10 @@ export function ExpensesSection({
   const hasFilters = Boolean(filters.propertyId || filters.category || filters.costCenterId || filters.from || filters.to);
   const companySettings = useCompanySettingsContract();
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
-  const exportVisibleExpenses = () => downloadCsv(`rentrix-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
+  const exportVisibleExpenses = () => downloadExpenseCsv(`rentrix-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
   const exportExpenseVoucher = (expense: Expense) => {
     const property = propertyById.get(expense.property_id);
-    exportExpenseToPdf(expense, {
-      settings: {
-        general: { company: { name: companySettings.companyName } },
-        operational: { currency: companySettings.defaultCurrency },
-      },
-      contracts: [],
-      tenants: [],
-      units: [],
-      properties: property ? [property] : [],
-    });
+    exportExpenseVoucherPdf(expense, property, companySettings.companyName, companySettings.defaultCurrency);
   };
 
   useEffect(() => {
@@ -250,7 +236,7 @@ export function ExpensesSection({
                   { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => setDetailsExpense(expense) },
                   { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEditForm(expense), disabled: !onUpdateExpense },
                   { id: 'pdf', label: 'تصدير PDF', icon: Download, onClick: () => exportExpenseVoucher(expense) },
-                  { id: 'print', label: 'طباعة', icon: Printer, onClick: printCurrentView },
+                  { id: 'print', label: 'طباعة', icon: Printer, onClick: printExpenses },
                 ]}
               />
             ) },

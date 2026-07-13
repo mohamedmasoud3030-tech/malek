@@ -10,8 +10,8 @@ import {
   summarizeOwners,
   validateOwnerForm,
   validatePropertyOwnershipLinkForm,
-} from './ownerUiHelpers';
-import type { Owner, PropertyOwnerWithOwner, PropertyWithOwners } from './ownerService';
+} from './owner-ui-helpers';
+import type { Owner, PropertyOwnerWithOwner, PropertyWithOwners } from '../services/owner-service';
 
 const baseOwner: Owner = {
   id: 'owner-1',

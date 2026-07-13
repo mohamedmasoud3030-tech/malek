@@ -7,11 +7,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { useContracts } from '@/features/contracts/useContracts';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
-import { exportInvoiceToPdf } from '@/services/pdfService';
 import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { getTodayLocalDateString, isValidDateInput } from '../financials-date-utils';
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 import { summarizeInvoices, type InvoiceDetail, type InvoiceStatusFilter } from '../invoices/invoiceService';
+import { exportInvoiceDocument as exportInvoiceDocumentPdf } from '../invoices/invoice-actions';
 import { useGenerateInvoices, useInvoice, useInvoicesPaginated } from '../invoices/useInvoices';
 import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/paymentService';
 import { usePostPayment } from '../payments/usePayments';
@@ -259,7 +259,7 @@ export function InvoiceWorkspaceSection() {
     const contract = contractsQuery.data?.rows.find((candidate) => candidate.id === invoice.contract_id);
     if (!contract) return;
 
-    exportInvoiceToPdf(invoice, {
+    exportInvoiceDocumentPdf(invoice, {
       settings: pdfSettings,
       ...contractContextForDocument(contract),
     });

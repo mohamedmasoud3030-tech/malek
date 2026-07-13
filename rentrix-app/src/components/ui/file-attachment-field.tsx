@@ -1,6 +1,6 @@
-import { Paperclip, Trash2, Upload, X } from 'lucide-react';
+import { Paperclip, Upload, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useAttachmentUpload } from '@/hooks/use-attachment-upload';
 import { cn } from '@/lib/utils';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
@@ -28,6 +28,7 @@ export function FileAttachmentField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const uploadAttachment = useAttachmentUpload();
 
   const handleFile = async (file: File) => {
     setError(null);
@@ -43,17 +44,7 @@ export function FileAttachmentField({
 
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop() ?? 'bin';
-      const uniqueId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Date.now().toString(36)}`;
-      const path = `${Date.now()}-${uniqueId}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('attachments')
-        .upload(path, file, { upsert: false });
-
-      if (uploadError) throw new Error(uploadError.message);
-
-      const { data } = supabase.storage.from('attachments').getPublicUrl(path);
-      onChange(data.publicUrl);
+      onChange(await uploadAttachment(file));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'فشل رفع الملف');
     } finally {

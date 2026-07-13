@@ -7,7 +7,7 @@ import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
-import { listOwners, type Owner } from './ownerService';
+import { listOwners, type Owner } from './services/owner-service';
 import { groupAgreementsByTemporalStatus, type OwnerAgreement, type OwnerAgreementFormPayload } from './ownerAgreementService';
 import { useCreateOwnerAgreement, useOwnerAgreements, useUpdateOwnerAgreement } from './useOwnerAgreements';
 import { useQuery } from '@tanstack/react-query';

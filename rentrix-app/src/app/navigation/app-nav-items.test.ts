@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { mobileNavItems, navGroups, quickLinks, type NavItem } from './app-nav-items';
 
-const routeTreeSource = readFileSync(new URL('../../routeTree.ts', import.meta.url), 'utf8');
+const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const routePaths = new Set(Array.from(routeTreeSource.matchAll(/path: '([^']+)'/g), (match) => match[1]));
 
 const requiredOperationalRoutes = [

@@ -22,9 +22,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
-import { OwnerCheckbox } from './OwnerCheckbox';
-import { OwnerPropertySelect } from './OwnerPropertySelect';
-import type { Owner, PropertyOwner, PropertyWithOwners } from './ownerService';
+import { OwnerCheckbox } from './components/owner-checkbox';
+import { OwnerPropertySelect } from './components/owner-property-select';
+import type { Owner, PropertyOwner, PropertyWithOwners } from './services/owner-service';
 import {
   useCreateOwner,
   useLinkOwnerToProperty,
@@ -53,7 +53,7 @@ import {
   type OwnerFormValues,
   type OwnerWorkspaceRow,
   type PropertyOwnershipLinkFormValues,
-} from './ownerUiHelpers';
+} from './utils/owner-ui-helpers';
 
 // ─── local types & helpers ───────────────────────────────────────────────────
 
