@@ -1,6 +1,7 @@
 import type { Property, Unit } from '@/types/domain';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { unitStatusLabels } from '@/features/units/unit-schema';
+import { getUnitSelectionIssueForContractPeriod, isUnitSelectableForContractPeriod, type UnitAvailabilityConflictMap } from './domain/unitAvailability';
 
 export type ContractUnitOptionUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount'>;
 export type ContractUnitOptionProperty = Pick<Property, 'title' | 'address'> | null | undefined;
@@ -14,6 +15,7 @@ type ContractUnitOptionLabelParams = Readonly<{
 type ContractUnitSelectableParams = Readonly<{
   unit: ContractUnitOptionUnit;
   currentLinkedUnitId?: string | null;
+  conflictsByUnitId?: UnitAvailabilityConflictMap;
 }>;
 
 type ContractUnitSelectionParams = Readonly<{
@@ -21,6 +23,7 @@ type ContractUnitSelectionParams = Readonly<{
   propertyId: string;
   unitId: string;
   currentLinkedUnitId?: string | null;
+  conflictsByUnitId?: UnitAvailabilityConflictMap;
 }>;
 
 export function buildContractUnitOptionLabel({ unit, property, formatRent = formatDefaultCompanyMoney }: ContractUnitOptionLabelParams): string {
@@ -34,14 +37,10 @@ export function buildContractUnitOptionLabel({ unit, property, formatRent = form
   return parts.filter((part): part is string => Boolean(part)).join(' — ');
 }
 
-export function isUnitSelectableForContract({ unit, currentLinkedUnitId }: ContractUnitSelectableParams): boolean {
-  return unit.status === 'available' || unit.id === currentLinkedUnitId;
+export function isUnitSelectableForContract({ unit, currentLinkedUnitId, conflictsByUnitId }: ContractUnitSelectableParams): boolean {
+  return isUnitSelectableForContractPeriod({ unit, currentLinkedUnitId, conflictsByUnitId });
 }
 
-export function getContractUnitSelectionIssue({ units, propertyId, unitId, currentLinkedUnitId }: ContractUnitSelectionParams): string | null {
-  const unit = units.find((candidate) => candidate.id === unitId);
-  if (!unit) return 'اختر وحدة من قائمة العقار المحدد';
-  if (unit.property_id !== propertyId) return 'الوحدة المختارة لا تتبع العقار المحدد';
-  if (!isUnitSelectableForContract({ unit, currentLinkedUnitId })) return 'لا يمكن إنشاء عقد على وحدة غير متاحة';
-  return null;
+export function getContractUnitSelectionIssue({ units, propertyId, unitId, currentLinkedUnitId, conflictsByUnitId }: ContractUnitSelectionParams): string | null {
+  return getUnitSelectionIssueForContractPeriod({ units, propertyId, unitId, currentLinkedUnitId, conflictsByUnitId });
 }
