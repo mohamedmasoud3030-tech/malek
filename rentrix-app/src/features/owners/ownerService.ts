@@ -195,7 +195,7 @@ export function getOwnerDisplayName(owner: Pick<Owner, 'full_name' | 'display_na
 
 export function getPropertyOwnerDisplayName(property: Pick<Property, 'owner_name'> & { property_owners?: PropertyOwnerWithOwner[] | null }): string | null {
   const relationshipNames = (property.property_owners ?? [])
-    .filter((link) => !link.ends_on)
+    .filter((link) => !link.ends_on || link.ends_on >= getTodayLocalDate())
     .map((link) => link.owner ? getOwnerDisplayName(link.owner) : null)
     .filter((name): name is string => Boolean(name));
 
@@ -204,11 +204,11 @@ export function getPropertyOwnerDisplayName(property: Pick<Property, 'owner_name
 }
 
 export function getActiveOwnerLinks(property: Pick<PropertyWithOwners, 'property_owners'>): PropertyOwnerWithOwner[] {
-  return property.property_owners.filter((link) => !link.ends_on);
+  return property.property_owners.filter((link) => !link.ends_on || link.ends_on >= getTodayLocalDate());
 }
 
 export function getOwnerActivePropertyCount(ownerId: string, properties: readonly PropertyWithOwners[]): number {
-  return properties.filter((property) => property.property_owners.some((link) => link.owner_id === ownerId && !link.ends_on)).length;
+  return properties.filter((property) => property.property_owners.some((link) => link.owner_id === ownerId && (!link.ends_on || link.ends_on >= getTodayLocalDate()))).length;
 }
 
 export function summarizeOwnerFinancials(invoices: readonly Pick<OwnerInvoice, 'amount' | 'paid_amount' | 'deleted_at'>[]): OwnerFinancialSummary {
@@ -358,7 +358,7 @@ export async function listOwnerProperties(ownerId: string): Promise<OwnerPropert
     .from('properties')
     .select('*, property_owners!inner(*)')
     .eq('property_owners.owner_id', ownerId)
-    .is('property_owners.ends_on', null)
+    .or(`ends_on.is.null,ends_on.gte.${getTodayLocalDate()}`, { referencedTable: 'property_owners' })
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .returns<OwnerProperty[]>();
