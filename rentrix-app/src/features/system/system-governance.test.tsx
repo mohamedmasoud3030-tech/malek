@@ -79,8 +79,7 @@ describe('system and governance route authorization', () => {
     const systemItems: readonly NavItem[] = navGroups
       .find(([sectionTitle]) => sectionTitle === 'إدارة النظام')?.[1] ?? [];
     const settingsItems: readonly NavItem[] = navGroups
-      .find(([sectionTitle]) => sectionTitle === 'الإعدادات والحساب')?.[1] ?? [];
-    console.log("Settings Items before filter:", settingsItems);
+      .find(([sectionTitle]) => sectionTitle === 'الإعدادات')?.[1] ?? [];
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = systemItems.map(([to]) => to);
 
@@ -90,10 +89,8 @@ describe('system and governance route authorization', () => {
     expect(systemRoutes).not.toContain('/change-password');
     const filteredSettingsItems = settingsItems.filter(([, , , , permission]) => {
       const canShow = canShowNavigationItem(adminContext, permission);
-      console.log(`Checking permission ${permission} for adminContext, result: ${canShow}`);
       return canShow;
     }).map(([to]) => to);
-    console.log("Filtered Settings Items:", filteredSettingsItems);
     expect(filteredSettingsItems).toEqual(expect.arrayContaining(['/settings']));
   });
 });

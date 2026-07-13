@@ -122,7 +122,7 @@ describe('app route and navigation parity', () => {
 
   it('keeps arrears out of bottom navigation while still reachable from the financials group in the drawer', () => {
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
-    const financialsGroup = navGroups.find(([sectionTitle]) => sectionTitle === 'الماليات والتحصيل');
+    const financialsGroup = navGroups.find(([sectionTitle]) => sectionTitle === 'الماليات');
 
     expect(mobileNavPaths).not.toContain('/arrears');
     expect(financialsGroup?.[1].map(([to]) => to)).toContain('/arrears');

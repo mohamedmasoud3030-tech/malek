@@ -1,8 +1,10 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { Plus, Save } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -66,24 +68,26 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
   const updateMutation = useUpdateOwnerAgreement(propertyId);
   const [editing, setEditing] = useState<OwnerAgreement | null>(null);
   const [form, setForm] = useState<AgreementFormState>(emptyForm);
-  const [message, setMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const grouped = useMemo(() => groupAgreementsByTemporalStatus(agreementsQuery.data ?? []), [agreementsQuery.data]);
   const owners = ownersQuery.data ?? [];
 
-  const startCreate = () => { setEditing(null); setForm({ ...emptyForm, owner_id: owners[0]?.id ?? '' }); setMessage(null); };
-  const startEdit = (agreement: OwnerAgreement) => { setEditing(agreement); setForm(agreementToForm(agreement)); setMessage(null); };
+  const startCreate = () => { setEditing(null); setForm({ ...emptyForm, owner_id: owners[0]?.id ?? '' }); setFormError(null); setFormOpen(true); };
+  const startEdit = (agreement: OwnerAgreement) => { setEditing(agreement); setForm(agreementToForm(agreement)); setFormError(null); setFormOpen(true); };
+  const closeForm = () => { setFormOpen(false); setEditing(null); setForm(emptyForm); setFormError(null); };
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setMessage(null);
+    setFormError(null);
     try {
       const payload = toPayload(propertyId, form);
       if (editing) await updateMutation.mutateAsync({ agreementId: editing.id, payload });
       else await createMutation.mutateAsync(payload);
-      setMessage(editing ? 'تم تحديث الاتفاقية ضمن قيود العقود المرتبطة.' : 'تم إنشاء الاتفاقية.');
-      setEditing(null); setForm(emptyForm);
+      toast.success(editing ? 'تم تحديث الاتفاقية ضمن قيود العقود المرتبطة.' : 'تم إنشاء الاتفاقية.');
+      closeForm();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'تعذر حفظ اتفاقية المالك.');
+      setFormError(error instanceof Error ? error.message : 'تعذر حفظ اتفاقية المالك.');
     }
   }
 
@@ -108,10 +112,16 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
           <section className="space-y-3"><h3 className="text-sm font-black">المجدولة</h3>{grouped.scheduled.length ? grouped.scheduled.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="blue" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات مستقبلية.</p>}</section>
           <section className="space-y-3"><h3 className="text-sm font-black">المنتهية</h3>{grouped.ended.length ? grouped.ended.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="gray" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات منتهية.</p>}</section>
         </div>
-        {(editing || form.owner_id || message) ? (
-          <form className="grid gap-4 rounded-2xl border border-border bg-muted/30 p-4 md:grid-cols-2" onSubmit={submit}>
-            <div className="md:col-span-2"><h3 className="font-black">{editing ? 'تعديل اتفاقية ضمن القيود' : 'إنشاء اتفاقية'}</h3><p className="text-sm text-muted-foreground">أي تعديل يخرج عقداً قائماً من فترة الاتفاقية سيُرفض من قاعدة البيانات.</p></div>
-            {message ? <p role="alert" className="md:col-span-2 text-sm font-bold text-primary">{message}</p> : null}
+      </CardContent>
+      <EntityForm.Overlay
+        open={formOpen}
+        onOpenChange={(open) => { if (!open) closeForm(); else setFormOpen(true); }}
+        title={editing ? 'تعديل اتفاقية ضمن القيود' : 'إنشاء اتفاقية مكتب ومالك'}
+        description="أي تعديل يخرج عقداً قائماً من فترة الاتفاقية سيُرفض من قاعدة البيانات."
+        className="max-w-2xl"
+      >
+          <EntityForm.Root className="md:grid-cols-2" onSubmit={submit}>
+            <EntityForm.ErrorSummary message={formError} className="md:col-span-2" />
             <label className="grid gap-2 text-sm font-bold">المالك<Select value={form.owner_id} onChange={(e) => setForm((v) => ({ ...v, owner_id: e.target.value }))} required><option value="">اختر المالك</option>{owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.display_name || owner.full_name}</option>)}</Select></label>
             <label className="grid gap-2 text-sm font-bold">نوع الاتفاقية<Select value={form.agreement_type} onChange={(e) => setForm((v) => ({ ...v, agreement_type: e.target.value as AgreementFormState['agreement_type'] }))}><option value="property_management">إدارة عقار</option><option value="master_lease">استئجار رئيسي</option></Select></label>
             <label className="grid gap-2 text-sm font-bold">نوع العمولة<Select value={form.commission_type} onChange={(e) => setForm((v) => ({ ...v, commission_type: e.target.value as AgreementFormState['commission_type'] }))}><option value="RATE">نسبة</option><option value="FIXED_MONTHLY">مبلغ شهري ثابت</option></Select></label>
@@ -119,10 +129,9 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
             <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" value={form.starts_on} onChange={(e) => setForm((v) => ({ ...v, starts_on: e.target.value }))} required /></label>
             <label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" value={form.ends_on} onChange={(e) => setForm((v) => ({ ...v, ends_on: e.target.value }))} /></label>
             <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={form.notes} onChange={(e) => setForm((v) => ({ ...v, notes: e.target.value }))} /></label>
-            <div className="flex gap-2 md:col-span-2"><Button type="submit" disabled={saving}><Save className="me-2 size-4" />{saving ? 'جار الحفظ...' : 'حفظ الاتفاقية'}</Button><Button type="button" variant="ghost" onClick={() => { setEditing(null); setForm(emptyForm); }}>إلغاء</Button></div>
-          </form>
-        ) : null}
-      </CardContent>
+            <EntityForm.Actions className="md:col-span-2" onCancel={closeForm} isSubmitting={saving} submitLabel={saving ? 'جار الحفظ...' : 'حفظ الاتفاقية'} />
+          </EntityForm.Root>
+      </EntityForm.Overlay>
     </Card>
   );
 }

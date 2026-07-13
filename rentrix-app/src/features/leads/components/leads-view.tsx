@@ -1,4 +1,4 @@
-import { Archive, Edit, Plus, UserCheck, Users, UsersRound } from 'lucide-react';
+import { Archive, CheckCircle2, Edit, Plus, UserCheck, Users, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -102,7 +103,7 @@ export function LeadsView(props: Props) {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <ResponsiveCardGrid>
         <KpiCard
           label="إجمالي العملاء"
           value={rows.length}
@@ -124,11 +125,18 @@ export function LeadsView(props: Props) {
           value={qualifiedLeads}
           icon={UserCheck}
           accent="emerald"
-          sub={`${convertedLeads} تم تحويلهم`}
+          sub="جاهزون للخطوة التالية"
           trend={qualifiedLeads > 0 ? 'up' : 'neutral'}
           trendValue={String(qualifiedLeads)}
         />
-      </div>
+        <KpiCard
+          label="تم تحويلهم"
+          value={convertedLeads}
+          icon={CheckCircle2}
+          accent="sky"
+          sub="سجلات انتقلت لمسار التعامل"
+        />
+      </ResponsiveCardGrid>
 
       <Card>
         <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]">

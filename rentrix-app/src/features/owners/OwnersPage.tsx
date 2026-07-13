@@ -311,22 +311,24 @@ type OwnershipLinkFormProps = Readonly<{
 function OwnershipLinkForm({ values, availableProperties, editingLink, error, isSaving, onCancelEdit, onSubmit, onValueChange }: OwnershipLinkFormProps) {
   const isEditing = Boolean(editingLink);
   return (
-    <form className="rounded-2xl border border-border bg-card p-4" onSubmit={onSubmit}>
-      <h3 className="font-black">{isEditing ? 'تعديل علاقة الملكية' : 'ربط عقار'}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{isEditing ? 'تحديث نسبة الملكية والحالة والتواريخ بدون إنشاء سجل مالي.' : 'إضافة علاقة ملكية بسيطة بدون إنشاء سجل مالي.'}</p>
-      {error ? <div className="mt-3 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</div> : null}
-      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_8rem]">
+    <EntityForm.Root onSubmit={onSubmit}>
+      <EntityForm.ErrorSummary message={error} />
+      <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
         <OwnerPropertySelect value={values.property_id} onValueChange={(propertyId) => onValueChange('property_id', propertyId)} disabled={isEditing || !availableProperties.length} properties={availableProperties} />
         <Input type="number" min="0.01" inputMode="decimal" max="100" step="0.01" value={values.ownership_percentage} onChange={(e) => onValueChange('ownership_percentage', e.target.value)} aria-label="نسبة الملكية" />
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Field label="تاريخ البداية"><Input type="date" value={values.starts_on} onChange={(e) => onValueChange('starts_on', e.target.value)} /></Field>
         <Field label="تاريخ النهاية"><Input type="date" value={values.ends_on} onChange={(e) => onValueChange('ends_on', e.target.value)} /></Field>
       </div>
-      <OwnerCheckbox checked={values.is_primary} label="مالك أساسي" onCheckedChange={(checked) => onValueChange('is_primary', checked)} className="mt-3 flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold" />
-      <Button className="mt-3 w-full" type="submit" disabled={!values.property_id || isSaving}>{isEditing ? 'حفظ علاقة الملكية' : 'ربط المالك بالعقار'}</Button>
-      {isEditing && <Button className="mt-2 w-full" type="button" variant="secondary" onClick={onCancelEdit}>إلغاء التعديل</Button>}
-    </form>
+      <OwnerCheckbox checked={values.is_primary} label="مالك أساسي" onCheckedChange={(checked) => onValueChange('is_primary', checked)} className="flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold" />
+      <EntityForm.Actions
+        onCancel={onCancelEdit}
+        isSubmitting={isSaving}
+        submitDisabled={!values.property_id}
+        submitLabel={isEditing ? 'حفظ علاقة الملكية' : 'ربط المالك بالعقار'}
+      />
+    </EntityForm.Root>
   );
 }
 
@@ -345,6 +347,7 @@ export function OwnersPage() {
   const [linkFormValues, setLinkFormValues] = useState<PropertyOwnershipLinkFormValues>(emptyPropertyOwnershipLinkFormValues);
   const [linkFormError, setLinkFormError] = useState<string | null>(null);
   const [editingLink, setEditingLink] = useState<EditingPropertyOwnerLink | null>(null);
+  const [linkFormOpen, setLinkFormOpen] = useState(false);
 
   const owners = ownersQuery.data ?? [];
   const properties = propertiesQuery.data ?? [];
@@ -372,8 +375,15 @@ export function OwnersPage() {
     setEditingLink({ id: link.id, propertyId: link.property_id, ownerId: link.owner_id });
     setLinkFormValues(propertyOwnerLinkToFormValues(link));
     setLinkFormError(null);
+    setLinkFormOpen(true);
   };
-  const resetLinkForm = () => { setEditingLink(null); setLinkFormValues(emptyPropertyOwnershipLinkFormValues); setLinkFormError(null); };
+  const resetLinkForm = () => { setEditingLink(null); setLinkFormValues(emptyPropertyOwnershipLinkFormValues); setLinkFormError(null); setLinkFormOpen(false); };
+  const openLinkForm = () => {
+    setEditingLink(null);
+    setLinkFormValues(emptyPropertyOwnershipLinkFormValues);
+    setLinkFormError(null);
+    setLinkFormOpen(true);
+  };
   const handleEndPropertyOwnership = async (link: PropertyOwner) => {
     try {
       await unlinkMutation.mutateAsync({ linkId: link.id, propertyId: link.property_id, ownerId: link.owner_id });
@@ -453,9 +463,14 @@ export function OwnersPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>علاقات الملكية</CardTitle>
-            <CardDescription>{selectedOwner ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(selectedOwner)}` : 'اختر مالكاً لعرض علاقات الملكية.'}</CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
+            <div>
+              <CardTitle>علاقات الملكية</CardTitle>
+              <CardDescription>{selectedOwner ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(selectedOwner)}` : 'اختر مالكاً لعرض علاقات الملكية.'}</CardDescription>
+            </div>
+            <Button type="button" variant="secondary" disabled={!selectedOwner || availableProperties.length === 0} onClick={openLinkForm}>
+              <Plus className="me-2 size-4" />ربط عقار
+            </Button>
           </CardHeader>
           <CardContent className="space-y-5">
             {selectedOwner ? (
@@ -463,7 +478,6 @@ export function OwnersPage() {
                 <div className="space-y-3">
                   <OwnerRelationshipsList linkedProperties={linkedProperties} endLinkPending={unlinkMutation.isPending} onEditLink={beginEditLink} onEndLink={handleEndPropertyOwnership} />
                 </div>
-                <OwnershipLinkForm values={linkFormValues} availableProperties={availableProperties} editingLink={editingLink} error={linkFormError} isSaving={isSavingLink} onCancelEdit={resetLinkForm} onSubmit={handleLinkProperty} onValueChange={setLinkField} />
               </>
             ) : null}
           </CardContent>
@@ -471,6 +485,14 @@ export function OwnersPage() {
       </div>
 
       <OwnerFormDialog owner={editingOwner} open={formOpen} onOpenChange={setFormOpen} />
+      <EntityForm.Overlay
+        open={linkFormOpen}
+        onOpenChange={(open) => { if (!open) resetLinkForm(); else setLinkFormOpen(true); }}
+        title={editingLink ? 'تعديل علاقة الملكية' : 'ربط عقار بالمالك'}
+        description={editingLink ? 'تحديث النسبة والتواريخ دون إنشاء سجل مالي.' : 'أضف علاقة ملكية مستقلة عن اتفاقية إدارة المكتب والحسابات المالية.'}
+      >
+        <OwnershipLinkForm values={linkFormValues} availableProperties={availableProperties} editingLink={editingLink} error={linkFormError} isSaving={isSavingLink} onCancelEdit={resetLinkForm} onSubmit={handleLinkProperty} onValueChange={setLinkField} />
+      </EntityForm.Overlay>
     </PageLayout>
   );
 }

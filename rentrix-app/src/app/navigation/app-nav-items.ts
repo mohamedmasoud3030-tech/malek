@@ -22,24 +22,22 @@ export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]
  *    route itself uses; we never hide them from users who can access them.
  */
 export const navGroups = [
-  ['الرئيسية', [['/', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
-  ['المحفظة', [
+  ['نظرة عامة', [['/', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
+  ['الأصول والعلاقات', [
     ['/properties', 'properties', 'ملفات العقارات والأصول', Building2],
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
     ['/lands', 'lands', 'إدارة قطع الأراضي ومتابعة حالتها', MapPinned, 'lands.view'],
-  ]],
-  ['الأطراف والعلاقات', [
     ['/people', 'people', 'دليل جهات التعامل', Users],
     ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
     ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
   ]],
-  ['التشغيل والصيانة', [
+  ['التشغيل اليومي', [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
     ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'communication.view'],
   ]],
-  ['الماليات والتحصيل', [
+  ['الماليات', [
     ['/financials', 'financials', 'لوحة الماليات والتحصيل', WalletCards],
     ['/invoices', 'invoices', 'الفواتير المستحقة', ReceiptText],
     ['/receipts', 'collectionsReceipts', 'التحصيلات والإيصالات', ReceiptText],
@@ -47,7 +45,7 @@ export const navGroups = [
     ['/arrears', 'arrears', 'متابعة المبالغ المتأخرة', ClipboardList],
     ['/bank-reconciliation', 'bankReconciliation', 'مطابقة حركات كشف البنك مع السجلات المالية', Landmark],
   ]],
-  ['التقارير والتحليلات', [
+  ['التحليل والنمو', [
     [
       '/reports',
       'reportsAndStatements',
@@ -60,12 +58,10 @@ export const navGroups = [
       'مساعد قراءة فقط لتلخيص المتأخرات والتجديدات واللقطات المالية',
       Bot,
     ],
-  ]],
-  ['المبيعات والعمولات', [
     ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
     ['/commissions', 'commissions', 'تتبع عمولات المكتب وحالات الاستحقاق', BadgeDollarSign, 'commissions.view'],
   ]],
-  ['الإعدادات والحساب', [
+  ['الإعدادات', [
     ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، والحساب', Settings, 'settings.manage'],
   ]],
   ['إدارة النظام', [
@@ -84,10 +80,10 @@ export const mobileNavItems = [
 ] as const satisfies readonly MobileNavItem[];
 
 export const quickLinks = [
-  ['/properties/new', 'إضافة عقار', Building2],
-  ['/people/new', 'إضافة شخص', Users],
-  ['/contracts/new', 'إنشاء عقد', FileText],
-  ['/invoices', 'قبض دفعة', ReceiptText],
+  ['/properties', 'العقارات', Building2],
+  ['/people', 'الأشخاص', Users],
+  ['/contracts', 'العقود', FileText],
+  ['/invoices', 'الفواتير', ReceiptText],
 ] as const;
 
 export type QuickLinkRoute = (typeof quickLinks)[number][0];

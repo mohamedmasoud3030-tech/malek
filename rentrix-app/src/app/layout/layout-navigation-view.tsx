@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Lock, Plus, Sparkles } from 'lucide-react';
+import { Lock, Plus } from 'lucide-react';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext } from '@/features/auth/permissions';
 import { cn } from '@/lib/utils';
 import { mobileNavItems, navGroups, quickLinks, type MobileNavItem, type QuickLinkRoute } from '@/app/navigation/app-nav-items';
@@ -14,7 +14,7 @@ export function NavigationLinks({
   onNavigate,
 }: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {navGroups.map(([sectionTitle, items, adminOnly]) => {
         // UX-019: hide the entire admin group when the user has no admin-style permission
         // across any of its entries.
@@ -30,18 +30,18 @@ export function NavigationLinks({
         if (visibleItems.length === 0) return null;
 
         return (
-          <section key={sectionTitle} className="space-y-1.5">
+          <section key={sectionTitle} className="space-y-1">
             {expanded ? (
               <div className="flex items-center gap-2 px-3 pb-1">
-                <span aria-hidden="true" className="inline-block size-1.5 rounded-full bg-primary/70" />
-                <p className="text-[10px] font-black tracking-[0.16em] text-sidebar-foreground/55">
+                <span aria-hidden="true" className="inline-block h-3 w-0.5 rounded-full bg-cyan-300/80" />
+                <p className="text-[10px] font-black tracking-[0.13em] text-sidebar-foreground/60">
                   {sectionTitle}
                 </p>
               </div>
             ) : (
               <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />
             )}
-            {items.map(([to, labelKey, description, Icon, permission]) => {
+            {items.map(([to, labelKey, _description, Icon, permission]) => {
               const isLocked = permission && !canAccessRoute(authorization, permission);
               const isHidden = !canShowNavigationItem(authorization, permission);
 
@@ -51,7 +51,7 @@ export function NavigationLinks({
                 return (
                   <div
                     key={`${to}:${labelKey}`}
-                    className="group flex min-h-11 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sidebar-foreground/55 opacity-70"
+                    className="group flex min-h-11 items-center gap-3 rounded-xl border border-white/8 bg-white/[0.025] px-3 py-2 text-sidebar-foreground/55 opacity-70"
                     title={`${sharedLabel(labelKey)} — تتطلب صلاحية`}
                   >
                     <Icon className="size-5 shrink-0" aria-hidden="true" />
@@ -61,9 +61,6 @@ export function NavigationLinks({
                           <span className="block truncate text-[13px] font-bold">{sharedLabel(labelKey)}</span>
                           <Lock className="size-3 shrink-0 text-warning/80" aria-hidden="true" />
                         </div>
-                        <span className="block truncate text-[10px] font-bold text-sidebar-foreground/45">
-                          {description}
-                        </span>
                       </span>
                     ) : null}
                   </div>
@@ -79,19 +76,15 @@ export function NavigationLinks({
                   title={expanded ? undefined : sharedLabel(labelKey)}
                   activeOptions={{ exact: to === '/' }}
                   className={cn(
-                    'group relative flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2 text-sidebar-foreground transition-all',
-                    'hover:-translate-y-0.5 hover:bg-white/10 hover:text-white',
-                    '[&.active]:bg-primary [&.active]:text-primary-foreground [&.active]:shadow-[0_8px_22px_-12px_rgba(0,0,0,0.55)]',
-                    '[&.active]:before:absolute [&.active]:before:-end-1 [&.active]:before:top-1/2 [&.active]:before:size-2 [&.active]:before:-translate-y-1/2 [&.active]:before:rounded-full [&.active]:before:bg-white',
+                    'group relative flex min-h-11 items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sidebar-foreground transition-all',
+                    'hover:bg-white/[0.075] hover:text-white',
+                    '[&.active]:border-white/10 [&.active]:bg-white/[0.13] [&.active]:text-white [&.active]:shadow-[inset_-3px_0_0_0_hsl(var(--primary)),0_10px_28px_-18px_rgba(0,0,0,0.75)]',
                   )}
                 >
                   <Icon className="size-5 shrink-0 transition-transform group-hover:scale-110" aria-hidden="true" />
                   {expanded ? (
                     <span className="min-w-0">
                       <span className="block truncate text-[13px] font-black">{sharedLabel(labelKey)}</span>
-                      <span className="block truncate text-[10px] font-bold text-sidebar-foreground/55 group-hover:text-white/75 [&.active]:text-primary-foreground/85">
-                        {description}
-                      </span>
                     </span>
                   ) : null}
                 </Link>
@@ -109,26 +102,27 @@ export function WorkspaceCard({
   compact = false,
 }: Readonly<{ onQuickLink: (to: QuickLinkRoute) => void; compact?: boolean }>) {
   return (
-    <section className={cn('rounded-2xl border border-white/10 bg-white/[0.06] p-3', compact ? 'mt-3' : 'mt-5')}>
+    <section className={cn('rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur', compact ? 'mt-3' : 'mt-5')}>
       <div className="mb-2 flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-black text-white">مركز العمل</p>
-          <p className="text-[10px] font-bold text-sidebar-foreground/55">اختصارات عملية لإنجاز أسرع</p>
+          <p className="text-xs font-black text-white">وصول سريع</p>
+          <p className="text-[10px] font-bold text-sidebar-foreground/60">افتح مساحة العمل ثم أضف من الفورم المنبثق</p>
         </div>
-        <Sparkles className="size-4 text-primary" />
+        <Plus className="size-4 text-cyan-300" />
       </div>
-      {quickLinks.map(([to, title, Icon]) => (
-        <button
-          key={to}
-          type="button"
-          onClick={() => onQuickLink(to)}
-          className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-right text-[11px] font-black text-sidebar-foreground/80 transition hover:bg-white/10 hover:text-white"
-        >
-          <Icon className="size-4 shrink-0 text-primary transition-transform group-hover:scale-110" />
-          <span>{title}</span>
-          <Plus className="ms-auto size-3.5 shrink-0 opacity-50" />
-        </button>
-      ))}
+      <div className="grid grid-cols-2 gap-1.5">
+        {quickLinks.map(([to, title, Icon]) => (
+          <button
+            key={to}
+            type="button"
+            onClick={() => onQuickLink(to)}
+            className="group flex min-h-16 min-w-0 flex-col items-start justify-between rounded-xl border border-white/8 bg-black/10 p-2.5 text-right text-[10px] font-black text-sidebar-foreground/80 transition hover:border-white/15 hover:bg-white/10 hover:text-white"
+          >
+            <Icon className="size-4 shrink-0 text-cyan-300 transition-transform group-hover:scale-110" />
+            <span className="line-clamp-2">{title}</span>
+          </button>
+        ))}
+      </div>
     </section>
   );
 }
@@ -179,11 +173,11 @@ export function CollapsedWorkspaceMenu({
           'flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] px-0 py-2 text-sidebar-foreground transition',
           'hover:-translate-y-0.5 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
         )}
-        aria-label={isOpen ? 'إغلاق اختصارات الإنشاء' : 'فتح اختصارات الإنشاء'}
+        aria-label={isOpen ? 'إغلاق الوصول السريع' : 'فتح الوصول السريع'}
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
         aria-haspopup="dialog"
-        title="اختصارات الإنشاء"
+        title="الوصول السريع"
         onClick={() => setIsOpen((current) => !current)}
       >
         <Plus className="size-5" aria-hidden="true" />
@@ -194,10 +188,10 @@ export function CollapsedWorkspaceMenu({
           className="absolute end-full top-0 z-50 me-2 w-56 rounded-2xl border border-white/10 bg-sidebar p-2 text-sidebar-foreground shadow-sidebar"
         >
           <div className="border-b border-white/10 px-2 pb-2">
-            <p className="text-xs font-black text-white">إنشاء سريع</p>
-            <p className="text-[10px] font-bold text-sidebar-foreground/55">اختر العملية المطلوبة</p>
+            <p className="text-xs font-black text-white">وصول سريع</p>
+            <p className="text-[10px] font-bold text-sidebar-foreground/55">افتح مساحة العمل المطلوبة</p>
           </div>
-          <div className="mt-2 space-y-1" aria-label="اختصارات الإنشاء">
+          <div className="mt-2 space-y-1" aria-label="روابط الوصول السريع">
             {quickLinks.map(([to, title, Icon]) => (
               <button
                 key={to}

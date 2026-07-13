@@ -23,15 +23,15 @@ function statusLabel(status: SyncStatus) {
 function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
   return (
     <div className={cn('flex min-w-0 items-center gap-3', !expanded && 'justify-center')}>
-      <div className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-lg font-black text-slate-950 shadow-lg" aria-hidden="true">
+      <div className="relative grid size-11 shrink-0 place-items-center rounded-[1.15rem] bg-gradient-to-br from-white to-cyan-100 text-lg font-black text-slate-950 shadow-[0_12px_32px_-12px_rgba(34,211,238,0.8)]" aria-hidden="true">
         R
-        <span className="absolute -bottom-1 -left-1 size-3 rounded-full border-2 border-sidebar bg-success" />
+        <span className="absolute -bottom-1 -left-1 size-3 rounded-full border-2 border-sidebar bg-emerald-400" />
       </div>
       {expanded ? (
         <div className="min-w-0">
-          <p className="truncate text-xl font-black text-white">Rentrix</p>
-          <p className="truncate text-xs font-bold text-sidebar-foreground/65">إدارة عقارية بوضوح وسرعة</p>
-          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-success">
+          <p className="truncate text-xl font-black tracking-tight text-white">Rentrix</p>
+          <p className="truncate text-[11px] font-bold text-sidebar-foreground/70">مكتبك العقاري في مساحة واحدة</p>
+          <p className="mt-1 flex items-center gap-1 text-[10px] font-bold text-emerald-300">
             <ShieldCheck className="size-3" aria-hidden="true" />
             مساحة عمل آمنة
           </p>
@@ -61,10 +61,10 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="animate-panel-in fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,86vw)] max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar p-0 text-sidebar-foreground shadow-sidebar sm:max-h-none sm:w-[min(20rem,86vw)] sm:p-0 lg:hidden"
+        className="animate-panel-in fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-white/10 bg-[linear-gradient(165deg,hsl(var(--sidebar)),hsl(var(--sidebar-accent))_145%)] p-0 text-sidebar-foreground shadow-2xl sm:max-h-none sm:w-[min(20rem,88vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        <div className="h-[3px] w-full bg-accent" />
+        <div className="h-1 w-full bg-gradient-to-l from-cyan-400 via-primary to-emerald-400" />
         {/* Brand bar with top safe-area inset for notch/status-bar */}
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/10 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
           <Brand expanded />
@@ -172,8 +172,8 @@ export function AppShell() {
         />
       ) : null}
 
-      <aside className={cn('fixed inset-y-0 right-0 z-30 hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20 overflow-visible' : 'w-80 overflow-hidden')}>
-        <div className="h-[3px] w-full bg-accent" />
+      <aside data-sidebar className={cn('fixed inset-y-0 right-0 z-30 hidden border-l border-white/10 bg-[linear-gradient(165deg,hsl(var(--sidebar)),hsl(var(--sidebar-accent))_150%)] text-sidebar-foreground shadow-[0_0_60px_-30px_rgba(15,23,42,0.8)] transition-all duration-300 lg:flex lg:flex-col', sidebarCollapsed ? 'w-20 overflow-visible' : 'w-72 overflow-hidden')}>
+        <div className="h-1 w-full bg-gradient-to-l from-cyan-400 via-primary to-emerald-400" />
         <div className="min-h-24 border-b border-white/10 px-5 py-5"><Brand expanded={isSidebarExpanded} /></div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
           <NavigationLinks authorization={authorization} expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
@@ -188,7 +188,7 @@ export function AppShell() {
         </div>
       </aside>
 
-      <div className={cn('w-full transition-all duration-300 lg:pe-80', sidebarCollapsed && 'lg:pe-20')}>
+      <div className={cn('w-full transition-all duration-300 lg:pe-72', sidebarCollapsed && 'lg:pe-20')}>
         {/* Sticky header with top safe-area inset for notch */}
         <header className="sticky top-0 z-20 border-b border-border bg-background/82 pt-[env(safe-area-inset-top,0px)] backdrop-blur-2xl">
           <div className="flex min-h-16 items-center gap-2 px-3 py-2 sm:min-h-20 sm:px-5">

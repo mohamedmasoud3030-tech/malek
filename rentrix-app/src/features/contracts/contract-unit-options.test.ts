@@ -23,7 +23,7 @@ describe('contract unit option helpers', () => {
   });
 
   it('rejects units with overlapping draft or active contracts', () => {
-    const conflictsByUnitId = new Map([['unit-occupied', { id: 'contract-1', unit_id: 'unit-occupied', start_date: '2026-09-01', end_date: '2027-08-31', status: 'active' }]]);
+    const conflictsByUnitId = new Map([['unit-occupied', { id: 'contract-1', unit_id: 'unit-occupied', start_date: '2026-09-01', end_date: '2027-08-31', status: 'active' as const }]]);
     expect(isUnitSelectableForContract({ unit: unit({ id: 'unit-occupied', status: 'occupied' }), conflictsByUnitId })).toBe(false);
     expect(getContractUnitSelectionIssue({ units: [unit({ id: 'unit-occupied', status: 'occupied' })], propertyId: 'property-1', unitId: 'unit-occupied', conflictsByUnitId })).toContain('عقد نشط متداخل');
   });
