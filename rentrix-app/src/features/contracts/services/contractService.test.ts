@@ -30,8 +30,21 @@ describe('renewContract', () => {
         new_start: '2026-07-01',
         new_end: '2027-06-30',
         new_amount: 12000,
+        agreement_id: null,
       },
     });
+  });
+
+  it('passes a selected covering agreement when renewing under a new owner agreement', async () => {
+    const result = { status: 'renewed', old_contract_id: 'contract-1', new_contract_id: 'contract-2', agreement_id: '00000000-0000-4000-9000-000000000001' } as const;
+    supabaseMock.rpc.mockResolvedValue({ data: result, error: null });
+    const { renewContract } = await import('./contractService');
+
+    await expect(renewContract('contract-1', { new_start: '2026-07-01', new_end: '2027-06-30', new_amount: 12000, agreement_id: result.agreement_id })).resolves.toEqual(result);
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('renew_contract_atomic', expect.objectContaining({
+      new_contract_data: expect.objectContaining({ agreement_id: result.agreement_id }),
+    }));
   });
 
   it('extracts the returned new_contract_id from the parsed object', async () => {

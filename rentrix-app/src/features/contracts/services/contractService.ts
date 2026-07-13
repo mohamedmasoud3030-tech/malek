@@ -128,6 +128,7 @@ export async function renewContract(contractId: string, payload: RenewalPayload)
       new_start: payload.new_start,
       new_end: payload.new_end,
       new_amount: payload.new_amount,
+      agreement_id: payload.agreement_id ?? null,
     },
   });
   if (error) throw error;

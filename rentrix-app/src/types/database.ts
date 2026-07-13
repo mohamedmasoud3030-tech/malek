@@ -610,6 +610,14 @@ export type Database = {
         };
         Returns: { property_id: string; agreement_id: string };
       };
+      create_owner_agreement_atomic: {
+        Args: { payload: Json };
+        Returns: Database['public']['Tables']['owner_agreements']['Row'];
+      };
+      update_owner_agreement_atomic: {
+        Args: { p_agreement_id: string; payload: Json };
+        Returns: Database['public']['Tables']['owner_agreements']['Row'];
+      };
       create_contract_atomic: {
         Args: {
           p_property_id: string;
@@ -630,7 +638,7 @@ export type Database = {
       };
       renew_contract_atomic: {
         Args: { old_contract_id: string; new_contract_data: Json };
-        Returns: { status: 'renewed'; old_contract_id: string; new_contract_id: string };
+        Returns: { status: 'renewed'; old_contract_id: string; new_contract_id: string; agreement_id?: string };
       };
       update_contract_atomic: {
         Args: {

@@ -14,6 +14,7 @@ import { DetailFields } from '@/components/ui/detail-fields';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { buildContractActions } from '@/components/ui/entity-action-presets';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { openWhatsApp, printCurrentView, shareOrCopy } from '@/services/action-service';
@@ -27,6 +28,7 @@ import { ContractDocumentsShell } from './contractDocumentsShell';
 import { ContractPaymentsTab } from './contractPaymentsTab';
 import type { ContractDetail } from './services/contractService';
 import { useContract, useRenewContract, useTerminateContract } from './useContracts';
+import { useAgreementCoverage } from '@/features/owners/useOwnerAgreements';
 
 type TimelineTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
 type TimelineItem = Readonly<{ title: string; value: string; description: string; tone: TimelineTone }>;
@@ -38,7 +40,7 @@ const addDays = (value: string, days: number) => { const date = new Date(`${valu
 const addYear = (date: Date) => { const nextDate = new Date(date); nextDate.setFullYear(nextDate.getFullYear() + 1); nextDate.setDate(nextDate.getDate() - 1); return nextDate; };
 const canRenewContract = (contract: ContractDetail) => contract.status === 'active' || contract.status === 'expired';
 const canTerminateContract = (contract: ContractDetail) => contract.status === 'active' || contract.status === 'draft';
-const getRenewalDefaults = (contract: ContractDetail): RenewalPayload => { const nextStart = addDays(contract.end_date, 1); return { new_start: toDateInputValue(nextStart), new_end: toDateInputValue(addYear(nextStart)), new_amount: contract.rent_amount }; };
+const getRenewalDefaults = (contract: ContractDetail): RenewalPayload => { const nextStart = addDays(contract.end_date, 1); return { new_start: toDateInputValue(nextStart), new_end: toDateInputValue(addYear(nextStart)), new_amount: contract.rent_amount, agreement_id: contract.agreement_id }; };
 
 const toPdfTenant = (person: ContractDetail['people']): Person | null => person ? { ...person, type: 'tenant', address: null, notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
 const toPdfUnit = (unit: ContractDetail['units'], propertyId: string): Unit | null => unit ? { ...unit, name: null, property_id: propertyId, notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
@@ -71,7 +73,11 @@ export function ContractDetailPage() {
   const [open, setOpen] = useState(false);
   const [terminateOpen, setTerminateOpen] = useState(false);
   const [terminateReason, setTerminateReason] = useState('');
-  const form = useForm<RenewalPayload>({ resolver: zodResolver(renewalSchema), defaultValues: { new_start: '', new_end: '', new_amount: 0 } });
+  const form = useForm<RenewalPayload>({ resolver: zodResolver(renewalSchema), defaultValues: { new_start: '', new_end: '', new_amount: 0, agreement_id: null } });
+  const renewalStart = form.watch('new_start');
+  const renewalEnd = form.watch('new_end');
+  const renewalAgreementQuery = useAgreementCoverage(contractQuery.data?.property_id ?? '', renewalStart, renewalEnd);
+  const renewalAgreement = renewalAgreementQuery.data ?? null;
 
   if (contractQuery.isLoading || contractQuery.isError || !contractQuery.data) {
     return (
@@ -90,6 +96,9 @@ export function ContractDetailPage() {
   }
 
   const contract = contractQuery.data;
+  const renewalCoverageError = open && renewalStart && renewalEnd && !renewalAgreementQuery.isLoading && !renewalAgreement
+    ? 'لا توجد اتفاقية مكتب ومالك تغطي كامل فترة التجديد. أنشئ اتفاقية لاحقة من صفحة العقار قبل التجديد.'
+    : null;
   const renewalAllowed = canRenewContract(contract);
   const timeline = getTimeline(companySettings, contract);
 
@@ -143,7 +152,11 @@ export function ContractDetailPage() {
   });
 
   const submitRenewal = async (values: RenewalPayload) => {
-    const result = await renewMutation.mutateAsync(values);
+    if (!renewalAgreement) {
+      form.setError('agreement_id', { type: 'validate', message: 'اختر اتفاقية تغطي كامل فترة التجديد.' });
+      return;
+    }
+    const result = await renewMutation.mutateAsync({ ...values, agreement_id: renewalAgreement.id });
     setOpen(false);
     await navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } });
   };
@@ -206,7 +219,7 @@ export function ContractDetailPage() {
 
       <ContractDocumentsShell contractId={contract.id} />
 
-      <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>تجديد العقد</DialogTitle><DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد.</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={form.handleSubmit(submitRenewal)}><label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('new_start')} />{fieldError(form.formState.errors.new_start?.message)}</label><label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('new_end')} />{fieldError(form.formState.errors.new_end?.message)}</label><label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('new_amount')} />{fieldError(form.formState.errors.new_amount?.message)}</label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setOpen(false)}>إلغاء</Button><Button type="submit" disabled={renewMutation.isPending}>تجديد العقد</Button></div></form></DialogContent></Dialog>
+      <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>تجديد العقد</DialogTitle><DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد. يجب وجود اتفاقية مكتب ومالك تغطي كامل فترة التجديد.</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={form.handleSubmit(submitRenewal)}>{renewalCoverageError ? <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm font-bold text-destructive">{renewalCoverageError}</p> : null}<label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('new_start')} />{fieldError(form.formState.errors.new_start?.message)}</label><label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('new_end')} />{fieldError(form.formState.errors.new_end?.message)}</label><label className="grid gap-2 text-sm font-bold">اتفاقية المالك المغطية<Select value={renewalAgreement?.id ?? ''} disabled><option value="">{renewalAgreementQuery.isLoading ? 'جار التحقق من الاتفاقية...' : renewalAgreement ? `اتفاقية ${renewalAgreement.starts_on} — ${renewalAgreement.ends_on ?? 'مفتوحة'}` : 'لا توجد اتفاقية مغطية'}</option></Select>{fieldError(form.formState.errors.agreement_id?.message)}</label><label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('new_amount')} />{fieldError(form.formState.errors.new_amount?.message)}</label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setOpen(false)}>إلغاء</Button><Button type="submit" disabled={renewMutation.isPending || renewalAgreementQuery.isLoading || Boolean(renewalCoverageError)}>تجديد العقد</Button></div></form></DialogContent></Dialog>
 
       <Dialog open={terminateOpen} onOpenChange={setTerminateOpen}>
         <DialogContent>

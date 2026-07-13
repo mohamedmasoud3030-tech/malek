@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ContractDetailPage } from './ContractDetailPage';
 
 vi.mock('../settings/useCompanySettings', async () => {
@@ -32,6 +33,10 @@ vi.mock('./useContracts', () => ({
 
 vi.mock('./useContractPayments', () => ({
   useContractPayments: () => contractsMocks.paymentsQuery,
+}));
+
+vi.mock('@/features/owners/useOwnerAgreements', () => ({
+  useAgreementCoverage: () => ({ data: { id: 'agreement-1', starts_on: '2026-01-01', ends_on: null }, isLoading: false, isError: false, error: null }),
 }));
 
 vi.mock('./useContractDocuments', () => ({
@@ -67,6 +72,11 @@ const contractDetail = {
   renewed_from: null,
   units: { id: 'unit-1', unit_number: 'A-1', floor: '1', status: 'occupied', rent_amount: 1234.5 },
 };
+
+function renderContractDetailPage() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return renderToStaticMarkup(<QueryClientProvider client={client}><ContractDetailPage /></QueryClientProvider>);
+}
 
 const contractPaymentsSnapshot = {
   invoices: [{
@@ -117,13 +127,13 @@ describe('ContractDetailPage load and money states', () => {
   });
 
   it('renders rent with centralized currency context', () => {
-    const html = renderToStaticMarkup(<ContractDetailPage />);
+    const html = renderContractDetailPage();
 
     expectMarkupToContain(html, ['OMR', 'مستأجر الاختبار', 'A-1']);
   });
 
   it('renders contract-scoped financial and lifecycle timeline context', () => {
-    const html = renderToStaticMarkup(<ContractDetailPage />);
+    const html = renderContractDetailPage();
 
     expectMarkupToContain(html, [
       'إجراءات التجديد والإنهاء',
@@ -152,7 +162,7 @@ describe('ContractDetailPage load and money states', () => {
     contractsMocks.contractQuery.error = new Error('تعذر تحميل عقد الاختبار');
     contractsMocks.contractQuery.isError = true;
 
-    const html = renderToStaticMarkup(<ContractDetailPage />);
+    const html = renderContractDetailPage();
 
     expectMarkupToContain(html, ['تعذر تحميل العقد', 'إعداد الاتصال بقاعدة البيانات غير مكتمل.', 'إعادة المحاولة']);
   });
