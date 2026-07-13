@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCrudFormState } from '@/hooks/use-crud-form-state';
 import { LeadsView } from './components/leads-view';
 import type { LeadFilters, LeadFormValues, LeadRecord } from './types';
 import { useArchiveLead, useLeads, useSaveLead } from './use-leads';
@@ -21,9 +21,7 @@ function formFromLead(lead: LeadRecord): LeadFormValues {
 
 export function LeadsPage() {
   const [filters, setFilters] = useState<LeadFilters>({ query: '', status: 'all', source: 'all' });
-  const [editingLead, setEditingLead] = useState<LeadRecord | null>(null);
-  const [draft, setDraft] = useState<LeadFormValues>(emptyForm);
-  const [formOpen, setFormOpen] = useState(false);
+  const formState = useCrudFormState<LeadRecord, LeadFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLead });
   const leadsQuery = useLeads(filters);
   const saveLead = useSaveLead();
   const archiveLead = useArchiveLead();
@@ -32,9 +30,9 @@ export function LeadsPage() {
     <LeadsView
       rows={leadsQuery.data ?? []}
       filters={filters}
-      draft={draft}
-      editingLead={editingLead}
-      formOpen={formOpen}
+      draft={formState.draft}
+      editingLead={formState.editingRecord}
+      formOpen={formState.formOpen}
       isLoading={leadsQuery.isLoading}
       isSaving={saveLead.isPending}
       isArchiving={archiveLead.isPending}
