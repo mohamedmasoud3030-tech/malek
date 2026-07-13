@@ -1,3 +1,4 @@
+import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 
@@ -71,6 +72,16 @@ function isCreatePropertyWithAgreementResult(value: unknown): value is CreatePro
     typeof value.property_id === 'string' &&
     typeof value.agreement_id === 'string'
   );
+}
+
+/** Returns the agreement in force on a specific date, not merely the latest scheduled agreement. */
+export function getAgreementActiveOn(
+  agreements: readonly OwnerAgreement[],
+  asOf = getTodayLocalDateString(),
+): OwnerAgreement | null {
+  return agreements.find((agreement) =>
+    agreement.starts_on <= asOf && (!agreement.ends_on || agreement.ends_on >= asOf),
+  ) ?? null;
 }
 
 export async function listOwnerAgreementsForProperty(propertyId: string): Promise<OwnerAgreement[]> {
