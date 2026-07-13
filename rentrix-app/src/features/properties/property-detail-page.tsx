@@ -14,6 +14,7 @@ import { useUnits } from '@/features/units/use-units';
 import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
 import { propertyStatusLabels } from './property-schema';
 import { summarizePropertyUnits } from './property-unit-summary';
+import { getAgreementActiveOn } from '@/features/owners/ownerAgreementService';
 import { useOwnerAgreements } from '@/features/owners/useOwnerAgreements';
 import { useProperty } from './use-properties';
 import { unitStatusLabels } from '../units/unit-schema';
@@ -119,7 +120,7 @@ export function PropertyOverview() {
   const agreementsQuery = useOwnerAgreements(propertyId);
 
   const property = propertyQuery.data;
-  const activeAgreement = (agreementsQuery.data ?? [])[0] ?? null;
+  const activeAgreement = getAgreementActiveOn(agreementsQuery.data ?? []);
 
   return (
     <AsyncContentState
