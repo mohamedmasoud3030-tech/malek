@@ -21,10 +21,14 @@ export function getExpiryDescription(settings: CompanySettingsContract, contract
 
 function getTimeline(settings: CompanySettingsContract, contract: ContractDetail): TimelineItem[] {
   const expiryDays = getContractRemainingDays(contract.end_date);
+  let expiryTone: TimelineTone = 'green';
+  if (contract.status === 'terminated') expiryTone = 'red';
+  else if (expiryDays < 0) expiryTone = 'gray';
+  else if (expiryDays <= 30) expiryTone = 'gold';
   return [
     { title: 'إنشاء العقد', value: formatContractDateTime(settings, contract.created_at), description: 'وقت تسجيل العقد في النظام.', tone: 'blue' },
     { title: 'تاريخ البداية', value: formatContractDate(settings, contract.start_date), description: `بداية الالتزام التجاري لمدة ${formatContractDayCount(settings, getContractInclusiveDays(contract.start_date, contract.end_date))} يوم.`, tone: 'green' },
-    { title: 'تاريخ النهاية', value: formatContractDate(settings, contract.end_date), description: getExpiryDescription(settings, contract), tone: contract.status === 'terminated' ? 'red' : expiryDays < 0 ? 'gray' : expiryDays <= 30 ? 'gold' : 'green' },
+    { title: 'تاريخ النهاية', value: formatContractDate(settings, contract.end_date), description: getExpiryDescription(settings, contract), tone: expiryTone },
     { title: 'آخر تحديث', value: formatContractDateTime(settings, contract.updated_at), description: 'آخر تعديل محفوظ على بيانات العقد.', tone: 'gray' },
   ];
 }

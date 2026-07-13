@@ -80,13 +80,14 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
     : hasSelectedPeriod && !agreementCoverageQuery.isLoading && !agreementCoverageQuery.data
       ? 'لا توجد اتفاقية إدارة تغطي كامل فترة العقد. انتقل إلى صفحة العقار لإنشاء أو تحديث اتفاقية الإدارة أولاً.'
       : null;
-  const dependencyError = propertiesQuery.isError || peopleQuery.isError
-    ? 'تعذر تحميل بيانات العقارات أو المستأجرين. أعد تحميل الصفحة ثم حاول مرة أخرى.'
-    : unitsQuery.isError
-      ? 'تعذر تحميل وحدات العقار المحدد. أعد المحاولة قبل حفظ العقد.'
-      : unitConflictsQuery.isError
-        ? 'تعذر التحقق من تعارضات عقود الوحدة. أعد المحاولة قبل حفظ العقد.'
-      : null;
+  let dependencyError: string | null = null;
+  if (propertiesQuery.isError || peopleQuery.isError) {
+    dependencyError = 'تعذر تحميل بيانات العقارات أو المستأجرين. أعد تحميل الصفحة ثم حاول مرة أخرى.';
+  } else if (unitsQuery.isError) {
+    dependencyError = 'تعذر تحميل وحدات العقار المحدد. أعد المحاولة قبل حفظ العقد.';
+  } else if (unitConflictsQuery.isError) {
+    dependencyError = 'تعذر التحقق من تعارضات عقود الوحدة. أعد المحاولة قبل حفظ العقد.';
+  }
 
   // Override handleSubmit to include agreement_id from coverage query
   const handleModalSubmit = form.handleSubmit(async (values: ContractFormValues) => {

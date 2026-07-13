@@ -33,5 +33,36 @@ export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed 
     await onRenewed(result);
   };
 
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent><DialogHeader><DialogTitle>تجديد العقد</DialogTitle><DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد. يجب وجود اتفاقية إدارة تغطي كامل فترة التجديد.</DialogDescription></DialogHeader><form className="grid gap-4" onSubmit={form.handleSubmit(submitRenewal)}>{renewalCoverageError ? <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm font-bold text-destructive">{renewalCoverageError}</p> : null}<label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('new_start')} />{fieldError(form.formState.errors.new_start?.message)}</label><label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('new_end')} />{fieldError(form.formState.errors.new_end?.message)}</label><label className="grid gap-2 text-sm font-bold">اتفاقية المالك المغطية<Select value={renewalAgreement?.id ?? ''} disabled><option value="">{renewalAgreementQuery.isLoading ? 'جار التحقق من الاتفاقية...' : renewalAgreement ? `اتفاقية ${renewalAgreement.starts_on} — ${renewalAgreement.ends_on ?? 'مفتوحة'}` : 'لا توجد اتفاقية مغطية'}</option></Select>{fieldError(form.formState.errors.agreement_id?.message)}</label><label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('new_amount')} />{fieldError(form.formState.errors.new_amount?.message)}</label><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={renewMutation.isPending || renewalAgreementQuery.isLoading || Boolean(renewalCoverageError)}>تجديد العقد</Button></div></form></DialogContent></Dialog>;
+  let agreementOptionLabel = 'لا توجد اتفاقية مغطية';
+  if (renewalAgreementQuery.isLoading) {
+    agreementOptionLabel = 'جار التحقق من الاتفاقية...';
+  } else if (renewalAgreement) {
+    agreementOptionLabel = `اتفاقية ${renewalAgreement.starts_on} — ${renewalAgreement.ends_on ?? 'مفتوحة'}`;
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>تجديد العقد</DialogTitle>
+          <DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد. يجب وجود اتفاقية إدارة تغطي كامل فترة التجديد.</DialogDescription>
+        </DialogHeader>
+        <form className="grid gap-4" onSubmit={form.handleSubmit(submitRenewal)}>
+          {renewalCoverageError ? <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm font-bold text-destructive">{renewalCoverageError}</p> : null}
+          <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('new_start')} />{fieldError(form.formState.errors.new_start?.message)}</label>
+          <label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('new_end')} />{fieldError(form.formState.errors.new_end?.message)}</label>
+          <label className="grid gap-2 text-sm font-bold">
+            اتفاقية المالك المغطية
+            <Select value={renewalAgreement?.id ?? ''} disabled><option value="">{agreementOptionLabel}</option></Select>
+            {fieldError(form.formState.errors.agreement_id?.message)}
+          </label>
+          <label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('new_amount')} />{fieldError(form.formState.errors.new_amount?.message)}</label>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button>
+            <Button type="submit" disabled={renewMutation.isPending || renewalAgreementQuery.isLoading || Boolean(renewalCoverageError)}>تجديد العقد</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }

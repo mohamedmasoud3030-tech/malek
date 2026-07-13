@@ -1,4 +1,4 @@
-import type { Unit } from '@/types/domain';
+import type { Contract, Unit } from '@/types/domain';
 
 export type ContractUnitOptionUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'status' | 'rent_amount'>;
 export type ContractUnitConflict = Readonly<{
@@ -6,7 +6,7 @@ export type ContractUnitConflict = Readonly<{
   unit_id: string | null;
   start_date: string;
   end_date: string;
-  status: 'draft' | 'active' | string;
+  status: Contract['status'];
 }>;
 
 export type UnitAvailabilityConflictMap = ReadonlyMap<string, ContractUnitConflict>;

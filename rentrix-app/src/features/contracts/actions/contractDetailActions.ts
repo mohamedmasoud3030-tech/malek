@@ -33,6 +33,7 @@ export async function shareContractLink(contract: ContractDetail) {
 }
 
 export function openContractWhatsApp(contract: ContractDetail) {
-  const message = `مرحباً${contract.people?.full_name ? ` ${contract.people.full_name}` : ''}، بخصوص عقد #${contract.id.slice(0, 8)} على ${contract.properties?.title ?? 'العقار'} / ${contract.units?.unit_number ?? 'الوحدة'}.`;
+  const tenantName = contract.people?.full_name ? ` ${contract.people.full_name}` : '';
+  const message = `مرحباً${tenantName}، بخصوص عقد #${contract.id.slice(0, 8)} على ${contract.properties?.title ?? 'العقار'} / ${contract.units?.unit_number ?? 'الوحدة'}.`;
   openWhatsApp(contract.people?.phone, message);
 }

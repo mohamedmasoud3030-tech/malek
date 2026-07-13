@@ -64,13 +64,13 @@ function collectSourceFiles(directory) {
 }
 
 function getImportSpecifiers(content) {
-  return [...content.matchAll(/import(?:\s+type)?[\s\S]*?from\s+['\"]([^'\"]+)['\"]/g)].map((match) => match[1])
-    .concat([...content.matchAll(/import\s+['\"]([^'\"]+)['\"]/g)].map((match) => match[1]));
+  return [...content.matchAll(/import(?:\s+type)?[\s\S]*?from\s+['"]([^'"]+)['"]/g)].map((match) => match[1])
+    .concat([...content.matchAll(/import\s+['"]([^'"]+)['"]/g)].map((match) => match[1]));
 }
 
 function getRuntimeImportSpecifiers(content) {
-  return [...content.matchAll(/import(?!\s+type)[\s\S]*?from\s+['\"]([^'\"]+)['\"]/g)].map((match) => match[1])
-    .concat([...content.matchAll(/import\s+['\"]([^'\"]+)['\"]/g)].map((match) => match[1]));
+  return [...content.matchAll(/import(?!\s+type)[\s\S]*?from\s+['"]([^'"]+)['"]/g)].map((match) => match[1])
+    .concat([...content.matchAll(/import\s+['"]([^'"]+)['"]/g)].map((match) => match[1]));
 }
 
 function isPresentationComponent(file) { return file.split(sep).includes('components'); }
@@ -82,7 +82,9 @@ function resolveImports(file, specifiers = getImportSpecifiers(readFileSync(file
 }
 
 function resolveImport(file, specifier) {
-  const absoluteBase = specifier.startsWith('@/') ? resolve(sourceRoot, specifier.slice(2)) : specifier.startsWith('.') ? resolve(dirname(file), specifier) : null;
+  let absoluteBase = null;
+  if (specifier.startsWith('@/')) absoluteBase = resolve(sourceRoot, specifier.slice(2));
+  else if (specifier.startsWith('.')) absoluteBase = resolve(dirname(file), specifier);
   if (!absoluteBase) return [];
   return ['', '.ts', '.tsx', '/index.ts', '/index.tsx']
     .map((suffix) => `${absoluteBase}${suffix}`)
@@ -127,7 +129,7 @@ function findCycles(graph) {
   function visit(node) {
     if (visiting.has(node)) {
       const cycle = stack.slice(stack.indexOf(node)).concat(node);
-      const key = [...new Set(cycle)].sort().join('|');
+      const key = [...new Set(cycle)].sort((left, right) => left.localeCompare(right)).join('|');
       if (!seen.has(key)) { seen.add(key); cycles.push(cycle); }
       return;
     }

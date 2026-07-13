@@ -21,7 +21,10 @@ export function useUnitContractConflicts({
   endDate: string;
   excludedContractId?: string | null;
 }>) {
-  const uniqueUnitIds = useMemo(() => [...new Set(unitIds.filter(Boolean))].sort(), [unitIds]);
+  const uniqueUnitIds = useMemo(
+    () => [...new Set(unitIds.filter(Boolean))].sort((left, right) => left.localeCompare(right)),
+    [unitIds],
+  );
   return useQuery({
     queryKey: unitContractConflictKeys.period(propertyId, startDate, endDate, excludedContractId),
     queryFn: () => listUnitContractConflicts({ unitIds: uniqueUnitIds, startDate, endDate, excludedContractId }),
