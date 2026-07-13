@@ -15,6 +15,26 @@ export {
   type TrialBalanceAccount,
   type TrialBalanceReport,
 } from './accounting-reports-service';
+export {
+  getOwnerStatementReport,
+  getTenantStatementReport,
+  normalizeOwnerStatementReport,
+  normalizeTenantStatementReport,
+  type OwnerStatementReport,
+  type OwnerStatementTransaction,
+  type TenantStatementLine,
+  type TenantStatementReport,
+} from './statements-reports-service';
+export {
+  getCashFlowStatementReport,
+  getVatReturnReport,
+  normalizeCashFlowStatementReport,
+  normalizeVatReturnReport,
+  type CashFlowStatementReport,
+  type ReportPeriod,
+  type StatementReportFilters,
+  type VatReturnReport,
+} from './financial-statements-service';
 
 export type FinancialReportStatus = Invoice['status'] | 'all';
 
@@ -96,25 +116,6 @@ export type FinancialCashflowReport = {
   rows: FinancialCashflowReportRow[];
   totalRevenue: number;
   totalExpenses: number;
-};
-
-export type CashFlowStatementReport = {
-  period: { from: string | null; to: string | null };
-  operating: {
-    receipts: number;
-    expenses: number;
-    netOperating: number;
-  };
-  investing: { amount: number; note: string | null };
-  financing: { amount: number; note: string | null };
-  netChange: number;
-};
-
-export type VatReturnReport = {
-  period: { from: string | null; to: string | null };
-  totalSalesAmount: number;
-  totalTaxAmount: number;
-  invoiceCount: number;
 };
 
 export type ExpenseBreakdownReportFilters = FinancialReportFilters & {
@@ -211,51 +212,6 @@ export type ArrearsSummaryReport = {
   over90Amount: number;
   over90InvoiceCount: number;
   averageDaysOverdue: number;
-};
-
-export type TenantStatementLine = {
-  date: string | null;
-  description: string | null;
-  type: string | null;
-  debit: number;
-  credit: number;
-  balance: number;
-};
-
-export type TenantStatementReport = {
-  contractId: string | null;
-  tenantName: string | null;
-  tenantPhone: string | null;
-  unitName: string | null;
-  propertyName: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  lines: TenantStatementLine[];
-  finalBalance: number;
-  error: string | null;
-};
-
-export type OwnerStatementTransaction = {
-  date: string | null;
-  details: string | null;
-  type: string | null;
-  propertyName: string | null;
-  gross: number;
-  deduction: number;
-  net: number;
-};
-
-export type OwnerStatementReport = {
-  ownerName: string | null;
-  commissionType: string | null;
-  commissionValue: number;
-  transactions: OwnerStatementTransaction[];
-  totalGross: number;
-  totalDeductions: number;
-  totalNet: number;
-  periodFrom: string | null;
-  periodTo: string | null;
-  error: string | null;
 };
 
 type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'> & { unit_id?: Contract['unit_id'] };
@@ -905,18 +861,6 @@ function mapFromSettledContext<T>(result: PromiseSettledResult<Map<string, T>>):
   return result.status === 'fulfilled' ? result.value : new Map<string, T>();
 }
 
-function getJsonRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
-}
-
-function getJsonNumber(value: unknown): number {
-  return toFinancialNumber(typeof value === 'string' || typeof value === 'number' ? value : 0);
-}
-
-function getJsonString(value: unknown): string | null {
-  return typeof value === 'string' ? value : null;
-}
-
 function getInvoiceReportGrossAmount(invoice: Pick<InvoiceReportRow, 'amount'> & Partial<Pick<InvoiceReportRow, 'tax_amount'>>): number {
   return toFinancialNumber(invoice.amount) + toFinancialNumber(invoice.tax_amount);
 }
@@ -925,107 +869,6 @@ function getInvoiceReportRemainingAmount(invoice: Pick<InvoiceReportRow, 'amount
   return getSafeRemainingAmount(getInvoiceReportGrossAmount(invoice), invoice.paid_amount);
 }
 
-
-function getJsonArray(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : [];
-}
-
-export function normalizeTenantStatementReport(payload: unknown): TenantStatementReport {
-  const root = getJsonRecord(payload);
-  return {
-    contractId: getJsonString(root.contract_id),
-    tenantName: getJsonString(root.tenant_name),
-    tenantPhone: getJsonString(root.tenant_phone),
-    unitName: getJsonString(root.unit_name),
-    propertyName: getJsonString(root.property_name),
-    startDate: getJsonString(root.start_date),
-    endDate: getJsonString(root.end_date),
-    lines: getJsonArray(root.lines).map((line) => {
-      const row = getJsonRecord(line);
-      return {
-        date: getJsonString(row.date),
-        description: getJsonString(row.description),
-        type: getJsonString(row.type),
-        debit: getJsonNumber(row.debit),
-        credit: getJsonNumber(row.credit),
-        balance: getJsonNumber(row.balance),
-      };
-    }),
-    finalBalance: getJsonNumber(root.final_balance),
-    error: getJsonString(root.error),
-  };
-}
-
-export function normalizeOwnerStatementReport(payload: unknown): OwnerStatementReport {
-  const root = getJsonRecord(payload);
-  return {
-    ownerName: getJsonString(root.owner_name),
-    commissionType: getJsonString(root.commission_type),
-    commissionValue: getJsonNumber(root.commission_value),
-    transactions: getJsonArray(root.transactions).map((transaction) => {
-      const row = getJsonRecord(transaction);
-      return {
-        date: getJsonString(row.date),
-        details: getJsonString(row.details),
-        type: getJsonString(row.type),
-        propertyName: getJsonString(row.property_name),
-        gross: getJsonNumber(row.gross),
-        deduction: getJsonNumber(row.deduction),
-        net: getJsonNumber(row.net),
-      };
-    }),
-    totalGross: getJsonNumber(root.total_gross),
-    totalDeductions: getJsonNumber(root.total_deductions),
-    totalNet: getJsonNumber(root.total_net),
-    periodFrom: getJsonString(root.period_from),
-    periodTo: getJsonString(root.period_to),
-    error: getJsonString(root.error),
-  };
-}
-
-export function normalizeCashFlowStatementReport(payload: unknown): CashFlowStatementReport {
-  const root = getJsonRecord(payload);
-  const period = getJsonRecord(root.period);
-  const operating = getJsonRecord(root.operating);
-  const investing = getJsonRecord(root.investing);
-  const financing = getJsonRecord(root.financing);
-
-  return {
-    period: {
-      from: getJsonString(period.from),
-      to: getJsonString(period.to),
-    },
-    operating: {
-      receipts: getJsonNumber(operating.receipts),
-      expenses: getJsonNumber(operating.expenses),
-      netOperating: getJsonNumber(operating.net_operating),
-    },
-    investing: {
-      amount: getJsonNumber(investing.amount),
-      note: getJsonString(investing.note),
-    },
-    financing: {
-      amount: getJsonNumber(financing.amount),
-      note: getJsonString(financing.note),
-    },
-    netChange: getJsonNumber(root.net_change),
-  };
-}
-
-export function normalizeVatReturnReport(payload: unknown): VatReturnReport {
-  const root = getJsonRecord(payload);
-  const period = getJsonRecord(root.period);
-
-  return {
-    period: {
-      from: getJsonString(period.from),
-      to: getJsonString(period.to),
-    },
-    totalSalesAmount: getJsonNumber(root.total_sales_amount),
-    totalTaxAmount: getJsonNumber(root.total_tax_amount),
-    invoiceCount: Math.trunc(getJsonNumber(root.invoice_count)),
-  };
-}
 
 async function loadArrearsContextMaps(invoices: ArrearsInvoiceRow[]): Promise<ArrearsContextMaps> {
   const contracts = invoices.map((invoice) => invoice.contracts).filter((contract): contract is ContractContext => Boolean(contract));
@@ -1060,24 +903,6 @@ export async function getArrearsSummaryReport(filters: ArrearsReportFilters): Pr
   return summarizeArrearsSummaryReport(invoices, filters);
 }
 
-export async function getTenantStatementReport(contractId: string): Promise<TenantStatementReport> {
-  const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('rpt_tenant_statement', {
-    p_contract_id: contractId,
-  });
-  if (error) throw error;
-  return normalizeTenantStatementReport(data);
-}
-
-export async function getOwnerStatementReport(params: { ownerId: string; dateFrom: string; dateTo: string }): Promise<OwnerStatementReport> {
-  const { data, error } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('rpt_owner_statement', {
-    p_owner_id: params.ownerId,
-    p_from: params.dateFrom,
-    p_to: params.dateTo,
-  });
-  if (error) throw error;
-  return normalizeOwnerStatementReport(data);
-}
-
 export async function getDailyCollectionReport(filters: FinancialReportFilters): Promise<DailyCollectionReport> {
   const payments = await loadPayments(filters);
   return summarizeDailyCollectionReport(payments);
@@ -1106,24 +931,6 @@ export async function getFinancialCashflowReport(filters: FinancialReportFilters
   ]);
 
   return summarizeFinancialCashflowReport({ payments, expenses });
-}
-
-export async function getCashFlowStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>): Promise<CashFlowStatementReport> {
-  const { data, error } = await supabase.rpc('rpt_cash_flow', {
-    p_from_date: filters.dateFrom,
-    p_to_date: filters.dateTo,
-  });
-  if (error) throw error;
-  return normalizeCashFlowStatementReport(data);
-}
-
-export async function getVatReturnReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>): Promise<VatReturnReport> {
-  const { data, error } = await supabase.rpc('rpt_vat_return', {
-    p_from_date: filters.dateFrom,
-    p_to_date: filters.dateTo,
-  });
-  if (error) throw error;
-  return normalizeVatReturnReport(data);
 }
 
 export async function getExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters): Promise<ExpenseBreakdownReport> {
