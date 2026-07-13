@@ -12,7 +12,6 @@ ALTER TABLE public.owner_agreements
     daterange(starts_on, COALESCE(ends_on, '9999-12-31'::date), '[]') WITH &&
   );
 
-
 CREATE OR REPLACE FUNCTION public.assert_property_owner_temporal_integrity()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -21,19 +20,60 @@ SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_range daterange;
-  v_overlap_total numeric;
+  v_violation_date date;
 BEGIN
-  v_range := daterange(COALESCE(NEW.starts_on, '-infinity'::date), COALESCE(NEW.ends_on, '9999-12-31'::date), '[]');
+  IF NEW.ownership_percentage IS NULL OR NEW.ownership_percentage <= 0 OR NEW.ownership_percentage > 100 THEN
+    RAISE EXCEPTION 'نسبة الملكية يجب أن تكون أكبر من صفر وألا تتجاوز 100%%.';
+  END IF;
 
-  SELECT COALESCE(sum(po.ownership_percentage), 0)
-    INTO v_overlap_total
-  FROM public.property_owners po
-  WHERE po.property_id = NEW.property_id
-    AND po.id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
-    AND daterange(COALESCE(po.starts_on, '-infinity'::date), COALESCE(po.ends_on, '9999-12-31'::date), '[]') && v_range;
+  IF NEW.starts_on IS NOT NULL AND NEW.ends_on IS NOT NULL AND NEW.ends_on < NEW.starts_on THEN
+    RAISE EXCEPTION 'تاريخ نهاية الملكية يجب ألا يسبق تاريخ البداية.';
+  END IF;
 
-  IF v_overlap_total + NEW.ownership_percentage > 100 THEN
-    RAISE EXCEPTION 'نسب الملكية المتداخلة زمنياً لهذا العقار لا يمكن أن تتجاوز 100%%.';
+  -- Serialize ownership edits for the same property. Without this lock, two
+  -- concurrent inserts can both pass the percentage check before either row
+  -- becomes visible to the other transaction.
+  PERFORM pg_advisory_xact_lock(hashtextextended(NEW.property_id::text, 0));
+
+  v_range := daterange(
+    COALESCE(NEW.starts_on, '-infinity'::date),
+    COALESCE(NEW.ends_on, '9999-12-31'::date),
+    '[]'
+  );
+
+  -- The active total can only increase at the beginning of NEW or at the
+  -- beginning of another overlapping ownership period. Evaluate those change
+  -- points instead of summing every row that touches the whole range, which
+  -- would incorrectly reject sequential, non-concurrent ownership periods.
+  WITH candidate_dates AS (
+    SELECT lower(v_range)::date AS effective_on
+    UNION
+    SELECT GREATEST(COALESCE(po.starts_on, '-infinity'::date), lower(v_range)::date)
+    FROM public.property_owners po
+    WHERE po.property_id = NEW.property_id
+      AND po.id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
+      AND daterange(
+        COALESCE(po.starts_on, '-infinity'::date),
+        COALESCE(po.ends_on, '9999-12-31'::date),
+        '[]'
+      ) && v_range
+  )
+  SELECT cd.effective_on
+    INTO v_violation_date
+  FROM candidate_dates cd
+  WHERE NEW.ownership_percentage + COALESCE((
+    SELECT sum(po.ownership_percentage)
+    FROM public.property_owners po
+    WHERE po.property_id = NEW.property_id
+      AND po.id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
+      AND COALESCE(po.starts_on, '-infinity'::date) <= cd.effective_on
+      AND COALESCE(po.ends_on, '9999-12-31'::date) >= cd.effective_on
+  ), 0) > 100
+  ORDER BY cd.effective_on
+  LIMIT 1;
+
+  IF FOUND THEN
+    RAISE EXCEPTION 'نسب الملكية المتزامنة لهذا العقار تتجاوز 100%% بتاريخ %.', v_violation_date;
   END IF;
 
   IF NEW.is_primary AND EXISTS (
@@ -42,7 +82,11 @@ BEGIN
     WHERE po.property_id = NEW.property_id
       AND po.id <> COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
       AND po.is_primary
-      AND daterange(COALESCE(po.starts_on, '-infinity'::date), COALESCE(po.ends_on, '9999-12-31'::date), '[]') && v_range
+      AND daterange(
+        COALESCE(po.starts_on, '-infinity'::date),
+        COALESCE(po.ends_on, '9999-12-31'::date),
+        '[]'
+      ) && v_range
   ) THEN
     RAISE EXCEPTION 'لا يمكن وجود أكثر من مالك أساسي لنفس العقار في فترة زمنية متداخلة.';
   END IF;
