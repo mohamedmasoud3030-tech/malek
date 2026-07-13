@@ -19,7 +19,7 @@ import {
   type OwnerUpdatePayload,
   type PropertyOwnerPayload,
   type PropertyOwnerUpdatePayload,
-} from './ownerService';
+} from './services/owner-service';
 
 export const ownerKeys = {
   all: ['owners'] as const,

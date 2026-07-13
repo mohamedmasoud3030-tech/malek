@@ -10,8 +10,8 @@ import {
   normalizeOwnershipPercentage,
   normalizePropertyOwnerPayload,
   summarizeOwnerFinancials,
-} from './ownerService';
-import type { Owner, PropertyWithOwners } from './ownerService';
+} from './owner-service';
+import type { Owner, PropertyWithOwners } from './owner-service';
 
 const owner: Owner = {
   id: 'owner-1',
@@ -138,7 +138,7 @@ describe('owner service normalization helpers', () => {
   });
 
   it('soft-ends owner-property relationships instead of hard deleting them', () => {
-    const ownerServiceSource = readFileSync(new URL('./ownerService.ts', import.meta.url), 'utf8');
+    const ownerServiceSource = readFileSync(new URL('./owner-service.ts', import.meta.url), 'utf8');
 
     expect(ownerServiceSource).toContain('.update({ ends_on:');
     expect(ownerServiceSource).not.toContain('.delete()');
@@ -180,11 +180,11 @@ describe('owner read helpers', () => {
 
 describe('owner relationship migration protections', () => {
   const coreSchemaSql = readFileSync(
-    new URL('../../../../supabase/migrations/20250101000001_core_schema.sql', import.meta.url),
+    new URL('../../../../../supabase/migrations/20250101000001_core_schema.sql', import.meta.url),
     'utf8',
   );
   const functionsSql = readFileSync(
-    new URL('../../../../supabase/migrations/20250101000003_functions_triggers_and_rpcs.sql', import.meta.url),
+    new URL('../../../../../supabase/migrations/20250101000003_functions_triggers_and_rpcs.sql', import.meta.url),
     'utf8',
   );
 

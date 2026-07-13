@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Lock, Plus, Sparkles } from 'lucide-react';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext } from '@/features/auth/permissions';
 import { cn } from '@/lib/utils';
-import { mobileNavItems, navGroups, quickLinks, type MobileNavItem, type QuickLinkRoute } from './app-nav-items';
+import { mobileNavItems, navGroups, quickLinks, type MobileNavItem, type QuickLinkRoute } from '@/app/navigation/app-nav-items';
 
 export type SharedLabel = (key: string) => string;
 

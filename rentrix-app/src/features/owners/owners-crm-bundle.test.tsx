@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { canAccess, canShowNavigationItem, getAuthorizationContextFromUser } from '@/features/auth/permissions';
-import { navGroups, type NavItem } from '@/components/layout/app-nav-items';
+import { navGroups, type NavItem } from '@/app/navigation/app-nav-items';
 import { CommissionsView } from '@/features/commissions/components/commissions-view';
 import { CommunicationHubView } from '@/features/communication/components/communication-hub-view';
 import { LandsView } from '@/features/lands/components/lands-view';
@@ -113,7 +113,7 @@ describe('Owners and CRM source safety', () => {
   });
 
   it('preserves verified writes without destructive deletes or RPC provider sends in expansion modules', () => {
-    const ownerManagementSource = readFeatureSources('features/owners/ownerService.ts');
+    const ownerManagementSource = readFeatureSources('features/owners/services/owner-service.ts');
     const expansionSource = [
       'features/owners/owner-detail-page.tsx',
       'features/owners/components/owner-detail-view.tsx',

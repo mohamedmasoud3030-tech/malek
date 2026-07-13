@@ -4,7 +4,7 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
-import type { Owner } from '@/features/owners/ownerService';
+import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import type { FilterState } from '../reports-page.helpers';
 

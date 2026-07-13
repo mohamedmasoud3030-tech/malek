@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { OwnerDetailView } from './components/owner-detail-view';
-import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './ownerService';
+import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './services/owner-service';
 
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');

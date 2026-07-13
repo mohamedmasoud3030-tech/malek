@@ -8,7 +8,7 @@ import { EntityTable } from '@/components/ui/entity-table';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
-import { getOwnerDisplayName } from '../ownerService';
+import { getOwnerDisplayName } from '../services/owner-service';
 import type { OwnerDetailState } from '../types';
 
 export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>) {

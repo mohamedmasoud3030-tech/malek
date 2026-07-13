@@ -1,5 +1,5 @@
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
-import type { Owner, PropertyOwner, PropertyOwnerUpdatePayload, PropertyWithOwners } from './ownerService';
+import type { Owner, PropertyOwner, PropertyOwnerUpdatePayload, PropertyWithOwners } from '../services/owner-service';
 
 export type OwnerFormValues = {
   full_name: string;
