@@ -7,7 +7,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
-import type { DashboardSnapshot } from '../dashboardSnapshot';
+import type { DashboardSnapshot } from '../dashboard-snapshot';
 
 interface FinancialSummaryProps {
   snapshot: DashboardSnapshot | undefined;

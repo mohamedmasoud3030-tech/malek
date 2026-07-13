@@ -1,1 +1,1 @@
-export { DashboardPage as DashboardRouteComponent } from '@/app/dashboard/DashboardPage';
+export { DashboardPage as DashboardRouteComponent } from '@/features/dashboard/dashboard-page';

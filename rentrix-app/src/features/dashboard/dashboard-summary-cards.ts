@@ -1,5 +1,5 @@
 import type { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
-import type { DashboardSnapshot } from '../dashboardSnapshot';
+import type { DashboardSnapshot } from './dashboard-snapshot';
 
 export type DashboardSummaryCard = {
   title: string;

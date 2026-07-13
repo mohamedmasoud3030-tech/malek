@@ -11,7 +11,7 @@ import {
 } from '@/features/financials/reports/financialReportsService';
 import { listContracts, type ContractListItem } from '@/features/contracts/services/contractService';
 import { listMaintenance, type Maintenance } from '@/features/maintenance/maintenance-service';
-import { getDashboardOverview, type DashboardOverview } from './dashboardService';
+import { getDashboardOverview, type DashboardOverview } from './dashboard-service';
 
 export type DashboardPeriod = {
   dateFrom: string;

@@ -3,7 +3,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { cn } from '@/lib/utils';
-import type { DashboardSnapshot } from '../dashboardSnapshot';
+import type { DashboardSnapshot } from '../dashboard-snapshot';
 
 interface DashboardChartsProps {
   snapshot: DashboardSnapshot | undefined;

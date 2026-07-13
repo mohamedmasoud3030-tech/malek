@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildDashboardSummaryCards } from './dashboard/dashboard-summary-cards';
-import { buildOverdueTenantRows } from './dashboard/dashboard.utils';
-import type { DashboardSnapshot } from './dashboardSnapshot';
+import { buildDashboardSummaryCards } from './dashboard-summary-cards';
+import { buildOverdueTenantRows } from './dashboard-utils';
+import type { DashboardSnapshot } from './dashboard-snapshot';
 import { useCompanyFormattersWith, formatMoney } from '@/hooks/useCompanyFormatters';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';

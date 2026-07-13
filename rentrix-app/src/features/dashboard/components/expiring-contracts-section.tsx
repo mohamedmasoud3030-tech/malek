@@ -5,7 +5,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/hooks/useCompanyFormatters';
-import { DASHBOARD_WINDOW_DAYS, type ExpiringContractRow } from './dashboard.utils';
+import { DASHBOARD_WINDOW_DAYS, type ExpiringContractRow } from '../dashboard-utils';
 
 interface ExpiringContractsSectionProps {
   rows: ExpiringContractRow[];

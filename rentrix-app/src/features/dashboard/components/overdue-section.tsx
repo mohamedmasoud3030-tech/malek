@@ -5,7 +5,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate, formatMoney } from '@/hooks/useCompanyFormatters';
-import type { OverdueTenantRow } from './dashboard.utils';
+import type { OverdueTenantRow } from '../dashboard-utils';
 
 interface OverdueSectionProps {
   rows: OverdueTenantRow[];
