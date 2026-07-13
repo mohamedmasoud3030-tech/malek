@@ -84,6 +84,14 @@ describe('owner UI helpers', () => {
     })).toBeNull();
   });
 
+  it('keeps a scheduled ownership link active through its end date', () => {
+    const scheduled = propertyOwnerLink('property-1', 'owner-1', '2026-05-16');
+
+    expect(isActivePropertyOwnerLink(scheduled, '2026-05-15')).toBe(true);
+    expect(isActivePropertyOwnerLink(scheduled, '2026-05-16')).toBe(true);
+    expect(isActivePropertyOwnerLink(scheduled, '2026-05-17')).toBe(false);
+  });
+
   it('keeps property ownership link metadata fields available for submit payloads', () => {
     const values = {
       ...emptyPropertyOwnershipLinkFormValues,
