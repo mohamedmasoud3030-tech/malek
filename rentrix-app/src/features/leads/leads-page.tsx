@@ -39,11 +39,11 @@ export function LeadsPage() {
       error={leadsQuery.error}
       writeError={saveLead.error ?? archiveLead.error}
       onFiltersChange={setFilters}
-      onDraftChange={setDraft}
-      onCreate={() => { setEditingLead(null); setDraft(emptyForm); setFormOpen(true); }}
-      onEdit={(lead) => { setEditingLead(lead); setDraft(formFromLead(lead)); setFormOpen(true); }}
-      onFormOpenChange={setFormOpen}
-      onSubmit={(values) => saveLead.mutate({ id: editingLead?.id, values }, { onSuccess: () => setFormOpen(false) })}
+      onDraftChange={formState.setDraft}
+      onCreate={formState.openCreate}
+      onEdit={formState.openEdit}
+      onFormOpenChange={formState.setFormOpen}
+      onSubmit={(values) => saveLead.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
       onArchive={(id) => archiveLead.mutate(id)}
       onRetry={() => void leadsQuery.refetch()}
     />
