@@ -141,7 +141,7 @@ export function isActivePropertyOwnerLink(
 }
 
 function getActivePropertyOwnerLinks(property: Pick<PropertyWithOwners, 'property_owners'>): PropertyOwner[] {
-  return property.property_owners.filter(isActivePropertyOwnerLink);
+  return property.property_owners.filter((link) => isActivePropertyOwnerLink(link));
 }
 
 export function summarizeOwners(owners: Owner[], properties: PropertyWithOwners[]): OwnerSummary {
