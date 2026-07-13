@@ -1,12 +1,14 @@
-import { Archive, Edit, MessageSquareText, Plus, RotateCcw } from 'lucide-react';
+import { Archive, CheckCircle2, Edit, MessageSquareText, Plus, RotateCcw, Rows3, UserRoundSearch } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +44,8 @@ export function CommunicationHubView(props: Props) {
   const { rows, filters, draft, editingRecord, formOpen, isLoading, isSaving, isArchiving, error, writeError, onFiltersChange, onDraftChange, onCreate, onEdit, onFormOpenChange, onSubmit, onArchive, onRetry } = props;
   const [archiveCandidate, setArchiveCandidate] = useState<CommunicationRecord | null>(null);
   const followUps = rows.filter((row) => row.status === 'follow_up').length;
+  const resolved = rows.filter((row) => row.status === 'resolved').length;
+  const archived = rows.filter((row) => row.status === 'archived').length;
   const hasFilters = filters.query.trim().length > 0 || filters.channel !== 'all' || filters.status !== 'all';
   const showRows = !isLoading && !error && rows.length > 0;
   const showEmpty = !isLoading && !error && rows.length === 0;
@@ -53,7 +57,14 @@ export function CommunicationHubView(props: Props) {
           <div><CardTitle className="flex items-center gap-2"><MessageSquareText className="size-5" /> سجل التواصل</CardTitle><CardDescription>سجل داخلي للمكالمات والرسائل والاجتماعات. لا يرسل رسائل خارجية ولا يستدعي مزودين مدفوعين.</CardDescription></div>
           <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة تواصل</Button>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3"><Summary label="إجمالي السجلات" value={String(rows.length)} /><Summary label="متابعة مطلوبة" value={String(followUps)} /><Summary label="مغلقة" value={String(rows.filter((row) => row.status === 'resolved').length)} /></CardContent>
+        <CardContent>
+          <ResponsiveCardGrid>
+            <KpiCard label="إجمالي السجلات" value={rows.length} icon={Rows3} accent="primary" compact />
+            <KpiCard label="متابعة مطلوبة" value={followUps} icon={UserRoundSearch} accent="amber" compact />
+            <KpiCard label="مغلقة" value={resolved} icon={CheckCircle2} accent="emerald" compact />
+            <KpiCard label="مؤرشفة" value={archived} icon={Archive} accent="sky" compact />
+          </ResponsiveCardGrid>
+        </CardContent>
       </Card>
 
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالاسم، الهاتف، الموضوع، المحتوى" aria-label="بحث سجل التواصل" /><Select value={filters.channel} onChange={(event) => onFiltersChange({ ...filters, channel: event.target.value })}><option value="all">كل القنوات</option>{Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
@@ -64,10 +75,14 @@ export function CommunicationHubView(props: Props) {
       {showEmpty ? <PageStateCard title={hasFilters ? 'لا توجد سجلات تواصل ضمن الفلاتر الحالية' : 'لا توجد سجلات تواصل بعد'} description={hasFilters ? 'غيّر البحث أو القناة أو الحالة لعرض سجلات تواصل أخرى.' : 'أضف أول سجل داخلي عند حدوث اتصال أو اجتماع أو ملاحظة. لا يتم إرسال أي رسالة خارجية.'} action={hasFilters ? undefined : <Button onClick={onCreate}>إضافة سجل تواصل</Button>} /> : null}
       {showRows ? <CommunicationRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={setArchiveCandidate} /> : null}
 
-      <Dialog open={formOpen} onOpenChange={onFormOpenChange}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader><DialogTitle>{editingRecord ? 'تعديل سجل تواصل' : 'إضافة سجل تواصل'}</DialogTitle><DialogDescription>هذا تسجيل داخلي فقط، ولن يرسل النظام أي رسالة خارجية عند الحفظ.</DialogDescription></DialogHeader>
-          <form className="grid gap-3 md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}>
+      <EntityForm.Overlay
+        open={formOpen}
+        onOpenChange={onFormOpenChange}
+        title={editingRecord ? 'تعديل سجل تواصل' : 'إضافة سجل تواصل'}
+        description="هذا تسجيل داخلي فقط، ولن يرسل النظام أي رسالة خارجية عند الحفظ."
+        className="max-w-2xl"
+      >
+          <EntityForm.Root className="md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}>
             <Field label="اسم جهة التواصل"><Input required value={draft.contact_name} onChange={(event) => onDraftChange({ ...draft, contact_name: event.target.value })} /></Field>
             <Field label="الهاتف"><Input value={draft.contact_phone} onChange={(event) => onDraftChange({ ...draft, contact_phone: event.target.value })} /></Field>
             <Field label="البريد الإلكتروني"><Input type="email" value={draft.contact_email} onChange={(event) => onDraftChange({ ...draft, contact_email: event.target.value })} /></Field>
@@ -78,10 +93,9 @@ export function CommunicationHubView(props: Props) {
             <Field label="نوع الربط"><Input value={draft.related_entity_type} onChange={(event) => onDraftChange({ ...draft, related_entity_type: event.target.value })} placeholder="مستأجر، مالك، عقد، أو اتركه فارغاً" /></Field>
             <Field label="معرف الربط"><Input value={draft.related_entity_id} onChange={(event) => onDraftChange({ ...draft, related_entity_id: event.target.value })} /></Field>
             <label className="grid gap-2 text-sm font-bold md:col-span-2">المحتوى<Textarea required value={draft.body} onChange={(event) => onDraftChange({ ...draft, body: event.target.value })} /></label>
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end md:col-span-2"><Button variant="secondary" onClick={() => onFormOpenChange(false)}>إلغاء</Button><Button type="submit" disabled={isSaving}>{isSaving ? 'جارٍ الحفظ...' : 'حفظ'}</Button></div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
+          </EntityForm.Root>
+      </EntityForm.Overlay>
 
       <ConfirmDialog
         open={archiveCandidate != null}
@@ -94,10 +108,6 @@ export function CommunicationHubView(props: Props) {
       />
     </section>
   );
-}
-
-function Summary({ label, value }: Readonly<{ label: string; value: string }>) {
-  return <div className="rounded-2xl border bg-background/70 p-4"><p className="text-xs font-bold text-muted-foreground">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>;
 }
 
 function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {

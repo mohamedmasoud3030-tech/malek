@@ -8,6 +8,7 @@ import { usePaymentTerms } from '@/features/settings/usePaymentTerms';
 import { listUnitsByProperty } from '@/features/units/unit-service';
 import { useAgreementCoverage } from '@/features/owners/useOwnerAgreements';
 import { useContract, useCreateContract, useUpdateContract } from './useContracts';
+import { useUnitContractConflicts } from './queries/useUnitContractConflicts';
 import {
   contractSchema,
   contractStatusLabels,
@@ -41,6 +42,8 @@ interface UseContractFormReturn {
   peopleQuery: UseQueryResult<PaginatedPeople, Error>;
   paymentTermsQuery: ReturnType<typeof usePaymentTerms>;
   unitsQuery: UseQueryResult<ReturnType<typeof listUnitsByProperty> extends Promise<infer U> ? U : never, Error>;
+  unitConflictsQuery: ReturnType<typeof useUnitContractConflicts>;
+  unitConflictsByUnitId: ReadonlyMap<string, import('./domain/unitAvailability').ContractUnitConflict>;
   agreementCoverageQuery: ReturnType<typeof useAgreementCoverage>;
   selectedProperty: Pick<Property, 'id' | 'title' | 'address'> | undefined;
   currentLinkedUnitId: string | null;
@@ -97,6 +100,15 @@ export function useContractForm({
     queryFn: () => listUnitsByProperty(propertyId || ''),
     enabled: Boolean(propertyId),
   });
+  const unitIds = unitsQuery.data?.map((unit) => unit.id) ?? [];
+  const unitConflictsQuery = useUnitContractConflicts({
+    propertyId: propertyId || '',
+    unitIds,
+    startDate: startDate || '',
+    endDate: endDate || '',
+    excludedContractId: contractId ?? null,
+  });
+  const unitConflictsByUnitId = new Map((unitConflictsQuery.data ?? []).flatMap((conflict) => conflict.unit_id ? [[conflict.unit_id, conflict] as const] : []));
   const agreementCoverageQuery = useAgreementCoverage(propertyId, startDate, endDate);
   const selectedProperty = propertiesQuery.data?.rows.find((property) => property.id === propertyId);
   const currentLinkedUnitId = isEdit ? contractQuery.data?.unit_id ?? null : null;
@@ -128,6 +140,7 @@ export function useContractForm({
       propertyId: payload.property_id,
       unitId: payload.unit_id,
       currentLinkedUnitId,
+      conflictsByUnitId: unitConflictsByUnitId,
     });
     if (unitIssue) {
       form.setError('unit_id', { type: 'validate', message: unitIssue });
@@ -157,6 +170,8 @@ export function useContractForm({
     peopleQuery,
     paymentTermsQuery,
     unitsQuery,
+    unitConflictsQuery,
+    unitConflictsByUnitId,
     agreementCoverageQuery,
     selectedProperty,
     currentLinkedUnitId,

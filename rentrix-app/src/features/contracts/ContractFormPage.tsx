@@ -24,6 +24,8 @@ export function ContractFormPage() {
     peopleQuery,
     paymentTermsQuery,
     unitsQuery,
+    unitConflictsQuery,
+    unitConflictsByUnitId,
     agreementCoverageQuery,
     selectedProperty,
     currentLinkedUnitId,
@@ -38,12 +40,12 @@ export function ContractFormPage() {
   const propertyId = form.watch('property_id');
   const startDate = form.watch('start_date');
   const endDate = form.watch('end_date');
-  const prerequisitesLoading = propertiesQuery.isLoading || peopleQuery.isLoading || unitsQuery.isLoading || agreementCoverageQuery.isLoading;
+  const prerequisitesLoading = propertiesQuery.isLoading || peopleQuery.isLoading || unitsQuery.isLoading || unitConflictsQuery.isLoading || agreementCoverageQuery.isLoading;
   const hasSelectedPeriod = Boolean(propertyId && startDate && endDate);
   const coverageError = agreementCoverageQuery.isError
     ? 'تعذر التحقق من اتفاقية المالك. أعد المحاولة قبل حفظ العقد.'
     : hasSelectedPeriod && !agreementCoverageQuery.isLoading && !agreementCoverageQuery.data
-      ? 'لا توجد اتفاقية مالك نشطة تغطي فترة العقد. أنشئ أو حدّث اتفاقية المالك أولاً.'
+      ? 'لا توجد اتفاقية إدارة تغطي كامل فترة العقد. انتقل إلى صفحة العقار لإنشاء أو تحديث اتفاقية الإدارة أولاً.'
       : null;
 
   return (
@@ -63,7 +65,7 @@ export function ContractFormPage() {
               ) : null}
               {coverageError ? <EntityForm.ErrorSummary className="md:col-span-2" message={coverageError} /> : null}
               <label className="grid gap-2 text-sm font-bold">العقار<Select {...form.register('property_id')}><option value="">اختر العقار</option>{propertiesQuery.data?.rows.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select>{fieldError(form.formState.errors.property_id?.message)}</label>
-              <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id')} disabled={!form.watch('property_id')}><option value="">اختر الوحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id} disabled={!isUnitSelectableForContract({ unit, currentLinkedUnitId })}>{buildContractUnitOptionLabel({ unit, property: selectedProperty })}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
+              <label className="grid gap-2 text-sm font-bold">الوحدة<Select {...form.register('unit_id')} disabled={!form.watch('property_id')}><option value="">اختر الوحدة</option>{unitsQuery.data?.map((unit) => <option key={unit.id} value={unit.id} disabled={!isUnitSelectableForContract({ unit, currentLinkedUnitId, conflictsByUnitId: unitConflictsByUnitId })}>{buildContractUnitOptionLabel({ unit, property: selectedProperty })}</option>)}</Select>{fieldError(form.formState.errors.unit_id?.message)}</label>
               <label className="grid gap-2 text-sm font-bold">المستأجر<Select {...form.register('tenant_id')}><option value="">اختر المستأجر</option>{peopleQuery.data?.rows.map((person) => <option key={person.id} value={person.id}>{person.full_name}</option>)}</Select>{fieldError(form.formState.errors.tenant_id?.message)}</label>
               <label className="grid gap-2 text-sm font-bold">الحالة<Select {...form.register('status')}>{contractStatusValues.map((status) => <option key={status} value={status}>{contractStatusLabels[status]}</option>)}</Select>{fieldError(form.formState.errors.status?.message)}</label>
               <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('start_date')} />{fieldError(form.formState.errors.start_date?.message)}</label>

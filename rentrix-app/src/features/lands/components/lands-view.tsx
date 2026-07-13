@@ -8,6 +8,7 @@ import { DataErrorScreen } from '@/components/data-error-screen';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
@@ -104,7 +105,7 @@ export function LandsView(props: Props) {
         }
       />
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+      <ResponsiveCardGrid>
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl sm:h-28" />)
         ) : (
@@ -115,7 +116,7 @@ export function LandsView(props: Props) {
             <KpiCard label="إجمالي المساحة" value={area(totalArea)} icon={Layers} accent="sky" sub="مجموع المساحات" />
           </>
         )}
-      </div>
+      </ResponsiveCardGrid>
 
       <Card>
         <CardContent className="grid gap-3 p-3 sm:p-5 md:grid-cols-[1fr_12rem]">

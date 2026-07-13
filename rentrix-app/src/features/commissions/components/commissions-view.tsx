@@ -1,4 +1,4 @@
-import { Archive, Edit, Plus, RotateCcw } from 'lucide-react';
+import { Archive, BadgeDollarSign, CheckCircle2, Clock3, Edit, Plus, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,9 @@ import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable } from '@/components/ui/entity-table';
-import { InlineStatCard } from '@/components/ui/inline-stat-card';
 import { Input } from '@/components/ui/input';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { PageHeader } from '@/components/layout/page-header';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -50,6 +51,7 @@ export function CommissionsView(props: Props) {
   const [archiveCandidate, setArchiveCandidate] = useState<CommissionRecord | null>(null);
   const pendingTotal = rows.filter((row) => row.status !== 'paid' && row.status !== 'cancelled').reduce((sum, row) => sum + (row.amount ?? 0), 0);
   const paidTotal = rows.filter((row) => row.status === 'paid').reduce((sum, row) => sum + (row.amount ?? 0), 0);
+  const approvedCount = rows.filter((row) => row.status === 'approved').length;
   const hasFilters = filters.query.trim().length > 0 || filters.status !== 'all' || filters.type !== 'all';
 
   return (
@@ -59,11 +61,12 @@ export function CommissionsView(props: Props) {
         description="تتبع تشغيلي لعمولات المكتب والوسطاء حسب الحالة والمصدر، ولا يعتمد صرفاً أو مطابقة مالية."
         action={<Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة عمولة</Button>}
       />
-      <div className="grid gap-3 sm:grid-cols-3">
-        <InlineStatCard label="إجمالي السجلات" value={String(rows.length)} />
-        <InlineStatCard label="قيد المراجعة/التتبع" value={money(pendingTotal)} />
-        <InlineStatCard label="مسجلة كمدفوعة" value={money(paidTotal)} />
-      </div>
+      <ResponsiveCardGrid>
+        <KpiCard label="إجمالي السجلات" value={rows.length} icon={BadgeDollarSign} accent="primary" />
+        <KpiCard label="قيد المراجعة/التتبع" value={money(pendingTotal)} icon={Clock3} accent="amber" />
+        <KpiCard label="معتمدة للتتبع" value={approvedCount} icon={CheckCircle2} accent="sky" />
+        <KpiCard label="مسجلة كمدفوعة" value={money(paidTotal)} icon={BadgeDollarSign} accent="emerald" />
+      </ResponsiveCardGrid>
 
       <Card><CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]"><Input value={filters.query} onChange={(event) => onFiltersChange({ ...filters, query: event.target.value })} placeholder="بحث بالموظف، المصدر، النوع" aria-label="بحث العمولات" /><Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}><option value="all">كل الحالات</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select><Select value={filters.type} onChange={(event) => onFiltersChange({ ...filters, type: event.target.value })}><option value="all">كل الأنواع</option>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></CardContent></Card>
 

@@ -30,6 +30,8 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
     peopleQuery,
     paymentTermsQuery,
     unitsQuery,
+    unitConflictsQuery,
+    unitConflictsByUnitId,
     agreementCoverageQuery,
     selectedProperty,
     currentLinkedUnitId,
@@ -71,18 +73,21 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
   const propertyId = form.watch('property_id');
   const startDate = form.watch('start_date');
   const endDate = form.watch('end_date');
-  const prerequisitesLoading = propertiesQuery.isLoading || peopleQuery.isLoading || unitsQuery.isLoading || agreementCoverageQuery.isLoading;
+  const prerequisitesLoading = propertiesQuery.isLoading || peopleQuery.isLoading || unitsQuery.isLoading || unitConflictsQuery.isLoading || agreementCoverageQuery.isLoading;
   const hasSelectedPeriod = Boolean(propertyId && startDate && endDate);
   const coverageError = agreementCoverageQuery.isError
     ? 'تعذر التحقق من اتفاقية المالك. أعد المحاولة قبل حفظ العقد.'
     : hasSelectedPeriod && !agreementCoverageQuery.isLoading && !agreementCoverageQuery.data
-      ? 'لا توجد اتفاقية مالك نشطة تغطي فترة العقد. أنشئ أو حدّث اتفاقية المالك أولاً.'
+      ? 'لا توجد اتفاقية إدارة تغطي كامل فترة العقد. انتقل إلى صفحة العقار لإنشاء أو تحديث اتفاقية الإدارة أولاً.'
       : null;
-  const dependencyError = propertiesQuery.isError || peopleQuery.isError
-    ? 'تعذر تحميل بيانات العقارات أو المستأجرين. أعد تحميل الصفحة ثم حاول مرة أخرى.'
-    : unitsQuery.isError
-      ? 'تعذر تحميل وحدات العقار المحدد. أعد المحاولة قبل حفظ العقد.'
-      : null;
+  let dependencyError: string | null = null;
+  if (propertiesQuery.isError || peopleQuery.isError) {
+    dependencyError = 'تعذر تحميل بيانات العقارات أو المستأجرين. أعد تحميل الصفحة ثم حاول مرة أخرى.';
+  } else if (unitsQuery.isError) {
+    dependencyError = 'تعذر تحميل وحدات العقار المحدد. أعد المحاولة قبل حفظ العقد.';
+  } else if (unitConflictsQuery.isError) {
+    dependencyError = 'تعذر التحقق من تعارضات عقود الوحدة. أعد المحاولة قبل حفظ العقد.';
+  }
 
   // Override handleSubmit to include agreement_id from coverage query
   const handleModalSubmit = form.handleSubmit(async (values: ContractFormValues) => {
@@ -92,6 +97,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
       propertyId: payload.property_id,
       unitId: payload.unit_id,
       currentLinkedUnitId,
+      conflictsByUnitId: unitConflictsByUnitId,
     });
     if (unitIssue) {
       form.setError('unit_id', { type: 'validate', message: unitIssue });
@@ -139,7 +145,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
                   <option
                     key={unit.id}
                     value={unit.id}
-                    disabled={!isUnitSelectableForContract({ unit, currentLinkedUnitId })}
+                    disabled={!isUnitSelectableForContract({ unit, currentLinkedUnitId, conflictsByUnitId: unitConflictsByUnitId })}
                   >
                     {buildContractUnitOptionLabel({ unit, property: selectedProperty })}
                   </option>

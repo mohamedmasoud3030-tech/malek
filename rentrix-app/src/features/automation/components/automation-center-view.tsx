@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { MobileCard } from '@/components/ui/mobile-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionHeader } from '@/components/ui/section-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { automationRulesCatalog, automationTemplatePreviews } from '../automation-catalog';
@@ -116,11 +117,13 @@ export function AutomationCenterView() {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard icon={CalendarClock} label="تذكيرات العقود" value="2" />
-          <SummaryCard icon={MessageCircle} label="تذكيرات الإيجار" value="2" />
-          <SummaryCard icon={Mail} label="تقارير الملاك" value="1" />
-          <SummaryCard icon={Wrench} label="تنبيهات الصيانة" value="1" />
+        <CardContent>
+          <ResponsiveCardGrid>
+            <SummaryCard icon={CalendarClock} label="تذكيرات العقود" value="2" />
+            <SummaryCard icon={MessageCircle} label="تذكيرات الإيجار" value="2" />
+            <SummaryCard icon={Mail} label="تقارير الملاك" value="1" />
+            <SummaryCard icon={Wrench} label="تنبيهات الصيانة" value="1" />
+          </ResponsiveCardGrid>
         </CardContent>
       </Card>
 
