@@ -1,6 +1,5 @@
 import { Archive, CheckCircle2, Edit, MessageSquareText, Plus, RotateCcw, Rows3, UserRoundSearch } from 'lucide-react';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
@@ -83,15 +82,15 @@ export function CommunicationHubView(props: Props) {
         className="max-w-2xl"
       >
           <EntityForm.Root className="md:grid-cols-2" onSubmit={(event) => { event.preventDefault(); onSubmit(draft); }}>
-            <Field label="اسم جهة التواصل"><Input required value={draft.contact_name} onChange={(event) => onDraftChange({ ...draft, contact_name: event.target.value })} /></Field>
-            <Field label="الهاتف"><Input value={draft.contact_phone} onChange={(event) => onDraftChange({ ...draft, contact_phone: event.target.value })} /></Field>
-            <Field label="البريد الإلكتروني"><Input type="email" value={draft.contact_email} onChange={(event) => onDraftChange({ ...draft, contact_email: event.target.value })} /></Field>
-            <Field label="الموضوع"><Input value={draft.subject} onChange={(event) => onDraftChange({ ...draft, subject: event.target.value })} /></Field>
-            <Field label="القناة"><Select value={draft.channel} onChange={(event) => onDraftChange({ ...draft, channel: event.target.value })}>{Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="الاتجاه"><Select value={draft.direction} onChange={(event) => onDraftChange({ ...draft, direction: event.target.value })}>{Object.entries(directionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field>
-            <Field label="نوع الربط"><Input value={draft.related_entity_type} onChange={(event) => onDraftChange({ ...draft, related_entity_type: event.target.value })} placeholder="مستأجر، مالك، عقد، أو اتركه فارغاً" /></Field>
-            <Field label="معرف الربط"><Input value={draft.related_entity_id} onChange={(event) => onDraftChange({ ...draft, related_entity_id: event.target.value })} /></Field>
+            <EntityForm.Field label="اسم جهة التواصل"><Input required value={draft.contact_name} onChange={(event) => onDraftChange({ ...draft, contact_name: event.target.value })} /></EntityForm.Field>
+            <EntityForm.Field label="الهاتف"><Input value={draft.contact_phone} onChange={(event) => onDraftChange({ ...draft, contact_phone: event.target.value })} /></EntityForm.Field>
+            <EntityForm.Field label="البريد الإلكتروني"><Input type="email" value={draft.contact_email} onChange={(event) => onDraftChange({ ...draft, contact_email: event.target.value })} /></EntityForm.Field>
+            <EntityForm.Field label="الموضوع"><Input value={draft.subject} onChange={(event) => onDraftChange({ ...draft, subject: event.target.value })} /></EntityForm.Field>
+            <EntityForm.Field label="القناة"><Select value={draft.channel} onChange={(event) => onDraftChange({ ...draft, channel: event.target.value })}>{Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+            <EntityForm.Field label="الاتجاه"><Select value={draft.direction} onChange={(event) => onDraftChange({ ...draft, direction: event.target.value })}>{Object.entries(directionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+            <EntityForm.Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+            <EntityForm.Field label="نوع الربط"><Input value={draft.related_entity_type} onChange={(event) => onDraftChange({ ...draft, related_entity_type: event.target.value })} placeholder="مستأجر، مالك، عقد، أو اتركه فارغاً" /></EntityForm.Field>
+            <EntityForm.Field label="معرف الربط"><Input value={draft.related_entity_id} onChange={(event) => onDraftChange({ ...draft, related_entity_id: event.target.value })} /></EntityForm.Field>
             <label className="grid gap-2 text-sm font-bold md:col-span-2">المحتوى<Textarea required value={draft.body} onChange={(event) => onDraftChange({ ...draft, body: event.target.value })} /></label>
             <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
           </EntityForm.Root>
@@ -108,10 +107,6 @@ export function CommunicationHubView(props: Props) {
       />
     </section>
   );
-}
-
-function Field({ label, children }: Readonly<{ label: string; children: ReactNode }>) {
-  return <label className="grid gap-2 text-sm font-bold">{label}{children}</label>;
 }
 
 function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: () => void }>) {

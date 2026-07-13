@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Building2, Eye, LinkIcon, Pencil, Plus, Users } from 'lucide-react';
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/empty-state';
@@ -57,13 +57,8 @@ import {
 
 // ─── local types & helpers ───────────────────────────────────────────────────
 
-type FieldProps = Readonly<{ label: string; children: ReactNode }>;
 type EditingPropertyOwnerLink = Readonly<{ id: string; propertyId: string; ownerId: string }>;
 type LinkedPropertyItem = Readonly<{ property: PropertyWithOwners; links: PropertyOwner[] }>;
-
-function Field({ label, children }: FieldProps) {
-  return <label className="space-y-2 text-sm font-bold"><span>{label}</span>{children}</label>;
-}
 
 function FieldError({ message }: Readonly<{ message?: string }>) {
   return message ? <p className="text-xs font-bold text-destructive">{message}</p> : null;
@@ -142,15 +137,15 @@ function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
       <EntityForm.Root onSubmit={handleSubmit}>
         <EntityForm.ErrorSummary message={error} />
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="اسم المالك *"><Input value={values.full_name} onChange={(e) => setField('full_name', e.target.value)} /><FieldError message={fieldErrors.full_name} /></Field>
-          <Field label="الاسم المختصر"><Input value={values.display_name} onChange={(e) => setField('display_name', e.target.value)} /></Field>
-          <Field label="الهاتف"><Input value={values.phone} onChange={(e) => setField('phone', e.target.value)} /><FieldError message={fieldErrors.phone} /></Field>
-          <Field label="البريد الإلكتروني"><Input dir="ltr" value={values.email} onChange={(e) => setField('email', e.target.value)} /><FieldError message={fieldErrors.email} /></Field>
-          <Field label="الرقم المدني"><Input value={values.national_id} onChange={(e) => setField('national_id', e.target.value)} /><FieldError message={fieldErrors.national_id} /></Field>
-          <Field label="الرقم الضريبي"><Input value={values.tax_number} onChange={(e) => setField('tax_number', e.target.value)} /></Field>
+          <EntityForm.Field label="اسم المالك *"><Input value={values.full_name} onChange={(e) => setField('full_name', e.target.value)} /><FieldError message={fieldErrors.full_name} /></EntityForm.Field>
+          <EntityForm.Field label="الاسم المختصر"><Input value={values.display_name} onChange={(e) => setField('display_name', e.target.value)} /></EntityForm.Field>
+          <EntityForm.Field label="الهاتف"><Input value={values.phone} onChange={(e) => setField('phone', e.target.value)} /><FieldError message={fieldErrors.phone} /></EntityForm.Field>
+          <EntityForm.Field label="البريد الإلكتروني"><Input dir="ltr" value={values.email} onChange={(e) => setField('email', e.target.value)} /><FieldError message={fieldErrors.email} /></EntityForm.Field>
+          <EntityForm.Field label="الرقم المدني"><Input value={values.national_id} onChange={(e) => setField('national_id', e.target.value)} /><FieldError message={fieldErrors.national_id} /></EntityForm.Field>
+          <EntityForm.Field label="الرقم الضريبي"><Input value={values.tax_number} onChange={(e) => setField('tax_number', e.target.value)} /></EntityForm.Field>
         </div>
-        <Field label="العنوان"><Textarea value={values.address} onChange={(e) => setField('address', e.target.value)} /></Field>
-        <Field label="ملاحظات"><Textarea value={values.notes} onChange={(e) => setField('notes', e.target.value)} /></Field>
+        <EntityForm.Field label="العنوان"><Textarea value={values.address} onChange={(e) => setField('address', e.target.value)} /></EntityForm.Field>
+        <EntityForm.Field label="ملاحظات"><Textarea value={values.notes} onChange={(e) => setField('notes', e.target.value)} /></EntityForm.Field>
         <OwnerCheckbox checked={values.is_active} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
         <EntityForm.Actions onCancel={() => onOpenChange(false)} isSubmitting={isPending} submitLabel={isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'} />
       </EntityForm.Root>
@@ -318,8 +313,8 @@ function OwnershipLinkForm({ values, availableProperties, editingLink, error, is
         <Input type="number" min="0.01" inputMode="decimal" max="100" step="0.01" value={values.ownership_percentage} onChange={(e) => onValueChange('ownership_percentage', e.target.value)} aria-label="نسبة الملكية" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="تاريخ البداية"><Input type="date" value={values.starts_on} onChange={(e) => onValueChange('starts_on', e.target.value)} /></Field>
-        <Field label="تاريخ النهاية"><Input type="date" value={values.ends_on} onChange={(e) => onValueChange('ends_on', e.target.value)} /></Field>
+        <EntityForm.Field label="تاريخ البداية"><Input type="date" value={values.starts_on} onChange={(e) => onValueChange('starts_on', e.target.value)} /></EntityForm.Field>
+        <EntityForm.Field label="تاريخ النهاية"><Input type="date" value={values.ends_on} onChange={(e) => onValueChange('ends_on', e.target.value)} /></EntityForm.Field>
       </div>
       <OwnerCheckbox checked={values.is_primary} label="مالك أساسي" onCheckedChange={(checked) => onValueChange('is_primary', checked)} className="flex items-center gap-3 rounded-2xl border border-border bg-muted/30 p-3 text-sm font-bold" />
       <EntityForm.Actions

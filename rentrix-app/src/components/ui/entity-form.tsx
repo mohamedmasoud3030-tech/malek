@@ -47,6 +47,21 @@ type EntityFormSectionProps = Readonly<{
   className?: string;
 }>;
 
+type EntityFormFieldProps = Readonly<{
+  label: ReactNode;
+  children: ReactNode;
+  className?: string;
+}>;
+
+function Field({ label, children, className }: EntityFormFieldProps) {
+  return (
+    <label className={cn('grid min-w-0 gap-2 text-sm font-bold', className)}>
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+
 function Section({ title, description, children, className }: EntityFormSectionProps) {
   return (
     <section className={cn('min-w-0 space-y-4 rounded-2xl border border-border/60 bg-muted/15 p-3.5 sm:p-4', className)}>
@@ -148,4 +163,4 @@ function Overlay({ open, onOpenChange, title, description, headerExtra, children
   );
 }
 
-export const EntityForm = Object.assign(Root, { Root, Section, ErrorSummary, Actions, Overlay });
+export const EntityForm = Object.assign(Root, { Root, Field, Section, ErrorSummary, Actions, Overlay });
