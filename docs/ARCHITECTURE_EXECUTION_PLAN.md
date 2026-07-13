@@ -75,7 +75,7 @@ Large tests may be split for navigation, but behavior coverage must not be reduc
 
 ## Phase A — app/feature boundary
 
-Status: **in progress on PR #1136**.
+Status: **implementation complete on the current architecture-boundary PR; merge gate pending**.
 
 Scope:
 
