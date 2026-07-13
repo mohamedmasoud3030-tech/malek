@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCrudFormState } from '@/hooks/use-crud-form-state';
 import { LandsView } from './components/lands-view';
 import { useArchiveLand, useLands, useSaveLand } from './use-lands';
 import type { LandFilters, LandFormValues, LandRecord } from './types';
@@ -23,9 +23,7 @@ function formFromLand(land: LandRecord): LandFormValues {
 
 export function LandsPage() {
   const [filters, setFilters] = useState<LandFilters>({ query: '', status: 'all' });
-  const [editingLand, setEditingLand] = useState<LandRecord | null>(null);
-  const [draft, setDraft] = useState<LandFormValues>(emptyForm);
-  const [formOpen, setFormOpen] = useState(false);
+  const formState = useCrudFormState<LandRecord, LandFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLand });
   const landsQuery = useLands(filters);
   const saveLand = useSaveLand();
   const archiveLand = useArchiveLand();
@@ -34,9 +32,9 @@ export function LandsPage() {
     <LandsView
       rows={landsQuery.data ?? []}
       filters={filters}
-      draft={draft}
-      editingLand={editingLand}
-      formOpen={formOpen}
+      draft={formState.draft}
+      editingLand={formState.editingRecord}
+      formOpen={formState.formOpen}
       isLoading={landsQuery.isLoading}
       isSaving={saveLand.isPending}
       isArchiving={archiveLand.isPending}
