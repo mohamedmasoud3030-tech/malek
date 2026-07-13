@@ -41,11 +41,11 @@ export function LandsPage() {
       error={landsQuery.error}
       writeError={saveLand.error ?? archiveLand.error}
       onFiltersChange={setFilters}
-      onDraftChange={setDraft}
-      onCreate={() => { setEditingLand(null); setDraft(emptyForm); setFormOpen(true); }}
-      onEdit={(land) => { setEditingLand(land); setDraft(formFromLand(land)); setFormOpen(true); }}
-      onFormOpenChange={setFormOpen}
-      onSubmit={(values) => saveLand.mutate({ id: editingLand?.id, values }, { onSuccess: () => setFormOpen(false) })}
+      onDraftChange={formState.setDraft}
+      onCreate={formState.openCreate}
+      onEdit={formState.openEdit}
+      onFormOpenChange={formState.setFormOpen}
+      onSubmit={(values) => saveLand.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
       onArchive={(id) => archiveLand.mutate(id)}
       onRetry={() => void landsQuery.refetch()}
     />
