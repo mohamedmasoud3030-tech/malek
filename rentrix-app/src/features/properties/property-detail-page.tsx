@@ -14,8 +14,7 @@ import { useUnits } from '@/features/units/use-units';
 import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
 import { propertyStatusLabels } from './property-schema';
 import { summarizePropertyUnits } from './property-unit-summary';
-import { getAgreementActiveOn } from '@/features/owners/ownerAgreementService';
-import { useOwnerAgreements } from '@/features/owners/useOwnerAgreements';
+import { OwnerAgreementsManager } from '@/features/owners/OwnerAgreementsManager';
 import { useProperty } from './use-properties';
 import { unitStatusLabels } from '../units/unit-schema';
 
@@ -117,10 +116,8 @@ export function PropertyOverview() {
   const propertyId = typeof params.propertyId === 'string' ? params.propertyId : '';
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
-  const agreementsQuery = useOwnerAgreements(propertyId);
 
   const property = propertyQuery.data;
-  const activeAgreement = getAgreementActiveOn(agreementsQuery.data ?? []);
 
   return (
     <AsyncContentState
@@ -179,41 +176,16 @@ export function PropertyOverview() {
             </CardContent>
           </Card>
 
-          {/* Concise empty states for unavailable agreement or finance information as per rules */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="rounded-2xl border-dashed border-2 bg-card">
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-xs font-bold text-muted-foreground">اتفاقية تشغيل المالك</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 px-4 pb-4 text-sm leading-relaxed">
-                {agreementsQuery.isLoading ? (
-                  <p className="text-muted-foreground">جارٍ تحميل اتفاقيات المالك...</p>
-                ) : activeAgreement ? (
-                  <>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge tone={activeAgreement.ends_on ? 'blue' : 'green'}>{activeAgreement.ends_on ? 'محددة المدة' : 'مفتوحة'}</StatusBadge>
-                      <span className="font-black">{activeAgreement.agreement_type === 'master_lease' ? 'Master lease' : 'Property management'}</span>
-                    </div>
-                    <p className="text-muted-foreground">التغطية: {formatDate(activeAgreement.starts_on)} — {activeAgreement.ends_on ? formatDate(activeAgreement.ends_on) : 'مفتوحة'}</p>
-                    <p className="text-muted-foreground">العمولة: {activeAgreement.commission_type === 'RATE' ? `${formatNumber(activeAgreement.commission_value)}%` : formatMoney(activeAgreement.commission_value)}</p>
-                  </>
-                ) : agreementsQuery.isError ? (
-                  <p className="text-destructive">تعذر تحميل اتفاقيات المالك لهذا العقار.</p>
-                ) : (
-                  <p className="text-muted-foreground">لا توجد اتفاقية مالك مسجلة لهذا العقار حالياً.</p>
-                )}
-              </CardContent>
-            </Card>
+          <OwnerAgreementsManager propertyId={propertyId} />
 
-            <Card className="rounded-2xl border-dashed border-2 bg-card">
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-xs font-bold text-muted-foreground">الحسابات والوضع المالي</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
-                سيظهر الملخص المالي هنا عند توفر بيانات مالية مرتبطة بالعقار.
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="rounded-2xl border-dashed border-2 bg-card">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-xs font-bold text-muted-foreground">الحسابات والوضع المالي</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 text-sm text-muted-foreground leading-relaxed">
+              سيظهر الملخص المالي هنا عند توفر بيانات مالية مرتبطة بالعقار.
+            </CardContent>
+          </Card>
         </div>
       )}
     </AsyncContentState>

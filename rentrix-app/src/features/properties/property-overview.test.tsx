@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PropertyOverview } from './property-detail-page';
 
 // Mock TanStack Router
@@ -38,20 +39,21 @@ vi.mock('@/features/units/use-units', () => ({
   }),
 }));
 
-vi.mock('@/features/owners/useOwnerAgreements', () => ({
-  useOwnerAgreements: () => ({
-    data: [],
-    isLoading: false,
-    isError: false,
-  }),
+vi.mock('@/features/owners/OwnerAgreementsManager', () => ({
+  OwnerAgreementsManager: () => <section>لا توجد اتفاقية سارية اليوم.</section>,
 }));
+
+function renderPropertyOverview() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return renderToStaticMarkup(<QueryClientProvider client={client}><PropertyOverview /></QueryClientProvider>);
+}
 
 describe('PropertyOverview Component Rendering and Copy Integrity', () => {
   it('renders accurate Arabic agreement and financial empty copy', () => {
-    const html = renderToStaticMarkup(<PropertyOverview />);
+    const html = renderPropertyOverview();
 
     // Renders the current service-backed empty state for owner agreements
-    expect(html).toContain('لا توجد اتفاقية مالك مسجلة لهذا العقار حالياً.');
+    expect(html).toContain('لا توجد اتفاقية سارية اليوم.');
     expect(html).toContain('سيظهر الملخص المالي هنا عند توفر بيانات مالية مرتبطة بالعقار.');
 
     // DOES NOT render unsupported legacy wording
@@ -61,7 +63,7 @@ describe('PropertyOverview Component Rendering and Copy Integrity', () => {
   });
 
   it('renders property identity and basic details when available', () => {
-    const html = renderToStaticMarkup(<PropertyOverview />);
+    const html = renderPropertyOverview();
     
     // Verifies property fields and basic info are rendered correctly
     expect(html).toContain('محمد مسعود');

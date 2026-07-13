@@ -71,6 +71,7 @@ export const renewalSchema = z.object({
   new_start: isoDate,
   new_end: isoDate,
   new_amount: money,
+  agreement_id: z.string().uuid('اختر اتفاقية مالك صحيحة').optional().nullable(),
 }).refine((value) => value.new_end > value.new_start, { path: ['new_end'], message: 'تاريخ النهاية يجب أن يكون بعد البداية' });
 
 export type ContractFormValues = z.input<typeof contractSchema>;
