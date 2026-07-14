@@ -1,0 +1,85 @@
+:root {
+  --visual-viewport-height: 100dvh;
+  --app-page-gutter-inline: clamp(0.75rem, 2.4vw, 1.5rem);
+  --app-page-gutter-block: clamp(0.75rem, 2vw, 1.5rem);
+  --entity-form-action-clearance: 7.5rem;
+}
+
+#main-content {
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: var(--app-page-gutter-inline);
+  padding-block-start: var(--app-page-gutter-block);
+}
+
+#main-content > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-page-layout],
+[data-page-content],
+[data-entity-form],
+[data-entity-form-field] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+[data-entity-form-scroll],
+[data-bottom-sheet-scroll],
+[data-dialog-scroll] {
+  overscroll-behavior: contain;
+  scroll-padding-block-start: 1rem;
+  scroll-padding-block-end: calc(var(--entity-form-action-clearance) + env(safe-area-inset-bottom, 0px));
+  -webkit-overflow-scrolling: touch;
+}
+
+.entity-form:has([data-entity-form-actions]) {
+  padding-block-end: calc(var(--entity-form-action-clearance) + env(safe-area-inset-bottom, 0px));
+}
+
+[data-entity-form-actions] {
+  isolation: isolate;
+}
+
+[data-bottom-sheet],
+[data-dialog-content],
+[data-entity-form-surface] {
+  max-inline-size: 100%;
+}
+
+@media (min-width: 640px) {
+  .entity-form:has([data-entity-form-actions]) {
+    padding-block-end: 0;
+  }
+
+  [data-entity-form-scroll],
+  [data-bottom-sheet-scroll],
+  [data-dialog-scroll] {
+    scroll-padding-block-end: 2rem;
+  }
+}
+
+@media (pointer: coarse) {
+  button,
+  [role='button'],
+  input[type='checkbox'],
+  input[type='radio'] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 359px) {
+  :root {
+    --app-page-gutter-inline: 0.625rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-bottom-sheet],
+  [data-dialog-content],
+  [data-entity-form-surface] {
+    scroll-behavior: auto;
+  }
+}
