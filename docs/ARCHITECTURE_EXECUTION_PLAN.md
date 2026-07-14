@@ -76,7 +76,7 @@ Public exports and behavior were preserved; no permission, database, RPC, RLS, o
 
 PR #1143 unified accessible field errors, action shells, contract/person fields, property/unit/owner workflows, renewal/termination overlays, page errors, and equivalent KPI/table patterns. PR #1144 closed the final repeated field-shell exception in bank reconciliation and related forms. CI now enforces `check:architecture`.
 
-Detailed implementation evidence remains in [`PHASE_D_SHARED_UI_EXECUTION.md`](PHASE_D_SHARED_UI_EXECUTION.md).
+Detailed implementation evidence is archived in [`archive/completed-execution/PHASE_D_SHARED_UI_EXECUTION.md`](archive/completed-execution/PHASE_D_SHARED_UI_EXECUTION.md).
 
 ## Phase E — documentation consolidation
 
