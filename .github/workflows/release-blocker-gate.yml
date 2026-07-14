@@ -1,0 +1,122 @@
+name: Release Blocker Gate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-blocker-code:
+    name: release-blocker-code
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_ANON_KEY: test-anon-key
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate gate scripts
+        run: |
+          bash -n scripts/check-release-secret-leaks.sh
+          node --check scripts/assert-release-blocker-env.mjs
+      - name: Typecheck application and tests
+        run: |
+          pnpm --filter ./rentrix-app run typecheck
+          pnpm --filter ./rentrix-app run typecheck:test
+      - name: Run application tests
+        run: pnpm --filter ./rentrix-app run test
+      - name: Run financial safety tests
+        run: pnpm --filter ./rentrix-app run test:financials
+      - name: Build browser application
+        run: pnpm --filter ./rentrix-app run build
+      - name: Reject service-role and private-key markers in browser artifacts
+        run: bash scripts/check-release-secret-leaks.sh rentrix-app/dist
+
+  release-blocker-database:
+    name: release-blocker-database
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create ephemeral local Supabase configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$PWD"
+          bootstrap_dir="$(mktemp -d)"
+          cd "$bootstrap_dir"
+          "$root/node_modules/.bin/supabase" init
+          cp supabase/config.toml "$root/supabase/config.toml"
+      - name: Start isolated Supabase
+        run: pnpm exec supabase start
+      - name: Replay every migration from an empty database
+        run: pnpm exec supabase db reset --local
+      - name: Run contract, payment, rollback, and RLS blocker tests
+        run: pnpm exec supabase test db
+      - name: Stop isolated Supabase
+        if: always()
+        run: pnpm exec supabase stop --no-backup || true
+      - name: Upload database diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-blocker-database-diagnostics
+          path: |
+            supabase/.temp
+            supabase/tests
+          if-no-files-found: ignore
+
+  release-blocker-authenticated-staging:
+    name: release-blocker-authenticated-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [release-blocker-code, release-blocker-database]
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      E2E_ENVIRONMENT_KIND: staging
+      E2E_BASE_URL: ${{ secrets.E2E_STAGING_BASE_URL }}
+      E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Fail closed when staging credentials are unavailable
+        run: node scripts/assert-release-blocker-env.mjs
+      - name: Install Chromium
+        run: pnpm e2e:install
+      - name: Run real authentication lifecycle tests with zero skips
+        run: pnpm --filter ./rentrix-app exec playwright test e2e/release-blocker-auth.spec.ts --config playwright.config.ts --project=chromium-desktop
+      - name: Upload failed authentication traces
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-blocker-auth-failure
+          path: |
+            rentrix-app/playwright-report
+            rentrix-app/test-results
+          if-no-files-found: ignore
