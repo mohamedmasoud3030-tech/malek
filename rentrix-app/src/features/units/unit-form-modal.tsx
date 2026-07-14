@@ -19,10 +19,6 @@ type UnitFormModalProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-function fieldError(message?: string) {
-  return message ? <p className="text-xs font-bold text-destructive">{message}</p> : null;
-}
-
 export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitFormModalProps) {
   const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });
   const [selectedPropertyId, setSelectedPropertyId] = useState(propertyId);
@@ -56,6 +52,11 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
   }, [form, open, propertyId, unit]);
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const propertyError = !selectedPropertyId
+    ? 'اختيار العقار مطلوب'
+    : propertiesQuery.isError
+      ? 'تعذر تحميل العقارات. أعد المحاولة قبل الحفظ.'
+      : undefined;
 
   return (
     <EntityForm.Overlay
@@ -100,7 +101,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
         <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
 
         {!unit ? (
-          <EntityForm.Field label="العقار" className="md:col-span-2">
+          <EntityForm.Field label="العقار" className="md:col-span-2" error={propertyError}>
             <Select
               value={selectedPropertyId}
               onChange={(event) => setSelectedPropertyId(event.target.value)}
@@ -114,20 +115,11 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
                 </option>
               ))}
             </Select>
-            {!selectedPropertyId ? (
-              <p className="text-xs font-bold text-destructive">اختيار العقار مطلوب</p>
-            ) : null}
-            {propertiesQuery.isError ? (
-              <p className="text-xs font-bold text-destructive">
-                تعذر تحميل العقارات. أعد المحاولة قبل الحفظ.
-              </p>
-            ) : null}
           </EntityForm.Field>
         ) : null}
 
-        <EntityForm.Field label="رقم الوحدة">
+        <EntityForm.Field label="رقم الوحدة" error={form.formState.errors.unit_number?.message}>
           <Input {...form.register('unit_number')} />
-          {fieldError(form.formState.errors.unit_number?.message)}
         </EntityForm.Field>
 
         <EntityForm.Field label="الدور">
@@ -144,7 +136,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
           </Select>
         </EntityForm.Field>
 
-        <EntityForm.Field label="قيمة الإيجار">
+        <EntityForm.Field label="قيمة الإيجار" error={form.formState.errors.rent_amount?.message}>
           <Input
             type="number"
             step="0.01"
@@ -152,7 +144,6 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
             min="0"
             {...form.register('rent_amount')}
           />
-          {fieldError(form.formState.errors.rent_amount?.message)}
         </EntityForm.Field>
 
         <EntityForm.Field label="ملاحظات" className="md:col-span-2">
