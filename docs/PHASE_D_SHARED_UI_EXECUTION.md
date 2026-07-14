@@ -1,6 +1,6 @@
 # Phase D — Shared page and form convergence
 
-Status: **in progress**
+Status: **implementation complete — verification in progress in PR #1143**
 
 Started from `main` after merge of PR #1142 (`63fc6ebb8d36d18bbfc4375ccf799c18175b7a7b`).
 
@@ -12,82 +12,80 @@ Converge only genuinely equivalent page, form, table, KPI, loading, empty, and e
 
 - Phase B operational page decomposition is merged through PRs #1139, #1140, and #1141.
 - Phase C financial report boundary split is merged in PR #1142.
-- `EntityForm.Field`, `EntityForm.ErrorSummary`, `EntityForm.Actions`, `EntityForm.Overlay`, and `ResponsiveCardGrid` already exist and are the preferred primitives.
-- The current code still contains local field wrappers and repeated `<label className="grid gap-2 text-sm font-bold">` shells.
-- A confirmed first target is `rentrix-app/src/features/contracts/contract-form-modal.tsx`, which has a local `fieldError` helper and repeated field-label/error markup despite already importing `EntityForm`.
+- `EntityForm.Field`, `EntityForm.ErrorSummary`, `EntityForm.Actions`, `EntityForm.Overlay`, and `ResponsiveCardGrid` already existed as the preferred primitives.
+- The code still contained repeated field wrappers, local validation-message helpers, raw route-backed form shells, and contract lifecycle dialogs that did not share the responsive form surface.
 
-## Ordered execution
+## Implemented convergence
 
 ### D1 — Form shell convergence
 
-1. Replace duplicate one-line field wrappers and repeated label/error shells with `EntityForm.Field` or the existing shared `FormField` where semantics match.
-2. Start with the contract form modal, then inspect people, properties, owners, settings, lands, commissions, leads, and communication forms.
-3. Preserve field names, registration, validation messages, autofocus, disabled states, placeholders, input types, and layout spans.
-4. Do not alter form schemas, mutations, RPCs, persistence payloads, or submit conditions.
+Implemented as one coherent form-system wave:
 
-Acceptance:
+- extended `EntityForm.Field` with shared `description` and accessible `error` rendering;
+- extended `EntityForm.Actions` with an optional destructive submit variant;
+- added coverage for the shared field description/error contract;
+- extracted `features/contracts/components/ContractFormFields.tsx` so the contract modal and route-backed contract page use one field tree instead of duplicate implementations;
+- migrated contract create/edit modal, contract route form, person modal/page, unit modal, property create/edit modal, property route form, and owner identity form;
+- removed local one-line field-error renderers from those migrated workflows;
+- preserved schemas, field names, values, placeholders, autofocus, query dependencies, mutation payloads, agreement coverage, unit-conflict validation, and submit-disable rules.
 
-- no duplicate one-line `Field` component remains in feature code;
-- each migrated form retains its current labels, errors, keyboard order, and submit behavior;
-- focused interaction tests cover open/close, validation, loading, server error, successful submit, and focus return where applicable.
+The first implementation attempt duplicated the contract field tree between the modal and route page and caused Sonar duplication to reach 46.6%. That approach was removed. The current implementation owns the contract field tree in one shared component and keeps only surface-specific orchestration in the modal and route page.
 
 ### D2 — Error, loading, and empty-state convergence
 
-1. Inventory local error summaries and route-level loading/empty shells.
-2. Replace only behaviorally equivalent implementations with shared primitives.
-3. Keep domain-specific remediation copy and retry behavior local.
-
-Acceptance:
-
-- repeated structural shells are removed without flattening domain-specific messaging;
-- no loading state hides actionable errors;
-- screen-reader live regions and alert roles remain correct.
+- field errors now use one shared semantic renderer with `role="alert"`;
+- root/server errors use `EntityForm.ErrorSummary` in the migrated workflows;
+- existing route loading states remain `RouteLoadingState`;
+- route-specific retry cards remain local because they include domain-specific retry/navigation actions rather than only repeated styling;
+- no loading state was changed to suppress a query or mutation error.
 
 ### D3 — KPI and summary convergence
 
-1. Find four-card KPI groups and move equivalent groups to `ResponsiveCardGrid`.
-2. Keep metric calculation and query ownership inside the feature domain.
-3. Preserve RTL order, mobile 2×2 behavior, skeletons, and empty values.
+Inventory confirmed that equivalent four-card KPI groups already use `ResponsiveCardGrid`, including the financial expenses summary. The four-column control in `financials-page.tsx` is a tab selector, not a KPI group, and remains local.
 
-Acceptance:
-
-- all equivalent four-card KPI groups use `ResponsiveCardGrid`;
-- no financial source or calculation changes;
-- mobile/tablet/desktop layouts remain stable.
+No metric calculation, report source, query ownership, currency formatting, or financial aggregation changed in this phase.
 
 ### D4 — Table and mobile-card inventory
 
-1. Classify `EntityTable`, raw table, and mobile-card implementations by behavior.
-2. Converge only when sorting, filtering, pagination, row actions, selection, and responsive semantics match.
-3. Record documented exceptions instead of forcing incompatible screens into one abstraction.
+Inventory confirmed:
 
-Acceptance:
+- financial expenses use `DataTable` with a dedicated `MobileCard` renderer;
+- equivalent list pages already preserve desktop/mobile action parity through their existing shared table/card path;
+- filter controls remain domain-owned because their selection, reset, and query semantics differ;
+- financial tables and reconciliation surfaces remain local where sorting, matching, selection, or atomic-operation behavior is domain-specific.
 
-- equivalent list behaviors share one implementation path;
-- domain-specific tables remain local with a documented reason;
-- row actions and mobile actions remain parity-tested.
+No forced table abstraction was added.
 
-### D5 — Overlay and accessibility verification
+### D5 — Overlay and accessibility convergence
 
-1. Confirm all create/edit workflows use `EntityForm.Overlay` or have a documented route-backed exception.
-2. Verify RTL labels, initial focus, focus return, Escape handling, keyboard navigation, dialog/sheet scrolling, sticky actions, and safe-area padding.
-3. Run browser checks on desktop, tablet, and mobile widths.
+- converted contract renewal to `EntityForm.Overlay`, preserving agreement-coverage validation and renewal RPC behavior;
+- converted contract termination to `EntityForm.Overlay` with shared destructive actions, preserving the required reason and termination mutation;
+- retained `ConfirmDialog` for confirmation-only destructive workflows;
+- retained the invoice-generation dialog as a documented non-form exception because it is a permission-gated financial batch confirmation with warning content, not a create/edit workflow;
+- retained `ContractFormPage`, `PersonFormPage`, and `PropertyFormPage` as documented route-backed exceptions because their routes already exist and include page navigation, retry, and dirty-navigation behavior.
 
-Acceptance:
+The shared overlay continues to provide mobile bottom-sheet and desktop dialog surfaces, bounded scrolling, sticky mobile actions, safe-area padding, and RTL-compatible layout.
 
-- no undocumented create/edit surface remains;
-- focus and scrolling behavior pass browser verification;
-- destructive confirmation behavior is unchanged.
-
-## Guardrails
+## Guardrails respected
 
 - No migrations, schema changes, RLS changes, RPC changes, auth changes, or production Supabase/Vercel changes.
 - No feature additions.
-- No business-rule or financial-source rewrites.
-- Shared components must represent repeated behavior, not merely repeated styling.
-- Keep one coherent migration wave per commit and preserve compatibility exports.
+- No business-rule, accounting, report-source, or financial calculation rewrites.
+- No file under `features/financials/` was modified.
+- Shared components represent repeated form behavior, not only repeated styling.
 
-## Required verification
+## Verification evidence
+
+Current implementation scope: 14 changed files and 19 commits before the documentation evidence commits.
+
+Verified remotely on implementation head `fa77d6d5d2c3f9413ac305852d60de3779faa7f4`:
+
+- Vercel preview/build: **success**.
+- Branch relation to `main`: **ahead, behind by 0** at the time of comparison.
+- Codacy: previously reported **0 new issues** while the branch was evolving; final-head reanalysis must still be checked.
+- Sonar: the earlier duplication failure is obsolete because the duplicate contract form bodies were replaced by `ContractFormFields`; final-head quality analysis must still complete successfully.
+
+Still required before marking the phase complete:
 
 ```bash
 pnpm typecheck
@@ -98,20 +96,13 @@ pnpm --filter ./rentrix-app test
 pnpm build
 ```
 
-Also run:
+Browser verification is also required at desktop, tablet, and mobile widths for form open/close, validation, scroll, focus, cancel, submit, renewal, and termination flows. The current connected environment can inspect GitHub/Vercel status but cannot run the local pnpm matrix, so the phase remains verification-in-progress rather than complete.
 
-```bash
-pnpm --filter ./rentrix-app run test:financials
-```
+## Exit decision
 
-when any financial feature file is touched, plus browser readiness/E2E for user-facing changes.
+Do not merge PR #1143 or advance automation to Phase E until:
 
-## Completion evidence
-
-Update this section in the same PR with:
-
-- migrated files and removed duplicate shells;
-- documented exceptions;
-- test counts and command results;
-- browser viewport evidence;
-- confirmation that no database, RPC, permission, or financial behavior changed.
+1. the required command matrix is green on the latest head SHA;
+2. final Sonar/Codacy analysis is green;
+3. browser desktop/tablet/mobile checks pass;
+4. the PR description records the final test counts and latest verified SHA.
