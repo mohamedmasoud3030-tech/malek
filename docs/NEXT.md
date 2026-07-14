@@ -15,12 +15,13 @@ First-ever end-to-end financial cycle test (contract → invoice → payment →
 3. `update_owner_balance_on_expense()` trigger unconditionally referenced `NEW.property_id`, which doesn't exist on `receipts` — **no receipt had ever been successfully posted in production**.
 4. `update_tenant_balance()` trigger unconditionally referenced `NEW.contract_id`, which doesn't exist on `receipt_allocations` — broke `post_receipt_atomic` end-to-end.
 
-**Unresolved architectural issue found during the same test:** `tenant_balances.tenant_id` has an FK to the legacy `tenants` table (40 rows), while `contracts.tenant_id` actually points to `people.id` (the documented source of truth per `DOMAIN.md`). Every existing `tenants` row happens to share an id with a `people` row, but any *new* tenant created only in `people` (the current official flow) will fail its first invoice/receipt against this FK. Needs a decision: drop the FK and standardize on `people`, or add sync. See `docs/CURRENT_STATE.md`.
+The tenant-balance identity follow-up from that QA run is now closed: migration `20260712020000_fix_tenant_balances_people_fk.sql` is present and registered live, `tenant_balances.tenant_id` references canonical `people(id)` with `ON DELETE RESTRICT`, and a 2026-07-14 read-only verification found zero tenant-balance orphans. A migration contract test prevents reintroducing the legacy `tenants(id)` dependency.
 
-QA cycle is still in progress — permission-boundary testing (non-admin role rejection), `void_receipt_atomic`, and report reconciliation checks remain, followed by full `TEST-QA` data cleanup.
+QA cycle is still in progress — permission-boundary testing, the payment-backed `void_receipt_atomic` path, and report-source reconciliation remain, followed by full `TEST-QA` data cleanup.
 
 ## Recently completed
 
+- Tenant financial identity is standardized on `people`: the live `tenant_balances` FK and migration ledger were verified on 2026-07-14, zero orphan rows were found, and regression coverage now locks the migration contract.
 - Architecture execution Phases A–E are complete through PR #1145: app/feature boundaries, large operational-page decomposition, financial-report service boundaries, shared form/UI convergence, and documentation consolidation.
 - Production migration cleanup from the earlier readiness pass is complete: the 2 committed-but-unapplied migrations were applied and the 9 orphaned enum types were dropped on `nnggcnpcuomwfuupupwg` on 2026-07-05. See `docs/CURRENT_STATE.md` for details.
 - Phase -1 shared-components implementation is complete: the custom contract/property/unit/receipt cards were replaced by shared `EntityCard` patterns, `EntityForm` now unifies form structure, `formatPropertyUnitSummary` moved into the properties feature, and receipt mobile/table status rendering no longer hard-codes posted status.
@@ -55,12 +56,12 @@ The former product/accounting decision blockers are now documented in `docs/deci
 
 - Bank reconciliation follow-up: foundation schema/UI plus CSV paste import and basic date/amount suggestions exist; add bank-file upload/format mapping, duplicate detection, advanced reconciliation rules, and production apply/verification.
 - Security deposit management — not found in migrations or `src/features`.
-- Deferred revenue handling — not found in migrations or `src/features`.
+- Deferred revenue handling — not found in migrations or `src/features`; current `Invoice`/`Expense`/`PaymentReceipt` types use a single unqualified `amount` number.
 - Multi-currency support — not found in migrations or `src/features`; current `Invoice`/`Expense`/`PaymentReceipt` types use a single unqualified `amount` number.
 
 ## Ready now — financial data consistency follow-ups
 
-1. Apply `20260706101000_align_payment_receipt_reporting_source.sql` in staging, then production only after approval.
+1. Repair the live `rpt_daily_collection` drift with a new forward migration that preserves the current JSONB API while restoring `payments` as the source and excluding VOID/deleted rows.
 2. Browser-verify invoice → payment → receipt → void → report totals.
 3. Wire validated report RPCs one screen at a time; do not swap financial calculations without parity tests.
 4. Continue contract lifecycle audit for sensitive direct updates/deletes.
