@@ -1,6 +1,6 @@
 # Architecture execution plan
 
-This document records the bounded architecture queue executed from PR #1137 onward. It remains the architecture history and verification contract; it is no longer an open-ended refactor backlog.
+This document records the bounded architecture queue executed from PR #1137 through PR #1145. It remains the architecture history and verification contract; it is no longer an open-ended refactor backlog.
 
 ## Operating rule
 
@@ -54,7 +54,7 @@ Rules:
 | B | Decompose Settings, Owners, and Maintenance operational pages | PRs #1139, #1140, #1141 | complete |
 | C | Split the 944-line financial-report facade into domain services while preserving its public API and financial rules | PR #1142 | complete |
 | D | Converge shared forms, errors, responsive overlays, KPI/table patterns, and enforce architecture checks in CI | PRs #1143 and #1144 | complete |
-| E | Consolidate documentation, archive superseded root reports, add a documentation index, and remove contradictory phase status | `agent/phase-e-documentation-consolidation` | implemented; ready to merge |
+| E | Consolidate documentation, archive superseded root reports, add a documentation index, and eliminate contradictory status claims | PR #1145 | complete |
 
 ## Phase A — app/feature boundary
 
@@ -80,7 +80,7 @@ Detailed implementation evidence remains in [`PHASE_D_SHARED_UI_EXECUTION.md`](P
 
 ## Phase E — documentation consolidation
 
-Implemented scope:
+Completed in PR #1145:
 
 - added [`README.md`](README.md) as the maintained documentation index;
 - retained `AGENTS.md` and `agent-context/CONTEXT_MAP.md` as contributor/agent entry points;
@@ -88,14 +88,19 @@ Implemented scope:
 - moved 13 completed audits/plans/execution reports plus the superseded root `CONTEXT_MAP.md` into [`archive/legacy-root-reports/`](archive/legacy-root-reports/);
 - preserved archived file bodies by reusing their exact Git blobs;
 - removed stale claims that Phase D awaited merge or Phase E remained blocked;
-- added a repository documentation-link check to CI.
+- added `pnpm check:docs`, CI diagnostics for link failures, and a required documentation-link gate;
+- scoped the maintained-document check away from vendored `.agents/skills` bodies whose upstream cross-links were intentionally pruned, while continuing to validate repository entry-point links into the skill index.
 
-Exit conditions for merge:
+Verification on the PR head included:
 
-- documentation-link check passes;
-- repository root contains only true entry/configuration documents rather than historical status reports;
-- standard CI remains green;
-- the PR description records the moved files and verification evidence.
+- governance guard;
+- Supabase migration evidence;
+- maintained documentation-link check;
+- typecheck and test typecheck;
+- lint and architecture check;
+- production build;
+- full application tests and financial tests;
+- Browser Readiness / Playwright E2E smoke.
 
 ## Required verification matrix
 
@@ -112,10 +117,10 @@ pnpm build
 
 Also run `pnpm --filter ./rentrix-app run test:financials` for files under `features/financials/`, and Browser Readiness/E2E for user-facing changes.
 
-For documentation-only consolidation, run:
+For documentation consolidation and future documentation changes, run:
 
 ```bash
 pnpm check:docs
 ```
 
-The standard CI still runs the full repository matrix before merge.
+The standard CI runs the full repository matrix before merge.
