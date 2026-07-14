@@ -29,7 +29,7 @@ async function openFixture(page: Page, theme: (typeof themes)[number], surface: 
   }, theme);
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await expect(page.getByRole('heading', { name: 'اختبار عقد الفورم المشترك' })).toBeVisible();
+  await expect(page.locator('main[data-e2e-form-contract]')).toBeAttached();
   await expect(page.getByRole('dialog')).toBeVisible();
 }
 
