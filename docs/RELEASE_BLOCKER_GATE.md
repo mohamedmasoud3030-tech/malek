@@ -44,33 +44,26 @@ Playwright traces, screenshots, video, and reports are retained only on failure.
 
 ## Current execution status
 
-Integrated gate baseline: PR #1150/#1151 merged in current local commit `8597d96bf8e64a57c06c5427c1707a9f23125ca8`. The container has no configured git remote, so PR #1152/main could not be fetched or verified locally in this pass.
+Repository source of truth on 2026-07-15 is `main` commit
+`77d8cbe04b5bd2776fbedbd74bdbce3c791062a8` (PR #1156). It includes the
+clean-replay compatibility fixes from PR #1157 and PR #1158.
 
-Local CI/readiness pass on 2026-07-14 from branch `ci-release-readiness-phase`:
+The latest completed release-gate run before this status update was run #28
+(`29366249857`) on PR #1156's temporary merge ref
+`d44055275b29d8a48c40b95f974c3808be769019`:
 
-| Check | Result | Evidence |
+| Job | Result | Evidence |
 | --- | --- | --- |
-| `pnpm install --frozen-lockfile` | **PASS with warning** | Dependencies were already locked/current; pnpm reported ignored dependency build scripts for `core-js` and `esbuild` |
-| `pnpm typecheck` | **PASS** | Root project references and app TypeScript completed successfully |
-| `pnpm lint` | **PASS** | Project lint script is the app TypeScript no-emit check |
-| `pnpm build` | **PASS** | Vite production build and PWA generation completed with placeholder Supabase env |
-| `pnpm --filter ./rentrix-app run typecheck:test` | **PASS** | Test TypeScript project completed successfully |
-| `pnpm --filter ./rentrix-app test` | **PASS** | 120 files / 546 tests passed |
-| `pnpm --filter ./rentrix-app run test:financials` | **PASS** | 36 files / 157 tests passed, including payment/receipt void/report parity tests |
-| `pnpm supabase:migration-evidence` | **BLOCKED for live reconciliation** | Local migration filename/order preflight passed; live migration-state reconciliation was blocked by missing `SUPABASE_PROJECT_REF` or `VITE_SUPABASE_URL`, `SUPABASE_ACCESS_TOKEN`, and `SUPABASE_DB_URL` |
-| `pnpm supabase:live-readiness` | **BLOCKED** | Failed closed because `SUPABASE_DB_URL` is not set; no live/staging database read occurred |
-| `pnpm e2e` | **BLOCKED** | Playwright Chromium executable was absent; `pnpm e2e:install` could not download Chromium because `https://cdn.playwright.dev/...` returned `403 Domain forbidden` in this environment |
-| `pnpm check:docs` | **PASS** | Maintained Markdown link check passed |
-| `pnpm --filter ./rentrix-app run check:architecture` | **PASS** | Architecture check completed successfully |
-| Gate script validation and browser secret-marker scan | **PASS** | `bash -n scripts/check-release-secret-leaks.sh`, `node --check scripts/assert-release-blocker-env.mjs`, and `bash scripts/check-release-secret-leaks.sh rentrix-app/dist` completed successfully |
+| `release-blocker-code` | **PASS** | Typecheck, application tests, financial tests, production build, and browser secret scan completed successfully |
+| `release-blocker-database` | **FAIL on superseded merge ref** | Empty-database startup reached migration replay and stopped at `schema "app_private" does not exist`; the run checked out a merge ref based on `fe3ce1b5`, immediately before PR #1158 added that compatibility schema to `main` |
+| `release-blocker-authenticated-staging` | **BLOCKED** | The preflight correctly failed closed because all five required staging values were absent; the authenticated browser tests did not run |
 
-Release gate workflow review on 2026-07-14:
-
-| Job | Current configuration | Blocking behavior |
-| --- | --- | --- |
-| `release-blocker-code` | Runs for pull requests to `main` and manual dispatch with no job-level skip condition | Code/type/test/build/secret checks must pass |
-| `release-blocker-database` | Runs for pull requests to `main` and manual dispatch with no job-level skip condition | Starts isolated Supabase, replays migrations, and runs pgTAP blockers; local container could not execute this because Docker is not installed |
-| `release-blocker-authenticated-staging` | Runs for pull requests to `main` and manual dispatch after `release-blocker-code`; it has no job-level skip condition | Fails closed before Playwright if any required staging secret is absent |
+The database result above is not evidence that current `main` still fails: its
+root cause is exactly the compatibility gap addressed by PR #1158, and the
+failed run did not contain that PR. A fresh pull request from current `main`
+is being used to rerun the mandatory gate without weakening or skipping any
+job. Record its run ID and database result here before merging or starting the
+Reports phase.
 
 Required staging/auth secrets for the authenticated release blocker remain:
 
@@ -85,7 +78,10 @@ Required live/read-only Supabase inputs remain:
 - `SUPABASE_DB_URL` for `pnpm supabase:live-readiness`
 - `SUPABASE_PROJECT_REF` or `VITE_SUPABASE_URL`, plus `SUPABASE_ACCESS_TOKEN` and/or `SUPABASE_DB_URL`, for live migration evidence reconciliation
 
-Overall status: **BLOCKED — NOT RELEASE READY** for production/staging sign-off. Local TypeScript, build, unit/integration, financial, migration-contract, documentation, architecture, and secret-scan checks are green. Browser E2E, live Supabase readiness, and isolated Docker-backed Supabase pgTAP replay remain blocked by environment capabilities or missing non-production secrets, not by an in-repository code failure observed during this pass.
+Overall status: **BLOCKED — NOT RELEASE READY** for production/staging sign-off. Application CI and Browser Readiness passed on PR #1156. The current-main database replay still needs a fresh CI result, live Supabase readiness remains unverified without approved read-only inputs, and authenticated staging remains blocked by missing non-production secrets.
+
+Reports/UI Phase 1 remains blocked until the fresh database gate passes and
+the authenticated staging job executes successfully with zero skips.
 
 ## Deferred observations
 
