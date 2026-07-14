@@ -52,11 +52,12 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
   }, [form, open, propertyId, unit]);
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-  const propertyError = !selectedPropertyId
-    ? 'اختيار العقار مطلوب'
-    : propertiesQuery.isError
-      ? 'تعذر تحميل العقارات. أعد المحاولة قبل الحفظ.'
-      : undefined;
+  let propertyError: string | undefined;
+  if (!selectedPropertyId) {
+    propertyError = 'اختيار العقار مطلوب';
+  } else if (propertiesQuery.isError) {
+    propertyError = 'تعذر تحميل العقارات. أعد المحاولة قبل الحفظ.';
+  }
 
   return (
     <EntityForm.Overlay
