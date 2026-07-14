@@ -90,8 +90,7 @@ function VoidReceiptDialog({
       >
         <EntityForm.ErrorSummary message={reasonMissing ? 'سبب الإلغاء مطلوب لإتمام العملية.' : undefined} />
         <EntityForm.Section title="سبب الإلغاء" description="اكتب سبباً واضحاً يمكن الرجوع إليه في سجل التدقيق.">
-          <label className="grid gap-2 text-sm font-bold">
-            <span>السبب</span>
+          <EntityForm.Field label="السبب">
             <Input
               value={state.reason}
               onChange={(event) => onReasonChange(event.target.value)}
@@ -99,7 +98,7 @@ function VoidReceiptDialog({
               autoFocus
               aria-invalid={reasonMissing}
             />
-          </label>
+          </EntityForm.Field>
         </EntityForm.Section>
         <EntityForm.Actions
           submitLabel={isLoading ? 'جارٍ الإلغاء...' : 'تأكيد الإلغاء'}
