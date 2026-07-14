@@ -7,10 +7,8 @@ import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { personSchema, personTypeLabels, personTypeValues, type PersonFormValues } from './person-schema';
+import { PersonFormFields } from './components/PersonFormFields';
+import { personSchema, type PersonFormValues } from './person-schema';
 import { useCreatePerson, usePerson, useUpdatePerson } from './use-people';
 
 export function PersonFormPage() {
@@ -104,29 +102,7 @@ export function PersonFormPage() {
           })}
         >
           <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-          <EntityForm.Field label="الاسم الكامل" error={form.formState.errors.full_name?.message}>
-            <Input {...form.register('full_name')} />
-          </EntityForm.Field>
-          <EntityForm.Field label="النوع" error={form.formState.errors.type?.message}>
-            <Select {...form.register('type')}>
-              {personTypeValues.map((type) => <option key={type} value={type}>{personTypeLabels[type]}</option>)}
-            </Select>
-          </EntityForm.Field>
-          <EntityForm.Field label="الهاتف" error={form.formState.errors.phone?.message}>
-            <Input {...form.register('phone')} dir="ltr" />
-          </EntityForm.Field>
-          <EntityForm.Field label="البريد الإلكتروني" error={form.formState.errors.email?.message}>
-            <Input {...form.register('email')} dir="ltr" />
-          </EntityForm.Field>
-          <EntityForm.Field label="رقم الهوية" error={form.formState.errors.national_id?.message}>
-            <Input {...form.register('national_id')} />
-          </EntityForm.Field>
-          <EntityForm.Field label="العنوان">
-            <Input {...form.register('address')} />
-          </EntityForm.Field>
-          <EntityForm.Field label="ملاحظات" className="md:col-span-2">
-            <Textarea {...form.register('notes')} />
-          </EntityForm.Field>
+          <PersonFormFields form={form} />
           <EntityForm.Actions
             className="md:col-span-2"
             onCancel={navigateBack}
