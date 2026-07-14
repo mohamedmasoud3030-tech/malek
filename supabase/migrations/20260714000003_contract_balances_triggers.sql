@@ -38,14 +38,13 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  -- Production schema uses text for contracts.id, invoices.contract_id, and
-  -- contract_balances.contract_id. Keep all local ID variables text to avoid
-  -- invalid text = uuid comparisons inside invoice/allocation triggers.
-  v_contract_id text;
+  -- Anchor stored values to the target table so the function works for both
+  -- the clean UUID baseline and the historical text capture.
+  v_contract_id public.contract_balances.contract_id%TYPE;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id text;
-  v_unit_id text;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
 BEGIN
   -- Determine which contract_id to update
   IF TG_OP = 'DELETE' THEN
@@ -65,7 +64,7 @@ BEGIN
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
     c.tenant_id,
-    c.unit_id::text
+    c.unit_id
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
@@ -113,14 +112,13 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  -- Production schema uses text for contracts.id, invoices.contract_id, and
-  -- contract_balances.contract_id. Keep all local ID variables text to avoid
-  -- invalid text = uuid comparisons inside invoice/allocation triggers.
-  v_contract_id text;
+  -- Anchor stored values to the target table so the function works for both
+  -- the clean UUID baseline and the historical text capture.
+  v_contract_id public.contract_balances.contract_id%TYPE;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id text;
-  v_unit_id text;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
 BEGIN
   -- Get contract_id from the invoice referenced by this allocation
   IF TG_OP = 'DELETE' THEN
@@ -142,7 +140,7 @@ BEGIN
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
     c.tenant_id,
-    c.unit_id::text
+    c.unit_id
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
@@ -198,28 +196,51 @@ CREATE TRIGGER trg_receipt_allocations_update_contract_balance
 -- =============================================================================
 -- STEP 4: Backfill existing contract_balances
 -- =============================================================================
-INSERT INTO public.contract_balances (
-  contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at
-)
-SELECT
-  c.id,
-  c.tenant_id,
-  c.unit_id::text,
-  COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
-  COALESCE(SUM(i.paid_amount), 0),
-  COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0) - COALESCE(SUM(i.paid_amount), 0),
-  now()
-FROM public.contracts c
-LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
-WHERE c.deleted_at IS NULL
-GROUP BY c.id, c.tenant_id, c.unit_id
-ON CONFLICT (contract_id) DO UPDATE SET
-  tenant_id = EXCLUDED.tenant_id,
-  unit_id = EXCLUDED.unit_id,
-  total_invoiced = EXCLUDED.total_invoiced,
-  total_paid = EXCLUDED.total_paid,
-  balance_due = EXCLUDED.balance_due,
-  updated_at = now();
+DO $$
+DECLARE
+  v_row record;
+  v_contract_id public.contract_balances.contract_id%TYPE;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
+BEGIN
+  FOR v_row IN
+    SELECT
+      c.id,
+      c.tenant_id,
+      c.unit_id,
+      COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0) AS total_invoiced,
+      COALESCE(SUM(i.paid_amount), 0) AS total_paid
+    FROM public.contracts c
+    LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
+    WHERE c.deleted_at IS NULL
+    GROUP BY c.id, c.tenant_id, c.unit_id
+  LOOP
+    -- PL/pgSQL assignment performs the supported UUID/text representation
+    -- conversion before values reach the target table.
+    v_contract_id := v_row.id;
+    v_tenant_id := v_row.tenant_id;
+    v_unit_id := v_row.unit_id;
+
+    INSERT INTO public.contract_balances (
+      contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at
+    ) VALUES (
+      v_contract_id,
+      v_tenant_id,
+      v_unit_id,
+      v_row.total_invoiced,
+      v_row.total_paid,
+      v_row.total_invoiced - v_row.total_paid,
+      now()
+    )
+    ON CONFLICT (contract_id) DO UPDATE SET
+      tenant_id = EXCLUDED.tenant_id,
+      unit_id = EXCLUDED.unit_id,
+      total_invoiced = EXCLUDED.total_invoiced,
+      total_paid = EXCLUDED.total_paid,
+      balance_due = EXCLUDED.balance_due,
+      updated_at = now();
+  END LOOP;
+END $$;
 
 -- =============================================================================
 -- STEP 5: Set ownership and grants

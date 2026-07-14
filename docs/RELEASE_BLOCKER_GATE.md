@@ -87,8 +87,18 @@ sides (`SQLSTATE 42883`). PR #1160 now casts both identifiers to text in the
 orphan preflight and delete guard, preserving the intended comparison for both
 the clean `uuid/uuid` and historical `uuid/text` layouts. PGlite execution tests
 cover both layouts and prove that orphan data fails closed before the guard is
-installed. The database job must pass on the latest PR head before either replay
-fix is considered verified.
+installed.
+
+Fresh run #31 (`29370113816`) verified both replay fixes, then exposed a third
+captured-layout assumption in
+`20260714000003_contract_balances_triggers.sql`: the backfill forced
+`contracts.unit_id` to text even though the clean target column is UUID
+(`SQLSTATE 42804`). PR #1160 now anchors trigger variables to the target
+`contract_balances` column types and performs the UUID/text representation
+conversion through typed PL/pgSQL assignment in the backfill. PGlite execution
+tests cover clean UUID backfill plus trigger maintenance and the historical text
+balance layout. The database job must pass on the latest PR head before these
+replay fixes are considered verified.
 
 Required staging/auth secrets for the authenticated release blocker remain:
 
