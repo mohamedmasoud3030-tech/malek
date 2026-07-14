@@ -275,29 +275,24 @@ export function BankReconciliationPage() {
         >
           <EntityForm.Section title="بيانات الحركة" description="أدخل الحساب والتاريخ والوصف والمبلغ كما ظهر في كشف البنك.">
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm font-bold">
-                <span>الحساب البنكي</span>
+              <EntityForm.Field label="الحساب البنكي">
                 <Select required value={lineDraft.bank_account_id} onChange={(event) => setLineDraft({ ...lineDraft, bank_account_id: event.target.value })}>
                   <option value="">اختر الحساب</option>
                   {accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
                 </Select>
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                <span>تاريخ الحركة</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="تاريخ الحركة">
                 <Input required type="date" value={lineDraft.transaction_date} onChange={(event) => setLineDraft({ ...lineDraft, transaction_date: event.target.value })} />
-              </label>
-              <label className="grid gap-2 text-sm font-bold sm:col-span-2">
-                <span>الوصف</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="الوصف" className="sm:col-span-2">
                 <Input value={lineDraft.description} onChange={(event) => setLineDraft({ ...lineDraft, description: event.target.value })} placeholder="وصف الحركة" />
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                <span>المرجع</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="المرجع">
                 <Input value={lineDraft.reference} onChange={(event) => setLineDraft({ ...lineDraft, reference: event.target.value })} placeholder="رقم المرجع" />
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                <span>المبلغ</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="المبلغ">
                 <Input required type="number" step="0.01" inputMode="decimal" value={lineDraft.amount} onChange={(event) => setLineDraft({ ...lineDraft, amount: event.target.value })} placeholder="المبلغ +/-" />
-              </label>
+              </EntityForm.Field>
             </div>
           </EntityForm.Section>
           <EntityForm.Actions
@@ -330,27 +325,24 @@ export function BankReconciliationPage() {
         >
           <EntityForm.Section title="بيانات الكشف" description="اختر الحساب وأدخل اسماً واضحاً للفترة ثم ألصق CSV.">
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm font-bold">
-                <span>الحساب البنكي</span>
+              <EntityForm.Field label="الحساب البنكي">
                 <Select required value={importDraft.bank_account_id} onChange={(event) => setImportDraft({ ...importDraft, bank_account_id: event.target.value })}>
                   <option value="">اختر الحساب</option>
                   {accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
                 </Select>
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                <span>اسم الكشف / الفترة</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="اسم الكشف / الفترة">
                 <Input value={importDraft.statement_name} onChange={(event) => setImportDraft({ ...importDraft, statement_name: event.target.value })} placeholder="مثال: يوليو 2026" />
-              </label>
+              </EntityForm.Field>
             </div>
-            <label className="grid gap-2 text-sm font-bold">
-              <span>بيانات CSV</span>
+            <EntityForm.Field label="بيانات CSV">
               <Textarea
                 value={importDraft.csv}
                 onChange={(event) => setImportDraft({ ...importDraft, csv: event.target.value })}
                 placeholder={'date,description,reference,amount\n2026-07-01,تحصيل إيجار,REC-100,250.00'}
                 className="min-h-40 font-mono text-xs"
               />
-            </label>
+            </EntityForm.Field>
           </EntityForm.Section>
           <EntityForm.Actions
             submitLabel={importCsv.isPending ? 'جارٍ الاستيراد...' : 'استيراد CSV'}
@@ -381,8 +373,7 @@ export function BankReconciliationPage() {
           }}
         >
           <EntityForm.Section title="الحركة والسجل" description="الاقتراحات تعتمد على التاريخ والمبلغ فقط وتحتاج مراجعتك.">
-            <label className="grid gap-2 text-sm font-bold">
-              <span>الحركة غير المطابقة</span>
+            <EntityForm.Field label="الحركة غير المطابقة">
               <Select
                 required
                 value={matchDraft.statement_line_id}
@@ -402,30 +393,26 @@ export function BankReconciliationPage() {
                   </option>
                 ))}
               </Select>
-            </label>
+            </EntityForm.Field>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm font-bold">
-                <span>نوع السجل</span>
+              <EntityForm.Field label="نوع السجل">
                 <Select
                   value={matchDraft.matched_entity_type}
                   onChange={(event) => setMatchDraft({ ...matchDraft, matched_entity_type: event.target.value as BankReconciliationMatchValues['matched_entity_type'] })}
                 >
                   {Object.entries(entityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </Select>
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                <span>معرّف السجل</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="معرّف السجل">
                 <Input required value={matchDraft.matched_entity_id} onChange={(event) => setMatchDraft({ ...matchDraft, matched_entity_id: event.target.value })} placeholder="معرف السجل" />
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                <span>مبلغ المطابقة</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="مبلغ المطابقة">
                 <Input required type="number" step="0.01" inputMode="decimal" value={matchDraft.matched_amount} onChange={(event) => setMatchDraft({ ...matchDraft, matched_amount: event.target.value })} placeholder="مبلغ المطابقة" />
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                <span>ملاحظات</span>
+              </EntityForm.Field>
+              <EntityForm.Field label="ملاحظات">
                 <Input value={matchDraft.notes} onChange={(event) => setMatchDraft({ ...matchDraft, notes: event.target.value })} placeholder="اختياري" />
-              </label>
+              </EntityForm.Field>
             </div>
 
             {selectedLine ? (

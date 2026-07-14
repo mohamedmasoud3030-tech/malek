@@ -53,15 +53,15 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
       <EntityForm.Root aria-busy={isSubmitting} onSubmit={form.handleSubmit(onSubmit)}>
         <EntityForm.ErrorSummary message={firstError} />
         <EntityForm.Section title="التكلفة الفعلية" description={target ? target.title : undefined}>
-          <label className="grid gap-2 text-sm font-bold">
-            <span>التكلفة الفعلية (ر.ع)</span>
+          <EntityForm.Field
+            label="التكلفة الفعلية (ر.ع)"
+            error={form.formState.errors.cost?.message}
+          >
             <Input dir="ltr" type="number" min="0" step="0.01" inputMode="decimal" {...form.register('cost')} aria-invalid={Boolean(form.formState.errors.cost)} />
-            {form.formState.errors.cost?.message ? <span className="text-xs text-destructive">{form.formState.errors.cost.message}</span> : null}
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            <span>ملاحظات (اختياري)</span>
+          </EntityForm.Field>
+          <EntityForm.Field label="ملاحظات (اختياري)">
             <Textarea className="min-h-20" {...form.register('notes')} />
-          </label>
+          </EntityForm.Field>
         </EntityForm.Section>
         <EntityForm.Actions
           submitLabel={isSubmitting ? 'جارٍ الحفظ...' : 'تأكيد الإغلاق'}

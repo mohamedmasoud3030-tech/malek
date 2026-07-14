@@ -122,13 +122,36 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
       >
           <EntityForm.Root className="md:grid-cols-2" onSubmit={submit}>
             <EntityForm.ErrorSummary message={formError} className="md:col-span-2" />
-            <label className="grid gap-2 text-sm font-bold">المالك<Select value={form.owner_id} onChange={(e) => setForm((v) => ({ ...v, owner_id: e.target.value }))} required><option value="">اختر المالك</option>{owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.display_name || owner.full_name}</option>)}</Select></label>
-            <label className="grid gap-2 text-sm font-bold">نوع الاتفاقية<Select value={form.agreement_type} onChange={(e) => setForm((v) => ({ ...v, agreement_type: e.target.value as AgreementFormState['agreement_type'] }))}><option value="property_management">إدارة عقار</option><option value="master_lease">استئجار رئيسي</option></Select></label>
-            <label className="grid gap-2 text-sm font-bold">نوع العمولة<Select value={form.commission_type} onChange={(e) => setForm((v) => ({ ...v, commission_type: e.target.value as AgreementFormState['commission_type'] }))}><option value="RATE">نسبة</option><option value="FIXED_MONTHLY">مبلغ شهري ثابت</option></Select></label>
-            <label className="grid gap-2 text-sm font-bold">قيمة العمولة<Input type="number" step="0.01" min="0" value={form.commission_value} onChange={(e) => setForm((v) => ({ ...v, commission_value: e.target.value }))} required /></label>
-            <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" value={form.starts_on} onChange={(e) => setForm((v) => ({ ...v, starts_on: e.target.value }))} required /></label>
-            <label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" value={form.ends_on} onChange={(e) => setForm((v) => ({ ...v, ends_on: e.target.value }))} /></label>
-            <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={form.notes} onChange={(e) => setForm((v) => ({ ...v, notes: e.target.value }))} /></label>
+            <EntityForm.Field label="المالك">
+              <Select value={form.owner_id} onChange={(e) => setForm((v) => ({ ...v, owner_id: e.target.value }))} required>
+                <option value="">اختر المالك</option>
+                {owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.display_name || owner.full_name}</option>)}
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="نوع الاتفاقية">
+              <Select value={form.agreement_type} onChange={(e) => setForm((v) => ({ ...v, agreement_type: e.target.value as AgreementFormState['agreement_type'] }))}>
+                <option value="property_management">إدارة عقار</option>
+                <option value="master_lease">استئجار رئيسي</option>
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="نوع العمولة">
+              <Select value={form.commission_type} onChange={(e) => setForm((v) => ({ ...v, commission_type: e.target.value as AgreementFormState['commission_type'] }))}>
+                <option value="RATE">نسبة</option>
+                <option value="FIXED_MONTHLY">مبلغ شهري ثابت</option>
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="قيمة العمولة">
+              <Input type="number" step="0.01" min="0" value={form.commission_value} onChange={(e) => setForm((v) => ({ ...v, commission_value: e.target.value }))} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="تاريخ البداية">
+              <Input type="date" value={form.starts_on} onChange={(e) => setForm((v) => ({ ...v, starts_on: e.target.value }))} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="تاريخ النهاية">
+              <Input type="date" value={form.ends_on} onChange={(e) => setForm((v) => ({ ...v, ends_on: e.target.value }))} />
+            </EntityForm.Field>
+            <EntityForm.Field label="ملاحظات" className="md:col-span-2">
+              <Textarea value={form.notes} onChange={(e) => setForm((v) => ({ ...v, notes: e.target.value }))} />
+            </EntityForm.Field>
             <EntityForm.Actions className="md:col-span-2" onCancel={closeForm} isSubmitting={saving} submitLabel={saving ? 'جار الحفظ...' : 'حفظ الاتفاقية'} />
           </EntityForm.Root>
       </EntityForm.Overlay>
