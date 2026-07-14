@@ -14,13 +14,13 @@ A skipped or conditionally omitted blocker test is a failure. Missing staging se
 
 ## Executable coverage
 
-| Risk | Executable evidence | Environment | Pass condition |
-| --- | --- | --- | --- |
-| Data loss / partial writes | `supabase/tests/release_blockers.sql` after a full empty-database migration replay | Isolated local Supabase in CI | Every migration applies; rejected overpayment leaves invoice, payment, and receipt counts unchanged |
-| Authentication | `rentrix-app/e2e/release-blocker-auth.spec.ts` | Deployed staging with a dedicated test account | Valid login, invalid password, invalidated session, and logout all execute with zero skips |
-| Contract creation | `supabase/tests/release_blockers.sql` | Isolated local Supabase in CI | ADMIN creates one valid contract; USER is denied; overlapping dates are rejected |
-| Collection / financial safety | `supabase/tests/release_blockers.sql` plus the existing financial suite | Isolated local Supabase in CI | One payment and one receipt per request ID; correct paid amount; negative and excessive amounts fail without partial writes |
-| Critical security | SQL RLS/role tests, safe `search_path` catalog assertions, and `scripts/check-release-secret-leaks.sh` | Isolated local Supabase and production browser build artifact | Anonymous/USER access is denied where required; critical definer RPCs pin search path; no private-key/service-role marker reaches `dist` |
+| Risk                          | Executable evidence                                                                                    | Environment                                                   | Pass condition                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Data loss / partial writes    | `supabase/tests/release_blockers.sql` after a full empty-database migration replay                     | Isolated local Supabase in CI                                 | Every migration applies; rejected overpayment leaves invoice, payment, and receipt counts unchanged                                      |
+| Authentication                | `rentrix-app/e2e/release-blocker-auth.spec.ts`                                                         | Deployed staging with a dedicated test account                | Valid login, invalid password, invalidated session, and logout all execute with zero skips                                               |
+| Contract creation             | `supabase/tests/release_blockers.sql`                                                                  | Isolated local Supabase in CI                                 | ADMIN creates one valid contract; USER is denied; overlapping dates are rejected                                                         |
+| Collection / financial safety | `supabase/tests/release_blockers.sql` plus the existing financial suite                                | Isolated local Supabase in CI                                 | One payment and one receipt per request ID; correct paid amount; negative and excessive amounts fail without partial writes              |
+| Critical security             | SQL RLS/role tests, safe `search_path` catalog assertions, and `scripts/check-release-secret-leaks.sh` | Isolated local Supabase and production browser build artifact | Anonymous/USER access is denied where required; critical definer RPCs pin search path; no private-key/service-role marker reaches `dist` |
 
 ## CI jobs
 
@@ -44,33 +44,26 @@ Playwright traces, screenshots, video, and reports are retained only on failure.
 
 ## Current execution status
 
-Integrated gate baseline: PR #1150/#1151 merged in current local commit `8597d96bf8e64a57c06c5427c1707a9f23125ca8`. The container has no configured git remote, so PR #1152/main could not be fetched or verified locally in this pass.
+Repository source of truth on 2026-07-15 is `main` commit
+`f661bf39fc3b1204fc46f60243bdbab6d2ffee5c`, which contains the release-blocker
+finalization merged through PR #1159. PR #1160 was closed without merge because
+it duplicated an older subset of the same work.
 
-Local CI/readiness pass on 2026-07-14 from branch `ci-release-readiness-phase`:
+The authoritative completed checks are on PR #1159 head
+`2cd5201fa3e9548d7bc2f631b193f125790a6693`:
 
-| Check | Result | Evidence |
-| --- | --- | --- |
-| `pnpm install --frozen-lockfile` | **PASS with warning** | Dependencies were already locked/current; pnpm reported ignored dependency build scripts for `core-js` and `esbuild` |
-| `pnpm typecheck` | **PASS** | Root project references and app TypeScript completed successfully |
-| `pnpm lint` | **PASS** | Project lint script is the app TypeScript no-emit check |
-| `pnpm build` | **PASS** | Vite production build and PWA generation completed with placeholder Supabase env |
-| `pnpm --filter ./rentrix-app run typecheck:test` | **PASS** | Test TypeScript project completed successfully |
-| `pnpm --filter ./rentrix-app test` | **PASS** | 120 files / 546 tests passed |
-| `pnpm --filter ./rentrix-app run test:financials` | **PASS** | 36 files / 157 tests passed, including payment/receipt void/report parity tests |
-| `pnpm supabase:migration-evidence` | **BLOCKED for live reconciliation** | Local migration filename/order preflight passed; live migration-state reconciliation was blocked by missing `SUPABASE_PROJECT_REF` or `VITE_SUPABASE_URL`, `SUPABASE_ACCESS_TOKEN`, and `SUPABASE_DB_URL` |
-| `pnpm supabase:live-readiness` | **BLOCKED** | Failed closed because `SUPABASE_DB_URL` is not set; no live/staging database read occurred |
-| `pnpm e2e` | **BLOCKED** | Playwright Chromium executable was absent; `pnpm e2e:install` could not download Chromium because `https://cdn.playwright.dev/...` returned `403 Domain forbidden` in this environment |
-| `pnpm check:docs` | **PASS** | Maintained Markdown link check passed |
-| `pnpm --filter ./rentrix-app run check:architecture` | **PASS** | Architecture check completed successfully |
-| Gate script validation and browser secret-marker scan | **PASS** | `bash -n scripts/check-release-secret-leaks.sh`, `node --check scripts/assert-release-blocker-env.mjs`, and `bash scripts/check-release-secret-leaks.sh rentrix-app/dist` completed successfully |
+| Check                                   | Result                     | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CI / Typecheck, Lint & Build            | **PASS**                   | Workflow run `29371714348`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Browser Readiness / E2E Smoke           | **PASS**                   | Workflow run `29371714179`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `release-blocker-code`                  | **PASS**                   | Application/test typechecks, full and financial suites, production build, and browser secret scan completed                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `release-blocker-database`              | **PASS**                   | Workflow run `29371714202` started isolated Supabase, replayed every migration from an empty database, then passed contract, payment, rollback, and RLS pgTAP blockers                                                                                                                                                                                                                                                                                                                                                                                     |
+| `release-blocker-authenticated-staging` | **FAIL — fix in PR #1161** | Run `29375862284` received all five staging values; valid login, invalid credentials, and logout passed, while session invalidation failed because the test searched for Supabase's default key instead of `rentrix-auth-session`. After correcting the key, run `29376128369` passed session invalidation but a redundant third valid-login setup for the standalone logout test remained on `/login`. PR #1161 folds logout into the already-authenticated valid-login lifecycle, preserving all four behaviors while avoiding a duplicate account login |
 
-Release gate workflow review on 2026-07-14:
-
-| Job | Current configuration | Blocking behavior |
-| --- | --- | --- |
-| `release-blocker-code` | Runs for pull requests to `main` and manual dispatch with no job-level skip condition | Code/type/test/build/secret checks must pass |
-| `release-blocker-database` | Runs for pull requests to `main` and manual dispatch with no job-level skip condition | Starts isolated Supabase, replays migrations, and runs pgTAP blockers; local container could not execute this because Docker is not installed |
-| `release-blocker-authenticated-staging` | Runs for pull requests to `main` and manual dispatch after `release-blocker-code`; it has no job-level skip condition | Fails closed before Playwright if any required staging secret is absent |
+The database phase is therefore verified. PR #1161 aligns the authenticated
+browser test with the application's explicit storage-key contract, and removes
+the redundant third valid login by completing logout in the successful-login
+lifecycle. All four behaviors must pass with zero skips before sign-off.
 
 Required staging/auth secrets for the authenticated release blocker remain:
 
@@ -85,7 +78,14 @@ Required live/read-only Supabase inputs remain:
 - `SUPABASE_DB_URL` for `pnpm supabase:live-readiness`
 - `SUPABASE_PROJECT_REF` or `VITE_SUPABASE_URL`, plus `SUPABASE_ACCESS_TOKEN` and/or `SUPABASE_DB_URL`, for live migration evidence reconciliation
 
-Overall status: **BLOCKED — NOT RELEASE READY** for production/staging sign-off. Local TypeScript, build, unit/integration, financial, migration-contract, documentation, architecture, and secret-scan checks are green. Browser E2E, live Supabase readiness, and isolated Docker-backed Supabase pgTAP replay remain blocked by environment capabilities or missing non-production secrets, not by an in-repository code failure observed during this pass.
+Overall status: **BLOCKED — NOT RELEASE READY** for production/staging sign-off.
+Code, build, Browser Readiness, empty-database migration replay, and pgTAP are
+green. The staging secrets are now available, but authenticated staging must be
+rerun after the storage-key test correction. Live Supabase readiness remains
+unverified without approved read-only inputs.
+
+Reports/UI Phase 1 remains blocked until the authenticated staging job executes
+successfully with zero skips on the exact candidate head.
 
 ## Deferred observations
 
