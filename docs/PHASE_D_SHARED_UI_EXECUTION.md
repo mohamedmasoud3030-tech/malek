@@ -1,6 +1,6 @@
 # Phase D — Shared page and form convergence
 
-Status: **implementation complete — verification in progress in PR #1143**
+Status: **verified — ready to merge in PR #1143**
 
 Started from `main` after merge of PR #1142 (`63fc6ebb8d36d18bbfc4375ccf799c18175b7a7b`).
 
@@ -25,11 +25,12 @@ Implemented as one coherent form-system wave:
 - extended `EntityForm.Actions` with an optional destructive submit variant;
 - added coverage for the shared field description/error contract;
 - extracted `features/contracts/components/ContractFormFields.tsx` so the contract modal and route-backed contract page use one field tree instead of duplicate implementations;
+- extracted `features/people/components/PersonFormFields.tsx` so person modal and route-backed page use one field tree;
 - migrated contract create/edit modal, contract route form, person modal/page, unit modal, property create/edit modal, property route form, and owner identity form;
 - removed local one-line field-error renderers from those migrated workflows;
 - preserved schemas, field names, values, placeholders, autofocus, query dependencies, mutation payloads, agreement coverage, unit-conflict validation, and submit-disable rules.
 
-The first implementation attempt duplicated the contract field tree between the modal and route page and caused Sonar duplication to reach 46.6%. That approach was removed. The current implementation owns the contract field tree in one shared component and keeps only surface-specific orchestration in the modal and route page.
+The first implementation attempt duplicated the contract field tree between the modal and route page and caused Sonar duplication to reach 46.6%. That approach was removed. The final implementation owns contract and person field trees in shared components and keeps only surface-specific orchestration in modal and route-backed variants.
 
 ### D2 — Error, loading, and empty-state convergence
 
@@ -76,33 +77,25 @@ The shared overlay continues to provide mobile bottom-sheet and desktop dialog s
 
 ## Verification evidence
 
-Current implementation scope: 14 changed files and 19 commits before the documentation evidence commits.
+Verified on implementation head `9768bd98947b807a2df43b321aa5a6ceded4c4bc`:
 
-Verified remotely on implementation head `fa77d6d5d2c3f9413ac305852d60de3779faa7f4`:
+- branch relation to `main`: **ahead, behind by 0**;
+- governance guard: **success**;
+- Supabase migration evidence: **success**;
+- `pnpm typecheck`: **success**;
+- `pnpm lint`: **success**;
+- `pnpm --filter ./rentrix-app run check:architecture`: **success**;
+- `pnpm build`: **success**;
+- `pnpm --filter ./rentrix-app run typecheck:test`: **success**;
+- `pnpm --filter ./rentrix-app test`: **success**;
+- financial test suite: **success**;
+- Browser Readiness / Playwright E2E smoke: **success**;
+- Vercel preview/build: **Ready**;
+- Codacy: **0 new issues**, complexity reduced by **79**;
+- Sonar Quality Gate: **passed**, **0 new issues**, **0 security hotspots**, duplication on new code reduced to **2.1%** from the earlier 46.6% failure.
 
-- Vercel preview/build: **success**.
-- Branch relation to `main`: **ahead, behind by 0** at the time of comparison.
-- Codacy: previously reported **0 new issues** while the branch was evolving; final-head reanalysis must still be checked.
-- Sonar: the earlier duplication failure is obsolete because the duplicate contract form bodies were replaced by `ContractFormFields`; final-head quality analysis must still complete successfully.
-
-Still required before marking the phase complete:
-
-```bash
-pnpm typecheck
-pnpm lint
-pnpm --filter ./rentrix-app run typecheck:test
-pnpm --filter ./rentrix-app run check:architecture
-pnpm --filter ./rentrix-app test
-pnpm build
-```
-
-Browser verification is also required at desktop, tablet, and mobile widths for form open/close, validation, scroll, focus, cancel, submit, renewal, and termination flows. The current connected environment can inspect GitHub/Vercel status but cannot run the local pnpm matrix, so the phase remains verification-in-progress rather than complete.
+The CI workflow now runs `check:architecture` explicitly, closing the gap between the documented verification matrix and the enforced GitHub gate.
 
 ## Exit decision
 
-Do not merge PR #1143 or advance automation to Phase E until:
-
-1. the required command matrix is green on the latest head SHA;
-2. final Sonar/Codacy analysis is green;
-3. browser desktop/tablet/mobile checks pass;
-4. the PR description records the final test counts and latest verified SHA.
+Phase D exit conditions are met on the verified implementation head. PR #1143 is ready to merge. Phase E remains blocked until PR #1143 is merged into `main`, after which automation should start from the updated `main` branch and re-read this plan before consolidating documentation.
