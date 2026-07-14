@@ -78,22 +78,23 @@ export function PropertyFormPage() {
     });
   });
 
-  const requestNavigate = (to: string) => {
+  const requestNavigate = async (to: string) => {
     if (isSubmitting) return;
     if (form.formState.isDirty) {
       setPendingNavigateTo(to);
       setShowDiscardDialog(true);
       return;
     }
-    void router.navigate({ to });
+    await router.navigate({ to });
   };
 
-  const handleConfirmDiscard = () => {
+  const handleConfirmDiscard = async () => {
     setShowDiscardDialog(false);
     form.reset(undefined, { keepValues: true });
     if (pendingNavigateTo) {
-      void router.navigate({ to: pendingNavigateTo });
+      const navigateTo = pendingNavigateTo;
       setPendingNavigateTo(null);
+      await router.navigate({ to: navigateTo });
     }
   };
 
