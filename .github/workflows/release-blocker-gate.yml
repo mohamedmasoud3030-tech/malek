@@ -70,11 +70,20 @@ jobs:
           "$root/node_modules/.bin/supabase" init
           cp supabase/config.toml "$root/supabase/config.toml"
       - name: Start isolated Supabase
-        run: pnpm exec supabase start
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm exec supabase start 2>&1 | tee supabase-start.log
       - name: Replay every migration from an empty database
-        run: pnpm exec supabase db reset --local
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm exec supabase db reset --local 2>&1 | tee supabase-reset.log
       - name: Run contract, payment, rollback, and RLS blocker tests
-        run: pnpm exec supabase test db
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm exec supabase test db 2>&1 | tee supabase-test.log
       - name: Stop isolated Supabase
         if: always()
         run: pnpm exec supabase stop --no-backup || true
@@ -86,6 +95,9 @@ jobs:
           path: |
             supabase/.temp
             supabase/tests
+            supabase-start.log
+            supabase-reset.log
+            supabase-test.log
           if-no-files-found: ignore
 
   release-blocker-authenticated-staging:
