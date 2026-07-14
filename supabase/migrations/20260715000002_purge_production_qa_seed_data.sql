@@ -38,9 +38,9 @@ BEGIN
   SELECT c.id
     INTO v_qa_contract_id
     FROM public.contracts c
-   WHERE c.property_id = v_qa_property_id
+   WHERE c.property_id::text = v_qa_property_id
      AND c.unit_id::text = v_qa_unit_id
-     AND c.tenant_id = v_qa_tenant_id
+     AND c.tenant_id::text = v_qa_tenant_id
      AND c.agreement_id = v_qa_agreement_id
      AND coalesce(c.notes, '') LIKE '%اختبار جاهزية%'
    LIMIT 1;
@@ -48,14 +48,14 @@ BEGIN
   -- If any row points at the QA contract but the contract cannot be resolved via
   -- the full QA graph, stop instead of guessing.
   IF v_qa_contract_id IS NULL AND EXISTS (
-    SELECT 1 FROM public.invoices WHERE id = v_qa_invoice_id
+    SELECT 1 FROM public.invoices WHERE id::text = v_qa_invoice_id
     UNION ALL
     SELECT 1 FROM public.payments WHERE reference_no = v_qa_reference OR reference_number = v_qa_reference
     UNION ALL
     SELECT 1 FROM public.receipts WHERE ref = v_qa_reference
     UNION ALL
     SELECT 1 FROM public.contracts
-     WHERE property_id = v_qa_property_id OR unit_id::text = v_qa_unit_id OR tenant_id = v_qa_tenant_id OR agreement_id = v_qa_agreement_id
+     WHERE property_id::text = v_qa_property_id OR unit_id::text = v_qa_unit_id OR tenant_id::text = v_qa_tenant_id OR agreement_id = v_qa_agreement_id
   ) THEN
     RAISE EXCEPTION 'QA cleanup guard failed: QA-linked rows exist but QA contract graph was not uniquely resolved';
   END IF;
@@ -70,39 +70,39 @@ BEGIN
 
   SELECT count(*) INTO v_bad_count
   FROM public.properties
-  WHERE id = v_qa_property_id
+  WHERE id::text = v_qa_property_id
     AND NOT (owner_id::text = v_qa_owner_id AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%'));
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: property % does not look like QA data', v_qa_property_id; END IF;
 
   SELECT count(*) INTO v_bad_count
   FROM public.units
   WHERE id::text = v_qa_unit_id
-    AND NOT (property_id = v_qa_property_id AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%'));
+    AND NOT (property_id::text = v_qa_property_id AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%'));
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: unit % does not look like QA data', v_qa_unit_id; END IF;
 
   SELECT count(*) INTO v_bad_count
   FROM public.people
-  WHERE id = v_qa_tenant_id
+  WHERE id::text = v_qa_tenant_id
     AND NOT (type = 'tenant' AND (coalesce(full_name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%'));
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: people tenant % does not look like QA data', v_qa_tenant_id; END IF;
 
   SELECT count(*) INTO v_bad_count
   FROM public.tenants
-  WHERE id = v_qa_tenant_id
+  WHERE id::text = v_qa_tenant_id
     AND NOT (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: legacy tenant % does not look like QA data', v_qa_tenant_id; END IF;
 
   SELECT count(*) INTO v_bad_count
   FROM public.owner_agreements
   WHERE id = v_qa_agreement_id
-    AND NOT (owner_id::text = v_qa_owner_id AND property_id = v_qa_property_id AND coalesce(notes, '') LIKE '%اختبار جاهزية%');
+    AND NOT (owner_id::text = v_qa_owner_id AND property_id::text = v_qa_property_id AND coalesce(notes, '') LIKE '%اختبار جاهزية%');
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: owner agreement % does not look like QA data', v_qa_agreement_id; END IF;
 
   SELECT count(*) INTO v_bad_count
   FROM public.invoices
-  WHERE id = v_qa_invoice_id
+  WHERE id::text = v_qa_invoice_id
     AND NOT (
-      contract_id = v_qa_contract_id
+      contract_id::text = v_qa_contract_id
       AND coalesce(no, '') = 'TEST-INV-1'
       AND coalesce(status, '') = 'UNPAID'
       AND coalesce(paid_amount, 0) = 0
@@ -112,9 +112,9 @@ BEGIN
 
   SELECT count(*) INTO v_bad_count
   FROM public.payments
-  WHERE (reference_no = v_qa_reference OR reference_number = v_qa_reference OR invoice_id = v_qa_invoice_id)
+  WHERE (reference_no = v_qa_reference OR reference_number = v_qa_reference OR invoice_id::text = v_qa_invoice_id)
     AND NOT (
-      invoice_id = v_qa_invoice_id
+      invoice_id::text = v_qa_invoice_id
       AND coalesce(reference_no, '') = v_qa_reference
       AND coalesce(reference_number, '') = v_qa_reference
     );
@@ -124,26 +124,26 @@ BEGIN
   FROM public.receipts
   WHERE (ref = v_qa_reference OR request_id = 'test-qa-payment-001' OR coalesce(notes, '') LIKE '%' || v_qa_invoice_id || '%')
     AND NOT (
-      contract_id = v_qa_contract_id
+      contract_id::text = v_qa_contract_id
       AND coalesce(ref, '') = v_qa_reference
       AND coalesce(status, '') = 'VOID'
     );
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: receipt reference % does not look like QA data', v_qa_reference; END IF;
 
   -- Guard against unexpected non-QA children that would make parent deletion unsafe.
-  SELECT count(*) INTO v_bad_count FROM public.receipt_allocations WHERE invoice_id = v_qa_invoice_id;
+  SELECT count(*) INTO v_bad_count FROM public.receipt_allocations WHERE invoice_id::text = v_qa_invoice_id;
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: invoice % has receipt allocations', v_qa_invoice_id; END IF;
 
-  SELECT count(*) INTO v_bad_count FROM public.deposit_txs WHERE contract_id = v_qa_contract_id;
+  SELECT count(*) INTO v_bad_count FROM public.deposit_txs WHERE contract_id::text = v_qa_contract_id;
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: QA contract has deposit transactions'; END IF;
 
-  SELECT count(*) INTO v_bad_count FROM public.contract_documents WHERE contract_id = v_qa_contract_id;
+  SELECT count(*) INTO v_bad_count FROM public.contract_documents WHERE contract_id::text = v_qa_contract_id;
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: QA contract has documents'; END IF;
 
   SELECT count(*) INTO v_bad_count FROM public.maintenance_records WHERE unit_id::text = v_qa_unit_id;
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: QA unit has maintenance records'; END IF;
 
-  SELECT count(*) INTO v_bad_count FROM public.cost_centers WHERE property_id = v_qa_property_id;
+  SELECT count(*) INTO v_bad_count FROM public.cost_centers WHERE property_id::text = v_qa_property_id;
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: QA property has cost centers'; END IF;
 
   -- Delete QA-only children first.
@@ -153,65 +153,65 @@ BEGIN
       OR response_payload::text LIKE '%' || v_qa_reference || '%';
 
   DELETE FROM public.payments
-   WHERE invoice_id = v_qa_invoice_id
+   WHERE invoice_id::text = v_qa_invoice_id
       OR reference_no = v_qa_reference
       OR reference_number = v_qa_reference;
 
   DELETE FROM public.receipts
    WHERE ref = v_qa_reference
       OR request_id = 'test-qa-payment-001'
-      OR (contract_id = v_qa_contract_id AND coalesce(notes, '') LIKE '%' || v_qa_invoice_id || '%');
+      OR (contract_id::text = v_qa_contract_id AND coalesce(notes, '') LIKE '%' || v_qa_invoice_id || '%');
 
   DELETE FROM public.invoices
-   WHERE id = v_qa_invoice_id
-      OR (contract_id = v_qa_contract_id AND coalesce(no, '') = 'TEST-INV-1' AND coalesce(notes, '') LIKE '%اختبار جاهزية%');
+   WHERE id::text = v_qa_invoice_id
+      OR (contract_id::text = v_qa_contract_id AND coalesce(no, '') = 'TEST-INV-1' AND coalesce(notes, '') LIKE '%اختبار جاهزية%');
 
   DELETE FROM public.contract_balances
-   WHERE contract_id = v_qa_contract_id
+   WHERE contract_id::text = v_qa_contract_id
       OR unit_id::text = v_qa_unit_id
-      OR tenant_id = v_qa_tenant_id;
+      OR tenant_id::text = v_qa_tenant_id;
 
   DELETE FROM public.tenant_balances
-   WHERE tenant_id = v_qa_tenant_id;
+   WHERE tenant_id::text = v_qa_tenant_id;
 
   DELETE FROM public.owner_balances
-   WHERE owner_id = v_qa_owner_id;
+   WHERE owner_id::text = v_qa_owner_id;
 
   -- Delete QA parent/domain rows after financial summaries are gone.
   DELETE FROM public.contracts
-   WHERE id = v_qa_contract_id
-     AND property_id = v_qa_property_id
+   WHERE id::text = v_qa_contract_id
+     AND property_id::text = v_qa_property_id
      AND unit_id::text = v_qa_unit_id
-     AND tenant_id = v_qa_tenant_id
+     AND tenant_id::text = v_qa_tenant_id
      AND agreement_id = v_qa_agreement_id
      AND coalesce(notes, '') LIKE '%اختبار جاهزية%';
 
   DELETE FROM public.tenants
-   WHERE id = v_qa_tenant_id
+   WHERE id::text = v_qa_tenant_id
      AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
 
   DELETE FROM public.people
-   WHERE id = v_qa_tenant_id
+   WHERE id::text = v_qa_tenant_id
      AND type = 'tenant'
      AND (coalesce(full_name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
 
   DELETE FROM public.owner_agreements
    WHERE id = v_qa_agreement_id
      AND owner_id::text = v_qa_owner_id
-     AND property_id = v_qa_property_id
+     AND property_id::text = v_qa_property_id
      AND coalesce(notes, '') LIKE '%اختبار جاهزية%';
 
   DELETE FROM public.units
    WHERE id::text = v_qa_unit_id
-     AND property_id = v_qa_property_id
+     AND property_id::text = v_qa_property_id
      AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
 
   DELETE FROM public.property_owners
-   WHERE property_id = v_qa_property_id
+   WHERE property_id::text = v_qa_property_id
       OR owner_id::text = v_qa_owner_id;
 
   DELETE FROM public.properties
-   WHERE id = v_qa_property_id
+   WHERE id::text = v_qa_property_id
      AND owner_id::text = v_qa_owner_id
      AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
 

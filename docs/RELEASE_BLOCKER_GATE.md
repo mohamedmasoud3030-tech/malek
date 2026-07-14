@@ -108,6 +108,16 @@ the source through `due_date::text` before applying the blank-value guard and
 date cast. Execution tests cover both the clean DATE layout and the historical
 TEXT layout with a blank due date. A fresh database run is still required.
 
+Fresh run #33 (`29370759271`) verified the financial-summary correction and
+replayed through `20260715000001`, then stopped in the guarded QA seed purge
+because UUID columns were compared directly with its text identifiers
+(`SQLSTATE 42883`). PR #1160 now compares every mixed-layout identifier through
+its text representation while preserving the same deterministic QA keys and
+all fail-closed guards. PGlite execution tests prove an empty clean UUID schema
+is a no-op, an unmarked row with a deterministic key is rejected without
+deletion, and only an explicitly QA-marked deterministic row is removed. A
+fresh database run is still required.
+
 Required staging/auth secrets for the authenticated release blocker remain:
 
 - `E2E_STAGING_BASE_URL`
