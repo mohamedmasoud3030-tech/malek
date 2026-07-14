@@ -127,6 +127,13 @@ the deterministic-key or QA-marker requirements. Its execution fixture now
 uses the actual clean-baseline `display_name`/`title` layout. A fresh database
 run is still required.
 
+Fresh run #35 (`29372564562`) verified the alternate owner/property marker
+fields, then exposed the remaining production-only `invoices.no` reference in
+the same purge (`SQLSTATE 42703`). The guard and deletion predicate now read
+that optional captured field through `to_jsonb(invoice)`, and the execution
+fixture omits it to mirror the clean baseline. A fresh database run is still
+required.
+
 Required staging/auth secrets for the authenticated release blocker remain:
 
 - `E2E_STAGING_BASE_URL`

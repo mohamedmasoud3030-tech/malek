@@ -117,14 +117,14 @@ BEGIN
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: owner agreement % does not look like QA data', v_qa_agreement_id; END IF;
 
   SELECT count(*) INTO v_bad_count
-  FROM public.invoices
-  WHERE id::text = v_qa_invoice_id
+  FROM public.invoices i
+  WHERE i.id::text = v_qa_invoice_id
     AND NOT (
-      contract_id::text = v_qa_contract_id
-      AND coalesce(no, '') = 'TEST-INV-1'
-      AND coalesce(status, '') = 'UNPAID'
-      AND coalesce(paid_amount, 0) = 0
-      AND coalesce(notes, '') LIKE '%اختبار جاهزية%'
+      i.contract_id::text = v_qa_contract_id
+      AND coalesce(to_jsonb(i)->>'no', '') = 'TEST-INV-1'
+      AND coalesce(i.status, '') = 'UNPAID'
+      AND coalesce(i.paid_amount, 0) = 0
+      AND coalesce(i.notes, '') LIKE '%اختبار جاهزية%'
     );
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: invoice % does not look like QA data', v_qa_invoice_id; END IF;
 
@@ -180,9 +180,13 @@ BEGIN
       OR request_id = 'test-qa-payment-001'
       OR (contract_id::text = v_qa_contract_id AND coalesce(notes, '') LIKE '%' || v_qa_invoice_id || '%');
 
-  DELETE FROM public.invoices
-   WHERE id::text = v_qa_invoice_id
-      OR (contract_id::text = v_qa_contract_id AND coalesce(no, '') = 'TEST-INV-1' AND coalesce(notes, '') LIKE '%اختبار جاهزية%');
+  DELETE FROM public.invoices i
+   WHERE i.id::text = v_qa_invoice_id
+      OR (
+        i.contract_id::text = v_qa_contract_id
+        AND coalesce(to_jsonb(i)->>'no', '') = 'TEST-INV-1'
+        AND coalesce(i.notes, '') LIKE '%اختبار جاهزية%'
+      );
 
   DELETE FROM public.contract_balances
    WHERE contract_id::text = v_qa_contract_id

@@ -17,7 +17,7 @@ describe('QA seed purge migration execution', () => {
     db = new PGlite();
     await db.exec(`
       CREATE TABLE contracts (id uuid, property_id uuid, unit_id uuid, tenant_id uuid, agreement_id uuid, notes text);
-      CREATE TABLE invoices (id uuid, contract_id uuid, no text, status text, paid_amount numeric, notes text);
+      CREATE TABLE invoices (id uuid, contract_id uuid, status text, paid_amount numeric, notes text);
       CREATE TABLE payments (reference_no text, reference_number text, invoice_id uuid);
       CREATE TABLE receipts (ref text, request_id text, notes text, contract_id uuid, status text);
       CREATE TABLE owners (id uuid, display_name text, notes text);
