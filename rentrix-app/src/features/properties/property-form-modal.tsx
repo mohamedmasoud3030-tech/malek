@@ -35,7 +35,7 @@ const propertyWithAgreementSchema = z
     }),
     commission_type: z.enum(['FIXED_MONTHLY', 'RATE'], { required_error: 'نوع العمولة مطلوب' }),
     commission_value: z.preprocess(
-      (value) => (value === '' || value === null || value === undefined ? NaN : Number(value)),
+      (value) => (value === '' || value === null || value === undefined ? Number.NaN : Number(value)),
       z.number({ invalid_type_error: 'قيمة العمولة مطلوبة' }).positive('قيمة العمولة يجب أن تكون أكبر من صفر'),
     ),
     agreement_starts_on: isoDate,
