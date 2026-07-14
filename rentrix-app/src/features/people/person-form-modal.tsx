@@ -110,6 +110,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         onOpenChange={handleOpenChange}
         title={title}
         className="max-w-2xl"
+        mobileSurface="full-page"
         headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
       >
         {isEdit && personQuery.isLoading ? (

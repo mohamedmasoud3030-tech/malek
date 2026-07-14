@@ -4,6 +4,7 @@ import App from './App';
 import { applyDocumentLanguageDirection } from '@/lib/i18n';
 import '@/styles/globals.css';
 import '@/styles/page-polish.css';
+import '@/styles/ux-foundation.css';
 
 applyDocumentLanguageDirection();
 

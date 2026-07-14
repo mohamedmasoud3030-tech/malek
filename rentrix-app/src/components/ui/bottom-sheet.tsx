@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,17 +22,20 @@ const focusableSelector = [
 
 export function BottomSheet({ open, onClose, title, children, className }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
   useEffect(() => {
     if (!open) return;
 
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.body.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     const sheet = sheetRef.current;
 
     const focusFirstControl = window.requestAnimationFrame(() => {
-      const firstFocusable = sheet?.querySelector<HTMLElement>(focusableSelector);
+      const firstContentControl = scrollRef.current?.querySelector<HTMLElement>(focusableSelector);
+      const firstFocusable = firstContentControl ?? sheet?.querySelector<HTMLElement>(focusableSelector);
       (firstFocusable ?? sheet)?.focus();
     });
 
@@ -63,19 +67,21 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
 
     document.addEventListener('keydown', handleKey);
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
 
     return () => {
       window.cancelAnimationFrame(focusFirstControl);
       document.removeEventListener('keydown', handleKey);
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
       previouslyFocused?.focus();
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end" role="presentation">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end" role="presentation" data-bottom-sheet-root>
       <button
         type="button"
         className="absolute inset-0 cursor-default touch-none bg-black/55 backdrop-blur-[2px]"
@@ -90,21 +96,22 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         aria-label={title ? undefined : 'لوحة إجراء'}
+        data-bottom-sheet
         className={cn(
-          'relative z-10 w-full max-w-full overflow-hidden rounded-t-[1.75rem] border border-b-0 border-border/60 bg-background outline-none',
+          'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-[1.75rem] border border-b-0 border-border/60 bg-background outline-none',
           'shadow-[0_-24px_70px_rgba(0,0,0,0.28)]',
           'animate-in slide-in-from-bottom duration-300',
-          'max-h-[calc(100dvh-0.5rem)]',
+          'max-h-[calc(var(--visual-viewport-height,100dvh)-0.5rem)]',
           'ps-[env(safe-area-inset-left,0px)] pe-[env(safe-area-inset-right,0px)]',
           className,
         )}
       >
-        <div className="flex justify-center pb-1 pt-3" aria-hidden="true">
+        <div className="flex shrink-0 justify-center pb-1 pt-3" aria-hidden="true">
           <div className="h-1.5 w-11 rounded-full bg-muted-foreground/20" />
         </div>
 
         {title ? (
-          <div className="flex min-h-16 items-center justify-between gap-3 border-b border-border/60 bg-background/96 px-4 py-3 backdrop-blur sm:px-5">
+          <div className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-background/96 px-4 py-3 backdrop-blur sm:px-5">
             <h2 id={titleId} className="min-w-0 text-base font-black leading-7">{title}</h2>
             <button
               type="button"
@@ -117,10 +124,15 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
           </div>
         ) : null}
 
-        <div className="max-h-[calc(100dvh-5.25rem)] overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-5">
+        <div
+          ref={scrollRef}
+          data-bottom-sheet-scroll
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pt-4 [scrollbar-gutter:stable] sm:px-5"
+        >
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
