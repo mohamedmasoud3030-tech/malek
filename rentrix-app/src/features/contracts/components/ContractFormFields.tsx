@@ -56,6 +56,12 @@ export function ContractFormFields({
     unitsQuery.isLoading ||
     unitConflictsQuery.isLoading ||
     agreementCoverageQuery.isLoading;
+  let submitLabel = 'حفظ العقد';
+  if (prerequisitesLoading) {
+    submitLabel = 'جار تجهيز بيانات العقد...';
+  } else if (submitting) {
+    submitLabel = 'جار الحفظ...';
+  }
 
   return (
     <EntityForm.Root className="gap-5 md:grid-cols-2" onSubmit={onSubmit} aria-busy={submitting}>
@@ -191,13 +197,7 @@ export function ContractFormFields({
           Boolean(coverageError) ||
           Boolean(dependencyError)
         }
-        submitLabel={
-          prerequisitesLoading
-            ? 'جار تجهيز بيانات العقد...'
-            : submitting
-              ? 'جار الحفظ...'
-              : 'حفظ العقد'
-        }
+        submitLabel={submitLabel}
       />
     </EntityForm.Root>
   );
