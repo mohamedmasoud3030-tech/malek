@@ -50,14 +50,22 @@ type EntityFormSectionProps = Readonly<{
 type EntityFormFieldProps = Readonly<{
   label: ReactNode;
   children: ReactNode;
+  description?: ReactNode;
+  error?: ReactNode;
   className?: string;
 }>;
 
-function Field({ label, children, className }: EntityFormFieldProps) {
+function Field({ label, children, description, error, className }: EntityFormFieldProps) {
   return (
     <label className={cn('grid min-w-0 gap-2 text-sm font-bold', className)}>
       <span>{label}</span>
+      {description ? <span className="text-xs font-medium leading-5 text-muted-foreground">{description}</span> : null}
       {children}
+      {error ? (
+        <span className="text-xs font-bold leading-5 text-destructive" role="alert">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }
