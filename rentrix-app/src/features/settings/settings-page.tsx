@@ -1,12 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Building2, FileSignature, FolderTree, KeyRound, Lock, RefreshCcw, Save, ShieldCheck, Sparkles, Cog, Bell, User, CalendarClock } from 'lucide-react';
+import { KeyRound, RefreshCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -28,6 +27,10 @@ import { useCompanySettings, useUpdateCompanySettings } from './useCompanySettin
 import { CostCentersSettingsSection } from './cost-centers-settings-section';
 import { PaymentTermsSettingsSection } from './payment-terms-settings-section';
 import { RoleSimulatorSection } from './role-simulator-section';
+import { settingsSections, type SettingsSectionId } from './settingsSections';
+import { FormField, PreviewField, SelectField } from './components/settings-form-fields';
+import { OverviewRow, SettingsHero } from './components/settings-hero';
+import { SectionCard } from './components/settings-section-card';
 import {
   areCompanySettingsDraftsEqual,
   companySettingsDraftToLocalSettings,
@@ -53,189 +56,9 @@ export function preventSettingsUnload(event: BeforeUnloadEvent) {
   event.returnValue = '';
 }
 
-type BaseFieldProps = Readonly<{
-  label: string;
-  field: CompanySettingsDraftField;
-  draft: CompanySettingsDraft;
-  errors: CompanySettingsValidationErrors;
-  disabled: boolean;
-  onChange: (field: CompanySettingsDraftField, value: string) => void;
-}>;
-
-type FormFieldProps = BaseFieldProps & Readonly<{
-  placeholder?: string;
-  type?: string;
-  inputMode?: 'decimal' | 'numeric' | 'text';
-}>;
-
-function FormField({ label, field, draft, errors, disabled, placeholder, type = 'text', inputMode, onChange }: FormFieldProps) {
-  const inputId = useId();
-  const errorId = `${inputId}-error`;
-  const isInvalid = Boolean(errors[field]);
-  return (
-    <label htmlFor={inputId} className="space-y-1 text-sm font-medium text-foreground">
-      <span>{label}</span>
-      <Input
-        id={inputId}
-        type={type}
-        inputMode={inputMode}
-        value={draft[field]}
-        placeholder={placeholder}
-        disabled={disabled}
-        aria-invalid={isInvalid}
-        aria-describedby={isInvalid ? errorId : undefined}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(field, event.target.value)}
-      />
-      {isInvalid ? <span id={errorId} className="block text-xs text-destructive" role="alert">{errors[field]}</span> : null}
-    </label>
-  );
-}
-
-type SelectFieldProps = BaseFieldProps & Readonly<{
-  options: readonly string[];
-}>;
-
-function SelectField({ label, field, draft, errors, disabled, options, onChange }: SelectFieldProps) {
-  const selectId = useId();
-  const errorId = `${selectId}-error`;
-  const isInvalid = Boolean(errors[field]);
-  return (
-    <label htmlFor={selectId} className="space-y-1 text-sm font-medium text-foreground">
-      <span>{label}</span>
-      <Select
-        id={selectId}
-        value={draft[field]}
-        disabled={disabled}
-        aria-invalid={isInvalid}
-        aria-describedby={isInvalid ? errorId : undefined}
-        onChange={(event: ChangeEvent<HTMLSelectElement>) => onChange(field, event.target.value)}
-      >
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
-      </Select>
-      {isInvalid ? <span id={errorId} className="block text-xs text-destructive" role="alert">{errors[field]}</span> : null}
-    </label>
-  );
-}
-
-type PreviewFieldProps = Readonly<{
-  label: string;
-  value: string;
-  muted?: boolean;
-}>;
-
-function PreviewField({ label, value, muted = false }: PreviewFieldProps) {
-  return (
-    <div className="rounded-xl border bg-background/70 p-3">
-      <dt className="text-[11px] font-bold text-muted-foreground">{label}</dt>
-      <dd className={muted ? 'mt-1 text-sm text-muted-foreground' : 'mt-1 text-sm font-semibold text-foreground'}>
-        {value}
-      </dd>
-    </div>
-  );
-}
-
-// ── Section definitions ───────────────────────────────────────────────────────
-//
-// These drive both the in-page section nav and the actual content cards. Each
-// section card is anchored by its id and renders only the persisted,
-// editable fields. Non-persisted preferences stay informational.
-export const settingsSections = [
-  { id: 'office',      label: 'بيانات المكتب',        icon: Building2      },
-  { id: 'identity',    label: 'الهوية والطباعة',      icon: FileSignature  },
-  { id: 'documents',   label: 'العقود والفواتير',     icon: FileSignature  },
-  { id: 'cost-centers', label: 'مراكز التكلفة',       icon: FolderTree     },
-  { id: 'payment-terms', label: 'شروط السداد',        icon: CalendarClock  },
-  { id: 'notifications', label: 'الإشعارات والتنبيهات', icon: Bell          },
-  { id: 'security',    label: 'الأمان والحساب',       icon: ShieldCheck    },
-  { id: 'role-simulator', label: 'محاكي الصلاحيات (Phase 6)', icon: Cog     },
-  { id: 'system',      label: 'النظام والبيانات',     icon: Cog           },
-] as const;
-
-type SettingsSectionId = (typeof settingsSections)[number]['id'];
-
-
-type SectionCardProps = Readonly<{
-  id: SettingsSectionId;
-  activeId: SettingsSectionId;
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}>;
-
-function SectionCard({ id, activeId, title, subtitle, children }: SectionCardProps) {
-  return (
-    <Card id={id} role="tabpanel" hidden={activeId !== id} className="scroll-mt-28 border-border/60">
-      <CardHeader className="space-y-1 border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-        <CardTitle className="text-sm font-black">{title}</CardTitle>
-        <p className="text-[11px] font-bold text-muted-foreground">{subtitle}</p>
-      </CardHeader>
-      <CardContent className="space-y-3 p-4 sm:p-5">{children}</CardContent>
-    </Card>
-  );
-}
-
-function SettingsHero({ companyName, hasUnsavedChanges }: Readonly<{ companyName: string; hasUnsavedChanges: boolean }>) {
-  return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 text-white sm:p-6">
-      <div aria-hidden="true" className="pointer-events-none absolute -left-8 -top-8 size-40 rounded-full bg-primary/25 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-8 -right-4 size-32 rounded-full bg-violet-500/20 blur-3xl" />
-
-      <div className="relative">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="flex items-center gap-2 text-sm font-bold text-slate-300">
-              <Sparkles className="size-4 text-primary" />
-              مركز تحكم الإعدادات
-            </p>
-            <h1 className="mt-0.5 text-xl font-black sm:text-2xl">إعدادات المكتب</h1>
-          </div>
-          {hasUnsavedChanges ? (
-            <StatusBadge tone="gold">تغييرات غير محفوظة</StatusBadge>
-          ) : (
-            <StatusBadge tone="green">كل الإعدادات محفوظة</StatusBadge>
-          )}
-        </div>
-
-        <div className="mt-4 flex items-end gap-3">
-          <div>
-            <p className="text-3xl font-black tabular-nums sm:text-4xl">{companyName}</p>
-            <p className="text-xs font-semibold text-slate-400">هوية الشركة المعتمدة حالياً</p>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold text-slate-300">
-          <span className="rounded-full bg-white/10 px-3 py-1.5">
-            بيانات موثقة
-          </span>
-          <span className="rounded-full bg-white/10 px-3 py-1.5">
-            مرجع لقوالب المستندات
-          </span>
-          <span className="rounded-full bg-white/10 px-3 py-1.5">
-            مصدر تفضيلات اللغة والسمة
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type OverviewTile = Readonly<{ label: string; value: string; helper: string; tone: 'green' | 'blue' | 'gold' | 'red' | 'gray' }>;
-
-function OverviewRow({ tiles }: Readonly<{ tiles: readonly OverviewTile[] }>) {
-  return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {tiles.map((tile) => (
-        <div key={tile.label} className="rounded-2xl border border-border/60 bg-card p-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] font-bold text-muted-foreground">{tile.label}</p>
-            <StatusBadge tone={tile.tone}>{tile.value}</StatusBadge>
-          </div>
-          <p className="mt-2 text-base font-black text-foreground">{tile.helper}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
+// Re-exported for backward compatibility: settings-page.test.ts imports
+// `settingsSections` from this module.
+export { settingsSections };
 
 export function SettingsPage() {
   const { theme, setTheme } = useUiStore();
