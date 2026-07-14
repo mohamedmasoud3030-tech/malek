@@ -28,8 +28,25 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm supabase:migration-evidence
-      - name: Check documentation links
-        run: pnpm check:docs
+      - name: Run documentation link check
+        id: docs-links
+        shell: bash
+        run: |
+          set +e
+          pnpm check:docs > /tmp/rentrix-doc-links.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          cat /tmp/rentrix-doc-links.log
+          exit 0
+      - name: Upload documentation link diagnostics
+        if: steps.docs-links.outputs.status != '0'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rentrix-doc-link-diagnostics
+          path: /tmp/rentrix-doc-links.log
+      - name: Fail on broken documentation links
+        if: steps.docs-links.outputs.status != '0'
+        run: exit 1
       - name: Run typecheck
         id: typecheck
         shell: bash
