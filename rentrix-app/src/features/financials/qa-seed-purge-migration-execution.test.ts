@@ -20,8 +20,8 @@ describe('QA seed purge migration execution', () => {
       CREATE TABLE invoices (id uuid, contract_id uuid, no text, status text, paid_amount numeric, notes text);
       CREATE TABLE payments (reference_no text, reference_number text, invoice_id uuid);
       CREATE TABLE receipts (ref text, request_id text, notes text, contract_id uuid, status text);
-      CREATE TABLE owners (id uuid, name text, notes text);
-      CREATE TABLE properties (id uuid, owner_id uuid, name text, notes text);
+      CREATE TABLE owners (id uuid, display_name text, notes text);
+      CREATE TABLE properties (id uuid, title text, notes text);
       CREATE TABLE units (id uuid, property_id uuid, name text, notes text);
       CREATE TABLE people (id uuid, type text, full_name text, notes text);
       CREATE TABLE tenants (id text, name text, notes text);

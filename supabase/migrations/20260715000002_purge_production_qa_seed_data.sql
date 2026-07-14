@@ -63,21 +63,36 @@ BEGIN
   -- Guard deterministic keys: if present, they must carry QA markers and/or the
   -- expected deterministic relationships.
   SELECT count(*) INTO v_bad_count
-  FROM public.owners
-  WHERE id::text = v_qa_owner_id
-    AND NOT (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
+  FROM public.owners o
+  WHERE o.id::text = v_qa_owner_id
+    AND NOT (
+      coalesce(to_jsonb(o)->>'name', to_jsonb(o)->>'display_name', '') ILIKE '%TEST-QA%'
+      OR coalesce(o.notes, '') LIKE '%اختبار جاهزية%'
+    );
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: owner % does not look like QA data', v_qa_owner_id; END IF;
 
   SELECT count(*) INTO v_bad_count
-  FROM public.properties
-  WHERE id::text = v_qa_property_id
-    AND NOT (owner_id::text = v_qa_owner_id AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%'));
+  FROM public.properties p
+  WHERE p.id::text = v_qa_property_id
+    AND NOT (
+      coalesce(to_jsonb(p)->>'owner_id', '') = v_qa_owner_id
+      AND (
+        coalesce(to_jsonb(p)->>'name', to_jsonb(p)->>'title', '') ILIKE '%TEST-QA%'
+        OR coalesce(p.notes, '') LIKE '%اختبار جاهزية%'
+      )
+    );
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: property % does not look like QA data', v_qa_property_id; END IF;
 
   SELECT count(*) INTO v_bad_count
-  FROM public.units
-  WHERE id::text = v_qa_unit_id
-    AND NOT (property_id::text = v_qa_property_id AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%'));
+  FROM public.units u
+  WHERE u.id::text = v_qa_unit_id
+    AND NOT (
+      u.property_id::text = v_qa_property_id
+      AND (
+        coalesce(to_jsonb(u)->>'name', to_jsonb(u)->>'unit_number', '') ILIKE '%TEST-QA%'
+        OR coalesce(u.notes, '') LIKE '%اختبار جاهزية%'
+      )
+    );
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: unit % does not look like QA data', v_qa_unit_id; END IF;
 
   SELECT count(*) INTO v_bad_count
@@ -87,9 +102,12 @@ BEGIN
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: people tenant % does not look like QA data', v_qa_tenant_id; END IF;
 
   SELECT count(*) INTO v_bad_count
-  FROM public.tenants
-  WHERE id::text = v_qa_tenant_id
-    AND NOT (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
+  FROM public.tenants t
+  WHERE t.id::text = v_qa_tenant_id
+    AND NOT (
+      coalesce(to_jsonb(t)->>'name', to_jsonb(t)->>'full_name', '') ILIKE '%TEST-QA%'
+      OR coalesce(t.notes, '') LIKE '%اختبار جاهزية%'
+    );
   IF v_bad_count > 0 THEN RAISE EXCEPTION 'QA cleanup guard failed: legacy tenant % does not look like QA data', v_qa_tenant_id; END IF;
 
   SELECT count(*) INTO v_bad_count
@@ -186,9 +204,12 @@ BEGIN
      AND agreement_id = v_qa_agreement_id
      AND coalesce(notes, '') LIKE '%اختبار جاهزية%';
 
-  DELETE FROM public.tenants
-   WHERE id::text = v_qa_tenant_id
-     AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
+  DELETE FROM public.tenants t
+   WHERE t.id::text = v_qa_tenant_id
+     AND (
+       coalesce(to_jsonb(t)->>'name', to_jsonb(t)->>'full_name', '') ILIKE '%TEST-QA%'
+       OR coalesce(t.notes, '') LIKE '%اختبار جاهزية%'
+     );
 
   DELETE FROM public.people
    WHERE id::text = v_qa_tenant_id
@@ -201,21 +222,30 @@ BEGIN
      AND property_id::text = v_qa_property_id
      AND coalesce(notes, '') LIKE '%اختبار جاهزية%';
 
-  DELETE FROM public.units
-   WHERE id::text = v_qa_unit_id
-     AND property_id::text = v_qa_property_id
-     AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
+  DELETE FROM public.units u
+   WHERE u.id::text = v_qa_unit_id
+     AND u.property_id::text = v_qa_property_id
+     AND (
+       coalesce(to_jsonb(u)->>'name', to_jsonb(u)->>'unit_number', '') ILIKE '%TEST-QA%'
+       OR coalesce(u.notes, '') LIKE '%اختبار جاهزية%'
+     );
 
   DELETE FROM public.property_owners
    WHERE property_id::text = v_qa_property_id
       OR owner_id::text = v_qa_owner_id;
 
-  DELETE FROM public.properties
-   WHERE id::text = v_qa_property_id
-     AND owner_id::text = v_qa_owner_id
-     AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
+  DELETE FROM public.properties p
+   WHERE p.id::text = v_qa_property_id
+     AND coalesce(to_jsonb(p)->>'owner_id', '') = v_qa_owner_id
+     AND (
+       coalesce(to_jsonb(p)->>'name', to_jsonb(p)->>'title', '') ILIKE '%TEST-QA%'
+       OR coalesce(p.notes, '') LIKE '%اختبار جاهزية%'
+     );
 
-  DELETE FROM public.owners
-   WHERE id::text = v_qa_owner_id
-     AND (coalesce(name, '') ILIKE '%TEST-QA%' OR coalesce(notes, '') LIKE '%اختبار جاهزية%');
+  DELETE FROM public.owners o
+   WHERE o.id::text = v_qa_owner_id
+     AND (
+       coalesce(to_jsonb(o)->>'name', to_jsonb(o)->>'display_name', '') ILIKE '%TEST-QA%'
+       OR coalesce(o.notes, '') LIKE '%اختبار جاهزية%'
+     );
 END $$;

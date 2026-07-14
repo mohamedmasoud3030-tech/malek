@@ -118,6 +118,15 @@ is a no-op, an unmarked row with a deterministic key is rejected without
 deletion, and only an explicitly QA-marked deterministic row is removed. A
 fresh database run is still required.
 
+Fresh run #34 (`29372331309`) verified the identifier comparisons, then exposed
+the second captured-layout assumption inside the same purge: production used
+`name`/`owner_id` fields that do not exist on the clean baseline's
+`owners`/`properties` tables (`SQLSTATE 42703`). The purge now reads alternate
+captured and baseline marker fields through `to_jsonb(row)` without weakening
+the deterministic-key or QA-marker requirements. Its execution fixture now
+uses the actual clean-baseline `display_name`/`title` layout. A fresh database
+run is still required.
+
 Required staging/auth secrets for the authenticated release blocker remain:
 
 - `E2E_STAGING_BASE_URL`
