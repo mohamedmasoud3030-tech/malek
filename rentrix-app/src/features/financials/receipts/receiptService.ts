@@ -188,6 +188,7 @@ function isVoidReceiptResult(value: unknown): value is VoidReceiptResult {
 export async function voidReceipt(payload: VoidReceiptPayload): Promise<VoidReceiptResult> {
   const { data, error } = await supabase.rpc('void_receipt_atomic', { payload });
   if (error) throw error;
+  if (data == null) throw new Error('void_receipt_atomic returned no data');
   if (!isVoidReceiptResult(data)) throw new Error('void_receipt_atomic returned an invalid response contract');
   return data;
 }
