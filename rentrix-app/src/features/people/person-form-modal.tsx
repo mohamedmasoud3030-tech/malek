@@ -13,10 +13,6 @@ import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { personSchema, personTypeLabels, personTypeValues, type PersonFormValues } from './person-schema';
 import { useCreatePerson, usePerson, useUpdatePerson } from './use-people';
 
-function fieldError(message?: string) {
-  return message ? <p className="text-xs font-bold text-destructive">{message}</p> : null;
-}
-
 interface PersonFormModalProps {
   open: boolean;
   onClose: () => void;
@@ -88,34 +84,23 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   });
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen || isSubmitting) {
-      return;
-    }
-
+    if (nextOpen || isSubmitting) return;
     if (form.formState.isDirty) {
       setShowDiscardDialog(true);
       return;
     }
-
     onClose();
   };
 
   const handleConfirmDiscard = () => {
-    if (isSubmitting) {
-      return;
-    }
-
+    if (isSubmitting) return;
     setShowDiscardDialog(false);
     form.reset(undefined, { keepValues: true });
     onClose();
   };
 
   const handleCancelDiscard = () => {
-    if (isSubmitting) {
-      return;
-    }
-
-    setShowDiscardDialog(false);
+    if (!isSubmitting) setShowDiscardDialog(false);
   };
 
   const title = isEdit ? 'تعديل شخص' : (defaultType === 'owner' ? 'إضافة مالك' : 'إضافة شخص');
@@ -134,44 +119,31 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         ) : (
           <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
             <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-
-            <EntityForm.Field label="الاسم الكامل">
+            <EntityForm.Field label="الاسم الكامل" error={form.formState.errors.full_name?.message}>
               <Input {...form.register('full_name')} autoFocus />
-              {fieldError(form.formState.errors.full_name?.message)}
             </EntityForm.Field>
-
-            <EntityForm.Field label="النوع">
+            <EntityForm.Field label="النوع" error={form.formState.errors.type?.message}>
               <Select {...form.register('type')}>
                 {personTypeValues.map((type) => (
                   <option key={type} value={type}>{personTypeLabels[type]}</option>
                 ))}
               </Select>
-              {fieldError(form.formState.errors.type?.message)}
             </EntityForm.Field>
-
-            <EntityForm.Field label="الهاتف">
+            <EntityForm.Field label="الهاتف" error={form.formState.errors.phone?.message}>
               <Input {...form.register('phone')} dir="ltr" />
-              {fieldError(form.formState.errors.phone?.message)}
             </EntityForm.Field>
-
-            <EntityForm.Field label="البريد الإلكتروني">
+            <EntityForm.Field label="البريد الإلكتروني" error={form.formState.errors.email?.message}>
               <Input {...form.register('email')} dir="ltr" />
-              {fieldError(form.formState.errors.email?.message)}
             </EntityForm.Field>
-
-            <EntityForm.Field label="رقم الهوية">
+            <EntityForm.Field label="رقم الهوية" error={form.formState.errors.national_id?.message}>
               <Input {...form.register('national_id')} />
-              {fieldError(form.formState.errors.national_id?.message)}
             </EntityForm.Field>
-
             <EntityForm.Field label="العنوان">
               <Input {...form.register('address')} />
             </EntityForm.Field>
-
             <EntityForm.Field label="ملاحظات" className="md:col-span-2">
               <Textarea {...form.register('notes')} />
             </EntityForm.Field>
-
             <EntityForm.Actions className="md:col-span-2" onCancel={() => handleOpenChange(false)} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'} />
           </EntityForm.Root>
         )}
