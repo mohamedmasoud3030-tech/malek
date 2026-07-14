@@ -259,17 +259,30 @@ describe('receiptService', () => {
 });
 
 describe('voidReceipt', () => {
-  it('voids the payment-backed receipt by id through the void facade and returns the result', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: { success: true, voided_at: '2026-05-15T08:00:00Z' }, error: null });
+  const successfulVoidResult = {
+    success: true,
+    idempotent: false,
+    request_id: 'void-request-1',
+    requested_receipt_id: 'payment_123',
+    payment_id: 'payment_123',
+    receipt_id: 'receipt_ledger_123',
+    status: 'VOID' as const,
+    reason: 'دفعة مكررة',
+    journal_reversal_batch_id: 'batch_123',
+    journal_reversal_entries: 2,
+  };
+
+  it('voids the payment-backed receipt by id through the void facade and returns the validated atomic RPC result', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: successfulVoidResult, error: null });
     const { voidReceipt } = await import('./receiptService');
     const payload = { receipt_id: 'payment_123', reason: 'دفعة مكررة', request_id: 'void-request-1' };
 
-    await expect(voidReceipt(payload)).resolves.toEqual({ success: true, voided_at: '2026-05-15T08:00:00Z' });
+    await expect(voidReceipt(payload)).resolves.toEqual(successfulVoidResult);
     expect(supabaseMock.rpc).toHaveBeenCalledWith('void_receipt_atomic', { payload });
   });
 
   it('sends the payment-backed receipt id as receipt_id, matching the receipt projection identifier', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: { success: true, voided_at: '2026-05-15T08:00:00Z' }, error: null });
+    supabaseMock.rpc.mockResolvedValue({ data: successfulVoidResult, error: null });
     const { voidReceipt } = await import('./receiptService');
 
     await voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' });
