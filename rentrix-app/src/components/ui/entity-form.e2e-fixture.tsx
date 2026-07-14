@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { EntityForm, type ResponsiveFormSurface } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ export function EntityFormE2EFixture({ mobileSurface = 'bottom-sheet' }: EntityF
   const [open, setOpen] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const name = String(data.get('full_name') ?? '').trim();
