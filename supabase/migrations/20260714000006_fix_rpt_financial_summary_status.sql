@@ -132,7 +132,7 @@ AS $$
         FROM public.invoices 
         WHERE deleted_at IS NULL 
           AND status IN ('UNPAID', 'PARTIALLY_PAID', 'OVERDUE') 
-          AND NULLIF(due_date, '')::date < current_date
+          AND NULLIF(due_date::text, '')::date < current_date
           AND COALESCE(UPPER(status), '') NOT IN ('VOID', 'CANCELLED')
       ), 0) AS overdue_amount,
       
@@ -141,7 +141,7 @@ AS $$
         FROM public.invoices 
         WHERE deleted_at IS NULL 
           AND status IN ('UNPAID', 'PARTIALLY_PAID', 'OVERDUE') 
-          AND NULLIF(due_date, '')::date < current_date
+          AND NULLIF(due_date::text, '')::date < current_date
           AND COALESCE(UPPER(status), '') NOT IN ('VOID', 'CANCELLED')
       ), 0) AS overdue_count,
       

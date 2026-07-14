@@ -100,6 +100,14 @@ tests cover clean UUID backfill plus trigger maintenance and the historical text
 balance layout. The database job must pass on the latest PR head before these
 replay fixes are considered verified.
 
+Fresh run #32 (`29370512641`) verified the contract-balance migration and
+replayed through `20260714000005`, then failed while creating
+`rpt_financial_summary` because `NULLIF(due_date, '')` coerced the empty string
+to the clean baseline's DATE type (`SQLSTATE 22007`). PR #1160 now normalizes
+the source through `due_date::text` before applying the blank-value guard and
+date cast. Execution tests cover both the clean DATE layout and the historical
+TEXT layout with a blank due date. A fresh database run is still required.
+
 Required staging/auth secrets for the authenticated release blocker remain:
 
 - `E2E_STAGING_BASE_URL`
