@@ -134,6 +134,14 @@ that optional captured field through `to_jsonb(invoice)`, and the execution
 fixture omits it to mirror the clean baseline. A fresh database run is still
 required.
 
+Fresh run #36 (`29372754687`) verified the primary QA purge and reached
+`20260715000003_purge_qa_journal_entries_residuals.sql`, whose strict guard
+incorrectly required the two production QA rows to exist on an empty database
+(`SQLSTATE P0001`). The residual purge is now idempotent when neither target is
+present while still rejecting partial or expanded matches and validating the
+exact debit/credit pair before deletion. Execution tests cover all three paths.
+A fresh database run is still required.
+
 Required staging/auth secrets for the authenticated release blocker remain:
 
 - `E2E_STAGING_BASE_URL`
