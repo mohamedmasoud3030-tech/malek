@@ -10,12 +10,25 @@ const viewportMatrix = [
 
 const themes = ['light', 'dark'] as const;
 
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'chromium-desktop',
+    'The explicit viewport matrix runs once in Chromium; project-level device coverage remains in readiness-smoke.spec.ts.',
+  );
+});
+
 async function openFixture(page: Page, theme: (typeof themes)[number], surface: 'bottom-sheet' | 'full-page' = 'full-page') {
   await page.addInitScript((selectedTheme) => {
     document.documentElement.dataset.theme = selectedTheme;
     document.documentElement.dir = 'rtl';
   }, theme);
   await page.goto(`/login?e2e-form-contract=1&surface=${surface}`);
+  await page.evaluate((selectedTheme) => {
+    document.documentElement.dataset.theme = selectedTheme;
+    document.documentElement.dir = 'rtl';
+  }, theme);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { name: 'اختبار عقد الفورم المشترك' })).toBeVisible();
   await expect(page.getByRole('dialog')).toBeVisible();
 }
