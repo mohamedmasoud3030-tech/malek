@@ -66,9 +66,23 @@ jobs:
           set -euo pipefail
           root="$PWD"
           bootstrap_dir="$(mktemp -d)"
-          cd "$bootstrap_dir"
-          "$root/node_modules/.bin/supabase" init
-          cp supabase/config.toml "$root/supabase/config.toml"
+          # Run 'supabase init' in a subshell so we never cd away from $root.
+          # Bug fix: previously 'cd $bootstrap_dir' was followed by
+          #   cp supabase/config.toml $root/supabase/config.toml
+          # which copied the freshly-initialised (empty) stock config over
+          # the committed project config, wiping migration paths so
+          # 'supabase db reset' saw zero migrations and pgTAP tests failed
+          # with missing public.* objects.
+          (
+            cd "$bootstrap_dir"
+            "$root/node_modules/.bin/supabase" init
+          )
+          mkdir -p "$root/supabase"
+          cp "$bootstrap_dir/supabase/config.toml" "$root/supabase/config.toml"
+          echo "--- supabase/config.toml present ($(wc -l <"$root/supabase/config.toml") lines) ---"
+          echo "--- migrations directory: $(ls "$root/supabase/migrations" | wc -l) files ---"
+          ls "$root/supabase/migrations" | head -5
+          echo "..."
       - name: Start isolated Supabase
         shell: bash
         run: |
