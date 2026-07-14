@@ -24,13 +24,13 @@ A skipped or conditionally omitted blocker test is a failure. Missing staging se
 
 ## CI jobs
 
-The workflow `.github/workflows/release-blocker-gate.yml` exposes three explicit jobs:
+The workflow `.github/workflows/release-blocker-gate.yml` exposes three mandatory jobs:
 
 - `release-blocker-code`
 - `release-blocker-database`
 - `release-blocker-authenticated-staging`
 
-The database job creates an ephemeral Supabase configuration, starts an isolated stack, replays the complete migration chain from an empty database, then executes pgTAP tests. It does not connect to production.
+The database job creates an ephemeral Supabase configuration, starts an isolated stack, replays the complete migration chain from an empty database, then executes pgTAP tests. It does not connect to production and must not be conditionally skipped on pull requests or manual gate runs.
 
 The staging authentication job fails before Playwright starts when any required value is absent:
 
@@ -44,11 +44,19 @@ Playwright traces, screenshots, video, and reports are retained only on failure.
 
 ## Current execution status
 
-Branch: `agent/release-blocker-gate-v2`
+Integrated gate commit: PR #1148, head `e71b411fa95ad94ee1aead5634549f4fef48c85e`.
 
-Status: **PENDING CI EXECUTION**
+First observed run: GitHub Actions run `29347228855` on 2026-07-14.
 
-No launch-readiness claim is made until all three jobs execute successfully with zero skipped blocker tests. A missing staging secret or a failed empty-database replay makes the result **BLOCKED** and must be resolved before release.
+| Job | Result | Evidence |
+| --- | --- | --- |
+| `release-blocker-code` | **PASS** | Typecheck, application tests, financial tests, production build, and browser secret-marker scan succeeded |
+| `release-blocker-database` | **SKIPPED / BLOCKED** | The original workflow restricted the job to an optional manual input, so the PR run did not replay migrations or execute pgTAP blockers |
+| `release-blocker-authenticated-staging` | **BLOCKED** | Preflight failed because all five staging/auth secrets were absent; Chromium and the real authentication scenarios did not run |
+
+Overall status: **BLOCKED — NOT RELEASE READY**.
+
+The follow-up change removes the conditional database skip so the isolated migration and pgTAP suite runs on every gate execution. Readiness still cannot be declared until the five staging secrets point to a non-production environment and all authentication scenarios execute successfully with zero skips.
 
 ## Deferred observations
 
