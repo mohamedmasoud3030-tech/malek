@@ -95,13 +95,13 @@ Exit conditions:
 
 ## Phase B — large operational page decomposition
 
-Status: **ready after Phase A**.
+Status: **in progress — 1 of 3 pages split; verification pending**.
 
 Order:
 
-1. `settings/settings-page.tsx`
-2. `owners/OwnersPage.tsx`
-3. `maintenance/maintenance-page.tsx`
+1. `owners/OwnersPage.tsx` — **done, unverified locally**
+2. `settings/settings-page.tsx` — not started
+3. `maintenance/maintenance-page.tsx` — not started
 
 For each page:
 
@@ -115,6 +115,25 @@ For each page:
 
 Exit conditions: each page is below 350 lines unless a documented exception is
 added, no behavior or permission changes are introduced, and full UI checks pass.
+
+Implementation evidence (current head):
+
+- `owners/OwnersPage.tsx` reduced from 493 to 100 lines. Extracted:
+  `components/owner-form-dialog.tsx` (owner identity create/edit dialog),
+  `components/owner-relationships.tsx` (`OwnerRelationshipsList` +
+  `OwnershipLinkForm`, exports `EditingPropertyOwnerLink`/`LinkedPropertyItem`),
+  `components/owner-workspace-table.tsx` (`OwnerWorkspaceTable` directory/search
+  table), and `useOwnersPageController.ts` (all data fetching, selection state,
+  and link/unlink handlers). The page keeps its single `OwnersPage` export
+  unchanged so routes and `owners-page-interaction.test.tsx` are unaffected by
+  the split. No behavior, copy, or props were changed — code was moved, not
+  rewritten.
+- `settings-page.tsx` (644 lines) and `maintenance-page.tsx` (528 lines) are
+  still monolithic and have not been touched in this pass.
+- **Verification has not been run locally for the OwnersPage split** (pnpm
+  install/typecheck/test/build were not executed in this pass, per explicit
+  instruction). The required verification matrix below must be run — locally
+  or in CI — before this phase advances or is marked complete.
 
 ## Phase C — financial report boundary
 
