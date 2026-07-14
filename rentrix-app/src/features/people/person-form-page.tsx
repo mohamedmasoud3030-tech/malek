@@ -51,6 +51,10 @@ export function PersonFormPage() {
 
   if (isEdit && personQuery.isLoading) return <RouteLoadingState />;
 
+  const retryPerson = async () => {
+    await personQuery.refetch();
+  };
+
   if (isEdit && personQuery.isError) {
     return (
       <Card className="mx-auto max-w-3xl">
@@ -59,7 +63,7 @@ export function PersonFormPage() {
           <CardDescription>{personQuery.error instanceof Error ? personQuery.error.message : 'حدث خطأ أثناء التحميل.'}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          <Button type="button" onClick={() => { void personQuery.refetch(); }}>إعادة المحاولة</Button>
+          <Button type="button" onClick={retryPerson}>إعادة المحاولة</Button>
           <Button variant="secondary" asChild><Link to="/people">العودة</Link></Button>
         </CardContent>
       </Card>
@@ -67,7 +71,9 @@ export function PersonFormPage() {
   }
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-  const navigateBack = () => { void router.navigate({ to: '/people' }); };
+  const navigateBack = async () => {
+    await router.navigate({ to: '/people' });
+  };
 
   return (
     <Card className="mx-auto max-w-5xl">
