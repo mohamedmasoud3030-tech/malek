@@ -2,13 +2,9 @@
 
 Short list of follow-up work, derived from gaps found while reviewing migrations, `src/features`, and test coverage. No TODO/FIXME/HACK markers or skipped tests were found in `rentrix-app/src` at the time of this check — the items below come from feature-area comparisons instead.
 
-## Architecture automation queue
+## Architecture refactor status
 
-Use [`docs/ARCHITECTURE_EXECUTION_PLAN.md`](./ARCHITECTURE_EXECUTION_PLAN.md) as the
-single ordered queue for code-tree, shared-component, large-file, and documentation
-consolidation work. Recurring automation must complete its first ready phase and
-update the evidence there instead of selecting an unrelated refactor from this
-product/data backlog.
+Architecture Phases A through E are complete. [`ARCHITECTURE_EXECUTION_PLAN.md`](ARCHITECTURE_EXECUTION_PLAN.md) is now the execution ledger and verification contract, not an automatically recurring refactor queue. Do not start another broad tree/UI refactor from historical reports. New architecture work must begin from current code evidence and a bounded plan; product, accounting, data-correctness, and release work continues from this backlog.
 
 ## Critical — production staging QA findings (2026-07-11)
 
@@ -25,12 +21,14 @@ QA cycle is still in progress — permission-boundary testing (non-admin role re
 
 ## Recently completed
 
+- Architecture execution Phases A–E are complete: app/feature boundaries, large operational-page decomposition, financial-report service boundaries, shared form/UI convergence, and documentation consolidation are merged or represented by the active Phase E PR.
 - Production migration cleanup from the earlier readiness pass is complete: the 2 committed-but-unapplied migrations were applied and the 9 orphaned enum types were dropped on `nnggcnpcuomwfuupupwg` on 2026-07-05. See `docs/CURRENT_STATE.md` for details.
 - Phase -1 shared-components implementation is complete: the custom contract/property/unit/receipt cards were replaced by shared `EntityCard` patterns, `EntityForm` now unifies form structure, `formatPropertyUnitSummary` moved into the properties feature, and receipt mobile/table status rendering no longer hard-codes posted status.
 - Phase 0 Settings + Auth verification is complete: production policy/function checks found no drift for F0-2/F0-3/F0-4, and F0-6 was fixed by moving the custom access-token hook role source to `public.users.role`. Keep `public.profiles.role` out of authorization logic unless a future schema change deliberately redefines it.
 
 ## Documentation and UX tracking
 
+- `docs/README.md` is the maintained documentation index; historical reports belong under `docs/archive/`, not the repository root.
 - `docs/agent-context/CONTEXT_MAP.md` is the canonical task-routing map for agents; keep it in sync when adding new high-risk task categories.
 - `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md` remains the active UI/navigation audit for sidebar, mobile drawer, viewport/safe-area, responsive, and RTL work. Use it for related UI branches instead of creating another one-off audit.
 - Commissions scope investigation is complete: `features/commissions/` is confirmed as an operational tracking view only, not a payout/accounting feature. See `docs/DOMAIN.md` for the documented assumptions and the inactive/placeholder `expense_id` note.
