@@ -8,7 +8,7 @@ const migration = readFileSync(
     '..',
     'supabase',
     'migrations',
-    '20260715000001_restore_live_shape_compatibility.sql',
+    '20260715000000_restore_live_shape_compatibility.sql',
   ),
   'utf8',
 ).toLowerCase();
