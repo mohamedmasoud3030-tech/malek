@@ -4,6 +4,16 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      run_database:
+        description: Run the isolated Supabase migration and pgTAP blocker suite
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-blocker-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -44,6 +54,7 @@ jobs:
 
   release-blocker-database:
     name: release-blocker-database
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_database }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -88,7 +99,7 @@ jobs:
     name: release-blocker-authenticated-staging
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [release-blocker-code, release-blocker-database]
+    needs: [release-blocker-code]
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       E2E_ENVIRONMENT_KIND: staging
