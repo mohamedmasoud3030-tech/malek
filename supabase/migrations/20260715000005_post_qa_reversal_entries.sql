@@ -60,7 +60,30 @@ DECLARE
   v_now          timestamptz := now();
   v_src_id       text := 'cef11264-fcb2-4f29-81c5-0b0b99e156a4';
   v_ent_id       text := 'b81853ee-b305-43f8-a7bc-39aed420781a';
+  v_target_count integer;
+  v_audit_id     public.audit_log.id%TYPE;
 BEGIN
+
+  -- Idempotency and scope guard. An empty database is already clean; any
+  -- partial QA journal graph is unsafe and must be reconciled explicitly.
+  SELECT count(*) INTO v_target_count
+  FROM public.journal_entries
+  WHERE no IN (
+    'PAY-testqapaymen-D',
+    'PAY-testqapaymen-C',
+    'REV-QA-PAY-testqapaymen-D',
+    'REV-QA-PAY-testqapaymen-C'
+  )
+     OR (source_id::text = v_src_id AND entity_id::text = v_ent_id);
+
+  IF v_target_count = 0 THEN
+    RAISE NOTICE 'QA original and reversal entries are absent. Migration is an idempotent no-op.';
+    RETURN;
+  END IF;
+
+  IF v_target_count <> 4 THEN
+    RAISE EXCEPTION 'Invariant failed: expected either 0 or exactly 4 QA journal rows, found %.', v_target_count;
+  END IF;
 
   -- =========================================================================
   -- PHASE 1: Verify original posted entries still exist (invariant check)
@@ -69,8 +92,8 @@ BEGIN
   SELECT * INTO v_orig_debit
   FROM public.journal_entries
   WHERE no = 'PAY-testqapaymen-D'
-    AND source_id = v_src_id
-    AND entity_id = v_ent_id;
+    AND source_id::text = v_src_id
+    AND entity_id::text = v_ent_id;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Invariant failed: original DEBIT entry PAY-testqapaymen-D not found.';
@@ -85,8 +108,8 @@ BEGIN
   SELECT * INTO v_orig_credit
   FROM public.journal_entries
   WHERE no = 'PAY-testqapaymen-C'
-    AND source_id = v_src_id
-    AND entity_id = v_ent_id;
+    AND source_id::text = v_src_id
+    AND entity_id::text = v_ent_id;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Invariant failed: original CREDIT entry PAY-testqapaymen-C not found.';
@@ -105,14 +128,14 @@ BEGIN
   SELECT * INTO v_rev_credit
   FROM public.journal_entries
   WHERE no = 'REV-QA-PAY-testqapaymen-D'
-    AND source_id = v_src_id
-    AND entity_id = v_ent_id;
+    AND source_id::text = v_src_id
+    AND entity_id::text = v_ent_id;
 
   SELECT * INTO v_rev_debit
   FROM public.journal_entries
   WHERE no = 'REV-QA-PAY-testqapaymen-C'
-    AND source_id = v_src_id
-    AND entity_id = v_ent_id;
+    AND source_id::text = v_src_id
+    AND entity_id::text = v_ent_id;
 
   -- =========================================================================
   -- PHASE 3: Idempotency — exit cleanly if already posted
@@ -166,8 +189,8 @@ BEGIN
     updated_at = v_now
   WHERE id IN (v_rev_credit.id, v_rev_debit.id)
     AND status = 'draft'
-    AND source_id = v_src_id
-    AND entity_id = v_ent_id;
+    AND source_id::text = v_src_id
+    AND entity_id::text = v_ent_id;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'UPDATE posted 0 rows — unexpected state. Aborting.';
@@ -185,8 +208,8 @@ BEGIN
     SUM(CASE WHEN type = 'CREDIT' THEN amount ELSE 0 END)
   INTO v_total_debit, v_total_credit
   FROM public.journal_entries
-  WHERE source_id = v_src_id
-    AND entity_id = v_ent_id;
+  WHERE source_id::text = v_src_id
+    AND entity_id::text = v_ent_id;
 
   IF v_total_debit <> v_total_credit THEN
     RAISE EXCEPTION
@@ -201,17 +224,19 @@ BEGIN
   -- PHASE 7: Audit trail
   -- =========================================================================
 
+  v_audit_id := gen_random_uuid();
+
   INSERT INTO public.audit_log (
     id, ts, user_id, username, action, entity, entity_id,
     note, "table", details, created_at, updated_at
   ) VALUES (
-    gen_random_uuid()::text,
+    v_audit_id,
     extract(epoch from v_now)::bigint,
     NULL,
     'migration:20260715000005',
     'POST_QA_REVERSAL_ENTRIES',
     'journal_entry',
-    v_rev_credit.id || ',' || v_rev_debit.id,
+    v_rev_credit.id::text || ',' || v_rev_debit.id::text,
     'QA cleanup: posted two draft reversal entries to complete double-entry neutralisation of QA journal pair PAY-testqapaymen-D/C. Net accounting effect = 0.',
     'journal_entries',
     jsonb_build_object(

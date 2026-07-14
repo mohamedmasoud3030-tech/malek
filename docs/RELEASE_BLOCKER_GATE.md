@@ -142,6 +142,15 @@ present while still rejecting partial or expanded matches and validating the
 exact debit/credit pair before deletion. Execution tests cover all three paths.
 A fresh database run is still required.
 
+Fresh run #37 (`29372998921`) verified the residual purge and replayed through
+`20260715000004`, then failed in reversal posting because UUID `source_id` was
+compared with a text variable and the function required the production QA graph
+to exist on an empty database (`SQLSTATE 42883`). The posting migration now
+normalizes mixed identifiers, treats an absent four-row graph as already clean,
+rejects partial/expanded graphs, validates and posts the exact balanced pair,
+and creates an audit ID using the target column type. Execution tests cover the
+absent, exact, and partial graph paths. A fresh database run is still required.
+
 Required staging/auth secrets for the authenticated release blocker remain:
 
 - `E2E_STAGING_BASE_URL`
