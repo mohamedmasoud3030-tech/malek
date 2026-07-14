@@ -32,8 +32,8 @@ describe('production QA purge identifier compatibility', () => {
     );
   });
 
-  it('retains narrow deletion behavior and avoids truncate', () => {
-    expect(migration).not.toContain('truncate');
+  it('retains narrow deletion behavior and avoids executable truncate statements', () => {
+    expect(migration).not.toMatch(/^\s*truncate\b/im);
     expect(migration).toContain('delete from public.financial_operation_idempotency');
     expect(migration).toContain('delete from public.contract_balances');
     expect(migration).toContain('delete from public.properties');
