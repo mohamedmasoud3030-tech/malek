@@ -6,12 +6,19 @@ import process from 'node:process';
 
 const root = process.cwd();
 const excludedDirectories = new Set(['.git', 'node_modules', 'dist', 'coverage', '.vercel']);
+const excludedPaths = new Set(['.agents/skills']);
 const markdownFiles = [];
 
 function walk(directory) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
-    if (entry.isDirectory() && excludedDirectories.has(entry.name)) continue;
     const absolutePath = resolve(directory, entry.name);
+    const repositoryPath = relative(root, absolutePath).split(sep).join('/');
+    if (
+      entry.isDirectory() &&
+      (excludedDirectories.has(entry.name) || excludedPaths.has(repositoryPath))
+    ) {
+      continue;
+    }
     if (entry.isDirectory()) walk(absolutePath);
     else if (entry.isFile() && entry.name.endsWith('.md')) markdownFiles.push(absolutePath);
   }
@@ -97,4 +104,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Documentation link check passed for ${markdownFiles.length} Markdown file(s).`);
+console.log(`Documentation link check passed for ${markdownFiles.length} maintained Markdown file(s).`);
