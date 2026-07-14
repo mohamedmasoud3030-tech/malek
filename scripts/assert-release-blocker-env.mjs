@@ -19,6 +19,14 @@ if (process.env.E2E_ENVIRONMENT_KIND !== 'staging') {
   process.exit(1);
 }
 
+const fallbackEmailDomain = 'gmail.com';
+const rawTestEmail = process.env.E2E_TEST_EMAIL.trim();
+const testEmail = rawTestEmail.endsWith('@') ? `${rawTestEmail}${fallbackEmailDomain}` : rawTestEmail;
+if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) {
+  console.error('BLOCKED: E2E_TEST_EMAIL must be a syntactically valid email address. The value remains redacted.');
+  process.exit(1);
+}
+
 let baseUrl;
 let supabaseUrl;
 try {
