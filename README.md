@@ -4,7 +4,7 @@ Rentrix is a rental-property management web application for properties, units, p
 
 ## Application location
 
-The active app lives in `rentrix-app/`.
+The active app lives in `rentrix-app/` as the deployable package in this pnpm workspace. Repository-level governance, CI, documentation, scripts, and Supabase assets remain at the root.
 
 ## Basic commands
 
@@ -13,6 +13,7 @@ pnpm install --frozen-lockfile
 pnpm --filter ./rentrix-app dev
 pnpm typecheck
 pnpm lint
+pnpm check:docs
 pnpm build
 pnpm --filter ./rentrix-app test
 pnpm --filter ./rentrix-app run test:financials
@@ -20,7 +21,7 @@ pnpm --filter ./rentrix-app run test:financials
 
 ## Documentation
 
-See [`docs/`](docs) for product, architecture, domain, testing, and current-state notes. Start with [`AGENTS.md`](AGENTS.md) if you are a new contributor or agent.
+Start with [`AGENTS.md`](AGENTS.md) for contributor/agent rules and [`docs/README.md`](docs/README.md) for the maintained documentation index. Historical audits and superseded execution reports live under `docs/archive/`; do not use them as the current backlog.
 
 ## Contributing
 
