@@ -3,34 +3,148 @@
 -- Phase: 2 (Wave 1 - Double-Entry Accounting Completion)
 -- Date: 2026-07-13
 --
--- Purpose:
--- Maintain contract_balances incrementally via triggers instead of relying
--- solely on recalculate_all_balances(). This ensures balances are always
--- current without manual intervention.
---
--- Triggers:
---   1. invoices INSERT/UPDATE/DELETE → update total_invoiced and balance_due
---   2. receipt_allocations INSERT/DELETE → update total_paid and balance_due
---
--- Fixes: A-03
---
--- Risk: MEDIUM - adds trigger overhead to invoice/payment paths
--- Rollback: See DROP statements at end of file
---
--- =============================================================================
--- ROLLBACK SCRIPT:
--- =============================================================================
--- DROP TRIGGER IF EXISTS trg_invoices_update_contract_balance ON public.invoices;
--- DROP TRIGGER IF EXISTS trg_receipt_allocations_update_contract_balance ON public.receipt_allocations;
--- DROP FUNCTION IF EXISTS public.update_contract_balance_from_invoice();
--- DROP FUNCTION IF EXISTS public.update_contract_balance_from_allocation();
+-- Maintains contract_balances incrementally from invoice and allocation changes.
+-- The migration supports both repository-backed identifier layouts:
+--   - clean baseline: uuid contract/tenant/unit identifiers
+--   - historical production: text contract/tenant identifiers and uuid unit ids
 -- =============================================================================
 
 BEGIN;
 
--- =============================================================================
--- STEP 1: Create function to update contract_balances from invoice changes
--- =============================================================================
+DO $$
+DECLARE
+  v_contract_id_type text;
+  v_balance_contract_id_type text;
+  v_contract_tenant_id_type text;
+  v_balance_tenant_id_type text;
+  v_contract_unit_id_type text;
+  v_balance_unit_id_type text;
+BEGIN
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_contract_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'contracts'
+    AND attribute.attname = 'id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_balance_contract_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'contract_balances'
+    AND attribute.attname = 'contract_id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_contract_tenant_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'contracts'
+    AND attribute.attname = 'tenant_id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_balance_tenant_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'contract_balances'
+    AND attribute.attname = 'tenant_id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_contract_unit_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'contracts'
+    AND attribute.attname = 'unit_id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_balance_unit_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'contract_balances'
+    AND attribute.attname = 'unit_id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  IF v_contract_id_type IS NULL OR v_balance_contract_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot install contract balance triggers: contract identifier columns were not found';
+  END IF;
+
+  IF v_contract_tenant_id_type IS NULL OR v_balance_tenant_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot install contract balance triggers: tenant identifier columns were not found';
+  END IF;
+
+  IF v_contract_unit_id_type IS NULL OR v_balance_unit_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot install contract balance triggers: unit identifier columns were not found';
+  END IF;
+
+  IF v_contract_id_type NOT IN ('uuid', 'text')
+     OR v_balance_contract_id_type NOT IN ('uuid', 'text') THEN
+    RAISE EXCEPTION
+      'Cannot install contract balance triggers: unsupported contract identifier types % and %',
+      v_contract_id_type,
+      v_balance_contract_id_type;
+  END IF;
+
+  IF v_contract_tenant_id_type NOT IN ('uuid', 'text')
+     OR v_balance_tenant_id_type NOT IN ('uuid', 'text') THEN
+    RAISE EXCEPTION
+      'Cannot install contract balance triggers: unsupported tenant identifier types % and %',
+      v_contract_tenant_id_type,
+      v_balance_tenant_id_type;
+  END IF;
+
+  IF v_contract_unit_id_type NOT IN ('uuid', 'text')
+     OR v_balance_unit_id_type NOT IN ('uuid', 'text') THEN
+    RAISE EXCEPTION
+      'Cannot install contract balance triggers: unsupported unit identifier types % and %',
+      v_contract_unit_id_type,
+      v_balance_unit_id_type;
+  END IF;
+
+  IF v_contract_id_type <> v_balance_contract_id_type THEN
+    RAISE EXCEPTION
+      'Cannot install contract balance triggers: contracts.id type % differs from contract_balances.contract_id type %',
+      v_contract_id_type,
+      v_balance_contract_id_type;
+  END IF;
+
+  IF v_contract_tenant_id_type <> v_balance_tenant_id_type THEN
+    RAISE EXCEPTION
+      'Cannot install contract balance triggers: contracts.tenant_id type % differs from contract_balances.tenant_id type %',
+      v_contract_tenant_id_type,
+      v_balance_tenant_id_type;
+  END IF;
+
+  IF v_contract_unit_id_type <> v_balance_unit_id_type THEN
+    RAISE EXCEPTION
+      'Cannot install contract balance triggers: contracts.unit_id type % differs from contract_balances.unit_id type %',
+      v_contract_unit_id_type,
+      v_balance_unit_id_type;
+  END IF;
+END
+$$;
+
 CREATE OR REPLACE FUNCTION public.update_contract_balance_from_invoice()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -38,50 +152,47 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  -- Production schema uses text for contracts.id, invoices.contract_id, and
-  -- contract_balances.contract_id. Keep all local ID variables text to avoid
-  -- invalid text = uuid comparisons inside invoice/allocation triggers.
-  v_contract_id text;
+  v_contract_id public.contract_balances.contract_id%TYPE;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id text;
-  v_unit_id text;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
 BEGIN
-  -- Determine which contract_id to update
   IF TG_OP = 'DELETE' THEN
     v_contract_id := OLD.contract_id;
   ELSE
     v_contract_id := NEW.contract_id;
   END IF;
 
-  -- Invoices may allow a NULL contract_id. Do not fail or create a balance
-  -- row when the invoice is not linked to a contract.
   IF v_contract_id IS NULL THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
 
-  -- Calculate totals for this contract
-  SELECT 
-    COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
-    COALESCE(SUM(i.paid_amount), 0),
-    c.tenant_id,
-    c.unit_id::text
+  SELECT
+    COALESCE(SUM(invoice.amount + COALESCE(invoice.tax_amount, 0)), 0),
+    COALESCE(SUM(invoice.paid_amount), 0),
+    contract_record.tenant_id,
+    contract_record.unit_id
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
-  FROM public.contracts c
-  LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
-  WHERE c.id = v_contract_id
-  GROUP BY c.tenant_id, c.unit_id;
+  FROM public.contracts AS contract_record
+  LEFT JOIN public.invoices AS invoice
+    ON invoice.contract_id = contract_record.id
+   AND invoice.deleted_at IS NULL
+  WHERE contract_record.id = v_contract_id
+  GROUP BY contract_record.tenant_id, contract_record.unit_id;
 
-  -- If the referenced contract cannot be found, do not fail invoice/allocation
-  -- writes. This should not happen with valid FK data, but keeps the trigger
-  -- defensive and avoids accidental write outages.
   IF NOT FOUND THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
 
-  -- Upsert contract_balances
   INSERT INTO public.contract_balances (
-    contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at
+    contract_id,
+    tenant_id,
+    unit_id,
+    total_invoiced,
+    total_paid,
+    balance_due,
+    updated_at
   ) VALUES (
     v_contract_id,
     v_tenant_id,
@@ -103,9 +214,6 @@ BEGIN
 END;
 $$;
 
--- =============================================================================
--- STEP 2: Create function to update contract_balances from allocation changes
--- =============================================================================
 CREATE OR REPLACE FUNCTION public.update_contract_balance_from_allocation()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -113,52 +221,53 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  -- Production schema uses text for contracts.id, invoices.contract_id, and
-  -- contract_balances.contract_id. Keep all local ID variables text to avoid
-  -- invalid text = uuid comparisons inside invoice/allocation triggers.
-  v_contract_id text;
+  v_contract_id public.contract_balances.contract_id%TYPE;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id text;
-  v_unit_id text;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
 BEGIN
-  -- Get contract_id from the invoice referenced by this allocation
   IF TG_OP = 'DELETE' THEN
-    SELECT i.contract_id INTO v_contract_id
-    FROM public.invoices i
-    WHERE i.id = OLD.invoice_id;
+    SELECT invoice.contract_id
+      INTO v_contract_id
+    FROM public.invoices AS invoice
+    WHERE invoice.id = OLD.invoice_id;
   ELSE
-    SELECT i.contract_id INTO v_contract_id
-    FROM public.invoices i
-    WHERE i.id = NEW.invoice_id;
+    SELECT invoice.contract_id
+      INTO v_contract_id
+    FROM public.invoices AS invoice
+    WHERE invoice.id = NEW.invoice_id;
   END IF;
 
   IF v_contract_id IS NULL THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
 
-  -- Calculate totals for this contract
-  SELECT 
-    COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
-    COALESCE(SUM(i.paid_amount), 0),
-    c.tenant_id,
-    c.unit_id::text
+  SELECT
+    COALESCE(SUM(invoice.amount + COALESCE(invoice.tax_amount, 0)), 0),
+    COALESCE(SUM(invoice.paid_amount), 0),
+    contract_record.tenant_id,
+    contract_record.unit_id
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
-  FROM public.contracts c
-  LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
-  WHERE c.id = v_contract_id
-  GROUP BY c.tenant_id, c.unit_id;
+  FROM public.contracts AS contract_record
+  LEFT JOIN public.invoices AS invoice
+    ON invoice.contract_id = contract_record.id
+   AND invoice.deleted_at IS NULL
+  WHERE contract_record.id = v_contract_id
+  GROUP BY contract_record.tenant_id, contract_record.unit_id;
 
-  -- If the referenced contract cannot be found, do not fail invoice/allocation
-  -- writes. This should not happen with valid FK data, but keeps the trigger
-  -- defensive and avoids accidental write outages.
   IF NOT FOUND THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
 
-  -- Upsert contract_balances
   INSERT INTO public.contract_balances (
-    contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at
+    contract_id,
+    tenant_id,
+    unit_id,
+    total_invoiced,
+    total_paid,
+    balance_due,
+    updated_at
   ) VALUES (
     v_contract_id,
     v_tenant_id,
@@ -180,9 +289,6 @@ BEGIN
 END;
 $$;
 
--- =============================================================================
--- STEP 3: Create triggers
--- =============================================================================
 DROP TRIGGER IF EXISTS trg_invoices_update_contract_balance ON public.invoices;
 CREATE TRIGGER trg_invoices_update_contract_balance
   AFTER INSERT OR UPDATE OR DELETE ON public.invoices
@@ -195,24 +301,30 @@ CREATE TRIGGER trg_receipt_allocations_update_contract_balance
   FOR EACH ROW
   EXECUTE FUNCTION public.update_contract_balance_from_allocation();
 
--- =============================================================================
--- STEP 4: Backfill existing contract_balances
--- =============================================================================
 INSERT INTO public.contract_balances (
-  contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at
+  contract_id,
+  tenant_id,
+  unit_id,
+  total_invoiced,
+  total_paid,
+  balance_due,
+  updated_at
 )
 SELECT
-  c.id,
-  c.tenant_id,
-  c.unit_id::text,
-  COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
-  COALESCE(SUM(i.paid_amount), 0),
-  COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0) - COALESCE(SUM(i.paid_amount), 0),
+  contract_record.id,
+  contract_record.tenant_id,
+  contract_record.unit_id,
+  COALESCE(SUM(invoice.amount + COALESCE(invoice.tax_amount, 0)), 0),
+  COALESCE(SUM(invoice.paid_amount), 0),
+  COALESCE(SUM(invoice.amount + COALESCE(invoice.tax_amount, 0)), 0)
+    - COALESCE(SUM(invoice.paid_amount), 0),
   now()
-FROM public.contracts c
-LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
-WHERE c.deleted_at IS NULL
-GROUP BY c.id, c.tenant_id, c.unit_id
+FROM public.contracts AS contract_record
+LEFT JOIN public.invoices AS invoice
+  ON invoice.contract_id = contract_record.id
+ AND invoice.deleted_at IS NULL
+WHERE contract_record.deleted_at IS NULL
+GROUP BY contract_record.id, contract_record.tenant_id, contract_record.unit_id
 ON CONFLICT (contract_id) DO UPDATE SET
   tenant_id = EXCLUDED.tenant_id,
   unit_id = EXCLUDED.unit_id,
@@ -221,9 +333,6 @@ ON CONFLICT (contract_id) DO UPDATE SET
   balance_due = EXCLUDED.balance_due,
   updated_at = now();
 
--- =============================================================================
--- STEP 5: Set ownership and grants
--- =============================================================================
 ALTER FUNCTION public.update_contract_balance_from_invoice() OWNER TO postgres;
 ALTER FUNCTION public.update_contract_balance_from_allocation() OWNER TO postgres;
 
@@ -233,26 +342,26 @@ GRANT EXECUTE ON FUNCTION public.update_contract_balance_from_invoice() TO servi
 REVOKE ALL ON FUNCTION public.update_contract_balance_from_allocation() FROM public, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.update_contract_balance_from_allocation() TO service_role;
 
--- =============================================================================
--- STEP 6: Validation
--- =============================================================================
 DO $$
 DECLARE
   v_invoice_trigger_exists boolean;
   v_allocation_trigger_exists boolean;
-  v_balance_count integer;
+  v_balance_count bigint;
 BEGIN
-  -- Verify triggers exist
-  SELECT EXISTS(
-    SELECT 1 FROM pg_trigger
+  SELECT EXISTS (
+    SELECT 1
+    FROM pg_trigger
     WHERE tgname = 'trg_invoices_update_contract_balance'
       AND tgrelid = 'public.invoices'::regclass
+      AND NOT tgisinternal
   ) INTO v_invoice_trigger_exists;
 
-  SELECT EXISTS(
-    SELECT 1 FROM pg_trigger
+  SELECT EXISTS (
+    SELECT 1
+    FROM pg_trigger
     WHERE tgname = 'trg_receipt_allocations_update_contract_balance'
       AND tgrelid = 'public.receipt_allocations'::regclass
+      AND NOT tgisinternal
   ) INTO v_allocation_trigger_exists;
 
   IF NOT v_invoice_trigger_exists THEN
@@ -263,10 +372,9 @@ BEGIN
     RAISE EXCEPTION 'Migration failed: allocation trigger not created';
   END IF;
 
-  -- Verify backfill
-  SELECT COUNT(*) INTO v_balance_count FROM public.contract_balances;
-  
-  RAISE NOTICE '✓ Contract balances triggers created and % existing contracts backfilled', v_balance_count;
-END $$;
+  SELECT count(*) INTO v_balance_count FROM public.contract_balances;
+  RAISE NOTICE 'Contract balance triggers created and % existing contracts backfilled', v_balance_count;
+END
+$$;
 
 COMMIT;
