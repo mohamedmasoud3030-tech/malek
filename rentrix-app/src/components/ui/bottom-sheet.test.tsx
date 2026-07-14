@@ -49,7 +49,7 @@ describe('BottomSheet mobile interaction contract', () => {
     expect(document.activeElement).toBe(input);
   });
 
-  it('restores document scroll ownership after unmount', () => {
+  it('restores document scroll ownership after the sheet leaves the tree', () => {
     document.body.style.overflow = 'auto';
     document.documentElement.style.overflow = 'clip';
 
@@ -60,7 +60,7 @@ describe('BottomSheet mobile interaction contract', () => {
         </BottomSheet>,
       );
     });
-    act(() => root.unmount());
+    act(() => root.render(null));
 
     expect(document.body.style.overflow).toBe('auto');
     expect(document.documentElement.style.overflow).toBe('clip');
