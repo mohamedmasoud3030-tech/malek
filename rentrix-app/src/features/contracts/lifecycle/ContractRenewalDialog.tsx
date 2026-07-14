@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { useAgreementCoverage } from '@/features/owners/useOwnerAgreements';
@@ -9,8 +8,6 @@ import { renewalSchema, type RenewalPayload } from '../contractSchema';
 import type { ContractDetail, RenewalResult } from '../services/contractService';
 import { useRenewContract } from '../useContracts';
 import { getRenewalDefaults } from './contractLifecycleRules';
-
-const fieldError = (message?: string) => message ? <span className="text-xs font-bold text-destructive">{message}</span> : null;
 
 export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed }: Readonly<{ contract: ContractDetail; open: boolean; onOpenChange: (open: boolean) => void; onRenewed: (result: RenewalResult) => Promise<void> | void }>) {
   const renewMutation = useRenewContract(contract.id);
@@ -41,28 +38,36 @@ export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed 
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>تجديد العقد</DialogTitle>
-          <DialogDescription>سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد. يجب وجود اتفاقية إدارة تغطي كامل فترة التجديد.</DialogDescription>
-        </DialogHeader>
-        <form className="grid gap-4" onSubmit={form.handleSubmit(submitRenewal)}>
-          {renewalCoverageError ? <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm font-bold text-destructive">{renewalCoverageError}</p> : null}
-          <label className="grid gap-2 text-sm font-bold">تاريخ البداية<Input type="date" {...form.register('new_start')} />{fieldError(form.formState.errors.new_start?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">تاريخ النهاية<Input type="date" {...form.register('new_end')} />{fieldError(form.formState.errors.new_end?.message)}</label>
-          <label className="grid gap-2 text-sm font-bold">
-            اتفاقية المالك المغطية
-            <Select value={renewalAgreement?.id ?? ''} disabled><option value="">{agreementOptionLabel}</option></Select>
-            {fieldError(form.formState.errors.agreement_id?.message)}
-          </label>
-          <label className="grid gap-2 text-sm font-bold">قيمة الإيجار<Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('new_amount')} />{fieldError(form.formState.errors.new_amount?.message)}</label>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>إلغاء</Button>
-            <Button type="submit" disabled={renewMutation.isPending || renewalAgreementQuery.isLoading || Boolean(renewalCoverageError)}>تجديد العقد</Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <EntityForm.Overlay
+      open={open}
+      onOpenChange={onOpenChange}
+      title="تجديد العقد"
+      description="سيتم إنشاء عقد جديد مرتبط بالعقد الحالي مع حفظ سلسلة التجديد. يجب وجود اتفاقية إدارة تغطي كامل فترة التجديد."
+      className="max-w-xl"
+    >
+      <EntityForm.Root onSubmit={form.handleSubmit(submitRenewal)} aria-busy={renewMutation.isPending}>
+        <EntityForm.ErrorSummary message={renewalCoverageError} />
+        <EntityForm.Field label="تاريخ البداية" error={form.formState.errors.new_start?.message}>
+          <Input type="date" {...form.register('new_start')} />
+        </EntityForm.Field>
+        <EntityForm.Field label="تاريخ النهاية" error={form.formState.errors.new_end?.message}>
+          <Input type="date" {...form.register('new_end')} />
+        </EntityForm.Field>
+        <EntityForm.Field label="اتفاقية المالك المغطية" error={form.formState.errors.agreement_id?.message}>
+          <Select value={renewalAgreement?.id ?? ''} disabled>
+            <option value="">{agreementOptionLabel}</option>
+          </Select>
+        </EntityForm.Field>
+        <EntityForm.Field label="قيمة الإيجار" error={form.formState.errors.new_amount?.message}>
+          <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('new_amount')} />
+        </EntityForm.Field>
+        <EntityForm.Actions
+          onCancel={() => onOpenChange(false)}
+          isSubmitting={renewMutation.isPending}
+          submitDisabled={renewMutation.isPending || renewalAgreementQuery.isLoading || Boolean(renewalCoverageError)}
+          submitLabel="تجديد العقد"
+        />
+      </EntityForm.Root>
+    </EntityForm.Overlay>
   );
 }
