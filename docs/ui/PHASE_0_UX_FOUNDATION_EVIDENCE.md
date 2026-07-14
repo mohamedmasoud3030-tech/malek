@@ -64,7 +64,9 @@ pnpm build
 pnpm e2e
 ```
 
-Final CI run IDs and results are recorded in PR #1156 after the head commit stabilizes.
+PR #1157 was merged into `main` on 2026-07-14 to repair clean Supabase migration replay compatibility. This documentation-only refresh forces PR #1156 checks to run against the latest merge ref containing that fix while keeping Phase 0's diff free of database, schema, RLS, RPC, auth, and financial changes.
+
+Final CI run IDs and results are recorded in PR #1156 after the refreshed head commit stabilizes.
 
 ## Exit-condition mapping
 
