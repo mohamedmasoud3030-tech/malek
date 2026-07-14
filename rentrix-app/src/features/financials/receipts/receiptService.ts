@@ -170,9 +170,24 @@ export type VoidReceiptResult = {
   journal_reversal_entries: number;
 };
 
+function isVoidReceiptResult(value: unknown): value is VoidReceiptResult {
+  if (!value || typeof value !== 'object') return false;
+  const result = value as Record<string, unknown>;
+  return result.success === true
+    && typeof result.idempotent === 'boolean'
+    && typeof result.request_id === 'string'
+    && typeof result.requested_receipt_id === 'string'
+    && typeof result.payment_id === 'string'
+    && typeof result.receipt_id === 'string'
+    && result.status === 'VOID'
+    && typeof result.reason === 'string'
+    && (result.journal_reversal_batch_id === null || typeof result.journal_reversal_batch_id === 'string')
+    && typeof result.journal_reversal_entries === 'number';
+}
+
 export async function voidReceipt(payload: VoidReceiptPayload): Promise<VoidReceiptResult> {
   const { data, error } = await supabase.rpc('void_receipt_atomic', { payload });
   if (error) throw error;
-  if (!data) throw new Error('void_receipt_atomic returned no data');
-  return data as VoidReceiptResult;
+  if (!isVoidReceiptResult(data)) throw new Error('void_receipt_atomic returned an invalid response contract');
+  return data;
 }
