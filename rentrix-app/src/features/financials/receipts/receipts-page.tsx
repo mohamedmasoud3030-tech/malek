@@ -37,6 +37,13 @@ export function canVoidReceipts(authorization: AuthorizationContext | null | und
   return canAccess(authorization, financialOperationPermissions.voidReceipt);
 }
 
+export function sumPostedReceiptAmount(receipts: readonly ReceiptRecord[]) {
+  return receipts.reduce(
+    (total, receipt) => total + (receipt.status === 'posted' ? receipt.amount : 0),
+    0,
+  );
+}
+
 function receiptStatusTone(status: string): 'green' | 'gray' | 'red' | 'gold' {
   if (status === 'posted') return 'green';
   if (status === 'void' || status === 'voided' || status === 'cancelled') return 'red';
@@ -77,7 +84,7 @@ function VoidReceiptDialog({
       open={Boolean(state.receipt)}
       onOpenChange={(open) => { if (!open && !isLoading) onClose(); }}
       title={`إلغاء الإيصال ${state.receipt?.receipt_number ?? ''}`}
-      description="أدخل سبب الإلغاء لتوثيق العملية. لا يتم حذف الإيصال أو تغيير الحسابات خارج منطق الإلغاء الحالي."
+      description="أدخل سبب الإلغاء لتوثيق العملية. يتم تحديث الدفعة والفاتورة وإنشاء القيد العكسي داخل عملية ذرية واحدة."
       headerExtra={<StatusBadge tone="red"><Ban className="me-1 size-3" aria-hidden="true" />إجراء حساس</StatusBadge>}
       className="max-w-lg"
     >
@@ -134,7 +141,7 @@ function ReceiptsHistoryContent() {
       && isWithinDate(receipt, from, to);
   }), [deferredQuery, from, method, receipts, to]);
 
-  const totalAmount = filteredReceipts.reduce((total, receipt) => total + receipt.amount, 0);
+  const totalAmount = sumPostedReceiptAmount(filteredReceipts);
   const selectedReceipt = selectedDetailQuery.data;
   const hasFilters = query.trim().length > 0 || method !== 'all' || from.length > 0 || to.length > 0;
 
@@ -145,7 +152,7 @@ function ReceiptsHistoryContent() {
   };
 
   const handleConfirmVoid = () => {
-    if (!voidDialog.receipt || !voidDialog.reason.trim()) return;
+    if (!voidDialog.receipt || voidDialog.receipt.status !== 'posted' || !voidDialog.reason.trim()) return;
     voidReceiptMutation.mutate(
       {
         receipt_id: voidDialog.receipt.id,
@@ -168,7 +175,7 @@ function ReceiptsHistoryContent() {
       <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
         <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
         <Button variant="secondary" className="min-h-10 px-3" onClick={() => openReceiptPrintView(receipt.id)}><Printer className="me-2 size-4" />طباعة</Button>
-        {canVoidReceipt ? (
+        {canVoidReceipt && receipt.status === 'posted' ? (
           <Button variant="danger" className="min-h-10 px-3" onClick={() => openVoidDialog(receipt)} disabled={voidReceiptMutation.isPending}>
             <Ban className="me-2 size-4" />إلغاء
           </Button>
@@ -190,7 +197,7 @@ function ReceiptsHistoryContent() {
 
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="الإيصالات المعروضة" value={filteredReceipts.length} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
-        <KpiCard label="إجمالي التحصيل" value={formatMoney(totalAmount)} sub="من الإيصالات المعروضة" icon={WalletCards} accent="emerald" />
+        <KpiCard label="إجمالي التحصيل" value={formatMoney(totalAmount)} sub="الإيصالات المنشورة فقط" icon={WalletCards} accent="emerald" />
         <KpiCard label="أحدث النتائج" value={receipts.length} sub="آخر 100 إيصال" icon={CalendarDays} accent="sky" />
         <KpiCard label="الإيصال المحدد" value={selectedReceipt?.receipt_number ?? '—'} sub="جاهز للعرض والطباعة" icon={Printer} accent="violet" />
       </ResponsiveCardGrid>
@@ -272,7 +279,7 @@ function ReceiptsHistoryContent() {
                 actions={[
                   { label: 'عرض', icon: Eye, variant: 'default', onClick: () => setSelectedReceiptId(receipt.id) },
                   { label: 'طباعة', icon: Printer, onClick: () => openReceiptPrintView(receipt.id) },
-                  ...(canVoidReceipt ? [{ label: 'إلغاء', icon: Ban, variant: 'danger' as const, onClick: () => openVoidDialog(receipt) }] : []),
+                  ...(canVoidReceipt && receipt.status === 'posted' ? [{ label: 'إلغاء', icon: Ban, variant: 'danger' as const, onClick: () => openVoidDialog(receipt) }] : []),
                 ]}
               />
             )}
