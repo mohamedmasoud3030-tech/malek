@@ -76,8 +76,19 @@ people foreign key. It derives both identifier types, validates UUID shape and
 person membership before mutation, converts only supported `uuid`/`text`
 layouts, and leaves already-aligned live layouts unchanged. PGlite execution
 tests cover UUID conversion, the historical text no-op path, and invalid-value
-rollback. The database job must pass on the latest PR head before this fix is
-considered verified.
+rollback.
+
+Fresh run #30 (`29369696984`) on PR #1160's then-current head confirmed that
+the tenant-balance compatibility fix replayed successfully and exposed the next
+clean-baseline incompatibility in
+`20260713000002_fix_owner_balances_cascade.sql`: its production-oriented
+comparison evaluated `text = uuid` when the baseline has UUID columns on both
+sides (`SQLSTATE 42883`). PR #1160 now casts both identifiers to text in the
+orphan preflight and delete guard, preserving the intended comparison for both
+the clean `uuid/uuid` and historical `uuid/text` layouts. PGlite execution tests
+cover both layouts and prove that orphan data fails closed before the guard is
+installed. The database job must pass on the latest PR head before either replay
+fix is considered verified.
 
 Required staging/auth secrets for the authenticated release blocker remain:
 

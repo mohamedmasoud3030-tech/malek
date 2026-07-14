@@ -37,7 +37,7 @@ BEGIN
   SELECT count(*)
     INTO v_orphan_count
     FROM public.owner_balances ob
-    LEFT JOIN public.owners o ON o.id::text = ob.owner_id
+    LEFT JOIN public.owners o ON o.id::text = ob.owner_id::text
     WHERE o.id IS NULL;
 
   IF v_orphan_count > 0 THEN
@@ -61,7 +61,7 @@ BEGIN
   IF EXISTS (
     SELECT 1
     FROM public.owner_balances ob
-    WHERE ob.owner_id = OLD.id::text
+    WHERE ob.owner_id::text = OLD.id::text
   ) THEN
     RAISE EXCEPTION 'Cannot hard-delete owner % because owner_balances rows exist; use soft-delete/archive to preserve financial history.', OLD.id
       USING ERRCODE = '23503';
