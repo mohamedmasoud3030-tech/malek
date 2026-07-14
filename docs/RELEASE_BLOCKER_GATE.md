@@ -58,12 +58,26 @@ The latest completed release-gate run before this status update was run #28
 | `release-blocker-database` | **FAIL on superseded merge ref** | Empty-database startup reached migration replay and stopped at `schema "app_private" does not exist`; the run checked out a merge ref based on `fe3ce1b5`, immediately before PR #1158 added that compatibility schema to `main` |
 | `release-blocker-authenticated-staging` | **BLOCKED** | The preflight correctly failed closed because all five required staging values were absent; the authenticated browser tests did not run |
 
-The database result above is not evidence that current `main` still fails: its
-root cause is exactly the compatibility gap addressed by PR #1158, and the
-failed run did not contain that PR. A fresh pull request from current `main`
-is being used to rerun the mandatory gate without weakening or skipping any
-job. Record its run ID and database result here before merging or starting the
-Reports phase.
+The database result above was not evidence that current `main` still failed:
+its root cause was exactly the compatibility gap addressed by PR #1158, and
+the failed run did not contain that PR.
+
+Fresh run #29 (`29368732725`) on PR #1160 verified the next boundary on current
+`main`:
+
+| Job | Result | Evidence |
+| --- | --- | --- |
+| `release-blocker-code` | **PASS** | The complete code/type/test/build/secret-scan job passed again |
+| `release-blocker-database` | **FAIL — fix in PR #1160** | Replay passed the `app_private` boundary, then `20260712020000_fix_tenant_balances_people_fk.sql` failed because captured `tenant_balances.tenant_id` was `text` while baseline `people.id` was `uuid` (`SQLSTATE 42804`) |
+| `release-blocker-authenticated-staging` | **BLOCKED** | The same five staging values remain absent, so authenticated tests correctly failed closed with zero false passes |
+
+PR #1160 now adds a fail-closed compatibility migration before the canonical
+people foreign key. It derives both identifier types, validates UUID shape and
+person membership before mutation, converts only supported `uuid`/`text`
+layouts, and leaves already-aligned live layouts unchanged. PGlite execution
+tests cover UUID conversion, the historical text no-op path, and invalid-value
+rollback. The database job must pass on the latest PR head before this fix is
+considered verified.
 
 Required staging/auth secrets for the authenticated release blocker remain:
 
