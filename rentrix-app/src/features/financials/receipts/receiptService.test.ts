@@ -30,7 +30,6 @@ const basePayment: Payment = {
   deleted_at: null,
 };
 
-
 function createPaymentFixture(overrides: Partial<Payment> = {}): Payment {
   return { ...basePayment, ...overrides };
 }
@@ -258,31 +257,31 @@ describe('receiptService', () => {
   });
 });
 
-describe('voidReceipt', () => {
-  const successfulVoidResult = {
-    success: true,
-    idempotent: false,
-    request_id: 'void-request-1',
-    requested_receipt_id: 'payment_123',
-    payment_id: 'payment_123',
-    receipt_id: 'receipt_ledger_123',
-    status: 'VOID' as const,
-    reason: 'دفعة مكررة',
-    journal_reversal_batch_id: 'batch_123',
-    journal_reversal_entries: 2,
-  };
+const voidReceiptRpcResult = {
+  success: true,
+  idempotent: false,
+  request_id: 'void-request-1',
+  requested_receipt_id: 'payment_123',
+  payment_id: 'payment_123',
+  receipt_id: 'receipt_123',
+  status: 'VOID' as const,
+  reason: 'دفعة مكررة',
+  journal_reversal_batch_id: 'journal-batch-1',
+  journal_reversal_entries: 2,
+};
 
-  it('voids the payment-backed receipt by id through the void facade and returns the validated atomic RPC result', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: successfulVoidResult, error: null });
+describe('voidReceipt', () => {
+  it('voids the payment-backed receipt by id through the void facade and returns the validated atomic result', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: voidReceiptRpcResult, error: null });
     const { voidReceipt } = await import('./receiptService');
     const payload = { receipt_id: 'payment_123', reason: 'دفعة مكررة', request_id: 'void-request-1' };
 
-    await expect(voidReceipt(payload)).resolves.toEqual(successfulVoidResult);
+    await expect(voidReceipt(payload)).resolves.toEqual(voidReceiptRpcResult);
     expect(supabaseMock.rpc).toHaveBeenCalledWith('void_receipt_atomic', { payload });
   });
 
   it('sends the payment-backed receipt id as receipt_id, matching the receipt projection identifier', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: successfulVoidResult, error: null });
+    supabaseMock.rpc.mockResolvedValue({ data: voidReceiptRpcResult, error: null });
     const { voidReceipt } = await import('./receiptService');
 
     await voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' });
@@ -300,11 +299,19 @@ describe('voidReceipt', () => {
       .rejects.toThrow('receipt already voided');
   });
 
-  it('rejects when the RPC reports success but returns no data', async () => {
+  it('rejects explicitly when the RPC returns no data', async () => {
     supabaseMock.rpc.mockResolvedValue({ data: null, error: null });
     const { voidReceipt } = await import('./receiptService');
 
     await expect(voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' }))
       .rejects.toThrow('void_receipt_atomic returned no data');
+  });
+
+  it('rejects legacy or malformed RPC result contracts', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { success: true, voided_at: '2026-05-15T08:00:00Z' }, error: null });
+    const { voidReceipt } = await import('./receiptService');
+
+    await expect(voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' }))
+      .rejects.toThrow('void_receipt_atomic returned an invalid response contract');
   });
 });
