@@ -89,8 +89,9 @@ insert into public.owner_agreements (
 );
 
 set local role anon;
-select throws_ok(
-  $$ select count(*) from public.contracts $$,
+select is(
+  (select count(*)::integer from public.contracts),
+  0,
   'anonymous users cannot read operational contracts'
 );
 reset role;
@@ -112,6 +113,8 @@ select throws_ok(
       'active', null, 'release-blocker-user-denied', null
     )
   $$,
+  null,
+  null,
   'USER cannot create contracts through the privileged RPC'
 );
 reset role;
@@ -151,6 +154,8 @@ select throws_ok(
       'active', null, 'release-blocker-overlap', null
     )
   $$,
+  null,
+  null,
   'overlapping contracts on the same unit are rejected'
 );
 
@@ -213,6 +218,8 @@ select throws_ok(
       'request_id', 'release-blocker-overpay'
     ))
   $$,
+  null,
+  null,
   'overpayment is rejected atomically'
 );
 select is(
@@ -241,6 +248,8 @@ select throws_ok(
       'request_id', 'release-blocker-negative'
     ))
   $$,
+  null,
+  null,
   'negative payments are rejected'
 );
 
@@ -251,6 +260,8 @@ select set_config(
 );
 select throws_ok(
   $$ select count(*) from public.financial_operation_idempotency $$,
+  null,
+  null,
   'browser users cannot read idempotency records directly'
 );
 reset role;

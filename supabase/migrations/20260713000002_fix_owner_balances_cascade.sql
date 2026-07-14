@@ -4,50 +4,90 @@
 -- Phase: 1A — Financial Safety Lock
 -- Risk: LOW/MEDIUM (hard-delete guard, no data changes)
 --
--- Production schema note:
---   public.owner_balances.owner_id is text, while public.owners.id is uuid.
---   PostgreSQL cannot create a normal FK from text to uuid. The earlier FK
---   rewrite approach would fail with `operator does not exist: uuid = text` and
---   must not be deployed.
+-- Supported schema layouts:
+--   - clean baseline: owners.id uuid, owner_balances.owner_id uuid
+--   - historical production: owners.id uuid, owner_balances.owner_id text
 --
--- Chosen fix:
---   Do NOT introduce an invalid FK. Instead, install a BEFORE DELETE trigger on
---   public.owners that implements RESTRICT semantics for owner balance rows by
---   comparing OLD.id::text to owner_balances.owner_id. This preserves financial
---   summary data from accidental owner hard-deletes while staying compatible
---   with the live mixed text/uuid schema.
---
--- Safety:
---   - No INSERT/UPDATE/DELETE of business data.
---   - Existing orphan owner_balances rows are checked with an explicit cast.
---   - Existing invalid/mismatched FK with this name is dropped if present.
---   - The application uses soft-delete, so normal operations are unaffected.
---
--- Rollback:
---   DROP TRIGGER IF EXISTS trg_prevent_owner_delete_with_balances ON public.owners;
---   DROP FUNCTION IF EXISTS public.prevent_owner_delete_with_balances();
+-- A normal FK cannot be retained in the mixed text/uuid layout. This migration
+-- therefore replaces any same-named FK with a trigger-based RESTRICT guard and
+-- compares both identifier columns through an explicit text representation.
 -- =============================================================================
 
--- Pre-flight: verify no orphaned owner_balances rows exist, using an explicit
--- uuid->text cast to match the production schema.
 DO $$
 DECLARE
-  v_orphan_count integer;
+  v_owner_id_type text;
+  v_balance_owner_id_type text;
+  v_orphan_count bigint;
 BEGIN
+  IF to_regclass('public.owners') IS NULL THEN
+    RAISE EXCEPTION 'Cannot protect owner balances: public.owners was not found';
+  END IF;
+
+  IF to_regclass('public.owner_balances') IS NULL THEN
+    RAISE EXCEPTION 'Cannot protect owner balances: public.owner_balances was not found';
+  END IF;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_owner_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation
+    ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace
+    ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'owners'
+    AND attribute.attname = 'id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_balance_owner_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation
+    ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace
+    ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'owner_balances'
+    AND attribute.attname = 'owner_id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  IF v_owner_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot protect owner balances: public.owners(id) was not found';
+  END IF;
+
+  IF v_balance_owner_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot protect owner balances: public.owner_balances(owner_id) was not found';
+  END IF;
+
+  IF v_owner_id_type NOT IN ('uuid', 'text') THEN
+    RAISE EXCEPTION
+      'Cannot protect owner balances: unsupported public.owners(id) type %',
+      v_owner_id_type;
+  END IF;
+
+  IF v_balance_owner_id_type NOT IN ('uuid', 'text') THEN
+    RAISE EXCEPTION
+      'Cannot protect owner balances: unsupported public.owner_balances(owner_id) type %',
+      v_balance_owner_id_type;
+  END IF;
+
   SELECT count(*)
     INTO v_orphan_count
-    FROM public.owner_balances ob
-    LEFT JOIN public.owners o ON o.id::text = ob.owner_id
-    WHERE o.id IS NULL;
+  FROM public.owner_balances AS owner_balance
+  LEFT JOIN public.owners AS owner_record
+    ON owner_record.id::text = owner_balance.owner_id::text
+  WHERE owner_record.id IS NULL;
 
   IF v_orphan_count > 0 THEN
-    RAISE EXCEPTION 'Cannot apply migration: found % orphan row(s) in owner_balances with no matching owner. Manual cleanup required before applying.', v_orphan_count;
+    RAISE EXCEPTION
+      'Cannot apply migration: found % orphan row(s) in owner_balances with no matching owner. Manual cleanup required before applying.',
+      v_orphan_count;
   END IF;
-END $$;
+END
+$$;
 
--- If a previous environment has a same-named FK, remove it before installing
--- the compatible trigger-based guard. This is safe when the constraint does not
--- exist and avoids keeping CASCADE behavior where it is present.
 ALTER TABLE public.owner_balances
   DROP CONSTRAINT IF EXISTS owner_balances_owner_id_fkey;
 
@@ -60,10 +100,12 @@ AS $$
 BEGIN
   IF EXISTS (
     SELECT 1
-    FROM public.owner_balances ob
-    WHERE ob.owner_id = OLD.id::text
+    FROM public.owner_balances AS owner_balance
+    WHERE owner_balance.owner_id::text = OLD.id::text
   ) THEN
-    RAISE EXCEPTION 'Cannot hard-delete owner % because owner_balances rows exist; use soft-delete/archive to preserve financial history.', OLD.id
+    RAISE EXCEPTION
+      'Cannot hard-delete owner % because owner_balances rows exist; use soft-delete/archive to preserve financial history.',
+      OLD.id
       USING ERRCODE = '23503';
   END IF;
 
@@ -81,7 +123,6 @@ CREATE TRIGGER trg_prevent_owner_delete_with_balances
   FOR EACH ROW
   EXECUTE FUNCTION public.prevent_owner_delete_with_balances();
 
--- Post-flight: verify the compatible guard exists and no invalid FK was added.
 DO $$
 DECLARE
   v_trigger_exists boolean;
@@ -108,8 +149,9 @@ BEGIN
   END IF;
 
   IF v_fk_exists THEN
-    RAISE EXCEPTION 'Post-flight check failed: invalid owner_balances FK should not exist in mixed text/uuid schema';
+    RAISE EXCEPTION 'Post-flight check failed: owner_balances FK should be replaced by the cross-layout trigger guard';
   END IF;
 
-  RAISE NOTICE 'owner_balances hard-delete protection installed via trigger; no invalid FK created';
-END $$;
+  RAISE NOTICE 'owner_balances hard-delete protection installed via trigger; no incompatible FK retained';
+END
+$$;
