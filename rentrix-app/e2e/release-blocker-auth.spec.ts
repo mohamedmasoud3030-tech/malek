@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+const isReleaseBlockerRun = process.env.E2E_ENVIRONMENT_KIND === 'staging';
+
 function requireEnv(name: 'E2E_TEST_EMAIL' | 'E2E_TEST_PASSWORD'): string {
   const value = process.env[name]?.trim();
   if (!value) {
@@ -8,8 +10,8 @@ function requireEnv(name: 'E2E_TEST_EMAIL' | 'E2E_TEST_PASSWORD'): string {
   return value;
 }
 
-const email = requireEnv('E2E_TEST_EMAIL');
-const password = requireEnv('E2E_TEST_PASSWORD');
+const email = isReleaseBlockerRun ? requireEnv('E2E_TEST_EMAIL') : '';
+const password = isReleaseBlockerRun ? requireEnv('E2E_TEST_PASSWORD') : '';
 
 async function submitLogin(page: Page, candidatePassword: string) {
   await page.goto('/login');
@@ -24,6 +26,11 @@ async function expectProtectedShell(page: Page) {
 }
 
 test.describe('release blocker: real authentication lifecycle', () => {
+  test.skip(
+    !isReleaseBlockerRun,
+    'The general browser smoke does not own staging credentials; the dedicated release-blocker job runs this suite with zero skips.',
+  );
+
   test('valid staging credentials create a usable protected session', async ({ page }) => {
     await submitLogin(page, password);
     await expectProtectedShell(page);
