@@ -24,3 +24,4 @@ x
 # Playwright artifacts
 rentrix-app/test-results/
 rentrix-app/playwright-report/
+supabase/config.toml

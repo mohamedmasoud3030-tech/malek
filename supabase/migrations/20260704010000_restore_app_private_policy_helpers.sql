@@ -7,6 +7,9 @@
 
 create schema if not exists app_private;
 
+-- Pin search_path defensively for schema creation (no functions here yet).
+select pg_catalog.set_config('search_path', 'public, pg_temp', true);
+
 create or replace function app_private.is_app_user()
 returns boolean
 language sql
@@ -26,6 +29,9 @@ set search_path = public, pg_temp
 as $$
   select public.is_admin_or_manager()
 $$;
+
+alter function app_private.is_app_user() owner to postgres;
+alter function app_private.is_admin_or_manager() owner to postgres;
 
 revoke all on schema app_private from public;
 revoke all on function app_private.is_app_user() from public;
