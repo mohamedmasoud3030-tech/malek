@@ -159,7 +159,15 @@ export type VoidReceiptPayload = {
 
 export type VoidReceiptResult = {
   success: boolean;
-  voided_at: string;
+  idempotent: boolean;
+  request_id: string;
+  requested_receipt_id: string;
+  payment_id: string;
+  receipt_id: string;
+  status: 'VOID';
+  reason: string;
+  journal_reversal_batch_id: string | null;
+  journal_reversal_entries: number;
 };
 
 export async function voidReceipt(payload: VoidReceiptPayload): Promise<VoidReceiptResult> {
