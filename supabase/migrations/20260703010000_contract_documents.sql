@@ -1,33 +1,84 @@
--- STATUS AS OF 2026-07-05: APPLIED to nnggcnpcuomwfuupupwg (production) via
--- apply_migration. Confirmed via information_schema.tables that
--- public.contract_documents now exists live, unblocking the PR #1036
--- frontend feature (contract document upload/list/delete).
+-- STATUS AS OF 2026-07-05: APPLIED to production via apply_migration.
 --
--- SCHEMA DRIFT FIX (2026-07-05): the original version of this file declared
--- contract_id as uuid, referencing public.contracts(id). Applying it against
--- production failed with "Key columns contract_id and id are of incompatible
--- types: uuid and text" — live public.contracts.id is text, not uuid
--- (confirmed via information_schema.columns). Corrected below to text to
--- match the live column and keep the foreign key valid. See
--- supabase/migrations/README.md.
+-- Historical production used text contract identifiers, while the code-first
+-- baseline uses UUIDs. Derive contract_documents.contract_id from contracts(id)
+-- so clean replay and the supported live schema both retain a valid foreign key.
 
 begin;
 
--- Real contract document management (upload/list/delete), backed by the existing
--- public 'attachments' storage bucket. Previously the UI shell was a disabled
--- no-op; this closes that gap with real persistence + RLS.
-create table if not exists public.contract_documents (
-  id uuid primary key default gen_random_uuid(),
-  contract_id text not null references public.contracts(id) on delete cascade,
-  file_name text not null,
-  file_url text not null,
-  storage_path text not null,
-  file_size bigint,
-  mime_type text,
-  uploaded_by uuid default auth.uid(),
-  created_at timestamptz not null default now(),
-  deleted_at timestamptz
-);
+DO $$
+DECLARE
+  v_contract_id_type text;
+  v_document_contract_id_type text;
+BEGIN
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_contract_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation
+    ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace
+    ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'contracts'
+    AND attribute.attname = 'id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  IF v_contract_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot create contract documents: public.contracts(id) was not found';
+  END IF;
+
+  IF v_contract_id_type NOT IN ('uuid', 'text') THEN
+    RAISE EXCEPTION
+      'Cannot create contract documents: unsupported public.contracts(id) type %',
+      v_contract_id_type;
+  END IF;
+
+  IF to_regclass('public.contract_documents') IS NULL THEN
+    EXECUTE format(
+      $sql$
+        CREATE TABLE public.contract_documents (
+          id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          contract_id %s NOT NULL REFERENCES public.contracts(id) ON DELETE CASCADE,
+          file_name text NOT NULL,
+          file_url text NOT NULL,
+          storage_path text NOT NULL,
+          file_size bigint,
+          mime_type text,
+          uploaded_by uuid DEFAULT auth.uid(),
+          created_at timestamptz NOT NULL DEFAULT now(),
+          deleted_at timestamptz
+        )
+      $sql$,
+      v_contract_id_type
+    );
+  END IF;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_document_contract_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation
+    ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace
+    ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'contract_documents'
+    AND attribute.attname = 'contract_id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  IF v_document_contract_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot validate contract documents: public.contract_documents(contract_id) was not found';
+  END IF;
+
+  IF v_document_contract_id_type <> v_contract_id_type THEN
+    RAISE EXCEPTION
+      'Cannot link contract documents: contracts.id type % differs from contract_documents.contract_id type %',
+      v_contract_id_type,
+      v_document_contract_id_type;
+  END IF;
+END
+$$;
 
 create index if not exists contract_documents_contract_idx
   on public.contract_documents (contract_id, created_at desc)
