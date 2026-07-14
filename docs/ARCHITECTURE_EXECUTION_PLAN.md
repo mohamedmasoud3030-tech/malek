@@ -95,83 +95,88 @@ Exit conditions:
 
 ## Phase B — large operational page decomposition
 
-Status: **in progress — 1 of 3 pages split; verification pending**.
+Status: **complete and merged through PRs #1139, #1140, and #1141**.
 
-Order:
+Completed order:
 
-1. `owners/OwnersPage.tsx` — **done, unverified locally**
-2. `settings/settings-page.tsx` — not started
-3. `maintenance/maintenance-page.tsx` — not started
+1. `settings/settings-page.tsx` — decomposed in PR #1139.
+2. `owners/OwnersPage.tsx` — decomposed in PR #1140.
+3. `maintenance/maintenance-page.tsx` — decomposed in PR #1141.
 
-For each page:
+Implementation evidence:
 
-- keep the page as orchestration and query/mutation composition;
-- move presentation sections into `components/`;
-- move pure transformations into named helper modules;
-- keep one public compatibility export when routes/tests already depend on it;
-- migrate repeated form shells to `EntityForm` primitives;
-- add interaction coverage for open/close, loading, empty, error, submit, and
-  destructive confirmation states.
+- `settings-page.tsx` was split into section/form components and a controller hook
+  while preserving compatibility exports;
+- `OwnersPage.tsx` was reduced to orchestration with owner identity, relationship,
+  table, and controller modules;
+- `maintenance-page.tsx` was reduced to orchestration with list, request form,
+  detail/resolve overlays, and controller modules;
+- the final Phase B branches reported typecheck, test typecheck, architecture check,
+  full tests, and production build passing before merge;
+- no permission, database, RPC, RLS, or financial behavior changes were introduced.
 
-Exit conditions: each page is below 350 lines unless a documented exception is
-added, no behavior or permission changes are introduced, and full UI checks pass.
-
-Implementation evidence (current head):
-
-- `owners/OwnersPage.tsx` reduced from 493 to 100 lines. Extracted:
-  `components/owner-form-dialog.tsx` (owner identity create/edit dialog),
-  `components/owner-relationships.tsx` (`OwnerRelationshipsList` +
-  `OwnershipLinkForm`, exports `EditingPropertyOwnerLink`/`LinkedPropertyItem`),
-  `components/owner-workspace-table.tsx` (`OwnerWorkspaceTable` directory/search
-  table), and `useOwnersPageController.ts` (all data fetching, selection state,
-  and link/unlink handlers). The page keeps its single `OwnersPage` export
-  unchanged so routes and `owners-page-interaction.test.tsx` are unaffected by
-  the split. No behavior, copy, or props were changed — code was moved, not
-  rewritten.
-- `settings-page.tsx` (644 lines) and `maintenance-page.tsx` (528 lines) are
-  still monolithic and have not been touched in this pass.
-- **Verification has not been run locally for the OwnersPage split** (pnpm
-  install/typecheck/test/build were not executed in this pass, per explicit
-  instruction). The required verification matrix below must be run — locally
-  or in CI — before this phase advances or is marked complete.
+Exit conditions were met: all three target pages are below the documented limit and
+their route/public exports remain compatible.
 
 ## Phase C — financial report boundary
 
-Status: **ready after Phase B; financial-risk phase**.
+Status: **complete and merged in PR #1142**.
 
-Scope:
+Implementation evidence:
 
-- convert `financialReportsService.ts` into a compatibility facade;
-- split operational collection/arrears aggregation, statement RPCs, accounting
-  reports, occupancy/rent roll, and shared normalization into separate modules;
-- split the 922-line test by the same domains;
-- preserve current RPC names, filters, VOID/deleted payment rules, and exported
-  types exactly unless a separate parity-tested behavior change is approved.
+- `financialReportsService.ts` became a thin compatibility facade;
+- operational collection and arrears aggregation moved into focused services;
+- shared report rows, normalization, filters, and loading context moved into a
+  dedicated shared module;
+- accounting, statement, cash-flow/VAT, occupancy/rent-roll boundaries established
+  by the preceding financial architecture work remain behind the same public facade;
+- RPC names, filters, exported types, VOID/deleted-payment rules, and consumers were
+  preserved;
+- the 140-test financial suite, typecheck, and production build were reported green
+  on the merged PR head.
 
-Required checks include the complete financial suite. Do not combine this phase
-with database migrations or report-source swaps.
+Documented exception: the large facade parity test remains intact for broad public-
+API regression coverage. It may be split later for navigation, but coverage must not
+be reduced and its size alone is not an architecture violation.
 
 ## Phase D — shared page and form convergence
 
-Status: **ready after Phase C**.
+Status: **verified in PR #1143; ready to merge**.
 
-Scope:
+Implemented scope:
 
-- finish replacing local `Field`, error-summary, filter-card, and summary-card
-  shells with shared primitives;
-- inventory `EntityTable`, raw tables, and mobile cards; converge only equivalent
-  behaviors;
-- make all create/edit workflows use an explicit overlay or a documented
-  route-backed exception;
-- verify RTL labels, focus return, keyboard navigation, dialog/sheet scrolling,
-  loading, empty, and error states.
+- `EntityForm.Field` owns shared description and accessible field-error semantics;
+- `EntityForm.Actions` supports normal and destructive submit workflows;
+- contract modal and route page share one `ContractFormFields` implementation;
+- person modal and route page share one `PersonFormFields` implementation;
+- property, unit, owner, contract-renewal, and contract-termination forms converged
+  on the shared form primitives;
+- root/server errors use `EntityForm.ErrorSummary` in migrated workflows;
+- equivalent four-card KPI groups were verified on `ResponsiveCardGrid`;
+- table/mobile-card inventory confirmed existing shared paths where behavior matches;
+- route-backed person/property/contract pages and confirmation-only financial dialogs
+  remain documented exceptions rather than forced abstractions;
+- CI now enforces `check:architecture` as part of the standard pull-request gate.
 
-Exit conditions: no duplicate one-line `Field` components remain, four-card KPI
-groups use `ResponsiveCardGrid`, and browser E2E passes on desktop/tablet/mobile.
+Verification evidence on implementation head
+`9768bd98947b807a2df43b321aa5a6ceded4c4bc`:
+
+- governance, migration evidence, typecheck, lint, architecture check, build, test
+  typecheck, full tests, and financial tests passed;
+- Browser Readiness / Playwright E2E smoke passed;
+- Vercel preview reached Ready;
+- Codacy reported 0 new issues and complexity reduced by 79;
+- Sonar Quality Gate passed with 0 new issues, 0 security hotspots, and 2.1%
+  duplication on new code.
+
+Detailed evidence and exceptions live in `docs/PHASE_D_SHARED_UI_EXECUTION.md`.
+
+Automation must not start Phase E until PR #1143 is merged. After merge, start from
+updated `main`, confirm the merge commit and re-read this plan before moving files.
 
 ## Phase E — documentation consolidation
 
-Status: **ready after code phases stabilize**.
+Status: **blocked until verified PR #1143 is merged**.
 
 Scope:
 

@@ -2,26 +2,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Input } from '@/components/ui/input';
+import { RouteLoadingState } from '@/components/loading-state';
 import { EntityForm } from '@/components/ui/entity-form';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
-import { RouteLoadingState } from '@/components/loading-state';
-import { useOwners } from '@/features/owners/useOwners';
 import { useCreatePropertyWithAgreement } from '@/features/owners/useOwnerAgreements';
-import { translateSharedLabel } from '@/lib/i18n';
-import { getAppLanguageState } from '@/lib/i18n';
+import { useOwners } from '@/features/owners/useOwners';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
-import { useUpdateProperty, useProperty } from './use-properties';
+import { useProperty, useUpdateProperty } from './use-properties';
 
 const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'التاريخ مطلوب بصيغة YYYY-MM-DD')
-  .refine((v) => !Number.isNaN(new Date(`${v}T00:00:00Z`).getTime()), 'تاريخ غير صحيح');
+  .refine((value) => !Number.isNaN(new Date(`${value}T00:00:00Z`).getTime()), 'تاريخ غير صحيح');
 
 const optionalMoney = z.preprocess(
-  (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+  (value) => (value === '' || value === null || value === undefined ? null : Number(value)),
   z.number().min(0, 'القيمة لا يمكن أن تكون سالبة').nullable(),
 );
 
@@ -36,7 +35,7 @@ const propertyWithAgreementSchema = z
     }),
     commission_type: z.enum(['FIXED_MONTHLY', 'RATE'], { required_error: 'نوع العمولة مطلوب' }),
     commission_value: z.preprocess(
-      (v) => (v === '' || v === null || v === undefined ? NaN : Number(v)),
+      (value) => (value === '' || value === null || value === undefined ? Number.NaN : Number(value)),
       z.number({ invalid_type_error: 'قيمة العمولة مطلوبة' }).positive('قيمة العمولة يجب أن تكون أكبر من صفر'),
     ),
     agreement_starts_on: isoDate,
@@ -45,29 +44,22 @@ const propertyWithAgreementSchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/)
       .optional()
       .or(z.literal(''))
-      .transform((v) => v || null),
+      .transform((value) => value || null),
     purchase_value: optionalMoney,
     current_value: optionalMoney,
     status: z.enum(propertyStatusValues, { required_error: 'الحالة مطلوبة' }),
-    notes: z
-      .string()
-      .trim()
-      .optional()
-      .transform((v) => v || null),
+    notes: z.string().trim().optional().transform((value) => value || null),
   })
-  .superRefine((data, ctx) => {
+  .superRefine((data, context) => {
     if (data.commission_type === 'RATE' && data.commission_value > 100) {
-      ctx.addIssue({
+      context.addIssue({
         code: 'custom',
         path: ['commission_value'],
         message: 'نسبة العمولة يجب أن تكون بين 0 و 100',
       });
     }
-    if (
-      data.agreement_ends_on &&
-      data.agreement_ends_on < data.agreement_starts_on
-    ) {
-      ctx.addIssue({
+    if (data.agreement_ends_on && data.agreement_ends_on < data.agreement_starts_on) {
+      context.addIssue({
         code: 'custom',
         path: ['agreement_ends_on'],
         message: 'تاريخ انتهاء الاتفاقية يجب أن يكون بعد تاريخ البداية',
@@ -78,7 +70,6 @@ const propertyWithAgreementSchema = z
 type PropertyWithAgreementFormValues = z.input<typeof propertyWithAgreementSchema>;
 type PropertyWithAgreementPayload = z.output<typeof propertyWithAgreementSchema>;
 
-// Edit-only schema (property fields only — agreement is immutable after creation)
 const propertyEditSchema = z.object({
   title: z.string().trim().min(2, 'اسم العقار مطلوب'),
   type: z.string().trim().min(2, 'نوع العقار مطلوب'),
@@ -86,15 +77,9 @@ const propertyEditSchema = z.object({
   purchase_value: optionalMoney,
   current_value: optionalMoney,
   status: z.enum(propertyStatusValues),
-  notes: z.string().trim().optional().transform((v) => v || null),
+  notes: z.string().trim().optional().transform((value) => value || null),
 });
 type PropertyEditFormValues = z.input<typeof propertyEditSchema>;
-
-function FieldError({ message }: { message?: string }) {
-  return message ? (
-    <p className="text-xs font-bold text-destructive">{message}</p>
-  ) : null;
-}
 
 interface PropertyFormModalProps {
   open: boolean;
@@ -103,20 +88,17 @@ interface PropertyFormModalProps {
 }
 
 export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormModalProps) {
-  const isEdit = Boolean(propertyId);
-  return isEdit ? (
-    <PropertyEditModal open={open} onClose={onClose} propertyId={propertyId!} />
+  return propertyId ? (
+    <PropertyEditModal open={open} onClose={onClose} propertyId={propertyId} />
   ) : (
     <PropertyCreateModal open={open} onClose={onClose} />
   );
 }
 
-// ─── CREATE: requires owner + agreement ────────────────────────────────────
 function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ownersQuery = useOwners();
   const createMutation = useCreatePropertyWithAgreement();
   const [submitError, setSubmitError] = useState<string | null>(null);
-
   const form = useForm<PropertyWithAgreementFormValues>({
     resolver: zodResolver(propertyWithAgreementSchema),
     defaultValues: {
@@ -145,7 +127,6 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
 
   const commissionType = form.watch('commission_type');
   const isSubmitting = createMutation.isPending;
-
   const handleSubmit = form.handleSubmit(async (values) => {
     const payload: PropertyWithAgreementPayload = propertyWithAgreementSchema.parse(values);
     setSubmitError(null);
@@ -167,75 +148,50 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       });
       onClose();
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : 'تعذر حفظ العقار. حاول مرة أخرى.',
-      );
+      setSubmitError(error instanceof Error ? error.message : 'تعذر حفظ العقار. حاول مرة أخرى.');
     }
   });
 
   return (
     <EntityForm.Overlay
       open={open}
-      onOpenChange={(v) => {
-        if (!v) onClose();
-      }}
+      onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}
       title="إضافة عقار جديد"
       className="max-w-2xl"
       headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
-      <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit}>
+      <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
         <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-
-        {/* Property fields */}
-        <label className="grid gap-2 text-sm font-bold">
-          اسم العقار
+        <EntityForm.Field label="اسم العقار" error={form.formState.errors.title?.message}>
           <Input {...form.register('title')} placeholder="مثال: عمارة الندى" autoFocus />
-          <FieldError message={form.formState.errors.title?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold">
-          نوع العقار
+        </EntityForm.Field>
+        <EntityForm.Field label="نوع العقار" error={form.formState.errors.type?.message}>
           <Input {...form.register('type')} placeholder="سكني، تجاري، أرض..." />
-          <FieldError message={form.formState.errors.type?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold md:col-span-2">
-          العنوان
+        </EntityForm.Field>
+        <EntityForm.Field label="العنوان" className="md:col-span-2" error={form.formState.errors.address?.message}>
           <Input {...form.register('address')} placeholder="المدينة، الحي، الشارع" />
-          <FieldError message={form.formState.errors.address?.message} />
-        </label>
-
-        {/* Owner selection — required */}
-        <label className="grid gap-2 text-sm font-bold md:col-span-2">
-          المالك
+        </EntityForm.Field>
+        <EntityForm.Field label="المالك" className="md:col-span-2" error={form.formState.errors.owner_id?.message}>
           <Select {...form.register('owner_id')} disabled={ownersQuery.isLoading}>
             <option value="">اختر المالك</option>
             {(ownersQuery.data ?? []).map((owner) => (
-              <option key={owner.id} value={owner.id}>
-                {owner.display_name ?? owner.full_name ?? '—'}
-              </option>
+              <option key={owner.id} value={owner.id}>{owner.display_name ?? owner.full_name ?? '—'}</option>
             ))}
           </Select>
-          <FieldError message={form.formState.errors.owner_id?.message} />
-        </label>
-
-        {/* Agreement section */}
-        <label className="grid gap-2 text-sm font-bold">
-          نوع الاتفاقية
+        </EntityForm.Field>
+        <EntityForm.Field label="نوع الاتفاقية" error={form.formState.errors.agreement_type?.message}>
           <Select {...form.register('agreement_type')}>
             <option value="property_management">إدارة عقارية</option>
             <option value="master_lease">إيجار رئيسي</option>
           </Select>
-          <FieldError message={form.formState.errors.agreement_type?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold">
-          نوع العمولة
+        </EntityForm.Field>
+        <EntityForm.Field label="نوع العمولة" error={form.formState.errors.commission_type?.message}>
           <Select {...form.register('commission_type')}>
             <option value="FIXED_MONTHLY">مبلغ ثابت شهري</option>
             <option value="RATE">نسبة مئوية %</option>
           </Select>
-          <FieldError message={form.formState.errors.commission_type?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold">
-          قيمة العمولة {commissionType === 'RATE' ? '(%)' : '(ريال)'}
+        </EntityForm.Field>
+        <EntityForm.Field label={`قيمة العمولة ${commissionType === 'RATE' ? '(%)' : '(ريال)'}`} error={form.formState.errors.commission_value?.message}>
           <Input
             type="number"
             step="0.01"
@@ -245,54 +201,39 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             {...form.register('commission_value')}
             placeholder={commissionType === 'RATE' ? '0 – 100' : '0.00'}
           />
-          <FieldError message={form.formState.errors.commission_value?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold">
-          الحالة
+        </EntityForm.Field>
+        <EntityForm.Field label="الحالة" error={form.formState.errors.status?.message}>
           <Select {...form.register('status')}>
-            {propertyStatusValues.map((s) => (
-              <option key={s} value={s}>
-                {propertyStatusLabels[s]}
-              </option>
+            {propertyStatusValues.map((status) => (
+              <option key={status} value={status}>{propertyStatusLabels[status]}</option>
             ))}
           </Select>
-          <FieldError message={form.formState.errors.status?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold">
-          بداية الاتفاقية
+        </EntityForm.Field>
+        <EntityForm.Field label="بداية الاتفاقية" error={form.formState.errors.agreement_starts_on?.message}>
           <Input type="date" {...form.register('agreement_starts_on')} />
-          <FieldError message={form.formState.errors.agreement_starts_on?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold">
-          نهاية الاتفاقية (اختياري)
+        </EntityForm.Field>
+        <EntityForm.Field
+          label="نهاية الاتفاقية (اختياري)"
+          description="اتركه فارغاً للاتفاقيات مفتوحة الأجل"
+          error={form.formState.errors.agreement_ends_on?.message}
+        >
           <Input type="date" {...form.register('agreement_ends_on')} />
-          <FieldError message={form.formState.errors.agreement_ends_on?.message} />
-          <p className="text-xs text-muted-foreground">اتركه فارغاً للاتفاقيات مفتوحة الأجل</p>
-        </label>
-
-        {/* Optional valuation */}
-        <label className="grid gap-2 text-sm font-bold">
-          قيمة الشراء
+        </EntityForm.Field>
+        <EntityForm.Field label="قيمة الشراء" error={form.formState.errors.purchase_value?.message}>
           <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('purchase_value')} />
-          <FieldError message={form.formState.errors.purchase_value?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold">
-          القيمة الحالية
+        </EntityForm.Field>
+        <EntityForm.Field label="القيمة الحالية" error={form.formState.errors.current_value?.message}>
           <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('current_value')} />
-          <FieldError message={form.formState.errors.current_value?.message} />
-        </label>
-        <label className="grid gap-2 text-sm font-bold md:col-span-2">
-          ملاحظات
+        </EntityForm.Field>
+        <EntityForm.Field label="ملاحظات" className="md:col-span-2">
           <Textarea {...form.register('notes')} placeholder="أي تفاصيل إضافية" />
-        </label>
-
+        </EntityForm.Field>
         <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ العقار'} />
       </EntityForm.Root>
     </EntityForm.Overlay>
   );
 }
 
-// ─── EDIT: property fields only (agreement immutable after creation) ────────
 function PropertyEditModal({
   open,
   onClose,
@@ -305,7 +246,6 @@ function PropertyEditModal({
   const propertyQuery = useProperty(propertyId);
   const updateMutation = useUpdateProperty(propertyId);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
   const form = useForm<PropertyEditFormValues>({
     resolver: zodResolver(propertyEditSchema),
     defaultValues: { title: '', type: '', address: '', status: 'active', notes: '' },
@@ -318,15 +258,15 @@ function PropertyEditModal({
       return;
     }
     if (propertyQuery.data) {
-      const p = propertyQuery.data;
+      const property = propertyQuery.data;
       form.reset({
-        title: p.title ?? '',
-        type: p.type ?? '',
-        address: p.address ?? '',
-        purchase_value: p.purchase_value,
-        current_value: p.current_value,
-        status: (p.status as typeof propertyStatusValues[number]) ?? 'active',
-        notes: p.notes ?? '',
+        title: property.title ?? '',
+        type: property.type ?? '',
+        address: property.address ?? '',
+        purchase_value: property.purchase_value,
+        current_value: property.current_value,
+        status: (property.status as typeof propertyStatusValues[number]) ?? 'active',
+        notes: property.notes ?? '',
       });
     }
   }, [form, propertyQuery.data, open]);
@@ -337,18 +277,14 @@ function PropertyEditModal({
       await updateMutation.mutateAsync(values as Parameters<typeof updateMutation.mutateAsync>[0]);
       onClose();
     } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : 'تعذر تحديث العقار. حاول مرة أخرى.',
-      );
+      setSubmitError(error instanceof Error ? error.message : 'تعذر تحديث العقار. حاول مرة أخرى.');
     }
   });
 
   return (
     <EntityForm.Overlay
       open={open}
-      onOpenChange={(v) => {
-        if (!v) onClose();
-      }}
+      onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}
       title="تعديل عقار"
       className="max-w-2xl"
       headerExtra={form.formState.isDirty && !updateMutation.isPending ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
@@ -356,46 +292,33 @@ function PropertyEditModal({
       {propertyQuery.isLoading ? (
         <RouteLoadingState />
       ) : (
-        <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit}>
-        <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-          <label className="grid gap-2 text-sm font-bold">
-            اسم العقار
+        <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={updateMutation.isPending}>
+          <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
+          <EntityForm.Field label="اسم العقار" error={form.formState.errors.title?.message}>
             <Input {...form.register('title')} autoFocus />
-            <FieldError message={form.formState.errors.title?.message} />
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            نوع العقار
+          </EntityForm.Field>
+          <EntityForm.Field label="نوع العقار" error={form.formState.errors.type?.message}>
             <Input {...form.register('type')} />
-            <FieldError message={form.formState.errors.type?.message} />
-          </label>
-          <label className="grid gap-2 text-sm font-bold md:col-span-2">
-            العنوان
+          </EntityForm.Field>
+          <EntityForm.Field label="العنوان" className="md:col-span-2" error={form.formState.errors.address?.message}>
             <Input {...form.register('address')} />
-            <FieldError message={form.formState.errors.address?.message} />
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            الحالة
+          </EntityForm.Field>
+          <EntityForm.Field label="الحالة" error={form.formState.errors.status?.message}>
             <Select {...form.register('status')}>
-              {propertyStatusValues.map((s) => (
-                <option key={s} value={s}>
-                  {propertyStatusLabels[s]}
-                </option>
+              {propertyStatusValues.map((status) => (
+                <option key={status} value={status}>{propertyStatusLabels[status]}</option>
               ))}
             </Select>
-            <FieldError message={form.formState.errors.status?.message} />
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            قيمة الشراء
+          </EntityForm.Field>
+          <EntityForm.Field label="قيمة الشراء" error={form.formState.errors.purchase_value?.message}>
             <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('purchase_value')} />
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            القيمة الحالية
+          </EntityForm.Field>
+          <EntityForm.Field label="القيمة الحالية" error={form.formState.errors.current_value?.message}>
             <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('current_value')} />
-          </label>
-          <label className="grid gap-2 text-sm font-bold md:col-span-2">
-            ملاحظات
+          </EntityForm.Field>
+          <EntityForm.Field label="ملاحظات" className="md:col-span-2">
             <Textarea {...form.register('notes')} />
-          </label>
+          </EntityForm.Field>
           <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={updateMutation.isPending} submitLabel={updateMutation.isPending ? 'جار الحفظ...' : 'حفظ'} />
         </EntityForm.Root>
       )}

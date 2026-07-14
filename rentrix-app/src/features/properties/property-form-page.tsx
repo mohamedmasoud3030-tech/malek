@@ -2,21 +2,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useParams, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
+import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { RouteLoadingState } from '@/components/loading-state';
 import { DirtyRouteNavigationGuard, useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
 import { propertySchema, propertyStatusLabels, propertyStatusValues, type PropertyFormValues } from './property-schema';
 import { useCreateProperty, useProperty, useUpdateProperty } from './use-properties';
-
-function fieldError(message?: string) {
-  return message ? <p className="text-xs font-bold text-destructive">{message}</p> : null;
-}
 
 export function PropertyFormPage() {
   const params = useParams({ strict: false });
@@ -63,7 +60,6 @@ export function PropertyFormPage() {
 
   const isMutationPending = createMutation.isPending || updateMutation.isPending;
   const isSubmitting = isSubmittingGuard || isMutationPending;
-
   const handleSubmit = form.handleSubmit(async (values) => {
     await runSubmit(async () => {
       setSubmitError(null);
@@ -74,8 +70,6 @@ export function PropertyFormPage() {
         } else {
           await createMutation.mutateAsync(payload);
         }
-        // Clear dirty state before navigation so the beforeunload guard
-        // does not trigger and the user can navigate freely.
         form.reset(undefined, { keepValues: true });
         await router.navigate({ to: '/properties' });
       } catch (error) {
@@ -84,25 +78,23 @@ export function PropertyFormPage() {
     });
   });
 
-  const requestNavigate = (to: string) => {
-    if (isSubmitting) {
-      return;
-    }
-
+  const requestNavigate = async (to: string) => {
+    if (isSubmitting) return;
     if (form.formState.isDirty) {
       setPendingNavigateTo(to);
       setShowDiscardDialog(true);
       return;
     }
-    router.navigate({ to });
+    await router.navigate({ to });
   };
 
-  const handleConfirmDiscard = () => {
+  const handleConfirmDiscard = async () => {
     setShowDiscardDialog(false);
     form.reset(undefined, { keepValues: true });
     if (pendingNavigateTo) {
-      router.navigate({ to: pendingNavigateTo });
+      const navigateTo = pendingNavigateTo;
       setPendingNavigateTo(null);
+      await router.navigate({ to: navigateTo });
     }
   };
 
@@ -133,70 +125,52 @@ export function PropertyFormPage() {
         <EntityDetailHeader
           title={isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}
           subtitle="أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك."
-          actions={
+          actions={(
             <Button variant="secondary" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
               العودة
             </Button>
-          }
+          )}
         />
         <Card>
           <CardContent>
-            <form
-              className="grid gap-5 md:grid-cols-2"
-              onSubmit={handleSubmit}
-              aria-busy={isSubmitting}
-            >
-              {submitError ? (
-                <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold text-destructive md:col-span-2" role="alert">{submitError}</div>
-              ) : null}
-              <label className="grid gap-2 text-sm font-bold">
-                اسم العقار
+            <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
+              <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
+              <EntityForm.Field label="اسم العقار" error={form.formState.errors.title?.message}>
                 <Input {...form.register('title')} placeholder="مثال: عمارة الندى" />
-                {fieldError(form.formState.errors.title?.message)}
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                نوع العقار
+              </EntityForm.Field>
+              <EntityForm.Field label="نوع العقار" error={form.formState.errors.type?.message}>
                 <Input {...form.register('type')} placeholder="سكني، تجاري، أرض..." />
-                {fieldError(form.formState.errors.type?.message)}
-              </label>
-              <label className="grid gap-2 text-sm font-bold md:col-span-2">
-                العنوان
+              </EntityForm.Field>
+              <EntityForm.Field label="العنوان" className="md:col-span-2" error={form.formState.errors.address?.message}>
                 <Input {...form.register('address')} placeholder="المدينة، الحي، الشارع" />
-                {fieldError(form.formState.errors.address?.message)}
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                اسم المالك للعرض
+              </EntityForm.Field>
+              <EntityForm.Field
+                label="اسم المالك للعرض"
+                description="حقل نصي خفيف للعرض فقط، ولا ينشئ حساب مالك أو نسب ملكية."
+              >
                 <Input {...form.register('owner_name')} placeholder="اسم عرض اختياري يظهر في قائمة وتفاصيل العقار" />
-                <p className="text-xs font-medium text-muted-foreground">حقل نصي خفيف للعرض فقط، ولا ينشئ حساب مالك أو نسب ملكية.</p>
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                الحالة
+              </EntityForm.Field>
+              <EntityForm.Field label="الحالة" error={form.formState.errors.status?.message}>
                 <Select {...form.register('status')}>
                   {propertyStatusValues.map((status) => <option key={status} value={status}>{propertyStatusLabels[status]}</option>)}
                 </Select>
-                {fieldError(form.formState.errors.status?.message)}
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                قيمة الشراء
+              </EntityForm.Field>
+              <EntityForm.Field label="قيمة الشراء" error={form.formState.errors.purchase_value?.message}>
                 <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('purchase_value')} />
-                {fieldError(form.formState.errors.purchase_value?.message)}
-              </label>
-              <label className="grid gap-2 text-sm font-bold">
-                القيمة الحالية
+              </EntityForm.Field>
+              <EntityForm.Field label="القيمة الحالية" error={form.formState.errors.current_value?.message}>
                 <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('current_value')} />
-                {fieldError(form.formState.errors.current_value?.message)}
-              </label>
-              <label className="grid gap-2 text-sm font-bold md:col-span-2">
-                ملاحظات
+              </EntityForm.Field>
+              <EntityForm.Field label="ملاحظات" className="md:col-span-2">
                 <Textarea {...form.register('notes')} placeholder="أي تفاصيل إضافية" />
-              </label>
-              <div className="flex justify-end gap-3 md:col-span-2">
-                <Button variant="secondary" type="button" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
-                  إلغاء
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'جار الحفظ...' : 'حفظ'}</Button>
-              </div>
-            </form>
+              </EntityForm.Field>
+              <EntityForm.Actions
+                className="md:col-span-2"
+                onCancel={() => requestNavigate('/properties')}
+                isSubmitting={isSubmitting}
+                submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'}
+              />
+            </EntityForm.Root>
           </CardContent>
         </Card>
       </div>
@@ -209,7 +183,7 @@ export function PropertyFormPage() {
 
       <ConfirmDialog
         open={showDiscardDialog}
-        onOpenChange={(open) => { if (!open) handleCancelDiscard(); }}
+        onOpenChange={(nextOpen) => { if (!nextOpen) handleCancelDiscard(); }}
         title="تغييرات غير محفوظة"
         description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
         confirmLabel="تجاهل التغييرات"

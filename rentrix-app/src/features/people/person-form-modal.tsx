@@ -3,19 +3,13 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { RouteLoadingState } from '@/components/loading-state';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Input } from '@/components/ui/input';
 import { EntityForm } from '@/components/ui/entity-form';
-import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Textarea } from '@/components/ui/textarea';
 import { useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
-import { personSchema, personTypeLabels, personTypeValues, type PersonFormValues } from './person-schema';
+import { PersonFormFields } from './components/PersonFormFields';
+import { personSchema, type PersonFormValues } from './person-schema';
 import { useCreatePerson, usePerson, useUpdatePerson } from './use-people';
-
-function fieldError(message?: string) {
-  return message ? <p className="text-xs font-bold text-destructive">{message}</p> : null;
-}
 
 interface PersonFormModalProps {
   open: boolean;
@@ -79,7 +73,6 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         } else {
           await createMutation.mutateAsync(payload);
         }
-        // Clear dirty state before closing so the guard does not block.
         form.reset(undefined, { keepValues: true });
         onClose();
       } catch (error) {
@@ -89,34 +82,23 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   });
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen || isSubmitting) {
-      return;
-    }
-
+    if (nextOpen || isSubmitting) return;
     if (form.formState.isDirty) {
       setShowDiscardDialog(true);
       return;
     }
-
     onClose();
   };
 
   const handleConfirmDiscard = () => {
-    if (isSubmitting) {
-      return;
-    }
-
+    if (isSubmitting) return;
     setShowDiscardDialog(false);
     form.reset(undefined, { keepValues: true });
     onClose();
   };
 
   const handleCancelDiscard = () => {
-    if (isSubmitting) {
-      return;
-    }
-
-    setShowDiscardDialog(false);
+    if (!isSubmitting) setShowDiscardDialog(false);
   };
 
   const title = isEdit ? 'تعديل شخص' : (defaultType === 'owner' ? 'إضافة مالك' : 'إضافة شخص');
@@ -135,43 +117,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         ) : (
           <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
             <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-            <label className="grid gap-2 text-sm font-bold">
-              الاسم الكامل
-              <Input {...form.register('full_name')} autoFocus />
-              {fieldError(form.formState.errors.full_name?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              النوع
-              <Select {...form.register('type')}>
-                {personTypeValues.map((type) => (
-                  <option key={type} value={type}>{personTypeLabels[type]}</option>
-                ))}
-              </Select>
-              {fieldError(form.formState.errors.type?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              الهاتف
-              <Input {...form.register('phone')} dir="ltr" />
-              {fieldError(form.formState.errors.phone?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              البريد الإلكتروني
-              <Input {...form.register('email')} dir="ltr" />
-              {fieldError(form.formState.errors.email?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              رقم الهوية
-              <Input {...form.register('national_id')} />
-              {fieldError(form.formState.errors.national_id?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              العنوان
-              <Input {...form.register('address')} />
-            </label>
-            <label className="grid gap-2 text-sm font-bold md:col-span-2">
-              ملاحظات
-              <Textarea {...form.register('notes')} />
-            </label>
+            <PersonFormFields form={form} autoFocusName />
             <EntityForm.Actions className="md:col-span-2" onCancel={() => handleOpenChange(false)} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'} />
           </EntityForm.Root>
         )}
@@ -179,7 +125,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
 
       <ConfirmDialog
         open={showDiscardDialog}
-        onOpenChange={(open) => { if (!open) handleCancelDiscard(); }}
+        onOpenChange={(nextOpen) => { if (!nextOpen) handleCancelDiscard(); }}
         title="تغييرات غير محفوظة"
         description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
         confirmLabel="تجاهل التغييرات"
