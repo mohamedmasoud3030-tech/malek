@@ -141,37 +141,42 @@ be reduced and its size alone is not an architecture violation.
 
 ## Phase D — shared page and form convergence
 
-Status: **implementation complete; verification in progress in PR #1143**.
+Status: **verified in PR #1143; ready to merge**.
 
 Implemented scope:
 
-- `EntityForm.Field` now owns shared description and accessible field-error semantics;
+- `EntityForm.Field` owns shared description and accessible field-error semantics;
 - `EntityForm.Actions` supports normal and destructive submit workflows;
-- contract modal and route page share one `ContractFormFields` implementation,
-  removing the duplicate contract field tree;
-- person, property, unit, owner, contract-renewal, and contract-termination forms
-  converged on the shared form primitives;
+- contract modal and route page share one `ContractFormFields` implementation;
+- person modal and route page share one `PersonFormFields` implementation;
+- property, unit, owner, contract-renewal, and contract-termination forms converged
+  on the shared form primitives;
 - root/server errors use `EntityForm.ErrorSummary` in migrated workflows;
 - equivalent four-card KPI groups were verified on `ResponsiveCardGrid`;
 - table/mobile-card inventory confirmed existing shared paths where behavior matches;
 - route-backed person/property/contract pages and confirmation-only financial dialogs
-  are documented exceptions rather than forced into incompatible abstractions.
+  remain documented exceptions rather than forced abstractions;
+- CI now enforces `check:architecture` as part of the standard pull-request gate.
+
+Verification evidence on implementation head
+`9768bd98947b807a2df43b321aa5a6ceded4c4bc`:
+
+- governance, migration evidence, typecheck, lint, architecture check, build, test
+  typecheck, full tests, and financial tests passed;
+- Browser Readiness / Playwright E2E smoke passed;
+- Vercel preview reached Ready;
+- Codacy reported 0 new issues and complexity reduced by 79;
+- Sonar Quality Gate passed with 0 new issues, 0 security hotspots, and 2.1%
+  duplication on new code.
 
 Detailed evidence and exceptions live in `docs/PHASE_D_SHARED_UI_EXECUTION.md`.
 
-Exit conditions still pending on the latest PR head:
-
-- required typecheck/lint/test/architecture/build matrix;
-- final Sonar and Codacy quality analysis;
-- desktop/tablet/mobile browser verification for focus, scrolling, open/close,
-  validation, cancel, submit, renewal, and termination flows.
-
-Automation must not start Phase E until PR #1143 records those final checks and is
-merged.
+Automation must not start Phase E until PR #1143 is merged. After merge, start from
+updated `main`, confirm the merge commit and re-read this plan before moving files.
 
 ## Phase E — documentation consolidation
 
-Status: **blocked until Phase D is verified and merged**.
+Status: **blocked until verified PR #1143 is merged**.
 
 Scope:
 
