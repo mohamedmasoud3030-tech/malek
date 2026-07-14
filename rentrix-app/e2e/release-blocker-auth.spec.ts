@@ -34,11 +34,20 @@ test.describe("release blocker: real authentication lifecycle", () => {
     "The general browser smoke does not own staging credentials; the dedicated release-blocker job runs this suite with zero skips.",
   );
 
-  test("valid staging credentials create a usable protected session", async ({
+  test("valid staging credentials create a usable session that can be logged out", async ({
     page,
   }) => {
     await submitLogin(page, password);
     await expectProtectedShell(page);
+
+    await page.getByRole("button", { name: "تسجيل الخروج" }).click();
+    await expect(page).toHaveURL(/\/login$/);
+
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(
+      page.getByRole("heading", { name: "مرحباً بعودتك" }),
+    ).toBeVisible();
   });
 
   test("invalid credentials do not create a session or enter the protected shell", async ({
@@ -79,20 +88,6 @@ test.describe("release blocker: real authentication lifecycle", () => {
 
     await page.goto("/");
     await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
-    await expect(
-      page.getByRole("heading", { name: "مرحباً بعودتك" }),
-    ).toBeVisible();
-  });
-
-  test("logout removes protected access", async ({ page }) => {
-    await submitLogin(page, password);
-    await expectProtectedShell(page);
-
-    await page.getByRole("button", { name: "تسجيل الخروج" }).click();
-    await expect(page).toHaveURL(/\/login$/);
-
-    await page.goto("/");
-    await expect(page).toHaveURL(/\/login$/);
     await expect(
       page.getByRole("heading", { name: "مرحباً بعودتك" }),
     ).toBeVisible();
