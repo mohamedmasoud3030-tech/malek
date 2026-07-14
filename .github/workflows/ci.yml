@@ -71,7 +71,25 @@ jobs:
         run: pnpm --filter ./rentrix-app run check:architecture
       - run: pnpm build
       - run: pnpm --filter ./rentrix-app run typecheck:test
-      - run: pnpm --filter ./rentrix-app test
+      - name: Run full application tests
+        id: full-tests
+        shell: bash
+        run: |
+          set +e
+          pnpm --filter ./rentrix-app test > /tmp/rentrix-full-tests.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          tail -n 220 /tmp/rentrix-full-tests.log
+          exit 0
+      - name: Upload full test diagnostics
+        if: steps.full-tests.outputs.status != '0'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rentrix-full-test-diagnostics
+          path: /tmp/rentrix-full-tests.log
+      - name: Fail on full test errors
+        if: steps.full-tests.outputs.status != '0'
+        run: exit 1
       - name: Run financial tests
         id: financial-tests
         shell: bash
