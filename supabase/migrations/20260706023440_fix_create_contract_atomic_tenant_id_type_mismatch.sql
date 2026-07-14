@@ -14,35 +14,46 @@ create or replace function public.create_contract_atomic(p_property_id text, p_u
  set search_path to 'public', 'pg_temp'
 as $function$
 DECLARE
-  v_id uuid;
+  v_id public.contracts.id%TYPE;
+  v_property_id public.contracts.property_id%TYPE;
+  v_unit_id public.contracts.unit_id%TYPE;
+  v_tenant_id public.contracts.tenant_id%TYPE;
+  v_agreement_id public.contracts.agreement_id%TYPE;
 BEGIN
+  -- Assign through the target column types so the clean UUID baseline and the
+  -- historical text capture share the same function body.
+  v_property_id := p_property_id;
+  v_unit_id := p_unit_id;
+  v_tenant_id := p_tenant_id;
+  v_agreement_id := p_agreement_id;
+
   IF auth.uid() IS NULL OR NOT public.is_admin_or_manager() THEN
     RAISE EXCEPTION 'غير مصرح: يجب أن تكون مديراً أو مشرفاً لإنشاء عقد' USING ERRCODE = '42501';
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM public.people
-    WHERE id = p_tenant_id::text AND type = 'tenant' AND deleted_at IS NULL
+    WHERE id = v_tenant_id AND type = 'tenant' AND deleted_at IS NULL
   ) THEN
     RAISE EXCEPTION 'المستأجر غير موجود أو نوعه غير صحيح';
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM public.properties WHERE id = p_property_id AND deleted_at IS NULL
+    SELECT 1 FROM public.properties WHERE id = v_property_id AND deleted_at IS NULL
   ) THEN
     RAISE EXCEPTION 'العقار غير موجود';
   END IF;
 
   IF p_unit_id IS NOT NULL AND NOT EXISTS (
     SELECT 1 FROM public.units
-    WHERE id = p_unit_id AND property_id = p_property_id AND deleted_at IS NULL
+    WHERE id = v_unit_id AND property_id = v_property_id AND deleted_at IS NULL
   ) THEN
     RAISE EXCEPTION 'الوحدة لا تنتمي إلى العقار المحدد';
   END IF;
 
   IF p_unit_id IS NOT NULL AND EXISTS (
     SELECT 1 FROM public.contracts
-    WHERE unit_id = p_unit_id
+    WHERE unit_id = v_unit_id
       AND deleted_at IS NULL
       AND status IN ('active', 'draft')
       AND start_date < p_end_date
@@ -57,8 +68,8 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1 FROM public.owner_agreements
-    WHERE id = p_agreement_id
-      AND property_id = p_property_id
+    WHERE id = v_agreement_id
+      AND property_id = v_property_id
       AND starts_on <= p_start_date
       AND (ends_on IS NULL OR ends_on >= p_end_date)
   ) THEN
@@ -70,12 +81,12 @@ BEGIN
     start_date, end_date, rent_amount, payment_cycle,
     payment_terms_id, status, cancellation_reason, notes, attachment_url
   ) VALUES (
-    p_property_id, p_unit_id, p_tenant_id, p_agreement_id,
+    v_property_id, v_unit_id, v_tenant_id, v_agreement_id,
     p_start_date, p_end_date, p_rent_amount, p_payment_cycle,
     p_payment_terms_id, p_status, p_cancellation_reason, p_notes, p_attachment_url
   )
   RETURNING id INTO v_id;
 
-  RETURN (SELECT to_jsonb(c) FROM public.contracts c WHERE c.id = v_id::text);
+  RETURN (SELECT to_jsonb(c) FROM public.contracts c WHERE c.id = v_id);
 END;
 $function$;

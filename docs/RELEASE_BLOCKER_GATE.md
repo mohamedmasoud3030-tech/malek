@@ -151,6 +151,18 @@ rejects partial/expanded graphs, validates and posts the exact balanced pair,
 and creates an audit ID using the target column type. Execution tests cover the
 absent, exact, and partial graph paths. A fresh database run is still required.
 
+Fresh run #38 (`29373252977`) is the first current-main run to replay every
+migration successfully from an empty database. The pgTAP blocker suite then
+ran and exposed a role-helper regression: after `users.role` becomes the
+`user_role` enum, `current_app_role()` attempted to coalesce it directly with
+text claims (`SQLSTATE 42804`). The baseline helper now casts the database
+fallback to text, and contract creation assigns request IDs through the target
+column types so both clean UUID and historical text layouts execute. PGlite
+tests cover both layouts. The pgTAP expectations now distinguish RLS-hidden
+rows from permission errors and match the actual guarded error classes instead
+of treating test descriptions as exact PostgreSQL error messages. A fresh
+database blocker run is required.
+
 Required staging/auth secrets for the authenticated release blocker remain:
 
 - `E2E_STAGING_BASE_URL`

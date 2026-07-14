@@ -12,7 +12,7 @@ as $$
   select coalesce(
     nullif(auth.jwt() -> 'app_metadata' ->> 'user_role', ''),
     nullif(auth.jwt() -> 'app_metadata' ->> 'role', ''),
-    (select u.role from public.users u where u.id = auth.uid() and u.deleted_at is null and u.is_active),
+    (select u.role::text from public.users u where u.id = auth.uid() and u.deleted_at is null and u.is_active),
     'USER'
   )
 $$;

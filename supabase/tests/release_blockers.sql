@@ -89,8 +89,9 @@ insert into public.owner_agreements (
 );
 
 set local role anon;
-select throws_ok(
-  $$ select count(*) from public.contracts $$,
+select is(
+  (select count(*)::integer from public.contracts),
+  0,
   'anonymous users cannot read operational contracts'
 );
 reset role;
@@ -101,7 +102,7 @@ select set_config(
   true
 );
 set local role authenticated;
-select throws_ok(
+select throws_like(
   $$
     select public.create_contract_atomic(
       '00000000-0000-0000-0000-000000000301',
@@ -112,6 +113,7 @@ select throws_ok(
       'active', null, 'release-blocker-user-denied', null
     )
   $$,
+  '%غير مصرح%',
   'USER cannot create contracts through the privileged RPC'
 );
 reset role;
@@ -140,7 +142,7 @@ select is(
   1,
   'valid contract is persisted exactly once'
 );
-select throws_ok(
+select throws_like(
   $$
     select public.create_contract_atomic(
       '00000000-0000-0000-0000-000000000301',
@@ -151,6 +153,7 @@ select throws_ok(
       'active', null, 'release-blocker-overlap', null
     )
   $$,
+  '%الوحدة محجوزة%',
   'overlapping contracts on the same unit are rejected'
 );
 
@@ -202,7 +205,7 @@ select is(
   'invoice paid amount is correct after the successful payment'
 );
 
-select throws_ok(
+select throws_like(
   $$
     select public.record_invoice_payment_atomic(jsonb_build_object(
       'invoice_id', '00000000-0000-0000-0000-000000000701',
@@ -213,6 +216,7 @@ select throws_ok(
       'request_id', 'release-blocker-overpay'
     ))
   $$,
+  '%exceeds outstanding invoice balance%',
   'overpayment is rejected atomically'
 );
 select is(
@@ -230,7 +234,7 @@ select is(
   25::numeric,
   'failed overpayment does not mutate the invoice balance'
 );
-select throws_ok(
+select throws_like(
   $$
     select public.record_invoice_payment_atomic(jsonb_build_object(
       'invoice_id', '00000000-0000-0000-0000-000000000701',
@@ -241,6 +245,7 @@ select throws_ok(
       'request_id', 'release-blocker-negative'
     ))
   $$,
+  '%greater than zero%',
   'negative payments are rejected'
 );
 
@@ -249,8 +254,9 @@ select set_config(
   '{"sub":"00000000-0000-0000-0000-000000000102","role":"authenticated","app_metadata":{"user_role":"USER"}}',
   true
 );
-select throws_ok(
+select throws_like(
   $$ select count(*) from public.financial_operation_idempotency $$,
+  '%permission denied%',
   'browser users cannot read idempotency records directly'
 );
 reset role;
