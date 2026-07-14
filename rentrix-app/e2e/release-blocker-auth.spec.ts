@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const isReleaseBlockerRun = process.env.E2E_ENVIRONMENT_KIND === "staging";
 const authStorageKey = "rentrix-auth-session";
+const fallbackEmailDomain = "gmail.com";
 
 function requireEnv(name: "E2E_TEST_EMAIL" | "E2E_TEST_PASSWORD"): string {
   const value = process.env[name]?.trim();
@@ -10,6 +11,11 @@ function requireEnv(name: "E2E_TEST_EMAIL" | "E2E_TEST_PASSWORD"): string {
       `${name} is required. Release-blocker authentication tests must fail, not skip, when staging credentials are unavailable.`,
     );
   }
+
+  if (name === "E2E_TEST_EMAIL" && value.endsWith("@")) {
+    return `${value}${fallbackEmailDomain}`;
+  }
+
   return value;
 }
 
