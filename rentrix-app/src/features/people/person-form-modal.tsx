@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { RouteLoadingState } from '@/components/loading-state';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Input } from '@/components/ui/input';
 import { EntityForm } from '@/components/ui/entity-form';
+import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -79,7 +79,6 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         } else {
           await createMutation.mutateAsync(payload);
         }
-        // Clear dirty state before closing so the guard does not block.
         form.reset(undefined, { keepValues: true });
         onClose();
       } catch (error) {
@@ -135,43 +134,44 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         ) : (
           <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
             <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-            <label className="grid gap-2 text-sm font-bold">
-              الاسم الكامل
+
+            <EntityForm.Field label="الاسم الكامل">
               <Input {...form.register('full_name')} autoFocus />
               {fieldError(form.formState.errors.full_name?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              النوع
+            </EntityForm.Field>
+
+            <EntityForm.Field label="النوع">
               <Select {...form.register('type')}>
                 {personTypeValues.map((type) => (
                   <option key={type} value={type}>{personTypeLabels[type]}</option>
                 ))}
               </Select>
               {fieldError(form.formState.errors.type?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              الهاتف
+            </EntityForm.Field>
+
+            <EntityForm.Field label="الهاتف">
               <Input {...form.register('phone')} dir="ltr" />
               {fieldError(form.formState.errors.phone?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              البريد الإلكتروني
+            </EntityForm.Field>
+
+            <EntityForm.Field label="البريد الإلكتروني">
               <Input {...form.register('email')} dir="ltr" />
               {fieldError(form.formState.errors.email?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              رقم الهوية
+            </EntityForm.Field>
+
+            <EntityForm.Field label="رقم الهوية">
               <Input {...form.register('national_id')} />
               {fieldError(form.formState.errors.national_id?.message)}
-            </label>
-            <label className="grid gap-2 text-sm font-bold">
-              العنوان
+            </EntityForm.Field>
+
+            <EntityForm.Field label="العنوان">
               <Input {...form.register('address')} />
-            </label>
-            <label className="grid gap-2 text-sm font-bold md:col-span-2">
-              ملاحظات
+            </EntityForm.Field>
+
+            <EntityForm.Field label="ملاحظات" className="md:col-span-2">
               <Textarea {...form.register('notes')} />
-            </label>
+            </EntityForm.Field>
+
             <EntityForm.Actions className="md:col-span-2" onCancel={() => handleOpenChange(false)} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'} />
           </EntityForm.Root>
         )}
@@ -179,7 +179,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
 
       <ConfirmDialog
         open={showDiscardDialog}
-        onOpenChange={(open) => { if (!open) handleCancelDiscard(); }}
+        onOpenChange={(nextOpen) => { if (!nextOpen) handleCancelDiscard(); }}
         title="تغييرات غير محفوظة"
         description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
         confirmLabel="تجاهل التغييرات"
