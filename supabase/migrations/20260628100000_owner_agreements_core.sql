@@ -1,27 +1,91 @@
--- Enable btree_gist so text columns work in EXCLUDE constraints
+-- Enable btree_gist so text and uuid columns work in EXCLUDE constraints.
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 -- ============================================================
 -- owner_agreements: one operational owner per property at a time
--- Live: properties.id = text, owners.id = uuid
+--
+-- Historical environments used text property identifiers while the code-first
+-- baseline uses UUIDs. Derive the agreement property key from properties(id)
+-- so clean replay and existing supported schemas remain consistent.
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS public.owner_agreements (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id      uuid NOT NULL REFERENCES public.owners(id) ON DELETE RESTRICT,
-  property_id   text NOT NULL REFERENCES public.properties(id) ON DELETE RESTRICT,
-  agreement_type text NOT NULL CHECK (agreement_type IN ('property_management', 'master_lease')),
-  commission_type  text NOT NULL CHECK (commission_type IN ('FIXED_MONTHLY', 'RATE')),
-  commission_value numeric(14,4) NOT NULL CHECK (
-    (commission_type = 'RATE'   AND commission_value >= 0 AND commission_value <= 100) OR
-    (commission_type = 'FIXED_MONTHLY' AND commission_value >= 0)
-  ),
-  starts_on     date NOT NULL,
-  ends_on       date CHECK (ends_on IS NULL OR ends_on >= starts_on),
-  notes         text,
-  created_at    timestamptz NOT NULL DEFAULT now(),
-  updated_at    timestamptz NOT NULL DEFAULT now()
-);
+DO $$
+DECLARE
+  v_property_id_type text;
+  v_agreement_property_id_type text;
+BEGIN
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_property_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation
+    ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace
+    ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'properties'
+    AND attribute.attname = 'id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  IF v_property_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot create owner agreements: public.properties(id) was not found';
+  END IF;
+
+  IF v_property_id_type NOT IN ('uuid', 'text') THEN
+    RAISE EXCEPTION
+      'Cannot create owner agreements: unsupported public.properties(id) type %',
+      v_property_id_type;
+  END IF;
+
+  IF to_regclass('public.owner_agreements') IS NULL THEN
+    EXECUTE format(
+      $sql$
+        CREATE TABLE public.owner_agreements (
+          id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          owner_id         uuid NOT NULL REFERENCES public.owners(id) ON DELETE RESTRICT,
+          property_id      %s NOT NULL REFERENCES public.properties(id) ON DELETE RESTRICT,
+          agreement_type   text NOT NULL CHECK (agreement_type IN ('property_management', 'master_lease')),
+          commission_type  text NOT NULL CHECK (commission_type IN ('FIXED_MONTHLY', 'RATE')),
+          commission_value numeric(14,4) NOT NULL CHECK (
+            (commission_type = 'RATE' AND commission_value >= 0 AND commission_value <= 100) OR
+            (commission_type = 'FIXED_MONTHLY' AND commission_value >= 0)
+          ),
+          starts_on        date NOT NULL,
+          ends_on          date CHECK (ends_on IS NULL OR ends_on >= starts_on),
+          notes            text,
+          created_at       timestamptz NOT NULL DEFAULT now(),
+          updated_at       timestamptz NOT NULL DEFAULT now()
+        )
+      $sql$,
+      v_property_id_type
+    );
+  END IF;
+
+  SELECT format_type(attribute.atttypid, attribute.atttypmod)
+    INTO v_agreement_property_id_type
+  FROM pg_attribute AS attribute
+  JOIN pg_class AS relation
+    ON relation.oid = attribute.attrelid
+  JOIN pg_namespace AS namespace
+    ON namespace.oid = relation.relnamespace
+  WHERE namespace.nspname = 'public'
+    AND relation.relname = 'owner_agreements'
+    AND attribute.attname = 'property_id'
+    AND attribute.attnum > 0
+    AND NOT attribute.attisdropped;
+
+  IF v_agreement_property_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot validate owner agreements: public.owner_agreements(property_id) was not found';
+  END IF;
+
+  IF v_agreement_property_id_type <> v_property_id_type THEN
+    RAISE EXCEPTION
+      'Cannot link owner agreements: properties.id type % differs from owner_agreements.property_id type %',
+      v_property_id_type,
+      v_agreement_property_id_type;
+  END IF;
+END
+$$;
 
 ALTER TABLE public.owner_agreements
   DROP CONSTRAINT IF EXISTS owner_agreements_no_overlap;
@@ -62,26 +126,26 @@ CREATE POLICY "owner_agreements_delete"
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.owner_agreements TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.create_property_with_agreement(
-  p_title              text,
-  p_type               text,
-  p_address            text,
-  p_owner_id           uuid,
-  p_agreement_type     text,
-  p_commission_type    text,
-  p_commission_value   numeric,
+  p_title               text,
+  p_type                text,
+  p_address             text,
+  p_owner_id            uuid,
+  p_agreement_type      text,
+  p_commission_type     text,
+  p_commission_value    numeric,
   p_agreement_starts_on date,
-  p_agreement_ends_on  date    DEFAULT NULL,
-  p_owner_name         text    DEFAULT NULL,
-  p_purchase_value     numeric DEFAULT NULL,
-  p_current_value      numeric DEFAULT NULL,
-  p_status             text    DEFAULT 'active',
-  p_notes              text    DEFAULT NULL
+  p_agreement_ends_on   date    DEFAULT NULL,
+  p_owner_name          text    DEFAULT NULL,
+  p_purchase_value      numeric DEFAULT NULL,
+  p_current_value       numeric DEFAULT NULL,
+  p_status              text    DEFAULT 'active',
+  p_notes               text    DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
-  v_property_id  text;
+  v_property_id  public.properties.id%TYPE;
   v_agreement_id uuid;
 BEGIN
   IF NOT is_admin_or_manager() THEN
