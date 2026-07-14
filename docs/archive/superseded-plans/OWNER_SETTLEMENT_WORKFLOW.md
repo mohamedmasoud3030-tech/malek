@@ -1,5 +1,7 @@
 # Owner Settlement Workflow — Gap Analysis & Business Decisions
 
+> Archived on 2026-07-14. The decisions requested by this review were resolved by `docs/decisions/0001-product-accounting-policies.md`; use that decision record and `docs/NEXT.md` for implementation work.
+
 Scope: P0-3 of the Final Gap Closure. Reviewed the existing implementation; did
 **not** rebuild it. The settlement workflow is partially present (a table and a
 read-only statement RPC), but the operational lifecycle is **not** wired. The

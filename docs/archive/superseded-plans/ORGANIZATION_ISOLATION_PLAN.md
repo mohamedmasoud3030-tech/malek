@@ -1,5 +1,7 @@
 # Organization isolation plan
 
+> Archived on 2026-07-14. Rentrix is intentionally a single-office product; this speculative multi-organization plan is not approved scope and must not be used as an implementation queue.
+
 Rentrix is currently hardened as a single-office ERP. This plan defines the future multi-organization sequence without changing business logic in the current hardening pass.
 
 ## 1. `organizations` table

@@ -1,5 +1,7 @@
 # Live Supabase Verification — Readiness Review (P0-1)
 
+> Archived on 2026-07-14. This point-in-time P0-1 review contains superseded file-only/live-status claims. Use `docs/RELEASE_READINESS.md`, `docs/CURRENT_STATE.md`, and the exact release-candidate evidence instead.
+
 Scope: P0-1 of the Final Gap Closure. **Review only — no database mutation was
 performed.** All evidence below is file-level (migrations, RPC definitions,
 contract tests). Live `apply_migration` / `supabase:live-readiness` must be run by

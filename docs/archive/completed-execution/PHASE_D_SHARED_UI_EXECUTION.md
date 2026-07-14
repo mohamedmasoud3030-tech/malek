@@ -1,5 +1,7 @@
 # Phase D — Shared page and form convergence
 
+> Archived on 2026-07-14 after PRs #1143, #1144, and #1145 were merged. Historical implementation evidence only; this is not an active execution queue.
+
 Status: **verified — ready to merge in PR #1143**
 
 Started from `main` after merge of PR #1142 (`63fc6ebb8d36d18bbfc4375ccf799c18175b7a7b`).
