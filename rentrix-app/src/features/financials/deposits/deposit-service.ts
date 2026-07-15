@@ -22,6 +22,7 @@ export type DepositRecord = {
 
 export type DepositDeductionPayload = {
   deposit_id: string;
+  property_id?: string;
   deduction_amount: number;
   reason: 'maintenance_damage' | 'unpaid_arrears' | 'cleaning_fee' | 'other';
   description: string;
@@ -91,6 +92,7 @@ export async function listTenantDeposits(): Promise<DepositRecord[]> {
 
 export async function recordDepositDeduction(payload: DepositDeductionPayload): Promise<boolean> {
   const { error } = await supabase.from('expenses').insert({
+    property_id: payload.property_id || '00000000-0000-0000-0000-000000000000',
     amount: payload.deduction_amount,
     category: 'صيانة',
     description: `خصم من تأمين المستأجر: ${payload.description}`,

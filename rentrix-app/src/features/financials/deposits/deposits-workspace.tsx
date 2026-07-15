@@ -182,7 +182,7 @@ export function DepositsWorkspace() {
         </CardHeader>
         <CardContent className="p-4 sm:p-5 space-y-3">
           {deposits.map((d) => {
-            const tone = d.status === 'refunded' ? 'green' : d.status === 'held' ? 'blue' : 'amber';
+            const tone: 'green' | 'blue' | 'gold' = d.status === 'refunded' ? 'green' : d.status === 'held' ? 'blue' : 'gold';
 
             return (
               <div key={d.id} className="rounded-2xl border border-border/60 bg-background p-4 space-y-3">

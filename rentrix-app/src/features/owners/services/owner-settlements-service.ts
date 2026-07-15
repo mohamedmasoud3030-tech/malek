@@ -58,7 +58,7 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
       period_start: '2026-06-01',
       period_end: '2026-06-30',
       gross_rent_collected: 1800,
-      management_fee_rate: 5, // 5%
+      management_fee_rate: 5,
       management_fee_type: 'percentage',
       management_fee_amount: 90,
       maintenance_deductions: 120,
@@ -96,14 +96,16 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
   ];
 }
 
-export async function approveOwnerSettlement(payload: ApproveSettlementPayload): Promise<boolean> {
+export async function approveOwnerSettlement(_payload: ApproveSettlementPayload): Promise<boolean> {
   return true;
 }
 
 export async function processOwnerPayout(payload: ProcessPayoutPayload): Promise<boolean> {
   const { error } = await supabase.from('expenses').insert({
+    property_id: '00000000-0000-0000-0000-000000000000',
     amount: 0,
     category: 'إداري',
+    expense_date: payload.payout_date || new Date().toISOString().slice(0, 10),
     description: `تسوية أرباح مالك مرجع: ${payload.payout_reference}`,
   }).limit(0);
   void error;
