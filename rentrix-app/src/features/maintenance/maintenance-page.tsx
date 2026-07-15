@@ -1,7 +1,9 @@
 import { AlertCircle, Clock, Flame, PlusCircle, Wrench } from 'lucide-react';
+import { useMemo } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -9,6 +11,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './components/maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './components/maintenance-list';
+import { maintenancePriorityLabels, maintenanceStatusLabels } from './components/maintenance-list';
 import { MaintenanceRequestForm } from './components/maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from './maintenance-helpers';
 import { useMaintenancePageController } from './useMaintenancePageController';
@@ -22,6 +25,42 @@ const summaryCards = [
 
 export function MaintenancePage() {
   const c = useMaintenancePageController();
+
+  const activeFilters = useMemo<readonly ActiveFilterItem[]>(() => {
+    const items: ActiveFilterItem[] = [];
+    if (c.statusFilter !== 'all') {
+      items.push({
+        key: 'status',
+        label: 'الحالة',
+        value: maintenanceStatusLabels[c.statusFilter as keyof typeof maintenanceStatusLabels] ?? c.statusFilter,
+        onRemove: () => c.setStatusFilter('all'),
+      });
+    }
+    if (c.priorityFilter !== 'all') {
+      items.push({
+        key: 'priority',
+        label: 'الأولوية',
+        value: maintenancePriorityLabels[c.priorityFilter as keyof typeof maintenancePriorityLabels] ?? c.priorityFilter,
+        onRemove: () => c.setPriorityFilter('all'),
+      });
+    }
+    if (c.propertyFilterId) {
+      const propLabel = c.properties.find((p) => p.id === c.propertyFilterId)?.title ?? c.propertyFilterId;
+      items.push({
+        key: 'property',
+        label: 'العقار',
+        value: propLabel,
+        onRemove: () => c.setPropertyFilterId(''),
+      });
+    }
+    return items;
+  }, [c]);
+
+  const clearAllFilters = () => {
+    c.setStatusFilter('all');
+    c.setPriorityFilter('all');
+    c.setPropertyFilterId('');
+  };
 
   return (
     <PageLayout dir="rtl" size="wide">
@@ -52,40 +91,48 @@ export function MaintenancePage() {
       <FilterBar
         filters={(
           <>
-            <Select aria-label="تصفية حسب الحالة" value={String(c.statusFilter)} onChange={(event) => c.setStatusFilter(event.target.value as MaintenanceStatusFilter)}>
+            <Select
+              aria-label="تصفية حسب الحالة"
+              value={String(c.statusFilter)}
+              onChange={(event) => c.setStatusFilter(event.target.value as MaintenanceStatusFilter)}
+            >
               <option value="all">كل الحالات</option>
               <option value="open">مفتوح</option>
               <option value="in_progress">قيد التنفيذ</option>
               <option value="resolved">تم الحل</option>
               <option value="closed">مغلق</option>
             </Select>
-            <Select aria-label="تصفية حسب الأولوية" value={String(c.priorityFilter)} onChange={(event) => c.setPriorityFilter(event.target.value as MaintenancePriorityFilter)}>
+            <Select
+              aria-label="تصفية حسب الأولوية"
+              value={String(c.priorityFilter)}
+              onChange={(event) => c.setPriorityFilter(event.target.value as MaintenancePriorityFilter)}
+            >
               <option value="all">كل الأولويات</option>
               <option value="low">منخفضة</option>
               <option value="medium">متوسطة</option>
               <option value="high">عالية</option>
               <option value="urgent">عاجلة</option>
             </Select>
-            <Select aria-label="تصفية حسب العقار" value={c.propertyFilterId} onChange={(event) => c.setPropertyFilterId(event.target.value)}>
+            <Select
+              aria-label="تصفية حسب العقار"
+              value={c.propertyFilterId}
+              onChange={(event) => c.setPropertyFilterId(event.target.value)}
+            >
               <option value="">كل العقارات</option>
-              {c.properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
+              {c.properties.map((property) => (
+                <option key={property.id} value={property.id}>{property.title}</option>
+              ))}
             </Select>
           </>
         )}
         actions={c.hasFilters ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              c.setStatusFilter('all');
-              c.setPriorityFilter('all');
-              c.setPropertyFilterId('');
-            }}
-          >
+          <Button type="button" variant="secondary" onClick={clearAllFilters}>
             مسح الفلاتر
           </Button>
         ) : undefined}
       />
+
+      <ActiveFilterBar filters={activeFilters} onClearAll={clearAllFilters} />
 
       <AsyncContentState
         status={c.isLoading ? 'loading' : c.hasLoadError ? 'error' : c.filteredMaintenanceRows.length === 0 ? 'empty' : 'ready'}
@@ -121,7 +168,10 @@ export function MaintenancePage() {
         onSubmit={c.onSubmit}
       />
 
-      <MaintenanceDetailsOverlay request={c.detailsRequest} onOpenChange={(open) => { if (!open) c.setDetailsRequest(null); }} />
+      <MaintenanceDetailsOverlay
+        request={c.detailsRequest}
+        onOpenChange={(open) => { if (!open) c.setDetailsRequest(null); }}
+      />
 
       <MaintenanceResolveOverlay
         target={c.resolveTarget}

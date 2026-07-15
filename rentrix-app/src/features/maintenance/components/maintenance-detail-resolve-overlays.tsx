@@ -1,10 +1,16 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import type { Maintenance } from '../maintenance-service';
 import type { MaintenanceResolveFormValues } from '../useMaintenancePageController';
-import { maintenanceStatusLabels } from './maintenance-list';
+import {
+  maintenancePriorityLabels,
+  maintenancePriorityTone,
+  maintenanceStatusLabels,
+  maintenanceStatusTone,
+} from './maintenance-list';
 
 export type MaintenanceDetailsOverlayProps = Readonly<{
   request: Maintenance | null;
@@ -21,11 +27,59 @@ export function MaintenanceDetailsOverlay({ request, onOpenChange }: Maintenance
       description={request?.title ?? undefined}
     >
       {request ? (
-        <div className="space-y-3 text-sm">
-          <p className="rounded-2xl border p-3"><strong>الحالة:</strong> {maintenanceStatusLabels[request.status as keyof typeof maintenanceStatusLabels] ?? request.status}</p>
-          <p className="rounded-2xl border p-3"><strong>الوصف:</strong> {request.description || '—'}</p>
-          <p className="rounded-2xl border p-3"><strong>الفني:</strong> {request.assigned_to || request.technician_name || '—'}</p>
-          <p className="rounded-2xl border p-3"><strong>التكلفة:</strong> {request.cost ?? 0}</p>
+        <div className="space-y-4 text-sm">
+          <div className="grid gap-3 rounded-2xl border border-border/60 bg-muted/15 p-4 sm:grid-cols-2">
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">الحالة</span>
+              <div className="mt-1">
+                <StatusBadge tone={maintenanceStatusTone[request.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>
+                  {maintenanceStatusLabels[request.status as keyof typeof maintenanceStatusLabels] ?? request.status ?? '—'}
+                </StatusBadge>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">الأولوية</span>
+              <div className="mt-1">
+                <StatusBadge tone={maintenancePriorityTone[request.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
+                  {maintenancePriorityLabels[request.priority as keyof typeof maintenancePriorityLabels] ?? request.priority ?? '—'}
+                </StatusBadge>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">الفني / المسؤول</span>
+              <p className="mt-1 font-medium">{request.assigned_to || request.technician_name || '—'}</p>
+            </div>
+
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">تاريخ الجدولة</span>
+              <p className="mt-1 font-medium">{request.scheduled_date || '—'}</p>
+            </div>
+
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">التكلفة الفعلية</span>
+              <p className="mt-1 font-semibold text-primary">{request.cost != null ? `${request.cost} ر.ع` : '—'}</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
+            <span className="text-xs font-medium text-muted-foreground">الوصف</span>
+            <p className="mt-1 text-sm font-normal leading-relaxed whitespace-pre-wrap">{request.description || 'لا يوجد وصف متاح.'}</p>
+          </div>
+
+          {request.attachment_url ? (
+            <div className="rounded-2xl border border-border/60 bg-muted/15 p-4">
+              <span className="text-xs font-medium text-muted-foreground">المرفق</span>
+              <div className="mt-2 overflow-hidden rounded-xl border border-border/50">
+                <img
+                  src={request.attachment_url}
+                  alt="مرفق طلب الصيانة"
+                  className="max-h-60 w-full object-cover"
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </EntityForm.Overlay>

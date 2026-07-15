@@ -1,0 +1,2 @@
+# Evidence screenshots are captured at runtime by the Playwright spec.
+# They are excluded from git via .gitignore.

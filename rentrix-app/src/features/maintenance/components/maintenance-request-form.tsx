@@ -23,7 +23,20 @@ export type MaintenanceRequestFormProps = Readonly<{
 }>;
 
 /** Create/edit overlay form for a single maintenance request (location, details, attachment). */
-export function MaintenanceRequestForm({ open, isEditing, isEditingResolvedRequest, isSubmitting, isLoadingUnits, form, formPropertyId, properties, units, firstError, onOpenChange, onSubmit }: MaintenanceRequestFormProps) {
+export function MaintenanceRequestForm({
+  open,
+  isEditing,
+  isEditingResolvedRequest,
+  isSubmitting,
+  isLoadingUnits,
+  form,
+  formPropertyId,
+  properties,
+  units,
+  firstError,
+  onOpenChange,
+  onSubmit,
+}: MaintenanceRequestFormProps) {
   return (
     <EntityForm.Overlay
       open={open}
@@ -36,50 +49,60 @@ export function MaintenanceRequestForm({ open, isEditing, isEditingResolvedReque
 
         <EntityForm.Section title="الموقع" description="اختر العقار، ويمكن ربط الطلب بوحدة محددة.">
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-1.5 text-sm font-bold">
-              <span>العقار</span>
+            <EntityForm.Field label="العقار" error={form.formState.errors.property_id?.message}>
               <Select aria-label="العقار" {...form.register('property_id')} disabled={isEditingResolvedRequest} aria-invalid={Boolean(form.formState.errors.property_id)}>
                 <option value="">اختر العقار</option>
-                {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
+                {properties.map((property) => (
+                  <option key={property.id} value={property.id}>{property.title}</option>
+                ))}
               </Select>
-              {form.formState.errors.property_id?.message ? <span className="text-xs text-destructive">{form.formState.errors.property_id.message}</span> : null}
-            </label>
+            </EntityForm.Field>
 
-            <label className="space-y-1.5 text-sm font-bold">
-              <span>الوحدة</span>
+            <EntityForm.Field label="الوحدة">
               <Select aria-label="الوحدة" {...form.register('unit_id')} disabled={isEditingResolvedRequest || !formPropertyId || isLoadingUnits}>
                 <option value="">بدون وحدة</option>
-                {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.unit_number}</option>)}
+                {units.map((unit) => (
+                  <option key={unit.id} value={unit.id}>{unit.unit_number}</option>
+                ))}
               </Select>
-            </label>
+            </EntityForm.Field>
           </div>
         </EntityForm.Section>
-        {isEditingResolvedRequest ? <p className="rounded-xl border border-amber-300/70 bg-amber-50/70 p-3 text-xs font-medium text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">لا يمكن تغيير موقع طلب تم حله أو إغلاقه حتى يبقى مرتبطاً بالمصروف المسجل.</p> : null}
+
+        {isEditingResolvedRequest ? (
+          <p className="rounded-xl border border-amber-300/70 bg-amber-50/70 p-3 text-xs font-medium text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">
+            لا يمكن تغيير موقع طلب تم حله أو إغلاقه حتى يبقى مرتبطاً بالمصروف المسجل.
+          </p>
+        ) : null}
 
         <EntityForm.Section title="تفاصيل الطلب" description="اكتب عنواناً قصيراً ثم أضف الوصف والأولوية.">
-          <label className="space-y-1.5 text-sm font-bold">
-            <span>عنوان الطلب</span>
+          <EntityForm.Field label="عنوان الطلب" error={form.formState.errors.title?.message}>
             <Input aria-label="عنوان الطلب" placeholder="مثال: تسريب مياه في المطبخ" {...form.register('title')} aria-invalid={Boolean(form.formState.errors.title)} />
-            {form.formState.errors.title?.message ? <span className="text-xs text-destructive">{form.formState.errors.title.message}</span> : null}
-          </label>
+          </EntityForm.Field>
 
-          <label className="space-y-1.5 text-sm font-bold">
-            <span>الوصف</span>
+          <EntityForm.Field label="الوصف">
             <Textarea aria-label="وصف الطلب" placeholder="الوصف (اختياري)" className="min-h-24" {...form.register('description')} />
-          </label>
+          </EntityForm.Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-1.5 text-sm font-bold">
-              <span>الأولوية</span>
+            <EntityForm.Field label="الأولوية">
               <Select aria-label="الأولوية" {...form.register('priority')}>
                 <option value="low">منخفضة</option>
                 <option value="medium">متوسطة</option>
                 <option value="high">عالية</option>
                 <option value="urgent">عاجلة</option>
               </Select>
-            </label>
-            <label className="space-y-1.5 text-sm font-bold"><span>المسؤول/الفني</span><Input placeholder="اسم الفني أو المسؤول" {...form.register('assigned_to')} /></label>
-            <label className="space-y-1.5 text-sm font-bold sm:col-span-2"><span>تاريخ الجدولة</span><Input type="date" {...form.register('scheduled_date')} /></label>
+            </EntityForm.Field>
+
+            <EntityForm.Field label="المسؤول/الفني">
+              <Input aria-label="المسؤول/الفني" placeholder="اسم الفني أو المسؤول" {...form.register('assigned_to')} />
+            </EntityForm.Field>
+
+            <div className="sm:col-span-2">
+              <EntityForm.Field label="تاريخ الجدولة">
+                <Input aria-label="تاريخ الجدولة" type="date" {...form.register('scheduled_date')} />
+              </EntityForm.Field>
+            </div>
           </div>
 
           <Controller

@@ -37,6 +37,14 @@ export const maintenancePriorityTone = {
   urgent: 'red',
 } as const;
 
+/** Maps maintenance priority to MobileCard accent */
+const priorityAccent = {
+  low: 'none',
+  medium: 'none',
+  high: 'warning',
+  urgent: 'danger',
+} as const satisfies Record<string, 'none' | 'warning' | 'danger'>;
+
 export type MaintenanceListProps = Readonly<{
   rows: Maintenance[];
   properties: Property[];
@@ -56,9 +64,11 @@ export type MaintenanceListProps = Readonly<{
 export function MaintenanceList({ rows, properties, allUnits, actionsPending, onViewDetails, onEdit, onStatusAction }: MaintenanceListProps) {
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 md:hidden">
+      {/* Mobile: single-column cards (hidden at md+) */}
+      <div className="grid gap-3 md:hidden">
         {rows.map((row) => {
           const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
+          const accent = priorityAccent[row.priority as keyof typeof priorityAccent] ?? 'none';
           return (
             <MobileCard
               key={row.id}
@@ -69,9 +79,10 @@ export function MaintenanceList({ rows, properties, allUnits, actionsPending, on
                   {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status ?? '—'}
                 </StatusBadge>
               )}
+              accent={accent}
               meta={(
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-muted-foreground">الأولوية</span>
+                  <span className="text-xs font-semibold text-muted-foreground">الأولوية</span>
                   <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
                     {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority ?? '—'}
                   </StatusBadge>
@@ -79,14 +90,28 @@ export function MaintenanceList({ rows, properties, allUnits, actionsPending, on
               )}
               actions={actions.length > 0 ? (
                 <div className="grid w-full grid-cols-1 gap-2">
-                  <Button type="button" variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => onViewDetails(row)}><Eye className="me-2 size-4" aria-hidden="true" />التفاصيل</Button>
-                  <Button type="button" variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => onEdit(row)}><Edit className="me-2 size-4" aria-hidden="true" />تعديل</Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="min-h-11 w-full text-xs"
+                    onClick={() => onViewDetails(row)}
+                  >
+                    <Eye className="me-2 size-4" aria-hidden="true" />التفاصيل
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="min-h-11 w-full text-xs"
+                    onClick={() => onEdit(row)}
+                  >
+                    <Edit className="me-2 size-4" aria-hidden="true" />تعديل
+                  </Button>
                   {actions.map((action) => (
                     <Button
                       key={`${row.id}-${action.status}`}
                       type="button"
                       variant="secondary"
-                      className="min-h-11 px-3 text-xs"
+                      className="min-h-11 w-full text-xs"
                       disabled={actionsPending}
                       onClick={() => onStatusAction(row, action.status)}
                     >
@@ -95,7 +120,7 @@ export function MaintenanceList({ rows, properties, allUnits, actionsPending, on
                   ))}
                 </div>
               ) : (
-                <span className="flex min-h-11 items-center gap-1 text-xs font-bold text-muted-foreground">
+                <span className="flex min-h-11 items-center gap-1 text-xs font-semibold text-muted-foreground">
                   <CheckCircle2 className="size-3.5" aria-hidden="true" />مكتمل
                 </span>
               )}
@@ -104,6 +129,7 @@ export function MaintenanceList({ rows, properties, allUnits, actionsPending, on
         })}
       </div>
 
+      {/* Desktop: DataTable (hidden below md) */}
       <div className="hidden md:block">
         <DataTable
           aria-label="جدول طلبات الصيانة"
@@ -124,17 +150,23 @@ export function MaintenanceList({ rows, properties, allUnits, actionsPending, on
             { key: 'action', header: 'الإجراء', render: (row) => {
               const actions = getMaintenanceStatusActions((row.status ?? '') as keyof typeof maintenanceStatusLabels);
               return actions.length === 0 ? (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground"><CheckCircle2 className="size-3.5" />مكتمل</span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <CheckCircle2 className="size-3.5" aria-hidden="true" />مكتمل
+                </span>
               ) : (
                 <div className="flex" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
                   <ActionMenu
                     label="تحديث الطلب"
-                    items={[{ id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => onViewDetails(row) }, { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => onEdit(row) }, ...actions.map((action) => ({
-                      id: String(action.status),
-                      label: action.label,
-                      onClick: () => onStatusAction(row, action.status),
-                      disabled: actionsPending,
-                    }))]}
+                    items={[
+                      { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => onViewDetails(row) },
+                      { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => onEdit(row) },
+                      ...actions.map((action) => ({
+                        id: String(action.status),
+                        label: action.label,
+                        onClick: () => onStatusAction(row, action.status),
+                        disabled: actionsPending,
+                      })),
+                    ]}
                   />
                 </div>
               );
