@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { BarChart3, FileSpreadsheet, ReceiptText, WalletCards } from 'lucide-react';
+import { BarChart3, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
@@ -35,6 +36,10 @@ export function ReportsWorkspace({
   const [activeSection, setActiveSection] = useState<ReportSectionId>('overview');
   const activeSectionLabel = reportSections.find((section) => section.id === activeSection)?.label ?? 'التقارير';
 
+  const handlePrintWorkspace = () => {
+    window.print();
+  };
+
   return (
     <>
       <ReportsHero summary={model.hero.summary} today={model.today} isLoading={model.hero.isLoading} />
@@ -67,16 +72,23 @@ export function ReportsWorkspace({
       />
 
       <Card className="min-w-0 overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-border/60 bg-muted/20 px-4 py-4 sm:px-6">
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <BarChart3 className="size-5" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-sm font-black sm:text-base">مركز التقارير</h2>
-            <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">
-              القسم الحالي: <span aria-live="polite">{activeSectionLabel}</span>
-            </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-muted/20 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <BarChart3 className="size-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-sm font-black sm:text-base">مركز التقارير</h2>
+              <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">
+                القسم الحالي: <span aria-live="polite">{activeSectionLabel}</span>
+              </p>
+            </div>
           </div>
+
+          <Button type="button" variant="outline" size="sm" onClick={handlePrintWorkspace} className="min-h-10 gap-2 font-bold text-xs">
+            <Printer className="size-4 text-primary" aria-hidden="true" />
+            طباعة التقرير الشامل A4
+          </Button>
         </div>
 
         <div className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-background/95 px-3 py-3 backdrop-blur sm:px-5">
@@ -122,7 +134,7 @@ export function ReportsWorkspace({
             <AccountingReportsSection {...model.sections.accounting} />
           </SectionTabPanel>
           <SectionTabPanel id="statements" activeId={activeSection}>
-            <StatementsSection {...model.sections.statements} />
+            <StatementsSection {...model.sections.statements} filters={filters} />
           </SectionTabPanel>
         </CardContent>
       </Card>

@@ -1,4 +1,5 @@
-import { AlertCircle, Inbox, WalletCards } from 'lucide-react';
+import { AlertCircle, Inbox, Printer, WalletCards } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -12,9 +13,20 @@ import {
   useFinancialPeriodSummaryReport,
   useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
+import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import { createReceiptPrintHref } from '../reports-page.helpers';
 
-export function StatementsSection({ agedReport, receiptRows, financialSummary, expenseBreakdown, cashFlowStatement, vatReturn, dailyRows, tenantStatement, ownerStatement, selectedContractId, selectedOwnerId, tenantStatementError, ownerStatementError, isTenantStatementLoading, isOwnerStatementLoading, isLoading }: Readonly<{
+const defaultDocumentSettings: DocumentSettings = {
+  company: {
+    name: 'رينتريكس لإدارة العقارات',
+    address: 'سلطنة عمان - مسقط',
+    phone: '+968 24000000',
+  },
+  currency: 'OMR',
+  currencySymbol: 'ر.ع',
+};
+
+export function StatementsSection({ agedReport, receiptRows, financialSummary, expenseBreakdown, cashFlowStatement, vatReturn, dailyRows, tenantStatement, ownerStatement, selectedContractId, selectedOwnerId, tenantStatementError, ownerStatementError, isTenantStatementLoading, isOwnerStatementLoading, isLoading, filters }: Readonly<{
   agedReport: NonNullable<ReturnType<typeof useAgedReceivablesReport>['data']> | undefined;
   receiptRows: Array<{ id: string; receipt_number: string; payment_date: string; amount: number; tenant_name: string | null }>;
   financialSummary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
@@ -31,6 +43,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
   isTenantStatementLoading: boolean;
   isOwnerStatementLoading: boolean;
   isLoading: boolean;
+  filters?: { from: string; to: string };
 }>) {
   const tenantRows = (agedReport?.rows ?? []).slice(0, 6);
   const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
@@ -43,29 +56,86 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
   const totalExpensesCount = financialSummary?.expensesCount ?? 0;
   const totalReceiptsCount = receiptRows.length;
 
+  const handlePrintTenantStatement = () => {
+    if (!tenantStatement) return;
+    DocumentTemplates.renderTenantStatementPdf(
+      {
+        tenantName: tenantStatement.tenantName || 'مستأجر غير محدد',
+        periodFrom: filters?.from || '—',
+        periodTo: filters?.to || '—',
+        propertyTitle: tenantStatement.propertyName || 'عقار غير محدد',
+        unitNumber: tenantStatement.unitName || '—',
+        openingBalance: 0,
+        totalInvoiced: tenantStatement.lines.reduce((acc, l) => acc + (l.debit || 0), 0),
+        totalPaid: tenantStatement.lines.reduce((acc, l) => acc + (l.credit || 0), 0),
+        closingBalance: tenantStatement.finalBalance || 0,
+        lines: tenantStatement.lines.map((l) => ({
+          date: l.date || '—',
+          type: l.type || 'حركة',
+          description: l.description || 'حركة حساب',
+          debit: l.debit || 0,
+          credit: l.credit || 0,
+          balance: l.debit - l.credit,
+        })),
+      },
+      defaultDocumentSettings,
+    );
+  };
+
+  const handlePrintOwnerStatement = () => {
+    if (!ownerStatement) return;
+    DocumentTemplates.renderOwnerStatementPdf(
+      {
+        ownerName: ownerStatement.ownerName || 'مالك غير محدد',
+        periodFrom: filters?.from || '—',
+        periodTo: filters?.to || '—',
+        propertyTitle: 'كافة العقارات المدارة',
+        totalRent: ownerStatement.totalGross || 0,
+        totalExpenses: ownerStatement.totalDeductions || 0,
+        totalCommission: 0,
+        netAmount: ownerStatement.totalNet || 0,
+        transactions: ownerStatement.transactions.map((t) => ({
+          date: t.date || '—',
+          type: t.type || 'حركة',
+          description: t.details || 'حركة مالية',
+          amount: t.net || 0,
+        })),
+      },
+      defaultDocumentSettings,
+    );
+  };
+
   return (
     <div className="space-y-4">
       <Card className="scroll-mt-28 border-border/60 bg-muted/20">
         <CardHeader className="px-4 py-3 sm:px-5">
-          <CardTitle className="text-sm font-black">Workspace كشوف الحساب</CardTitle>
+          <CardTitle className="text-sm font-black">Workspace كشوف الحساب والورقيات المعتمدة</CardTitle>
           <CardDescription>
-            اختر المالك أو العقد والفترة من فلاتر الصفحة أعلاه. الكشوف قراءة فقط ولا تعرض أرصدة جارية أو تسويات نهائية أو دفتر أستاذ محاسبي.
+            اختر المالك أو العقد والفترة من فلاتر الصفحة أعلاه لطباعة وتصدير كشف حساب ملون بفرص المطبوعات الرسمية وموثق آلياً.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveCardGrid desktopColumns={3}>
             <StatementWorkspaceCue title="كشف مستأجر" value={selectedContractId ? 'عقد محدد' : 'اختر عقدًا من الفلاتر'} tone={selectedContractId ? 'ready' : 'muted'} />
             <StatementWorkspaceCue title="كشف مالك" value={selectedOwnerId ? 'مالك محدد' : 'اختر مالكًا من الفلاتر'} tone={selectedOwnerId ? 'ready' : 'muted'} />
-            <StatementWorkspaceCue title="الفترة" value="من فلاتر نطاق التقرير" tone="ready" />
+            <StatementWorkspaceCue title="فترة الكشف" value={`${filters?.from || '—'} إلى ${filters?.to || '—'}`} tone="ready" />
           </ResponsiveCardGrid>
         </CardContent>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="border-border/60">
-          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <CardTitle className="text-sm font-black">كشف حساب المستأجر</CardTitle>
-            <CardDescription>ذمم ومتأخرات المستأجرين من تقرير receivables، مع أحدث إيصالات متاحة من السجل.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <div>
+              <CardTitle className="text-sm font-black">كشف حساب المستأجر</CardTitle>
+              <CardDescription>ذمم ومتأخرات المستأجرين مع دفتر الحركة المباشر.</CardDescription>
+            </div>
+            {tenantStatement && (
+              <Button type="button" size="sm" variant="outline" onClick={handlePrintTenantStatement} className="min-h-9 gap-1.5 text-xs">
+                <Printer className="size-3.5" aria-hidden="true" />
+                طباعة الكشف
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-2 p-4 sm:p-5">
             {selectedContractId ? (
@@ -101,7 +171,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
             ) : isLoading ? (
               <Skeleton className="h-32" />
             ) : tenantRows.length === 0 ? (
-              <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />اختر عقدًا من الفلاتر لعرض كشف المستأجر الحقيقي من RPC، أو لا توجد ذمم حسب تاريخ as-of.</div>
+              <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />اختر عقدًا من الفلاتر لعرض كشف المستأجر الحقيقي من RPC.</div>
             ) : (
               tenantRows.map((row) => <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm"><p className="font-medium">{row.tenantName ?? 'مستأجر غير محدد'}</p><div className="mt-1 flex items-center justify-between gap-2"><span className="text-muted-foreground">ذمم</span><span className="font-black" dir="ltr">{formatMoney(row.totalOutstanding)}</span></div><div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">متأخر</span><span className="font-black text-destructive" dir="ltr">{formatMoney(row.totalOverdue)}</span></div><p className="mt-1 text-xs text-muted-foreground">{row.invoiceCount.toLocaleString('ar')} فواتير مرتبطة</p></div>)
             )}
@@ -114,9 +184,17 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
         </Card>
 
         <Card className="border-border/60">
-          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <CardTitle className="text-sm font-black">ملخص حركة المالك</CardTitle>
-            <CardDescription>ملخص حركة عقار مدعوم بالمصروفات المرتبطة به. ليس كشف تسوية مالك.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <div>
+              <CardTitle className="text-sm font-black">ملخص حركة المالك</CardTitle>
+              <CardDescription>ملخص الإيرادات والمصروفات والاستقطاعات.</CardDescription>
+            </div>
+            {ownerStatement && (
+              <Button type="button" size="sm" variant="outline" onClick={handlePrintOwnerStatement} className="min-h-9 gap-1.5 text-xs">
+                <Printer className="size-3.5" aria-hidden="true" />
+                طباعة الكشف
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-2 p-4 sm:p-5">
             {selectedOwnerId ? (
@@ -136,7 +214,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
             ) : ownerMovementRows.length === 0 ? (
               <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground">
                 <Inbox className="size-5 text-muted-foreground/70" />
-                لا توجد حركة مصروفات عقارية للفترة المحددة، ولا تتوفر بيانات مالك تفصيلية بعد.
+                لا توجد حركة مصروفات عقارية للفترة المحددة.
               </div>
             ) : (
               ownerMovementRows.map((row) => (
@@ -156,14 +234,14 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
         <Card className="border-border/60">
           <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
             <CardTitle className="text-sm font-black">ملخص حركة المكتب</CardTitle>
-            <CardDescription>ملخص فواتير وتحصيلات ومصروفات للفترة، وليس قائمة دخل أو دفتر حسابات.</CardDescription>
+            <CardDescription>ملخص فواتير وتحصيلات ومصروفات للفترة.</CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-5">
             <ResponsiveCardGrid desktopColumns={4} gap="sm">
-            <KpiCard label="فواتير الفترة" value={formatMoney(totalInvoiced)} icon={WalletCards} accent="sky" sub={`${totalInvoicesCount} فواتير`} compact />
-            <KpiCard label="تحصيلات الفترة" value={formatMoney(totalCollections)} icon={WalletCards} accent="emerald" sub={`${totalPayments} مدفوعات`} compact />
-            <KpiCard label="مصروفات الفترة" value={formatMoney(totalExpenses)} icon={WalletCards} accent="rose" sub={`${totalExpensesCount} مصروفات`} compact />
-            <KpiCard label="رصيد مستحق (قراءة فقط)" value={formatMoney(totalOutstanding)} icon={WalletCards} accent="amber" sub={`${totalReceiptsCount} إيصالات متاحة للطباعة`} compact />
+              <KpiCard label="فواتير الفترة" value={formatMoney(totalInvoiced)} icon={WalletCards} accent="sky" sub={`${totalInvoicesCount} فواتير`} compact />
+              <KpiCard label="تحصيلات الفترة" value={formatMoney(totalCollections)} icon={WalletCards} accent="emerald" sub={`${totalPayments} مدفوعات`} compact />
+              <KpiCard label="مصروفات الفترة" value={formatMoney(totalExpenses)} icon={WalletCards} accent="rose" sub={`${totalExpensesCount} مصروفات`} compact />
+              <KpiCard label="رصيد مستحق" value={formatMoney(totalOutstanding)} icon={WalletCards} accent="amber" sub={`${totalReceiptsCount} إيصالات متاحة للطباعة`} compact />
             </ResponsiveCardGrid>
           </CardContent>
         </Card>
@@ -173,7 +251,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
         <Card className="border-border/60">
           <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
             <CardTitle className="text-sm font-black">Cash Flow RPC</CardTitle>
-            <CardDescription>قراءة مباشرة من `rpt_cash_flow` للفترة المختارة، بدون دفتر أستاذ عام.</CardDescription>
+            <CardDescription>قراءة مباشرة من `rpt_cash_flow` للفترة المختارة.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 p-4 sm:p-5">
             {isLoading ? (

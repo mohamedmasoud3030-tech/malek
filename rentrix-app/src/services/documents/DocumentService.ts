@@ -11,6 +11,8 @@ export type DocumentType =
   | 'receipt'
   | 'expense_voucher'
   | 'payment'
+  | 'owner_statement'
+  | 'tenant_statement'
   | 'trial_balance'
   | 'income_statement'
   | 'balance_sheet';
@@ -27,6 +29,8 @@ const templateCapabilities: readonly DocumentCapability[] = [
   { type: 'receipt', templateAvailable: true, externalProviderRequired: false },
   { type: 'expense_voucher', templateAvailable: true, externalProviderRequired: false },
   { type: 'payment', templateAvailable: true, externalProviderRequired: false },
+  { type: 'owner_statement', templateAvailable: true, externalProviderRequired: false },
+  { type: 'tenant_statement', templateAvailable: true, externalProviderRequired: false },
   { type: 'trial_balance', templateAvailable: false, externalProviderRequired: true },
   { type: 'income_statement', templateAvailable: false, externalProviderRequired: true },
   { type: 'balance_sheet', templateAvailable: false, externalProviderRequired: true },
@@ -55,5 +59,4 @@ export const documentService = {
 
     await DocumentController.renderToPDF(request);
   },
-
 };

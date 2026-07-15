@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 @import 'tailwindcss';
 
 /* ============================================
@@ -227,12 +227,11 @@
   .text-sidebar-accent-foreground{ color: hsl(var(--sidebar-accent-foreground)); }
   .text-accent            { color: hsl(var(--accent)); }
   .bg-accent              { background-color: hsl(var(--accent)); }
-  /* text-{success,warning,danger,info,neutral} + bg-{success,…}/NN generated from tailwind.config */
 
   .animate-route-in       { animation: route-in 0.18s ease-out both; }
   .animate-slide-up       { animation: slide-up 0.2s ease-out both; }
 
-  /* Subtle card interaction — no scale transform */
+  /* Subtle card interaction */
   .hover-card {
     transition: box-shadow 0.18s ease, border-color 0.18s ease;
   }
@@ -307,9 +306,19 @@
   }
 }
 
+/* ============================================
+   Enterprise Print Engine Standards (A4 Color)
+   ============================================ */
+
 @media print {
   @page {
-    margin: 12mm;
+    size: A4 portrait;
+    margin: 12mm 10mm 15mm 10mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   body > *:not(#root) {
@@ -333,8 +342,9 @@
   body,
   #root {
     min-width: 0 !important;
-    background: #fff !important;
-    color: #000 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif !important;
   }
 
   main {
@@ -348,29 +358,44 @@
     max-width: none !important;
     margin: 0 auto !important;
     padding: 0 !important;
-    font-size: 12pt;
-    color: #000;
-    background: #fff;
+    font-size: 11pt;
+    line-height: 1.6;
+    color: #0f172a;
+    background: #ffffff;
     box-shadow: none !important;
   }
 
   .print-document .card,
   .print-document [class*="rounded"] {
     box-shadow: none !important;
-    border-color: #d1d5db !important;
+    border-color: #cbd5e1 !important;
   }
 
   .print-page-break {
-    page-break-before: always;
+    page-break-before: always !important;
+    break-before: page !important;
   }
 
-  tr {
-    page-break-inside: avoid;
+  tr,
+  .print-avoid-break,
+  .kpi-card,
+  [data-entity-card],
+  .signature-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   button,
   [role="button"],
   [data-print-actions] {
     display: none !important;
+  }
+
+  /* SVG Charts & Recharts Color Print Stability */
+  .recharts-responsive-container,
+  svg.recharts-surface {
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }

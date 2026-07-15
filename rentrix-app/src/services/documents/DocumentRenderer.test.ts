@@ -41,7 +41,7 @@ describe('collectDocumentTextChunks', () => {
     const invoice = documentEngine.build({ type: 'invoice', payload: { invoice: { id: 'invoice-1', contract_id: 'contract-1', issue_date: '2026-06-01', due_date: '2026-06-30', amount: 100, paid_amount: 25, status: 'PARTIALLY_PAID', notes: null, created_at: '2026-06-01', updated_at: '2026-06-01', deleted_at: null }, db } });
     const expense = documentEngine.build({ type: 'expense_voucher', payload: { expense: { id: 'expense-1', property_id: 'property-1', category: '\u0635\u064a\u0627\u0646\u0629', amount: 50, expense_date: '2026-06-15', description: '\u0645\u0635\u0639\u062f', attachment_url: null, created_at: '2026-06-15', updated_at: '2026-06-15', deleted_at: null }, db } });
 
-    expect(collectDocumentTextChunks(invoice)).toEqual(expect.arrayContaining(['\u0641\u0627\u062a\u0648\u0631\u0629', '\u0627\u0644\u0645\u0633\u062a\u0623\u062c\u0631', '\u0627\u0644\u0645\u062a\u0628\u0642\u064a']));
-    expect(collectDocumentTextChunks(expense)).toEqual(expect.arrayContaining(['\u0633\u0646\u062f \u0645\u0635\u0631\u0648\u0641', '\u0627\u0644\u0639\u0642\u0627\u0631', '\u0628\u0631\u062c \u0627\u0644\u0646\u064a\u0644']));
+    expect(collectDocumentTextChunks(invoice)).toEqual(expect.arrayContaining(['فاتورة مطالبة مالية', 'المستأجر', 'المبلغ المتبقي واجب السداد']));
+    expect(collectDocumentTextChunks(expense)).toEqual(expect.arrayContaining(['سند صرف مصروفات', 'العقار المرتبط', 'برج النيل']));
   });
 });
