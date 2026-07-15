@@ -42,68 +42,75 @@ export function LoginPage() {
 
   return (
     <section
-      className="animate-panel-in w-full max-w-md overflow-hidden rounded-[2rem] border border-border/70 bg-[hsl(var(--card)/0.96)] shadow-[0_30px_90px_-45px_rgba(15,23,42,0.7)] backdrop-blur-2xl"
+      className="w-full max-w-md overflow-hidden rounded-xl border border-border/70 bg-card shadow-elevated"
       data-login-surface
     >
-      <div className="p-5 sm:p-8 lg:p-10">
-        <header className="mb-8">
+      <div className="p-6 sm:p-8">
+        {/* Brand */}
+        <header className="mb-7">
           <div className="flex items-center gap-3">
-            <div className="relative grid size-12 place-items-center rounded-2xl bg-primary text-lg font-black text-primary-foreground shadow-lg">
+            <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
               R
-              <span className="absolute -bottom-1 -left-1 size-3.5 rounded-full border-2 border-[hsl(var(--card))] bg-emerald-400" />
             </div>
             <div>
-              <p className="text-xl font-black">Rentrix</p>
-              <p className="text-xs font-bold text-muted-foreground">إدارة عقارية بوضوح وسرعة</p>
+              <p className="text-lg font-bold leading-tight">Rentrix</p>
+              <p className="text-xs font-medium text-muted-foreground">إدارة عقارية بوضوح وسرعة</p>
             </div>
           </div>
 
-          <div className="mt-8">
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-black text-primary">
-              <LockKeyhole className="size-4" />
+          <div className="mt-6">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2.5 py-1 text-[11px] font-semibold text-primary">
+              <LockKeyhole className="size-3.5" aria-hidden="true" />
               دخول آمن لمساحة العمل
             </span>
-            <h1 className="mt-4 text-3xl font-black tracking-tight text-foreground">مرحباً بعودتك</h1>
-            <p className="mt-2 text-sm font-bold leading-6 text-muted-foreground">
+            <h1 className="mt-4 text-2xl font-bold tracking-tight">مرحباً بعودتك</h1>
+            <p className="mt-2 text-[0.8125rem] font-normal leading-6 text-muted-foreground">
               أدخل بيانات حسابك للانتقال مباشرة إلى مساحة العمل.
             </p>
           </div>
         </header>
 
-        <form className="space-y-5" onSubmit={handleSubmit} aria-describedby={formError || runtimeError ? 'login-error' : undefined}>
-          <label className="grid gap-2 text-sm font-black text-foreground">
-            البريد الإلكتروني
-            <span className="relative">
-              <Mail className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        {/* Form */}
+        <form
+          className="space-y-4"
+          onSubmit={handleSubmit}
+          aria-describedby={formError || runtimeError ? 'login-error' : undefined}
+        >
+          {/* Email field */}
+          <div className="grid gap-1.5">
+            <label htmlFor="login-email" className="text-[0.8125rem] font-medium text-foreground">
+              البريد الإلكتروني
+            </label>
+            <div className="relative">
+              <Mail className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
-                className="h-12 rounded-2xl bg-[hsl(var(--background)/0.7)] pe-11"
+                id="login-email"
+                className="pe-10"
                 type="email"
                 value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  setFormError(null);
-                }}
+                onChange={(e) => { setEmail(e.target.value); setFormError(null); }}
                 required
                 autoComplete="email"
                 dir="ltr"
                 placeholder="name@example.com"
                 disabled={isSubmitting || Boolean(runtimeError)}
               />
-            </span>
-          </label>
+            </div>
+          </div>
 
-          <label className="grid gap-2 text-sm font-black text-foreground">
-            كلمة المرور
-            <span className="relative">
-              <LockKeyhole className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          {/* Password field */}
+          <div className="grid gap-1.5">
+            <label htmlFor="login-password" className="text-[0.8125rem] font-medium text-foreground">
+              كلمة المرور
+            </label>
+            <div className="relative">
+              <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
-                className="h-12 rounded-2xl bg-[hsl(var(--background)/0.7)] px-11"
+                id="login-password"
+                className="px-10"
                 type={isPasswordVisible ? 'text' : 'password'}
                 value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  setFormError(null);
-                }}
+                onChange={(e) => { setPassword(e.target.value); setFormError(null); }}
                 required
                 autoComplete="current-password"
                 dir="ltr"
@@ -112,48 +119,69 @@ export function LoginPage() {
               />
               <button
                 type="button"
-                className="pressable absolute left-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
+                className="absolute left-3 top-1/2 -translate-y-1/2 grid size-6 place-items-center rounded-md text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                onClick={() => setIsPasswordVisible((v) => !v)}
                 aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
                 disabled={isSubmitting || Boolean(runtimeError)}
               >
-                {isPasswordVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                {isPasswordVisible
+                  ? <EyeOff className="size-4" aria-hidden="true" />
+                  : <Eye className="size-4" aria-hidden="true" />}
               </button>
-            </span>
-          </label>
+            </div>
+          </div>
 
+          {/* Inline error */}
           {runtimeError || formError ? (
             <div
               id="login-error"
-              className="flex items-start gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 p-3.5 text-destructive"
+              className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/5 p-3 text-danger"
               role="alert"
               aria-live="assertive"
             >
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
               <div>
-                <p className="text-xs font-black">
+                <p className="text-xs font-semibold">
                   {runtimeError ? 'يتعذر إكمال تسجيل الدخول بسبب إعدادات تشغيل ناقصة' : 'تعذر تسجيل الدخول'}
                 </p>
-                <p className="mt-1 text-xs font-bold leading-5 text-destructive/90">
+                <p className="mt-0.5 text-xs leading-5 text-danger/80">
                   {runtimeError ?? formError}
                 </p>
               </div>
             </div>
           ) : null}
 
-          <Button className="h-12 w-full gap-2 rounded-2xl text-sm" type="submit" disabled={isSubmitting || Boolean(runtimeError)}>
-            {isSubmitting ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'}
-            <ArrowLeft className="size-4" />
+          {/* Submit */}
+          <Button
+            className="mt-1 h-10 w-full gap-2"
+            type="submit"
+            disabled={isSubmitting || Boolean(runtimeError)}
+          >
+            {isSubmitting ? (
+              <>
+                <span
+                  className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                  aria-hidden="true"
+                />
+                جارٍ تسجيل الدخول...
+              </>
+            ) : (
+              <>
+                تسجيل الدخول
+                <ArrowLeft className="size-4 rtl:rotate-180" aria-hidden="true" />
+              </>
+            )}
           </Button>
         </form>
 
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-border bg-muted/55 p-3.5">
-          <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-emerald-500/15 text-emerald-600">
-            <CheckCircle2 className="size-4" />
+        {/* Security note */}
+        <div className="mt-5 flex items-start gap-2.5 rounded-lg border border-border bg-muted/40 p-3">
+          <span className="grid size-7 shrink-0 place-items-center rounded-md bg-success/10 text-success">
+            <CheckCircle2 className="size-4" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-xs font-black text-foreground">جلسة عمل محمية</p>
-            <p className="mt-1 text-[11px] font-bold leading-5 text-muted-foreground">
+            <p className="text-xs font-semibold text-foreground">جلسة عمل محمية</p>
+            <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
               بيانات الدخول تستخدم للوصول إلى حسابك فقط، وتظل جلسة العمل محفوظة على جهازك.
             </p>
           </div>

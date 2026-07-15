@@ -27,12 +27,12 @@ export function FinancialSummary({ snapshot, isLoading, settings }: FinancialSum
   ];
 
   return (
-    <Card className="rounded-3xl border-border/60">
+    <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-sm font-bold">النظرة المالية للشهر</CardTitle>
           <Link to="/financials">
-            <Button variant="secondary" className="h-9 rounded-xl px-3 text-xs gap-1">
+            <Button variant="secondary" size="sm" className="gap-1">
               <WalletCards className="size-3.5" /> المالية
             </Button>
           </Link>
