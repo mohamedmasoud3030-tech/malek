@@ -28,12 +28,17 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-describe('LoginPage runtime diagnostics', () => {
-  it('renders a deployment warning when Supabase env is missing', () => {
+describe('LoginPage focused auth surface', () => {
+  it('keeps brand and form together without the marketing panel', () => {
     const html = renderToStaticMarkup(<LoginPage />);
 
+    expect(html).toContain('data-login-surface');
     expect(html).toContain('دخول آمن لمساحة العمل');
     expect(html).toContain('مرحباً بعودتك');
     expect(html).toContain('جلسة عمل محمية');
+    expect(html).not.toContain('إدارة واضحة للأصول');
+    expect(html).not.toContain('متابعة مالية أسرع');
+    expect(html).not.toContain('قرارات أدق');
+    expect(html).not.toContain('<aside');
   });
 });
