@@ -10,7 +10,6 @@ export const reportSections = [
   { id: 'occupancy', label: 'الإشغال والعقود', icon: Building2 },
   { id: 'accounting', label: 'محاسبة', icon: Scale },
   { id: 'statements', label: 'كشوف الحساب', icon: FileSpreadsheet },
-  { id: 'metrics', label: 'المؤشرات الرئيسية', icon: BarChart3 },
 ] as const;
 
 export type ReportSectionId = (typeof reportSections)[number]['id'];

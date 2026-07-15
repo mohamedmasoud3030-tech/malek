@@ -1,5 +1,6 @@
 import { EntityFormE2EFixture } from '@/components/ui/entity-form.e2e-fixture';
 import { LoginPage } from '@/features/auth/login-page';
+import { ReportsWorkspaceE2EFixture } from '@/features/reports/reports-workspace.e2e-fixture';
 
 export function LoginRouteComponent() {
   if (import.meta.env.VITE_E2E && typeof window !== 'undefined') {
@@ -7,6 +8,10 @@ export function LoginRouteComponent() {
     if (search.get('e2e-form-contract') === '1') {
       const mobileSurface = search.get('surface') === 'full-page' ? 'full-page' : 'bottom-sheet';
       return <EntityFormE2EFixture mobileSurface={mobileSurface} />;
+    }
+
+    if (search.get('e2e-reports-workspace') === '1') {
+      return <ReportsWorkspaceE2EFixture />;
     }
   }
 
