@@ -1,16 +1,26 @@
-import { AlertTriangle, FileSpreadsheet, WalletCards } from 'lucide-react';
+import { AlertTriangle, FileSpreadsheet, Printer, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { DataTable } from '@/components/ui/data-table';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { useAgedReceivablesReport } from '@/features/financials/reports/useFinancialReports';
+import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import { agingBucketKeys, buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
 import { buildAgingBucketChartRows } from '../reports-page.helpers';
 import { ReportCard, SafeAnchor } from './common';
+
+const defaultSettings: DocumentSettings = {
+  company: {
+    name: 'رينتريكس لإدارة العقارات',
+    address: 'سلطنة عمان - مسقط',
+    phone: '+968 24000000',
+  },
+  currency: 'OMR',
+  currencySymbol: 'ر.ع',
+};
 
 export function OverdueSection({ rows, agedReport, canExportReports, isLoading }: Readonly<{
   rows: OverdueInvoiceReportRow[];
@@ -20,12 +30,46 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
 }>) {
   const bucketRows = buildAgingBucketChartRows(agedReport?.buckets, agingBucketKeys);
 
+  const handlePrintOverdueReport = () => {
+    DocumentTemplates.renderReportPdf(
+      {
+        reportTitle: 'كشف المتأخرات والديون التفصيلي',
+        reportType: 'Overdue_Debts_Report',
+        periodFrom: new Date().toISOString().slice(0, 10),
+        periodTo: new Date().toISOString().slice(0, 10),
+        sections: [
+          {
+            title: 'جدول الفواتير والذمم المتأخرة السداد',
+            rows: rows.map((r) => ({
+              label: `${r.tenantName || 'مستأجر'} - (فاتورة #${r.shortInvoiceId})`,
+              value: `المبلغ: ${r.remainingAmount} ر.ع | أيام التأخير: ${r.daysOverdue} يوم | الاستحقاق: ${r.dueDate}`,
+            })),
+            totals: ['إجمالي المتأخرات', `${rows.reduce((sum, r) => sum + r.remainingAmount, 0).toLocaleString('ar-OM')} ر.ع`],
+          },
+        ],
+        totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | الإجمالي المستحق: ${rows.reduce((sum, r) => sum + r.remainingAmount, 0).toLocaleString('ar-OM')} ر.ع`,
+      },
+      defaultSettings,
+    );
+  };
+
   return (
     <div className="space-y-4">
       <ReportCard
-        title="الفواتير المتأخرة حسب as-of"
-        description="الفواتير المتأخرة المحسوبة من خدمة arrears الحالية حسب تاريخ الاحتساب."
-        action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
+        title="الفواتير المتأخرة والديون المستحقة"
+        description="تفاصيل الفواتير والذمم المتأخرة المحسوبة حسب تاريخ اليوم مع أيام التأخير والرصيد المتبقي."
+        action={canExportReports ? (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrintOverdueReport} className="min-h-9 gap-1.5 text-xs font-bold">
+              <Printer className="size-3.5 text-primary" aria-hidden="true" />
+              طباعة كشف المتأخرات A4
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)} className="min-h-9 text-xs">
+              <FileSpreadsheet className="me-1.5 size-3.5" />
+              تصدير CSV
+            </Button>
+          </div>
+        ) : undefined}
         isLoading={isLoading}
       >
         {/* Mobile cards */}
@@ -63,9 +107,9 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
       </ReportCard>
 
       <ReportCard
-        title="تقادم الذمم حسب الفئة العمرية"
-        description="ملخص أعمار الذمم والفواتير المتراكمة في كل فئة عمرية."
-        action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
+        title="تعتيق وتقادم الذمم حسب الفئة العمرية"
+        description="ملخص توزيع الديون والذمم في فئات التعتيق المحاسبي (حالي، 1-30 يوم، 31-60 يوم، 61-90 يوم، +90 يوم)."
+        action={canExportReports ? <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))} className="min-h-9 text-xs"><FileSpreadsheet className="me-1.5 size-3.5" />تصدير CSV</Button> : undefined}
         isLoading={isLoading}
       >
         <ResponsiveCardGrid className="p-4" desktopColumns={5}>

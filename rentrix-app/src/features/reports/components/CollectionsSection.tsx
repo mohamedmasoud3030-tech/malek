@@ -1,4 +1,4 @@
-import { FileSpreadsheet, ReceiptText } from 'lucide-react';
+import { FileSpreadsheet, Printer, ReceiptText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -6,12 +6,23 @@ import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatDate, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
+import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import { buildReportCsvFilename, downloadCsv, latestReceiptLimit, toDailyCollectionCsv } from '../reports-page.helpers';
 import type { RentRollReportRow } from '../reports-page.helpers';
 import { createReceiptPrintHref } from '../reports-page.helpers';
 import { ReportCard, SafeAnchor } from './common';
 
 type RentRollRow = RentRollReportRow;
+
+const defaultSettings: DocumentSettings = {
+  company: {
+    name: 'رينتريكس لإدارة العقارات',
+    address: 'سلطنة عمان - مسقط',
+    phone: '+968 24000000',
+  },
+  currency: 'OMR',
+  currencySymbol: 'ر.ع',
+};
 
 export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportReports, isLoading }: Readonly<{
   rows: DailyCollectionReportRow[];
@@ -20,12 +31,47 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
   canExportReports: boolean;
   isLoading: boolean;
 }>) {
+  const handlePrintCollectionsReport = () => {
+    const totalCollected = rows.reduce((acc, r) => acc + r.totalPaid, 0);
+    DocumentTemplates.renderReportPdf(
+      {
+        reportTitle: 'كشف حركة التحصيلات اليومية والتدفقات النقدية',
+        reportType: 'Daily_Collections_Report',
+        periodFrom: new Date().toISOString().slice(0, 10),
+        periodTo: new Date().toISOString().slice(0, 10),
+        sections: [
+          {
+            title: 'جدول المقبوضات حسب التاريخ وطرق السداد',
+            rows: rows.map((r) => ({
+              label: `تاريخ ${r.paymentDate} - (${r.paymentsCount} عمليات سداد)`,
+              value: `إجمالي اليوم: ${r.totalPaid.toLocaleString('ar-OM')} ر.ع | نقداً: ${r.methodTotals.cash} | تحويل: ${r.methodTotals.bank_transfer} | شيك: ${r.methodTotals.check}`,
+            })),
+            totals: ['إجمالي المقبوضات للفترة', `${totalCollected.toLocaleString('ar-OM')} ر.ع`],
+          },
+        ],
+        totalSummary: `إجمالي المبلغ المحصل: ${totalCollected.toLocaleString('ar-OM')} ر.ع`,
+      },
+      defaultSettings,
+    );
+  };
+
   return (
     <div className="space-y-4">
       <ReportCard
-        title="التحصيل اليومي للفترة"
-        description="تفصيل يومي للتحصيل مع تفصيل طرق الدفع لكل يوم."
-        action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
+        title="التحصيل اليومي والتدفقات النقدية للفترة"
+        description="تفصيل المقبوضات اليومية موصلة بطرق السداد المختلفة (نقداً، تحويل بنكي، شيك، بطاقات)."
+        action={canExportReports ? (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrintCollectionsReport} className="min-h-9 gap-1.5 text-xs font-bold">
+              <Printer className="size-3.5 text-primary" aria-hidden="true" />
+              طباعة حركة التحصيلات A4
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))} className="min-h-9 text-xs">
+              <FileSpreadsheet className="me-1.5 size-3.5" />
+              تصدير CSV
+            </Button>
+          </div>
+        ) : undefined}
         isLoading={isLoading}
       >
         {/* Mobile cards */}
@@ -70,7 +116,7 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <p className="font-black">روابط الإيصالات المتاحة</p>
-              <p className="text-xs text-muted-foreground">أحدث {latestReceiptLimit} إيصال قابل للفتح والطباعة من السجل.</p>
+              <p className="text-xs text-muted-foreground">أحدث {latestReceiptLimit} إيصال قابل للفتح والطباعة المعتمدة من السجل.</p>
             </div>
             <ReceiptText className="size-5 text-primary" />
           </div>
@@ -93,9 +139,9 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
       </ReportCard>
 
       <ReportCard
-        title="قائمة العقود الإيجارية (Rent Roll)"
-        description="عقود الإيجار الحالية فقط، مع روابط آمنة لتفاصيل العقود."
-        action={canExportReports ? <Button variant="secondary" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)}><FileSpreadsheet className="me-2 size-4" />تصدير CSV</Button> : undefined}
+        title="سجل عقود الإيجار الجارية (Rent Roll)"
+        description="بيانات العقد، اسم المستأجر، العين المؤجرة، وقيمة الدفعة الإيجارية."
+        action={canExportReports ? <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)} className="min-h-9 text-xs"><FileSpreadsheet className="me-1.5 size-3.5" />تصدير CSV</Button> : undefined}
         isLoading={isLoading}
       >
         {/* Mobile cards */}
