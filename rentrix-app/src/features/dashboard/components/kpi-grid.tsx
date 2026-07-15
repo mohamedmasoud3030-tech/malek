@@ -60,9 +60,9 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
 
   return (
     <div data-dashboard-kpi-grid>
-      <ResponsiveCardGrid>
+      <ResponsiveCardGrid className="gap-3 sm:gap-4">
         {items.map((item) => (
-          <KpiCard key={item.label} {...item} />
+          <KpiCard key={item.label} {...item} className="rounded-2xl border-border/80 bg-card/95 shadow-card hover:border-primary/25" />
         ))}
       </ResponsiveCardGrid>
     </div>
