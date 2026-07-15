@@ -36,13 +36,13 @@ export function KpiCard({
     <article
       data-kpi-card
       className={cn(
-        'min-w-0 rounded-xl border border-border/70 bg-card p-4 shadow-card',
+        'min-w-0 rounded-xl border border-border/70 bg-card p-3.5 sm:p-4 shadow-card',
         'transition-shadow duration-200 hover:shadow-card-hover',
         className,
       )}
     >
-      {/* Icon + Trend */}
-      <div className="flex items-start justify-between gap-3">
+      {/* Icon + Trend Badge */}
+      <div className="flex items-start justify-between gap-2">
         <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
           <Icon className="size-[1.125rem]" aria-hidden="true" />
         </div>
@@ -62,7 +62,9 @@ export function KpiCard({
 
       {/* Value + Label */}
       <div className="mt-3 min-w-0">
-        <p className="break-words text-[1.5rem] font-bold tabular-nums leading-tight">{value}</p>
+        <p className="break-words text-lg sm:text-2xl font-bold tabular-nums leading-tight text-foreground" dir="ltr">
+          {value}
+        </p>
         <p className="mt-1 text-xs font-medium text-muted-foreground">{label}</p>
         {sub ? (
           <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted-foreground/70">{sub}</p>
