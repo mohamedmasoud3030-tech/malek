@@ -45,9 +45,9 @@ export function LoginPage() {
       className="w-full max-w-md overflow-hidden rounded-xl border border-border/70 bg-card shadow-elevated"
       data-login-surface
     >
-      <div className="p-6 sm:p-8">
-        {/* Brand */}
-        <header className="mb-7">
+      <div className="p-5 sm:p-8">
+        {/* Brand Header */}
+        <header className="mb-6">
           <div className="flex items-center gap-3">
             <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
               R
@@ -58,19 +58,19 @@ export function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-6">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-2.5 py-1 text-[11px] font-semibold text-primary">
+          <div className="mt-5">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
               <LockKeyhole className="size-3.5" aria-hidden="true" />
               دخول آمن لمساحة العمل
             </span>
-            <h1 className="mt-4 text-2xl font-bold tracking-tight">مرحباً بعودتك</h1>
-            <p className="mt-2 text-[0.8125rem] font-normal leading-6 text-muted-foreground">
+            <h1 className="mt-3 text-2xl font-bold leading-tight">مرحباً بعودتك</h1>
+            <p className="mt-1.5 text-xs font-normal leading-relaxed text-muted-foreground">
               أدخل بيانات حسابك للانتقال مباشرة إلى مساحة العمل.
             </p>
           </div>
         </header>
 
-        {/* Form */}
+        {/* Login Form */}
         <form
           className="space-y-4"
           onSubmit={handleSubmit}
@@ -78,14 +78,14 @@ export function LoginPage() {
         >
           {/* Email field */}
           <div className="grid gap-1.5">
-            <label htmlFor="login-email" className="text-[0.8125rem] font-medium text-foreground">
+            <label htmlFor="login-email" className="text-xs font-medium text-foreground">
               البريد الإلكتروني
             </label>
             <div className="relative">
               <Mail className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 id="login-email"
-                className="pe-10"
+                className="pe-10 text-sm focus-visible:ring-2 focus-visible:ring-primary/20"
                 type="email"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setFormError(null); }}
@@ -100,14 +100,14 @@ export function LoginPage() {
 
           {/* Password field */}
           <div className="grid gap-1.5">
-            <label htmlFor="login-password" className="text-[0.8125rem] font-medium text-foreground">
+            <label htmlFor="login-password" className="text-xs font-medium text-foreground">
               كلمة المرور
             </label>
             <div className="relative">
               <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 id="login-password"
-                className="px-10"
+                className="ps-10 pe-12 text-sm focus-visible:ring-2 focus-visible:ring-primary/20"
                 type={isPasswordVisible ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setFormError(null); }}
@@ -119,7 +119,7 @@ export function LoginPage() {
               />
               <button
                 type="button"
-                className="absolute left-3 top-1/2 -translate-y-1/2 grid size-6 place-items-center rounded-md text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="absolute left-1 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                 onClick={() => setIsPasswordVisible((v) => !v)}
                 aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
                 disabled={isSubmitting || Boolean(runtimeError)}
@@ -139,21 +139,21 @@ export function LoginPage() {
               role="alert"
               aria-live="assertive"
             >
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden="true" />
               <div>
                 <p className="text-xs font-semibold">
                   {runtimeError ? 'يتعذر إكمال تسجيل الدخول بسبب إعدادات تشغيل ناقصة' : 'تعذر تسجيل الدخول'}
                 </p>
-                <p className="mt-0.5 text-xs leading-5 text-danger/80">
+                <p className="mt-0.5 text-xs leading-relaxed text-danger/90">
                   {runtimeError ?? formError}
                 </p>
               </div>
             </div>
           ) : null}
 
-          {/* Submit */}
+          {/* Submit Action */}
           <Button
-            className="mt-1 h-10 w-full gap-2"
+            className="mt-2 h-11 w-full gap-2 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-primary/20"
             type="submit"
             disabled={isSubmitting || Boolean(runtimeError)}
           >
@@ -174,14 +174,14 @@ export function LoginPage() {
           </Button>
         </form>
 
-        {/* Security note */}
-        <div className="mt-5 flex items-start gap-2.5 rounded-lg border border-border bg-muted/40 p-3">
+        {/* Security footer note */}
+        <div className="mt-5 flex items-start gap-2.5 rounded-lg border border-border/70 bg-muted/40 p-3">
           <span className="grid size-7 shrink-0 place-items-center rounded-md bg-success/10 text-success">
             <CheckCircle2 className="size-4" aria-hidden="true" />
           </span>
           <div>
             <p className="text-xs font-semibold text-foreground">جلسة عمل محمية</p>
-            <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
+            <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
               بيانات الدخول تستخدم للوصول إلى حسابك فقط، وتظل جلسة العمل محفوظة على جهازك.
             </p>
           </div>
