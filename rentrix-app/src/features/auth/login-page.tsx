@@ -115,7 +115,7 @@ export function LoginPage() {
                 className="pressable absolute left-3 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
                 aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-                disabled={isSubmitting}
+                disabled={isSubmitting || Boolean(runtimeError)}
               >
                 {isPasswordVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
