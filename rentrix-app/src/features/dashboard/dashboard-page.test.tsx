@@ -154,12 +154,12 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     // 5. Decision hierarchy and reduced duplication
     expect(text).toContain('الأولوية الآن');
     expect(text).toContain('قوائم العمل');
-    expect(text).toContain('الاتجاهات والتفاصيل');
+    expect(text).toContain('المحفظة والتحصيل');
     expect(text).toContain('حالة التحصيل');
 
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['priorities', 'kpis', 'work-queues', 'trends']);
+    expect(sectionOrder).toEqual(['kpis', 'priorities', 'trends', 'work-queues']);
     expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(4);
     expect(container?.querySelectorAll('[data-dashboard-kpi-grid] [class*="grid-cols-2"] > *')).toHaveLength(4);
   });
