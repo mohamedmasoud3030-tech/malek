@@ -25,3 +25,4 @@ x
 rentrix-app/test-results/
 rentrix-app/playwright-report/
 supabase/config.toml
+__pycache__/
