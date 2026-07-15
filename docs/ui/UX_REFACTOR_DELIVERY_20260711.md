@@ -124,3 +124,32 @@ pnpm e2e
 ```
 
 Browser acceptance covers 360×800, 390×844, 430×932, 768×1024, and 1440×1000 in light/dark Arabic RTL. It asserts the priority-first section order, exactly four quick actions, exactly four KPI cards, two computed columns for both four-card groups, and no horizontal overflow. Exact-head CI results belong in the PR and #1155; this document records the durable scope and command contract.
+
+
+## Login simplification pass (2026-07-15)
+
+Tracked by [#1155](https://github.com/mohamedmasoud3030-tech/rentrixxx/issues/1155).
+
+### Goal and scope
+
+- Reduce `/login` to one focused authentication surface: brand, form, and form-local status.
+- Remove the desktop marketing panel and repeated feature cards from the authentication path.
+- Keep runtime diagnostics and authentication failures inside the form with an accessible live alert.
+- Preserve `useAuth().login`, session storage, redirects, Supabase configuration, and route protection unchanged.
+- Keep success notification behavior while making failure recovery independent of transient toast visibility.
+
+### Verification contract
+
+Run from the repository root:
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app run check:architecture
+pnpm --filter ./rentrix-app test
+pnpm build
+pnpm e2e
+```
+
+Browser acceptance covers 360×800, 390×844, 430×932, 768×1024, and 1440×1000 in light/dark Arabic RTL. It asserts one form surface, removal of the marketing aside/cards, usable primary controls, no horizontal overflow, viewport containment, and an inline recoverable authentication error. Exact-head CI results and screenshots belong in the PR and #1155; this section records the durable scope and command contract.
