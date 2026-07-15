@@ -1,6 +1,7 @@
 import { EntityFormE2EFixture } from '@/components/ui/entity-form.e2e-fixture';
 import { LoginPage } from '@/features/auth/login-page';
 import { ReportsWorkspaceE2EFixture } from '@/features/reports/reports-workspace.e2e-fixture';
+import { SettingsWorkspaceE2EFixture } from '@/features/settings/settings-workspace.e2e-fixture';
 
 export function LoginRouteComponent() {
   if (import.meta.env.VITE_E2E && typeof window !== 'undefined') {
@@ -12,6 +13,10 @@ export function LoginRouteComponent() {
 
     if (search.get('e2e-reports-workspace') === '1') {
       return <ReportsWorkspaceE2EFixture />;
+    }
+
+    if (search.get('e2e-settings-workspace') === '1') {
+      return <SettingsWorkspaceE2EFixture />;
     }
   }
 
