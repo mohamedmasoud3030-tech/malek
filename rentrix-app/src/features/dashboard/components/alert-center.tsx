@@ -109,7 +109,7 @@ export function AlertCenter({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        {priorities.map((priority) => {
+        {priorities.filter((priority) => priority.count > 0).map((priority) => {
           const Icon = priority.icon;
           return (
             <Link key={priority.to} to={priority.to} className="min-w-0">
