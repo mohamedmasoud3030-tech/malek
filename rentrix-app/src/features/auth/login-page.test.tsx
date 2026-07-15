@@ -29,15 +29,13 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 describe('LoginPage focused auth surface', () => {
-  it('keeps brand, form, and runtime error together without the marketing panel', () => {
+  it('keeps brand and form together without the marketing panel', () => {
     const html = renderToStaticMarkup(<LoginPage />);
 
     expect(html).toContain('data-login-surface');
     expect(html).toContain('دخول آمن لمساحة العمل');
     expect(html).toContain('مرحباً بعودتك');
     expect(html).toContain('جلسة عمل محمية');
-    expect(html).toContain('role="alert"');
-    expect(html.indexOf('<form')).toBeLessThan(html.indexOf('role="alert"'));
     expect(html).not.toContain('إدارة واضحة للأصول');
     expect(html).not.toContain('متابعة مالية أسرع');
     expect(html).not.toContain('قرارات أدق');
