@@ -46,7 +46,7 @@ export function PropertiesListPage() {
         dir="rtl"
         title="العقارات"
         description="إدارة المحفظة العقارية والتشغيلية"
-        count={ctrl.totalCount || undefined}
+        count={ctrl.totalCount}
         primaryAction={
           <Button className="rounded-2xl gap-2" onClick={ctrl.openCreateModal}>
             <Plus className="size-4" />إضافة عقار

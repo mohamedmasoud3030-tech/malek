@@ -86,10 +86,6 @@ export function useUnitsListController() {
     navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId: unit.property_id, unitId: unit.id } });
   };
 
-  const navigateToProperty = (propId: string) => {
-    navigate({ to: '/properties/$propertyId', params: { propertyId: propId } });
-  };
-
   const refetchAll = () => { unitsQuery.refetch(); propertiesQuery.refetch(); };
 
   return {
@@ -122,7 +118,6 @@ export function useUnitsListController() {
 
     // Navigation
     navigateToUnit,
-    navigateToProperty,
 
     // Query
     unitsQuery,

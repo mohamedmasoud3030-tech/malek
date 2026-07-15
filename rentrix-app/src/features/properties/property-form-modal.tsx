@@ -171,10 +171,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
         <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
 
         {/* Core property fields (shared) */}
-        <PropertyFormCoreFields
-          register={form.register as unknown as ReturnType<typeof useForm<Record<string, unknown>>>['register']}
-          errors={form.formState.errors as unknown as ReturnType<typeof useForm<Record<string, unknown>>>['formState']['errors']}
-        />
+        <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
 
         {/* Agreement-specific fields (create only) */}
         <EntityForm.Field label="المالك" className="md:col-span-2" error={form.formState.errors.owner_id?.message}>
@@ -287,10 +284,7 @@ function PropertyEditModal({
       ) : (
         <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={updateMutation.isPending}>
           <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-          <PropertyFormCoreFields
-            register={form.register as unknown as ReturnType<typeof useForm<Record<string, unknown>>>['register']}
-            errors={form.formState.errors as unknown as ReturnType<typeof useForm<Record<string, unknown>>>['formState']['errors']}
-          />
+          <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
           <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={updateMutation.isPending} submitLabel={updateMutation.isPending ? 'جار الحفظ...' : 'حفظ'} />
         </EntityForm.Root>
       )}

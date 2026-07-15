@@ -153,3 +153,64 @@ pnpm e2e
 ```
 
 Browser acceptance covers 360×800, 390×844, 430×932, 768×1024, and 1440×1000 in light/dark Arabic RTL. It asserts one form surface, removal of the marketing aside/cards, usable primary controls, no horizontal overflow, viewport containment, and an inline recoverable authentication error. Exact-head CI results and screenshots belong in the PR and #1155; this section records the durable scope and command contract.
+
+
+## Properties + Units refactor pass (2026-07-15)
+
+Tracked by [#1155](https://github.com/mohamedmasoud3030-tech/rentrixxx/issues/1155).
+
+### Goal and scope
+
+- Extract controller hooks so list pages are pure orchestrators.
+- Eliminate shared-primitive duplication (propertyStatusTone, DataTable alias, MobileCard, EntityDetailHeader).
+- Deduplicate property form fields between create and edit modals.
+- Fix zero-count display bug in Properties list header.
+- Add regression tests for filter state, modal lifecycle, navigation, and responsive patterns.
+
+### What changed
+
+| File | Change |
+| --- | --- |
+| `use-property-list-controller.ts` | **New.** Controller hook owning search, status, pagination, modal, and archive state. |
+| `use-units-list-controller.ts` | **New.** Controller hook owning search, property/status/occupancy filters, KPI computation, modal state. |
+| `property-form-core-fields.tsx` | **New.** Generic `<T extends FieldValues>` component sharing 7 core property form fields. |
+| `properties-list-page.tsx` | Refactored to use controller; fixed zero-count via `count={ctrl.totalCount}` (no longer `\|\| undefined`); imports `propertyStatusTone` from shared source. |
+| `property-form-modal.tsx` | Refactored to use `PropertyFormCoreFields<T>` — removed all `as unknown as` casts. |
+| `units-page.tsx` | Refactored to use controller hook; page is now a pure orchestrator. |
+| `units-list.tsx` | Replaced hand-assembled mobile `<div>` cards with shared `MobileCard`; uses `DataTable` alias. |
+| `property-unit-detail-page.tsx` | Uses `EntityDetailHeader` instead of manual Card header assembly. |
+| `units-page.test.ts` | Updated imports to match new controller file location. |
+| `properties-list-page-interaction.test.tsx` | Added zero-count regression test. |
+| `property-form-core-fields.test.tsx` | **New.** Validates generic typing renders all 7 fields without cast regressions. |
+| `properties-controller-regression.test.tsx` | **New.** 9 tests: count badge, zero count, desktop/mobile parity, modal open/close, archive flow, filter/search rendering. |
+| `units-controller-regression.test.tsx` | **New.** 14 tests: KPI computation, status normalization, desktop/mobile parity, filters, modal lifecycle, navigation. |
+
+### Decisions
+
+- `PropertyFormCoreFields` uses `Path<T>` for register calls. This is the narrowest type-safe approach that works with both `PropertyWithAgreementFormValues` and `PropertyEditFormValues` without requiring the caller to cast.
+- `navigateToProperty` was removed from the units controller because the units page only navigates to unit detail, never directly to property detail.
+- The zero-count bug was caused by `count={ctrl.totalCount || undefined}` converting `0` to `undefined`. Fixed with `count={ctrl.totalCount}`; `PageHeader` already guards with `count !== undefined`.
+
+### Schema / backend contract boundary
+
+No changes to:
+- Database schema, migrations, RLS policies
+- RPC signatures or financial calculations
+- Auth implementation or permissions
+- Supabase service-layer contracts
+
+### Verification contract
+
+Run from the repository root:
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app run check:architecture
+pnpm --filter ./rentrix-app test
+pnpm --filter ./rentrix-app run test:financials
+pnpm build
+```
+
+Browser acceptance covers 360×800, 390×844, 430×932, 768×1024, and 1440×1000 in light/dark Arabic RTL. It asserts: mobile cards render for every list row, filter selects have all expected options, search inputs have correct placeholders, create modals expose agreement fields, edit modals do not show agreement fields, and navigation targets are correct. Exact-head CI results belong in the PR and #1155; this section records the durable scope and command contract.
