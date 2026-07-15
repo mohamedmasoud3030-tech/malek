@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from './BrandMark';
-import { AppPreview } from './AppPreview';
+import { ProductScreenshot } from './ProductScreenshot';
 
 export function LandingHero() {
   return (
@@ -57,7 +57,12 @@ export function LandingHero() {
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 pb-16 sm:px-6">
-        <AppPreview />
+        <div className="ring-1 ring-black/5">
+          <ProductScreenshot
+            src="/landing/dashboard.png"
+            alt="لوحة تحكم Rentrix الحقيقية بالمؤشرات والتحصيلات والمتأخرات"
+          />
+        </div>
       </div>
     </section>
   );
