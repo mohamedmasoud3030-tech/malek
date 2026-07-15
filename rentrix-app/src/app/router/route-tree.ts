@@ -119,8 +119,16 @@ const maintenanceRoute = createRoute({
   staticData: { title: 'الصيانة' },
 });
 
+const landingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/landing',
+  component: lazyRouteComponent(() => import('@/routes/landing'), 'LandingRouteComponent'),
+  staticData: { title: 'Rentrix — نظام إدارة العقارات' },
+});
+
 export const routeTree = rootRoute.addChildren([
   authRoute.addChildren([loginRoute]),
+  landingRoute,
   protectedRoute.addChildren([
     dashboardRoute,
     propertiesRoute,
