@@ -48,7 +48,7 @@ export const settlementStatusLabels: Record<SettlementStatus, string> = {
 };
 
 export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
-  const { data: settlements, error: settleError } = await supabase
+  const { data: settlements, error: settleError } = await (supabase as any)
     .from('owner_settlements')
     .select('*')
     .order('created_at', { ascending: false });
@@ -62,22 +62,22 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
     return [];
   }
 
-  const ownerIds = Array.from(new Set(settlements.map((s) => s.owner_id).filter(Boolean)));
-  const propertyIds = Array.from(new Set(settlements.map((s) => s.property_id).filter(Boolean)));
+  const ownerIds = Array.from(new Set(settlements.map((s: any) => s.owner_id).filter(Boolean)));
+  const propertyIds = Array.from(new Set(settlements.map((s: any) => s.property_id).filter(Boolean)));
 
   const [ownersRes, propertiesRes] = await Promise.all([
     ownerIds.length > 0
-      ? supabase.from('owners').select('id, name').in('id', ownerIds)
+      ? (supabase as any).from('owners').select('id, name').in('id', ownerIds)
       : { data: [] },
     propertyIds.length > 0
-      ? supabase.from('properties').select('id, title').in('id', propertyIds)
+      ? (supabase as any).from('properties').select('id, title').in('id', propertyIds)
       : { data: [] }
   ]);
 
-  const ownerMap = new Map((ownersRes.data ?? []).map((o) => [o.id.toString(), o.name]));
-  const propertyMap = new Map((propertiesRes.data ?? []).map((p) => [p.id.toString(), p.title]));
+  const ownerMap = new Map<string, string>((ownersRes.data ?? []).map((o: any) => [o.id.toString(), (o.name ?? '') as string]));
+  const propertyMap = new Map<string, string>((propertiesRes.data ?? []).map((p: any) => [p.id.toString(), (p.title ?? '') as string]));
 
-  return settlements.map((s) => {
+  return (settlements as any[]).map((s: any): OwnerSettlementRecord => {
     // Map DRAFT status from DB to 'pending' status for UI backwards compatibility
     const uiStatus: SettlementStatus =
       s.status === 'DRAFT'
@@ -111,7 +111,7 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
 }
 
 export async function approveOwnerSettlement(payload: ApproveSettlementPayload): Promise<boolean> {
-  const { error } = await supabase.rpc('approve_owner_settlement_atomic', {
+  const { error } = await (supabase as any).rpc('approve_owner_settlement_atomic', {
     p_payload: {
       settlement_id: payload.settlement_id,
       request_id: crypto.randomUUID()
@@ -126,7 +126,7 @@ export async function approveOwnerSettlement(payload: ApproveSettlementPayload):
 }
 
 export async function processOwnerPayout(payload: ProcessPayoutPayload): Promise<boolean> {
-  const { error } = await supabase.rpc('pay_owner_settlement_atomic', {
+  const { error } = await (supabase as any).rpc('pay_owner_settlement_atomic', {
     p_payload: {
       settlement_id: payload.settlement_id,
       request_id: crypto.randomUUID(),

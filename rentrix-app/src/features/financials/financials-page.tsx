@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-import { ClipboardList, FileText, Landmark, ReceiptText, WalletCards } from 'lucide-react';
+import { ClipboardList, FileCheck, FileText, Landmark, ReceiptText, WalletCards } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -15,6 +15,7 @@ import { ArrearsWorkspaceSection } from './components/arrears-workspace-section'
 import { ExpensesSection, type ExpenseFormValues } from './components/expenses-section';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { InvoiceWorkspaceSection } from './components/invoice-workspace-section';
+import { DepositsWorkspace } from './deposits/deposits-workspace';
 import { OPERATIONAL_EXPENSE_CATEGORIES, type OperationalExpenseFilterValues } from './expenses/operational-expenses';
 import { useCreateExpenseAtomic, useExpenses } from './expenses/useExpenses';
 import { getTodayLocalDateString } from './financials-date-utils';
@@ -41,7 +42,7 @@ function getCurrentMonthReportRange() {
   };
 }
 
-type FinancialsTab = 'invoices' | 'receipts' | 'expenses' | 'arrears' | 'reconciliation';
+type FinancialsTab = 'invoices' | 'receipts' | 'expenses' | 'arrears' | 'reconciliation' | 'deposits';
 
 const financialTabs = [
   ['invoices', 'الفواتير والتحصيل', 'مراجعة وتسجيل دفعات الفواتير', FileText],
@@ -49,6 +50,7 @@ const financialTabs = [
   ['expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards],
   ['arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList],
   ['reconciliation', 'مطابقة كشف البنك', 'مطابقة السجلات مع الحسابات البنكية', Landmark],
+  ['deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck],
 ] as const satisfies readonly [FinancialsTab, string, string, typeof FileText][];
 
 export function FinancialsPage() {
@@ -191,6 +193,7 @@ export function FinancialsPage() {
                 </CardContent>
               </Card>
             ) : null}
+            {activeTab === 'deposits' ? <DepositsWorkspace /> : null}
           </div>
         </CardContent>
       </Card>
