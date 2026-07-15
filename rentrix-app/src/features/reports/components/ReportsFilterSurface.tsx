@@ -8,6 +8,7 @@ import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import { buildReportFilterSummary } from '../reports-filter-summary';
 import { getCurrentMonthFilters, type FilterState } from '../reports-page.helpers';
+import { getSelectedFilterEntities } from '../reports-filters.shared';
 import { FiltersPanel } from './FiltersPanel';
 
 type ReportsFilterSurfaceProps = Readonly<{
@@ -29,9 +30,12 @@ export function ReportsFilterSurface({
 }: ReportsFilterSurfaceProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const defaults = useMemo(() => getCurrentMonthFilters(), []);
-  const selectedCostCenter = costCenterRows.find((row) => row.id === filters.costCenterId)?.name;
-  const selectedOwner = ownerRows.find((row) => row.id === filters.ownerId);
-  const selectedContract = contractRows.find((row) => row.id === filters.contractId);
+  const { selectedCostCenter, selectedOwner, selectedContract } = getSelectedFilterEntities(
+    filters,
+    costCenterRows,
+    ownerRows,
+    contractRows,
+  );
   const summary = buildReportFilterSummary(filters, defaults, {
     costCenter: selectedCostCenter,
     owner: selectedOwner?.display_name ?? selectedOwner?.full_name,

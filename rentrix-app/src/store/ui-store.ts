@@ -8,10 +8,13 @@ type UiState = {
   theme: Theme;
   syncStatus: SyncStatus;
   lastSyncedAt: string | null;
+  /** Transient, per-session dismissal of the onboarding checklist (not persisted). */
+  onboardingDismissed: boolean;
   toggleSidebar: () => void;
   setTheme: (theme: Theme) => void;
   setSyncStatus: (syncStatus: SyncStatus) => void;
   setLastSyncedAt: (lastSyncedAt: string | null) => void;
+  setOnboardingDismissed: (value: boolean) => void;
 };
 
 const getInitialTheme = (): Theme => {
@@ -24,6 +27,7 @@ export const useUiStore = create<UiState>((set) => ({
   theme: getInitialTheme(),
   syncStatus: 'idle',
   lastSyncedAt: null,
+  onboardingDismissed: false,
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setTheme: (theme) => {
     localStorage.setItem('rentrix-theme', theme);
@@ -32,4 +36,5 @@ export const useUiStore = create<UiState>((set) => ({
   },
   setSyncStatus: (syncStatus) => set({ syncStatus }),
   setLastSyncedAt: (lastSyncedAt) => set({ lastSyncedAt }),
+  setOnboardingDismissed: (value) => set({ onboardingDismissed: value }),
 }));

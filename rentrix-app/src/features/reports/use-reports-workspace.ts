@@ -31,6 +31,23 @@ import {
   type FilterState,
 } from './reports-page.helpers';
 
+/**
+ * Returns the first non-null error from a list of query results. Replaces the
+ * long `a.error ?? b.error ?? …` chain with a single composition call so the
+ * view-model stays readable and duplication-free (PR #1163 cleanup).
+ */
+function firstErrorOf(...errors: ReadonlyArray<unknown>): unknown {
+  for (const error of errors) {
+    if (error != null) return error;
+  }
+  return undefined;
+}
+
+/** Returns true when any of the supplied query loading flags is active. */
+function isLoadingAny(...flags: ReadonlyArray<boolean | undefined>): boolean {
+  return flags.some(Boolean);
+}
+
 export function useReportsWorkspace(filters: FilterState) {
   const financialFilters = useMemo(
     () => ({
@@ -92,25 +109,27 @@ export function useReportsWorkspace(filters: FilterState) {
     [filters, receiptsQuery.data],
   );
 
-  const firstError = financialSummaryQuery.error
-    ?? financialCashflowQuery.error
-    ?? cashFlowStatementQuery.error
-    ?? vatReturnQuery.error
-    ?? dailyCollectionQuery.error
-    ?? expenseBreakdownQuery.error
-    ?? overdueInvoicesQuery.error
-    ?? agedReceivablesQuery.error
-    ?? trialBalanceQuery.error
-    ?? incomeStatementQuery.error
-    ?? balanceSheetQuery.error
-    ?? contractsQuery.error
-    ?? ownersQuery.error
-    ?? tenantStatementQuery.error
-    ?? ownerStatementQuery.error
-    ?? unitsQuery.error
-    ?? receiptsQuery.error
-    ?? costCentersQuery.error
-    ?? propertyTitlesQuery.error;
+  const firstError = firstErrorOf(
+    financialSummaryQuery.error,
+    financialCashflowQuery.error,
+    cashFlowStatementQuery.error,
+    vatReturnQuery.error,
+    dailyCollectionQuery.error,
+    expenseBreakdownQuery.error,
+    overdueInvoicesQuery.error,
+    agedReceivablesQuery.error,
+    trialBalanceQuery.error,
+    incomeStatementQuery.error,
+    balanceSheetQuery.error,
+    contractsQuery.error,
+    ownersQuery.error,
+    tenantStatementQuery.error,
+    ownerStatementQuery.error,
+    unitsQuery.error,
+    receiptsQuery.error,
+    costCentersQuery.error,
+    propertyTitlesQuery.error,
+  );
 
   return {
     today: getTodayLocalDateString(),
@@ -128,18 +147,18 @@ export function useReportsWorkspace(filters: FilterState) {
       overview: {
         summary: financialSummaryQuery.data,
         cashflowRows: financialCashflowQuery.data?.rows ?? [],
-        isLoading: financialSummaryQuery.isLoading || financialCashflowQuery.isLoading,
+        isLoading: isLoadingAny(financialSummaryQuery.isLoading, financialCashflowQuery.isLoading),
       },
       collections: {
         rows: dailyCollectionQuery.data?.rows ?? [],
         receiptRows,
         rentRollRows,
-        isLoading: dailyCollectionQuery.isLoading || receiptsQuery.isLoading || contractsQuery.isLoading,
+        isLoading: isLoadingAny(dailyCollectionQuery.isLoading, receiptsQuery.isLoading, contractsQuery.isLoading),
       },
       overdue: {
         rows: overdueInvoicesQuery.data?.rows ?? [],
         agedReport: agedReceivablesQuery.data,
-        isLoading: overdueInvoicesQuery.isLoading || agedReceivablesQuery.isLoading,
+        isLoading: isLoadingAny(overdueInvoicesQuery.isLoading, agedReceivablesQuery.isLoading),
       },
       expenses: {
         report: expenseBreakdownQuery.data,
@@ -148,7 +167,7 @@ export function useReportsWorkspace(filters: FilterState) {
       occupancy: {
         occupancyRows,
         expiringRows,
-        isLoading: unitsQuery.isLoading || contractsQuery.isLoading,
+        isLoading: isLoadingAny(unitsQuery.isLoading, contractsQuery.isLoading),
       },
       accounting: {
         asOf: filters.asOf,
@@ -163,7 +182,7 @@ export function useReportsWorkspace(filters: FilterState) {
         trialBalanceError: trialBalanceQuery.error,
         incomeStatementError: incomeStatementQuery.error,
         balanceSheetError: balanceSheetQuery.error,
-        isLoading: financialSummaryQuery.isLoading || expenseBreakdownQuery.isLoading,
+        isLoading: isLoadingAny(financialSummaryQuery.isLoading, expenseBreakdownQuery.isLoading),
       },
       statements: {
         agedReport: agedReceivablesQuery.data,
@@ -181,13 +200,15 @@ export function useReportsWorkspace(filters: FilterState) {
         ownerStatementError: ownerStatementQuery.error,
         isTenantStatementLoading: tenantStatementQuery.isLoading,
         isOwnerStatementLoading: ownerStatementQuery.isLoading,
-        isLoading: agedReceivablesQuery.isLoading
-          || receiptsQuery.isLoading
-          || financialSummaryQuery.isLoading
-          || expenseBreakdownQuery.isLoading
-          || dailyCollectionQuery.isLoading
-          || cashFlowStatementQuery.isLoading
-          || vatReturnQuery.isLoading,
+        isLoading: isLoadingAny(
+          agedReceivablesQuery.isLoading,
+          receiptsQuery.isLoading,
+          financialSummaryQuery.isLoading,
+          expenseBreakdownQuery.isLoading,
+          dailyCollectionQuery.isLoading,
+          cashFlowStatementQuery.isLoading,
+          vatReturnQuery.isLoading,
+        ),
       },
     },
   } as const;

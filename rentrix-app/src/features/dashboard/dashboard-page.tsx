@@ -4,6 +4,8 @@ import { ErrorState } from '@/components/ui/error-state';
 import { PageLayout } from '@/components/layout/page-layout';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
+import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist';
+import type { OnboardingProgress } from '@/features/onboarding/useOnboarding';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { HeroBanner } from './components/hero-banner';
 import { KpiGrid } from './components/kpi-grid';
@@ -29,6 +31,16 @@ export function DashboardPage() {
     refetch().catch(() => undefined);
   }, [refetch]);
 
+  const progress = useMemo<OnboardingProgress>(
+    () => ({
+      hasProperty: (snapshot?.operational.properties ?? 0) > 0,
+      hasUnit: (snapshot?.operational.units ?? 0) > 0,
+      hasContract: (snapshot?.operational.activeContracts ?? 0) > 0,
+      hasInvoice: (snapshot?.financial.invoicesCount ?? 0) > 0,
+    }),
+    [snapshot],
+  );
+
   const expiringContracts = useMemo(
     () => buildExpiringContracts(snapshot?.activeContracts, now),
     [snapshot?.activeContracts, now],
@@ -41,6 +53,8 @@ export function DashboardPage() {
   return (
     <PageLayout className="space-y-6">
       <HeroBanner snapshot={snapshot} isLoading={isLoading} settings={settings} today={today} />
+
+      <OnboardingChecklist progress={progress} />
 
       {isError ? (
         <ErrorState

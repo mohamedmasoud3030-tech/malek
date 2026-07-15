@@ -6,6 +6,7 @@ import { Select } from '@/components/ui/select';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 import type { Owner } from '@/features/owners/services/owner-service';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
+import { getSelectedFilterEntities } from '../reports-filters.shared';
 import type { FilterState } from '../reports-page.helpers';
 
 export function FiltersPanel({
@@ -23,9 +24,12 @@ export function FiltersPanel({
   onChange: (filters: FilterState) => void;
   onResetCurrentMonth: () => void;
 }>) {
-  const selectedCostCenter = costCenterRows.find((row) => row.id === filters.costCenterId)?.name;
-  const selectedOwner = ownerRows.find((row) => row.id === filters.ownerId);
-  const selectedContract = contractRows.find((row) => row.id === filters.contractId);
+  const { selectedCostCenter, selectedOwner, selectedContract } = getSelectedFilterEntities(
+    filters,
+    costCenterRows,
+    ownerRows,
+    contractRows,
+  );
 
   return (
     <div className="space-y-3">
