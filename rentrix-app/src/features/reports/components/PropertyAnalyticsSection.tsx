@@ -108,7 +108,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
         </ResponsiveCardGrid>
 
         <div className="border-t border-border/70 p-4">
-          <p className="mb-3 font-black text-sm">تفاصيل أداء العقارات في المحفظة</p>
+          <p className="mb-3 font-bold text-sm">تفاصيل أداء العقارات في المحفظة</p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {occupancyRows.map((row) => {
               const totalU = row.occupied + row.vacant;
@@ -119,7 +119,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
                 <div key={row.propertyId} className="rounded-2xl border border-border bg-background p-4 space-y-2">
                   <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2">
                     <span className="font-bold text-sm">{row.property}</span>
-                    <span className="text-xs font-black text-primary bg-primary/10 px-2 py-1 rounded-lg">
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
                       {rate}% إشغال
                     </span>
                   </div>

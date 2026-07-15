@@ -61,7 +61,7 @@ export function ReportsFilterSurface({
             <SlidersHorizontal className="size-5" aria-hidden="true" />
           </span>
           <div>
-            <h2 className="text-sm font-black sm:text-base">فلترة نطاق التقرير</h2>
+            <h2 className="text-sm font-bold sm:text-base">فلترة نطاق التقرير</h2>
             <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">
               حدد الفترة أو المالك أو العقد ثم راجع النتائج في القسم المطلوب.
             </p>
@@ -77,8 +77,8 @@ export function ReportsFilterSurface({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-black">نطاق التقرير</h2>
-              <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-black text-muted-foreground">
+              <h2 className="text-sm font-bold">نطاق التقرير</h2>
+              <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
                 {summary.activeCount > 0 ? `${summary.activeCount} فلاتر نشطة` : 'الشهر الحالي'}
               </span>
             </div>

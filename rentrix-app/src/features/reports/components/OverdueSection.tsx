@@ -81,7 +81,7 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
               title={row.tenantName ?? '—'}
               subtitle={formatDate(row.dueDate)}
               badge={<span className="shrink-0 text-xs font-bold text-destructive">{row.daysOverdue.toLocaleString('ar')} يوم</span>}
-              stats={<div className="flex items-center justify-between gap-2"><SafeAnchor href="/invoices" label={row.shortInvoiceId} /><span className="font-black text-destructive" dir="ltr">{formatMoney(row.remainingAmount)}</span></div>}
+              stats={<div className="flex items-center justify-between gap-2"><SafeAnchor href="/invoices" label={row.shortInvoiceId} /><span className="font-bold text-destructive" dir="ltr">{formatMoney(row.remainingAmount)}</span></div>}
             />
           ))}
           {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد فواتير متأخرة حسب تاريخ as-of.</p> : null}

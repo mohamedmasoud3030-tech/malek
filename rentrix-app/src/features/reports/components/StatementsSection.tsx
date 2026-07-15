@@ -109,7 +109,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
     <div className="space-y-4">
       <Card className="scroll-mt-28 border-border/60 bg-muted/20">
         <CardHeader className="px-4 py-3 sm:px-5">
-          <CardTitle className="text-sm font-black">Workspace كشوف الحساب والورقيات المعتمدة</CardTitle>
+          <CardTitle className="text-sm font-bold">Workspace كشوف الحساب والورقيات المعتمدة</CardTitle>
           <CardDescription>
             اختر المالك أو العقد والفترة من فلاتر الصفحة أعلاه لطباعة وتصدير كشف حساب ملون بفرص المطبوعات الرسمية وموثق آلياً.
           </CardDescription>
@@ -127,7 +127,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
         <Card className="border-border/60">
           <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
             <div>
-              <CardTitle className="text-sm font-black">كشف حساب المستأجر</CardTitle>
+              <CardTitle className="text-sm font-bold">كشف حساب المستأجر</CardTitle>
               <CardDescription>ذمم ومتأخرات المستأجرين مع دفتر الحركة المباشر.</CardDescription>
             </div>
             {tenantStatement && (
@@ -156,7 +156,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
                   <div className="rounded-xl bg-muted/30 p-3 text-sm">
                     <p className="font-medium">{tenantStatement.tenantName ?? 'مستأجر غير محدد'}</p>
                     <p className="text-xs text-muted-foreground">{tenantStatement.propertyName ?? '—'} · {tenantStatement.unitName ?? '—'}</p>
-                    <div className="mt-1 flex items-center justify-between gap-2"><span>الرصيد النهائي</span><span className="font-black" dir="ltr">{formatMoney(tenantStatement.finalBalance)}</span></div>
+                    <div className="mt-1 flex items-center justify-between gap-2"><span>الرصيد النهائي</span><span className="font-bold" dir="ltr">{formatMoney(tenantStatement.finalBalance)}</span></div>
                   </div>
                   {tenantStatement.lines.slice(0, 5).map((line, index) => (
                     <div key={`${line.date}-${index}`} className="rounded-xl border p-3 text-xs">
@@ -173,7 +173,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
             ) : tenantRows.length === 0 ? (
               <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />اختر عقدًا من الفلاتر لعرض كشف المستأجر الحقيقي من RPC.</div>
             ) : (
-              tenantRows.map((row) => <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm"><p className="font-medium">{row.tenantName ?? 'مستأجر غير محدد'}</p><div className="mt-1 flex items-center justify-between gap-2"><span className="text-muted-foreground">ذمم</span><span className="font-black" dir="ltr">{formatMoney(row.totalOutstanding)}</span></div><div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">متأخر</span><span className="font-black text-destructive" dir="ltr">{formatMoney(row.totalOverdue)}</span></div><p className="mt-1 text-xs text-muted-foreground">{row.invoiceCount.toLocaleString('ar')} فواتير مرتبطة</p></div>)
+              tenantRows.map((row) => <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm"><p className="font-medium">{row.tenantName ?? 'مستأجر غير محدد'}</p><div className="mt-1 flex items-center justify-between gap-2"><span className="text-muted-foreground">ذمم</span><span className="font-bold" dir="ltr">{formatMoney(row.totalOutstanding)}</span></div><div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">متأخر</span><span className="font-bold text-destructive" dir="ltr">{formatMoney(row.totalOverdue)}</span></div><p className="mt-1 text-xs text-muted-foreground">{row.invoiceCount.toLocaleString('ar')} فواتير مرتبطة</p></div>)
             )}
             {receiptRows.slice(0, 3).map((receipt) => (
               <a key={`receipt-${receipt.id}`} className="block rounded-xl border p-3 text-sm hover:border-primary/40" href={createReceiptPrintHref(receipt.id)}>
@@ -186,7 +186,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
         <Card className="border-border/60">
           <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
             <div>
-              <CardTitle className="text-sm font-black">ملخص حركة المالك</CardTitle>
+              <CardTitle className="text-sm font-bold">ملخص حركة المالك</CardTitle>
               <CardDescription>ملخص الإيرادات والمصروفات والاستقطاعات.</CardDescription>
             </div>
             {ownerStatement && (
@@ -205,7 +205,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
               ) : ownerStatement?.error ? (
                 <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />{ownerStatement.error}</div>
               ) : ownerStatement && ownerStatement.transactions.length > 0 ? (
-                <div className="space-y-2"><div className="rounded-xl bg-muted/30 p-3 text-sm"><p className="font-medium">{ownerStatement.ownerName ?? 'مالك غير محدد'}</p><div className="mt-1 flex items-center justify-between gap-2"><span>صافي الحركة</span><span className="font-black" dir="ltr">{formatMoney(ownerStatement.totalNet)}</span></div><p className="text-xs text-muted-foreground">الإجمالي {formatMoney(ownerStatement.totalGross)} · الاستقطاعات {formatMoney(ownerStatement.totalDeductions)}</p></div>{ownerStatement.transactions.slice(0, 5).map((tx, index) => <div key={`${tx.date}-${index}`} className="rounded-xl border p-3 text-xs"><p className="font-bold">{tx.details ?? tx.type ?? 'حركة'}</p><div className="mt-1 flex justify-between gap-2 text-muted-foreground"><span>{tx.date ?? '—'}</span><span dir="ltr">{formatMoney(tx.net)}</span></div></div>)}</div>
+                <div className="space-y-2"><div className="rounded-xl bg-muted/30 p-3 text-sm"><p className="font-medium">{ownerStatement.ownerName ?? 'مالك غير محدد'}</p><div className="mt-1 flex items-center justify-between gap-2"><span>صافي الحركة</span><span className="font-bold" dir="ltr">{formatMoney(ownerStatement.totalNet)}</span></div><p className="text-xs text-muted-foreground">الإجمالي {formatMoney(ownerStatement.totalGross)} · الاستقطاعات {formatMoney(ownerStatement.totalDeductions)}</p></div>{ownerStatement.transactions.slice(0, 5).map((tx, index) => <div key={`${tx.date}-${index}`} className="rounded-xl border p-3 text-xs"><p className="font-bold">{tx.details ?? tx.type ?? 'حركة'}</p><div className="mt-1 flex justify-between gap-2 text-muted-foreground"><span>{tx.date ?? '—'}</span><span dir="ltr">{formatMoney(tx.net)}</span></div></div>)}</div>
               ) : (
                 <div className="flex min-h-24 items-center gap-3 rounded-xl border border-dashed bg-background/70 p-3 text-sm text-muted-foreground"><Inbox className="size-5 text-muted-foreground/70" />لا توجد حركات في كشف المالك للفترة المحددة.</div>
               )
@@ -222,7 +222,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
                   <p className="font-medium">{row.propertyTitle ?? formatShortId(row.propertyId)}</p>
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">مصروفات مسجلة</span>
-                    <span className="font-black" dir="ltr">{formatMoney(row.total)}</span>
+                    <span className="font-bold" dir="ltr">{formatMoney(row.total)}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{row.count.toLocaleString('ar')} حركة مصروفات في الفترة</p>
                 </div>
@@ -233,7 +233,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
 
         <Card className="border-border/60">
           <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <CardTitle className="text-sm font-black">ملخص حركة المكتب</CardTitle>
+            <CardTitle className="text-sm font-bold">ملخص حركة المكتب</CardTitle>
             <CardDescription>ملخص فواتير وتحصيلات ومصروفات للفترة.</CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-5">
@@ -250,7 +250,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="border-border/60">
           <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <CardTitle className="text-sm font-black">Cash Flow RPC</CardTitle>
+            <CardTitle className="text-sm font-bold">Cash Flow RPC</CardTitle>
             <CardDescription>قراءة مباشرة من `rpt_cash_flow` للفترة المختارة.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 p-4 sm:p-5">
@@ -268,7 +268,7 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
 
         <Card className="border-border/60">
           <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <CardTitle className="text-sm font-black">VAT Return RPC</CardTitle>
+            <CardTitle className="text-sm font-bold">VAT Return RPC</CardTitle>
             <CardDescription>ملخص ضريبة القيمة المضافة من `rpt_vat_return` للفترة المختارة.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 p-4 sm:p-5">
@@ -291,8 +291,8 @@ export function StatementsSection({ agedReport, receiptRows, financialSummary, e
 function StatementWorkspaceCue({ title, value, tone }: Readonly<{ title: string; value: string; tone: 'ready' | 'muted' }>) {
   return (
     <div className="rounded-2xl border border-border/60 bg-background p-3">
-      <p className="text-xs font-black text-muted-foreground">{title}</p>
-      <p className={tone === 'ready' ? 'mt-1 font-black text-primary' : 'mt-1 font-black text-muted-foreground'}>{value}</p>
+      <p className="text-xs font-bold text-muted-foreground">{title}</p>
+      <p className={tone === 'ready' ? 'mt-1 font-bold text-primary' : 'mt-1 font-bold text-muted-foreground'}>{value}</p>
     </div>
   );
 }

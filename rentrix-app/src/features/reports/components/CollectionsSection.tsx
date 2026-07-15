@@ -81,7 +81,7 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
             <MobileCard
               key={row.paymentDate}
               title={formatDate(row.paymentDate)}
-              stats={<span className="text-base font-black" dir="ltr">{formatMoney(row.totalPaid)}</span>}
+              stats={<span className="text-base font-bold" dir="ltr">{formatMoney(row.totalPaid)}</span>}
               meta={(
                 <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                   <span>نقداً: <span className="font-medium text-foreground" dir="ltr">{formatMoney(row.methodTotals.cash)}</span></span>
@@ -116,7 +116,7 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
         <div className="border-t border-border/70 p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <p className="font-black">روابط الإيصالات المتاحة</p>
+              <p className="font-bold">روابط الإيصالات المتاحة</p>
               <p className="text-xs text-muted-foreground">أحدث {latestReceiptLimit} إيصال قابل للفتح والطباعة المعتمدة من السجل.</p>
             </div>
             <ReceiptText className="size-5 text-primary" />
@@ -125,12 +125,12 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
             {receiptRows.map((receipt) => (
               <a key={receipt.id} className="rounded-2xl border border-border bg-background/80 p-3 transition hover:border-primary/40" href={createReceiptPrintHref(receipt.id)}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-black">{receipt.receipt_number}</span>
+                  <span className="font-bold">{receipt.receipt_number}</span>
                   <span className="text-xs text-muted-foreground">{formatDate(receipt.payment_date)}</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-2 text-sm">
                   <span className="text-muted-foreground">{receipt.tenant_name ?? '—'}</span>
-                  <span className="font-black" dir="ltr">{formatMoney(receipt.amount)}</span>
+                  <span className="font-bold" dir="ltr">{formatMoney(receipt.amount)}</span>
                 </div>
               </a>
             ))}
@@ -154,7 +154,7 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
               subtitle={`${row.propertyTitle} · ${row.unitNumber}`}
               badge={<StatusBadge tone="green">{row.statusLabel}</StatusBadge>}
               meta={<span className="text-xs text-muted-foreground">{row.paymentCycle} · {formatDate(row.startDate)} — {formatDate(row.endDate)}</span>}
-              stats={<div className="flex items-center justify-between gap-2"><SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /><span className="font-black" dir="ltr">{formatMoney(row.rentAmount)}</span></div>}
+              stats={<div className="flex items-center justify-between gap-2"><SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /><span className="font-bold" dir="ltr">{formatMoney(row.rentAmount)}</span></div>}
             />
           ))}
           {rentRollRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عقود ضمن البيانات الحالية.</p> : null}

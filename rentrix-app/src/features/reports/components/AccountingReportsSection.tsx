@@ -116,7 +116,7 @@ export function AccountingReportsSection({
     <div className="space-y-4">
       <Card className="scroll-mt-28 border-border/60 bg-muted/20">
         <CardHeader className="px-4 py-3 sm:px-5">
-          <CardTitle className="text-sm font-black">التقارير المحاسبية الأساسية</CardTitle>
+          <CardTitle className="text-sm font-bold">التقارير المحاسبية الأساسية</CardTitle>
           <CardDescription>
             قائمة ميزان مراجعة وتقرير دخل وقائمة مركز مالي مشتقة من جداول التشغيل المصدرية (فواتير، تحصيلات، مصاريف، تسويات مالك).
             جاهزة للطباعة والتصدير بجودة A4 المعتمدة لتقديمها للإدارة أو المراجع المحاسبي.
@@ -129,7 +129,7 @@ export function AccountingReportsSection({
         <Card className="border-border/60">
           <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
             <div>
-              <CardTitle className="text-sm font-black">ميزان المراجعة</CardTitle>
+              <CardTitle className="text-sm font-bold">ميزان المراجعة</CardTitle>
               <CardDescription>كما في {asOf || '—'} (مشتق تشغيلي).</CardDescription>
             </div>
             {trialBalance && (
@@ -173,7 +173,7 @@ export function AccountingReportsSection({
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="font-black">
+                      <tr className="font-bold">
                         <td className="px-2 py-2" colSpan={2}>الإجمالي</td>
                         <td className="px-2 py-2 text-end" dir="ltr">{formatMoney(trialBalance.totalDebits)}</td>
                         <td className="px-2 py-2 text-end" dir="ltr">{formatMoney(trialBalance.totalCredits)}</td>
@@ -193,7 +193,7 @@ export function AccountingReportsSection({
         <Card className="border-border/60">
           <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
             <div>
-              <CardTitle className="text-sm font-black">تقرير الدخل والربحية</CardTitle>
+              <CardTitle className="text-sm font-bold">تقرير الدخل والربحية</CardTitle>
               <CardDescription>من {from || '—'} إلى {to || '—'}.</CardDescription>
             </div>
             {incomeStatement && (
@@ -220,7 +220,7 @@ export function AccountingReportsSection({
                       <span dir="ltr">{formatMoney(line.amount)}</span>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-black">
+                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-bold">
                     <span>إجمالي الإيرادات</span>
                     <span dir="ltr">{formatMoney(incomeStatement.totalRevenue)}</span>
                   </div>
@@ -237,12 +237,12 @@ export function AccountingReportsSection({
                       </div>
                     ))
                   )}
-                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-black">
+                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-bold">
                     <span>إجمالي المصاريف</span>
                     <span dir="ltr">{formatMoney(incomeStatement.totalExpenses)}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-2 rounded-xl bg-muted/30 p-3 text-sm font-black">
+                <div className="flex items-center justify-between gap-2 rounded-xl bg-muted/30 p-3 text-sm font-bold">
                   <span className="flex items-center gap-2"><TrendingDown className="size-4" />صافي الدخل</span>
                   <span dir="ltr">{formatMoney(incomeStatement.netIncome)}</span>
                 </div>
@@ -255,7 +255,7 @@ export function AccountingReportsSection({
         <Card className="border-border/60">
           <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
             <div>
-              <CardTitle className="text-sm font-black">قائمة المركز المالي</CardTitle>
+              <CardTitle className="text-sm font-bold">قائمة المركز المالي</CardTitle>
               <CardDescription>كما في {asOf || '—'} (مشتق تشغيلي).</CardDescription>
             </div>
             {balanceSheet && (
@@ -282,7 +282,7 @@ export function AccountingReportsSection({
                       <span dir="ltr">{formatMoney(item.amount)}</span>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-black">
+                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-bold">
                     <span><WalletCards className="me-1 inline size-3" />الإجمالي</span>
                     <span dir="ltr">{formatMoney(balanceSheet.totalAssets)}</span>
                   </div>
@@ -295,7 +295,7 @@ export function AccountingReportsSection({
                       <span dir="ltr">{formatMoney(item.amount)}</span>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-black">
+                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-bold">
                     <span>الإجمالي</span>
                     <span dir="ltr">{formatMoney(balanceSheet.totalLiabilities)}</span>
                   </div>
@@ -308,7 +308,7 @@ export function AccountingReportsSection({
                       <span dir="ltr">{formatMoney(item.amount)}</span>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-black">
+                  <div className="flex items-center justify-between gap-2 border-t border-border/40 py-1 text-sm font-bold">
                     <span><Scale className="me-1 inline size-3" />الإجمالي</span>
                     <span dir="ltr">{formatMoney(balanceSheet.totalEquity)}</span>
                   </div>

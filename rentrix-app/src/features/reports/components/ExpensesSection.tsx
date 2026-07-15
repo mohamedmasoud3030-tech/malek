@@ -82,24 +82,24 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
       </ResponsiveCardGrid>
       <div className="grid gap-4 p-4 pt-0 lg:grid-cols-2">
         <div className="rounded-2xl border bg-background/80 p-3">
-          <p className="mb-2 font-black">حسب التصنيف</p>
+          <p className="mb-2 font-bold">حسب التصنيف</p>
           <div className="space-y-2">
             {categoryRows.map((row) => (
               <div key={row.category} className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 p-3 text-sm">
                 <span>{row.category} · {row.count.toLocaleString('ar')}</span>
-                <span className="font-black" dir="ltr">{formatMoney(row.total)}</span>
+                <span className="font-bold" dir="ltr">{formatMoney(row.total)}</span>
               </div>
             ))}
             {categoryRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مصروفات في الفترة المحددة.</p> : null}
           </div>
         </div>
         <div className="rounded-2xl border bg-background/80 p-3">
-          <p className="mb-2 font-black">حسب العقار</p>
+          <p className="mb-2 font-bold">حسب العقار</p>
           <div className="space-y-2">
             {propertyRows.map((row) => (
               <div key={row.propertyId} className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 p-3 text-sm">
                 <span>{row.propertyTitle ?? formatShortId(row.propertyId)} · {row.count.toLocaleString('ar')}</span>
-                <span className="font-black" dir="ltr">{formatMoney(row.total)}</span>
+                <span className="font-bold" dir="ltr">{formatMoney(row.total)}</span>
               </div>
             ))}
             {propertyRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مصروفات مرتبطة بعقارات في الفترة المحددة.</p> : null}

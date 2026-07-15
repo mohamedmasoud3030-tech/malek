@@ -82,7 +82,7 @@ export function ReportsWorkspace({
               <BarChart3 className="size-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <h2 className="text-sm font-black sm:text-base">مركز التقارير والكشوفات التنفيذية</h2>
+              <h2 className="text-sm font-bold sm:text-base">مركز التقارير والكشوفات التنفيذية</h2>
               <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">
                 القسم الحالي: <span aria-live="polite">{activeSectionLabel}</span>
               </p>
@@ -174,7 +174,7 @@ function ReportWorkspaceCue({
       <div className="flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">{icon}</span>
         <div className="min-w-0">
-          <p className="font-black">{title}</p>
+          <p className="font-bold">{title}</p>
           <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">{description}</p>
         </div>
       </div>

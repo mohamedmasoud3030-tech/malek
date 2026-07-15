@@ -28,7 +28,7 @@ export function ReportsHero({ summary, today, isLoading }: Readonly<{
               <BarChart3 className="size-4 text-primary" />
               مركز التقارير والكشوف
             </p>
-            <h1 className="mt-0.5 text-xl font-black sm:text-2xl">مركز التقارير</h1>
+            <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">مركز التقارير</h1>
           </div>
           <StatusBadge tone="blue">{today}</StatusBadge>
         </div>
@@ -38,7 +38,7 @@ export function ReportsHero({ summary, today, isLoading }: Readonly<{
             {isLoading ? (
               <Skeleton className="h-10 w-32 bg-white/10" />
             ) : (
-              <p className="text-3xl font-black tabular-nums sm:text-4xl" dir="ltr">{formatMoney(paid)}</p>
+              <p className="text-3xl font-bold tabular-nums sm:text-4xl" dir="ltr">{formatMoney(paid)}</p>
             )}
             <p className="text-xs font-semibold text-slate-400">المحصل للفترة المحددة</p>
           </div>
@@ -47,7 +47,7 @@ export function ReportsHero({ summary, today, isLoading }: Readonly<{
             {isLoading ? (
               <Skeleton className="h-6 w-20 bg-white/10" />
             ) : (
-              <p className="text-lg font-black" dir="ltr">{formatMoney(outstanding)}</p>
+              <p className="text-lg font-bold" dir="ltr">{formatMoney(outstanding)}</p>
             )}
             <p className="text-xs font-semibold text-slate-400">الرصيد المستحق</p>
           </div>

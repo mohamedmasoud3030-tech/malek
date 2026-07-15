@@ -25,7 +25,7 @@ type SafeLinkProps = Readonly<{
 
 export function SafeAnchor({ href, label }: SafeLinkProps) {
   return (
-    <a className="inline-flex items-center gap-1 font-black text-primary hover:underline" href={href}>
+    <a className="inline-flex items-center gap-1 font-bold text-primary hover:underline" href={href}>
       {label}
       <ArrowUpLeft className="size-3" />
     </a>
@@ -90,7 +90,7 @@ export function ReportCard({
     <Card id={id} className="scroll-mt-28 overflow-hidden border-border/60 print-document">
       <CardHeader className="flex flex-col gap-3 border-b border-border/70 bg-muted/20 px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-5">
         <div>
-          <CardTitle className="text-sm font-black">{title}</CardTitle>
+          <CardTitle className="text-sm font-bold">{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </div>
         {exportActions}

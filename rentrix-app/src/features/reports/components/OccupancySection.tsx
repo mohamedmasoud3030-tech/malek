@@ -67,7 +67,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
     >
       <div className="grid gap-4 p-4 lg:grid-cols-2">
         <div className="rounded-2xl border bg-background/80 p-3">
-          <p className="mb-2 flex items-center justify-between gap-2 font-black">
+          <p className="mb-2 flex items-center justify-between gap-2 font-bold">
             <span>الإشغال والشاغر حسب العقار</span>
             <Building2 className="size-4 text-muted-foreground" />
           </p>
@@ -93,7 +93,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
           </div>
         </div>
         <div className="rounded-2xl border bg-background/80 p-3">
-          <p className="mb-2 flex items-center justify-between gap-2 font-black">
+          <p className="mb-2 flex items-center justify-between gap-2 font-bold">
             <span>عقود تنتهي خلال {expiringContractWindowDays} يوم</span>
             <CalendarClock className="size-4 text-muted-foreground" />
           </p>
