@@ -1,31 +1,50 @@
 -- Phase: Real Deposits Ledger
 -- Implements proper tenant deposits with immutable transactions, idempotency, and balance guards
 -- Does NOT drop existing deposit_txs (legacy), creates new tables tenant_deposits and deposit_transactions
+-- Compatible with both uuid and text contracts.id (for empty DB replay vs live)
 
 begin;
 
--- 1. Create tenant_deposits table
-create table if not exists public.tenant_deposits (
-  id text primary key default gen_random_uuid()::text,
-  contract_id text not null references public.contracts(id) on delete restrict,
-  tenant_id text,
-  property_id uuid references public.properties(id) on delete set null,
-  unit_id uuid references public.units(id) on delete set null,
-  deposit_amount numeric(14,2) not null check (deposit_amount >= 0),
-  deducted_amount numeric(14,2) not null default 0 check (deducted_amount >= 0),
-  refunded_amount numeric(14,2) not null default 0 check (refunded_amount >= 0),
-  remaining_amount numeric(14,2) not null default 0 check (remaining_amount >= 0),
-  status text not null default 'held' check (status in ('held','partially_refunded','refunded','forfeited_damage','forfeited_arrears')),
-  received_date date not null default current_date,
-  settled_date date,
-  notes text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  deleted_at timestamptz,
-  request_id text unique,
-  constraint tenant_deposits_amounts_check check (deducted_amount + refunded_amount + remaining_amount <= deposit_amount + 0.001),
-  constraint tenant_deposits_remaining_check check (remaining_amount = deposit_amount - deducted_amount - refunded_amount)
-);
+-- 1. Create tenant_deposits table with dynamic contract_id type matching contracts.id
+DO $$
+DECLARE
+  v_contract_id_type text;
+BEGIN
+  SELECT format_type(a.atttypid, a.atttypmod) INTO v_contract_id_type
+  FROM pg_attribute a
+  JOIN pg_class c ON c.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname='public' AND c.relname='contracts' AND a.attname='id' AND a.attnum>0 AND NOT a.attisdropped;
+
+  IF v_contract_id_type IS NULL THEN
+    RAISE EXCEPTION 'contracts.id not found, cannot create tenant_deposits';
+  END IF;
+
+  IF to_regclass('public.tenant_deposits') IS NULL THEN
+    EXECUTE format(
+      'CREATE TABLE public.tenant_deposits (
+        id text primary key default gen_random_uuid()::text,
+        contract_id %s not null references public.contracts(id) on delete restrict,
+        tenant_id text,
+        property_id uuid references public.properties(id) on delete set null,
+        unit_id uuid references public.units(id) on delete set null,
+        deposit_amount numeric(14,2) not null check (deposit_amount >= 0),
+        deducted_amount numeric(14,2) not null default 0 check (deducted_amount >= 0),
+        refunded_amount numeric(14,2) not null default 0 check (refunded_amount >= 0),
+        remaining_amount numeric(14,2) not null default 0 check (remaining_amount >= 0),
+        status text not null default ''held'' check (status in (''held'',''partially_refunded'',''refunded'',''forfeited_damage'',''forfeited_arrears'')),
+        received_date date not null default current_date,
+        settled_date date,
+        notes text,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now(),
+        deleted_at timestamptz,
+        request_id text unique,
+        constraint tenant_deposits_amounts_check check (deducted_amount + refunded_amount + remaining_amount <= deposit_amount + 0.001),
+        constraint tenant_deposits_remaining_check check (remaining_amount = deposit_amount - deducted_amount - refunded_amount)
+      )', v_contract_id_type);
+  END IF;
+END $$;
 
 create index if not exists idx_tenant_deposits_contract on public.tenant_deposits(contract_id) where deleted_at is null;
 create index if not exists idx_tenant_deposits_status on public.tenant_deposits(status) where deleted_at is null;
@@ -93,7 +112,7 @@ create trigger trg_tenant_deposits_updated_at
   before update on public.tenant_deposits
   for each row execute function public.set_updated_at();
 
--- 4. RPC: create_deposit_atomic - creates deposit + initial transaction + journal
+-- 4. RPC: create_deposit_atomic
 create or replace function public.create_deposit_atomic(p_payload jsonb)
 returns jsonb
 language plpgsql
@@ -102,7 +121,10 @@ set search_path to 'public', 'pg_temp'
 as $$
 declare
   v_request_id text := nullif(p_payload->>'request_id','');
-  v_contract_id text := nullif(p_payload->>'contract_id','');
+  v_contract_id_raw text := nullif(p_payload->>'contract_id','');
+  v_contract_id_uuid uuid;
+  v_contract_id_text text;
+  v_contract_id_type text;
   v_tenant_id text := nullif(p_payload->>'tenant_id','');
   v_property_id uuid := nullif(p_payload->>'property_id','')::uuid;
   v_unit_id uuid := nullif(p_payload->>'unit_id','')::uuid;
@@ -124,21 +146,31 @@ begin
   select response_payload into v_cached from public.financial_operation_idempotency where operation_name='create_deposit_atomic' and request_id=v_request_id;
   if v_cached is not null then return v_cached || jsonb_build_object('idempotent', true); end if;
 
-  if v_contract_id is null then raise exception 'contract_id required'; end if;
+  if v_contract_id_raw is null then raise exception 'contract_id required'; end if;
   if v_amount is null or v_amount <=0 then raise exception 'amount must be >0'; end if;
   if v_received_date is null then v_received_date := current_date; end if;
+
+  SELECT format_type(a.atttypid, a.atttypmod) INTO v_contract_id_type
+  FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace
+  WHERE n.nspname='public' AND c.relname='contracts' AND a.attname='id' AND a.attnum>0 AND NOT a.attisdropped;
 
   perform pg_advisory_xact_lock(hashtextextended('create_deposit:'||v_request_id,0));
 
   v_deposit_id := gen_random_uuid()::text;
 
-  insert into public.tenant_deposits (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, notes, request_id)
-  values (v_deposit_id, v_contract_id, v_tenant_id, v_property_id, v_unit_id, v_amount, v_amount, 'held', v_received_date, v_notes, v_request_id);
+  IF v_contract_id_type = 'uuid' THEN
+    v_contract_id_uuid := v_contract_id_raw::uuid;
+    insert into public.tenant_deposits (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, notes, request_id)
+    values (v_deposit_id, v_contract_id_uuid, v_tenant_id, v_property_id, v_unit_id, v_amount, v_amount, 'held', v_received_date, v_notes, v_request_id);
+  ELSE
+    v_contract_id_text := v_contract_id_raw;
+    insert into public.tenant_deposits (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, notes, request_id)
+    values (v_deposit_id, v_contract_id_text, v_tenant_id, v_property_id, v_unit_id, v_amount, v_amount, 'held', v_received_date, v_notes, v_request_id);
+  END IF;
 
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, request_id)
   values (v_deposit_id, 'held', v_amount, 'initial_deposit', 'استلام وديعة تأمين', v_request_id || '-held');
 
-  -- Journal: Debit cash (1111), Credit deposit liability (need account, assume 2200 Deposits Payable)
   v_cash_account_id := (select id from public.accounts where no='1111' limit 1);
   v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);
   if v_deposit_account_id is null then
@@ -219,7 +251,6 @@ begin
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, request_id)
   values (v_deposit_id, 'deduction', v_amount, v_reason, v_description, v_request_id);
 
-  -- Create expense for damage
   v_expense_account_id := (select id from public.accounts where no='6100' limit 1);
   v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);
   if v_expense_account_id is null then
