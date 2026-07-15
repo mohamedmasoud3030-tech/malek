@@ -40,8 +40,9 @@ const initialDraft: CompanySettingsDraft = {
 };
 
 function getInitialTheme(): 'light' | 'dark' {
-  if (typeof document === 'undefined') return 'light';
-  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+  if (typeof window === 'undefined') return 'light';
+  const requestedTheme = new URLSearchParams(window.location.search).get('theme');
+  return requestedTheme === 'dark' ? 'dark' : 'light';
 }
 
 export function SettingsWorkspaceE2EFixture() {
