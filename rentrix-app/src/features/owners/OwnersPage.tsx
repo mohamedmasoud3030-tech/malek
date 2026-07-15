@@ -35,7 +35,7 @@ export function OwnersPage() {
       <PageHeader
         title="إدارة الملاك"
         description="إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية."
-        action={<Button onClick={c.openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>}
+        action={<Button className="min-h-11" onClick={c.openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>}
       />
 
       {/* KPI grid */}
@@ -72,7 +72,7 @@ export function OwnersPage() {
               <CardTitle>علاقات الملكية</CardTitle>
               <CardDescription>{c.selectedOwner ? `العقارات المرتبطة بـ ${getOwnerDisplayLabel(c.selectedOwner)}` : 'اختر مالكاً لعرض علاقات الملكية.'}</CardDescription>
             </div>
-            <Button type="button" variant="secondary" disabled={!c.selectedOwner || c.availableProperties.length === 0} onClick={c.openLinkForm}>
+            <Button className="min-h-11" type="button" variant="secondary" disabled={!c.selectedOwner || c.availableProperties.length === 0} onClick={c.openLinkForm}>
               <Plus className="me-2 size-4" />ربط عقار
             </Button>
           </CardHeader>
