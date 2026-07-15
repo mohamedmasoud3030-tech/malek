@@ -32,9 +32,8 @@ export function NavigationLinks({
         return (
           <section key={sectionTitle} className="space-y-1">
             {expanded ? (
-              <div className="flex items-center gap-2 px-3 pb-1">
-                <span aria-hidden="true" className="inline-block h-3 w-0.5 rounded-full bg-cyan-300/80" />
-                <p className="text-[10px] font-black tracking-[0.13em] text-sidebar-foreground/60">
+              <div className="px-3 pb-1">
+                <p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50">
                   {sectionTitle}
                 </p>
               </div>
@@ -84,7 +83,7 @@ export function NavigationLinks({
                   <Icon className="size-5 shrink-0 transition-transform group-hover:scale-110" aria-hidden="true" />
                   {expanded ? (
                     <span className="min-w-0">
-                      <span className="block truncate text-[13px] font-black">{sharedLabel(labelKey)}</span>
+                      <span className="block truncate text-[13px] font-semibold">{sharedLabel(labelKey)}</span>
                     </span>
                   ) : null}
                 </Link>
@@ -105,10 +104,10 @@ export function WorkspaceCard({
     <section className={cn('rounded-2xl border border-white/10 bg-white/[0.055] p-3 backdrop-blur', compact ? 'mt-3' : 'mt-5')}>
       <div className="mb-2 flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-black text-white">وصول سريع</p>
-          <p className="text-[10px] font-bold text-sidebar-foreground/60">افتح مساحة العمل ثم أضف من الفورم المنبثق</p>
+          <p className="text-xs font-semibold text-white">وصول سريع</p>
+          <p className="text-[10px] font-medium text-sidebar-foreground/60">افتح مساحة العمل ثم أضف من الفورم المنبثق</p>
         </div>
-        <Plus className="size-4 text-cyan-300" />
+        <Plus className="size-4 text-primary" />
       </div>
       <div className="grid grid-cols-2 gap-1.5">
         {quickLinks.map(([to, title, Icon]) => (
@@ -116,9 +115,9 @@ export function WorkspaceCard({
             key={to}
             type="button"
             onClick={() => onQuickLink(to)}
-            className="group flex min-h-16 min-w-0 flex-col items-start justify-between rounded-xl border border-white/8 bg-black/10 p-2.5 text-right text-[10px] font-black text-sidebar-foreground/80 transition hover:border-white/15 hover:bg-white/10 hover:text-white"
+            className="group flex min-h-16 min-w-0 flex-col items-start justify-between rounded-xl border border-white/8 bg-black/10 p-2.5 text-right text-[10px] font-semibold text-sidebar-foreground/80 transition hover:border-white/15 hover:bg-white/10 hover:text-white"
           >
-            <Icon className="size-4 shrink-0 text-cyan-300 transition-transform group-hover:scale-110" />
+            <Icon className="size-4 shrink-0 text-primary transition-transform group-hover:scale-110" />
             <span className="line-clamp-2">{title}</span>
           </button>
         ))}
@@ -171,7 +170,7 @@ export function CollapsedWorkspaceMenu({
         type="button"
         className={cn(
           'flex min-h-11 w-full items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] px-0 py-2 text-sidebar-foreground transition',
-          'hover:-translate-y-0.5 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
+          'hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar',
         )}
         aria-label={isOpen ? 'إغلاق الوصول السريع' : 'فتح الوصول السريع'}
         aria-expanded={isOpen}
@@ -188,7 +187,7 @@ export function CollapsedWorkspaceMenu({
           className="absolute end-full top-0 z-50 me-2 w-56 rounded-2xl border border-white/10 bg-sidebar p-2 text-sidebar-foreground shadow-sidebar"
         >
           <div className="border-b border-white/10 px-2 pb-2">
-            <p className="text-xs font-black text-white">وصول سريع</p>
+            <p className="text-xs font-semibold text-white">وصول سريع</p>
             <p className="text-[10px] font-bold text-sidebar-foreground/55">افتح مساحة العمل المطلوبة</p>
           </div>
           <div className="mt-2 space-y-1" aria-label="روابط الوصول السريع">
@@ -197,7 +196,7 @@ export function CollapsedWorkspaceMenu({
                 key={to}
                 type="button"
                 onClick={() => handleQuickLink(to)}
-                className="group/item flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-right text-[12px] font-black text-sidebar-foreground/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="group/item flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-right text-[12px] font-semibold text-sidebar-foreground/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <Icon className="size-4 shrink-0 text-primary transition-transform group-hover/item:scale-110" aria-hidden="true" />
                 <span className="min-w-0 flex-1 truncate">{title}</span>

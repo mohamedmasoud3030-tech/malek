@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 import { EmptyState } from '@/components/empty-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Skeleton } from '@/components/ui/skeleton';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/hooks/useCompanyFormatters';
 import { DASHBOARD_WINDOW_DAYS, type ExpiringContractRow } from '../dashboard-utils';
@@ -19,10 +20,10 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
     <div>
       <SectionHeader
         title="العقود المنتهية قريباً"
-        action={<Link to="/contracts">عرض الكل</Link>}
+        action={<Link to="/contracts" className="text-[0.8125rem] font-medium text-primary hover:underline">عرض الكل</Link>}
       />
 
-      {isLoading && <Skeleton className="h-36 rounded-2xl" />}
+      {isLoading && <Skeleton className="h-36 rounded-xl" />}
 
       {!isLoading && rows.length === 0 && (
         <EmptyState
@@ -32,31 +33,27 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
       )}
 
       {!isLoading && rows.length > 0 && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {rows.map((row) => {
-            const urgency = row.daysRemaining <= 7 ? 'rose' : row.daysRemaining <= 14 ? 'amber' : 'emerald';
+            const tone = row.daysRemaining <= 7 ? 'danger' : row.daysRemaining <= 14 ? 'warning' : 'success';
             return (
               <Link key={row.id} to="/contracts/$contractId" params={{ contractId: row.id }}>
                 <div className={cn(
-                  'rounded-2xl border border-border/60 bg-card p-4 hover:shadow-md transition-all',
-                  row.daysRemaining <= 7 && 'border-rose-300 dark:border-rose-800/60',
+                  'rounded-xl border border-border/70 bg-card p-4 transition-shadow hover:shadow-card-hover',
+                  row.daysRemaining <= 7 && 'border-s-2 border-s-danger',
+                  row.daysRemaining > 7 && row.daysRemaining <= 14 && 'border-s-2 border-s-warning',
                 )}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-bold text-sm truncate">{row.tenantName}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{row.location}</p>
+                      <p className="truncate text-sm font-semibold">{row.tenantName}</p>
+                      <p className="mt-0.5 truncate text-[0.8125rem] text-muted-foreground">{row.location}</p>
                     </div>
-                    <span className={cn(
-                      'shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold',
-                      urgency === 'rose'    && 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300',
-                      urgency === 'amber'   && 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
-                      urgency === 'emerald' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
-                    )}>
-                      <Clock className="size-4" />
+                    <StatusBadge tone={tone}>
+                      <Clock className="size-3" aria-hidden="true" />
                       {row.daysRemaining} يوم
-                    </span>
+                    </StatusBadge>
                   </div>
-                  <p className="mt-2 text-[11px] text-muted-foreground/70">
+                  <p className="mt-2 text-[11px] text-muted-foreground">
                     ينتهي: {date(row.endDate)}
                   </p>
                 </div>

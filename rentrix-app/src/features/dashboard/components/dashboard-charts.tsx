@@ -28,19 +28,19 @@ function MetricBars({ title, description, items, formatValue, emptyLabel }: {
   const max = Math.max(...items.map((item) => item.value), 0);
 
   return (
-    <Card className="rounded-3xl border-border/60">
+    <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-bold">{title}</CardTitle>
-        <p className="text-xs font-bold text-muted-foreground">{description}</p>
+        <CardTitle>{title}</CardTitle>
+        <p className="text-[0.8125rem] text-muted-foreground">{description}</p>
       </CardHeader>
       <CardContent className="space-y-3">
         {max <= 0 ? (
-          <p className="rounded-2xl bg-muted/50 px-3 py-4 text-center text-xs font-bold text-muted-foreground">{emptyLabel}</p>
+          <p className="rounded-lg bg-muted/50 px-3 py-4 text-center text-[0.8125rem] text-muted-foreground">{emptyLabel}</p>
         ) : items.map((item) => {
           const width = Math.max(6, Math.round((item.value / max) * 100));
           return (
             <div key={item.label} className="space-y-1.5">
-              <div className="flex items-center justify-between gap-2 text-xs font-bold">
+              <div className="flex items-center justify-between gap-2 text-xs font-medium">
                 <span className="text-muted-foreground">{item.label}</span>
                 <span className="tabular-nums" dir="ltr">{item.displayValue ?? formatValue(item.value)}</span>
               </div>
@@ -67,16 +67,16 @@ export function DashboardCharts({ snapshot, isLoading, settings }: DashboardChar
 
   const money = (value: number) => formatCompanyMoney(settings, value);
   const collectionItems: BarItem[] = [
-    { label: 'المستحق', value: snapshot?.financial.rentDue ?? 0, tone: 'bg-sky-500' },
-    { label: 'المحصّل', value: snapshot?.financial.collectedRent ?? 0, tone: 'bg-emerald-500' },
-    { label: 'المتبقي', value: snapshot?.financial.outstandingRent ?? 0, tone: 'bg-amber-500' },
-    { label: 'المتأخر', value: snapshot?.arrears.totalOverdue ?? 0, tone: 'bg-rose-500' },
+    { label: 'المستحق', value: snapshot?.financial.rentDue ?? 0, tone: 'bg-info' },
+    { label: 'المحصّل', value: snapshot?.financial.collectedRent ?? 0, tone: 'bg-success' },
+    { label: 'المتبقي', value: snapshot?.financial.outstandingRent ?? 0, tone: 'bg-warning' },
+    { label: 'المتأخر', value: snapshot?.arrears.totalOverdue ?? 0, tone: 'bg-danger' },
   ];
   const totalUnits = snapshot?.operational.units ?? 0;
   const occupancyItems: BarItem[] = [
-    { label: 'إجمالي الوحدات', value: totalUnits, tone: 'bg-sky-500' },
-    { label: 'مشغولة', value: snapshot?.operational.occupiedUnits ?? 0, tone: 'bg-emerald-500' },
-    { label: 'شاغرة', value: snapshot?.operational.vacantUnits ?? 0, tone: 'bg-amber-500' },
+    { label: 'إجمالي الوحدات', value: totalUnits, tone: 'bg-info' },
+    { label: 'مشغولة', value: snapshot?.operational.occupiedUnits ?? 0, tone: 'bg-success' },
+    { label: 'شاغرة', value: snapshot?.operational.vacantUnits ?? 0, tone: 'bg-warning' },
     {
       label: 'نسبة الإشغال',
       value: totalUnits > 0 ? (snapshot?.operational.occupancyRate ?? 0) * totalUnits / 100 : 0,

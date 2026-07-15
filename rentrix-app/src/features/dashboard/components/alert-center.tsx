@@ -39,26 +39,26 @@ export function AlertCenter({
   urgentMaintenance,
   className = '',
 }: AlertCenterProps) {
-  const contractCount = expiringContracts.filter((contract) => {
-    const days = getDaysUntil(contract.end_date);
+  const contractCount = expiringContracts.filter((c) => {
+    const days = getDaysUntil(c.end_date);
     return days >= 0 && days <= 30;
   }).length;
   const overdueCount = overdueInvoices.length;
   const maintenanceCount = urgentMaintenance.filter(
-    (request) => request.priority === 'urgent' || request.priority === 'high',
+    (r) => r.priority === 'urgent' || r.priority === 'high',
   ).length;
   const total = contractCount + overdueCount + maintenanceCount;
 
   if (total === 0) {
     return (
-      <Card className={`border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/30 ${className}`}>
+      <Card className={`border-success/20 bg-success/5 dark:bg-success/8 ${className}`}>
         <CardContent className="flex items-center gap-3 p-4">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
             <CheckCircle2 className="size-5" aria-hidden="true" />
           </div>
           <div>
-            <p className="font-bold text-emerald-800 dark:text-emerald-200">لا توجد أعمال عاجلة</p>
-            <p className="text-sm text-emerald-700/80 dark:text-emerald-300/80">انتقل إلى المؤشرات لمراجعة الأداء الحالي.</p>
+            <p className="text-sm font-semibold text-success">لا توجد أعمال عاجلة</p>
+            <p className="text-[0.8125rem] text-muted-foreground">انتقل إلى المؤشرات لمراجعة الأداء الحالي.</p>
           </div>
         </CardContent>
       </Card>
@@ -72,8 +72,7 @@ export function AlertCenter({
       count: contractCount,
       to: '/contracts',
       icon: CalendarClock,
-      tone: 'gold' as const,
-      surface: 'border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/25',
+      tone: 'warning' as const,
     },
     {
       label: 'فواتير متأخرة',
@@ -81,8 +80,7 @@ export function AlertCenter({
       count: overdueCount,
       to: '/arrears',
       icon: CreditCard,
-      tone: 'red' as const,
-      surface: 'border-rose-200 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/25',
+      tone: 'danger' as const,
     },
     {
       label: 'صيانة عاجلة',
@@ -90,8 +88,7 @@ export function AlertCenter({
       count: maintenanceCount,
       to: '/maintenance',
       icon: Wrench,
-      tone: 'gold' as const,
-      surface: 'border-orange-200 bg-orange-50/60 dark:border-orange-900 dark:bg-orange-950/25',
+      tone: 'warning' as const,
     },
   ];
 
@@ -100,30 +97,30 @@ export function AlertCenter({
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <Bell className="size-5 text-primary" aria-hidden="true" />
-            <h2 className="text-base font-black">الأولوية الآن</h2>
+            <Bell className="size-4 text-primary" aria-hidden="true" />
+            <h2 className="text-[0.9375rem] font-semibold">الأولوية الآن</h2>
           </div>
-          <p className="mt-1 text-xs font-bold text-muted-foreground">{total} حالة ظاهرة تحتاج قراراً أو متابعة</p>
+          <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">{total} حالة تحتاج قراراً أو متابعة</p>
         </div>
-        <StatusBadge tone="red">{total} متابعة</StatusBadge>
+        <StatusBadge tone="danger">{total} متابعة</StatusBadge>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        {priorities.filter((priority) => priority.count > 0).map((priority) => {
+        {priorities.filter((p) => p.count > 0).map((priority) => {
           const Icon = priority.icon;
           return (
             <Link key={priority.to} to={priority.to} className="min-w-0">
-              <Card className={`h-full transition hover:-translate-y-0.5 hover:shadow-md ${priority.surface}`}>
+              <Card className="h-full transition-shadow hover:shadow-card-hover">
                 <CardContent className="flex min-h-24 items-center gap-3 p-4">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-background/75">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                     <Icon className="size-5" aria-hidden="true" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-black">{priority.label}</p>
+                      <p className="truncate text-sm font-semibold">{priority.label}</p>
                       <StatusBadge tone={priority.tone}>{priority.count}</StatusBadge>
                     </div>
-                    <p className="mt-1 text-xs font-bold text-muted-foreground">{priority.description}</p>
+                    <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">{priority.description}</p>
                   </div>
                 </CardContent>
               </Card>
