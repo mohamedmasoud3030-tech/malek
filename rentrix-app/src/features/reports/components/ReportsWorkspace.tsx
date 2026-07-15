@@ -10,6 +10,7 @@ import type { FilterState } from '../reports-page.helpers';
 import { reportSections, type ReportSectionId } from '../reports-page.sections';
 import { AccountingReportsSection } from './AccountingReportsSection';
 import { CollectionsSection } from './CollectionsSection';
+import { DeferredRevenueReportSection } from './DeferredRevenueReportSection';
 import { ExpensesSection } from './ExpensesSection';
 import { MaintenanceReportSection } from './MaintenanceReportSection';
 import { OccupancySection } from './OccupancySection';
@@ -151,6 +152,9 @@ export function ReportsWorkspace({
               }}
               isLoading={model.hero.isLoading}
             />
+          </SectionTabPanel>
+          <SectionTabPanel id="deferred_revenue" activeId={activeSection}>
+            <DeferredRevenueReportSection isLoading={model.hero.isLoading} />
           </SectionTabPanel>
           <SectionTabPanel id="statements" activeId={activeSection}>
             <StatementsSection {...model.sections.statements} filters={filters} />

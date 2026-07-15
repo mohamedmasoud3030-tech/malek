@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart3, Building2, ClipboardList, FileSpreadsheet, Scale, WalletCards, Wrench } from 'lucide-react';
+import { AlertTriangle, BarChart3, Building2, ClipboardList, FileSpreadsheet, Layers, Scale, WalletCards, Wrench } from 'lucide-react';
 
 export const reportSections = [
   { id: 'overview', label: 'نظرة عامة', icon: BarChart3 },
@@ -8,6 +8,7 @@ export const reportSections = [
   { id: 'collections', label: 'التحصيلات والتدفقات', icon: WalletCards },
   { id: 'expenses', label: 'المصروفات والتكاليف', icon: ClipboardList },
   { id: 'maintenance_analytics', label: 'تحليل أعمال الصيانة', icon: Wrench },
+  { id: 'deferred_revenue', label: 'الإيرادات المؤجلة والاستحقاق', icon: Layers },
   { id: 'statements', label: 'كشوف الحسابات المعتمدة', icon: FileSpreadsheet },
   { id: 'accounting', label: 'القوائم المحاسبية', icon: Scale },
 ] as const;
