@@ -227,16 +227,7 @@
   .text-sidebar-accent-foreground{ color: hsl(var(--sidebar-accent-foreground)); }
   .text-accent            { color: hsl(var(--accent)); }
   .bg-accent              { background-color: hsl(var(--accent)); }
-  .text-success           { color: hsl(var(--color-success-text)); }
-  .bg-success             { background-color: hsl(var(--color-success-bg)); }
-  .text-warning           { color: hsl(var(--color-warning-text)); }
-  .bg-warning             { background-color: hsl(var(--color-warning-bg)); }
-  .text-danger            { color: hsl(var(--color-danger-text)); }
-  .bg-danger              { background-color: hsl(var(--color-danger-bg)); }
-  .text-info              { color: hsl(var(--color-info-text)); }
-  .bg-info                { background-color: hsl(var(--color-info-bg)); }
-  .text-neutral           { color: hsl(var(--color-neutral-text)); }
-  .bg-neutral             { background-color: hsl(var(--color-neutral-bg)); }
+  /* text-{success,warning,danger,info,neutral} + bg-{success,…}/NN generated from tailwind.config */
 
   .animate-route-in       { animation: route-in 0.18s ease-out both; }
   .animate-slide-up       { animation: slide-up 0.2s ease-out both; }
