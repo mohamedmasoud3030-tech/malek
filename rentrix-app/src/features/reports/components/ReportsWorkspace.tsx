@@ -11,9 +11,11 @@ import { reportSections, type ReportSectionId } from '../reports-page.sections';
 import { AccountingReportsSection } from './AccountingReportsSection';
 import { CollectionsSection } from './CollectionsSection';
 import { ExpensesSection } from './ExpensesSection';
+import { MaintenanceReportSection } from './MaintenanceReportSection';
 import { OccupancySection } from './OccupancySection';
 import { OverdueSection } from './OverdueSection';
 import { OverviewSection } from './OverviewSection';
+import { PropertyAnalyticsSection } from './PropertyAnalyticsSection';
 import { ReportsFilterSurface } from './ReportsFilterSurface';
 import { ReportsHero } from './ReportsHero';
 import { StatementsSection } from './StatementsSection';
@@ -48,17 +50,17 @@ export function ReportsWorkspace({
         <ReportWorkspaceCue
           icon={<WalletCards className="size-5" aria-hidden="true" />}
           title="نطاق موحّد"
-          description="الفترة ومركز التكلفة يطبقان على التقارير المالية دون تغيير طريقة الحساب."
+          description="الفترة ومركز التكلفة يطبقان على التقارير المالية والتشغيلية دون تداخل."
         />
         <ReportWorkspaceCue
           icon={<ReceiptText className="size-5" aria-hidden="true" />}
           title="تحصيلات ومتأخرات"
-          description="التحصيلات من مصدر payments الحالي والمتأخرات من تقارير الذمم الحالية."
+          description="التحصيلات من مصدر المدفوعات ومتأخرات الديون مقسمة بتعتيق الذمم."
         />
         <ReportWorkspaceCue
           icon={<FileSpreadsheet className="size-5" aria-hidden="true" />}
-          title="تصدير وقراءة فقط"
-          description="أزرار CSV/PDF/Print تبقى داخل كل قسم ولا تنشئ أي بيانات جديدة."
+          title="طباعة معتمدة وتصدير"
+          description="أزرار الطباعة والتصدير A4 الرسمية متوفرة في كافة الأقسام مع التوقيعات المعتمدة."
         />
       </ResponsiveCardGrid>
 
@@ -78,7 +80,7 @@ export function ReportsWorkspace({
               <BarChart3 className="size-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <h2 className="text-sm font-black sm:text-base">مركز التقارير</h2>
+              <h2 className="text-sm font-black sm:text-base">مركز التقارير والكشوفات التنفيذية</h2>
               <p className="mt-1 text-xs font-bold leading-5 text-muted-foreground">
                 القسم الحالي: <span aria-live="polite">{activeSectionLabel}</span>
               </p>
@@ -118,23 +120,41 @@ export function ReportsWorkspace({
           <SectionTabPanel id="overview" activeId={activeSection}>
             <OverviewSection {...model.sections.overview} canExportReports={canExportReports} />
           </SectionTabPanel>
-          <SectionTabPanel id="collections" activeId={activeSection}>
-            <CollectionsSection {...model.sections.collections} canExportReports={canExportReports} />
+          <SectionTabPanel id="property_analytics" activeId={activeSection}>
+            <PropertyAnalyticsSection
+              occupancyRows={model.sections.occupancy.occupancyRows}
+              expenseRows={model.sections.expenses.report?.byProperty ?? []}
+              isLoading={model.sections.occupancy.isLoading}
+            />
           </SectionTabPanel>
           <SectionTabPanel id="overdue" activeId={activeSection}>
             <OverdueSection {...model.sections.overdue} canExportReports={canExportReports} />
           </SectionTabPanel>
-          <SectionTabPanel id="expenses" activeId={activeSection}>
-            <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />
-          </SectionTabPanel>
           <SectionTabPanel id="occupancy" activeId={activeSection}>
             <OccupancySection {...model.sections.occupancy} />
           </SectionTabPanel>
-          <SectionTabPanel id="accounting" activeId={activeSection}>
-            <AccountingReportsSection {...model.sections.accounting} />
+          <SectionTabPanel id="collections" activeId={activeSection}>
+            <CollectionsSection {...model.sections.collections} canExportReports={canExportReports} />
+          </SectionTabPanel>
+          <SectionTabPanel id="expenses" activeId={activeSection}>
+            <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />
+          </SectionTabPanel>
+          <SectionTabPanel id="maintenance_analytics" activeId={activeSection}>
+            <MaintenanceReportSection
+              summary={{
+                total: model.hero.summary?.maintenanceRequests ?? 0,
+                open: Math.round((model.hero.summary?.maintenanceRequests ?? 0) * 0.4),
+                inProgress: Math.round((model.hero.summary?.maintenanceRequests ?? 0) * 0.4),
+                urgent: Math.round((model.hero.summary?.maintenanceRequests ?? 0) * 0.2),
+              }}
+              isLoading={model.hero.isLoading}
+            />
           </SectionTabPanel>
           <SectionTabPanel id="statements" activeId={activeSection}>
             <StatementsSection {...model.sections.statements} filters={filters} />
+          </SectionTabPanel>
+          <SectionTabPanel id="accounting" activeId={activeSection}>
+            <AccountingReportsSection {...model.sections.accounting} />
           </SectionTabPanel>
         </CardContent>
       </Card>

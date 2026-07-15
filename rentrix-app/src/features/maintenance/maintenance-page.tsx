@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, Flame, PlusCircle, Wrench } from 'lucide-react';
+import { AlertCircle, Clock, Flame, PlusCircle, Printer, Wrench } from 'lucide-react';
 import { useMemo } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
@@ -9,12 +9,23 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
+import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './components/maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './components/maintenance-list';
 import { maintenancePriorityLabels, maintenanceStatusLabels } from './components/maintenance-list';
 import { MaintenanceRequestForm } from './components/maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from './maintenance-helpers';
 import { useMaintenancePageController } from './useMaintenancePageController';
+
+const defaultSettings: DocumentSettings = {
+  company: {
+    name: 'رينتريكس لإدارة العقارات',
+    address: 'سلطنة عمان - مسقط',
+    phone: '+968 24000000',
+  },
+  currency: 'OMR',
+  currencySymbol: 'ر.ع',
+};
 
 const summaryCards = [
   { key: 'total', label: 'إجمالي الطلبات', sub: 'ضمن الفلاتر الحالية', icon: Wrench, accent: 'primary' },
@@ -62,16 +73,44 @@ export function MaintenancePage() {
     c.setPropertyFilterId('');
   };
 
+  const handlePrintMaintenanceList = () => {
+    DocumentTemplates.renderReportPdf(
+      {
+        reportTitle: 'كشف بلاغات وطلبات الصيانة الميدانية',
+        reportType: 'Maintenance_Requests_Report',
+        periodFrom: new Date().toISOString().slice(0, 10),
+        periodTo: new Date().toISOString().slice(0, 10),
+        sections: [
+          {
+            title: 'جدول طلبات الصيانة والتكلفة والأولوية',
+            rows: c.filteredMaintenanceRows.map((r) => ({
+              label: `${r.title} - (${maintenancePriorityLabels[r.priority as keyof typeof maintenancePriorityLabels] ?? r.priority})`,
+              value: `الحالة: ${maintenanceStatusLabels[r.status as keyof typeof maintenanceStatusLabels] ?? r.status} | المسؤول: ${r.assigned_to || r.technician_name || 'غير محدد'} | التكلفة: ${r.cost ? `${r.cost} ر.ع` : '—'}`,
+            })),
+          },
+        ],
+        totalSummary: `عدد الطلبات المدرجة: ${c.filteredMaintenanceRows.length} طلب صيانة`,
+      },
+      defaultSettings,
+    );
+  };
+
   return (
     <PageLayout dir="rtl" size="wide">
       <PageHeader
         title="طلبات الصيانة"
-        description="تتبع طلبات الصيانة حسب الحالة والأولوية والعقار، مع إجراءات واضحة للموبايل والديسكتوب."
+        description="تتبع طلبات الصيانة حسب الحالة والأولوية والعقار، مع إجراءات واضحة للموبايل والديسكتوب وطباعة التقرير الشامل."
         primaryAction={(
-          <Button type="button" onClick={c.openCreateForm} className="min-h-11">
-            <PlusCircle className="me-2 size-4" aria-hidden="true" />
-            طلب صيانة جديد
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={handlePrintMaintenanceList} className="min-h-11 gap-2 font-bold">
+              <Printer className="size-4 text-primary" aria-hidden="true" />
+              طباعة كشف الصيانة A4
+            </Button>
+            <Button type="button" onClick={c.openCreateForm} className="min-h-11">
+              <PlusCircle className="me-2 size-4" aria-hidden="true" />
+              طلب صيانة جديد
+            </Button>
+          </div>
         )}
       />
 
