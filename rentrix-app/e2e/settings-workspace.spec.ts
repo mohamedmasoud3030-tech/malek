@@ -22,7 +22,7 @@ async function openFixture(page: Page, theme: (typeof themes)[number]) {
     document.documentElement.dataset.theme = selectedTheme;
     document.documentElement.dir = 'rtl';
   }, theme);
-  await page.goto('/login?e2e-settings-workspace=1');
+  await page.goto(`/login?e2e-settings-workspace=1&theme=${theme}`);
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
