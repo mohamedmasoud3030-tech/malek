@@ -48,7 +48,7 @@ export function Drawer({
       >
         <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
           <div className="min-w-0">
-            <DialogTitle className="text-base font-black">{title}</DialogTitle>
+            <DialogTitle className="text-base font-bold">{title}</DialogTitle>
             {description ? (
               <DialogDescription className="mt-1 text-xs font-bold text-muted-foreground">
                 {description}

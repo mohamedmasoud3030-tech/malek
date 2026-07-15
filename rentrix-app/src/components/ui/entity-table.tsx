@@ -22,18 +22,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export interface ColumnDef<T> {
-  /** مفتاح فريد للعمود */
   key: string;
-  /** العنوان المعروض */
   header: ReactNode;
-  /** دالة لاستخراج محتوى الخلية من الصف */
   render: (row: T) => ReactNode;
-  /** هل يمكن الفرز بهذا العمود؟ */
   sortable?: boolean;
-  /** عرض العمود (Tailwind class مثل 'w-40') */
   className?: string;
 }
 
@@ -52,52 +45,27 @@ export interface PaginationState {
 }
 
 export interface EntityTableProps<T> {
-  // ─── Data ────────────────────────────────────────────────
   rows: T[];
   columns: ColumnDef<T>[];
   keyOf: (row: T) => string;
-
-  // ─── States ──────────────────────────────────────────────
   isLoading?: boolean;
-  /** Pass queryResult.error when isError is true, or null otherwise */
   error?: unknown;
-
-  // ─── Empty state ─────────────────────────────────────────
   emptyTitle?: string;
   emptyDescription?: string;
   emptyAction?: ReactNode;
-
-  // ─── Error state ─────────────────────────────────────────
   errorTitle?: string;
   onRetry?: () => void;
-
-  // ─── Pagination ──────────────────────────────────────────
   pagination?: PaginationState;
-
-  // ─── Sorting ─────────────────────────────────────────────
   sort?: SortState;
   onSort?: (field: string, direction: SortDirection) => void;
-
-  // ─── Row interaction ─────────────────────────────────────
   onRowClick?: (row: T) => void;
-  /** Slot for extra row content (expand panel, etc.) */
   renderRowExpansion?: (row: T) => ReactNode;
   expandedRowId?: string | null;
-
-  // ─── Mobile ──────────────────────────────────────────────
-  /** إذا غاب هذا الـ prop، الجدول يظهر دائماً بدون card mobile view */
   renderMobileCard?: (row: T) => ReactNode;
-
-  // ─── Accessibility ───────────────────────────────────────
   'aria-label': string;
-
-  // ─── Styling ─────────────────────────────────────────────
   className?: string;
-  /** عدد skeleton rows أثناء التحميل (افتراضي: 5) */
   skeletonRows?: number;
 }
-
-// ─── Sort icon ────────────────────────────────────────────────────────────────
 
 function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
   if (!sort || sort.field !== field) return <ChevronsUpDown className="ms-1 inline size-3.5 opacity-40" />;
@@ -105,8 +73,6 @@ function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
     ? <ChevronUp className="ms-1 inline size-3.5 text-primary" />
     : <ChevronDown className="ms-1 inline size-3.5 text-primary" />;
 }
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function TableSkeleton({ rows, cols, hasMobileCards }: { rows: number; cols: number; hasMobileCards: boolean }) {
   return (
@@ -145,8 +111,6 @@ function MobileSkeleton({ rows }: { rows: number }) {
   );
 }
 
-// ─── Pagination bar ───────────────────────────────────────────────────────────
-
 function PaginationBar({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
   const { page, onPageChange } = pagination;
@@ -181,7 +145,6 @@ function PaginationBar({ pagination }: { pagination: PaginationState }) {
   );
 }
 
-
 function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
   const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
 
@@ -198,8 +161,6 @@ function PaginationRecovery({ pagination }: { pagination: PaginationState }) {
     />
   );
 }
-
-// ─── Main component ───────────────────────────────────────────────────────────
 
 export function EntityTable<T>({
   rows,
@@ -223,8 +184,6 @@ export function EntityTable<T>({
   className,
   skeletonRows = 5,
 }: EntityTableProps<T>) {
-
-  // ── Loading ──────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className={cn('space-y-4', className)}>
@@ -234,7 +193,6 @@ export function EntityTable<T>({
     );
   }
 
-  // ── Error ────────────────────────────────────────────────
   if (error != null) {
     return (
       <DataErrorScreen
@@ -246,7 +204,6 @@ export function EntityTable<T>({
     );
   }
 
-  // ── Empty ────────────────────────────────────────────────
   if (rows.length === 0) {
     if (pagination !== undefined && pagination.total > 0 && pagination.page > 1) {
       return <PaginationRecovery pagination={pagination} />;
@@ -261,7 +218,6 @@ export function EntityTable<T>({
     );
   }
 
-  // ── Sort handler ─────────────────────────────────────────
   function handleSort(field: string) {
     if (!onSort) return;
     const nextDirection: SortDirection =
@@ -269,14 +225,11 @@ export function EntityTable<T>({
     onSort(field, nextDirection);
   }
 
-  // ── Render ───────────────────────────────────────────────
   const hasExpansion = renderRowExpansion !== undefined;
   const colSpan = columns.length + (hasExpansion ? 1 : 0);
 
   return (
     <div className={cn('space-y-4', className)}>
-
-      {/* Mobile card view */}
       {renderMobileCard !== undefined && (
         <div className="grid gap-3 sm:grid-cols-2 md:hidden" role="list" aria-label={ariaLabel}>
           {rows.map((row) => (
@@ -287,7 +240,6 @@ export function EntityTable<T>({
         </div>
       )}
 
-      {/* Desktop table */}
       <Card className={cn('overflow-hidden', renderMobileCard !== undefined ? 'hidden md:block' : '')}>
         <div className={renderMobileCard !== undefined ? "overflow-x-auto" : "mobile-scroll-x"}>
           <Table aria-label={ariaLabel}>
@@ -307,7 +259,7 @@ export function EntityTable<T>({
                       {col.sortable === true && onSort !== undefined ? (
                         <button
                           type="button"
-                          className="inline-flex cursor-pointer items-center font-black hover:text-foreground"
+                          className="inline-flex cursor-pointer items-center font-semibold hover:text-foreground"
                           onClick={() => handleSort(col.key)}
                         >
                           {col.header}
@@ -374,7 +326,6 @@ export function EntityTable<T>({
         </div>
       </Card>
 
-      {/* Pagination */}
       {pagination !== undefined && <PaginationBar pagination={pagination} />}
     </div>
   );

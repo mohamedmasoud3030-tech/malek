@@ -42,7 +42,7 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
               aria-controls={`section-panel-${item.id}`}
               id={`section-tab-${item.id}`}
               className={cn(
-                'flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-black transition',
+                'flex min-h-10 shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-semibold transition',
                 isActive
                   ? 'border-primary bg-primary text-primary-foreground shadow-md scale-[1.02]'
                   : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground',

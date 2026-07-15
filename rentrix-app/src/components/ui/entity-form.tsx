@@ -129,7 +129,7 @@ function Section({ title, description, children, className }: EntityFormSectionP
     <section className={cn('min-w-0 space-y-4 rounded-2xl border border-border/60 bg-muted/15 p-3.5 sm:p-4', className)}>
       {title || description ? (
         <div className="border-b border-border/50 pb-3">
-          {title ? <h2 className="text-sm font-black leading-6">{title}</h2> : null}
+          {title ? <h2 className="text-sm font-semibold leading-6">{title}</h2> : null}
           {description ? <p className="mt-0.5 text-xs font-medium leading-5 text-muted-foreground">{description}</p> : null}
         </div>
       ) : null}
@@ -200,7 +200,7 @@ function OverlayHeader({ title, description, headerExtra }: Pick<EntityFormOverl
   return (
     <div className="min-w-0 flex-1">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <h2 className="min-w-0 text-lg font-black leading-7">{title}</h2>
+        <h2 className="min-w-0 text-lg font-bold leading-7">{title}</h2>
         {headerExtra}
       </div>
       {description ? <p className="mt-1 text-sm font-medium leading-6 text-muted-foreground">{description}</p> : null}

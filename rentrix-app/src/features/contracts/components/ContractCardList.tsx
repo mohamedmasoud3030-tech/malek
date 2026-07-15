@@ -11,17 +11,17 @@ import type { ContractListItem } from '../services/contractService';
 import { getDaysUntilEnd, isExpiringSoon } from '../hooks/useContractFilters';
 
 
-const contractStatusTone: Record<string, { label: string; tone: 'blue' | 'green' | 'red' | 'gray' | 'gold' }> = {
-  ACTIVE: { label: 'نشط', tone: 'green' },
-  EXPIRED: { label: 'منتهي', tone: 'gold' },
-  TERMINATED: { label: 'مُنهى', tone: 'red' },
-  DRAFT: { label: 'مسودة', tone: 'gray' },
+const contractStatusTone: Record<string, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' | 'info' }> = {
+  ACTIVE: { label: 'نشط', tone: 'success' },
+  EXPIRED: { label: 'منتهي', tone: 'warning' },
+  TERMINATED: { label: 'مُنهى', tone: 'danger' },
+  DRAFT: { label: 'مسودة', tone: 'neutral' },
 };
 
 function contractUrgencyClassName(daysRemaining: number) {
-  if (daysRemaining <= 7) return 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300';
-  if (daysRemaining <= 30) return 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300';
-  return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300';
+  if (daysRemaining <= 7) return 'bg-danger/10 text-danger';
+  if (daysRemaining <= 30) return 'bg-warning/10 text-warning';
+  return 'bg-success/10 text-success';
 }
 
 export function ContractCardList({
@@ -54,7 +54,7 @@ export function ContractCardList({
               supportingText={`عقد #${getContractNumber(contract)}`}
               avatarIcon={User}
               badge={<StatusBadge tone={statusMeta.tone} className="shrink-0">{statusMeta.label}</StatusBadge>}
-              className={cn(daysUntilEnd !== null && daysUntilEnd <= 7 && normalizedStatus === 'ACTIVE' && 'border-rose-300 dark:border-rose-800')}
+              className={cn(daysUntilEnd !== null && daysUntilEnd <= 7 && normalizedStatus === 'ACTIVE' && 'border-danger/40')}
               onClick={() => navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}
               stats={(
                 <div className="flex items-center justify-between gap-3">
@@ -68,20 +68,20 @@ export function ContractCardList({
                       {(daysUntilEnd ?? 0) <= 0 ? 'انتهى' : `${daysUntilEnd ?? 0} يوم`}
                     </div>
                   )}
-                  <p className="text-sm font-black text-primary">{formatContractMoney(companySettings, contract.rent_amount)}</p>
+                  <p className="text-sm font-bold text-primary tabular-nums" dir="ltr">{formatContractMoney(companySettings, contract.rent_amount)}</p>
                 </div>
               )}
             />
             {expiringSoon && (
-              <p className="px-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
+              <p className="px-1 text-xs font-semibold text-warning">ينتهي خلال {daysUntilEnd} يوم</p>
             )}
             <div className="flex items-center justify-end gap-2 px-1">
-              <Button variant="secondary" className="min-h-11" onClick={() => onEdit(contract.id)}>
+              <Button variant="secondary" className="min-h-10" onClick={() => onEdit(contract.id)}>
                 <Edit className="size-3.5 me-1" />تعديل
               </Button>
               <Button
                 variant="danger"
-                className="min-h-11"
+                className="min-h-10"
                 aria-label={`حذف العقد ${getContractNumber(contract)}`}
                 onClick={() => onDelete(contract.id)}
               >

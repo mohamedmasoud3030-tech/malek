@@ -15,8 +15,8 @@ import { getDaysUntilEnd, isExpiringSoon } from '../hooks/useContractFilters';
 
 function DetailBox({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-background p-4">
-      <p className="mb-2 text-xs font-black text-muted-foreground">{label}</p>
+    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card">
+      <p className="mb-2 text-xs font-medium text-muted-foreground">{label}</p>
       <div className="space-y-1 text-sm leading-6">{children}</div>
     </div>
   );
@@ -67,9 +67,9 @@ export function ContractTable({
         const daysUntilEnd = getDaysUntilEnd(contract);
         return (
           <>
-            <p className="font-black">{getContractNumber(contract)}</p>
+            <p className="font-bold">{getContractNumber(contract)}</p>
             {expiringSoon && (
-              <p className="mt-1 text-xs font-bold text-amber-700">ينتهي خلال {daysUntilEnd} يوم</p>
+              <p className="mt-1 text-xs font-semibold text-warning">ينتهي خلال {daysUntilEnd} يوم</p>
             )}
           </>
         );
@@ -113,17 +113,17 @@ export function ContractTable({
       className: 'w-52',
       render: (contract) => (
         <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-          <Button variant="secondary" className="min-h-11 px-3" asChild>
+          <Button variant="secondary" className="min-h-10 px-3" asChild>
             <Link to="/contracts/$contractId" params={{ contractId: contract.id }} aria-label={`عرض تفاصيل العقد ${getContractNumber(contract)}`}>
               <Eye className="size-4" />
             </Link>
           </Button>
-          <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(contract.id)}>
+          <Button variant="secondary" className="min-h-10 px-3" onClick={() => onEdit(contract.id)}>
             <Edit className="size-4" />
           </Button>
           <Button
             variant="danger"
-            className="min-h-11 px-3"
+            className="min-h-10 px-3"
             aria-label={`حذف العقد ${getContractNumber(contract)}`}
             onClick={() => onDelete(contract.id)}
           >
@@ -155,14 +155,14 @@ export function ContractTable({
               <p className="text-muted-foreground">العنوان: {contract.properties?.address ?? '—'}</p>
             </DetailBox>
             <DetailBox label="قيمة الإيجار">
-              <p className="text-lg font-black" dir="ltr">{formatContractMoney(companySettings, contract.rent_amount)}</p>
+              <p className="text-lg font-bold tabular-nums" dir="ltr">{formatContractMoney(companySettings, contract.rent_amount)}</p>
               <p className="text-muted-foreground">دورة السداد: {paymentCycleLabels[contract.payment_cycle]}</p>
             </DetailBox>
             <DetailBox label="فترة العقد">
               <p>{formatContractDate(companySettings, contract.start_date)} ← {formatContractDate(companySettings, contract.end_date)}</p>
               <p className="text-muted-foreground">رقم العقد: {getContractNumber(contract)}</p>
               {isExpiringSoon(contract) && (
-                <p className="font-bold text-amber-700">تنبيه: العقد ينتهي خلال {getDaysUntilEnd(contract)} يوم.</p>
+                <p className="font-semibold text-warning">تنبيه: العقد ينتهي خلال {getDaysUntilEnd(contract)} يوم.</p>
               )}
             </DetailBox>
             <DetailBox label="الحالة">

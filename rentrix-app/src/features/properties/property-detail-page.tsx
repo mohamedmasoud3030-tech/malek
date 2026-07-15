@@ -52,14 +52,14 @@ export function PropertyDetailPage() {
               <Link
                 to="/properties/$propertyId"
                 params={{ propertyId }}
-                className={`border-b-2 pb-3 text-sm font-bold transition-all duration-150 ${!isUnitsTab ? 'border-primary text-primary font-black' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                className={`border-b-2 pb-3 text-sm font-bold transition-all duration-150 ${!isUnitsTab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
               >
                 نظرة عامة
               </Link>
               <Link
                 to="/properties/$propertyId/units"
                 params={{ propertyId }}
-                className={`border-b-2 pb-3 text-sm font-bold transition-all duration-150 ${isUnitsTab ? 'border-primary text-primary font-black' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+                className={`border-b-2 pb-3 text-sm font-bold transition-all duration-150 ${isUnitsTab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
               >
                 الوحدات
               </Link>

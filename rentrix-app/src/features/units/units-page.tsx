@@ -16,7 +16,7 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
 import { UnitFormModal } from './unit-form-modal';
 
-const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
+const unitStatusTone = { available: 'success', occupied: 'info', maintenance: 'warning', reserved: 'neutral' } as const;
 
 export function UnitsPage() {
   const ctrl = useUnitsListController();
@@ -37,10 +37,10 @@ export function UnitsPage() {
       />
 
       <ResponsiveCardGrid desktopColumns={4} gap="lg">
-        <KpiCard label="إجمالي الوحدات" value={formatNumber(ctrl.units.length)} sub="كل الوحدات النشطة" icon={DoorOpen} accent="primary" />
-        <KpiCard label="الوحدات المشغولة" value={formatNumber(ctrl.kpis.occupiedCount)} sub="حسب حالة الوحدة" icon={Home} accent="sky" />
-        <KpiCard label="الوحدات المتاحة" value={formatNumber(ctrl.kpis.availableCount)} sub="جاهزة للتأجير" icon={DoorOpen} accent="emerald" />
-        <KpiCard label="إجمالي الإيجار المتوقع" value={formatMoney(ctrl.kpis.expectedRent)} sub="من قيم الإيجار المسجلة" icon={Building2} accent="amber" />
+        <KpiCard label="إجمالي الوحدات" value={formatNumber(ctrl.units.length)} sub="كل الوحدات النشطة" icon={DoorOpen} />
+        <KpiCard label="الوحدات المشغولة" value={formatNumber(ctrl.kpis.occupiedCount)} sub="حسب حالة الوحدة" icon={Home} />
+        <KpiCard label="الوحدات المتاحة" value={formatNumber(ctrl.kpis.availableCount)} sub="جاهزة للتأجير" icon={DoorOpen} />
+        <KpiCard label="إجمالي الإيجار المتوقع" value={formatMoney(ctrl.kpis.expectedRent)} sub="من قيم الإيجار المسجلة" icon={Building2} />
       </ResponsiveCardGrid>
 
       <FilterBar
@@ -86,7 +86,7 @@ export function UnitsPage() {
             aria-label="جدول الوحدات"
             rows={ctrl.filteredUnits}
             columns={[
-              { key: 'unit_number', header: 'الوحدة', render: (unit) => <span className="font-black">{unit.unit_number}</span> },
+              { key: 'unit_number', header: 'الوحدة', render: (unit) => <span className="font-bold">{unit.unit_number}</span> },
               { key: 'property', header: 'العقار', render: (unit) => {
                 const property = ctrl.propertyById.get(unit.property_id);
                 return property ? (
@@ -133,7 +133,7 @@ export function UnitsPage() {
                   stats={
                     <div className="flex items-center justify-between gap-3">
                       {unit.notes ? <p className="min-w-0 flex-1 truncate text-xs leading-relaxed text-muted-foreground">{unit.notes}</p> : <span className="text-xs text-muted-foreground">بدون ملاحظات</span>}
-                      {unit.rent_amount != null ? <p className="shrink-0 whitespace-nowrap text-sm font-black text-emerald-600 dark:text-emerald-400">{formatMoney(unit.rent_amount)}</p> : null}
+                      {unit.rent_amount != null ? <p className="shrink-0 whitespace-nowrap text-sm font-bold text-success" dir="ltr">{formatMoney(unit.rent_amount)}</p> : null}
                     </div>
                   }
                   onClick={() => ctrl.navigateToUnit(unit)}

@@ -23,7 +23,7 @@ export function EntityFormE2EFixture({ mobileSurface = 'bottom-sheet' }: EntityF
     <main dir="rtl" className="min-h-dvh bg-background p-3 text-foreground sm:p-6" data-e2e-form-contract>
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">
-          <h1 className="text-xl font-black">اختبار عقد الفورم المشترك</h1>
+          <h1 className="text-xl font-bold">اختبار عقد الفورم المشترك</h1>
           <p className="mt-1 text-sm text-muted-foreground">سطح متصفح معزول لا يتصل ببيانات أو مصادقة أو عمليات مالية.</p>
           <Button className="mt-4" onClick={() => setOpen(true)}>فتح النموذج</Button>
         </div>

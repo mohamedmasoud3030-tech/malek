@@ -23,7 +23,7 @@ export function ActiveFilterBar({ filters, onClearAll, className }: ActiveFilter
     <div className={cn('rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2', className)} aria-label="الفلاتر النشطة">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="text-xs font-black text-primary">الفلاتر النشطة</span>
+          <span className="text-xs font-semibold text-primary">الفلاتر النشطة</span>
           {filters.map((filter) => (
             <button
               key={filter.key}

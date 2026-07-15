@@ -36,7 +36,7 @@ export function EntityDetailHeader({ title, subtitle, backTo, backLabel = 'ال�
     <div className={cn('flex flex-wrap items-start justify-between gap-4', className)}>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-black tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
           {status}
         </div>
         {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
