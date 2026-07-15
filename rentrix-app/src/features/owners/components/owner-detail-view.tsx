@@ -67,8 +67,8 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
           <DetailFields
             columns={3}
             fields={[
-              { label: 'الهاتف', value: owner.phone ? <span dir="ltr">{owner.phone}</span> : undefined },
-              { label: 'البريد الإلكتروني', value: owner.email ? <span dir="ltr">{owner.email}</span> : undefined },
+              { label: 'الهاتف', value: owner.phone ? <span dir="ltr">{owner.phone}</span> : 'غير موثق' },
+              { label: 'البريد الإلكتروني', value: owner.email ? <span dir="ltr">{owner.email}</span> : 'غير موثق' },
               { label: 'الحالة', value: <StatusBadge tone={owner.is_active ? 'success' : 'neutral'} dot>{owner.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
             ]}
           />
