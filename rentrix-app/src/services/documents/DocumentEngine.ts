@@ -56,6 +56,38 @@ export type TenantStatementDataPayload = {
   }>;
 };
 
+export type TrialBalancePayload = {
+  trial: {
+    lines: Array<{ no: string; name: string; debit: number; credit: number }>;
+    totalDebit: number;
+    totalCredit: number;
+  };
+  endDate: string;
+};
+
+export type IncomeStatementPayload = {
+  pnlData: {
+    totalRevenue: number;
+    totalExpense: number;
+    netIncome: number;
+    revenues: Array<{ label: string; amount: number }>;
+    expenses: Array<{ label: string; amount: number }>;
+  };
+  dateRange: string;
+};
+
+export type BalanceSheetPayload = {
+  data: {
+    assets: Array<{ label: string; amount: number }>;
+    liabilities: Array<{ label: string; amount: number }>;
+    equity: Array<{ label: string; amount: number }>;
+    totalAssets: number;
+    totalLiabilities: number;
+    totalEquity: number;
+  };
+  date: string;
+};
+
 const fmtDate = (v?: string | null) => (v ? new Date(v).toLocaleDateString('ar-OM') : '-');
 const currencyOf = (s?: Settings) => s?.operational?.currency || 'ر.ع';
 const toMoney = (value: number, s?: Settings) =>
@@ -115,6 +147,12 @@ class DocumentEngine {
         return this.buildOwnerStatement(request.payload as { data: OwnerStatementDataPayload; db: AppLikeDb });
       case 'tenant_statement':
         return this.buildTenantStatement(request.payload as { data: TenantStatementDataPayload; db: AppLikeDb });
+      case 'trial_balance':
+        return this.buildTrialBalance(request.payload as TrialBalancePayload);
+      case 'income_statement':
+        return this.buildIncomeStatement(request.payload as IncomeStatementPayload);
+      case 'balance_sheet':
+        return this.buildBalanceSheet(request.payload as BalanceSheetPayload);
       default:
         throw new Error(`Unsupported document type: ${request.type}`);
     }
@@ -301,6 +339,106 @@ class DocumentEngine {
       ],
       footer: footer(['tenant', 'accountant', 'general_manager']),
       fileName: fileName('tenant_statement', data.tenantName, 'statement'),
+    };
+  }
+
+  private buildTrialBalance(payload: TrialBalancePayload): UnifiedDocumentModel {
+    const trial = payload.trial;
+    return {
+      type: 'trial_balance',
+      header: {
+        companyName: 'رينتريكس لإدارة العقارات',
+        companyAddress: 'سلطنة عمان - مسقط',
+        companyPhone: '+968 24000000',
+        title: 'قائمة ميزان المراجعة المحاسبي',
+        dateLabel: 'تاريخ الكشف',
+        dateValue: fmtDate(payload.endDate),
+      },
+      kpis: [
+        kpi('إجمالي الحركة المدينة', toMoney(trial.totalDebit)),
+        kpi('إجمالي الحركة الدائنة', toMoney(trial.totalCredit)),
+        kpi('حالة التوازن المحاسبي', trial.totalDebit === trial.totalCredit ? 'متوازن 100%' : 'غير متوازن'),
+      ],
+      tables: [
+        TableGenerator.build(
+          ['رقم الحساب', 'اسم الحساب المحاسبي', 'مدين (ر.ع)', 'دائن (ر.ع)'],
+          trial.lines.map((l) => [l.no, l.name, toMoney(l.debit), toMoney(l.credit)]),
+          ['الإجمالي العام', '', toMoney(trial.totalDebit), toMoney(trial.totalCredit)],
+        ),
+      ],
+      footer: footer(['accountant', 'general_manager']),
+      fileName: fileName('trial_balance', payload.endDate, 'report'),
+    };
+  }
+
+  private buildIncomeStatement(payload: IncomeStatementPayload): UnifiedDocumentModel {
+    const pnl = payload.pnlData;
+    return {
+      type: 'income_statement',
+      header: {
+        companyName: 'رينتريكس لإدارة العقارات',
+        companyAddress: 'سلطنة عمان - مسقط',
+        companyPhone: '+968 24000000',
+        title: 'تقرير قائمه الدخل والربحية',
+        dateLabel: 'الفترة المالية',
+        dateValue: payload.dateRange,
+      },
+      kpis: [
+        kpi('إجمالي الإيرادات التشغيلية', toMoney(pnl.totalRevenue)),
+        kpi('إجمالي المصروفات والنفقات', toMoney(pnl.totalExpense)),
+        kpi('صافي أرباح / خسائر الفترة', toMoney(pnl.netIncome)),
+      ],
+      tables: [
+        TableGenerator.build(
+          ['بند الإيرادات', 'المبلغ (ر.ع)'],
+          pnl.revenues.map((r) => [r.label, toMoney(r.amount)]),
+          ['إجمالي الإيرادات', toMoney(pnl.totalRevenue)],
+        ),
+        TableGenerator.build(
+          ['بند المصروفات', 'المبلغ (ر.ع)'],
+          pnl.expenses.map((e) => [e.label, toMoney(e.amount)]),
+          ['إجمالي المصروفات', toMoney(pnl.totalExpense)],
+        ),
+      ],
+      footer: footer(['accountant', 'general_manager']),
+      fileName: fileName('income_statement', payload.dateRange, 'report'),
+    };
+  }
+
+  private buildBalanceSheet(payload: BalanceSheetPayload): UnifiedDocumentModel {
+    const bs = payload.data;
+    return {
+      type: 'balance_sheet',
+      header: {
+        companyName: 'رينتريكس لإدارة العقارات',
+        companyAddress: 'سلطنة عمان - مسقط',
+        companyPhone: '+968 24000000',
+        title: 'قائمة المركز المالي والميزانية العمومية',
+        dateLabel: 'كما في تاريخ',
+        dateValue: fmtDate(payload.date),
+      },
+      kpis: [
+        kpi('إجمالي الأصول', toMoney(bs.totalAssets)),
+        kpi('إجمالي الالتزامات', toMoney(bs.totalLiabilities)),
+        kpi('إجمالي حقوق الملكية', toMoney(bs.totalEquity)),
+      ],
+      tables: [
+        TableGenerator.build(
+          ['الأصول (الموجودات)', 'القيمة (ر.ع)'],
+          bs.assets.map((a) => [a.label, toMoney(a.amount)]),
+          ['إجمالي الأصول', toMoney(bs.totalAssets)],
+        ),
+        TableGenerator.build(
+          ['الالتزامات وحقوق الملكية', 'القيمة (ر.ع)'],
+          [
+            ...bs.liabilities.map((l) => [l.label, toMoney(l.amount)]),
+            ...bs.equity.map((eq) => [eq.label, toMoney(eq.amount)]),
+          ],
+          ['إجمالي الالتزامات وحقوق الملكية', toMoney(bs.totalLiabilities + bs.totalEquity)],
+        ),
+      ],
+      footer: footer(['accountant', 'general_manager']),
+      fileName: fileName('balance_sheet', payload.date, 'report'),
     };
   }
 }

@@ -31,9 +31,9 @@ const templateCapabilities: readonly DocumentCapability[] = [
   { type: 'payment', templateAvailable: true, externalProviderRequired: false },
   { type: 'owner_statement', templateAvailable: true, externalProviderRequired: false },
   { type: 'tenant_statement', templateAvailable: true, externalProviderRequired: false },
-  { type: 'trial_balance', templateAvailable: false, externalProviderRequired: true },
-  { type: 'income_statement', templateAvailable: false, externalProviderRequired: true },
-  { type: 'balance_sheet', templateAvailable: false, externalProviderRequired: true },
+  { type: 'trial_balance', templateAvailable: true, externalProviderRequired: false },
+  { type: 'income_statement', templateAvailable: true, externalProviderRequired: false },
+  { type: 'balance_sheet', templateAvailable: true, externalProviderRequired: false },
 ];
 
 export function listDocumentCapabilities(): readonly DocumentCapability[] {

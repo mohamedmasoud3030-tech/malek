@@ -1,4 +1,5 @@
-import { AlertCircle, Inbox, Scale, TrendingDown, WalletCards } from 'lucide-react';
+import { AlertCircle, Inbox, Printer, Scale, TrendingDown, WalletCards } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
@@ -7,6 +8,11 @@ import type {
   IncomeStatementReport,
   TrialBalanceReport,
 } from '@/features/financials/reports/financialReportsService';
+import {
+  exportBalanceSheetToPdf,
+  exportIncomeStatementToPdf,
+  exportTrialBalanceToPdf,
+} from '@/services/pdfService';
 
 type AccountingReportsSectionProps = Readonly<{
   asOf: string;
@@ -57,6 +63,55 @@ export function AccountingReportsSection({
   balanceSheetError,
   isLoading,
 }: AccountingReportsSectionProps) {
+  const handlePrintTrialBalance = () => {
+    if (!trialBalance) return;
+    exportTrialBalanceToPdf(
+      {
+        lines: trialBalance.accounts.map((acc) => ({
+          no: acc.code,
+          name: acc.name,
+          debit: acc.balanceType === 'debit' ? acc.balance : 0,
+          credit: acc.balanceType === 'credit' ? acc.balance : 0,
+        })),
+        totalDebit: trialBalance.totalDebits,
+        totalCredit: trialBalance.totalCredits,
+      },
+      {},
+      asOf || '—',
+    );
+  };
+
+  const handlePrintIncomeStatement = () => {
+    if (!incomeStatement) return;
+    exportIncomeStatementToPdf(
+      {
+        totalRevenue: incomeStatement.totalRevenue,
+        totalExpense: incomeStatement.totalExpenses,
+        netIncome: incomeStatement.netIncome,
+        revenues: incomeStatement.revenue,
+        expenses: incomeStatement.expenses,
+      },
+      {},
+      `${from || '—'} إلى ${to || '—'}`,
+    );
+  };
+
+  const handlePrintBalanceSheet = () => {
+    if (!balanceSheet) return;
+    exportBalanceSheetToPdf(
+      {
+        assets: balanceSheet.assets.map((a) => ({ label: a.name, amount: a.amount })),
+        liabilities: balanceSheet.liabilities.map((l) => ({ label: l.name, amount: l.amount })),
+        equity: balanceSheet.equity.map((eq) => ({ label: eq.name, amount: eq.amount })),
+        totalAssets: balanceSheet.totalAssets,
+        totalLiabilities: balanceSheet.totalLiabilities,
+        totalEquity: balanceSheet.totalEquity,
+      },
+      {},
+      asOf || '—',
+    );
+  };
+
   return (
     <div className="space-y-4">
       <Card className="scroll-mt-28 border-border/60 bg-muted/20">
@@ -64,7 +119,7 @@ export function AccountingReportsSection({
           <CardTitle className="text-sm font-black">التقارير المحاسبية الأساسية</CardTitle>
           <CardDescription>
             قائمة ميزان مراجعة وتقرير دخل وقائمة مركز مالي مشتقة من جداول التشغيل المصدرية (فواتير، تحصيلات، مصاريف، تسويات مالك).
-            هذه عروض تشغيلية وليست دفتر أستاذ عام منشور؛ الأرصدة متوازنة ببنائها (الأرباح المحتجزة هي الرصيد الموازن).
+            جاهزة للطباعة والتصدير بجودة A4 المعتمدة لتقديمها للإدارة أو المراجع المحاسبي.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -72,9 +127,17 @@ export function AccountingReportsSection({
       <div className="grid gap-4 lg:grid-cols-1">
         {/* Trial Balance */}
         <Card className="border-border/60">
-          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <CardTitle className="text-sm font-black">ميزان المراجعة</CardTitle>
-            <CardDescription>كما في {asOf || '—'} (مشتق تشغيلي).</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <div>
+              <CardTitle className="text-sm font-black">ميزان المراجعة</CardTitle>
+              <CardDescription>كما في {asOf || '—'} (مشتق تشغيلي).</CardDescription>
+            </div>
+            {trialBalance && (
+              <Button type="button" size="sm" variant="outline" onClick={handlePrintTrialBalance} className="min-h-9 gap-1.5 text-xs">
+                <Printer className="size-3.5" aria-hidden="true" />
+                طباعة الميزان A4
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="p-4 sm:p-5">
             {isTrialBalanceLoading || isLoading ? (
@@ -128,9 +191,17 @@ export function AccountingReportsSection({
 
         {/* Income Statement */}
         <Card className="border-border/60">
-          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <CardTitle className="text-sm font-black">تقرير الدخل</CardTitle>
-            <CardDescription>من {from || '—'} إلى {to || '—'} (أساس استحقاقي: الإيرادات المستحقة ناقص المصاريف).</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <div>
+              <CardTitle className="text-sm font-black">تقرير الدخل والربحية</CardTitle>
+              <CardDescription>من {from || '—'} إلى {to || '—'}.</CardDescription>
+            </div>
+            {incomeStatement && (
+              <Button type="button" size="sm" variant="outline" onClick={handlePrintIncomeStatement} className="min-h-9 gap-1.5 text-xs">
+                <Printer className="size-3.5" aria-hidden="true" />
+                طباعة تقرير الدخل A4
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="p-4 sm:p-5">
             {isIncomeStatementLoading || isLoading ? (
@@ -182,9 +253,17 @@ export function AccountingReportsSection({
 
         {/* Balance Sheet */}
         <Card className="border-border/60">
-          <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-            <CardTitle className="text-sm font-black">قائمة المركز المالي</CardTitle>
-            <CardDescription>كما في {asOf || '—'} (مشتق تشغيلي).</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+            <div>
+              <CardTitle className="text-sm font-black">قائمة المركز المالي</CardTitle>
+              <CardDescription>كما في {asOf || '—'} (مشتق تشغيلي).</CardDescription>
+            </div>
+            {balanceSheet && (
+              <Button type="button" size="sm" variant="outline" onClick={handlePrintBalanceSheet} className="min-h-9 gap-1.5 text-xs">
+                <Printer className="size-3.5" aria-hidden="true" />
+                طباعة المركز المالي A4
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="p-4 sm:p-5">
             {isBalanceSheetLoading || isLoading ? (
