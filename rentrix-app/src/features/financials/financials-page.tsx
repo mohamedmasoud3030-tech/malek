@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-import { FileText, ReceiptText, WalletCards } from 'lucide-react';
+import { ClipboardList, FileText, Landmark, ReceiptText, WalletCards } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -41,13 +41,14 @@ function getCurrentMonthReportRange() {
   };
 }
 
-type FinancialsTab = 'invoices' | 'receipts' | 'expenses' | 'actions';
+type FinancialsTab = 'invoices' | 'receipts' | 'expenses' | 'arrears' | 'reconciliation';
 
 const financialTabs = [
-  ['invoices', 'الفواتير', 'اختيار الفواتير وتسجيل الدفعات', FileText],
-  ['receipts', 'الإيصالات', 'فتح سجل الإيصالات والطباعة', ReceiptText],
-  ['expenses', 'المصاريف', 'تسجيل ومراجعة مصاريف العقارات', WalletCards],
-  ['actions', 'إجراءات سريعة', 'روابط تشغيلية يومية', WalletCards],
+  ['invoices', 'الفواتير والتحصيل', 'مراجعة وتسجيل دفعات الفواتير', FileText],
+  ['receipts', 'السدادات والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText],
+  ['expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards],
+  ['arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList],
+  ['reconciliation', 'مطابقة كشف البنك', 'مطابقة السجلات مع الحسابات البنكية', Landmark],
 ] as const satisfies readonly [FinancialsTab, string, string, typeof FileText][];
 
 export function FinancialsPage() {
@@ -105,13 +106,15 @@ export function FinancialsPage() {
   return (
     <PageLayout dir="rtl" size="wide">
       <PageHeader
-        title="المالية"
-        description="تبويبات مختصرة للفواتير والإيصالات والمصاريف حتى لا تظهر كل أدوات التحصيل مكدسة على شاشة واحدة، خصوصاً على الجوال."
+        title="مركز إدارة الماليات والمحاسبة"
+        description="منظومة موحدة لإدارة الفواتير المستحقة، التحصيلات، الإيصالات المعتمدة، المصروفات التشغيلية، ومطابقة البنك."
         secondaryActions={(
           <>
-            <Button variant="secondary" asChild><Link to="/invoices">صفحة الفواتير</Link></Button>
-            <Button variant="secondary" asChild><Link to="/receipts">سجل الإيصالات</Link></Button>
-            <Button variant="secondary" asChild><Link to="/expenses">صفحة المصاريف</Link></Button>
+            <Button variant="secondary" asChild><Link to="/invoices">الفواتير</Link></Button>
+            <Button variant="secondary" asChild><Link to="/receipts">الإيصالات</Link></Button>
+
+            <Button variant="secondary" asChild><Link to="/expenses">المصاريف</Link></Button>
+            <Button variant="secondary" asChild><Link to="/bank-reconciliation">مطابقة البنك</Link></Button>
           </>
         )}
       />
@@ -126,7 +129,7 @@ export function FinancialsPage() {
 
       <Card>
         <CardContent className="space-y-5 p-3 sm:p-4">
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" role="tablist" aria-label="أقسام المالية">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" role="tablist" aria-label="أقسام المالية الموحدة">
             {financialTabs.map(([tab, label, description, Icon]) => (
               <button
                 key={tab}
@@ -141,8 +144,8 @@ export function FinancialsPage() {
               >
                 <Icon className="size-5 shrink-0" />
                 <span className="min-w-0">
-                  <span className="block text-sm font-black">{label}</span>
-                  <span className={cn('block truncate text-[11px] font-bold', activeTab === tab ? 'text-primary-foreground/75' : 'text-muted-foreground')}>{description}</span>
+                  <span className="block text-sm font-bold">{label}</span>
+                  <span className={cn('block truncate text-[11px] font-medium', activeTab === tab ? 'text-primary-foreground/80' : 'text-muted-foreground')}>{description}</span>
                 </span>
               </button>
             ))}
@@ -154,10 +157,10 @@ export function FinancialsPage() {
               <Card className="border-dashed bg-muted/20">
                 <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-lg font-black">الإيصالات والطباعة</p>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">استخدم صفحة الإيصالات للبحث برقم الإيصال أو المستأجر وفتح تفاصيل الطباعة.</p>
+                    <p className="text-base font-bold">سجل الإيصالات وطباعة السندات A4</p>
+                    <p className="mt-1 text-xs leading-6 text-muted-foreground">افتح مساحة الإيصالات الكاملة للبحث برقم الإيصال أو المستأجر، وطباعة السند المعتمد مع التفقيط المالي.</p>
                   </div>
-                  <Button asChild><Link to="/receipts">فتح سجل الإيصالات</Link></Button>
+                  <Button asChild><Link to="/receipts">فتح سجل الإيصالات بالكامل</Link></Button>
                 </CardContent>
               </Card>
             ) : null}
@@ -174,18 +177,25 @@ export function FinancialsPage() {
                 onCreateExpense={onCreateExpense}
               />
             ) : null}
-            {activeTab === 'actions' ? (
-              <div className="grid gap-3 md:grid-cols-3">
-                <Button asChild><Link to="/invoices">مراجعة الفواتير</Link></Button>
-                <Button variant="secondary" asChild><Link to="/receipts">طباعة إيصال</Link></Button>
-                <Button variant="secondary" asChild><Link to="/arrears">متابعة المتأخرات</Link></Button>
-              </div>
+            {activeTab === 'arrears' ? (
+              <ArrearsWorkspaceSection />
+            ) : null}
+            {activeTab === 'reconciliation' ? (
+              <Card className="border-dashed bg-muted/20">
+                <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-base font-bold">مطابقة كشوف الحسابات البنكية</p>
+                    <p className="mt-1 text-xs leading-6 text-muted-foreground">استورد كشف الحساب البنكي وقم بمطابقة المقبوضات والمصروفات مع الحركة البنكية المباشرة.</p>
+                  </div>
+                  <Button asChild><Link to="/bank-reconciliation">فتح مطابقة البنك</Link></Button>
+                </CardContent>
+              </Card>
             ) : null}
           </div>
         </CardContent>
       </Card>
-
-      <ArrearsWorkspaceSection />
     </PageLayout>
   );
 }
+
+export default FinancialsPage;

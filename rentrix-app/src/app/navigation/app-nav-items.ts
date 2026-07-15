@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileText, FolderKanban, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Bot, Building2, ContactRound, DoorOpen, FileText, FolderKanban, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, SearchCheck, Settings, Settings2, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -6,7 +6,7 @@ export type NavItem = readonly [to: string, labelKey: string, description: strin
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
-export const navGroups = [
+export const navGroups: readonly NavGroup[] = [
   ['نظرة عامة', [['/', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
   ['الأصول والعلاقات', [
     ['/properties', 'properties', 'ملفات العقارات والأصول', Building2],
@@ -24,19 +24,14 @@ export const navGroups = [
     ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'communication.view'],
   ]],
-  ['الماليات', [
-    ['/financials', 'financials', 'لوحة الماليات والتحصيل', WalletCards],
-    ['/invoices', 'invoices', 'الفواتير المستحقة', ReceiptText],
-    ['/receipts', 'collectionsReceipts', 'التحصيلات والإيصالات', ReceiptText],
-    ['/expenses', 'expenses', 'مصاريف العقارات التشغيلية', WalletCards, 'expenses.write'],
-    ['/arrears', 'arrears', 'متابعة المبالغ المتأخرة', ClipboardList],
-    ['/bank-reconciliation', 'bankReconciliation', 'مطابقة حركات كشف البنك مع السجلات المالية', Landmark],
+  ['الماليات والمحاسبة', [
+    ['/financials', 'financials', 'مركز إدارة الفواتير، الإيصالات، المصاريف، والمتأخرات', WalletCards],
   ]],
   ['التحليل والنمو', [
     [
       '/reports',
       'reportsAndStatements',
-      'تحصيلات، متأخرات، إشغال، وكشوف قراءة فقط',
+      'مركز التقارير والكشوفات التنفيذية الشاملة',
       BarChart3,
     ],
     [
@@ -48,29 +43,27 @@ export const navGroups = [
     ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
     ['/commissions', 'commissions', 'تتبع عمولات المكتب وحالات الاستحقاق', BadgeDollarSign, 'commissions.view'],
   ]],
-  ['الإعدادات', [
-    ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، والحساب', Settings, 'settings.manage'],
+  ['الإعدادات والحوكمة', [
+    ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، وسجلات الحوكمة', Settings, 'settings.manage'],
+    ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة والعمليات', ListChecks, 'audit.view'],
+    ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات والتطابق', SearchCheck, 'integrity.view'],
+    ['/system', 'system', 'إدارة حوكمة النظام وإسناد الأدوار', ShieldCheck, 'system.view'],
   ]],
-  ['إدارة النظام', [
-    ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة قراءة فقط', ListChecks, 'audit.view'],
-    ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات', SearchCheck, 'integrity.view'],
-    ['/system', 'system', 'إدارة حوكمة النظام', ShieldCheck, 'system.view'],
-  ], true],
-] as const satisfies readonly NavGroup[];
+];
 
-export const mobileNavItems = [
+export const mobileNavItems: readonly MobileNavItem[] = [
   ['/', 'dashboard', LayoutDashboard],
   ['/properties', 'properties', Building2],
   ['/contracts', 'contracts', FileText],
-  ['/invoices', 'invoices', ReceiptText],
+  ['/financials', 'financials', WalletCards],
   ['/reports', 'reports', BarChart3],
-] as const satisfies readonly MobileNavItem[];
+];
 
 export const quickLinks = [
   ['/properties', 'العقارات', Building2],
   ['/people', 'الأشخاص', Users],
   ['/contracts', 'العقود', FileText],
-  ['/invoices', 'الفواتير', ReceiptText],
+  ['/financials', 'المالية', WalletCards],
 ] as const;
 
 export type QuickLinkRoute = (typeof quickLinks)[number][0];

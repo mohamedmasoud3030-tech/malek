@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, ListChecks, SearchCheck, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/hooks/use-auth';
@@ -113,6 +113,54 @@ export function SettingsOperationsSections({
             <Link to="/change-password">
               <KeyRound className="me-2 size-4" aria-hidden="true" />
               تغيير كلمة المرور
+            </Link>
+          </Button>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        id="governance"
+        activeId={activeSection}
+        title="حوكمة وسجلات النظام"
+        subtitle="تتبع كافة الأحداث الحوكمية، التغييرات المحاسبية، والتحكم الإداري للنظام."
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border bg-background p-4 space-y-2">
+            <p className="font-bold text-sm">سجل التدقيق الحوكمي (Audit Log)</p>
+            <p className="text-xs text-muted-foreground">عرض سجل بالعمليات المنفذة، المستخدمين، والتغييرات الحوكمية.</p>
+            <Button asChild variant="outline" size="sm" className="mt-2 text-xs">
+              <Link to="/audit-log">
+                <ListChecks className="me-2 size-3.5" />
+                فتح سجل التدقيق
+              </Link>
+            </Button>
+          </div>
+          <div className="rounded-xl border bg-background p-4 space-y-2">
+            <p className="font-bold text-sm">حوكمة وإسناد أدوار النظام</p>
+            <p className="text-xs text-muted-foreground">إدارة صلاحيات المستخدمين والقيود الأمنية الحوكمية.</p>
+            <Button asChild variant="outline" size="sm" className="mt-2 text-xs">
+              <Link to="/system">
+                <ShieldAlert className="me-2 size-3.5" />
+                إدارة حوكمة النظام
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        id="integrity"
+        activeId={activeSection}
+        title="فحوصات سلامة البيانات والتطابق"
+        subtitle="أدوات التدقيق التقني للتأكد من صحة التوازن المحاسبي وسلامة السجلات الهيكلية."
+      >
+        <div className="rounded-xl border bg-background p-4 space-y-2">
+          <p className="font-bold text-sm">فحص مطابقة وسلامة البيانات (Data Integrity)</p>
+          <p className="text-xs text-muted-foreground">تشغيل الفحوصات الآلية للتأكد من عدم وجود قيود غير متوازنة أو بيانات يتيمة.</p>
+          <Button asChild variant="outline" size="sm" className="mt-2 text-xs">
+            <Link to="/data-integrity">
+              <SearchCheck className="me-2 size-3.5" />
+              تشغيل فحوصات سلامة البيانات
             </Link>
           </Button>
         </div>
