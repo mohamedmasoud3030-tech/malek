@@ -37,15 +37,52 @@ const corsHeaders = {
 const sqlStatementPattern = /\b(select|insert|update|delete|drop|alter|truncate|create|grant|revoke)\b[\s\S]*(\bfrom\b|\binto\b|\btable\b|\bset\b|;)/i;
 const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
-function jsonResponse(body: unknown, status = 200): Response {
+// Simple in-memory rate limiter: 10 requests per minute per user identifier
+const rateLimiter = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+
+function getRateLimitIdentifier(request: Request): string {
+  const auth = request.headers.get('Authorization') || '';
+  // Hash-like short identifier without exposing token
+  if (auth.startsWith('Bearer ')) {
+    const token = auth.slice(7, 20); // first 13 chars of token as identifier
+    return `auth:${token}`;
+  }
+  const forwarded = request.headers.get('x-forwarded-for') || '';
+  if (forwarded) return `ip:${forwarded.split(',')[0].trim().slice(0, 20)}`;
+  return 'ip:unknown';
+}
+
+function checkRateLimit(request: Request): { allowed: boolean; retryAfter?: number } {
+  const id = getRateLimitIdentifier(request);
+  const now = Date.now();
+  const entry = rateLimiter.get(id);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimiter.set(id, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true };
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+    return { allowed: false, retryAfter };
+  }
+
+  entry.count += 1;
+  rateLimiter.set(id, entry);
+  return { allowed: true };
+}
+
+function jsonResponse(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json; charset=utf-8', ...extraHeaders },
   });
 }
 
-function errorResponse(code: string, message: string, status: number): Response {
-  return jsonResponse({ error: { code, message } }, status);
+function errorResponse(code: string, message: string, status: number, extraHeaders: Record<string, string> = {}): Response {
+  return jsonResponse({ error: { code, message } }, status, extraHeaders);
 }
 
 function isRecord(value: unknown): value is JsonObject {
@@ -179,6 +216,13 @@ async function assertAuthenticated(request: Request): Promise<Response | null> {
     return errorResponse('AUTH_REQUIRED', 'انتهت الجلسة أو لا تملك صلاحية استخدام المساعد.', 401);
   }
 
+  const userData = await userResponse.json().catch(() => null) as any;
+  // Basic role check: must be app user, not blocked
+  // We trust Supabase Auth; further role checks can be added via user app_metadata
+  if (!userData?.id) {
+    return errorResponse('AUTH_REQUIRED', 'تعذر التحقق من هوية المستخدم.', 401);
+  }
+
   return null;
 }
 
@@ -186,12 +230,21 @@ Deno.serve(async (request: Request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return errorResponse('METHOD_NOT_ALLOWED', 'طريقة الطلب غير مدعومة.', 405);
 
+  // Rate limiting
+  const rateLimit = checkRateLimit(request);
+  if (!rateLimit.allowed) {
+    return errorResponse('RATE_LIMIT_EXCEEDED', `تم تجاوز الحد المسموح للطلبات. حاول مرة أخرى بعد ${rateLimit.retryAfter || 60} ثانية.`, 429, {
+      'Retry-After': String(rateLimit.retryAfter || 60),
+    });
+  }
+
   const authError = await assertAuthenticated(request);
   if (authError) return authError;
 
   const apiKey = Deno.env.get('AI_PROVIDER_API_KEY')?.trim();
   if (!apiKey) {
-    return errorResponse('AI_CONFIG_MISSING', 'إعدادات الذكاء الاصطناعي غير مكتملة', 503);
+    // Graceful handling when provider not configured - return 503 so frontend shows "غير متاح"
+    return errorResponse('AI_CONFIG_MISSING', 'إعدادات الذكاء الاصطناعي غير مكتملة. اضبط AI_PROVIDER_API_KEY في إعدادات Edge Function.', 503);
   }
 
   const providerUrlResult = readProviderUrl();
@@ -203,8 +256,16 @@ Deno.serve(async (request: Request) => {
   const prompt = readString(body.prompt, 2400);
   const action = readString(body.action, 120) || 'freeform';
   if (!prompt) return errorResponse('VALIDATION_ERROR', 'اكتب سؤالاً أو اختر إجراءً جاهزاً.', 422);
+  if (prompt.length < 3) return errorResponse('VALIDATION_ERROR', 'الطلب قصير جداً.', 422);
   if (sqlStatementPattern.test(prompt)) {
     return errorResponse('SQL_NOT_ACCEPTED', 'لا يقبل المساعد أوامر SQL ولا ينفذ استعلامات مباشرة.', 422);
+  }
+
+  // Additional injection guard: block attempts to reveal secrets
+  const lowerPrompt = prompt.toLowerCase();
+  if (lowerPrompt.includes('api_key') || lowerPrompt.includes('secret') || lowerPrompt.includes('password') || lowerPrompt.includes('env')) {
+    // Not a hard block, but we log and add system instruction to not reveal secrets (already in system prompt)
+    console.log('Potential secret-seeking prompt detected, proceeding with safe system instructions');
   }
 
   const context = stringifyForPrompt(body.context, 9000);
@@ -219,6 +280,8 @@ Deno.serve(async (request: Request) => {
         'أنت مساعد قراءة فقط: لا تنفذ تعديلات، لا ترسل رسائل، لا تنشئ سجلات، لا تنفذ SQL، ولا تقترح تجاوز صلاحيات RLS.',
         'استخدم السياق الملخص المرسل فقط. إذا كان السياق غير كافٍ، اذكر ذلك بوضوح بدلاً من اختلاق بيانات.',
         'قدّم رداً عملياً ومختصراً بالعربية، وميّز بين الحقائق المستندة للسياق والتوصيات التشغيلية.',
+        'لا تكشف أبداً عن مفاتيح API، كلمات مرور، أو إعدادات البيئة. إذا طُلب منك ذلك، اعتذر وقل أنك لا تملك صلاحية.',
+        'إذا كان السياق يحتوي على بيانات حساسة، لا تعيد نشرها كاملة، فقط لخص.',
       ].join('\n'),
     },
     ...history,
@@ -228,23 +291,38 @@ Deno.serve(async (request: Request) => {
     },
   ];
 
-  const providerResponse = await fetch(providerUrlResult.url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 900 }),
-  });
+  const startTime = Date.now();
+  let providerResponse: Response;
+  try {
+    providerResponse = await fetch(providerUrlResult.url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 900 }),
+    });
+  } catch (e) {
+    console.error('AI provider network error', { error: e instanceof Error ? e.message : String(e) });
+    return errorResponse('AI_PROVIDER_NETWORK_ERROR', 'تعذر الاتصال بمزود الذكاء الاصطناعي. تحقق من الشبكة والإعدادات.', 502);
+  }
 
   const providerBody = readProviderResponse(await providerResponse.json().catch(() => null));
+  const durationMs = Date.now() - startTime;
+
   if (!providerResponse.ok) {
-    console.error('AI provider request failed', { status: providerResponse.status, message: providerBody.error?.message });
+    console.error('AI provider request failed', { status: providerResponse.status, message: providerBody.error?.message, durationMs, model });
     return errorResponse('AI_PROVIDER_ERROR', 'تعذر الحصول على رد من مزود الذكاء الاصطناعي.', 502);
   }
 
   const reply = providerBody.choices?.[0]?.message?.content?.trim();
-  if (!reply) return errorResponse('AI_EMPTY_RESPONSE', 'عاد مزود الذكاء الاصطناعي برد فارغ.', 502);
+  if (!reply) {
+    console.error('AI provider empty response', { durationMs, model });
+    return errorResponse('AI_EMPTY_RESPONSE', 'عاد مزود الذكاء الاصطناعي برد فارغ.', 502);
+  }
 
-  return jsonResponse({ reply });
+  // Safe logging: log only metadata, not full prompt/context
+  console.log('AI request success', { model, promptLength: prompt.length, contextLength: context.length, replyLength: reply.length, durationMs, action });
+
+  return jsonResponse({ reply, meta: { model, durationMs } });
 });

@@ -13,9 +13,73 @@ if (rawPort && (Number.isNaN(port) || port <= 0)) {
 
 const basePath = process.env.BASE_PATH ?? "/";
 
+const PLACEHOLDER_URLS = ['https://example.supabase.co', 'https://invalid.supabase.local'];
+const PLACEHOLDER_KEYS = ['test-anon-key', 'invalid-anon-key'];
+
+function isPlaceholderEnv(url: string | undefined, key: string | undefined): { isPlaceholder: boolean; reason?: string } {
+  if (!url || !key) {
+    return { isPlaceholder: true, reason: 'VITE_SUPABASE_URL أو VITE_SUPABASE_ANON_KEY مفقود' };
+  }
+  if (PLACEHOLDER_URLS.includes(url.trim())) {
+    return { isPlaceholder: true, reason: `VITE_SUPABASE_URL يستخدم قيمة وهمية: ${url}` };
+  }
+  if (PLACEHOLDER_KEYS.includes(key.trim())) {
+    return { isPlaceholder: true, reason: `VITE_SUPABASE_ANON_KEY يستخدم قيمة وهمية: ${key}` };
+  }
+  if (url.includes('example.supabase.co') || url.includes('invalid.supabase.local')) {
+    return { isPlaceholder: true, reason: `VITE_SUPABASE_URL يحتوي على نطاق وهمي: ${url}` };
+  }
+  return { isPlaceholder: false };
+}
+
+function productionEnvGuardPlugin() {
+  return {
+    name: 'rentrix-production-env-guard',
+    configResolved(config: any) {
+      const isTest = process.env.VITEST === 'true' || config.mode === 'test' || process.env.NODE_ENV === 'test';
+      const isProdBuild = config.command === 'build' && config.mode === 'production';
+      const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV === 'production');
+      const isEnforced = process.env.VITE_ENFORCE_PROD_ENV === 'true';
+
+      // Allow test env to use placeholders
+      if (isTest) return;
+
+      if (isProdBuild) {
+        const url = process.env.VITE_SUPABASE_URL;
+        const key = process.env.VITE_SUPABASE_ANON_KEY;
+        const check = isPlaceholderEnv(url, key);
+
+        if (check.isPlaceholder) {
+          // In Vercel production or when explicitly enforced, fail hard
+          if (isVercel || isEnforced) {
+            throw new Error(
+              `\n\n=== فشل بناء الإنتاج: متغيرات Supabase وهمية ===\n${check.reason}\n\n` +
+                `يمنع بناء نسخة Production باستخدام قيم Placeholder.\n` +
+                `الحلول:\n` +
+                `1. اضبط متغيرات بيئة حقيقية في Vercel/ production .env\n` +
+                `2. للإختبارات المحلية استخدم VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY الحقيقية أو اترك الاختبارات تستخدم القيم التجريبية عبر VITEST=true\n` +
+                `3. لا تستخدم https://example.supabase.co أو https://invalid.supabase.local في الإنتاج\n\n` +
+                `القيم الحالية:\n` +
+                `VITE_SUPABASE_URL=${url || '(مفقود)'}\n` +
+                `VITE_SUPABASE_ANON_KEY=${key ? key.slice(0, 10) + '...' : '(مفقود)'}\n`
+            );
+          } else {
+            // In local/CI build, allow but warn loudly
+            console.warn(
+              `\n[rentrix-env-guard] تحذير: بناء الإنتاج يستخدم قيم Supabase وهمية: ${check.reason}\n` +
+                `هذا مسموح في CI/التطوير المحلي لكن سيفشل في Vercel production. اضبط متغيرات حقيقية قبل الإطلاق.\n`
+            );
+          }
+        }
+      }
+    },
+  };
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
+    productionEnvGuardPlugin(),
     react(),
     runtimeErrorOverlay(),
     VitePWA({

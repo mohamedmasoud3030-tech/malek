@@ -1,284 +1,258 @@
 import { useMemo, useState } from 'react';
-import { Eye, ExternalLink, FileText, FolderKanban, Image as ImageIcon, Paperclip, Printer, Search, UploadCloud } from 'lucide-react';
+import { Eye, FileText, FolderKanban, Image as ImageIcon, Paperclip, Search, Trash2, UploadCloud, Download } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
-import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
-import {
-  vaultCategoryLabels,
-  type VaultCategory,
-  type VaultDocumentItem,
-} from './documents-vault-service';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
+import { AsyncContentState } from '@/components/async-content-state';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { vaultCategoryLabels, listVaultDocuments, uploadVaultDocument, softDeleteVaultDocument, getVaultDocumentDownloadUrl, type VaultCategory, type VaultDocumentItem } from './documents-vault-service';
+import { toast } from 'sonner';
 
 export function DocumentsVaultPage() {
   const [selectedCategory, setSelectedCategory] = useState<VaultCategory>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadCategory, setUploadCategory] = useState<VaultCategory>('contracts');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [previewItem, setPreviewItem] = useState<VaultDocumentItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<VaultDocumentItem | null>(null);
 
-  const [documents] = useState<VaultDocumentItem[]>(() => [
-    {
-      id: 'doc-1',
-      title: 'عقد إيجار موثق - شقة 102',
-      category: 'contracts',
-      relatedEntityTitle: 'برج النيل / شقة 102',
-      fileUrl: 'https://placehold.co/600x800/png?text=Contract+PDF',
-      fileType: 'pdf',
-      uploadedAt: '2026-06-01',
-      fileSizeBytes: 1024 * 450,
+  const queryClient = useQueryClient();
+
+  const documentsQuery = useQuery({
+    queryKey: ['vault-documents', selectedCategory, searchQuery],
+    queryFn: () => listVaultDocuments({ category: selectedCategory, search: searchQuery }),
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: () => {
+      if (!uploadFile) throw new Error('اختر ملفاً للرفع');
+      if (!uploadTitle.trim()) throw new Error('عنوان المستند مطلوب');
+      return uploadVaultDocument({ file: uploadFile, title: uploadTitle, category: uploadCategory });
     },
-    {
-      id: 'doc-2',
-      title: 'بطاقة مقيم / إثبات مستأجر - أحمد علي',
-      category: 'identity',
-      relatedEntityTitle: 'أحمد علي (مستأجر)',
-      fileUrl: 'https://placehold.co/800x600/png?text=ID+Card+Scan',
-      fileType: 'image',
-      uploadedAt: '2026-06-02',
-      fileSizeBytes: 1024 * 820,
+    onSuccess: () => {
+      toast.success('تم رفع المستند بنجاح');
+      setUploadFile(null);
+      setUploadTitle('');
+      queryClient.invalidateQueries({ queryKey: ['vault-documents'] });
     },
-    {
-      id: 'doc-3',
-      title: 'صورة عطل مصعد المبنى الرئيسي',
-      category: 'maintenance',
-      relatedEntityTitle: 'طلب صيانة #M-8012',
-      fileUrl: 'https://placehold.co/800x600/png?text=Maintenance+Photo',
-      fileType: 'image',
-      uploadedAt: '2026-06-15',
-      fileSizeBytes: 1024 * 1200,
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'فشل رفع المستند');
     },
-    {
-      id: 'doc-4',
-      title: 'إيصال استلام نقدية - دفعة يونيو',
-      category: 'receipts',
-      relatedEntityTitle: 'إيصال #REC-0092',
-      fileUrl: 'https://placehold.co/600x800/png?text=Receipt+PDF',
-      fileType: 'pdf',
-      uploadedAt: '2026-06-20',
-      fileSizeBytes: 1024 * 310,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => softDeleteVaultDocument(id),
+    onSuccess: () => {
+      toast.success('تم حذف المستند');
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['vault-documents'] });
     },
-  ]);
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'فشل حذف المستند');
+    },
+  });
 
-  const filteredDocuments = useMemo(() => {
-    return documents.filter((doc) => {
-      if (selectedCategory !== 'all' && doc.category !== selectedCategory) return false;
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        return (
-          doc.title.toLowerCase().includes(query) ||
-          doc.relatedEntityTitle.toLowerCase().includes(query)
-        );
-      }
-      return true;
-    });
-  }, [documents, selectedCategory, searchQuery]);
+  const documents = documentsQuery.data ?? [];
 
-  const totalPdfs = useMemo(() => documents.filter((d) => d.fileType === 'pdf').length, [documents]);
-  const totalImages = useMemo(() => documents.filter((d) => d.fileType === 'image').length, [documents]);
+  const totalPdfs = useMemo(() => documents.filter((d) => d.mimeType?.includes('pdf') || d.fileName.toLowerCase().endsWith('.pdf')).length, [documents]);
+  const totalImages = useMemo(() => documents.filter((d) => d.mimeType?.startsWith('image/')).length, [documents]);
 
-  const handlePrintVaultReport = () => {
-    const todayStr = getTodayLocalDateString();
+  const activeFilters = useMemo<ActiveFilterItem[]>(() => {
+    const items: ActiveFilterItem[] = [];
+    if (selectedCategory !== 'all') {
+      items.push({ key: 'category', label: 'التصنيف', value: vaultCategoryLabels[selectedCategory], onRemove: () => setSelectedCategory('all') });
+    }
+    if (searchQuery.trim()) {
+      items.push({ key: 'search', label: 'بحث', value: searchQuery, onRemove: () => setSearchQuery('') });
+    }
+    return items;
+  }, [selectedCategory, searchQuery]);
 
-    DocumentTemplates.renderReportPdf(
-      {
-        reportTitle: 'سجل وأرشيف المرفقات والمستندات الرسمية',
-        reportType: 'Document_Vault_Archive_Report',
-        periodFrom: todayStr,
-        periodTo: todayStr,
-        sections: [
-          {
-            title: 'جدول المستندات والمرفقات الموثوقة المحفوظة في النظام',
-            rows: filteredDocuments.map((d) => ({
-              label: `${d.title} - [${vaultCategoryLabels[d.category]}]`,
-              value: `الجهة المرتبطة: ${d.relatedEntityTitle} | النوع: ${d.fileType.toUpperCase()} | تاريخ الرفع: ${d.uploadedAt}`,
-            })),
-            totals: ['إجمالي المستندات المؤرشفة', `${filteredDocuments.length} مستند محفوظ`],
-          },
-        ],
-        totalSummary: `إجمالي المستندات المحفوظة: ${documents.length} | ملفات PDF: ${totalPdfs} | صور ممسوحة ضوئياً: ${totalImages}`,
-      },
-      defaultSettings,
-    );
+  const handleDownload = async (doc: VaultDocumentItem) => {
+    try {
+      const url = await getVaultDocumentDownloadUrl(doc.storagePath);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.fileName;
+      a.target = '_blank';
+      a.click();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'تعذر تنزيل الملف');
+    }
   };
 
   return (
     <PageLayout dir="rtl" size="wide">
-      <PageHeader
-        title="خزينة المستندات والمرفقات"
-        description="الأرشيف المركزي لكافة العقود، بطاقات الهوية، الإيصالات، صور الصيانة، وفواتير المرافق المحفوظة بأمان."
-        primaryAction={
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={handlePrintVaultReport} className="min-h-11 gap-2 font-bold">
-              <Printer className="size-4 text-primary" aria-hidden="true" />
-              طباعة أرشيف المستندات A4
-            </Button>
-          </div>
-        }
-      />
+      <PageHeader title="خزينة المستندات والمرفقات" description="أرشيف حقيقي للمستندات مع تخزين آمن، ربط بالكيانات، وتحقق من نوع وحجم الملف." />
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="إجمالي المستندات" value={documents.length.toLocaleString('ar')} icon={FolderKanban} accent="primary" sub="كل الملفات المحفوظة" />
-        <KpiCard label="عقود وإثباتات PDF" value={totalPdfs.toLocaleString('ar')} icon={FileText} accent="sky" sub="مستندات معتمدة" />
-        <KpiCard label="صور وبلاغات مرفقة" value={totalImages.toLocaleString('ar')} icon={ImageIcon} accent="emerald" sub="معاينات بصرية" />
-        <KpiCard label="سعة التخزين المستغلة" value="~ 2.8 MB" icon={UploadCloud} accent="amber" sub="ضمن السحابة الآمنة" />
+        <KpiCard label="إجمالي المستندات" value={documents.length.toLocaleString('ar')} icon={FolderKanban} accent="primary" sub="ملفات محفوظة" />
+        <KpiCard label="ملفات PDF" value={totalPdfs.toLocaleString('ar')} icon={FileText} accent="sky" sub="مستندات" />
+        <KpiCard label="صور مرفقة" value={totalImages.toLocaleString('ar')} icon={ImageIcon} accent="emerald" sub="معاينات" />
+        <KpiCard label="التخزين" value={documents.reduce((acc, d) => acc + (d.fileSize || 0), 0) > 0 ? `${(documents.reduce((acc, d) => acc + (d.fileSize || 0), 0) / 1024 / 1024).toFixed(2)} MB` : '—'} icon={UploadCloud} accent="amber" sub="إجمالي" />
       </ResponsiveCardGrid>
 
-      {/* Upload Box Container */}
       <Card className="border-border/60">
-        <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-          <CardTitle className="text-sm font-black">رفع مستند أو مرفق جديد للخزينة</CardTitle>
-          <CardDescription>ارفع صور الهويات، العقود الموقعة، أو الفواتير لحفظها وأرصفتها آلياً.</CardDescription>
+        <CardHeader className="bg-muted/20 border-b">
+          <CardTitle className="text-sm font-black">رفع مستند جديد</CardTitle>
+          <CardDescription>الحد الأقصى 10MB. الأنواع المدعومة: PDF، صور، Word، Excel. سيتم ربط الملف بالعنوان والتصنيف.</CardDescription>
         </CardHeader>
-        <CardContent className="p-4 sm:p-5">
-          <FileAttachmentField
-            label="اختر أو اسحب ملف المستند (PDF أو صورة)"
-            value={uploadedUrl}
-            onChange={(url) => setUploadedUrl(url)}
-          />
+        <CardContent className="p-4 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label>عنوان المستند *</Label>
+              <Input value={uploadTitle} onChange={(e) => setUploadTitle(e.target.value)} placeholder="مثال: عقد إيجار موثق - شقة 102" />
+            </div>
+            <div className="grid gap-2">
+              <Label>التصنيف *</Label>
+              <Select value={uploadCategory} onChange={(e) => setUploadCategory(e.target.value as VaultCategory)}>
+                {Object.entries(vaultCategoryLabels).map(([cat, label]) => (
+                  <option key={cat} value={cat}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label>اختر الملف *</Label>
+            <Input type="file" accept=".pdf,image/*,.doc,.docx,.xls,.xlsx" onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} />
+            {uploadFile && <p className="text-xs text-muted-foreground">الملف: {uploadFile.name} - {(uploadFile.size / 1024 / 1024).toFixed(2)} MB</p>}
+          </div>
+          {uploadMutation.isError && <p className="text-sm text-destructive">{(uploadMutation.error as Error)?.message}</p>}
+          <Button onClick={() => uploadMutation.mutate()} disabled={uploadMutation.isPending || !uploadFile || !uploadTitle.trim()} className="min-h-11">
+            {uploadMutation.isPending ? 'جارٍ الرفع...' : 'رفع المستند'}
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Search & Categories Bar */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="ابحث باسم المستند أو العقار أو المستأجر..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pe-3 ps-9"
-          />
-        </div>
-        <div className="w-56">
-          <Select
-            aria-label="تصفية حسب القسم"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value as VaultCategory)}
-          >
+      <FilterBar
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="بحث بعنوان المستند أو اسمه..."
+        searchAriaLabel="بحث في المستندات"
+        filters={
+          <Select aria-label="التصنيف" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value as VaultCategory)} className="w-full sm:w-48">
             {Object.entries(vaultCategoryLabels).map(([cat, label]) => (
               <option key={cat} value={cat}>
                 {label}
               </option>
             ))}
           </Select>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Documents Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredDocuments.map((doc) => (
-          <Card key={doc.id} className="border-border/60 overflow-hidden hover:border-primary/40 transition">
-            <CardHeader className="bg-muted/15 border-b border-border/50 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <CardTitle className="text-sm font-bold">{doc.title}</CardTitle>
-                  <CardDescription className="text-xs mt-1">{doc.relatedEntityTitle}</CardDescription>
-                </div>
-                <StatusBadge tone={doc.fileType === 'pdf' ? 'blue' : 'gold'}>
-                  {doc.fileType.toUpperCase()}
-                </StatusBadge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              <div className="aspect-video w-full rounded-xl border border-border bg-muted/30 grid place-items-center overflow-hidden">
-                {doc.fileType === 'image' ? (
-                  <img src={doc.fileUrl} alt={doc.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <FileText className="size-8 text-primary" />
-                    <span className="text-xs font-bold">ملف PDF محفوظ</span>
+      <ActiveFilterBar filters={activeFilters} onClearAll={() => { setSelectedCategory('all'); setSearchQuery(''); }} />
+
+      <AsyncContentState
+        status={documentsQuery.isLoading ? 'loading' : documentsQuery.isError ? 'error' : documents.length === 0 ? 'empty' : 'ready'}
+        error={documentsQuery.error as Error}
+        errorTitle="تعذر تحميل المستندات"
+        errorAction={<Button onClick={() => documentsQuery.refetch()}>إعادة المحاولة</Button>}
+        emptyTitle="لا توجد مستندات"
+        emptyDescription="ابدأ برفع أول مستند (عقد، هوية، إيصال) باستخدام النموذج أعلاه."
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {documents.map((doc) => (
+            <Card key={doc.id} className="border-border/60 overflow-hidden hover:border-primary/40 transition">
+              <CardHeader className="bg-muted/15 border-b p-4">
+                <div className="flex justify-between gap-2">
+                  <div className="min-w-0">
+                    <CardTitle className="text-sm font-bold truncate">{doc.title}</CardTitle>
+                    <CardDescription className="text-xs mt-1 truncate">{doc.fileName} · {doc.relatedEntityTitle || 'غير مرتبط'}</CardDescription>
                   </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                <span>تاريخ الرفع: {doc.uploadedAt}</span>
+                  <StatusBadge tone={doc.mimeType?.includes('pdf') ? 'blue' : 'gold'}>{doc.category ? vaultCategoryLabels[doc.category] : '—'}</StatusBadge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                <div className="aspect-video w-full rounded-xl border bg-muted/30 grid place-items-center overflow-hidden">
+                  {doc.mimeType?.startsWith('image/') ? (
+                    <img src={doc.fileUrl} alt={doc.title} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <FileText className="size-8 text-primary" />
+                      <span className="text-xs font-bold">{doc.fileName}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{new Date(doc.uploadedAt).toLocaleDateString('ar-OM')}</span>
+                  <span>{doc.fileSize ? `${(doc.fileSize / 1024).toFixed(1)} KB` : ''}</span>
+                </div>
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setPreviewItem(doc)}
-                    className="h-8 px-2 text-xs gap-1"
-                  >
+                  <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setPreviewItem(doc)}>
                     <Eye className="size-3.5" />
                     معاينة
                   </Button>
-                  <a
-                    href={doc.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary font-bold hover:underline h-8 px-2"
-                  >
-                    <ExternalLink className="size-3.5" />
-                    فتح
-                  </a>
+                  <Button size="sm" variant="secondary" className="flex-1 gap-1" onClick={() => handleDownload(doc)}>
+                    <Download className="size-3.5" />
+                    تنزيل
+                  </Button>
+                  <Button size="sm" variant="ghost" className="gap-1 text-destructive" onClick={() => setDeleteTarget(doc)}>
+                    <Trash2 className="size-3.5" />
+                  </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {filteredDocuments.length === 0 ? (
-          <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
-            <Paperclip className="size-8 mx-auto mb-2 opacity-50" />
-            <p className="font-bold text-sm">لا توجد مستندات تطابق شروط البحث أو الفلترة.</p>
-          </div>
-        ) : null}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </AsyncContentState>
 
-      {/* Preview Modal Overlay */}
-      {previewItem ? (
+      {previewItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-3xl bg-background border border-border p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <h3 className="font-black text-base">{previewItem.title}</h3>
+          <div className="w-full max-w-2xl rounded-3xl bg-background border p-5 space-y-4 shadow-2xl">
+            <div className="flex justify-between border-b pb-3">
+              <h3 className="font-black text-base truncate">{previewItem.title}</h3>
               <Button size="sm" variant="ghost" onClick={() => setPreviewItem(null)}>
                 إغلاق
               </Button>
             </div>
-            <div className="aspect-video w-full rounded-2xl border border-border bg-muted/20 grid place-items-center overflow-hidden">
-              {previewItem.fileType === 'image' ? (
+            <div className="aspect-video w-full rounded-2xl border bg-muted/20 grid place-items-center overflow-hidden">
+              {previewItem.mimeType?.startsWith('image/') ? (
                 <img src={previewItem.fileUrl} alt={previewItem.title} className="max-h-80 object-contain" />
               ) : (
-                <div className="text-center space-y-3 p-6">
+                <div className="text-center p-6 space-y-3">
                   <FileText className="size-16 text-primary mx-auto" />
-                  <p className="font-bold text-sm">{previewItem.title}</p>
-                  <a
-                    href={previewItem.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-4 py-2 text-xs font-bold"
-                  >
-                    تحميل / فتح المستند في نافذة جديدة
-                    <ExternalLink className="size-4" />
-                  </a>
+                  <p className="font-bold text-sm">{previewItem.fileName}</p>
+                  <Button onClick={() => handleDownload(previewItem)}>تنزيل / فتح</Button>
                 </div>
               )}
             </div>
-            <div className="flex justify-between items-center text-xs text-muted-foreground">
-              <span>القسم: {vaultCategoryLabels[previewItem.category]}</span>
-              <span>تاريخ الأرشفة: {previewItem.uploadedAt}</span>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>التصنيف: {vaultCategoryLabels[previewItem.category]}</span>
+              <span>{new Date(previewItem.uploadedAt).toLocaleString('ar-OM')}</span>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title={`حذف المستند "${deleteTarget?.title ?? ''}"؟`}
+        description="سيتم أرشفة المستند وإخفاؤه من القوائم. يمكن استرجاعه من سجل التدقيق إذا لزم."
+        confirmLabel="حذف"
+        isLoading={deleteMutation.isPending}
+        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget.id); }}
+      />
+
+      {documents.length === 0 ? null : (
+        <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground text-sm">
+          <Paperclip className="size-6 mx-auto mb-2 opacity-50" />
+          <p>لا توجد مستندات إضافية ضمن الفلاتر.</p>
+        </div>
+      )}
     </PageLayout>
   );
 }

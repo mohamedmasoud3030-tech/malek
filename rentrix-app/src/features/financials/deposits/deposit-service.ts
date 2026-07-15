@@ -1,14 +1,17 @@
 import { supabase } from '@/lib/supabase';
+import { handleSupabaseError } from '@/lib/supabase-error';
 
 export type DepositStatus = 'held' | 'partially_refunded' | 'refunded' | 'forfeited_damage' | 'forfeited_arrears';
 
 export type DepositRecord = {
   id: string;
   contract_id: string;
-  tenant_id: string;
-  tenant_name: string;
-  property_title: string;
-  unit_number: string;
+  tenant_id?: string | null;
+  tenant_name?: string | null;
+  property_id?: string | null;
+  property_title?: string | null;
+  unit_id?: string | null;
+  unit_number?: string | null;
   deposit_amount: number;
   deducted_amount: number;
   refunded_amount: number;
@@ -18,15 +21,28 @@ export type DepositRecord = {
   settled_date?: string | null;
   notes?: string | null;
   created_at: string;
+  request_id?: string | null;
+};
+
+export type DepositCreatePayload = {
+  contract_id: string;
+  tenant_id?: string | null;
+  property_id?: string | null;
+  unit_id?: string | null;
+  amount: number;
+  received_date?: string | null;
+  notes?: string | null;
+  request_id?: string;
 };
 
 export type DepositDeductionPayload = {
   deposit_id: string;
-  property_id?: string;
   deduction_amount: number;
   reason: 'maintenance_damage' | 'unpaid_arrears' | 'cleaning_fee' | 'other';
   description: string;
   charged_date: string;
+  property_id?: string | null;
+  request_id?: string;
 };
 
 export type DepositRefundPayload = {
@@ -34,7 +50,8 @@ export type DepositRefundPayload = {
   refund_amount: number;
   payment_method: 'cash' | 'bank_transfer' | 'check';
   refund_date: string;
-  notes?: string;
+  notes?: string | null;
+  request_id?: string;
 };
 
 export const depositStatusLabels: Record<DepositStatus, string> = {
@@ -52,63 +69,206 @@ export const deductionReasonLabels: Record<DepositDeductionPayload['reason'], st
   other: 'خصومات أخرى معتمدة',
 };
 
+type DepositRow = {
+  id: string;
+  contract_id: string;
+  tenant_id?: string | null;
+  property_id?: string | null;
+  unit_id?: string | null;
+  deposit_amount: number;
+  deducted_amount: number;
+  refunded_amount: number;
+  remaining_amount: number;
+  status: DepositStatus;
+  received_date: string;
+  settled_date?: string | null;
+  notes?: string | null;
+  created_at: string;
+  request_id?: string | null;
+};
+
+function mapRow(row: any): DepositRecord {
+  return {
+    id: row.id,
+    contract_id: row.contract_id,
+    tenant_id: row.tenant_id ?? null,
+    tenant_name: row.people?.full_name ?? row.tenant_id ?? null,
+    property_id: row.property_id ?? null,
+    property_title: row.properties?.title ?? row.property_id ?? null,
+    unit_id: row.unit_id ?? null,
+    unit_number: row.units?.unit_number ?? row.unit_id ?? null,
+    deposit_amount: Number(row.deposit_amount ?? 0),
+    deducted_amount: Number(row.deducted_amount ?? 0),
+    refunded_amount: Number(row.refunded_amount ?? 0),
+    remaining_amount: Number(row.remaining_amount ?? 0),
+    status: row.status as DepositStatus,
+    received_date: row.received_date,
+    settled_date: row.settled_date ?? null,
+    notes: row.notes ?? null,
+    created_at: row.created_at,
+    request_id: row.request_id ?? null,
+  };
+}
+
 export async function listTenantDeposits(): Promise<DepositRecord[]> {
-  return [
-    {
-      id: 'dep-101',
-      contract_id: 'contract-1',
-      tenant_id: 'tenant-1',
-      tenant_name: 'أحمد بن علي البوسعيدي',
-      property_title: 'برج النيل المكتبي',
-      unit_number: 'A-102',
-      deposit_amount: 300,
-      deducted_amount: 50,
-      refunded_amount: 0,
-      remaining_amount: 250,
-      status: 'held',
-      received_date: '2026-01-01',
-      notes: 'مبلغ التأمين المحتجز عند توقيع العقد',
-      created_at: '2026-01-01T00:00:00.000Z',
-    },
-    {
-      id: 'dep-102',
-      contract_id: 'contract-2',
-      tenant_id: 'tenant-2',
-      tenant_name: 'سالم بن حمد الرئيسي',
-      property_title: 'مجمع العذيبة السكني',
-      unit_number: 'B-304',
-      deposit_amount: 200,
-      deducted_amount: 0,
-      refunded_amount: 200,
-      remaining_amount: 0,
-      status: 'refunded',
-      received_date: '2025-06-01',
-      settled_date: '2026-06-01',
-      notes: 'تم رد مبلغ التأمين بالكامل عند تسليم الشقة بحالة ممتازة',
-      created_at: '2025-06-01T00:00:00.000Z',
-    },
-  ];
+  const { data, error } = await supabase
+    .from('tenant_deposits')
+    .select(`
+      *,
+      properties:property_id(id,title),
+      units:unit_id(id,unit_number)
+    `)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(200)
+    .returns<DepositRow[]>();
+
+  if (error) {
+    // If table not yet migrated in local test env, return empty rather than mock
+    if ((error as any).code === '42P01') return [];
+    handleSupabaseError(error, 'تعذر تحميل ودائع التأمين');
+  }
+
+  return (data ?? []).map(mapRow);
 }
 
-export async function recordDepositDeduction(payload: DepositDeductionPayload): Promise<boolean> {
-  const { error } = await supabase.from('expenses').insert({
-    property_id: payload.property_id || '00000000-0000-0000-0000-000000000000',
+export async function createTenantDeposit(payload: DepositCreatePayload): Promise<DepositRecord> {
+  if (!payload.contract_id) throw new Error('العقد مطلوب لتسجيل الوديعة');
+  if (!Number.isFinite(payload.amount) || payload.amount <= 0) throw new Error('مبلغ الوديعة يجب أن يكون أكبر من صفر');
+
+  const requestId = payload.request_id || crypto.randomUUID();
+
+  function getLocalDateString(date = new Date()): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  const rpcPayload = {
+    contract_id: payload.contract_id,
+    tenant_id: payload.tenant_id || null,
+    property_id: payload.property_id || null,
+    unit_id: payload.unit_id || null,
+    amount: payload.amount,
+    received_date: payload.received_date || getLocalDateString(),
+    notes: payload.notes || null,
+    request_id: requestId,
+  };
+
+  const { data, error } = await supabase.rpc('create_deposit_atomic' as any, { p_payload: rpcPayload });
+
+  if (error) handleSupabaseError(error, 'فشل إنشاء وديعة التأمين');
+
+  // data contains deposit_id
+  const depositId = (data as any)?.deposit_id as string | undefined;
+  if (!depositId) throw new Error('لم يتم إرجاع معرف الوديعة من الخادم');
+
+  // Fetch created record
+  const { data: row, error: fetchError } = await supabase
+    .from('tenant_deposits')
+    .select(`
+      *,
+      properties:property_id(id,title),
+      units:unit_id(id,unit_number)
+    `)
+    .eq('id', depositId)
+    .single();
+
+  if (fetchError) handleSupabaseError(fetchError, 'تم إنشاء الوديعة لكن تعذر تحميلها');
+
+  return mapRow(row);
+}
+
+export async function recordDepositDeduction(payload: DepositDeductionPayload): Promise<DepositRecord> {
+  if (!payload.deposit_id) throw new Error('معرف الوديعة مطلوب');
+  if (!Number.isFinite(payload.deduction_amount) || payload.deduction_amount <= 0) throw new Error('مبلغ الخصم يجب أن يكون أكبر من صفر');
+  if (!payload.description?.trim()) throw new Error('وصف الخصم مطلوب');
+  if (!payload.charged_date) throw new Error('تاريخ الخصم مطلوب');
+
+  const requestId = payload.request_id || crypto.randomUUID();
+
+  const rpcPayload = {
+    deposit_id: payload.deposit_id,
     amount: payload.deduction_amount,
-    category: 'صيانة',
-    description: `خصم من تأمين المستأجر: ${payload.description}`,
-    expense_date: payload.charged_date,
-  }).limit(0);
-  void error;
-  return true;
+    reason: payload.reason,
+    description: payload.description.trim(),
+    charged_date: payload.charged_date,
+    property_id: payload.property_id || null,
+    request_id: requestId,
+  };
+
+  const { data, error } = await supabase.rpc('deduct_deposit_atomic' as any, { p_payload: rpcPayload });
+
+  if (error) {
+    // Do NOT swallow error, propagate it to UI - no false success
+    handleSupabaseError(error, 'فشل خصم مبلغ التأمين - تحقق من الرصيد المتبقي');
+  }
+
+  void data;
+
+  // Fetch updated record
+  const { data: row, error: fetchError } = await supabase
+    .from('tenant_deposits')
+    .select(`
+      *,
+      properties:property_id(id,title),
+      units:unit_id(id,unit_number)
+    `)
+    .eq('id', payload.deposit_id)
+    .single();
+
+  if (fetchError) handleSupabaseError(fetchError, 'تم الخصم لكن تعذر تحديث السجل');
+
+  return mapRow(row);
 }
 
-export async function recordDepositRefund(payload: DepositRefundPayload): Promise<boolean> {
-  const { error } = await supabase.from('payments').insert({
+export async function recordDepositRefund(payload: DepositRefundPayload): Promise<DepositRecord> {
+  if (!payload.deposit_id) throw new Error('معرف الوديعة مطلوب');
+  if (!Number.isFinite(payload.refund_amount) || payload.refund_amount <= 0) throw new Error('مبلغ الاسترداد يجب أن يكون أكبر من صفر');
+  if (!payload.refund_date) throw new Error('تاريخ الاسترداد مطلوب');
+
+  const requestId = payload.request_id || crypto.randomUUID();
+
+  const rpcPayload = {
+    deposit_id: payload.deposit_id,
     amount: payload.refund_amount,
     payment_method: payload.payment_method,
-    payment_date: payload.refund_date,
-    notes: `إرجاع تأمين مستأجر: ${payload.notes ?? ''}`,
-  }).limit(0);
-  void error;
-  return true;
+    refund_date: payload.refund_date,
+    notes: payload.notes || null,
+    request_id: requestId,
+  };
+
+  const { data, error } = await supabase.rpc('refund_deposit_atomic' as any, { p_payload: rpcPayload });
+
+  if (error) {
+    handleSupabaseError(error, 'فشل رد مبلغ التأمين - تحقق من الرصيد المتبقي');
+  }
+
+  void data;
+
+  const { data: row, error: fetchError } = await supabase
+    .from('tenant_deposits')
+    .select(`
+      *,
+      properties:property_id(id,title),
+      units:unit_id(id,unit_number)
+    `)
+    .eq('id', payload.deposit_id)
+    .single();
+
+  if (fetchError) handleSupabaseError(fetchError, 'تم الاسترداد لكن تعذر تحديث السجل');
+
+  return mapRow(row);
+}
+
+export async function listDepositTransactions(depositId: string) {
+  const { data, error } = await supabase
+    .from('deposit_transactions')
+    .select('*')
+    .eq('deposit_id', depositId)
+    .order('created_at', { ascending: true });
+
+  if (error) handleSupabaseError(error, 'تعذر تحميل سجل حركات الوديعة');
+  return data ?? [];
 }
