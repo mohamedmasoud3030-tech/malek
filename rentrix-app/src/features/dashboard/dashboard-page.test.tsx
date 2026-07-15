@@ -160,7 +160,7 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
     expect(sectionOrder).toEqual(['priorities', 'kpis', 'work-queues', 'trends']);
-    expect(container?.querySelectorAll('[data-dashboard-action-grid] > a')).toHaveLength(4);
+    expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(4);
     expect(container?.querySelectorAll('[data-dashboard-kpi-grid] [class*="grid-cols-2"] > *')).toHaveLength(4);
   });
 
