@@ -79,6 +79,8 @@ test('keeps authentication failure inside the login form', async ({ page }) => {
   });
 
   await openLogin(page, 'light');
+  const submitButton = page.getByRole('button', { name: 'تسجيل الدخول' });
+  await expect(submitButton).toBeEnabled();
   await page.getByLabel('البريد الإلكتروني').fill('invalid@example.com');
   await page.getByPlaceholder('••••••••').fill('not-a-real-password');
   await page.getByRole('button', { name: /تسجيل الدخول/ }).click();
@@ -87,5 +89,5 @@ test('keeps authentication failure inside the login form', async ({ page }) => {
   const error = form.getByRole('alert');
   await expect(error).toBeVisible();
   await expect(error).toContainText('تعذر تسجيل الدخول');
-  await expect(page.getByRole('button', { name: 'تسجيل الدخول' })).toBeEnabled();
+  await expect(submitButton).toBeEnabled();
 });
