@@ -7,9 +7,9 @@ const bars = [42, 68, 55, 80, 63, 90, 74];
  * fallback when a real captured screenshot is not yet available under
  * `public/landing/`.
  */
-export function AppPreview() {
+export function AppPreview({ className }: { className?: string }) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl">
+    <div className={cn('overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl', className)}>
       <div className="flex items-center gap-2 border-b border-border/60 bg-muted/40 px-4 py-3">
         <span className="size-3 rounded-full bg-rose-400/70" />
         <span className="size-3 rounded-full bg-amber-400/70" />
