@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Printer, MessageCircle, Share2, Download, ExternalLink, Copy } from 'lucide-react';
+import { ArrowRight, Printer, MessageCircle, Share2, Copy, ExternalLink } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,8 @@ import { useReceipt } from './useReceipts';
 import { formatDate, formatMoney, getErrorMessage } from '../components/financials-formatters';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import { toast } from 'sonner';
-import { openWhatsApp, printCurrentView, shareOrCopy } from '@/services/action-service';
+import { openWhatsApp, shareOrCopy } from '@/services/action-service';
+import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
 
 export function ReceiptDetailPage() {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
@@ -23,10 +24,33 @@ export function ReceiptDetailPage() {
   const receipt = receiptQuery.data;
 
   const handlePrint = useCallback(() => {
+    if (!receipt) return;
     setIsPrinting(true);
-    printCurrentView();
+    DocumentTemplates.renderReceiptPdf(
+      {
+        receiptNumber: receipt.receipt_number,
+        paymentDate: receipt.payment_date,
+        tenantName: receipt.tenant_name ?? '—',
+        propertyName: receipt.property_title ?? '—',
+        unitNumber: receipt.unit_number ?? '—',
+        invoiceNumber: receipt.invoice_id?.slice(0, 8) ?? '—',
+        amount: receipt.amount,
+        paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
+        reference: receipt.reference_number ?? undefined,
+        notes: receipt.notes ?? undefined,
+      },
+      {
+        company: {
+          name: companySettings.companyName || 'رينتريكس لإدارة العقارات',
+          phone: companySettings.phone || '+968 24000000',
+          address: companySettings.address || 'سلطنة عمان - مسقط',
+        },
+        currency: 'OMR',
+        currencySymbol: 'ر.ع',
+      },
+    );
     window.setTimeout(() => setIsPrinting(false), 1000);
-  }, []);
+  }, [receipt, companySettings]);
 
   const handleWhatsApp = useCallback(() => {
     if (!receipt) return;
@@ -98,31 +122,25 @@ export function ReceiptDetailPage() {
 
   return (
     <div className="space-y-4 p-4 print:space-y-0 print:p-0 md:p-6" dir="rtl">
-      {/* Print Header - Only visible on print */}
-      <div className="hidden print:block">
-        <h1 className="text-2xl font-bold">{companySettings.companyName}</h1>
-        <p className="text-muted-foreground">إيصال استلام</p>
-      </div>
-
       {/* Action Bar */}
       <div className="flex flex-wrap items-center gap-2 print:hidden">
-        <Button variant="secondary" onClick={handlePrint} disabled={isPrinting}>
+        <Button variant="primary" onClick={handlePrint} disabled={isPrinting} className="min-h-11">
           <Printer className="me-2 size-4" />
-          {isPrinting ? 'جارٍ الطباعة...' : 'طباعة'}
+          {isPrinting ? 'جارٍ الطباعة...' : 'طباعة الإيصال المعتمد A4'}
         </Button>
-        <Button variant="secondary" onClick={handleWhatsApp}>
+        <Button variant="secondary" onClick={handleWhatsApp} className="min-h-11">
           <MessageCircle className="me-2 size-4" />
           إرسال واتساب
         </Button>
-        <Button variant="secondary" onClick={handleShare} disabled={isSharing}>
+        <Button variant="secondary" onClick={handleShare} disabled={isSharing} className="min-h-11">
           <Share2 className="me-2 size-4" />
           {isSharing ? 'جارٍ المشاركة...' : 'مشاركة'}
         </Button>
-        <Button variant="secondary" onClick={handleCopyReceiptNumber}>
+        <Button variant="secondary" onClick={handleCopyReceiptNumber} className="min-h-11">
           <Copy className="me-2 size-4" />
           نسخ الرقم
         </Button>
-        <Button asChild variant="secondary" className="mr-auto">
+        <Button asChild variant="secondary" className="mr-auto min-h-11">
           <Link to="/receipts">
             <ArrowRight className="me-2 size-4" />
             العودة
@@ -134,7 +152,7 @@ export function ReceiptDetailPage() {
       <Card className="border-primary/20 bg-gradient-to-l from-primary/5">
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div>
-            <CardTitle className="text-2xl font-black">إيصال استلام</CardTitle>
+            <CardTitle className="text-2xl font-black">إيصال استلام نقدية</CardTitle>
             <CardDescription className="mt-1">
               رقم الإيصال:{' '}
               <button
@@ -218,31 +236,17 @@ export function ReceiptDetailPage() {
               <p className="mt-1">{formatReceiptContext(receipt)}</p>
             </div>
           ) : null}
-
-          {/* Print Footer - Only visible on print */}
-          <div className="hidden print:block mt-8 pt-8 border-t">
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <p className="font-bold">توقيع المستلم:</p>
-                <p className="mt-8 border-b border-black" />
-              </div>
-              <div>
-                <p className="font-bold">توقيع المحاسب:</p>
-                <p className="mt-8 border-b border-black" />
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
-      {/* Mobile WhatsApp Action */}
+      {/* Mobile Action */}
       <div className="fixed bottom-20 left-4 right-4 print:hidden md:hidden">
         <Button
-          className="w-full min-h-14 bg-[#25D366] hover:bg-[#25D366]/90 text-white"
-          onClick={handleWhatsApp}
+          className="w-full min-h-14 bg-primary text-white"
+          onClick={handlePrint}
         >
-          <MessageCircle className="me-2 size-5" />
-          إرسال إيصال واتساب
+          <Printer className="me-2 size-5" />
+          طباعة الإيصال المعتمد A4
         </Button>
       </div>
     </div>
