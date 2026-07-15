@@ -40,11 +40,13 @@ export function buildExpiringContracts(
   today: Date,
 ): ExpiringContractRow[] {
   const cutoff = addDays(today, DASHBOARD_WINDOW_DAYS);
+  const todayStart = Date.parse(`${toDateInputValue(today)}T00:00:00.000Z`);
+  const cutoffEnd = Date.parse(`${toDateInputValue(cutoff)}T23:59:59.999Z`);
   return (contracts ?? [])
     .filter((c) => {
       if (!c.end_date) return false;
-      const d = Date.parse(`${c.end_date}T00:00:00.000Z`);
-      return Number.isFinite(d) && d >= Date.now() && d <= cutoff.getTime();
+      const endDate = Date.parse(`${c.end_date}T00:00:00.000Z`);
+      return Number.isFinite(endDate) && endDate >= todayStart && endDate <= cutoffEnd;
     })
     .slice(0, MAX_EXPIRING_ROWS)
     .map((c) => ({

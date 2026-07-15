@@ -96,3 +96,31 @@ Added/completed:
 2. Wire automation rules to real `automation_jobs` workers when backend schedule is ready.
 3. Add provider adapters behind `sendOutboundMessage` for production WhatsApp/email.
 4. Device QA on 320/375/430 against drawer + bottom nav + sticky actions.
+
+
+## Dashboard priority pass (2026-07-15)
+
+Tracked by [#1155](https://github.com/mohamedmasoud3030-tech/rentrixxx/issues/1155) and implemented in [PR #1165](https://github.com/mohamedmasoud3030-tech/rentrixxx/pull/1165).
+
+### Goal and scope
+
+- Make the dashboard a decision surface ordered as priorities, four decision KPIs, work queues, then supporting trends.
+- Remove duplicate financial and operational summaries without changing their source or calculation.
+- Keep every four-card metric/action group on the shared 2×2 contract.
+- Preserve `getDashboardSnapshot`, route guards, permissions, financial services, and all backend contracts.
+
+### Verification contract
+
+Run from the repository root:
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm --filter ./rentrix-app run typecheck:test
+pnpm --filter ./rentrix-app run check:architecture
+pnpm --filter ./rentrix-app test
+pnpm build
+pnpm e2e
+```
+
+Browser acceptance covers 360×800, 390×844, 430×932, 768×1024, and 1440×1000 in light/dark Arabic RTL. It asserts the priority-first section order, exactly four quick actions, exactly four KPI cards, two computed columns for both four-card groups, and no horizontal overflow. Exact-head CI results belong in the PR and #1155; this document records the durable scope and command contract.

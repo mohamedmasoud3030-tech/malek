@@ -136,7 +136,7 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
 
     // 1. Dashboard title / operating overview
     expect(text).toContain('لوحة التحكم');
-    expect(text).toContain('عقد نشط');
+    expect(text).toContain('صورة الأداء');
     expect(text).toContain('نسبة الإشغال');
 
     // 2. Quick Actions
@@ -151,9 +151,17 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     expect(text).toContain('أعلى المتأخرات');
     expect(text).toContain('أحمد الفارسي');
 
-    // 5. Financial summary
-    expect(text).toContain('النظرة المالية للشهر');
-    expect(text).toContain('المحصّل');
+    // 5. Decision hierarchy and reduced duplication
+    expect(text).toContain('الأولوية الآن');
+    expect(text).toContain('قوائم العمل');
+    expect(text).toContain('الاتجاهات والتفاصيل');
+    expect(text).toContain('حالة التحصيل');
+
+    const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
+      .map((section) => section.getAttribute('data-dashboard-section'));
+    expect(sectionOrder).toEqual(['priorities', 'kpis', 'work-queues', 'trends']);
+    expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(4);
+    expect(container?.querySelectorAll('[data-dashboard-kpi-grid] [class*="grid-cols-2"] > *')).toHaveLength(4);
   });
 
   it('handles query loading state correctly by rendering skeletons', async () => {
