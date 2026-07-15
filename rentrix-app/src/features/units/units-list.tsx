@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
-import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { DataTable } from '@/components/ui/data-table';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/hooks/useCompanyFormatters';
 import type { Unit } from '@/types/domain';
@@ -30,19 +31,6 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
     deleteMutation.mutate(archiveCandidate.id, { onSettled: () => setArchiveCandidate(null) });
   };
 
-  const columns: ColumnDef<Unit>[] = [
-    { key: 'unit_number', header: 'رقم الوحدة', render: (unit) => <EntityCell icon={DoorOpen} title={`وحدة ${unit.unit_number}`} subtitle={unit.floor ? `الدور: ${unit.floor}` : null} /> },
-    { key: 'status', header: 'الحالة', render: (unit) => <StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge> },
-    { key: 'rent_amount', header: 'الإيجار', render: (unit) => <span dir="ltr" className="block font-bold">{formatMoney(unit.rent_amount)}</span> },
-    { key: 'notes', header: 'ملاحظات', render: (unit) => unit.notes ?? '—' },
-    { key: 'actions', header: 'إجراءات', render: (unit) => (
-      <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-        <Button variant="secondary" className="min-h-9 px-3" aria-label={`تعديل وحدة ${unit.unit_number}`} onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
-        <Button variant="danger" className="min-h-9 px-3" aria-label={`أرشفة وحدة ${unit.unit_number}`} onClick={() => setArchiveCandidate(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
-      </div>
-    ) },
-  ];
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3">
@@ -51,10 +39,21 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
       </CardHeader>
 
       <div className="px-3 pb-4 sm:px-6 sm:pb-6">
-        <EntityTable
+        <DataTable
           aria-label="جدول وحدات العقار"
           rows={unitsQuery.data ?? []}
-          columns={columns}
+          columns={[
+            { key: 'unit_number', header: 'رقم الوحدة', render: (unit) => <EntityCell icon={DoorOpen} title={`وحدة ${unit.unit_number}`} subtitle={unit.floor ? `الدور: ${unit.floor}` : null} /> },
+            { key: 'status', header: 'الحالة', render: (unit) => <StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge> },
+            { key: 'rent_amount', header: 'الإيجار', render: (unit) => <span dir="ltr" className="block font-bold">{formatMoney(unit.rent_amount)}</span> },
+            { key: 'notes', header: 'ملاحظات', render: (unit) => unit.notes ?? '—' },
+            { key: 'actions', header: 'إجراءات', render: (unit) => (
+              <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                <Button variant="secondary" className="min-h-9 px-3" aria-label={`تعديل وحدة ${unit.unit_number}`} onClick={() => openForEdit(unit)}><Edit className="size-4" /></Button>
+                <Button variant="danger" className="min-h-9 px-3" aria-label={`أرشفة وحدة ${unit.unit_number}`} onClick={() => setArchiveCandidate(unit)} disabled={deleteMutation.isPending}><Archive className="size-4" /></Button>
+              </div>
+            ) },
+          ]}
           keyOf={(u) => u.id}
           isLoading={unitsQuery.isLoading}
           error={unitsQuery.isError ? unitsQuery.error : null}
@@ -65,25 +64,24 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
           emptyAction={<Button onClick={openForCreate}>إضافة وحدة</Button>}
           onRowClick={(unit) => navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}
           renderMobileCard={(unit) => (
-            <div className="rounded-2xl border border-border/60 bg-card p-4 transition-shadow hover:shadow-md">
-              <button data-entity-card role="button" className="w-full text-start" onClick={() => navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-black">وحدة {unit.unit_number}</p>
-                    <p className="mt-0.5 truncate text-sm text-muted-foreground">{unit.floor ? `الدور ${unit.floor}` : 'الدور غير محدد'}</p>
-                    {unit.notes ? <p className="mt-1 line-clamp-1 text-xs text-muted-foreground/70">{unit.notes}</p> : null}
-                  </div>
-                  <StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge>
-                </div>
-                <div className="mt-3 flex items-center gap-4 text-sm font-bold">
+            <MobileCard
+              title={`وحدة ${unit.unit_number}`}
+              subtitle={unit.floor ? `الدور ${unit.floor}` : 'الدور غير محدد'}
+              badge={<StatusBadge tone={unitStatusTone[unit.status]}>{unitStatusLabels[unit.status]}</StatusBadge>}
+              stats={
+                <div className="flex items-center gap-4 text-sm font-bold">
                   {unit.rent_amount != null ? <span dir="ltr">{formatMoney(unit.rent_amount)}</span> : null}
+                  {unit.notes ? <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{unit.notes}</span> : null}
                 </div>
-              </button>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button className="min-h-11" variant="secondary" onClick={() => openForEdit(unit)}><Edit className="me-2 size-4" />تعديل</Button>
-                <Button className="min-h-11" variant="danger" disabled={deleteMutation.isPending} onClick={() => setArchiveCandidate(unit)}><Archive className="me-2 size-4" />أرشفة</Button>
-              </div>
-            </div>
+              }
+              onClick={() => navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId, unitId: unit.id } })}
+              actions={
+                <div className="grid w-full grid-cols-2 gap-2">
+                  <Button className="min-h-11" variant="secondary" onClick={(e) => { e.stopPropagation(); openForEdit(unit); }}><Edit className="me-2 size-4" />تعديل</Button>
+                  <Button className="min-h-11" variant="danger" disabled={deleteMutation.isPending} onClick={(e) => { e.stopPropagation(); setArchiveCandidate(unit); }}><Archive className="me-2 size-4" />أرشفة</Button>
+                </div>
+              }
+            />
           )}
         />
       </div>
