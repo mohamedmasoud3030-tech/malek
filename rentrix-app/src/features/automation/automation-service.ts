@@ -99,7 +99,7 @@ export const localAutomationGateway = {
       return { accepted: false, provider: 'automation-worker', message: e instanceof Error ? e.message : 'فشل تحديث القاعدة' };
     }
   },
-  previewRule() {
+  previewRule(_rule?: any) {
     return { accepted: true, provider: 'local-preview' as const, message: 'معاينة القاعدة' };
   },
 };
