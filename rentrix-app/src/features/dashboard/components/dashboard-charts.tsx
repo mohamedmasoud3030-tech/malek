@@ -28,12 +28,12 @@ function MetricBars({ title, description, items, formatValue, emptyLabel }: {
   const max = Math.max(...items.map((item) => item.value), 0);
 
   return (
-    <Card>
+    <Card className="overflow-hidden rounded-3xl border-border/80 shadow-card">
       <CardHeader className="pb-2">
         <CardTitle>{title}</CardTitle>
         <p className="text-[0.8125rem] text-muted-foreground">{description}</p>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         {max <= 0 ? (
           <p className="rounded-lg bg-muted/50 px-3 py-4 text-center text-[0.8125rem] text-muted-foreground">{emptyLabel}</p>
         ) : items.map((item) => {
@@ -44,8 +44,8 @@ function MetricBars({ title, description, items, formatValue, emptyLabel }: {
                 <span className="text-muted-foreground">{item.label}</span>
                 <span className="tabular-nums" dir="ltr">{item.displayValue ?? formatValue(item.value)}</span>
               </div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                <div className={cn('h-full rounded-full', item.tone)} style={{ width: `${width}%` }} />
+              <div className="h-2.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={item.label} aria-valuenow={item.value} aria-valuemax={max}>
+                <div className={cn('h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none', item.tone)} style={{ width: `${width}%` }} />
               </div>
             </div>
           );
