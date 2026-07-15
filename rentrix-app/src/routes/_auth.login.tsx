@@ -3,6 +3,7 @@ import { LoginPage } from '@/features/auth/login-page';
 import { DashboardWorkspaceE2EFixture } from '@/features/dashboard/dashboard-workspace.e2e-fixture';
 import { ReportsWorkspaceE2EFixture } from '@/features/reports/reports-workspace.e2e-fixture';
 import { SettingsWorkspaceE2EFixture } from '@/features/settings/settings-workspace.e2e-fixture';
+import { OwnerDetailE2EFixture } from '@/features/owners/owner-detail.e2e-fixture';
 
 export function LoginRouteComponent() {
   if (import.meta.env.VITE_E2E && typeof window !== 'undefined') {
@@ -22,6 +23,10 @@ export function LoginRouteComponent() {
 
     if (search.get('e2e-settings-workspace') === '1') {
       return <SettingsWorkspaceE2EFixture />;
+    }
+
+    if (search.get('e2e-owner-detail-workspace') === '1') {
+      return <OwnerDetailE2EFixture />;
     }
   }
 

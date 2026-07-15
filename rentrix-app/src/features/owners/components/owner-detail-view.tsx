@@ -5,8 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { EntityTable } from '@/components/ui/entity-table';
+import { DetailFields } from '@/components/ui/detail-fields';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
@@ -60,10 +63,15 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
           <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><UserRoundCog className="size-6" /></div>
           <CardTitle className="text-base">بيانات التواصل</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div><p className="text-xs font-bold text-muted-foreground">الهاتف</p><p className="font-black">{owner.phone || 'غير موثق'}</p></div>
-          <div><p className="text-xs font-bold text-muted-foreground">البريد الإلكتروني</p><p className="font-black">{owner.email || 'غير موثق'}</p></div>
-          <div><p className="text-xs font-bold text-muted-foreground">الحالة</p><p className="font-black">{owner.is_active ? 'نشط' : 'غير نشط'}</p></div>
+        <CardContent>
+          <DetailFields
+            columns={3}
+            fields={[
+              { label: 'الهاتف', value: owner.phone ? <span dir="ltr">{owner.phone}</span> : 'غير موثق' },
+              { label: 'البريد الإلكتروني', value: owner.email ? <span dir="ltr">{owner.email}</span> : 'غير موثق' },
+              { label: 'الحالة', value: <StatusBadge tone={owner.is_active ? 'success' : 'neutral'} dot>{owner.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
+            ]}
+          />
         </CardContent>
       </Card>
 
@@ -81,7 +89,7 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
             aria-label="جدول عقارات المالك"
             rows={properties}
             columns={[
-              { key: 'title', header: 'العقار', render: (property) => <span className="font-black">{property.title}</span> },
+              { key: 'title', header: 'العقار', render: (property) => <span className="font-semibold">{property.title}</span> },
               { key: 'address', header: 'العنوان', render: (property) => property.address },
               { key: 'ownership', header: 'نسبة الملكية', render: (property) => {
                 const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
@@ -94,6 +102,18 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
             keyOf={(property) => property.id}
             emptyTitle="لا توجد عقارات مرتبطة"
             emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك."
+            renderMobileCard={(property) => {
+              const ownershipPercentage = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
+              const activeContracts = contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length;
+              return (
+                <MobileCard
+                  title={property.title}
+                  subtitle={property.address}
+                  badge={<StatusBadge tone={property.status === 'active' ? 'success' : 'neutral'} dot>{property.status === 'active' ? 'نشط' : property.status}</StatusBadge>}
+                  stats={<div className="grid grid-cols-3 gap-2 text-center text-xs"><span><strong>{formatCompanyNumber(companySettings, ownershipPercentage)}%</strong><br />الملكية</span><span><strong>{formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length)}</strong><br />الوحدات</span><span><strong>{formatCompanyNumber(companySettings, activeContracts)}</strong><br />عقود نشطة</span></div>}
+                />
+              );
+            }}
           />
         </CardContent>
       </Card>

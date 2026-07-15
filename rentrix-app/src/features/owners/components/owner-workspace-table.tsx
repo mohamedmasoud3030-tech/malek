@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/empty-state';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { MobileCard } from '@/components/ui/mobile-card';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
 import type { Owner } from '../services/owner-service';
@@ -98,7 +99,11 @@ export function OwnerWorkspaceTable({ rows, search, selectedOwner, onCreateOwner
             <MobileCard
               title={getOwnerDisplayLabel(row.owner)}
               subtitle={row.owner.display_name ? row.owner.full_name : 'مالك'}
-              badge={<span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700">مالك</span>}
+              badge={(
+                <StatusBadge tone={row.owner.is_active ? 'success' : 'neutral'} dot>
+                  {row.owner.is_active ? 'نشط' : 'غير نشط'}
+                </StatusBadge>
+              )}
               meta={(
                 <div className="space-y-1 text-xs text-muted-foreground">
                   {row.owner.phone ? <p dir="ltr">{row.owner.phone}</p> : null}
