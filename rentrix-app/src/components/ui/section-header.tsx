@@ -9,25 +9,19 @@ interface SectionHeaderProps {
 }
 
 /**
- * Small header used inside cards and sections — title + optional link/action.
- * Replaces the repeated `mb-3 flex items-center justify-between` pattern.
- *
- * @example
- * <SectionHeader
- *   title="العقود المنتهية قريباً"
- *   action={<Link to="/contracts">عرض الكل</Link>}
- * />
+ * Section header used inside cards and page sections.
+ * Consistent typography: 15px semibold title, 13px description.
  */
 export function SectionHeader({ title, description, action, className }: SectionHeaderProps) {
   return (
-    <div className={cn('mb-3 flex items-start justify-between gap-2', className)}>
+    <div className={cn('mb-3 flex items-start justify-between gap-3', className)}>
       <div className="min-w-0">
-        <h2 className="text-sm font-bold">{title}</h2>
+        <h2 className="text-[0.9375rem] font-semibold leading-6">{title}</h2>
         {description ? (
-          <p className="mt-0.5 text-xs font-bold leading-5 text-muted-foreground">{description}</p>
+          <p className="mt-0.5 text-[0.8125rem] leading-5 text-muted-foreground">{description}</p>
         ) : null}
       </div>
-      {action && <div className="shrink-0 text-xs font-bold text-primary">{action}</div>}
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }

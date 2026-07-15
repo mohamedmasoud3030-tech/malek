@@ -12,10 +12,8 @@ interface PageLayoutProps {
 
 /**
  * Consistent top-level page wrapper.
- *
- * The wrapper owns horizontal containment, vertical rhythm and the mobile-safe
- * bottom breathing room. Feature pages should not add their own outer cards or
- * duplicate page-width/padding rules around this component.
+ * Every feature page MUST wrap content in <PageLayout>.
+ * No page should set its own max-width or page-level padding.
  */
 const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
   default: 'mx-auto w-full max-w-7xl',
@@ -23,18 +21,20 @@ const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
   full: 'w-full',
 };
 
-export function PageLayout({ children, className, contentClassName, dir, lang, size = 'default' }: PageLayoutProps) {
+export function PageLayout({
+  children,
+  className,
+  contentClassName,
+  dir,
+  lang,
+  size = 'default',
+}: PageLayoutProps) {
   return (
-    <div
-      data-page-layout
-      className={cn('min-w-0 overflow-x-clip', className)}
-      dir={dir}
-      lang={lang}
-    >
+    <div data-page-layout className={cn('min-w-0 overflow-x-clip', className)} dir={dir} lang={lang}>
       <div
         className={cn(
           pageSizes[size],
-          'min-w-0 space-y-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:space-y-5 sm:pb-8',
+          'min-w-0 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:space-y-6 sm:pb-8',
           contentClassName,
         )}
       >

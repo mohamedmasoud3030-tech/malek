@@ -23,10 +23,10 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: 'min-h-11 min-w-11 rounded-xl px-3 py-1.5 text-xs sm:min-h-10 sm:min-w-10',
-  md: 'min-h-11 min-w-11 rounded-xl px-4 py-2 text-sm',
-  lg: 'min-h-12 min-w-12 rounded-2xl px-5 py-2.5 text-base',
-  icon: 'size-11 rounded-xl p-0',
+  sm: 'min-h-10 min-w-10 rounded-lg px-3 py-1.5 text-xs',
+  md: 'min-h-10 min-w-10 rounded-lg px-4 py-2 text-sm',
+  lg: 'min-h-11 min-w-11 rounded-xl px-5 py-2.5 text-base',
+  icon: 'size-10 rounded-lg p-0',
 };
 
 export function Button({ asChild = false, className, variant = 'primary', size = 'md', type = 'button', ...props }: ButtonProps) {
