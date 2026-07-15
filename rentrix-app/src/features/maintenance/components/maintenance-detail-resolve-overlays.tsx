@@ -1,6 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import type { Maintenance } from '../maintenance-service';
@@ -11,6 +12,15 @@ import {
   maintenanceStatusLabels,
   maintenanceStatusTone,
 } from './maintenance-list';
+
+export type ChargeTarget = 'landlord' | 'tenant' | 'office' | 'split_landlord_tenant';
+
+export const chargeTargetLabels: Record<ChargeTarget, string> = {
+  landlord: 'خصم استقطاع من حساب المالك (مالك العقار)',
+  tenant: 'إصدار فاتورة مطالبة على المستأجر (سوء استخدام)',
+  office: 'مصروف تشغيلي عام على شركة الإدارة',
+  split_landlord_tenant: 'مناصفة بين المالك والمستأجر (50% / 50%)',
+};
 
 export type MaintenanceDetailsOverlayProps = Readonly<{
   request: Maintenance | null;
@@ -95,30 +105,41 @@ export type MaintenanceResolveOverlayProps = Readonly<{
   onSubmit: (values: MaintenanceResolveFormValues) => void;
 }>;
 
-/** Overlay for entering the actual cost when resolving/closing a maintenance request. */
+/** Overlay for entering actual cost and assigning charge target upon maintenance resolution. */
 export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstError, onOpenChange, onSubmit }: MaintenanceResolveOverlayProps) {
   return (
     <EntityForm.Overlay
       open={target != null}
       onOpenChange={(open) => { if (!open && !isSubmitting) onOpenChange(false); }}
-      title="إغلاق طلب الصيانة"
-      description="أدخل التكلفة الفعلية. سيتم تسجيلها كمصروف صيانة وفق منطق النظام الحالي."
+      title="إغلاق وتوجيه تكلفة الصيانة"
+      description="أدخل التكلفة الفعلية وحدد الجهة المسؤولة عن السداد لتوجيه القيد المالي آلياً."
     >
       <EntityForm.Root aria-busy={isSubmitting} onSubmit={form.handleSubmit(onSubmit)}>
         <EntityForm.ErrorSummary message={firstError} />
-        <EntityForm.Section title="التكلفة الفعلية" description={target ? target.title : undefined}>
+        <EntityForm.Section title="التكلفة وتوزيع المسؤولية" description={target ? target.title : undefined}>
           <EntityForm.Field
-            label="التكلفة الفعلية (ر.ع)"
+            label="التكلفة الفعلية للأعمال (ر.ع)"
             error={form.formState.errors.cost?.message}
           >
             <Input dir="ltr" type="number" min="0" step="0.01" inputMode="decimal" {...form.register('cost')} aria-invalid={Boolean(form.formState.errors.cost)} />
           </EntityForm.Field>
-          <EntityForm.Field label="ملاحظات (اختياري)">
-            <Textarea className="min-h-20" {...form.register('notes')} />
+
+          <EntityForm.Field label="توجيه التكلفة والجهة المسؤولة عن السداد">
+            <Select aria-label="توجيه تكلفة الصيانة" defaultValue="landlord">
+              {Object.entries(chargeTargetLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </EntityForm.Field>
+
+          <EntityForm.Field label="ملاحظات وتوجيهات التسوية (اختياري)">
+            <Textarea className="min-h-20" placeholder="اكتب أي ملاحظات فنية أو سبب تحميل التكلفة..." {...form.register('notes')} />
           </EntityForm.Field>
         </EntityForm.Section>
         <EntityForm.Actions
-          submitLabel={isSubmitting ? 'جارٍ الحفظ...' : 'تأكيد الإغلاق'}
+          submitLabel={isSubmitting ? 'جارٍ الحفظ والتوجيه...' : 'تأكيد الإغلاق وتوجيه التكلفة'}
           onCancel={() => onOpenChange(false)}
           isSubmitting={isSubmitting}
         />
