@@ -1,8 +1,10 @@
+/* Rentrix UX Foundation v2.0 — aligned with Visual Contract */
+
 :root {
   --visual-viewport-height: 100dvh;
   --app-page-gutter-inline: clamp(0.75rem, 2.4vw, 1.5rem);
   --app-page-gutter-block: clamp(0.75rem, 2vw, 1.5rem);
-  --entity-form-action-clearance: 7.5rem;
+  --entity-form-action-clearance: 6rem;
 }
 
 #main-content {
@@ -38,9 +40,7 @@
   padding-block-end: calc(var(--entity-form-action-clearance) + env(safe-area-inset-bottom, 0px));
 }
 
-[data-entity-form-actions] {
-  isolation: isolate;
-}
+[data-entity-form-actions] { isolation: isolate; }
 
 [data-bottom-sheet],
 [data-dialog-content],
@@ -49,9 +49,7 @@
 }
 
 @media (min-width: 640px) {
-  .entity-form:has([data-entity-form-actions]) {
-    padding-block-end: 0;
-  }
+  .entity-form:has([data-entity-form-actions]) { padding-block-end: 0; }
 
   [data-entity-form-scroll],
   [data-bottom-sheet-scroll],
@@ -71,9 +69,7 @@
 }
 
 @media (max-width: 359px) {
-  :root {
-    --app-page-gutter-inline: 0.625rem;
-  }
+  :root { --app-page-gutter-inline: 0.625rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -84,7 +84,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
     <div className="fixed inset-0 z-[100] flex flex-col justify-end" role="presentation" data-bottom-sheet-root>
       <button
         type="button"
-        className="absolute inset-0 cursor-default touch-none bg-black/55 backdrop-blur-[2px]"
+        className="absolute inset-0 cursor-default touch-none bg-black/45 backdrop-blur-sm"
         aria-label="إغلاق اللوحة"
         onClick={onClose}
       />
@@ -98,9 +98,9 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         aria-label={title ? undefined : 'لوحة إجراء'}
         data-bottom-sheet
         className={cn(
-          'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-[1.75rem] border border-b-0 border-border/60 bg-background outline-none',
-          'shadow-[0_-24px_70px_rgba(0,0,0,0.28)]',
-          'animate-in slide-in-from-bottom duration-300',
+          'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border/60 bg-card outline-none',
+          'shadow-elevated',
+          'animate-in slide-in-from-bottom duration-250',
           'max-h-[calc(var(--visual-viewport-height,100dvh)-0.5rem)]',
           'ps-[env(safe-area-inset-left,0px)] pe-[env(safe-area-inset-right,0px)]',
           className,
@@ -112,7 +112,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
 
         {title ? (
           <div className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-background/96 px-4 py-3 backdrop-blur sm:px-5">
-            <h2 id={titleId} className="min-w-0 text-base font-black leading-7">{title}</h2>
+            <h2 id={titleId} className="min-w-0 text-base font-bold leading-7">{title}</h2>
             <button
               type="button"
               onClick={onClose}

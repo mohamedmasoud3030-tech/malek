@@ -8,50 +8,21 @@ interface KpiCardProps {
   icon: LucideIcon;
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
-  accent?: 'primary' | 'emerald' | 'amber' | 'rose' | 'violet' | 'sky';
-  compact?: boolean;
   className?: string;
+  /** @deprecated All KPI cards now use primary accent only. Prop accepted but ignored. */
+  accent?: string;
+  /** @deprecated Compact variant now determined by context. Prop accepted but ignored. */
+  compact?: boolean;
 }
 
-const accentMap = {
-  primary: {
-    surface: 'bg-primary/[0.055]',
-    icon: 'bg-primary text-primary-foreground',
-    trend_up: 'text-emerald-600 dark:text-emerald-400',
-    trend_down: 'text-rose-600 dark:text-rose-400',
-  },
-  emerald: {
-    surface: 'bg-emerald-50/75 dark:bg-emerald-950/25',
-    icon: 'bg-emerald-500 text-white',
-    trend_up: 'text-emerald-600 dark:text-emerald-400',
-    trend_down: 'text-rose-600 dark:text-rose-400',
-  },
-  amber: {
-    surface: 'bg-amber-50/75 dark:bg-amber-950/25',
-    icon: 'bg-amber-500 text-white',
-    trend_up: 'text-emerald-600 dark:text-emerald-400',
-    trend_down: 'text-rose-600 dark:text-rose-400',
-  },
-  rose: {
-    surface: 'bg-rose-50/75 dark:bg-rose-950/25',
-    icon: 'bg-rose-500 text-white',
-    trend_up: 'text-emerald-600 dark:text-emerald-400',
-    trend_down: 'text-rose-600 dark:text-rose-400',
-  },
-  violet: {
-    surface: 'bg-violet-50/75 dark:bg-violet-950/25',
-    icon: 'bg-violet-500 text-white',
-    trend_up: 'text-emerald-600 dark:text-emerald-400',
-    trend_down: 'text-rose-600 dark:text-rose-400',
-  },
-  sky: {
-    surface: 'bg-sky-50/75 dark:bg-sky-950/25',
-    icon: 'bg-sky-500 text-white',
-    trend_up: 'text-emerald-600 dark:text-emerald-400',
-    trend_down: 'text-rose-600 dark:text-rose-400',
-  },
-};
-
+/**
+ * KPI metric card — single accent (primary only).
+ *
+ * No emerald/amber/rose/violet/sky accent variations.
+ * All KPI cards use the primary brand color for the icon,
+ * keeping dashboards visually cohesive. Trend indicators
+ * signal direction, not category.
+ */
 export function KpiCard({
   label,
   value,
@@ -59,34 +30,29 @@ export function KpiCard({
   icon: Icon,
   trend,
   trendValue,
-  accent = 'primary',
-  compact = false,
   className,
 }: KpiCardProps) {
-  const colors = accentMap[accent];
-
   return (
     <article
       data-kpi-card
       className={cn(
-        'relative min-w-0 overflow-hidden rounded-[1.35rem] border border-border/65 bg-card p-4 shadow-[0_8px_24px_hsl(var(--foreground)/0.045)] transition-[transform,border-color,box-shadow] sm:rounded-2xl',
-        'hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_14px_32px_hsl(var(--foreground)/0.07)]',
-        colors.surface,
-        compact ? 'p-3' : 'p-4',
+        'min-w-0 rounded-xl border border-border/70 bg-card p-4 shadow-card',
+        'transition-shadow duration-200 hover:shadow-card-hover',
         className,
       )}
     >
+      {/* Icon + Trend */}
       <div className="flex items-start justify-between gap-3">
-        <div className={cn('grid size-10 shrink-0 place-items-center rounded-2xl shadow-sm', compact && 'size-9 rounded-xl', colors.icon)}>
-          <Icon className={cn('size-4.5', compact && 'size-4')} aria-hidden="true" />
+        <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+          <Icon className="size-[1.125rem]" aria-hidden="true" />
         </div>
         {trend && trendValue ? (
           <span
             className={cn(
-              'inline-flex min-h-7 items-center rounded-full px-2 py-1 text-[10px] font-black tabular-nums',
-              trend === 'up' && `${colors.trend_up} bg-emerald-100 dark:bg-emerald-900/40`,
-              trend === 'down' && `${colors.trend_down} bg-rose-100 dark:bg-rose-900/40`,
-              trend === 'neutral' && 'bg-muted text-muted-foreground',
+              'inline-flex min-h-6 items-center rounded-md px-2 py-0.5 text-[11px] font-semibold tabular-nums',
+              trend === 'up' && 'text-success bg-success/10',
+              trend === 'down' && 'text-danger bg-danger/10',
+              trend === 'neutral' && 'text-muted-foreground bg-muted',
             )}
           >
             {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '–'} {trendValue}
@@ -94,12 +60,13 @@ export function KpiCard({
         ) : null}
       </div>
 
+      {/* Value + Label */}
       <div className="mt-3 min-w-0">
-        <p className={cn('break-words font-black tabular-nums leading-tight tracking-tight', compact ? 'text-xl' : 'text-[1.65rem] sm:text-2xl')}>
-          {value}
-        </p>
-        <p className={cn('mt-1 font-bold text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>{label}</p>
-        {sub ? <p className="mt-1 line-clamp-2 text-[10px] font-medium leading-4 text-muted-foreground/80">{sub}</p> : null}
+        <p className="break-words text-[1.5rem] font-bold tabular-nums leading-tight">{value}</p>
+        <p className="mt-1 text-xs font-medium text-muted-foreground">{label}</p>
+        {sub ? (
+          <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted-foreground/70">{sub}</p>
+        ) : null}
       </div>
     </article>
   );
