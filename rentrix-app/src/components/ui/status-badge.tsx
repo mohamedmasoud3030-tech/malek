@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /** Semantic tones — canonical for new code. */
-type SemanticTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'primary';
+type SemanticTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'primary' | 'secondary';
 
 /** Legacy color tones — supported for backward compatibility. */
 type LegacyTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
@@ -26,6 +26,7 @@ const tones: Record<SemanticTone, string> = {
   info: 'bg-info/10 text-info ring-info/20',
   neutral: 'bg-neutral/10 text-neutral ring-neutral/20',
   primary: 'bg-primary/10 text-primary ring-primary/20',
+  secondary: 'bg-neutral/10 text-neutral ring-neutral/20',
 };
 
 const dotTones: Record<SemanticTone, string> = {
@@ -35,6 +36,7 @@ const dotTones: Record<SemanticTone, string> = {
   info: 'bg-info',
   neutral: 'bg-neutral',
   primary: 'bg-primary',
+  secondary: 'bg-neutral',
 };
 
 const resolveTone = (tone: StatusTone): SemanticTone =>
