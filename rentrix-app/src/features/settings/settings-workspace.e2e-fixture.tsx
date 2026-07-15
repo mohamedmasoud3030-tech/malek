@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { CompanyProfileSections } from './components/company-profile-sections';
 import { OverviewRow, SettingsHero } from './components/settings-hero';
 import { SettingsAppearanceSection } from './components/settings-appearance-section';
@@ -39,11 +39,16 @@ const initialDraft: CompanySettingsDraft = {
   notification_sms_enabled: 'false',
 };
 
+function getInitialTheme(): 'light' | 'dark' {
+  if (typeof document === 'undefined') return 'light';
+  return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+}
+
 export function SettingsWorkspaceE2EFixture() {
   const [baseDraft, setBaseDraft] = useState(initialDraft);
   const [draft, setDraft] = useState(initialDraft);
   const [activeSection, setActiveSection] = useState<SettingsSectionId>('office');
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>(getInitialTheme);
   const [submitCount, setSubmitCount] = useState(0);
   const isDirty = JSON.stringify(baseDraft) !== JSON.stringify(draft);
   const preview = useMemo(() => getCompanySettingsPreviewModel(draft), [draft]);
@@ -54,6 +59,10 @@ export function SettingsWorkspaceE2EFixture() {
     hasAuthorization: true,
     metadataMismatch: false,
   });
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   const handleDraftChange = (field: CompanySettingsDraftField, value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
