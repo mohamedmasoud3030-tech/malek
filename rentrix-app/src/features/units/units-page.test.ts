@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Unit } from '@/types/domain';
-import { getUnitPageStatus, summarizeUnitsForUnitsPage } from './units-page';
+import { getUnitPageStatus, computeUnitKpis } from './use-units-list-controller';
 
 function makeUnit(overrides: Partial<Unit> = {}): Unit {
   return {
@@ -31,6 +31,6 @@ describe('units page status invariants', () => {
       makeUnit({ id: 'unit-corrupted', status: 'corrupted-status' as Unit['status'] }),
     ];
 
-    expect(() => summarizeUnitsForUnitsPage(units)).toThrow('Unsupported unit status: corrupted-status');
+    expect(() => computeUnitKpis(units)).toThrow('Unsupported unit status: corrupted-status');
   });
 });

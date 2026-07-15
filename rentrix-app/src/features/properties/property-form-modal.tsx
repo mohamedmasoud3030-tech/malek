@@ -7,12 +7,14 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Textarea } from '@/components/ui/textarea';
 import { useCreatePropertyWithAgreement } from '@/features/owners/useOwnerAgreements';
 import { useOwners } from '@/features/owners/useOwners';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperty, useUpdateProperty } from './use-properties';
+import { PropertyFormCoreFields } from './components/property-form-core-fields';
+
+// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const isoDate = z
   .string()
@@ -81,6 +83,8 @@ const propertyEditSchema = z.object({
 });
 type PropertyEditFormValues = z.input<typeof propertyEditSchema>;
 
+// ─── Public entry point ───────────────────────────────────────────────────────
+
 interface PropertyFormModalProps {
   open: boolean;
   onClose: () => void;
@@ -94,6 +98,8 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
     <PropertyCreateModal open={open} onClose={onClose} />
   );
 }
+
+// ─── Create modal ─────────────────────────────────────────────────────────────
 
 function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ownersQuery = useOwners();
@@ -127,6 +133,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
 
   const commissionType = form.watch('commission_type');
   const isSubmitting = createMutation.isPending;
+
   const handleSubmit = form.handleSubmit(async (values) => {
     const payload: PropertyWithAgreementPayload = propertyWithAgreementSchema.parse(values);
     setSubmitError(null);
@@ -162,15 +169,11 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
     >
       <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
         <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-        <EntityForm.Field label="اسم العقار" error={form.formState.errors.title?.message}>
-          <Input {...form.register('title')} placeholder="مثال: عمارة الندى" autoFocus />
-        </EntityForm.Field>
-        <EntityForm.Field label="نوع العقار" error={form.formState.errors.type?.message}>
-          <Input {...form.register('type')} placeholder="سكني، تجاري، أرض..." />
-        </EntityForm.Field>
-        <EntityForm.Field label="العنوان" className="md:col-span-2" error={form.formState.errors.address?.message}>
-          <Input {...form.register('address')} placeholder="المدينة، الحي، الشارع" />
-        </EntityForm.Field>
+
+        {/* Core property fields (shared) */}
+        <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
+
+        {/* Agreement-specific fields (create only) */}
         <EntityForm.Field label="المالك" className="md:col-span-2" error={form.formState.errors.owner_id?.message}>
           <Select {...form.register('owner_id')} disabled={ownersQuery.isLoading}>
             <option value="">اختر المالك</option>
@@ -202,13 +205,6 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             placeholder={commissionType === 'RATE' ? '0 – 100' : '0.00'}
           />
         </EntityForm.Field>
-        <EntityForm.Field label="الحالة" error={form.formState.errors.status?.message}>
-          <Select {...form.register('status')}>
-            {propertyStatusValues.map((status) => (
-              <option key={status} value={status}>{propertyStatusLabels[status]}</option>
-            ))}
-          </Select>
-        </EntityForm.Field>
         <EntityForm.Field label="بداية الاتفاقية" error={form.formState.errors.agreement_starts_on?.message}>
           <Input type="date" {...form.register('agreement_starts_on')} />
         </EntityForm.Field>
@@ -219,20 +215,14 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
         >
           <Input type="date" {...form.register('agreement_ends_on')} />
         </EntityForm.Field>
-        <EntityForm.Field label="قيمة الشراء" error={form.formState.errors.purchase_value?.message}>
-          <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('purchase_value')} />
-        </EntityForm.Field>
-        <EntityForm.Field label="القيمة الحالية" error={form.formState.errors.current_value?.message}>
-          <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('current_value')} />
-        </EntityForm.Field>
-        <EntityForm.Field label="ملاحظات" className="md:col-span-2">
-          <Textarea {...form.register('notes')} placeholder="أي تفاصيل إضافية" />
-        </EntityForm.Field>
+
         <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ العقار'} />
       </EntityForm.Root>
     </EntityForm.Overlay>
   );
 }
+
+// ─── Edit modal ───────────────────────────────────────────────────────────────
 
 function PropertyEditModal({
   open,
@@ -294,31 +284,7 @@ function PropertyEditModal({
       ) : (
         <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={updateMutation.isPending}>
           <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-          <EntityForm.Field label="اسم العقار" error={form.formState.errors.title?.message}>
-            <Input {...form.register('title')} autoFocus />
-          </EntityForm.Field>
-          <EntityForm.Field label="نوع العقار" error={form.formState.errors.type?.message}>
-            <Input {...form.register('type')} />
-          </EntityForm.Field>
-          <EntityForm.Field label="العنوان" className="md:col-span-2" error={form.formState.errors.address?.message}>
-            <Input {...form.register('address')} />
-          </EntityForm.Field>
-          <EntityForm.Field label="الحالة" error={form.formState.errors.status?.message}>
-            <Select {...form.register('status')}>
-              {propertyStatusValues.map((status) => (
-                <option key={status} value={status}>{propertyStatusLabels[status]}</option>
-              ))}
-            </Select>
-          </EntityForm.Field>
-          <EntityForm.Field label="قيمة الشراء" error={form.formState.errors.purchase_value?.message}>
-            <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('purchase_value')} />
-          </EntityForm.Field>
-          <EntityForm.Field label="القيمة الحالية" error={form.formState.errors.current_value?.message}>
-            <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('current_value')} />
-          </EntityForm.Field>
-          <EntityForm.Field label="ملاحظات" className="md:col-span-2">
-            <Textarea {...form.register('notes')} />
-          </EntityForm.Field>
+          <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
           <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={updateMutation.isPending} submitLabel={updateMutation.isPending ? 'جار الحفظ...' : 'حفظ'} />
         </EntityForm.Root>
       )}

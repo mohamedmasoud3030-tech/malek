@@ -99,4 +99,14 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     await act(async () => root.render(<PropertiesListPage />));
     expect(container.textContent).toContain('إضافة أول عقار');
   });
+
+  it('displays zero count in the page header when no properties exist', async () => {
+    propertyRows = [];
+    await act(async () => root.render(<PropertiesListPage />));
+    // The count badge must render "0" (not be hidden due to falsy-zero).
+    // The aria-label is "عدد السجلات {count}" so we match the prefix.
+    const countBadge = container.querySelector('[aria-label^="عدد السجلات"]');
+    expect(countBadge).toBeTruthy();
+    expect(countBadge?.textContent?.trim()).toBe('0');
+  });
 });
