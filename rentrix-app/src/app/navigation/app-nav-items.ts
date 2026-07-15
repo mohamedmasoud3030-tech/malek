@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileText, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileText, FolderKanban, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -6,27 +6,13 @@ export type NavItem = readonly [to: string, labelKey: string, description: strin
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
-/**
- * The primary sidebar / mobile drawer navigation.
- *
- * Design rules (PR #929 polish):
- *  - Group titles are short, scannable, and never wrap on mobile.
- *  - Each entry opens a real, distinct route. We never show two sidebar items
- *    that point to the same route without a real tab / deep-link behavior.
- *    `/reports` and "Statements" therefore collapse into a single entry
- *    "مركز التقارير والكشوف" — the Reports page itself renders the
- *    التقارير and كشوف الحساب sections.
- *  - Change Password stays out of the sidebar; it lives in the
- *    الأمان والحساب section of /settings (see settings-page.tsx).
- *  - ADMIN routes are visible to ADMIN via the same `permission` gating the
- *    route itself uses; we never hide them from users who can access them.
- */
 export const navGroups = [
   ['نظرة عامة', [['/', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
   ['الأصول والعلاقات', [
     ['/properties', 'properties', 'ملفات العقارات والأصول', Building2],
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
     ['/lands', 'lands', 'إدارة قطع الأراضي ومتابعة حالتها', MapPinned, 'lands.view'],
+    ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
     ['/people', 'people', 'دليل جهات التعامل', Users],
     ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
     ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
@@ -34,6 +20,7 @@ export const navGroups = [
   ['التشغيل اليومي', [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
+    ['/utilities', 'utilities', 'عدادات الكهرباء والمياه وفواتير المرافق', Zap],
     ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'communication.view'],
   ]],
