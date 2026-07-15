@@ -34,7 +34,7 @@ export function FilterBar({
     <section
       data-filter-bar
       className={cn(
-        'grid min-w-0 gap-3 rounded-[1.35rem] border border-border/70 bg-card/88 p-3 shadow-sm sm:rounded-2xl sm:p-4 lg:grid-cols-[minmax(15rem,1fr)_auto_auto] lg:items-center',
+        'grid min-w-0 gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-card sm:p-4 lg:grid-cols-[minmax(15rem,1fr)_auto_auto] lg:items-center',
         !showSearch && 'lg:grid-cols-[minmax(0,1fr)_auto]',
         className,
       )}

@@ -12,7 +12,7 @@ import { PropertyInfoItem } from '../components/property-info-item';
 import { useProperty } from '../use-properties';
 import { unitStatusLabels } from '@/features/units/unit-schema';
 
-const unitStatusTone = { available: 'green', occupied: 'blue', maintenance: 'gold', reserved: 'gray' } as const;
+const unitStatusTone = { available: 'success', occupied: 'info', maintenance: 'warning', reserved: 'neutral' } as const;
 
 export function PropertyUnitDetailPage() {
   const params = useParams({ strict: false });
@@ -56,18 +56,18 @@ export function PropertyUnitDetailPage() {
             <PropertyInfoItem label="رقم الوحدة" value={`وحدة ${unit.unit_number}`} />
             <PropertyInfoItem label="الدور" value={unit.floor ?? '—'} />
             <PropertyInfoItem label="قيمة الإيجار المسجلة" value={formatMoney(unit.rent_amount)} />
-            <div className="rounded-2xl border border-border bg-background p-4 md:col-span-2">
-              <p className="text-xs font-bold text-muted-foreground">العقار التابع له</p>
+            <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card md:col-span-2">
+              <p className="text-xs font-medium text-muted-foreground">العقار التابع له</p>
               <p className="mt-1">
                 {property ? (
-                  <Link to="/properties/$propertyId" params={{ propertyId: property.id }} className="text-primary font-black hover:underline">
+                  <Link to="/properties/$propertyId" params={{ propertyId: property.id }} className="font-semibold text-primary hover:underline">
                     {property.title}
                   </Link>
                 ) : '—'}
               </p>
             </div>
-            <div className="rounded-2xl border border-border bg-background p-4 md:col-span-2">
-              <p className="text-xs font-bold text-muted-foreground">ملاحظات الوحدة</p>
+            <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card md:col-span-2">
+              <p className="text-xs font-medium text-muted-foreground">ملاحظات الوحدة</p>
               <p className="mt-1 leading-7">{unit.notes ?? '—'}</p>
             </div>
           </div>

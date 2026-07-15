@@ -120,7 +120,7 @@ export function EntityCard({
             <AvatarIcon className={cn('size-4.5', tone.text)} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-black leading-6">{name}</p>
+            <p className="line-clamp-2 text-sm font-bold leading-6">{name}</p>
             {subtitle ? <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-5 text-muted-foreground">{subtitle}</p> : null}
             {supportingText ? <p className="mt-1 text-[10px] font-bold leading-4 text-muted-foreground/75">{supportingText}</p> : null}
           </div>

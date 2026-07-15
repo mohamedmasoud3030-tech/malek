@@ -11,7 +11,7 @@ import type { Unit } from '@/types/domain';
 
 export function PropertyIdentityCard({ property }: Readonly<{ property: Property }>) {
   return (
-    <Card className="rounded-2xl">
+    <Card>
       <CardHeader>
         <CardTitle>معلومات العقار</CardTitle>
         <CardDescription>البيانات الأساسية للعقار مع معلومات المالك وقيم الشراء والتقييم.</CardDescription>
@@ -19,8 +19,8 @@ export function PropertyIdentityCard({ property }: Readonly<{ property: Property
       <CardContent>
         <ResponsiveCardGrid desktopColumns={4} gap="lg">
           <PropertyInfoItem label="النوع" value={translatePropertyType(property.type)} />
-          <div className="rounded-2xl border border-border bg-background p-4">
-            <p className="text-xs font-bold text-muted-foreground">الحالة</p>
+          <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card">
+            <p className="text-xs font-medium text-muted-foreground">الحالة</p>
             <div className="mt-2">
               <StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge>
             </div>
@@ -29,8 +29,8 @@ export function PropertyIdentityCard({ property }: Readonly<{ property: Property
           <PropertyInfoItem label="قيمة الشراء" value={formatMoney(property.purchase_value)} />
           <PropertyInfoItem label="القيمة الحالية" value={formatMoney(property.current_value)} />
           <PropertyInfoItem label="تاريخ الإنشاء" value={formatDate(property.created_at)} />
-          <div className="rounded-2xl border border-border bg-background p-4 md:col-span-2">
-            <p className="text-xs font-bold text-muted-foreground">ملاحظات</p>
+          <div className="rounded-xl border border-border/70 bg-card p-4 shadow-card md:col-span-2">
+            <p className="text-xs font-medium text-muted-foreground">ملاحظات</p>
             <p className="mt-1 leading-7">{property.notes ?? '—'}</p>
           </div>
         </ResponsiveCardGrid>
@@ -43,7 +43,7 @@ export function PropertyUnitsSummaryCard({ units }: Readonly<{ units: Unit[] }>)
   const unitSummary = summarizePropertyUnits(units);
 
   return (
-    <Card className="rounded-2xl">
+    <Card>
       <CardHeader>
         <CardTitle>ملخص الوحدات</CardTitle>
         <CardDescription>مؤشرات قراءة فقط محسوبة من الوحدات المسجلة لهذا العقار.</CardDescription>

@@ -56,7 +56,7 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
       ),
     },
     { key: 'amount', header: 'المبلغ', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.amount)}</span> },
-    { key: 'paid_amount', header: 'المدفوع', render: (inv) => <span className="font-bold text-emerald-700 dark:text-emerald-200">{formatDefaultCompanyMoney(inv.paid_amount)}</span> },
+    { key: 'paid_amount', header: 'المدفوع', render: (inv) => <span className="font-bold text-success tabular-nums">{formatDefaultCompanyMoney(inv.paid_amount)}</span> },
     { key: 'remaining', header: 'المتبقي', render: (inv) => <span className="font-bold">{formatDefaultCompanyMoney(inv.remaining_amount)}</span> },
   ];
 
@@ -117,7 +117,7 @@ export function ContractPaymentsTab({ contractId }: Readonly<{ contractId: strin
         </div>
       </CardHeader>
       <CardContent className="space-y-5 pt-6">
-        <p className="rounded-2xl border border-border bg-background p-4 text-sm leading-7 text-muted-foreground">
+        <p className="rounded-xl border border-border/70 bg-card p-4 text-sm leading-7 text-muted-foreground">
           هذا العرض لا ينشئ دفعات، ولا يصدر إيصالات، ولا يعدّل الفواتير. يتم عرض السجلات الموجودة فقط من مسارات الفواتير والمدفوعات الحالية.
         </p>
 
@@ -137,13 +137,13 @@ export function ContractPaymentsTab({ contractId }: Readonly<{ contractId: strin
           <div className="space-y-5">
             <ContractPaymentsSummary snapshot={paymentsQuery.data} />
             <section className="space-y-3">
-              <h3 className="flex items-center gap-2 text-lg font-black">
+              <h3 className="flex items-center gap-2 text-base font-semibold">
                 <FileText className="size-5 text-primary" />الفواتير المرتبطة
               </h3>
               <ContractInvoicesTable snapshot={paymentsQuery.data} />
             </section>
             <section className="space-y-3">
-              <h3 className="flex items-center gap-2 text-lg font-black">
+              <h3 className="flex items-center gap-2 text-base font-semibold">
                 <ReceiptText className="size-5 text-primary" />الدفعات ومراجع الإيصالات
               </h3>
               <ContractPaymentsTable snapshot={paymentsQuery.data} />

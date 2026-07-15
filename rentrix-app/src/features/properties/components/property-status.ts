@@ -1,4 +1,4 @@
-export const propertyStatusTone = { active: 'green', inactive: 'gray', maintenance: 'gold', sold: 'blue' } as const;
+export const propertyStatusTone = { active: 'success', inactive: 'neutral', maintenance: 'warning', sold: 'info' } as const;
 
 const propertyTypeAliases: Readonly<Record<string, string>> = {
   building: 'مبنى',

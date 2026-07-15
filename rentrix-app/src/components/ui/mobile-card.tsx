@@ -107,7 +107,7 @@ export function MobileCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="line-clamp-2 text-[15px] font-black leading-6 text-foreground">{title}</div>
+          <div className="line-clamp-2 text-[15px] font-bold leading-6 text-foreground">{title}</div>
           {subtitle && (
             <div className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-muted-foreground">
               {subtitle}
@@ -138,10 +138,6 @@ export function MobileCard({
     </div>
   );
 }
-
-// ============================================================
-// Stat Card Component (for dashboard-like displays)
-// ============================================================
 
 export interface StatCardProps {
   label: string;
@@ -187,7 +183,7 @@ export function StatCard({
       }
       stats={
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-black">{value}</span>
+          <span className="text-2xl font-bold">{value}</span>
           {trend && (
             <span className={cn(
               'text-sm',
@@ -204,10 +200,6 @@ export function StatCard({
     />
   );
 }
-
-// ============================================================
-// List Item Card (compact single-line cards)
-// ============================================================
 
 export interface ListItemCardProps {
   title: string;

@@ -59,7 +59,7 @@ export function FilterTabs<T extends string>({
           {opt.count !== undefined && (
             <span
               className={cn(
-                "rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums",
+                "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
                 value === opt.value
                   ? "bg-white/20 text-primary-foreground"
                   : "bg-background text-foreground",

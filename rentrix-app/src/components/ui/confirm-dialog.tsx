@@ -69,7 +69,7 @@ export function ConfirmDialog({
             <AlertTriangle className="size-5" />
           </div>
           <div>
-            <DialogTitle className="text-base font-black">{title}</DialogTitle>
+            <DialogTitle className="text-base font-bold">{title}</DialogTitle>
             {description && (
               <DialogDescription className="mt-0.5 text-sm text-muted-foreground">
                 {description}

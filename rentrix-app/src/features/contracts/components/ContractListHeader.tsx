@@ -13,7 +13,7 @@ export function ContractListHeader({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h2 className="text-3xl font-black">العقود</h2>
+        <h2 className="text-2xl font-bold tracking-tight">العقود</h2>
         <p className="text-sm text-muted-foreground">إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي.</p>
       </div>
       <div className="flex flex-wrap gap-2">

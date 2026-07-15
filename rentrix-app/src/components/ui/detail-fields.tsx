@@ -30,7 +30,7 @@ export function DetailFields({ fields, columns = 4, className }: { fields: Detai
       {fields.map((field) => (
         <div key={field.label} className={cn('rounded-2xl border border-border bg-background p-4', field.wide && 'md:col-span-2')}>
           <p className="text-xs font-bold text-muted-foreground">{field.label}</p>
-          <div className="mt-1 font-black">{field.value === null || field.value === undefined || field.value === '' ? '—' : field.value}</div>
+          <div className="mt-1 font-semibold">{field.value === null || field.value === undefined || field.value === '' ? '—' : field.value}</div>
         </div>
       ))}
     </div>

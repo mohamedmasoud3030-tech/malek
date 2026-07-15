@@ -18,7 +18,7 @@ export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowEle
 }
 
 export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn('h-12 whitespace-nowrap px-4 text-start align-middle text-xs font-black text-muted-foreground', className)} {...props} />;
+  return <th className={cn('h-12 whitespace-nowrap px-4 text-start align-middle text-xs font-semibold text-muted-foreground', className)} {...props} />;
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {

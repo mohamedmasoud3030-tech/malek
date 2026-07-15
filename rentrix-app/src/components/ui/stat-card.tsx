@@ -30,7 +30,7 @@ export function StatCard({ label, value, sub, tone = "default", className }: Sta
   return (
     <div className={cn("rounded-2xl p-3", colors.bg, className)}>
       <p className="text-[11px] font-bold text-muted-foreground">{label}</p>
-      <p className={cn("mt-1.5 text-base font-black tabular-nums leading-none", colors.value)} dir="ltr">
+      <p className={cn("mt-1.5 text-base font-bold tabular-nums leading-none", colors.value)} dir="ltr">
         {value}
       </p>
       {sub && <p className="mt-1 text-[10px] text-muted-foreground/70">{sub}</p>}
