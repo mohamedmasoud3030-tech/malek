@@ -48,66 +48,96 @@ export const settlementStatusLabels: Record<SettlementStatus, string> = {
 };
 
 export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
-  return [
-    {
-      id: 'settle-801',
-      owner_id: 'owner-1',
-      owner_name: 'سعود بن محمد الكثيري',
-      property_id: 'p-1',
-      property_title: 'برج النيل المكتبي',
-      period_start: '2026-06-01',
-      period_end: '2026-06-30',
-      gross_rent_collected: 1800,
-      management_fee_rate: 5,
+  const { data: settlements, error: settleError } = await supabase
+    .from('owner_settlements')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (settleError) {
+    console.error('Error fetching owner settlements:', settleError);
+    return [];
+  }
+
+  if (!settlements || settlements.length === 0) {
+    return [];
+  }
+
+  const ownerIds = Array.from(new Set(settlements.map((s) => s.owner_id).filter(Boolean)));
+  const propertyIds = Array.from(new Set(settlements.map((s) => s.property_id).filter(Boolean)));
+
+  const [ownersRes, propertiesRes] = await Promise.all([
+    ownerIds.length > 0
+      ? supabase.from('owners').select('id, name').in('id', ownerIds)
+      : { data: [] },
+    propertyIds.length > 0
+      ? supabase.from('properties').select('id, title').in('id', propertyIds)
+      : { data: [] }
+  ]);
+
+  const ownerMap = new Map((ownersRes.data ?? []).map((o) => [o.id.toString(), o.name]));
+  const propertyMap = new Map((propertiesRes.data ?? []).map((p) => [p.id.toString(), p.title]));
+
+  return settlements.map((s) => {
+    // Map DRAFT status from DB to 'pending' status for UI backwards compatibility
+    const uiStatus: SettlementStatus =
+      s.status === 'DRAFT'
+        ? 'pending'
+        : (s.status?.toLowerCase() as SettlementStatus) || 'pending';
+
+    return {
+      id: s.id,
+      owner_id: s.owner_id || '',
+      owner_name: ownerMap.get(s.owner_id || '') || 'مالك غير معروف',
+      property_id: s.property_id || '',
+      property_title: propertyMap.get(s.property_id || '') || 'عقار غير معروف',
+      period_start: s.period_start || '',
+      period_end: s.period_end || '',
+      gross_rent_collected: Number(s.gross_collected ?? 0),
+      management_fee_rate: 5, // Default percentage
       management_fee_type: 'percentage',
-      management_fee_amount: 90,
-      maintenance_deductions: 120,
-      utility_deductions: 0,
-      net_payable_amount: 1590,
-      status: 'approved',
-      approved_by: 'مدير الحسابات',
-      approved_at: '2026-07-01T10:00:00.000Z',
-      payout_reference: 'TR-990124',
-      created_at: '2026-07-01T00:00:00.000Z',
-    },
-    {
-      id: 'settle-802',
-      owner_id: 'owner-2',
-      owner_name: 'خالد بن ناصر الهنائي',
-      property_id: 'p-2',
-      property_title: 'مجمع العذيبة السكني',
-      period_start: '2026-06-01',
-      period_end: '2026-06-30',
-      gross_rent_collected: 2400,
-      management_fee_rate: 5,
-      management_fee_type: 'percentage',
-      management_fee_amount: 120,
-      maintenance_deductions: 0,
-      utility_deductions: 0,
-      net_payable_amount: 2280,
-      status: 'paid',
-      approved_by: 'المدير العام',
-      approved_at: '2026-07-02T11:00:00.000Z',
-      paid_at: '2026-07-03T14:30:00.000Z',
-      payout_reference: 'BANK-00912',
-      notes: 'تم التحويل لحساب المالك البنكي المعتمد',
-      created_at: '2026-07-01T00:00:00.000Z',
-    },
-  ];
+      management_fee_amount: Number(s.office_fee ?? 0),
+      maintenance_deductions: Number(s.owner_expenses ?? 0),
+      utility_deductions: Number(s.tax_amount ?? 0),
+      net_payable_amount: Number(s.net_payable ?? 0),
+      status: uiStatus,
+      approved_by: s.approved_by,
+      approved_at: s.approved_at,
+      paid_at: s.paid_at,
+      payout_reference: s.payment_reference,
+      notes: s.notes,
+      created_at: s.created_at || new Date().toISOString(),
+    };
+  });
 }
 
-export async function approveOwnerSettlement(_payload: ApproveSettlementPayload): Promise<boolean> {
+export async function approveOwnerSettlement(payload: ApproveSettlementPayload): Promise<boolean> {
+  const { error } = await supabase.rpc('approve_owner_settlement_atomic', {
+    p_payload: {
+      settlement_id: payload.settlement_id,
+      request_id: crypto.randomUUID()
+    }
+  });
+
+  if (error) {
+    console.error('Error approving owner settlement:', error);
+    throw new Error(error.message);
+  }
   return true;
 }
 
 export async function processOwnerPayout(payload: ProcessPayoutPayload): Promise<boolean> {
-  const { error } = await supabase.from('expenses').insert({
-    property_id: '00000000-0000-0000-0000-000000000000',
-    amount: 0,
-    category: 'إداري',
-    expense_date: payload.payout_date || new Date().toISOString().slice(0, 10),
-    description: `تسوية أرباح مالك مرجع: ${payload.payout_reference}`,
-  }).limit(0);
-  void error;
+  const { error } = await supabase.rpc('pay_owner_settlement_atomic', {
+    p_payload: {
+      settlement_id: payload.settlement_id,
+      request_id: crypto.randomUUID(),
+      method: payload.payout_method,
+      payment_reference: payload.payout_reference
+    }
+  });
+
+  if (error) {
+    console.error('Error paying owner settlement:', error);
+    throw new Error(error.message);
+  }
   return true;
 }
