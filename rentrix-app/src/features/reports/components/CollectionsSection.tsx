@@ -7,7 +7,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatDate, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
-import { buildReportCsvFilename, downloadCsv, latestReceiptLimit, toDailyCollectionCsv } from '../reports-page.helpers';
+import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString, latestReceiptLimit, toDailyCollectionCsv } from '../reports-page.helpers';
 import type { RentRollReportRow } from '../reports-page.helpers';
 import { createReceiptPrintHref } from '../reports-page.helpers';
 import { ReportCard, SafeAnchor } from './common';
@@ -33,12 +33,13 @@ export function CollectionsSection({ rows, receiptRows, rentRollRows, canExportR
 }>) {
   const handlePrintCollectionsReport = () => {
     const totalCollected = rows.reduce((acc, r) => acc + r.totalPaid, 0);
+    const todayStr = getTodayLocalDateString();
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'كشف حركة التحصيلات اليومية والتدفقات النقدية',
         reportType: 'Daily_Collections_Report',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'جدول المقبوضات حسب التاريخ وطرق السداد',

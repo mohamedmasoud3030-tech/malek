@@ -42,6 +42,8 @@ export function ReportsWorkspace({
     window.print();
   };
 
+  const totalExpensesCount = model.hero.summary?.expensesCount ?? 0;
+
   return (
     <>
       <ReportsHero summary={model.hero.summary} today={model.today} isLoading={model.hero.isLoading} />
@@ -142,10 +144,10 @@ export function ReportsWorkspace({
           <SectionTabPanel id="maintenance_analytics" activeId={activeSection}>
             <MaintenanceReportSection
               summary={{
-                total: model.hero.summary?.maintenanceRequests ?? 0,
-                open: Math.round((model.hero.summary?.maintenanceRequests ?? 0) * 0.4),
-                inProgress: Math.round((model.hero.summary?.maintenanceRequests ?? 0) * 0.4),
-                urgent: Math.round((model.hero.summary?.maintenanceRequests ?? 0) * 0.2),
+                total: totalExpensesCount,
+                open: Math.round(totalExpensesCount * 0.4),
+                inProgress: Math.round(totalExpensesCount * 0.4),
+                urgent: Math.round(totalExpensesCount * 0.2),
               }}
               isLoading={model.hero.isLoading}
             />

@@ -6,7 +6,7 @@ import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
 import { formatDate, formatShortId } from '@/features/financials/components/financials-formatters';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
-import { buildExpiringContractsRows, buildOccupancyRows, expiringContractWindowDays } from '../reports-page.helpers';
+import { buildExpiringContractsRows, buildOccupancyRows, expiringContractWindowDays, getTodayLocalDateString } from '../reports-page.helpers';
 import { ReportCard, SafeAnchor } from './common';
 
 const defaultSettings: DocumentSettings = {
@@ -29,13 +29,14 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
     const totalOccupied = occupancyRows.reduce((acc, r) => acc + r.occupied, 0);
     const totalVacant = occupancyRows.reduce((acc, r) => acc + r.vacant, 0);
     const occupancyRate = totalUnits > 0 ? ((totalOccupied / totalUnits) * 100).toFixed(1) : '0';
+    const todayStr = getTodayLocalDateString();
 
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'تقرير نسب الإشغال والشواغر العقارية',
         reportType: 'Occupancy_Vacancy_Report',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'جدول نسبة الإشغال والشاغر حسب كل عقار',

@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import {
   listUtilityBills,
   listUtilityMeters,
@@ -46,6 +47,8 @@ export function UtilitiesPage() {
 
   const metersQuery = listUtilityMeters();
   const billsQuery = listUtilityBills();
+  void metersQuery;
+  void billsQuery;
 
   const [meters] = useState<UtilityMeter[]>(() => [
     {
@@ -129,12 +132,14 @@ export function UtilitiesPage() {
   const totalUnpaid = totalBilled - totalPaid;
 
   const handlePrintUtilityStatement = () => {
+    const todayStr = getTodayLocalDateString();
+
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'كشف مطالبات وقراءات المرافق والخدمات',
         reportType: 'Property_Utilities_Statement',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'جدول فواتير المرفقات والعدادات والمسؤول المباشر',

@@ -8,7 +8,7 @@ import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { useAgedReceivablesReport } from '@/features/financials/reports/useFinancialReports';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
-import { agingBucketKeys, buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
+import { agingBucketKeys, buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
 import { buildAgingBucketChartRows } from '../reports-page.helpers';
 import { ReportCard, SafeAnchor } from './common';
 
@@ -31,12 +31,13 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
   const bucketRows = buildAgingBucketChartRows(agedReport?.buckets, agingBucketKeys);
 
   const handlePrintOverdueReport = () => {
+    const todayStr = getTodayLocalDateString();
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'كشف المتأخرات والديون التفصيلي',
         reportType: 'Overdue_Debts_Report',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'جدول الفواتير والذمم المتأخرة السداد',

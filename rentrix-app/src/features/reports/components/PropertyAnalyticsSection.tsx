@@ -5,6 +5,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import type { OccupancyChartRow } from '../reports-page.helpers';
+import { getTodayLocalDateString } from '../reports-page.helpers';
 import { ReportCard } from './common';
 
 const defaultSettings: DocumentSettings = {
@@ -59,12 +60,14 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
       };
     });
 
+    const todayStr = getTodayLocalDateString();
+
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'كشف التحليل التنفيذي واستغلال المحفظة العقارية',
         reportType: 'Property_Portfolio_Executive_Analysis',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'جدول أداء واستغلال العقارات ونسب العائد والنفقات',

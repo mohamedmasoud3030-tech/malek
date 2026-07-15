@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Eye, ExternalLink, FileText, Filter, FolderKanban, Image as ImageIcon, Paperclip, Printer, Search, UploadCloud } from 'lucide-react';
+import { Eye, ExternalLink, FileText, FolderKanban, Image as ImageIcon, Paperclip, Printer, Search, UploadCloud } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,8 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import {
-  listVaultDocuments,
   vaultCategoryLabels,
   type VaultCategory,
   type VaultDocumentItem,
@@ -95,12 +95,14 @@ export function DocumentsVaultPage() {
   const totalImages = useMemo(() => documents.filter((d) => d.fileType === 'image').length, [documents]);
 
   const handlePrintVaultReport = () => {
+    const todayStr = getTodayLocalDateString();
+
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'سجل وأرشيف المرفقات والمستندات الرسمية',
         reportType: 'Document_Vault_Archive_Report',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'جدول المستندات والمرفقات الموثوقة المحفوظة في النظام',

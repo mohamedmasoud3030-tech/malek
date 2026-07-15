@@ -10,6 +10,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './components/maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './components/maintenance-list';
 import { maintenancePriorityLabels, maintenanceStatusLabels } from './components/maintenance-list';
@@ -74,12 +75,13 @@ export function MaintenancePage() {
   };
 
   const handlePrintMaintenanceList = () => {
+    const todayStr = getTodayLocalDateString();
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'كشف بلاغات وطلبات الصيانة الميدانية',
         reportType: 'Maintenance_Requests_Report',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'جدول طلبات الصيانة والتكلفة والأولوية',

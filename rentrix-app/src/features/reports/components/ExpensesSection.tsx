@@ -5,7 +5,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import { useExpenseBreakdownReport } from '@/features/financials/reports/useFinancialReports';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
-import { buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
+import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
 import { ReportCard } from './common';
 
 const defaultSettings: DocumentSettings = {
@@ -27,12 +27,13 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   const propertyRows = report?.byProperty ?? [];
 
   const handlePrintExpensesReport = () => {
+    const todayStr = getTodayLocalDateString();
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'تقرير وتوزيع المصروفات التشغيلية',
         reportType: 'Operational_Expenses_Report',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'توزيع المصروفات حسب التصنيف',

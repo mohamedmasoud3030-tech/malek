@@ -37,13 +37,13 @@ export function ReceiptDetailPage() {
         amount: receipt.amount,
         paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
         reference: receipt.reference_number ?? undefined,
-        notes: receipt.notes ?? undefined,
+        notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
       },
       {
         company: {
           name: companySettings.companyName || 'رينتريكس لإدارة العقارات',
-          phone: companySettings.phone || '+968 24000000',
-          address: companySettings.address || 'سلطنة عمان - مسقط',
+          phone: '+968 24000000',
+          address: 'سلطنة عمان - مسقط',
         },
         currency: 'OMR',
         currencySymbol: 'ر.ع',

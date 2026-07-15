@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { getTodayLocalDateString } from '../reports-page.helpers';
 import { ReportCard } from './common';
 
 const defaultSettings: DocumentSettings = {
@@ -27,12 +28,13 @@ export type MaintenanceReportProps = Readonly<{
 
 export function MaintenanceReportSection({ summary, isLoading }: MaintenanceReportProps) {
   const handlePrintMaintenanceReport = () => {
+    const todayStr = getTodayLocalDateString();
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'كشف تحليل طلبات وتكاليف الصيانة التشغيلية',
         reportType: 'Maintenance_Operations_Report',
-        periodFrom: new Date().toISOString().slice(0, 10),
-        periodTo: new Date().toISOString().slice(0, 10),
+        periodFrom: todayStr,
+        periodTo: todayStr,
         sections: [
           {
             title: 'ملخص مؤشرات طلبات الصيانة حسب الحالة والأولوية',
