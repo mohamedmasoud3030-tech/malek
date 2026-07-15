@@ -51,7 +51,7 @@ export function DashboardPage() {
   );
 
   return (
-    <PageLayout className="space-y-6">
+    <PageLayout className="space-y-6 pb-8" data-dashboard-v2>
       <HeroBanner snapshot={snapshot} isLoading={isLoading} settings={settings} today={today} />
 
       <OnboardingChecklist progress={progress} />
@@ -64,6 +64,11 @@ export function DashboardPage() {
           onRetry={retryDashboard}
         />
       ) : null}
+
+      <section className="space-y-3" aria-label="صورة الأداء" data-dashboard-section="kpis">
+        <SectionHeader title="صورة الأداء" description="التحصيل والسيولة والمتأخرات للفترة الحالية" />
+        <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
+      </section>
 
       <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]" data-dashboard-section="priorities">
         <AlertCenter
@@ -80,23 +85,18 @@ export function DashboardPage() {
         <QuickActions />
       </div>
 
-      <section className="space-y-3" aria-label="صورة الأداء" data-dashboard-section="kpis">
-        <SectionHeader title="صورة الأداء" description="أربع مؤشرات قرار مرتبة في شبكة 2×2 ثابتة" />
-        <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
+      <section className="space-y-4" aria-label="المحفظة والتحصيل" data-dashboard-section="trends">
+        <SectionHeader title="المحفظة والتحصيل" description="قراءة سريعة تساعدك قبل فتح التقارير التفصيلية" />
+        <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
+        <ArrearsBreakdown snapshot={snapshot} settings={settings} />
       </section>
 
       <section className="space-y-3" aria-label="قوائم العمل" data-dashboard-section="work-queues">
-        <SectionHeader title="قوائم العمل" description="الحالات الأعلى أولوية للتنفيذ اليومي" />
+        <SectionHeader title="قوائم العمل" description="التفاصيل التي تحتاج متابعة بعد ترتيب الأولويات" />
         <div className="grid gap-5 lg:grid-cols-2">
           <ExpiringContractsSection rows={expiringContracts} isLoading={isLoading} settings={settings} />
           <OverdueSection rows={overdueRows} isLoading={isLoading} settings={settings} />
         </div>
-      </section>
-
-      <section className="space-y-4" aria-label="الاتجاهات والتفاصيل" data-dashboard-section="trends">
-        <SectionHeader title="الاتجاهات والتفاصيل" description="تفاصيل مساندة بعد إنهاء الأعمال ذات الأولوية" />
-        <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
-        <ArrearsBreakdown snapshot={snapshot} settings={settings} />
       </section>
     </PageLayout>
   );

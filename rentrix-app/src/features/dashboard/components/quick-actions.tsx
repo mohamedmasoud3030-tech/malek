@@ -41,13 +41,13 @@ export function QuickActions() {
           const Icon = action.icon;
           return (
             <Link key={action.to} to={action.to} className="min-w-0">
-              <div className="flex min-h-24 items-center gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-card transition-shadow hover:shadow-card-hover sm:p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex min-h-24 items-center gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-card transition-all hover:border-primary/25 hover:shadow-card-hover active:opacity-85 sm:p-4">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Icon className="size-5" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <span className="block truncate text-sm font-semibold leading-tight">{action.label}</span>
-                  <span className="mt-1 block text-[11px] text-muted-foreground">{action.description}</span>
+                  <span className="block truncate text-sm font-bold leading-tight">{action.label}</span>
+                  <span className="mt-1 block text-[11px] leading-4 text-muted-foreground">{action.description}</span>
                 </div>
               </div>
             </Link>

@@ -49,7 +49,8 @@ for (const viewport of viewportMatrix) {
       const sectionNames = await page.locator('[data-dashboard-section]').evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-dashboard-section')),
       );
-      expect(sectionNames).toEqual(['priorities', 'kpis', 'work-queues', 'trends']);
+      expect(sectionNames).toEqual(['kpis', 'priorities', 'trends', 'work-queues']);
+      await expect(page.locator('[data-dashboard-hero]')).toBeVisible();
 
       await expect(page.locator('[data-dashboard-action-grid] > a')).toHaveCount(4);
       await expect(page.locator('[data-dashboard-kpi-grid] [class*="grid-cols-2"] > *')).toHaveCount(4);
