@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { EntityCard } from '@/components/ui/entity-card';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -254,11 +254,9 @@ function ReceiptsHistoryContent() {
             emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض إيصالات أخرى.' : 'لا توجد إيصالات منشورة حتى الآن.'}
             onRowClick={(receipt) => setSelectedReceiptId(receipt.id)}
             renderMobileCard={(receipt) => (
-              <EntityCard
-                id={receipt.id}
-                name={`إيصال #${receipt.receipt_number}`}
+              <MobileCard
+                title={`إيصال #${receipt.receipt_number}`}
                 subtitle={formatDate(receipt.payment_date)}
-                avatarIcon={Printer}
                 badge={(
                   <StatusBadge tone={receiptStatusTone(receipt.status)} className="shrink-0">
                     <CheckCircle2 className="size-3" aria-hidden="true" />
@@ -267,7 +265,7 @@ function ReceiptsHistoryContent() {
                 )}
                 onClick={() => setSelectedReceiptId(receipt.id)}
                 stats={(
-                  <div className="grid gap-2">
+                  <div className="grid gap-2 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex min-w-0 items-center gap-2 font-bold"><Wallet className="size-4 shrink-0" aria-hidden="true" />{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span>
                       <strong className="whitespace-nowrap text-base font-black tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(receipt.amount)}</strong>
@@ -276,11 +274,24 @@ function ReceiptsHistoryContent() {
                     <div className="text-[10px] text-muted-foreground/75">فاتورة #{formatShortId(receipt.invoice_id)}</div>
                   </div>
                 )}
-                actions={[
-                  { label: 'عرض', icon: Eye, variant: 'default', onClick: () => setSelectedReceiptId(receipt.id) },
-                  { label: 'طباعة', icon: Printer, onClick: () => openReceiptPrintView(receipt.id) },
-                  ...(canVoidReceipt && receipt.status === 'posted' ? [{ label: 'إلغاء', icon: Ban, variant: 'danger' as const, onClick: () => openVoidDialog(receipt) }] : []),
-                ]}
+                actions={(
+                  <div className="flex flex-wrap gap-2 w-full">
+                    <Button variant="outline" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => setSelectedReceiptId(receipt.id)}>
+                      <Eye className="size-4" />
+                      عرض
+                    </Button>
+                    <Button variant="outline" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => openReceiptPrintView(receipt.id)}>
+                      <Printer className="size-4" />
+                      طباعة
+                    </Button>
+                    {canVoidReceipt && receipt.status === 'posted' ? (
+                      <Button variant="danger" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => openVoidDialog(receipt)}>
+                        <Ban className="size-4" />
+                        إلغاء
+                      </Button>
+                    ) : null}
+                  </div>
+                )}
               />
             )}
           />
