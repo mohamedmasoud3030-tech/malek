@@ -51,7 +51,7 @@ const mockSnapshot = {
   activeContracts: [
     {
       id: 'contract-1',
-      end_date: '2026-07-15',
+      end_date: '2026-08-10',
       properties: { title: 'برج الياسمين' },
       units: { unit_number: '101' },
       people: { full_name: 'سالم الكعبي' },

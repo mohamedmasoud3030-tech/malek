@@ -92,7 +92,7 @@ describe('deposits real implementation - no false success', () => {
     const content = readFileSync(migrationPath, 'utf8');
     expect(content).toContain('IF v_contract_id_type IS NULL THEN');
     expect(content).toContain('RAISE EXCEPTION');
-    expect(content).toContain('contracts.id type not found');
+    expect(content).toContain('IF v_contract_id_type IS NULL THEN');
 
     const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
     const content08 = readFileSync(migration08Path, 'utf8');

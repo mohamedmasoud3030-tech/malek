@@ -17,7 +17,6 @@ describe('AI assistant edge function', () => {
     expect(content).toContain('AI_PROVIDER_API_KEY');
     expect(content).toContain('AI_CONFIG_MISSING');
     expect(content).toContain('قراءة فقط');
-    // New: secure user id hash, not partial JWT
     expect(content).toContain('secureHashUserId');
     expect(content).toContain('userId');
     expect(content).not.toContain('slice(7, 20)');
@@ -54,10 +53,12 @@ describe('AI assistant edge function', () => {
     expect(content).toContain('promptLength');
     expect(content).toContain('durationMs');
     expect(content).toContain('AI request success');
-    // Rate limit after auth, not before
-    const authIndex = content.indexOf('assertAuthenticated');
-    const rateLimitIndex = content.indexOf('checkRateLimitForUser');
-    expect(rateLimitIndex).toBeGreaterThan(authIndex);
+    // Rate limit after auth: check execution order inside Deno.serve, not definition order
+    const authCallIndex = content.indexOf('const authResult = await assertAuthenticated');
+    const rateLimitCallIndex = content.indexOf('checkRateLimitForUser(userId)');
+    expect(authCallIndex).toBeGreaterThan(-1);
+    expect(rateLimitCallIndex).toBeGreaterThan(-1);
+    expect(rateLimitCallIndex).toBeGreaterThan(authCallIndex);
     // Should mention centralized storage TODO
     expect(content).toContain('centralized');
     expect(content).toContain('Supabase table');
