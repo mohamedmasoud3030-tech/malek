@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+// Keep this guard strict: CI must use the exact tool versions resolved by the lockfile.
 const EXPECTED_SUPABASE = '2.105.0';
 const EXPECTED_PLAYWRIGHT = '1.61.1';
 
