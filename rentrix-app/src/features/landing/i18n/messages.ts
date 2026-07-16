@@ -120,6 +120,8 @@ const ar = {
     kicker: 'جولة في المنتج',
     title: 'شاهد التطبيق الحقيقي — لا رسومات توضيحية',
     subtitle: 'كل ما تراه هنا لقطات فعلية من أحدث نسخة من Rentrix.',
+    watchVideo: 'شاهد الجولة بالفيديو',
+    closeVideo: 'إغلاق الفيديو',
     tabs: [
       {
         id: 'dashboard',
@@ -385,6 +387,8 @@ const en: Messages = {
     kicker: 'Product tour',
     title: 'See the real product — not illustrations',
     subtitle: 'Everything below is an actual capture from the latest Rentrix build.',
+    watchVideo: 'Watch the video tour',
+    closeVideo: 'Close video',
     tabs: [
       { id: 'dashboard', label: 'Dashboard', caption: 'Your office’s daily pulse: priorities, KPIs, worklists.' },
       { id: 'workspace', label: 'Reports hub', caption: 'Collections, arrears, occupancy and accounting with unified filters and CSV/PDF export.' },

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LayoutDashboard, FileBarChart, Settings2, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, FileBarChart, Settings2, ClipboardList, Play, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { SectionHeader } from './SectionHeader';
 import { Reveal } from './Reveal';
@@ -12,10 +12,28 @@ const TAB_META = [
   { id: 'entity-form', icon: ClipboardList, src: '/landing/entity-form.png' },
 ] as const;
 
+const DEMO_VIDEO_SRC = '/landing/rentrix-demo.mp4';
+
 export function Showcase() {
   const { t } = useLanguage();
   const [active, setActive] = useState(0);
+  const [videoOpen, setVideoOpen] = useState(false);
   const current = TAB_META[active];
+
+  // Close on ESC + lock body scroll while the modal is open
+  useEffect(() => {
+    if (!videoOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setVideoOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [videoOpen]);
 
   return (
     <section id="showcase" className="section-light relative overflow-hidden border-t border-slate-200/70">
@@ -30,6 +48,21 @@ export function Showcase() {
           title={t.showcase.title}
           subtitle={t.showcase.subtitle}
         />
+
+        <Reveal className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVideoOpen(true)}
+            className="group inline-flex items-center gap-3 rounded-full border border-brand-200 bg-white px-6 py-3 text-sm font-extrabold text-brand-700 shadow-[0_14px_30px_-14px_rgba(37,84,235,0.5)] transition duration-300 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-[0_20px_40px_-16px_rgba(37,84,235,0.55)]"
+          >
+            <span className="relative grid size-9 place-items-center rounded-full bg-brand-600 text-white transition group-hover:scale-105">
+              <span aria-hidden="true" className="absolute inset-0 rounded-full bg-brand-500/50 motion-safe:animate-ping" />
+              <Play className="relative size-4 fill-current" aria-hidden="true" />
+            </span>
+            {t.showcase.watchVideo}
+            <span className="text-xs font-bold text-slate-400">2:02</span>
+          </button>
+        </Reveal>
 
         <Reveal className="mt-12">
           <div className="grid items-start gap-6 lg:grid-cols-[280px_1fr] lg:gap-10">
@@ -103,6 +136,49 @@ export function Showcase() {
           </div>
         </Reveal>
       </div>
+
+      {/* Video modal */}
+      <AnimatePresence>
+        {videoOpen ? (
+          <motion.div
+            key="video-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t.showcase.watchVideo}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 grid place-items-center bg-ink-950/85 p-4 backdrop-blur-sm"
+            onClick={() => setVideoOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 10 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="relative w-full max-w-4xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setVideoOpen(false)}
+                aria-label={t.showcase.closeVideo}
+                className="absolute -top-12 end-0 grid size-10 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+              >
+                <X className="size-5" aria-hidden="true" />
+              </button>
+              <video
+                src={DEMO_VIDEO_SRC}
+                controls
+                autoPlay
+                playsInline
+                className="w-full rounded-2xl border border-white/10 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]"
+              />
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }
