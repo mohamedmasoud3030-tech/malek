@@ -1,10 +1,11 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Response } from '@playwright/test';
 
-const isReleaseBlockerRun = process.env.E2E_ENVIRONMENT_KIND === "staging";
-const authStorageKey = "rentrix-auth-session";
-const fallbackEmailDomain = "gmail.com";
+const isReleaseBlockerRun = process.env.E2E_ENVIRONMENT_KIND === 'staging';
+const authStorageKey = 'rentrix-auth-session';
+const invalidSessionSeedMarker = 'rentrix-invalid-session-seeded';
+const fallbackEmailDomain = 'gmail.com';
 
-function requireEnv(name: "E2E_TEST_EMAIL" | "E2E_TEST_PASSWORD"): string {
+function requireEnv(name: 'E2E_TEST_EMAIL' | 'E2E_TEST_PASSWORD'): string {
   const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(
@@ -12,60 +13,66 @@ function requireEnv(name: "E2E_TEST_EMAIL" | "E2E_TEST_PASSWORD"): string {
     );
   }
 
-  if (name === "E2E_TEST_EMAIL" && value.endsWith("@")) {
+  if (name === 'E2E_TEST_EMAIL' && value.endsWith('@')) {
     return `${value}${fallbackEmailDomain}`;
   }
 
   return value;
 }
 
-const email = isReleaseBlockerRun ? requireEnv("E2E_TEST_EMAIL") : "";
-const password = isReleaseBlockerRun ? requireEnv("E2E_TEST_PASSWORD") : "";
+const email = isReleaseBlockerRun ? requireEnv('E2E_TEST_EMAIL') : '';
+const password = isReleaseBlockerRun ? requireEnv('E2E_TEST_PASSWORD') : '';
 
-async function submitLogin(page: Page, candidatePassword: string) {
-  await page.goto("/login");
-  await page.getByLabel("البريد الإلكتروني").fill(email);
-  await page.getByPlaceholder("••••••••").fill(candidatePassword);
-  await page.getByRole("button", { name: /^تسجيل الدخول$/ }).click();
+async function submitLogin(page: Page, candidatePassword: string): Promise<Response> {
+  await page.goto('/login');
+  await page.getByLabel('البريد الإلكتروني').fill(email);
+  await page.getByPlaceholder('••••••••').fill(candidatePassword);
+
+  const loginButton = page.getByRole('button', { name: /^تسجيل الدخول$/ });
+  const authResponsePromise = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname.endsWith('/auth/v1/token') && response.request().method() === 'POST';
+  });
+
+  await loginButton.click();
+  const authResponse = await authResponsePromise;
+  await expect(loginButton).toBeEnabled();
+  return authResponse;
 }
 
 async function expectProtectedShell(page: Page) {
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByText("لوحة التحكم").first()).toBeVisible();
+  await expect(page.getByText('لوحة التحكم').first()).toBeVisible();
 }
 
-test.describe("release blocker: real authentication lifecycle", () => {
+test.describe('release blocker: real authentication lifecycle', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test.skip(
     !isReleaseBlockerRun,
-    "The general browser smoke does not own staging credentials; the dedicated release-blocker job runs this suite with zero skips.",
+    'The general browser smoke does not own staging credentials; the dedicated release-blocker job runs this suite with zero skips.',
   );
 
-  test("valid staging credentials create a usable session that can be logged out", async ({
-    page,
-  }) => {
-    await submitLogin(page, password);
+  test('valid staging credentials create a usable session that can be logged out', async ({ page }) => {
+    const authResponse = await submitLogin(page, password);
+    expect(authResponse.ok()).toBe(true);
     await expectProtectedShell(page);
 
-    await page.getByRole("button", { name: "تسجيل الخروج" }).click();
+    await page.getByRole('button', { name: 'تسجيل الخروج' }).click();
     await expect(page).toHaveURL(/\/login$/);
 
-    await page.goto("/");
+    await page.goto('/');
     await expect(page).toHaveURL(/\/login$/);
-    await expect(
-      page.getByRole("heading", { name: "مرحباً بعودتك" }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
   });
 
-  test("invalid credentials do not create a session or enter the protected shell", async ({
-    page,
-  }) => {
-    await submitLogin(page, `${password}-invalid`);
+  test('invalid credentials do not create a session or enter the protected shell', async ({ page }) => {
+    const authResponse = await submitLogin(page, `${password}-invalid`);
+    expect(authResponse.status()).toBeGreaterThanOrEqual(400);
 
     await expect(page).toHaveURL(/\/login$/);
-    await expect(
-      page.getByRole("heading", { name: "مرحباً بعودتك" }),
-    ).toBeVisible();
-    await expect(page.getByText("لوحة التحكم")).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
+    await expect(page.getByText('لوحة التحكم')).toHaveCount(0);
 
     const authStorageValue = await page.evaluate(
       (storageKey) => localStorage.getItem(storageKey),
@@ -74,28 +81,35 @@ test.describe("release blocker: real authentication lifecycle", () => {
     expect(authStorageValue).toBeNull();
   });
 
-  test("an invalidated stored session returns to login without a redirect loop", async ({
-    page,
-  }) => {
-    await submitLogin(page, password);
-    await expectProtectedShell(page);
+  test('an invalidated stored session returns to login without a second real sign-in', async ({ page }) => {
+    await page.addInitScript(
+      ({ storageKey, marker, userEmail }) => {
+        if (sessionStorage.getItem(marker) === '1') return;
 
-    await page.evaluate((storageKey) => {
-      const rawSession = localStorage.getItem(storageKey);
-      if (!rawSession)
-        throw new Error(`Auth storage value is missing for ${storageKey}.`);
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            access_token: 'expired.invalid.token',
+            refresh_token: 'invalid-refresh-token',
+            expires_at: 1,
+            expires_in: 1,
+            token_type: 'bearer',
+            user: {
+              id: '00000000-0000-4000-8000-000000000001',
+              aud: 'authenticated',
+              role: 'authenticated',
+              email: userEmail,
+            },
+          }),
+        );
+        sessionStorage.setItem(marker, '1');
+      },
+      { storageKey: authStorageKey, marker: invalidSessionSeedMarker, userEmail: email },
+    );
 
-      const session = JSON.parse(rawSession) as Record<string, unknown>;
-      session.access_token = "expired.invalid.token";
-      session.refresh_token = "invalid-refresh-token";
-      session.expires_at = 1;
-      localStorage.setItem(storageKey, JSON.stringify(session));
-    }, authStorageKey);
-
-    await page.goto("/");
+    await page.goto('/');
     await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
-    await expect(
-      page.getByRole("heading", { name: "مرحباً بعودتك" }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
+    await expect(page.getByText('لوحة التحكم')).toHaveCount(0);
   });
 });
