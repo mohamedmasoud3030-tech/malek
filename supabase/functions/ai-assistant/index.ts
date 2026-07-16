@@ -37,25 +37,24 @@ const corsHeaders = {
 const sqlStatementPattern = /\b(select|insert|update|delete|drop|alter|truncate|create|grant|revoke)\b[\s\S]*(\bfrom\b|\binto\b|\btable\b|\bset\b|;)/i;
 const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
-// Simple in-memory rate limiter: 10 requests per minute per user identifier
+// NOTE: In-memory Map is NOT production-grade for multi-instance Edge Functions.
+// For production completeness, rate limiting should use centralized storage:
+// - Supabase table `ai_rate_limits` with user_id, count, window_start
+// - Or Redis/KV via Upstash
+// This in-memory implementation is suitable for single-instance and for graceful 503 fallback.
+// TODO: Replace with Supabase table for distributed enforcement when feature is announced as complete.
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
-function getRateLimitIdentifier(request: Request): string {
-  const auth = request.headers.get('Authorization') || '';
-  // Hash-like short identifier without exposing token
-  if (auth.startsWith('Bearer ')) {
-    const token = auth.slice(7, 20); // first 13 chars of token as identifier
-    return `auth:${token}`;
-  }
-  const forwarded = request.headers.get('x-forwarded-for') || '';
-  if (forwarded) return `ip:${forwarded.split(',')[0].trim().slice(0, 20)}`;
-  return 'ip:unknown';
+function secureHashUserId(userId: string): string {
+  // Use full user_id as key, not partial JWT. If needed, hash with SHA-256 for privacy.
+  // Here we use direct user_id because it's already unique and not similar across users.
+  return `user:${userId}`;
 }
 
-function checkRateLimit(request: Request): { allowed: boolean; retryAfter?: number } {
-  const id = getRateLimitIdentifier(request);
+function checkRateLimitForUser(userId: string): { allowed: boolean; retryAfter?: number } {
+  const id = secureHashUserId(userId);
   const now = Date.now();
   const entry = rateLimiter.get(id);
 
@@ -193,16 +192,18 @@ function readProviderUrl(): ProviderUrlResult {
   return { url: parsedUrl.toString() };
 }
 
-async function assertAuthenticated(request: Request): Promise<Response | null> {
+type AuthSuccess = { userId: string; email?: string };
+
+async function assertAuthenticated(request: Request): Promise<{ error: Response } | { user: AuthSuccess }> {
   const authHeader = request.headers.get('Authorization') ?? '';
   if (!authHeader.startsWith('Bearer ')) {
-    return errorResponse('AUTH_REQUIRED', 'يجب تسجيل الدخول لاستخدام مساعد الذكاء الاصطناعي.', 401);
+    return { error: errorResponse('AUTH_REQUIRED', 'يجب تسجيل الدخول لاستخدام مساعد الذكاء الاصطناعي.', 401) };
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')?.trim();
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
   if (!supabaseUrl || !supabaseAnonKey) {
-    return errorResponse('SUPABASE_CONFIG_MISSING', 'إعدادات Supabase غير مكتملة للدالة الخلفية.', 500);
+    return { error: errorResponse('SUPABASE_CONFIG_MISSING', 'إعدادات Supabase غير مكتملة للدالة الخلفية.', 500) };
   }
 
   const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
@@ -213,37 +214,37 @@ async function assertAuthenticated(request: Request): Promise<Response | null> {
   });
 
   if (!userResponse.ok) {
-    return errorResponse('AUTH_REQUIRED', 'انتهت الجلسة أو لا تملك صلاحية استخدام المساعد.', 401);
+    return { error: errorResponse('AUTH_REQUIRED', 'انتهت الجلسة أو لا تملك صلاحية استخدام المساعد.', 401) };
   }
 
   const userData = await userResponse.json().catch(() => null) as any;
-  // Basic role check: must be app user, not blocked
-  // We trust Supabase Auth; further role checks can be added via user app_metadata
   if (!userData?.id) {
-    return errorResponse('AUTH_REQUIRED', 'تعذر التحقق من هوية المستخدم.', 401);
+    return { error: errorResponse('AUTH_REQUIRED', 'تعذر التحقق من هوية المستخدم.', 401) };
   }
 
-  return null;
+  return { user: { userId: userData.id as string, email: userData.email as string | undefined } };
 }
 
 Deno.serve(async (request: Request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return errorResponse('METHOD_NOT_ALLOWED', 'طريقة الطلب غير مدعومة.', 405);
 
-  // Rate limiting
-  const rateLimit = checkRateLimit(request);
+  // 1. Authenticate FIRST - extract user id securely
+  const authResult = await assertAuthenticated(request);
+  if ('error' in authResult) return authResult.error;
+
+  const { userId } = authResult.user;
+
+  // 2. Rate limit AFTER successful authentication, using secure user_id (not partial JWT)
+  const rateLimit = checkRateLimitForUser(userId);
   if (!rateLimit.allowed) {
     return errorResponse('RATE_LIMIT_EXCEEDED', `تم تجاوز الحد المسموح للطلبات. حاول مرة أخرى بعد ${rateLimit.retryAfter || 60} ثانية.`, 429, {
       'Retry-After': String(rateLimit.retryAfter || 60),
     });
   }
 
-  const authError = await assertAuthenticated(request);
-  if (authError) return authError;
-
   const apiKey = Deno.env.get('AI_PROVIDER_API_KEY')?.trim();
   if (!apiKey) {
-    // Graceful handling when provider not configured - return 503 so frontend shows "غير متاح"
     return errorResponse('AI_CONFIG_MISSING', 'إعدادات الذكاء الاصطناعي غير مكتملة. اضبط AI_PROVIDER_API_KEY في إعدادات Edge Function.', 503);
   }
 
@@ -261,11 +262,9 @@ Deno.serve(async (request: Request) => {
     return errorResponse('SQL_NOT_ACCEPTED', 'لا يقبل المساعد أوامر SQL ولا ينفذ استعلامات مباشرة.', 422);
   }
 
-  // Additional injection guard: block attempts to reveal secrets
   const lowerPrompt = prompt.toLowerCase();
   if (lowerPrompt.includes('api_key') || lowerPrompt.includes('secret') || lowerPrompt.includes('password') || lowerPrompt.includes('env')) {
-    // Not a hard block, but we log and add system instruction to not reveal secrets (already in system prompt)
-    console.log('Potential secret-seeking prompt detected, proceeding with safe system instructions');
+    console.log('Potential secret-seeking prompt detected, proceeding with safe system instructions', { userId: userId.slice(0, 8) + '...' });
   }
 
   const context = stringifyForPrompt(body.context, 9000);
@@ -303,7 +302,7 @@ Deno.serve(async (request: Request) => {
       body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 900 }),
     });
   } catch (e) {
-    console.error('AI provider network error', { error: e instanceof Error ? e.message : String(e) });
+    console.error('AI provider network error', { error: e instanceof Error ? e.message : String(e), userId: userId.slice(0, 8) });
     return errorResponse('AI_PROVIDER_NETWORK_ERROR', 'تعذر الاتصال بمزود الذكاء الاصطناعي. تحقق من الشبكة والإعدادات.', 502);
   }
 
@@ -311,18 +310,17 @@ Deno.serve(async (request: Request) => {
   const durationMs = Date.now() - startTime;
 
   if (!providerResponse.ok) {
-    console.error('AI provider request failed', { status: providerResponse.status, message: providerBody.error?.message, durationMs, model });
+    console.error('AI provider request failed', { status: providerResponse.status, message: providerBody.error?.message, durationMs, model, userId: userId.slice(0, 8) });
     return errorResponse('AI_PROVIDER_ERROR', 'تعذر الحصول على رد من مزود الذكاء الاصطناعي.', 502);
   }
 
   const reply = providerBody.choices?.[0]?.message?.content?.trim();
   if (!reply) {
-    console.error('AI provider empty response', { durationMs, model });
+    console.error('AI provider empty response', { durationMs, model, userId: userId.slice(0, 8) });
     return errorResponse('AI_EMPTY_RESPONSE', 'عاد مزود الذكاء الاصطناعي برد فارغ.', 502);
   }
 
-  // Safe logging: log only metadata, not full prompt/context
-  console.log('AI request success', { model, promptLength: prompt.length, contextLength: context.length, replyLength: reply.length, durationMs, action });
+  console.log('AI request success', { model, promptLength: prompt.length, contextLength: context.length, replyLength: reply.length, durationMs, action, userId: userId.slice(0, 8) + '...' });
 
   return jsonResponse({ reply, meta: { model, durationMs } });
 });

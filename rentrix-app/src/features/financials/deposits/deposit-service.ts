@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 
-export type DepositStatus = 'held' | 'partially_refunded' | 'refunded' | 'forfeited_damage' | 'forfeited_arrears';
+export type DepositStatus = 'held' | 'partially_refunded' | 'refunded' | 'forfeited_damage' | 'forfeited_arrears' | 'partially_deducted';
 
 export type DepositRecord = {
   id: string;
@@ -60,6 +60,7 @@ export const depositStatusLabels: Record<DepositStatus, string> = {
   refunded: 'مسترد بالكامل',
   forfeited_damage: 'مخصوم لصالح أضرار الشقة',
   forfeited_arrears: 'مصادر لسداد المتأخرات',
+  partially_deducted: 'مخصوم جزئياً لأضرار',
 };
 
 export const deductionReasonLabels: Record<DepositDeductionPayload['reason'], string> = {

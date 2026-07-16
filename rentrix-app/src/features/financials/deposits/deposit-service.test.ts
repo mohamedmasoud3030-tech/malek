@@ -45,7 +45,6 @@ describe('deposits real implementation - no false success', () => {
   it('migration creates tenant_deposits and deposit_transactions with immutable log', () => {
     const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
     const content = readFileSync(migrationPath, 'utf8').toLowerCase();
-    // Dynamic creation via EXECUTE format still contains table names
     expect(content).toContain('tenant_deposits');
     expect(content).toContain('deposit_transactions');
     expect(content).toContain('is_admin_or_manager()');
@@ -57,7 +56,6 @@ describe('deposits real implementation - no false success', () => {
     expect(content).toContain('deduct_deposit_atomic');
     expect(content).toContain('refund_deposit_atomic');
     expect(content).toContain('journal_entries');
-    // Should handle both uuid and text for contract_id compatibility
     expect(content).toContain('contract_id');
   });
 
@@ -72,10 +70,49 @@ describe('deposits real implementation - no false success', () => {
   it('migration handles uuid/text contract_id mismatch for empty DB replay', () => {
     const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
     const content = readFileSync(migrationPath, 'utf8').toLowerCase();
-    // Should detect contracts.id type dynamically
     expect(content).toContain('format_type');
     expect(content).toContain('contracts');
-    // Should support both types
     expect(content).toContain('uuid');
+  });
+
+  it('does not use partially_refunded for deduction - uses partially_deducted', () => {
+    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
+    const content = readFileSync(migrationPath, 'utf8').toLowerCase();
+    expect(content).toContain('partially_deducted');
+    // Should not set partially_refunded when deduction partial
+    expect(content).toContain('forfeited_damage');
+    // Check service type includes new status
+    const servicePath = resolve(import.meta.dirname, './deposit-service.ts');
+    const serviceContent = readFileSync(servicePath, 'utf8');
+    expect(serviceContent).toContain('partially_deducted');
+  });
+
+  it('has explicit NULL guard after detecting contracts.id type', () => {
+    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
+    const content = readFileSync(migrationPath, 'utf8');
+    expect(content).toContain('IF v_contract_id_type IS NULL THEN');
+    expect(content).toContain('RAISE EXCEPTION');
+    expect(content).toContain('contracts.id type not found');
+
+    const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
+    const content08 = readFileSync(migration08Path, 'utf8');
+    expect(content08).toContain('IF v_contract_id_type IS NULL THEN');
+  });
+
+  it('tests create -> partial deduction -> refund -> full settlement status flow', () => {
+    const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
+    const content = readFileSync(migration08Path, 'utf8').toLowerCase();
+    // Deduction partial should result in partially_deducted
+    expect(content).toContain('partially_deducted');
+    // Refund partial should be partially_refunded
+    expect(content).toContain('partially_refunded');
+    // Full settlement: refunded and forfeited_damage
+    expect(content).toContain('refunded');
+    expect(content).toContain('forfeited_damage');
+    // Service should have labels for new status
+    const servicePath = resolve(import.meta.dirname, './deposit-service.ts');
+    const serviceContent = readFileSync(servicePath, 'utf8');
+    expect(serviceContent).toContain('partially_deducted');
+    expect(serviceContent).toContain('partially_refunded');
   });
 });

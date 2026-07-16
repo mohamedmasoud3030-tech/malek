@@ -85,6 +85,18 @@ export async function markNotificationRead(id: string): Promise<void> {
   if (error) handleSupabaseError(error, 'تعذر تحديث حالة الإشعار');
 }
 
+export async function retryAutomationRun(runId: string): Promise<any> {
+  const { data, error } = await (supabase.rpc as any)('retry_automation_run', { p_run_id: runId });
+  if (error) handleSupabaseError(error, 'فشل إعادة محاولة تشغيل الأتمتة');
+  return data;
+}
+
+export async function runScheduledAutomationRules(): Promise<any> {
+  const { data, error } = await (supabase.rpc as any)('run_scheduled_automation_rules');
+  if (error) handleSupabaseError(error, 'فشل تشغيل الأتمتة المجدولة');
+  return data;
+}
+
 // Legacy gateway compatibility for old tests
 export type AutomationCommand = Readonly<{ ruleId: string; status: 'active' | 'paused' | 'draft'; requestedBy?: string }>;
 export type AutomationCommandResult = Readonly<{ accepted: boolean; provider: 'local-preview' | 'automation-worker'; message: string }>;

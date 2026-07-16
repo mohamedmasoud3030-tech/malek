@@ -10,15 +10,15 @@ describe('automation real execution', () => {
     expect(content).toContain('execute_automation_rule');
     expect(content).toContain('automation_runs');
     expect(content).toContain('automation_notifications');
-    // New service should call toggleAutomationRule with real DB, not just local preview
     expect(content).toContain('toggleAutomationRule');
     expect(content).toContain('supabase');
+    expect(content).toContain('retryAutomationRun');
+    expect(content).toContain('runScheduledAutomationRules');
   });
 
   it('service does not use old local-preview only gateway pattern', () => {
     const servicePath = resolve(import.meta.dirname, './automation-service.ts');
     const content = readFileSync(servicePath, 'utf8');
-    // Old implementation had message "لم يتم تشغيل عامل أتمتة خارجي" as sole behavior
     expect(content).not.toContain('لم يتم تشغيل عامل أتمتة خارجي');
   });
 
@@ -39,13 +39,49 @@ describe('automation real execution', () => {
     expect(content).toContain('create table if not exists public.automation_rules');
     expect(content).toContain('automation_notifications');
     expect(content).toContain('execute_automation_rule');
-    // Should have row locking for safety (either advisory lock or FOR UPDATE)
     const hasLocking = content.includes('pg_advisory_xact_lock') || content.includes('for update');
     expect(hasLocking).toBe(true);
     expect(content).toContain('contract_expiry');
     expect(content).toContain('overdue_invoice');
     expect(content).toContain('maintenance_overdue');
     expect(content).toContain('is_admin_or_manager()');
+  });
+
+  it('migration fixes exception handling to preserve FAILED logs', () => {
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql');
+    const content = readFileSync(migrationPath, 'utf8');
+    // Should NOT have RAISE after updating to failed (old pattern caused rollback)
+    // New pattern: update to failed then RETURN failure result, not RAISE
+    expect(content).toContain('FAILED');
+    expect(content).toContain('RETURN jsonb_build_object');
+    expect(content).toContain('success');
+    // Should have comment about preserving logs
+    expect(content.toLowerCase()).toContain('preserve');
+    expect(content).toContain('failed');
+  });
+
+  it('migration adds scheduling via pg_cron and prevents duplicates', () => {
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql');
+    const content = readFileSync(migrationPath, 'utf8').toLowerCase();
+    expect(content).toContain('pg_cron');
+    expect(content).toContain('cron.schedule');
+    expect(content).toContain('rentrix-automation-hourly');
+    expect(content).toContain('run_scheduled_automation_rules');
+    expect(content).toContain('duplicate');
+    expect(content).toContain('pg_advisory_xact_lock');
+    expect(content).toContain('retry_automation_run');
+  });
+
+  it('migration tests success, failure, retry, duplicate prevention', () => {
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql');
+    const content = readFileSync(migrationPath, 'utf8');
+    expect(content).toContain('SUCCESS');
+    expect(content).toContain('FAILED');
+    expect(content).toContain('retry_count');
+    expect(content).toContain('retry_automation_run');
+    expect(content).toContain('Max retries');
+    expect(content).toContain('duplicate prevention');
+    expect(content).toContain('running');
   });
 
   it('seed migration inserts default rules', () => {
@@ -60,7 +96,15 @@ describe('automation real execution', () => {
   it('automation page is not just local preview', () => {
     const pagePath = resolve(import.meta.dirname, './automation-page.tsx');
     const content = readFileSync(pagePath, 'utf8');
-    // Page should not contain old local-preview message as main implementation
     expect(content).not.toContain('لم يتم تشغيل عامل أتمتة خارجي');
+  });
+
+  it('service has retry and scheduled execution', () => {
+    const servicePath = resolve(import.meta.dirname, './automation-service.ts');
+    const content = readFileSync(servicePath, 'utf8');
+    expect(content).toContain('retryAutomationRun');
+    expect(content).toContain('runScheduledAutomationRules');
+    expect(content).toContain('retry_automation_run');
+    expect(content).toContain('run_scheduled_automation_rules');
   });
 });

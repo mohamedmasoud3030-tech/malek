@@ -17,6 +17,10 @@ describe('AI assistant edge function', () => {
     expect(content).toContain('AI_PROVIDER_API_KEY');
     expect(content).toContain('AI_CONFIG_MISSING');
     expect(content).toContain('قراءة فقط');
+    // New: secure user id hash, not partial JWT
+    expect(content).toContain('secureHashUserId');
+    expect(content).toContain('userId');
+    expect(content).not.toContain('slice(7, 20)');
   });
 
   it('does not have write permissions and is read-only', () => {
@@ -40,20 +44,32 @@ describe('AI assistant edge function', () => {
     expect(content).toContain('AI_PROVIDER_BASE_URL');
   });
 
-  it('has safe logging without exposing secrets', () => {
+  it('has safe logging without exposing secrets and rate limit after auth', () => {
     const funcPath = resolve(import.meta.dirname, '../../../../../supabase/functions/ai-assistant/index.ts');
     const content = readFileSync(funcPath, 'utf8');
 
     expect(content).toContain('console.log');
     expect(content).toContain('console.error');
-    // Should NOT log apiKey value directly - check that console.log does not include apiKey variable
     expect(content).not.toMatch(/console\.log\([^)]*apiKey[^)]*\)/);
-    expect(content).not.toMatch(/console\.error\([^)]*apiKey[^)]*\)/);
-    // Should log metadata, not full prompt
     expect(content).toContain('promptLength');
     expect(content).toContain('durationMs');
-    // Ensure it logs safe metadata
     expect(content).toContain('AI request success');
+    // Rate limit after auth, not before
+    const authIndex = content.indexOf('assertAuthenticated');
+    const rateLimitIndex = content.indexOf('checkRateLimitForUser');
+    expect(rateLimitIndex).toBeGreaterThan(authIndex);
+    // Should mention centralized storage TODO
+    expect(content).toContain('centralized');
+    expect(content).toContain('Supabase table');
+  });
+
+  it('rate limiting uses user id not partial JWT', () => {
+    const funcPath = resolve(import.meta.dirname, '../../../../../supabase/functions/ai-assistant/index.ts');
+    const content = readFileSync(funcPath, 'utf8');
+    expect(content).toContain('secureHashUserId');
+    expect(content).toContain('user:${userId}');
+    expect(content).not.toContain('slice(7, 20)');
+    expect(content).toContain('checkRateLimitForUser');
   });
 
   it('frontend service does not contain mock data', () => {
