@@ -1,4 +1,4 @@
-import { AlertCircle, Inbox, Printer, UserRound, UsersRound } from 'lucide-react';
+import { Printer, UserRound, UsersRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatMoney, formatShortId, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
