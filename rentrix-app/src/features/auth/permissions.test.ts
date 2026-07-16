@@ -9,6 +9,7 @@ import {
   appPermissions,
   getAuthorizationContextFromUser,
   getAuthorizationDiagnosticsFromUser,
+  getWriteAccessState,
   hasRole,
   normalizeRole,
 } from './permissions';
@@ -126,6 +127,13 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(managerContext, financialOperationPermissions.payOwnerSettlement)).toBe(false);
 
     expect(allFinancialPermissions.every((permission) => !canAccess(userContext, permission))).toBe(true);
+  });
+
+  it('exposes a clear write-access state for the shared app shell', () => {
+    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('ADMIN')))).toBe('full');
+    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('MANAGER')))).toBe('full');
+    expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('USER')))).toBe('read-only');
+    expect(getWriteAccessState(null)).toBe('unconfigured');
   });
 
   it('normalizes roles safely', () => {
