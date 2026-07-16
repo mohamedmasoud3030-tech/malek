@@ -8,12 +8,15 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PLAYWRIGHT_VERSION: '1.61.1'
+
 jobs:
   browser-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       VITE_SUPABASE_URL: https://example.supabase.co
       VITE_SUPABASE_ANON_KEY: test-anon-key
     steps:
@@ -24,8 +27,14 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm e2e:install
-      - run: pnpm e2e
+      - name: Verify pinned toolchain
+        run: node scripts/ci/verify-tool-versions.mjs
+      - name: Restore pinned Chromium
+        uses: ./.github/actions/setup-playwright
+        with:
+          playwright-version: ${{ env.PLAYWRIGHT_VERSION }}
+      - name: Run complete browser readiness suite
+        run: pnpm e2e
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -43,10 +52,10 @@ jobs:
 
   seeded-staging-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     if: ${{ github.event_name == 'workflow_dispatch' }}
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      E2E_ENVIRONMENT_KIND: staging
       E2E_BASE_URL: ${{ secrets.E2E_STAGING_BASE_URL }}
       E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
@@ -60,12 +69,24 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm e2e:install
-      - run: pnpm e2e
+      - name: Verify pinned toolchain
+        run: node scripts/ci/verify-tool-versions.mjs
+      - name: Validate staging environment
+        run: |
+          node scripts/assert-release-blocker-env.mjs
+          node scripts/ci/preflight-staging.mjs
+      - name: Restore pinned Chromium
+        uses: ./.github/actions/setup-playwright
+        with:
+          playwright-version: ${{ env.PLAYWRIGHT_VERSION }}
+      - name: Run complete seeded staging suite
+        run: pnpm e2e
       - name: Upload seeded staging Playwright report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: seeded-staging-playwright-report
-          path: rentrix-app/playwright-report
+          path: |
+            rentrix-app/playwright-report
+            rentrix-app/test-results
           if-no-files-found: ignore
