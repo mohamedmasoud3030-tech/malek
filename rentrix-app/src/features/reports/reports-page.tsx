@@ -23,10 +23,10 @@ export function ReportsPage() {
   }
 
   return (
-    <PageLayout dir="rtl" size="wide" className="space-y-6">
+    <PageLayout dir="rtl" size="wide" className="space-y-5 pb-8">
       <PageHeader
         title="مركز التقارير والكشوف"
-        description="Workspace واحد للتقارير المالية، التحصيلات، المتأخرات، الإشغال، والكشوف مع نفس مصادر البيانات الحالية."
+        description="قراءة موحّدة للتحصيل والمتأخرات والإشغال والكشوف من نفس مصادر Rentrix المعتمدة."
       />
 
       <ReportsWorkspace
