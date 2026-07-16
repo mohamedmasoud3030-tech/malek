@@ -293,7 +293,7 @@ export async function createUtilityBill(values: UtilityBillFormValues): Promise<
 
 async function resolveBillAmounts(id: string, values: Partial<UtilityBillFormValues>) {
   if (values.amount !== undefined && values.paid_amount !== undefined) {
-    return { amount: values.amount, paidAmount: values.paid_amount };
+    return { amount: values.amount, paidAmount: values.paid_amount ?? 0 };
   }
 
   const { data, error } = await ((supabase as any)
