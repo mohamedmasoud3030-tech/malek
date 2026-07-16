@@ -17,7 +17,7 @@ export type VaultDocumentItem = {
   fileSize?: number | null;
   mimeType?: string | null;
   uploadedAt: string;
-  signedUrl?: string | null; // populated on demand via signed URL
+  signedUrl?: string | null;
 };
 
 export const vaultCategoryLabels: Record<VaultCategory, string> = {
@@ -38,7 +38,7 @@ export type VaultListParams = {
   relatedEntityId?: string;
 };
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_MIME = new Set([
   'application/pdf',
   'image/jpeg',
@@ -51,7 +51,7 @@ const ALLOWED_MIME = new Set([
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]);
 
-const SIGNED_URL_EXPIRY_SECONDS = 60 * 60; // 1 hour
+const SIGNED_URL_EXPIRY_SECONDS = 60 * 60;
 
 export async function listVaultDocuments(params: VaultListParams = {}): Promise<VaultDocumentItem[]> {
   let query = (supabase as any).from('vault_documents').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(100);
@@ -74,21 +74,19 @@ export async function listVaultDocuments(params: VaultListParams = {}): Promise<
   if (error) handleSupabaseError(error, 'تعذر تحميل المستندات');
 
   const rows = (data ?? []) as any[];
-
-  return rows.map((r: any) => ({
-    id: r.id,
-    title: r.title,
-    category: r.category as VaultCategory,
-    relatedEntityType: r.related_entity_type ?? null,
-    relatedEntityId: r.related_entity_id ?? null,
-    relatedEntityTitle: r.related_entity_id ? `${r.related_entity_type ?? ''} ${r.related_entity_id.slice(0, 8)}` : null,
-    fileName: r.file_name,
-    // file_url in DB now holds storage_path for private bucket compatibility, not a public URL
-    fileUrl: r.file_url,
-    storagePath: r.storage_path,
-    fileSize: r.file_size ?? null,
-    mimeType: r.mime_type ?? null,
-    uploadedAt: r.created_at,
+  return rows.map((row: any) => ({
+    id: row.id,
+    title: row.title,
+    category: row.category as VaultCategory,
+    relatedEntityType: row.related_entity_type ?? null,
+    relatedEntityId: row.related_entity_id ?? null,
+    relatedEntityTitle: row.related_entity_id ? `${row.related_entity_type ?? ''} ${row.related_entity_id.slice(0, 8)}` : null,
+    fileName: row.file_name,
+    fileUrl: row.file_url,
+    storagePath: row.storage_path,
+    fileSize: row.file_size ?? null,
+    mimeType: row.mime_type ?? null,
+    uploadedAt: row.created_at,
     signedUrl: null,
   }));
 }
@@ -106,9 +104,7 @@ function validateFile(file: File) {
     throw new Error(`حجم الملف يتجاوز الحد المسموح (10MB). حجم الملف الحالي: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
   }
   if (file.type && !ALLOWED_MIME.has(file.type) && !file.type.startsWith('image/')) {
-    if (!file.type.startsWith('image/')) {
-      throw new Error(`نوع الملف غير مدعوم: ${file.type}. الأنواع المدعومة: PDF، صور، Word، Excel`);
-    }
+    throw new Error(`نوع الملف غير مدعوم: ${file.type}. الأنواع المدعومة: PDF، صور، Word، Excel`);
   }
 }
 
@@ -118,10 +114,9 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
   if (!params.title.trim()) throw new Error('عنوان المستند مطلوب');
 
   const fileExt = params.file.name.split('.').pop() || 'bin';
-  const storagePath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+  const storagePath = `${crypto.randomUUID()}.${fileExt}`;
   const fullPath = `vault/${storagePath}`;
 
-  // 1. Upload to storage bucket attachments (private bucket)
   const { error: uploadError } = await supabase.storage.from('attachments').upload(fullPath, params.file, {
     cacheControl: '3600',
     upsert: false,
@@ -132,8 +127,6 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
     handleSupabaseError(uploadError as any, 'فشل رفع الملف إلى التخزين');
   }
 
-  // 2. Insert metadata - store storage_path only, NOT public URL (private bucket)
-  // file_url column is kept for backward compat but now holds storage_path, not public URL
   try {
     const { data, error } = await ((supabase as any)
       .from('vault_documents')
@@ -143,7 +136,7 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
         related_entity_type: params.relatedEntityType || null,
         related_entity_id: params.relatedEntityId || null,
         file_name: params.file.name,
-        file_url: fullPath, // Store storage_path, not public URL, because bucket is private
+        file_url: fullPath,
         storage_path: fullPath,
         file_size: params.file.size,
         mime_type: params.file.type || null,
@@ -169,27 +162,25 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
       uploadedAt: data.created_at,
       signedUrl: null,
     };
-  } catch (err) {
-    // Rollback: try to delete uploaded file
+  } catch (error) {
     try {
       await supabase.storage.from('attachments').remove([fullPath]);
     } catch {
-      // ignore rollback failure
+      // Keep the original metadata error; orphan cleanup can be retried operationally.
     }
-    if (err instanceof Error) throw err;
-    handleSupabaseError(err as any, 'تعذر حفظ بيانات المستند بعد الرفع');
-    throw err;
+    if (error instanceof Error) throw error;
+    handleSupabaseError(error as any, 'تعذر حفظ بيانات المستند بعد الرفع');
+    throw error;
   }
 }
 
 export async function softDeleteVaultDocument(id: string): Promise<void> {
-  const { data: existing, error: fetchError } = await ((supabase as any).from('vault_documents').select('storage_path').eq('id', id).is('deleted_at', null).single() as any);
-  if (fetchError) handleSupabaseError(fetchError, 'المستند غير موجود');
-
-  const { error } = await ((supabase as any).from('vault_documents').update({ deleted_at: new Date().toISOString() } as any).eq('id', id) as any);
+  const { error } = await ((supabase as any)
+    .from('vault_documents')
+    .update({ deleted_at: new Date().toISOString() } as any)
+    .eq('id', id)
+    .is('deleted_at', null) as any);
   if (error) handleSupabaseError(error, 'تعذر حذف المستند');
-
-  void existing;
 }
 
 export async function getVaultDocumentSignedUrl(storagePath: string, expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS): Promise<string> {
@@ -200,22 +191,19 @@ export async function getVaultDocumentSignedUrl(storagePath: string, expiresInSe
   return data.signedUrl;
 }
 
-// Backward compatible name, now always uses signed URL (private bucket)
 export async function getVaultDocumentDownloadUrl(storagePath: string): Promise<string> {
   return getVaultDocumentSignedUrl(storagePath, SIGNED_URL_EXPIRY_SECONDS);
 }
 
-// Batch helper to get signed URLs for multiple documents (for image previews)
 export async function getVaultDocumentsWithSignedUrls(documents: VaultDocumentItem[], expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS): Promise<VaultDocumentItem[]> {
-  const results = await Promise.all(
-    documents.map(async (doc) => {
+  return Promise.all(
+    documents.map(async (document) => {
       try {
-        const signedUrl = await getVaultDocumentSignedUrl(doc.storagePath, expiresInSeconds);
-        return { ...doc, signedUrl };
+        const signedUrl = await getVaultDocumentSignedUrl(document.storagePath, expiresInSeconds);
+        return { ...document, signedUrl };
       } catch {
-        return { ...doc, signedUrl: null };
+        return { ...document, signedUrl: null };
       }
-    })
+    }),
   );
-  return results;
 }
