@@ -7,7 +7,7 @@ begin;
 -- 1. Create utility_meters table if not exists
 create table if not exists public.utility_meters (
   id uuid primary key default gen_random_uuid(),
-  property_id uuid not null references public.properties(id) on delete cascade,
+  property_id text not null references public.properties(id) on delete cascade,
   unit_id uuid references public.units(id) on delete set null,
   utility_type text not null check (utility_type in ('electricity','water','sanitation','internet','gas','other')),
   meter_number text not null,
