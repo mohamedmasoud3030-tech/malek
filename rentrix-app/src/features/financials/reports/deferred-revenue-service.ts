@@ -4,21 +4,39 @@ export type DeferredRevenueScheduleRow = {
   propertyTitle: string;
   totalCollected: number;
   recognizedRevenueCurrentMonth: number;
+  recognizedRevenueToDate: number;
   deferredRevenueRemaining: number;
   periodStart: string;
   periodEnd: string;
   monthlyAmortizationAmount: number;
+  totalMonths: number;
+  elapsedMonths: number;
 };
 
 export type DeferredRevenueSummary = {
   totalUpfrontCollections: number;
-  totalRecognizedRevenue: number;
+  totalRecognizedRevenueCurrentMonth: number;
+  totalRecognizedRevenueToDate: number;
   totalDeferredLiability: number;
   schedules: DeferredRevenueScheduleRow[];
 };
 
+function parseDateOnly(value: string) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function monthDistanceInclusive(start: Date, end: Date) {
+  return (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth()) + 1;
+}
+
+function roundMoney(value: number) {
+  return Number(value.toFixed(3));
+}
+
 /**
- * Calculates monthly revenue recognition (Accrual Basis) for upfront collections.
+ * Calculates straight-line monthly revenue recognition for collections that
+ * have already been verified as upfront payments linked to a real contract.
  */
 export function calculateDeferredRevenueSchedule(
   collections: Array<{
@@ -31,46 +49,58 @@ export function calculateDeferredRevenueSchedule(
   }>,
   asOfDateStr: string,
 ): DeferredRevenueSummary {
-  const asOf = new Date(asOfDateStr);
+  const asOf = parseDateOnly(asOfDateStr);
 
   let totalUpfrontCollections = 0;
-  let totalRecognizedRevenue = 0;
+  let totalRecognizedRevenueCurrentMonth = 0;
+  let totalRecognizedRevenueToDate = 0;
   let totalDeferredLiability = 0;
 
-  const schedules: DeferredRevenueScheduleRow[] = collections.map((c) => {
-    const start = new Date(c.startDate);
-    const end = new Date(c.endDate);
+  const schedules: DeferredRevenueScheduleRow[] = [];
 
-    const totalMonths = Math.max(1, (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1);
-    const monthlyRate = c.amount / totalMonths;
+  for (const collection of collections) {
+    const start = parseDateOnly(collection.startDate);
+    const end = parseDateOnly(collection.endDate);
+    if (!asOf || !start || !end || start > end || collection.amount <= 0) continue;
 
-    let elapsedMonths = (asOf.getFullYear() - start.getFullYear()) * 12 + (asOf.getMonth() - start.getMonth()) + 1;
-    elapsedMonths = Math.max(0, Math.min(totalMonths, elapsedMonths));
+    const totalMonths = Math.max(1, monthDistanceInclusive(start, end));
+    const monthlyRate = collection.amount / totalMonths;
+    const isCurrentMonthRecognizable = asOf >= start && asOf <= end;
+    const elapsedMonths = asOf < start
+      ? 0
+      : Math.max(0, Math.min(totalMonths, monthDistanceInclusive(start, asOf)));
+    const recognizedToDate = Math.min(collection.amount, monthlyRate * elapsedMonths);
+    const currentMonthRecognition = isCurrentMonthRecognizable ? monthlyRate : 0;
+    const remainingDeferred = Math.max(0, collection.amount - recognizedToDate);
 
-    const recognizedToDate = monthlyRate * elapsedMonths;
-    const remainingDeferred = Math.max(0, c.amount - recognizedToDate);
-
-    totalUpfrontCollections += c.amount;
-    totalRecognizedRevenue += monthlyRate; // current month portion
+    totalUpfrontCollections += collection.amount;
+    totalRecognizedRevenueCurrentMonth += currentMonthRecognition;
+    totalRecognizedRevenueToDate += recognizedToDate;
     totalDeferredLiability += remainingDeferred;
 
-    return {
-      contractId: c.contractId,
-      tenantName: c.tenantName,
-      propertyTitle: c.propertyTitle,
-      totalCollected: c.amount,
-      recognizedRevenueCurrentMonth: Number(monthlyRate.toFixed(3)),
-      deferredRevenueRemaining: Number(remainingDeferred.toFixed(3)),
-      periodStart: c.startDate,
-      periodEnd: c.endDate,
-      monthlyAmortizationAmount: Number(monthlyRate.toFixed(3)),
-    };
-  });
+    schedules.push({
+      contractId: collection.contractId,
+      tenantName: collection.tenantName,
+      propertyTitle: collection.propertyTitle,
+      totalCollected: roundMoney(collection.amount),
+      recognizedRevenueCurrentMonth: roundMoney(currentMonthRecognition),
+      recognizedRevenueToDate: roundMoney(recognizedToDate),
+      deferredRevenueRemaining: roundMoney(remainingDeferred),
+      periodStart: collection.startDate,
+      periodEnd: collection.endDate,
+      monthlyAmortizationAmount: roundMoney(monthlyRate),
+      totalMonths,
+      elapsedMonths,
+    });
+  }
+
+  schedules.sort((a, b) => b.deferredRevenueRemaining - a.deferredRevenueRemaining || a.contractId.localeCompare(b.contractId));
 
   return {
-    totalUpfrontCollections: Number(totalUpfrontCollections.toFixed(3)),
-    totalRecognizedRevenue: Number(totalRecognizedRevenue.toFixed(3)),
-    totalDeferredLiability: Number(totalDeferredLiability.toFixed(3)),
+    totalUpfrontCollections: roundMoney(totalUpfrontCollections),
+    totalRecognizedRevenueCurrentMonth: roundMoney(totalRecognizedRevenueCurrentMonth),
+    totalRecognizedRevenueToDate: roundMoney(totalRecognizedRevenueToDate),
+    totalDeferredLiability: roundMoney(totalDeferredLiability),
     schedules,
   };
 }
