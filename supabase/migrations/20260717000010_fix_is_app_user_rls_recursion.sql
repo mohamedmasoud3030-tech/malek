@@ -32,7 +32,7 @@ $function$;
 
 revoke all on function public.is_app_user() from public, anon, authenticated;
 revoke all on function app_private.is_app_user() from public, anon, authenticated;
-grant execute on function public.is_app_user() to service_role;
+grant execute on function public.is_app_user() to authenticated, service_role;
 grant execute on function app_private.is_app_user() to service_role;
 
 commit;
