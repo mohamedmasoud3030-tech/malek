@@ -1,10 +1,10 @@
 import { Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bell, ChevronLeft, LogOut, Menu, Moon, Sun, X } from 'lucide-react';
+import { Bell, ChevronLeft, LogOut, Menu, Moon, ShieldAlert, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import type { AuthorizationContext } from '@/features/auth/permissions';
+import { getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -116,6 +116,19 @@ export function AppShell() {
   const appLanguage = getAppLanguageState();
   const isSidebarExpanded = sidebarCollapsed === false;
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
+  const writeAccessState = getWriteAccessState(authorization);
+  const writeAccessNotice =
+    writeAccessState === 'read-only'
+      ? {
+          title: 'وضع العرض فقط',
+          description: 'يمكنك استعراض البيانات، لكن الإضافة والتعديل يحتاجان صلاحية مدير أو مسؤول.',
+        }
+      : writeAccessState === 'unconfigured'
+        ? {
+            title: 'صلاحيات الحساب غير مكتملة',
+            description: 'لن تتوفر الإضافة والتعديل حتى يراجع مسؤول النظام إعداد صلاحيات حسابك.',
+          }
+        : null;
   const pageTitle =
     ([...matches]
       .reverse()
@@ -321,6 +334,18 @@ export function AppShell() {
 
         {/* Main content */}
         <main id="main-content" tabIndex={-1} className="animate-route-in safe-bottom-app overflow-x-hidden p-3 outline-none sm:p-4 lg:p-6 lg:pb-6">
+          {writeAccessNotice ? (
+            <div
+              role="status"
+              className="mb-4 flex items-start gap-3 rounded-xl border border-[hsl(var(--color-warning-text)/0.25)] bg-[hsl(var(--color-warning-bg)/0.1)] px-4 py-3 text-warning"
+            >
+              <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">{writeAccessNotice.title}</p>
+                <p className="mt-0.5 text-xs leading-5 text-warning/80">{writeAccessNotice.description}</p>
+              </div>
+            </div>
+          ) : null}
           <Outlet />
         </main>
       </div>
