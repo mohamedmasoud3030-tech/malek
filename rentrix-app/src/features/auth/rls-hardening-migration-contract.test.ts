@@ -97,6 +97,7 @@ describe('RLS app-user helper contract', () => {
     expect(publicSection).not.toContain('app_private.is_app_user()');
     expect(privateSection).toContain('select public.is_app_user()');
     expect(privateSection).not.toContain('select app_private.is_app_user()');
+    expect(sql).toContain('grant execute on function public.is_app_user() to authenticated, service_role');
   });
 });
 
