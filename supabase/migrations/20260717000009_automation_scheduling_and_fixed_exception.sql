@@ -283,17 +283,17 @@ EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'No existing rentrix-automation-hourly job to unschedule';
 END $$;
 
-DO $$
+DO $cron_outer$
 BEGIN
   PERFORM cron.schedule(
     'rentrix-automation-hourly',
     '0 * * * *',
-    $$ SELECT public.run_scheduled_automation_rules(); $$
+    $cron_inner$ SELECT public.run_scheduled_automation_rules(); $cron_inner$
   );
   RAISE NOTICE 'Scheduled rentrix-automation-hourly cron job';
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Failed to schedule cron job (pg_cron may not be enabled): %', SQLERRM;
-END $$;
+END $cron_outer$;
 
 -- 5. Add retry support function
 create or replace function public.retry_automation_run(p_run_id uuid)
