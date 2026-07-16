@@ -1,4 +1,4 @@
-import { createRootRoute, createRoute, lazyRouteComponent, redirect } from '@tanstack/react-router';
+import { createRootRoute, createRoute, lazyRouteComponent, redirect, isRedirect } from '@tanstack/react-router';
 import { RouteErrorFallback } from '@/components/error-boundary';
 import { NotFoundPage } from '@/app/not-found-page';
 import { RootRouteComponent } from '@/routes/__root';
@@ -18,17 +18,21 @@ const authRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'auth',
   beforeLoad: async () => {
+    // Fix for review thread: don't swallow redirect by having it inside try/catch that catches all
+    // Get session in try, handle errors separately, then redirect outside try
+    let session: import('@supabase/supabase-js').Session | null = null;
     try {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
-        // Invalid or expired session - allow access to login page, don't throw
+        // Invalid or expired session - allow access to login page
         return;
       }
-      if (data.session) throw redirect({ to: '/' });
+      session = data.session;
     } catch {
-      // On any error, allow login page to render (don't throw, don't redirect loop)
+      // On any error (network etc), allow login page to render to avoid loop
       return;
     }
+    if (session) throw redirect({ to: '/' });
   },
   component: AuthRouteComponent,
 });
@@ -40,16 +44,15 @@ const protectedRoute = createRoute({
     try {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
-        // Invalid session (e.g., expired token, invalid refresh) - redirect to login without loop
         throw redirect({ to: '/login' });
       }
       if (!data.session) throw redirect({ to: '/login' });
     } catch (err) {
-      // If it's already a redirect, throw it
-      if (err && typeof err === 'object' && 'to' in (err as any)) {
+      // Use router's isRedirect guard instead of ad-hoc 'to' in err check
+      if (isRedirect(err)) {
         throw err;
       }
-      // For any other error (e.g., invalid token), redirect to login to prevent loop
+      // For any other error (invalid token etc), redirect to login to prevent loop
       throw redirect({ to: '/login' });
     }
   },
@@ -64,10 +67,12 @@ const requirePermission = (permission: AppPermission) => async () => {
     }
     assertSessionPermission(data.session, permission);
   } catch (err) {
-    if (err && typeof err === 'object' && 'to' in (err as any)) {
+    // Use isRedirect guard to correctly preserve permission-denial redirects
+    // Previously used `'to' in err` which is unreliable for TanStack Router v1.139
+    // where redirect target is nested in options and identified via isRedirect()
+    if (isRedirect(err)) {
       throw err;
     }
-    // On error (invalid session), redirect to login
     throw redirect({ to: '/login' });
   }
 };
