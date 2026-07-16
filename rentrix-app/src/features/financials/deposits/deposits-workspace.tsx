@@ -27,8 +27,8 @@ import {
   type DepositDeductionPayload,
   type DepositRecord,
   type DepositRefundPayload,
+  type DepositStatus,
 } from './deposit-service';
-import { useProperties } from '@/features/properties/use-properties';
 import type { Contract } from '@/types/domain';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
@@ -43,18 +43,36 @@ function useContracts() {
   return useQuery({
     queryKey: ['contracts-for-deposits'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('contracts').select('id, tenant_id, property_id, unit_id').is('deleted_at', null).eq('status', 'active').limit(100).returns<Contract[]>();
+      const { data, error } = await supabase
+        .from('contracts')
+        .select('id, tenant_id, property_id, unit_id')
+        .is('deleted_at', null)
+        .eq('status', 'active')
+        .limit(100)
+        .returns<Contract[]>();
       if (error) handleSupabaseError(error, 'تعذر تحميل العقود');
       return data ?? [];
     },
   });
 }
 
+function getDepositTone(status: DepositStatus): 'green' | 'blue' | 'gold' {
+  if (status === 'refunded') return 'green';
+  if (status === 'held') return 'blue';
+  return 'gold';
+}
+
+function getContentStatus(isLoading: boolean, isError: boolean, isEmpty: boolean) {
+  if (isLoading) return 'loading' as const;
+  if (isError) return 'error' as const;
+  if (isEmpty) return 'empty' as const;
+  return 'ready' as const;
+}
+
 export function DepositsWorkspace() {
   const queryClient = useQueryClient();
   const [selectedDeposit, setSelectedDeposit] = useState<DepositRecord | null>(null);
   const [actionType, setActionType] = useState<'deduct' | 'refund' | 'create' | null>(null);
-
   const [amountInput, setAmountInput] = useState<number>(0);
   const [reasonInput, setReasonInput] = useState<DepositDeductionPayload['reason']>('maintenance_damage');
   const [descriptionInput, setDescriptionInput] = useState('');
@@ -65,10 +83,7 @@ export function DepositsWorkspace() {
     queryKey: ['tenant-deposits'],
     queryFn: listTenantDeposits,
   });
-
   const contractsQuery = useContracts();
-  const propertiesQuery = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
-
   const deposits = depositsQuery.data ?? [];
 
   const createMut = useMutation({
@@ -86,7 +101,7 @@ export function DepositsWorkspace() {
       setCreateForm({ contract_id: '', amount: 0, received_date: getTodayLocalDateString(), notes: '' });
       queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'فشل إنشاء الوديعة'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل إنشاء الوديعة'),
   });
 
   const deductMut = useMutation({
@@ -109,7 +124,7 @@ export function DepositsWorkspace() {
       setDescriptionInput('');
       queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'فشل الخصم - تحقق من الرصيد'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل الخصم - تحقق من الرصيد'),
   });
 
   const refundMut = useMutation({
@@ -132,39 +147,49 @@ export function DepositsWorkspace() {
       setDescriptionInput('');
       queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'فشل الاسترداد - تحقق من الرصيد'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل الاسترداد - تحقق من الرصيد'),
   });
 
-  const totalHeld = useMemo(() => deposits.reduce((acc, d) => acc + d.remaining_amount, 0), [deposits]);
-  const totalDeductions = useMemo(() => deposits.reduce((acc, d) => acc + d.deducted_amount, 0), [deposits]);
-  const totalRefunded = useMemo(() => deposits.reduce((acc, d) => acc + d.refunded_amount, 0), [deposits]);
+  const totalHeld = useMemo(() => deposits.reduce((sum, deposit) => sum + deposit.remaining_amount, 0), [deposits]);
+  const totalDeductions = useMemo(() => deposits.reduce((sum, deposit) => sum + deposit.deducted_amount, 0), [deposits]);
+  const totalRefunded = useMemo(() => deposits.reduce((sum, deposit) => sum + deposit.refunded_amount, 0), [deposits]);
+  const contentStatus = getContentStatus(depositsQuery.isLoading, depositsQuery.isError, deposits.length === 0);
 
-  const handlePrint = (d: DepositRecord) => {
-    const tafqeet = numberToArabicWords(d.remaining_amount > 0 ? d.remaining_amount : d.deposit_amount, OMR_CURRENCY_CONFIG);
+  const handlePrint = (deposit: DepositRecord) => {
+    const printableAmount = deposit.remaining_amount > 0 ? deposit.remaining_amount : deposit.deposit_amount;
+    const tafqeet = numberToArabicWords(printableAmount, OMR_CURRENCY_CONFIG);
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'سند تسوية ومخالصة مبلغ التأمين',
         reportType: 'Tenant_Security_Deposit_Clearance',
-        periodFrom: d.received_date,
+        periodFrom: deposit.received_date,
         periodTo: getTodayLocalDateString(),
         sections: [
           {
             title: 'بيانات الوديعة',
             rows: [
-              { label: 'معرف العقد', value: d.contract_id },
-              { label: 'مبلغ التأمين الأصلي', value: `${d.deposit_amount} ر.ع` },
-              { label: 'الخصومات', value: `${d.deducted_amount} ر.ع` },
-              { label: 'المسترد', value: `${d.refunded_amount} ر.ع` },
-              { label: 'المتبقي', value: `${d.remaining_amount} ر.ع` },
+              { label: 'معرف العقد', value: deposit.contract_id },
+              { label: 'مبلغ التأمين الأصلي', value: `${deposit.deposit_amount} ر.ع` },
+              { label: 'الخصومات', value: `${deposit.deducted_amount} ر.ع` },
+              { label: 'المسترد', value: `${deposit.refunded_amount} ر.ع` },
+              { label: 'المتبقي', value: `${deposit.remaining_amount} ر.ع` },
               { label: 'تفقيط المتبقي', value: tafqeet },
             ],
-            totals: ['الصافي', `${d.remaining_amount} ر.ع`],
+            totals: ['الصافي', `${deposit.remaining_amount} ر.ع`],
           },
         ],
         totalSummary: `تاريخ المخالصة: ${getTodayLocalDateString()}`,
       },
       defaultSettings,
     );
+  };
+
+  const executeSelectedAction = () => {
+    if (actionType === 'deduct') {
+      deductMut.mutate();
+      return;
+    }
+    refundMut.mutate();
   };
 
   return (
@@ -185,14 +210,14 @@ export function DepositsWorkspace() {
       </Card>
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} accent="emerald" sub="واجب الرد" />
-        <KpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} accent="rose" sub="أضرار وصيانة" />
-        <KpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} accent="sky" sub="تم رده" />
-        <KpiCard label="عدد الودائع" value={deposits.length.toLocaleString('ar')} icon={FileCheck} accent="primary" sub="سجلات" />
+        <KpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} sub="واجب الرد" />
+        <KpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} sub="أضرار وصيانة" />
+        <KpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} sub="تم رده" />
+        <KpiCard label="عدد الودائع" value={deposits.length.toLocaleString('ar')} icon={FileCheck} sub="سجلات" />
       </ResponsiveCardGrid>
 
       <AsyncContentState
-        status={depositsQuery.isLoading ? 'loading' : depositsQuery.isError ? 'error' : deposits.length === 0 ? 'empty' : 'ready'}
+        status={contentStatus}
         error={depositsQuery.error as Error}
         errorTitle="تعذر تحميل الودائع"
         errorAction={<Button onClick={() => depositsQuery.refetch()}>إعادة المحاولة</Button>}
@@ -201,88 +226,48 @@ export function DepositsWorkspace() {
         emptyAction={<Button onClick={() => setActionType('create')}>تسجيل أول وديعة</Button>}
       >
         <div className="grid gap-3">
-          {deposits.map((d) => {
-            const tone = d.status === 'refunded' ? 'green' : d.status === 'held' ? 'blue' : 'gold';
-            return (
-              <Card key={d.id} className="border-border/60">
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex flex-wrap justify-between gap-2 border-b pb-2">
-                    <div>
-                      <p className="font-bold text-sm">وديعة عقد {d.contract_id.slice(0, 8)} · {d.tenant_name || d.tenant_id || 'مستأجر'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {d.property_title || d.property_id || 'عقار'} · وحدة {d.unit_number || d.unit_id || '—'} · استلام: {d.received_date}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <StatusBadge tone={tone as any}>{depositStatusLabels[d.status]}</StatusBadge>
-                      <Button variant="outline" size="sm" onClick={() => handlePrint(d)} className="gap-1">
-                        <Printer className="size-3.5" />
-                        طباعة
-                      </Button>
-                    </div>
+          {deposits.map((deposit) => (
+            <Card key={deposit.id} className="border-border/60">
+              <CardContent className="space-y-3 p-4">
+                <div className="flex flex-wrap justify-between gap-2 border-b pb-2">
+                  <div>
+                    <p className="text-sm font-bold">وديعة عقد {deposit.contract_id.slice(0, 8)} · {deposit.tenant_name || deposit.tenant_id || 'مستأجر'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {deposit.property_title || deposit.property_id || 'عقار'} · وحدة {deposit.unit_number || deposit.unit_id || '—'} · استلام: {deposit.received_date}
+                    </p>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    <div className="rounded-xl bg-muted/20 p-2">
-                      <span className="text-muted-foreground block">الأصلي</span>
-                      <strong dir="ltr">{formatMoney(d.deposit_amount)}</strong>
-                    </div>
-                    <div className="rounded-xl bg-muted/20 p-2">
-                      <span className="text-muted-foreground block">المخصوم</span>
-                      <strong className="text-destructive" dir="ltr">
-                        {formatMoney(d.deducted_amount)}
-                      </strong>
-                    </div>
-                    <div className="rounded-xl bg-muted/20 p-2">
-                      <span className="text-muted-foreground block">المسترد</span>
-                      <strong className="text-emerald-600" dir="ltr">
-                        {formatMoney(d.refunded_amount)}
-                      </strong>
-                    </div>
-                    <div className="rounded-xl bg-primary/10 p-2">
-                      <span className="text-muted-foreground block">المتبقي</span>
-                      <strong className="text-primary" dir="ltr">
-                        {formatMoney(d.remaining_amount)}
-                      </strong>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge tone={getDepositTone(deposit.status)}>{depositStatusLabels[deposit.status]}</StatusBadge>
+                    <Button variant="outline" size="sm" onClick={() => handlePrint(deposit)} className="gap-1">
+                      <Printer className="size-3.5" />
+                      طباعة
+                    </Button>
                   </div>
-                  {d.remaining_amount > 0 && (
-                    <div className="flex gap-2 pt-2 border-t">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs gap-1 text-destructive"
-                        onClick={() => {
-                          setSelectedDeposit(d);
-                          setActionType('deduct');
-                          setAmountInput(d.remaining_amount);
-                        }}
-                      >
-                        <ShieldAlert className="size-3.5" />
-                        خصم ضرر
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="text-xs gap-1"
-                        onClick={() => {
-                          setSelectedDeposit(d);
-                          setActionType('refund');
-                          setAmountInput(d.remaining_amount);
-                        }}
-                      >
-                        <DollarSign className="size-3.5" />
-                        رد التأمين
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                  <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">الأصلي</span><strong dir="ltr">{formatMoney(deposit.deposit_amount)}</strong></div>
+                  <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">المخصوم</span><strong className="text-destructive" dir="ltr">{formatMoney(deposit.deducted_amount)}</strong></div>
+                  <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">المسترد</span><strong className="text-emerald-600" dir="ltr">{formatMoney(deposit.refunded_amount)}</strong></div>
+                  <div className="rounded-xl bg-primary/10 p-2"><span className="block text-muted-foreground">المتبقي</span><strong className="text-primary" dir="ltr">{formatMoney(deposit.remaining_amount)}</strong></div>
+                </div>
+                {deposit.remaining_amount > 0 && (
+                  <div className="flex gap-2 border-t pt-2">
+                    <Button size="sm" variant="outline" className="gap-1 text-xs text-destructive" onClick={() => { setSelectedDeposit(deposit); setActionType('deduct'); setAmountInput(deposit.remaining_amount); }}>
+                      <ShieldAlert className="size-3.5" />
+                      خصم ضرر
+                    </Button>
+                    <Button size="sm" variant="secondary" className="gap-1 text-xs" onClick={() => { setSelectedDeposit(deposit); setActionType('refund'); setAmountInput(deposit.remaining_amount); }}>
+                      <DollarSign className="size-3.5" />
+                      رد التأمين
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </AsyncContentState>
 
-      {/* Create Dialog */}
       <Dialog open={actionType === 'create'} onOpenChange={(open) => { if (!open) setActionType(null); }}>
         <DialogContent dir="rtl" className="max-w-lg">
           <DialogHeader>
@@ -292,28 +277,26 @@ export function DepositsWorkspace() {
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label>العقد النشط *</Label>
-              <Select value={createForm.contract_id} onChange={(e) => setCreateForm((f) => ({ ...f, contract_id: e.target.value }))}>
+              <Select value={createForm.contract_id} onChange={(event) => setCreateForm((form) => ({ ...form, contract_id: event.target.value }))}>
                 <option value="">اختر العقد</option>
-                {contractsQuery.data?.map((c: any) => (
-                  <option key={c.id} value={c.id}>
-                    {c.id.slice(0, 8)} - عقار {c.property_id?.slice(0, 6)}
-                  </option>
+                {contractsQuery.data?.map((contract) => (
+                  <option key={contract.id} value={contract.id}>{contract.id.slice(0, 8)} - عقار {contract.property_id?.slice(0, 6)}</option>
                 ))}
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label>المبلغ *</Label>
-                <Input type="number" dir="ltr" value={createForm.amount} onChange={(e) => setCreateForm((f) => ({ ...f, amount: Number(e.target.value) || 0 }))} />
+                <Input type="number" dir="ltr" value={createForm.amount} onChange={(event) => setCreateForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} />
               </div>
               <div className="grid gap-2">
                 <Label>تاريخ الاستلام *</Label>
-                <Input type="date" value={createForm.received_date} onChange={(e) => setCreateForm((f) => ({ ...f, received_date: e.target.value }))} />
+                <Input type="date" value={createForm.received_date} onChange={(event) => setCreateForm((form) => ({ ...form, received_date: event.target.value }))} />
               </div>
             </div>
             <div className="grid gap-2">
               <Label>ملاحظات</Label>
-              <Input value={createForm.notes} onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))} placeholder="ملاحظات الاستلام..." />
+              <Input value={createForm.notes} onChange={(event) => setCreateForm((form) => ({ ...form, notes: event.target.value }))} placeholder="ملاحظات الاستلام..." />
             </div>
             {createMut.isError && <p className="text-sm text-destructive">{(createMut.error as Error).message}</p>}
             <Button onClick={() => createMut.mutate()} disabled={createMut.isPending || !createForm.contract_id || createForm.amount <= 0} className="min-h-11">
@@ -323,50 +306,35 @@ export function DepositsWorkspace() {
         </DialogContent>
       </Dialog>
 
-      {/* Deduct / Refund Dialog */}
-      <Dialog
-        open={actionType === 'deduct' || actionType === 'refund'}
-        onOpenChange={(open) => {
-          if (!open) {
-            setActionType(null);
-            setSelectedDeposit(null);
-          }
-        }}
-      >
+      <Dialog open={actionType === 'deduct' || actionType === 'refund'} onOpenChange={(open) => { if (!open) { setActionType(null); setSelectedDeposit(null); } }}>
         <DialogContent dir="rtl" className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{actionType === 'deduct' ? 'خصم من وديعة التأمين' : 'رد وديعة التأمين'}</DialogTitle>
-            <DialogDescription>
-              {selectedDeposit ? `المتبقي: ${formatMoney(selectedDeposit.remaining_amount)} - لن يسمح النظام بتجاوز الرصيد` : ''}
-            </DialogDescription>
+            <DialogDescription>{selectedDeposit ? `المتبقي: ${formatMoney(selectedDeposit.remaining_amount)} - لن يسمح النظام بتجاوز الرصيد` : ''}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label>المبلغ *</Label>
-              <Input type="number" dir="ltr" value={amountInput} onChange={(e) => setAmountInput(Number(e.target.value) || 0)} max={selectedDeposit?.remaining_amount} />
+              <Input type="number" dir="ltr" value={amountInput} onChange={(event) => setAmountInput(Number(event.target.value) || 0)} max={selectedDeposit?.remaining_amount} />
             </div>
             {actionType === 'deduct' ? (
               <>
                 <div className="grid gap-2">
                   <Label>سبب الخصم *</Label>
-                  <Select value={reasonInput} onChange={(e) => setReasonInput(e.target.value as any)}>
-                    {Object.entries(deductionReasonLabels).map(([k, label]) => (
-                      <option key={k} value={k}>
-                        {label}
-                      </option>
-                    ))}
+                  <Select value={reasonInput} onChange={(event) => setReasonInput(event.target.value as DepositDeductionPayload['reason'])}>
+                    {Object.entries(deductionReasonLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
                   </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label>وصف تفصيلي *</Label>
-                  <Textarea value={descriptionInput} onChange={(e) => setDescriptionInput(e.target.value)} placeholder="تفاصيل الأضرار..." />
+                  <Textarea value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} placeholder="تفاصيل الأضرار..." />
                 </div>
               </>
             ) : (
               <>
                 <div className="grid gap-2">
                   <Label>طريقة الدفع *</Label>
-                  <Select value={paymentMethodInput} onChange={(e) => setPaymentMethodInput(e.target.value as any)}>
+                  <Select value={paymentMethodInput} onChange={(event) => setPaymentMethodInput(event.target.value as DepositRefundPayload['payment_method'])}>
                     <option value="bank_transfer">تحويل بنكي</option>
                     <option value="cash">نقداً</option>
                     <option value="check">شيك</option>
@@ -374,18 +342,12 @@ export function DepositsWorkspace() {
                 </div>
                 <div className="grid gap-2">
                   <Label>ملاحظات</Label>
-                  <Input value={descriptionInput} onChange={(e) => setDescriptionInput(e.target.value)} placeholder="ملاحظات الاسترداد..." />
+                  <Input value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} placeholder="ملاحظات الاسترداد..." />
                 </div>
               </>
             )}
-            {(deductMut.isError || refundMut.isError) && (
-              <p className="text-sm text-destructive">{(deductMut.error as Error)?.message || (refundMut.error as Error)?.message}</p>
-            )}
-            <Button
-              onClick={() => (actionType === 'deduct' ? deductMut.mutate() : refundMut.mutate())}
-              disabled={amountInput <= 0 || (selectedDeposit ? amountInput > selectedDeposit.remaining_amount : true) || deductMut.isPending || refundMut.isPending}
-              className="min-h-11"
-            >
+            {(deductMut.isError || refundMut.isError) && <p className="text-sm text-destructive">{(deductMut.error as Error)?.message || (refundMut.error as Error)?.message}</p>}
+            <Button onClick={executeSelectedAction} disabled={amountInput <= 0 || !selectedDeposit || amountInput > selectedDeposit.remaining_amount || deductMut.isPending || refundMut.isPending} className="min-h-11">
               {deductMut.isPending || refundMut.isPending ? 'جارٍ التنفيذ...' : 'تأكيد العملية'}
             </Button>
           </div>
