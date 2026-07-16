@@ -30,7 +30,7 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
   const bucketRows = buildAgingBucketChartRows(agedReport?.buckets, agingBucketKeys);
   const totalOverdue = rows.reduce((total, row) => total + row.remainingAmount, 0);
   const oldestDelay = rows.reduce((maximum, row) => Math.max(maximum, row.daysOverdue), 0);
-  const criticalBucket = bucketRows.find((row) => row.bucket === agingBucketKeys[agingBucketKeys.length - 1]);
+  const criticalBucket = bucketRows[bucketRows.length - 1];
 
   const handlePrintOverdueReport = () => {
     const todayStr = getTodayLocalDateString();
