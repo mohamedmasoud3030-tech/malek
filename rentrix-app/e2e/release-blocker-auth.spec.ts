@@ -35,9 +35,7 @@ async function submitLogin(page: Page, candidatePassword: string): Promise<Respo
   });
 
   await loginButton.click();
-  const authResponse = await authResponsePromise;
-  await expect(loginButton).toBeEnabled();
-  return authResponse;
+  return authResponsePromise;
 }
 
 async function expectProtectedShell(page: Page) {
@@ -70,6 +68,8 @@ test.describe('release blocker: real authentication lifecycle', () => {
     const authResponse = await submitLogin(page, `${password}-invalid`);
     expect(authResponse.status()).toBeGreaterThanOrEqual(400);
 
+    const loginButton = page.getByRole('button', { name: /^تسجيل الدخول$/ });
+    await expect(loginButton).toBeEnabled();
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
     await expect(page.getByText('لوحة التحكم')).toHaveCount(0);
