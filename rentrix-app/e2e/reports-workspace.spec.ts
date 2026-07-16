@@ -63,7 +63,7 @@ for (const viewport of viewportMatrix) {
         await expect(sheet).toBeHidden();
       } else {
         await expect(editFilters).toBeHidden();
-        await expect(page.getByRole('heading', { name: 'فلترة نطاق التقرير' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'نطاق التقرير', exact: true })).toBeVisible();
       }
 
       const collectionsTab = page.getByRole('tab', { name: 'التحصيلات' });
