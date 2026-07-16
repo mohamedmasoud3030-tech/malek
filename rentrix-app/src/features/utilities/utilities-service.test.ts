@@ -27,7 +27,9 @@ describe('utilities real implementation - no mock data', () => {
   it('migration creates real utility_meters table with RLS hardened to manager write', async () => {
     const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000001_real_utility_meters_and_enhance_bills.sql');
     const sql = readFileSync(migrationPath, 'utf8');
-    expect(sql).toContain('create table if not exists public.utility_meters');
+    expect(sql).toContain('create table public.utility_meters');
+    expect(sql).toContain("'public.properties'::regclass");
+    expect(sql).toContain("'public.units'::regclass");
     expect(sql).toContain('manager_write_utility_meters');
     expect(sql).toContain('app_read_utility_meters');
     expect(sql).toContain('is_admin_or_manager()');
