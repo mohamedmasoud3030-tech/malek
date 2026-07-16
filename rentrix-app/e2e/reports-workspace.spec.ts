@@ -10,6 +10,21 @@ const viewportMatrix = [
 
 const themes = ['light', 'dark'] as const;
 
+const reportTabs = [
+  { id: 'overview', label: 'نظرة عامة' },
+  { id: 'property_analytics', label: 'العقارات' },
+  { id: 'overdue', label: 'المتأخرات' },
+  { id: 'occupancy', label: 'الإشغال' },
+  { id: 'collections', label: 'التحصيلات' },
+  { id: 'expenses', label: 'المصروفات' },
+  { id: 'maintenance_analytics', label: 'الصيانة' },
+  { id: 'deferred_revenue', label: 'الاستحقاق' },
+  { id: 'statements', label: 'الكشوف' },
+  { id: 'accounting', label: 'المحاسبة' },
+] as const;
+
+const evidenceTabs = new Set(['maintenance_analytics', 'statements', 'accounting']);
+
 test.beforeEach(async ({}, testInfo) => {
   test.skip(
     testInfo.project.name !== 'chromium-desktop',
@@ -61,14 +76,25 @@ for (const viewport of viewportMatrix) {
       await page.getByRole('button', { name: 'عرض النتائج' }).click();
       await expect(sheet).toBeHidden();
 
-      const collectionsTab = page.getByRole('tab', { name: 'التحصيلات', exact: true });
-      await collectionsTab.click();
-      await expect(collectionsTab).toHaveAttribute('aria-selected', 'true');
-      await expect(
-        page.locator('[role="tabpanel"][aria-labelledby="section-tab-collections"]'),
-      ).toBeVisible();
+      for (const reportTab of reportTabs) {
+        const tab = page.getByRole('tab', { name: reportTab.label, exact: true });
+        await tab.click();
+        await expect(tab).toHaveAttribute('aria-selected', 'true');
+        await expect(page.locator(`[role="tabpanel"][aria-labelledby="section-tab-${reportTab.id}"]`)).toBeVisible();
+        await assertNoHorizontalOverflow(page);
 
-      await assertNoHorizontalOverflow(page);
+        if (
+          theme === 'light'
+          && evidenceTabs.has(reportTab.id)
+          && (viewport.name === 'mobile-390' || viewport.name === 'desktop-1440')
+        ) {
+          await page.screenshot({
+            path: testInfo.outputPath(`reports-${reportTab.id}-${viewport.name}-${theme}.png`),
+            fullPage: true,
+          });
+        }
+      }
+
       await page.screenshot({
         path: testInfo.outputPath(`reports-workspace-${viewport.name}-${theme}.png`),
         fullPage: true,
