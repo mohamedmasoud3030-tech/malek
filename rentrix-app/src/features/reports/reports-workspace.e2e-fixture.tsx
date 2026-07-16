@@ -44,6 +44,11 @@ const fixtureModel: ReportsWorkspaceModel = {
       expiringRows: [],
       isLoading: false,
     },
+    maintenance: {
+      rows: [],
+      summary: { total: 0, open: 0, inProgress: 0, urgent: 0 },
+      isLoading: false,
+    },
     accounting: {
       asOf: fixtureDate,
       from: '2026-07-01',
