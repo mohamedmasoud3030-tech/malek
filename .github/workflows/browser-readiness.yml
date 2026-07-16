@@ -29,10 +29,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify pinned toolchain
         run: node scripts/ci/verify-tool-versions.mjs
-      - name: Restore pinned Chromium
-        uses: ./.github/actions/setup-playwright
+      - name: Restore Chromium binary cache
+        id: playwright-cache
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4
         with:
-          playwright-version: ${{ env.PLAYWRIGHT_VERSION }}
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install Chromium system dependencies
+        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+      - name: Install Chromium binary on cache miss
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter ./rentrix-app exec playwright install chromium
+      - name: Verify Chromium installation
+        run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
       - name: Run complete browser readiness suite
         run: pnpm e2e
       - name: Upload Playwright report
@@ -75,10 +84,19 @@ jobs:
         run: |
           node scripts/assert-release-blocker-env.mjs
           node scripts/ci/preflight-staging.mjs
-      - name: Restore pinned Chromium
-        uses: ./.github/actions/setup-playwright
+      - name: Restore Chromium binary cache
+        id: playwright-cache
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4
         with:
-          playwright-version: ${{ env.PLAYWRIGHT_VERSION }}
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install Chromium system dependencies
+        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+      - name: Install Chromium binary on cache miss
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter ./rentrix-app exec playwright install chromium
+      - name: Verify Chromium installation
+        run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
       - name: Run complete seeded staging suite
         run: pnpm e2e
       - name: Upload seeded staging Playwright report
