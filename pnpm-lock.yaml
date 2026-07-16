@@ -79,7 +79,7 @@ importers:
         specifier: ^3.8.1
         version: 3.8.1
       supabase:
-        specifier: ^2.105.0
+        specifier: 2.105.0
         version: 2.105.0
       typescript:
         specifier: ~5.9.2
@@ -119,7 +119,7 @@ importers:
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.71.2(react@19.1.0))
       '@playwright/test':
-        specifier: ^1.61.1
+        specifier: 1.61.1
         version: 1.61.1
       '@radix-ui/react-accordion':
         specifier: ^1.2.4
