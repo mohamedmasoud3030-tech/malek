@@ -1,4 +1,4 @@
-import { Building2, ClipboardList, FileSpreadsheet, Printer, WalletCards } from 'lucide-react';
+import { Building2, ClipboardList, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -6,7 +6,15 @@ import { formatMoney, formatShortId } from '@/features/financials/components/fin
 import { useExpenseBreakdownReport } from '@/features/financials/reports/useFinancialReports';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
-import { ReportCard } from './common';
+import {
+  ReportColumns,
+  ReportInsightNote,
+  ReportList,
+  ReportListRow,
+  ReportPanel,
+  ReportProgress,
+  ReportState,
+} from './report-section-primitives';
 
 const defaultSettings: DocumentSettings = {
   company: {
@@ -25,6 +33,13 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
 }>) {
   const categoryRows = report?.byCategory ?? [];
   const propertyRows = report?.byProperty ?? [];
+  const totalExpenses = report?.totalExpenses ?? 0;
+  const expensesCount = report?.expensesCount ?? 0;
+  const averageExpense = expensesCount > 0 ? totalExpenses / expensesCount : 0;
+  const topCategory = [...categoryRows].sort((a, b) => b.total - a.total)[0];
+  const topProperty = [...propertyRows].sort((a, b) => b.total - a.total)[0];
+  const topCategoryShare = topCategory && totalExpenses > 0 ? (topCategory.total / totalExpenses) * 100 : 0;
+  const topPropertyShare = topProperty && totalExpenses > 0 ? (topProperty.total / totalExpenses) * 100 : 0;
 
   const handlePrintExpensesReport = () => {
     const todayStr = getTodayLocalDateString();
@@ -37,75 +52,124 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
         sections: [
           {
             title: 'توزيع المصروفات حسب التصنيف',
-            rows: categoryRows.map((r) => ({
-              label: r.category,
-              value: `المبلغ: ${r.total.toLocaleString('ar-OM')} ر.ع | عدد السندات: ${r.count}`,
+            rows: categoryRows.map((row) => ({
+              label: row.category,
+              value: `المبلغ: ${row.total.toLocaleString('ar-OM')} ر.ع | عدد السندات: ${row.count}`,
             })),
-            totals: ['إجمالي المصروفات التشغيلية', `${(report?.totalExpenses ?? 0).toLocaleString('ar-OM')} ر.ع`],
+            totals: ['إجمالي المصروفات التشغيلية', `${totalExpenses.toLocaleString('ar-OM')} ر.ع`],
           },
           {
             title: 'توزيع المصروفات حسب العقارات',
-            rows: propertyRows.map((r) => ({
-              label: r.propertyTitle ?? formatShortId(r.propertyId),
-              value: `المبلغ: ${r.total.toLocaleString('ar-OM')} ر.ع | عدد الحركات: ${r.count}`,
+            rows: propertyRows.map((row) => ({
+              label: row.propertyTitle ?? formatShortId(row.propertyId),
+              value: `المبلغ: ${row.total.toLocaleString('ar-OM')} ر.ع | عدد الحركات: ${row.count}`,
             })),
           },
         ],
-        totalSummary: `إجمالي النفقات: ${(report?.totalExpenses ?? 0).toLocaleString('ar-OM')} ر.ع | عدد السندات: ${report?.expensesCount ?? 0}`,
+        totalSummary: `إجمالي النفقات: ${totalExpenses.toLocaleString('ar-OM')} ر.ع | عدد السندات: ${expensesCount}`,
       },
       defaultSettings,
     );
   };
 
+  const actions = canExportReports ? (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="outline" size="sm" onClick={handlePrintExpensesReport} className="min-h-10 gap-1.5 text-xs">
+        <Printer className="size-3.5" aria-hidden="true" />
+        طباعة A4
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])}
+        className="min-h-10 gap-1.5 text-xs"
+      >
+        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+        CSV
+      </Button>
+    </div>
+  ) : undefined;
+
   return (
-    <ReportCard
-      title="تحليل المصروفات والتكاليف التشغيلية للفترة"
-      description="تفصيل المصروفات والنفقات حسب نوع التصنيف والعقار ومركز التكلفة المسجل."
-      action={canExportReports ? (
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrintExpensesReport} className="min-h-9 gap-1.5 text-xs font-bold">
-            <Printer className="size-3.5 text-primary" aria-hidden="true" />
-            طباعة تقرير المصروفات A4
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('expense-breakdown'), [...categoryRows, ...propertyRows])} className="min-h-9 text-xs">
-            <FileSpreadsheet className="me-1.5 size-3.5" />
-            تصدير CSV
-          </Button>
-        </div>
-      ) : undefined}
-      isLoading={isLoading}
-    >
-      <ResponsiveCardGrid className="p-4" desktopColumns={3}>
-        <KpiCard label="إجمالي المصروفات" value={formatMoney(report?.totalExpenses ?? 0)} icon={WalletCards} accent="rose" sub={`${report?.expensesCount ?? 0} مصروفات`} />
-        <KpiCard label="تصنيفات المصروفات" value={(categoryRows.length).toLocaleString('ar')} icon={ClipboardList} accent="amber" sub="حسب نوع التصنيف" />
-        <KpiCard label="عقارات بها مصروفات" value={(propertyRows.length).toLocaleString('ar')} icon={Building2} accent="sky" sub="حسب العقار المرتبط" />
+    <div className="space-y-4">
+      <ResponsiveCardGrid>
+        <KpiCard label="إجمالي المصروفات" value={formatMoney(totalExpenses)} icon={WalletCards} sub={`${expensesCount} مصروفات`} />
+        <KpiCard label="متوسط المصروف" value={formatMoney(averageExpense)} icon={ReceiptText} sub="لكل حركة مسجلة" />
+        <KpiCard label="التصنيفات" value={categoryRows.length.toLocaleString('ar')} icon={ClipboardList} sub={topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات'} />
+        <KpiCard label="العقارات المتأثرة" value={propertyRows.length.toLocaleString('ar')} icon={Building2} sub={topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات'} />
       </ResponsiveCardGrid>
-      <div className="grid gap-4 p-4 pt-0 lg:grid-cols-2">
-        <div className="rounded-2xl border bg-background/80 p-3">
-          <p className="mb-2 font-bold">حسب التصنيف</p>
-          <div className="space-y-2">
-            {categoryRows.map((row) => (
-              <div key={row.category} className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 p-3 text-sm">
-                <span>{row.category} · {row.count.toLocaleString('ar')}</span>
-                <span className="font-bold" dir="ltr">{formatMoney(row.total)}</span>
-              </div>
-            ))}
-            {categoryRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مصروفات في الفترة المحددة.</p> : null}
-          </div>
-        </div>
-        <div className="rounded-2xl border bg-background/80 p-3">
-          <p className="mb-2 font-bold">حسب العقار</p>
-          <div className="space-y-2">
-            {propertyRows.map((row) => (
-              <div key={row.propertyId} className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 p-3 text-sm">
-                <span>{row.propertyTitle ?? formatShortId(row.propertyId)} · {row.count.toLocaleString('ar')}</span>
-                <span className="font-bold" dir="ltr">{formatMoney(row.total)}</span>
-              </div>
-            ))}
-            {propertyRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مصروفات مرتبطة بعقارات في الفترة المحددة.</p> : null}
-          </div>
-        </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ReportProgress
+          label="تركيز أكبر تصنيف"
+          value={topCategoryShare}
+          helper={topCategory ? `${topCategory.category} · ${formatMoney(topCategory.total)}` : 'لا توجد مصروفات'}
+          tone={topCategoryShare <= 40 ? 'good' : topCategoryShare <= 60 ? 'warning' : 'critical'}
+        />
+        <ReportProgress
+          label="تركيز أكبر عقار"
+          value={topPropertyShare}
+          helper={topProperty ? `${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)} · ${formatMoney(topProperty.total)}` : 'لا توجد مصروفات'}
+          tone={topPropertyShare <= 45 ? 'good' : topPropertyShare <= 65 ? 'warning' : 'critical'}
+        />
       </div>
-    </ReportCard>
+
+      <ReportInsightNote title="قراءة المصروفات">
+        {topCategoryShare > 60
+          ? 'معظم المصروفات متركزة في تصنيف واحد؛ راجع تفاصيل هذا التصنيف والتكرار قبل اعتماد الفترة.'
+          : topPropertyShare > 65
+            ? 'عقار واحد يتحمل الحصة الأكبر من المصروفات؛ راجع الصيانة والخدمات المرتبطة به.'
+            : 'المصروفات موزعة نسبيًا بين التصنيفات والعقارات دون تركّز حاد.'}
+      </ReportInsightNote>
+
+      <ReportColumns>
+        <ReportPanel
+          title="المصروفات حسب التصنيف"
+          description="ترتيب مباشر لقيمة وعدد الحركات في كل تصنيف."
+          eyebrow="تحليل التكلفة"
+          icon={ClipboardList}
+          action={actions}
+          isLoading={isLoading}
+        >
+          {categoryRows.length === 0 ? (
+            <div className="p-4"><ReportState message="لا توجد مصروفات في الفترة المحددة." /></div>
+          ) : (
+            <ReportList>
+              {categoryRows.map((row) => (
+                <ReportListRow
+                  key={row.category}
+                  title={row.category}
+                  subtitle={`${row.count.toLocaleString('ar')} حركة`}
+                  value={<span dir="ltr">{formatMoney(row.total)}</span>}
+                />
+              ))}
+            </ReportList>
+          )}
+        </ReportPanel>
+
+        <ReportPanel
+          title="المصروفات حسب العقار"
+          description="العقارات الأعلى تحمّلًا للتكاليف داخل النطاق."
+          eyebrow="تحليل المحفظة"
+          icon={Building2}
+          isLoading={isLoading}
+        >
+          {propertyRows.length === 0 ? (
+            <div className="p-4"><ReportState message="لا توجد مصروفات مرتبطة بعقارات في الفترة المحددة." /></div>
+          ) : (
+            <ReportList>
+              {propertyRows.map((row) => (
+                <ReportListRow
+                  key={row.propertyId}
+                  title={row.propertyTitle ?? formatShortId(row.propertyId)}
+                  subtitle={`${row.count.toLocaleString('ar')} حركة`}
+                  value={<span dir="ltr">{formatMoney(row.total)}</span>}
+                />
+              ))}
+            </ReportList>
+          )}
+        </ReportPanel>
+      </ReportColumns>
+    </div>
   );
 }

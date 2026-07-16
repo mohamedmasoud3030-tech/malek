@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { ShieldCheck } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
@@ -39,7 +40,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
         description="لم يرجع مصدر سجل التدقيق أي أحداث للعرض."
         action={
           <Button asChild>
-            <a href="/">العودة إلى لوحة التحكم</a>
+            <Link to="/dashboard">العودة إلى لوحة التحكم</Link>
           </Button>
         }
       />

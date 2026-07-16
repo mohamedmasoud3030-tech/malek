@@ -91,7 +91,7 @@ test.describe('seeded staging readiness smoke', () => {
     await page.getByPlaceholder('••••••••').fill(process.env.E2E_TEST_PASSWORD!);
     await page.getByRole('button', { name: /تسجيل الدخول/ }).click();
 
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByText('لوحة التحكم').first()).toBeVisible();
   });
 });
