@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
@@ -22,7 +23,12 @@ export function ReportsPage() {
   }
 
   return (
-    <PageLayout dir="rtl" size="wide" className="space-y-0">
+    <PageLayout dir="rtl" size="wide" className="space-y-5 pb-8">
+      <PageHeader
+        title="مركز التقارير والكشوف"
+        description="قراءة موحّدة للتحصيل والمتأخرات والإشغال والكشوف من نفس مصادر Rentrix المعتمدة."
+      />
+
       <ReportsWorkspace
         model={workspace}
         filters={filters}
