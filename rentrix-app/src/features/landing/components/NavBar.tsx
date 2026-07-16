@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Link } from '@tanstack/react-router';
 import { Languages, Menu, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { APP_URL } from '../lib/links';
 
 const SECTION_IDS = ['problems', 'features', 'showcase', 'how', 'security', 'faq'] as const;
 type SectionId = (typeof SECTION_IDS)[number];
@@ -80,13 +80,13 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
             <Languages className="size-4" />
             <span>{isArabic ? 'EN' : 'ع'}</span>
           </button>
-          <a
-            href={APP_URL}
+          <Link
+            to="/login"
             className="hidden items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-500 sm:inline-flex"
           >
             {t.nav.start}
             <ArrowIcon className="size-4" />
-          </a>
+          </Link>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -118,13 +118,13 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
                 {labels[id]}
               </a>
             ))}
-            <a
-              href={APP_URL}
+            <Link
+              to="/login"
               className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white"
             >
               {t.nav.start}
               <ArrowIcon className="size-4" />
-            </a>
+            </Link>
           </motion.div>
         ) : null}
       </AnimatePresence>

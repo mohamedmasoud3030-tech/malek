@@ -1,6 +1,6 @@
 /** Device-style frames that make real app screenshots look presented, not pasted. */
 import type { ReactNode } from 'react';
-import { APP_HOST } from '../lib/links';
+import { APP_HOST } from '../constants';
 
 export function BrowserFrame({
   src,

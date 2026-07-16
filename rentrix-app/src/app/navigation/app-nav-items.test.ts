@@ -117,7 +117,7 @@ describe('app route and navigation parity', () => {
 
   it('keeps mobile bottom navigation concise while the drawer carries the full route inventory', () => {
     expect(mobileNavItems).toHaveLength(5);
-    expect(mobileNavItems.map(([to]) => to)).toEqual(['/', '/properties', '/contracts', '/financials', '/reports']);
+    expect(mobileNavItems.map(([to]) => to)).toEqual(['/dashboard', '/properties', '/contracts', '/financials', '/reports']);
   });
 
   it('keeps arrears out of bottom navigation while still reachable from the financials group in the drawer', () => {

@@ -3,7 +3,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { SectionHeader } from './SectionHeader';
 import { Reveal } from './Reveal';
 import { BrowserFrame, PhoneFrame } from './Frames';
-import { APP_HOST } from '../lib/links';
+import { APP_HOST } from '../constants';
 
 const BULLET_ICONS = [Globe, Smartphone, Moon];
 
@@ -32,7 +32,7 @@ export function Devices() {
           <Reveal>
             <div className="relative max-w-2xl">
               <BrowserFrame
-                src="/screenshots/dashboard-dark.png"
+                src="/landing/dashboard-dark.png"
                 alt={t.devices.darkLabel}
                 url={APP_HOST}
               />
@@ -45,7 +45,7 @@ export function Devices() {
           </Reveal>
 
           <Reveal delay={0.15} className="relative mx-auto">
-            <PhoneFrame src="/screenshots/mobile-light.png" alt={t.devices.mobileLabel} />
+            <PhoneFrame src="/landing/mobile-light.png" alt={t.devices.mobileLabel} />
             <span className="absolute -top-4 start-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-ink-850/95 px-4 py-2 text-xs font-bold text-slate-200 shadow-xl backdrop-blur rtl:translate-x-1/2">
               <Smartphone className="size-3.5 text-emerald-300" />
               {t.devices.mobileLabel}

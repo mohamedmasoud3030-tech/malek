@@ -64,7 +64,7 @@ export function FeaturesBento() {
                   className="absolute -inset-6 rounded-[2rem] bg-brand-500/20 blur-3xl transition duration-500 group-hover:bg-brand-500/30"
                 />
                 <img
-                  src="/screenshots/dashboard-dark.png"
+                  src="/landing/dashboard-dark.png"
                   alt={t.features.spotlight.caption}
                   loading="lazy"
                   className="relative w-full rounded-2xl border border-white/10 shadow-2xl transition duration-500 group-hover:scale-[1.02]"

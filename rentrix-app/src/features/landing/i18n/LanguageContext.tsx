@@ -29,6 +29,28 @@ function detectInitialLang(): Lang {
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(detectInitialLang);
 
+  // Landing pages control <html> dir/lang/title and scroll padding while mounted;
+  // the app's own chrome values are restored on unmount.
+  useEffect(() => {
+    const root = document.documentElement;
+    const original = {
+      lang: root.lang,
+      dir: root.dir,
+      title: document.title,
+      scrollBehavior: root.style.scrollBehavior,
+      scrollPaddingTop: root.style.scrollPaddingTop,
+    };
+    root.style.scrollBehavior = 'smooth';
+    root.style.scrollPaddingTop = '96px';
+    return () => {
+      root.lang = original.lang;
+      root.dir = original.dir;
+      document.title = original.title;
+      root.style.scrollBehavior = original.scrollBehavior;
+      root.style.scrollPaddingTop = original.scrollPaddingTop;
+    };
+  }, []);
+
   useEffect(() => {
     const dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;

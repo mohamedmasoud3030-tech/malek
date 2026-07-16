@@ -11,7 +11,7 @@ export function NotFoundPage() {
           <CardDescription>المسار المطلوب غير متاح في بنية Rentrix الجديدة.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild><Link to="/">العودة للوحة التحكم</Link></Button>
+          <Button asChild><Link to="/dashboard">العودة للوحة التحكم</Link></Button>
         </CardContent>
       </Card>
     </div>

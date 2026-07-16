@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import { Link } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, CheckCircle2, MessageCircle, Rocket, ChevronDown, TrendingUp, Home } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { APP_HOST, APP_URL, whatsappLink } from '../lib/links';
+import { APP_HOST, whatsappLink } from '../constants';
 import { BrowserFrame, FrameCaption } from './Frames';
 import { CountUp } from './CountUp';
 
@@ -58,15 +59,15 @@ export function Hero() {
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <motion.a
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-              href={APP_URL}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-8 py-4 text-base font-bold text-white shadow-[0_18px_40px_-10px_rgba(37,84,235,0.55)] transition hover:bg-brand-500 sm:w-auto"
-            >
-              {t.hero.ctaPrimary}
-              <ArrowIcon className="size-5" />
-            </motion.a>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+              <Link
+                to="/login"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-8 py-4 text-base font-bold text-white shadow-[0_18px_40px_-10px_rgba(37,84,235,0.55)] transition hover:bg-brand-500 sm:w-auto"
+              >
+                {t.hero.ctaPrimary}
+                <ArrowIcon className="size-5" />
+              </Link>
+            </motion.div>
             <motion.a
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
@@ -125,7 +126,7 @@ export function Hero() {
           </div>
 
           <BrowserFrame
-            src="/screenshots/dashboard.png"
+            src="/landing/dashboard.png"
             alt={isArabic ? 'لوحة تحكم Rentrix الحقيقية' : 'The real Rentrix dashboard'}
             url={`${APP_HOST}/dashboard`}
           />

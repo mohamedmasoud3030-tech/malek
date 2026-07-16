@@ -1,6 +1,7 @@
+import { Link } from '@tanstack/react-router';
 import { Mail, MessageCircle, Heart } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { APP_HOST, APP_URL, CONTACT_EMAIL, whatsappLink } from '../lib/links';
+import { APP_HOST, CONTACT_EMAIL, whatsappLink } from '../constants';
 
 export function Footer() {
   const { t, isArabic } = useLanguage();
@@ -65,9 +66,12 @@ export function Footer() {
                 </li>
               ))}
               <li>
-                <a href={APP_URL} className="text-sm text-brand-400 transition hover:text-brand-300" dir="ltr">
-                  {APP_HOST}
-                </a>
+                <Link
+                  to="/login"
+                  className="text-sm text-brand-400 transition hover:text-brand-300"
+                >
+                  <span dir="ltr">{APP_HOST}</span>
+                </Link>
               </li>
             </ul>
           </nav>
@@ -78,13 +82,12 @@ export function Footer() {
             <ul className="mt-4 space-y-2.5">
               {t.footer.legalLinks.map((link, i) => (
                 <li key={link}>
-                  <a
-                    href={i === 0 ? '/privacy' : '/terms'}
-                    data-internal
+                  <Link
+                    to={i === 0 ? '/privacy' : '/terms'}
                     className="text-sm text-slate-400 transition hover:text-white"
                   >
                     {link}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

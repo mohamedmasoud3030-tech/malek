@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import { Link } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, MessageCircle, Zap, Headset, Handshake } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { APP_URL, whatsappLink } from '../lib/links';
+import { whatsappLink } from '../constants';
 import { Reveal } from './Reveal';
 
 export function FinalCta() {
@@ -38,15 +39,15 @@ export function FinalCta() {
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <motion.a
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              href={APP_URL}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-9 py-4 text-base font-bold text-white shadow-[0_20px_45px_-12px_rgba(37,84,235,0.6)] transition hover:bg-brand-500 sm:w-auto"
-            >
-              {t.cta.primary}
-              <ForwardArrow className="size-5" />
-            </motion.a>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+              <Link
+                to="/login"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-9 py-4 text-base font-bold text-white shadow-[0_20px_45px_-12px_rgba(37,84,235,0.6)] transition hover:bg-brand-500 sm:w-auto"
+              >
+                {t.cta.primary}
+                <ForwardArrow className="size-5" />
+              </Link>
+            </motion.div>
             <motion.a
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}

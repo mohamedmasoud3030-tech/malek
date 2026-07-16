@@ -72,7 +72,7 @@ test.describe('release readiness browser smoke', () => {
   test('redirects a protected route to login when no session exists', async ({ page }) => {
     const consoleErrors = await collectUnexpectedConsoleErrors(page);
 
-    await page.goto('/');
+    await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
     expect(consoleErrors).toEqual([]);

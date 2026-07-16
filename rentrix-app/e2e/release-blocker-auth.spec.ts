@@ -49,7 +49,7 @@ test.describe("release blocker: real authentication lifecycle", () => {
     await page.getByRole("button", { name: "تسجيل الخروج" }).click();
     await expect(page).toHaveURL(/\/login$/);
 
-    await page.goto("/");
+    await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login$/);
     await expect(
       page.getByRole("heading", { name: "مرحباً بعودتك" }),
@@ -92,7 +92,7 @@ test.describe("release blocker: real authentication lifecycle", () => {
       localStorage.setItem(storageKey, JSON.stringify(session));
     }, authStorageKey);
 
-    await page.goto("/");
+    await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
     await expect(
       page.getByRole("heading", { name: "مرحباً بعودتك" }),

@@ -6,10 +6,10 @@ import { SectionHeader } from './SectionHeader';
 import { Reveal } from './Reveal';
 
 const TAB_META = [
-  { id: 'dashboard', icon: LayoutDashboard, src: '/screenshots/dashboard.png' },
-  { id: 'workspace', icon: FileBarChart, src: '/screenshots/workspace.png' },
-  { id: 'settings', icon: Settings2, src: '/screenshots/settings.png' },
-  { id: 'entity-form', icon: ClipboardList, src: '/screenshots/entity-form.png' },
+  { id: 'dashboard', icon: LayoutDashboard, src: '/landing/dashboard.png' },
+  { id: 'workspace', icon: FileBarChart, src: '/landing/workspace.png' },
+  { id: 'settings', icon: Settings2, src: '/landing/settings.png' },
+  { id: 'entity-form', icon: ClipboardList, src: '/landing/entity-form.png' },
 ] as const;
 
 export function Showcase() {

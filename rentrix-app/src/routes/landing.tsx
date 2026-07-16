@@ -1,22 +1,38 @@
-import { PageLayout } from '@/components/layout/page-layout';
-import { LandingNavBar } from '@/features/landing/components/LandingNavBar';
-import { LandingHero } from '@/features/landing/components/LandingHero';
-import { FeaturesSection } from '@/features/landing/components/FeaturesSection';
-import { ShowcaseSection } from '@/features/landing/components/ShowcaseSection';
-import { WhyRentrixSection } from '@/features/landing/components/WhyRentrixSection';
-import { CtaSection } from '@/features/landing/components/CtaSection';
-import { LandingFooter } from '@/features/landing/components/LandingFooter';
+import { LanguageProvider } from '@/features/landing/i18n/LanguageContext';
+import { NavBar } from '@/features/landing/components/NavBar';
+import { Hero } from '@/features/landing/components/Hero';
+import { ProblemSolution } from '@/features/landing/components/ProblemSolution';
+import { FeaturesBento } from '@/features/landing/components/FeaturesBento';
+import { Showcase } from '@/features/landing/components/Showcase';
+import { HowItWorks } from '@/features/landing/components/HowItWorks';
+import { Devices } from '@/features/landing/components/Devices';
+import { Security } from '@/features/landing/components/Security';
+import { Faq } from '@/features/landing/components/Faq';
+import { FinalCta } from '@/features/landing/components/FinalCta';
+import { Footer } from '@/features/landing/components/Footer';
 
+/**
+ * Public marketing landing — served on the app domain root (`/`).
+ * Full-bleed layout (no app chrome): the landing manages its own theme while mounted.
+ */
 export function LandingRouteComponent() {
   return (
-    <PageLayout dir="rtl" lang="ar" size="full" contentClassName="space-y-0" className="bg-background text-foreground">
-      <LandingNavBar />
-      <LandingHero />
-      <FeaturesSection />
-      <ShowcaseSection />
-      <WhyRentrixSection />
-      <CtaSection />
-      <LandingFooter />
-    </PageLayout>
+    <LanguageProvider>
+      <div className="min-h-screen overflow-x-clip bg-ink-950 font-sans">
+        <NavBar />
+        <main>
+          <Hero />
+          <ProblemSolution />
+          <FeaturesBento />
+          <Showcase />
+          <HowItWorks />
+          <Devices />
+          <Security />
+          <Faq />
+          <FinalCta />
+        </main>
+        <Footer />
+      </div>
+    </LanguageProvider>
   );
 }
