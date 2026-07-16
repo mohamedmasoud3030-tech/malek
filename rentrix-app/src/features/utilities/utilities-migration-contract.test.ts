@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('utilities schema contract', () => {
-  it('uses the canonical text property id for meters and bills', () => {
+  it('adapts property and unit foreign keys to both live and clean schema identifier types', () => {
     const createMetersSql = readFileSync(
       resolve(
         import.meta.dirname,
@@ -19,15 +19,16 @@ describe('utilities schema contract', () => {
       'utf8',
     ).toLowerCase();
 
-    expect(createMetersSql).toContain(
-      'property_id text not null references public.properties(id)',
-    );
+    expect(createMetersSql).toContain("attribute.attrelid = 'public.properties'::regclass");
+    expect(createMetersSql).toContain("attribute.attrelid = 'public.units'::regclass");
+    expect(createMetersSql).toContain('property_id %s not null references public.properties(id)');
+    expect(createMetersSql).toContain('unit_id %s references public.units(id)');
     expect(createMetersSql).not.toContain(
       'property_id uuid not null references public.properties(id)',
     );
 
-    expect(alignBillsSql).toContain('alter column property_id type text');
-    expect(alignBillsSql).toContain('using property_id::text');
+    expect(alignBillsSql).toContain('if bill_type <> canonical_type then');
+    expect(alignBillsSql).toContain('using property_id::text::%s');
     expect(alignBillsSql).toContain('references public.properties(id)');
   });
 });
