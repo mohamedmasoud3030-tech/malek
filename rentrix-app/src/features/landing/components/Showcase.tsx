@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LayoutDashboard, FileBarChart, Settings2, ClipboardList, Play, X } from 'lucide-react';
+import { LayoutDashboard, FileBarChart, Settings2, ClipboardList, Play, X, Building2, ScrollText, WalletCards, Wrench, Bot, Zap } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { SectionHeader } from './SectionHeader';
 import { Reveal } from './Reveal';
 
 const TAB_META = [
   { id: 'dashboard', icon: LayoutDashboard, src: '/landing/dashboard.png' },
+  { id: 'properties', icon: Building2, src: '/landing/properties.png' },
+  { id: 'contracts', icon: ScrollText, src: '/landing/contracts.png' },
+  { id: 'financials', icon: WalletCards, src: '/landing/financials.png' },
+  { id: 'maintenance', icon: Wrench, src: '/landing/maintenance.png' },
+  { id: 'ai-assistant', icon: Bot, src: '/landing/ai-assistant.png' },
+  { id: 'automation', icon: Zap, src: '/landing/automation.png' },
   { id: 'workspace', icon: FileBarChart, src: '/landing/workspace.png' },
   { id: 'settings', icon: Settings2, src: '/landing/settings.png' },
   { id: 'entity-form', icon: ClipboardList, src: '/landing/entity-form.png' },
@@ -60,7 +66,7 @@ export function Showcase() {
               <Play className="relative size-4 fill-current" aria-hidden="true" />
             </span>
             {t.showcase.watchVideo}
-            <span className="text-xs font-bold text-slate-400">2:02</span>
+            <span className="text-xs font-bold text-slate-400">3:22</span>
           </button>
         </Reveal>
 

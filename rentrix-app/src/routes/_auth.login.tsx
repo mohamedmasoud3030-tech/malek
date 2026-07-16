@@ -4,6 +4,12 @@ import { DashboardWorkspaceE2EFixture } from '@/features/dashboard/dashboard-wor
 import { ReportsWorkspaceE2EFixture } from '@/features/reports/reports-workspace.e2e-fixture';
 import { SettingsWorkspaceE2EFixture } from '@/features/settings/settings-workspace.e2e-fixture';
 import { OwnerDetailE2EFixture } from '@/features/owners/owner-detail.e2e-fixture';
+import { PropertiesListE2EFixture } from '@/features/properties/properties-list.e2e-fixture';
+import { ContractsListE2EFixture } from '@/features/contracts/contracts-list.e2e-fixture';
+import { FinancialsHubE2EFixture } from '@/features/financials/financials-hub.e2e-fixture';
+import { MaintenanceE2EFixture } from '@/features/maintenance/maintenance.e2e-fixture';
+import { AiAssistantE2EFixture } from '@/features/ai-assistant/ai-assistant.e2e-fixture';
+import { AutomationE2EFixture } from '@/features/automation/automation.e2e-fixture';
 
 export function LoginRouteComponent() {
   if (import.meta.env.VITE_E2E && typeof window !== 'undefined') {
@@ -27,6 +33,30 @@ export function LoginRouteComponent() {
 
     if (search.get('e2e-owner-detail-workspace') === '1') {
       return <OwnerDetailE2EFixture />;
+    }
+
+    if (search.get('e2e-properties-workspace') === '1') {
+      return <PropertiesListE2EFixture />;
+    }
+
+    if (search.get('e2e-contracts-workspace') === '1') {
+      return <ContractsListE2EFixture />;
+    }
+
+    if (search.get('e2e-financials-workspace') === '1') {
+      return <FinancialsHubE2EFixture />;
+    }
+
+    if (search.get('e2e-maintenance-workspace') === '1') {
+      return <MaintenanceE2EFixture />;
+    }
+
+    if (search.get('e2e-ai-assistant') === '1') {
+      return <AiAssistantE2EFixture />;
+    }
+
+    if (search.get('e2e-automation-workspace') === '1') {
+      return <AutomationE2EFixture />;
     }
   }
 

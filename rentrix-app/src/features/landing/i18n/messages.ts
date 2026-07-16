@@ -129,6 +129,36 @@ const ar = {
         caption: 'نبض مكتبك اليومي: الأولويات، مؤشرات الأداء، قوائم العمل.',
       },
       {
+        id: 'properties',
+        label: 'العقارات',
+        caption: 'أبراج وفلل وعمائر ومجمعات — بقيمتها ومالكيها وحالتها في جدول واحد.',
+      },
+      {
+        id: 'contracts',
+        label: 'العقود',
+        caption: 'إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي — وتصدير CSV بضغطة.',
+      },
+      {
+        id: 'financials',
+        label: 'مركز المالية',
+        caption: 'الفواتير والإيصالات والمصروفات والمتأخرات ومطابقة البنك في منظومة واحدة.',
+      },
+      {
+        id: 'maintenance',
+        label: 'الصيانة',
+        caption: 'كل طلب بأولوية وحالة وفني مسؤول — مع طباعة كشف A4 جاهز للتوقيع.',
+      },
+      {
+        id: 'ai-assistant',
+        label: 'المساعد الذكي',
+        caption: 'اسأل عن المتأخرات والتجديدات واللقطة المالية — يجيبك بالعربي بأمان تام.',
+      },
+      {
+        id: 'automation',
+        label: 'الأتمتة',
+        caption: 'تذكيرات الإيجار وتنبيهات انتهاء العقود وإشعارات الصيانة تعمل وحدها.',
+      },
+      {
         id: 'workspace',
         label: 'مركز التقارير',
         caption: 'تحصيلات ومتأخرات وإشغال ومحاسبة مع فلاتر موحدة وتصدير CSV/PDF.',
@@ -391,6 +421,12 @@ const en: Messages = {
     closeVideo: 'Close video',
     tabs: [
       { id: 'dashboard', label: 'Dashboard', caption: 'Your office’s daily pulse: priorities, KPIs, worklists.' },
+      { id: 'properties', label: 'Properties', caption: 'Towers, villas and compounds with values, owners and status in one register.' },
+      { id: 'contracts', label: 'Contracts', caption: 'Full contract lifecycle from draft to active to expired — with one-click CSV export.' },
+      { id: 'financials', label: 'Finance hub', caption: 'Invoices, receipts, expenses, arrears and bank reconciliation in one system.' },
+      { id: 'maintenance', label: 'Maintenance', caption: 'Every request with priority, status and assignee — plus a signature-ready A4 printout.' },
+      { id: 'ai-assistant', label: 'AI assistant', caption: 'Ask about arrears, renewals and financial snapshots — answers in Arabic, fully read-only.' },
+      { id: 'automation', label: 'Automation', caption: 'Rent reminders, contract-expiry alerts and maintenance notifications run on their own.' },
       { id: 'workspace', label: 'Reports hub', caption: 'Collections, arrears, occupancy and accounting with unified filters and CSV/PDF export.' },
       { id: 'settings', label: 'Office settings', caption: 'Company identity, currency, language and document templates in one place.' },
       { id: 'entity-form', label: 'Unified form', caption: 'Fast, consistent data entry for every entity — mobile and desktop.' },
