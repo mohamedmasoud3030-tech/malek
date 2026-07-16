@@ -59,4 +59,24 @@ export const documentService = {
 
     await DocumentController.renderToPDF(request);
   },
+
+  async printDocument(request: DocumentRequest): Promise<void> {
+    const capability = getDocumentCapability(request.type);
+    if (!capability) throw new Error(`Unsupported document type: ${request.type}`);
+    if (!capability.templateAvailable) {
+      throw new Error(`لا يوجد قالب محلي جاهز للمستند: ${request.type}`);
+    }
+
+    await DocumentController.printDocument(request);
+  },
+
+  async downloadDocumentPdf(request: DocumentRequest): Promise<void> {
+    const capability = getDocumentCapability(request.type);
+    if (!capability) throw new Error(`Unsupported document type: ${request.type}`);
+    if (!capability.templateAvailable) {
+      throw new Error(`لا يوجد قالب محلي جاهز للمستند: ${request.type}`);
+    }
+
+    await DocumentController.downloadDocumentPdf(request);
+  },
 };

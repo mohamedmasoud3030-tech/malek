@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Ban, CalendarDays, CheckCircle2, Eye, Printer, ReceiptText, Wallet, WalletCards } from 'lucide-react';
+import { ArrowRight, Ban, CalendarDays, CheckCircle2, Download, Eye, Printer, ReceiptText, Wallet, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -22,6 +22,9 @@ import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '
 import type { ReceiptRecord } from './receiptService';
 import { ReceiptDetailPage } from './receipt-detail-page';
 import { useReceipt, useReceipts, useVoidReceipt } from './useReceipts';
+import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { toast } from 'sonner';
 
 type MethodFilter = 'all' | ReceiptRecord['payment_method'];
 
@@ -132,6 +135,7 @@ function ReceiptsHistoryContent() {
   const selectedDetailQuery = useReceipt(selectedReceiptId);
   const voidReceiptMutation = useVoidReceipt();
   const canVoidReceipt = canVoidReceipts(authorization);
+  const companySettings = useCompanySettingsContract();
 
   const receipts = receiptsQuery.data ?? [];
   const filteredReceipts = useMemo(() => receipts.filter((receipt) => {
@@ -147,8 +151,63 @@ function ReceiptsHistoryContent() {
 
   const openVoidDialog = (receipt: ReceiptRecord) => setVoidDialog({ receipt, reason: '' });
   const closeVoidDialog = () => setVoidDialog({ receipt: null, reason: '' });
-  const openReceiptPrintView = (receiptId: string) => {
-    globalThis.location.assign(createReceiptPrintHref(receiptId));
+
+  const handlePrintReceipt = (receipt: ReceiptRecord) => {
+    DocumentTemplates.printReceipt(
+      {
+        receiptNumber: receipt.receipt_number,
+        paymentDate: receipt.payment_date,
+        tenantName: receipt.tenant_name ?? '—',
+        propertyName: receipt.property_title ?? '—',
+        unitNumber: receipt.unit_number ?? '—',
+        invoiceNumber: receipt.invoice_id?.slice(0, 8) ?? '—',
+        amount: receipt.amount,
+        paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
+        reference: receipt.reference_number ?? undefined,
+        notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
+      },
+      {
+        company: {
+          name: companySettings.companyName || 'رينتريكس لإدارة العقارات',
+          phone: '+968 24000000',
+          address: 'سلطنة عمان - مسقط',
+        },
+        currency: companySettings.defaultCurrency || 'OMR',
+        currencySymbol: 'ر.ع',
+      }
+    );
+  };
+
+  const handleDownloadReceiptPdf = async (receipt: ReceiptRecord) => {
+    try {
+      await DocumentTemplates.downloadReceiptPdf(
+        {
+          receiptNumber: receipt.receipt_number,
+          paymentDate: receipt.payment_date,
+          tenantName: receipt.tenant_name ?? '—',
+          propertyName: receipt.property_title ?? '—',
+          unitNumber: receipt.unit_number ?? '—',
+          invoiceNumber: receipt.invoice_id?.slice(0, 8) ?? '—',
+          amount: receipt.amount,
+          paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
+          reference: receipt.reference_number ?? undefined,
+          notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
+        },
+        {
+          company: {
+            name: companySettings.companyName || 'رينتريكس لإدارة العقارات',
+            phone: '+968 24000000',
+            address: 'سلطنة عمان - مسقط',
+          },
+          currency: companySettings.defaultCurrency || 'OMR',
+          currencySymbol: 'ر.ع',
+        }
+      );
+      toast.success('تم تنزيل إيصال الـ PDF بنجاح');
+    } catch (err) {
+      console.error(err);
+      toast.error('فشل تنزيل ملف الـ PDF');
+    }
   };
 
   const handleConfirmVoid = () => {
@@ -174,7 +233,8 @@ function ReceiptsHistoryContent() {
     { key: 'actions', header: 'الإجراءات', render: (receipt) => (
       <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
         <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-        <Button variant="secondary" className="min-h-10 px-3" onClick={() => openReceiptPrintView(receipt.id)}><Printer className="me-2 size-4" />طباعة</Button>
+        <Button variant="secondary" className="min-h-10 px-3" onClick={() => handlePrintReceipt(receipt)}><Printer className="me-2 size-4" />طباعة</Button>
+        <Button variant="secondary" className="min-h-10 px-3" onClick={() => handleDownloadReceiptPdf(receipt)}><Download className="me-2 size-4" />تحميل PDF</Button>
         {canVoidReceipt && receipt.status === 'posted' ? (
           <Button variant="danger" className="min-h-10 px-3" onClick={() => openVoidDialog(receipt)} disabled={voidReceiptMutation.isPending}>
             <Ban className="me-2 size-4" />إلغاء
@@ -190,8 +250,11 @@ function ReceiptsHistoryContent() {
         title="الإيصالات"
         description="مراجعة إيصالات الدفعات المنشورة، فتح التفاصيل والطباعة، وإدارة الإلغاء وفق الصلاحيات."
         secondaryActions={<Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
-        primaryAction={selectedReceiptId ? (
-          <Button onClick={() => openReceiptPrintView(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
+        primaryAction={selectedReceipt ? (
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => handleDownloadReceiptPdf(selectedReceipt)}><Download className="me-2 size-4" />تحميل PDF المحدد</Button>
+            <Button onClick={() => handlePrintReceipt(selectedReceipt)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
+          </div>
         ) : undefined}
       />
 
@@ -280,9 +343,13 @@ function ReceiptsHistoryContent() {
                       <Eye className="size-4" />
                       عرض
                     </Button>
-                    <Button variant="outline" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => openReceiptPrintView(receipt.id)}>
+                    <Button variant="outline" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => handlePrintReceipt(receipt)}>
                       <Printer className="size-4" />
                       طباعة
+                    </Button>
+                    <Button variant="outline" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => handleDownloadReceiptPdf(receipt)}>
+                      <Download className="size-4" />
+                      تحميل PDF
                     </Button>
                     {canVoidReceipt && receipt.status === 'posted' ? (
                       <Button variant="danger" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => openVoidDialog(receipt)}>

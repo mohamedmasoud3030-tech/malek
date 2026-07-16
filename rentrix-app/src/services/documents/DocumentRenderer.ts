@@ -1,4 +1,6 @@
 import { jsPDF } from 'jspdf';
+// @ts-ignore
+import html2canvas from 'html2canvas';
 import type { SignatureRole, UnifiedDocumentModel } from './types';
 
 const ARABIC_REGEX = /[\u0600-\u06FF]/;
@@ -214,6 +216,22 @@ const buildRtlPrintHtml = (model: UnifiedDocumentModel) => {
 };
 
 const openPrintWindowSafely = (): Window => {
+  if (typeof globalThis.open !== 'function') {
+    return {
+      document: {
+        open: () => {},
+        write: () => {},
+        close: () => {},
+        readyState: 'complete',
+      },
+      focus: () => {},
+      print: () => {},
+      addEventListener: () => {},
+      URL: {
+        revokeObjectURL: () => {},
+      },
+    } as unknown as Window;
+  }
   const popup = globalThis.open('', '_blank', 'width=1024,height=768');
   if (!popup)
     throw new Error('تعذر فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة ثم إعادة المحاولة.');
@@ -352,4 +370,70 @@ export const DocumentRenderer = {
     renderPdfFooter(doc, model, y);
     doc.save(`${model.fileName}.pdf`);
   },
+
+  printDocument(model: UnifiedDocumentModel): void {
+    if (modelHasArabicText(model)) {
+      renderRtlPrintPreview(model);
+    } else {
+      const doc = newDoc();
+      let y = PAGE_MARGIN_Y;
+      y = renderPdfHeader(doc, model, y);
+      y = renderPdfKpis(doc, model, y);
+      y = renderPdfTables(doc, model, y);
+      renderPdfFooter(doc, model, y);
+      doc.save(`${model.fileName}.pdf`);
+    }
+  },
+
+  async downloadDocumentPdf(model: UnifiedDocumentModel): Promise<void> {
+    if (modelHasArabicText(model)) {
+      // Direct high-fidelity PDF render using jsPDF html and html2canvas
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '-9999px';
+      container.style.width = '794px'; // standard A4 page width at 96 dpi
+      container.style.direction = 'rtl';
+      container.style.fontFamily = '"Cairo", "Segoe UI", Tahoma, sans-serif';
+      container.style.background = '#FFFFFF';
+      container.innerHTML = buildRtlPrintHtml(model);
+      document.body.appendChild(container);
+
+      // Wait for fonts and images to be fully loaded
+      if (typeof document !== 'undefined' && document.fonts) {
+        await document.fonts.ready;
+      }
+
+      const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+      await new Promise<void>((resolve, reject) => {
+      doc.html(container, {
+        html2canvas: html2canvas,
+        callback: function (pdfDoc: any) {
+          try {
+            pdfDoc.save(`${model.fileName}.pdf`);
+            document.body.removeChild(container);
+            resolve();
+          } catch (err) {
+            if (container.parentNode) {
+              document.body.removeChild(container);
+            }
+            reject(err);
+          }
+        },
+        x: 0,
+        y: 0,
+        width: 210, // Full A4 width in mm
+        windowWidth: 794,
+      } as any);
+      });
+    } else {
+      const doc = newDoc();
+      let y = PAGE_MARGIN_Y;
+      y = renderPdfHeader(doc, model, y);
+      y = renderPdfKpis(doc, model, y);
+      y = renderPdfTables(doc, model, y);
+      renderPdfFooter(doc, model, y);
+      doc.save(`${model.fileName}.pdf`);
+    }
+  }
 };

@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Printer, MessageCircle, Share2, Copy, ExternalLink } from 'lucide-react';
+import { ArrowRight, Printer, Download, MessageCircle, Share2, Copy, ExternalLink } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,7 @@ export function ReceiptDetailPage() {
   const receiptQuery = useReceipt(receiptId);
   const companySettings = useCompanySettingsContract();
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
   const receipt = receiptQuery.data;
@@ -26,7 +27,7 @@ export function ReceiptDetailPage() {
   const handlePrint = useCallback(() => {
     if (!receipt) return;
     setIsPrinting(true);
-    DocumentTemplates.renderReceiptPdf(
+    DocumentTemplates.printReceipt(
       {
         receiptNumber: receipt.receipt_number,
         paymentDate: receipt.payment_date,
@@ -45,11 +46,48 @@ export function ReceiptDetailPage() {
           phone: '+968 24000000',
           address: 'سلطنة عمان - مسقط',
         },
-        currency: 'OMR',
+        currency: companySettings.defaultCurrency || 'OMR',
         currencySymbol: 'ر.ع',
       },
     );
     window.setTimeout(() => setIsPrinting(false), 1000);
+  }, [receipt, companySettings]);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!receipt) return;
+    setIsDownloading(true);
+    const loadingToast = toast.loading('جارٍ إنشاء وتحميل ملف الـ PDF...');
+    try {
+      await DocumentTemplates.downloadReceiptPdf(
+        {
+          receiptNumber: receipt.receipt_number,
+          paymentDate: receipt.payment_date,
+          tenantName: receipt.tenant_name ?? '—',
+          propertyName: receipt.property_title ?? '—',
+          unitNumber: receipt.unit_number ?? '—',
+          invoiceNumber: receipt.invoice_id?.slice(0, 8) ?? '—',
+          amount: receipt.amount,
+          paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
+          reference: receipt.reference_number ?? undefined,
+          notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
+        },
+        {
+          company: {
+            name: companySettings.companyName || 'رينتريكس لإدارة العقارات',
+            phone: '+968 24000000',
+            address: 'سلطنة عمان - مسقط',
+          },
+          currency: companySettings.defaultCurrency || 'OMR',
+          currencySymbol: 'ر.ع',
+        },
+      );
+      toast.success('تم تنزيل الإيصال المعتمد بصيغة PDF بنجاح', { id: loadingToast });
+    } catch (error) {
+      console.error(error);
+      toast.error('فشل تنزيل ملف الـ PDF. تحقق من المتصفح وحاول مرة أخرى.', { id: loadingToast });
+    } finally {
+      setIsDownloading(false);
+    }
   }, [receipt, companySettings]);
 
   const handleWhatsApp = useCallback(() => {
@@ -126,7 +164,11 @@ export function ReceiptDetailPage() {
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <Button variant="primary" onClick={handlePrint} disabled={isPrinting} className="min-h-11">
           <Printer className="me-2 size-4" />
-          {isPrinting ? 'جارٍ الطباعة...' : 'طباعة الإيصال المعتمد A4'}
+          {isPrinting ? 'جارٍ تهيئة الطباعة...' : 'طباعة الإيصال A4'}
+        </Button>
+        <Button variant="secondary" onClick={handleDownloadPdf} disabled={isDownloading} className="min-h-11">
+          <Download className="me-2 size-4" />
+          {isDownloading ? 'جارٍ تنزيل الـ PDF...' : 'تنزيل PDF'}
         </Button>
         <Button variant="secondary" onClick={handleWhatsApp} className="min-h-11">
           <MessageCircle className="me-2 size-4" />

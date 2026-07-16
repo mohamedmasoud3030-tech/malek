@@ -153,15 +153,16 @@ function toLocalDateString(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function renderContractPdf(data: ContractDocumentData, settings: DocumentSettings): void {
-  const model: UnifiedDocumentModel = {
+// Unified model builder functions to prevent duplicate templates code
+function buildContractModel(data: ContractDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  return {
     type: 'contract',
     fileName: `contract-${data.contractNumber}`,
     header: {
       companyName: settings.company.name || 'رينتريكس لإدارة العقارات',
       companyAddress: settings.company.address ?? 'سلطنة عمان - مسقط',
       companyPhone: settings.company.phone ?? '+968 24000000',
-      title: `عقد إيجار تنفيذي رقم ${data.contractNumber}`,
+      title: `عقد إيجار رقم ${data.contractNumber}`,
       documentNo: data.contractNumber,
       dateLabel: 'تاريخ بداية العقد',
       dateValue: formatDate(data.startDate),
@@ -193,12 +194,10 @@ export function renderContractPdf(data: ContractDocumentData, settings: Document
       metadata: `رقم العقد: ${data.contractNumber} | العقار: ${data.propertyName}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderInvoicePdf(data: InvoiceDocumentData, settings: DocumentSettings): void {
-  const model: UnifiedDocumentModel = {
+function buildInvoiceModel(data: InvoiceDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  return {
     type: 'invoice',
     fileName: `invoice-${data.invoiceNumber}`,
     header: {
@@ -235,14 +234,11 @@ export function renderInvoicePdf(data: InvoiceDocumentData, settings: DocumentSe
       metadata: `فاتورة رقم: ${data.invoiceNumber} | ${settings.company.name}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderReceiptPdf(data: ReceiptDocumentData, settings: DocumentSettings): void {
+function buildReceiptModel(data: ReceiptDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
   const amountWords = numberToArabicWords(data.amount, OMR_CURRENCY_CONFIG);
-
-  const model: UnifiedDocumentModel = {
+  return {
     type: 'receipt',
     fileName: `receipt-${data.receiptNumber}`,
     header: {
@@ -255,7 +251,7 @@ export function renderReceiptPdf(data: ReceiptDocumentData, settings: DocumentSe
       dateValue: formatDate(data.paymentDate),
     },
     kpis: [
-      { label: 'استلمنا من الفاضل', value: data.tenantName },
+      { label: 'استلمنا من الفاضل / الفاضلة', value: data.tenantName },
       { label: 'العقار والوحدة', value: `${data.propertyName} / ${data.unitNumber}` },
       { label: 'طريقة السداد', value: data.paymentMethod },
       ...(data.reference ? [{ label: 'رقم المرجع / الشيك', value: data.reference }] : []),
@@ -267,7 +263,7 @@ export function renderReceiptPdf(data: ReceiptDocumentData, settings: DocumentSe
         columns: ['البند والبيان', 'المبلغ بالتفصيل'],
         rows: [
           ['المبلغ المستلم رقماً', formatMoney(data.amount, settings.currencySymbol)],
-          ['المبلغ المستلم بالحروف (تفقيط)', amountWords],
+          ['المبلغ المستلم بالحروف', amountWords],
           ['ذلك عن / مقابل', data.notes || `سداد الفاتورة رقم ${data.invoiceNumber}`],
         ],
         totals: ['المبلغ الإجمالي المقبوض', formatMoney(data.amount, settings.currencySymbol)],
@@ -279,12 +275,10 @@ export function renderReceiptPdf(data: ReceiptDocumentData, settings: DocumentSe
       metadata: `إيصال استلام رقم: ${data.receiptNumber} | ${settings.company.name}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderOwnerStatementPdf(data: OwnerStatementData, settings: DocumentSettings): void {
-  const model: UnifiedDocumentModel = {
+function buildOwnerStatementModel(data: OwnerStatementData, settings: DocumentSettings): UnifiedDocumentModel {
+  return {
     type: 'owner_statement',
     fileName: `owner-statement-${data.ownerName}`,
     header: {
@@ -306,7 +300,7 @@ export function renderOwnerStatementPdf(data: OwnerStatementData, settings: Docu
     ],
     tables: [
       {
-        title: 'سجل الحركة المالية للera المحددة',
+        title: 'سجل الحركة المالية للفترة المحددة',
         columns: ['التاريخ', 'نوع الحركة', 'البيان / التفاصيل', 'المبلغ'],
         rows: data.transactions.map((t) => [
           t.date,
@@ -323,12 +317,10 @@ export function renderOwnerStatementPdf(data: OwnerStatementData, settings: Docu
       metadata: `كشف حساب مالك: ${data.ownerName} | ${settings.company.name}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderTenantStatementPdf(data: TenantStatementData, settings: DocumentSettings): void {
-  const model: UnifiedDocumentModel = {
+function buildTenantStatementModel(data: TenantStatementData, settings: DocumentSettings): UnifiedDocumentModel {
+  return {
     type: 'tenant_statement',
     fileName: `tenant-statement-${data.tenantName}`,
     header: {
@@ -346,7 +338,7 @@ export function renderTenantStatementPdf(data: TenantStatementData, settings: Do
       { label: 'الرصيد الافتتاحي', value: formatMoney(data.openingBalance, settings.currencySymbol) },
       { label: 'إجمالي الفواتير والمطالبات', value: formatMoney(data.totalInvoiced, settings.currencySymbol) },
       { label: 'إجمالي السدادات والمقبوضات', value: formatMoney(data.totalPaid, settings.currencySymbol) },
-      { label: 'الرصيد المتبقي النهائي', value: formatMoney(data.closingBalance, settings.currencySymbol) },
+      { label: 'الرصيد النهائي المستحق', value: formatMoney(data.closingBalance, settings.currencySymbol) },
     ],
     tables: [
       {
@@ -369,11 +361,9 @@ export function renderTenantStatementPdf(data: TenantStatementData, settings: Do
       metadata: `كشف حساب مستأجر: ${data.tenantName} | ${settings.company.name}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderReportPdf(data: ReportDocumentData, settings: DocumentSettings): void {
+function buildReportModel(data: ReportDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
   const tables = data.sections.map((section) => ({
     title: section.title,
     columns: section.rows.map((row) => row.label),
@@ -381,7 +371,7 @@ export function renderReportPdf(data: ReportDocumentData, settings: DocumentSett
     totals: section.totals,
   }));
 
-  const model: UnifiedDocumentModel = {
+  return {
     type: 'report',
     fileName: `report-${data.reportType}-${toLocalDateString(new Date())}`,
     header: {
@@ -401,17 +391,86 @@ export function renderReportPdf(data: ReportDocumentData, settings: DocumentSett
       metadata: `${data.reportTitle} | ${settings.company.name}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
 export const DocumentTemplates = {
-  renderContractPdf,
-  renderInvoicePdf,
-  renderReceiptPdf,
-  renderOwnerStatementPdf,
-  renderTenantStatementPdf,
-  renderReportPdf,
+  // Print operations (backward compatible with direct window.print triggering)
+  renderContractPdf(data: ContractDocumentData, settings: DocumentSettings): void {
+    const model = buildContractModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  renderInvoicePdf(data: InvoiceDocumentData, settings: DocumentSettings): void {
+    const model = buildInvoiceModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  renderReceiptPdf(data: ReceiptDocumentData, settings: DocumentSettings): void {
+    const model = buildReceiptModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  renderOwnerStatementPdf(data: OwnerStatementData, settings: DocumentSettings): void {
+    const model = buildOwnerStatementModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  renderTenantStatementPdf(data: TenantStatementData, settings: DocumentSettings): void {
+    const model = buildTenantStatementModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  renderReportPdf(data: ReportDocumentData, settings: DocumentSettings): void {
+    const model = buildReportModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+
+  // Direct direct print action
+  printContract(data: ContractDocumentData, settings: DocumentSettings): void {
+    const model = buildContractModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  printInvoice(data: InvoiceDocumentData, settings: DocumentSettings): void {
+    const model = buildInvoiceModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  printReceipt(data: ReceiptDocumentData, settings: DocumentSettings): void {
+    const model = buildReceiptModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  printOwnerStatement(data: OwnerStatementData, settings: DocumentSettings): void {
+    const model = buildOwnerStatementModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  printTenantStatement(data: TenantStatementData, settings: DocumentSettings): void {
+    const model = buildTenantStatementModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+  printReport(data: ReportDocumentData, settings: DocumentSettings): void {
+    const model = buildReportModel(data, settings);
+    DocumentRenderer.printDocument(model);
+  },
+
+  // Pure direct download PDF operations
+  async downloadContractPdf(data: ContractDocumentData, settings: DocumentSettings): Promise<void> {
+    const model = buildContractModel(data, settings);
+    await DocumentRenderer.downloadDocumentPdf(model);
+  },
+  async downloadInvoicePdf(data: InvoiceDocumentData, settings: DocumentSettings): Promise<void> {
+    const model = buildInvoiceModel(data, settings);
+    await DocumentRenderer.downloadDocumentPdf(model);
+  },
+  async downloadReceiptPdf(data: ReceiptDocumentData, settings: DocumentSettings): Promise<void> {
+    const model = buildReceiptModel(data, settings);
+    await DocumentRenderer.downloadDocumentPdf(model);
+  },
+  async downloadOwnerStatementPdf(data: OwnerStatementData, settings: DocumentSettings): Promise<void> {
+    const model = buildOwnerStatementModel(data, settings);
+    await DocumentRenderer.downloadDocumentPdf(model);
+  },
+  async downloadTenantStatementPdf(data: TenantStatementData, settings: DocumentSettings): Promise<void> {
+    const model = buildTenantStatementModel(data, settings);
+    await DocumentRenderer.downloadDocumentPdf(model);
+  },
+  async downloadReportPdf(data: ReportDocumentData, settings: DocumentSettings): Promise<void> {
+    const model = buildReportModel(data, settings);
+    await DocumentRenderer.downloadDocumentPdf(model);
+  },
 };
 
 export default DocumentTemplates;

@@ -96,6 +96,9 @@ importers:
       '@tanstack/react-router-devtools':
         specifier: ^1.139.3
         version: 1.166.13(@tanstack/react-router@1.169.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@tanstack/router-core@1.169.2)(csstype@3.2.3)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      html2canvas:
+        specifier: ^1.4.1
+        version: 1.4.1
       i18next:
         specifier: ^26.0.8
         version: 26.0.8(typescript@5.9.3)
@@ -6271,8 +6274,7 @@ snapshots:
 
   balanced-match@4.0.4: {}
 
-  base64-arraybuffer@1.0.2:
-    optional: true
+  base64-arraybuffer@1.0.2: {}
 
   baseline-browser-mapping@2.10.25: {}
 
@@ -6385,7 +6387,6 @@ snapshots:
   css-line-break@2.1.0:
     dependencies:
       utrie: 1.0.2
-    optional: true
 
   css.escape@1.5.1: {}
 
@@ -6840,7 +6841,6 @@ snapshots:
     dependencies:
       css-line-break: 2.1.0
       text-segmentation: 1.0.3
-    optional: true
 
   i18next@26.0.8(typescript@5.9.3):
     optionalDependencies:
@@ -7630,7 +7630,6 @@ snapshots:
   text-segmentation@1.0.3:
     dependencies:
       utrie: 1.0.2
-    optional: true
 
   tiny-invariant@1.3.3: {}
 
@@ -7752,7 +7751,6 @@ snapshots:
   utrie@1.0.2:
     dependencies:
       base64-arraybuffer: 1.0.2
-    optional: true
 
   vaul@1.1.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:

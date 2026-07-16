@@ -10,4 +10,16 @@ export const DocumentController = {
     const { DocumentRenderer } = await import('./DocumentRenderer');
     DocumentRenderer.renderToPDF(model);
   },
+
+  async printDocument(request: DocumentRequest): Promise<void> {
+    const model = documentEngine.build(request);
+    const { DocumentRenderer } = await import('./DocumentRenderer');
+    DocumentRenderer.printDocument(model);
+  },
+
+  async downloadDocumentPdf(request: DocumentRequest): Promise<void> {
+    const model = documentEngine.build(request);
+    const { DocumentRenderer } = await import('./DocumentRenderer');
+    await DocumentRenderer.downloadDocumentPdf(model);
+  }
 };
