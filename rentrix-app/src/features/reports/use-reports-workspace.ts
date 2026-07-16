@@ -4,8 +4,10 @@ import { useOwners } from '@/features/owners/useOwners';
 import { useReceipts } from '@/features/financials/receipts/useReceipts';
 import {
   useAgedReceivablesReport,
+  useArrearsSummaryReport,
   useBalanceSheetReport,
   useCashFlowStatementReport,
+  useCollectionSummaryReport,
   useDailyCollectionReport,
   useExpenseBreakdownReport,
   useFinancialCashflowReport,
@@ -21,6 +23,7 @@ import { summarizeMaintenanceRequests } from '@/features/maintenance/maintenance
 import { useMaintenance } from '@/features/maintenance/use-maintenance';
 import { useCostCenters } from '@/features/settings/useCostCenters';
 import { useAllUnits } from '@/features/units/use-units';
+import { buildDeferredRevenueAudit } from './reports-insights';
 import {
   buildExpiringContractsRows,
   buildOccupancyRows,
@@ -56,6 +59,7 @@ export function useReportsWorkspace(filters: FilterState) {
   const arrearsFilters = useMemo(() => ({ asOf: filters.asOf }), [filters.asOf]);
 
   const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
+  const collectionSummaryQuery = useCollectionSummaryReport(financialFilters);
   const financialCashflowQuery = useFinancialCashflowReport(financialFilters);
   const cashFlowStatementQuery = useCashFlowStatementReport(financialFilters);
   const vatReturnQuery = useVatReturnReport(financialFilters);
@@ -63,6 +67,7 @@ export function useReportsWorkspace(filters: FilterState) {
   const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters);
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
+  const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters);
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
   const ownersQuery = useOwners();
   const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined);
@@ -77,6 +82,7 @@ export function useReportsWorkspace(filters: FilterState) {
   const propertyTitlesQuery = usePropertyTitles();
 
   const contracts = contractsQuery.data?.rows ?? [];
+  const allReceipts = receiptsQuery.data ?? [];
   const propertyTitlesById = useMemo(
     () => new Map((propertyTitlesQuery.data ?? []).map((row) => [row.id, row.title] as const)),
     [propertyTitlesQuery.data],
@@ -98,7 +104,7 @@ export function useReportsWorkspace(filters: FilterState) {
     [maintenanceQuery.data],
   );
   const receiptRows = useMemo(
-    () => (receiptsQuery.data ?? [])
+    () => allReceipts
       .filter((receipt) => isWithinDateRange(receipt.payment_date, filters))
       .map((receipt) => ({
         id: receipt.id,
@@ -106,12 +112,22 @@ export function useReportsWorkspace(filters: FilterState) {
         payment_date: receipt.payment_date,
         amount: receipt.amount,
         tenant_name: receipt.tenant_name,
+        property_title: receipt.property_title,
+        unit_number: receipt.unit_number,
+        contract_id: receipt.contract_id,
+        payment_method: receipt.payment_method,
+        status: receipt.status,
       })),
-    [filters, receiptsQuery.data],
+    [allReceipts, filters],
+  );
+  const deferredRevenueAudit = useMemo(
+    () => buildDeferredRevenueAudit(contracts, allReceipts, filters.asOf),
+    [allReceipts, contracts, filters.asOf],
   );
 
   const firstError = firstErrorOf(
     financialSummaryQuery.error,
+    collectionSummaryQuery.error,
     financialCashflowQuery.error,
     cashFlowStatementQuery.error,
     vatReturnQuery.error,
@@ -119,6 +135,7 @@ export function useReportsWorkspace(filters: FilterState) {
     expenseBreakdownQuery.error,
     overdueInvoicesQuery.error,
     agedReceivablesQuery.error,
+    arrearsSummaryQuery.error,
     trialBalanceQuery.error,
     incomeStatementQuery.error,
     balanceSheetQuery.error,
@@ -148,19 +165,35 @@ export function useReportsWorkspace(filters: FilterState) {
     sections: {
       overview: {
         summary: financialSummaryQuery.data,
+        collectionSummary: collectionSummaryQuery.data,
         cashflowRows: financialCashflowQuery.data?.rows ?? [],
-        isLoading: isLoadingAny(financialSummaryQuery.isLoading, financialCashflowQuery.isLoading),
+        isLoading: isLoadingAny(
+          financialSummaryQuery.isLoading,
+          collectionSummaryQuery.isLoading,
+          financialCashflowQuery.isLoading,
+        ),
       },
       collections: {
+        summary: collectionSummaryQuery.data,
         rows: dailyCollectionQuery.data?.rows ?? [],
         receiptRows,
         rentRollRows,
-        isLoading: isLoadingAny(dailyCollectionQuery.isLoading, receiptsQuery.isLoading, contractsQuery.isLoading),
+        isLoading: isLoadingAny(
+          collectionSummaryQuery.isLoading,
+          dailyCollectionQuery.isLoading,
+          receiptsQuery.isLoading,
+          contractsQuery.isLoading,
+        ),
       },
       overdue: {
         rows: overdueInvoicesQuery.data?.rows ?? [],
         agedReport: agedReceivablesQuery.data,
-        isLoading: isLoadingAny(overdueInvoicesQuery.isLoading, agedReceivablesQuery.isLoading),
+        summary: arrearsSummaryQuery.data,
+        isLoading: isLoadingAny(
+          overdueInvoicesQuery.isLoading,
+          agedReceivablesQuery.isLoading,
+          arrearsSummaryQuery.isLoading,
+        ),
       },
       expenses: {
         report: expenseBreakdownQuery.data,
@@ -175,6 +208,11 @@ export function useReportsWorkspace(filters: FilterState) {
         rows: maintenanceQuery.data ?? [],
         summary: maintenanceSummary,
         isLoading: maintenanceQuery.isLoading,
+      },
+      deferredRevenue: {
+        audit: deferredRevenueAudit,
+        asOf: filters.asOf,
+        isLoading: isLoadingAny(receiptsQuery.isLoading, contractsQuery.isLoading),
       },
       accounting: {
         asOf: filters.asOf,
