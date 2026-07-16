@@ -3,7 +3,7 @@
 
 const fallbackAppUrl = 'https://rentrix-alpha.vercel.app/login';
 const fallbackWhatsApp = '96891928186';
-const fallbackEmail = 'hello@rentrix.example';
+const fallbackEmail = 'Mohamedms.oud@outlook.com';
 
 export const APP_URL =
   (import.meta.env.VITE_APP_URL as string | undefined)?.trim() || fallbackAppUrl;

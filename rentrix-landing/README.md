@@ -59,12 +59,31 @@ All imagery under `public/` is **real product material**, not stock:
 - `public/icon-rentrix.png` — official icon
 - `public/opengraph.jpg` — social sharing card
 
-## Deployment
+## Routes
 
-Any static host works (Vercel / Netlify / Cloudflare Pages / S3+CDN):
+- `/` — the full landing page
+- `/privacy` — سياسة الخصوصية (bilingual, follows the site language)
+- `/terms` — شروط الاستخدام (bilingual)
+
+Routing is a tiny history-API router in `src/App.tsx` (~30 lines, zero dependencies).
+Internal links opt in via the `data-internal` attribute; all other anchors behave normally.
+
+## Deployment (Vercel — recommended)
+
+Ships with `vercel.json` pre-configured (framework: Vite + SPA rewrite), so from the
+Vercel dashboard: **New Project → pick this repo → Root Directory: `rentrix-landing`** —
+everything else is detected automatically. Or from the CLI:
+
+```bash
+cd rentrix-landing
+npx vercel deploy --prod
+```
+
+For any other static host (Netlify / Cloudflare Pages / S3+CDN):
 
 - Build command: `npm run build`
 - Output directory: `dist`
+- Remember an SPA fallback → `index.html` (needed for `/privacy` and `/terms`)
 
 Update the canonical/OG URLs in `index.html` when the final domain is known.
 

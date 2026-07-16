@@ -14,7 +14,7 @@ export function Footer() {
   return (
     <footer className="border-t border-white/5 bg-ink-950">
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2.5">
@@ -69,6 +69,24 @@ export function Footer() {
                   {APP_HOST}
                 </a>
               </li>
+            </ul>
+          </nav>
+
+          {/* Legal */}
+          <nav aria-label={t.footer.legalTitle}>
+            <h3 className="text-sm font-extrabold text-white">{t.footer.legalTitle}</h3>
+            <ul className="mt-4 space-y-2.5">
+              {t.footer.legalLinks.map((link, i) => (
+                <li key={link}>
+                  <a
+                    href={i === 0 ? '/privacy' : '/terms'}
+                    data-internal
+                    className="text-sm text-slate-400 transition hover:text-white"
+                  >
+                    {link}
+                  </a>
+                </li>
+              ))}
             </ul>
           </nav>
 

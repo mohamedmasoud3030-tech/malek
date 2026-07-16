@@ -7,10 +7,14 @@ import { APP_URL } from '../lib/links';
 const SECTION_IDS = ['problems', 'features', 'showcase', 'how', 'security', 'faq'] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
-export function NavBar() {
+export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean }) {
   const { t, isArabic, toggle } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+
+  // On sub-pages (privacy/terms) section anchors must first navigate home.
+  const sectionHref = (id: SectionId) => (anchoredToHome ? `/#${id}` : `#${id}`);
+  const internalAttrs = anchoredToHome ? { 'data-internal': true } : {};
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -42,7 +46,11 @@ export function NavBar() {
             : 'border-transparent bg-transparent'
         }`}
       >
-        <a href="#top" className="flex items-center gap-2.5">
+        <a
+          href={anchoredToHome ? '/' : '#top'}
+          {...(anchoredToHome ? { 'data-internal': true } : {})}
+          className="flex items-center gap-2.5"
+        >
           <img src="/icon-rentrix.png" alt="Rentrix" className="size-9 rounded-xl" />
           <span className="text-xl font-extrabold tracking-tight text-white" dir="ltr">
             Rentrix
@@ -53,7 +61,8 @@ export function NavBar() {
           {SECTION_IDS.map((id) => (
             <a
               key={id}
-              href={`#${id}`}
+              href={sectionHref(id)}
+              {...internalAttrs}
               className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               {labels[id]}
@@ -101,7 +110,8 @@ export function NavBar() {
             {SECTION_IDS.map((id) => (
               <a
                 key={id}
-                href={`#${id}`}
+                href={sectionHref(id)}
+                {...internalAttrs}
                 onClick={() => setOpen(false)}
                 className="block rounded-xl px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/5"
               >
