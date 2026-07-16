@@ -75,3 +75,29 @@ describe('financial reports source of truth', () => {
     expect(sql).toContain('financial_operation_idempotency');
   });
 });
+
+describe('RLS app-user helper contract', () => {
+  it('keeps public and compatibility helpers non-recursive', () => {
+    const migrationPath = resolve(
+      import.meta.dirname,
+      '../../../../supabase/migrations/20260717000010_fix_is_app_user_rls_recursion.sql',
+    );
+    const sql = readFileSync(migrationPath, 'utf8').toLowerCase();
+
+    const publicStart = sql.indexOf('create or replace function public.is_app_user()');
+    const privateStart = sql.indexOf('create or replace function app_private.is_app_user()');
+
+    expect(publicStart).toBeGreaterThanOrEqual(0);
+    expect(privateStart).toBeGreaterThan(publicStart);
+
+    const publicSection = sql.slice(publicStart, privateStart);
+    const privateSection = sql.slice(privateStart);
+
+    expect(publicSection).toContain('select auth.uid() is not null');
+    expect(publicSection).not.toContain('app_private.is_app_user()');
+    expect(privateSection).toContain('select public.is_app_user()');
+    expect(privateSection).not.toContain('select app_private.is_app_user()');
+    expect(sql).toContain('grant execute on function public.is_app_user() to authenticated, service_role');
+  });
+});
+
