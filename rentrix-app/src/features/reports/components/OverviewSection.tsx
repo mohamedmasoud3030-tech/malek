@@ -1,11 +1,22 @@
-import { BarChart3, Building2, FileSpreadsheet, ReceiptText } from 'lucide-react';
+import { BarChart3, FileSpreadsheet, Gauge, ReceiptText } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
-import { useFinancialCashflowReport, useFinancialPeriodSummaryReport } from '@/features/financials/reports/useFinancialReports';
-import { buildReportCsvFilename, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
+import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
+import {
+  useCollectionSummaryReport,
+  useFinancialCashflowReport,
+  useFinancialPeriodSummaryReport,
+} from '@/features/financials/reports/useFinancialReports';
+import { buildExecutiveHealthInsights } from '../reports-insights';
+import { buildReportCsvFilename, createReceiptPrintHref, downloadCsv, toFinancialSummaryCsv } from '../reports-page.helpers';
+import {
+  ReportInsightNote,
+  ReportList,
+  ReportListRow,
+  ReportPanel,
+  ReportProgress,
+  ReportState,
+} from './report-section-primitives';
 
 type ReceiptRow = Readonly<{
   id: string;
@@ -23,6 +34,7 @@ type OccupancyRow = Readonly<{
 
 export function OverviewSection({
   summary,
+  collectionSummary,
   cashflowRows,
   receiptRows,
   occupancyRows,
@@ -30,6 +42,7 @@ export function OverviewSection({
   isLoading,
 }: Readonly<{
   summary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
+  collectionSummary: NonNullable<ReturnType<typeof useCollectionSummaryReport>['data']> | undefined;
   cashflowRows: NonNullable<ReturnType<typeof useFinancialCashflowReport>['data']>['rows'];
   receiptRows: readonly ReceiptRow[];
   occupancyRows: readonly OccupancyRow[];
@@ -55,143 +68,149 @@ export function OverviewSection({
     { occupied: 0, vacant: 0 },
   );
   const totalUnits = occupancy.occupied + occupancy.vacant;
-  const occupancyRate = totalUnits > 0 ? Math.round((occupancy.occupied / totalUnits) * 100) : 0;
-  const latestReceipts = receiptRows.slice(0, 3);
+  const latestReceipts = receiptRows.slice(0, 4);
+  const insights = buildExecutiveHealthInsights({
+    invoiced: collectionSummary?.invoiced ?? report.invoiced,
+    paid: collectionSummary?.paid ?? report.paid,
+    outstanding: collectionSummary?.outstanding ?? report.outstanding,
+    expenses: collectionSummary?.expensesTotal ?? report.expenses,
+    occupiedUnits: occupancy.occupied,
+    totalUnits,
+  });
+  const collectionInsight = insights[0];
+  const expenseInsight = insights[1];
 
   return (
     <div className="grid gap-4 lg:grid-cols-12">
-      <Card className="overflow-hidden lg:col-span-6">
-        <CardHeader className="flex flex-row items-start justify-between gap-3 border-b border-border/60 px-4 py-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <BarChart3 className="size-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <CardTitle className="text-sm font-bold">حركة السيولة</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">التحصيل مقابل المصروفات خلال الفترة.</p>
-            </div>
+      <ReportPanel
+        title="حركة السيولة"
+        description="التحصيل مقابل المصروفات شهرًا بشهر داخل نطاق التقرير."
+        eyebrow="اتجاه مالي"
+        icon={BarChart3}
+        className="lg:col-span-7"
+        action={canExportReports ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-10 shrink-0 gap-2 text-xs"
+            onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}
+          >
+            <FileSpreadsheet className="size-4" aria-hidden="true" />
+            CSV
+          </Button>
+        ) : undefined}
+        isLoading={isLoading}
+      >
+        {cashflowRows.length === 0 ? (
+          <div className="p-4 sm:p-5">
+            <ReportState
+              title="لا توجد حركة شهرية كافية"
+              message="وسّع الفترة أو أضف تحصيلات ومصروفات لعرض اتجاه السيولة."
+            />
           </div>
-          {canExportReports ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-9 shrink-0 gap-2 text-xs"
-              onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}
-            >
-              <FileSpreadsheet className="size-4" aria-hidden="true" />
-              CSV
-            </Button>
-          ) : null}
-        </CardHeader>
-        <CardContent className="p-3 sm:p-4">
-          {isLoading ? (
-            <Skeleton className="h-56 w-full" />
-          ) : cashflowRows.length === 0 ? (
-            <p className="grid h-56 place-items-center text-center text-sm text-muted-foreground">
-              لا توجد بيانات شهرية كافية لعرض حركة السيولة.
-            </p>
-          ) : (
-            <div className="h-56">
+        ) : (
+          <div className="p-3 sm:p-5">
+            <div className="h-72 sm:h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cashflowRows} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                  <YAxis tickLine={false} axisLine={false} width={54} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="revenue" name="المحصّل" fill="#0f766e" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expenses" name="المصروفات" fill="#e11d48" radius={[4, 4, 0, 0]} />
+                <BarChart data={cashflowRows} margin={{ top: 12, right: 0, left: 0, bottom: 0 }} barGap={6}>
+                  <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <YAxis tickLine={false} axisLine={false} width={58} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                  <Tooltip
+                    cursor={{ fill: 'hsl(var(--muted) / 0.35)' }}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: '1px solid hsl(var(--border))',
+                      background: 'hsl(var(--card))',
+                      color: 'hsl(var(--foreground))',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="revenue" name="المحصّل" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="expenses" name="المصروفات" fill="hsl(var(--destructive))" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="overflow-hidden lg:col-span-3">
-        <CardHeader className="border-b border-border/60 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Building2 className="size-4" aria-hidden="true" />
-            </span>
-            <div>
-              <CardTitle className="text-sm font-bold">الإشغال الآن</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">صورة المحفظة الحالية.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+              <MiniSummary label="الفواتير" value={formatMoney(collectionSummary?.invoiced ?? report.invoiced)} />
+              <MiniSummary label="المحصّل" value={formatMoney(collectionSummary?.paid ?? report.paid)} />
+              <MiniSummary label="المصروفات" value={formatMoney(collectionSummary?.expensesTotal ?? report.expenses)} />
+              <MiniSummary label="صافي الحركة" value={formatMoney(report.netCash)} />
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          {isLoading ? (
-            <Skeleton className="h-56 w-full" />
-          ) : (
-            <div className="flex h-56 flex-col justify-between">
-              <div>
-                <p className="text-4xl font-bold tabular-nums" dir="ltr">{occupancyRate}%</p>
-                <p className="mt-1 text-xs text-muted-foreground">نسبة الإشغال الكلية</p>
-              </div>
+        )}
+      </ReportPanel>
 
-              <div className="space-y-3">
-                <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary" style={{ width: `${occupancyRate}%` }} />
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  <div className="rounded-lg border border-border/70 bg-muted/30 p-2.5">
-                    <p className="text-lg font-bold tabular-nums" dir="ltr">{occupancy.occupied}</p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">مشغولة</p>
-                  </div>
-                  <div className="rounded-lg border border-border/70 bg-muted/30 p-2.5">
-                    <p className="text-lg font-bold tabular-nums" dir="ltr">{occupancy.vacant}</p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">غير مشغولة</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="overflow-hidden lg:col-span-3">
-        <CardHeader className="border-b border-border/60 px-4 py-3">
-          <div className="flex items-start gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <ReceiptText className="size-4" aria-hidden="true" />
-            </span>
-            <div>
-              <CardTitle className="text-sm font-bold">آخر التحصيلات</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">أحدث 3 إيصالات في النطاق.</p>
-            </div>
+      <div className="space-y-4 lg:col-span-5">
+        <ReportPanel
+          title="صحة المحفظة"
+          description="أربع نسب تلخص التحصيل والتكلفة والإشغال وانكشاف الذمم."
+          eyebrow="قراءة تنفيذية"
+          icon={Gauge}
+          isLoading={isLoading}
+        >
+          <div className="grid gap-3 p-4 sm:grid-cols-2">
+            {insights.map((insight) => (
+              <ReportProgress
+                key={insight.label}
+                label={insight.label}
+                value={insight.value}
+                helper={insight.helper}
+                tone={insight.tone}
+              />
+            ))}
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="space-y-2 p-4">
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
+          <div className="px-4 pb-4">
+            <ReportInsightNote title="الخلاصة التنفيذية">
+              {collectionInsight?.tone === 'critical'
+                ? 'كفاءة التحصيل منخفضة وتحتاج مراجعة قائمة المتأخرات وأولوية التواصل.'
+                : expenseInsight?.tone === 'critical'
+                  ? 'المصروفات تستهلك نسبة مرتفعة من المتحصل وتحتاج مراجعة التصنيفات والعقارات الأعلى تكلفة.'
+                  : 'المؤشرات الأساسية مستقرة؛ تابع التحصيل والإشغال للحفاظ على الأداء.'}
+            </ReportInsightNote>
+          </div>
+        </ReportPanel>
+
+        <ReportPanel
+          title="آخر التحصيلات"
+          description="أحدث الإيصالات المنشورة داخل النطاق المحدد."
+          eyebrow="حركة حديثة"
+          icon={ReceiptText}
+          isLoading={isLoading}
+        >
+          {latestReceipts.length === 0 ? (
+            <div className="p-4">
+              <ReportState message="لا توجد تحصيلات حديثة داخل الفترة." />
             </div>
-          ) : latestReceipts.length === 0 ? (
-            <p className="grid h-56 place-items-center px-4 text-center text-sm text-muted-foreground">
-              لا توجد تحصيلات حديثة داخل الفترة.
-            </p>
           ) : (
-            <div className="divide-y divide-border/60">
+            <ReportList>
               {latestReceipts.map((receipt) => (
-                <div key={receipt.id} className="px-4 py-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{receipt.tenant_name || 'مستأجر غير مسمى'}</p>
-                      <p className="mt-1 truncate text-[11px] text-muted-foreground">إيصال {receipt.receipt_number}</p>
-                    </div>
-                    <p className="shrink-0 text-sm font-bold tabular-nums" dir="ltr">{formatMoney(receipt.amount)}</p>
-                  </div>
-                  <p className="mt-2 text-[11px] text-muted-foreground">{receipt.payment_date}</p>
-                </div>
+                <ReportListRow
+                  key={receipt.id}
+                  title={(
+                    <a className="hover:text-primary hover:underline" href={createReceiptPrintHref(receipt.id)}>
+                      {receipt.tenant_name || 'مستأجر غير مسمى'}
+                    </a>
+                  )}
+                  subtitle={`إيصال ${receipt.receipt_number}`}
+                  meta={formatDate(receipt.payment_date)}
+                  value={<span dir="ltr">{formatMoney(receipt.amount)}</span>}
+                />
               ))}
-            </div>
+            </ReportList>
           )}
-        </CardContent>
-      </Card>
+        </ReportPanel>
+      </div>
+    </div>
+  );
+}
+
+function MiniSummary({ label, value }: Readonly<{ label: string; value: string }>) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5">
+      <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-extrabold tabular-nums" dir="ltr">{value}</p>
     </div>
   );
 }

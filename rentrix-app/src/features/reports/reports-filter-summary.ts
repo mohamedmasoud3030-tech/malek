@@ -6,6 +6,13 @@ type FilterLabels = Readonly<{
   contract?: string;
 }>;
 
+export type ReportFilterChip = Readonly<{
+  key: 'period' | 'asOf' | 'costCenter' | 'owner' | 'contract';
+  label: string;
+  value: string;
+  isActive: boolean;
+}>;
+
 export function buildReportFilterSummary(
   filters: FilterState,
   defaults: FilterState,
@@ -19,17 +26,28 @@ export function buildReportFilterSummary(
     + Number(Boolean(filters.ownerId))
     + Number(Boolean(filters.contractId));
 
-  const segments = [
-    `${filters.from || '—'} إلى ${filters.to || '—'}`,
-    `حتى ${filters.asOf || '—'}`,
+  const chips: ReportFilterChip[] = [
+    {
+      key: 'period',
+      label: 'الفترة',
+      value: `${filters.from || '—'} — ${filters.to || '—'}`,
+      isActive: filters.from !== defaults.from || filters.to !== defaults.to,
+    },
+    {
+      key: 'asOf',
+      label: 'حتى',
+      value: filters.asOf || '—',
+      isActive: filters.asOf !== defaults.asOf,
+    },
   ];
 
-  if (labels.costCenter) segments.push(labels.costCenter);
-  if (labels.owner) segments.push(labels.owner);
-  if (labels.contract) segments.push(labels.contract);
+  if (labels.costCenter) chips.push({ key: 'costCenter', label: 'مركز التكلفة', value: labels.costCenter, isActive: true });
+  if (labels.owner) chips.push({ key: 'owner', label: 'المالك', value: labels.owner, isActive: true });
+  if (labels.contract) chips.push({ key: 'contract', label: 'العقد', value: labels.contract, isActive: true });
 
   return {
     activeCount,
-    label: segments.join(' · '),
+    label: chips.map((chip) => `${chip.label}: ${chip.value}`).join(' · '),
+    chips,
   } as const;
 }

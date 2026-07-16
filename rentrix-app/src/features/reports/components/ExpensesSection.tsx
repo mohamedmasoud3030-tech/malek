@@ -6,7 +6,15 @@ import { formatMoney, formatShortId } from '@/features/financials/components/fin
 import { useExpenseBreakdownReport } from '@/features/financials/reports/useFinancialReports';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
-import { ReportColumns, ReportList, ReportListRow, ReportPanel, ReportState } from './report-section-primitives';
+import {
+  ReportColumns,
+  ReportInsightNote,
+  ReportList,
+  ReportListRow,
+  ReportPanel,
+  ReportProgress,
+  ReportState,
+} from './report-section-primitives';
 
 const defaultSettings: DocumentSettings = {
   company: {
@@ -28,6 +36,10 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   const totalExpenses = report?.totalExpenses ?? 0;
   const expensesCount = report?.expensesCount ?? 0;
   const averageExpense = expensesCount > 0 ? totalExpenses / expensesCount : 0;
+  const topCategory = [...categoryRows].sort((a, b) => b.total - a.total)[0];
+  const topProperty = [...propertyRows].sort((a, b) => b.total - a.total)[0];
+  const topCategoryShare = topCategory && totalExpenses > 0 ? (topCategory.total / totalExpenses) * 100 : 0;
+  const topPropertyShare = topProperty && totalExpenses > 0 ? (topProperty.total / totalExpenses) * 100 : 0;
 
   const handlePrintExpensesReport = () => {
     const todayStr = getTodayLocalDateString();
@@ -83,14 +95,38 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
       <ResponsiveCardGrid>
         <KpiCard label="إجمالي المصروفات" value={formatMoney(totalExpenses)} icon={WalletCards} sub={`${expensesCount} مصروفات`} />
         <KpiCard label="متوسط المصروف" value={formatMoney(averageExpense)} icon={ReceiptText} sub="لكل حركة مسجلة" />
-        <KpiCard label="التصنيفات" value={categoryRows.length.toLocaleString('ar')} icon={ClipboardList} sub="أنواع مصروفات فعالة" />
-        <KpiCard label="العقارات المتأثرة" value={propertyRows.length.toLocaleString('ar')} icon={Building2} sub="عقارات لها مصروفات" />
+        <KpiCard label="التصنيفات" value={categoryRows.length.toLocaleString('ar')} icon={ClipboardList} sub={topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات'} />
+        <KpiCard label="العقارات المتأثرة" value={propertyRows.length.toLocaleString('ar')} icon={Building2} sub={topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات'} />
       </ResponsiveCardGrid>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ReportProgress
+          label="تركيز أكبر تصنيف"
+          value={topCategoryShare}
+          helper={topCategory ? `${topCategory.category} · ${formatMoney(topCategory.total)}` : 'لا توجد مصروفات'}
+          tone={topCategoryShare <= 40 ? 'good' : topCategoryShare <= 60 ? 'warning' : 'critical'}
+        />
+        <ReportProgress
+          label="تركيز أكبر عقار"
+          value={topPropertyShare}
+          helper={topProperty ? `${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)} · ${formatMoney(topProperty.total)}` : 'لا توجد مصروفات'}
+          tone={topPropertyShare <= 45 ? 'good' : topPropertyShare <= 65 ? 'warning' : 'critical'}
+        />
+      </div>
+
+      <ReportInsightNote title="قراءة المصروفات">
+        {topCategoryShare > 60
+          ? 'معظم المصروفات متركزة في تصنيف واحد؛ راجع تفاصيل هذا التصنيف والتكرار قبل اعتماد الفترة.'
+          : topPropertyShare > 65
+            ? 'عقار واحد يتحمل الحصة الأكبر من المصروفات؛ راجع الصيانة والخدمات المرتبطة به.'
+            : 'المصروفات موزعة نسبيًا بين التصنيفات والعقارات دون تركّز حاد.'}
+      </ReportInsightNote>
 
       <ReportColumns>
         <ReportPanel
           title="المصروفات حسب التصنيف"
           description="ترتيب مباشر لقيمة وعدد الحركات في كل تصنيف."
+          eyebrow="تحليل التكلفة"
           icon={ClipboardList}
           action={actions}
           isLoading={isLoading}
@@ -114,6 +150,7 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
         <ReportPanel
           title="المصروفات حسب العقار"
           description="العقارات الأعلى تحمّلًا للتكاليف داخل النطاق."
+          eyebrow="تحليل المحفظة"
           icon={Building2}
           isLoading={isLoading}
         >

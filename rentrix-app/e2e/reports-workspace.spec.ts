@@ -23,7 +23,15 @@ const reportTabs = [
   { id: 'accounting', label: 'المحاسبة' },
 ] as const;
 
-const evidenceTabs = new Set(['maintenance_analytics', 'statements', 'accounting']);
+const evidenceTabs = new Set([
+  'overview',
+  'overdue',
+  'collections',
+  'maintenance_analytics',
+  'deferred_revenue',
+  'statements',
+  'accounting',
+]);
 
 test.beforeEach(async ({}, testInfo) => {
   test.skip(
@@ -47,6 +55,7 @@ async function openFixture(page: Page, theme: (typeof themes)[number]) {
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('main[data-e2e-reports-workspace]')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'مركز التقارير والكشوف', exact: true })).toBeVisible();
+  await expect(page.getByText('لوحة القرار', { exact: true })).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -72,8 +81,8 @@ for (const viewport of viewportMatrix) {
 
       const sheet = page.getByRole('dialog', { name: 'فلترة نطاق التقرير' });
       await expect(sheet).toBeVisible();
-      await expect(page.getByRole('button', { name: 'عرض النتائج' })).toBeVisible();
-      await page.getByRole('button', { name: 'عرض النتائج' }).click();
+      await expect(page.getByRole('button', { name: 'تطبيق وعرض النتائج' })).toBeVisible();
+      await page.getByRole('button', { name: 'تطبيق وعرض النتائج' }).click();
       await expect(sheet).toBeHidden();
 
       for (const reportTab of reportTabs) {
@@ -81,6 +90,7 @@ for (const viewport of viewportMatrix) {
         await tab.click();
         await expect(tab).toHaveAttribute('aria-selected', 'true');
         await expect(page.locator(`[role="tabpanel"][aria-labelledby="section-tab-${reportTab.id}"]`)).toBeVisible();
+        await expect(page.getByRole('heading', { name: reportTab.label, exact: true })).toBeVisible();
         await assertNoHorizontalOverflow(page);
 
         if (
