@@ -125,7 +125,6 @@ export async function listTenantDeposits(): Promise<DepositRecord[]> {
     .returns<DepositRow[]>();
 
   if (error) {
-    // If table not yet migrated in local test env, return empty rather than mock
     if ((error as any).code === '42P01') return [];
     handleSupabaseError(error, 'تعذر تحميل ودائع التأمين');
   }
@@ -158,14 +157,11 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
   };
 
   const { data, error } = await supabase.rpc('create_deposit_atomic' as any, { p_payload: rpcPayload });
-
   if (error) handleSupabaseError(error, 'فشل إنشاء وديعة التأمين');
 
-  // data contains deposit_id
   const depositId = (data as any)?.deposit_id as string | undefined;
   if (!depositId) throw new Error('لم يتم إرجاع معرف الوديعة من الخادم');
 
-  // Fetch created record
   const { data: row, error: fetchError } = await supabase
     .from('tenant_deposits')
     .select(`
@@ -177,7 +173,6 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
     .single();
 
   if (fetchError) handleSupabaseError(fetchError, 'تم إنشاء الوديعة لكن تعذر تحميلها');
-
   return mapRow(row);
 }
 
@@ -188,7 +183,6 @@ export async function recordDepositDeduction(payload: DepositDeductionPayload): 
   if (!payload.charged_date) throw new Error('تاريخ الخصم مطلوب');
 
   const requestId = payload.request_id || crypto.randomUUID();
-
   const rpcPayload = {
     deposit_id: payload.deposit_id,
     amount: payload.deduction_amount,
@@ -199,16 +193,9 @@ export async function recordDepositDeduction(payload: DepositDeductionPayload): 
     request_id: requestId,
   };
 
-  const { data, error } = await supabase.rpc('deduct_deposit_atomic' as any, { p_payload: rpcPayload });
+  const { error } = await supabase.rpc('deduct_deposit_atomic' as any, { p_payload: rpcPayload });
+  if (error) handleSupabaseError(error, 'فشل خصم مبلغ التأمين - تحقق من الرصيد المتبقي');
 
-  if (error) {
-    // Do NOT swallow error, propagate it to UI - no false success
-    handleSupabaseError(error, 'فشل خصم مبلغ التأمين - تحقق من الرصيد المتبقي');
-  }
-
-  void data;
-
-  // Fetch updated record
   const { data: row, error: fetchError } = await supabase
     .from('tenant_deposits')
     .select(`
@@ -220,7 +207,6 @@ export async function recordDepositDeduction(payload: DepositDeductionPayload): 
     .single();
 
   if (fetchError) handleSupabaseError(fetchError, 'تم الخصم لكن تعذر تحديث السجل');
-
   return mapRow(row);
 }
 
@@ -230,7 +216,6 @@ export async function recordDepositRefund(payload: DepositRefundPayload): Promis
   if (!payload.refund_date) throw new Error('تاريخ الاسترداد مطلوب');
 
   const requestId = payload.request_id || crypto.randomUUID();
-
   const rpcPayload = {
     deposit_id: payload.deposit_id,
     amount: payload.refund_amount,
@@ -240,13 +225,8 @@ export async function recordDepositRefund(payload: DepositRefundPayload): Promis
     request_id: requestId,
   };
 
-  const { data, error } = await supabase.rpc('refund_deposit_atomic' as any, { p_payload: rpcPayload });
-
-  if (error) {
-    handleSupabaseError(error, 'فشل رد مبلغ التأمين - تحقق من الرصيد المتبقي');
-  }
-
-  void data;
+  const { error } = await supabase.rpc('refund_deposit_atomic' as any, { p_payload: rpcPayload });
+  if (error) handleSupabaseError(error, 'فشل رد مبلغ التأمين - تحقق من الرصيد المتبقي');
 
   const { data: row, error: fetchError } = await supabase
     .from('tenant_deposits')
@@ -259,7 +239,6 @@ export async function recordDepositRefund(payload: DepositRefundPayload): Promis
     .single();
 
   if (fetchError) handleSupabaseError(fetchError, 'تم الاسترداد لكن تعذر تحديث السجل');
-
   return mapRow(row);
 }
 
