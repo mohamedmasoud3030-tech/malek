@@ -4,24 +4,54 @@
 
 begin;
 
--- 1. Create utility_meters table if not exists
-create table if not exists public.utility_meters (
-  id uuid primary key default gen_random_uuid(),
-  property_id text not null references public.properties(id) on delete cascade,
-  unit_id uuid references public.units(id) on delete set null,
-  utility_type text not null check (utility_type in ('electricity','water','sanitation','internet','gas','other')),
-  meter_number text not null,
-  account_number text not null,
-  provider_name text,
-  responsible_party text not null default 'tenant' check (responsible_party in ('tenant','landlord','company')),
-  is_active boolean not null default true,
-  notes text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  deleted_at timestamptz,
-  constraint utility_meters_meter_number_not_empty check (length(trim(meter_number)) > 0),
-  constraint utility_meters_account_number_not_empty check (length(trim(account_number)) > 0)
-);
+-- 1. Create utility_meters using the actual identifier types in this environment.
+-- Historical production uses text identifiers while clean migration replay uses uuid.
+do $$
+declare
+  property_id_type text;
+  unit_id_type text;
+begin
+  select format_type(attribute.atttypid, attribute.atttypmod)
+    into property_id_type
+  from pg_attribute attribute
+  where attribute.attrelid = 'public.properties'::regclass
+    and attribute.attname = 'id'
+    and not attribute.attisdropped;
+
+  select format_type(attribute.atttypid, attribute.atttypmod)
+    into unit_id_type
+  from pg_attribute attribute
+  where attribute.attrelid = 'public.units'::regclass
+    and attribute.attname = 'id'
+    and not attribute.attisdropped;
+
+  if property_id_type is null or unit_id_type is null then
+    raise exception 'Cannot resolve canonical property/unit identifier types';
+  end if;
+
+  if to_regclass('public.utility_meters') is null then
+    execute format($table$
+      create table public.utility_meters (
+        id uuid primary key default gen_random_uuid(),
+        property_id %s not null references public.properties(id) on delete cascade,
+        unit_id %s references public.units(id) on delete set null,
+        utility_type text not null check (utility_type in ('electricity','water','sanitation','internet','gas','other')),
+        meter_number text not null,
+        account_number text not null,
+        provider_name text,
+        responsible_party text not null default 'tenant' check (responsible_party in ('tenant','landlord','company')),
+        is_active boolean not null default true,
+        notes text,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now(),
+        deleted_at timestamptz,
+        constraint utility_meters_meter_number_not_empty check (length(trim(meter_number)) > 0),
+        constraint utility_meters_account_number_not_empty check (length(trim(account_number)) > 0)
+      )
+    $table$, property_id_type, unit_id_type);
+  end if;
+end
+$$;
 
 create index if not exists idx_utility_meters_property_id on public.utility_meters(property_id) where deleted_at is null;
 create index if not exists idx_utility_meters_unit_id on public.utility_meters(unit_id) where deleted_at is null;
