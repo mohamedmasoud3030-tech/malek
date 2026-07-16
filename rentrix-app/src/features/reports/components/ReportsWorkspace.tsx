@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { FilterState } from '../reports-page.helpers';
@@ -36,7 +37,8 @@ export function ReportsWorkspace({
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
   const [activeSection, setActiveSection] = useState<ReportSectionId>('overview');
-  const activeSectionLabel = reportSections.find((section) => section.id === activeSection)?.label ?? 'التقارير';
+  const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
+  const ActiveSectionIcon = activeSectionMeta.icon;
   const summary = model.hero.summary;
 
   const occupancy = useMemo(() => {
@@ -55,6 +57,10 @@ export function ReportsWorkspace({
     };
   }, [model.sections.occupancy.occupancyRows]);
 
+  const collectionRate = (summary?.invoiced ?? 0) > 0
+    ? Math.round(((summary?.paid ?? 0) / (summary?.invoiced ?? 1)) * 100)
+    : 0;
+
   return (
     <div className="space-y-5">
       <ReportsFilterSurface
@@ -66,36 +72,53 @@ export function ReportsWorkspace({
         onResetCurrentMonth={onResetCurrentMonth}
       />
 
-      <ResponsiveCardGrid>
-        <KpiCard
-          label="المحصّل للفترة"
-          value={formatMoney(summary?.paid ?? 0)}
-          icon={Receipt}
-          sub={`${summary?.paymentsCount ?? 0} مدفوعات مسجلة`}
-        />
-        <KpiCard
-          label="نسبة الإشغال"
-          value={`${occupancy.rate}%`}
-          icon={Building2}
-          sub={`${occupancy.occupied} من ${occupancy.total} وحدة`}
-        />
-        <KpiCard
-          label="الرصيد المستحق"
-          value={formatMoney(summary?.outstanding ?? 0)}
-          icon={AlertTriangle}
-          sub="رصيد يحتاج متابعة التحصيل"
-        />
-        <KpiCard
-          label="صافي الحركة"
-          value={formatMoney(summary?.netCash ?? 0)}
-          icon={TrendingUp}
-          sub={(summary?.netCash ?? 0) >= 0 ? 'الحركة النقدية موجبة' : 'المصروفات أعلى من التحصيل'}
-        />
-      </ResponsiveCardGrid>
+      <section aria-label="المؤشرات التنفيذية" className="space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-primary">لوحة القرار</p>
+            <h2 className="mt-1 text-sm font-extrabold">المؤشرات الأهم في النطاق الحالي</h2>
+          </div>
+          <span className="hidden text-[11px] font-semibold text-muted-foreground sm:block">مصادر مالية وتشغيلية موحّدة</span>
+        </div>
+        <ResponsiveCardGrid>
+          <KpiCard
+            label="المحصّل للفترة"
+            value={formatMoney(summary?.paid ?? 0)}
+            icon={Receipt}
+            sub={`${summary?.paymentsCount ?? 0} مدفوعات مسجلة`}
+            trend={collectionRate >= 85 ? 'up' : collectionRate >= 65 ? 'neutral' : 'down'}
+            trendValue={`${collectionRate}%`}
+          />
+          <KpiCard
+            label="نسبة الإشغال"
+            value={`${occupancy.rate}%`}
+            icon={Building2}
+            sub={`${occupancy.occupied} من ${occupancy.total} وحدة`}
+            trend={occupancy.rate >= 90 ? 'up' : occupancy.rate >= 75 ? 'neutral' : 'down'}
+            trendValue={`${occupancy.vacant} شاغرة`}
+          />
+          <KpiCard
+            label="الرصيد المستحق"
+            value={formatMoney(summary?.outstanding ?? 0)}
+            icon={AlertTriangle}
+            sub="رصيد يحتاج متابعة التحصيل"
+            trend="neutral"
+            trendValue={`${summary?.invoicesCount ?? 0} فواتير`}
+          />
+          <KpiCard
+            label="صافي الحركة"
+            value={formatMoney(summary?.netCash ?? 0)}
+            icon={TrendingUp}
+            sub={(summary?.netCash ?? 0) >= 0 ? 'الحركة النقدية موجبة' : 'المصروفات أعلى من التحصيل'}
+            trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
+            trendValue={(summary?.netCash ?? 0) >= 0 ? 'موجب' : 'سالب'}
+          />
+        </ResponsiveCardGrid>
+      </section>
 
       {model.firstError ? (
         <div
-          className="rounded-xl border border-destructive/25 bg-destructive/5 p-4 text-sm font-semibold leading-6 text-destructive"
+          className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4 text-sm font-semibold leading-6 text-destructive"
           role="alert"
         >
           {getErrorMessage(
@@ -105,19 +128,29 @@ export function ReportsWorkspace({
         </div>
       ) : null}
 
-      <section className="min-w-0" aria-label="أقسام التقارير">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-muted-foreground">التقرير المفتوح</p>
-            <h2 className="mt-0.5 truncate text-base font-bold" aria-live="polite">{activeSectionLabel}</h2>
+      <section className="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card" aria-label="أقسام التقارير">
+        <div className="flex flex-col gap-3 border-b border-border/60 bg-gradient-to-l from-primary/10 via-primary/[0.025] to-transparent p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <ActiveSectionIcon className="size-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0" aria-live="polite">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-extrabold sm:text-lg">{activeSectionMeta.label}</h2>
+                <StatusBadge tone="blue">{activeSectionMeta.group}</StatusBadge>
+              </div>
+              <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm">
+                {activeSectionMeta.description}
+              </p>
+            </div>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => window.print()} className="min-h-10 gap-2 text-xs">
+          <Button type="button" variant="outline" size="sm" onClick={() => window.print()} className="min-h-10 shrink-0 gap-2 text-xs">
             <Printer className="size-4" aria-hidden="true" />
-            طباعة A4
+            طباعة التبويب
           </Button>
         </div>
 
-        <div className="no-scrollbar sticky top-0 z-20 -mx-1 overflow-x-auto bg-background/95 px-1 py-3 backdrop-blur">
+        <div className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur sm:px-4">
           <div className="min-w-max">
             <SectionTabs
               items={reportSections}
@@ -129,7 +162,7 @@ export function ReportsWorkspace({
         </div>
       </section>
 
-      <div className="min-w-0">
+      <div className="min-w-0 animate-slide-up" key={activeSection}>
         <SectionTabPanel id="overview" activeId={activeSection}>
           <OverviewSection
             {...model.sections.overview}
@@ -166,7 +199,7 @@ export function ReportsWorkspace({
           <MaintenanceReportSection {...model.sections.maintenance} />
         </SectionTabPanel>
         <SectionTabPanel id="deferred_revenue" activeId={activeSection}>
-          <DeferredRevenueReportSection isLoading={false} />
+          <DeferredRevenueReportSection {...model.sections.deferredRevenue} canExportReports={canExportReports} />
         </SectionTabPanel>
         <SectionTabPanel id="statements" activeId={activeSection}>
           <StatementsSection {...model.sections.statements} filters={filters} />
