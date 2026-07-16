@@ -1,16 +1,15 @@
-import { AlertTriangle, FileSpreadsheet, Printer, WalletCards } from 'lucide-react';
+import { AlertTriangle, CalendarClock, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
-import { DataTable } from '@/components/ui/data-table';
-import { MobileCard } from '@/components/ui/mobile-card';
-import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
+import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { useAgedReceivablesReport } from '@/features/financials/reports/useFinancialReports';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
-import { agingBucketKeys, buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
-import { buildAgingBucketChartRows } from '../reports-page.helpers';
-import { ReportCard, SafeAnchor } from './common';
+import { agingBucketKeys, buildAgingBucketChartRows, buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
+import { ReportColumns } from './report-section-primitives';
+import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
+import { OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
 
 const defaultSettings: DocumentSettings = {
   company: {
@@ -29,6 +28,9 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
   isLoading: boolean;
 }>) {
   const bucketRows = buildAgingBucketChartRows(agedReport?.buckets, agingBucketKeys);
+  const totalOverdue = rows.reduce((total, row) => total + row.remainingAmount, 0);
+  const oldestDelay = rows.reduce((maximum, row) => Math.max(maximum, row.daysOverdue), 0);
+  const criticalBucket = bucketRows.find((row) => row.bucket === agingBucketKeys[agingBucketKeys.length - 1]);
 
   const handlePrintOverdueReport = () => {
     const todayStr = getTodayLocalDateString();
@@ -41,94 +43,63 @@ export function OverdueSection({ rows, agedReport, canExportReports, isLoading }
         sections: [
           {
             title: 'جدول الفواتير والذمم المتأخرة السداد',
-            rows: rows.map((r) => ({
-              label: `${r.tenantName || 'مستأجر'} - (فاتورة #${r.shortInvoiceId})`,
-              value: `المبلغ: ${r.remainingAmount} ر.ع | أيام التأخير: ${r.daysOverdue} يوم | الاستحقاق: ${r.dueDate}`,
+            rows: rows.map((row) => ({
+              label: `${row.tenantName || 'مستأجر'} - (فاتورة #${row.shortInvoiceId})`,
+              value: `المبلغ: ${row.remainingAmount} ر.ع | أيام التأخير: ${row.daysOverdue} يوم | الاستحقاق: ${row.dueDate}`,
             })),
-            totals: ['إجمالي المتأخرات', `${rows.reduce((sum, r) => sum + r.remainingAmount, 0).toLocaleString('ar-OM')} ر.ع`],
+            totals: ['إجمالي المتأخرات', `${totalOverdue.toLocaleString('ar-OM')} ر.ع`],
           },
         ],
-        totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | الإجمالي المستحق: ${rows.reduce((sum, r) => sum + r.remainingAmount, 0).toLocaleString('ar-OM')} ر.ع`,
+        totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | الإجمالي المستحق: ${totalOverdue.toLocaleString('ar-OM')} ر.ع`,
       },
       defaultSettings,
     );
   };
 
+  const invoiceActions = canExportReports ? (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="outline" size="sm" onClick={handlePrintOverdueReport} className="min-h-10 gap-1.5 text-xs">
+        <Printer className="size-3.5" aria-hidden="true" />
+        طباعة A4
+      </Button>
+      <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)} className="min-h-10 gap-1.5 text-xs">
+        <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+        CSV
+      </Button>
+    </div>
+  ) : undefined;
+
+  const agingAction = canExportReports ? (
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}
+      className="min-h-10 gap-1.5 text-xs"
+    >
+      <FileSpreadsheet className="size-3.5" aria-hidden="true" />
+      CSV
+    </Button>
+  ) : undefined;
+
   return (
     <div className="space-y-4">
-      <ReportCard
-        title="الفواتير المتأخرة والديون المستحقة"
-        description="تفاصيل الفواتير والذمم المتأخرة المحسوبة حسب تاريخ اليوم مع أيام التأخير والرصيد المتبقي."
-        action={canExportReports ? (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handlePrintOverdueReport} className="min-h-9 gap-1.5 text-xs font-bold">
-              <Printer className="size-3.5 text-primary" aria-hidden="true" />
-              طباعة كشف المتأخرات A4
-            </Button>
-            <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)} className="min-h-9 text-xs">
-              <FileSpreadsheet className="me-1.5 size-3.5" />
-              تصدير CSV
-            </Button>
-          </div>
-        ) : undefined}
-        isLoading={isLoading}
-      >
-        {/* Mobile cards */}
-        <div className="grid gap-3 p-4 md:hidden">
-          {rows.slice(0, 20).map((row) => (
-            <MobileCard
-              key={row.invoiceId}
-              title={row.tenantName ?? '—'}
-              subtitle={formatDate(row.dueDate)}
-              badge={<span className="shrink-0 text-xs font-bold text-destructive">{row.daysOverdue.toLocaleString('ar')} يوم</span>}
-              stats={<div className="flex items-center justify-between gap-2"><SafeAnchor href="/invoices" label={row.shortInvoiceId} /><span className="font-bold text-destructive" dir="ltr">{formatMoney(row.remainingAmount)}</span></div>}
-            />
-          ))}
-          {rows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد فواتير متأخرة حسب تاريخ as-of.</p> : null}
-        </div>
-        {/* Desktop table */}
-        <div className="hidden md:block px-4 pb-4">
-          <DataTable
-            aria-label="جدول الفواتير المتأخرة"
-            rows={rows}
-            columns={[
-              { key: 'invoice', header: 'الفاتورة', render: (row) => <SafeAnchor href="/invoices" label={row.shortInvoiceId} /> },
-              { key: 'contract', header: 'العقد', render: (row) => <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /> },
-              { key: 'tenant', header: 'المستأجر', render: (row) => row.tenantName ?? '—' },
-              { key: 'due_date', header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
-              { key: 'days_overdue', header: 'أيام التأخير', render: (row) => row.daysOverdue.toLocaleString('ar') },
-              { key: 'remaining', header: 'المتبقي', render: (row) => <span dir="ltr">{formatMoney(row.remainingAmount)}</span> },
-              { key: 'status', header: 'الحالة', render: (row) => formatInvoiceStatusLabel(row.status) },
-            ]}
-            keyOf={(row) => row.invoiceId}
-            emptyTitle="لا توجد فواتير متأخرة"
-            emptyDescription="لا توجد فواتير متأخرة حسب تاريخ as-of."
-          />
-        </div>
-      </ReportCard>
+      <ResponsiveCardGrid>
+        <KpiCard label="إجمالي المتأخر" value={formatMoney(totalOverdue)} icon={WalletCards} sub="رصيد يحتاج تحصيل" />
+        <KpiCard label="الفواتير المتأخرة" value={rows.length.toLocaleString('ar')} icon={ReceiptText} sub="فواتير مفتوحة" />
+        <KpiCard label="أطول تأخير" value={`${oldestDelay.toLocaleString('ar')} يوم`} icon={CalendarClock} sub="أقدم فاتورة متأخرة" />
+        <KpiCard label="أكثر من 90 يوم" value={formatMoney(criticalBucket?.total ?? 0)} icon={AlertTriangle} sub={`${criticalBucket?.invoiceCount.toLocaleString('ar') ?? '٠'} فواتير`} />
+      </ResponsiveCardGrid>
 
-      <ReportCard
-        title="تعتيق وتقادم الذمم حسب الفئة العمرية"
-        description="ملخص توزيع الديون والذمم في فئات التعتيق المحاسبي (حالي، 1-30 يوم، 31-60 يوم، 61-90 يوم، +90 يوم)."
-        action={canExportReports ? <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))} className="min-h-9 text-xs"><FileSpreadsheet className="me-1.5 size-3.5" />تصدير CSV</Button> : undefined}
-        isLoading={isLoading}
-      >
-        <ResponsiveCardGrid className="p-4" desktopColumns={5}>
-          {bucketRows.map((row) => {
-            const isCurrent = row.bucket === agingBucketKeys[0];
-            return (
-              <KpiCard
-                key={row.bucket}
-                label={row.bucket}
-                value={formatMoney(row.total)}
-                icon={isCurrent ? WalletCards : AlertTriangle}
-                accent={isCurrent ? 'emerald' : 'amber'}
-                sub={`${row.invoiceCount.toLocaleString('ar')} فواتير`}
-              />
-            );
-          })}
-        </ResponsiveCardGrid>
-      </ReportCard>
+      <OverdueInvoicesPanel rows={rows} action={invoiceActions} isLoading={isLoading} />
+
+      <ReportColumns>
+        <AgingBucketsPanel rows={bucketRows} action={agingAction} isLoading={isLoading} />
+        <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm leading-6 text-muted-foreground">
+          <p className="font-bold text-foreground">أولوية المتابعة</p>
+          <p className="mt-2">ابدأ بالفواتير الأعلى عمرًا ورصيدًا، ثم استخدم رابط العقد للوصول إلى المستأجر والوحدة قبل إجراء التحصيل.</p>
+          <p className="mt-3">هذه القراءة تعتمد على تاريخ التقرير الحالي ولا تغيّر أي فاتورة أو حركة مالية.</p>
+        </div>
+      </ReportColumns>
     </div>
   );
 }
