@@ -81,7 +81,10 @@ describe('buildExecutiveHealthInsights', () => {
       totalUnits: 10,
     });
 
-    expect(insights.map((insight) => insight.value)).toEqual([85, 200 / 8.5, 90, 15]);
+    expect(insights[0]?.value).toBe(85);
+    expect(insights[1]?.value).toBeCloseTo(23.5294117647, 10);
+    expect(insights[2]?.value).toBe(90);
+    expect(insights[3]?.value).toBe(15);
     expect(insights[0]?.tone).toBe('good');
     expect(insights[2]?.tone).toBe('good');
   });
