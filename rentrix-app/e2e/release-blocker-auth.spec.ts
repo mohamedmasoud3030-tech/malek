@@ -39,7 +39,7 @@ async function submitLogin(page: Page, candidatePassword: string): Promise<Respo
 }
 
 async function expectProtectedShell(page: Page) {
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText('لوحة التحكم').first()).toBeVisible();
 }
 
@@ -59,7 +59,7 @@ test.describe('release blocker: real authentication lifecycle', () => {
     await page.getByRole('button', { name: 'تسجيل الخروج' }).click();
     await expect(page).toHaveURL(/\/login$/);
 
-    await page.goto('/');
+    await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
   });
@@ -107,7 +107,7 @@ test.describe('release blocker: real authentication lifecycle', () => {
       { storageKey: authStorageKey, marker: invalidSessionSeedMarker, userEmail: email },
     );
 
-    await page.goto('/');
+    await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
     await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
     await expect(page.getByText('لوحة التحكم')).toHaveCount(0);

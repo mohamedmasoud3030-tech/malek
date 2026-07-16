@@ -4,7 +4,7 @@ import { canAccess, getAuthorizationContextFromSession, type AppPermission } fro
 
 export function assertSessionPermission(session: Pick<Session, 'user'> | null | undefined, permission: AppPermission): void {
   if (!canAccess(getAuthorizationContextFromSession(session), permission)) {
-    throw redirect({ to: '/' });
+    throw redirect({ to: '/dashboard' });
   }
 }
 

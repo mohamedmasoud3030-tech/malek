@@ -32,7 +32,7 @@ const authRoute = createRoute({
       // On any error (network etc), allow login page to render to avoid loop
       return;
     }
-    if (session) throw redirect({ to: '/' });
+    if (session) throw redirect({ to: '/dashboard' });
   },
   component: AuthRouteComponent,
 });
@@ -78,7 +78,7 @@ const requirePermission = (permission: AppPermission) => async () => {
 };
 
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: lazyRouteComponent(() => import('@/routes/_auth.login'), 'LoginRouteComponent'), staticData: { title: 'تسجيل الدخول' } });
-const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/', component: lazyRouteComponent(() => import('@/routes/_protected.index'), 'DashboardRouteComponent'), staticData: { title: 'لوحة التحكم' } });
+const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/dashboard', component: lazyRouteComponent(() => import('@/routes/_protected.index'), 'DashboardRouteComponent'), staticData: { title: 'لوحة التحكم' } });
 const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: lazyRouteComponent(() => import('@/routes/_protected.properties'), 'PropertiesRouteComponent'), staticData: { title: 'العقارات' } });
 const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/new', beforeLoad: requirePermission('properties.write'), component: lazyRouteComponent(() => import('@/routes/_protected.properties.new'), 'PropertyNewRouteComponent'), staticData: { title: 'إضافة عقار' } });
 const propertyDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId'), 'PropertyDetailRouteComponent'), staticData: { title: 'تفاصيل العقار' } });
@@ -157,16 +157,44 @@ const maintenanceRoute = createRoute({
   staticData: { title: 'الصيانة' },
 });
 
+// Public marketing landing is served on the domain root; the authenticated
+// dashboard lives at /dashboard and all guards redirect accordingly.
 const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/landing',
+  path: '/',
   component: lazyRouteComponent(() => import('@/routes/landing'), 'LandingRouteComponent'),
   staticData: { title: 'Rentrix — نظام إدارة العقارات' },
+});
+
+const privacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/privacy',
+  component: lazyRouteComponent(() => import('@/routes/privacy'), 'PrivacyRouteComponent'),
+  staticData: { title: 'سياسة الخصوصية' },
+});
+
+const termsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/terms',
+  component: lazyRouteComponent(() => import('@/routes/terms'), 'TermsRouteComponent'),
+  staticData: { title: 'شروط الاستخدام' },
+});
+
+// Backward compatibility: old /landing links must land on the public root.
+const landingCompatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/landing',
+  beforeLoad: () => {
+    throw redirect({ to: '/' });
+  },
 });
 
 export const routeTree = rootRoute.addChildren([
   authRoute.addChildren([loginRoute]),
   landingRoute,
+  landingCompatRoute,
+  privacyRoute,
+  termsRoute,
   protectedRoute.addChildren([
     dashboardRoute,
     propertiesRoute,

@@ -98,7 +98,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAuthenticated: Boolean(session),
       login: async (email, password) => {
         await signInWithEmail(email, password);
-        await router.navigate({ to: '/', replace: true });
+        await router.navigate({ to: '/dashboard', replace: true });
       },
       logout: async () => {
         await signOut();

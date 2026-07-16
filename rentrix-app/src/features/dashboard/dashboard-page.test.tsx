@@ -51,7 +51,9 @@ const mockSnapshot = {
   activeContracts: [
     {
       id: 'contract-1',
-      end_date: '2026-08-10',
+      // Relative date: the dashboard only lists contracts expiring within the
+      // next 30 days — a hardcoded date silently filters the fixture out over time.
+      end_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       properties: { title: 'برج الياسمين' },
       units: { unit_number: '101' },
       people: { full_name: 'سالم الكعبي' },

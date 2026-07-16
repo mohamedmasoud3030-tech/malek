@@ -73,7 +73,7 @@ export function NavigationLinks({
                   onClick={onNavigate}
                   aria-label={sharedLabel(labelKey)}
                   title={expanded ? undefined : sharedLabel(labelKey)}
-                  activeOptions={{ exact: to === '/' }}
+                  activeOptions={{ exact: to === '/dashboard' }}
                   className={cn(
                     'group relative flex min-h-11 items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sidebar-foreground transition-all',
                     'hover:bg-white/[0.075] hover:text-white',
@@ -223,7 +223,7 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
             <Link
               key={to}
               to={to}
-              activeOptions={{ exact: to === '/' }}
+              activeOptions={{ exact: to === '/dashboard' }}
               aria-label={sharedLabel(labelKey)}
               className="mx-0.5 my-1 flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl px-1 text-muted-foreground transition-colors [&.active]:bg-primary/10 [&.active]:text-primary"
             >

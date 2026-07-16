@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { AuditLogView } from '@/features/audit/components/audit-log-view';
 import { fetchAuditLog, normalizeAuditRecords } from '@/features/audit/services/audit-log-service';
@@ -98,9 +99,24 @@ describe('audit log recovery states', () => {
     expect(renderToStaticMarkup(<AuditLogView state={{ status: 'loading' }} />)).toContain('role="status"');
   });
 
-  it('renders the audit empty state', () => {
-    const html = renderToStaticMarkup(<AuditLogView state={{ status: 'ready', result: { status: 'available', records: [] } }} />);
+  it('renders the audit empty state', async () => {
+    // The empty-state action links to /dashboard via the router Link, so it
+    // needs a router context even for a static markup render.
+    const state = { status: 'ready', result: { status: 'available', records: [] } } as const;
+    const rootRoute = createRootRoute({});
+    const indexRoute = createRoute({
+      getParentRoute: () => rootRoute,
+      path: '/',
+      component: () => <AuditLogView state={state} />,
+    });
+    const router = createRouter({
+      routeTree: rootRoute.addChildren([indexRoute]),
+      history: createMemoryHistory({ initialEntries: ['/'] }),
+    });
+    await router.load();
+    const html = renderToStaticMarkup(<RouterProvider router={router} />);
     expect(html).toContain('لا توجد أحداث تدقيق');
+    expect(html).toContain('/dashboard');
   });
 
   it('renders the audit recoverable error state', () => {

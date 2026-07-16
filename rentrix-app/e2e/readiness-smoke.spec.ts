@@ -72,7 +72,7 @@ test.describe('release readiness browser smoke', () => {
   test('redirects a protected route to login when no session exists', async ({ page }) => {
     const consoleErrors = await collectUnexpectedConsoleErrors(page);
 
-    await page.goto('/');
+    await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
     expect(consoleErrors).toEqual([]);
@@ -91,7 +91,7 @@ test.describe('seeded staging readiness smoke', () => {
     await page.getByPlaceholder('••••••••').fill(process.env.E2E_TEST_PASSWORD!);
     await page.getByRole('button', { name: /تسجيل الدخول/ }).click();
 
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByText('لوحة التحكم').first()).toBeVisible();
   });
 });

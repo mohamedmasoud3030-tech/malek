@@ -7,7 +7,7 @@ export type MobileNavItem = readonly [to: string, labelKey: string, Icon: Lucide
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
 export const navGroups: readonly NavGroup[] = [
-  ['نظرة عامة', [['/', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
+  ['نظرة عامة', [['/dashboard', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
   ['الأصول والعلاقات', [
     ['/properties', 'properties', 'ملفات العقارات والأصول', Building2],
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
@@ -52,7 +52,7 @@ export const navGroups: readonly NavGroup[] = [
 ];
 
 export const mobileNavItems: readonly MobileNavItem[] = [
-  ['/', 'dashboard', LayoutDashboard],
+  ['/dashboard', 'dashboard', LayoutDashboard],
   ['/properties', 'properties', Building2],
   ['/contracts', 'contracts', FileText],
   ['/financials', 'financials', WalletCards],
