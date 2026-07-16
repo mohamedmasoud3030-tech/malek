@@ -106,9 +106,7 @@ function validateFile(file: File) {
     throw new Error(`حجم الملف يتجاوز الحد المسموح (10MB). حجم الملف الحالي: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
   }
   if (file.type && !ALLOWED_MIME.has(file.type) && !file.type.startsWith('image/')) {
-    if (!file.type.startsWith('image/')) {
-      throw new Error(`نوع الملف غير مدعوم: ${file.type}. الأنواع المدعومة: PDF، صور، Word، Excel`);
-    }
+    throw new Error(`نوع الملف غير مدعوم: ${file.type}. الأنواع المدعومة: PDF، صور، Word، Excel`);
   }
 }
 
@@ -118,7 +116,7 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
   if (!params.title.trim()) throw new Error('عنوان المستند مطلوب');
 
   const fileExt = params.file.name.split('.').pop() || 'bin';
-  const storagePath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+  const storagePath = `${crypto.randomUUID()}.${fileExt}`;
   const fullPath = `vault/${storagePath}`;
 
   // 1. Upload to storage bucket attachments (private bucket)
@@ -183,13 +181,12 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
 }
 
 export async function softDeleteVaultDocument(id: string): Promise<void> {
-  const { data: existing, error: fetchError } = await ((supabase as any).from('vault_documents').select('storage_path').eq('id', id).is('deleted_at', null).single() as any);
-  if (fetchError) handleSupabaseError(fetchError, 'المستند غير موجود');
-
-  const { error } = await ((supabase as any).from('vault_documents').update({ deleted_at: new Date().toISOString() } as any).eq('id', id) as any);
+  const { error } = await ((supabase as any)
+    .from('vault_documents')
+    .update({ deleted_at: new Date().toISOString() } as any)
+    .eq('id', id)
+    .is('deleted_at', null) as any);
   if (error) handleSupabaseError(error, 'تعذر حذف المستند');
-
-  void existing;
 }
 
 export async function getVaultDocumentSignedUrl(storagePath: string, expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS): Promise<string> {
