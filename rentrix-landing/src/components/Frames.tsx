@@ -1,10 +1,11 @@
 /** Device-style frames that make real app screenshots look presented, not pasted. */
 import type { ReactNode } from 'react';
+import { APP_HOST } from '../lib/links';
 
 export function BrowserFrame({
   src,
   alt,
-  url = 'app.rentrix',
+  url = APP_HOST,
   className = '',
   imgClassName = '',
   glow = true,

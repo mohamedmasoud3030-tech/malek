@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, CheckCircle2, MessageCircle, Rocket, ChevronDown, TrendingUp, Home } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { APP_URL, whatsappLink } from '../lib/links';
+import { APP_HOST, APP_URL, whatsappLink } from '../lib/links';
 import { BrowserFrame, FrameCaption } from './Frames';
 import { CountUp } from './CountUp';
 
@@ -127,7 +127,7 @@ export function Hero() {
           <BrowserFrame
             src="/screenshots/dashboard.png"
             alt={isArabic ? 'لوحة تحكم Rentrix الحقيقية' : 'The real Rentrix dashboard'}
-            url={isArabic ? 'app.rentrix/لوحة-التحكم' : 'app.rentrix/dashboard'}
+            url={`${APP_HOST}/dashboard`}
           />
           <FrameCaption>{t.hero.screenshotCaption}</FrameCaption>
         </motion.div>

@@ -3,6 +3,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { SectionHeader } from './SectionHeader';
 import { Reveal } from './Reveal';
 import { BrowserFrame, PhoneFrame } from './Frames';
+import { APP_HOST } from '../lib/links';
 
 const BULLET_ICONS = [Globe, Smartphone, Moon];
 
@@ -33,7 +34,7 @@ export function Devices() {
               <BrowserFrame
                 src="/screenshots/dashboard-dark.png"
                 alt={t.devices.darkLabel}
-                url="app.rentrix"
+                url={APP_HOST}
               />
               {/* Floating chips over the frame */}
               <span className="absolute -top-4 end-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/10 bg-ink-850/95 px-4 py-2 text-xs font-bold text-slate-200 shadow-xl backdrop-blur">

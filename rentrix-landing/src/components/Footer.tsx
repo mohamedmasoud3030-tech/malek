@@ -1,6 +1,6 @@
 import { Mail, MessageCircle, Heart } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
-import { APP_URL, CONTACT_EMAIL, whatsappLink } from '../lib/links';
+import { APP_HOST, APP_URL, CONTACT_EMAIL, whatsappLink } from '../lib/links';
 
 export function Footer() {
   const { t, isArabic } = useLanguage();
@@ -66,7 +66,7 @@ export function Footer() {
               ))}
               <li>
                 <a href={APP_URL} className="text-sm text-brand-400 transition hover:text-brand-300" dir="ltr">
-                  app.rentrix
+                  {APP_HOST}
                 </a>
               </li>
             </ul>
@@ -100,7 +100,7 @@ export function Footer() {
             © {year} <span dir="ltr">Rentrix</span>. {t.footer.rights}
           </p>
           <p className="text-xs text-slate-600" dir="ltr">
-            rentrix.example — property management, simplified.
+            {APP_HOST} — property management, simplified.
           </p>
         </div>
       </div>

@@ -1,8 +1,8 @@
 // Central place for environment-driven outbound links.
 // Configure via .env (see .env.example) before deploying.
 
-const fallbackAppUrl = 'https://app.rentrix.example/login';
-const fallbackWhatsApp = '96890000000';
+const fallbackAppUrl = 'https://rentrix-alpha.vercel.app/login';
+const fallbackWhatsApp = '96891928186';
 const fallbackEmail = 'hello@rentrix.example';
 
 export const APP_URL =
@@ -14,6 +14,15 @@ export const WHATSAPP_NUMBER =
 
 export const CONTACT_EMAIL =
   (import.meta.env.VITE_CONTACT_EMAIL as string | undefined)?.trim() || fallbackEmail;
+
+/** Hostname of the app URL — used for decorative browser-address bars in device frames. */
+export const APP_HOST = (() => {
+  try {
+    return new URL(APP_URL).hostname;
+  } catch {
+    return 'app.rentrix';
+  }
+})();
 
 export function whatsappLink(message: string): string {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
