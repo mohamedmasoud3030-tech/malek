@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
-import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
@@ -23,12 +22,7 @@ export function ReportsPage() {
   }
 
   return (
-    <PageLayout dir="rtl" size="wide" className="space-y-6">
-      <PageHeader
-        title="مركز التقارير والكشوف"
-        description="Workspace واحد للتقارير المالية، التحصيلات، المتأخرات، الإشغال، والكشوف مع نفس مصادر البيانات الحالية."
-      />
-
+    <PageLayout dir="rtl" size="wide" className="space-y-0">
       <ReportsWorkspace
         model={workspace}
         filters={filters}
