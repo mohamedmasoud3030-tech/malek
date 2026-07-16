@@ -6,7 +6,14 @@ import { formatMoney } from '@/features/financials/components/financials-formatt
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import type { OccupancyChartRow } from '../reports-page.helpers';
 import { getTodayLocalDateString } from '../reports-page.helpers';
-import { ReportList, ReportListRow, ReportPanel, ReportState } from './report-section-primitives';
+import {
+  ReportInsightNote,
+  ReportList,
+  ReportListRow,
+  ReportPanel,
+  ReportProgress,
+  ReportState,
+} from './report-section-primitives';
 
 const defaultSettings: DocumentSettings = {
   company: {
@@ -32,6 +39,17 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
   const totalPortfolioUnits = totalOccupiedUnits + totalVacantUnits;
   const overallOccupancyRate = totalPortfolioUnits > 0 ? Math.round((totalOccupiedUnits / totalPortfolioUnits) * 100) : 0;
   const totalExpenses = expenseRows.reduce((total, row) => total + row.total, 0);
+  const expensePerOccupiedUnit = totalOccupiedUnits > 0 ? totalExpenses / totalOccupiedUnits : 0;
+  const highestExpenseProperty = [...expenseRows].sort((a, b) => b.total - a.total)[0];
+  const highestExpenseShare = highestExpenseProperty && totalExpenses > 0
+    ? (highestExpenseProperty.total / totalExpenses) * 100
+    : 0;
+  const lowestOccupancyProperty = [...occupancyRows]
+    .filter((row) => row.occupied + row.vacant > 0)
+    .sort((a, b) => (a.occupied / (a.occupied + a.vacant)) - (b.occupied / (b.occupied + b.vacant)))[0];
+  const lowestOccupancyRate = lowestOccupancyProperty
+    ? (lowestOccupancyProperty.occupied / (lowestOccupancyProperty.occupied + lowestOccupancyProperty.vacant)) * 100
+    : 0;
 
   const handlePrintPropertyAnalytics = () => {
     const propertyMap = new Map<string, { title: string; occupied: number; vacant: number; expenses: number }>();
@@ -78,7 +96,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
             }),
           },
         ],
-        totalSummary: `إجمالي العقارات المحللة: ${propertyMap.size} عقار`,
+        totalSummary: `إجمالي العقارات: ${propertyMap.size} | إشغال المحفظة: ${overallOccupancyRate}% | المصروف لكل وحدة مشغولة: ${expensePerOccupiedUnit.toLocaleString('ar-OM')} ر.ع`,
       },
       defaultSettings,
     );
@@ -89,13 +107,37 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
       <ResponsiveCardGrid>
         <KpiCard label="العقارات المدارة" value={totalProperties.toLocaleString('ar')} icon={Building2} sub={`${totalPortfolioUnits.toLocaleString('ar')} وحدة`} />
         <KpiCard label="إشغال المحفظة" value={`${overallOccupancyRate}%`} icon={TrendingUp} sub={`${totalOccupiedUnits.toLocaleString('ar')} وحدة مشغولة`} />
+        <KpiCard label="مصروف للوحدة المشغولة" value={formatMoney(expensePerOccupiedUnit)} icon={WalletCards} sub={`${totalExpenses.toLocaleString('ar-OM')} إجمالي المصروفات`} />
         <KpiCard label="الوحدات الشاغرة" value={totalVacantUnits.toLocaleString('ar')} icon={DoorOpen} sub="فرص تأجير متاحة" />
-        <KpiCard label="مصروفات التشغيل" value={formatMoney(totalExpenses)} icon={WalletCards} sub={`${expenseRows.reduce((total, row) => total + row.count, 0).toLocaleString('ar')} حركة`} />
       </ResponsiveCardGrid>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ReportProgress
+          label="إشغال المحفظة"
+          value={overallOccupancyRate}
+          helper={`${totalOccupiedUnits.toLocaleString('ar')} من ${totalPortfolioUnits.toLocaleString('ar')} وحدة`}
+          tone={overallOccupancyRate >= 90 ? 'good' : overallOccupancyRate >= 75 ? 'warning' : 'critical'}
+        />
+        <ReportProgress
+          label="تركيز التكلفة في أعلى عقار"
+          value={highestExpenseShare}
+          helper={highestExpenseProperty ? `${highestExpenseProperty.propertyTitle ?? highestExpenseProperty.propertyId} · ${formatMoney(highestExpenseProperty.total)}` : 'لا توجد مصروفات'}
+          tone={highestExpenseShare <= 40 ? 'good' : highestExpenseShare <= 60 ? 'warning' : 'critical'}
+        />
+      </div>
+
+      <ReportInsightNote title="قراءة المحفظة">
+        {lowestOccupancyProperty && lowestOccupancyRate < 70
+          ? `${lowestOccupancyProperty.property} هو الأقل إشغالًا بنسبة ${Math.round(lowestOccupancyRate)}%؛ ابدأ بمراجعة شواغره وتسعيره وحالته التشغيلية.`
+          : highestExpenseShare > 60
+            ? 'تكلفة التشغيل متركزة في عقار واحد؛ راجع أسباب المصروفات قبل اعتماد قرارات صيانة أو تسعير جديدة.'
+            : 'استغلال المحفظة وتوزيع تكاليفها متوازنان نسبيًا بين العقارات.'}
+      </ReportInsightNote>
 
       <ReportPanel
         title="أداء العقارات"
         description="قراءة موحّدة للإشغال والشواغر والمصروفات لكل عقار."
+        eyebrow="مقارنة المحفظة"
         icon={Building2}
         action={(
           <Button variant="outline" size="sm" onClick={handlePrintPropertyAnalytics} className="min-h-10 gap-1.5 text-xs">
@@ -113,12 +155,13 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
               const units = row.occupied + row.vacant;
               const rate = units > 0 ? Math.round((row.occupied / units) * 100) : 0;
               const expense = expenseByProperty.get(row.propertyId);
+              const propertyExpensePerOccupied = row.occupied > 0 ? (expense?.total ?? 0) / row.occupied : 0;
               return (
                 <ReportListRow
                   key={row.propertyId}
                   title={row.property}
                   subtitle={`${row.occupied.toLocaleString('ar')} مشغولة · ${row.vacant.toLocaleString('ar')} شاغرة · ${expense?.count.toLocaleString('ar') ?? '٠'} مصروفات`}
-                  meta={`${units.toLocaleString('ar')} وحدة`}
+                  meta={`${units.toLocaleString('ar')} وحدة · ${formatMoney(propertyExpensePerOccupied)} للوحدة المشغولة`}
                   value={(
                     <div className="text-end">
                       <p dir="ltr">{rate}%</p>
