@@ -18,9 +18,17 @@ const authRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'auth',
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    if (data.session) throw redirect({ to: '/' });
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        // Invalid or expired session - allow access to login page, don't throw
+        return;
+      }
+      if (data.session) throw redirect({ to: '/' });
+    } catch {
+      // On any error, allow login page to render (don't throw, don't redirect loop)
+      return;
+    }
   },
   component: AuthRouteComponent,
 });
@@ -29,17 +37,39 @@ const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'protected',
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    if (!data.session) throw redirect({ to: '/login' });
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        // Invalid session (e.g., expired token, invalid refresh) - redirect to login without loop
+        throw redirect({ to: '/login' });
+      }
+      if (!data.session) throw redirect({ to: '/login' });
+    } catch (err) {
+      // If it's already a redirect, throw it
+      if (err && typeof err === 'object' && 'to' in (err as any)) {
+        throw err;
+      }
+      // For any other error (e.g., invalid token), redirect to login to prevent loop
+      throw redirect({ to: '/login' });
+    }
   },
   component: ProtectedRouteComponent,
 });
 
 const requirePermission = (permission: AppPermission) => async () => {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  assertSessionPermission(data.session, permission);
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      throw redirect({ to: '/login' });
+    }
+    assertSessionPermission(data.session, permission);
+  } catch (err) {
+    if (err && typeof err === 'object' && 'to' in (err as any)) {
+      throw err;
+    }
+    // On error (invalid session), redirect to login
+    throw redirect({ to: '/login' });
+  }
 };
 
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: lazyRouteComponent(() => import('@/routes/_auth.login'), 'LoginRouteComponent'), staticData: { title: 'تسجيل الدخول' } });
