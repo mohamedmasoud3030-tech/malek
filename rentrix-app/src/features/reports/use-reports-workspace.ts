@@ -17,6 +17,8 @@ import {
   useTrialBalanceReport,
   useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
+import { summarizeMaintenanceRequests } from '@/features/maintenance/maintenance-helpers';
+import { useMaintenance } from '@/features/maintenance/use-maintenance';
 import { useCostCenters } from '@/features/settings/useCostCenters';
 import { useAllUnits } from '@/features/units/use-units';
 import {
@@ -31,11 +33,6 @@ import {
   type FilterState,
 } from './reports-page.helpers';
 
-/**
- * Returns the first non-null error from a list of query results. Replaces the
- * long `a.error ?? b.error ?? …` chain with a single composition call so the
- * view-model stays readable and duplication-free (PR #1163 cleanup).
- */
 function firstErrorOf(...errors: ReadonlyArray<unknown>): unknown {
   for (const error of errors) {
     if (error != null) return error;
@@ -43,7 +40,6 @@ function firstErrorOf(...errors: ReadonlyArray<unknown>): unknown {
   return undefined;
 }
 
-/** Returns true when any of the supplied query loading flags is active. */
 function isLoadingAny(...flags: ReadonlyArray<boolean | undefined>): boolean {
   return flags.some(Boolean);
 }
@@ -72,6 +68,7 @@ export function useReportsWorkspace(filters: FilterState) {
   const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined);
   const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters);
   const unitsQuery = useAllUnits();
+  const maintenanceQuery = useMaintenance('all', '');
   const trialBalanceQuery = useTrialBalanceReport(filters.asOf);
   const incomeStatementQuery = useIncomeStatementReport(financialFilters);
   const balanceSheetQuery = useBalanceSheetReport(filters.asOf);
@@ -95,6 +92,10 @@ export function useReportsWorkspace(filters: FilterState) {
   const expiringRows = useMemo(
     () => buildExpiringContractsRows(contracts, new Date()),
     [contracts],
+  );
+  const maintenanceSummary = useMemo(
+    () => summarizeMaintenanceRequests(maintenanceQuery.data ?? []),
+    [maintenanceQuery.data],
   );
   const receiptRows = useMemo(
     () => (receiptsQuery.data ?? [])
@@ -126,6 +127,7 @@ export function useReportsWorkspace(filters: FilterState) {
     tenantStatementQuery.error,
     ownerStatementQuery.error,
     unitsQuery.error,
+    maintenanceQuery.error,
     receiptsQuery.error,
     costCentersQuery.error,
     propertyTitlesQuery.error,
@@ -169,6 +171,11 @@ export function useReportsWorkspace(filters: FilterState) {
         expiringRows,
         isLoading: isLoadingAny(unitsQuery.isLoading, contractsQuery.isLoading),
       },
+      maintenance: {
+        rows: maintenanceQuery.data ?? [],
+        summary: maintenanceSummary,
+        isLoading: maintenanceQuery.isLoading,
+      },
       accounting: {
         asOf: filters.asOf,
         from: filters.from,
@@ -182,7 +189,7 @@ export function useReportsWorkspace(filters: FilterState) {
         trialBalanceError: trialBalanceQuery.error,
         incomeStatementError: incomeStatementQuery.error,
         balanceSheetError: balanceSheetQuery.error,
-        isLoading: isLoadingAny(financialSummaryQuery.isLoading, expenseBreakdownQuery.isLoading),
+        isLoading: isLoadingAny(trialBalanceQuery.isLoading, incomeStatementQuery.isLoading, balanceSheetQuery.isLoading),
       },
       statements: {
         agedReport: agedReceivablesQuery.data,

@@ -38,7 +38,6 @@ export function ReportsWorkspace({
   const [activeSection, setActiveSection] = useState<ReportSectionId>('overview');
   const activeSectionLabel = reportSections.find((section) => section.id === activeSection)?.label ?? 'التقارير';
   const summary = model.hero.summary;
-  const totalExpensesCount = summary?.expensesCount ?? 0;
 
   const occupancy = useMemo(() => {
     const totals = model.sections.occupancy.occupancyRows.reduce(
@@ -67,7 +66,7 @@ export function ReportsWorkspace({
         onResetCurrentMonth={onResetCurrentMonth}
       />
 
-      <ResponsiveCardGrid desktopColumns={4} className="grid-cols-2">
+      <ResponsiveCardGrid>
         <KpiCard
           label="المحصّل للفترة"
           value={formatMoney(summary?.paid ?? 0)}
@@ -148,7 +147,7 @@ export function ReportsWorkspace({
           <PropertyAnalyticsSection
             occupancyRows={model.sections.occupancy.occupancyRows}
             expenseRows={model.sections.expenses.report?.byProperty ?? []}
-            isLoading={model.sections.occupancy.isLoading}
+            isLoading={model.sections.occupancy.isLoading || model.sections.expenses.isLoading}
           />
         </SectionTabPanel>
         <SectionTabPanel id="overdue" activeId={activeSection}>
@@ -164,18 +163,10 @@ export function ReportsWorkspace({
           <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />
         </SectionTabPanel>
         <SectionTabPanel id="maintenance_analytics" activeId={activeSection}>
-          <MaintenanceReportSection
-            summary={{
-              total: totalExpensesCount,
-              open: Math.round(totalExpensesCount * 0.4),
-              inProgress: Math.round(totalExpensesCount * 0.4),
-              urgent: Math.round(totalExpensesCount * 0.2),
-            }}
-            isLoading={model.hero.isLoading}
-          />
+          <MaintenanceReportSection {...model.sections.maintenance} />
         </SectionTabPanel>
         <SectionTabPanel id="deferred_revenue" activeId={activeSection}>
-          <DeferredRevenueReportSection isLoading={model.hero.isLoading} />
+          <DeferredRevenueReportSection isLoading={false} />
         </SectionTabPanel>
         <SectionTabPanel id="statements" activeId={activeSection}>
           <StatementsSection {...model.sections.statements} filters={filters} />
