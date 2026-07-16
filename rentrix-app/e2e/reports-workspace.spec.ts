@@ -31,7 +31,7 @@ async function openFixture(page: Page, theme: (typeof themes)[number]) {
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('main[data-e2e-reports-workspace]')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'مركز التقارير والكشوف' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'مركز التقارير والكشوف', exact: true })).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {

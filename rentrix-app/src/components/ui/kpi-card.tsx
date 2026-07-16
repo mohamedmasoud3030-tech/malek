@@ -9,19 +9,15 @@ interface KpiCardProps {
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
   className?: string;
-  /** @deprecated All KPI cards now use primary accent only. Prop accepted but ignored. */
+  /** Legacy compatibility prop. KPI cards intentionally render one brand accent. */
   accent?: string;
-  /** @deprecated Compact variant now determined by context. Prop accepted but ignored. */
+  /** Legacy compatibility prop. Compact sizing is determined by context. */
   compact?: boolean;
 }
 
 /**
  * KPI metric card — single accent (primary only).
- *
- * No emerald/amber/rose/violet/sky accent variations.
- * All KPI cards use the primary brand color for the icon,
- * keeping dashboards visually cohesive. Trend indicators
- * signal direction, not category.
+ * Trend indicators communicate direction rather than category color.
  */
 export function KpiCard({
   label,
@@ -41,7 +37,6 @@ export function KpiCard({
         className,
       )}
     >
-      {/* Icon + Trend Badge */}
       <div className="flex items-start justify-between gap-2">
         <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
           <Icon className="size-[1.125rem]" aria-hidden="true" />
@@ -60,7 +55,6 @@ export function KpiCard({
         ) : null}
       </div>
 
-      {/* Value + Label */}
       <div className="mt-3 min-w-0">
         <p className="break-words text-lg sm:text-2xl font-bold tabular-nums leading-tight text-foreground" dir="ltr">
           {value}

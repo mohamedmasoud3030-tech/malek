@@ -74,6 +74,11 @@ export function DashboardWorkspaceE2EFixture() {
         <PageLayout className="space-y-6">
           <HeroBanner snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} today="2026-07-15" />
 
+          <section className="space-y-3" aria-label="صورة الأداء" data-dashboard-section="kpis">
+            <SectionHeader title="صورة الأداء" description="أربع مؤشرات قرار مرتبة في شبكة 2×2 ثابتة" />
+            <KpiGrid snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+          </section>
+
           <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]" data-dashboard-section="priorities">
             <AlertCenter
               expiringContracts={[]}
@@ -86,9 +91,10 @@ export function DashboardWorkspaceE2EFixture() {
             <QuickActions />
           </div>
 
-          <section className="space-y-3" aria-label="صورة الأداء" data-dashboard-section="kpis">
-            <SectionHeader title="صورة الأداء" description="أربع مؤشرات قرار مرتبة في شبكة 2×2 ثابتة" />
-            <KpiGrid snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+          <section className="space-y-4" aria-label="الاتجاهات والتفاصيل" data-dashboard-section="trends">
+            <SectionHeader title="الاتجاهات والتفاصيل" description="تفاصيل مساندة بعد إنهاء الأعمال ذات الأولوية" />
+            <DashboardCharts snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+            <ArrearsBreakdown snapshot={fixtureSnapshot} settings={defaultCompanySettingsContract} />
           </section>
 
           <section className="space-y-3" aria-label="قوائم العمل" data-dashboard-section="work-queues">
@@ -103,12 +109,6 @@ export function DashboardWorkspaceE2EFixture() {
                 <p className="mt-2 text-sm text-muted-foreground">فاتورتان تحتاجان متابعة التحصيل.</p>
               </div>
             </div>
-          </section>
-
-          <section className="space-y-4" aria-label="الاتجاهات والتفاصيل" data-dashboard-section="trends">
-            <SectionHeader title="الاتجاهات والتفاصيل" description="تفاصيل مساندة بعد إنهاء الأعمال ذات الأولوية" />
-            <DashboardCharts snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
-            <ArrearsBreakdown snapshot={fixtureSnapshot} settings={defaultCompanySettingsContract} />
           </section>
         </PageLayout>
       </div>

@@ -13,9 +13,100 @@ if (rawPort && (Number.isNaN(port) || port <= 0)) {
 
 const basePath = process.env.BASE_PATH ?? "/";
 
+const PLACEHOLDER_URLS = new Set([
+  "https://example.supabase.co",
+  "https://invalid.supabase.local",
+]);
+const PLACEHOLDER_KEYS = new Set(["test-anon-key", "invalid-anon-key"]);
+
+function isPlaceholderEnv(
+  url: string | undefined,
+  key: string | undefined,
+): { isPlaceholder: boolean; reason?: string } {
+  if (!url || !key) {
+    return {
+      isPlaceholder: true,
+      reason: "VITE_SUPABASE_URL أو VITE_SUPABASE_ANON_KEY مفقود",
+    };
+  }
+
+  const normalizedUrl = url.trim();
+  const normalizedKey = key.trim();
+  if (PLACEHOLDER_URLS.has(normalizedUrl)) {
+    return {
+      isPlaceholder: true,
+      reason: `VITE_SUPABASE_URL يستخدم قيمة وهمية: ${url}`,
+    };
+  }
+  if (PLACEHOLDER_KEYS.has(normalizedKey)) {
+    return {
+      isPlaceholder: true,
+      reason: `VITE_SUPABASE_ANON_KEY يستخدم قيمة وهمية: ${key}`,
+    };
+  }
+  if (
+    normalizedUrl.includes("example.supabase.co") ||
+    normalizedUrl.includes("invalid.supabase.local")
+  ) {
+    return {
+      isPlaceholder: true,
+      reason: `VITE_SUPABASE_URL يحتوي على نطاق وهمي: ${url}`,
+    };
+  }
+  return { isPlaceholder: false };
+}
+
+function productionEnvGuardPlugin() {
+  return {
+    name: "rentrix-production-env-guard",
+    configResolved(config: any) {
+      const isTest =
+        process.env.VITEST === "true" ||
+        config.mode === "test" ||
+        process.env.NODE_ENV === "test";
+      const isProdBuild =
+        config.command === "build" && config.mode === "production";
+      const isVercel = Boolean(
+        process.env.VERCEL || process.env.VERCEL_ENV === "production",
+      );
+      const isEnforced = process.env.VITE_ENFORCE_PROD_ENV === "true";
+
+      if (isTest) return;
+
+      if (isProdBuild) {
+        const url = process.env.VITE_SUPABASE_URL;
+        const key = process.env.VITE_SUPABASE_ANON_KEY;
+        const check = isPlaceholderEnv(url, key);
+
+        if (check.isPlaceholder) {
+          if (isVercel || isEnforced) {
+            throw new Error(
+              `\n\n=== فشل بناء الإنتاج: متغيرات Supabase وهمية ===\n${check.reason}\n\n` +
+                `يمنع بناء نسخة Production باستخدام قيم Placeholder.\n` +
+                `الحلول:\n` +
+                `1. اضبط متغيرات بيئة حقيقية في Vercel/ production .env\n` +
+                `2. للإختبارات المحلية استخدم VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY الحقيقية أو اترك الاختبارات تستخدم القيم التجريبية عبر VITEST=true\n` +
+                `3. لا تستخدم https://example.supabase.co أو https://invalid.supabase.local في الإنتاج\n\n` +
+                `القيم الحالية:\n` +
+                `VITE_SUPABASE_URL=${url || "(مفقود)"}\n` +
+                `VITE_SUPABASE_ANON_KEY=${key ? `${key.slice(0, 10)}...` : "(مفقود)"}\n`,
+            );
+          }
+
+          console.warn(
+            `\n[rentrix-env-guard] تحذير: بناء الإنتاج يستخدم قيم Supabase وهمية: ${check.reason}\n` +
+              `هذا مسموح في CI/التطوير المحلي لكن سيفشل في Vercel production. اضبط متغيرات حقيقية قبل الإطلاق.\n`,
+          );
+        }
+      }
+    },
+  };
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
+    productionEnvGuardPlugin(),
     react(),
     runtimeErrorOverlay(),
     VitePWA({
@@ -27,7 +118,6 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],
-        // Offline shell only — never cache authenticated API/financial payloads.
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.mode === "navigate",
@@ -47,7 +137,10 @@ export default defineConfig({
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "rentrix-assets",
-              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
+              },
             },
           },
         ],
@@ -78,7 +171,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
-      "@assets": path.resolve(import.meta.dirname, "..", "..", "attached_assets"),
+      "@assets": path.resolve(
+        import.meta.dirname,
+        "..",
+        "..",
+        "attached_assets",
+      ),
     },
     dedupe: ["react", "react-dom"],
   },
@@ -89,12 +187,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          supabase: ['@supabase/supabase-js'],
-          router: ['@tanstack/react-router'],
-          query: ['@tanstack/react-query'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-select'],
-          charts: ['recharts'],
+          "react-vendor": ["react", "react-dom"],
+          supabase: ["@supabase/supabase-js"],
+          router: ["@tanstack/react-router"],
+          query: ["@tanstack/react-query"],
+          ui: ["@radix-ui/react-dialog", "@radix-ui/react-select"],
+          charts: ["recharts"],
         },
       },
     },
