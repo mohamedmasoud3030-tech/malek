@@ -57,8 +57,8 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
           {
             title: 'طلبات الصيانة الفعالة',
             rows: activeRows.map((row) => ({
-              label: row.title,
-              value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | الأولوية: ${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority} | التاريخ: ${row.created_at}`,
+              label: row.title ?? 'طلب صيانة',
+              value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | الأولوية: ${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority} | التاريخ: ${row.created_at ?? '—'}`,
             })),
           },
         ],
@@ -96,8 +96,8 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
             {activeRows.map((row) => (
               <ReportListRow
                 key={row.id}
-                title={row.title}
-                subtitle={`${formatDate(row.created_at)} · ${row.technician_name || row.assigned_to || 'غير مسند'}`}
+                title={row.title ?? 'طلب صيانة'}
+                subtitle={`${row.created_at ? formatDate(row.created_at) : '—'} · ${row.technician_name || row.assigned_to || 'غير مسند'}`}
                 meta={(
                   <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
                     {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority}
