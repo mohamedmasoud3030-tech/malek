@@ -12,13 +12,17 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  SUPABASE_CLI_VERSION: '2.105.0'
+  PLAYWRIGHT_VERSION: '1.61.1'
+
 jobs:
   release-blocker-code:
     name: release-blocker-code
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       VITE_SUPABASE_URL: https://example.supabase.co
       VITE_SUPABASE_ANON_KEY: test-anon-key
     steps:
@@ -29,10 +33,16 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify pinned toolchain
+        run: node scripts/ci/verify-tool-versions.mjs
       - name: Validate gate scripts
         run: |
           bash -n scripts/check-release-secret-leaks.sh
+          bash -n scripts/ci/start-supabase-stable.sh
+          bash -n scripts/ci/run-supabase-database-gate.sh
           node --check scripts/assert-release-blocker-env.mjs
+          node --check scripts/ci/preflight-staging.mjs
+          node --check scripts/ci/check-cron-quoting.mjs
       - name: Typecheck application and tests
         run: |
           pnpm --filter ./rentrix-app run typecheck
@@ -49,9 +59,7 @@ jobs:
   release-blocker-database:
     name: release-blocker-database
     runs-on: ubuntu-latest
-    timeout-minutes: 35
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -60,67 +68,25 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Create ephemeral local Supabase configuration
+      - name: Verify pinned toolchain
+        run: node scripts/ci/verify-tool-versions.mjs
+      - name: Replay every migration and run database blockers
         shell: bash
-        run: |
-          set -euo pipefail
-          root="$PWD"
-          bootstrap_dir="$(mktemp -d)"
-          # Run 'supabase init' in a subshell so we never cd away from $root.
-          # Bug fix: previously 'cd $bootstrap_dir' was followed by
-          #   cp supabase/config.toml $root/supabase/config.toml
-          # which copied the freshly-initialised (empty) stock config over
-          # the committed project config, wiping migration paths so
-          # 'supabase db reset' saw zero migrations and pgTAP tests failed
-          # with missing public.* objects.
-          (
-            cd "$bootstrap_dir"
-            "$root/node_modules/.bin/supabase" init
-          )
-          mkdir -p "$root/supabase"
-          cp "$bootstrap_dir/supabase/config.toml" "$root/supabase/config.toml"
-          echo "--- supabase/config.toml present ($(wc -l <"$root/supabase/config.toml") lines) ---"
-          echo "--- migrations directory: $(ls "$root/supabase/migrations" | wc -l) files ---"
-          ls "$root/supabase/migrations" | head -5
-          echo "..."
-      - name: Start isolated Supabase
-        shell: bash
-        run: |
-          set -o pipefail
-          pnpm exec supabase start 2>&1 | tee supabase-start.log
-      - name: Replay every migration from an empty database
-        shell: bash
-        run: |
-          set -o pipefail
-          pnpm exec supabase db reset --local 2>&1 | tee supabase-reset.log
-      - name: Run contract, payment, rollback, and RLS blocker tests
-        shell: bash
-        run: |
-          set -o pipefail
-          pnpm exec supabase test db 2>&1 | tee supabase-test.log
-      - name: Stop isolated Supabase
-        if: always()
-        run: pnpm exec supabase stop --no-backup || true
+        run: bash scripts/ci/run-supabase-database-gate.sh
       - name: Upload database diagnostics
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-blocker-database-diagnostics
-          path: |
-            supabase/.temp
-            supabase/tests
-            supabase-start.log
-            supabase-reset.log
-            supabase-test.log
+          path: .ci-diagnostics/supabase
           if-no-files-found: ignore
 
   release-blocker-authenticated-staging:
     name: release-blocker-authenticated-staging
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     needs: [release-blocker-code]
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       E2E_ENVIRONMENT_KIND: staging
       E2E_BASE_URL: ${{ secrets.E2E_STAGING_BASE_URL }}
       E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
@@ -135,10 +101,16 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify pinned toolchain
+        run: node scripts/ci/verify-tool-versions.mjs
       - name: Fail closed when staging credentials are unavailable
         run: node scripts/assert-release-blocker-env.mjs
-      - name: Install Chromium
-        run: pnpm e2e:install
+      - name: Verify staging application and Auth endpoints
+        run: node scripts/ci/preflight-staging.mjs
+      - name: Restore pinned Chromium
+        uses: ./.github/actions/setup-playwright
+        with:
+          playwright-version: ${{ env.PLAYWRIGHT_VERSION }}
       - name: Run real authentication lifecycle tests with zero skips
         run: pnpm --filter ./rentrix-app exec playwright test e2e/release-blocker-auth.spec.ts --config playwright.config.ts --project=chromium-desktop
       - name: Upload failed authentication traces
