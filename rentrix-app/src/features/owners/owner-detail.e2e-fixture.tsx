@@ -5,7 +5,7 @@ const state = {
   status: 'ready',
   snapshot: {
     owner: {
-      id: 'owner-1', full_name: 'خالد السالمي', display_name: 'أبو راشد', phone: '+96899112233', email: 'khalid@example.com', is_active: true,
+      id: 'owner-1', full_name: 'خالد السالمي', display_name: 'خالد السالمي', phone: '+96899112233', email: 'khalid@example.com', is_active: true,
     },
     properties: [{
       id: 'property-1', title: 'مجمع الخوير التجاري', address: 'الخوير، مسقط', status: 'active',

@@ -33,7 +33,7 @@ test.describe('Maintenance workspace RTL polish', () => {
       test(`no horizontal overflow at ${vp.width}×${vp.height} [${scheme}]`, async ({ page }) => {
         await page.emulateMedia({ colorScheme: scheme });
         await page.setViewportSize(vp);
-        await page.goto('/maintenance');
+        await page.goto('/login?e2e-maintenance-workspace=1');
 
         // Wait for the page structure to appear
         await page.waitForSelector('[data-filter-bar]', { timeout: 10_000 }).catch(() => null);
@@ -58,7 +58,7 @@ test.describe('Maintenance workspace RTL polish', () => {
       test(`filter bar renders without overflow at ${vp.width}×${vp.height} [${scheme}]`, async ({ page }) => {
         await page.emulateMedia({ colorScheme: scheme });
         await page.setViewportSize(vp);
-        await page.goto('/maintenance');
+        await page.goto('/login?e2e-maintenance-workspace=1');
 
         const filterBar = page.locator('[data-filter-bar]');
         await expect(filterBar).toBeVisible({ timeout: 10_000 });
@@ -73,7 +73,7 @@ test.describe('Maintenance workspace RTL polish', () => {
         test.skip(vp.width >= 768, 'desktop breakpoint — DataTable shown instead');
         await page.emulateMedia({ colorScheme: scheme });
         await page.setViewportSize(vp);
-        await page.goto('/maintenance');
+        await page.goto('/login?e2e-maintenance-workspace=1');
         // If there are rows, confirm buttons are at least 44px tall
         const firstButton = page.locator('[data-entity-card] button, .mobile-card button').first();
         const count = await firstButton.count();

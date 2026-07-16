@@ -1,13 +1,23 @@
-import { Building2, CalendarClock, Printer } from 'lucide-react';
+import { Building2, CalendarClock, DoorOpen, Printer, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
 import { formatDate, formatShortId } from '@/features/financials/components/financials-formatters';
 import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import { buildExpiringContractsRows, buildOccupancyRows, expiringContractWindowDays, getTodayLocalDateString } from '../reports-page.helpers';
-import { ReportCard, SafeAnchor } from './common';
+import { SafeAnchor } from './common';
+import {
+  ReportColumns,
+  ReportInsightNote,
+  ReportList,
+  ReportListRow,
+  ReportPanel,
+  ReportProgress,
+  ReportState,
+} from './report-section-primitives';
 
 const defaultSettings: DocumentSettings = {
   company: {
@@ -24,13 +34,19 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
   expiringRows: ReturnType<typeof buildExpiringContractsRows>;
   isLoading: boolean;
 }>) {
-  const handlePrintOccupancyReport = () => {
-    const totalUnits = occupancyRows.reduce((acc, r) => acc + r.occupied + r.vacant, 0);
-    const totalOccupied = occupancyRows.reduce((acc, r) => acc + r.occupied, 0);
-    const totalVacant = occupancyRows.reduce((acc, r) => acc + r.vacant, 0);
-    const occupancyRate = totalUnits > 0 ? ((totalOccupied / totalUnits) * 100).toFixed(1) : '0';
-    const todayStr = getTodayLocalDateString();
+  const totalUnits = occupancyRows.reduce((total, row) => total + row.occupied + row.vacant, 0);
+  const totalOccupied = occupancyRows.reduce((total, row) => total + row.occupied, 0);
+  const totalVacant = occupancyRows.reduce((total, row) => total + row.vacant, 0);
+  const occupancyRate = totalUnits > 0 ? Math.round((totalOccupied / totalUnits) * 100) : 0;
+  const vacancyRate = totalUnits > 0 ? (totalVacant / totalUnits) * 100 : 0;
+  const renewalPressure = totalOccupied > 0 ? (expiringRows.length / totalOccupied) * 100 : 0;
+  const highestVacancyProperty = [...occupancyRows].sort((a, b) => b.vacant - a.vacant)[0];
+  const highestVacancyShare = totalVacant > 0 && highestVacancyProperty
+    ? (highestVacancyProperty.vacant / totalVacant) * 100
+    : 0;
 
+  const handlePrintOccupancyReport = () => {
+    const todayStr = getTodayLocalDateString();
     DocumentTemplates.renderReportPdf(
       {
         reportTitle: 'تقرير نسب الإشغال والشواغر العقارية',
@@ -40,78 +56,124 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
         sections: [
           {
             title: 'جدول نسبة الإشغال والشاغر حسب كل عقار',
-            rows: occupancyRows.map((r) => ({
-              label: r.property,
-              value: `إجمالي الوحدات: ${r.occupied + r.vacant} | المشغولة: ${r.occupied} | الشاغرة: ${r.vacant}`,
+            rows: occupancyRows.map((row) => ({
+              label: row.property,
+              value: `إجمالي الوحدات: ${row.occupied + row.vacant} | المشغولة: ${row.occupied} | الشاغرة: ${row.vacant}`,
             })),
             totals: ['إجمالي إشغال المحفظة', `مشغولة: ${totalOccupied} / شاغرة: ${totalVacant} | نسبة الإشغال العامة: ${occupancyRate}%`],
           },
+          {
+            title: `العقود المنتهية خلال ${expiringContractWindowDays} يوم`,
+            rows: expiringRows.map((row) => ({
+              label: `${row.tenantName} · ${row.propertyTitle} · ${row.unitNumber}`,
+              value: `ينتهي في ${row.endDate} | متبقي ${row.daysRemaining} يوم`,
+            })),
+          },
         ],
-        totalSummary: `معدل الإشغال الكلي: ${occupancyRate}% | عدد الوحدات الشاغرة الجاهزة للتأجير: ${totalVacant} وحدة`,
+        totalSummary: `معدل الإشغال: ${occupancyRate}% | الشواغر: ${totalVacant} | عقود قريبة من الانتهاء: ${expiringRows.length}`,
       },
       defaultSettings,
     );
   };
 
   return (
-    <ReportCard
-      title="مؤشرات الإشغال، الشواغر، والعقود القريبة من الانتهاء"
-      description="متابعة نسبة استغلال الوحدات في كل عقار وتتبع الشواغر وتنبيهات العقود المتوقع انتهاؤها."
-      action={
-        <Button variant="outline" size="sm" onClick={handlePrintOccupancyReport} className="min-h-9 gap-1.5 text-xs font-bold">
-          <Printer className="size-3.5 text-primary" aria-hidden="true" />
-          طباعة تقرير الشواغر والإشغال A4
-        </Button>
-      }
-      isLoading={isLoading}
-    >
-      <div className="grid gap-4 p-4 lg:grid-cols-2">
-        <div className="rounded-2xl border bg-background/80 p-3">
-          <p className="mb-2 flex items-center justify-between gap-2 font-bold">
-            <span>الإشغال والشاغر حسب العقار</span>
-            <Building2 className="size-4 text-muted-foreground" />
-          </p>
-          <div className="space-y-2">
-            {occupancyRows.map((row) => (
-              <div key={row.propertyId} className="rounded-xl bg-muted/30 p-3 text-sm">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="font-bold">{row.property}</span>
-                    {!row.hasTitle && row.shortPropertyId ? (
-                      <span className="ms-2 text-[10px] text-muted-foreground/70" dir="ltr">#{row.shortPropertyId}</span>
-                    ) : null}
-                  </div>
-                  <span className="text-muted-foreground">{formatCompanyNumber(defaultCompanyLocalSettings, row.occupied + row.vacant)} وحدة</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <KpiCard label="مشغولة" value={formatCompanyNumber(defaultCompanyLocalSettings, row.occupied)} icon={Building2} accent="emerald" sub="وحدات مؤجرة" compact />
-                  <KpiCard label="شاغرة" value={formatCompanyNumber(defaultCompanyLocalSettings, row.vacant)} icon={Building2} accent="amber" sub="وحدات متاحة" compact />
-                </div>
-              </div>
-            ))}
-            {occupancyRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد وحدات متاحة لحساب الإشغال.</p> : null}
-          </div>
-        </div>
-        <div className="rounded-2xl border bg-background/80 p-3">
-          <p className="mb-2 flex items-center justify-between gap-2 font-bold">
-            <span>عقود تنتهي خلال {expiringContractWindowDays} يوم</span>
-            <CalendarClock className="size-4 text-muted-foreground" />
-          </p>
-          <div className="space-y-2">
-            {expiringRows.map((row) => (
-              <div key={row.contractId} className="rounded-xl bg-muted/30 p-3 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} />
-                  <StatusBadge tone={row.daysRemaining <= 15 ? 'red' : 'gold'}>{formatCompanyNumber(defaultCompanyLocalSettings, row.daysRemaining)} يوم</StatusBadge>
-                </div>
-                <p className="mt-2 font-medium">{row.tenantName}</p>
-                <p className="text-muted-foreground">{row.propertyTitle} · {row.unitNumber} · {formatDate(row.endDate)}</p>
-              </div>
-            ))}
-            {expiringRows.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عقود نشطة تنتهي قريباً ضمن البيانات الحالية.</p> : null}
-          </div>
-        </div>
+    <div className="space-y-4">
+      <ResponsiveCardGrid>
+        <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(defaultCompanyLocalSettings, totalUnits)} icon={Building2} sub={`${occupancyRows.length.toLocaleString('ar')} عقارات`} />
+        <KpiCard label="نسبة الإشغال" value={`${occupancyRate}%`} icon={TrendingUp} sub={`${totalOccupied.toLocaleString('ar')} وحدة مشغولة`} />
+        <KpiCard label="الوحدات الشاغرة" value={formatCompanyNumber(defaultCompanyLocalSettings, totalVacant)} icon={DoorOpen} sub={`${Math.round(vacancyRate).toLocaleString('ar')}% من المحفظة`} />
+        <KpiCard label="عقود تنتهي قريبًا" value={expiringRows.length.toLocaleString('ar')} icon={CalendarClock} sub={`خلال ${expiringContractWindowDays} يوم`} />
+      </ResponsiveCardGrid>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ReportProgress
+          label="إشغال المحفظة"
+          value={occupancyRate}
+          helper={`${totalOccupied.toLocaleString('ar')} مشغولة من ${totalUnits.toLocaleString('ar')} وحدة`}
+          tone={occupancyRate >= 90 ? 'good' : occupancyRate >= 75 ? 'warning' : 'critical'}
+        />
+        <ReportProgress
+          label="ضغط التجديد القادم"
+          value={renewalPressure}
+          helper={`${expiringRows.length.toLocaleString('ar')} عقود من ${totalOccupied.toLocaleString('ar')} وحدات مشغولة`}
+          tone={renewalPressure <= 15 ? 'good' : renewalPressure <= 30 ? 'warning' : 'critical'}
+        />
       </div>
-    </ReportCard>
+
+      <ReportInsightNote title="قراءة الإشغال">
+        {occupancyRate < 75
+          ? 'الإشغال منخفض نسبيًا؛ ابدأ بالعقار الأعلى شواغرًا وراجع التسعير وحالة الوحدات الجاهزة للتأجير.'
+          : renewalPressure > 30
+            ? 'نسبة كبيرة من العقود النشطة تنتهي قريبًا؛ جهّز خطة تجديد مبكرة لتفادي ارتفاع الشواغر.'
+            : highestVacancyShare > 60
+              ? `معظم الشواغر متركزة في ${highestVacancyProperty?.property ?? 'عقار واحد'}؛ عالج السبب محليًا بدل اتخاذ قرار على مستوى المحفظة كلها.`
+              : 'الإشغال مستقر وضغط التجديد ضمن نطاق يمكن متابعته تشغيليًا.'}
+      </ReportInsightNote>
+
+      <ReportColumns>
+        <ReportPanel
+          title="الإشغال حسب العقار"
+          description="نسبة الاستغلال والوحدات المشغولة والشاغرة لكل عقار."
+          eyebrow="استغلال المحفظة"
+          icon={Building2}
+          action={(
+            <Button variant="outline" size="sm" onClick={handlePrintOccupancyReport} className="min-h-10 gap-1.5 text-xs">
+              <Printer className="size-3.5" aria-hidden="true" />
+              طباعة A4
+            </Button>
+          )}
+          isLoading={isLoading}
+        >
+          {occupancyRows.length === 0 ? (
+            <div className="p-4"><ReportState message="لا توجد وحدات متاحة لحساب الإشغال." /></div>
+          ) : (
+            <ReportList>
+              {occupancyRows.map((row) => {
+                const propertyTotal = row.occupied + row.vacant;
+                const rate = propertyTotal > 0 ? Math.round((row.occupied / propertyTotal) * 100) : 0;
+                return (
+                  <ReportListRow
+                    key={row.propertyId}
+                    title={(
+                      <span>
+                        {row.property}
+                        {!row.hasTitle && row.shortPropertyId ? <span className="ms-2 text-[10px] text-muted-foreground" dir="ltr">#{row.shortPropertyId}</span> : null}
+                      </span>
+                    )}
+                    subtitle={`${formatCompanyNumber(defaultCompanyLocalSettings, row.occupied)} مشغولة · ${formatCompanyNumber(defaultCompanyLocalSettings, row.vacant)} شاغرة`}
+                    meta={`${propertyTotal.toLocaleString('ar')} وحدة`}
+                    value={<span dir="ltr">{rate}%</span>}
+                  />
+                );
+              })}
+            </ReportList>
+          )}
+        </ReportPanel>
+
+        <ReportPanel
+          title={`العقود المنتهية خلال ${expiringContractWindowDays} يوم`}
+          description="أقرب العقود التي تحتاج قرار تجديد أو إخلاء."
+          eyebrow="مخاطر التجديد"
+          icon={CalendarClock}
+          isLoading={isLoading}
+        >
+          {expiringRows.length === 0 ? (
+            <div className="p-4"><ReportState message="لا توجد عقود نشطة تنتهي قريبًا ضمن البيانات الحالية." /></div>
+          ) : (
+            <ReportList>
+              {expiringRows.map((row) => (
+                <ReportListRow
+                  key={row.contractId}
+                  title={row.tenantName}
+                  subtitle={`${row.propertyTitle} · ${row.unitNumber} · ${formatDate(row.endDate)}`}
+                  meta={<SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} />}
+                  value={<StatusBadge tone={row.daysRemaining <= 15 ? 'red' : 'gold'}>{formatCompanyNumber(defaultCompanyLocalSettings, row.daysRemaining)} يوم</StatusBadge>}
+                />
+              ))}
+            </ReportList>
+          )}
+        </ReportPanel>
+      </ReportColumns>
+    </div>
   );
 }

@@ -13,15 +13,13 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: isCredentialedStaging ? 0 : process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: isCredentialedStaging
-    ? [['list']]
-    : process.env.CI
-      ? [['list'], ['html', { open: 'never' }]]
-      : [['list']],
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }]]
+    : [['list']],
   use: {
     baseURL,
-    trace: isCredentialedStaging ? 'off' : 'retain-on-failure',
-    screenshot: isCredentialedStaging ? 'off' : 'only-on-failure',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
     video: isCredentialedStaging ? 'off' : 'retain-on-failure',
     locale: 'ar-EG',
     timezoneId: 'Africa/Cairo',
