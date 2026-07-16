@@ -179,6 +179,15 @@ export function canAccessRoute(context: AuthorizationContext | null | undefined,
   return permission ? canAccess(context, permission) : Boolean(context);
 }
 
+export type WriteAccessState = 'full' | 'read-only' | 'unconfigured';
+
+export function getWriteAccessState(
+  context: AuthorizationContext | null | undefined,
+): WriteAccessState {
+  if (!context) return 'unconfigured';
+  return context.role === 'USER' ? 'read-only' : 'full';
+}
+
 export function canShowNavigationItem(context: AuthorizationContext | null | undefined, permission: AppPermission | null | undefined): boolean {
   return permission ? canAccess(context, permission) : true;
 }
