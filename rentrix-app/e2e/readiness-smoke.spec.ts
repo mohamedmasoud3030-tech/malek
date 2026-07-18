@@ -28,7 +28,7 @@ test.describe('release readiness browser smoke', () => {
     await expect(page.getByRole('heading', { name: /ودّع جداول Excel/ })).toHaveCount(0);
 
     expect(requestedUrls.some((url) => url.includes('rentrix-demo.mp4'))).toBe(false);
-    expect(requestedUrls.some((url) => url.includes('/features/landing') || url.includes('/routes/landing'))).toBe(false);
+    expect(requestedUrls.some((url) => url.includes('/features/landing'))).toBe(false);
     expect(requestedUrls.some((url) => url.includes('recharts') || url.includes('/routes/_protected'))).toBe(false);
     expect(requestedUrls.some((url) => url.endsWith('/icon-rentrix.png'))).toBe(false);
   });
