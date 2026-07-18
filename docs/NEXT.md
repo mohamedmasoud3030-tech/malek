@@ -3,7 +3,7 @@
 
 ## Current status
 
-> Verified repository head: `7bb098f530fdd0041aa5588cbccd223b04beba5c` from PR #1190 on 2026-07-18. There are no open pull requests at this checkpoint.
+> Verified repository head: `e82b754ed7cbee8a07e809b87e935b4bf5c4cf37` from PR #1196 on 2026-07-18. There are no open pull requests at this checkpoint.
 
 The bounded architecture refactor (phases A–E) is complete. The latest production incident fixes are merged, including authorization-helper recursion/grants, dashboard live-type compatibility, duplicate dashboard reads, and the public landing performance boundary.
 
@@ -13,16 +13,19 @@ The engineering P0 implementation is merged. As of 2026-07-18, Deposits and Auto
 - Deposits and Automation migrations `20260717000003`, `20260717000004`, `20260717000005`, `20260717000007`, `20260717000008`, `20260717000009` were applied to production in dependency order on 2026-07-18 with explicit owner approval. Live-verified: `tenant_deposits`, `deposit_transactions`, `automation_rules` (6 rows seeded), `automation_notifications` all exist; RPCs `create_deposit_atomic`, `deduct_deposit_atomic`, `refund_deposit_atomic`, `execute_automation_rule`, `execute_automation_rule_internal`, `run_scheduled_automation_rules`, `retry_automation_run` are all live; the `tenant_deposits_status_check` constraint includes `partially_deducted`; `pg_cron` is enabled and `rentrix-automation-hourly` is scheduled and active (`0 * * * *`).
 - Production authorization helpers and `rpt_dashboard_overview` were repaired and authenticated reads were verified after PR #1189.
 - PR #1190 isolated the public landing entry from authenticated providers and heavy protected-app dependencies.
+- PR #1195 repaired the canonical owner → property → agreement links, backfilled all 10 managed properties, and aligned owner reports/balances with payments and contract-level agreements. Production currently contains 8 `FIXED_MONTHLY` and 2 `RATE` agreements, with zero unlinked contracts, agreement/property/date mismatches, or invalid fee values in the 2026-07-18 read-only checkpoint.
+- PR #1196 revoked direct API execution from internal owner-agreement trigger helpers and passed the security quality gate.
 
 Do not recreate completed architecture phases or reopen historical UI refactors.
 
-## Execute next — deposits/automation lifecycle verification
+## Execute now — authenticated live release verification
 
-1. Run authenticated CRUD/lifecycle tests for deposits (create → deduct → refund, overdraw rejection) and automation (rule execution, retry, scheduled run) against production or a Staging replica.
-2. Add repository contract tests that lock the now-live schema (columns, constraint values, RPC signatures) so future migrations can't silently drift from it.
-3. Confirm the frontend/service layer callers for deposits and automation now resolve against production (previously blocked by the absent tables/RPCs — see historical note below).
+1. Run the owner → property → agreement → unit → tenant → contract lifecycle with two different agreement fee policies. Confirm each contract keeps its own agreement and that `FIXED_MONTHLY` is never interpreted as a percentage.
+2. Run invoice → partial/full payment → receipt → VOID and reconcile reports, journal entries, allocations, owner/tenant balances, and orphan checks.
+3. Run authenticated CRUD/lifecycle tests for deposits (create → deduct → refund, overdraw rejection) and automation (rule execution, retry, scheduled run) against Staging first, then the approved Production target.
+4. Keep the repository pgTAP release gate aligned with the live contract so fee-policy drift fails CI before deployment.
 
-## Then — Phase 1 live release verification
+## Phase 1 live release verification
 
 1. Take a restorable backup before applying schema changes to the target environment.
 2. Apply and reconcile the merged migration ledger on Staging; verify no drift or orphan migrations.

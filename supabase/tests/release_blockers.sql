@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(26);
+select plan(32);
 
 select has_table('public', 'contracts', 'contracts table exists after a clean migration replay');
 select has_table('public', 'invoices', 'invoices table exists after a clean migration replay');
@@ -71,10 +71,14 @@ insert into public.owners (id, full_name)
 values ('00000000-0000-0000-0000-000000000201', 'Release Owner');
 
 insert into public.properties (id, title, type, address, status)
-values ('00000000-0000-0000-0000-000000000301', 'Release Property', 'residential', 'Release Gate', 'active');
+values
+  ('00000000-0000-0000-0000-000000000301', 'Release Rate Property', 'residential', 'Release Gate', 'active'),
+  ('00000000-0000-0000-0000-000000000302', 'Release Fixed Property', 'residential', 'Release Gate', 'active');
 
 insert into public.units (id, property_id, unit_number, status, rent_amount)
-values ('00000000-0000-0000-0000-000000000401', '00000000-0000-0000-0000-000000000301', 'RG-1', 'available', 100);
+values
+  ('00000000-0000-0000-0000-000000000401', '00000000-0000-0000-0000-000000000301', 'RG-1', 'available', 100),
+  ('00000000-0000-0000-0000-000000000402', '00000000-0000-0000-0000-000000000302', 'FG-1', 'available', 100);
 
 insert into public.people (id, full_name, type)
 values ('00000000-0000-0000-0000-000000000501', 'Release Tenant', 'tenant');
@@ -86,26 +90,39 @@ select is(
 );
 select is(
   (select name from public.properties where id = '00000000-0000-0000-0000-000000000301'),
-  'Release Property',
+  'Release Rate Property',
   'property compatibility name is populated from title'
 );
 
 insert into public.property_owners (
   property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on
-) values (
-  '00000000-0000-0000-0000-000000000301',
-  '00000000-0000-0000-0000-000000000201',
-  100, true, date '2026-01-01', date '2027-12-31'
-);
+) values
+  (
+    '00000000-0000-0000-0000-000000000301',
+    '00000000-0000-0000-0000-000000000201',
+    100, true, date '2026-01-01', date '2027-12-31'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000302',
+    '00000000-0000-0000-0000-000000000201',
+    100, true, date '2026-01-01', date '2027-12-31'
+  );
 
 insert into public.owner_agreements (
   id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on
-) values (
-  '00000000-0000-0000-0000-000000000601',
-  '00000000-0000-0000-0000-000000000201',
-  '00000000-0000-0000-0000-000000000301',
-  'property_management', 'RATE', 5, date '2026-01-01', date '2027-12-31'
-);
+) values
+  (
+    '00000000-0000-0000-0000-000000000601',
+    '00000000-0000-0000-0000-000000000201',
+    '00000000-0000-0000-0000-000000000301',
+    'property_management', 'RATE', 5, date '2026-01-01', date '2027-12-31'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000602',
+    '00000000-0000-0000-0000-000000000201',
+    '00000000-0000-0000-0000-000000000302',
+    'property_management', 'FIXED_MONTHLY', 50, date '2026-01-01', date '2027-12-31'
+  );
 
 set local role anon;
 select is(
@@ -176,6 +193,25 @@ select throws_ok(
   null,
   null,
   'overlapping contracts on the same unit are rejected'
+);
+
+select lives_ok(
+  $$
+    select public.create_contract_atomic(
+      '00000000-0000-0000-0000-000000000302',
+      '00000000-0000-0000-0000-000000000402',
+      '00000000-0000-0000-0000-000000000501',
+      '00000000-0000-0000-0000-000000000602',
+      date '2026-08-01', date '2027-07-31', 100, 'monthly', null,
+      'active', null, 'release-blocker-fixed-contract', null
+    )
+  $$,
+  'the same owner can use a different fee agreement on another property'
+);
+select is(
+  (select count(*)::integer from public.contracts where notes = 'release-blocker-fixed-contract'),
+  1,
+  'the fixed-fee contract is linked and persisted independently'
 );
 
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status)
@@ -270,6 +306,50 @@ select throws_ok(
   null,
   null,
   'negative payments are rejected'
+);
+
+insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status)
+select
+  '00000000-0000-0000-0000-000000000702', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
+from public.contracts
+where notes = 'release-blocker-fixed-contract';
+
+select lives_ok(
+  $$
+    select public.record_invoice_payment_atomic(jsonb_build_object(
+      'invoice_id', '00000000-0000-0000-0000-000000000702',
+      'amount', 40,
+      'method', 'cash',
+      'date', '2026-08-05',
+      'reference', 'RB-FIXED-PAYMENT',
+      'request_id', 'release-blocker-fixed-payment'
+    ))
+  $$,
+  'a payment under the independent fixed-fee agreement succeeds'
+);
+select is(
+  (select total_income::numeric from public.owner_balances where owner_id = '00000000-0000-0000-0000-000000000201'),
+  65::numeric,
+  'owner income combines collections from both agreements'
+);
+select is(
+  (select commission::numeric from public.owner_balances where owner_id = '00000000-0000-0000-0000-000000000201'),
+  1.25::numeric,
+  'only the RATE agreement accrues a collection percentage'
+);
+select is(
+  (
+    select coalesce(sum((transaction ->> 'deduction')::numeric), 0)
+    from jsonb_array_elements(
+      public.rpt_owner_statement(
+        '00000000-0000-0000-0000-000000000201',
+        date '2026-08-01',
+        date '2026-08-31'
+      ) -> 'transactions'
+    ) transaction
+  ),
+  1.25::numeric,
+  'the owner statement applies each contract agreement without treating FIXED_MONTHLY as a rate'
 );
 
 select set_config(
