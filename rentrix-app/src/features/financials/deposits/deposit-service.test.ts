@@ -67,12 +67,17 @@ describe('deposits real implementation - no false success', () => {
     expect(content).toContain('pg_advisory_xact_lock');
   });
 
-  it('migration handles uuid/text contract_id mismatch for empty DB replay', () => {
+  it('migration derives contract/property/unit identifiers from canonical tables', () => {
     const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
     const content = readFileSync(migrationPath, 'utf8').toLowerCase();
     expect(content).toContain('format_type');
     expect(content).toContain('contracts');
-    expect(content).toContain('uuid');
+    expect(content).toContain('properties');
+    expect(content).toContain('units');
+    expect(content).toContain('v_property_id_type');
+    expect(content).toContain('v_unit_id_type');
+    expect(content).not.toContain('property_id uuid references public.properties');
+    expect(content).not.toContain('v_property_id uuid :=');
   });
 
   it('does not use partially_refunded for deduction - uses partially_deducted', () => {
@@ -96,7 +101,9 @@ describe('deposits real implementation - no false success', () => {
 
     const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
     const content08 = readFileSync(migration08Path, 'utf8');
-    expect(content08).toContain('IF v_contract_id_type IS NULL THEN');
+    expect(content08).toContain('v_property_id_type');
+    expect(content08).toContain('v_unit_id_type');
+    expect(content08).not.toContain("v_property_id uuid :=");
   });
 
   it('tests create -> partial deduction -> refund -> full settlement status flow', () => {
