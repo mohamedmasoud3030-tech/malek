@@ -23,25 +23,35 @@ BEGIN
   JOIN public.owner_agreements oa ON oa.id = c.agreement_id AND oa.owner_id = p_owner_id
   WHERE p.deleted_at IS NULL AND upper(COALESCE(p.status, '')) <> 'VOID';
 
-  SELECT COALESCE(sum(e.amount), 0)
-  INTO v_expenses
-  FROM public.expenses e
-  WHERE e.deleted_at IS NULL
-    AND upper(COALESCE(e.status, '')) = 'POSTED'
-    AND upper(COALESCE(e.charged_to, '')) = 'OWNER'
-    AND (
-      EXISTS (
-        SELECT 1 FROM public.contracts c
-        JOIN public.owner_agreements oa ON oa.id = c.agreement_id
-        WHERE c.id = e.contract_id AND oa.owner_id = p_owner_id
-      )
-      OR EXISTS (
-        SELECT 1 FROM public.property_owners po
-        WHERE po.property_id = e.property_id AND po.owner_id = p_owner_id
-          AND (po.starts_on IS NULL OR po.starts_on <= public._safe_date(e.date_time))
-          AND (po.ends_on IS NULL OR po.ends_on >= public._safe_date(e.date_time))
-      )
-    );
+  -- The clean canonical expense table deliberately has no owner/office charge
+  -- classifier. Do not guess ownership there. The legacy live table can still
+  -- contribute explicitly classified OWNER expenses until it is converged.
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'charged_to'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'status'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'date_time'
+  ) THEN
+    EXECUTE $owner_expenses$
+      SELECT COALESCE(sum(e.amount), 0)
+      FROM public.expenses e
+      WHERE e.deleted_at IS NULL
+        AND upper(COALESCE(e.status, '')) = 'POSTED'
+        AND upper(COALESCE(e.charged_to, '')) = 'OWNER'
+        AND EXISTS (
+          SELECT 1 FROM public.property_owners po
+          WHERE po.property_id = e.property_id AND po.owner_id = $1
+            AND (po.starts_on IS NULL OR po.starts_on <= public._safe_date(e.date_time))
+            AND (po.ends_on IS NULL OR po.ends_on >= public._safe_date(e.date_time))
+        )
+    $owner_expenses$ INTO v_expenses USING p_owner_id;
+  ELSE
+    v_expenses := 0;
+  END IF;
 
   INSERT INTO public.owner_balances(owner_id, total_income, total_expenses, commission, net_balance, updated_at)
   VALUES (p_owner_id::text, public._r3(v_income), public._r3(v_expenses), public._r3(v_commission),
@@ -69,12 +79,18 @@ DECLARE
   v_owner_id uuid;
 BEGIN
   IF TG_OP IN ('INSERT', 'UPDATE') THEN
-    v_new_contract_id := NEW.contract_id;
-    IF TG_TABLE_NAME = 'expenses' THEN v_new_property_id := NEW.property_id; END IF;
+    IF TG_TABLE_NAME = 'payments' THEN
+      v_new_contract_id := NEW.contract_id;
+    ELSE
+      v_new_property_id := NEW.property_id;
+    END IF;
   END IF;
   IF TG_OP IN ('UPDATE', 'DELETE') THEN
-    v_old_contract_id := OLD.contract_id;
-    IF TG_TABLE_NAME = 'expenses' THEN v_old_property_id := OLD.property_id; END IF;
+    IF TG_TABLE_NAME = 'payments' THEN
+      v_old_contract_id := OLD.contract_id;
+    ELSE
+      v_old_property_id := OLD.property_id;
+    END IF;
   END IF;
 
   FOR v_owner_id IN
