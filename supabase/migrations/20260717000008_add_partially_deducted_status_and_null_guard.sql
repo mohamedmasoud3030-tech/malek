@@ -44,13 +44,14 @@ declare
   v_reason text := nullif(p_payload->>'reason','');
   v_description text := nullif(p_payload->>'description','');
   v_charged_date date := nullif(p_payload->>'charged_date','')::date;
-  v_property_id uuid := nullif(p_payload->>'property_id','')::uuid;
+  v_property_id_raw text := nullif(p_payload->>'property_id','');
   v_deposit record;
   v_cached jsonb;
   v_result jsonb;
   v_expense_account_id text;
   v_deposit_account_id text;
   v_expense_id uuid;
+  v_expense_property_id_type text;
 begin
   if auth.uid() is null or not public.is_admin_or_manager() then
     raise exception 'ADMIN or MANAGER role required' using errcode='42501';
@@ -97,9 +98,31 @@ begin
   end if;
 
   if v_deposit_account_id is not null and v_expense_account_id is not null then
+    SELECT format_type(a.atttypid, a.atttypmod) INTO v_expense_property_id_type
+    FROM pg_attribute a
+    JOIN pg_class c ON c.oid = a.attrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname='public' AND c.relname='expenses' AND a.attname='property_id' AND a.attnum>0 AND NOT a.attisdropped;
+
+    IF v_expense_property_id_type IS NULL THEN
+      RAISE EXCEPTION 'expenses.property_id type not found';
+    END IF;
+
     v_expense_id := gen_random_uuid();
-    insert into public.expenses (id, property_id, category, amount, expense_date, description, status, no)
-    values (v_expense_id, coalesce(v_property_id, v_deposit.property_id), 'صيانة من تأمين', v_amount, v_charged_date, 'خصم تأمين: '||coalesce(v_description,''), 'POSTED', 'EXP-DEP-'||substr(v_deposit_id,1,6));
+    EXECUTE format(
+      'insert into public.expenses
+        (id, property_id, category, amount, expense_date, description, status, no)
+       values ($1, $2::%s, $3, $4, $5, $6, $7, $8)',
+      v_expense_property_id_type
+    )
+    USING v_expense_id,
+          coalesce(v_property_id_raw, v_deposit.property_id::text),
+          'صيانة من تأمين',
+          v_amount,
+          v_charged_date,
+          'خصم تأمين: '||coalesce(v_description,''),
+          'POSTED',
+          'EXP-DEP-'||substr(v_deposit_id,1,6);
 
     insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id)
     values
@@ -129,12 +152,12 @@ as $$
 declare
   v_request_id text := nullif(p_payload->>'request_id','');
   v_contract_id_raw text := nullif(p_payload->>'contract_id','');
-  v_contract_id_uuid uuid;
-  v_contract_id_text text;
   v_contract_id_type text;
+  v_property_id_type text;
+  v_unit_id_type text;
   v_tenant_id text := nullif(p_payload->>'tenant_id','');
-  v_property_id uuid := nullif(p_payload->>'property_id','')::uuid;
-  v_unit_id uuid := nullif(p_payload->>'unit_id','')::uuid;
+  v_property_id_raw text := nullif(p_payload->>'property_id','');
+  v_unit_id_raw text := nullif(p_payload->>'unit_id','');
   v_amount numeric := nullif(p_payload->>'amount','')::numeric;
   v_received_date date := nullif(p_payload->>'received_date','')::date;
   v_notes text := nullif(p_payload->>'notes','');
@@ -162,31 +185,36 @@ begin
   FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace
   WHERE n.nspname='public' AND c.relname='contracts' AND a.attname='id' AND a.attnum>0 AND NOT a.attisdropped;
 
-  IF v_contract_id_type IS NULL THEN
-    RAISE EXCEPTION 'contracts.id type not found - cannot determine FK type for tenant_deposits';
+  SELECT format_type(a.atttypid, a.atttypmod) INTO v_property_id_type
+  FROM pg_attribute a
+  JOIN pg_class c ON c.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname='public' AND c.relname='properties' AND a.attname='id' AND a.attnum>0 AND NOT a.attisdropped;
+
+  SELECT format_type(a.atttypid, a.atttypmod) INTO v_unit_id_type
+  FROM pg_attribute a
+  JOIN pg_class c ON c.oid = a.attrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname='public' AND c.relname='units' AND a.attname='id' AND a.attnum>0 AND NOT a.attisdropped;
+
+  IF v_contract_id_type IS NULL OR v_property_id_type IS NULL OR v_unit_id_type IS NULL THEN
+    RAISE EXCEPTION 'Cannot resolve canonical contract/property/unit identifier types';
   END IF;
 
   perform pg_advisory_xact_lock(hashtextextended('create_deposit:'||v_request_id,0));
 
   v_deposit_id := gen_random_uuid()::text;
 
-  IF v_contract_id_type = 'uuid' THEN
-    BEGIN
-      v_contract_id_uuid := v_contract_id_raw::uuid;
-    EXCEPTION WHEN OTHERS THEN
-      RAISE EXCEPTION 'contract_id is not a valid uuid: %', v_contract_id_raw;
-    END;
-    insert into public.tenant_deposits (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, notes, request_id)
-    values (v_deposit_id, v_contract_id_uuid, v_tenant_id, v_property_id, v_unit_id, v_amount, v_amount, 'held', v_received_date, v_notes, v_request_id);
-  ELSE
-    v_contract_id_text := v_contract_id_raw;
-    -- Explicit NULL guard: ensure text contract_id still exists in contracts table
-    IF NOT EXISTS (SELECT 1 FROM public.contracts WHERE id::text = v_contract_id_text AND deleted_at IS NULL) THEN
-      RAISE EXCEPTION 'Contract not found for id %', v_contract_id_text;
-    END IF;
-    insert into public.tenant_deposits (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, notes, request_id)
-    values (v_deposit_id, v_contract_id_text, v_tenant_id, v_property_id, v_unit_id, v_amount, v_amount, 'held', v_received_date, v_notes, v_request_id);
-  END IF;
+  EXECUTE format(
+    'insert into public.tenant_deposits
+      (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, notes, request_id)
+     values ($1, $2::%s, $3, $4::%s, $5::%s, $6, $6, ''held'', $7, $8, $9)',
+    v_contract_id_type,
+    v_property_id_type,
+    v_unit_id_type
+  )
+  USING v_deposit_id, v_contract_id_raw, v_tenant_id, v_property_id_raw, v_unit_id_raw,
+        v_amount, v_received_date, v_notes, v_request_id;
 
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, request_id)
   values (v_deposit_id, 'held', v_amount, 'initial_deposit', 'استلام وديعة تأمين', v_request_id || '-held');
