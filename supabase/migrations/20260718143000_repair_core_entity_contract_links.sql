@@ -75,7 +75,7 @@ BEGIN
     INTO v_owner_id, v_owner_name
   FROM public.property_owners po
   JOIN public.owners o ON o.id = po.owner_id
-  WHERE po.property_id = p_property_id
+  WHERE po.property_id::text = p_property_id
     AND (po.starts_on IS NULL OR po.starts_on <= current_date)
     AND (po.ends_on IS NULL OR po.ends_on >= current_date)
   ORDER BY po.is_primary DESC, po.starts_on DESC NULLS LAST, po.created_at
@@ -85,7 +85,7 @@ BEGIN
   SET owner_id = v_owner_id,
       owner_name = v_owner_name,
       updated_at = now()
-  WHERE id = p_property_id
+  WHERE id::text = p_property_id
     AND (owner_id IS DISTINCT FROM v_owner_id OR owner_name IS DISTINCT FROM v_owner_name);
 END;
 $$;
@@ -98,10 +98,10 @@ SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP IN ('UPDATE', 'DELETE') THEN
-    PERFORM public.refresh_property_owner_projection(OLD.property_id);
+    PERFORM public.refresh_property_owner_projection(OLD.property_id::text);
   END IF;
   IF TG_OP IN ('INSERT', 'UPDATE') AND (TG_OP = 'INSERT' OR NEW.property_id IS DISTINCT FROM OLD.property_id) THEN
-    PERFORM public.refresh_property_owner_projection(NEW.property_id);
+    PERFORM public.refresh_property_owner_projection(NEW.property_id::text);
   END IF;
   RETURN COALESCE(NEW, OLD);
 END;
@@ -162,7 +162,7 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  v_property_id text;
+  v_property_id public.properties.id%TYPE;
   v_agreement_id uuid;
   v_owner_name text;
 BEGIN
