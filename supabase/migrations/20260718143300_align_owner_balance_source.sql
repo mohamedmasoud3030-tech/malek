@@ -62,10 +62,10 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
-  v_new_contract_id text;
-  v_old_contract_id text;
-  v_new_property_id text;
-  v_old_property_id text;
+  v_new_contract_id public.contracts.id%TYPE;
+  v_old_contract_id public.contracts.id%TYPE;
+  v_new_property_id public.properties.id%TYPE;
+  v_old_property_id public.properties.id%TYPE;
   v_owner_id uuid;
 BEGIN
   IF TG_OP IN ('INSERT', 'UPDATE') THEN
