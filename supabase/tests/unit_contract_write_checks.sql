@@ -69,23 +69,23 @@ select ok(
 
 select ok(
   pg_get_functiondef('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text)'::regprocedure)
-    like '%u.status in (''maintenance'', ''reserved'')%'
+    like '%unit_record.status in (''maintenance'', ''reserved'')%'
   and pg_get_functiondef('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text)'::regprocedure)
-    like '%btrim(c.start_date)::date <= p_end_date%'
+    like '%btrim(contract_record.start_date::text)::date <= p_end_date%'
   and pg_get_functiondef('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text)'::regprocedure)
-    like '%btrim(c.end_date)::date >= p_start_date%',
+    like '%btrim(contract_record.end_date::text)::date >= p_start_date%',
   'contract creation rejects blocked units and inclusive overlaps'
 );
 
 select ok(
   pg_get_functiondef('public.update_contract_atomic(text,text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text)'::regprocedure)
-    like '%p_unit_id is distinct from v_old.unit_id%'
+    like '%v_unit_id::text is distinct from v_old.unit_id::text%'
   and pg_get_functiondef('public.update_contract_atomic(text,text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text)'::regprocedure)
-    like '%c.id <> p_contract_id%'
+    like '%contract_record.id::text <> p_contract_id%'
   and pg_get_functiondef('public.update_contract_atomic(text,text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text)'::regprocedure)
-    like '%btrim(c.start_date)::date <= p_end_date%'
+    like '%btrim(contract_record.start_date::text)::date <= p_end_date%'
   and pg_get_functiondef('public.update_contract_atomic(text,text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text)'::regprocedure)
-    like '%btrim(c.end_date)::date >= p_start_date%',
+    like '%btrim(contract_record.end_date::text)::date >= p_start_date%',
   'contract editing keeps its current unit while rejecting invalid moves and overlaps'
 );
 
