@@ -24,7 +24,7 @@ test.describe('release readiness browser smoke', () => {
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: /ودّع جداول Excel/ })).toBeVisible();
-    await expect(page.locator('img[src="/landing/dashboard.webp"]')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'لوحة تحكم Rentrix الحقيقية' })).toBeVisible();
 
     expect(requestedUrls.some((url) => url.includes('rentrix-demo.mp4'))).toBe(false);
     expect(requestedUrls.some((url) => url.includes('@supabase') || url.includes('/lib/supabase'))).toBe(false);
