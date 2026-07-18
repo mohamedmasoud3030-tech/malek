@@ -12,8 +12,7 @@ function migration(name: string): string {
 const integritySql = migration('20260718231047_unit_contract_integrity_constraints.sql');
 const statusSql = migration('20260718231106_unit_operational_status_sync.sql');
 const scheduleSql = migration('20260718231116_schedule_unit_status_reconciliation.sql');
-const createSql = migration('20260718231142_harden_create_contract_unit_validation.sql');
-const updateSql = migration('20260718231208_harden_update_contract_unit_validation.sql');
+const finalContractWriteSql = migration('20260718233052_replay_compatible_contract_write_types.sql');
 
 describe('unit and contract write migration contracts', () => {
   it('prevents duplicate unit numbers and cross-property contract links', () => {
@@ -39,18 +38,25 @@ describe('unit and contract write migration contracts', () => {
     expect(scheduleSql).toContain('select public.recalculate_unit_statuses();');
   });
 
+  it('uses canonical table column types for clean replay and production', () => {
+    expect(finalContractWriteSql).toContain('v_tenant_id public.contracts.tenant_id%type');
+    expect(finalContractWriteSql).toContain('v_payment_terms_id public.contracts.payment_terms_id%type');
+    expect(finalContractWriteSql).toContain('v_start_date public.contracts.start_date%type');
+    expect(finalContractWriteSql).toContain('v_end_date public.contracts.end_date%type');
+  });
+
   it('rejects blocked units and inclusive date overlaps on create', () => {
-    expect(createSql).toContain("u.status in ('maintenance', 'reserved')");
-    expect(createSql).toContain('btrim(c.start_date)::date <= p_end_date');
-    expect(createSql).toContain('btrim(c.end_date)::date >= p_start_date');
-    expect(createSql).toContain('p_end_date <= p_start_date');
+    expect(finalContractWriteSql).toContain("unit_record.status in ('maintenance', 'reserved')");
+    expect(finalContractWriteSql).toContain('btrim(contract_record.start_date::text)::date <= p_end_date');
+    expect(finalContractWriteSql).toContain('btrim(contract_record.end_date::text)::date >= p_start_date');
+    expect(finalContractWriteSql).toContain('p_end_date <= p_start_date');
   });
 
   it('allows editing the currently linked blocked unit but rejects moving into another', () => {
-    expect(updateSql).toContain('p_unit_id is distinct from v_old.unit_id');
-    expect(updateSql).toContain("u.status in ('maintenance', 'reserved')");
-    expect(updateSql).toContain('c.id <> p_contract_id');
-    expect(updateSql).toContain('btrim(c.start_date)::date <= p_end_date');
-    expect(updateSql).toContain('btrim(c.end_date)::date >= p_start_date');
+    expect(finalContractWriteSql).toContain('v_unit_id::text is distinct from v_old.unit_id::text');
+    expect(finalContractWriteSql).toContain("unit_record.status in ('maintenance', 'reserved')");
+    expect(finalContractWriteSql).toContain('contract_record.id::text <> p_contract_id');
+    expect(finalContractWriteSql).toContain('btrim(contract_record.start_date::text)::date <= p_end_date');
+    expect(finalContractWriteSql).toContain('btrim(contract_record.end_date::text)::date >= p_start_date');
   });
 });
