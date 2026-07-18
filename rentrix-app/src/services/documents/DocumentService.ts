@@ -48,15 +48,33 @@ export function getDocumentCapability(type: string): DocumentCapability | undefi
  * Document service boundary used by UI actions. It deliberately returns a
  * promise so a future provider/storage adapter can be introduced without
  * changing page contracts. The current implementation renders local PDFs.
+ *
+ * `print` and `downloadPdf` are two distinct operations — `print` opens a
+ * scoped A4 preview of just this document and triggers the browser print
+ * dialog; `downloadPdf` produces a real `application/pdf` file and saves it.
+ * Neither one is implemented in terms of the other.
  */
 export const documentService = {
-  async renderPdf(request: DocumentRequest): Promise<void> {
+  async print(request: DocumentRequest): Promise<void> {
     const capability = getDocumentCapability(request.type);
     if (!capability) throw new Error(`Unsupported document type: ${request.type}`);
     if (!capability.templateAvailable) {
       throw new Error(`لا يوجد قالب محلي جاهز للمستند: ${request.type}`);
     }
+    await DocumentController.print(request);
+  },
 
-    await DocumentController.renderToPDF(request);
+  async downloadPdf(request: DocumentRequest): Promise<void> {
+    const capability = getDocumentCapability(request.type);
+    if (!capability) throw new Error(`Unsupported document type: ${request.type}`);
+    if (!capability.templateAvailable) {
+      throw new Error(`لا يوجد قالب محلي جاهز للمستند: ${request.type}`);
+    }
+    await DocumentController.downloadPdf(request);
+  },
+
+  /** @deprecated use `downloadPdf` — kept temporarily for callers mid-migration. */
+  async renderPdf(request: DocumentRequest): Promise<void> {
+    await this.downloadPdf(request);
   },
 };

@@ -32,7 +32,7 @@ describe('collectDocumentTextChunks', () => {
 
   it('builds active invoice and expense documents with Arabic labels for RTL output', () => {
     const db = {
-      settings: { general: { company: { name: 'Rentrix' } }, operational: { currency: 'OMR' } },
+      settings: { company: { companyName: 'Rentrix', defaultCurrency: 'OMR' } },
       contracts: [{ id: 'contract-1', tenant_id: 'tenant-1', unit_id: 'unit-1', property_id: 'property-1', start_date: '2026-01-01', end_date: '2026-12-31', rent_amount: 100, payment_cycle: 'monthly', status: 'active', cancellation_reason: null, renewed_from_id: null, notes: null, attachment_url: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
       tenants: [{ id: 'tenant-1', full_name: '\u0623\u062d\u0645\u062f \u0639\u0644\u064a', phone: null, email: null, national_id: null, type: 'tenant', address: null, notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],
       units: [{ id: 'unit-1', property_id: 'property-1', name: null, unit_number: 'A-1', floor: null, status: 'occupied', rent_amount: 100, notes: null, created_at: '2026-01-01', updated_at: '2026-01-01', deleted_at: null }],

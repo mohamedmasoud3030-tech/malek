@@ -1,9 +1,11 @@
-import { Building2, DoorOpen, Printer, TrendingUp, WalletCards } from 'lucide-react';
+import { Building2, DoorOpen, Download, Printer, TrendingUp, WalletCards } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
 import type { OccupancyChartRow } from '../reports-page.helpers';
 import { getTodayLocalDateString } from '../reports-page.helpers';
 import {
@@ -14,16 +16,6 @@ import {
   ReportProgress,
   ReportState,
 } from './report-section-primitives';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 export type PropertyAnalyticsProps = Readonly<{
   occupancyRows: OccupancyChartRow[];
@@ -51,7 +43,10 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
     ? (lowestOccupancyProperty.occupied / (lowestOccupancyProperty.occupied + lowestOccupancyProperty.vacant)) * 100
     : 0;
 
-  const handlePrintPropertyAnalytics = () => {
+  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
+
+  const buildPropertyAnalyticsData = (): ReportDocumentData => {
     const propertyMap = new Map<string, { title: string; occupied: number; vacant: number; expenses: number }>();
 
     for (const row of occupancyRows) {
@@ -77,29 +72,42 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
     }
 
     const todayStr = getTodayLocalDateString();
-    DocumentTemplates.renderReportPdf(
-      {
-        reportTitle: 'كشف التحليل التنفيذي واستغلال المحفظة العقارية',
-        reportType: 'Property_Portfolio_Executive_Analysis',
-        periodFrom: todayStr,
-        periodTo: todayStr,
-        sections: [
-          {
-            title: 'جدول أداء واستغلال العقارات ونسب العائد والنفقات',
-            rows: Array.from(propertyMap.values()).map((property) => {
-              const units = property.occupied + property.vacant;
-              const rate = units > 0 ? Math.round((property.occupied / units) * 100) : 0;
-              return {
-                label: property.title,
-                value: `الوحدات: ${units} (${property.occupied} مشغولة / ${property.vacant} شاغرة) | نسبة الإشغال: ${rate}% | إجمالي المصروفات: ${property.expenses.toLocaleString('ar-OM')} ر.ع`,
-              };
-            }),
-          },
-        ],
-        totalSummary: `إجمالي العقارات: ${propertyMap.size} | إشغال المحفظة: ${overallOccupancyRate}% | المصروف لكل وحدة مشغولة: ${expensePerOccupiedUnit.toLocaleString('ar-OM')} ر.ع`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'كشف التحليل التنفيذي واستغلال المحفظة العقارية',
+      reportType: 'Property_Portfolio_Executive_Analysis',
+      periodFrom: todayStr,
+      periodTo: todayStr,
+      sections: [
+        {
+          title: 'جدول أداء واستغلال العقارات ونسب العائد والنفقات',
+          rows: Array.from(propertyMap.values()).map((property) => {
+            const units = property.occupied + property.vacant;
+            const rate = units > 0 ? Math.round((property.occupied / units) * 100) : 0;
+            return {
+              label: property.title,
+              value: `الوحدات: ${units} (${property.occupied} مشغولة / ${property.vacant} شاغرة) | نسبة الإشغال: ${rate}% | إجمالي المصروفات: ${property.expenses.toLocaleString('ar-OM')} ${currencySymbol}`,
+            };
+          }),
+        },
+      ],
+      totalSummary: `إجمالي العقارات: ${propertyMap.size} | إشغال المحفظة: ${overallOccupancyRate}% | المصروف لكل وحدة مشغولة: ${expensePerOccupiedUnit.toLocaleString('ar-OM')} ${currencySymbol}`,
+    };
+  };
+
+  const handlePrintPropertyAnalytics = async () => {
+    try {
+      await DocumentTemplates.printReportDocument(buildPropertyAnalyticsData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
+    }
+  };
+
+  const handleDownloadPropertyAnalytics = async () => {
+    try {
+      await DocumentTemplates.downloadReportPdf(buildPropertyAnalyticsData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
+    }
   };
 
   return (
@@ -140,10 +148,16 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
         eyebrow="مقارنة المحفظة"
         icon={Building2}
         action={(
-          <Button variant="outline" size="sm" onClick={handlePrintPropertyAnalytics} className="min-h-10 gap-1.5 text-xs">
-            <Printer className="size-3.5" aria-hidden="true" />
-            طباعة A4
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" onClick={handlePrintPropertyAnalytics} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+              <Printer className="size-3.5" aria-hidden="true" />
+              طباعة A4
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadPropertyAnalytics} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+              <Download className="size-3.5" aria-hidden="true" />
+              تنزيل PDF
+            </Button>
+          </div>
         )}
         isLoading={isLoading}
       >

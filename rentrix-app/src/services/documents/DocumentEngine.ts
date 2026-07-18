@@ -1,15 +1,20 @@
 import type { Contract, Expense, Invoice, Person, Property, Receipt, Unit } from '@/types/domain';
-import { numberToArabicWords, OMR_CURRENCY_CONFIG } from '@/lib/numberToArabicWords';
+import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@/lib/numberToArabicWords';
 import { TableGenerator } from './TableGenerator';
-import type { DocumentRequest, SignatureRole, UnifiedDocumentModel } from './types';
+import type { DocumentCompanyIdentity, DocumentRequest, SignatureRole, UnifiedDocumentModel } from './types';
 
-type Settings = {
-  general?: { company?: { name?: string; address?: string; phone?: string } };
-  operational?: { currency?: string };
-};
+/**
+ * Company identity is a required input, never a fallback. Every document
+ * builder reads real values from this object (sourced from `company_settings`
+ * via `useCompanySettingsContract()`); there is no built-in company name,
+ * address, phone, or currency anywhere in this file. If the caller has not
+ * loaded settings yet, `DocumentEngine.build` throws instead of rendering
+ * placeholder branding.
+ */
+export type DocumentSettings = { company: DocumentCompanyIdentity };
 
 type AppLikeDb = {
-  settings: Settings;
+  settings: DocumentSettings;
   contracts: Contract[];
   tenants: Person[];
   units: Unit[];
@@ -88,21 +93,52 @@ export type BalanceSheetPayload = {
   date: string;
 };
 
+/**
+ * Thrown when a document is requested without a usable company identity.
+ * Callers (page components) should catch this and show a clear Arabic
+ * message instead of letting a document render with placeholder branding.
+ */
+export class MissingCompanyIdentityError extends Error {
+  constructor() {
+    super('لا يمكن إنشاء المستند: بيانات هوية الشركة غير مكتملة. يرجى إكمال بيانات الشركة في الإعدادات أولاً.');
+    this.name = 'MissingCompanyIdentityError';
+  }
+}
+
 const fmtDate = (v?: string | null) => (v ? new Date(v).toLocaleDateString('ar-OM') : '-');
-const currencyOf = (s?: Settings) => s?.operational?.currency || 'ر.ع';
-const toMoney = (value: number, s?: Settings) =>
+
+function assertCompanyIdentity(settings: DocumentSettings): DocumentCompanyIdentity {
+  const company = settings?.company;
+  if (!company || !company.companyName?.trim() || !company.defaultCurrency?.trim()) {
+    throw new MissingCompanyIdentityError();
+  }
+  return company;
+}
+
+const currencyOf = (s: DocumentSettings) => getCurrencySymbol(assertCompanyIdentity(s).defaultCurrency);
+const wordsOf = (amount: number, s: DocumentSettings) =>
+  numberToArabicWords(amount, getCurrencyWordConfig(assertCompanyIdentity(s).defaultCurrency));
+
+const toMoney = (value: number, s: DocumentSettings) =>
   `${Number.isFinite(value) ? value.toLocaleString('ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '0.000'} ${currencyOf(s)}`;
 
-const baseHeader = (s: Settings, title: string, dateValue?: string, documentNo?: string) => ({
-  companyName: s.general?.company?.name || 'رينتريكس لإدارة العقارات',
-  companyAddress: s.general?.company?.address || 'سلطنة عمان - مسقط',
-  companyPhone: s.general?.company?.phone || '+968 24000000',
-  title,
-  documentNo,
-  dateLabel: 'التاريخ',
-  dateValue,
-  currency: currencyOf(s),
-});
+const baseHeader = (s: DocumentSettings, title: string, dateValue?: string, documentNo?: string) => {
+  const company = assertCompanyIdentity(s);
+  return {
+    companyName: company.companyName,
+    companyAddress: company.address ?? null,
+    companyPhone: company.phone ?? null,
+    companyEmail: company.email ?? null,
+    companyLogoUrl: company.logoUrl ?? null,
+    companyTaxNumber: company.taxNumber ?? null,
+    companyRegistrationNumber: company.registrationNumber ?? null,
+    title,
+    documentNo,
+    dateLabel: 'التاريخ',
+    dateValue,
+    currency: currencyOf(s),
+  };
+};
 
 const formatDocumentValue = (value: unknown): string => {
   if (value == null) return '—';
@@ -120,7 +156,20 @@ const formatDocumentValue = (value: unknown): string => {
 };
 
 const kpi = (label: string, value: unknown) => ({ label, value: formatDocumentValue(value) });
-const footer = (signatures: SignatureRole[]) => ({ signatures, companyStampLabel: 'ختم الشركة المعتمد' });
+
+/**
+ * The stamp/footer label must not claim the document carries a real
+ * approval unless real signature/approval data exists on the model. The
+ * caller is responsible for only requesting a stamp label when a real
+ * company stamp identity is available; this helper never invents wording
+ * like "معتمد آلياً" that implies an automated approval took place.
+ */
+const footer = (signatures: SignatureRole[], metadata?: string | null) => ({
+  signatures,
+  companyStampLabel: null,
+  metadata: metadata ?? null,
+});
+
 const fileName = (prefix: string, id: string | null, fallback: string) => `${prefix}_${id || fallback}`;
 
 const resolveContractContext = (db: AppLikeDb, contractId: string | null) => {
@@ -129,6 +178,26 @@ const resolveContractContext = (db: AppLikeDb, contractId: string | null) => {
   const unit = contract ? db.units.find((u) => u.id === contract.unit_id) : null;
   const property = unit ? db.properties.find((p) => p.id === unit.property_id) : null;
   return { contract, tenant, unit, property };
+};
+
+/**
+ * A contract is only "تنفيذي" (executed/in-force) once real activation
+ * data marks it as such. We label strictly from `contract.status` instead
+ * of assuming every printed contract is executed.
+ */
+const contractStatusTitle = (status: Contract['status']): string => {
+  switch (status) {
+    case 'active':
+      return 'عقد إيجار ساري المفعول';
+    case 'draft':
+      return 'مسودة عقد إيجار (غير موقّع)';
+    case 'expired':
+      return 'عقد إيجار منتهي';
+    case 'terminated':
+      return 'عقد إيجار مفسوخ';
+    default:
+      return 'عقد إيجار';
+  }
 };
 
 class DocumentEngine {
@@ -148,11 +217,11 @@ class DocumentEngine {
       case 'tenant_statement':
         return this.buildTenantStatement(request.payload as { data: TenantStatementDataPayload; db: AppLikeDb });
       case 'trial_balance':
-        return this.buildTrialBalance(request.payload as TrialBalancePayload);
+        return this.buildTrialBalance(request.payload as TrialBalancePayload & { db: AppLikeDb });
       case 'income_statement':
-        return this.buildIncomeStatement(request.payload as IncomeStatementPayload);
+        return this.buildIncomeStatement(request.payload as IncomeStatementPayload & { db: AppLikeDb });
       case 'balance_sheet':
-        return this.buildBalanceSheet(request.payload as BalanceSheetPayload);
+        return this.buildBalanceSheet(request.payload as BalanceSheetPayload & { db: AppLikeDb });
       default:
         throw new Error(`Unsupported document type: ${request.type}`);
     }
@@ -178,14 +247,13 @@ class DocumentEngine {
           ['البيان / تفاصيل المطالبة', 'المبلغ'],
           [
             ['قيمة الإيجار المستحق', toMoney(invoice.amount || 0, db.settings)],
-            ['ضريبة القيمة المضافة (إن وجدت)', toMoney(0, db.settings)],
             ['إجمالي المدفوع حتى تاريخه', toMoney(paid, db.settings)],
             ['المبلغ المتبقي واجب السداد', toMoney(remaining, db.settings)],
           ],
-          ['المبلغ الإجمالي المطلق', toMoney(total, db.settings)],
+          ['المبلغ الإجمالي المطلوب', toMoney(total, db.settings)],
         ),
       ],
-      footer: footer(['tenant', 'accountant', 'general_manager']),
+      footer: footer(['tenant', 'accountant', 'general_manager'], `فاتورة رقم: ${invoice.id.slice(0, 8)}`),
       fileName: fileName('invoice', invoice.id.slice(0, 8), invoice.id),
     };
   }
@@ -197,7 +265,7 @@ class DocumentEngine {
 
     return {
       type: 'contract',
-      header: baseHeader(db.settings, 'عقد إيجار تنفيذي', fmtDate(contract.start_date), contract.id.slice(0, 8)),
+      header: baseHeader(db.settings, contractStatusTitle(contract.status), fmtDate(contract.start_date), contract.id.slice(0, 8)),
       kpis: [
         kpi('اسم المستأجر', tenant?.full_name),
         kpi('رقم الهوية / السجل', tenant?.national_id || '—'),
@@ -211,13 +279,13 @@ class DocumentEngine {
           ['بند العقد', 'التفاصيل المالية والقانونية'],
           [
             ['قيمة الإيجار المتفق عليها', toMoney(contract.rent_amount || 0, db.settings)],
-            ['دورة ودفعات السداد', String(contract.payment_cycle || 'شهري')],
-            ['المبلغ بالحروف', numberToArabicWords(contract.rent_amount || 0, OMR_CURRENCY_CONFIG)],
+            ['دورة ودفعات السداد', String(contract.payment_cycle || '—')],
+            ['المبلغ بالحروف', wordsOf(contract.rent_amount || 0, db.settings)],
             ['ملاحظات وأحكام خاصة', contract.notes || 'لا يوجد'],
           ],
         ),
       ],
-      footer: footer(['owner', 'tenant', 'accountant', 'general_manager']),
+      footer: footer(['owner', 'tenant', 'accountant', 'general_manager'], `رقم العقد: ${contract.id.slice(0, 8)}`),
       fileName: fileName('contract', contract.id.slice(0, 8), contract.id),
     };
   }
@@ -228,7 +296,7 @@ class DocumentEngine {
       ? resolveContractContext(db, invoice.contract_id)
       : { tenant: undefined, unit: undefined, property: undefined };
 
-    const amountInWords = numberToArabicWords(receipt.amount || 0, OMR_CURRENCY_CONFIG);
+    const amountInWords = wordsOf(receipt.amount || 0, db.settings);
     const receiptNo = receipt.id.slice(0, 8);
 
     return {
@@ -246,12 +314,12 @@ class DocumentEngine {
           [
             ['المبلغ المستلم رقماً', toMoney(receipt.amount || 0, db.settings)],
             ['المبلغ المستلم بالحروف', amountInWords],
-            ['ذلك عن / مقابل', receipt.notes || `سداد دفعة إيجارية مرطبطة بالإيصال ${receiptNo}`],
+            ['ذلك عن / مقابل', receipt.notes || `سداد دفعة إيجارية مرتبطة بالإيصال ${receiptNo}`],
           ],
           ['إجمالي المقبوضات', toMoney(receipt.amount || 0, db.settings)],
         ),
       ],
-      footer: footer(['tenant', 'accountant', 'general_manager']),
+      footer: footer(['tenant', 'accountant', 'general_manager'], `إيصال استلام رقم: ${receiptNo}`),
       fileName: fileName('receipt', receiptNo, receipt.id),
     };
   }
@@ -272,12 +340,12 @@ class DocumentEngine {
           ['بيان المصروف', 'القيمة المالية'],
           [
             ['المبلغ المصروف', toMoney(expense.amount || 0, db.settings)],
-            ['المبلغ بالحروف', numberToArabicWords(expense.amount || 0, OMR_CURRENCY_CONFIG)],
+            ['المبلغ بالحروف', wordsOf(expense.amount || 0, db.settings)],
             ['شرح وتفاصيل المصروف', expense.description || '—'],
           ],
         ),
       ],
-      footer: footer(['accountant', 'general_manager']),
+      footer: footer(['accountant', 'general_manager'], `سند صرف رقم: ${expense.id.slice(0, 8)}`),
       fileName: fileName('expense', expense.id.slice(0, 8), expense.id),
     };
   }
@@ -306,7 +374,7 @@ class DocumentEngine {
           ['صافي المبلغ النهائي المستحق للمالك', '', '', toMoney(data.netAmount, db.settings)],
         ),
       ],
-      footer: footer(['accountant', 'general_manager']),
+      footer: footer(['accountant', 'general_manager'], `كشف حساب مالك: ${data.ownerName}`),
       fileName: fileName('owner_statement', data.ownerName, 'statement'),
     };
   }
@@ -337,108 +405,84 @@ class DocumentEngine {
           ['إجمالي الذمم والمال المتبقي', '', '', '', '', toMoney(data.closingBalance, db.settings)],
         ),
       ],
-      footer: footer(['tenant', 'accountant', 'general_manager']),
+      footer: footer(['tenant', 'accountant', 'general_manager'], `كشف حساب مستأجر: ${data.tenantName}`),
       fileName: fileName('tenant_statement', data.tenantName, 'statement'),
     };
   }
 
-  private buildTrialBalance(payload: TrialBalancePayload): UnifiedDocumentModel {
-    const trial = payload.trial;
+  private buildTrialBalance({ trial, endDate, db }: TrialBalancePayload & { db: AppLikeDb }): UnifiedDocumentModel {
     return {
       type: 'trial_balance',
-      header: {
-        companyName: 'رينتريكس لإدارة العقارات',
-        companyAddress: 'سلطنة عمان - مسقط',
-        companyPhone: '+968 24000000',
-        title: 'قائمة ميزان المراجعة المحاسبي',
-        dateLabel: 'تاريخ الكشف',
-        dateValue: fmtDate(payload.endDate),
-      },
+      header: baseHeader(db.settings, 'قائمة ميزان المراجعة المحاسبي', fmtDate(endDate)),
       kpis: [
-        kpi('إجمالي الحركة المدينة', toMoney(trial.totalDebit)),
-        kpi('إجمالي الحركة الدائنة', toMoney(trial.totalCredit)),
-        kpi('حالة التوازن المحاسبي', trial.totalDebit === trial.totalCredit ? 'متوازن 100%' : 'غير متوازن'),
+        kpi('إجمالي الحركة المدينة', toMoney(trial.totalDebit, db.settings)),
+        kpi('إجمالي الحركة الدائنة', toMoney(trial.totalCredit, db.settings)),
+        kpi('حالة التوازن المحاسبي', trial.totalDebit === trial.totalCredit ? 'متوازن' : 'غير متوازن'),
       ],
       tables: [
         TableGenerator.build(
-          ['رقم الحساب', 'اسم الحساب المحاسبي', 'مدين (ر.ع)', 'دائن (ر.ع)'],
-          trial.lines.map((l) => [l.no, l.name, toMoney(l.debit), toMoney(l.credit)]),
-          ['الإجمالي العام', '', toMoney(trial.totalDebit), toMoney(trial.totalCredit)],
+          ['رقم الحساب', 'اسم الحساب المحاسبي', `مدين (${currencyOf(db.settings)})`, `دائن (${currencyOf(db.settings)})`],
+          trial.lines.map((l) => [l.no, l.name, toMoney(l.debit, db.settings), toMoney(l.credit, db.settings)]),
+          ['الإجمالي العام', '', toMoney(trial.totalDebit, db.settings), toMoney(trial.totalCredit, db.settings)],
         ),
       ],
-      footer: footer(['accountant', 'general_manager']),
-      fileName: fileName('trial_balance', payload.endDate, 'report'),
+      footer: footer(['accountant', 'general_manager'], 'قائمة ميزان المراجعة المحاسبي'),
+      fileName: fileName('trial_balance', endDate, 'report'),
     };
   }
 
-  private buildIncomeStatement(payload: IncomeStatementPayload): UnifiedDocumentModel {
-    const pnl = payload.pnlData;
+  private buildIncomeStatement({ pnlData, dateRange, db }: IncomeStatementPayload & { db: AppLikeDb }): UnifiedDocumentModel {
     return {
       type: 'income_statement',
-      header: {
-        companyName: 'رينتريكس لإدارة العقارات',
-        companyAddress: 'سلطنة عمان - مسقط',
-        companyPhone: '+968 24000000',
-        title: 'تقرير قائمه الدخل والربحية',
-        dateLabel: 'الفترة المالية',
-        dateValue: payload.dateRange,
-      },
+      header: baseHeader(db.settings, 'تقرير قائمة الدخل والربحية', dateRange),
       kpis: [
-        kpi('إجمالي الإيرادات التشغيلية', toMoney(pnl.totalRevenue)),
-        kpi('إجمالي المصروفات والنفقات', toMoney(pnl.totalExpense)),
-        kpi('صافي أرباح / خسائر الفترة', toMoney(pnl.netIncome)),
+        kpi('إجمالي الإيرادات التشغيلية', toMoney(pnlData.totalRevenue, db.settings)),
+        kpi('إجمالي المصروفات والنفقات', toMoney(pnlData.totalExpense, db.settings)),
+        kpi('صافي أرباح / خسائر الفترة', toMoney(pnlData.netIncome, db.settings)),
       ],
       tables: [
         TableGenerator.build(
-          ['بند الإيرادات', 'المبلغ (ر.ع)'],
-          pnl.revenues.map((r) => [r.label, toMoney(r.amount)]),
-          ['إجمالي الإيرادات', toMoney(pnl.totalRevenue)],
+          ['بند الإيرادات', `المبلغ (${currencyOf(db.settings)})`],
+          pnlData.revenues.map((r) => [r.label, toMoney(r.amount, db.settings)]),
+          ['إجمالي الإيرادات', toMoney(pnlData.totalRevenue, db.settings)],
         ),
         TableGenerator.build(
-          ['بند المصروفات', 'المبلغ (ر.ع)'],
-          pnl.expenses.map((e) => [e.label, toMoney(e.amount)]),
-          ['إجمالي المصروفات', toMoney(pnl.totalExpense)],
+          ['بند المصروفات', `المبلغ (${currencyOf(db.settings)})`],
+          pnlData.expenses.map((e) => [e.label, toMoney(e.amount, db.settings)]),
+          ['إجمالي المصروفات', toMoney(pnlData.totalExpense, db.settings)],
         ),
       ],
-      footer: footer(['accountant', 'general_manager']),
-      fileName: fileName('income_statement', payload.dateRange, 'report'),
+      footer: footer(['accountant', 'general_manager'], 'تقرير قائمة الدخل والربحية'),
+      fileName: fileName('income_statement', dateRange, 'report'),
     };
   }
 
-  private buildBalanceSheet(payload: BalanceSheetPayload): UnifiedDocumentModel {
-    const bs = payload.data;
+  private buildBalanceSheet({ data, date, db }: BalanceSheetPayload & { db: AppLikeDb }): UnifiedDocumentModel {
     return {
       type: 'balance_sheet',
-      header: {
-        companyName: 'رينتريكس لإدارة العقارات',
-        companyAddress: 'سلطنة عمان - مسقط',
-        companyPhone: '+968 24000000',
-        title: 'قائمة المركز المالي والميزانية العمومية',
-        dateLabel: 'كما في تاريخ',
-        dateValue: fmtDate(payload.date),
-      },
+      header: baseHeader(db.settings, 'قائمة المركز المالي والميزانية العمومية', fmtDate(date)),
       kpis: [
-        kpi('إجمالي الأصول', toMoney(bs.totalAssets)),
-        kpi('إجمالي الالتزامات', toMoney(bs.totalLiabilities)),
-        kpi('إجمالي حقوق الملكية', toMoney(bs.totalEquity)),
+        kpi('إجمالي الأصول', toMoney(data.totalAssets, db.settings)),
+        kpi('إجمالي الالتزامات', toMoney(data.totalLiabilities, db.settings)),
+        kpi('إجمالي حقوق الملكية', toMoney(data.totalEquity, db.settings)),
       ],
       tables: [
         TableGenerator.build(
-          ['الأصول (الموجودات)', 'القيمة (ر.ع)'],
-          bs.assets.map((a) => [a.label, toMoney(a.amount)]),
-          ['إجمالي الأصول', toMoney(bs.totalAssets)],
+          ['الأصول (الموجودات)', `القيمة (${currencyOf(db.settings)})`],
+          data.assets.map((a) => [a.label, toMoney(a.amount, db.settings)]),
+          ['إجمالي الأصول', toMoney(data.totalAssets, db.settings)],
         ),
         TableGenerator.build(
-          ['الالتزامات وحقوق الملكية', 'القيمة (ر.ع)'],
+          ['الالتزامات وحقوق الملكية', `القيمة (${currencyOf(db.settings)})`],
           [
-            ...bs.liabilities.map((l) => [l.label, toMoney(l.amount)]),
-            ...bs.equity.map((eq) => [eq.label, toMoney(eq.amount)]),
+            ...data.liabilities.map((l) => [l.label, toMoney(l.amount, db.settings)]),
+            ...data.equity.map((eq) => [eq.label, toMoney(eq.amount, db.settings)]),
           ],
-          ['إجمالي الالتزامات وحقوق الملكية', toMoney(bs.totalLiabilities + bs.totalEquity)],
+          ['إجمالي الالتزامات وحقوق الملكية', toMoney(data.totalLiabilities + data.totalEquity, db.settings)],
         ),
       ],
-      footer: footer(['accountant', 'general_manager']),
-      fileName: fileName('balance_sheet', payload.date, 'report'),
+      footer: footer(['accountant', 'general_manager'], 'قائمة المركز المالي والميزانية العمومية'),
+      fileName: fileName('balance_sheet', date, 'report'),
     };
   }
 }

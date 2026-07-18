@@ -158,7 +158,7 @@ export function DepositsWorkspace() {
   const handlePrint = (deposit: DepositRecord) => {
     const printableAmount = deposit.remaining_amount > 0 ? deposit.remaining_amount : deposit.deposit_amount;
     const tafqeet = numberToArabicWords(printableAmount, OMR_CURRENCY_CONFIG);
-    DocumentTemplates.renderReportPdf(
+    DocumentTemplates.printReportDocument(
       {
         reportTitle: 'سند تسوية ومخالصة مبلغ التأمين',
         reportType: 'Tenant_Security_Deposit_Clearance',

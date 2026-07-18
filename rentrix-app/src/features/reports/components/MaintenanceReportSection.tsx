@@ -1,4 +1,5 @@
-import { AlertCircle, Clock, Flame, Printer, Wrench } from 'lucide-react';
+import { AlertCircle, Clock, Download, Flame, Printer, Wrench } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -12,7 +13,8 @@ import {
 } from '@/features/maintenance/components/maintenance-list';
 import type { MaintenanceSummary } from '@/features/maintenance/maintenance-helpers';
 import type { Maintenance } from '@/features/maintenance/maintenance-service';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
 import { getTodayLocalDateString } from '../reports-page.helpers';
 import {
   ReportColumns,
@@ -23,16 +25,6 @@ import {
   ReportProgress,
   ReportState,
 } from './report-section-primitives';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 export type MaintenanceReportProps = Readonly<{
   rows: Maintenance[];
@@ -51,40 +43,55 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
   const schedulingCoverage = activeRows.length > 0 ? (scheduledCount / activeRows.length) * 100 : 100;
   const urgentActiveCount = activeRows.filter((row) => row.priority === 'urgent').length;
 
-  const handlePrintMaintenanceReport = () => {
+  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+
+  const buildMaintenanceReportData = (): ReportDocumentData => {
     const todayStr = getTodayLocalDateString();
-    DocumentTemplates.renderReportPdf(
-      {
-        reportTitle: 'كشف تحليل طلبات الصيانة التشغيلية',
-        reportType: 'Maintenance_Operations_Report',
-        periodFrom: todayStr,
-        periodTo: todayStr,
-        sections: [
-          {
-            title: 'ملخص مؤشرات طلبات الصيانة حسب الحالة والأولوية',
-            rows: [
-              { label: 'إجمالي طلبات الصيانة المسجلة', value: `${summary.total} طلب` },
-              { label: 'الطلبات المفتوحة', value: `${summary.open} طلب` },
-              { label: 'الطلبات قيد التنفيذ', value: `${summary.inProgress} طلب` },
-              { label: 'الطلبات المكتملة', value: `${completedCount} طلب` },
-              { label: 'الطلبات العاجلة النشطة', value: `${urgentActiveCount} طلب` },
-              { label: 'تغطية الإسناد', value: `${Math.round(assignmentCoverage)}%` },
-              { label: 'تغطية الجدولة', value: `${Math.round(schedulingCoverage)}%` },
-            ],
-            totals: ['إجمالي الطلبات الفعالة', `${activeRows.length} طلب صيانة`],
-          },
-          {
-            title: 'طلبات الصيانة الفعالة',
-            rows: activeRows.map((row) => ({
-              label: row.title ?? 'طلب صيانة',
-              value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | الأولوية: ${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority} | المسؤول: ${row.technician_name || row.assigned_to || 'غير مسند'} | الموعد: ${row.scheduled_date || 'غير مجدول'}`,
-            })),
-          },
-        ],
-        totalSummary: `إجمالي البلاغات: ${summary.total} | المكتمل: ${completedCount} | الفعال: ${activeRows.length} | العاجل الفعال: ${urgentActiveCount}`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'كشف تحليل طلبات الصيانة التشغيلية',
+      reportType: 'Maintenance_Operations_Report',
+      periodFrom: todayStr,
+      periodTo: todayStr,
+      sections: [
+        {
+          title: 'ملخص مؤشرات طلبات الصيانة حسب الحالة والأولوية',
+          rows: [
+            { label: 'إجمالي طلبات الصيانة المسجلة', value: `${summary.total} طلب` },
+            { label: 'الطلبات المفتوحة', value: `${summary.open} طلب` },
+            { label: 'الطلبات قيد التنفيذ', value: `${summary.inProgress} طلب` },
+            { label: 'الطلبات المكتملة', value: `${completedCount} طلب` },
+            { label: 'الطلبات العاجلة النشطة', value: `${urgentActiveCount} طلب` },
+            { label: 'تغطية الإسناد', value: `${Math.round(assignmentCoverage)}%` },
+            { label: 'تغطية الجدولة', value: `${Math.round(schedulingCoverage)}%` },
+          ],
+          totals: ['إجمالي الطلبات الفعالة', `${activeRows.length} طلب صيانة`],
+        },
+        {
+          title: 'طلبات الصيانة الفعالة',
+          rows: activeRows.map((row) => ({
+            label: row.title ?? 'طلب صيانة',
+            value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | الأولوية: ${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority} | المسؤول: ${row.technician_name || row.assigned_to || 'غير مسند'} | الموعد: ${row.scheduled_date || 'غير مجدول'}`,
+          })),
+        },
+      ],
+      totalSummary: `إجمالي البلاغات: ${summary.total} | المكتمل: ${completedCount} | الفعال: ${activeRows.length} | العاجل الفعال: ${urgentActiveCount}`,
+    };
+  };
+
+  const handlePrintMaintenanceReport = async () => {
+    try {
+      await DocumentTemplates.printReportDocument(buildMaintenanceReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
+    }
+  };
+
+  const handleDownloadMaintenanceReport = async () => {
+    try {
+      await DocumentTemplates.downloadReportPdf(buildMaintenanceReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
+    }
   };
 
   return (
@@ -124,10 +131,16 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
           eyebrow="قائمة العمل"
           icon={Wrench}
           action={(
-            <Button variant="outline" size="sm" onClick={handlePrintMaintenanceReport} className="min-h-10 gap-1.5 text-xs">
-              <Printer className="size-3.5" aria-hidden="true" />
-              طباعة A4
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button variant="outline" size="sm" onClick={handlePrintMaintenanceReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+                <Printer className="size-3.5" aria-hidden="true" />
+                طباعة A4
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadMaintenanceReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+                <Download className="size-3.5" aria-hidden="true" />
+                تنزيل PDF
+              </Button>
+            </div>
           )}
           isLoading={isLoading}
         >

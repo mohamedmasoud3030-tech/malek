@@ -22,6 +22,11 @@ export const DEFAULT_CONTRACT_PREFIX = 'CON';
 export type CompanyLocalSettings = {
   companyName: string;
   logoUrl?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  taxNumber?: string | null;
+  registrationNumber?: string | null;
   defaultLanguage: SupportedLanguage;
   defaultCurrency: SupportedCurrency;
   country: SupportedCountry;
@@ -39,6 +44,11 @@ export type CompanySettingsContract = CompanyLocalSettings & {
 type CompanySettingsInput = Readonly<Partial<{
   companyName: unknown;
   logoUrl: unknown;
+  address: unknown;
+  phone: unknown;
+  email: unknown;
+  taxNumber: unknown;
+  registrationNumber: unknown;
   defaultLanguage: unknown;
   defaultCurrency: unknown;
   country: unknown;
@@ -72,6 +82,11 @@ const countryAliases: Readonly<Record<string, SupportedCountry>> = {
 export const defaultCompanyLocalSettings: CompanyLocalSettings = {
   companyName: 'Rentrix',
   logoUrl: null,
+  address: null,
+  phone: null,
+  email: null,
+  taxNumber: null,
+  registrationNumber: null,
   defaultLanguage: DEFAULT_LANGUAGE,
   defaultCurrency: DEFAULT_CURRENCY,
   country: DEFAULT_COUNTRY,
@@ -181,6 +196,11 @@ export function normalizeCompanySettingsContract(value: CompanySettingsInput | n
   return {
     companyName: normalizeOptionalString(value?.companyName) || defaultCompanySettingsContract.companyName,
     logoUrl: normalizeCompanyLogoUrl(value?.logoUrl),
+    address: normalizeOptionalString(value?.address),
+    phone: normalizeOptionalString(value?.phone),
+    email: normalizeOptionalString(value?.email),
+    taxNumber: normalizeOptionalString(value?.taxNumber),
+    registrationNumber: normalizeOptionalString(value?.registrationNumber),
     defaultLanguage: normalizedLanguage,
     defaultCurrency: normalizeCurrency(value?.defaultCurrency),
     country: normalizeCountry(value?.country),
@@ -199,6 +219,11 @@ export function normalizeCompanyLocalSettings(value: Partial<CompanyLocalSetting
   return {
     companyName: contract.companyName,
     logoUrl: contract.logoUrl,
+    address: contract.address,
+    phone: contract.phone,
+    email: contract.email,
+    taxNumber: contract.taxNumber,
+    registrationNumber: contract.registrationNumber,
     defaultLanguage: contract.defaultLanguage,
     defaultCurrency: contract.defaultCurrency,
     country: contract.country,
