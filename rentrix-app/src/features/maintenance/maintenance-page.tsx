@@ -76,7 +76,7 @@ export function MaintenancePage() {
 
   const handlePrintMaintenanceList = () => {
     const todayStr = getTodayLocalDateString();
-    DocumentTemplates.renderReportPdf(
+    DocumentTemplates.printReportDocument(
       {
         reportTitle: 'كشف بلاغات وطلبات الصيانة الميدانية',
         reportType: 'Maintenance_Requests_Report',

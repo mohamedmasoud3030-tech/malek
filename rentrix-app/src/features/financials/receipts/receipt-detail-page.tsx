@@ -26,7 +26,7 @@ export function ReceiptDetailPage() {
   const handlePrint = useCallback(() => {
     if (!receipt) return;
     setIsPrinting(true);
-    DocumentTemplates.renderReceiptPdf(
+    DocumentTemplates.printReceiptDocument(
       {
         receiptNumber: receipt.receipt_number,
         paymentDate: receipt.payment_date,

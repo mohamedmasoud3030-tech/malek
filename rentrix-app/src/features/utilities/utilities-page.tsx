@@ -145,7 +145,7 @@ export function UtilitiesPage() {
 
   const handlePrint = () => {
     const today = getTodayLocalDateString();
-    DocumentTemplates.renderReportPdf(
+    DocumentTemplates.printReportDocument(
       {
         reportTitle: 'كشف مطالبات وقراءات المرافق',
         reportType: 'Property_Utilities_Statement',

@@ -84,7 +84,7 @@ export function OwnerSettlementWorkspace() {
   const handlePrintSettlementVoucher = (s: OwnerSettlementRecord) => {
     const tafqeetAmount = numberToArabicWords(s.net_payable_amount, OMR_CURRENCY_CONFIG);
 
-    DocumentTemplates.renderOwnerStatementPdf(
+    DocumentTemplates.printOwnerStatementDocument(
       {
         ownerName: s.owner_name,
         periodFrom: s.period_start,
