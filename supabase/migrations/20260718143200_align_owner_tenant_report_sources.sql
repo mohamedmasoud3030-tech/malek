@@ -6,6 +6,24 @@
 -- policy defines their accrual timing; they are deliberately not treated as
 -- percentages here.
 
+CREATE OR REPLACE FUNCTION public._r3(v numeric)
+RETURNS numeric
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public, pg_temp
+AS $$
+  SELECT round(COALESCE(v, 0), 3)
+$$;
+
+CREATE OR REPLACE FUNCTION public._safe_date(v text)
+RETURNS date
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public, pg_temp
+AS $$
+  SELECT CASE WHEN v ~ '^\d{4}-\d{2}-\d{2}' THEN v::date ELSE NULL END
+$$;
+
 CREATE OR REPLACE FUNCTION public.rpt_aged_receivables(p_as_of date)
 RETURNS jsonb
 LANGUAGE plpgsql
