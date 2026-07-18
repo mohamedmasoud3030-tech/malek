@@ -37,6 +37,20 @@ TanStack Router routes are declared programmatically in `routeTree.ts`. Each rou
 - Each feature's `*Service.ts` file wraps Supabase queries/RPCs for that domain; hooks (`use*.ts`) wrap those services with TanStack Query for caching, loading, and error states.
 - All contract write operations are implemented as atomic Postgres RPCs (`create_contract_atomic`, `update_contract_atomic`, `renew_contract_atomic`, `terminate_contract_atomic`, and `soft_delete_contract_atomic`) rather than direct client-side table writes against `contracts`. Other multi-step domain operations are likewise atomic RPCs (e.g. `resolve_maintenance_with_expense`, `record_invoice_payment_atomic`, `void_receipt_atomic`), keeping related writes and financial/accounting invariants consistent.
 
+
+## Automated dependency boundary — Guard v2
+
+The architecture check governs every feature directory, not a selected subset:
+
+- every current cross-feature dependency edge is explicit in `scripts/check-architecture.mjs`;
+- a new feature has no cross-feature access by default;
+- adding an edge requires a reviewed integration seam and allow-list update in the same PR;
+- presentation components cannot add new cross-feature service imports;
+- eight existing presentation/service debts are frozen by exact file path and may only be removed, not expanded;
+- app-composition, direct-Supabase presentation, page-size, and circular-import checks remain enforced.
+
+This is a ratchet: it preserves current behavior while preventing architecture drift. It does not certify that every grandfathered deep import is ideal.
+
 ## Tests
 
 Tests are colocated with the code they cover (`*.test.ts(x)`, `*.spec.ts`) and run with Vitest (`happy-dom` environment, configured in `vite.config.ts`). `rentrix-app/package.json`'s `test` script uses Vitest's default test-file discovery so new colocated tests are picked up automatically; `test:financials` remains an explicit financials-only suite via `--dir src/features/financials`. See `docs/TESTING.md` for exact commands.
