@@ -6,7 +6,7 @@ import { SectionHeader } from './SectionHeader';
 import { Reveal } from './Reveal';
 
 const TAB_META = [
-  { id: 'dashboard', icon: LayoutDashboard, src: '/landing/dashboard.png' },
+  { id: 'dashboard', icon: LayoutDashboard, src: '/landing/dashboard.webp' },
   { id: 'properties', icon: Building2, src: '/landing/properties.png' },
   { id: 'contracts', icon: ScrollText, src: '/landing/contracts.png' },
   { id: 'financials', icon: WalletCards, src: '/landing/financials.png' },

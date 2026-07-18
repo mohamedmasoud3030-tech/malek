@@ -112,7 +112,7 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: false,
-      includeAssets: ["offline.html", "icon-rentrix.png", "favicon.svg"],
+      includeAssets: ["offline.html", "icon-rentrix-192.png", "icon-rentrix-512.png", "favicon.svg"],
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         cleanupOutdatedCaches: true,
@@ -184,18 +184,6 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom"],
-          supabase: ["@supabase/supabase-js"],
-          router: ["@tanstack/react-router"],
-          query: ["@tanstack/react-query"],
-          ui: ["@radix-ui/react-dialog", "@radix-ui/react-select"],
-          charts: ["recharts"],
-        },
-      },
-    },
   },
   server: {
     port,

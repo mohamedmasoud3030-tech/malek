@@ -126,9 +126,11 @@ export function Hero() {
           </div>
 
           <BrowserFrame
-            src="/landing/dashboard.png"
+            src="/landing/dashboard.webp"
             alt={isArabic ? 'لوحة تحكم Rentrix الحقيقية' : 'The real Rentrix dashboard'}
             url={`${APP_HOST}/dashboard`}
+            loading="eager"
+            fetchPriority="high"
           />
           <FrameCaption>{t.hero.screenshotCaption}</FrameCaption>
         </motion.div>

@@ -2,11 +2,8 @@ import { createRootRoute, createRoute, lazyRouteComponent, redirect, isRedirect 
 import { RouteErrorFallback } from '@/components/error-boundary';
 import { NotFoundPage } from '@/app/not-found-page';
 import { RootRouteComponent } from '@/routes/__root';
-import { AuthRouteComponent } from '@/routes/_auth';
-import { ProtectedRouteComponent } from '@/routes/_protected';
 import type { AppPermission } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
-import { supabase } from '@/lib/supabase';
 
 const rootRoute = createRootRoute({
   component: RootRouteComponent,
@@ -18,6 +15,7 @@ const authRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'auth',
   beforeLoad: async () => {
+    const { supabase } = await import('@/lib/supabase');
     // Fix for review thread: don't swallow redirect by having it inside try/catch that catches all
     // Get session in try, handle errors separately, then redirect outside try
     let session: import('@supabase/supabase-js').Session | null = null;
@@ -34,13 +32,14 @@ const authRoute = createRoute({
     }
     if (session) throw redirect({ to: '/dashboard' });
   },
-  component: AuthRouteComponent,
+  component: lazyRouteComponent(() => import('@/routes/_auth'), 'AuthRouteComponent'),
 });
 
 const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'protected',
   beforeLoad: async () => {
+    const { supabase } = await import('@/lib/supabase');
     try {
       const { data, error } = await supabase.auth.getSession();
       if (error) {
@@ -56,10 +55,11 @@ const protectedRoute = createRoute({
       throw redirect({ to: '/login' });
     }
   },
-  component: ProtectedRouteComponent,
+  component: lazyRouteComponent(() => import('@/routes/_protected'), 'ProtectedRouteComponent'),
 });
 
 const requirePermission = (permission: AppPermission) => async () => {
+  const { supabase } = await import('@/lib/supabase');
   try {
     const { data, error } = await supabase.auth.getSession();
     if (error) {
