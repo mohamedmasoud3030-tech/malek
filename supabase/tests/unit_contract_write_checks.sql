@@ -32,8 +32,8 @@ select ok(
 );
 
 select ok(
-  position("then 'maintenance'" in pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure))
-    < position("then 'occupied'" in pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure))
+  position('then ''maintenance''' in pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure))
+    < position('then ''occupied''' in pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure))
   and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
     like '%current_date between btrim(c.start_date)::date and btrim(c.end_date)::date%'
   and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
