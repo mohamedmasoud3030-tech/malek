@@ -28,13 +28,16 @@ type ContractUnitSelectionParams = Readonly<{
 
 export function buildContractUnitOptionLabel({ unit, property, formatRent = formatDefaultCompanyMoney }: ContractUnitOptionLabelParams): string {
   const propertyLabel = property?.title?.trim() || property?.address?.trim() || null;
-  const unitNumber = unit.unit_number?.trim();
-  const unitLabel = unitNumber ? `غرفة ${unitNumber}` : null;
+  const unitLabel = unit.unit_number?.trim() || null;
   const statusLabel = unitStatusLabels[unit.status] ?? null;
   const rentLabel = unit.rent_amount === null || unit.rent_amount === undefined ? null : formatRent(unit.rent_amount);
   const parts = [propertyLabel, unitLabel, statusLabel, rentLabel];
 
   return parts.filter((part): part is string => Boolean(part)).join(' — ');
+}
+
+export function getContractUnitDefaultRent(units: readonly ContractUnitOptionUnit[], unitId: string): number {
+  return units.find((unit) => unit.id === unitId)?.rent_amount ?? 0;
 }
 
 export function isUnitSelectableForContract({ unit, currentLinkedUnitId, conflictsByUnitId }: ContractUnitSelectableParams): boolean {
