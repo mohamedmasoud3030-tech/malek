@@ -3,7 +3,7 @@
 
 ## Current status
 
-> Verified repository head: `e82b754ed7cbee8a07e809b87e935b4bf5c4cf37` from PR #1196 on 2026-07-18. There are no open pull requests at this checkpoint.
+> Verified repository head: `20f443ab3eb57dde588001d9233300fa60d84dfc` from merged PR #1197 on 2026-07-18. This checkpoint records the subsequent production verification.
 
 The bounded architecture refactor (phases A–E) is complete. The latest production incident fixes are merged, including authorization-helper recursion/grants, dashboard live-type compatibility, duplicate dashboard reads, and the public landing performance boundary.
 
@@ -15,15 +15,21 @@ The engineering P0 implementation is merged. As of 2026-07-18, Deposits and Auto
 - PR #1190 isolated the public landing entry from authenticated providers and heavy protected-app dependencies.
 - PR #1195 repaired the canonical owner → property → agreement links, backfilled all 10 managed properties, and aligned owner reports/balances with payments and contract-level agreements. Production currently contains 8 `FIXED_MONTHLY` and 2 `RATE` agreements, with zero unlinked contracts, agreement/property/date mismatches, or invalid fee values in the 2026-07-18 read-only checkpoint.
 - PR #1196 revoked direct API execution from internal owner-agreement trigger helpers and passed the security quality gate.
+- PR #1197 expanded the owner-agreement release gate to 32 pgTAP assertions, covering independent RATE and FIXED_MONTHLY agreements, and added the owner-statement schema-compatibility migration.
+- The PR #1197 migration is applied to production as ledger entry `20260718161218_fix_owner_statement_owner_schema_compatibility`. Its authenticated ADMIN owner-statement smoke passed; anonymous execution remains denied.
+- A read-only production integrity snapshot returned zero findings for contract/agreement/property mismatches, financial or allocation orphans, overpayments/overallocations, balance-formula drift, unbalanced posted journals, and deposit math/orphans. The hourly automation cron is active and four automation rules are enabled.
 
 Do not recreate completed architecture phases or reopen historical UI refactors.
 
 ## Execute now — authenticated live release verification
 
-1. Run the owner → property → agreement → unit → tenant → contract lifecycle with two different agreement fee policies. Confirm each contract keeps its own agreement and that `FIXED_MONTHLY` is never interpreted as a percentage.
-2. Run invoice → partial/full payment → receipt → VOID and reconcile reports, journal entries, allocations, owner/tenant balances, and orphan checks.
-3. Run authenticated CRUD/lifecycle tests for deposits (create → deduct → refund, overdraw rejection) and automation (rule execution, retry, scheduled run) against Staging first, then the approved Production target.
-4. Keep the repository pgTAP release gate aligned with the live contract so fee-policy drift fails CI before deployment.
+The owner-agreement/report read-only release gate is complete in repository CI and production verification. Remaining launch evidence, in priority order:
+
+1. Run the authenticated deposit lifecycle (create → deduct → refund, including overdraw rejection) against Staging or an isolated approved target with bounded test data and rollback.
+2. Run automation rule execution, retry, and scheduled-run verification.
+3. Run owner-settlement approval and payout with journal and balance reconciliation.
+4. Verify private Storage upload, preview, and download through signed URLs, plus denied unauthorized access.
+5. Run the final post-deploy browser smoke and record the Go/No-Go decision with evidence.
 
 ## Phase 1 live release verification
 
