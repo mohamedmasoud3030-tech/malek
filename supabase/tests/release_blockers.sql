@@ -90,7 +90,7 @@ select is(
 );
 select is(
   (select name from public.properties where id = '00000000-0000-0000-0000-000000000301'),
-  'Release Property',
+  'Release Rate Property',
   'property compatibility name is populated from title'
 );
 
