@@ -90,6 +90,14 @@ select is(
   'property compatibility name is populated from title'
 );
 
+insert into public.property_owners (
+  property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on
+) values (
+  '00000000-0000-0000-0000-000000000301',
+  '00000000-0000-0000-0000-000000000201',
+  100, true, date '2026-01-01', date '2027-12-31'
+);
+
 insert into public.owner_agreements (
   id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on
 ) values (
