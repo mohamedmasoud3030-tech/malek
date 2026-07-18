@@ -26,11 +26,11 @@ production-verified.
 
 ## Repository checkpoint (2026-07-18)
 
-- Verified `main` head: `7bb098f530fdd0041aa5588cbccd223b04beba5c` (PR #1190).
-- No open pull requests were returned by the GitHub repository query at this checkpoint.
+- Verified `main` head: `20f443ab3eb57dde588001d9233300fa60d84dfc` (merged PR #1197).
+- This checkpoint includes the production verification performed after PR #1197 merged.
 - Architecture phases A–E remain complete; `docs/ARCHITECTURE_EXECUTION_PLAN.md` is historical evidence, not an active Phase F backlog.
 - The deposit migration chain derives contract/property/unit identifier types from canonical tables and dynamically casts expense property references, eliminating the fixed-UUID replay blocker in code. The automation migration fails early when its baseline tables are absent and its dependency order is covered by a contract test. **As of 2026-07-18, this chain (`20260717000003`, `20260717000004`, `20260717000005`, `20260717000007`, `20260717000008`, `20260717000009`) has been applied to production in dependency order with explicit owner approval and live-verified**: `tenant_deposits`, `deposit_transactions`, `automation_rules` (6 seeded rows), `automation_notifications` exist; all seven RPCs (`create_deposit_atomic`, `deduct_deposit_atomic`, `refund_deposit_atomic`, `execute_automation_rule`, `execute_automation_rule_internal`, `run_scheduled_automation_rules`, `retry_automation_run`) are live; `pg_cron` is enabled with `rentrix-automation-hourly` active. Lifecycle/CRUD testing against production is still pending — see `docs/NEXT.md`.
-- Do not describe Deposits or Automation as production-complete until their absent live tables/RPCs are staged, applied with approval, and lifecycle-tested.
+- Deposits and Automation are deployed and structurally/live-read verified; authenticated mutation lifecycle evidence remains outstanding before the release gate can close.
 
 ## Application
 
@@ -59,7 +59,7 @@ Cross-referenced every `.rpc(...)` and `.from(...)` call in `rentrix-app/src` ag
 - **Bank reconciliation tables were missing live** — see correction above. Now fixed.
 - **Reports RPC wiring has changed since the original 2026-07-06 audit.** Current code now calls `rpt_owner_statement` and `rpt_tenant_statement` from the Reports page when owner/contract filters are selected, and also calls `rpt_cash_flow` / `rpt_vat_return`. Still-unwired report RPC sources include `rpt_daily_collection`, `rpt_overdue_invoices`, `rpt_aged_receivables`, `rpt_income_statement`, `rpt_balance_sheet`, `rpt_trial_balance`, and `rpt_rent_roll`; current UI/service code still computes daily collection/overdue/aged/rent-roll style outputs through service/client aggregation.
 - **Two live function overloads have zero frontend callers**: `get_financial_summary(date,date)` and `get_financial_summary(date,date,date,date)` (neither overload is called anywhere in `rentrix-app/src`), and the legacy `void_receipt_atomic(text, bigint, jsonb, jsonb)` overload (frontend only calls the `void_receipt_atomic(jsonb)` facade). Candidates for `DROP FUNCTION`, pending confirmation these aren't reserved for planned-but-unbuilt screens.
-- No security deposit management, deferred revenue handling, or multi-currency support was found in migrations or `src/features`.
+- **Historical 2026-07-06 finding:** security deposit management was not present then. Deposits are now deployed; deferred revenue handling and multi-currency support remain unverified gaps.
 - The Supabase migration-evidence script (`scripts/collect-supabase-migration-evidence.sh`, run in CI via `pnpm supabase:migration-evidence`) performs local, read-only checks by default (file ordering, presence of env vars). When `SUPABASE_DB_URL` and `psql` are available, it also performs a read-only reconciliation that fails if any local migration file is absent from `supabase_migrations.schema_migrations`; otherwise live schema state must still be checked separately before relying on a migration as deployed.
 
 ### Production loading incident and refreshed contract audit (2026-07-18)
@@ -76,7 +76,10 @@ Cross-referenced every `.rpc(...)` and `.from(...)` call in `rentrix-app/src` ag
 - Owner/property compatibility names and the current owner projection are maintained at the database boundary. Agreement writes now require matching temporal ownership, and `create_property_with_agreement` creates ownership before the agreement.
 - Aged receivables, overdue invoices, and rent roll use canonical `people`; the owner statement and owner balance use canonical `payments` plus each contract's `owner_agreement`. The receipt-based owner-balance trigger is removed and the payment trigger is active.
 - `FIXED_MONTHLY` values are preserved but are not reinterpreted as percentages. Their accrual remains settlement-controlled until a product accounting rule defines timing. On a clean canonical expense schema without an explicit owner/office classifier, automated owner expense deduction remains zero rather than guessing responsibility.
-- Verification passed on a clean database replay (103 migrations and 26 pgTap blockers), 699 application tests, TypeScript checks, production build, and live read-only report/relationship checks. Supabase advisors reported no errors after rollout.
+- PR #1197 is merged. Its release gate now has 32 pgTAP assertions covering two contracts with independent RATE and FIXED_MONTHLY agreements; the full CI matrix passed.
+- Production ledger entry `20260718161218_fix_owner_statement_owner_schema_compatibility` is applied. The owner report now tolerates the clean/live payment timestamp shapes, keeps anonymous execution revoked, and passed an authenticated ADMIN smoke.
+- The post-deploy read-only integrity snapshot returned zero contract/agreement/property mismatches, financial or allocation orphans, overpayments/overallocations, owner/tenant balance drift, unbalanced posted journal batches, and deposit math/orphans. The hourly automation cron is active and four rules are enabled.
+- Supabase security advisors reported zero errors after rollout. Remaining warnings are documented hardening items, including intentional authenticated SECURITY DEFINER RPCs with internal authorization checks.
 
 ### Migration consolidation audit findings (2026-07-05, live-verified against `nnggcnpcuomwfuupupwg`)
 
