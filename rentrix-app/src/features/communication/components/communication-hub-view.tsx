@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -114,39 +115,16 @@ function ErrorCard({ message, onRetry }: Readonly<{ message: string; onRetry: ()
 }
 
 function CommunicationRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: CommunicationRecord[]; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchiveClick: (row: CommunicationRecord) => void }>) {
-  return (
-    <Card className="overflow-hidden">
-      <div className="grid gap-3 p-4 md:hidden" role="list" aria-label="سجلات التواصل">
-        {rows.map((row) => <CommunicationCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}
-      </div>
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[860px] text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              <th className="p-3 text-right">جهة التواصل</th>
-              <th className="p-3 text-right">النوع والاتجاه</th>
-              <th className="p-3 text-right">السياق</th>
-              <th className="p-3 text-right">آخر تحديث</th>
-              <th className="p-3 text-right">الحالة</th>
-              <th className="p-3 text-right">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-t">
-                <td className="max-w-56 whitespace-normal break-words p-3 font-bold">{row.contact_name}<p className="text-xs text-muted-foreground">{row.contact_phone ?? row.contact_email ?? 'بدون بيانات اتصال'}</p></td>
-                <td className="p-3">{channelLabels[row.channel] ?? row.channel}<p className="text-xs text-muted-foreground">{directionLabels[row.direction] ?? row.direction}</p></td>
-                <td className="max-w-72 whitespace-normal break-words p-3">{row.subject ?? row.body.slice(0, 48)}<p className="text-xs text-muted-foreground">{formatRelatedContext(row)}</p></td>
-                <td className="p-3 tabular-nums" dir="ltr">{formatCommunicationTimestamp(row.updated_at ?? row.created_at)}</td>
-                <td className="p-3"><StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge></td>
-                <td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  );
+  const columns: ColumnDef<CommunicationRecord>[] = [
+    { key: 'contact', header: 'جهة التواصل', className: 'max-w-56', render: (row) => <><p className="whitespace-normal break-words font-bold">{row.contact_name}</p><p className="text-xs text-muted-foreground">{row.contact_phone ?? row.contact_email ?? 'بدون بيانات اتصال'}</p></> },
+    { key: 'channel', header: 'النوع والاتجاه', render: (row) => <>{channelLabels[row.channel] ?? row.channel}<p className="text-xs text-muted-foreground">{directionLabels[row.direction] ?? row.direction}</p></> },
+    { key: 'context', header: 'السياق', className: 'max-w-72', render: (row) => <><span className="whitespace-normal break-words">{row.subject ?? row.body.slice(0, 48)}</span><p className="text-xs text-muted-foreground">{formatRelatedContext(row)}</p></> },
+    { key: 'updated_at', header: 'آخر تحديث', render: (row) => <span className="tabular-nums" dir="ltr">{formatCommunicationTimestamp(row.updated_at ?? row.created_at)}</span> },
+    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={statusTone[row.status] ?? 'gray'}>{statusLabels[row.status] ?? row.status}</StatusBadge> },
+    { key: 'actions', header: 'إجراءات', render: (row) => <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /> },
+  ];
+
+  return <EntityTable rows={rows} columns={columns} keyOf={(row) => row.id} aria-label="سجلات التواصل" renderMobileCard={(row) => <CommunicationCard row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />} />;
 }
 
 function CommunicationCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: CommunicationRecord; isArchiving: boolean; onEdit: (row: CommunicationRecord) => void; onArchiveClick: (row: CommunicationRecord) => void }>) {

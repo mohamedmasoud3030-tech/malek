@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { WriteErrorCard } from '@/components/page-state-card';
 import { Card, CardContent } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -223,40 +224,15 @@ export function LeadsView(props: Props) {
 }
 
 function LeadRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: LeadRecord[]; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchiveClick: (row: LeadRecord) => void }>) {
-  return (
-    <Card className="overflow-hidden">
-      <div className="grid gap-3 p-4 md:hidden">
-        {rows.map((row) => <LeadCard key={row.id} row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />)}
-      </div>
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[760px] text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              <th className="p-3 text-right">العميل</th>
-              <th className="p-3 text-right">المصدر</th>
-              <th className="p-3 text-right">الميزانية</th>
-              <th className="p-3 text-right">الحالة</th>
-              <th className="p-3 text-right">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-t">
-                <td className="max-w-56 whitespace-normal break-words p-3 font-bold">
-                  {row.name}
-                  <p className="text-xs text-muted-foreground">{row.phone ?? row.email ?? 'بدون بيانات اتصال'}</p>
-                </td>
-                <td className="p-3">{sourceLabels[row.source ?? ''] ?? row.source ?? '—'}</td>
-                <td className="p-3">{row.min_budget ?? '—'} - {row.max_budget ?? '—'}</td>
-                <td className="p-3"><StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge></td>
-                <td className="p-3"><RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  );
+  const columns: ColumnDef<LeadRecord>[] = [
+    { key: 'name', header: 'العميل', className: 'max-w-56', render: (row) => <><p className="whitespace-normal break-words font-bold">{row.name}</p><p className="text-xs text-muted-foreground">{row.phone ?? row.email ?? 'بدون بيانات اتصال'}</p></> },
+    { key: 'source', header: 'المصدر', render: (row) => sourceLabels[row.source ?? ''] ?? row.source ?? '—' },
+    { key: 'budget', header: 'الميزانية', render: (row) => <span dir="ltr">{row.min_budget ?? '—'} - {row.max_budget ?? '—'}</span> },
+    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={statusTone[row.status ?? ''] ?? 'gray'}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge> },
+    { key: 'actions', header: 'إجراءات', render: (row) => <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /> },
+  ];
+
+  return <EntityTable rows={rows} columns={columns} keyOf={(row) => row.id} aria-label="قائمة العملاء المحتملين" renderMobileCard={(row) => <LeadCard row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />} />;
 }
 
 function LeadCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: LeadRecord; isArchiving: boolean; onEdit: (row: LeadRecord) => void; onArchiveClick: (row: LeadRecord) => void }>) {
