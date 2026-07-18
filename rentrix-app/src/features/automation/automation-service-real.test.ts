@@ -33,6 +33,29 @@ describe('automation real execution', () => {
     expect(content).toContain('AsyncContentState');
   });
 
+  it('migration chain declares and enforces its baseline dependencies', () => {
+    const baselinePath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260705000001_baseline_capture_untracked_tables_batch_b.sql');
+    const executionPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000004_real_automation_execution.sql');
+    const seedPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000007_seed_automation_rules.sql');
+    const schedulePath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql');
+
+    const baseline = readFileSync(baselinePath, 'utf8');
+    const execution = readFileSync(executionPath, 'utf8');
+    const seed = readFileSync(seedPath, 'utf8');
+    const schedule = readFileSync(schedulePath, 'utf8');
+
+    expect(baseline).toContain('public.automation_jobs');
+    expect(execution).toContain("to_regclass('public.automation_jobs')");
+    expect(execution).toContain("to_regclass('public.automation_runs')");
+    expect(execution).toContain("to_regclass('public.automation_run_logs')");
+    expect(execution).toContain('Automation baseline missing');
+    expect(seed).toContain('public.automation_rules');
+    expect(schedule).toContain('public.run_scheduled_automation_rules');
+    expect(Number('20260705000001')).toBeLessThan(Number('20260717000004'));
+    expect(Number('20260717000004')).toBeLessThan(Number('20260717000007'));
+    expect(Number('20260717000007')).toBeLessThan(Number('20260717000009'));
+  });
+
   it('migration creates automation_rules with real execution', () => {
     const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000004_real_automation_execution.sql');
     const content = readFileSync(migrationPath, 'utf8');

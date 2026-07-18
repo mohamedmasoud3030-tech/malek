@@ -29,7 +29,7 @@ production-verified.
 - Verified `main` head: `7bb098f530fdd0041aa5588cbccd223b04beba5c` (PR #1190).
 - No open pull requests were returned by the GitHub repository query at this checkpoint.
 - Architecture phases A–E remain complete; `docs/ARCHITECTURE_EXECUTION_PLAN.md` is historical evidence, not an active Phase F backlog.
-- The next bounded structural work is data-contract stabilization for unapplied Deposits/Automation migrations, followed by broader automated dependency-boundary enforcement.
+- The deposit migration chain now derives contract/property/unit identifier types from canonical tables and dynamically casts expense property references, eliminating the fixed-UUID replay blocker in code. The automation migration now fails early when its baseline tables are absent and its dependency order is covered by a contract test. These repository fixes are not proof of Staging or Production application; both modules remain live-incomplete until the corrected chain is replayed and lifecycle-tested.
 - Do not describe Deposits or Automation as production-complete until their absent live tables/RPCs are staged, applied with approval, and lifecycle-tested.
 
 ## Application
