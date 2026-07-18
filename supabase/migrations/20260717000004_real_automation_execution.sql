@@ -7,7 +7,7 @@ begin;
 
 -- The execution layer extends baseline-captured automation tables. Fail early
 -- with a deterministic dependency error instead of partially creating the module.
-do $
+do $automation_dependencies$
 begin
   if to_regclass('public.automation_jobs') is null
      or to_regclass('public.automation_runs') is null
@@ -15,7 +15,7 @@ begin
     raise exception 'Automation baseline missing: automation_jobs, automation_runs, and automation_run_logs must exist before 20260717000004';
   end if;
 end
-$;
+$automation_dependencies$;
 
 -- 1. Create automation_rules table (user-facing rules catalog with real persistence)
 create table if not exists public.automation_rules (
