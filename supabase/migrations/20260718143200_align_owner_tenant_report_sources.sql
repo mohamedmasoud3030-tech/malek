@@ -24,6 +24,59 @@ AS $$
   SELECT CASE WHEN v ~ '^\d{4}-\d{2}-\d{2}' THEN v::date ELSE NULL END
 $$;
 
+CREATE OR REPLACE FUNCTION public._owner_statement_expenses(
+  p_owner_id uuid,
+  p_from date,
+  p_to date
+)
+RETURNS TABLE(
+  tx_date text,
+  details text,
+  tx_type text,
+  property_name text,
+  gross numeric,
+  deduction numeric,
+  sort_no text
+)
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'charged_to'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'status'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'date_time'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'expenses' AND column_name = 'contract_id'
+  ) THEN
+    RETURN QUERY EXECUTE $owner_expenses$
+      SELECT e.date_time,
+        'مصروف — ' || COALESCE(e.description, e.category),
+        'expense', COALESCE(pr.title, ''), -e.amount, 0::numeric,
+        COALESCE(e.no, e.id::text)
+      FROM public.expenses e
+      LEFT JOIN public.properties pr ON pr.id = e.property_id
+      WHERE e.deleted_at IS NULL
+        AND upper(COALESCE(e.status, '')) = 'POSTED'
+        AND upper(COALESCE(e.charged_to, '')) = 'OWNER'
+        AND public._safe_date(e.date_time) BETWEEN $2 AND $3
+        AND EXISTS (
+          SELECT 1 FROM public.property_owners po
+          WHERE po.property_id = e.property_id AND po.owner_id = $1
+            AND (po.starts_on IS NULL OR po.starts_on <= public._safe_date(e.date_time))
+            AND (po.ends_on IS NULL OR po.ends_on >= public._safe_date(e.date_time))
+        )
+    $owner_expenses$ USING p_owner_id, p_from, p_to;
+  END IF;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.rpt_aged_receivables(p_as_of date)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -196,31 +249,13 @@ BEGIN
     WHERE p.deleted_at IS NULL AND upper(COALESCE(p.status, '')) <> 'VOID'
       AND COALESCE(p.payment_date, public._safe_date(p.date_time)) BETWEEN p_from AND p_to
   ), expense_rows AS (
-    SELECT e.date_time tx_date,
-      'مصروف — ' || COALESCE(e.description, e.category) details,
-      'expense' tx_type, COALESCE(oc.property_name, pr.title, '') property_name,
-      -e.amount gross, 0::numeric deduction, COALESCE(e.no, e.id) sort_no
-    FROM public.expenses e
-    LEFT JOIN owner_contracts oc ON oc.contract_id = e.contract_id
-    LEFT JOIN public.properties pr ON pr.id = e.property_id
-    WHERE e.deleted_at IS NULL AND upper(COALESCE(e.status, '')) = 'POSTED'
-      AND upper(COALESCE(e.charged_to, '')) = 'OWNER'
-      AND public._safe_date(e.date_time) BETWEEN p_from AND p_to
-      AND (
-        oc.contract_id IS NOT NULL
-        OR EXISTS (
-          SELECT 1 FROM public.property_owners po
-          WHERE po.property_id = e.property_id AND po.owner_id = p_owner_id
-            AND (po.starts_on IS NULL OR po.starts_on <= public._safe_date(e.date_time))
-            AND (po.ends_on IS NULL OR po.ends_on >= public._safe_date(e.date_time))
-        )
-      )
+    SELECT * FROM public._owner_statement_expenses(p_owner_id, p_from, p_to)
   ), settlement_rows AS (
     SELECT s.date tx_date, 'تسوية مالية رقم ' || s.no details,
       'settlement' tx_type, '' property_name, -s.amount gross,
       0::numeric deduction, COALESCE(s.no, s.id) sort_no
     FROM public.owner_settlements s
-    WHERE s.owner_id = p_owner_id::text AND public._safe_date(s.date) BETWEEN p_from AND p_to
+    WHERE s.owner_id::text = p_owner_id::text AND public._safe_date(s.date) BETWEEN p_from AND p_to
   ), all_tx AS (
     SELECT * FROM payment_rows UNION ALL SELECT * FROM expense_rows UNION ALL SELECT * FROM settlement_rows
   )
@@ -246,5 +281,6 @@ $$;
 ALTER FUNCTION public.rpt_owner_statement(uuid,date,date) OWNER TO postgres;
 REVOKE ALL ON FUNCTION public.rpt_owner_statement(uuid,date,date) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.rpt_owner_statement(uuid,date,date) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public._owner_statement_expenses(uuid,date,date) FROM PUBLIC, anon, authenticated;
 
 NOTIFY pgrst, 'reload schema';
