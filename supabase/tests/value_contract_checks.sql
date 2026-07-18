@@ -47,14 +47,23 @@ select ok(
 );
 
 select ok(
-  pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%v_target_status := ''occupied''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%v_target_status := ''maintenance''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%v_target_status := ''available''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''OCCUPIED''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''MAINTENANCE''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''AVAILABLE''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''ACTIVE''%',
-  'unit-status trigger writes only canonical lowercase unit states'
+  pg_get_functiondef('public.update_unit_status()'::regprocedure)
+    like '%resolve_unit_operational_status%'
+  and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
+    like '%then ''occupied''%'
+  and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
+    like '%then ''maintenance''%'
+  and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
+    like '%else ''available''%'
+  and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
+    not like '%''OCCUPIED''%'
+  and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
+    not like '%''MAINTENANCE''%'
+  and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
+    not like '%''AVAILABLE''%'
+  and pg_get_functiondef('public.resolve_unit_operational_status(uuid,text)'::regprocedure)
+    not like '%''ACTIVE''%',
+  'unit-status trigger delegates to canonical lowercase unit states'
 );
 
 select ok(

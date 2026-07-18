@@ -10,6 +10,8 @@ export const unitKeys = {
   property: (propertyId: string) => [...unitKeys.all, 'property', propertyId] as const,
 };
 
+const contractQueries = ['contracts'] as const;
+
 export function useAllUnits() {
   return useQuery({
     queryKey: unitKeys.list(),
@@ -48,6 +50,7 @@ export function useUpdateUnit(propertyId: string) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: unitKeys.list() }),
         queryClient.invalidateQueries({ queryKey: unitKeys.property(propertyId) }),
+        queryClient.invalidateQueries({ queryKey: contractQueries }),
       ]);
       toast.success('تم تحديث الوحدة بنجاح');
     },
@@ -71,7 +74,10 @@ export function useSoftDeleteUnit(propertyId: string) {
     },
     onSuccess: () => toast.success('تمت أرشفة الوحدة بنجاح'),
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: unitKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: unitKeys.all }),
+        queryClient.invalidateQueries({ queryKey: contractQueries }),
+      ]);
     },
   });
 }

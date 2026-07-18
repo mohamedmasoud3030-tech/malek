@@ -9,7 +9,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useProperties } from '@/features/properties/use-properties';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import type { Unit } from '@/types/domain';
-import { unitSchema, unitStatusLabels, unitStatusValues, type UnitFormValues } from './unit-schema';
+import {
+  isUnitOperationallyManagedStatus,
+  unitManualStatusValues,
+  unitSchema,
+  unitStatusLabels,
+  type UnitFormValues,
+} from './unit-schema';
 import { useCreateUnit, useUpdateUnit } from './use-units';
 
 type UnitFormModalProps = {
@@ -26,6 +32,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
   const createMutation = useCreateUnit(effectivePropertyId);
   const updateMutation = useUpdateUnit(effectivePropertyId);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const managedStatus = unit ? isUnitOperationallyManagedStatus(unit.status) : false;
   const form = useForm<UnitFormValues>({
     resolver: zodResolver(unitSchema),
     defaultValues: {
@@ -64,7 +71,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
       open={open}
       onOpenChange={onOpenChange}
       title={unit ? 'تعديل وحدة' : 'إضافة وحدة'}
-      description="الوحدات مرتبطة بالعقار الحالي وتُحذف أرشيفياً عند الإزالة."
+      description="أدخل بيانات الوحدة الأساسية. حالتا الإشغال والصيانة تُحدّثان تلقائياً من العقود وطلبات الصيانة."
       className="max-w-2xl"
       headerExtra={
         form.formState.isDirty && !isSubmitting ? (
@@ -128,16 +135,28 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
         </EntityForm.Field>
 
         <EntityForm.Field label="الحالة">
-          <Select {...form.register('status')}>
-            {unitStatusValues.map((status) => (
-              <option key={status} value={status}>
-                {unitStatusLabels[status]}
-              </option>
-            ))}
-          </Select>
+          {managedStatus && unit ? (
+            <div className="space-y-2 rounded-xl border bg-muted/30 p-3">
+              <input type="hidden" {...form.register('status')} />
+              <StatusBadge tone={unit.status === 'occupied' ? 'green' : 'gold'}>
+                {unitStatusLabels[unit.status]}
+              </StatusBadge>
+              <p className="text-xs leading-5 text-muted-foreground">
+                هذه الحالة مرتبطة {unit.status === 'occupied' ? 'بعقد نشط' : 'بطلب صيانة مفتوح'} وتتغير تلقائياً عند تغيره.
+              </p>
+            </div>
+          ) : (
+            <Select {...form.register('status')}>
+              {unitManualStatusValues.map((status) => (
+                <option key={status} value={status}>
+                  {unitStatusLabels[status]}
+                </option>
+              ))}
+            </Select>
+          )}
         </EntityForm.Field>
 
-        <EntityForm.Field label="قيمة الإيجار" error={form.formState.errors.rent_amount?.message}>
+        <EntityForm.Field label="قيمة الإيجار الافتراضية" error={form.formState.errors.rent_amount?.message}>
           <Input
             type="number"
             step="0.01"

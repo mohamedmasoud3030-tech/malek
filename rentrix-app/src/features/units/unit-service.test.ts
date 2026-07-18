@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { normalizeUnitPayload } from './unit-service';
+import { getUnitWriteErrorMessage, normalizeUnitPayload } from './unit-service';
 
 function createQueryMock(result: unknown) {
   const chain = {
@@ -19,7 +19,7 @@ const supabaseMock = vi.hoisted(() => ({
   from: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: supabaseMock,
 }));
 
@@ -43,6 +43,13 @@ describe('unit service write workflow', () => {
       rent_amount: 500,
       notes: null,
     });
+  });
+
+  it('returns an actionable duplicate-number message for the same property', () => {
+    expect(getUnitWriteErrorMessage('create', {
+      code: '23505',
+      message: 'duplicate key value violates unique constraint units_property_unit_number_active_uidx',
+    })).toContain('يوجد بالفعل وحدة بنفس الرقم داخل هذا العقار');
   });
 
   it('throws actionable permission errors on update failures', async () => {

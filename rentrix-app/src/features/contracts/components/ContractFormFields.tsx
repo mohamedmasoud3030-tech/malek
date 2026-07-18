@@ -5,6 +5,7 @@ import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { getContractUnitDefaultRent } from '../contract-unit-options';
 import {
   buildContractUnitOptionLabel,
   contractStatusLabels,
@@ -69,7 +70,6 @@ export function ContractFormFields({
       <EntityForm.ErrorSummary className="md:col-span-2" message={coverageError} />
       <EntityForm.ErrorSummary className="md:col-span-2" message={form.formState.errors.root?.message} />
 
-      {/* Section 1: أطراف العقد والعقار */}
       <EntityForm.Section
         title="أطراف العقد والوحدة العقارية"
         description="اختر العقار المستهدف، ورقم العين الإيجارية المحددة، وهوية المستأجر."
@@ -77,7 +77,16 @@ export function ContractFormFields({
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <EntityForm.Field label="العقار" error={form.formState.errors.property_id?.message}>
-            <Select {...form.register('property_id')} autoFocus={autoFocusProperty}>
+            <Select
+              {...form.register('property_id', {
+                onChange: () => {
+                  form.setValue('unit_id', '', { shouldDirty: true, shouldValidate: false });
+                  form.setValue('rent_amount', 0, { shouldDirty: true, shouldValidate: false });
+                  form.clearErrors('unit_id');
+                },
+              })}
+              autoFocus={autoFocusProperty}
+            >
               <option value="">اختر العقار</option>
               {propertiesQuery.data?.rows.map((property) => (
                 <option key={property.id} value={property.id}>
@@ -88,7 +97,19 @@ export function ContractFormFields({
           </EntityForm.Field>
 
           <EntityForm.Field label="الوحدة" error={form.formState.errors.unit_id?.message}>
-            <Select {...form.register('unit_id')} disabled={!propertyId}>
+            <Select
+              {...form.register('unit_id', {
+                onChange: (event) => {
+                  const unitId = String(event.target.value ?? '');
+                  form.setValue(
+                    'rent_amount',
+                    getContractUnitDefaultRent(unitsQuery.data ?? [], unitId),
+                    { shouldDirty: true, shouldValidate: true },
+                  );
+                },
+              })}
+              disabled={!propertyId || unitsQuery.isLoading}
+            >
               <option value="">اختر الوحدة</option>
               {unitsQuery.data?.map((unit) => (
                 <option
@@ -131,7 +152,6 @@ export function ContractFormFields({
         </div>
       </EntityForm.Section>
 
-      {/* Section 2: المدد المالية وشروط السداد */}
       <EntityForm.Section
         title="المدد المالية ودورات السداد"
         description="تحديد تاريخ سريان العقد ونهايته، قيمة الدفعة المالية المعتمدة وقالب السداد."
@@ -154,6 +174,7 @@ export function ContractFormFields({
               min="0.01"
               {...form.register('rent_amount')}
             />
+            <p className="mt-1 text-xs text-muted-foreground">تُملأ تلقائياً من الإيجار الافتراضي للوحدة ويمكن تعديلها حسب الاتفاق.</p>
           </EntityForm.Field>
 
           <EntityForm.Field label="دورة السداد" error={form.formState.errors.payment_cycle?.message}>
@@ -181,7 +202,6 @@ export function ContractFormFields({
         </div>
       </EntityForm.Section>
 
-      {/* Section 3: الملحقات والملاحظات الإدارية */}
       <EntityForm.Section
         title="المرفقات والتوضيحات الإضافية"
         description="إضافة المستندات الرسمية، مبررات الإلغاء، أو أي مذكرات عامة للعقد."

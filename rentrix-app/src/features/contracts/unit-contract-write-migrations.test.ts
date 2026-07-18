@@ -1,0 +1,62 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+function migration(name: string): string {
+  return readFileSync(
+    join(process.cwd(), '..', 'supabase', 'migrations', name),
+    'utf8',
+  );
+}
+
+const integritySql = migration('20260718231047_unit_contract_integrity_constraints.sql');
+const statusSql = migration('20260718231106_unit_operational_status_sync.sql');
+const scheduleSql = migration('20260718231116_schedule_unit_status_reconciliation.sql');
+const finalContractWriteSql = migration('20260718233052_replay_compatible_contract_write_types.sql');
+
+describe('unit and contract write migration contracts', () => {
+  it('prevents duplicate unit numbers and cross-property contract links', () => {
+    expect(integritySql).toContain('units_property_unit_number_active_uidx');
+    expect(integritySql).toContain('lower(btrim(unit_number))');
+    expect(integritySql).toContain('contracts_unit_property_fkey');
+    expect(integritySql).toContain('foreign key (unit_id, property_id)');
+  });
+
+  it('derives maintenance before current occupancy and preserves manual reservations', () => {
+    const maintenancePosition = statusSql.indexOf("then 'maintenance'");
+    const occupiedPosition = statusSql.indexOf("then 'occupied'");
+    expect(maintenancePosition).toBeGreaterThanOrEqual(0);
+    expect(occupiedPosition).toBeGreaterThan(maintenancePosition);
+    expect(statusSql).toContain("current_date between btrim(c.start_date::text)::date and btrim(c.end_date::text)::date");
+    expect(statusSql).toContain("when lower(coalesce(p_fallback_status, '')) = 'reserved' then 'reserved'");
+    expect(statusSql).toContain('before insert or update of status on public.units');
+  });
+
+  it('keeps time-based unit state synchronized hourly', () => {
+    expect(scheduleSql).toContain("'rentrix-unit-status-hourly'");
+    expect(scheduleSql).toContain("'5 * * * *'");
+    expect(scheduleSql).toContain('select public.recalculate_unit_statuses();');
+  });
+
+  it('uses canonical table column types for clean replay and production', () => {
+    expect(finalContractWriteSql).toContain('v_tenant_id public.contracts.tenant_id%type');
+    expect(finalContractWriteSql).toContain('v_payment_terms_id public.contracts.payment_terms_id%type');
+    expect(finalContractWriteSql).toContain('v_start_date public.contracts.start_date%type');
+    expect(finalContractWriteSql).toContain('v_end_date public.contracts.end_date%type');
+  });
+
+  it('rejects blocked units and inclusive date overlaps on create', () => {
+    expect(finalContractWriteSql).toContain("unit_record.status in ('maintenance', 'reserved')");
+    expect(finalContractWriteSql).toContain('btrim(contract_record.start_date::text)::date <= p_end_date');
+    expect(finalContractWriteSql).toContain('btrim(contract_record.end_date::text)::date >= p_start_date');
+    expect(finalContractWriteSql).toContain('p_end_date <= p_start_date');
+  });
+
+  it('allows editing the currently linked blocked unit but rejects moving into another', () => {
+    expect(finalContractWriteSql).toContain('v_unit_id::text is distinct from v_old.unit_id::text');
+    expect(finalContractWriteSql).toContain("unit_record.status in ('maintenance', 'reserved')");
+    expect(finalContractWriteSql).toContain('contract_record.id::text <> p_contract_id');
+    expect(finalContractWriteSql).toContain('btrim(contract_record.start_date::text)::date <= p_end_date');
+    expect(finalContractWriteSql).toContain('btrim(contract_record.end_date::text)::date >= p_start_date');
+  });
+});
