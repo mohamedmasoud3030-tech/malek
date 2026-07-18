@@ -1,6 +1,7 @@
 -- Phase: Real Automation Execution
 -- Enhances automation_jobs to support enabling/disabling, cron scheduling, and real run logging
 -- Adds automation_rules table for UI-configurable rules
+-- Requires the baseline-captured automation jobs/runs/logs tables; the preflight below enforces that ordering
 
 begin;
 
