@@ -199,7 +199,7 @@ export function LeadsView(props: Props) {
           <EntityForm.Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
           <EntityForm.Field label="أقل ميزانية"><Input type="number" min="0" inputMode="decimal" value={draft.min_budget} onChange={(event) => onDraftChange({ ...draft, min_budget: event.target.value })} /></EntityForm.Field>
           <EntityForm.Field label="أعلى ميزانية"><Input type="number" min="0" inputMode="decimal" value={draft.max_budget} onChange={(event) => onDraftChange({ ...draft, max_budget: event.target.value })} /></EntityForm.Field>
-          <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></label>
+          <EntityForm.Field label="ملاحظات" className="md:col-span-2"><Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></EntityForm.Field>
           <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
         </EntityForm.Root>
       </EntityForm.Overlay>

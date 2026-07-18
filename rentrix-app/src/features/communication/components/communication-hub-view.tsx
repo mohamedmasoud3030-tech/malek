@@ -91,7 +91,7 @@ export function CommunicationHubView(props: Props) {
             <EntityForm.Field label="الحالة"><Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
             <EntityForm.Field label="نوع الربط"><Input value={draft.related_entity_type} onChange={(event) => onDraftChange({ ...draft, related_entity_type: event.target.value })} placeholder="مستأجر، مالك، عقد، أو اتركه فارغاً" /></EntityForm.Field>
             <EntityForm.Field label="معرف الربط"><Input value={draft.related_entity_id} onChange={(event) => onDraftChange({ ...draft, related_entity_id: event.target.value })} /></EntityForm.Field>
-            <label className="grid gap-2 text-sm font-bold md:col-span-2">المحتوى<Textarea required value={draft.body} onChange={(event) => onDraftChange({ ...draft, body: event.target.value })} /></label>
+            <EntityForm.Field label="المحتوى" className="md:col-span-2"><Textarea required value={draft.body} onChange={(event) => onDraftChange({ ...draft, body: event.target.value })} /></EntityForm.Field>
             <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
           </EntityForm.Root>
       </EntityForm.Overlay>
