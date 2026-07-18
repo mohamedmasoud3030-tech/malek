@@ -13,6 +13,7 @@ DECLARE
   v_income numeric := 0;
   v_expenses numeric := 0;
   v_commission numeric := 0;
+  v_balance_owner_id public.owner_balances.owner_id%TYPE := p_owner_id;
 BEGIN
   SELECT COALESCE(sum(p.amount), 0),
     COALESCE(sum(CASE WHEN oa.commission_type = 'RATE'
@@ -54,7 +55,7 @@ BEGIN
   END IF;
 
   INSERT INTO public.owner_balances(owner_id, total_income, total_expenses, commission, net_balance, updated_at)
-  VALUES (p_owner_id::text, public._r3(v_income), public._r3(v_expenses), public._r3(v_commission),
+  VALUES (v_balance_owner_id, public._r3(v_income), public._r3(v_expenses), public._r3(v_commission),
     public._r3(v_income - v_expenses - v_commission), now())
   ON CONFLICT (owner_id) DO UPDATE SET
     total_income = EXCLUDED.total_income,
