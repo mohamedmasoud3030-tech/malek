@@ -18,6 +18,20 @@ async function collectUnexpectedConsoleErrors(page: Page): Promise<string[]> {
 }
 
 test.describe('release readiness browser smoke', () => {
+  test('keeps the public landing independent from authenticated app resources', async ({ page }) => {
+    const requestedUrls: string[] = [];
+    page.on('request', (request) => requestedUrls.push(request.url()));
+
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: /ودّع جداول Excel/ })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'لوحة تحكم Rentrix الحقيقية' })).toBeVisible();
+
+    expect(requestedUrls.some((url) => url.includes('rentrix-demo.mp4'))).toBe(false);
+    expect(requestedUrls.some((url) => url.includes('@supabase') || url.includes('/lib/supabase'))).toBe(false);
+    expect(requestedUrls.some((url) => url.includes('recharts') || url.includes('/routes/_protected'))).toBe(false);
+    expect(requestedUrls.some((url) => url.endsWith('/icon-rentrix.png'))).toBe(false);
+  });
+
   test('renders the unauthenticated login surface without critical accessibility violations', async ({ page }, testInfo) => {
     const consoleErrors = await collectUnexpectedConsoleErrors(page);
 

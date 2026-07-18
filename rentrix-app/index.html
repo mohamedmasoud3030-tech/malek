@@ -7,9 +7,9 @@
     <meta name="description" content="Rentrix نظام إدارة العقارات الذكي — إدارة شاملة للعقود والمستأجرين والمالية والتقارير." />
     <meta name="robots" content="index, follow" />
     <!-- Favicon & Icons -->
-    <link rel="icon" href="/icon-rentrix.png" type="image/png" />
-    <link rel="shortcut icon" href="/icon-rentrix.png" type="image/png" />
-    <link rel="apple-touch-icon" href="/icon-rentrix.png" />
+    <link rel="icon" href="/icon-rentrix-192.png" type="image/png" />
+    <link rel="shortcut icon" href="/icon-rentrix-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icon-rentrix-192.png" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
@@ -50,10 +50,9 @@
       }
     </script>
 
-    <!-- Google Fonts -->
+    <!-- Establish the font connection early, but never block first paint on a third-party stylesheet. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
     <style nonce="rentrix-static">
       :root {
@@ -110,6 +109,14 @@
         const theme = localStorage.getItem('rentrix-theme') || 'light';
         document.documentElement.dataset.theme = theme;
       })();
+    </script>
+    <script nonce="rentrix-static">
+      window.addEventListener('load', function loadCairoFont() {
+        const stylesheet = document.createElement('link');
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap';
+        document.head.appendChild(stylesheet);
+      }, { once: true });
     </script>
   </head>
   <body>

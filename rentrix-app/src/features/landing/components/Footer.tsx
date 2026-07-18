@@ -19,7 +19,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2.5">
-              <img src="/icon-rentrix.png" alt="Rentrix" className="size-9 rounded-xl" />
+              <img src="/icon-rentrix-192.png" alt="Rentrix" width="36" height="36" loading="lazy" className="size-9 rounded-xl" />
               <span className="text-xl font-extrabold tracking-tight text-white" dir="ltr">
                 Rentrix
               </span>

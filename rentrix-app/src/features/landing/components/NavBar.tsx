@@ -51,7 +51,7 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
           {...(anchoredToHome ? { 'data-internal': true } : {})}
           className="flex items-center gap-2.5"
         >
-          <img src="/icon-rentrix.png" alt="Rentrix" className="size-9 rounded-xl" />
+          <img src="/icon-rentrix-192.png" alt="Rentrix" width="36" height="36" className="size-9 rounded-xl" />
           <span className="text-xl font-extrabold tracking-tight text-white" dir="ltr">
             Rentrix
           </span>

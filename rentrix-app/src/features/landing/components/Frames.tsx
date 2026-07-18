@@ -9,6 +9,8 @@ export function BrowserFrame({
   className = '',
   imgClassName = '',
   glow = true,
+  loading = 'lazy',
+  fetchPriority = 'auto',
 }: {
   src: string;
   alt: string;
@@ -16,6 +18,8 @@ export function BrowserFrame({
   className?: string;
   imgClassName?: string;
   glow?: boolean;
+  loading?: 'eager' | 'lazy';
+  fetchPriority?: 'auto' | 'high' | 'low';
 }) {
   return (
     <div className={`relative ${className}`}>
@@ -41,7 +45,13 @@ export function BrowserFrame({
           </div>
           <div className="w-10" />
         </div>
-        <img src={src} alt={alt} loading="lazy" className={`block w-full ${imgClassName}`} />
+        <img
+          src={src}
+          alt={alt}
+          loading={loading}
+          fetchPriority={fetchPriority}
+          className={`block w-full ${imgClassName}`}
+        />
       </div>
     </div>
   );
