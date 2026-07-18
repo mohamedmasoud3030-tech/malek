@@ -10,18 +10,22 @@ const violations = [];
 // Every existing cross-feature edge is explicit. A new feature starts with no
 // cross-feature access until its integration seam is reviewed and added here.
 const featureDependencyAllowList = new Map([
+  ['ai-assistant', new Set(['financials'])],
   ['audit', new Set(['auth', 'settings'])],
   ['contracts', new Set(['financials', 'owners', 'people', 'properties', 'settings', 'units'])],
   ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding'])],
-  ['financials', new Set(['auth', 'contracts', 'properties', 'settings'])],
-  ['maintenance', new Set(['properties', 'units'])],
-  ['owners', new Set(['financials', 'properties', 'settings'])],
+  ['financials', new Set(['auth', 'contracts', 'properties', 'reports', 'settings'])],
+  ['maintenance', new Set(['financials', 'properties', 'reports', 'units'])],
+  ['onboarding', new Set(['owners'])],
+  ['owners', new Set(['financials', 'properties', 'reports', 'settings'])],
   ['people', new Set(['tenants'])],
   ['properties', new Set(['financials', 'owners', 'units'])],
   ['reports', new Set(['auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
-  ['system', new Set(['auth'])],
+  ['settings', new Set(['properties'])],
+  ['system', new Set(['auth', 'settings'])],
   ['tenants', new Set(['financials', 'people'])],
   ['units', new Set(['properties'])],
+  ['utilities', new Set(['financials', 'properties', 'reports'])],
 ]);
 
 // These are known presentation-to-service debts, frozen so the guard blocks
