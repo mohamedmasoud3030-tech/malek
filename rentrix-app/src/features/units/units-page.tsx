@@ -10,7 +10,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { DataTable } from '@/components/ui/data-table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
@@ -82,7 +82,7 @@ export function UnitsPage() {
           <CardDescription>{formatNumber(ctrl.filteredUnits.length)} وحدة ضمن الفلاتر الحالية.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable
+          <EntityTable
             aria-label="جدول الوحدات"
             rows={ctrl.filteredUnits}
             columns={[

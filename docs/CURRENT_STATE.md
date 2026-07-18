@@ -26,10 +26,10 @@ production-verified.
 
 ## Repository checkpoint (2026-07-18)
 
-- Verified `main` head: `20f443ab3eb57dde588001d9233300fa60d84dfc` (merged PR #1197).
-- This checkpoint includes the production verification performed after PR #1197 merged.
+- Verified starting `main` head: `afb3126` after merged PRs #1198–#1200.
+- This checkpoint includes the production verification performed after PR #1200 merged.
 - Architecture phases A–E remain complete; `docs/ARCHITECTURE_EXECUTION_PLAN.md` is historical evidence, not an active Phase F backlog.
-- The deposit migration chain derives contract/property/unit identifier types from canonical tables and dynamically casts expense property references, eliminating the fixed-UUID replay blocker in code. The automation migration fails early when its baseline tables are absent and its dependency order is covered by a contract test. **As of 2026-07-18, this chain (`20260717000003`, `20260717000004`, `20260717000005`, `20260717000007`, `20260717000008`, `20260717000009`) has been applied to production in dependency order with explicit owner approval and live-verified**: `tenant_deposits`, `deposit_transactions`, `automation_rules` (6 seeded rows), `automation_notifications` exist; all seven RPCs (`create_deposit_atomic`, `deduct_deposit_atomic`, `refund_deposit_atomic`, `execute_automation_rule`, `execute_automation_rule_internal`, `run_scheduled_automation_rules`, `retry_automation_run`) are live; `pg_cron` is enabled with `rentrix-automation-hourly` active. Lifecycle/CRUD testing against production is still pending — see `docs/NEXT.md`.
+- The deposit migration chain derives contract/property/unit identifier types from canonical tables and dynamically casts expense property references, eliminating the fixed-UUID replay blocker in code. The automation migration fails early when its baseline tables are absent and its dependency order is covered by a contract test. **As of 2026-07-18, this chain (`20260718100928`, `20260718101006`, `20260718101020`, `20260718101036`, `20260718101117`, `20260718101201`) has been applied to production in dependency order with explicit owner approval and live-verified**: `tenant_deposits`, `deposit_transactions`, `automation_rules` (6 rows seeded), `automation_notifications` exist; all seven RPCs (`create_deposit_atomic`, `deduct_deposit_atomic`, `refund_deposit_atomic`, `execute_automation_rule`, `execute_automation_rule_internal`, `run_scheduled_automation_rules`, `retry_automation_run`) are live; `pg_cron` is enabled with `rentrix-automation-hourly` active. Lifecycle/CRUD testing against production is still pending — see `docs/NEXT.md`.
 - Deposits and Automation are deployed and structurally/live-read verified; authenticated mutation lifecycle evidence remains outstanding before the release gate can close.
 
 ## Supabase drift-check pass and live schema fixes (2026-07-18)
@@ -64,13 +64,22 @@ covered by check #1 and by `release_blockers.sql`) as the actual enforcement
 layer. Asserting on GRANT alone tests the wrong layer and would have been a
 permanently-red or noise-generating check.
 
-`void_receipt_atomic` has two live overloads: the current one taking a
-single `jsonb payload` (has `authenticated` EXECUTE, used by the app) and a
-legacy one with four positional arguments (`p_receipt_id text,
-p_voided_at bigint, p_invoice_updates jsonb, p_reverse_entries jsonb`) with
-**no** grants to any role — unreachable via PostgREST, dead code. Left
-in place (not in scope for this pass); flagged here for cleanup during the
-next migration consolidation pass.
+`void_receipt_atomic` now has one live overload: the current `jsonb payload`
+facade used by the app. The unreachable four-argument overload was removed by
+`20260718170255_drop_legacy_void_receipt_overload` after live verification
+found no database callers and no API-role grants. Post-flight verification
+confirmed the JSONB facade remains `SECURITY DEFINER`, pins
+`search_path = public, pg_temp`, and grants only `authenticated` and
+`service_role` in addition to its owner.
+
+The consolidation replay also exposed two live/repository gaps hidden behind
+the earlier missing `normalize_unit_status_contract()` definition. Migration
+`20260718173652_reconcile_replay_security_and_fk_invariants` closes them
+idempotently by removing inherited anonymous execution from public
+`SECURITY DEFINER` functions and adding any missing supporting indexes for
+core-entity foreign keys. Production preflight and post-flight both returned
+zero findings, so the live application schema was unchanged apart from the
+migration ledger entry.
 
 ## Application
 
@@ -104,7 +113,7 @@ Cross-referenced every `.rpc(...)` and `.from(...)` call in `rentrix-app/src` ag
 
 ### Production loading incident and refreshed contract audit (2026-07-18)
 
-- Live API logs showed the authenticated app issuing a broad dashboard request fan-out where the core tables returned `403` and `rpt_dashboard_overview` failed. The immediate RLS cause was contract drift: 49 authenticated policies still call `app_private.is_app_user()`, while migration `20260717000010` had revoked authenticated execution on that compatibility helper. The manager helper pair was also still recursive.
+- Live API logs showed the authenticated app issuing a broad dashboard request fan-out where the core tables returned `403` and `rpt_dashboard_overview` failed. The immediate RLS cause was contract drift: 49 authenticated policies still call `app_private.is_app_user()`, while migration `20260718074336` had revoked authenticated execution on that compatibility helper. The manager helper pair was also still recursive.
 - Production migrations `20260718075311_fix_authorization_helper_grants_and_recursion` and `20260718075504_fix_dashboard_overview_live_type_compatibility` are applied and verified under an impersonated authenticated ADMIN JWT. Both public/private helper pairs now return true without recursion; reads across properties, units, owners, contracts, invoices, payments, expenses, and maintenance succeed; `rpt_dashboard_overview` returns the expected JSON shape. The dashboard RPC fix safely bridges the live `contracts.end_date text` shape to its date parameters.
 - The dashboard frontend now loads the shared arrears invoice set once instead of issuing three duplicate arrears queries, and its page query does not retry the entire multi-request snapshot after a deterministic contract/permission failure.
 - **Resolved 2026-07-18:** a previous cross-reference of every production `.from(...)` and `.rpc(...)` caller had found a deployment gap where `tenant_deposits`, `deposit_transactions`, `create_deposit_atomic`, `deduct_deposit_atomic`, `refund_deposit_atomic`, `automation_rules`, and `automation_notifications` were referenced by UI/services but absent live. An earlier attempt to apply the chain as-is had failed because `tenant_deposits.property_id uuid` conflicted with live `properties.id text`; the corrected chain (which derives identifier types dynamically instead of assuming UUID) was re-verified against the live schema and applied to production in dependency order with explicit owner approval. All listed tables and RPCs are now confirmed live.

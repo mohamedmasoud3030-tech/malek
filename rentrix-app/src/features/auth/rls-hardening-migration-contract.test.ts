@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('RLS hardening for secondary tables', () => {
   it('creates hardened RLS policies for lands, leads, commissions, communication_records', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000005_harden_rls_secondary_tables.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101020_harden_rls_secondary_tables.sql');
     const sql = readFileSync(migrationPath, 'utf8').toLowerCase();
 
     const tables = ['lands', 'leads', 'commissions', 'communication_records', 'utility_meters', 'utility_bills', 'vault_documents', 'tenant_deposits', 'deposit_transactions', 'automation_rules'];
@@ -22,7 +22,7 @@ describe('RLS hardening for secondary tables', () => {
   });
 
   it('revokes delete for secondary tables', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000005_harden_rls_secondary_tables.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101020_harden_rls_secondary_tables.sql');
     const sql = readFileSync(migrationPath, 'utf8').toLowerCase();
 
     expect(sql).toContain('revoke delete');
@@ -33,7 +33,7 @@ describe('RLS hardening for secondary tables', () => {
   });
 
   it('existing permissive app_user policies are dropped', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000005_harden_rls_secondary_tables.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101020_harden_rls_secondary_tables.sql');
     const sql = readFileSync(migrationPath, 'utf8').toLowerCase();
 
     expect(sql).toContain('drop policy if exists');
@@ -80,7 +80,7 @@ describe('RLS app-user helper contract', () => {
   it('keeps public and compatibility helpers non-recursive', () => {
     const migrationPath = resolve(
       import.meta.dirname,
-      '../../../../supabase/migrations/20260717000010_fix_is_app_user_rls_recursion.sql',
+      '../../../../supabase/migrations/20260718074336_fix_is_app_user_rls_recursion.sql',
     );
     const sql = readFileSync(migrationPath, 'utf8').toLowerCase();
 
@@ -100,4 +100,3 @@ describe('RLS app-user helper contract', () => {
     expect(sql).toContain('grant execute on function public.is_app_user() to authenticated, service_role');
   });
 });
-

@@ -2,19 +2,19 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const coreSql = readFileSync(
-  new URL('../../../../supabase/migrations/20260718143000_repair_core_entity_contract_links.sql', import.meta.url),
+  new URL('../../../../supabase/migrations/20260718113322_repair_core_entity_contract_links.sql', import.meta.url),
   'utf8',
 );
 const backfillSql = readFileSync(
-  new URL('../../../../supabase/migrations/20260718143100_backfill_owner_agreements.sql', import.meta.url),
+  new URL('../../../../supabase/migrations/20260718113340_backfill_owner_agreements.sql', import.meta.url),
   'utf8',
 );
 const reportsSql = readFileSync(
-  new URL('../../../../supabase/migrations/20260718143200_align_owner_tenant_report_sources.sql', import.meta.url),
+  new URL('../../../../supabase/migrations/20260718113405_align_owner_tenant_report_sources.sql', import.meta.url),
   'utf8',
 );
 const balancesSql = readFileSync(
-  new URL('../../../../supabase/migrations/20260718143300_align_owner_balance_source.sql', import.meta.url),
+  new URL('../../../../supabase/migrations/20260718113414_align_owner_balance_source.sql', import.meta.url),
   'utf8',
 );
 

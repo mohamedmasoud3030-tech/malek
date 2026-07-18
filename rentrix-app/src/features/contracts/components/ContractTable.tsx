@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronDown, ChevronUp, Edit, Eye, Trash2, User } from 'lucide-react';
-import { Fragment, type ReactNode } from 'react';
+import { Edit, Eye, Trash2, User } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
@@ -12,6 +12,7 @@ import { formatContractDate, formatContractMoney } from '../contractDisplayForma
 import { contractStatusLabels, contractStatusTone, paymentCycleLabels } from '../contractSchema';
 import type { ContractListItem } from '../services/contractService';
 import { getDaysUntilEnd, isExpiringSoon } from '../hooks/useContractFilters';
+import { ContractMobileCard } from './ContractMobileCard';
 
 function DetailBox({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -26,39 +27,32 @@ export function ContractTable({
   companySettings,
   contracts,
   expandedId,
+  error,
+  isLoading,
+  emptyDescription,
+  emptyTitle,
+  onCreate,
   onDelete,
   onEdit,
+  onRetry,
+  pagination,
   setExpandedId,
 }: {
   companySettings: CompanySettingsContract;
   contracts: ContractListItem[];
   expandedId: string | null;
+  error?: unknown;
+  isLoading: boolean;
+  emptyDescription: string;
+  emptyTitle: string;
+  onCreate?: () => void;
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
+  onRetry: () => void;
+  pagination?: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
   setExpandedId: (updater: (value: string | null) => string | null) => void;
 }) {
   const columns: ColumnDef<ContractListItem>[] = [
-    {
-      key: 'expand',
-      header: 'تفاصيل',
-      className: 'w-12',
-      render: (contract) => {
-        const isExpanded = expandedId === contract.id;
-        return (
-          <Button
-            variant="ghost"
-            className="min-h-9 px-3"
-            aria-label={isExpanded ? 'إخفاء تفاصيل العقد' : 'عرض تفاصيل العقد'}
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpandedId((current) => (current === contract.id ? null : contract.id));
-            }}
-          >
-            {isExpanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-          </Button>
-        );
-      },
-    },
     {
       key: 'contract_number',
       header: 'العقد رقم',
@@ -135,12 +129,28 @@ export function ContractTable({
   ];
 
   return (
-    <div className="hidden md:block">
       <EntityTable
         aria-label="جدول العقود"
         rows={contracts}
         columns={columns}
         keyOf={(c) => c.id}
+        isLoading={isLoading}
+        error={error}
+        errorTitle="تعذر تحميل العقود"
+        onRetry={onRetry}
+        emptyTitle={emptyTitle}
+        emptyDescription={emptyDescription}
+        emptyAction={onCreate ? <Button onClick={onCreate}>إنشاء عقد</Button> : undefined}
+        pagination={pagination}
+        onRowClick={(contract) => setExpandedId((current) => (current === contract.id ? null : contract.id))}
+        renderMobileCard={(contract) => (
+          <ContractMobileCard
+            companySettings={companySettings}
+            contract={contract}
+            onDelete={onDelete}
+            onEdit={onEdit}
+          />
+        )}
         renderRowExpansion={(contract) => (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <DetailBox label="بيانات المستأجر">
@@ -175,6 +185,5 @@ export function ContractTable({
         )}
         expandedRowId={expandedId}
       />
-    </div>
   );
 }
