@@ -47,12 +47,13 @@ select ok(
 );
 
 select ok(
-  pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%status = ''occupied''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%status = ''maintenance''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%status = ''available''%'
+  pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%v_target_status := ''occupied''%'
+  and pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%v_target_status := ''maintenance''%'
+  and pg_get_functiondef('public.update_unit_status()'::regprocedure) like '%v_target_status := ''available''%'
   and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''OCCUPIED''%'
   and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''MAINTENANCE''%'
-  and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''AVAILABLE''%',
+  and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''AVAILABLE''%'
+  and pg_get_functiondef('public.update_unit_status()'::regprocedure) not like '%''ACTIVE''%',
   'unit-status trigger writes only canonical lowercase unit states'
 );
 
