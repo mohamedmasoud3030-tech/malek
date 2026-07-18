@@ -29,6 +29,9 @@ const baseInput = {
     },
   ],
   invoices: [{ id: 'invoice-1', contract_id: 'contract-1', amount: 100, paid_amount: 50, deleted_at: null }],
+  owners: [{ id: 'owner-1', name: 'مالك', full_name: 'مالك', deleted_at: null }],
+  propertyOwners: [{ property_id: 'prop-1', owner_id: 'owner-1', is_primary: true, starts_on: null, ends_on: null }],
+  ownerAgreements: [{ property_id: 'prop-1', owner_id: 'owner-1', starts_on: '2026-01-01', ends_on: null }],
 } as const;
 
 describe('buildDataIntegritySnapshot', () => {
@@ -38,11 +41,40 @@ describe('buildDataIntegritySnapshot', () => {
     expect(result.status).toBe('available');
     if (result.status !== 'available') return;
 
-    expect(result.snapshot.checks).toHaveLength(6);
+    expect(result.snapshot.checks).toHaveLength(11);
     for (const check of result.snapshot.checks) {
       expect(check.count).toBe(0);
       expect(check.severity).toBe('ok');
     }
+  });
+
+  it('flags properties that cannot create contracts because they have no owner agreement', () => {
+    const result = buildDataIntegritySnapshot({ ...baseInput, ownerAgreements: [] });
+
+    expect(getCheck(result, 'properties-without-owner-agreements').count).toBe(1);
+  });
+
+  it('flags stale owner projections and agreements not covered by ownership', () => {
+    const result = buildDataIntegritySnapshot({
+      ...baseInput,
+      properties: [{ id: 'prop-1', owner_id: 'owner-2', deleted_at: null }],
+      propertyOwners: [{ property_id: 'prop-1', owner_id: 'owner-1', is_primary: true, starts_on: '2026-06-01', ends_on: null }],
+      ownerAgreements: [{ property_id: 'prop-1', owner_id: 'owner-1', starts_on: '2026-01-01', ends_on: null }],
+    });
+
+    expect(getCheck(result, 'owner-projection-mismatches').count).toBe(1);
+    expect(getCheck(result, 'agreements-without-ownership').count).toBe(1);
+  });
+
+  it('flags stale compatibility names', () => {
+    const result = buildDataIntegritySnapshot({
+      ...baseInput,
+      properties: [{ id: 'prop-1', owner_id: 'owner-1', name: 'قديم', title: 'حديث', deleted_at: null }],
+      owners: [{ id: 'owner-1', name: 'قديم', full_name: 'حديث', deleted_at: null }],
+    });
+
+    expect(getCheck(result, 'owner-name-mismatches').count).toBe(1);
+    expect(getCheck(result, 'property-name-mismatches').count).toBe(1);
   });
 
   it('flags units that reference a missing or soft-deleted property', () => {
