@@ -1,24 +1,31 @@
 # Next
 
-> **Current main:** includes PR #1180 via merge commit `8d57580b9346ddca93fe8df0cbd696b9416645de`.  
-> **Canonical execution checklist:** [`docs/handover/INTEGRATED_TODO_LIST.md`](handover/INTEGRATED_TODO_LIST.md).
 
 ## Current status
 
-The engineering P0 release-blocker phase is complete and merged:
+> Verified repository head: `7bb098f530fdd0041aa5588cbccd223b04beba5c` from PR #1190 on 2026-07-18. There are no open pull requests at this checkpoint.
 
-- mock-backed Utilities, Documents Vault, Deposits, and Automation were replaced with real implementations;
-- AI Assistant auth/rate-limit flow was hardened;
-- RLS, report source, production environment validation, and deterministic CI were implemented;
-- owner settlements are connected to real tables/RPCs;
-- date-only UTC slicing regressions are closed;
-- Main CI, full Browser Readiness, Vercel Preview, Empty DB Replay, DB/RLS tests, and authenticated staging auth tests succeeded;
-- Database and Auth release blockers passed 3/3 consecutive runs on the same SHA;
-- PR #1180 was merged with zero open review threads.
+The bounded architecture refactor (phases A–E) is complete. The latest production incident fixes are merged, including authorization-helper recursion/grants, dashboard live-type compatibility, duplicate dashboard reads, and the public landing performance boundary.
 
-Do not create another audit or reopen historical mock/CI items unless current code or live evidence proves a regression.
+The engineering P0 implementation is merged, but two data contracts must not be described as live-ready yet:
 
-## Execute next — Phase 1 live release verification
+- Utilities and Documents Vault are backed by real services and their current live contracts have been reconciled.
+- Deposits and Automation have frontend/service/migration implementations in the repository, but their required tables and RPCs are absent from the verified production schema.
+- The existing deposit/automation migration chain must not be applied as-is: its `property_id uuid` assumption conflicts with the verified live `properties.id text` contract.
+- Production authorization helpers and `rpt_dashboard_overview` were repaired and authenticated reads were verified after PR #1189.
+- PR #1190 isolated the public landing entry from authenticated providers and heavy protected-app dependencies.
+
+Do not recreate completed architecture phases or reopen historical UI refactors. Current work must start from the verified data-contract mismatch below.
+
+## Execute next — bounded data-contract stabilization
+
+1. Correct the unapplied deposit and automation migration chain so every property reference matches the verified live `properties.id text` contract.
+2. Add repository contract tests that reject UUID property references and verify migration dependency ordering.
+3. Replay the corrected migrations on an empty/Staging database and reconcile tables, constraints, indexes, RLS policies, grants, and RPC signatures.
+4. Run authenticated CRUD/lifecycle tests for deposits and automation on Staging.
+5. Apply to Production only with a restorable backup, rollback/mitigation notes, and explicit approval under `docs/GOVERNANCE.md`.
+
+## Then — Phase 1 live release verification
 
 1. Take a restorable backup before applying schema changes to the target environment.
 2. Apply and reconcile the merged migration ledger on Staging; verify no drift or orphan migrations.
