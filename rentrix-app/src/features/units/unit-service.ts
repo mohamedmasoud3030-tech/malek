@@ -1,4 +1,4 @@
-import { getCrudWriteErrorMessage } from '@/lib/data/crud-write-error';
+import { getCrudWriteErrorMessage, type CrudWriteAction } from '@/lib/data/crud-write-error';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Unit } from '@/types/domain';
@@ -6,9 +6,27 @@ import { normalizeUnitStatus, type UnitPayload } from './unit-schema';
 
 type UnitInsert = Database['public']['Tables']['units']['Insert'];
 type UnitUpdate = Database['public']['Tables']['units']['Update'];
+type DatabaseWriteError = Readonly<{ code?: string; message?: string; details?: string }>;
 
 export function normalizeUnitPayload(propertyId: string, payload: UnitPayload): UnitInsert {
   return { ...payload, property_id: propertyId };
+}
+
+export function getUnitWriteErrorMessage(action: CrudWriteAction, error: unknown): string {
+  const databaseError = error as DatabaseWriteError | null;
+  const message = databaseError?.message ?? (error instanceof Error ? error.message : String(error ?? ''));
+  if (
+    databaseError?.code === '23505'
+    || message.includes('units_property_unit_number_active_uidx')
+  ) {
+    return 'يوجد بالفعل وحدة بنفس الرقم داخل هذا العقار. استخدم رقماً مختلفاً أو عدّل الوحدة الموجودة.';
+  }
+
+  return getCrudWriteErrorMessage({
+    action,
+    entityPlural: 'الوحدات',
+    error: message ? new Error(message) : error,
+  });
 }
 
 function normalizeUnit(unit: Unit): Unit {
@@ -45,7 +63,7 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
 export async function createUnit(propertyId: string, payload: UnitPayload): Promise<Unit> {
   const insertPayload = normalizeUnitPayload(propertyId, payload);
   const { data, error } = await supabase.from('units').insert(insertPayload).select('*').single().returns<Unit>();
-  if (error) throw new Error(getCrudWriteErrorMessage({ action: 'create', entityPlural: 'الوحدات', error }));
+  if (error) throw new Error(getUnitWriteErrorMessage('create', error));
   return normalizeUnit(data);
 }
 
@@ -59,12 +77,12 @@ export async function updateUnit(unitId: string, payload: UnitPayload): Promise<
     .select('*')
     .single()
     .returns<Unit>();
-  if (error) throw new Error(getCrudWriteErrorMessage({ action: 'update', entityPlural: 'الوحدات', error }));
+  if (error) throw new Error(getUnitWriteErrorMessage('update', error));
   return normalizeUnit(data);
 }
 
 export async function softDeleteUnit(unitId: string): Promise<void> {
   const updatePayload: UnitUpdate = { deleted_at: new Date().toISOString() };
   const { error } = await supabase.from('units').update(updatePayload).eq('id', unitId).is('deleted_at', null);
-  if (error) throw new Error(getCrudWriteErrorMessage({ action: 'archive', entityPlural: 'الوحدات', error }));
+  if (error) throw new Error(getUnitWriteErrorMessage('archive', error));
 }
