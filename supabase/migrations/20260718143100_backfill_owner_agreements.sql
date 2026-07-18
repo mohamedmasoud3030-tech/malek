@@ -16,38 +16,58 @@ SET title = COALESCE(NULLIF(btrim(title), ''), name),
 WHERE title IS DISTINCT FROM COALESCE(NULLIF(btrim(title), ''), name)
    OR name IS DISTINCT FROM COALESCE(NULLIF(btrim(title), ''), name);
 
-INSERT INTO public.owner_agreements (
-  owner_id,
-  property_id,
-  agreement_type,
-  commission_type,
-  commission_value,
-  starts_on,
-  ends_on,
-  notes
-)
-SELECT
-  p.owner_id,
-  p.id,
-  'property_management',
-  CASE WHEN o.commission_type IN ('RATE', 'FIXED_MONTHLY') THEN o.commission_type ELSE 'RATE' END,
-  CASE
-    WHEN o.commission_type = 'RATE' THEN greatest(0, least(100, COALESCE(o.commission_value, 0)))
-    ELSE greatest(0, COALESCE(o.commission_value, 0))
-  END,
-  CASE
-    WHEN o.management_contract_date ~ '^\d{4}-\d{2}-\d{2}$' THEN o.management_contract_date::date
-    ELSE current_date
-  END,
-  NULL,
-  'Backfilled from the legacy owner management contract fields.'
-FROM public.properties p
-JOIN public.owners o ON o.id = p.owner_id
-WHERE p.deleted_at IS NULL
-  AND o.deleted_at IS NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM public.owner_agreements oa WHERE oa.property_id = p.id
-  );
+DO $$
+BEGIN
+  -- These owner-level fields exist in the legacy live schema but were already
+  -- removed from a clean canonical schema. Dynamic SQL keeps this data repair
+  -- replayable without restoring the deprecated duplicate source of truth.
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'owners'
+      AND column_name = 'commission_type'
+  ) AND EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'owners'
+      AND column_name = 'commission_value'
+  ) AND EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'owners'
+      AND column_name = 'management_contract_date'
+  ) THEN
+    EXECUTE $backfill$
+      INSERT INTO public.owner_agreements (
+        owner_id, property_id, agreement_type, commission_type,
+        commission_value, starts_on, ends_on, notes
+      )
+      SELECT
+        p.owner_id,
+        p.id,
+        'property_management',
+        CASE WHEN o.commission_type IN ('RATE', 'FIXED_MONTHLY') THEN o.commission_type ELSE 'RATE' END,
+        CASE
+          WHEN o.commission_type = 'RATE' THEN greatest(0, least(100, COALESCE(o.commission_value, 0)))
+          ELSE greatest(0, COALESCE(o.commission_value, 0))
+        END,
+        CASE
+          WHEN o.management_contract_date ~ '^\d{4}-\d{2}-\d{2}$' THEN o.management_contract_date::date
+          ELSE current_date
+        END,
+        NULL,
+        'Backfilled from the legacy owner management contract fields.'
+      FROM public.properties p
+      JOIN public.owners o ON o.id = p.owner_id
+      WHERE p.deleted_at IS NULL
+        AND o.deleted_at IS NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM public.owner_agreements oa WHERE oa.property_id = p.id
+        )
+    $backfill$;
+  END IF;
+END;
+$$;
 
 DO $$
 BEGIN
