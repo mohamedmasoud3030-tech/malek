@@ -179,7 +179,7 @@ export function LandsView(props: Props) {
           <EntityForm.Field label="سعر المالك"><Input type="number" min="0" inputMode="decimal" value={draft.owner_price} onChange={(e) => onDraftChange({ ...draft, owner_price: e.target.value })} /></EntityForm.Field>
           <EntityForm.Field label="سعر الشراء"><Input type="number" min="0" inputMode="decimal" value={draft.purchase_price} onChange={(e) => onDraftChange({ ...draft, purchase_price: e.target.value })} /></EntityForm.Field>
           <EntityForm.Field label="عمولة تقديرية"><Input type="number" min="0" inputMode="decimal" value={draft.commission} onChange={(e) => onDraftChange({ ...draft, commission: e.target.value })} /></EntityForm.Field>
-          <label className="grid gap-2 text-sm font-bold md:col-span-2">ملاحظات<Textarea value={draft.notes} onChange={(e) => onDraftChange({ ...draft, notes: e.target.value })} /></label>
+          <EntityForm.Field label="ملاحظات" className="md:col-span-2"><Textarea value={draft.notes} onChange={(e) => onDraftChange({ ...draft, notes: e.target.value })} /></EntityForm.Field>
           <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
         </EntityForm.Root>
       </EntityForm.Overlay>
