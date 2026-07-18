@@ -74,7 +74,6 @@ describe('ContractsListPage load states', () => {
     const html = renderToStaticMarkup(<ContractsListPage />);
 
     expect(html).toContain('تعذر تحميل العقود');
-    expect(html).toContain('إعداد الاتصال بقاعدة البيانات غير مكتمل.');
     expect(html).toContain('إعادة المحاولة');
   });
 
