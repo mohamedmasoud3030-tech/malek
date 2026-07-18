@@ -2,12 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractListHeader } from './components/ContractListHeader';
-import { ContractListState } from './components/ContractListState';
 import { ContractResults } from './components/ContractResults';
 import { ContractFormModal } from './contract-form-modal';
 import { PageLayout } from '@/components/layout/page-layout';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Button } from '@/components/ui/button';
 import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractListExport';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
 import { useContractFilters } from './hooks/useContractFilters';
@@ -53,7 +51,7 @@ export function ContractsListPage() {
   const contracts = contractsQuery.data?.rows ?? [];
   const totalPages = hasClientFilter ? 1 : Math.max(1, Math.ceil((contractsQuery.data?.count ?? 0) / pageSize));
 
-  const { filteredContracts, hasActiveFilters, hasContracts } = useContractFilters({
+  const { filteredContracts, hasActiveFilters } = useContractFilters({
     contracts,
     expiringOnly,
     searchTerm,
@@ -102,48 +100,27 @@ export function ContractsListPage() {
           status={status}
         />
 
-        <ContractListState
-          error={contractsQuery.error}
-          hasContracts={hasContracts}
-          isError={contractsQuery.isError}
-          isLoading={contractsQuery.isLoading}
-          onCreate={openCreate}
-          onRetry={() => contractsQuery.refetch()}
-          resultsCount={filteredContracts.length}
-        />
-
         <ContractResults
           companySettings={companySettings}
           contracts={filteredContracts}
           expandedId={expandedId}
+          emptyDescription={hasActiveFilters ? 'جرّب تغيير عبارة البحث أو فلتر الحالة لعرض عقود أخرى.' : 'ابدأ بإنشاء أول عقد وربطه بالعقار والوحدة والمستأجر.'}
+          emptyTitle={hasActiveFilters ? 'لا توجد عقود مطابقة' : 'لا توجد عقود'}
+          error={contractsQuery.error}
           isError={contractsQuery.isError}
           isLoading={contractsQuery.isLoading}
+          onCreate={hasActiveFilters ? undefined : openCreate}
           onDelete={setDeleteId}
           onEdit={openEdit}
+          onRetry={() => contractsQuery.refetch()}
+          pagination={!hasClientFilter && totalPages > 1 ? {
+            page,
+            pageSize,
+            total: contractsQuery.data?.count ?? 0,
+            onPageChange: setPage,
+          } : undefined}
           setExpandedId={setExpandedId}
         />
-
-        {!hasClientFilter && totalPages > 1 && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>الصفحة {page} من {totalPages}</span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                disabled={page <= 1}
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-              >
-                السابق
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={page >= totalPages}
-                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-              >
-                التالي
-              </Button>
-            </div>
-          </div>
-        )}
       </PageLayout>
 
       <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />

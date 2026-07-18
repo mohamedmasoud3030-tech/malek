@@ -12,7 +12,7 @@ begin
   if to_regclass('public.automation_jobs') is null
      or to_regclass('public.automation_runs') is null
      or to_regclass('public.automation_run_logs') is null then
-    raise exception 'Automation baseline missing: automation_jobs, automation_runs, and automation_run_logs must exist before 20260717000004';
+    raise exception 'Automation baseline missing: automation_jobs, automation_runs, and automation_run_logs must exist before the automation execution migration';
   end if;
 end
 $automation_dependencies$;

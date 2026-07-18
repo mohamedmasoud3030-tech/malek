@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractsListPage } from './ContractsListPage';
 import { normalizeSearchText } from './hooks/useContractFilters';
+import type { ContractListItem } from './services/contractService';
 
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
@@ -26,6 +27,30 @@ const contractsMocks = vi.hoisted(() => ({
   deleteMutation: { isPending: false, mutate: vi.fn() },
 }));
 
+const contractFixture: ContractListItem = {
+  id: 'contract-123456789',
+  property_id: 'property-1',
+  unit_id: 'unit-1',
+  tenant_id: 'tenant-1',
+  start_date: '2026-01-01',
+  end_date: '2026-12-31',
+  rent_amount: 1250,
+  payment_cycle: 'monthly',
+  payment_terms_id: null,
+  status: 'active',
+  notes: null,
+  renewed_from_id: null,
+  cancellation_reason: null,
+  attachment_url: null,
+  agreement_id: null,
+  deleted_at: null,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  properties: { id: 'property-1', title: 'برج الريان', address: 'مسقط' },
+  units: { id: 'unit-1', unit_number: 'A-101', floor: '1', status: 'occupied', rent_amount: 1250 },
+  people: { id: 'tenant-1', full_name: 'أحمد سالم', phone: '+96890000000', email: null, national_id: 'OM123' },
+};
+
 vi.mock('./useContracts', () => ({
   useContract: () => ({ data: null, error: null, isError: false, isLoading: false }),
   useContracts: () => contractsMocks.contractsQuery,
@@ -49,7 +74,7 @@ describe('ContractsListPage load states', () => {
     const html = renderToStaticMarkup(<ContractsListPage />);
 
     expect(html).toContain('تعذر تحميل العقود');
-    expect(html).toContain('تعذر تحميل عقود الاختبار');
+    expect(html).toContain('إعداد الاتصال بقاعدة البيانات غير مكتمل.');
     expect(html).toContain('إعادة المحاولة');
   });
 
@@ -58,6 +83,17 @@ describe('ContractsListPage load states', () => {
 
     expect(html).toContain('لا توجد عقود');
     expect(html).toContain('إنشاء عقد');
+  });
+
+  it('renders desktop rows and mobile cards through the shared entity table', () => {
+    contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
+
+    const html = renderToStaticMarkup(<ContractsListPage />);
+
+    expect(html).toContain('aria-label="جدول العقود"');
+    expect(html).toContain('role="list" aria-label="جدول العقود"');
+    expect(html).toContain('أحمد سالم');
+    expect(html).toContain('A-101');
   });
 });
 

@@ -133,10 +133,14 @@ export function ContractsListE2EFixture() {
           companySettings={defaultCompanySettingsContract}
           contracts={filteredContracts}
           expandedId={expandedId}
+          emptyDescription="لا توجد عقود مطابقة لبيانات الاختبار."
+          emptyTitle="لا توجد عقود مطابقة"
+          error={null}
           isError={false}
           isLoading={false}
           onDelete={() => undefined}
           onEdit={() => undefined}
+          onRetry={() => undefined}
           setExpandedId={setExpandedId}
         />
       </PageLayout>

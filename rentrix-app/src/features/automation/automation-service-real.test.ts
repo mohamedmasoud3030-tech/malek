@@ -35,9 +35,9 @@ describe('automation real execution', () => {
 
   it('migration chain declares and enforces its baseline dependencies', () => {
     const baselinePath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260705000001_baseline_capture_untracked_tables_batch_b.sql');
-    const executionPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000004_real_automation_execution.sql');
-    const seedPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000007_seed_automation_rules.sql');
-    const schedulePath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql');
+    const executionPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101006_real_automation_execution.sql');
+    const seedPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101036_seed_automation_rules.sql');
+    const schedulePath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101201_automation_scheduling_and_fixed_exception.sql');
 
     const baseline = readFileSync(baselinePath, 'utf8');
     const execution = readFileSync(executionPath, 'utf8');
@@ -51,13 +51,13 @@ describe('automation real execution', () => {
     expect(execution).toContain('Automation baseline missing');
     expect(seed).toContain('public.automation_rules');
     expect(schedule).toContain('public.run_scheduled_automation_rules');
-    expect(Number('20260705000001')).toBeLessThan(Number('20260717000004'));
-    expect(Number('20260717000004')).toBeLessThan(Number('20260717000007'));
-    expect(Number('20260717000007')).toBeLessThan(Number('20260717000009'));
+    expect(Number('20260705000001')).toBeLessThan(Number('20260718101006'));
+    expect(Number('20260718101006')).toBeLessThan(Number('20260718101036'));
+    expect(Number('20260718101036')).toBeLessThan(Number('20260718101201'));
   });
 
   it('migration creates automation_rules with real execution', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000004_real_automation_execution.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101006_real_automation_execution.sql');
     const content = readFileSync(migrationPath, 'utf8');
     expect(content).toContain('create table if not exists public.automation_rules');
     expect(content).toContain('automation_notifications');
@@ -71,7 +71,7 @@ describe('automation real execution', () => {
   });
 
   it('migration fixes exception handling to preserve FAILED logs', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101201_automation_scheduling_and_fixed_exception.sql');
     const content = readFileSync(migrationPath, 'utf8');
     // Should NOT have RAISE after updating to failed (old pattern caused rollback)
     // New pattern: update to failed then RETURN failure result, not RAISE
@@ -84,7 +84,7 @@ describe('automation real execution', () => {
   });
 
   it('migration adds scheduling via pg_cron and prevents duplicates', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101201_automation_scheduling_and_fixed_exception.sql');
     const content = readFileSync(migrationPath, 'utf8').toLowerCase();
     expect(content).toContain('pg_cron');
     expect(content).toContain('cron.schedule');
@@ -96,7 +96,7 @@ describe('automation real execution', () => {
   });
 
   it('migration tests success, failure, retry, duplicate prevention', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101201_automation_scheduling_and_fixed_exception.sql');
     const content = readFileSync(migrationPath, 'utf8');
     expect(content).toContain('SUCCESS');
     expect(content).toContain('FAILED');
@@ -108,7 +108,7 @@ describe('automation real execution', () => {
   });
 
   it('seed migration inserts default rules', () => {
-    const seedPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000007_seed_automation_rules.sql');
+    const seedPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101036_seed_automation_rules.sql');
     const content = readFileSync(seedPath, 'utf8');
     expect(content).toContain('contract-expiry-30');
     expect(content).toContain('rent-reminder-due');

@@ -14,7 +14,7 @@ describe('utilities schema contract', () => {
     const alignBillsSql = readFileSync(
       resolve(
         import.meta.dirname,
-        '../../../../supabase/migrations/20260717000011_align_utility_property_id_type.sql',
+        '../../../../supabase/migrations/20260718074853_align_utility_property_id_type.sql',
       ),
       'utf8',
     ).toLowerCase();

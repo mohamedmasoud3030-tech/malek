@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCell } from '@/components/ui/entity-cell';
-import { DataTable } from '@/components/ui/data-table';
+import { EntityTable } from '@/components/ui/entity-table';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/hooks/useCompanyFormatters';
@@ -39,7 +39,7 @@ export function UnitsList({ propertyId, unitsQuery }: Readonly<{ propertyId: str
       </CardHeader>
 
       <div className="px-3 pb-4 sm:px-6 sm:pb-6">
-        <DataTable
+        <EntityTable
           aria-label="جدول وحدات العقار"
           rows={unitsQuery.data ?? []}
           columns={[

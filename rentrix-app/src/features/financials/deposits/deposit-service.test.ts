@@ -43,7 +43,7 @@ describe('deposits real implementation - no false success', () => {
   });
 
   it('migration creates tenant_deposits and deposit_transactions with immutable log', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260718100928_real_deposits_ledger.sql');
     const content = readFileSync(migrationPath, 'utf8').toLowerCase();
     expect(content).toContain('tenant_deposits');
     expect(content).toContain('deposit_transactions');
@@ -60,7 +60,7 @@ describe('deposits real implementation - no false success', () => {
   });
 
   it('migration prevents overdraw with constraint checks', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260718100928_real_deposits_ledger.sql');
     const content = readFileSync(migrationPath, 'utf8');
     expect(content).toContain('Insufficient deposit balance');
     expect(content).toContain('Insufficient remaining balance');
@@ -68,7 +68,7 @@ describe('deposits real implementation - no false success', () => {
   });
 
   it('migration derives contract/property/unit identifiers from canonical tables', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260718100928_real_deposits_ledger.sql');
     const content = readFileSync(migrationPath, 'utf8').toLowerCase();
     expect(content).toContain('format_type');
     expect(content).toContain('contracts');
@@ -81,7 +81,7 @@ describe('deposits real implementation - no false success', () => {
   });
 
   it('does not use partially_refunded for deduction - uses partially_deducted', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql');
     const content = readFileSync(migrationPath, 'utf8').toLowerCase();
     expect(content).toContain('partially_deducted');
     // Should not set partially_refunded when deduction partial
@@ -93,13 +93,13 @@ describe('deposits real implementation - no false success', () => {
   });
 
   it('has explicit NULL guard after detecting contracts.id type', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
+    const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260718100928_real_deposits_ledger.sql');
     const content = readFileSync(migrationPath, 'utf8');
     expect(content).toContain('IF v_contract_id_type IS NULL OR v_property_id_type IS NULL OR v_unit_id_type IS NULL THEN');
     expect(content).toContain('RAISE EXCEPTION');
     expect(content).toContain('IF v_contract_id_type IS NULL OR v_property_id_type IS NULL OR v_unit_id_type IS NULL THEN');
 
-    const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
+    const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql');
     const content08 = readFileSync(migration08Path, 'utf8');
     expect(content08).toContain('v_property_id_type');
     expect(content08).toContain('v_unit_id_type');
@@ -107,7 +107,7 @@ describe('deposits real implementation - no false success', () => {
   });
 
   it('tests create -> partial deduction -> refund -> full settlement status flow', () => {
-    const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
+    const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql');
     const content = readFileSync(migration08Path, 'utf8').toLowerCase();
     // Deduction partial should result in partially_deducted
     expect(content).toContain('partially_deducted');

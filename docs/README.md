@@ -21,7 +21,7 @@ This directory contains the maintained sources of truth for the Rentrix reposito
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — maintained application architecture.
 - [`ARCHITECTURE_EXECUTION_PLAN.md`](ARCHITECTURE_EXECUTION_PLAN.md) — completed architecture-refactor ledger and verification contract, not an active queue.
 - [`DATABASE_ARCHITECTURE.md`](DATABASE_ARCHITECTURE.md) — database structure and boundaries.
-- [`DATABASE_BASELINE_GUIDE.md`](DATABASE_BASELINE_GUIDE.md) — baseline and migration guidance.
+- [`../supabase/migrations/README.md`](../supabase/migrations/README.md) — active migration-chain guidance.
 - [`RPC_REFERENCE.md`](RPC_REFERENCE.md) — RPC reference; verify live definitions before high-risk changes.
 
 ## Delivery, governance, and verification

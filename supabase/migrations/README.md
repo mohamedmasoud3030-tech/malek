@@ -68,3 +68,16 @@ idempotent or corrective and simply ran more than once.
 ## 2026-07-06 payment/receipt reporting alignment
 
 `20260706101000_align_payment_receipt_reporting_source.sql` defines `rpt_daily_collection` on `public.payments`, requires an authenticated app user via `public.is_app_user()`, and excludes soft-deleted and VOID rows. Do not apply it to production without explicit approval and staging verification.
+
+## 2026-07-18 canonical ledger reconciliation
+
+`supabase/migrations/` is the only active migration source. The historical
+`supabase/migrations_consolidated/` snapshot was removed because it duplicated
+and contradicted the active chain. Every active filename was compared with the
+production ledger; 14 planning timestamps were replaced with their exact live
+versions. With `20260718170255_drop_legacy_void_receipt_overload.sql`, both
+the repository and production ledger contain 109 exact `version_name` entries.
+
+The production ledger was not squashed or rewritten. Applied historical files
+remain in replay order so a fresh database can reproduce the same forward
+chain without a metadata-only baseline repair.

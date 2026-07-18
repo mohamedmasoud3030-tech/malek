@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 const migrationPath = resolve(
   process.cwd(),
-  'supabase/migrations/20260717000009_automation_scheduling_and_fixed_exception.sql',
+  'supabase/migrations/20260718101201_automation_scheduling_and_fixed_exception.sql',
 );
 const sql = readFileSync(migrationPath, 'utf8');
 
