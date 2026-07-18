@@ -8,7 +8,7 @@ const migrationSql = readFileSync(
     '..',
     'supabase',
     'migrations',
-    '20260718215500_reconcile_ui_database_value_contracts.sql',
+    '20260718215711_reconcile_ui_database_value_contracts.sql',
   ),
   'utf8',
 );
