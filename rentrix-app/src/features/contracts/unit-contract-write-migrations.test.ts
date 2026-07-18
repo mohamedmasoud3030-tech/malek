@@ -28,7 +28,7 @@ describe('unit and contract write migration contracts', () => {
     const occupiedPosition = statusSql.indexOf("then 'occupied'");
     expect(maintenancePosition).toBeGreaterThanOrEqual(0);
     expect(occupiedPosition).toBeGreaterThan(maintenancePosition);
-    expect(statusSql).toContain("current_date between btrim(c.start_date)::date and btrim(c.end_date)::date");
+    expect(statusSql).toContain("current_date between btrim(c.start_date::text)::date and btrim(c.end_date::text)::date");
     expect(statusSql).toContain("when lower(coalesce(p_fallback_status, '')) = 'reserved' then 'reserved'");
     expect(statusSql).toContain('before insert or update of status on public.units');
   });
