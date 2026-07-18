@@ -71,8 +71,9 @@ and all test/script references were updated. The duplicate historical
 removed, leaving `supabase/migrations/` as the only SQL migration source.
 
 The applied production history was deliberately not squashed or rewritten.
-After adding `20260718170255_drop_legacy_void_receipt_overload`, the active
-chain and production ledger both contain 109 exact `version_name` entries.
+After adding `20260718170255_drop_legacy_void_receipt_overload` and the
+clean-replay invariant repair `20260718173652`, the active chain and
+production ledger both contain 110 exact `version_name` entries.
 This preserves disaster-recovery replay order while removing the competing
 archive, superseded filenames, and the unreachable receipt overload.
 

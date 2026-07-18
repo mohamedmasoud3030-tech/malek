@@ -75,8 +75,10 @@ idempotent or corrective and simply ran more than once.
 `supabase/migrations_consolidated/` snapshot was removed because it duplicated
 and contradicted the active chain. Every active filename was compared with the
 production ledger; 14 planning timestamps were replaced with their exact live
-versions. With `20260718170255_drop_legacy_void_receipt_overload.sql`, both
-the repository and production ledger contain 109 exact `version_name` entries.
+versions. With `20260718170255_drop_legacy_void_receipt_overload.sql` and the
+clean-replay invariant repair
+`20260718173652_reconcile_replay_security_and_fk_invariants.sql`, both the
+repository and production ledger contain 110 exact `version_name` entries.
 
 The production ledger was not squashed or rewritten. Applied historical files
 remain in replay order so a fresh database can reproduce the same forward

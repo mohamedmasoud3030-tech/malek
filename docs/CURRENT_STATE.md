@@ -72,6 +72,15 @@ confirmed the JSONB facade remains `SECURITY DEFINER`, pins
 `search_path = public, pg_temp`, and grants only `authenticated` and
 `service_role` in addition to its owner.
 
+The consolidation replay also exposed two live/repository gaps hidden behind
+the earlier missing `normalize_unit_status_contract()` definition. Migration
+`20260718173652_reconcile_replay_security_and_fk_invariants` closes them
+idempotently by removing inherited anonymous execution from public
+`SECURITY DEFINER` functions and adding any missing supporting indexes for
+core-entity foreign keys. Production preflight and post-flight both returned
+zero findings, so the live application schema was unchanged apart from the
+migration ledger entry.
+
 ## Application
 
 The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single-page app using TanStack Router (`rentrix-app/src/routeTree.ts`, `src/app/router.tsx`) and TanStack Query (`src/lib/query-client.ts`). It talks to Supabase (Postgres + Auth) as its backend via `src/lib/supabase.ts`.
