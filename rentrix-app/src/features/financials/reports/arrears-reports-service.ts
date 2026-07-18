@@ -89,6 +89,12 @@ export type ArrearsSummaryReport = {
   averageDaysOverdue: number;
 };
 
+export type DashboardArrearsReports = {
+  overdueInvoices: OverdueInvoicesReport;
+  arrearsSummary: ArrearsSummaryReport;
+  agedReceivables: AgedReceivablesReport;
+};
+
 const agingBucketLabels: Record<AgingBucketKey, string> = {
   current: 'غير متأخر',
   days_1_30: '1–30 يوم',
@@ -323,4 +329,15 @@ export async function getAgedReceivablesReport(filters: ArrearsReportFilters): P
 export async function getArrearsSummaryReport(filters: ArrearsReportFilters): Promise<ArrearsSummaryReport> {
   const invoices = await loadArrearsInvoices(filters);
   return summarizeArrearsSummaryReport(invoices, filters);
+}
+
+export async function getDashboardArrearsReports(filters: ArrearsReportFilters): Promise<DashboardArrearsReports> {
+  const invoices = await loadArrearsInvoices(filters);
+  const contexts = await loadArrearsContextMaps(invoices);
+
+  return {
+    overdueInvoices: summarizeOverdueInvoicesReport(invoices, filters, contexts),
+    arrearsSummary: summarizeArrearsSummaryReport(invoices, filters),
+    agedReceivables: summarizeAgedReceivablesReport(invoices, filters, contexts),
+  };
 }

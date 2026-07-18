@@ -1,9 +1,7 @@
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import {
-  getAgedReceivablesReport,
-  getArrearsSummaryReport,
+  getDashboardArrearsReports,
   getFinancialPeriodSummaryReport,
-  getOverdueInvoicesReport,
   type AgedReceivablesReport,
   type ArrearsSummaryReport,
   type FinancialPeriodSummaryReport,
@@ -161,22 +159,19 @@ export async function getDashboardSnapshot(date = new Date()): Promise<Dashboard
   const [
     overview,
     periodSummary,
-    overdueInvoices,
-    arrearsSummary,
-    agedReceivables,
+    arrearsReports,
     activeContractsResult,
     maintenanceRows,
   ] = await Promise.all([
     getDashboardOverview(date),
     getFinancialPeriodSummaryReport(periodFilters),
-    getOverdueInvoicesReport(arrearsFilters),
-    getArrearsSummaryReport(arrearsFilters),
-    getAgedReceivablesReport(arrearsFilters),
+    getDashboardArrearsReports(arrearsFilters),
     listContracts({ status: 'active', page: 1, pageSize: 500 }),
     listMaintenance('all', ''),
   ]);
 
   const activeContracts = activeContractsResult.rows;
+  const { overdueInvoices, arrearsSummary, agedReceivables } = arrearsReports;
   const urgentRequests = maintenanceRows.filter(
     (request) => request.priority === 'urgent' && (request.status === 'open' || request.status === 'in_progress'),
   );

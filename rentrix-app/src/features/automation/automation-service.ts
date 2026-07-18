@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { env } from '@/lib/env';
 
 export type AutomationRuleType = 'contract_expiry' | 'overdue_invoice' | 'maintenance_overdue' | 'payment_reminder' | 'large_payment_alert' | 'unit_status' | 'custom';
 
@@ -103,6 +104,10 @@ export type AutomationCommandResult = Readonly<{ accepted: boolean; provider: 'l
 
 export const localAutomationGateway = {
   async updateRule(command: AutomationCommand): Promise<AutomationCommandResult> {
+    if (!env.isConfigured) {
+      return { accepted: false, provider: 'automation-worker', message: 'Supabase environment is not configured' };
+    }
+
     try {
       const isEnabled = command.status === 'active';
       await toggleAutomationRule(command.ruleId, isEnabled);

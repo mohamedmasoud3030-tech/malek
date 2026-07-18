@@ -39,6 +39,7 @@ export {
 export {
   getAgedReceivablesReport,
   getArrearsSummaryReport,
+  getDashboardArrearsReports,
   getOverdueInvoicesReport,
   calculateDaysOverdue,
   filterInvoicesForArrearsReport,
@@ -52,6 +53,7 @@ export {
   type AgingBucketKey,
   type ArrearsReportFilters,
   type ArrearsSummaryReport,
+  type DashboardArrearsReports,
   type OverdueInvoiceReportRow,
   type OverdueInvoicesReport,
 } from './arrears-reports-service';

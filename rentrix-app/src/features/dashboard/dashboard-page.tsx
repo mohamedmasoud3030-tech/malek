@@ -25,6 +25,7 @@ export function DashboardPage() {
   const { data: snapshot, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
     queryFn: () => getDashboardSnapshot(now),
+    retry: false,
   });
 
   const retryDashboard = useCallback(() => {
