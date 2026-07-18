@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 describe('architecture guard v2 contract', () => {
   const guard = readFileSync(
-    resolve(import.meta.dirname, '../../scripts/check-architecture.mjs'),
+    resolve(import.meta.dirname, '../scripts/check-architecture.mjs'),
     'utf8',
   );
 
