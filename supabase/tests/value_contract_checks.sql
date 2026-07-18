@@ -64,105 +64,122 @@ select ok(
   'unit maintenance blocker recognizes current request states and ignores soft-deleted rows'
 );
 
-with expected_values(table_name, constraint_name, expected_value) as (
-  values
-    ('automation_rules', 'automation_rules_rule_type_check', 'contract_expiry'),
-    ('automation_rules', 'automation_rules_rule_type_check', 'overdue_invoice'),
-    ('automation_rules', 'automation_rules_rule_type_check', 'maintenance_overdue'),
-    ('automation_rules', 'automation_rules_rule_type_check', 'payment_reminder'),
-    ('automation_rules', 'automation_rules_rule_type_check', 'large_payment_alert'),
-    ('automation_rules', 'automation_rules_rule_type_check', 'unit_status'),
-    ('automation_rules', 'automation_rules_rule_type_check', 'custom'),
-    ('bank_reconciliation_matches', 'bank_reconciliation_matches_type_chk', 'payment'),
-    ('bank_reconciliation_matches', 'bank_reconciliation_matches_type_chk', 'receipt'),
-    ('bank_reconciliation_matches', 'bank_reconciliation_matches_type_chk', 'expense'),
-    ('bank_reconciliation_matches', 'bank_reconciliation_matches_type_chk', 'manual_adjustment'),
-    ('bank_statement_lines', 'bank_statement_lines_status_chk', 'unmatched'),
-    ('bank_statement_lines', 'bank_statement_lines_status_chk', 'matched'),
-    ('bank_statement_lines', 'bank_statement_lines_status_chk', 'ignored'),
-    ('communication_records', 'communication_records_channel_chk', 'phone'),
-    ('communication_records', 'communication_records_channel_chk', 'whatsapp'),
-    ('communication_records', 'communication_records_channel_chk', 'email'),
-    ('communication_records', 'communication_records_channel_chk', 'meeting'),
-    ('communication_records', 'communication_records_channel_chk', 'note'),
-    ('communication_records', 'communication_records_direction_chk', 'inbound'),
-    ('communication_records', 'communication_records_direction_chk', 'outbound'),
-    ('communication_records', 'communication_records_direction_chk', 'internal'),
-    ('communication_records', 'communication_records_status_chk', 'logged'),
-    ('communication_records', 'communication_records_status_chk', 'follow_up'),
-    ('communication_records', 'communication_records_status_chk', 'resolved'),
-    ('communication_records', 'communication_records_status_chk', 'archived'),
-    ('deposit_transactions', 'deposit_transactions_type_check', 'held'),
-    ('deposit_transactions', 'deposit_transactions_type_check', 'deduction'),
-    ('deposit_transactions', 'deposit_transactions_type_check', 'refund'),
-    ('deposit_transactions', 'deposit_transactions_payment_method_check', 'cash'),
-    ('deposit_transactions', 'deposit_transactions_payment_method_check', 'bank_transfer'),
-    ('deposit_transactions', 'deposit_transactions_payment_method_check', 'check'),
-    ('owner_agreements', 'owner_agreements_agreement_type_check', 'property_management'),
-    ('owner_agreements', 'owner_agreements_agreement_type_check', 'master_lease'),
-    ('owner_agreements', 'owner_agreements_commission_type_check', 'FIXED_MONTHLY'),
-    ('owner_agreements', 'owner_agreements_commission_type_check', 'RATE'),
-    ('owner_settlements', 'owner_settlements_status_check', 'DRAFT'),
-    ('owner_settlements', 'owner_settlements_status_check', 'APPROVED'),
-    ('owner_settlements', 'owner_settlements_status_check', 'PAID'),
-    ('owner_settlements', 'owner_settlements_status_check', 'CANCELLED'),
-    ('payment_terms_templates', 'payment_terms_templates_interval_type_check', 'monthly'),
-    ('payment_terms_templates', 'payment_terms_templates_interval_type_check', 'quarterly'),
-    ('payment_terms_templates', 'payment_terms_templates_interval_type_check', 'biannual'),
-    ('payment_terms_templates', 'payment_terms_templates_interval_type_check', 'annual'),
-    ('payment_terms_templates', 'payment_terms_templates_interval_type_check', 'custom'),
-    ('people', 'people_type_check', 'tenant'),
-    ('people', 'people_type_check', 'owner'),
-    ('people', 'people_type_check', 'contact'),
-    ('tenant_deposits', 'tenant_deposits_status_check', 'held'),
-    ('tenant_deposits', 'tenant_deposits_status_check', 'partially_refunded'),
-    ('tenant_deposits', 'tenant_deposits_status_check', 'refunded'),
-    ('tenant_deposits', 'tenant_deposits_status_check', 'forfeited_damage'),
-    ('tenant_deposits', 'tenant_deposits_status_check', 'forfeited_arrears'),
-    ('tenant_deposits', 'tenant_deposits_status_check', 'partially_deducted'),
-    ('units', 'units_status_canonical_check', 'available'),
-    ('units', 'units_status_canonical_check', 'occupied'),
-    ('units', 'units_status_canonical_check', 'maintenance'),
-    ('units', 'units_status_canonical_check', 'reserved'),
-    ('utility_meters', 'utility_meters_responsible_party_check', 'tenant'),
-    ('utility_meters', 'utility_meters_responsible_party_check', 'landlord'),
-    ('utility_meters', 'utility_meters_responsible_party_check', 'company'),
-    ('utility_meters', 'utility_meters_utility_type_check', 'electricity'),
-    ('utility_meters', 'utility_meters_utility_type_check', 'water'),
-    ('utility_meters', 'utility_meters_utility_type_check', 'sanitation'),
-    ('utility_meters', 'utility_meters_utility_type_check', 'internet'),
-    ('utility_meters', 'utility_meters_utility_type_check', 'gas'),
-    ('utility_meters', 'utility_meters_utility_type_check', 'other'),
-    ('vault_documents', 'vault_documents_category_check', 'all'),
-    ('vault_documents', 'vault_documents_category_check', 'contracts'),
-    ('vault_documents', 'vault_documents_category_check', 'identity'),
-    ('vault_documents', 'vault_documents_category_check', 'receipts'),
-    ('vault_documents', 'vault_documents_category_check', 'maintenance'),
-    ('vault_documents', 'vault_documents_category_check', 'expenses'),
-    ('vault_documents', 'vault_documents_category_check', 'utilities'),
-    ('vault_documents', 'vault_documents_category_check', 'other')
-), constraint_definitions as (
-  select
-    t.relname as table_name,
-    c.conname as constraint_name,
-    pg_get_constraintdef(c.oid) as definition
-  from pg_constraint c
-  join pg_class t on t.oid = c.conrelid
-  join pg_namespace n on n.oid = t.relnamespace
-  where n.nspname = 'public'
-    and c.contype = 'c'
+create temporary table expected_value_contracts (
+  table_name text not null,
+  column_name text not null,
+  expected_value text not null
+) on commit drop;
+
+insert into expected_value_contracts (table_name, column_name, expected_value)
+values
+  ('automation_rules', 'rule_type', 'contract_expiry'),
+  ('automation_rules', 'rule_type', 'overdue_invoice'),
+  ('automation_rules', 'rule_type', 'maintenance_overdue'),
+  ('automation_rules', 'rule_type', 'payment_reminder'),
+  ('automation_rules', 'rule_type', 'large_payment_alert'),
+  ('automation_rules', 'rule_type', 'unit_status'),
+  ('automation_rules', 'rule_type', 'custom'),
+  ('bank_reconciliation_matches', 'matched_entity_type', 'payment'),
+  ('bank_reconciliation_matches', 'matched_entity_type', 'receipt'),
+  ('bank_reconciliation_matches', 'matched_entity_type', 'expense'),
+  ('bank_reconciliation_matches', 'matched_entity_type', 'manual_adjustment'),
+  ('bank_statement_lines', 'status', 'unmatched'),
+  ('bank_statement_lines', 'status', 'matched'),
+  ('bank_statement_lines', 'status', 'ignored'),
+  ('communication_records', 'channel', 'phone'),
+  ('communication_records', 'channel', 'whatsapp'),
+  ('communication_records', 'channel', 'email'),
+  ('communication_records', 'channel', 'meeting'),
+  ('communication_records', 'channel', 'note'),
+  ('communication_records', 'direction', 'inbound'),
+  ('communication_records', 'direction', 'outbound'),
+  ('communication_records', 'direction', 'internal'),
+  ('communication_records', 'status', 'logged'),
+  ('communication_records', 'status', 'follow_up'),
+  ('communication_records', 'status', 'resolved'),
+  ('communication_records', 'status', 'archived'),
+  ('deposit_transactions', 'type', 'held'),
+  ('deposit_transactions', 'type', 'deduction'),
+  ('deposit_transactions', 'type', 'refund'),
+  ('deposit_transactions', 'payment_method', 'cash'),
+  ('deposit_transactions', 'payment_method', 'bank_transfer'),
+  ('deposit_transactions', 'payment_method', 'check'),
+  ('owner_agreements', 'agreement_type', 'property_management'),
+  ('owner_agreements', 'agreement_type', 'master_lease'),
+  ('owner_agreements', 'commission_type', 'FIXED_MONTHLY'),
+  ('owner_agreements', 'commission_type', 'RATE'),
+  ('owner_settlements', 'status', 'DRAFT'),
+  ('owner_settlements', 'status', 'APPROVED'),
+  ('owner_settlements', 'status', 'PAID'),
+  ('owner_settlements', 'status', 'CANCELLED'),
+  ('payment_terms_templates', 'interval_type', 'monthly'),
+  ('payment_terms_templates', 'interval_type', 'quarterly'),
+  ('payment_terms_templates', 'interval_type', 'biannual'),
+  ('payment_terms_templates', 'interval_type', 'annual'),
+  ('payment_terms_templates', 'interval_type', 'custom'),
+  ('people', 'type', 'tenant'),
+  ('people', 'type', 'owner'),
+  ('people', 'type', 'contact'),
+  ('tenant_deposits', 'status', 'held'),
+  ('tenant_deposits', 'status', 'partially_refunded'),
+  ('tenant_deposits', 'status', 'refunded'),
+  ('tenant_deposits', 'status', 'forfeited_damage'),
+  ('tenant_deposits', 'status', 'forfeited_arrears'),
+  ('tenant_deposits', 'status', 'partially_deducted'),
+  ('units', 'status', 'available'),
+  ('units', 'status', 'occupied'),
+  ('units', 'status', 'maintenance'),
+  ('units', 'status', 'reserved'),
+  ('utility_meters', 'responsible_party', 'tenant'),
+  ('utility_meters', 'responsible_party', 'landlord'),
+  ('utility_meters', 'responsible_party', 'company'),
+  ('utility_meters', 'utility_type', 'electricity'),
+  ('utility_meters', 'utility_type', 'water'),
+  ('utility_meters', 'utility_type', 'sanitation'),
+  ('utility_meters', 'utility_type', 'internet'),
+  ('utility_meters', 'utility_type', 'gas'),
+  ('utility_meters', 'utility_type', 'other'),
+  ('vault_documents', 'category', 'all'),
+  ('vault_documents', 'category', 'contracts'),
+  ('vault_documents', 'category', 'identity'),
+  ('vault_documents', 'category', 'receipts'),
+  ('vault_documents', 'category', 'maintenance'),
+  ('vault_documents', 'category', 'expenses'),
+  ('vault_documents', 'category', 'utilities'),
+  ('vault_documents', 'category', 'other');
+
+create temporary view missing_value_contracts as
+select expected.table_name, expected.column_name, expected.expected_value
+from expected_value_contracts expected
+where not exists (
+  select 1
+  from pg_constraint constraint_record
+  join pg_class relation_record
+    on relation_record.oid = constraint_record.conrelid
+  join pg_namespace namespace_record
+    on namespace_record.oid = relation_record.relnamespace
+  join pg_attribute attribute_record
+    on attribute_record.attrelid = relation_record.oid
+   and attribute_record.attname = expected.column_name
+   and attribute_record.attnum = any(constraint_record.conkey)
+  where namespace_record.nspname = 'public'
+    and relation_record.relname = expected.table_name
+    and constraint_record.contype = 'c'
+    and position(
+      quote_literal(expected.expected_value)
+      in pg_get_constraintdef(constraint_record.oid)
+    ) > 0
+);
+
+select diag(
+  'Missing constrained value contract: '
+  || table_name || '.' || column_name || '=' || quote_literal(expected_value)
 )
+from missing_value_contracts;
+
 select ok(
-  not exists (
-    select 1
-    from expected_values expected
-    left join constraint_definitions actual
-      on actual.table_name = expected.table_name
-     and actual.constraint_name = expected.constraint_name
-    where actual.definition is null
-       or position(quote_literal(expected.expected_value) in actual.definition) = 0
-  ),
-  'all audited user-facing constrained values remain accepted by the live schema contract'
+  not exists (select 1 from missing_value_contracts),
+  'all audited user-facing constrained values remain accepted by the replayed schema contract'
 );
 
 select * from finish();
