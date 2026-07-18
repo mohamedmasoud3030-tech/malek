@@ -24,9 +24,9 @@ as $function$
       where c.unit_id = p_unit_id
         and c.deleted_at is null
         and lower(coalesce(c.status, '')) = 'active'
-        and btrim(coalesce(c.start_date, '')) ~ '^\d{4}-\d{2}-\d{2}$'
-        and btrim(coalesce(c.end_date, '')) ~ '^\d{4}-\d{2}-\d{2}$'
-        and current_date between btrim(c.start_date)::date and btrim(c.end_date)::date
+        and btrim(coalesce(c.start_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$'
+        and btrim(coalesce(c.end_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$'
+        and current_date between btrim(c.start_date::text)::date and btrim(c.end_date::text)::date
     ) then 'occupied'
     when lower(coalesce(p_fallback_status, '')) = 'reserved' then 'reserved'
     else 'available'
