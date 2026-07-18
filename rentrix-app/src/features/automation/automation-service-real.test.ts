@@ -51,9 +51,9 @@ describe('automation real execution', () => {
     expect(execution).toContain('Automation baseline missing');
     expect(seed).toContain('public.automation_rules');
     expect(schedule).toContain('public.run_scheduled_automation_rules');
-    expect('20260705000001').toBeLessThan('20260717000004');
-    expect('20260717000004').toBeLessThan('20260717000007');
-    expect('20260717000007').toBeLessThan('20260717000009');
+    expect(Number('20260705000001')).toBeLessThan(Number('20260717000004'));
+    expect(Number('20260717000004')).toBeLessThan(Number('20260717000007'));
+    expect(Number('20260717000007')).toBeLessThan(Number('20260717000009'));
   });
 
   it('migration creates automation_rules with real execution', () => {
