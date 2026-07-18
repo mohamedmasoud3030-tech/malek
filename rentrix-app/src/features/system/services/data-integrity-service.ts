@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { Database } from '@/types/database';
 import type { DataIntegrityCheck, DataIntegrityResult } from '../types';
 
@@ -20,6 +19,13 @@ const INTEGRITY_UNAVAILABLE_REASON = 'تعذر تشغيل فحص سلامة ال
 const INTEGRITY_BROWSER_LIMIT_REASON = 'وصل فحص سلامة البيانات إلى حد القراءة الآمن في المتصفح قبل تأكيد اكتمال البيانات. هذا الفحص مناسب لبيانات العرض أو التدريج فقط، ويحتاج الإنتاج إلى مسار قراءة خادمي قابل للتوسع ومتحقق منه.';
 export const DATA_INTEGRITY_PAGE_SIZE = 500;
 export const DATA_INTEGRITY_MAX_PAGES = 10;
+
+function getTodayLocalDateString(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 type PaginatedReadQuery<Row> = Readonly<{
   range: (from: number, to: number) => PromiseLike<{ data: readonly Row[] | null; error: unknown }>;
