@@ -32,6 +32,46 @@ production-verified.
 - The deposit migration chain derives contract/property/unit identifier types from canonical tables and dynamically casts expense property references, eliminating the fixed-UUID replay blocker in code. The automation migration fails early when its baseline tables are absent and its dependency order is covered by a contract test. **As of 2026-07-18, this chain (`20260717000003`, `20260717000004`, `20260717000005`, `20260717000007`, `20260717000008`, `20260717000009`) has been applied to production in dependency order with explicit owner approval and live-verified**: `tenant_deposits`, `deposit_transactions`, `automation_rules` (6 seeded rows), `automation_notifications` exist; all seven RPCs (`create_deposit_atomic`, `deduct_deposit_atomic`, `refund_deposit_atomic`, `execute_automation_rule`, `execute_automation_rule_internal`, `run_scheduled_automation_rules`, `retry_automation_run`) are live; `pg_cron` is enabled with `rentrix-automation-hourly` active. Lifecycle/CRUD testing against production is still pending — see `docs/NEXT.md`.
 - Deposits and Automation are deployed and structurally/live-read verified; authenticated mutation lifecycle evidence remains outstanding before the release gate can close.
 
+## Supabase drift-check pass and live schema fixes (2026-07-18)
+
+A new `supabase/tests/security_drift_checks.sql` pgTAP file was added, asserting
+global invariants over every object in `public` (RLS enabled on all tables,
+every SECURITY DEFINER and trigger function pins a safe `search_path`, no
+SECURITY DEFINER RPC is executable by `anon`, every FK referencing a core
+entity table — `owners`/`contracts`/`properties`/`units`/`tenants`/`people` —
+has a supporting index). Unlike `release_blockers.sql`, this file needs no
+per-object updates as new tables/functions are added.
+
+Two real gaps were found and fixed live on `nnggcnpcuomwfuupupwg` with owner
+approval before the test file was written to assert against them:
+- `set_updated_at()` and `normalize_unit_status_contract()` (trigger
+  functions) had no pinned `search_path`, unlike all 61 other functions in
+  `public`. Both now pin `search_path = public, pg_temp`; behavior is
+  unchanged (verified: same 5 trigger bindings on `set_updated_at`
+  post-fix).
+- `utility_bills.unit_id`, `tenant_deposits.property_id`, and
+  `tenant_deposits.unit_id` are FK columns with no supporting index (unlike
+  their sibling FK columns on the same tables). Added matching partial
+  indexes (`WHERE deleted_at IS NULL`, consistent with the existing indexing
+  convention on both tables).
+
+A third candidate check — asserting `anon` has no table-level
+INSERT/UPDATE/DELETE grant — was written, tested against production, found
+to fail on nearly every table, investigated, and **dropped** rather than
+shipped: Supabase's standard convention grants table-level privileges to
+`anon`/`authenticated` by default and relies on RLS policies (already
+covered by check #1 and by `release_blockers.sql`) as the actual enforcement
+layer. Asserting on GRANT alone tests the wrong layer and would have been a
+permanently-red or noise-generating check.
+
+`void_receipt_atomic` has two live overloads: the current one taking a
+single `jsonb payload` (has `authenticated` EXECUTE, used by the app) and a
+legacy one with four positional arguments (`p_receipt_id text,
+p_voided_at bigint, p_invoice_updates jsonb, p_reverse_entries jsonb`) with
+**no** grants to any role — unreachable via PostgREST, dead code. Left
+in place (not in scope for this pass); flagged here for cleanup during the
+next migration consolidation pass.
+
 ## Application
 
 The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single-page app using TanStack Router (`rentrix-app/src/routeTree.ts`, `src/app/router.tsx`) and TanStack Query (`src/lib/query-client.ts`). It talks to Supabase (Postgres + Auth) as its backend via `src/lib/supabase.ts`.
