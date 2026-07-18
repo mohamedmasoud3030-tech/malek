@@ -7,13 +7,34 @@ const sourceFiles = collectSourceFiles(sourceRoot);
 const sourceSet = new Set(sourceFiles);
 const violations = [];
 
-const focusedFeatureAllowList = new Map([
-  // Properties may render unit/owner/financial summaries through explicit integration seams only.
-  ['properties', new Set(['owners', 'units', 'financials'])],
-  // Units may reference property labels/services; properties must not imply a reciprocal free-for-all.
+// Every existing cross-feature edge is explicit. A new feature starts with no
+// cross-feature access until its integration seam is reviewed and added here.
+const featureDependencyAllowList = new Map([
+  ['audit', new Set(['auth', 'settings'])],
+  ['contracts', new Set(['financials', 'owners', 'people', 'properties', 'settings', 'units'])],
+  ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding'])],
+  ['financials', new Set(['auth', 'contracts', 'properties', 'settings'])],
+  ['maintenance', new Set(['properties', 'units'])],
+  ['owners', new Set(['financials', 'properties', 'settings'])],
+  ['people', new Set(['tenants'])],
+  ['properties', new Set(['financials', 'owners', 'units'])],
+  ['reports', new Set(['auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
+  ['system', new Set(['auth'])],
+  ['tenants', new Set(['financials', 'people'])],
   ['units', new Set(['properties'])],
-  // Contract UI needs property/unit/owner option hooks and tenant/person selection while contract services remain the owner of mutations.
-  ['contracts', new Set(['properties', 'units', 'owners', 'people', 'settings', 'financials'])],
+]);
+
+// These are known presentation-to-service debts, frozen so the guard blocks
+// new exceptions while they are migrated to feature hooks in bounded PRs.
+const presentationServiceDebtAllowList = new Set([
+  'features/owners/components/owner-detail-view.tsx',
+  'features/reports/components/CollectionsSection.tsx',
+  'features/reports/components/ExpensesSection.tsx',
+  'features/reports/components/FiltersPanel.tsx',
+  'features/reports/components/MaintenanceReportSection.tsx',
+  'features/reports/components/OverdueSection.tsx',
+  'features/reports/components/ReportsFilterSurface.tsx',
+  'features/reports/components/StatementsSection.tsx',
 ]);
 
 const allowedAppDirectories = new Set(['layout', 'navigation', 'providers', 'router']);
@@ -34,13 +55,17 @@ for (const file of sourceFiles) {
     violations.push(`${displayPath}: presentation components must not import Supabase directly`);
   }
 
-  if (isPresentationComponent(file) && isFocusedArchitectureFile(file) && runtimeImports.some((specifier) => specifier.startsWith('@/services/') || /(?:^|\/)services\//.test(specifier))) {
-    violations.push(`${displayPath}: presentation components must use a hook instead of importing a service`);
+  if (
+    isPresentationComponent(file)
+    && runtimeImports.some((specifier) => isCrossFeatureServiceImport(file, specifier))
+    && !presentationServiceDebtAllowList.has(relative(sourceRoot, file).split(sep).join('/'))
+  ) {
+    violations.push(`${displayPath}: presentation components must use a feature hook instead of importing a cross-feature service`);
   }
 
-  if (isFocusedArchitectureFile(file)) {
+  if (isFeatureFile(file)) {
     for (const specifier of imports) {
-      const dependencyViolation = getFocusedDependencyViolation(file, specifier);
+      const dependencyViolation = getFeatureDependencyViolation(file, specifier);
       if (dependencyViolation) violations.push(`${displayPath}: ${dependencyViolation}`);
     }
   }
@@ -106,17 +131,22 @@ function resolveImport(file, specifier) {
     .filter((candidate) => sourceSet.has(candidate));
 }
 
-function isFocusedArchitectureFile(file) {
-  const normalized = relative(sourceRoot, file).split(sep).join('/');
-  const feature = normalized.match(/^features\/([^/]+)\//)?.[1];
-  return Boolean(feature && focusedFeatureAllowList.has(feature));
+function isFeatureFile(file) {
+  return getFeatureNameFromPath(file) !== null;
 }
 
-function getFocusedDependencyViolation(file, specifier) {
+function isCrossFeatureServiceImport(file, specifier) {
+  const sourceFeature = getFeatureNameFromPath(file);
+  const targetFeature = getFeatureNameFromSpecifier(file, specifier);
+  if (!sourceFeature || !targetFeature || sourceFeature === targetFeature) return false;
+  return /(?:^|\/)services?\//.test(specifier) || /Service(?:\.[cm]?[jt]sx?)?$/.test(specifier);
+}
+
+function getFeatureDependencyViolation(file, specifier) {
   const sourceFeature = getFeatureNameFromPath(file);
   const targetFeature = getFeatureNameFromSpecifier(file, specifier);
   if (!sourceFeature || !targetFeature || sourceFeature === targetFeature) return null;
-  const allowedTargets = focusedFeatureAllowList.get(sourceFeature) ?? new Set();
+  const allowedTargets = featureDependencyAllowList.get(sourceFeature) ?? new Set();
   if (allowedTargets.has(targetFeature)) return null;
   return `unexpected cross-feature import from ${sourceFeature} to ${targetFeature}; use a feature hook/service seam or move shared-neutral code to a real shared module`;
 }
