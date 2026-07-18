@@ -1,4 +1,4 @@
-import { Printer, UserRound, UsersRound } from 'lucide-react';
+import { Download, Printer, UserRound, UsersRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatMoney, formatShortId, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
@@ -36,6 +36,7 @@ export function TenantStatementPanel({
   fallbackRows,
   receipts,
   onPrint,
+  onDownloadPdf,
 }: Readonly<{
   selectedContractId: string;
   statement: TenantStatementReport | undefined;
@@ -44,6 +45,7 @@ export function TenantStatementPanel({
   fallbackRows: TenantFallbackRow[];
   receipts: ReceiptRow[];
   onPrint: () => void;
+  onDownloadPdf: () => void;
 }>) {
   return (
     <ReportPanel
@@ -51,10 +53,16 @@ export function TenantStatementPanel({
       description="دفتر الحركة الحقيقي للعقد المحدد مع الذمم والإيصالات."
       icon={UserRound}
       action={statement ? (
-        <Button type="button" size="sm" variant="outline" onClick={onPrint} className="min-h-10 gap-1.5 text-xs">
-          <Printer className="size-3.5" aria-hidden="true" />
-          طباعة الكشف
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button type="button" size="sm" variant="outline" onClick={onPrint} className="min-h-10 gap-1.5 text-xs">
+            <Printer className="size-3.5" aria-hidden="true" />
+            طباعة الكشف
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} className="min-h-10 gap-1.5 text-xs">
+            <Download className="size-3.5" aria-hidden="true" />
+            تنزيل PDF
+          </Button>
+        </div>
       ) : undefined}
     >
       {isLoading ? (
@@ -121,6 +129,7 @@ export function OwnerStatementPanel({
   isLoading,
   fallbackRows,
   onPrint,
+  onDownloadPdf,
 }: Readonly<{
   selectedOwnerId: string;
   statement: OwnerStatementReport | undefined;
@@ -128,6 +137,7 @@ export function OwnerStatementPanel({
   isLoading: boolean;
   fallbackRows: OwnerFallbackRow[];
   onPrint: () => void;
+  onDownloadPdf: () => void;
 }>) {
   return (
     <ReportPanel
@@ -135,10 +145,16 @@ export function OwnerStatementPanel({
       description="الإيرادات والاستقطاعات وصافي الحركة للمالك المحدد."
       icon={UsersRound}
       action={statement ? (
-        <Button type="button" size="sm" variant="outline" onClick={onPrint} className="min-h-10 gap-1.5 text-xs">
-          <Printer className="size-3.5" aria-hidden="true" />
-          طباعة الكشف
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button type="button" size="sm" variant="outline" onClick={onPrint} className="min-h-10 gap-1.5 text-xs">
+            <Printer className="size-3.5" aria-hidden="true" />
+            طباعة الكشف
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} className="min-h-10 gap-1.5 text-xs">
+            <Download className="size-3.5" aria-hidden="true" />
+            تنزيل PDF
+          </Button>
+        </div>
       ) : undefined}
     >
       {isLoading ? (

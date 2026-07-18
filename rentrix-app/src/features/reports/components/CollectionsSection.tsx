@@ -1,26 +1,18 @@
-import { Building2, CalendarDays, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { Building2, CalendarDays, Download, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { useCollectionSummaryReport } from '@/features/financials/reports/useFinancialReports';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
 import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString, toDailyCollectionCsv, type RentRollReportRow } from '../reports-page.helpers';
 import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
 import { ReceiptLinksPanel } from './collections/receipt-links-panel';
 import { RentRollPanel } from './collections/rent-roll-panel';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 const paymentMethodLabels = {
   cash: 'نقدًا',
@@ -59,35 +51,55 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   const dominantMethodShare = dominantMethod && totalCollected > 0 ? (dominantMethod[1] / totalCollected) * 100 : 0;
   const averagePayment = paymentsCount > 0 ? totalCollected / paymentsCount : 0;
 
-  const handlePrintCollectionsReport = () => {
+  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
+
+  const buildCollectionsReportData = (): ReportDocumentData => {
     const todayStr = getTodayLocalDateString();
-    DocumentTemplates.renderReportPdf(
-      {
-        reportTitle: 'كشف حركة التحصيلات اليومية والتدفقات النقدية',
-        reportType: 'Daily_Collections_Report',
-        periodFrom: todayStr,
-        periodTo: todayStr,
-        sections: [
-          {
-            title: 'جدول المقبوضات حسب التاريخ وطرق السداد',
-            rows: rows.map((row) => ({
-              label: `تاريخ ${row.paymentDate} - (${row.paymentsCount} عمليات سداد)`,
-              value: `إجمالي اليوم: ${row.totalPaid.toLocaleString('ar-OM')} ر.ع | نقداً: ${row.methodTotals.cash} | تحويل: ${row.methodTotals.bank_transfer} | شيك: ${row.methodTotals.check}`,
-            })),
-            totals: ['إجمالي المقبوضات للفترة', `${totalCollected.toLocaleString('ar-OM')} ر.ع`],
-          },
-        ],
-        totalSummary: `إجمالي المبلغ المحصل: ${totalCollected.toLocaleString('ar-OM')} ر.ع | كفاءة التحصيل: ${Math.round(collectionRate)}%`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'كشف حركة التحصيلات اليومية والتدفقات النقدية',
+      reportType: 'Daily_Collections_Report',
+      periodFrom: todayStr,
+      periodTo: todayStr,
+      sections: [
+        {
+          title: 'جدول المقبوضات حسب التاريخ وطرق السداد',
+          rows: rows.map((row) => ({
+            label: `تاريخ ${row.paymentDate} - (${row.paymentsCount} عمليات سداد)`,
+            value: `إجمالي اليوم: ${row.totalPaid.toLocaleString('ar-OM')} ${currencySymbol} | نقداً: ${row.methodTotals.cash} | تحويل: ${row.methodTotals.bank_transfer} | شيك: ${row.methodTotals.check}`,
+          })),
+          totals: ['إجمالي المقبوضات للفترة', `${totalCollected.toLocaleString('ar-OM')} ${currencySymbol}`],
+        },
+      ],
+      totalSummary: `إجمالي المبلغ المحصل: ${totalCollected.toLocaleString('ar-OM')} ${currencySymbol} | كفاءة التحصيل: ${Math.round(collectionRate)}%`,
+    };
+  };
+
+  const handlePrintCollectionsReport = async () => {
+    try {
+      await DocumentTemplates.printReportDocument(buildCollectionsReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
+    }
+  };
+
+  const handleDownloadCollectionsReport = async () => {
+    try {
+      await DocumentTemplates.downloadReportPdf(buildCollectionsReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
+    }
   };
 
   const dailyActions = canExportReports ? (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrintCollectionsReport} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="outline" size="sm" onClick={handlePrintCollectionsReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
         <Printer className="size-3.5" aria-hidden="true" />
         طباعة A4
+      </Button>
+      <Button variant="outline" size="sm" onClick={handleDownloadCollectionsReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+        <Download className="size-3.5" aria-hidden="true" />
+        تنزيل PDF
       </Button>
       <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))} className="min-h-10 gap-1.5 text-xs">
         <FileSpreadsheet className="size-3.5" aria-hidden="true" />

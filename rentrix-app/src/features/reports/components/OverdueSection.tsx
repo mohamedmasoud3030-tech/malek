@@ -1,25 +1,17 @@
-import { AlertTriangle, CalendarClock, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Download, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { useAgedReceivablesReport, useArrearsSummaryReport } from '@/features/financials/reports/useFinancialReports';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
 import { agingBucketKeys, buildAgingBucketChartRows, buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
 import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
 import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
 import { OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 export function OverdueSection({ rows, agedReport, summary, canExportReports, isLoading }: Readonly<{
   rows: OverdueInvoiceReportRow[];
@@ -50,35 +42,55 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
     .sort((a, b) => b[1].total - a[1].total)[0];
   const topExposureShare = topExposure && totalOverdue > 0 ? (topExposure[1].total / totalOverdue) * 100 : 0;
 
-  const handlePrintOverdueReport = () => {
+  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
+
+  const buildOverdueReportData = (): ReportDocumentData => {
     const todayStr = getTodayLocalDateString();
-    DocumentTemplates.renderReportPdf(
-      {
-        reportTitle: 'كشف المتأخرات والديون التفصيلي',
-        reportType: 'Overdue_Debts_Report',
-        periodFrom: todayStr,
-        periodTo: todayStr,
-        sections: [
-          {
-            title: 'جدول الفواتير والذمم المتأخرة السداد',
-            rows: rows.map((row) => ({
-              label: `${row.tenantName || 'مستأجر'} - (فاتورة #${row.shortInvoiceId})`,
-              value: `المبلغ: ${row.remainingAmount} ر.ع | أيام التأخير: ${row.daysOverdue} يوم | الاستحقاق: ${row.dueDate}`,
-            })),
-            totals: ['إجمالي المتأخرات', `${totalOverdue.toLocaleString('ar-OM')} ر.ع`],
-          },
-        ],
-        totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | متوسط التأخير: ${Math.round(averageDelay)} يوم | أكثر من 90 يوم: ${over90Amount.toLocaleString('ar-OM')} ر.ع`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'كشف المتأخرات والديون التفصيلي',
+      reportType: 'Overdue_Debts_Report',
+      periodFrom: todayStr,
+      periodTo: todayStr,
+      sections: [
+        {
+          title: 'جدول الفواتير والذمم المتأخرة السداد',
+          rows: rows.map((row) => ({
+            label: `${row.tenantName || 'مستأجر'} - (فاتورة #${row.shortInvoiceId})`,
+            value: `المبلغ: ${row.remainingAmount} ${currencySymbol} | أيام التأخير: ${row.daysOverdue} يوم | الاستحقاق: ${row.dueDate}`,
+          })),
+          totals: ['إجمالي المتأخرات', `${totalOverdue.toLocaleString('ar-OM')} ${currencySymbol}`],
+        },
+      ],
+      totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | متوسط التأخير: ${Math.round(averageDelay)} يوم | أكثر من 90 يوم: ${over90Amount.toLocaleString('ar-OM')} ${currencySymbol}`,
+    };
+  };
+
+  const handlePrintOverdueReport = async () => {
+    try {
+      await DocumentTemplates.printReportDocument(buildOverdueReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
+    }
+  };
+
+  const handleDownloadOverdueReport = async () => {
+    try {
+      await DocumentTemplates.downloadReportPdf(buildOverdueReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
+    }
   };
 
   const invoiceActions = canExportReports ? (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrintOverdueReport} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="outline" size="sm" onClick={handlePrintOverdueReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
         <Printer className="size-3.5" aria-hidden="true" />
         طباعة A4
+      </Button>
+      <Button variant="outline" size="sm" onClick={handleDownloadOverdueReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+        <Download className="size-3.5" aria-hidden="true" />
+        تنزيل PDF
       </Button>
       <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)} className="min-h-10 gap-1.5 text-xs">
         <FileSpreadsheet className="size-3.5" aria-hidden="true" />

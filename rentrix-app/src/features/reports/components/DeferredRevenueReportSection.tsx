@@ -1,4 +1,5 @@
-import { CalendarRange, FileSpreadsheet, Link2, Printer, Scale, WalletCards } from 'lucide-react';
+import { CalendarRange, Download, FileSpreadsheet, Link2, Printer, Scale, WalletCards } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -6,7 +7,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import type { DeferredRevenueAudit } from '../reports-insights';
 import { buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
 import {
   ReportColumns,
   ReportInsightNote,
@@ -16,16 +18,6 @@ import {
   ReportProgress,
   ReportState,
 } from './report-section-primitives';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 export function DeferredRevenueReportSection({
   audit,
@@ -43,42 +35,60 @@ export function DeferredRevenueReportSection({
     ? (audit.linkedReceiptsCount / audit.postedReceiptsCount) * 100
     : 0;
 
-  const handlePrint = () => {
-    DocumentTemplates.renderReportPdf(
+  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
+
+  const buildDeferredRevenueReportData = (): ReportDocumentData => ({
+    reportTitle: 'تقرير الإيرادات المؤجلة والاستحقاق',
+    reportType: 'Deferred_Revenue_Report',
+    periodFrom: schedule.schedules[0]?.periodStart ?? asOf,
+    periodTo: asOf,
+    sections: [
       {
-        reportTitle: 'تقرير الإيرادات المؤجلة والاستحقاق',
-        reportType: 'Deferred_Revenue_Report',
-        periodFrom: schedule.schedules[0]?.periodStart ?? asOf,
-        periodTo: asOf,
-        sections: [
-          {
-            title: 'ملخص الاستحقاق',
-            rows: [
-              { label: 'التحصيلات المقدمة الموثقة', value: `${schedule.totalUpfrontCollections.toLocaleString('ar-OM')} ر.ع` },
-              { label: 'الإيراد المعترف به للشهر الحالي', value: `${schedule.totalRecognizedRevenueCurrentMonth.toLocaleString('ar-OM')} ر.ع` },
-              { label: 'الإيراد المعترف به حتى التاريخ', value: `${schedule.totalRecognizedRevenueToDate.toLocaleString('ar-OM')} ر.ع` },
-              { label: 'الالتزام المؤجل المتبقي', value: `${schedule.totalDeferredLiability.toLocaleString('ar-OM')} ر.ع` },
-            ],
-          },
-          {
-            title: 'جداول الاعتراف حسب العقد',
-            rows: schedule.schedules.map((row) => ({
-              label: `${row.tenantName} · ${row.propertyTitle} · عقد ${formatShortId(row.contractId)}`,
-              value: `المقدم ${row.totalCollected.toLocaleString('ar-OM')} ر.ع | شهريًا ${row.monthlyAmortizationAmount.toLocaleString('ar-OM')} ر.ع | المؤجل ${row.deferredRevenueRemaining.toLocaleString('ar-OM')} ر.ع`,
-            })),
-          },
+        title: 'ملخص الاستحقاق',
+        rows: [
+          { label: 'التحصيلات المقدمة الموثقة', value: `${schedule.totalUpfrontCollections.toLocaleString('ar-OM')} ${currencySymbol}` },
+          { label: 'الإيراد المعترف به للشهر الحالي', value: `${schedule.totalRecognizedRevenueCurrentMonth.toLocaleString('ar-OM')} ${currencySymbol}` },
+          { label: 'الإيراد المعترف به حتى التاريخ', value: `${schedule.totalRecognizedRevenueToDate.toLocaleString('ar-OM')} ${currencySymbol}` },
+          { label: 'الالتزام المؤجل المتبقي', value: `${schedule.totalDeferredLiability.toLocaleString('ar-OM')} ${currencySymbol}` },
         ],
-        totalSummary: `عقود مؤهلة: ${audit.candidateContractsCount} | إيصالات مقدمة: ${audit.candidateReceiptsCount} | تغطية الربط: ${Math.round(linkCoverage)}%`,
       },
-      defaultSettings,
-    );
+      {
+        title: 'جداول الاعتراف حسب العقد',
+        rows: schedule.schedules.map((row) => ({
+          label: `${row.tenantName} · ${row.propertyTitle} · عقد ${formatShortId(row.contractId)}`,
+          value: `المقدم ${row.totalCollected.toLocaleString('ar-OM')} ${currencySymbol} | شهريًا ${row.monthlyAmortizationAmount.toLocaleString('ar-OM')} ${currencySymbol} | المؤجل ${row.deferredRevenueRemaining.toLocaleString('ar-OM')} ${currencySymbol}`,
+        })),
+      },
+    ],
+    totalSummary: `عقود مؤهلة: ${audit.candidateContractsCount} | إيصالات مقدمة: ${audit.candidateReceiptsCount} | تغطية الربط: ${Math.round(linkCoverage)}%`,
+  });
+
+  const handlePrint = async () => {
+    try {
+      await DocumentTemplates.printReportDocument(buildDeferredRevenueReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      await DocumentTemplates.downloadReportPdf(buildDeferredRevenueReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
+    }
   };
 
   const actions = canExportReports ? (
     <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" size="sm" className="min-h-10 gap-1.5 text-xs" onClick={handlePrint}>
+      <Button type="button" variant="outline" size="sm" className="min-h-10 gap-1.5 text-xs" onClick={handlePrint} disabled={!isDocumentSettingsReady}>
         <Printer className="size-3.5" aria-hidden="true" />
         طباعة A4
+      </Button>
+      <Button type="button" variant="outline" size="sm" className="min-h-10 gap-1.5 text-xs" onClick={handleDownload} disabled={!isDocumentSettingsReady}>
+        <Download className="size-3.5" aria-hidden="true" />
+        تنزيل PDF
       </Button>
       <Button
         type="button"

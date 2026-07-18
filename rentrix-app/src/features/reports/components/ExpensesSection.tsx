@@ -1,10 +1,12 @@
-import { Building2, ClipboardList, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { Building2, ClipboardList, Download, FileSpreadsheet, Printer, ReceiptText, WalletCards } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import { useExpenseBreakdownReport } from '@/features/financials/reports/useFinancialReports';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
 import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
 import {
   ReportColumns,
@@ -15,16 +17,6 @@ import {
   ReportProgress,
   ReportState,
 } from './report-section-primitives';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 export function ExpensesSection({ report, canExportReports, isLoading }: Readonly<{
   report: NonNullable<ReturnType<typeof useExpenseBreakdownReport>['data']> | undefined;
@@ -41,42 +33,62 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   const topCategoryShare = topCategory && totalExpenses > 0 ? (topCategory.total / totalExpenses) * 100 : 0;
   const topPropertyShare = topProperty && totalExpenses > 0 ? (topProperty.total / totalExpenses) * 100 : 0;
 
-  const handlePrintExpensesReport = () => {
+  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
+
+  const buildExpensesReportData = (): ReportDocumentData => {
     const todayStr = getTodayLocalDateString();
-    DocumentTemplates.renderReportPdf(
-      {
-        reportTitle: 'تقرير وتوزيع المصروفات التشغيلية',
-        reportType: 'Operational_Expenses_Report',
-        periodFrom: todayStr,
-        periodTo: todayStr,
-        sections: [
-          {
-            title: 'توزيع المصروفات حسب التصنيف',
-            rows: categoryRows.map((row) => ({
-              label: row.category,
-              value: `المبلغ: ${row.total.toLocaleString('ar-OM')} ر.ع | عدد السندات: ${row.count}`,
-            })),
-            totals: ['إجمالي المصروفات التشغيلية', `${totalExpenses.toLocaleString('ar-OM')} ر.ع`],
-          },
-          {
-            title: 'توزيع المصروفات حسب العقارات',
-            rows: propertyRows.map((row) => ({
-              label: row.propertyTitle ?? formatShortId(row.propertyId),
-              value: `المبلغ: ${row.total.toLocaleString('ar-OM')} ر.ع | عدد الحركات: ${row.count}`,
-            })),
-          },
-        ],
-        totalSummary: `إجمالي النفقات: ${totalExpenses.toLocaleString('ar-OM')} ر.ع | عدد السندات: ${expensesCount}`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'تقرير وتوزيع المصروفات التشغيلية',
+      reportType: 'Operational_Expenses_Report',
+      periodFrom: todayStr,
+      periodTo: todayStr,
+      sections: [
+        {
+          title: 'توزيع المصروفات حسب التصنيف',
+          rows: categoryRows.map((row) => ({
+            label: row.category,
+            value: `المبلغ: ${row.total.toLocaleString('ar-OM')} ${currencySymbol} | عدد السندات: ${row.count}`,
+          })),
+          totals: ['إجمالي المصروفات التشغيلية', `${totalExpenses.toLocaleString('ar-OM')} ${currencySymbol}`],
+        },
+        {
+          title: 'توزيع المصروفات حسب العقارات',
+          rows: propertyRows.map((row) => ({
+            label: row.propertyTitle ?? formatShortId(row.propertyId),
+            value: `المبلغ: ${row.total.toLocaleString('ar-OM')} ${currencySymbol} | عدد الحركات: ${row.count}`,
+          })),
+        },
+      ],
+      totalSummary: `إجمالي النفقات: ${totalExpenses.toLocaleString('ar-OM')} ${currencySymbol} | عدد السندات: ${expensesCount}`,
+    };
+  };
+
+  const handlePrintExpensesReport = async () => {
+    try {
+      await DocumentTemplates.printReportDocument(buildExpensesReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
+    }
+  };
+
+  const handleDownloadExpensesReport = async () => {
+    try {
+      await DocumentTemplates.downloadReportPdf(buildExpensesReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
+    }
   };
 
   const actions = canExportReports ? (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrintExpensesReport} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="outline" size="sm" onClick={handlePrintExpensesReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
         <Printer className="size-3.5" aria-hidden="true" />
         طباعة A4
+      </Button>
+      <Button variant="outline" size="sm" onClick={handleDownloadExpensesReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+        <Download className="size-3.5" aria-hidden="true" />
+        تنزيل PDF
       </Button>
       <Button
         variant="secondary"

@@ -108,6 +108,46 @@ export const OMR_CURRENCY_CONFIG: CurrencyConfig = {
 };
 
 /**
+ * Arabic tafqeet configs for every currency the company settings screen
+ * supports (`SupportedCurrency` in `lib/formatters.ts`). Callers must look
+ * up the company's actual `defaultCurrency` and pass the matching config —
+ * documents must never hardcode `OMR_CURRENCY_CONFIG` for a company whose
+ * currency may be different.
+ */
+export const CURRENCY_WORD_CONFIGS: Record<string, CurrencyConfig> = {
+  OMR: OMR_CURRENCY_CONFIG,
+  AED: { mainUnitSingular: 'درهم إماراتي', mainUnitPlural: 'درهم إماراتي', fractionUnitSingular: 'فلس', fractionUnitPlural: 'فلساً', fractionScale: 100 },
+  SAR: { mainUnitSingular: 'ريال سعودي', mainUnitPlural: 'ريال سعودي', fractionUnitSingular: 'هللة', fractionUnitPlural: 'هللة', fractionScale: 100 },
+  QAR: { mainUnitSingular: 'ريال قطري', mainUnitPlural: 'ريال قطري', fractionUnitSingular: 'درهم', fractionUnitPlural: 'درهماً', fractionScale: 100 },
+  KWD: { mainUnitSingular: 'دينار كويتي', mainUnitPlural: 'دينار كويتي', fractionUnitSingular: 'فلس', fractionUnitPlural: 'فلساً', fractionScale: 1000 },
+  BHD: { mainUnitSingular: 'دينار بحريني', mainUnitPlural: 'دينار بحريني', fractionUnitSingular: 'فلس', fractionUnitPlural: 'فلساً', fractionScale: 1000 },
+  USD: { mainUnitSingular: 'دولار أمريكي', mainUnitPlural: 'دولار أمريكي', fractionUnitSingular: 'سنت', fractionUnitPlural: 'سنتاً', fractionScale: 100 },
+  EGP: { mainUnitSingular: 'جنيه مصري', mainUnitPlural: 'جنيه مصري', fractionUnitSingular: 'قرش', fractionUnitPlural: 'قرشاً', fractionScale: 100 },
+};
+
+/** Arabic currency symbols/abbreviations used in table cells and totals. */
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  OMR: 'ر.ع',
+  AED: 'د.إ',
+  SAR: 'ر.س',
+  QAR: 'ر.ق',
+  KWD: 'د.ك',
+  BHD: 'د.ب',
+  USD: '$',
+  EGP: 'ج.م',
+};
+
+export function getCurrencyWordConfig(currencyCode: string | null | undefined): CurrencyConfig {
+  if (currencyCode && CURRENCY_WORD_CONFIGS[currencyCode]) return CURRENCY_WORD_CONFIGS[currencyCode];
+  return OMR_CURRENCY_CONFIG;
+}
+
+export function getCurrencySymbol(currencyCode: string | null | undefined): string {
+  if (currencyCode && CURRENCY_SYMBOLS[currencyCode]) return CURRENCY_SYMBOLS[currencyCode];
+  return currencyCode || CURRENCY_SYMBOLS.OMR;
+}
+
+/**
  * Formats a monetary amount into formal Arabic words (Tafqeet).
  * Example: 250.500 -> "فقط مائتان وخمسون ريال عماني وخمسعمائة بيسة لا غير"
  */

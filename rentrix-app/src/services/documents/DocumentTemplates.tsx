@@ -1,15 +1,23 @@
 /**
  * Document Templates - RTL-Ready Enterprise Document Engine for Rentrix
  * Supports: Contract, Invoice, Receipt, Owner Statement, Tenant Statement, Financial Reports
+ *
+ * Every function here requires real company identity (`DocumentSettings.company`)
+ * sourced from `company_settings` — there is no fallback company name, address,
+ * phone, or currency anywhere in this file. Each document type exposes a
+ * `print*` and a `download*Pdf` pair; `print*` opens a scoped A4 preview and
+ * triggers the browser print dialog, `download*Pdf` saves a real PDF file.
+ * Neither is implemented as a wrapper around `window.print`.
  */
 
-import { numberToArabicWords, OMR_CURRENCY_CONFIG } from '@/lib/numberToArabicWords';
-import { DocumentRenderer } from './DocumentRenderer';
+import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@/lib/numberToArabicWords';
+import { DocumentRenderer, DocumentRenderError } from './DocumentRenderer';
 import type { UnifiedDocumentModel } from './types';
 
 export interface ContractDocumentData {
   contractId: string;
   contractNumber: string;
+  contractStatus?: 'draft' | 'active' | 'expired' | 'terminated';
   tenantName: string;
   tenantPhone: string;
   tenantEmail: string;
@@ -129,8 +137,31 @@ export interface DocumentSettings {
   receiptPrefix?: string;
 }
 
-function formatMoney(amount: number, currency = 'ر.ع'): string {
-  return `${amount.toLocaleString('ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${currency}`;
+/** Thrown by every render* function when required company identity is missing. */
+export class MissingDocumentSettingsError extends Error {
+  constructor() {
+    super('تعذر إنشاء المستند: بيانات هوية الشركة غير مكتملة. يرجى إكمال اسم الشركة والعملة في إعدادات الشركة أولاً.');
+    this.name = 'MissingDocumentSettingsError';
+  }
+}
+
+function assertSettings(settings: DocumentSettings): void {
+  if (!settings?.company?.name?.trim() || !settings?.currency?.trim()) {
+    throw new MissingDocumentSettingsError();
+  }
+}
+
+function currencySymbolOf(settings: DocumentSettings): string {
+  return settings.currencySymbol || getCurrencySymbol(settings.currency);
+}
+
+function amountToWords(amount: number, settings: DocumentSettings): string {
+  return numberToArabicWords(amount, getCurrencyWordConfig(settings.currency));
+}
+
+function formatMoney(amount: number, settings: DocumentSettings): string {
+  const symbol = currencySymbolOf(settings);
+  return `${amount.toLocaleString('ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${symbol}`;
 }
 
 function formatDate(dateStr: string, locale = 'ar-OM'): string {
@@ -153,18 +184,44 @@ function toLocalDateString(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function renderContractPdf(data: ContractDocumentData, settings: DocumentSettings): void {
-  const model: UnifiedDocumentModel = {
+/**
+ * A contract is only described as "تنفيذي" / "ساري المفعول" when its real
+ * status says so. Draft, expired, and terminated contracts get an honest
+ * title instead of always claiming to be executed.
+ */
+function contractTitle(data: ContractDocumentData): string {
+  switch (data.contractStatus) {
+    case 'draft':
+      return `مسودة عقد إيجار (غير موقّع) رقم ${data.contractNumber}`;
+    case 'expired':
+      return `عقد إيجار منتهي رقم ${data.contractNumber}`;
+    case 'terminated':
+      return `عقد إيجار مفسوخ رقم ${data.contractNumber}`;
+    case 'active':
+      return `عقد إيجار ساري المفعول رقم ${data.contractNumber}`;
+    default:
+      return `عقد إيجار رقم ${data.contractNumber}`;
+  }
+}
+
+function buildContractModel(data: ContractDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
+  return {
     type: 'contract',
     fileName: `contract-${data.contractNumber}`,
     header: {
-      companyName: settings.company.name || 'رينتريكس لإدارة العقارات',
-      companyAddress: settings.company.address ?? 'سلطنة عمان - مسقط',
-      companyPhone: settings.company.phone ?? '+968 24000000',
-      title: `عقد إيجار تنفيذي رقم ${data.contractNumber}`,
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
+      title: contractTitle(data),
       documentNo: data.contractNumber,
       dateLabel: 'تاريخ بداية العقد',
       dateValue: formatDate(data.startDate),
+      currency: currencySymbolOf(settings),
     },
     kpis: [
       { label: 'المستأجر', value: data.tenantName },
@@ -172,7 +229,7 @@ export function renderContractPdf(data: ContractDocumentData, settings: Document
       { label: 'رقم الهاتف', value: data.tenantPhone || '—' },
       { label: 'العقار والوحدة', value: `${data.propertyName} / ${data.unitNumber}` },
       { label: 'فترة العقد', value: `${formatDate(data.startDate)} إلى ${formatDate(data.endDate)}` },
-      { label: 'قيمة الإيجار', value: formatMoney(data.rentAmount, settings.currencySymbol) },
+      { label: 'قيمة الإيجار', value: formatMoney(data.rentAmount, settings) },
       { label: 'دورة السداد', value: data.paymentCycle },
     ],
     tables: [
@@ -180,8 +237,8 @@ export function renderContractPdf(data: ContractDocumentData, settings: Document
         title: 'تفاصيل وأحكام العقد',
         columns: ['البند', 'التفاصيل والاشتراطات'],
         rows: [
-          ['قيمة الإيجار بالإرقام', formatMoney(data.rentAmount, settings.currencySymbol)],
-          ['قيمة الإيجار بالحروف (تفقيط)', numberToArabicWords(data.rentAmount, OMR_CURRENCY_CONFIG)],
+          ['قيمة الإيجار بالإرقام', formatMoney(data.rentAmount, settings)],
+          ['قيمة الإيجار بالحروف (تفقيط)', amountToWords(data.rentAmount, settings)],
           ['دورة الدفع المسجلة', data.paymentCycle],
           ['ملاحظات العقد', data.notes || 'لا توجد شروط إضافية'],
         ],
@@ -189,26 +246,30 @@ export function renderContractPdf(data: ContractDocumentData, settings: Document
     ],
     footer: {
       signatures: ['owner', 'tenant', 'accountant', 'general_manager'],
-      companyStampLabel: settings.company.name,
+      companyStampLabel: null,
       metadata: `رقم العقد: ${data.contractNumber} | العقار: ${data.propertyName}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderInvoicePdf(data: InvoiceDocumentData, settings: DocumentSettings): void {
-  const model: UnifiedDocumentModel = {
+function buildInvoiceModel(data: InvoiceDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
+  return {
     type: 'invoice',
     fileName: `invoice-${data.invoiceNumber}`,
     header: {
-      companyName: settings.company.name || 'رينتريكس لإدارة العقارات',
-      companyAddress: settings.company.address ?? 'سلطنة عمان - مسقط',
-      companyPhone: settings.company.phone ?? '+968 24000000',
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
       title: `فاتورة مطالبة مالية رقم ${data.invoiceNumber}`,
       documentNo: data.invoiceNumber,
       dateLabel: 'تاريخ الإصدار',
       dateValue: formatDate(data.issueDate),
+      currency: currencySymbolOf(settings),
     },
     kpis: [
       { label: 'اسم المستأجر', value: data.tenantName },
@@ -221,38 +282,40 @@ export function renderInvoicePdf(data: InvoiceDocumentData, settings: DocumentSe
         title: 'تفاصيل المطالبة المالية',
         columns: ['البيان / تفاصيل الخدمات', 'المبلغ'],
         rows: [
-          [data.description, formatMoney(data.amount, settings.currencySymbol)],
-          ...(data.vatAmount
-            ? [['ضريبة القيمة المضافة', formatMoney(data.vatAmount, settings.currencySymbol)]]
-            : []),
+          [data.description, formatMoney(data.amount, settings)],
+          ...(data.vatAmount ? [['ضريبة القيمة المضافة', formatMoney(data.vatAmount, settings)]] : []),
         ],
-        totals: ['إجمالي المستحق السداد', formatMoney(data.totalAmount, settings.currencySymbol)],
+        totals: ['إجمالي المستحق السداد', formatMoney(data.totalAmount, settings)],
       },
     ],
     footer: {
       signatures: ['accountant', 'general_manager'],
-      companyStampLabel: settings.company.name,
-      metadata: `فاتورة رقم: ${data.invoiceNumber} | ${settings.company.name}`,
+      companyStampLabel: null,
+      metadata: `فاتورة رقم: ${data.invoiceNumber}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderReceiptPdf(data: ReceiptDocumentData, settings: DocumentSettings): void {
-  const amountWords = numberToArabicWords(data.amount, OMR_CURRENCY_CONFIG);
+function buildReceiptModel(data: ReceiptDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
+  const amountWords = amountToWords(data.amount, settings);
 
-  const model: UnifiedDocumentModel = {
+  return {
     type: 'receipt',
     fileName: `receipt-${data.receiptNumber}`,
     header: {
-      companyName: settings.company.name || 'رينتريكس لإدارة العقارات',
-      companyAddress: settings.company.address ?? 'سلطنة عمان - مسقط',
-      companyPhone: settings.company.phone ?? '+968 24000000',
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
       title: `إيصال استلام نقدية / سداد رقم ${data.receiptNumber}`,
       documentNo: data.receiptNumber,
       dateLabel: 'تاريخ الاستلام',
       dateValue: formatDate(data.paymentDate),
+      currency: currencySymbolOf(settings),
     },
     kpis: [
       { label: 'استلمنا من الفاضل', value: data.tenantName },
@@ -266,87 +329,90 @@ export function renderReceiptPdf(data: ReceiptDocumentData, settings: DocumentSe
         title: 'تفاصيل المقبوضات',
         columns: ['البند والبيان', 'المبلغ بالتفصيل'],
         rows: [
-          ['المبلغ المستلم رقماً', formatMoney(data.amount, settings.currencySymbol)],
+          ['المبلغ المستلم رقماً', formatMoney(data.amount, settings)],
           ['المبلغ المستلم بالحروف (تفقيط)', amountWords],
           ['ذلك عن / مقابل', data.notes || `سداد الفاتورة رقم ${data.invoiceNumber}`],
         ],
-        totals: ['المبلغ الإجمالي المقبوض', formatMoney(data.amount, settings.currencySymbol)],
+        totals: ['المبلغ الإجمالي المقبوض', formatMoney(data.amount, settings)],
       },
     ],
     footer: {
       signatures: ['tenant', 'accountant', 'general_manager'],
-      companyStampLabel: settings.company.name,
-      metadata: `إيصال استلام رقم: ${data.receiptNumber} | ${settings.company.name}`,
+      companyStampLabel: null,
+      metadata: `إيصال استلام رقم: ${data.receiptNumber}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderOwnerStatementPdf(data: OwnerStatementData, settings: DocumentSettings): void {
-  const model: UnifiedDocumentModel = {
+function buildOwnerStatementModel(data: OwnerStatementData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
+  return {
     type: 'owner_statement',
     fileName: `owner-statement-${data.ownerName}`,
     header: {
-      companyName: settings.company.name || 'رينتريكس لإدارة العقارات',
-      companyAddress: settings.company.address ?? 'سلطنة عمان - مسقط',
-      companyPhone: settings.company.phone ?? '+968 24000000',
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
       title: `كشف حساب مالك - ${data.ownerName}`,
       documentNo: data.ownerName,
       dateLabel: 'فترة الكشف',
       dateValue: `${formatDate(data.periodFrom)} - ${formatDate(data.periodTo)}`,
+      currency: currencySymbolOf(settings),
     },
     kpis: [
       { label: 'اسم المالك', value: data.ownerName },
       { label: 'العقار', value: data.propertyTitle },
-      { label: 'إجمالي الإيجارات', value: formatMoney(data.totalRent, settings.currencySymbol) },
-      { label: 'إجمالي المصروفات', value: formatMoney(data.totalExpenses, settings.currencySymbol) },
-      { label: 'عمولة إدارة الأملاك', value: formatMoney(data.totalCommission, settings.currencySymbol) },
-      { label: 'صافي المستحق للمالك', value: formatMoney(data.netAmount, settings.currencySymbol) },
+      { label: 'إجمالي الإيجارات', value: formatMoney(data.totalRent, settings) },
+      { label: 'إجمالي المصروفات', value: formatMoney(data.totalExpenses, settings) },
+      { label: 'عمولة إدارة الأملاك', value: formatMoney(data.totalCommission, settings) },
+      { label: 'صافي المستحق للمالك', value: formatMoney(data.netAmount, settings) },
     ],
     tables: [
       {
-        title: 'سجل الحركة المالية للera المحددة',
+        title: 'سجل الحركة المالية للفترة المحددة',
         columns: ['التاريخ', 'نوع الحركة', 'البيان / التفاصيل', 'المبلغ'],
-        rows: data.transactions.map((t) => [
-          t.date,
-          t.type,
-          t.description,
-          formatMoney(t.amount, settings.currencySymbol),
-        ]),
-        totals: ['صافي الرصيد المستحق', '', '', formatMoney(data.netAmount, settings.currencySymbol)],
+        rows: data.transactions.map((t) => [t.date, t.type, t.description, formatMoney(t.amount, settings)]),
+        totals: ['صافي الرصيد المستحق', '', '', formatMoney(data.netAmount, settings)],
       },
     ],
     footer: {
       signatures: ['accountant', 'general_manager'],
-      companyStampLabel: settings.company.name,
-      metadata: `كشف حساب مالك: ${data.ownerName} | ${settings.company.name}`,
+      companyStampLabel: null,
+      metadata: `كشف حساب مالك: ${data.ownerName}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderTenantStatementPdf(data: TenantStatementData, settings: DocumentSettings): void {
-  const model: UnifiedDocumentModel = {
+function buildTenantStatementModel(data: TenantStatementData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
+  return {
     type: 'tenant_statement',
     fileName: `tenant-statement-${data.tenantName}`,
     header: {
-      companyName: settings.company.name || 'رينتريكس لإدارة العقارات',
-      companyAddress: settings.company.address ?? 'سلطنة عمان - مسقط',
-      companyPhone: settings.company.phone ?? '+968 24000000',
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
       title: `كشف حساب مستأجر - ${data.tenantName}`,
       documentNo: data.tenantName,
       dateLabel: 'فترة الكشف',
       dateValue: `${formatDate(data.periodFrom)} - ${formatDate(data.periodTo)}`,
+      currency: currencySymbolOf(settings),
     },
     kpis: [
       { label: 'اسم المستأجر', value: data.tenantName },
       { label: 'العقار والوحدة', value: `${data.propertyTitle} / ${data.unitNumber}` },
-      { label: 'الرصيد الافتتاحي', value: formatMoney(data.openingBalance, settings.currencySymbol) },
-      { label: 'إجمالي الفواتير والمطالبات', value: formatMoney(data.totalInvoiced, settings.currencySymbol) },
-      { label: 'إجمالي السدادات والمقبوضات', value: formatMoney(data.totalPaid, settings.currencySymbol) },
-      { label: 'الرصيد المتبقي النهائي', value: formatMoney(data.closingBalance, settings.currencySymbol) },
+      { label: 'الرصيد الافتتاحي', value: formatMoney(data.openingBalance, settings) },
+      { label: 'إجمالي الفواتير والمطالبات', value: formatMoney(data.totalInvoiced, settings) },
+      { label: 'إجمالي السدادات والمقبوضات', value: formatMoney(data.totalPaid, settings) },
+      { label: 'الرصيد المتبقي النهائي', value: formatMoney(data.closingBalance, settings) },
     ],
     tables: [
       {
@@ -356,24 +422,23 @@ export function renderTenantStatementPdf(data: TenantStatementData, settings: Do
           l.date,
           l.type,
           l.description,
-          formatMoney(l.debit, settings.currencySymbol),
-          formatMoney(l.credit, settings.currencySymbol),
-          formatMoney(l.balance, settings.currencySymbol),
+          formatMoney(l.debit, settings),
+          formatMoney(l.credit, settings),
+          formatMoney(l.balance, settings),
         ]),
-        totals: ['إجمالي الرصيد المستحق الواجب السداد', '', '', '', '', formatMoney(data.closingBalance, settings.currencySymbol)],
+        totals: ['إجمالي الرصيد المستحق الواجب السداد', '', '', '', '', formatMoney(data.closingBalance, settings)],
       },
     ],
     footer: {
       signatures: ['tenant', 'accountant', 'general_manager'],
-      companyStampLabel: settings.company.name,
-      metadata: `كشف حساب مستأجر: ${data.tenantName} | ${settings.company.name}`,
+      companyStampLabel: null,
+      metadata: `كشف حساب مستأجر: ${data.tenantName}`,
     },
   };
-
-  DocumentRenderer.renderToPDF(model);
 }
 
-export function renderReportPdf(data: ReportDocumentData, settings: DocumentSettings): void {
+function buildReportModel(data: ReportDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
   const tables = data.sections.map((section) => ({
     title: section.title,
     columns: section.rows.map((row) => row.label),
@@ -381,37 +446,97 @@ export function renderReportPdf(data: ReportDocumentData, settings: DocumentSett
     totals: section.totals,
   }));
 
-  const model: UnifiedDocumentModel = {
+  return {
     type: 'report',
     fileName: `report-${data.reportType}-${toLocalDateString(new Date())}`,
     header: {
-      companyName: settings.company.name || 'رينتريكس لإدارة العقارات',
-      companyAddress: settings.company.address ?? 'سلطنة عمان - مسقط',
-      companyPhone: settings.company.phone ?? '+968 24000000',
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
       title: data.reportTitle,
       documentNo: data.reportType,
       dateLabel: 'فترة التقرير',
       dateValue: `${formatDate(data.periodFrom)} - ${formatDate(data.periodTo)}`,
+      currency: currencySymbolOf(settings),
     },
     kpis: data.totalSummary ? [{ label: 'الملخص المالي والتشغيلي', value: data.totalSummary }] : [],
     tables,
     footer: {
       signatures: ['accountant', 'general_manager'],
-      companyStampLabel: settings.company.name,
-      metadata: `${data.reportTitle} | ${settings.company.name}`,
+      companyStampLabel: null,
+      metadata: data.reportTitle,
     },
   };
+}
 
-  DocumentRenderer.renderToPDF(model);
+async function runOrThrow(operation: () => Promise<void>): Promise<void> {
+  try {
+    await operation();
+  } catch (error) {
+    if (error instanceof DocumentRenderError || error instanceof MissingDocumentSettingsError) throw error;
+    throw new DocumentRenderError('تعذر تنفيذ العملية على المستند. يرجى إعادة المحاولة.', error);
+  }
+}
+
+export function printContractDocument(data: ContractDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildContractModel(data, settings)));
+}
+export function downloadContractPdf(data: ContractDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildContractModel(data, settings)));
+}
+
+export function printInvoiceDocument(data: InvoiceDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildInvoiceModel(data, settings)));
+}
+export function downloadInvoicePdf(data: InvoiceDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildInvoiceModel(data, settings)));
+}
+
+export function printReceiptDocument(data: ReceiptDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildReceiptModel(data, settings)));
+}
+export function downloadReceiptPdf(data: ReceiptDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildReceiptModel(data, settings)));
+}
+
+export function printOwnerStatementDocument(data: OwnerStatementData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildOwnerStatementModel(data, settings)));
+}
+export function downloadOwnerStatementPdf(data: OwnerStatementData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildOwnerStatementModel(data, settings)));
+}
+
+export function printTenantStatementDocument(data: TenantStatementData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildTenantStatementModel(data, settings)));
+}
+export function downloadTenantStatementPdf(data: TenantStatementData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildTenantStatementModel(data, settings)));
+}
+
+export function printReportDocument(data: ReportDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildReportModel(data, settings)));
+}
+export function downloadReportPdf(data: ReportDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildReportModel(data, settings)));
 }
 
 export const DocumentTemplates = {
-  renderContractPdf,
-  renderInvoicePdf,
-  renderReceiptPdf,
-  renderOwnerStatementPdf,
-  renderTenantStatementPdf,
-  renderReportPdf,
+  printContractDocument,
+  downloadContractPdf,
+  printInvoiceDocument,
+  downloadInvoicePdf,
+  printReceiptDocument,
+  downloadReceiptPdf,
+  printOwnerStatementDocument,
+  downloadOwnerStatementPdf,
+  printTenantStatementDocument,
+  downloadTenantStatementPdf,
+  printReportDocument,
+  downloadReportPdf,
 };
 
 export default DocumentTemplates;

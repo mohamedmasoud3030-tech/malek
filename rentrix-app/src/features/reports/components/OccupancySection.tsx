@@ -1,4 +1,4 @@
-import { Building2, CalendarClock, DoorOpen, Printer, TrendingUp } from 'lucide-react';
+import { Building2, CalendarClock, Download, DoorOpen, Printer, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -6,7 +6,9 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
 import { formatDate, formatShortId } from '@/features/financials/components/financials-formatters';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
+import { toast } from 'sonner';
 import { buildExpiringContractsRows, buildOccupancyRows, expiringContractWindowDays, getTodayLocalDateString } from '../reports-page.helpers';
 import { SafeAnchor } from './common';
 import {
@@ -18,16 +20,6 @@ import {
   ReportProgress,
   ReportState,
 } from './report-section-primitives';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Readonly<{
   occupancyRows: ReturnType<typeof buildOccupancyRows>;
@@ -45,35 +37,50 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
     ? (highestVacancyProperty.vacant / totalVacant) * 100
     : 0;
 
-  const handlePrintOccupancyReport = () => {
+  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+
+  const buildOccupancyReportData = (): ReportDocumentData => {
     const todayStr = getTodayLocalDateString();
-    DocumentTemplates.renderReportPdf(
-      {
-        reportTitle: 'تقرير نسب الإشغال والشواغر العقارية',
-        reportType: 'Occupancy_Vacancy_Report',
-        periodFrom: todayStr,
-        periodTo: todayStr,
-        sections: [
-          {
-            title: 'جدول نسبة الإشغال والشاغر حسب كل عقار',
-            rows: occupancyRows.map((row) => ({
-              label: row.property,
-              value: `إجمالي الوحدات: ${row.occupied + row.vacant} | المشغولة: ${row.occupied} | الشاغرة: ${row.vacant}`,
-            })),
-            totals: ['إجمالي إشغال المحفظة', `مشغولة: ${totalOccupied} / شاغرة: ${totalVacant} | نسبة الإشغال العامة: ${occupancyRate}%`],
-          },
-          {
-            title: `العقود المنتهية خلال ${expiringContractWindowDays} يوم`,
-            rows: expiringRows.map((row) => ({
-              label: `${row.tenantName} · ${row.propertyTitle} · ${row.unitNumber}`,
-              value: `ينتهي في ${row.endDate} | متبقي ${row.daysRemaining} يوم`,
-            })),
-          },
-        ],
-        totalSummary: `معدل الإشغال: ${occupancyRate}% | الشواغر: ${totalVacant} | عقود قريبة من الانتهاء: ${expiringRows.length}`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'تقرير نسب الإشغال والشواغر العقارية',
+      reportType: 'Occupancy_Vacancy_Report',
+      periodFrom: todayStr,
+      periodTo: todayStr,
+      sections: [
+        {
+          title: 'جدول نسبة الإشغال والشاغر حسب كل عقار',
+          rows: occupancyRows.map((row) => ({
+            label: row.property,
+            value: `إجمالي الوحدات: ${row.occupied + row.vacant} | المشغولة: ${row.occupied} | الشاغرة: ${row.vacant}`,
+          })),
+          totals: ['إجمالي إشغال المحفظة', `مشغولة: ${totalOccupied} / شاغرة: ${totalVacant} | نسبة الإشغال العامة: ${occupancyRate}%`],
+        },
+        {
+          title: `العقود المنتهية خلال ${expiringContractWindowDays} يوم`,
+          rows: expiringRows.map((row) => ({
+            label: `${row.tenantName} · ${row.propertyTitle} · ${row.unitNumber}`,
+            value: `ينتهي في ${row.endDate} | متبقي ${row.daysRemaining} يوم`,
+          })),
+        },
+      ],
+      totalSummary: `معدل الإشغال: ${occupancyRate}% | الشواغر: ${totalVacant} | عقود قريبة من الانتهاء: ${expiringRows.length}`,
+    };
+  };
+
+  const handlePrintOccupancyReport = async () => {
+    try {
+      await DocumentTemplates.printReportDocument(buildOccupancyReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
+    }
+  };
+
+  const handleDownloadOccupancyReport = async () => {
+    try {
+      await DocumentTemplates.downloadReportPdf(buildOccupancyReportData(), documentSettings);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
+    }
   };
 
   return (
@@ -117,10 +124,16 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
           eyebrow="استغلال المحفظة"
           icon={Building2}
           action={(
-            <Button variant="outline" size="sm" onClick={handlePrintOccupancyReport} className="min-h-10 gap-1.5 text-xs">
-              <Printer className="size-3.5" aria-hidden="true" />
-              طباعة A4
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button variant="outline" size="sm" onClick={handlePrintOccupancyReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+                <Printer className="size-3.5" aria-hidden="true" />
+                طباعة A4
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadOccupancyReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+                <Download className="size-3.5" aria-hidden="true" />
+                تنزيل PDF
+              </Button>
+            </div>
           )}
           isLoading={isLoading}
         >
