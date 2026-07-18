@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { AlertTriangle, Building2, Printer, Receipt, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -9,17 +10,32 @@ import { formatMoney, getErrorMessage } from '@/features/financials/components/f
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { FilterState } from '../reports-page.helpers';
 import { reportSections, type ReportSectionId } from '../reports-page.sections';
-import { AccountingReportsSection } from './AccountingReportsSection';
-import { CollectionsSection } from './CollectionsSection';
-import { DeferredRevenueReportSection } from './DeferredRevenueReportSection';
-import { ExpensesSection } from './ExpensesSection';
-import { MaintenanceReportSection } from './MaintenanceReportSection';
-import { OccupancySection } from './OccupancySection';
-import { OverdueSection } from './OverdueSection';
-import { OverviewSection } from './OverviewSection';
-import { PropertyAnalyticsSection } from './PropertyAnalyticsSection';
 import { ReportsFilterSurface } from './ReportsFilterSurface';
-import { StatementsSection } from './StatementsSection';
+
+// Only the first-viewed tab (overview) is loaded eagerly; the other nine are
+// heavy report sections (some pulling PDF/export services) that most visits
+// never open. React.lazy defers each section's JS — and its data-service
+// imports — until the user actually selects that tab.
+const OverviewSection = lazy(() => import('./OverviewSection').then((m) => ({ default: m.OverviewSection })));
+const PropertyAnalyticsSection = lazy(() =>
+  import('./PropertyAnalyticsSection').then((m) => ({ default: m.PropertyAnalyticsSection })),
+);
+const OverdueSection = lazy(() => import('./OverdueSection').then((m) => ({ default: m.OverdueSection })));
+const OccupancySection = lazy(() => import('./OccupancySection').then((m) => ({ default: m.OccupancySection })));
+const CollectionsSection = lazy(() => import('./CollectionsSection').then((m) => ({ default: m.CollectionsSection })));
+const ExpensesSection = lazy(() => import('./ExpensesSection').then((m) => ({ default: m.ExpensesSection })));
+const MaintenanceReportSection = lazy(() =>
+  import('./MaintenanceReportSection').then((m) => ({ default: m.MaintenanceReportSection })),
+);
+const DeferredRevenueReportSection = lazy(() =>
+  import('./DeferredRevenueReportSection').then((m) => ({ default: m.DeferredRevenueReportSection })),
+);
+const StatementsSection = lazy(() => import('./StatementsSection').then((m) => ({ default: m.StatementsSection })));
+const AccountingReportsSection = lazy(() =>
+  import('./AccountingReportsSection').then((m) => ({ default: m.AccountingReportsSection })),
+);
+
+const SectionFallback = () => <LoadingState variant="section" label="جارٍ تحميل التقرير..." />;
 
 type ReportsWorkspaceProps = Readonly<{
   model: ReportsWorkspaceModel;
@@ -163,50 +179,72 @@ export function ReportsWorkspace({
       </section>
 
       <div className="min-w-0 animate-slide-up" key={activeSection}>
-        <SectionTabPanel id="overview" activeId={activeSection}>
-          <OverviewSection
-            {...model.sections.overview}
-            receiptRows={model.sections.collections.receiptRows}
-            occupancyRows={model.sections.occupancy.occupancyRows}
-            canExportReports={canExportReports}
-            isLoading={
-              model.sections.overview.isLoading
-              || model.sections.collections.isLoading
-              || model.sections.occupancy.isLoading
-            }
-          />
-        </SectionTabPanel>
-        <SectionTabPanel id="property_analytics" activeId={activeSection}>
-          <PropertyAnalyticsSection
-            occupancyRows={model.sections.occupancy.occupancyRows}
-            expenseRows={model.sections.expenses.report?.byProperty ?? []}
-            isLoading={model.sections.occupancy.isLoading || model.sections.expenses.isLoading}
-          />
-        </SectionTabPanel>
-        <SectionTabPanel id="overdue" activeId={activeSection}>
-          <OverdueSection {...model.sections.overdue} canExportReports={canExportReports} />
-        </SectionTabPanel>
-        <SectionTabPanel id="occupancy" activeId={activeSection}>
-          <OccupancySection {...model.sections.occupancy} />
-        </SectionTabPanel>
-        <SectionTabPanel id="collections" activeId={activeSection}>
-          <CollectionsSection {...model.sections.collections} canExportReports={canExportReports} />
-        </SectionTabPanel>
-        <SectionTabPanel id="expenses" activeId={activeSection}>
-          <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />
-        </SectionTabPanel>
-        <SectionTabPanel id="maintenance_analytics" activeId={activeSection}>
-          <MaintenanceReportSection {...model.sections.maintenance} />
-        </SectionTabPanel>
-        <SectionTabPanel id="deferred_revenue" activeId={activeSection}>
-          <DeferredRevenueReportSection {...model.sections.deferredRevenue} canExportReports={canExportReports} />
-        </SectionTabPanel>
-        <SectionTabPanel id="statements" activeId={activeSection}>
-          <StatementsSection {...model.sections.statements} filters={filters} />
-        </SectionTabPanel>
-        <SectionTabPanel id="accounting" activeId={activeSection}>
-          <AccountingReportsSection {...model.sections.accounting} />
-        </SectionTabPanel>
+        <Suspense fallback={<SectionFallback />}>
+          {activeSection === 'overview' && (
+            <SectionTabPanel id="overview" activeId={activeSection}>
+              <OverviewSection
+                {...model.sections.overview}
+                receiptRows={model.sections.collections.receiptRows}
+                occupancyRows={model.sections.occupancy.occupancyRows}
+                canExportReports={canExportReports}
+                isLoading={
+                  model.sections.overview.isLoading
+                  || model.sections.collections.isLoading
+                  || model.sections.occupancy.isLoading
+                }
+              />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'property_analytics' && (
+            <SectionTabPanel id="property_analytics" activeId={activeSection}>
+              <PropertyAnalyticsSection
+                occupancyRows={model.sections.occupancy.occupancyRows}
+                expenseRows={model.sections.expenses.report?.byProperty ?? []}
+                isLoading={model.sections.occupancy.isLoading || model.sections.expenses.isLoading}
+              />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'overdue' && (
+            <SectionTabPanel id="overdue" activeId={activeSection}>
+              <OverdueSection {...model.sections.overdue} canExportReports={canExportReports} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'occupancy' && (
+            <SectionTabPanel id="occupancy" activeId={activeSection}>
+              <OccupancySection {...model.sections.occupancy} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'collections' && (
+            <SectionTabPanel id="collections" activeId={activeSection}>
+              <CollectionsSection {...model.sections.collections} canExportReports={canExportReports} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'expenses' && (
+            <SectionTabPanel id="expenses" activeId={activeSection}>
+              <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'maintenance_analytics' && (
+            <SectionTabPanel id="maintenance_analytics" activeId={activeSection}>
+              <MaintenanceReportSection {...model.sections.maintenance} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'deferred_revenue' && (
+            <SectionTabPanel id="deferred_revenue" activeId={activeSection}>
+              <DeferredRevenueReportSection {...model.sections.deferredRevenue} canExportReports={canExportReports} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'statements' && (
+            <SectionTabPanel id="statements" activeId={activeSection}>
+              <StatementsSection {...model.sections.statements} filters={filters} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'accounting' && (
+            <SectionTabPanel id="accounting" activeId={activeSection}>
+              <AccountingReportsSection {...model.sections.accounting} />
+            </SectionTabPanel>
+          )}
+        </Suspense>
       </div>
     </div>
   );
