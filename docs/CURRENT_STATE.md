@@ -24,6 +24,14 @@ not yet live/E2E verified; whoever next touches that area should confirm the
 live RPC definitions, migration ledger, and app path before calling it
 production-verified.
 
+## Repository checkpoint (2026-07-18)
+
+- Verified `main` head: `7bb098f530fdd0041aa5588cbccd223b04beba5c` (PR #1190).
+- No open pull requests were returned by the GitHub repository query at this checkpoint.
+- Architecture phases A–E remain complete; `docs/ARCHITECTURE_EXECUTION_PLAN.md` is historical evidence, not an active Phase F backlog.
+- The next bounded structural work is data-contract stabilization for unapplied Deposits/Automation migrations, followed by broader automated dependency-boundary enforcement.
+- Do not describe Deposits or Automation as production-complete until their absent live tables/RPCs are staged, applied with approval, and lifecycle-tested.
+
 ## Application
 
 The active app lives in `rentrix-app/`. It is a Vite + React + TypeScript single-page app using TanStack Router (`rentrix-app/src/routeTree.ts`, `src/app/router.tsx`) and TanStack Query (`src/lib/query-client.ts`). It talks to Supabase (Postgres + Auth) as its backend via `src/lib/supabase.ts`.
