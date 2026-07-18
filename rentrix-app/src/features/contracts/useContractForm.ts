@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { listPeople } from '@/features/people/people-service';
 import { listProperties } from '@/features/properties/property-service';
 import { usePaymentTerms } from '@/features/settings/usePaymentTerms';
-import { listUnitsByProperty } from '@/features/units/unit-service';
+import { useUnits } from '@/features/units/use-units';
 import { useAgreementCoverage } from '@/features/owners/useOwnerAgreements';
 import { useContract, useCreateContract, useUpdateContract } from './useContracts';
 import { useUnitContractConflicts } from './queries/useUnitContractConflicts';
@@ -41,7 +41,7 @@ interface UseContractFormReturn {
   propertiesQuery: UseQueryResult<PaginatedResult<Property>, Error>;
   peopleQuery: UseQueryResult<PaginatedPeople, Error>;
   paymentTermsQuery: ReturnType<typeof usePaymentTerms>;
-  unitsQuery: UseQueryResult<ReturnType<typeof listUnitsByProperty> extends Promise<infer U> ? U : never, Error>;
+  unitsQuery: ReturnType<typeof useUnits>;
   unitConflictsQuery: ReturnType<typeof useUnitContractConflicts>;
   unitConflictsByUnitId: ReadonlyMap<string, import('./domain/unitAvailability').ContractUnitConflict>;
   agreementCoverageQuery: ReturnType<typeof useAgreementCoverage>;
@@ -95,11 +95,7 @@ export function useContractForm({
     queryFn: () => listPeople({ search: '', type: 'tenant', page: 1, pageSize: 200 }),
   });
   const paymentTermsQuery = usePaymentTerms();
-  const unitsQuery = useQuery({
-    queryKey: ['contracts', 'unit-options', propertyId],
-    queryFn: () => listUnitsByProperty(propertyId || ''),
-    enabled: Boolean(propertyId),
-  });
+  const unitsQuery = useUnits(propertyId || '');
   const unitIds = unitsQuery.data?.map((unit) => unit.id) ?? [];
   const unitConflictsQuery = useUnitContractConflicts({
     propertyId: propertyId || '',
