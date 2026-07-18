@@ -95,9 +95,9 @@ describe('deposits real implementation - no false success', () => {
   it('has explicit NULL guard after detecting contracts.id type', () => {
     const migrationPath = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000003_real_deposits_ledger.sql');
     const content = readFileSync(migrationPath, 'utf8');
-    expect(content).toContain('IF v_contract_id_type IS NULL THEN');
+    expect(content).toContain('IF v_contract_id_type IS NULL OR v_property_id_type IS NULL OR v_unit_id_type IS NULL THEN');
     expect(content).toContain('RAISE EXCEPTION');
-    expect(content).toContain('IF v_contract_id_type IS NULL THEN');
+    expect(content).toContain('IF v_contract_id_type IS NULL OR v_property_id_type IS NULL OR v_unit_id_type IS NULL THEN');
 
     const migration08Path = resolve(import.meta.dirname, '../../../../../supabase/migrations/20260717000008_add_partially_deducted_status_and_null_guard.sql');
     const content08 = readFileSync(migration08Path, 'utf8');
