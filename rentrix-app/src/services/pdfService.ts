@@ -1,5 +1,4 @@
 import type { Contract, Expense, Invoice, Person, Property, Receipt, Unit } from '@/types/domain';
-import { documentService } from './documents/DocumentService';
 import type { OwnerStatementDataPayload, TenantStatementDataPayload } from './documents/DocumentEngine';
 
 type AppLikeDb = {
@@ -14,7 +13,13 @@ type AppLikeDb = {
 type TrialBalanceInput = { lines: Array<{ no: string; name: string; debit: number; credit: number }>; totalDebit: number; totalCredit: number };
 type PdfRow = { label: string; amount: number };
 
-const render = (type: string, payload: unknown) => void documentService.renderPdf({ type, payload });
+// documentService pulls in jsPDF + html2canvas (~600 KB uncompressed) at import
+// time. Loading it lazily keeps that weight out of every page bundle that
+// merely needs the ability to export a PDF, and pulls it in only at the
+// moment a user actually triggers an export.
+const render = (type: string, payload: unknown): void => {
+  void import('./documents/DocumentService').then(({ documentService }) => documentService.renderPdf({ type, payload }));
+};
 
 export const exportInvoiceToPdf = (invoice: Invoice, db: AppLikeDb): void => render('invoice', { invoice, db });
 export const exportContractToPdf = (contract: Contract, db: AppLikeDb): void => render('contract', { contract, db });
