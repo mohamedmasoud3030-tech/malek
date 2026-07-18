@@ -39,6 +39,7 @@ describe('property service write workflow', () => {
       status: 'active',
       notes: null,
     })).toMatchObject({
+      name: 'عمارة الندى',
       title: 'عمارة الندى',
       type: 'سكني',
       address: 'الخوير',
@@ -61,7 +62,7 @@ describe('property service write workflow', () => {
       status: 'active',
       notes: null,
     })).rejects.toThrow('لا تملك صلاحية الكتابة على العقارات');
-    expect(chain.insert).toHaveBeenCalledWith(expect.objectContaining({ title: 'عمارة الندى' }));
+    expect(chain.insert).toHaveBeenCalledWith(expect.objectContaining({ name: 'عمارة الندى', title: 'عمارة الندى' }));
   });
 
   it('archives properties with deleted_at instead of hard deleting', async () => {

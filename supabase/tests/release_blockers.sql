@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(26);
 
 select has_table('public', 'contracts', 'contracts table exists after a clean migration replay');
 select has_table('public', 'invoices', 'invoices table exists after a clean migration replay');
@@ -78,6 +78,17 @@ values ('00000000-0000-0000-0000-000000000401', '00000000-0000-0000-0000-0000000
 
 insert into public.people (id, full_name, type)
 values ('00000000-0000-0000-0000-000000000501', 'Release Tenant', 'tenant');
+
+select is(
+  (select name from public.owners where id = '00000000-0000-0000-0000-000000000201'),
+  'Release Owner',
+  'owner compatibility name is populated from full_name'
+);
+select is(
+  (select name from public.properties where id = '00000000-0000-0000-0000-000000000301'),
+  'Release Property',
+  'property compatibility name is populated from title'
+);
 
 insert into public.owner_agreements (
   id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on

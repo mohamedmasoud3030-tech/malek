@@ -8,6 +8,8 @@ import type { Contract, Invoice, Property, Unit } from '@/types/domain';
 export type Owner = Database['public']['Tables']['owners']['Row'];
 export type OwnerInsert = Database['public']['Tables']['owners']['Insert'];
 export type OwnerUpdate = Database['public']['Tables']['owners']['Update'];
+type OwnerInsertWithCompatibility = OwnerInsert & { name: string };
+type OwnerUpdateWithCompatibility = OwnerUpdate & { name?: string };
 export type PropertyOwner = Database['public']['Tables']['property_owners']['Row'];
 export type PropertyOwnerInsert = Database['public']['Tables']['property_owners']['Insert'];
 export type PropertyOwnerUpdate = Database['public']['Tables']['property_owners']['Update'];
@@ -99,7 +101,8 @@ export function normalizeOwnerPayload(payload: OwnerPayload): OwnerInsert {
   const fullName = normalizeRequiredString(payload.full_name);
   if (!fullName) throw new Error('اسم المالك مطلوب');
 
-  const normalized: OwnerInsert = {
+  const normalized: OwnerInsertWithCompatibility = {
+    name: fullName,
     full_name: fullName,
     is_active: payload.is_active ?? true,
   };
@@ -112,11 +115,12 @@ export function normalizeOwnerPayload(payload: OwnerPayload): OwnerInsert {
 }
 
 export function normalizeOwnerUpdatePayload(payload: OwnerUpdatePayload): OwnerUpdate {
-  const normalized: OwnerUpdate = {};
+  const normalized: OwnerUpdateWithCompatibility = {};
 
   if ('full_name' in payload) {
     const fullName = normalizeRequiredString(payload.full_name);
     if (!fullName) throw new Error('اسم المالك مطلوب');
+    normalized.name = fullName;
     normalized.full_name = fullName;
   }
 
@@ -128,7 +132,7 @@ export function normalizeOwnerUpdatePayload(payload: OwnerUpdatePayload): OwnerU
     if (field in payload) normalized[field] = normalizeNullableString(payload[field]);
   }
 
-  return normalized;
+  return normalized as OwnerUpdate;
 }
 
 export function normalizeOwnershipPercentage(value: unknown): number {

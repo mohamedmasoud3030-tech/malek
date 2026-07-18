@@ -66,11 +66,19 @@ describe('owner service normalization helpers', () => {
       email: ' owner@example.com ',
       is_active: false,
     })).toMatchObject({
+      name: 'شركة المالك',
       full_name: 'شركة المالك',
       display_name: 'المالك',
       phone: null,
       email: 'owner@example.com',
       is_active: false,
+    });
+  });
+
+  it('keeps the required legacy owner name aligned on updates', () => {
+    expect(normalizeOwnerUpdatePayload({ full_name: '  اسم محدث  ' })).toMatchObject({
+      name: 'اسم محدث',
+      full_name: 'اسم محدث',
     });
   });
 

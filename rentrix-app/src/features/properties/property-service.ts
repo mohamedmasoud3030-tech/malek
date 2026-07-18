@@ -19,7 +19,8 @@ export type PaginatedResult<T> = {
 };
 
 export function normalizePropertyPayload(payload: PropertyPayload): PropertyInsert {
-  return { ...payload };
+  const normalized: PropertyInsert & { name: string } = { ...payload, name: payload.title };
+  return normalized;
 }
 
 type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
