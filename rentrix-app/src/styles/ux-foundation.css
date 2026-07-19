@@ -79,3 +79,130 @@
     scroll-behavior: auto;
   }
 }
+
+/* ── Mobile scroll momentum & rubber-banding ─ */
+@media (pointer: coarse) {
+  html {
+    /* Smooth kinetic scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent double-tap zoom on interactive elements */
+  button,
+  [role='button'],
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  /* Prevent text selection on long-press for nav items */
+  [data-bottom-sheet],
+  nav,
+  [role='navigation'] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Overscroll containment on scrollable regions */
+  [data-bottom-sheet-scroll],
+  [data-entity-form-scroll],
+  [data-dialog-scroll] {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* ── Active press states (mobile-first) ──── */
+@media (pointer: coarse) {
+  /* Slightly dim interactive cards on press */
+  [data-entity-card]:active,
+  [role='button']:active {
+    opacity: 0.88;
+  }
+
+  /* Prevent ghost hover states after tap */
+  [data-entity-card]:hover:not(:active),
+  .hover-card:hover:not(:active) {
+    box-shadow: var(--shadow-card);
+    border-color: hsl(var(--border));
+  }
+}
+
+/* ── Bottom nav clearance ─────────────────── */
+/* Ensures content is never hidden behind the bottom nav on small screens */
+@media (max-width: 1023px) {
+  [data-page-layout] {
+    padding-block-end: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── Filter tabs fade edges ───────────────── */
+/* Applied via wrapper — signals to user that tabs scroll horizontally */
+[data-filter-tabs-wrapper] {
+  position: relative;
+}
+
+[data-filter-tabs-wrapper]::before,
+[data-filter-tabs-wrapper]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+[data-filter-tabs-wrapper]::before {
+  inset-inline-start: 0;
+  background: linear-gradient(to right, hsl(var(--background)), transparent);
+}
+
+[data-filter-tabs-wrapper]::after {
+  inset-inline-end: 0;
+  background: linear-gradient(to left, hsl(var(--background)), transparent);
+}
+
+[dir='rtl'] [data-filter-tabs-wrapper]::before {
+  background: linear-gradient(to left, hsl(var(--background)), transparent);
+}
+
+[dir='rtl'] [data-filter-tabs-wrapper]::after {
+  background: linear-gradient(to right, hsl(var(--background)), transparent);
+}
+
+/* ── Tap highlight suppression (custom handled) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Input zoom prevention (iOS 16-) ─────── */
+/* Already using text-base (16px) for search; this is a safety net */
+@supports (-webkit-touch-callout: none) {
+  input[type='text'],
+  input[type='search'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='password'],
+  input[type='date'],
+  textarea,
+  select {
+    font-size: max(1rem, 16px);
+  }
+
+  @media (min-width: 640px) {
+    input[type='text'],
+    input[type='search'],
+    input[type='email'],
+    input[type='tel'],
+    input[type='number'],
+    input[type='password'],
+    input[type='date'],
+    textarea,
+    select {
+      font-size: 0.875rem;
+    }
+  }
+}
