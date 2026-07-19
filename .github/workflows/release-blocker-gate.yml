@@ -110,7 +110,12 @@ jobs:
       - name: Verify staging application and Auth endpoints
         run: node scripts/ci/preflight-staging.mjs
       - name: Verify private Storage upload, signed download, denial, and cleanup
-        run: pnpm --filter ./rentrix-app exec node scripts/storage-staging-smoke.mjs
+        shell: bash
+        run: |
+          mkdir -p .ci-diagnostics/storage
+          set -o pipefail
+          pnpm --filter ./rentrix-app exec node scripts/storage-staging-smoke.mjs 2>&1 \
+            | tee .ci-diagnostics/storage/storage-staging-smoke.log
       - name: Restore Chromium binary cache
         id: playwright-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -126,12 +131,13 @@ jobs:
         run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
       - name: Run real authentication lifecycle tests with zero skips
         run: pnpm --filter ./rentrix-app exec playwright test e2e/release-blocker-auth.spec.ts --config playwright.config.ts --project=chromium-desktop
-      - name: Upload failed authentication traces
+      - name: Upload failed authentication and Storage diagnostics
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: release-blocker-auth-failure
+          name: release-blocker-staging-failure
           path: |
+            .ci-diagnostics/storage
             rentrix-app/playwright-report
             rentrix-app/test-results
           if-no-files-found: ignore
