@@ -1,71 +1,75 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  validateVaultFile,
+  VAULT_ALLOWED_MIME_TYPES,
+  VAULT_MAX_FILE_SIZE,
+} from './documents-vault-service';
 
 describe('documents vault real implementation', () => {
-  it('service does not contain placehold.co mock data', () => {
-    const servicePath = resolve(import.meta.dirname, './documents-vault-service.ts');
-    const content = readFileSync(servicePath, 'utf8');
-    expect(content).not.toContain('placehold.co');
-    expect(content).not.toContain('doc-1');
-    expect(content).not.toContain('عقد إيجار موثق - شقة 102');
-    expect(content).not.toContain('برج النيل / شقة 102');
-    expect(content).not.toContain('ID+Card+Scan');
+  it('service and page do not contain hardcoded document mocks', () => {
+    const service = readFileSync(resolve(import.meta.dirname, './documents-vault-service.ts'), 'utf8');
+    const page = readFileSync(resolve(import.meta.dirname, './documents-vault-page.tsx'), 'utf8');
+
+    for (const marker of ['placehold.co', 'doc-1', 'عقد إيجار موثق - شقة 102', 'ID+Card+Scan']) {
+      expect(service).not.toContain(marker);
+    }
+    for (const marker of ['placehold.co', 'doc-1', 'Contract+PDF']) {
+      expect(page).not.toContain(marker);
+    }
   });
 
-  it('page does not contain hardcoded mock documents', () => {
-    const pagePath = resolve(import.meta.dirname, './documents-vault-page.tsx');
-    const content = readFileSync(pagePath, 'utf8');
-    expect(content).not.toContain('placehold.co');
-    expect(content).not.toContain('doc-1');
-    expect(content).not.toContain('Contract+PDF');
+  it('uses a private bucket, signed URLs, and compensating cleanup', () => {
+    const service = readFileSync(resolve(import.meta.dirname, './documents-vault-service.ts'), 'utf8');
+    expect(service).toContain('supabase.storage.from');
+    expect(service).toContain('.upload(');
+    expect(service).toContain('createSignedUrl');
+    expect(service).toContain('getVaultDocumentSignedUrl');
+    expect(service).not.toContain('getPublicUrl');
+    expect(service).toContain('vault_documents');
+    expect(service).toContain('.remove([fullPath])');
+    expect(service).toContain('file_size');
+    expect(service).toContain('mime_type');
   });
 
-  it('service implements real private bucket with signed URLs and no getPublicUrl', () => {
-    const servicePath = resolve(import.meta.dirname, './documents-vault-service.ts');
-    const content = readFileSync(servicePath, 'utf8');
-    expect(content).toContain('supabase.storage.from');
-    expect(content).toContain('upload');
-    expect(content).toContain('createSignedUrl');
-    expect(content).toContain('getVaultDocumentSignedUrl');
-    expect(content).not.toContain('getPublicUrl');
-    expect(content).toContain('vault_documents');
-    expect(content).toContain('rollback');
-    expect(content).toContain('remove');
-    expect(content).toContain('file_size');
-    expect(content).toContain('mime_type');
-    expect(content).toContain('private');
+  it('matches the live bucket size and MIME contract', () => {
+    expect(VAULT_MAX_FILE_SIZE).toBe(5 * 1024 * 1024);
+    expect([...VAULT_ALLOWED_MIME_TYPES]).toEqual([
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ]);
+
+    expect(() => validateVaultFile({ size: 1, type: 'application/pdf' })).not.toThrow();
+    expect(() => validateVaultFile({ size: VAULT_MAX_FILE_SIZE, type: 'image/png' })).not.toThrow();
+    expect(() => validateVaultFile({ size: 0, type: 'image/png' })).toThrow('الملف فارغ');
+    expect(() => validateVaultFile({ size: VAULT_MAX_FILE_SIZE + 1, type: 'image/png' })).toThrow('5MB');
+    expect(() => validateVaultFile({ size: 1, type: 'application/msword' })).toThrow('غير مدعوم');
+    expect(() => validateVaultFile({ size: 1, type: '' })).toThrow('غير مدعوم');
   });
 
-  it('service validates file size and type', () => {
-    const servicePath = resolve(import.meta.dirname, './documents-vault-service.ts');
-    const content = readFileSync(servicePath, 'utf8');
-    expect(content).toContain('MAX_FILE_SIZE');
-    expect(content).toContain('ALLOWED_MIME');
-    expect(content).toContain('10 * 1024 * 1024');
+  it('migration hardens the bucket and removes the legacy broad uploader policy', () => {
+    const migration = readFileSync(
+      resolve(import.meta.dirname, '../../../../supabase/migrations/20260719134000_harden_private_attachments_bucket.sql'),
+      'utf8',
+    );
+
+    expect(migration).toContain("'attachments'");
+    expect(migration).toContain('public = excluded.public');
+    expect(migration).toContain('file_size_limit = excluded.file_size_limit');
+    expect(migration).toContain('allowed_mime_types = excluded.allowed_mime_types');
+    expect(migration).toContain('drop policy if exists "authenticated upload attachments"');
+    expect(migration).toContain('attachments_authenticated_insert');
+    expect(migration).toContain('public.is_admin_or_manager()');
+    expect(migration).toContain('public.is_app_user()');
   });
 
-  it('migration creates vault_documents with hardened RLS and private bucket', () => {
-    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260717000002_real_documents_vault.sql');
-    const content = readFileSync(migrationPath, 'utf8');
-    expect(content).toContain('create table if not exists public.vault_documents');
-    expect(content).toContain('manager_write_vault_documents');
-    expect(content).toContain('app_read_vault_documents');
-    expect(content).toContain('is_admin_or_manager()');
-    expect(content).toContain('storage.buckets');
-    expect(content).toContain('attachments');
-    expect(content).toContain('attachments_authenticated_insert');
-    expect(content).toContain('public = false');
-  });
-
-  it('page uses signed URLs for images', () => {
-    const pagePath = resolve(import.meta.dirname, './documents-vault-page.tsx');
-    const content = readFileSync(pagePath, 'utf8');
-    expect(content).toContain('getVaultDocumentSignedUrl');
-    expect(content).toContain('signedMap');
-    expect(content).not.toContain('placehold.co');
-    // Should mention private bucket
-    expect(content).toContain('private');
-    expect(content).toContain('signed');
+  it('page uses signed URLs for private previews', () => {
+    const page = readFileSync(resolve(import.meta.dirname, './documents-vault-page.tsx'), 'utf8');
+    expect(page).toContain('getVaultDocumentSignedUrl');
+    expect(page).toContain('signedMap');
+    expect(page).not.toContain('getPublicUrl');
   });
 });
