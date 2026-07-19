@@ -235,7 +235,7 @@ export function AppShell() {
       <div className={cn('w-full transition-all duration-250 lg:pe-64', sidebarCollapsed && 'lg:pe-[4.5rem]')}>
         {/* Sticky header — clean, flat, mobile-optimised */}
         <header className="sticky top-0 z-20 border-b border-border/70 bg-background/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md">
-          <div className="flex min-h-[3.25rem] items-center gap-1 px-2 py-1.5 sm:min-h-[3.5rem] sm:gap-2 sm:px-4">
+          <div className="flex min-h-[3.25rem] items-center gap-1 px-2 py-1 sm:min-h-[3.5rem] sm:gap-2 sm:px-4">
             {/* Mobile menu toggle */}
             <Button
               variant="ghost"
