@@ -38,11 +38,13 @@ describe('automation real execution', () => {
     const executionPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101006_real_automation_execution.sql');
     const seedPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101036_seed_automation_rules.sql');
     const schedulePath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260718101201_automation_scheduling_and_fixed_exception.sql');
+    const retryFixPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260719123000_fix_automation_retry_self_duplicate.sql');
 
     const baseline = readFileSync(baselinePath, 'utf8');
     const execution = readFileSync(executionPath, 'utf8');
     const seed = readFileSync(seedPath, 'utf8');
     const schedule = readFileSync(schedulePath, 'utf8');
+    const retryFix = readFileSync(retryFixPath, 'utf8');
 
     expect(baseline).toContain('public.automation_jobs');
     expect(execution).toContain("to_regclass('public.automation_jobs')");
@@ -51,9 +53,11 @@ describe('automation real execution', () => {
     expect(execution).toContain('Automation baseline missing');
     expect(seed).toContain('public.automation_rules');
     expect(schedule).toContain('public.run_scheduled_automation_rules');
+    expect(retryFix).toContain('public.retry_automation_run');
     expect(Number('20260705000001')).toBeLessThan(Number('20260718101006'));
     expect(Number('20260718101006')).toBeLessThan(Number('20260718101036'));
     expect(Number('20260718101036')).toBeLessThan(Number('20260718101201'));
+    expect(Number('20260718101201')).toBeLessThan(Number('20260719123000'));
   });
 
   it('migration creates automation_rules with real execution', () => {
@@ -105,6 +109,19 @@ describe('automation real execution', () => {
     expect(content).toContain('Max retries');
     expect(content).toContain('duplicate prevention');
     expect(content).toContain('running');
+  });
+
+  it('forward migration retries by creating a new run instead of self-blocking', () => {
+    const migrationPath = resolve(import.meta.dirname, '../../../../supabase/migrations/20260719123000_fix_automation_retry_self_duplicate.sql');
+    const content = readFileSync(migrationPath, 'utf8');
+
+    expect(content).toContain("hashtextextended('automation_rule:' || v_run.rule_id, 0)");
+    expect(content).toContain("status = 'running'");
+    expect(content).toContain('retry_count = retry_count + 1');
+    expect(content).toContain('v_result := public.execute_automation_rule(v_run.rule_id)');
+    expect(content).toContain('retried_from_run_id');
+    expect(content).toContain('Preserve the failed source row');
+    expect(content).not.toMatch(/set\s+retry_count\s*=\s*retry_count\s*\+\s*1\s*,\s*status\s*=\s*'running'/is);
   });
 
   it('seed migration inserts default rules', () => {
