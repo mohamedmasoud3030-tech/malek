@@ -5,6 +5,7 @@
   --app-page-gutter-inline: clamp(0.75rem, 2.4vw, 1.5rem);
   --app-page-gutter-block: clamp(0.75rem, 2vw, 1.5rem);
   --entity-form-action-clearance: 6rem;
+  --mobile-bottom-nav-height: 3.75rem;
 }
 
 #main-content {
@@ -40,7 +41,9 @@
   padding-block-end: calc(var(--entity-form-action-clearance) + env(safe-area-inset-bottom, 0px));
 }
 
-[data-entity-form-actions] { isolation: isolate; }
+[data-entity-form-actions] {
+  isolation: isolate;
+}
 
 [data-bottom-sheet],
 [data-dialog-content],
@@ -49,7 +52,9 @@
 }
 
 @media (min-width: 640px) {
-  .entity-form:has([data-entity-form-actions]) { padding-block-end: 0; }
+  .entity-form:has([data-entity-form-actions]) {
+    padding-block-end: 0;
+  }
 
   [data-entity-form-scroll],
   [data-bottom-sheet-scroll],
@@ -66,10 +71,113 @@
     min-width: 44px;
     min-height: 44px;
   }
+
+  html {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  button,
+  [role='button'],
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  [data-bottom-sheet],
+  nav,
+  [role='navigation'] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  [data-bottom-sheet-scroll],
+  [data-entity-form-scroll],
+  [data-dialog-scroll] {
+    overscroll-behavior-y: contain;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  [data-entity-card]:active,
+  [role='button']:active {
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 1023px) {
+  [data-page-layout] {
+    padding-block-end: calc(
+      var(--mobile-bottom-nav-height) + 0.75rem + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+/*
+ * FilterTabs renders as a horizontally scrollable role=group.
+ * The symmetric mask works for both RTL and LTR while its contents scroll.
+ */
+@media (max-width: 639px) {
+  [role='group'].no-scrollbar.overflow-x-auto {
+    scroll-padding-inline: 1rem;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 1rem,
+      #000 calc(100% - 1rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 1rem,
+      #000 calc(100% - 1rem),
+      transparent 100%
+    );
+  }
 }
 
 @media (max-width: 359px) {
-  :root { --app-page-gutter-inline: 0.625rem; }
+  :root {
+    --app-page-gutter-inline: 0.625rem;
+  }
+
+  [data-entity-card] {
+    padding: 0.75rem;
+  }
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports (-webkit-touch-callout: none) {
+  input[type='text'],
+  input[type='search'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='password'],
+  input[type='date'],
+  textarea,
+  select {
+    font-size: max(1rem, 16px);
+  }
+
+  @media (min-width: 640px) {
+    input[type='text'],
+    input[type='search'],
+    input[type='email'],
+    input[type='tel'],
+    input[type='number'],
+    input[type='password'],
+    input[type='date'],
+    textarea,
+    select {
+      font-size: 0.875rem;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
