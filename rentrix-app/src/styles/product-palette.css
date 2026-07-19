@@ -87,6 +87,27 @@
   box-shadow: inset 0 0 0 1px hsl(var(--kpi-tone) / 0.18);
 }
 
+/* Status badges use the same palette, so old color labels and new product
+   tones remain legible and consistent in both themes. */
+[data-status-badge][data-tone='emerald'],
+[data-status-badge][data-tone='amber'],
+[data-status-badge][data-tone='sky'],
+[data-status-badge][data-tone='rose'],
+[data-status-badge][data-tone='violet'],
+[data-status-badge][data-tone='slate'] {
+  color: hsl(var(--status-tone));
+  background: hsl(var(--status-soft));
+  --tw-ring-color: hsl(var(--status-tone) / 0.22);
+}
+
+[data-status-badge][data-tone='emerald'] { --status-tone: var(--tone-emerald); --status-soft: var(--tone-emerald-soft); }
+[data-status-badge][data-tone='amber'] { --status-tone: var(--tone-amber); --status-soft: var(--tone-amber-soft); }
+[data-status-badge][data-tone='sky'] { --status-tone: var(--tone-sky); --status-soft: var(--tone-sky-soft); }
+[data-status-badge][data-tone='rose'] { --status-tone: var(--tone-rose); --status-soft: var(--tone-rose-soft); }
+[data-status-badge][data-tone='violet'] { --status-tone: var(--tone-violet); --status-soft: var(--tone-violet-soft); }
+[data-status-badge][data-tone='slate'] { --status-tone: var(--tone-slate); --status-soft: var(--tone-slate-soft); }
+[data-status-badge] [data-status-dot] { background: currentColor; }
+
 /* DialogContent classifies itself after rendering. Data-entry dialogs receive
    the same full-height mobile contract as EntityForm, while confirmation and
    information dialogs remain compact. Physical edges avoid RTL ambiguity. */
