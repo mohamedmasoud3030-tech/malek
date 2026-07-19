@@ -1,4 +1,10 @@
-import { type FormEvent, useMemo, useState } from 'react';
+import {
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+  useMemo,
+  useState,
+} from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BadgeCheck,
@@ -148,6 +154,25 @@ export function OwnerSettlementWorkspace() {
   );
 
   const activeMutationError = createMutation.error ?? approveMutation.error ?? payoutMutation.error;
+  const backgroundRefreshError = settlements.length > 0 && settlementsQuery.isError
+    ? settlementsQuery.error
+    : null;
+
+  const handleDraftOpenChange = (open: boolean) => {
+    setDraftOpen(open);
+    if (!open) {
+      setDraftForm(initialDraftForm());
+      setDraftValidationError('');
+      createMutation.reset();
+    }
+  };
+
+  const handlePayoutOpenChange = (open: boolean) => {
+    if (open) return;
+    setSelectedSettlement(null);
+    setPayoutRef('');
+    payoutMutation.reset();
+  };
 
   const handlePrint = (settlement: OwnerSettlementRecord) => {
     if (!documentSettings.isReady) return;
@@ -269,13 +294,12 @@ export function OwnerSettlementWorkspace() {
       settlement_id: selectedSettlement.id,
       payout_method: payoutMethod,
       payout_reference: payoutRef.trim(),
-      payout_date: getTodayLocalDateString(),
     });
   };
 
   const listStatus = settlementsQuery.isPending
     ? 'loading'
-    : settlementsQuery.isError
+    : settlementsQuery.isError && settlements.length === 0
       ? 'error'
       : settlements.length === 0
         ? 'empty'
@@ -296,7 +320,11 @@ export function OwnerSettlementWorkspace() {
               <RefreshCw className="size-4" />
               تحديث
             </Button>
-            <Button size="sm" onClick={() => setDraftOpen(true)} disabled={targetsQuery.isPending || targets.length === 0}>
+            <Button
+              size="sm"
+              onClick={() => handleDraftOpenChange(true)}
+              disabled={targetsQuery.isPending || targets.length === 0}
+            >
               <Plus className="size-4" />
               إنشاء مسودة تسوية
             </Button>
@@ -312,6 +340,9 @@ export function OwnerSettlementWorkspace() {
       </ResponsiveCardGrid>
 
       {activeMutationError ? <EntityForm.ErrorSummary message={errorMessage(activeMutationError)} /> : null}
+      {backgroundRefreshError ? (
+        <EntityForm.ErrorSummary message={`تعذر تحديث التسويات؛ ما زالت آخر بيانات ناجحة ظاهرة. ${errorMessage(backgroundRefreshError)}`} />
+      ) : null}
       {!documentSettings.isReady && !documentSettings.isLoading ? (
         <EntityForm.ErrorSummary message="أكمل اسم الشركة والعملة في الإعدادات لتفعيل طباعة كشوف التسوية دون بيانات افتراضية." />
       ) : null}
@@ -328,7 +359,7 @@ export function OwnerSettlementWorkspace() {
             errorAction={<Button variant="outline" onClick={() => settlementsQuery.refetch()}>إعادة المحاولة</Button>}
             emptyTitle="لا توجد تسويات مسجلة"
             emptyDescription="أنشئ أول مسودة من اتفاقية مالك وعقار؛ لن تظهر هنا أي بيانات تجريبية."
-            emptyAction={targets.length > 0 ? <Button onClick={() => setDraftOpen(true)}>إنشاء مسودة تسوية</Button> : undefined}
+            emptyAction={targets.length > 0 ? <Button onClick={() => handleDraftOpenChange(true)}>إنشاء مسودة تسوية</Button> : undefined}
           >
             {settlements.map((settlement) => {
               const isApproving = approveMutation.isPending && approveMutation.variables?.settlement_id === settlement.id;
@@ -389,7 +420,7 @@ export function OwnerSettlementWorkspace() {
 
       <DraftOverlay
         open={draftOpen}
-        onOpenChange={setDraftOpen}
+        onOpenChange={handleDraftOpenChange}
         form={draftForm}
         setForm={setDraftForm}
         targets={targets}
@@ -404,9 +435,7 @@ export function OwnerSettlementWorkspace() {
 
       <EntityForm.Overlay
         open={Boolean(selectedSettlement)}
-        onOpenChange={(open) => {
-          if (!open) setSelectedSettlement(null);
-        }}
+        onOpenChange={handlePayoutOpenChange}
         title="تسجيل صرف مستحق المالك"
         description={selectedSettlement ? `${selectedSettlement.owner_name} · ${formatMoney(selectedSettlement.net_payable_amount)}` : undefined}
       >
@@ -426,7 +455,7 @@ export function OwnerSettlementWorkspace() {
           </EntityForm.Section>
           <EntityForm.Actions
             submitLabel={payoutMutation.isPending ? 'جارٍ تسجيل الصرف…' : 'تأكيد الصرف'}
-            onCancel={() => setSelectedSettlement(null)}
+            onCancel={() => handlePayoutOpenChange(false)}
             isSubmitting={payoutMutation.isPending}
             submitDisabled={!payoutRef.trim()}
           />
@@ -456,7 +485,7 @@ type DraftOverlayProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   form: DraftFormState;
-  setForm: React.Dispatch<React.SetStateAction<DraftFormState>>;
+  setForm: Dispatch<SetStateAction<DraftFormState>>;
   targets: OwnerSettlementTarget[];
   selectedTarget: OwnerSettlementTarget | null;
   validationError: string;
@@ -512,24 +541,12 @@ function DraftOverlay({
 
         <EntityForm.Section title="الفترة والمبالغ">
           <div className="grid gap-4 sm:grid-cols-2">
-            <EntityForm.Field label="بداية الفترة">
-              <Input type="date" value={form.periodStart} onChange={(event) => setForm((current) => ({ ...current, periodStart: event.target.value }))} required />
-            </EntityForm.Field>
-            <EntityForm.Field label="نهاية الفترة">
-              <Input type="date" value={form.periodEnd} onChange={(event) => setForm((current) => ({ ...current, periodEnd: event.target.value }))} required />
-            </EntityForm.Field>
-            <EntityForm.Field label="إجمالي المحصل">
-              <Input type="number" min="0.001" step="0.001" inputMode="decimal" value={form.grossCollected} onChange={(event) => onGrossChange(event.target.value)} required />
-            </EntityForm.Field>
-            <EntityForm.Field label="أتعاب المكتب">
-              <Input type="number" min="0" step="0.001" inputMode="decimal" value={form.officeFee} onChange={(event) => setForm((current) => ({ ...current, officeFee: event.target.value }))} required />
-            </EntityForm.Field>
-            <EntityForm.Field label="مصروفات على المالك">
-              <Input type="number" min="0" step="0.001" inputMode="decimal" value={form.ownerExpenses} onChange={(event) => setForm((current) => ({ ...current, ownerExpenses: event.target.value }))} required />
-            </EntityForm.Field>
-            <EntityForm.Field label="الضريبة">
-              <Input type="number" min="0" step="0.001" inputMode="decimal" value={form.taxAmount} onChange={(event) => setForm((current) => ({ ...current, taxAmount: event.target.value }))} required />
-            </EntityForm.Field>
+            <DraftField label="بداية الفترة" type="date" value={form.periodStart} onChange={(value) => setForm((current) => ({ ...current, periodStart: value }))} />
+            <DraftField label="نهاية الفترة" type="date" value={form.periodEnd} onChange={(value) => setForm((current) => ({ ...current, periodEnd: value }))} />
+            <DraftField label="إجمالي المحصل" value={form.grossCollected} min="0.001" onChange={onGrossChange} />
+            <DraftField label="أتعاب المكتب" value={form.officeFee} onChange={(value) => setForm((current) => ({ ...current, officeFee: value }))} />
+            <DraftField label="مصروفات على المالك" value={form.ownerExpenses} onChange={(value) => setForm((current) => ({ ...current, ownerExpenses: value }))} />
+            <DraftField label="الضريبة" value={form.taxAmount} onChange={(value) => setForm((current) => ({ ...current, taxAmount: value }))} />
           </div>
           <EntityForm.Field label="ملاحظات" description="اختياري؛ تحفظ داخل التسوية.">
             <Input value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
@@ -543,5 +560,33 @@ function DraftOverlay({
         />
       </EntityForm.Root>
     </EntityForm.Overlay>
+  );
+}
+
+function DraftField({
+  label,
+  value,
+  onChange,
+  type = 'number',
+  min = '0',
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: 'number' | 'date';
+  min?: string;
+}) {
+  return (
+    <EntityForm.Field label={label}>
+      <Input
+        type={type}
+        min={type === 'number' ? min : undefined}
+        step={type === 'number' ? '0.001' : undefined}
+        inputMode={type === 'number' ? 'decimal' : undefined}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        required
+      />
+    </EntityForm.Field>
   );
 }
