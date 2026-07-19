@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BadgeCheck,
@@ -22,8 +22,8 @@ import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
-import { numberToArabicWords, OMR_CURRENCY_CONFIG } from '@/lib/numberToArabicWords';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
 import {
   approveOwnerSettlement,
   createOwnerSettlementDraft,
@@ -39,16 +39,6 @@ import {
 
 const settlementsQueryKey = ['owner-settlements'] as const;
 const settlementTargetsQueryKey = ['owner-settlement-targets'] as const;
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 type DraftFormState = {
   targetKey: string;
@@ -84,12 +74,20 @@ function numberOrZero(value: string) {
   return Number.isFinite(number) ? number : 0;
 }
 
-function mutationErrorMessage(error: unknown) {
+function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'تعذر إكمال العملية. أعد المحاولة.';
+}
+
+function settlementTone(status: OwnerSettlementRecord['status']) {
+  if (status === 'paid') return 'green' as const;
+  if (status === 'approved') return 'blue' as const;
+  if (status === 'cancelled') return 'red' as const;
+  return 'gold' as const;
 }
 
 export function OwnerSettlementWorkspace() {
   const queryClient = useQueryClient();
+  const documentSettings = useDocumentSettings();
   const [draftOpen, setDraftOpen] = useState(false);
   const [draftForm, setDraftForm] = useState<DraftFormState>(initialDraftForm);
   const [draftValidationError, setDraftValidationError] = useState('');
@@ -136,31 +134,23 @@ export function OwnerSettlementWorkspace() {
   const targets = targetsQuery.data ?? [];
   const selectedTarget = targets.find((target) => targetKey(target) === draftForm.targetKey) ?? null;
 
-  const totalGrossCollected = useMemo(
-    () => settlements.reduce((sum, settlement) => sum + settlement.gross_rent_collected, 0),
-    [settlements],
-  );
-  const totalManagementCommissions = useMemo(
-    () => settlements.reduce((sum, settlement) => sum + settlement.management_fee_amount, 0),
-    [settlements],
-  );
-  const totalDeductions = useMemo(
+  const totals = useMemo(
     () => settlements.reduce(
-      (sum, settlement) => sum + settlement.maintenance_deductions + settlement.utility_deductions,
-      0,
+      (summary, settlement) => ({
+        gross: summary.gross + settlement.gross_rent_collected,
+        fees: summary.fees + settlement.management_fee_amount,
+        deductions: summary.deductions + settlement.maintenance_deductions + settlement.utility_deductions,
+        net: summary.net + settlement.net_payable_amount,
+      }),
+      { gross: 0, fees: 0, deductions: 0, net: 0 },
     ),
-    [settlements],
-  );
-  const totalNetPayable = useMemo(
-    () => settlements.reduce((sum, settlement) => sum + settlement.net_payable_amount, 0),
     [settlements],
   );
 
   const activeMutationError = createMutation.error ?? approveMutation.error ?? payoutMutation.error;
 
-  const handlePrintSettlementVoucher = (settlement: OwnerSettlementRecord) => {
-    const tafqeetAmount = numberToArabicWords(settlement.net_payable_amount, OMR_CURRENCY_CONFIG);
-
+  const handlePrint = (settlement: OwnerSettlementRecord) => {
+    if (!documentSettings.isReady) return;
     DocumentTemplates.printOwnerStatementDocument(
       {
         ownerName: settlement.owner_name,
@@ -188,7 +178,7 @@ export function OwnerSettlementWorkspace() {
             ? [{
                 date: settlement.period_end,
                 type: 'مصروفات على المالك',
-                description: 'مصروفات تشغيلية مخصومة من مستحق المالك',
+                description: 'مصروفات مخصومة من مستحق المالك',
                 amount: -settlement.maintenance_deductions,
               }]
             : []),
@@ -196,14 +186,13 @@ export function OwnerSettlementWorkspace() {
             ? [{
                 date: settlement.period_end,
                 type: 'ضريبة التسوية',
-                description: 'الضريبة المسجلة بصورة مستقلة في التسوية',
+                description: 'ضريبة مسجلة مستقلة داخل التسوية',
                 amount: -settlement.utility_deductions,
               }]
             : []),
         ],
-        notes: settlement.notes ? `${settlement.notes}\nالمبلغ كتابة: ${tafqeetAmount}` : `المبلغ كتابة: ${tafqeetAmount}`,
       },
-      defaultSettings,
+      documentSettings.settings,
     );
   };
 
@@ -236,7 +225,7 @@ export function OwnerSettlementWorkspace() {
     }));
   };
 
-  const handleCreateDraft = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateDraft = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setDraftValidationError('');
     if (!selectedTarget) {
@@ -273,11 +262,7 @@ export function OwnerSettlementWorkspace() {
     createMutation.mutate(payload);
   };
 
-  const handleApprove = (settlement: OwnerSettlementRecord) => {
-    approveMutation.mutate({ settlement_id: settlement.id });
-  };
-
-  const handleExecutePayout = (event: React.FormEvent<HTMLFormElement>) => {
+  const handlePayout = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedSettlement || !payoutRef.trim()) return;
     payoutMutation.mutate({
@@ -320,14 +305,15 @@ export function OwnerSettlementWorkspace() {
       </Card>
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="إجمالي المقبوضات" value={formatMoney(totalGrossCollected)} icon={Wallet} accent="emerald" sub="تحصيلات مثبتة داخل التسويات" />
-        <KpiCard label="أتعاب المكتب" value={formatMoney(totalManagementCommissions)} icon={Landmark} accent="primary" sub="أتعاب كل تسوية حسب اتفاقها" />
-        <KpiCard label="المصروفات والضرائب" value={formatMoney(totalDeductions)} icon={DollarSign} accent="rose" sub="خصومات مسجلة على التسويات" />
-        <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totalNetPayable)} icon={BadgeCheck} accent="sky" sub="صافي جميع حالات التسوية" />
+        <KpiCard label="إجمالي المقبوضات" value={formatMoney(totals.gross)} icon={Wallet} accent="emerald" sub="تحصيلات مثبتة داخل التسويات" />
+        <KpiCard label="أتعاب المكتب" value={formatMoney(totals.fees)} icon={Landmark} accent="primary" sub="أتعاب كل تسوية حسب اتفاقها" />
+        <KpiCard label="المصروفات والضرائب" value={formatMoney(totals.deductions)} icon={DollarSign} accent="rose" sub="خصومات مسجلة على التسويات" />
+        <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totals.net)} icon={BadgeCheck} accent="sky" sub="صافي جميع حالات التسوية" />
       </ResponsiveCardGrid>
 
-      {activeMutationError ? (
-        <EntityForm.ErrorSummary message={mutationErrorMessage(activeMutationError)} />
+      {activeMutationError ? <EntityForm.ErrorSummary message={errorMessage(activeMutationError)} /> : null}
+      {!documentSettings.isReady && !documentSettings.isLoading ? (
+        <EntityForm.ErrorSummary message="أكمل اسم الشركة والعملة في الإعدادات لتفعيل طباعة كشوف التسوية دون بيانات افتراضية." />
       ) : null}
 
       <Card className="border-border/60">
@@ -345,9 +331,7 @@ export function OwnerSettlementWorkspace() {
             emptyAction={targets.length > 0 ? <Button onClick={() => setDraftOpen(true)}>إنشاء مسودة تسوية</Button> : undefined}
           >
             {settlements.map((settlement) => {
-              const tone = settlement.status === 'paid' ? 'green' : settlement.status === 'approved' ? 'blue' : settlement.status === 'cancelled' ? 'red' : 'gold';
               const isApproving = approveMutation.isPending && approveMutation.variables?.settlement_id === settlement.id;
-
               return (
                 <article key={settlement.id} className="space-y-3 rounded-2xl border border-border/60 bg-background p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
@@ -356,8 +340,8 @@ export function OwnerSettlementWorkspace() {
                       <p className="text-xs text-muted-foreground">{settlement.property_title} · {settlement.period_start} إلى {settlement.period_end}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge tone={tone}>{settlementStatusLabels[settlement.status]}</StatusBadge>
-                      <Button variant="outline" size="sm" onClick={() => handlePrintSettlementVoucher(settlement)}>
+                      <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge>
+                      <Button variant="outline" size="sm" onClick={() => handlePrint(settlement)} disabled={!documentSettings.isReady}>
                         <Printer className="size-3.5" />
                         طباعة الكشف
                       </Button>
@@ -365,22 +349,10 @@ export function OwnerSettlementWorkspace() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
-                    <div className="rounded-xl bg-muted/20 p-2">
-                      <span className="block text-muted-foreground">المحصل</span>
-                      <strong className="text-sm" dir="ltr">{formatMoney(settlement.gross_rent_collected)}</strong>
-                    </div>
-                    <div className="rounded-xl bg-muted/20 p-2">
-                      <span className="block text-muted-foreground">أتعاب المكتب</span>
-                      <strong className="text-sm text-primary" dir="ltr">{formatMoney(settlement.management_fee_amount)}</strong>
-                    </div>
-                    <div className="rounded-xl bg-muted/20 p-2">
-                      <span className="block text-muted-foreground">المصروفات والضريبة</span>
-                      <strong className="text-sm text-destructive" dir="ltr">{formatMoney(settlement.maintenance_deductions + settlement.utility_deductions)}</strong>
-                    </div>
-                    <div className="rounded-xl bg-emerald-500/10 p-2">
-                      <span className="block text-muted-foreground">الصافي للمالك</span>
-                      <strong className="text-sm text-emerald-600" dir="ltr">{formatMoney(settlement.net_payable_amount)}</strong>
-                    </div>
+                    <Metric label="المحصل" value={settlement.gross_rent_collected} />
+                    <Metric label="أتعاب المكتب" value={settlement.management_fee_amount} tone="primary" />
+                    <Metric label="المصروفات والضريبة" value={settlement.maintenance_deductions + settlement.utility_deductions} tone="danger" />
+                    <Metric label="الصافي للمالك" value={settlement.net_payable_amount} tone="success" />
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2 text-xs">
@@ -390,7 +362,12 @@ export function OwnerSettlementWorkspace() {
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {settlement.status === 'pending' ? (
-                        <Button size="sm" variant="secondary" onClick={() => handleApprove(settlement)} disabled={approveMutation.isPending}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => approveMutation.mutate({ settlement_id: settlement.id })}
+                          disabled={approveMutation.isPending}
+                        >
                           <CheckCircle2 className="size-3.5" />
                           {isApproving ? 'جارٍ الاعتماد…' : 'اعتماد التسوية'}
                         </Button>
@@ -410,61 +387,20 @@ export function OwnerSettlementWorkspace() {
         </CardContent>
       </Card>
 
-      <EntityForm.Overlay
+      <DraftOverlay
         open={draftOpen}
         onOpenChange={setDraftOpen}
-        title="إنشاء مسودة تسوية مالك"
-        description="الأتعاب المقترحة تُحسب من اتفاقية العقار، ويمكن مراجعتها قبل الحفظ."
-      >
-        <EntityForm.Root onSubmit={handleCreateDraft} aria-busy={createMutation.isPending}>
-          <EntityForm.ErrorSummary message={draftValidationError || (createMutation.error ? mutationErrorMessage(createMutation.error) : undefined)} />
-          <EntityForm.Section title="المالك والعقار" description="لا تظهر إلا الروابط التي لديها اتفاقية إدارة حية.">
-            <EntityForm.Field label="اتفاقية المالك والعقار">
-              <Select value={draftForm.targetKey} onChange={(event) => handleTargetChange(event.target.value)} required>
-                <option value="">اختر المالك والعقار</option>
-                {targets.map((target) => (
-                  <option key={targetKey(target)} value={targetKey(target)}>
-                    {target.owner_name} — {target.property_title}
-                  </option>
-                ))}
-              </Select>
-            </EntityForm.Field>
-            {selectedTarget ? (
-              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
-                الاتفاق: {selectedTarget.commission_type === 'percentage' ? `نسبة ${selectedTarget.commission_value}% من المحصل` : `مبلغ ثابت ${formatMoney(selectedTarget.commission_value)}`}
-              </p>
-            ) : null}
-          </EntityForm.Section>
-
-          <EntityForm.Section title="الفترة والمبالغ">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="بداية الفترة">
-                <Input type="date" value={draftForm.periodStart} onChange={(event) => setDraftForm((current) => ({ ...current, periodStart: event.target.value }))} required />
-              </EntityForm.Field>
-              <EntityForm.Field label="نهاية الفترة">
-                <Input type="date" value={draftForm.periodEnd} onChange={(event) => setDraftForm((current) => ({ ...current, periodEnd: event.target.value }))} required />
-              </EntityForm.Field>
-              <EntityForm.Field label="إجمالي المحصل">
-                <Input type="number" min="0.001" step="0.001" inputMode="decimal" value={draftForm.grossCollected} onChange={(event) => handleGrossChange(event.target.value)} required />
-              </EntityForm.Field>
-              <EntityForm.Field label="أتعاب المكتب">
-                <Input type="number" min="0" step="0.001" inputMode="decimal" value={draftForm.officeFee} onChange={(event) => setDraftForm((current) => ({ ...current, officeFee: event.target.value }))} required />
-              </EntityForm.Field>
-              <EntityForm.Field label="مصروفات على المالك">
-                <Input type="number" min="0" step="0.001" inputMode="decimal" value={draftForm.ownerExpenses} onChange={(event) => setDraftForm((current) => ({ ...current, ownerExpenses: event.target.value }))} required />
-              </EntityForm.Field>
-              <EntityForm.Field label="الضريبة">
-                <Input type="number" min="0" step="0.001" inputMode="decimal" value={draftForm.taxAmount} onChange={(event) => setDraftForm((current) => ({ ...current, taxAmount: event.target.value }))} required />
-              </EntityForm.Field>
-            </div>
-            <EntityForm.Field label="ملاحظات" description="اختياري؛ تظهر داخل كشف التسوية.">
-              <Input value={draftForm.notes} onChange={(event) => setDraftForm((current) => ({ ...current, notes: event.target.value }))} />
-            </EntityForm.Field>
-          </EntityForm.Section>
-
-          <EntityForm.Actions submitLabel={createMutation.isPending ? 'جارٍ إنشاء المسودة…' : 'إنشاء المسودة'} onCancel={() => setDraftOpen(false)} isSubmitting={createMutation.isPending} />
-        </EntityForm.Root>
-      </EntityForm.Overlay>
+        form={draftForm}
+        setForm={setDraftForm}
+        targets={targets}
+        selectedTarget={selectedTarget}
+        validationError={draftValidationError}
+        mutationError={createMutation.error}
+        isSubmitting={createMutation.isPending}
+        onTargetChange={handleTargetChange}
+        onGrossChange={handleGrossChange}
+        onSubmit={handleCreateDraft}
+      />
 
       <EntityForm.Overlay
         open={Boolean(selectedSettlement)}
@@ -474,8 +410,8 @@ export function OwnerSettlementWorkspace() {
         title="تسجيل صرف مستحق المالك"
         description={selectedSettlement ? `${selectedSettlement.owner_name} · ${formatMoney(selectedSettlement.net_payable_amount)}` : undefined}
       >
-        <EntityForm.Root onSubmit={handleExecutePayout} aria-busy={payoutMutation.isPending}>
-          <EntityForm.ErrorSummary message={payoutMutation.error ? mutationErrorMessage(payoutMutation.error) : undefined} />
+        <EntityForm.Root onSubmit={handlePayout} aria-busy={payoutMutation.isPending}>
+          <EntityForm.ErrorSummary message={payoutMutation.error ? errorMessage(payoutMutation.error) : undefined} />
           <EntityForm.Section title="بيانات الصرف" description="عند التأكيد تُنشئ قاعدة البيانات قيد مالك مستحق/نقدية متوازنًا.">
             <EntityForm.Field label="وسيلة الصرف">
               <Select value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value as ProcessPayoutPayload['payout_method'])}>
@@ -488,9 +424,124 @@ export function OwnerSettlementWorkspace() {
               <Input placeholder="مثال: TR-902184 / CHK-102" value={payoutRef} onChange={(event) => setPayoutRef(event.target.value)} required />
             </EntityForm.Field>
           </EntityForm.Section>
-          <EntityForm.Actions submitLabel={payoutMutation.isPending ? 'جارٍ تسجيل الصرف…' : 'تأكيد الصرف'} onCancel={() => setSelectedSettlement(null)} isSubmitting={payoutMutation.isPending} submitDisabled={!payoutRef.trim()} />
+          <EntityForm.Actions
+            submitLabel={payoutMutation.isPending ? 'جارٍ تسجيل الصرف…' : 'تأكيد الصرف'}
+            onCancel={() => setSelectedSettlement(null)}
+            isSubmitting={payoutMutation.isPending}
+            submitDisabled={!payoutRef.trim()}
+          />
         </EntityForm.Root>
       </EntityForm.Overlay>
     </div>
+  );
+}
+
+function Metric({ label, value, tone = 'default' }: { label: string; value: number; tone?: 'default' | 'primary' | 'danger' | 'success' }) {
+  const className = tone === 'primary'
+    ? 'text-primary'
+    : tone === 'danger'
+      ? 'text-destructive'
+      : tone === 'success'
+        ? 'text-emerald-600'
+        : 'text-foreground';
+  return (
+    <div className="rounded-xl bg-muted/20 p-2">
+      <span className="block text-muted-foreground">{label}</span>
+      <strong className={`text-sm ${className}`} dir="ltr">{formatMoney(value)}</strong>
+    </div>
+  );
+}
+
+type DraftOverlayProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  form: DraftFormState;
+  setForm: React.Dispatch<React.SetStateAction<DraftFormState>>;
+  targets: OwnerSettlementTarget[];
+  selectedTarget: OwnerSettlementTarget | null;
+  validationError: string;
+  mutationError: unknown;
+  isSubmitting: boolean;
+  onTargetChange: (value: string) => void;
+  onGrossChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+function DraftOverlay({
+  open,
+  onOpenChange,
+  form,
+  setForm,
+  targets,
+  selectedTarget,
+  validationError,
+  mutationError,
+  isSubmitting,
+  onTargetChange,
+  onGrossChange,
+  onSubmit,
+}: DraftOverlayProps) {
+  return (
+    <EntityForm.Overlay
+      open={open}
+      onOpenChange={onOpenChange}
+      title="إنشاء مسودة تسوية مالك"
+      description="الأتعاب المقترحة تُحسب من اتفاقية العقار، ويمكن مراجعتها قبل الحفظ."
+    >
+      <EntityForm.Root onSubmit={onSubmit} aria-busy={isSubmitting}>
+        <EntityForm.ErrorSummary message={validationError || (mutationError ? errorMessage(mutationError) : undefined)} />
+        <EntityForm.Section title="المالك والعقار" description="لا تظهر إلا الروابط التي لديها اتفاقية إدارة حية.">
+          <EntityForm.Field label="اتفاقية المالك والعقار">
+            <Select value={form.targetKey} onChange={(event) => onTargetChange(event.target.value)} required>
+              <option value="">اختر المالك والعقار</option>
+              {targets.map((target) => (
+                <option key={targetKey(target)} value={targetKey(target)}>
+                  {target.owner_name} — {target.property_title}
+                </option>
+              ))}
+            </Select>
+          </EntityForm.Field>
+          {selectedTarget ? (
+            <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
+              الاتفاق: {selectedTarget.commission_type === 'percentage'
+                ? `نسبة ${selectedTarget.commission_value}% من المحصل`
+                : `مبلغ ثابت ${formatMoney(selectedTarget.commission_value)}`}
+            </p>
+          ) : null}
+        </EntityForm.Section>
+
+        <EntityForm.Section title="الفترة والمبالغ">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <EntityForm.Field label="بداية الفترة">
+              <Input type="date" value={form.periodStart} onChange={(event) => setForm((current) => ({ ...current, periodStart: event.target.value }))} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="نهاية الفترة">
+              <Input type="date" value={form.periodEnd} onChange={(event) => setForm((current) => ({ ...current, periodEnd: event.target.value }))} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="إجمالي المحصل">
+              <Input type="number" min="0.001" step="0.001" inputMode="decimal" value={form.grossCollected} onChange={(event) => onGrossChange(event.target.value)} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="أتعاب المكتب">
+              <Input type="number" min="0" step="0.001" inputMode="decimal" value={form.officeFee} onChange={(event) => setForm((current) => ({ ...current, officeFee: event.target.value }))} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="مصروفات على المالك">
+              <Input type="number" min="0" step="0.001" inputMode="decimal" value={form.ownerExpenses} onChange={(event) => setForm((current) => ({ ...current, ownerExpenses: event.target.value }))} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="الضريبة">
+              <Input type="number" min="0" step="0.001" inputMode="decimal" value={form.taxAmount} onChange={(event) => setForm((current) => ({ ...current, taxAmount: event.target.value }))} required />
+            </EntityForm.Field>
+          </div>
+          <EntityForm.Field label="ملاحظات" description="اختياري؛ تحفظ داخل التسوية.">
+            <Input value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
+          </EntityForm.Field>
+        </EntityForm.Section>
+
+        <EntityForm.Actions
+          submitLabel={isSubmitting ? 'جارٍ إنشاء المسودة…' : 'إنشاء المسودة'}
+          onCancel={() => onOpenChange(false)}
+          isSubmitting={isSubmitting}
+        />
+      </EntityForm.Root>
+    </EntityForm.Overlay>
   );
 }
