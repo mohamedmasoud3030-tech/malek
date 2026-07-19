@@ -14,6 +14,7 @@ function useVisualViewportCssVariable() {
       const offsetTop = Math.round(viewport?.offsetTop ?? 0);
       root.style.setProperty('--visual-viewport-height', `${height}px`);
       root.style.setProperty('--visual-viewport-offset-top', `${offsetTop}px`);
+      root.style.setProperty('--visual-viewport-center-y', `${offsetTop + Math.round(height / 2)}px`);
     };
 
     updateViewportMetrics();
@@ -27,6 +28,7 @@ function useVisualViewportCssVariable() {
       viewport?.removeEventListener('scroll', updateViewportMetrics);
       root.style.removeProperty('--visual-viewport-height');
       root.style.removeProperty('--visual-viewport-offset-top');
+      root.style.removeProperty('--visual-viewport-center-y');
     };
   }, []);
 }
