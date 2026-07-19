@@ -112,6 +112,10 @@
    the same full-height mobile contract as EntityForm, while confirmation and
    information dialogs remain compact. Physical edges avoid RTL ambiguity. */
 @media (max-width: 639px) {
+  html {
+    scrollbar-gutter: auto;
+  }
+
   [data-dialog-content][data-dialog-form='true'] {
     left: 0 !important;
     right: 0 !important;
