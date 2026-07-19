@@ -3,13 +3,13 @@
 ## Repository layout
 
 - `rentrix-app/` — the application (Vite + React + TypeScript). This is the only workspace package (see `pnpm-workspace.yaml`).
-- `supabase/migrations/` — SQL migrations: schema, RLS policies, functions/triggers/RPCs, and later feature/fix migrations. Intended as the source of truth for the database, but as of 2026-07-05 it is known to be incomplete relative to the live `nnggcnpcuomwfuupupwg` project (~31 live tables have no corresponding migration file, and 2 committed migrations were never applied live) — see `supabase/migrations/README.md` and `docs/CURRENT_STATE.md` before assuming a file reflects live reality.
-- `scripts/collect-supabase-migration-evidence.sh` — a read-only preflight script that checks migration file naming/ordering and reports whether Supabase credentials/CLI are available. Run via `pnpm supabase:migration-evidence`. If `SUPABASE_DB_URL` and `psql` are available, it also reconciles local migration filenames against the live `supabase_migrations.schema_migrations` ledger without mutating the database.
+- `supabase/migrations/` — the sole active SQL migration source for schema, RLS policies, functions, triggers, and RPCs. Reconcile the ordered files with the live `supabase_migrations.schema_migrations` ledger before assuming a migration is deployed.
+- `scripts/collect-supabase-migration-evidence.sh` — a read-only preflight script that checks migration file naming/ordering and reports whether Supabase credentials/CLI are available. Run via `pnpm supabase:migration-evidence`. If `SUPABASE_DB_URL` and `psql` are available, it also reconciles local migration filenames against the live ledger without mutating the database.
 - `.github/workflows/ci.yml` — CI pipeline (see `docs/TESTING.md` for the commands it runs).
 - Root `package.json` — workspace-level scripts (`build`, `typecheck`, `lint`, `supabase:migration-evidence`) that delegate into `rentrix-app` via `pnpm --filter`.
 - `tsconfig.base.json` / `tsconfig.json` — shared TypeScript compiler options; `rentrix-app` extends these.
 
-There is no separate `lib/` package at the workspace root; the prompt referenced one, but the workspace's only package is `rentrix-app`.
+There is no separate `lib/` package at the workspace root. The workspace's only package is `rentrix-app`.
 
 ## Frontend structure (`rentrix-app/src/`)
 
@@ -23,9 +23,7 @@ There is no separate `lib/` package at the workspace root; the prompt referenced
 - `store/ui-store.ts` — Zustand store for local UI-only state (theme, sidebar, sync status). Not a data-persistence layer.
 - `types/database.ts` — generated Supabase database types; `types/domain.ts` — shared domain-adjacent types used across features.
 
-The ordered refactor queue and measured hotspots live in
-[`ARCHITECTURE_EXECUTION_PLAN.md`](./ARCHITECTURE_EXECUTION_PLAN.md). Keep that
-plan aligned with code so recurring automation has one unambiguous next phase.
+Active execution priorities are maintained in [`NEXT.md`](./NEXT.md); verified implementation and live-state caveats are maintained in [`CURRENT_STATE.md`](./CURRENT_STATE.md).
 
 ## Routing
 
@@ -36,7 +34,6 @@ TanStack Router routes are declared programmatically in `routeTree.ts`. Each rou
 - `lib/supabase.ts` creates a typed Supabase client (`createClient<Database>`) using `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from `lib/env.ts`. `env.ts` treats known placeholder URLs/keys (used in CI) as "not configured" and surfaces that state to the UI via runtime diagnostics rather than crashing.
 - Each feature's `*Service.ts` file wraps Supabase queries/RPCs for that domain; hooks (`use*.ts`) wrap those services with TanStack Query for caching, loading, and error states.
 - All contract write operations are implemented as atomic Postgres RPCs (`create_contract_atomic`, `update_contract_atomic`, `renew_contract_atomic`, `terminate_contract_atomic`, and `soft_delete_contract_atomic`) rather than direct client-side table writes against `contracts`. Other multi-step domain operations are likewise atomic RPCs (e.g. `resolve_maintenance_with_expense`, `record_invoice_payment_atomic`, `void_receipt_atomic`), keeping related writes and financial/accounting invariants consistent.
-
 
 ## Automated dependency boundary — Guard v2
 

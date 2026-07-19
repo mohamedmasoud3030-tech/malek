@@ -21,7 +21,7 @@ pnpm --filter ./rentrix-app run test:financials
 
 ## Documentation
 
-Start with [`AGENTS.md`](AGENTS.md) for contributor/agent rules and [`docs/README.md`](docs/README.md) for the maintained documentation index. Historical audits and superseded execution reports live under `docs/archive/`; do not use them as the current backlog.
+Start with [`AGENTS.md`](AGENTS.md) for contributor/agent rules and [`docs/README.md`](docs/README.md) for the maintained documentation index. Historical audits, completed plans, and superseded reports are kept in Git history rather than the active repository tree.
 
 ## Contributing
 

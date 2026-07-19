@@ -112,6 +112,10 @@
    the same full-height mobile contract as EntityForm, while confirmation and
    information dialogs remain compact. Physical edges avoid RTL ambiguity. */
 @media (max-width: 639px) {
+  html {
+    scrollbar-gutter: auto;
+  }
+
   [data-dialog-content][data-dialog-form='true'] {
     left: 0 !important;
     right: 0 !important;
@@ -128,6 +132,7 @@
     border-radius: 0 !important;
     padding-block-start: calc(1rem + env(safe-area-inset-top, 0px)) !important;
     padding-block-end: calc(1rem + env(safe-area-inset-bottom, 0px)) !important;
+    scrollbar-gutter: auto !important;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }

@@ -14,12 +14,11 @@ This directory contains the maintained sources of truth for the Rentrix reposito
 - [`PRODUCT.md`](PRODUCT.md) — product scope and operating model.
 - [`DOMAIN.md`](DOMAIN.md) — canonical entities, terminology, and accounting concepts.
 - [`FEATURE_GAP_REGISTER.md`](FEATURE_GAP_REGISTER.md) — evidence-backed capability gaps that remain visible to tests and release work.
-- [`decisions/`](decisions/) — accepted product and accounting decisions; these supersede earlier “decision needed” reviews.
+- [`decisions/`](decisions/) — accepted product and accounting decisions.
 
 ## Architecture and data contracts
 
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — maintained application architecture.
-- [`ARCHITECTURE_EXECUTION_PLAN.md`](ARCHITECTURE_EXECUTION_PLAN.md) — completed architecture-refactor ledger and verification contract, not an active queue.
 - [`DATABASE_ARCHITECTURE.md`](DATABASE_ARCHITECTURE.md) — database structure and boundaries.
 - [`../supabase/migrations/README.md`](../supabase/migrations/README.md) — active migration-chain guidance.
 - [`RPC_REFERENCE.md`](RPC_REFERENCE.md) — RPC reference; verify live definitions before high-risk changes.
@@ -34,13 +33,8 @@ This directory contains the maintained sources of truth for the Rentrix reposito
 - [`RELEASE_EVIDENCE_LEDGER.md`](RELEASE_EVIDENCE_LEDGER.md) — evidence recorded for an exact release candidate.
 - [`SEEDED_STAGING_READINESS_RUNBOOK.md`](SEEDED_STAGING_READINESS_RUNBOOK.md) — controlled staging validation.
 
-## Historical evidence
+## Documentation policy
 
-Completed audits, superseded plans, and point-in-time execution reports belong under [`archive/`](archive/). They are evidence, not the current backlog or architecture authority.
+Keep only maintained sources in the active tree. Historical audits, completed execution plans, superseded reviews, and one-off reports remain available through Git history and must not be recreated as archive folders.
 
-- [`archive/legacy-root-reports/`](archive/legacy-root-reports/) — reports moved from the repository root during PR #1145.
-- [`archive/completed-execution/`](archive/completed-execution/) — completed phase-level execution evidence.
-- [`archive/superseded-plans/`](archive/superseded-plans/) — plans invalidated by current product scope or later decisions.
-- [`archive/superseded-reviews/`](archive/superseded-reviews/) — point-in-time reviews whose status claims are no longer current.
-
-Do not create another standalone status report. Update the maintained source above, add a decision record when a durable decision is required, or place immutable historical evidence in `docs/archive/`.
+Do not create another standalone status report. Update the maintained source above or add a decision record when a durable decision is required.
