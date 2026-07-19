@@ -84,18 +84,24 @@ for (const viewport of viewportMatrix) {
   }
 }
 
-test('bottom sheet follows a reduced visual viewport and keeps actions reachable', async ({ page }) => {
+test('bottom sheet follows a reduced and offset visual viewport and keeps actions reachable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openFixture(page, 'dark', 'bottom-sheet');
 
   await page.evaluate(() => {
     document.documentElement.style.setProperty('--visual-viewport-height', '560px');
+    document.documentElement.style.setProperty('--visual-viewport-offset-top', '36px');
   });
 
+  const root = page.locator('[data-bottom-sheet-root]');
   const sheet = page.locator('[data-bottom-sheet]');
   await expect(sheet).toBeVisible();
+  const rootBox = await root.boundingBox();
   const sheetBox = await sheet.boundingBox();
+  expect(rootBox?.y).toBe(36);
+  expect(rootBox?.height).toBeLessThanOrEqual(560);
   expect(sheetBox?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(560);
+  expect((sheetBox?.y ?? 0) + (sheetBox?.height ?? 0)).toBeLessThanOrEqual(596);
 
   const lastField = page.locator('[data-e2e-last-field]');
   await lastField.scrollIntoViewIfNeeded();
