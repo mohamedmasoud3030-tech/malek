@@ -37,41 +37,12 @@ function decodeJwtPayload(token) {
   return JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
 }
 
-const signIn = await adminClient.auth.signInWithPassword({
-  email: process.env.E2E_TEST_EMAIL.trim(),
-  password: process.env.E2E_TEST_PASSWORD,
-});
-if (signIn.error || !signIn.data.session) {
-  throw signIn.error ?? new Error('Storage smoke could not obtain an authenticated session.');
+function asError(value, fallback) {
+  if (value instanceof Error) return value;
+  return new Error(fallback, { cause: value });
 }
 
-const claims = decodeJwtPayload(signIn.data.session.access_token);
-const role = String(
-  claims?.app_metadata?.role
-  ?? claims?.app_metadata?.user_role
-  ?? claims?.user_role
-  ?? '',
-).toUpperCase();
-if (!['ADMIN', 'MANAGER'].includes(role)) {
-  throw new Error(`Storage smoke requires an ADMIN or MANAGER staging user; received ${role || 'no app role'}.`);
-}
-
-const pngBytes = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=',
-  'base64',
-);
-const path = `vault/e2e-storage-smoke/${crypto.randomUUID()}.png`;
-let uploaded = false;
-
-try {
-  const upload = await adminClient.storage.from('attachments').upload(path, pngBytes, {
-    contentType: 'image/png',
-    cacheControl: '60',
-    upsert: false,
-  });
-  if (upload.error) throw upload.error;
-  uploaded = true;
-
+async function verifyUploadedObject(path, pngBytes) {
   const signed = await adminClient.storage.from('attachments').createSignedUrl(path, 60);
   if (signed.error || !signed.data?.signedUrl) {
     throw signed.error ?? new Error('Authenticated signed URL was not returned.');
@@ -97,23 +68,85 @@ try {
     throw new Error('Private attachment object was reachable through a public URL.');
   }
 
+  return {
+    signedDownloadStatus: signedResponse.status,
+    publicDownloadStatus: publicResponse.status,
+  };
+}
+
+async function cleanupObject(path) {
+  const cleanup = await adminClient.storage.from('attachments').remove([path]);
+  if (cleanup.error) return asError(cleanup.error, 'Storage smoke cleanup failed.');
+
+  const afterDelete = await adminClient.storage.from('attachments').createSignedUrl(path, 60);
+  if (!afterDelete.error && afterDelete.data?.signedUrl) {
+    const response = await fetch(afterDelete.data.signedUrl, { redirect: 'manual' });
+    if (response.ok) return new Error('Storage smoke cleanup did not remove the uploaded object.');
+  }
+  return null;
+}
+
+async function run() {
+  const signIn = await adminClient.auth.signInWithPassword({
+    email: process.env.E2E_TEST_EMAIL.trim(),
+    password: process.env.E2E_TEST_PASSWORD,
+  });
+  if (signIn.error || !signIn.data.session) {
+    throw signIn.error ?? new Error('Storage smoke could not obtain an authenticated session.');
+  }
+
+  const claims = decodeJwtPayload(signIn.data.session.access_token);
+  const role = String(
+    claims?.app_metadata?.role
+    ?? claims?.app_metadata?.user_role
+    ?? claims?.user_role
+    ?? '',
+  ).toUpperCase();
+  if (!['ADMIN', 'MANAGER'].includes(role)) {
+    throw new Error(`Storage smoke requires an ADMIN or MANAGER staging user; received ${role || 'no app role'}.`);
+  }
+
+  const pngBytes = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=',
+    'base64',
+  );
+  const path = `vault/e2e-storage-smoke/${crypto.randomUUID()}.png`;
+  let uploaded = false;
+  let primaryError = null;
+  let cleanupError = null;
+  let evidence = null;
+
+  try {
+    const upload = await adminClient.storage.from('attachments').upload(path, pngBytes, {
+      contentType: 'image/png',
+      cacheControl: '60',
+      upsert: false,
+    });
+    if (upload.error) throw upload.error;
+    uploaded = true;
+
+    evidence = await verifyUploadedObject(path, pngBytes);
+  } catch (error) {
+    primaryError = asError(error, 'Storage staging smoke failed.');
+  } finally {
+    if (uploaded) cleanupError = await cleanupObject(path);
+    const signOut = await adminClient.auth.signOut();
+    if (signOut.error && !cleanupError) cleanupError = signOut.error;
+  }
+
+  if (primaryError && cleanupError) {
+    throw new AggregateError([primaryError, cleanupError], 'Storage smoke and cleanup both failed.');
+  }
+  if (primaryError) throw primaryError;
+  if (cleanupError) throw cleanupError;
+
   console.log(JSON.stringify({
     storageSmoke: 'passed',
     bucket: 'attachments',
-    signedDownloadStatus: signedResponse.status,
-    publicDownloadStatus: publicResponse.status,
+    ...evidence,
     anonymousSignedUrlDenied: true,
+    cleanupVerified: true,
   }));
-} finally {
-  if (uploaded) {
-    const cleanup = await adminClient.storage.from('attachments').remove([path]);
-    if (cleanup.error) throw cleanup.error;
-
-    const afterDelete = await adminClient.storage.from('attachments').createSignedUrl(path, 60);
-    if (!afterDelete.error && afterDelete.data?.signedUrl) {
-      const response = await fetch(afterDelete.data.signedUrl, { redirect: 'manual' });
-      if (response.ok) throw new Error('Storage smoke cleanup did not remove the uploaded object.');
-    }
-  }
-  await adminClient.auth.signOut();
 }
+
+await run();
