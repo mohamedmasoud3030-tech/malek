@@ -102,6 +102,7 @@
     height: var(--visual-viewport-height, 100dvh) !important;
     max-height: var(--visual-viewport-height, 100dvh) !important;
     transform: none !important;
+    translate: none !important;
     border-inline: 0 !important;
     border-radius: 0 !important;
     padding-block-start: calc(1rem + env(safe-area-inset-top, 0px)) !important;
