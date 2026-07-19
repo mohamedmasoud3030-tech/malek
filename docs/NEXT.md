@@ -2,16 +2,16 @@
 
 ## Current checkpoint
 
-> Verified starting `main` head: `f647a2a` after merged PR #1209 on 2026-07-19.
+> Verified starting `main` head: `ae64eb0` after merged PR #1210 on 2026-07-19.
 
-The bounded architecture refactor, migration-ledger consolidation, unit/contract integrity work, mobile form stabilization, theme expansion, and action cleanup are complete. Do not reopen those phases from historical plans.
+The bounded architecture refactor, migration-ledger consolidation, unit/contract integrity work, mobile form stabilization, theme expansion, action cleanup, and stale-document removal are complete. Do not reopen those phases from historical plans.
 
 ## Execute now — authenticated release verification
 
 Complete the remaining launch evidence in this order:
 
-1. Run the authenticated deposit lifecycle against Staging or another isolated approved target: create → deduct → refund, including overdraw rejection and cleanup.
-2. Verify automation rule execution, retry behavior, and the scheduled-run path.
+1. **Deposits:** rollback-isolated authenticated lifecycle passed on production on 2026-07-19: create → idempotent replay → overdraw rejection → deduct → idempotent replay → refund → idempotent replay. The final amounts reconciled to zero remaining, six journal entries balanced at 200 debit / 200 credit, and forced rollback left zero test rows. A persistent Staging/approved isolated-target run is still required before final Go/No-Go.
+2. **Automation:** manual execution and the scheduled-run path passed in a rollback-isolated authenticated production check on 2026-07-19. The same check proved `retry_automation_run` self-blocks by marking its source row `running` before duplicate detection. Migration `20260719123000_fix_automation_retry_self_duplicate.sql` fixes this by preserving the failed source row and creating a new execution. Merge, replay, apply with explicit production approval, then verify a real failed-run retry.
 3. Run owner-settlement approval and payout with journal and balance reconciliation.
 4. Verify private Storage upload, preview, and download through signed URLs, plus denied unauthorized access.
 5. Run the final post-deploy browser smoke on the exact release candidate and record the Go/No-Go decision.
