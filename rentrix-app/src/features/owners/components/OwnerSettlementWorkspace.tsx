@@ -1,299 +1,592 @@
-import { useState, useMemo } from 'react';
-import { BadgeCheck, CheckCircle2, DollarSign, FileSpreadsheet, Landmark, Printer, Send, ShieldCheck, Wallet } from 'lucide-react';
+import {
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+  useMemo,
+  useState,
+} from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  BadgeCheck,
+  CheckCircle2,
+  DollarSign,
+  Landmark,
+  Plus,
+  Printer,
+  RefreshCw,
+  Send,
+  Wallet,
+} from 'lucide-react';
+import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
-import { numberToArabicWords, OMR_CURRENCY_CONFIG } from '@/lib/numberToArabicWords';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
 import {
+  approveOwnerSettlement,
+  createOwnerSettlementDraft,
+  listOwnerSettlements,
+  listOwnerSettlementTargets,
+  processOwnerPayout,
   settlementStatusLabels,
+  type CreateSettlementDraftPayload,
   type OwnerSettlementRecord,
+  type OwnerSettlementTarget,
   type ProcessPayoutPayload,
 } from '../services/owner-settlements-service';
 
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
+const settlementsQueryKey = ['owner-settlements'] as const;
+const settlementTargetsQueryKey = ['owner-settlement-targets'] as const;
+
+type DraftFormState = {
+  targetKey: string;
+  periodStart: string;
+  periodEnd: string;
+  grossCollected: string;
+  officeFee: string;
+  ownerExpenses: string;
+  taxAmount: string;
+  notes: string;
 };
 
-export function OwnerSettlementWorkspace() {
-  const [settlements, setSettlements] = useState<OwnerSettlementRecord[]>(() => [
-    {
-      id: 'settle-801',
-      owner_id: 'owner-1',
-      owner_name: 'سعود بن محمد الكثيري',
-      property_id: 'p-1',
-      property_title: 'برج النيل المكتبي',
-      period_start: '2026-06-01',
-      period_end: '2026-06-30',
-      gross_rent_collected: 1800,
-      management_fee_rate: 5,
-      management_fee_type: 'percentage',
-      management_fee_amount: 90,
-      maintenance_deductions: 120,
-      utility_deductions: 0,
-      net_payable_amount: 1590,
-      status: 'pending',
-      created_at: '2026-07-01T00:00:00.000Z',
-    },
-    {
-      id: 'settle-802',
-      owner_id: 'owner-2',
-      owner_name: 'خالد بن ناصر الهنائي',
-      property_id: 'p-2',
-      property_title: 'مجمع العذيبة السكني',
-      period_start: '2026-06-01',
-      period_end: '2026-06-30',
-      gross_rent_collected: 2400,
-      management_fee_rate: 5,
-      management_fee_type: 'percentage',
-      management_fee_amount: 120,
-      maintenance_deductions: 0,
-      utility_deductions: 0,
-      net_payable_amount: 2280,
-      status: 'paid',
-      approved_by: 'المدير العام',
-      approved_at: '2026-07-02T11:00:00.000Z',
-      paid_at: '2026-07-03T14:30:00.000Z',
-      payout_reference: 'BANK-00912',
-      notes: 'تم التحويل لحساب المالك البنكي المعتمد',
-      created_at: '2026-07-01T00:00:00.000Z',
-    },
-  ]);
+function initialDraftForm(): DraftFormState {
+  const today = getTodayLocalDateString();
+  return {
+    targetKey: '',
+    periodStart: `${today.slice(0, 7)}-01`,
+    periodEnd: today,
+    grossCollected: '',
+    officeFee: '',
+    ownerExpenses: '0',
+    taxAmount: '0',
+    notes: '',
+  };
+}
 
+function targetKey(target: Pick<OwnerSettlementTarget, 'owner_id' | 'property_id'>) {
+  return `${target.owner_id}:${target.property_id}`;
+}
+
+function numberOrZero(value: string) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'تعذر إكمال العملية. أعد المحاولة.';
+}
+
+function settlementTone(status: OwnerSettlementRecord['status']) {
+  if (status === 'paid') return 'green' as const;
+  if (status === 'approved') return 'blue' as const;
+  if (status === 'cancelled') return 'red' as const;
+  return 'gold' as const;
+}
+
+export function OwnerSettlementWorkspace() {
+  const queryClient = useQueryClient();
+  const documentSettings = useDocumentSettings();
+  const [draftOpen, setDraftOpen] = useState(false);
+  const [draftForm, setDraftForm] = useState<DraftFormState>(initialDraftForm);
+  const [draftValidationError, setDraftValidationError] = useState('');
   const [selectedSettlement, setSelectedSettlement] = useState<OwnerSettlementRecord | null>(null);
-  const [payoutRef, setPayoutRef] = useState<string>('');
+  const [payoutRef, setPayoutRef] = useState('');
   const [payoutMethod, setPayoutMethod] = useState<ProcessPayoutPayload['payout_method']>('bank_transfer');
 
-  const totalGrossCollected = useMemo(() => settlements.reduce((acc, s) => acc + s.gross_rent_collected, 0), [settlements]);
-  const totalManagementCommissions = useMemo(() => settlements.reduce((acc, s) => acc + s.management_fee_amount, 0), [settlements]);
-  const totalDeductions = useMemo(() => settlements.reduce((acc, s) => acc + s.maintenance_deductions + s.utility_deductions, 0), [settlements]);
-  const totalNetPayable = useMemo(() => settlements.reduce((acc, s) => acc + s.net_payable_amount, 0), [settlements]);
+  const settlementsQuery = useQuery({
+    queryKey: settlementsQueryKey,
+    queryFn: listOwnerSettlements,
+  });
+  const targetsQuery = useQuery({
+    queryKey: settlementTargetsQueryKey,
+    queryFn: listOwnerSettlementTargets,
+  });
 
-  const handlePrintSettlementVoucher = (s: OwnerSettlementRecord) => {
-    const tafqeetAmount = numberToArabicWords(s.net_payable_amount, OMR_CURRENCY_CONFIG);
+  const refreshSettlements = async () => {
+    await queryClient.invalidateQueries({ queryKey: settlementsQueryKey });
+  };
 
+  const createMutation = useMutation({
+    mutationFn: createOwnerSettlementDraft,
+    onSuccess: async () => {
+      await refreshSettlements();
+      setDraftOpen(false);
+      setDraftForm(initialDraftForm());
+      setDraftValidationError('');
+    },
+  });
+  const approveMutation = useMutation({
+    mutationFn: approveOwnerSettlement,
+    onSuccess: refreshSettlements,
+  });
+  const payoutMutation = useMutation({
+    mutationFn: processOwnerPayout,
+    onSuccess: async () => {
+      await refreshSettlements();
+      setSelectedSettlement(null);
+      setPayoutRef('');
+    },
+  });
+
+  const settlements = settlementsQuery.data ?? [];
+  const targets = targetsQuery.data ?? [];
+  const selectedTarget = targets.find((target) => targetKey(target) === draftForm.targetKey) ?? null;
+
+  const totals = useMemo(
+    () => settlements.reduce(
+      (summary, settlement) => ({
+        gross: summary.gross + settlement.gross_rent_collected,
+        fees: summary.fees + settlement.management_fee_amount,
+        deductions: summary.deductions + settlement.maintenance_deductions + settlement.utility_deductions,
+        net: summary.net + settlement.net_payable_amount,
+      }),
+      { gross: 0, fees: 0, deductions: 0, net: 0 },
+    ),
+    [settlements],
+  );
+
+  const activeMutationError = createMutation.error ?? approveMutation.error ?? payoutMutation.error;
+  const backgroundRefreshError = settlements.length > 0 && settlementsQuery.isError
+    ? settlementsQuery.error
+    : null;
+
+  const handleDraftOpenChange = (open: boolean) => {
+    setDraftOpen(open);
+    if (!open) {
+      setDraftForm(initialDraftForm());
+      setDraftValidationError('');
+      createMutation.reset();
+    }
+  };
+
+  const handlePayoutOpenChange = (open: boolean) => {
+    if (open) return;
+    setSelectedSettlement(null);
+    setPayoutRef('');
+    payoutMutation.reset();
+  };
+
+  const handlePrint = (settlement: OwnerSettlementRecord) => {
+    if (!documentSettings.isReady) return;
     DocumentTemplates.printOwnerStatementDocument(
       {
-        ownerName: s.owner_name,
-        periodFrom: s.period_start,
-        periodTo: s.period_end,
-        propertyTitle: s.property_title,
-        totalRent: s.gross_rent_collected,
-        totalExpenses: s.maintenance_deductions + s.utility_deductions,
-        totalCommission: s.management_fee_amount,
-        netAmount: s.net_payable_amount,
+        ownerName: settlement.owner_name,
+        periodFrom: settlement.period_start,
+        periodTo: settlement.period_end,
+        propertyTitle: settlement.property_title,
+        totalRent: settlement.gross_rent_collected,
+        totalExpenses: settlement.maintenance_deductions + settlement.utility_deductions,
+        totalCommission: settlement.management_fee_amount,
+        netAmount: settlement.net_payable_amount,
         transactions: [
           {
-            date: s.period_start,
+            date: settlement.period_start,
             type: 'إيجارات مقبوضة',
-            description: `تحصيلات إيجارات ${s.property_title}`,
-            amount: s.gross_rent_collected,
+            description: `تحصيلات إيجارات ${settlement.property_title}`,
+            amount: settlement.gross_rent_collected,
           },
           {
-            date: s.period_end,
-            type: 'عمولة إدارة إيجارات',
-            description: `عمولة إدارة أملاك بنسبة ${s.management_fee_rate}%`,
-            amount: -s.management_fee_amount,
+            date: settlement.period_end,
+            type: 'أتعاب إدارة',
+            description: 'أتعاب المكتب المعتمدة في التسوية',
+            amount: -settlement.management_fee_amount,
           },
-          ...(s.maintenance_deductions > 0
-            ? [
-                {
-                  date: s.period_end,
-                  type: 'استقطاع صيانة',
-                  description: 'مصروفات صيانة تشغيلية للعقار',
-                  amount: -s.maintenance_deductions,
-                },
-              ]
+          ...(settlement.maintenance_deductions > 0
+            ? [{
+                date: settlement.period_end,
+                type: 'مصروفات على المالك',
+                description: 'مصروفات مخصومة من مستحق المالك',
+                amount: -settlement.maintenance_deductions,
+              }]
+            : []),
+          ...(settlement.utility_deductions > 0
+            ? [{
+                date: settlement.period_end,
+                type: 'ضريبة التسوية',
+                description: 'ضريبة مسجلة مستقلة داخل التسوية',
+                amount: -settlement.utility_deductions,
+              }]
             : []),
         ],
       },
-      defaultSettings,
+      documentSettings.settings,
     );
   };
 
-  const handleApprove = (s: OwnerSettlementRecord) => {
-    setSettlements((prev) =>
-      prev.map((item) =>
-        item.id === s.id
-          ? {
-              ...item,
-              status: 'approved',
-              approved_by: 'مدير النظام',
-              approved_at: new Date().toISOString(),
-            }
-          : item,
-      ),
-    );
+  const handleTargetChange = (value: string) => {
+    const target = targets.find((item) => targetKey(item) === value);
+    const gross = numberOrZero(draftForm.grossCollected);
+    const recommendedFee = target
+      ? target.commission_type === 'percentage'
+        ? gross * target.commission_value / 100
+        : target.commission_value
+      : 0;
+    setDraftForm((current) => ({
+      ...current,
+      targetKey: value,
+      officeFee: target ? String(Number(recommendedFee.toFixed(3))) : '',
+    }));
   };
 
-  const handleExecutePayout = () => {
+  const handleGrossChange = (value: string) => {
+    const gross = numberOrZero(value);
+    const recommendedFee = selectedTarget?.commission_type === 'percentage'
+      ? gross * selectedTarget.commission_value / 100
+      : selectedTarget?.commission_type === 'fixed'
+        ? selectedTarget.commission_value
+        : numberOrZero(draftForm.officeFee);
+    setDraftForm((current) => ({
+      ...current,
+      grossCollected: value,
+      officeFee: selectedTarget ? String(Number(recommendedFee.toFixed(3))) : current.officeFee,
+    }));
+  };
+
+  const handleCreateDraft = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setDraftValidationError('');
+    if (!selectedTarget) {
+      setDraftValidationError('اختر المالك والعقار المرتبطين باتفاقية إدارة.');
+      return;
+    }
+    if (!draftForm.periodStart || !draftForm.periodEnd || draftForm.periodStart > draftForm.periodEnd) {
+      setDraftValidationError('حدد فترة صحيحة؛ تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.');
+      return;
+    }
+
+    const amounts = [
+      numberOrZero(draftForm.grossCollected),
+      numberOrZero(draftForm.officeFee),
+      numberOrZero(draftForm.ownerExpenses),
+      numberOrZero(draftForm.taxAmount),
+    ];
+    if (amounts.some((amount) => amount < 0) || amounts[0] <= 0) {
+      setDraftValidationError('يجب أن يكون المحصل أكبر من صفر، وجميع المبالغ غير سالبة.');
+      return;
+    }
+
+    const payload: CreateSettlementDraftPayload = {
+      owner_id: selectedTarget.owner_id,
+      property_id: selectedTarget.property_id,
+      period_start: draftForm.periodStart,
+      period_end: draftForm.periodEnd,
+      gross_collected: amounts[0],
+      office_fee: amounts[1],
+      owner_expenses: amounts[2],
+      tax_amount: amounts[3],
+      notes: draftForm.notes.trim() || undefined,
+    };
+    createMutation.mutate(payload);
+  };
+
+  const handlePayout = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!selectedSettlement || !payoutRef.trim()) return;
-
-    setSettlements((prev) =>
-      prev.map((item) =>
-        item.id === selectedSettlement.id
-          ? {
-              ...item,
-              status: 'paid',
-              paid_at: new Date().toISOString(),
-              payout_reference: payoutRef,
-              notes: `تم تحويل المبلغ لمالك العقار مرجع #${payoutRef}`,
-            }
-          : item,
-      ),
-    );
-
-    setSelectedSettlement(null);
-    setPayoutRef('');
+    payoutMutation.mutate({
+      settlement_id: selectedSettlement.id,
+      payout_method: payoutMethod,
+      payout_reference: payoutRef.trim(),
+    });
   };
+
+  const listStatus = settlementsQuery.isPending
+    ? 'loading'
+    : settlementsQuery.isError && settlements.length === 0
+      ? 'error'
+      : settlements.length === 0
+        ? 'empty'
+        : 'ready';
 
   return (
     <div className="space-y-4">
       <Card className="border-border/60 bg-muted/20">
-        <CardHeader className="px-4 py-3 sm:px-5">
-          <CardTitle className="text-sm font-bold">مركز تسويات ومحاسبة الملاك (Landlord Settlement Hub)</CardTitle>
-          <CardDescription>
-            احتساب نسب وعمولات إدارة الأملاك آلياً من إجمالي التحصيلات الفعالية، وخصم تكاليف الصيانة واعتماد وصرف أرباح الملاك.
-          </CardDescription>
+        <CardHeader className="gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <div>
+            <CardTitle className="text-sm font-bold">مركز تسويات ومحاسبة الملاك</CardTitle>
+            <CardDescription>
+              مسودات حقيقية من قاعدة البيانات، ثم اعتماد وصرف ذري مع سجل تدقيق وقيد يومية متوازن.
+            </CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
+              <RefreshCw className="size-4" />
+              تحديث
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleDraftOpenChange(true)}
+              disabled={targetsQuery.isPending || targets.length === 0}
+            >
+              <Plus className="size-4" />
+              إنشاء مسودة تسوية
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="إجمالي المقبوضات" value={formatMoney(totalGrossCollected)} icon={Wallet} accent="emerald" sub="إيجارات حصلت من المستأجرين" />
-        <KpiCard label="عمولات الإدارة المكتسبة" value={formatMoney(totalManagementCommissions)} icon={Landmark} accent="primary" sub="إيراد عمولة المكتب" />
-        <KpiCard label="خصومات الصيانة والنفقات" value={formatMoney(totalDeductions)} icon={DollarSign} accent="rose" sub="مصاريف مخصومة من المالك" />
-        <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totalNetPayable)} icon={BadgeCheck} accent="sky" sub="صافي الأرباح المحولة" />
+        <KpiCard label="إجمالي المقبوضات" value={formatMoney(totals.gross)} icon={Wallet} accent="emerald" sub="تحصيلات مثبتة داخل التسويات" />
+        <KpiCard label="أتعاب المكتب" value={formatMoney(totals.fees)} icon={Landmark} accent="primary" sub="أتعاب كل تسوية حسب اتفاقها" />
+        <KpiCard label="المصروفات والضرائب" value={formatMoney(totals.deductions)} icon={DollarSign} accent="rose" sub="خصومات مسجلة على التسويات" />
+        <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totals.net)} icon={BadgeCheck} accent="sky" sub="صافي جميع حالات التسوية" />
       </ResponsiveCardGrid>
+
+      {activeMutationError ? <EntityForm.ErrorSummary message={errorMessage(activeMutationError)} /> : null}
+      {backgroundRefreshError ? (
+        <EntityForm.ErrorSummary message={`تعذر تحديث التسويات؛ ما زالت آخر بيانات ناجحة ظاهرة. ${errorMessage(backgroundRefreshError)}`} />
+      ) : null}
+      {!documentSettings.isReady && !documentSettings.isLoading ? (
+        <EntityForm.ErrorSummary message="أكمل اسم الشركة والعملة في الإعدادات لتفعيل طباعة كشوف التسوية دون بيانات افتراضية." />
+      ) : null}
 
       <Card className="border-border/60">
         <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
-          <CardTitle className="text-sm font-bold">جدول كشوف وتعميدات أرباح الملاك</CardTitle>
+          <CardTitle className="text-sm font-bold">التسويات المسجلة</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 sm:p-5 space-y-3">
-          {settlements.map((s) => {
-            const tone = s.status === 'paid' ? 'green' : s.status === 'approved' ? 'blue' : 'gold';
-
-            return (
-              <div key={s.id} className="rounded-2xl border border-border/60 bg-background p-4 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
-                  <div>
-                    <p className="font-bold text-sm">{s.owner_name}</p>
-                    <p className="text-xs text-muted-foreground">{s.property_title} · فترة {s.period_start} إلى {s.period_end}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge tone={tone}>{settlementStatusLabels[s.status]}</StatusBadge>
-                    <Button variant="outline" size="sm" onClick={() => handlePrintSettlementVoucher(s)} className="min-h-8 text-xs gap-1">
-                      <Printer className="size-3.5 text-primary" />
-                      طباعة كشف التسوية A4
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="rounded-xl bg-muted/20 p-2">
-                    <span className="text-muted-foreground block">الإيجارات المحصلة</span>
-                    <strong className="text-foreground text-sm" dir="ltr">{formatMoney(s.gross_rent_collected)}</strong>
-                  </div>
-                  <div className="rounded-xl bg-muted/20 p-2">
-                    <span className="text-muted-foreground block">عمولة المكتب ({s.management_fee_rate}%)</span>
-                    <strong className="text-primary text-sm" dir="ltr">{formatMoney(s.management_fee_amount)}</strong>
-                  </div>
-                  <div className="rounded-xl bg-muted/20 p-2">
-                    <span className="text-muted-foreground block">خصومات المصاريف</span>
-                    <strong className="text-destructive text-sm" dir="ltr">{formatMoney(s.maintenance_deductions + s.utility_deductions)}</strong>
-                  </div>
-                  <div className="rounded-xl bg-emerald-500/10 p-2">
-                    <span className="text-muted-foreground block">الصافي المستحق للمالك</span>
-                    <strong className="text-emerald-600 text-sm" dir="ltr">{formatMoney(s.net_payable_amount)}</strong>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border/40 text-xs">
-                  <span className="text-muted-foreground">
-                    {s.approved_by ? `معتمد بواسطة: ${s.approved_by}` : 'في انتظار الاعتماد المالي'}
-                    {s.payout_reference ? ` | مرجع التحويل: ${s.payout_reference}` : ''}
-                  </span>
-
-                  <div className="flex gap-2">
-                    {s.status === 'pending' ? (
-                      <Button size="sm" variant="secondary" onClick={() => handleApprove(s)} className="text-xs gap-1">
-                        <CheckCircle2 className="size-3.5 text-primary" />
-                        اعتماد التسوية
+        <CardContent className="space-y-3 p-4 sm:p-5">
+          <AsyncContentState
+            status={listStatus}
+            error={settlementsQuery.error}
+            errorTitle="تعذر تحميل تسويات الملاك"
+            errorAction={<Button variant="outline" onClick={() => settlementsQuery.refetch()}>إعادة المحاولة</Button>}
+            emptyTitle="لا توجد تسويات مسجلة"
+            emptyDescription="أنشئ أول مسودة من اتفاقية مالك وعقار؛ لن تظهر هنا أي بيانات تجريبية."
+            emptyAction={targets.length > 0 ? <Button onClick={() => handleDraftOpenChange(true)}>إنشاء مسودة تسوية</Button> : undefined}
+          >
+            {settlements.map((settlement) => {
+              const isApproving = approveMutation.isPending && approveMutation.variables?.settlement_id === settlement.id;
+              return (
+                <article key={settlement.id} className="space-y-3 rounded-2xl border border-border/60 bg-background p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
+                    <div>
+                      <p className="text-sm font-bold">{settlement.owner_name}</p>
+                      <p className="text-xs text-muted-foreground">{settlement.property_title} · {settlement.period_start} إلى {settlement.period_end}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge>
+                      <Button variant="outline" size="sm" onClick={() => handlePrint(settlement)} disabled={!documentSettings.isReady}>
+                        <Printer className="size-3.5" />
+                        طباعة الكشف
                       </Button>
-                    ) : null}
-
-                    {s.status === 'approved' ? (
-                      <Button size="sm" onClick={() => setSelectedSettlement(s)} className="text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white">
-                        <Send className="size-3.5" />
-                        تسجيل تحويل أرباح المالك
-                      </Button>
-                    ) : null}
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+
+                  <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                    <Metric label="المحصل" value={settlement.gross_rent_collected} />
+                    <Metric label="أتعاب المكتب" value={settlement.management_fee_amount} tone="primary" />
+                    <Metric label="المصروفات والضريبة" value={settlement.maintenance_deductions + settlement.utility_deductions} tone="danger" />
+                    <Metric label="الصافي للمالك" value={settlement.net_payable_amount} tone="success" />
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2 text-xs">
+                    <span className="text-muted-foreground">
+                      {settlement.approved_at ? 'تم الاعتماد ماليًا' : 'في انتظار الاعتماد المالي'}
+                      {settlement.payout_reference ? ` · مرجع الصرف: ${settlement.payout_reference}` : ''}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {settlement.status === 'pending' ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => approveMutation.mutate({ settlement_id: settlement.id })}
+                          disabled={approveMutation.isPending}
+                        >
+                          <CheckCircle2 className="size-3.5" />
+                          {isApproving ? 'جارٍ الاعتماد…' : 'اعتماد التسوية'}
+                        </Button>
+                      ) : null}
+                      {settlement.status === 'approved' ? (
+                        <Button size="sm" onClick={() => setSelectedSettlement(settlement)} disabled={payoutMutation.isPending}>
+                          <Send className="size-3.5" />
+                          تسجيل صرف المستحق
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </AsyncContentState>
         </CardContent>
       </Card>
 
-      {/* Payout Dialog */}
-      {selectedSettlement ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl bg-background border border-border p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <h3 className="font-bold text-base">تسجيل تحويل أرباح المالك للبنك</h3>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedSettlement(null)}>
-                إلغاء
-              </Button>
-            </div>
+      <DraftOverlay
+        open={draftOpen}
+        onOpenChange={handleDraftOpenChange}
+        form={draftForm}
+        setForm={setDraftForm}
+        targets={targets}
+        selectedTarget={selectedTarget}
+        validationError={draftValidationError}
+        mutationError={createMutation.error}
+        isSubmitting={createMutation.isPending}
+        onTargetChange={handleTargetChange}
+        onGrossChange={handleGrossChange}
+        onSubmit={handleCreateDraft}
+      />
 
-            <div className="space-y-3 text-xs">
-              <p className="font-medium text-muted-foreground">
-                المالك: <strong className="text-foreground">{selectedSettlement.owner_name}</strong> | الصافي المعتمد: <strong className="text-emerald-600 font-bold" dir="ltr">{formatMoney(selectedSettlement.net_payable_amount)}</strong>
-              </p>
-
-              <div>
-                <label className="block font-bold mb-1">وسيلة التحويل</label>
-                <Select value={payoutMethod} onChange={(e) => setPayoutMethod(e.target.value as any)}>
-                  <option value="bank_transfer">تحويل بنكي مباشر</option>
-                  <option value="check">شيك مصرفي</option>
-                  <option value="cash">نقداً</option>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block font-bold mb-1">رقم المرجع / المعاملة البنكية</label>
-                <Input
-                  placeholder="مثال: TR-902184 / CHK-102"
-                  value={payoutRef}
-                  onChange={(e) => setPayoutRef(e.target.value)}
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2 border-t border-border/60">
-                <Button variant="secondary" onClick={() => setSelectedSettlement(null)}>
-                  إلغاء
-                </Button>
-                <Button onClick={handleExecutePayout} disabled={!payoutRef.trim()}>
-                  تأكيد التحويل وإغلاق الكشف
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <EntityForm.Overlay
+        open={Boolean(selectedSettlement)}
+        onOpenChange={handlePayoutOpenChange}
+        title="تسجيل صرف مستحق المالك"
+        description={selectedSettlement ? `${selectedSettlement.owner_name} · ${formatMoney(selectedSettlement.net_payable_amount)}` : undefined}
+      >
+        <EntityForm.Root onSubmit={handlePayout} aria-busy={payoutMutation.isPending}>
+          <EntityForm.ErrorSummary message={payoutMutation.error ? errorMessage(payoutMutation.error) : undefined} />
+          <EntityForm.Section title="بيانات الصرف" description="عند التأكيد تُنشئ قاعدة البيانات قيد مالك مستحق/نقدية متوازنًا.">
+            <EntityForm.Field label="وسيلة الصرف">
+              <Select value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value as ProcessPayoutPayload['payout_method'])}>
+                <option value="bank_transfer">تحويل بنكي</option>
+                <option value="check">شيك مصرفي</option>
+                <option value="cash">نقدًا</option>
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="رقم المرجع / المعاملة">
+              <Input placeholder="مثال: TR-902184 / CHK-102" value={payoutRef} onChange={(event) => setPayoutRef(event.target.value)} required />
+            </EntityForm.Field>
+          </EntityForm.Section>
+          <EntityForm.Actions
+            submitLabel={payoutMutation.isPending ? 'جارٍ تسجيل الصرف…' : 'تأكيد الصرف'}
+            onCancel={() => handlePayoutOpenChange(false)}
+            isSubmitting={payoutMutation.isPending}
+            submitDisabled={!payoutRef.trim()}
+          />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
     </div>
+  );
+}
+
+function Metric({ label, value, tone = 'default' }: { label: string; value: number; tone?: 'default' | 'primary' | 'danger' | 'success' }) {
+  const className = tone === 'primary'
+    ? 'text-primary'
+    : tone === 'danger'
+      ? 'text-destructive'
+      : tone === 'success'
+        ? 'text-emerald-600'
+        : 'text-foreground';
+  return (
+    <div className="rounded-xl bg-muted/20 p-2">
+      <span className="block text-muted-foreground">{label}</span>
+      <strong className={`text-sm ${className}`} dir="ltr">{formatMoney(value)}</strong>
+    </div>
+  );
+}
+
+type DraftOverlayProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  form: DraftFormState;
+  setForm: Dispatch<SetStateAction<DraftFormState>>;
+  targets: OwnerSettlementTarget[];
+  selectedTarget: OwnerSettlementTarget | null;
+  validationError: string;
+  mutationError: unknown;
+  isSubmitting: boolean;
+  onTargetChange: (value: string) => void;
+  onGrossChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+function DraftOverlay({
+  open,
+  onOpenChange,
+  form,
+  setForm,
+  targets,
+  selectedTarget,
+  validationError,
+  mutationError,
+  isSubmitting,
+  onTargetChange,
+  onGrossChange,
+  onSubmit,
+}: DraftOverlayProps) {
+  return (
+    <EntityForm.Overlay
+      open={open}
+      onOpenChange={onOpenChange}
+      title="إنشاء مسودة تسوية مالك"
+      description="الأتعاب المقترحة تُحسب من اتفاقية العقار، ويمكن مراجعتها قبل الحفظ."
+    >
+      <EntityForm.Root onSubmit={onSubmit} aria-busy={isSubmitting}>
+        <EntityForm.ErrorSummary message={validationError || (mutationError ? errorMessage(mutationError) : undefined)} />
+        <EntityForm.Section title="المالك والعقار" description="لا تظهر إلا الروابط التي لديها اتفاقية إدارة حية.">
+          <EntityForm.Field label="اتفاقية المالك والعقار">
+            <Select value={form.targetKey} onChange={(event) => onTargetChange(event.target.value)} required>
+              <option value="">اختر المالك والعقار</option>
+              {targets.map((target) => (
+                <option key={targetKey(target)} value={targetKey(target)}>
+                  {target.owner_name} — {target.property_title}
+                </option>
+              ))}
+            </Select>
+          </EntityForm.Field>
+          {selectedTarget ? (
+            <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
+              الاتفاق: {selectedTarget.commission_type === 'percentage'
+                ? `نسبة ${selectedTarget.commission_value}% من المحصل`
+                : `مبلغ ثابت ${formatMoney(selectedTarget.commission_value)}`}
+            </p>
+          ) : null}
+        </EntityForm.Section>
+
+        <EntityForm.Section title="الفترة والمبالغ">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <DraftField label="بداية الفترة" type="date" value={form.periodStart} onChange={(value) => setForm((current) => ({ ...current, periodStart: value }))} />
+            <DraftField label="نهاية الفترة" type="date" value={form.periodEnd} onChange={(value) => setForm((current) => ({ ...current, periodEnd: value }))} />
+            <DraftField label="إجمالي المحصل" value={form.grossCollected} min="0.001" onChange={onGrossChange} />
+            <DraftField label="أتعاب المكتب" value={form.officeFee} onChange={(value) => setForm((current) => ({ ...current, officeFee: value }))} />
+            <DraftField label="مصروفات على المالك" value={form.ownerExpenses} onChange={(value) => setForm((current) => ({ ...current, ownerExpenses: value }))} />
+            <DraftField label="الضريبة" value={form.taxAmount} onChange={(value) => setForm((current) => ({ ...current, taxAmount: value }))} />
+          </div>
+          <EntityForm.Field label="ملاحظات" description="اختياري؛ تحفظ داخل التسوية.">
+            <Input value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
+          </EntityForm.Field>
+        </EntityForm.Section>
+
+        <EntityForm.Actions
+          submitLabel={isSubmitting ? 'جارٍ إنشاء المسودة…' : 'إنشاء المسودة'}
+          onCancel={() => onOpenChange(false)}
+          isSubmitting={isSubmitting}
+        />
+      </EntityForm.Root>
+    </EntityForm.Overlay>
+  );
+}
+
+function DraftField({
+  label,
+  value,
+  onChange,
+  type = 'number',
+  min = '0',
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: 'number' | 'date';
+  min?: string;
+}) {
+  return (
+    <EntityForm.Field label={label}>
+      <Input
+        type={type}
+        min={type === 'number' ? min : undefined}
+        step={type === 'number' ? '0.001' : undefined}
+        inputMode={type === 'number' ? 'decimal' : undefined}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        required
+      />
+    </EntityForm.Field>
   );
 }
