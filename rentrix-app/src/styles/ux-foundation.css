@@ -153,19 +153,7 @@
 }
 
 @supports (-webkit-touch-callout: none) {
-  input[type='text'],
-  input[type='search'],
-  input[type='email'],
-  input[type='tel'],
-  input[type='number'],
-  input[type='password'],
-  input[type='date'],
-  textarea,
-  select {
-    font-size: max(1rem, 16px);
-  }
-
-  @media (min-width: 640px) {
+  @media (max-width: 639px) {
     input[type='text'],
     input[type='search'],
     input[type='email'],
@@ -175,7 +163,7 @@
     input[type='date'],
     textarea,
     select {
-      font-size: 0.875rem;
+      font-size: max(1rem, 16px);
     }
   }
 }
