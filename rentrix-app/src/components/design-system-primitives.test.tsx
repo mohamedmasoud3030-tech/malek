@@ -28,10 +28,10 @@ describe('DetailFields', () => {
 });
 
 describe('StatusBadge semantic tones', () => {
-  it('renders the same visual treatment for a semantic tone and its legacy color alias', () => {
-    const semantic = renderToStaticMarkup(<StatusBadge tone="success">نشط</StatusBadge>);
+  it('renders the same visual treatment for a product tone and its legacy color alias', () => {
+    const product = renderToStaticMarkup(<StatusBadge tone="emerald">نشط</StatusBadge>);
     const legacy = renderToStaticMarkup(<StatusBadge tone="green">نشط</StatusBadge>);
-    expect(semantic).toBe(legacy);
+    expect(product).toBe(legacy);
   });
 
   it('maps every semantic tone without throwing', () => {
