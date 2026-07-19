@@ -62,7 +62,7 @@ export function OnboardingChecklist({ progress }: Readonly<{ progress: Onboardin
             </p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" aria-label="إغلاق" onClick={onboarding.dismissLater}>
+        <Button variant="ghost" size="icon" aria-label="إكمال الإعداد لاحقًا" onClick={onboarding.dismissLater}>
           <X className="size-4" />
         </Button>
       </CardHeader>
@@ -122,10 +122,7 @@ export function OnboardingChecklist({ progress }: Readonly<{ progress: Onboardin
           ))}
         </ul>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-          <Button variant="ghost" size="sm" onClick={onboarding.dismissLater}>
-            إكمال لاحقاً
-          </Button>
+        <div className="flex justify-end pt-1">
           {allRequiredDone ? (
             <Button size="sm" onClick={onboarding.complete}>
               <CheckCircle2 className="me-2 size-4" />
@@ -133,7 +130,7 @@ export function OnboardingChecklist({ progress }: Readonly<{ progress: Onboardin
             </Button>
           ) : (
             <Button variant="outline" size="sm" onClick={onboarding.skip}>
-              تخطّي
+              تخطّي الإعداد
             </Button>
           )}
         </div>
