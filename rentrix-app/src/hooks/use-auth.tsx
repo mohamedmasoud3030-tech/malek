@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 import { getAuthorizationContextFromSession, getAuthorizationDiagnosticsFromSession, type AuthorizationContext, type AuthorizationDiagnostics } from '@/features/auth/permissions';
 import { supabase } from '@/lib/supabase';
 import { getCurrentSession, signInWithEmail, signOut } from '@/services/auth-service';
@@ -19,6 +20,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const LOGIN_PATH = '/login';
+const AUTH_STORAGE_KEY = 'rentrix-auth-session';
 
 function redirectToLogin(): void {
   const currentPath = router.state.location.pathname;
@@ -27,9 +29,30 @@ function redirectToLogin(): void {
   }
 }
 
+/**
+ * Clears the local session storage entry so a corrupted/stale refresh token
+ * (e.g. left over from another Vercel preview deployment sharing the same
+ * origin/storage key) cannot keep failing silently on the next load.
+ */
+function clearStaleSessionStorage(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // Storage may be unavailable (privacy mode, etc.) - safe to ignore.
+  }
+}
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Tracks whether we last observed an authenticated session, so a SIGNED_OUT
+  // event can be told apart from an explicit user-initiated logout (which
+  // already clears storage itself via signOut()) vs. an unexpected session
+  // drop (e.g. corrupted/expired refresh token) that needs cleanup + a
+  // user-facing explanation instead of a silent redirect.
+  const hadSessionRef = useRef(false);
+  const explicitLogoutRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -44,6 +67,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       .then((restoredSession) => {
         if (mounted) {
           setSession(restoredSession);
+          hadSessionRef.current = Boolean(restoredSession);
         }
       })
       .finally(stopLoadingIfMounted);
@@ -54,13 +78,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
 
       switch (event) {
-        case 'SIGNED_OUT':
+        case 'SIGNED_OUT': {
+          const wasUnexpected = hadSessionRef.current && !explicitLogoutRef.current;
           setSession(null);
+          hadSessionRef.current = false;
+          if (wasUnexpected) {
+            // Session dropped without an explicit logout call - most likely
+            // a corrupted/expired refresh token. Clear the stale storage
+            // entry so it can't keep failing on reload, and tell the user
+            // plainly instead of redirecting them silently mid-edit.
+            clearStaleSessionStorage();
+            toast.error('انتهت جلستك، الرجاء تسجيل الدخول مجددًا للمتابعة.');
+          }
+          explicitLogoutRef.current = false;
           redirectToLogin();
           break;
+        }
         case 'SIGNED_IN':
         case 'USER_UPDATED':
           setSession(nextSession);
+          hadSessionRef.current = Boolean(nextSession);
           break;
         default:
           break;
@@ -101,6 +138,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         await router.navigate({ to: '/dashboard', replace: true });
       },
       logout: async () => {
+        explicitLogoutRef.current = true;
         await signOut();
         setSession(null);
       },
