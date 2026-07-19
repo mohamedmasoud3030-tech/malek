@@ -43,6 +43,7 @@ jobs:
           node --check scripts/assert-release-blocker-env.mjs
           node --check scripts/ci/preflight-staging.mjs
           node --check scripts/ci/check-cron-quoting.mjs
+          node --check rentrix-app/scripts/storage-staging-smoke.mjs
       - name: Typecheck application and tests
         run: |
           pnpm --filter ./rentrix-app run typecheck
@@ -93,6 +94,7 @@ jobs:
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
       VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      PRODUCTION_SUPABASE_PROJECT_REF: nnggcnpcuomwfuupupwg
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -107,6 +109,8 @@ jobs:
         run: node scripts/assert-release-blocker-env.mjs
       - name: Verify staging application and Auth endpoints
         run: node scripts/ci/preflight-staging.mjs
+      - name: Verify private Storage upload, signed download, denial, and cleanup
+        run: pnpm --filter ./rentrix-app exec node scripts/storage-staging-smoke.mjs
       - name: Restore Chromium binary cache
         id: playwright-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
