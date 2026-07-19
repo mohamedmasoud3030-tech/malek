@@ -56,7 +56,6 @@ export type ProcessPayoutPayload = {
   settlement_id: string;
   payout_method: 'bank_transfer' | 'check' | 'cash';
   payout_reference: string;
-  payout_date?: string;
 };
 
 export const settlementStatusLabels: Record<SettlementStatus, string> = {
@@ -64,6 +63,11 @@ export const settlementStatusLabels: Record<SettlementStatus, string> = {
   approved: 'معتمدة للصرف',
   paid: 'مدفوعة للمالك',
   cancelled: 'ملغاة',
+};
+
+type EntityLabels = {
+  ownerMap: Map<string, string>;
+  propertyMap: Map<string, string>;
 };
 
 function messageFromError(error: unknown, fallback: string) {
@@ -81,28 +85,32 @@ function normalizeStatus(status: unknown): SettlementStatus {
   return 'pending';
 }
 
-export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
-  const { data: settlements, error: settlementError } = await (supabase as any)
-    .from('owner_settlements')
-    .select('*')
-    .order('created_at', { ascending: false });
+function uniqueIds(rows: any[], key: string) {
+  return Array.from(new Set(rows.map((row) => String(row[key] ?? '')).filter(Boolean)));
+}
 
-  if (settlementError) {
-    throw new Error(messageFromError(settlementError, 'تعذر تحميل تسويات الملاك.'));
+async function loadEntityLabels(
+  ownerIds: string[],
+  propertyIds: string[],
+  options: { activeOnly?: boolean } = {},
+): Promise<EntityLabels> {
+  let ownersQuery = (supabase as any)
+    .from('owners')
+    .select('id, name, full_name, display_name')
+    .in('id', ownerIds);
+  let propertiesQuery = (supabase as any)
+    .from('properties')
+    .select('id, title')
+    .in('id', propertyIds);
+
+  if (options.activeOnly) {
+    ownersQuery = ownersQuery.is('deleted_at', null).eq('is_active', true);
+    propertiesQuery = propertiesQuery.is('deleted_at', null);
   }
 
-  if (!settlements?.length) return [];
-
-  const ownerIds = Array.from(new Set(settlements.map((row: any) => String(row.owner_id ?? '')).filter(Boolean)));
-  const propertyIds = Array.from(new Set(settlements.map((row: any) => String(row.property_id ?? '')).filter(Boolean)));
-
   const [ownersResult, propertiesResult] = await Promise.all([
-    ownerIds.length
-      ? (supabase as any).from('owners').select('id, name, full_name, display_name').in('id', ownerIds)
-      : Promise.resolve({ data: [], error: null }),
-    propertyIds.length
-      ? (supabase as any).from('properties').select('id, title').in('id', propertyIds)
-      : Promise.resolve({ data: [], error: null }),
+    ownerIds.length ? ownersQuery : Promise.resolve({ data: [], error: null }),
+    propertyIds.length ? propertiesQuery : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (ownersResult.error) {
@@ -112,14 +120,36 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
     throw new Error(messageFromError(propertiesResult.error, 'تعذر تحميل أسماء العقارات.'));
   }
 
-  const ownerMap = new Map<string, string>(
-    (ownersResult.data ?? []).map((owner: any) => [
-      String(owner.id),
-      String(owner.display_name ?? owner.full_name ?? owner.name ?? 'مالك غير معروف'),
-    ]),
-  );
-  const propertyMap = new Map<string, string>(
-    (propertiesResult.data ?? []).map((property: any) => [String(property.id), String(property.title ?? 'عقار غير معروف')]),
+  return {
+    ownerMap: new Map<string, string>(
+      (ownersResult.data ?? []).map((owner: any) => [
+        String(owner.id),
+        String(owner.display_name ?? owner.full_name ?? owner.name ?? 'مالك غير معروف'),
+      ]),
+    ),
+    propertyMap: new Map<string, string>(
+      (propertiesResult.data ?? []).map((property: any) => [
+        String(property.id),
+        String(property.title ?? 'عقار غير معروف'),
+      ]),
+    ),
+  };
+}
+
+export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
+  const { data: settlements, error: settlementError } = await (supabase as any)
+    .from('owner_settlements')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (settlementError) {
+    throw new Error(messageFromError(settlementError, 'تعذر تحميل تسويات الملاك.'));
+  }
+  if (!settlements?.length) return [];
+
+  const { ownerMap, propertyMap } = await loadEntityLabels(
+    uniqueIds(settlements, 'owner_id'),
+    uniqueIds(settlements, 'property_id'),
   );
 
   return settlements.map((row: any): OwnerSettlementRecord => ({
@@ -158,34 +188,10 @@ export async function listOwnerSettlementTargets(): Promise<OwnerSettlementTarge
   }
   if (!agreements?.length) return [];
 
-  const ownerIds = Array.from(new Set(agreements.map((row: any) => String(row.owner_id ?? '')).filter(Boolean)));
-  const propertyIds = Array.from(new Set(agreements.map((row: any) => String(row.property_id ?? '')).filter(Boolean)));
-
-  const [ownersResult, propertiesResult] = await Promise.all([
-    (supabase as any)
-      .from('owners')
-      .select('id, name, full_name, display_name')
-      .in('id', ownerIds)
-      .is('deleted_at', null)
-      .eq('is_active', true),
-    (supabase as any).from('properties').select('id, title').in('id', propertyIds).is('deleted_at', null),
-  ]);
-
-  if (ownersResult.error) {
-    throw new Error(messageFromError(ownersResult.error, 'تعذر تحميل الملاك المتاحين للتسوية.'));
-  }
-  if (propertiesResult.error) {
-    throw new Error(messageFromError(propertiesResult.error, 'تعذر تحميل العقارات المتاحة للتسوية.'));
-  }
-
-  const ownerMap = new Map<string, string>(
-    (ownersResult.data ?? []).map((owner: any) => [
-      String(owner.id),
-      String(owner.display_name ?? owner.full_name ?? owner.name ?? 'مالك غير معروف'),
-    ]),
-  );
-  const propertyMap = new Map<string, string>(
-    (propertiesResult.data ?? []).map((property: any) => [String(property.id), String(property.title ?? 'عقار غير معروف')]),
+  const { ownerMap, propertyMap } = await loadEntityLabels(
+    uniqueIds(agreements, 'owner_id'),
+    uniqueIds(agreements, 'property_id'),
+    { activeOnly: true },
   );
 
   const uniqueTargets = new Map<string, OwnerSettlementTarget>();
@@ -216,10 +222,7 @@ export async function listOwnerSettlementTargets(): Promise<OwnerSettlementTarge
 
 export async function createOwnerSettlementDraft(payload: CreateSettlementDraftPayload): Promise<string> {
   const { data, error } = await (supabase as any).rpc('create_owner_settlement_draft_atomic', {
-    p_payload: {
-      ...payload,
-      request_id: crypto.randomUUID(),
-    },
+    p_payload: { ...payload, request_id: crypto.randomUUID() },
   });
 
   if (error) {
@@ -232,10 +235,7 @@ export async function createOwnerSettlementDraft(payload: CreateSettlementDraftP
 
 export async function approveOwnerSettlement(payload: ApproveSettlementPayload): Promise<void> {
   const { error } = await (supabase as any).rpc('approve_owner_settlement_atomic', {
-    p_payload: {
-      settlement_id: payload.settlement_id,
-      request_id: crypto.randomUUID(),
-    },
+    p_payload: { settlement_id: payload.settlement_id, request_id: crypto.randomUUID() },
   });
 
   if (error) {
