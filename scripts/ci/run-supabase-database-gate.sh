@@ -39,6 +39,13 @@ set -o pipefail
 pnpm exec supabase db reset --local 2>&1 | tee "$LOG_DIR/supabase-reset.log"
 pnpm exec supabase test db 2>&1 | tee "$LOG_DIR/supabase-test.log"
 
+# The database helper intentionally starts PostgreSQL only. Once migrations and
+# pgTAP pass, start just the HTTP services required for the Auth + Storage smoke
+# on top of the same migrated database. Do not stop or reset the stack here.
+API_EXCLUDED_SERVICES="realtime,imgproxy,inbucket,studio,edge-runtime,logflare,vector,supavisor"
+pnpm exec supabase start --exclude "$API_EXCLUDED_SERVICES" \
+  2>&1 | tee "$LOG_DIR/supabase-api-start.log"
+
 # The Storage API smoke must run after every migration and pgTAP assertion on
 # the same isolated local stack. This tests the real Auth + Storage HTTP path
 # without using production or relying on mislabeled external Staging secrets.
