@@ -212,8 +212,11 @@ export function CollapsedWorkspaceMenu({
 
 export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-12px_30px_-24px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:hidden">
-      <div className="grid h-16 min-w-0 grid-cols-5 gap-0.5 px-1">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/96 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-1px_0_0_hsl(var(--border)/0.6),0_-16px_40px_-20px_rgba(0,0,0,0.18)] backdrop-blur-xl lg:hidden"
+      aria-label="التنقل الرئيسي"
+    >
+      <div className="grid h-[3.75rem] min-w-0 grid-cols-5 items-stretch px-0.5">
         {mobileNavItems.map((item) => {
           const [to, labelKey, Icon] = item;
           const permission = (item as MobileNavItem)[3];
@@ -225,10 +228,24 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
               to={to}
               activeOptions={{ exact: to === '/dashboard' }}
               aria-label={sharedLabel(labelKey)}
-              className="mx-0.5 my-1 flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl px-1 text-muted-foreground transition-colors [&.active]:bg-primary/10 [&.active]:text-primary"
+              className={cn(
+                'group relative flex min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-2 text-muted-foreground',
+                'transition-colors duration-150 focus-visible:outline-none',
+                '[&.active]:text-primary',
+              )}
             >
-              <Icon className="size-5 shrink-0" aria-hidden="true" />
-              <span className="max-w-full truncate text-[10px] font-bold leading-none">{sharedLabel(labelKey)}</span>
+              {/* active pill background */}
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-1.5 inset-y-1 rounded-2xl bg-primary/0 transition-all duration-200 group-[.active]:bg-primary/[0.09]"
+              />
+              {/* active top hairline */}
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary opacity-0 transition-all duration-200 group-[.active]:opacity-100"
+              />
+              <Icon className="relative z-10 size-[1.2rem] shrink-0 transition-transform duration-150 group-active:scale-90" aria-hidden="true" />
+              <span className="relative z-10 max-w-full truncate text-[9.5px] font-bold leading-none tracking-tight">{sharedLabel(labelKey)}</span>
             </Link>
           );
         })}

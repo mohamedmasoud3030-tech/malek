@@ -233,43 +233,45 @@ export function AppShell() {
 
       {/* Main content area */}
       <div className={cn('w-full transition-all duration-250 lg:pe-64', sidebarCollapsed && 'lg:pe-[4.5rem]')}>
-        {/* Sticky header — clean, flat */}
-        <header className="sticky top-0 z-20 border-b border-border bg-background/90 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md">
-          <div className="flex min-h-14 items-center gap-2 px-3 py-2 sm:min-h-[3.75rem] sm:px-5">
+        {/* Sticky header — clean, flat, mobile-optimised */}
+        <header className="sticky top-0 z-20 border-b border-border/70 bg-background/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md">
+          <div className="flex min-h-[3.25rem] items-center gap-1 px-2 py-1.5 sm:min-h-[3.5rem] sm:gap-2 sm:px-4">
             {/* Mobile menu toggle */}
             <Button
               variant="ghost"
-              className="size-10 shrink-0 px-0 lg:hidden"
+              className="size-10 shrink-0 px-0 text-muted-foreground hover:text-foreground lg:hidden"
               onClick={() => setMobileNavOpen(true)}
               aria-label={sharedLabel('openMenu')}
             >
-              <Menu className="size-5" aria-hidden="true" />
+              <Menu className="size-[1.1rem]" aria-hidden="true" />
             </Button>
 
             {/* Desktop sidebar toggle */}
             <Button
               variant="ghost"
-              className="hidden size-10 shrink-0 px-0 lg:inline-flex"
+              className="hidden size-10 shrink-0 px-0 text-muted-foreground hover:text-foreground lg:inline-flex"
               onClick={toggleSidebar}
               aria-label={sharedLabel('collapseMenu')}
             >
-              <Menu className="size-5" aria-hidden="true" />
+              <Menu className="size-[1.1rem]" aria-hidden="true" />
             </Button>
 
-            {/* Breadcrumb + Title */}
+            {/* Page title — mobile shows title only, desktop shows breadcrumb */}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1 truncate text-[11px] font-medium text-muted-foreground">
-                <span>{sharedLabel('home')}</span>
-                <ChevronLeft className="size-3" aria-hidden="true" />
-                <span>{pageTitle}</span>
+              {/* Desktop breadcrumb */}
+              <div className="hidden items-center gap-1 sm:flex">
+                <span className="text-[11px] font-medium text-muted-foreground">{sharedLabel('home')}</span>
+                <ChevronLeft className="size-3 text-muted-foreground/60" aria-hidden="true" />
+                <span className="truncate text-[11px] font-semibold text-foreground">{pageTitle}</span>
               </div>
-              <h1 className="truncate text-lg font-bold tracking-tight sm:text-xl">{pageTitle}</h1>
+              {/* Mobile: just the page title, compact */}
+              <p className="truncate text-[0.9375rem] font-bold tracking-tight sm:hidden">{pageTitle}</p>
             </div>
 
             {/* Header actions */}
-            <div className="flex items-center gap-1.5">
-              {/* Sync status */}
-              <span className="hidden rounded-lg border border-border bg-card px-3 py-1.5 text-[11px] font-medium text-muted-foreground sm:inline-flex">
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              {/* Sync status — desktop only */}
+              <span className="hidden rounded-lg border border-border bg-card px-2.5 py-1 text-[10px] font-medium text-muted-foreground sm:inline-flex lg:text-[11px] lg:px-3 lg:py-1.5">
                 {statusLabel(syncStatus)}
                 {lastSyncedAt
                   ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}`
@@ -286,9 +288,9 @@ export function AppShell() {
                   aria-haspopup="dialog"
                   aria-expanded={notificationsOpen}
                   aria-controls={notificationsOpen ? notificationsMenuId : undefined}
-                  className="pressable inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted font-medium text-secondary-foreground outline-none hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-primary/25"
+                  className="pressable inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 sm:size-10 sm:rounded-lg"
                 >
-                  <Bell className="size-4" aria-hidden="true" />
+                  <Bell className="size-[1rem]" aria-hidden="true" />
                 </button>
                 {notificationsOpen ? (
                   <div
@@ -296,7 +298,7 @@ export function AppShell() {
                     id={notificationsMenuId}
                     role="dialog"
                     aria-label={sharedLabel('notificationsNone')}
-                    className="absolute end-0 top-12 z-50 w-72 rounded-xl border border-border bg-card p-3 text-start text-card-foreground shadow-elevated"
+                    className="absolute end-0 top-11 z-50 w-64 rounded-xl border border-border bg-card p-3 text-start text-card-foreground shadow-elevated sm:w-72 sm:top-12"
                   >
                     <p className="text-xs font-semibold">{sharedLabel('notificationsNone')}</p>
                     <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
@@ -309,20 +311,20 @@ export function AppShell() {
               {/* Theme toggle */}
               <Button
                 variant="ghost"
-                className="size-10 px-0"
+                className="size-9 px-0 text-muted-foreground hover:text-foreground sm:size-10"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label={sharedLabel('toggleTheme')}
               >
                 {theme === 'dark' ? (
-                  <Sun className="size-4" aria-hidden="true" />
+                  <Sun className="size-[1rem]" aria-hidden="true" />
                 ) : (
-                  <Moon className="size-4" aria-hidden="true" />
+                  <Moon className="size-[1rem]" aria-hidden="true" />
                 )}
               </Button>
 
-              {/* User avatar */}
+              {/* User avatar — sm and up */}
               <span
-                className="hidden size-9 place-items-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground xl:grid"
+                className="hidden size-8 place-items-center rounded-lg bg-primary text-xs font-bold text-primary-foreground sm:grid xl:size-9"
                 title={user?.email}
                 aria-label={user?.email ?? undefined}
               >
