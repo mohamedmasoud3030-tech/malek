@@ -30,8 +30,18 @@ type EntityCardTone = Readonly<{
 
 export const entityCardTypeMap: Record<string, EntityCardTone> = {
   tenant: { label: 'مستأجر', bg: 'bg-primary/10', text: 'text-primary', icon: User },
-  owner: { label: 'مالك', bg: 'bg-emerald-100 dark:bg-emerald-950/50', text: 'text-emerald-700 dark:text-emerald-300', icon: Briefcase },
-  contact: { label: 'جهة اتصال', bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-300', icon: Contact },
+  owner: {
+    label: 'مالك',
+    bg: 'bg-[hsl(var(--color-success-bg))]',
+    text: 'text-[hsl(var(--color-success-text))]',
+    icon: Briefcase,
+  },
+  contact: {
+    label: 'جهة اتصال',
+    bg: 'bg-[hsl(var(--color-neutral-bg))]',
+    text: 'text-[hsl(var(--color-neutral-text))]',
+    icon: Contact,
+  },
 };
 
 export interface EntityCardProps {
@@ -52,7 +62,7 @@ export interface EntityCardProps {
 function getActionClassName(variant: EntityCardAction['variant'] = 'secondary') {
   if (variant === 'danger') return 'border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/15';
   if (variant === 'default') return 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/15';
-  return 'border-border bg-secondary text-secondary-foreground hover:bg-secondary/80';
+  return 'border-border/70 bg-background text-foreground/80 hover:bg-muted/70 hover:text-foreground';
 }
 
 function handleCardKeyDown(event: KeyboardEvent<HTMLElement>, onClick?: () => void) {
@@ -85,8 +95,9 @@ function EntityCardShell({
       onClick={onClick}
       onKeyDown={(event) => handleCardKeyDown(event, onClick)}
       className={cn(
-        'relative w-full min-w-0 overflow-hidden rounded-[1.35rem] border border-border/70 bg-card p-4 text-start shadow-[0_8px_24px_hsl(var(--foreground)/0.045)] transition-[transform,border-color,box-shadow] sm:rounded-3xl',
-        clickable && 'cursor-pointer hover:border-primary/25 hover:shadow-[0_14px_32px_hsl(var(--foreground)/0.075)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
+        'relative w-full min-w-0 overflow-hidden rounded-[1.2rem] border border-border/70 bg-card p-3 text-start shadow-[0_5px_18px_hsl(var(--foreground)/0.04)] transition-[transform,border-color,box-shadow] sm:rounded-3xl sm:p-4',
+        clickable &&
+          'cursor-pointer hover:border-primary/25 hover:shadow-[0_12px_28px_hsl(var(--foreground)/0.07)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
         className,
       )}
     >
@@ -114,44 +125,59 @@ export function EntityCard({
 
   return (
     <EntityCardShell id={id} clickable={Boolean(onClick)} onClick={onClick} className={className}>
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          <div className={cn('grid size-10 shrink-0 place-items-center rounded-2xl shadow-sm', tone.bg)}>
-            <AvatarIcon className={cn('size-4.5', tone.text)} aria-hidden="true" />
+      <div className="flex min-w-0 items-start justify-between gap-2.5 sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
+          <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl shadow-sm sm:size-10 sm:rounded-2xl', tone.bg)}>
+            <AvatarIcon className={cn('size-4 sm:size-4.5', tone.text)} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-bold leading-6">{name}</p>
-            {subtitle ? <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-5 text-muted-foreground">{subtitle}</p> : null}
-            {supportingText ? <p className="mt-1 text-[10px] font-bold leading-4 text-muted-foreground/75">{supportingText}</p> : null}
+            <p className="line-clamp-2 text-sm font-bold leading-5 sm:leading-6">{name}</p>
+            {subtitle ? (
+              <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-4.5 text-muted-foreground sm:leading-5">
+                {subtitle}
+              </p>
+            ) : null}
+            {supportingText ? (
+              <p className="mt-0.5 text-[10px] font-bold leading-4 text-muted-foreground/75 sm:mt-1">{supportingText}</p>
+            ) : null}
           </div>
         </div>
         {badge ?? (
-          <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold', tone.bg, tone.text)}>
+          <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold sm:px-2.5 sm:py-1 sm:text-[11px]', tone.bg, tone.text)}>
             {tone.label}
           </span>
         )}
       </div>
 
+      {stats ? (
+        <div className="mt-2.5 rounded-2xl border border-primary/10 bg-primary/[0.045] p-2.5 text-xs text-foreground/80 sm:mt-3 sm:p-3">
+          {stats}
+        </div>
+      ) : null}
+
       {meta?.length ? (
-        <div className="mt-3 grid gap-2 rounded-2xl bg-muted/40 p-3 text-xs text-muted-foreground">
+        <div className="mt-2.5 grid gap-1.5 rounded-2xl bg-muted/35 p-2.5 text-xs text-muted-foreground sm:mt-3 sm:gap-2 sm:p-3">
           {meta.map((item, index) => {
             const MetaIcon = item.icon;
             return (
               <div key={index} className={cn('flex min-w-0 items-center gap-2', item.className)}>
-                {MetaIcon ? <MetaIcon className="size-3.5 shrink-0" aria-hidden="true" /> : null}
+                {MetaIcon ? <MetaIcon className="size-3.5 shrink-0 text-muted-foreground/80" aria-hidden="true" /> : null}
                 {item.label ? <span className="shrink-0 font-bold text-foreground/80">{item.label}</span> : null}
-                <span dir={item.dir} className="min-w-0 flex-1 truncate">{item.value}</span>
+                <span dir={item.dir} className="min-w-0 flex-1 truncate">
+                  {item.value}
+                </span>
               </div>
             );
           })}
         </div>
       ) : null}
 
-      {stats ? <div className="mt-3 rounded-2xl border border-border/60 bg-background/60 p-3 text-xs text-muted-foreground">{stats}</div> : null}
-
       {actions?.length ? (
         <div
-          className="mt-4 grid grid-cols-1 gap-2 border-t border-border/60 pt-3 sm:grid-cols-2"
+          className={cn(
+            'mt-3 grid gap-1.5 border-t border-border/60 pt-2.5 sm:mt-4 sm:gap-2 sm:pt-3',
+            actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2',
+          )}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
@@ -163,12 +189,12 @@ export function EntityCard({
                 type="button"
                 aria-label={action.ariaLabel}
                 className={cn(
-                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15',
+                  'inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-[11px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 sm:gap-2 sm:px-3 sm:text-xs',
                   getActionClassName(action.variant),
                 )}
                 onClick={action.onClick}
               >
-                {ActionIcon ? <ActionIcon className="size-4 shrink-0" aria-hidden="true" /> : null}
+                {ActionIcon ? <ActionIcon className="size-3.5 shrink-0 sm:size-4" aria-hidden="true" /> : null}
                 <span className="truncate">{action.label}</span>
               </button>
             );

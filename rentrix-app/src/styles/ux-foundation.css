@@ -138,9 +138,16 @@
 }
 
 /* ── Filter tabs fade edges ───────────────── */
-/* Applied via wrapper — signals to user that tabs scroll horizontally */
+/* The component exposes its real scroll state; fades only appear when more tabs exist. */
 [data-filter-tabs-wrapper] {
   position: relative;
+  min-width: 0;
+  isolation: isolate;
+  --filter-tabs-fade-surface: hsl(var(--background));
+}
+
+[data-list-controls] [data-filter-tabs-wrapper] {
+  --filter-tabs-fade-surface: hsl(var(--card));
 }
 
 [data-filter-tabs-wrapper]::before,
@@ -149,27 +156,34 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 1.5rem;
+  width: 1.75rem;
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 160ms ease;
 }
 
 [data-filter-tabs-wrapper]::before {
   inset-inline-start: 0;
-  background: linear-gradient(to right, hsl(var(--background)), transparent);
+  background: linear-gradient(to right, var(--filter-tabs-fade-surface), transparent);
 }
 
 [data-filter-tabs-wrapper]::after {
   inset-inline-end: 0;
-  background: linear-gradient(to left, hsl(var(--background)), transparent);
+  background: linear-gradient(to left, var(--filter-tabs-fade-surface), transparent);
+}
+
+[data-filter-tabs-wrapper][data-can-scroll-start='true']::before,
+[data-filter-tabs-wrapper][data-can-scroll-end='true']::after {
+  opacity: 1;
 }
 
 [dir='rtl'] [data-filter-tabs-wrapper]::before {
-  background: linear-gradient(to left, hsl(var(--background)), transparent);
+  background: linear-gradient(to left, var(--filter-tabs-fade-surface), transparent);
 }
 
 [dir='rtl'] [data-filter-tabs-wrapper]::after {
-  background: linear-gradient(to right, hsl(var(--background)), transparent);
+  background: linear-gradient(to right, var(--filter-tabs-fade-surface), transparent);
 }
 
 /* ── Tap highlight suppression (custom handled) */
