@@ -1,6 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+export type KpiAccent = 'primary' | 'emerald' | 'amber' | 'sky' | 'rose' | 'violet' | 'slate';
+
 interface KpiCardProps {
   label: string;
   value: string | number;
@@ -9,15 +11,15 @@ interface KpiCardProps {
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
   className?: string;
-  /** Legacy compatibility prop. KPI cards intentionally render one brand accent. */
-  accent?: string;
+  accent?: KpiAccent;
   /** Legacy compatibility prop. Compact sizing is determined by context. */
   compact?: boolean;
 }
 
 /**
- * KPI metric card — single accent (primary only).
- * Trend indicators communicate direction rather than category color.
+ * KPI metric card with semantic accent support.
+ * The accent affects the icon tile and top rule only; value text stays neutral
+ * for readability and financial consistency in both light and dark themes.
  */
 export function KpiCard({
   label,
@@ -27,10 +29,12 @@ export function KpiCard({
   trend,
   trendValue,
   className,
+  accent = 'primary',
 }: KpiCardProps) {
   return (
     <article
       data-kpi-card
+      data-accent={accent}
       className={cn(
         'min-w-0 rounded-xl border border-border/70 bg-card p-3.5 sm:p-4 shadow-card',
         'transition-shadow duration-200 hover:shadow-card-hover',
@@ -38,7 +42,7 @@ export function KpiCard({
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+        <div className="kpi-card__icon grid size-10 shrink-0 place-items-center rounded-lg">
           <Icon className="size-[1.125rem]" aria-hidden="true" />
         </div>
         {trend && trendValue ? (
