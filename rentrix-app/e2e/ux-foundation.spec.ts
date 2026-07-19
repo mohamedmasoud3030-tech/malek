@@ -9,6 +9,7 @@ const viewportMatrix = [
 ] as const;
 
 const themes = ['light', 'dark'] as const;
+type FixtureSurface = 'bottom-sheet' | 'full-page' | 'raw-dialog';
 
 test.beforeEach(async ({}, testInfo) => {
   test.skip(
@@ -17,7 +18,7 @@ test.beforeEach(async ({}, testInfo) => {
   );
 });
 
-async function openFixture(page: Page, theme: (typeof themes)[number], surface: 'bottom-sheet' | 'full-page' = 'full-page') {
+async function openFixture(page: Page, theme: (typeof themes)[number], surface: FixtureSurface = 'full-page') {
   await page.addInitScript((selectedTheme) => {
     document.documentElement.dataset.theme = selectedTheme;
     document.documentElement.dir = 'rtl';
@@ -102,6 +103,30 @@ test('bottom sheet follows a reduced and offset visual viewport and keeps action
   expect(rootBox?.height).toBeLessThanOrEqual(560);
   expect(sheetBox?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(560);
   expect((sheetBox?.y ?? 0) + (sheetBox?.height ?? 0)).toBeLessThanOrEqual(596);
+
+  const lastField = page.locator('[data-e2e-last-field]');
+  await lastField.scrollIntoViewIfNeeded();
+  await expect(lastField).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+});
+
+test('legacy dialog forms become a stable full-height mobile surface', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openFixture(page, 'light', 'raw-dialog');
+
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--visual-viewport-height', '560px');
+    document.documentElement.style.setProperty('--visual-viewport-offset-top', '36px');
+    document.documentElement.style.setProperty('--visual-viewport-center-y', '316px');
+  });
+
+  const dialog = page.locator('[data-dialog-content]');
+  await expect(dialog).toBeVisible();
+  const dialogBox = await dialog.boundingBox();
+  expect(dialogBox?.x).toBe(0);
+  expect(dialogBox?.y).toBe(36);
+  expect(dialogBox?.width).toBe(390);
+  expect(dialogBox?.height).toBeLessThanOrEqual(560);
 
   const lastField = page.locator('[data-e2e-last-field]');
   await lastField.scrollIntoViewIfNeeded();
