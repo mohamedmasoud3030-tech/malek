@@ -87,15 +87,16 @@
   box-shadow: inset 0 0 0 1px hsl(var(--kpi-tone) / 0.18);
 }
 
-/* Any remaining raw Dialog that contains data-entry controls receives the
-   same stable, full-height mobile contract as EntityForm. Confirmation and
-   information dialogs remain compact because they contain no form controls. */
+/* DialogContent classifies itself after rendering. Data-entry dialogs receive
+   the same full-height mobile contract as EntityForm, while confirmation and
+   information dialogs remain compact. Physical edges avoid RTL ambiguity. */
 @media (max-width: 639px) {
-  [data-dialog-content]:has(input:not([type='hidden']), select, textarea) {
-    inset-inline: 0 !important;
-    inset-block-start: var(--visual-viewport-offset-top, 0px) !important;
-    inset-block-end: auto !important;
-    width: 100vw !important;
+  [data-dialog-content][data-dialog-form='true'] {
+    left: 0 !important;
+    right: 0 !important;
+    top: var(--visual-viewport-offset-top, 0px) !important;
+    bottom: auto !important;
+    width: auto !important;
     min-width: 0 !important;
     max-width: none !important;
     height: var(--visual-viewport-height, 100dvh) !important;
