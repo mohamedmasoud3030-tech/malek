@@ -9,21 +9,24 @@ function useVisualViewportCssVariable() {
   useEffect(() => {
     const root = document.documentElement;
     const viewport = window.visualViewport;
-    const updateViewportHeight = () => {
+    const updateViewportMetrics = () => {
       const height = Math.round(viewport?.height ?? window.innerHeight);
+      const offsetTop = Math.round(viewport?.offsetTop ?? 0);
       root.style.setProperty('--visual-viewport-height', `${height}px`);
+      root.style.setProperty('--visual-viewport-offset-top', `${offsetTop}px`);
     };
 
-    updateViewportHeight();
-    window.addEventListener('resize', updateViewportHeight);
-    viewport?.addEventListener('resize', updateViewportHeight);
-    viewport?.addEventListener('scroll', updateViewportHeight);
+    updateViewportMetrics();
+    window.addEventListener('resize', updateViewportMetrics);
+    viewport?.addEventListener('resize', updateViewportMetrics);
+    viewport?.addEventListener('scroll', updateViewportMetrics);
 
     return () => {
-      window.removeEventListener('resize', updateViewportHeight);
-      viewport?.removeEventListener('resize', updateViewportHeight);
-      viewport?.removeEventListener('scroll', updateViewportHeight);
+      window.removeEventListener('resize', updateViewportMetrics);
+      viewport?.removeEventListener('resize', updateViewportMetrics);
+      viewport?.removeEventListener('scroll', updateViewportMetrics);
       root.style.removeProperty('--visual-viewport-height');
+      root.style.removeProperty('--visual-viewport-offset-top');
     };
   }, []);
 }

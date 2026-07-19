@@ -81,7 +81,15 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col justify-end" role="presentation" data-bottom-sheet-root>
+    <div
+      className="fixed inset-x-0 z-[100] flex flex-col justify-end"
+      style={{
+        top: 'var(--visual-viewport-offset-top, 0px)',
+        height: 'var(--visual-viewport-height, 100dvh)',
+      }}
+      role="presentation"
+      data-bottom-sheet-root
+    >
       <button
         type="button"
         className="absolute inset-0 cursor-default touch-none bg-black/45 backdrop-blur-sm"
