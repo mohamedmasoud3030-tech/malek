@@ -41,19 +41,15 @@ export function PageHeader({
   return (
     <header
       data-page-header
-      className={cn(
-        'pb-4 border-b border-border/60',
-        className,
-      )}
+      className={cn('border-b border-border/60 pb-3 sm:pb-4', className)}
     >
-      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        {/* Title + description */}
+      <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h1 className="min-w-0 text-balance text-2xl font-bold tracking-tight">{title}</h1>
+            <h1 className="min-w-0 text-balance text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
             {count !== undefined ? (
               <span
-                className="inline-flex min-h-6 items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground"
+                className="inline-flex min-h-5 items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground"
                 aria-label={`عدد السجلات ${count}`}
               >
                 {count}
@@ -61,30 +57,32 @@ export function PageHeader({
             ) : null}
           </div>
           {description ? (
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
+            <p className="mt-0.5 max-w-3xl text-[0.8125rem] leading-5 text-muted-foreground sm:mt-1 sm:text-sm sm:leading-6">
+              {description}
+            </p>
           ) : null}
         </div>
 
-        {/* Actions */}
         {hasActions ? (
-          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-shrink-0 sm:justify-end">
-            {secondaryActions ? (
-              <div
-                className="no-scrollbar flex min-w-0 items-center gap-2 overflow-x-auto sm:flex-wrap sm:justify-end sm:overflow-visible"
-                aria-label="إجراءات ثانوية"
-              >
-                {secondaryActions}
-              </div>
-            ) : null}
+          <div
+            className="no-scrollbar flex max-w-[58vw] shrink-0 items-center justify-end gap-1.5 overflow-x-auto pb-0.5 sm:max-w-none sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0"
+            aria-label="إجراءات الصفحة"
+          >
             {backTo ? (
               <Button variant="secondary" size="sm" asChild>
                 <Link to={backTo}>
-                  <ArrowLeft className="me-1.5 size-4 rtl:rotate-180" />
-                  {backLabel}
+                  <ArrowLeft className="me-1 size-3.5 rtl:rotate-180 sm:me-1.5 sm:size-4" />
+                  <span className="hidden sm:inline">{backLabel}</span>
+                  <span className="sm:hidden">رجوع</span>
                 </Link>
               </Button>
             ) : null}
-            {resolvedPrimaryAction ? resolvedPrimaryAction : null}
+            {secondaryActions ? (
+              <div className="contents" aria-label="إجراءات ثانوية">
+                {secondaryActions}
+              </div>
+            ) : null}
+            {resolvedPrimaryAction ?? null}
           </div>
         ) : null}
       </div>
