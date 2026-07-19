@@ -123,9 +123,10 @@ test('legacy dialog forms become a stable full-height mobile surface', async ({ 
   const dialog = page.locator('[data-dialog-content]');
   await expect(dialog).toBeVisible();
   const dialogBox = await dialog.boundingBox();
+  const layoutWidth = await page.evaluate(() => document.documentElement.clientWidth);
   expect(dialogBox?.x).toBe(0);
   expect(dialogBox?.y).toBe(36);
-  expect(dialogBox?.width).toBe(390);
+  expect(dialogBox?.width).toBe(layoutWidth);
   expect(dialogBox?.height).toBeLessThanOrEqual(560);
 
   const lastField = page.locator('[data-e2e-last-field]');
