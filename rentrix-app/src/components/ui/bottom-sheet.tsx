@@ -82,9 +82,11 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
 
   return createPortal(
     <div
-      className="fixed inset-x-0 z-[100] flex flex-col justify-end"
+      className="fixed z-[100] flex min-w-0 flex-col justify-end overflow-hidden"
       style={{
         top: 'var(--visual-viewport-offset-top, 0px)',
+        left: 'var(--visual-viewport-offset-left, 0px)',
+        width: 'var(--visual-viewport-width, 100vw)',
         height: 'var(--visual-viewport-height, 100dvh)',
       }}
       role="presentation"
@@ -114,7 +116,6 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
           className,
         )}
       >
-        {/* Drag handle — tappable to close on mobile */}
         <button
           type="button"
           onClick={onClose}
@@ -141,7 +142,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         <div
           ref={scrollRef}
           data-bottom-sheet-scroll
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-4 [scrollbar-gutter:stable] sm:px-5"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-5 sm:[scrollbar-gutter:stable]"
         >
           {children}
         </div>
