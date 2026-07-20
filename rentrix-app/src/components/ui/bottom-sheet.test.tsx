@@ -28,7 +28,7 @@ describe('BottomSheet mobile interaction contract', () => {
     vi.restoreAllMocks();
   });
 
-  it('portals to the document, locks background scroll, and focuses the first form control', () => {
+  it('portals to the document, tracks the visual viewport, locks scroll, and focuses the first form control', () => {
     act(() => {
       root.render(
         <BottomSheet open onClose={vi.fn()} title="إضافة شخص">
@@ -38,10 +38,16 @@ describe('BottomSheet mobile interaction contract', () => {
       );
     });
 
+    const viewportRoot = document.body.querySelector<HTMLElement>('[data-bottom-sheet-root]');
     const sheet = document.body.querySelector('[data-bottom-sheet]');
     const scrollBody = document.body.querySelector('[data-bottom-sheet-scroll]');
     const input = document.body.querySelector<HTMLInputElement>('input[aria-label="الاسم"]');
 
+    expect(viewportRoot).not.toBeNull();
+    expect(viewportRoot?.style.top).toBe('var(--visual-viewport-offset-top, 0px)');
+    expect(viewportRoot?.style.left).toBe('var(--visual-viewport-offset-left, 0px)');
+    expect(viewportRoot?.style.width).toBe('var(--visual-viewport-width, 100vw)');
+    expect(viewportRoot?.style.height).toBe('var(--visual-viewport-height, 100dvh)');
     expect(sheet).not.toBeNull();
     expect(scrollBody).not.toBeNull();
     expect(document.body.style.overflow).toBe('hidden');
