@@ -20,7 +20,7 @@ import { OPERATIONAL_EXPENSE_CATEGORIES, summarizeOperationalExpenses, type Oper
 import { useCreateExpenseAtomic, useExpenses, useUpdateExpense } from './useExpenses';
 
 const expenseSchema = z.object({
-  property_id: z.string().uuid('اختر العقار'),
+  property_id: z.string().trim().min(1, 'اختر العقار'),
   category: z.enum(OPERATIONAL_EXPENSE_CATEGORIES, { message: 'اختر التصنيف' }),
   cost_center_id: z.string().optional(),
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
