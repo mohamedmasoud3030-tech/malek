@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -7,9 +8,16 @@ interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   title?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }
+
+export const visualViewportOverlayStyle = {
+  top: 'var(--visual-viewport-offset-top, 0px)',
+  left: 'var(--visual-viewport-offset-left, 0px)',
+  width: 'var(--visual-viewport-width, 100vw)',
+  height: 'var(--visual-viewport-height, 100dvh)',
+} satisfies CSSProperties;
 
 const focusableSelector = [
   'a[href]',
@@ -83,12 +91,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
   return createPortal(
     <div
       className="fixed z-[100] flex min-w-0 flex-col justify-end overflow-hidden"
-      style={{
-        top: 'var(--visual-viewport-offset-top, 0px)',
-        left: 'var(--visual-viewport-offset-left, 0px)',
-        width: 'var(--visual-viewport-width, 100vw)',
-        height: 'var(--visual-viewport-height, 100dvh)',
-      }}
+      style={visualViewportOverlayStyle}
       role="presentation"
       data-bottom-sheet-root
     >
