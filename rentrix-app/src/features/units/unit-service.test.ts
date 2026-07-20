@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getUnitWriteErrorMessage,
   normalizeUnitPayload,
-  normalizeUnitUpdatePayload,
   resolveUnitRentAmount,
 } from './unit-service';
 
@@ -33,7 +32,7 @@ describe('unit service write workflow', () => {
     vi.clearAllMocks();
   });
 
-  it('requires the parent property id and synchronizes legacy default rent on insert', () => {
+  it('requires the parent property id in the Supabase insert contract', () => {
     expect(normalizeUnitPayload('property-1', {
       unit_number: '101',
       floor: null,
@@ -46,21 +45,7 @@ describe('unit service write workflow', () => {
       floor: null,
       status: 'available',
       rent_amount: 500,
-      rent_default: 500,
       notes: null,
-    });
-  });
-
-  it('synchronizes canonical and legacy rent fields on update', () => {
-    expect(normalizeUnitUpdatePayload({
-      unit_number: '101',
-      floor: null,
-      status: 'available',
-      rent_amount: 125,
-      notes: null,
-    })).toMatchObject({
-      rent_amount: 125,
-      rent_default: 125,
     });
   });
 
@@ -78,6 +63,14 @@ describe('unit service write workflow', () => {
       rent_default: 100,
       rent: 90,
     })).toBe(125);
+  });
+
+  it('falls back to the older rent column when no default is available', () => {
+    expect(resolveUnitRentAmount({
+      rent_amount: 0,
+      rent_default: null,
+      rent: '80',
+    })).toBe(80);
   });
 
   it('returns an actionable duplicate-number message for the same property', () => {
