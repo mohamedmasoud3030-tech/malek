@@ -7,9 +7,50 @@ import { normalizeUnitStatus, type UnitPayload } from './unit-schema';
 type UnitInsert = Database['public']['Tables']['units']['Insert'];
 type UnitUpdate = Database['public']['Tables']['units']['Update'];
 type DatabaseWriteError = Readonly<{ code?: string; message?: string; details?: string }>;
+type NumericLike = number | string | null | undefined;
+type UnitWithLegacyRent = Omit<Unit, 'rent_amount'> & {
+  rent_amount: NumericLike;
+  rent_default?: NumericLike;
+  rent?: NumericLike;
+  min_rent?: NumericLike;
+};
+type UnitInsertWithLegacyRent = UnitInsert & { rent_default?: number | null };
+type UnitUpdateWithLegacyRent = UnitUpdate & { rent_default?: number | null };
 
-export function normalizeUnitPayload(propertyId: string, payload: UnitPayload): UnitInsert {
-  return { ...payload, property_id: propertyId };
+function toFiniteNumber(value: NumericLike): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function resolveUnitRentAmount(
+  unit: Pick<UnitWithLegacyRent, 'rent_amount' | 'rent_default' | 'rent'>,
+): number | null {
+  const canonicalRent = toFiniteNumber(unit.rent_amount);
+  if (canonicalRent !== null && canonicalRent !== 0) return canonicalRent;
+
+  const legacyDefaultRent = toFiniteNumber(unit.rent_default);
+  if (legacyDefaultRent !== null && legacyDefaultRent > 0) return legacyDefaultRent;
+
+  const legacyRent = toFiniteNumber(unit.rent);
+  if (legacyRent !== null && legacyRent > 0) return legacyRent;
+
+  return canonicalRent;
+}
+
+export function normalizeUnitPayload(propertyId: string, payload: UnitPayload): UnitInsertWithLegacyRent {
+  return {
+    ...payload,
+    property_id: propertyId,
+    rent_default: payload.rent_amount,
+  };
+}
+
+export function normalizeUnitUpdatePayload(payload: UnitPayload): UnitUpdateWithLegacyRent {
+  return {
+    ...payload,
+    rent_default: payload.rent_amount,
+  };
 }
 
 export function getUnitWriteErrorMessage(action: CrudWriteAction, error: unknown): string {
@@ -29,9 +70,10 @@ export function getUnitWriteErrorMessage(action: CrudWriteAction, error: unknown
   });
 }
 
-function normalizeUnit(unit: Unit): Unit {
+export function normalizeUnitRecord(unit: UnitWithLegacyRent): Unit {
   return {
     ...unit,
+    rent_amount: resolveUnitRentAmount(unit),
     status: normalizeUnitStatus(String(unit.status)),
   };
 }
@@ -43,9 +85,9 @@ export async function listUnits(): Promise<Unit[]> {
     .is('deleted_at', null)
     .order('property_id', { ascending: true })
     .order('unit_number', { ascending: true })
-    .returns<Unit[]>();
+    .returns<UnitWithLegacyRent[]>();
   if (error) throw error;
-  return (data ?? []).map(normalizeUnit);
+  return (data ?? []).map(normalizeUnitRecord);
 }
 
 export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
@@ -55,20 +97,25 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
     .eq('property_id', propertyId)
     .is('deleted_at', null)
     .order('unit_number', { ascending: true })
-    .returns<Unit[]>();
+    .returns<UnitWithLegacyRent[]>();
   if (error) throw error;
-  return (data ?? []).map(normalizeUnit);
+  return (data ?? []).map(normalizeUnitRecord);
 }
 
 export async function createUnit(propertyId: string, payload: UnitPayload): Promise<Unit> {
   const insertPayload = normalizeUnitPayload(propertyId, payload);
-  const { data, error } = await supabase.from('units').insert(insertPayload).select('*').single().returns<Unit>();
+  const { data, error } = await supabase
+    .from('units')
+    .insert(insertPayload)
+    .select('*')
+    .single()
+    .returns<UnitWithLegacyRent>();
   if (error) throw new Error(getUnitWriteErrorMessage('create', error));
-  return normalizeUnit(data);
+  return normalizeUnitRecord(data);
 }
 
 export async function updateUnit(unitId: string, payload: UnitPayload): Promise<Unit> {
-  const updatePayload: UnitUpdate = payload;
+  const updatePayload = normalizeUnitUpdatePayload(payload);
   const { data, error } = await supabase
     .from('units')
     .update(updatePayload)
@@ -76,9 +123,9 @@ export async function updateUnit(unitId: string, payload: UnitPayload): Promise<
     .is('deleted_at', null)
     .select('*')
     .single()
-    .returns<Unit>();
+    .returns<UnitWithLegacyRent>();
   if (error) throw new Error(getUnitWriteErrorMessage('update', error));
-  return normalizeUnit(data);
+  return normalizeUnitRecord(data);
 }
 
 export async function softDeleteUnit(unitId: string): Promise<void> {
