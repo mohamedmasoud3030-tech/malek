@@ -1,6 +1,7 @@
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
+import type { Owner, PropertyOwnerWithOwner } from './services/owner-service';
 
 export type OwnerAgreement = Database['public']['Tables']['owner_agreements']['Row'];
 export type OwnerAgreementInsert = Database['public']['Tables']['owner_agreements']['Insert'];
@@ -29,6 +30,46 @@ function normalizeAgreementPayload(payload: OwnerAgreementFormPayload): OwnerAgr
     throw new Error('قيمة العمولة الثابتة يجب ألا تكون سالبة.');
   }
   return { ...payload, ends_on: payload.ends_on || null, notes: payload.notes?.trim() || null };
+}
+
+export function propertyOwnershipCoversAgreementRange(
+  ownership: Pick<PropertyOwnerWithOwner, 'starts_on' | 'ends_on'>,
+  startsOn: string,
+  endsOn?: string | null,
+): boolean {
+  if (!startsOn) return false;
+  if (ownership.starts_on && ownership.starts_on > startsOn) return false;
+  if (!ownership.ends_on) return true;
+  return Boolean(endsOn && ownership.ends_on >= endsOn);
+}
+
+export function getEligibleAgreementOwners(
+  ownershipLinks: readonly PropertyOwnerWithOwner[],
+  startsOn: string,
+  endsOn?: string | null,
+): Owner[] {
+  const ownersById = new Map<string, Owner>();
+
+  for (const link of ownershipLinks) {
+    if (!link.owner || !propertyOwnershipCoversAgreementRange(link, startsOn, endsOn)) continue;
+    ownersById.set(link.owner_id, link.owner);
+  }
+
+  return [...ownersById.values()];
+}
+
+export function assertAgreementOwnerHasOwnership(
+  ownershipLinks: readonly PropertyOwnerWithOwner[],
+  payload: Pick<OwnerAgreementFormPayload, 'owner_id' | 'starts_on' | 'ends_on'>,
+): void {
+  const hasCoveringOwnership = ownershipLinks.some((link) => (
+    link.owner_id === payload.owner_id
+    && propertyOwnershipCoversAgreementRange(link, payload.starts_on, payload.ends_on)
+  ));
+
+  if (!hasCoveringOwnership) {
+    throw new Error('المالك المحدد لا يملك العقار طوال فترة الاتفاقية. راجع تواريخ الملكية أو اختر مالكاً آخر.');
+  }
 }
 
 export async function createPropertyWithAgreement(payload: CreatePropertyWithAgreementPayload): Promise<CreatePropertyWithAgreementResult> {
@@ -88,6 +129,7 @@ export function formatAgreementError(message: string): string {
   const lower = message.toLowerCase();
   if (lower.includes('غير مصرح') || lower.includes('not authorized') || lower.includes('permission denied')) return 'غير مصرح: يحتاج هذا الإجراء صلاحية مدير أو مشرف.';
   if (lower.includes('owner_agreements_no_overlap') || lower.includes('exclusion constraint')) return 'يوجد اتفاقية مالك لهذا العقار في نفس الفترة الزمنية. عدّل التواريخ أو أنهِ الاتفاقية الحالية أولاً.';
+  if (lower.includes('لا يملك العقار طوال فترة الاتفاقية') || lower.includes('requires ownership')) return 'المالك المحدد لا يملك العقار طوال فترة الاتفاقية. راجع تواريخ الملكية أو اختر مالكاً آخر.';
   if (lower.includes('outside') || lower.includes('خارج الفترة') || lower.includes('linked')) return 'لا يمكن تعديل الاتفاقية لأن هناك عقداً محفوظاً سيصبح خارج فترة الاتفاقية.';
   if (lower.includes('نسبة العمولة') || lower.includes('rate')) return 'نسبة العمولة يجب أن تكون بين 0 و100 عند اختيار نوع RATE.';
   return message || 'تعذر حفظ اتفاقية المالك. حاول مرة أخرى.';
