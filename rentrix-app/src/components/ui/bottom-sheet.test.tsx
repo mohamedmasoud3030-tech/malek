@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BottomSheet } from './bottom-sheet';
+import { BottomSheet, visualViewportOverlayStyle } from './bottom-sheet';
 
 describe('BottomSheet mobile interaction contract', () => {
   let host: HTMLDivElement;
@@ -28,7 +28,14 @@ describe('BottomSheet mobile interaction contract', () => {
     vi.restoreAllMocks();
   });
 
-  it('portals to the document, locks background scroll, and focuses the first form control', () => {
+  it('portals to the document, tracks the visual viewport, locks scroll, and focuses the first form control', () => {
+    expect(visualViewportOverlayStyle).toEqual({
+      top: 'var(--visual-viewport-offset-top, 0px)',
+      left: 'var(--visual-viewport-offset-left, 0px)',
+      width: 'var(--visual-viewport-width, 100vw)',
+      height: 'var(--visual-viewport-height, 100dvh)',
+    });
+
     act(() => {
       root.render(
         <BottomSheet open onClose={vi.fn()} title="إضافة شخص">
@@ -38,10 +45,12 @@ describe('BottomSheet mobile interaction contract', () => {
       );
     });
 
+    const viewportRoot = document.body.querySelector<HTMLElement>('[data-bottom-sheet-root]');
     const sheet = document.body.querySelector('[data-bottom-sheet]');
     const scrollBody = document.body.querySelector('[data-bottom-sheet-scroll]');
     const input = document.body.querySelector<HTMLInputElement>('input[aria-label="الاسم"]');
 
+    expect(viewportRoot).not.toBeNull();
     expect(sheet).not.toBeNull();
     expect(scrollBody).not.toBeNull();
     expect(document.body.style.overflow).toBe('hidden');

@@ -54,6 +54,30 @@ describe('shared entity form composition', () => {
     expect(html).toContain('رقم العقد مطلوب');
   });
 
+  it('keeps the primary save action inside a compact sticky mobile action bar', () => {
+    const html = renderToStaticMarkup(createElement(EntityForm.Actions, {
+      submitLabel: 'حفظ الوحدة',
+      cancelLabel: 'إلغاء',
+      onCancel: vi.fn(),
+    }));
+
+    expect(html).toContain('data-entity-form-actions');
+    expect(html).toContain('data-entity-form-submit');
+    expect(html).toContain('type="submit"');
+    expect(html).toContain('حفظ الوحدة');
+    expect(html).toContain('grid-cols-[minmax(0,1fr)_minmax(6.5rem,0.42fr)]');
+  });
+
+  it('marks form-level save errors as live alerts beside the action area', () => {
+    const html = renderToStaticMarkup(createElement(EntityForm.ErrorSummary, {
+      message: 'تعذر حفظ الوحدة',
+    }));
+
+    expect(html).toContain('data-entity-form-error-summary');
+    expect(html).toContain('aria-live="assertive"');
+    expect(html).toContain('تعذر حفظ الوحدة');
+  });
+
   it('focuses and centers the first invalid field after validation fails', () => {
     const form = document.createElement('form');
     const firstValid = document.createElement('input');

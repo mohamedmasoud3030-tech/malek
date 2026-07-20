@@ -144,6 +144,7 @@ function ErrorSummary({ message, className }: EntityFormErrorSummaryProps) {
   if (!message) return null;
   return (
     <div
+      data-entity-form-error-summary
       className={cn('rounded-2xl border border-destructive/30 bg-destructive/5 p-3 text-sm font-bold leading-6 text-destructive', className)}
       role="alert"
       aria-live="assertive"
@@ -168,15 +169,29 @@ function Actions({ submitLabel, cancelLabel = 'إلغاء', onCancel, isSubmitti
     <div
       data-entity-form-actions
       className={cn(
-        'sticky bottom-[var(--entity-form-action-offset,0px)] z-20 -mx-4 grid grid-cols-1 gap-2 border-t border-border/70 bg-background/96 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-12px_30px_hsl(var(--background)/0.92)] backdrop-blur sm:static sm:mx-0 sm:flex sm:flex-row-reverse sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none',
+        'sticky bottom-[var(--entity-form-action-offset,0px)] z-20 -mx-4 grid gap-2 border-t border-border/70 bg-background/96 px-4 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] pt-2.5 shadow-[0_-12px_30px_hsl(var(--background)/0.92)] backdrop-blur',
+        onCancel ? 'grid-cols-[minmax(0,1fr)_minmax(6.5rem,0.42fr)]' : 'grid-cols-1',
+        'sm:static sm:mx-0 sm:flex sm:flex-row-reverse sm:justify-start sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0 sm:shadow-none',
         className,
       )}
     >
-      <Button type="submit" variant={submitVariant} disabled={submitDisabled ?? isSubmitting} className="min-h-11 w-full sm:w-auto">
+      <Button
+        data-entity-form-submit
+        type="submit"
+        variant={submitVariant}
+        disabled={submitDisabled ?? isSubmitting}
+        className="min-h-11 min-w-0 w-full sm:w-auto"
+      >
         {submitLabel}
       </Button>
       {onCancel ? (
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting} className="min-h-11 w-full sm:w-auto">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="min-h-11 min-w-0 w-full sm:w-auto"
+        >
           {cancelLabel}
         </Button>
       ) : null}
@@ -214,20 +229,28 @@ function FullPageOverlay({ open, onOpenChange, title, description, headerExtra, 
   return (
     <div
       data-entity-form-surface="full-page"
-      className="fixed inset-0 z-[110] bg-background text-foreground"
-      style={{ height: 'var(--visual-viewport-height, 100dvh)' }}
+      className="fixed z-[110] min-w-0 overflow-hidden bg-background text-foreground"
+      style={{
+        top: 'var(--visual-viewport-offset-top, 0px)',
+        left: 'var(--visual-viewport-offset-left, 0px)',
+        width: 'var(--visual-viewport-width, 100vw)',
+        height: 'var(--visual-viewport-height, 100dvh)',
+      }}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
-      <div className={cn('mx-auto flex h-full w-full max-w-4xl min-w-0 flex-col', className)}>
-        <header className="safe-top-app flex shrink-0 items-center gap-3 border-b border-border/70 bg-background/96 px-4 py-3 backdrop-blur sm:px-6">
+      <div className={cn('mx-auto flex h-full w-full max-w-4xl min-w-0 flex-col overflow-hidden', className)}>
+        <header className="safe-top-app flex shrink-0 items-start gap-2 border-b border-border/70 bg-background/96 px-3 py-2.5 backdrop-blur sm:items-center sm:gap-3 sm:px-6 sm:py-3">
           <OverlayHeader title={title} description={description} headerExtra={headerExtra} />
           <Button variant="ghost" size="icon" className="shrink-0" onClick={() => onOpenChange(false)} aria-label="إغلاق">
             <X className="size-5" aria-hidden="true" />
           </Button>
         </header>
-        <div data-entity-form-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pt-4 [scrollbar-gutter:stable] sm:px-6 sm:py-6">
+        <div
+          data-entity-form-scroll
+          className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-6 sm:py-6 sm:[scrollbar-gutter:stable]"
+        >
           {children}
         </div>
       </div>
@@ -245,9 +268,9 @@ function Overlay({ open, onOpenChange, title, description, headerExtra, children
   if (resolvedSurface === 'bottom-sheet') {
     return (
       <BottomSheet open={open} onClose={() => onOpenChange(false)} title={title} className={className}>
-        <div data-entity-form-surface="bottom-sheet">
+        <div data-entity-form-surface="bottom-sheet" className="min-w-0 max-w-full overflow-x-hidden">
           {description || headerExtra ? (
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-muted/35 p-3">
+            <div className="mb-4 flex min-w-0 flex-wrap items-center gap-2 rounded-2xl bg-muted/35 p-3">
               {description ? <p className="min-w-0 flex-1 text-sm font-medium leading-6 text-muted-foreground">{description}</p> : null}
               {headerExtra}
             </div>

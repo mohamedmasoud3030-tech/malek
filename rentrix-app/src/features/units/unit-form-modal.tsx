@@ -83,31 +83,35 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
     >
       <EntityForm.Root
         className="md:grid-cols-2"
-        onSubmit={form.handleSubmit(async (values) => {
-          setSubmitError(null);
-          const payload = unitSchema.parse(values);
-          try {
-            if (unit) {
-              await updateMutation.mutateAsync({ unitId: unit.id, payload });
-            } else {
-              if (!effectivePropertyId) {
-                setSubmitError('اختر العقار قبل حفظ الوحدة.');
-                return;
+        aria-busy={isSubmitting}
+        onSubmit={form.handleSubmit(
+          async (values) => {
+            setSubmitError(null);
+            const payload = unitSchema.parse(values);
+            try {
+              if (unit) {
+                await updateMutation.mutateAsync({ unitId: unit.id, payload });
+              } else {
+                if (!effectivePropertyId) {
+                  setSubmitError('اختر العقار قبل حفظ الوحدة.');
+                  return;
+                }
+                await createMutation.mutateAsync(payload);
               }
-              await createMutation.mutateAsync(payload);
+              onOpenChange(false);
+            } catch (error) {
+              setSubmitError(
+                error instanceof Error
+                  ? error.message
+                  : 'تعذر حفظ الوحدة. تحقق من الصلاحيات ثم أعد المحاولة.',
+              );
             }
-            onOpenChange(false);
-          } catch (error) {
-            setSubmitError(
-              error instanceof Error
-                ? error.message
-                : 'تعذر حفظ الوحدة. تحقق من الصلاحيات ثم أعد المحاولة.',
-            );
-          }
-        })}
+          },
+          () => {
+            setSubmitError('راجع الحقول المعلّمة ثم اضغط حفظ الوحدة مرة أخرى.');
+          },
+        )}
       >
-        <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
-
         {!unit ? (
           <EntityForm.Field label="العقار" className="md:col-span-2" error={propertyError}>
             <Select
@@ -169,6 +173,8 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
         <EntityForm.Field label="ملاحظات" className="md:col-span-2">
           <Textarea {...form.register('notes')} />
         </EntityForm.Field>
+
+        <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
 
         <EntityForm.Actions
           className="md:col-span-2"
