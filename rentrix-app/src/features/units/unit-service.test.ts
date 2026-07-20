@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getUnitWriteErrorMessage, normalizeUnitPayload } from './unit-service';
+import {
+  getUnitWriteErrorMessage,
+  normalizeUnitPayload,
+  normalizeUnitUpdatePayload,
+  resolveUnitRentAmount,
+} from './unit-service';
 
 function createQueryMock(result: unknown) {
   const chain = {
@@ -28,7 +33,7 @@ describe('unit service write workflow', () => {
     vi.clearAllMocks();
   });
 
-  it('requires the parent property id in the Supabase insert contract', () => {
+  it('requires the parent property id and synchronizes legacy default rent on insert', () => {
     expect(normalizeUnitPayload('property-1', {
       unit_number: '101',
       floor: null,
@@ -41,8 +46,38 @@ describe('unit service write workflow', () => {
       floor: null,
       status: 'available',
       rent_amount: 500,
+      rent_default: 500,
       notes: null,
     });
+  });
+
+  it('synchronizes canonical and legacy rent fields on update', () => {
+    expect(normalizeUnitUpdatePayload({
+      unit_number: '101',
+      floor: null,
+      status: 'available',
+      rent_amount: 125,
+      notes: null,
+    })).toMatchObject({
+      rent_amount: 125,
+      rent_default: 125,
+    });
+  });
+
+  it('recovers a legacy saved rent when the canonical field was zeroed', () => {
+    expect(resolveUnitRentAmount({
+      rent_amount: 0,
+      rent_default: 100,
+      rent: null,
+    })).toBe(100);
+  });
+
+  it('keeps a non-zero canonical rent ahead of legacy fields', () => {
+    expect(resolveUnitRentAmount({
+      rent_amount: 125,
+      rent_default: 100,
+      rent: 90,
+    })).toBe(125);
   });
 
   it('returns an actionable duplicate-number message for the same property', () => {
