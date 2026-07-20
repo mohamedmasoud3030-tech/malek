@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getUnitWriteErrorMessage, normalizeUnitPayload } from './unit-service';
+import {
+  getUnitWriteErrorMessage,
+  normalizeUnitPayload,
+  resolveUnitRentAmount,
+} from './unit-service';
 
 function createQueryMock(result: unknown) {
   const chain = {
@@ -43,6 +47,30 @@ describe('unit service write workflow', () => {
       rent_amount: 500,
       notes: null,
     });
+  });
+
+  it('recovers a legacy saved rent when the canonical field was zeroed', () => {
+    expect(resolveUnitRentAmount({
+      rent_amount: 0,
+      rent_default: 100,
+      rent: null,
+    })).toBe(100);
+  });
+
+  it('keeps a non-zero canonical rent ahead of legacy fields', () => {
+    expect(resolveUnitRentAmount({
+      rent_amount: 125,
+      rent_default: 100,
+      rent: 90,
+    })).toBe(125);
+  });
+
+  it('falls back to the older rent column when no default is available', () => {
+    expect(resolveUnitRentAmount({
+      rent_amount: 0,
+      rent_default: null,
+      rent: '80',
+    })).toBe(80);
   });
 
   it('returns an actionable duplicate-number message for the same property', () => {
