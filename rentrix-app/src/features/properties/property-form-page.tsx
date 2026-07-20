@@ -28,7 +28,7 @@ export function PropertyFormPage() {
   const [pendingNavigateTo, setPendingNavigateTo] = useState<string | null>(null);
   const { busy: isSubmittingGuard, run: runSubmit } = useSubmitGuard();
   const form = useForm<PropertyFormValues>({
-    resolver: zodResolver(propertySchema),
+    resolver: zodResolver(propertySchema, undefined, { raw: true }),
     defaultValues: {
       title: '',
       type: '',
@@ -63,8 +63,8 @@ export function PropertyFormPage() {
   const handleSubmit = form.handleSubmit(async (values) => {
     await runSubmit(async () => {
       setSubmitError(null);
-      const payload = propertySchema.parse(values);
       try {
+        const payload = propertySchema.parse(values);
         if (isEdit && propertyId) {
           await updateMutation.mutateAsync(payload);
         } else {

@@ -27,7 +27,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const { busy: isSubmittingGuard, run: runSubmit } = useSubmitGuard();
   const form = useForm<PersonFormValues>({
-    resolver: zodResolver(personSchema),
+    resolver: zodResolver(personSchema, undefined, { raw: true }),
     defaultValues: {
       full_name: '',
       phone: '',
@@ -66,8 +66,8 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   const handleSubmit = form.handleSubmit(async (values) => {
     await runSubmit(async () => {
       setSubmitError(null);
-      const payload = personSchema.parse(values);
       try {
+        const payload = personSchema.parse(values);
         if (isEdit && personId) {
           await updateMutation.mutateAsync(payload);
         } else {

@@ -106,7 +106,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
   const createMutation = useCreatePropertyWithAgreement();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<PropertyWithAgreementFormValues>({
-    resolver: zodResolver(propertyWithAgreementSchema),
+    resolver: zodResolver(propertyWithAgreementSchema, undefined, { raw: true }),
     defaultValues: {
       title: '',
       type: '',
@@ -135,9 +135,9 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
   const isSubmitting = createMutation.isPending;
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    const payload: PropertyWithAgreementPayload = propertyWithAgreementSchema.parse(values);
     setSubmitError(null);
     try {
+      const payload: PropertyWithAgreementPayload = propertyWithAgreementSchema.parse(values);
       await createMutation.mutateAsync({
         title: payload.title,
         type: payload.type,
