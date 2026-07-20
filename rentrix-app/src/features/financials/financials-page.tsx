@@ -22,7 +22,7 @@ import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
 
 const expenseSchema = z.object({
-  property_id: z.string().uuid('اختر العقار'),
+  property_id: z.string().trim().min(1, 'اختر العقار'),
   category: z.enum(OPERATIONAL_EXPENSE_CATEGORIES, { message: 'اختر التصنيف' }),
   cost_center_id: z.string().optional(),
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
@@ -179,17 +179,15 @@ export function FinancialsPage() {
                 onCreateExpense={onCreateExpense}
               />
             ) : null}
-            {activeTab === 'arrears' ? (
-              <ArrearsWorkspaceSection />
-            ) : null}
+            {activeTab === 'arrears' ? <ArrearsWorkspaceSection /> : null}
             {activeTab === 'reconciliation' ? (
               <Card className="border-dashed bg-muted/20">
                 <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-base font-bold">مطابقة كشوف الحسابات البنكية</p>
-                    <p className="mt-1 text-xs leading-6 text-muted-foreground">استورد كشف الحساب البنكي وقم بمطابقة المقبوضات والمصروفات مع الحركة البنكية المباشرة.</p>
+                    <p className="text-base font-bold">مطابقة كشف البنك</p>
+                    <p className="mt-1 text-xs leading-6 text-muted-foreground">مساحة مستقلة لاستيراد كشف البنك ومطابقة الحركات مع التحصيلات والمصروفات.</p>
                   </div>
-                  <Button asChild><Link to="/bank-reconciliation">فتح مطابقة البنك</Link></Button>
+                  <Button asChild><Link to="/bank-reconciliation">فتح المطابقة البنكية</Link></Button>
                 </CardContent>
               </Card>
             ) : null}
@@ -200,5 +198,3 @@ export function FinancialsPage() {
     </PageLayout>
   );
 }
-
-export default FinancialsPage;
