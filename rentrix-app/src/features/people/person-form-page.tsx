@@ -21,7 +21,7 @@ export function PersonFormPage() {
   const updateMutation = useUpdatePerson(personId ?? '');
   const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<PersonFormValues>({
-    resolver: zodResolver(personSchema),
+    resolver: zodResolver(personSchema, undefined, { raw: true }),
     defaultValues: {
       full_name: '',
       phone: '',
@@ -88,8 +88,8 @@ export function PersonFormPage() {
           aria-busy={isSubmitting}
           onSubmit={form.handleSubmit(async (values) => {
             setSubmitError(null);
-            const payload = personSchema.parse(values);
             try {
+              const payload = personSchema.parse(values);
               if (isEdit && personId) {
                 await updateMutation.mutateAsync(payload);
               } else {
