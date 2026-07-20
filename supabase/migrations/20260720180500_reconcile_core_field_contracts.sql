@@ -131,42 +131,58 @@ begin
 end
 $reconcile_communication_id$;
 
--- Invoices use a date-only business field, but historical rows stored midnight
--- timestamps in the text column. Canonicalize only recognizable ISO date values.
-update public.invoices
-set due_date = substring(btrim(due_date) from 1 for 10)
-where due_date is not null
-  and btrim(due_date) ~ '^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])([ T].+)$';
-
-create or replace function public.normalize_invoice_due_date_text()
-returns trigger
-language plpgsql
-set search_path to 'public', 'pg_temp'
-as $function$
+-- Production historically stores invoice due_date as text, while a clean
+-- replay uses a real date column. Only the historical text layout needs repair.
+do $reconcile_invoice_due_date$
 declare
-  v_date text;
+  v_data_type text;
 begin
-  if new.due_date is null then
-    return new;
-  end if;
+  select data_type into v_data_type
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'invoices'
+    and column_name = 'due_date';
 
-  if btrim(new.due_date) ~ '^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])([ T].*)?$' then
-    v_date := substring(btrim(new.due_date) from 1 for 10);
-    begin
-      perform v_date::date;
-      new.due_date := v_date;
-    exception when invalid_datetime_format or datetime_field_overflow then
-      null;
-    end;
-  end if;
-  return new;
-end;
-$function$;
+  if v_data_type in ('text', 'character varying', 'character') then
+    execute $invoice_backfill$
+      update public.invoices
+      set due_date = substring(btrim(due_date::text) from 1 for 10)
+      where due_date is not null
+        and btrim(due_date::text) ~ '^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])([ T].+)$'
+    $invoice_backfill$;
 
-drop trigger if exists normalize_invoice_due_date_on_invoices on public.invoices;
-create trigger normalize_invoice_due_date_on_invoices
-before insert or update of due_date on public.invoices
-for each row execute function public.normalize_invoice_due_date_text();
+    execute $invoice_function$
+      create or replace function public.normalize_invoice_due_date_text()
+      returns trigger
+      language plpgsql
+      set search_path to 'public', 'pg_temp'
+      as $function$
+      declare
+        v_date text;
+      begin
+        if new.due_date is null then
+          return new;
+        end if;
+
+        if btrim(new.due_date::text) ~ '^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])([ T].*)?$' then
+          v_date := substring(btrim(new.due_date::text) from 1 for 10);
+          begin
+            perform v_date::date;
+            new.due_date := v_date;
+          exception when invalid_datetime_format or datetime_field_overflow then
+            null;
+          end;
+        end if;
+        return new;
+      end;
+      $function$
+    $invoice_function$;
+
+    execute 'drop trigger if exists normalize_invoice_due_date_on_invoices on public.invoices';
+    execute 'create trigger normalize_invoice_due_date_on_invoices before insert or update of due_date on public.invoices for each row execute function public.normalize_invoice_due_date_text()';
+  end if;
+end
+$reconcile_invoice_due_date$;
 
 -- Keep the retired monthly_rent compatibility column aligned when it exists.
 do $reconcile_contract_rent$
