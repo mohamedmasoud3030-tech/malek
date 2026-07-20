@@ -65,7 +65,7 @@ export function useContractForm({
   const updateMutation = useUpdateContract(contractId ?? '');
 
   const form = useForm<ContractFormValues>({
-    resolver: zodResolver(contractSchema),
+    resolver: zodResolver(contractSchema, undefined, { raw: true }),
     defaultValues: {
       property_id: '',
       unit_id: '',
@@ -130,21 +130,21 @@ export function useContractForm({
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = async (values: ContractFormValues) => {
-    const payload = contractSchema.parse(values);
-    const unitIssue = getContractUnitSelectionIssue({
-      units: unitsQuery.data ?? [],
-      propertyId: payload.property_id,
-      unitId: payload.unit_id,
-      currentLinkedUnitId,
-      conflictsByUnitId: unitConflictsByUnitId,
-    });
-    if (unitIssue) {
-      form.setError('unit_id', { type: 'validate', message: unitIssue });
-      return;
-    }
-    const agreementId = agreementCoverageQuery.data?.id ?? null;
-    const finalPayload = { ...payload, agreement_id: agreementId };
     try {
+      const payload = contractSchema.parse(values);
+      const unitIssue = getContractUnitSelectionIssue({
+        units: unitsQuery.data ?? [],
+        propertyId: payload.property_id,
+        unitId: payload.unit_id,
+        currentLinkedUnitId,
+        conflictsByUnitId: unitConflictsByUnitId,
+      });
+      if (unitIssue) {
+        form.setError('unit_id', { type: 'validate', message: unitIssue });
+        return;
+      }
+      const agreementId = agreementCoverageQuery.data?.id ?? null;
+      const finalPayload = { ...payload, agreement_id: agreementId };
       if (isEdit && contractId) {
         await updateMutation.mutateAsync(finalPayload);
       } else {
