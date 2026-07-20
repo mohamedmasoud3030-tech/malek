@@ -9,7 +9,7 @@ import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
-import { listPropertyOwners, type Owner } from './services/owner-service';
+import { listOwners, listPropertyOwners, type Owner } from './services/owner-service';
 import {
   assertAgreementOwnerHasOwnership,
   getEligibleAgreementOwners,
@@ -74,6 +74,10 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
     queryFn: () => listPropertyOwners(propertyId),
     enabled: Boolean(propertyId),
   });
+  const ownersQuery = useQuery({
+    queryKey: ['owners', 'agreement-display'],
+    queryFn: listOwners,
+  });
   const createMutation = useCreateOwnerAgreement(propertyId);
   const updateMutation = useUpdateOwnerAgreement(propertyId);
   const [editing, setEditing] = useState<OwnerAgreement | null>(null);
@@ -82,23 +86,32 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
   const [formOpen, setFormOpen] = useState(false);
   const grouped = useMemo(() => groupAgreementsByTemporalStatus(agreementsQuery.data ?? []), [agreementsQuery.data]);
   const ownershipLinks = ownershipQuery.data ?? [];
-  const owners = useMemo(() => {
+  const propertyOwners = useMemo(() => {
     const ownersById = new Map<string, Owner>();
     for (const link of ownershipLinks) {
       if (link.owner) ownersById.set(link.owner_id, link.owner);
     }
     return [...ownersById.values()];
   }, [ownershipLinks]);
-  const eligibleOwners = useMemo(
-    () => form.starts_on
+  const owners = ownersQuery.data ?? propertyOwners;
+  const eligibleOwners = useMemo(() => {
+    const base = form.starts_on
       ? getEligibleAgreementOwners(ownershipLinks, form.starts_on, form.ends_on || null)
-      : owners,
-    [form.ends_on, form.starts_on, owners, ownershipLinks],
-  );
+      : propertyOwners;
+
+    if (!editing) return base;
+
+    const currentOwner = owners.find((owner) => owner.id === editing.owner_id);
+    if (currentOwner && !base.some((owner) => owner.id === currentOwner.id)) {
+      return [currentOwner, ...base];
+    }
+
+    return base;
+  }, [editing, form.ends_on, form.starts_on, owners, ownershipLinks, propertyOwners]);
 
   const startCreate = () => {
     setEditing(null);
-    setForm({ ...emptyForm, owner_id: owners.length === 1 ? owners[0].id : '' });
+    setForm({ ...emptyForm, owner_id: propertyOwners.length === 1 ? propertyOwners[0].id : '' });
     setFormError(null);
     setFormOpen(true);
   };
