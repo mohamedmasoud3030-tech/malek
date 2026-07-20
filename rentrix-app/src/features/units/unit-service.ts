@@ -14,8 +14,6 @@ type UnitWithLegacyRent = Omit<Unit, 'rent_amount'> & {
   rent?: NumericLike;
   min_rent?: NumericLike;
 };
-type UnitInsertWithLegacyRent = UnitInsert & { rent_default?: number | null };
-type UnitUpdateWithLegacyRent = UnitUpdate & { rent_default?: number | null };
 
 function toFiniteNumber(value: NumericLike): number | null {
   if (value === null || value === undefined || value === '') return null;
@@ -38,19 +36,8 @@ export function resolveUnitRentAmount(
   return canonicalRent;
 }
 
-export function normalizeUnitPayload(propertyId: string, payload: UnitPayload): UnitInsertWithLegacyRent {
-  return {
-    ...payload,
-    property_id: propertyId,
-    rent_default: payload.rent_amount,
-  };
-}
-
-export function normalizeUnitUpdatePayload(payload: UnitPayload): UnitUpdateWithLegacyRent {
-  return {
-    ...payload,
-    rent_default: payload.rent_amount,
-  };
+export function normalizeUnitPayload(propertyId: string, payload: UnitPayload): UnitInsert {
+  return { ...payload, property_id: propertyId };
 }
 
 export function getUnitWriteErrorMessage(action: CrudWriteAction, error: unknown): string {
@@ -115,7 +102,7 @@ export async function createUnit(propertyId: string, payload: UnitPayload): Prom
 }
 
 export async function updateUnit(unitId: string, payload: UnitPayload): Promise<Unit> {
-  const updatePayload = normalizeUnitUpdatePayload(payload);
+  const updatePayload: UnitUpdate = payload;
   const { data, error } = await supabase
     .from('units')
     .update(updatePayload)
