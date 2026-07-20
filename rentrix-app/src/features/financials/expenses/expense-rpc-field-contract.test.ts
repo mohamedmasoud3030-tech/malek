@@ -2,13 +2,27 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+const preparationPath = resolve(
+  import.meta.dirname,
+  '../../../../../supabase/migrations/20260720180530_prepare_expense_write_fields.sql',
+);
 const migrationPath = resolve(
   import.meta.dirname,
   '../../../../../supabase/migrations/20260720180600_reconcile_expense_write_fields.sql',
 );
+const preparationSql = readFileSync(preparationPath, 'utf8').toLowerCase();
 const sql = readFileSync(migrationPath, 'utf8').toLowerCase();
 
 describe('expense atomic RPC field contract', () => {
+  it('prepares historical operational fields before replacing the RPCs', () => {
+    expect(preparationSql).toContain('alter table public.expenses');
+    expect(preparationSql).toContain('add column if not exists contract_id text');
+    expect(preparationSql).toContain('add column if not exists charged_to text');
+    expect(preparationSql).toContain("add column if not exists status text default 'posted'");
+    expect(preparationSql).toContain('add column if not exists date_time text');
+    expect(preparationSql).toContain('add column if not exists no text');
+  });
+
   it('uses target-column identifier types instead of forcing UUID casts', () => {
     expect(sql).toContain('v_property_id public.expenses.property_id%type');
     expect(sql).toContain('v_cost_center_id public.expenses.cost_center_id%type');
