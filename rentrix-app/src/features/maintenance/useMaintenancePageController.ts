@@ -20,7 +20,9 @@ import {
 } from './maintenance-helpers';
 
 export const maintenanceRequestSchema = z.object({
-  property_id: z.string().uuid('اختر العقار'),
+  // Historical production properties use text identifiers; the relationship
+  // contract requires a selected property, not a UUID-shaped string.
+  property_id: z.string().trim().min(1, 'اختر العقار'),
   unit_id: z.string().nullable().optional().transform((value) => (value === '' ? null : value)),
   title: z.string().min(1, 'أدخل عنوان الطلب'),
   description: z.string().nullable().optional(),
