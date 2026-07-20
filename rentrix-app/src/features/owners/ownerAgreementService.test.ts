@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { getAgreementActiveOn, groupAgreementsByTemporalStatus, formatAgreementError, type OwnerAgreement } from './ownerAgreementService';
+import {
+  assertAgreementOwnerHasOwnership,
+  formatAgreementError,
+  getAgreementActiveOn,
+  getEligibleAgreementOwners,
+  groupAgreementsByTemporalStatus,
+  propertyOwnershipCoversAgreementRange,
+  type OwnerAgreement,
+} from './ownerAgreementService';
+import type { PropertyOwnerWithOwner } from './services/owner-service';
 
 function agreement(id: string, starts_on: string, ends_on: string | null): OwnerAgreement {
   return {
@@ -14,6 +23,39 @@ function agreement(id: string, starts_on: string, ends_on: string | null): Owner
     notes: null,
     created_at: '2026-01-01T00:00:00.000Z',
     updated_at: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+function ownershipLink(
+  ownerId: string,
+  startsOn: string | null,
+  endsOn: string | null,
+  id = `link-${ownerId}`,
+): PropertyOwnerWithOwner {
+  return {
+    id,
+    property_id: 'property-1',
+    owner_id: ownerId,
+    ownership_percentage: 100,
+    is_primary: true,
+    starts_on: startsOn,
+    ends_on: endsOn,
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+    owner: {
+      id: ownerId,
+      full_name: `مالك ${ownerId}`,
+      display_name: null,
+      phone: null,
+      email: null,
+      national_id: null,
+      tax_number: null,
+      address: null,
+      notes: null,
+      is_active: true,
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+    },
   };
 }
 
@@ -33,7 +75,6 @@ describe('getAgreementActiveOn', () => {
   });
 });
 
-
 describe('groupAgreementsByTemporalStatus', () => {
   it('separates current scheduled and ended agreements without hiding future relationships', () => {
     const grouped = groupAgreementsByTemporalStatus([
@@ -48,13 +89,48 @@ describe('groupAgreementsByTemporalStatus', () => {
   });
 });
 
-describe('formatAgreementError', () => {
-  it('localizes overlap and historical contract coverage violations', () => {
-    expect(formatAgreementError('violates exclusion constraint owner_agreements_no_overlap')).toContain('نفس الفترة الزمنية');
-    expect(formatAgreementError('contract is outside the agreement period')).toContain('عقداً محفوظاً');
+describe('owner agreement ownership windows', () => {
+  it('matches the database rule for inclusive, finite, and open-ended ownership coverage', () => {
+    const finite = ownershipLink('owner-1', '2026-01-01', '2026-12-31');
+    const open = ownershipLink('owner-2', null, null);
+
+    expect(propertyOwnershipCoversAgreementRange(finite, '2026-01-01', '2026-12-31')).toBe(true);
+    expect(propertyOwnershipCoversAgreementRange(finite, '2025-12-31', '2026-12-31')).toBe(false);
+    expect(propertyOwnershipCoversAgreementRange(finite, '2026-01-01', '2027-01-01')).toBe(false);
+    expect(propertyOwnershipCoversAgreementRange(finite, '2026-01-01', null)).toBe(false);
+    expect(propertyOwnershipCoversAgreementRange(open, '2026-01-01', null)).toBe(true);
+  });
+
+  it('offers only covering property owners and blocks a doomed RPC submission', () => {
+    const finite = ownershipLink('owner-1', '2026-01-01', '2026-12-31');
+    const open = ownershipLink('owner-2', null, null);
+    const duplicateOpen = ownershipLink('owner-2', '2025-01-01', null, 'link-owner-2-secondary');
+    const links = [finite, open, duplicateOpen];
+
+    expect(getEligibleAgreementOwners(links, '2026-06-01', '2026-12-31').map((owner) => owner.id)).toEqual(['owner-1', 'owner-2']);
+    expect(getEligibleAgreementOwners(links, '2026-06-01', null).map((owner) => owner.id)).toEqual(['owner-2']);
+
+    expect(() => assertAgreementOwnerHasOwnership(links, {
+      owner_id: 'owner-1',
+      starts_on: '2026-06-01',
+      ends_on: null,
+    })).toThrow('لا يملك العقار طوال فترة الاتفاقية');
+
+    expect(() => assertAgreementOwnerHasOwnership(links, {
+      owner_id: 'owner-2',
+      starts_on: '2026-06-01',
+      ends_on: null,
+    })).not.toThrow();
   });
 });
 
+describe('formatAgreementError', () => {
+  it('localizes overlap, ownership, and historical contract coverage violations', () => {
+    expect(formatAgreementError('violates exclusion constraint owner_agreements_no_overlap')).toContain('نفس الفترة الزمنية');
+    expect(formatAgreementError('مالك الاتفاقية لا يملك العقار طوال فترة الاتفاقية.')).toContain('راجع تواريخ الملكية');
+    expect(formatAgreementError('contract is outside the agreement period')).toContain('عقداً محفوظاً');
+  });
+});
 
 describe('owner agreement data boundary', () => {
   it('queries owner_agreements directly instead of the property_owners ownership-link table', async () => {
