@@ -139,10 +139,10 @@ export function PropertiesListPage() {
               onClick={() => ctrl.navigateToProperty(p.id)}
               actions={
                 <div className="grid w-full grid-cols-2 gap-2">
-                  <Button variant="secondary" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => ctrl.openEditModal(p.id)}>
+                  <Button variant="secondary" className="min-h-11 text-xs gap-1" onClick={() => ctrl.openEditModal(p.id)}>
                     <Edit className="size-3.5" />تعديل
                   </Button>
-                  <Button variant="danger" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => ctrl.requestArchive(p.id, p.title ?? 'عقار')}>
+                  <Button variant="danger" className="min-h-11 text-xs gap-1" onClick={() => ctrl.requestArchive(p.id, p.title ?? 'عقار')}>
                     <Trash2 className="size-3.5" />أرشفة
                   </Button>
                 </div>
