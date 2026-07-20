@@ -3,7 +3,7 @@ import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Expense } from '@/types/domain';
 
 export type ExpenseFilters = { propertyId: string; category: string; costCenterId?: string; from: string; to: string };
-export type ExpensePayload = Pick<Expense, 'property_id' | 'category' | 'amount' | 'expense_date' | 'description'> & { attachment_url?: string | null; cost_center_id?: string | null };
+export type ExpensePayload = Pick<Expense, 'property_id' | 'category' | 'amount' | 'expense_date' | 'description'> & { attachment_url?: string | null; cost_center_id?: string | null; contract_id?: string | null; charged_to?: string | null };
 
 export async function listExpenses(filters: ExpenseFilters): Promise<Expense[]> {
   try {
@@ -23,9 +23,9 @@ export async function listExpenses(filters: ExpenseFilters): Promise<Expense[]> 
 }
 
 /**
- * Atomic expense update that adjusts the expense row and, if the amount
- * changed, creates reversing + new journal entries to maintain double-entry
- * consistency. Uses update_expense_with_journal_atomic RPC.
+ * Atomic expense update that persists every editable field. Amount or date
+ * changes are represented by balanced reversal and replacement journal entries;
+ * metadata-only changes do not duplicate ledger movements.
  */
 export type UpdateExpenseResult = {
   expenseId: string;
@@ -46,8 +46,13 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
         p_payload: {
           request_id: requestId,
           expense_id: id,
-          amount: payload.amount,
+          property_id: payload.property_id,
           category: payload.category,
+          amount: payload.amount,
+          expense_date: payload.expense_date,
+          cost_center_id: payload.cost_center_id ?? null,
+          contract_id: payload.contract_id ?? null,
+          charged_to: payload.charged_to ?? null,
           description: payload.description ?? null,
           attachment_url: payload.attachment_url ?? null,
         },
@@ -58,7 +63,6 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
     const result = (data ?? {}) as { success?: boolean };
     if (!result.success) throw new Error('Expense update failed');
 
-    // Fetch the updated expense row to return to the caller
     const { data: expense, error: fetchError } = await supabase
       .from('expenses')
       .select('*')
@@ -77,9 +81,7 @@ export async function updateExpense(id: string, payload: ExpensePayload): Promis
 
 /**
  * Atomic expense creation that records the expense together with its journal
- * entry and audit-log row in a single RPC. Mirrors the payment atomic: same
- * user-facing fields/result, but the accounting and audit trail are guaranteed
- * by the database. `requestId` enables idempotent retries.
+ * entry and audit-log row in a single RPC. `requestId` enables idempotent retries.
  */
 export type ExpenseWithJournalPayload = {
   requestId?: string;
