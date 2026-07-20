@@ -64,9 +64,10 @@ describe('core field contract reconciliation', () => {
     expect(migrationSql).not.toContain('drop constraint communication_records_status_chk');
   });
 
-  it('canonicalizes invoice due dates and installs a future-write trigger', () => {
+  it('canonicalizes only historical text invoice dates and leaves date columns untouched', () => {
+    expect(migrationSql).toContain("v_data_type in ('text', 'character varying', 'character')");
     expect(migrationSql).toContain('normalize_invoice_due_date_text');
-    expect(migrationSql).toContain('substring(btrim(due_date) from 1 for 10)');
+    expect(migrationSql).toContain('substring(btrim(due_date::text) from 1 for 10)');
     expect(migrationSql).toContain('before insert or update of due_date on public.invoices');
   });
 });
