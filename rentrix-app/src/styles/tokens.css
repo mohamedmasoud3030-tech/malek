@@ -1,0 +1,309 @@
+/* ============================================
+   Rentrix Design Tokens — المصدر المركزي الوحيد
+   ============================================
+   Single source of truth for every visual token in the app:
+   colors (light/dark), status palette, product accents,
+   sidebar ramp, shadows, radius scale, and typography.
+
+   الرقم التعريفي لكل قيمة هنا هو نفسه المستخدم اليوم في
+   الإنتاج — هذا الملف لا يغيّر الهوية البصرية، بل يجعلها
+   تعمل فعليًا (راجع جسر @theme في الأسفل).
+
+   ⚠️ Tailwind v4 لا يقرأ tailwind.config.js تلقائيًا.
+   لذلك يتم تسجيل كل التوكنات هنا عبر @theme inline، وإلا
+   تتحول الفئات مثل shadow-card و text-success و bg-primary/90
+   إلى no-op صامتة في البناء.
+   ============================================ */
+
+/* ── Typography ────────────────────────────── */
+@theme {
+  --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Semantic Color Tokens (Light) ──────────── */
+:root {
+  /* Core surfaces */
+  --color-bg: 210 20% 98%;
+  --color-card: 0 0% 100%;
+  --color-card-muted: 210 20% 96%;
+
+  /* Brand */
+  --color-primary: 200 85% 38%;
+  --color-primary-fg: 0 0% 100%;
+
+  /* Text */
+  --color-text-primary: 215 28% 17%;
+  --color-text-secondary: 215 16% 40%;
+  --color-text-muted: 215 14% 55%;
+
+  /* Borders */
+  --color-border: 214 20% 88%;
+  --color-border-light: 214 20% 93%;
+
+  /* Sidebar (dark — same in both modes) */
+  --color-sidebar-bg: 215 28% 12%;
+  --color-sidebar-text: 210 20% 85%;
+  --color-sidebar-active-bg: 200 85% 38%;
+  --color-sidebar-active-text: 0 0% 100%;
+  --color-sidebar-hover-bg: 215 28% 18%;
+
+  /* Status colors */
+  --color-success-text: 152 66% 26%;
+  --color-success-bg: 152 62% 94%;
+  --color-warning-text: 32 81% 32%;
+  --color-warning-bg: 42 96% 92%;
+  --color-danger-text: 0 72% 42%;
+  --color-danger-bg: 0 72% 95%;
+  --color-info-text: 199 74% 32%;
+  --color-info-bg: 199 82% 94%;
+  --color-neutral-text: 215 16% 42%;
+  --color-neutral-bg: 215 18% 92%;
+
+  /* Product accent ramp — richer semantic accents shared by
+     KPI cards and status badges in both themes. */
+  --accent-foreground: 0 0% 100%;
+  --tone-emerald: 154 67% 34%;
+  --tone-emerald-soft: 153 56% 93%;
+  --tone-amber: 36 88% 42%;
+  --tone-amber-soft: 43 96% 91%;
+  --tone-sky: 199 83% 43%;
+  --tone-sky-soft: 198 85% 93%;
+  --tone-rose: 347 74% 48%;
+  --tone-rose-soft: 349 82% 94%;
+  --tone-violet: 263 69% 52%;
+  --tone-violet-soft: 263 78% 95%;
+  --tone-slate: 215 20% 42%;
+  --tone-slate-soft: 214 24% 93%;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.06);
+  --shadow-elevated: 0 8px 32px 0 rgb(0 0 0 / 0.12);
+  --shadow-sidebar: 0 0 40px -20px rgb(15 23 42 / 0.6);
+
+  /* Radius */
+  --radius: 0.625rem;
+  --radius-card: 0.75rem;
+  --radius-elevated: 0.875rem;
+  --radius-full: 9999px;
+
+  /* Shadcn-compatible mappings */
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-card);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-fg);
+  --secondary: 210 20% 94%;
+  --secondary-foreground: var(--color-text-primary);
+  --muted: 210 20% 94%;
+  --muted-foreground: var(--color-text-muted);
+  --destructive: 0 72% 42%;
+  --destructive-foreground: 0 0% 100%;
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --sidebar: var(--color-sidebar-bg);
+  --sidebar-foreground: var(--color-sidebar-text);
+  --sidebar-accent: var(--color-sidebar-hover-bg);
+  --sidebar-accent-foreground: var(--color-sidebar-active-text);
+  --sidebar-border: 215 20% 20%;
+  --accent: 200 85% 38%;
+
+  /* Bridge aliases (channel refs) — required because a Tailwind
+     @theme key may not reference a CSS variable with its own name:
+     `--color-border: hsl(var(--color-border))` is a self-reference
+     that breaks both var() resolution and the Lightning CSS fallback
+     for alpha utilities. These aliases keep every reference
+     self-free. Alias values live once — in the channel vars above. */
+  --text-secondary: var(--color-text-secondary);
+  --border-light: var(--color-border-light);
+  --card-muted: var(--color-card-muted);
+  --success-text: var(--color-success-text);
+  --success-bg: var(--color-success-bg);
+  --warning-text: var(--color-warning-text);
+  --warning-bg: var(--color-warning-bg);
+  --danger-text: var(--color-danger-text);
+  --danger-bg: var(--color-danger-bg);
+  --info-text: var(--color-info-text);
+  --info-bg: var(--color-info-bg);
+  --neutral-text: var(--color-neutral-text);
+  --neutral-bg: var(--color-neutral-bg);
+  --sidebar-bg: var(--color-sidebar-bg);
+  --sidebar-text: var(--color-sidebar-text);
+  --sidebar-active-bg: var(--color-sidebar-active-bg);
+  --sidebar-active-text: var(--color-sidebar-active-text);
+  --sidebar-hover-bg: var(--color-sidebar-hover-bg);
+
+  /* Shadow aliases for the bridge (same self-reference constraint) */
+  --elev-card: var(--shadow-card);
+  --elev-card-hover: var(--shadow-card-hover);
+  --elev-raised: var(--shadow-elevated);
+  --elev-sidebar: var(--shadow-sidebar);
+}
+
+/* ── Dark Mode Overrides ───────────────────── */
+[data-theme='dark'] {
+  --color-bg: 215 28% 9%;
+  --color-card: 215 25% 13%;
+  --color-card-muted: 215 20% 11%;
+  --color-primary: 200 85% 48%;
+  --color-primary-fg: 0 0% 100%;
+  --color-text-primary: 210 20% 92%;
+  --color-text-secondary: 210 14% 68%;
+  --color-text-muted: 210 10% 50%;
+  --color-border: 215 20% 22%;
+  --color-border-light: 215 16% 17%;
+  --color-sidebar-bg: 215 30% 7%;
+  --color-sidebar-text: 210 20% 80%;
+  --color-sidebar-active-bg: 200 85% 38%;
+  --color-sidebar-active-text: 0 0% 100%;
+  --color-sidebar-hover-bg: 215 28% 14%;
+
+  --color-success-text: 152 58% 62%;
+  --color-success-bg: 152 40% 16%;
+  --color-warning-text: 42 88% 64%;
+  --color-warning-bg: 38 60% 16%;
+  --color-danger-text: 0 78% 70%;
+  --color-danger-bg: 0 48% 18%;
+  --color-info-text: 199 82% 68%;
+  --color-info-bg: 199 46% 16%;
+  --color-neutral-text: 215 14% 55%;
+  --color-neutral-bg: 215 16% 18%;
+
+  --accent-foreground: 215 28% 9%;
+  --tone-emerald: 154 60% 58%;
+  --tone-emerald-soft: 154 38% 16%;
+  --tone-amber: 42 91% 62%;
+  --tone-amber-soft: 38 54% 17%;
+  --tone-sky: 199 86% 67%;
+  --tone-sky-soft: 199 42% 17%;
+  --tone-rose: 347 82% 70%;
+  --tone-rose-soft: 347 42% 18%;
+  --tone-violet: 263 86% 76%;
+  --tone-violet-soft: 263 38% 19%;
+  --tone-slate: 214 18% 70%;
+  --tone-slate-soft: 215 18% 18%;
+
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.2);
+  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.3);
+  --shadow-elevated: 0 8px 32px 0 rgb(0 0 0 / 0.4);
+
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-card);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-fg);
+  --secondary: 215 20% 15%;
+  --secondary-foreground: var(--color-text-primary);
+  --muted: 215 20% 15%;
+  --muted-foreground: var(--color-text-muted);
+  --destructive: 0 68% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --sidebar: var(--color-sidebar-bg);
+  --sidebar-foreground: var(--color-sidebar-text);
+  --sidebar-accent: var(--color-sidebar-hover-bg);
+  --sidebar-accent-foreground: var(--color-sidebar-active-text);
+  --sidebar-border: 215 16% 16%;
+  --accent: 200 85% 48%;
+}
+
+/* ============================================
+   Tailwind v4 Theme Bridge — الجسر
+   ============================================
+   `@theme inline` يولّد فئات الأدوات من نفس متغيرات CSS
+   أعلاه دون إعادة إخراج المتغيرات في :root (يتجنب الدوران
+   المرجعي). القيم المحسوبة لا تتغير — نفس المتغيرات،
+   لكن الفئات أصبحت موجودة فعلًا:
+
+     shadow-card · shadow-card-hover · shadow-elevated
+     text-success / bg-success/10 / ring-success/20 ...
+     bg-primary/90 (hover) · border-border/70 · bg-muted/50
+     rounded-lg = var(--radius) = 10px بدل 8px
+   ============================================ */
+@theme inline {
+  /* Surfaces & text — لا مرجع ذاتي هنا: يمنع كسر var() وتلف
+     توليد fئات الشفافية (hsl(hsl(...))) في Lightning CSS */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-muted: hsl(var(--card-muted));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-text: hsl(var(--color-text-primary));
+  --color-text-secondary: hsl(var(--text-secondary));
+  --color-text-muted: hsl(var(--muted-foreground));
+
+  /* Brand */
+  --color-primary: hsl(var(--primary));
+  --color-primary-fg: hsl(var(--primary-foreground));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  /* Shadcn semantic surfaces */
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  /* Borders & inputs */
+  --color-border: hsl(var(--border));
+  --color-border-light: hsl(var(--border-light));
+  --color-input: hsl(var(--input));
+
+  /* Status palette — DEFAULT = text tone, matching the
+     documented tailwind.config.js contract (bg-{tone}/NN works). */
+  --color-success: hsl(var(--success-text));
+  --color-success-text: hsl(var(--success-text));
+  --color-success-bg: hsl(var(--success-bg));
+  --color-warning: hsl(var(--warning-text));
+  --color-warning-text: hsl(var(--warning-text));
+  --color-warning-bg: hsl(var(--warning-bg));
+  --color-danger: hsl(var(--danger-text));
+  --color-danger-text: hsl(var(--danger-text));
+  --color-danger-bg: hsl(var(--danger-bg));
+  --color-info: hsl(var(--info-text));
+  --color-info-text: hsl(var(--info-text));
+  --color-info-bg: hsl(var(--info-bg));
+  --color-neutral: hsl(var(--neutral-text));
+  --color-neutral-text: hsl(var(--neutral-text));
+  --color-neutral-bg: hsl(var(--neutral-bg));
+
+  /* Sidebar ramp */
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-bg: hsl(var(--sidebar-bg));
+  --color-sidebar-text: hsl(var(--sidebar-text));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-active-bg: hsl(var(--sidebar-active-bg));
+  --color-sidebar-active-text: hsl(var(--sidebar-active-text));
+  --color-sidebar-hover-bg: hsl(var(--sidebar-hover-bg));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+
+  /* Shadows */
+  --shadow-card: var(--elev-card);
+  --shadow-card-hover: var(--elev-card-hover);
+  --shadow-elevated: var(--elev-raised);
+  --shadow-sidebar: var(--elev-sidebar);
+
+  /* Radius — يستعيد خريطة tailwind.config.js الموثقة:
+     rounded-lg = var(--radius), rounded-xl = var(--radius-card) */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius-card);
+  --radius-2xl: var(--radius-elevated);
+}
+
+/* ============================================
+   Dark variant bound to the app theme toggle
+   ============================================
+   التطبيق يبدّل الثيم عبر documentElement.dataset.theme،
+   وليس عبر prefers-color-scheme. بدون هذا التعريف تستجيب
+   فئات dark:* لثيم نظام التشغيل وتتناقض مع مبدّل التطبيق. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));

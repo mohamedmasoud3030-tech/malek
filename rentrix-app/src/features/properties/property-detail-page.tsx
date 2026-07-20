@@ -47,11 +47,12 @@ export function PropertyDetailPage() {
             }
           />
 
-          <div className="border-b border-border">
+          <nav className="border-b border-border" aria-label="أقسام العقار">
             <div className="flex gap-6">
               <Link
                 to="/properties/$propertyId"
                 params={{ propertyId }}
+                aria-current={!isUnitsTab ? 'page' : undefined}
                 className={`border-b-2 pb-3 text-sm font-bold transition-all duration-150 ${!isUnitsTab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
               >
                 نظرة عامة
@@ -59,12 +60,13 @@ export function PropertyDetailPage() {
               <Link
                 to="/properties/$propertyId/units"
                 params={{ propertyId }}
+                aria-current={isUnitsTab ? 'page' : undefined}
                 className={`border-b-2 pb-3 text-sm font-bold transition-all duration-150 ${isUnitsTab ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
               >
                 الوحدات
               </Link>
             </div>
-          </div>
+          </nav>
 
           <Outlet />
         </PageLayout>

@@ -10,12 +10,18 @@ interface StatCardProps {
   className?: string;
 }
 
+/**
+ * Tones consume the semantic status tokens (--color-*-text / --color-*-bg
+ * from styles/tokens.css) so the card follows the app theme toggle
+ * ([data-theme='dark']) exactly like StatusBadge — no raw palette colors
+ * and no prefers-color-scheme-only variants.
+ */
 const toneMap: Record<StatTone, { bg: string; value: string }> = {
-  default:  { bg: "bg-muted/60",                    value: "text-foreground" },
-  success:  { bg: "bg-emerald-50 dark:bg-emerald-950/30", value: "text-emerald-600 dark:text-emerald-400" },
-  warning:  { bg: "bg-amber-50 dark:bg-amber-950/30",    value: "text-amber-600 dark:text-amber-400" },
-  danger:   { bg: "bg-rose-50 dark:bg-rose-950/30",      value: "text-rose-600 dark:text-rose-400" },
-  info:     { bg: "bg-sky-50 dark:bg-sky-950/30",        value: "text-sky-600 dark:text-sky-400" },
+  default: { bg: "bg-muted/60", value: "text-foreground" },
+  success: { bg: "bg-success-bg", value: "text-success" },
+  warning: { bg: "bg-warning-bg", value: "text-warning" },
+  danger: { bg: "bg-danger-bg", value: "text-danger" },
+  info: { bg: "bg-info-bg", value: "text-info" },
 };
 
 /**
@@ -28,7 +34,7 @@ const toneMap: Record<StatTone, { bg: string; value: string }> = {
 export function StatCard({ label, value, sub, tone = "default", className }: StatCardProps) {
   const colors = toneMap[tone];
   return (
-    <div className={cn("rounded-2xl p-3", colors.bg, className)}>
+    <div data-stat-card data-tone={tone} className={cn("rounded-2xl p-3", colors.bg, className)}>
       <p className="text-[11px] font-bold text-muted-foreground">{label}</p>
       <p className={cn("mt-1.5 text-base font-bold tabular-nums leading-none", colors.value)} dir="ltr">
         {value}
