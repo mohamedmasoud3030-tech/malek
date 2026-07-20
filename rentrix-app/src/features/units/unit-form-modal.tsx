@@ -34,7 +34,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
   const [submitError, setSubmitError] = useState<string | null>(null);
   const managedStatus = unit ? isUnitOperationallyManagedStatus(unit.status) : false;
   const form = useForm<UnitFormValues>({
-    resolver: zodResolver(unitSchema),
+    resolver: zodResolver(unitSchema, undefined, { raw: true }),
     defaultValues: {
       unit_number: '',
       floor: '',
@@ -87,8 +87,8 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
         onSubmit={form.handleSubmit(
           async (values) => {
             setSubmitError(null);
-            const payload = unitSchema.parse(values);
             try {
+              const payload = unitSchema.parse(values);
               if (unit) {
                 await updateMutation.mutateAsync({ unitId: unit.id, payload });
               } else {
