@@ -68,8 +68,8 @@ export function StatementsSection({
     if (!tenantStatement) return null;
     return {
       tenantName: tenantStatement.tenantName || 'مستأجر غير محدد',
-      periodFrom: filters?.from || '—',
-      periodTo: filters?.to || '—',
+      periodFrom: filters?.from || tenantStatement.startDate || '—',
+      periodTo: filters?.to || tenantStatement.endDate || '—',
       propertyTitle: tenantStatement.propertyName || 'عقار غير محدد',
       unitNumber: tenantStatement.unitName || '—',
       openingBalance: 0,
@@ -78,11 +78,11 @@ export function StatementsSection({
       closingBalance: tenantStatement.finalBalance || 0,
       lines: tenantStatement.lines.map((line) => ({
         date: line.date || '—',
-        type: line.type || 'حركة',
+        type: line.type === 'invoice' ? 'مطالبة' : line.type === 'receipt' ? 'تحصيل' : 'حركة',
         description: line.description || 'حركة حساب',
         debit: line.debit || 0,
         credit: line.credit || 0,
-        balance: line.debit - line.credit,
+        balance: line.balance || 0,
       })),
     };
   };
@@ -109,18 +109,22 @@ export function StatementsSection({
 
   const buildOwnerStatementData = (): OwnerStatementData | null => {
     if (!ownerStatement) return null;
+    const totalRent = ownerStatement.transactions.filter((t) => t.type === 'receipt').reduce((sum, t) => sum + (t.gross || 0), 0);
+    const totalExpenses = ownerStatement.transactions.filter((t) => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.gross || 0), 0);
+    const totalCommission = ownerStatement.totalDeductions || 0;
+
     return {
       ownerName: ownerStatement.ownerName || 'مالك غير محدد',
       periodFrom: filters?.from || '—',
       periodTo: filters?.to || '—',
       propertyTitle: 'كافة العقارات المدارة',
-      totalRent: ownerStatement.totalGross || 0,
-      totalExpenses: ownerStatement.totalDeductions || 0,
-      totalCommission: 0,
+      totalRent,
+      totalExpenses,
+      totalCommission,
       netAmount: ownerStatement.totalNet || 0,
       transactions: ownerStatement.transactions.map((transaction) => ({
         date: transaction.date || '—',
-        type: transaction.type || 'حركة',
+        type: transaction.type === 'receipt' ? 'تحصيل' : transaction.type === 'expense' ? 'مصروف' : transaction.type === 'settlement' ? 'تسوية' : 'حركة',
         description: transaction.details || 'حركة مالية',
         amount: transaction.net || 0,
       })),
