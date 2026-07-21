@@ -1,11 +1,13 @@
+import { ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
 
 export type ContractDocumentRecord = Database['public']['Tables']['contract_documents']['Row'];
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_TYPES = ATTACHMENTS_ALLOWED_MIME_TYPES;
+const MAX_SIZE_BYTES = ATTACHMENTS_MAX_FILE_SIZE;
+const SIGNED_URL_EXPIRY_SECONDS = 60 * 60;
 
 function createDocumentStorageId() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
@@ -29,11 +31,11 @@ export async function listContractDocuments(contractId: string) {
 
 export async function uploadContractDocument(contractId: string, file: File) {
   if (!contractId) throw new Error('معرّف العقد مطلوب');
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!ALLOWED_TYPES.has(file.type)) {
     throw new Error('نوع الملف غير مدعوم. المسموح: صور JPG/PNG/WEBP أو PDF');
   }
   if (file.size > MAX_SIZE_BYTES) {
-    throw new Error('حجم الملف يتجاوز 10 ميغابايت');
+    throw new Error('حجم الملف يتجاوز 5 ميغابايت');
   }
 
   const ext = file.name.split('.').pop() ?? 'bin';
@@ -45,14 +47,14 @@ export async function uploadContractDocument(contractId: string, file: File) {
     .upload(storagePath, file, { upsert: false });
   if (uploadError) throw new Error(uploadError.message);
 
-  const { data: publicUrlData } = supabase.storage.from('attachments').getPublicUrl(storagePath);
-
+  // The bucket is private: file_url stores the storage path (not a public URL);
+  // viewing/downloading always goes through getContractDocumentSignedUrl below.
   const { data, error } = await supabase
     .from('contract_documents')
     .insert({
       contract_id: contractId,
       file_name: file.name,
-      file_url: publicUrlData.publicUrl,
+      file_url: storagePath,
       storage_path: storagePath,
       file_size: file.size,
       mime_type: file.type,
@@ -67,6 +69,26 @@ export async function uploadContractDocument(contractId: string, file: File) {
     handleSupabaseError(error, 'تعذر حفظ مستند العقد');
   }
   return data;
+}
+
+/**
+ * Resolve a view/download URL for a stored contract document.
+ * Legacy rows may still hold an absolute public URL in file_url; newer rows
+ * hold the storage path there. Private-bucket reads always use a signed URL.
+ */
+export async function getContractDocumentSignedUrl(
+  document: Pick<ContractDocumentRecord, 'file_url' | 'storage_path'>,
+  expiresInSeconds = SIGNED_URL_EXPIRY_SECONDS,
+): Promise<string> {
+  if (/^https?:\/\//i.test(document.file_url)) return document.file_url;
+  const storagePath = document.storage_path || document.file_url;
+  if (!storagePath) throw new Error('مسار الملف مطلوب');
+  const { data, error } = await supabase.storage
+    .from('attachments')
+    .createSignedUrl(storagePath, expiresInSeconds);
+  if (error) handleSupabaseError(error, 'تعذر إنشاء رابط المعاينة المؤقت');
+  if (!data?.signedUrl) throw new Error('تعذر إنشاء رابط المعاينة المؤقت');
+  return data.signedUrl;
 }
 
 export async function deleteContractDocument(documentId: string) {

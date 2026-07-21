@@ -43,6 +43,7 @@ jobs:
           node --check scripts/assert-release-blocker-env.mjs
           node --check scripts/ci/preflight-staging.mjs
           node --check scripts/ci/check-cron-quoting.mjs
+          node --check rentrix-app/scripts/storage-isolated-smoke.mjs
       - name: Typecheck application and tests
         run: |
           pnpm --filter ./rentrix-app run typecheck
@@ -70,10 +71,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify pinned toolchain
         run: node scripts/ci/verify-tool-versions.mjs
-      - name: Replay every migration and run database blockers
+      - name: Replay every migration and run database plus isolated Storage blockers
         shell: bash
         run: bash scripts/ci/run-supabase-database-gate.sh
-      - name: Upload database diagnostics
+      - name: Upload database and Storage diagnostics
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
