@@ -63,18 +63,20 @@ wait_for_supabase_api() {
 }
 
 node scripts/ci/check-cron-quoting.mjs
+
+# Single stack bring-up for the whole gate. The helper honours
+# SUPABASE_EXCLUDED_SERVICES, so we start Postgres AND the HTTP services
+# (Kong gateway, GoTrue auth, Storage API, PostgREST) in one go. A second
+# `supabase start --exclude ...` against an already-running project does NOT
+# add services on CLI 2.105 — it reconciles to the first invocation's shape
+# and stops everything else, which is exactly the failure mode this gate had
+# in CI. Excluded names are valid for CLI 2.105 (mailpit, not inbucket).
+export SUPABASE_EXCLUDED_SERVICES="realtime,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor"
 bash scripts/ci/start-supabase-stable.sh
 
 set -o pipefail
 pnpm exec supabase db reset --local 2>&1 | tee "$LOG_DIR/supabase-reset.log"
 pnpm exec supabase test db 2>&1 | tee "$LOG_DIR/supabase-test.log"
-
-# The database helper intentionally starts PostgreSQL only. Once migrations and
-# pgTAP pass, start just the HTTP services required for the Auth + Storage smoke
-# on top of the same migrated database. Do not stop or reset the stack here.
-API_EXCLUDED_SERVICES="realtime,imgproxy,inbucket,studio,edge-runtime,logflare,vector,supavisor"
-pnpm exec supabase start --exclude "$API_EXCLUDED_SERVICES" \
-  2>&1 | tee "$LOG_DIR/supabase-api-start.log"
 
 # The Storage API smoke must run after every migration and pgTAP assertion on
 # the same isolated local stack. This tests the real Auth + Storage HTTP path
