@@ -67,6 +67,37 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['bank_reconciliation_matches']['Row']>;
         Relationships: [];
       };
+      companies: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          currency: string;
+          locale: string;
+          timezone: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['companies']['Row']> & Pick<Database['public']['Tables']['companies']['Row'], 'name' | 'slug'>;
+        Update: Partial<Database['public']['Tables']['companies']['Row']>;
+        Relationships: [];
+      };
+      company_members: {
+        Row: {
+          id: string;
+          company_id: string;
+          user_id: string;
+          role: string;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          companies?: Database['public']['Tables']['companies']['Row'];
+        };
+        Insert: Partial<Database['public']['Tables']['company_members']['Row']> & Pick<Database['public']['Tables']['company_members']['Row'], 'company_id' | 'user_id'>;
+        Update: Partial<Database['public']['Tables']['company_members']['Row']>;
+        Relationships: [];
+      };
       company_settings: {
         Row: {
           id: string;
