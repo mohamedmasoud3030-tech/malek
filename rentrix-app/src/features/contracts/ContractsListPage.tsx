@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Download, Plus } from 'lucide-react';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
-import { ContractListHeader } from './components/ContractListHeader';
 import { ContractResults } from './components/ContractResults';
 import { ContractFormModal } from './contract-form-modal';
+import { ListControlSurface } from '@/components/layout/list-controls';
+import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractListExport';
 import { useCompanySettingsContract } from '../settings/useCompanySettings';
@@ -81,24 +84,36 @@ export function ContractsListPage() {
   return (
     <>
       <PageLayout dir="rtl" size="wide">
-        <ContractListHeader
-          canExport={Boolean(filteredContracts.length)}
-          onCreate={openCreate}
-          onExport={() => exportContractsCsv(filteredContracts)}
+        <PageHeader
+          title="العقود"
+          description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."
+          count={filteredContracts.length}
+          primaryAction={
+            <Button onClick={openCreate}>
+              <Plus className="me-2 size-4" />إنشاء عقد
+            </Button>
+          }
+          secondaryActions={
+            <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length} aria-label="تصدير العقود كملف CSV">
+              <Download className="me-2 size-4" />تصدير CSV
+            </Button>
+          }
         />
 
         <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} />
 
-        <ContractFilters
-          expiringOnly={expiringOnly}
-          hasActiveFilters={hasActiveFilters}
-          resetFilters={resetFilters}
-          searchTerm={searchTerm}
-          setExpiringOnly={(updater) => { setExpiringOnly(updater); setPage(1); }}
-          setSearchTerm={(value) => { setSearchTerm(value); setPage(1); }}
-          setStatus={(value) => { setStatus(value); setPage(1); }}
-          status={status}
-        />
+        <ListControlSurface>
+          <ContractFilters
+            expiringOnly={expiringOnly}
+            hasActiveFilters={hasActiveFilters}
+            resetFilters={resetFilters}
+            searchTerm={searchTerm}
+            setExpiringOnly={(updater) => { setExpiringOnly(updater); setPage(1); }}
+            setSearchTerm={(value) => { setSearchTerm(value); setPage(1); }}
+            setStatus={(value) => { setStatus(value); setPage(1); }}
+            status={status}
+          />
+        </ListControlSurface>
 
         <ContractResults
           companySettings={companySettings}

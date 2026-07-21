@@ -1,37 +1,7 @@
-/* Rentrix product palette — richer semantic accents for both themes. */
-:root {
-  --accent-foreground: 0 0% 100%;
-
-  --tone-emerald: 154 67% 34%;
-  --tone-emerald-soft: 153 56% 93%;
-  --tone-amber: 36 88% 42%;
-  --tone-amber-soft: 43 96% 91%;
-  --tone-sky: 199 83% 43%;
-  --tone-sky-soft: 198 85% 93%;
-  --tone-rose: 347 74% 48%;
-  --tone-rose-soft: 349 82% 94%;
-  --tone-violet: 263 69% 52%;
-  --tone-violet-soft: 263 78% 95%;
-  --tone-slate: 215 20% 42%;
-  --tone-slate-soft: 214 24% 93%;
-}
-
-[data-theme='dark'] {
-  --accent-foreground: 215 28% 9%;
-
-  --tone-emerald: 154 60% 58%;
-  --tone-emerald-soft: 154 38% 16%;
-  --tone-amber: 42 91% 62%;
-  --tone-amber-soft: 38 54% 17%;
-  --tone-sky: 199 86% 67%;
-  --tone-sky-soft: 199 42% 17%;
-  --tone-rose: 347 82% 70%;
-  --tone-rose-soft: 347 42% 18%;
-  --tone-violet: 263 86% 76%;
-  --tone-violet-soft: 263 38% 19%;
-  --tone-slate: 214 18% 70%;
-  --tone-slate-soft: 215 18% 18%;
-}
+/* Rentrix product palette — richer semantic accents for both themes.
+   Token values (--tone-*, --accent-foreground) live in ./tokens.css —
+   the single source of truth; this file only contains component styles
+   that consume those tokens. */
 
 /* KPI cards already declare semantic accents across the product. This layer
    activates those intents instead of flattening every metric into brand blue. */

@@ -48,20 +48,19 @@ export function PropertiesListPage() {
         description="إدارة المحفظة العقارية والتشغيلية"
         count={ctrl.totalCount}
         primaryAction={
-          <Button className="rounded-2xl gap-2" onClick={ctrl.openCreateModal}>
-            <Plus className="size-4" />إضافة عقار
+          <Button onClick={ctrl.openCreateModal}>
+            <Plus className="me-2 size-4" />إضافة عقار
           </Button>
         }
         secondaryActions={
           <Button
             type="button"
             variant="secondary"
-            className="rounded-2xl gap-2"
             onClick={handleExportCsv}
             disabled={ctrl.properties.length === 0}
             aria-label="تصدير العقارات كملف CSV"
           >
-            <Download className="size-4" />تصدير CSV
+            <Download className="me-2 size-4" />تصدير CSV
           </Button>
         }
         filters={
@@ -96,11 +95,11 @@ export function PropertiesListPage() {
           }
           error={ctrl.propertiesQuery.error}
           errorTitle="تعذر تحميل قائمة العقارات"
-          errorAction={<Button onClick={() => ctrl.propertiesQuery.refetch()} className="rounded-2xl">إعادة المحاولة</Button>}
+          errorAction={<Button onClick={() => ctrl.propertiesQuery.refetch()}>إعادة المحاولة</Button>}
           emptyTitle={ctrl.hasFilterValues ? 'لا توجد نتائج مطابقة للبحث' : 'لم تُضف عقارات بعد'}
           emptyDescription={ctrl.hasFilterValues ? 'جرّب تغيير عوامل البحث أو إزالة الفلتر.' : 'ابدأ بإضافة أول عقار لك.'}
           emptyAction={!ctrl.hasFilterValues ? (
-            <Button className="rounded-2xl" onClick={ctrl.openCreateModal}>
+            <Button onClick={ctrl.openCreateModal}>
               <Building2 className="me-2 size-4" />إضافة أول عقار
             </Button>
           ) : undefined}
@@ -140,10 +139,10 @@ export function PropertiesListPage() {
               onClick={() => ctrl.navigateToProperty(p.id)}
               actions={
                 <div className="grid w-full grid-cols-2 gap-2">
-                  <Button variant="secondary" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => ctrl.openEditModal(p.id)}>
+                  <Button variant="secondary" className="min-h-11 text-xs gap-1" onClick={() => ctrl.openEditModal(p.id)}>
                     <Edit className="size-3.5" />تعديل
                   </Button>
-                  <Button variant="danger" className="min-h-11 rounded-xl text-xs gap-1" onClick={() => ctrl.requestArchive(p.id, p.title ?? 'عقار')}>
+                  <Button variant="danger" className="min-h-11 text-xs gap-1" onClick={() => ctrl.requestArchive(p.id, p.title ?? 'عقار')}>
                     <Trash2 className="size-3.5" />أرشفة
                   </Button>
                 </div>

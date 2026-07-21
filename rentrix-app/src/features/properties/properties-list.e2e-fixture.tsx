@@ -1,9 +1,10 @@
-import { Building2, Download, Plus } from 'lucide-react';
+import { Building2, Download, Edit, Plus, Trash2 } from 'lucide-react';
 import { ListPage } from '@/components/layout/list-page';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { EntityCell } from '@/components/ui/entity-cell';
 import { FilterBar } from '@/components/ui/filter-bar';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { propertyStatusTone } from './components/property-status';
@@ -13,6 +14,8 @@ import type { Property } from '@/types/domain';
  * Static marketing/demo capture of the real properties workspace —
  * reuses the exact list page chrome and table components, fed with
  * showcase data instead of live queries. Rendered only behind VITE_E2E.
+ * Kept structurally identical to PropertiesListPage (unified buttons,
+ * mobile cards) so captured evidence matches production.
  */
 const fixtureProperties: Property[] = [
   {
@@ -116,13 +119,13 @@ export function PropertiesListE2EFixture() {
         description="إدارة ملفات العقارات والأصول العقارية"
         count={fixtureProperties.length}
         primaryAction={
-          <Button className="rounded-2xl gap-2">
-            <Plus className="size-4" aria-hidden="true" />إضافة عقار
+          <Button>
+            <Plus className="me-2 size-4" aria-hidden="true" />إضافة عقار
           </Button>
         }
         secondaryActions={
-          <Button variant="secondary" className="rounded-2xl gap-2">
-            <Download className="size-4" aria-hidden="true" />تصدير CSV
+          <Button variant="secondary">
+            <Download className="me-2 size-4" aria-hidden="true" />تصدير CSV
           </Button>
         }
         filters={
@@ -145,6 +148,30 @@ export function PropertiesListE2EFixture() {
           aria-label="جدول العقارات"
           rows={fixtureProperties}
           keyOf={(p) => p.id}
+          onRowClick={() => undefined}
+          renderMobileCard={(p) => (
+            <MobileCard
+              title={p.title ?? 'عقار'}
+              subtitle={p.address ?? 'العنوان غير محدد'}
+              badge={(
+                <StatusBadge tone={propertyStatusTone[p.status] ?? 'neutral'} dot>
+                  {statusLabels[p.status] ?? p.status}
+                </StatusBadge>
+              )}
+              stats={<span className="text-xs text-muted-foreground">اضغط لفتح تفاصيل العقار</span>}
+              onClick={() => undefined}
+              actions={(
+                <div className="grid w-full grid-cols-2 gap-2">
+                  <Button variant="secondary" className="min-h-11 text-xs gap-1">
+                    <Edit className="size-3.5" />تعديل
+                  </Button>
+                  <Button variant="danger" className="min-h-11 text-xs gap-1">
+                    <Trash2 className="size-3.5" />أرشفة
+                  </Button>
+                </div>
+              )}
+            />
+          )}
           columns={[
             {
               key: 'title',

@@ -94,6 +94,18 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });
+
+  it('renders the unified PageHeader (h1 + record count) and shared filter surface', () => {
+    contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
+
+    const html = renderToStaticMarkup(<ContractsListPage />);
+
+    expect(html).toContain('data-page-header');
+    expect(html).toContain('<h1');
+    expect(html).toContain('عدد السجلات 1');
+    expect(html).toContain('data-list-controls');
+    expect(html).not.toContain('<h2');
+  });
 });
 
 describe('normalizeSearchText', () => {

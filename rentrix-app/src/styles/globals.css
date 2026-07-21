@@ -1,142 +1,15 @@
 @import 'tailwindcss';
+@import './tokens.css';
 
 /* ============================================
-   Rentrix Visual Contract v2.0 — Design Tokens
+   Rentrix Visual Contract v2.0
    Enterprise Minimalism + Swiss Clarity
+
+   Design tokens (colors / shadows / radius / typography)
+   live in ./tokens.css — المصدر المركزي الوحيد.
+   Tailwind v4 لا يقرأ tailwind.config.js؛ الجسر في
+   tokens.css (@theme inline) هو ما يولّد فئات النظام.
    ============================================ */
-
-@theme {
-  --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
-}
-
-/* ── Semantic Color Tokens (Light) ──────────── */
-:root {
-  /* Core surfaces */
-  --color-bg: 210 20% 98%;
-  --color-card: 0 0% 100%;
-  --color-card-muted: 210 20% 96%;
-
-  /* Brand */
-  --color-primary: 200 85% 38%;
-  --color-primary-fg: 0 0% 100%;
-
-  /* Text */
-  --color-text-primary: 215 28% 17%;
-  --color-text-secondary: 215 16% 40%;
-  --color-text-muted: 215 14% 55%;
-
-  /* Borders */
-  --color-border: 214 20% 88%;
-  --color-border-light: 214 20% 93%;
-
-  /* Sidebar (dark — same in both modes) */
-  --color-sidebar-bg: 215 28% 12%;
-  --color-sidebar-text: 210 20% 85%;
-  --color-sidebar-active-bg: 200 85% 38%;
-  --color-sidebar-active-text: 0 0% 100%;
-  --color-sidebar-hover-bg: 215 28% 18%;
-
-  /* Status colors */
-  --color-success-text: 152 66% 26%;
-  --color-success-bg: 152 62% 94%;
-  --color-warning-text: 32 81% 32%;
-  --color-warning-bg: 42 96% 92%;
-  --color-danger-text: 0 72% 42%;
-  --color-danger-bg: 0 72% 95%;
-  --color-info-text: 199 74% 32%;
-  --color-info-bg: 199 82% 94%;
-  --color-neutral-text: 215 16% 42%;
-  --color-neutral-bg: 215 18% 92%;
-
-  /* Shadows */
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04);
-  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.06);
-  --shadow-elevated: 0 8px 32px 0 rgb(0 0 0 / 0.12);
-  --shadow-sidebar: 0 0 40px -20px rgb(15 23 42 / 0.6);
-
-  /* Radius */
-  --radius: 0.625rem;
-  --radius-card: 0.75rem;
-  --radius-elevated: 0.875rem;
-  --radius-full: 9999px;
-
-  /* Shadcn-compatible mappings */
-  --background: var(--color-bg);
-  --foreground: var(--color-text-primary);
-  --card: var(--color-card);
-  --card-foreground: var(--color-text-primary);
-  --primary: var(--color-primary);
-  --primary-foreground: var(--color-primary-fg);
-  --secondary: 210 20% 94%;
-  --secondary-foreground: var(--color-text-primary);
-  --muted: 210 20% 94%;
-  --muted-foreground: var(--color-text-muted);
-  --destructive: 0 72% 42%;
-  --destructive-foreground: 0 0% 100%;
-  --border: var(--color-border);
-  --input: var(--color-border);
-  --sidebar: var(--color-sidebar-bg);
-  --sidebar-foreground: var(--color-sidebar-text);
-  --sidebar-accent: var(--color-sidebar-hover-bg);
-  --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 215 20% 20%;
-  --accent: 200 85% 38%;
-}
-
-/* ── Dark Mode Overrides ───────────────────── */
-[data-theme='dark'] {
-  --color-bg: 215 28% 9%;
-  --color-card: 215 25% 13%;
-  --color-card-muted: 215 20% 11%;
-  --color-primary: 200 85% 48%;
-  --color-primary-fg: 0 0% 100%;
-  --color-text-primary: 210 20% 92%;
-  --color-text-secondary: 210 14% 68%;
-  --color-text-muted: 210 10% 50%;
-  --color-border: 215 20% 22%;
-  --color-border-light: 215 16% 17%;
-  --color-sidebar-bg: 215 30% 7%;
-  --color-sidebar-text: 210 20% 80%;
-  --color-sidebar-active-bg: 200 85% 38%;
-  --color-sidebar-active-text: 0 0% 100%;
-  --color-sidebar-hover-bg: 215 28% 14%;
-
-  --color-success-text: 152 58% 62%;
-  --color-success-bg: 152 40% 16%;
-  --color-warning-text: 42 88% 64%;
-  --color-warning-bg: 38 60% 16%;
-  --color-danger-text: 0 78% 70%;
-  --color-danger-bg: 0 48% 18%;
-  --color-info-text: 199 82% 68%;
-  --color-info-bg: 199 46% 16%;
-  --color-neutral-text: 215 14% 55%;
-  --color-neutral-bg: 215 16% 18%;
-
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.2);
-  --shadow-card-hover: 0 2px 8px 0 rgb(0 0 0 / 0.3);
-  --shadow-elevated: 0 8px 32px 0 rgb(0 0 0 / 0.4);
-
-  --background: var(--color-bg);
-  --foreground: var(--color-text-primary);
-  --card: var(--color-card);
-  --card-foreground: var(--color-text-primary);
-  --primary: var(--color-primary);
-  --primary-foreground: var(--color-primary-fg);
-  --secondary: 215 20% 15%;
-  --secondary-foreground: var(--color-text-primary);
-  --muted: 215 20% 15%;
-  --muted-foreground: var(--color-text-muted);
-  --destructive: 0 68% 51%;
-  --destructive-foreground: 0 0% 100%;
-  --border: var(--color-border);
-  --input: var(--color-border);
-  --sidebar: var(--color-sidebar-bg);
-  --sidebar-foreground: var(--color-sidebar-text);
-  --sidebar-accent: var(--color-sidebar-hover-bg);
-  --sidebar-accent-foreground: var(--color-sidebar-active-text);
-  --sidebar-border: 215 16% 16%;
-  --accent: 200 85% 48%;
-}
 
 /* ── Subtle, professional animations only ───── */
 @keyframes route-in {
@@ -200,33 +73,11 @@
 
 /* ============================================
    Utility classes
+   (Color/shadow/radius utilities تولّد من @theme
+   في tokens.css — لا تعرّف هنا يدويًا)
    ============================================ */
 
 @layer utilities {
-  .bg-background          { background-color: hsl(var(--background)); }
-  .text-foreground        { color: hsl(var(--foreground)); }
-  .bg-card                { background-color: hsl(var(--card)); }
-  .text-card-foreground   { color: hsl(var(--card-foreground)); }
-  .bg-primary             { background-color: hsl(var(--primary)); }
-  .text-primary           { color: hsl(var(--primary)); }
-  .text-primary-foreground{ color: hsl(var(--primary-foreground)); }
-  .bg-secondary           { background-color: hsl(var(--secondary)); }
-  .text-secondary-foreground{ color: hsl(var(--secondary-foreground)); }
-  .bg-muted               { background-color: hsl(var(--muted)); }
-  .text-muted-foreground  { color: hsl(var(--muted-foreground)); }
-  .bg-destructive         { background-color: hsl(var(--destructive)); }
-  .text-destructive       { color: hsl(var(--destructive)); }
-  .text-destructive-foreground{ color: hsl(var(--destructive-foreground)); }
-  .border-border          { border-color: hsl(var(--border)); }
-  .border-input           { border-color: hsl(var(--input)); }
-  .bg-sidebar             { background-color: hsl(var(--sidebar)); }
-  .text-sidebar-foreground{ color: hsl(var(--sidebar-foreground)); }
-  .border-sidebar-border  { border-color: hsl(var(--sidebar-border)); }
-  .bg-sidebar-accent      { background-color: hsl(var(--sidebar-accent)); }
-  .text-sidebar-accent-foreground{ color: hsl(var(--sidebar-accent-foreground)); }
-  .text-accent            { color: hsl(var(--accent)); }
-  .bg-accent              { background-color: hsl(var(--accent)); }
-
   .animate-route-in       { animation: route-in 0.18s ease-out both; }
   .animate-slide-up       { animation: slide-up 0.2s ease-out both; }
 

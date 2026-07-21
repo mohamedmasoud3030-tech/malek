@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { SearchInput } from '@/components/ui/search-input';
 import { cn } from '@/lib/utils';
+import { ListControlSurface } from './list-controls';
 import { PageHeader } from './page-header';
 import { PageLayout } from './page-layout';
 
@@ -71,11 +72,7 @@ export function ListPage({
       />
 
       {search || filters ? (
-        <section
-          data-list-controls
-          aria-label="البحث والتصفية"
-          className="rounded-2xl border border-border/70 bg-card p-2.5 shadow-[0_6px_20px_hsl(var(--foreground)/0.035)] sm:p-3"
-        >
+        <ListControlSurface>
           <div
             className={cn(
               'grid min-w-0 gap-2.5',
@@ -94,7 +91,7 @@ export function ListPage({
               <div className={cn('min-w-0', hasSearchAndFilters && 'lg:order-1')}>{filters}</div>
             ) : null}
           </div>
-        </section>
+        </ListControlSurface>
       ) : null}
 
       <div data-list-results className="space-y-2.5 sm:space-y-3">
