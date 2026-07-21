@@ -58,6 +58,27 @@ describe('BottomSheet mobile interaction contract', () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it('exposes a tappable grab handle and honours reduced motion on its entrance animations', () => {
+    act(() => {
+      root.render(
+        <BottomSheet open onClose={vi.fn()} title="إضافة شخص">
+          <input aria-label="الاسم" />
+        </BottomSheet>,
+      );
+    });
+
+    const handle = document.body.querySelector<HTMLButtonElement>('[data-bottom-sheet-handle]');
+    const backdrop = document.body.querySelector<HTMLButtonElement>('[data-bottom-sheet-root] > button');
+    const panel = document.body.querySelector<HTMLElement>('[data-bottom-sheet]');
+
+    expect(handle).not.toBeNull();
+    expect(handle?.getAttribute('aria-label')).toBe('مقبض اللوحة — اضغط للإغلاق');
+    expect(handle?.className).toContain('cursor-grab');
+    expect(backdrop?.className).toContain('fade-in');
+    expect(backdrop?.className).toContain('motion-reduce:animate-none');
+    expect(panel?.className).toContain('motion-reduce:animate-none');
+  });
+
   it('restores document scroll ownership after the sheet leaves the tree', () => {
     document.body.style.overflow = 'auto';
     document.documentElement.style.overflow = 'clip';

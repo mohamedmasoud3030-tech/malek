@@ -97,7 +97,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
     >
       <button
         type="button"
-        className="absolute inset-0 cursor-default touch-none bg-black/45 backdrop-blur-sm"
+        className="animate-in fade-in absolute inset-0 cursor-default touch-none bg-black/45 backdrop-blur-sm duration-200 motion-reduce:animate-none"
         aria-label="إغلاق اللوحة"
         onClick={onClose}
       />
@@ -113,7 +113,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         className={cn(
           'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-3xl border border-b-0 border-border/50 bg-card outline-none',
           'shadow-[0_-8px_48px_-8px_rgba(0,0,0,0.18),0_-1px_0_0_hsl(var(--border)/0.5)]',
-          'animate-in slide-in-from-bottom duration-300 ease-out',
+          'animate-in slide-in-from-bottom duration-300 ease-out motion-reduce:animate-none',
           'max-h-[calc(var(--visual-viewport-height,100dvh)-0.5rem)]',
           'ps-[env(safe-area-inset-left,0px)] pe-[env(safe-area-inset-right,0px)]',
           className,
@@ -122,10 +122,11 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         <button
           type="button"
           onClick={onClose}
-          className="flex shrink-0 justify-center pb-1.5 pt-3.5 focus-visible:outline-none"
-          aria-label="إغلاق اللوحة"
+          data-bottom-sheet-handle
+          className="flex shrink-0 cursor-grab justify-center pb-1.5 pt-3.5 focus-visible:outline-none active:cursor-grabbing"
+          aria-label="مقبض اللوحة — اضغط للإغلاق"
         >
-          <div className="h-1 w-10 rounded-full bg-muted-foreground/25 transition-colors hover:bg-muted-foreground/40" />
+          <div className="h-1 w-10 rounded-full bg-muted-foreground/25 transition-colors hover:bg-muted-foreground/40 motion-reduce:transition-none" />
         </button>
 
         {title ? (
