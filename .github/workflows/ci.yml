@@ -26,7 +26,12 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      # Keep install deterministic and block arbitrary package lifecycle scripts.
+      # esbuild is the only approved native toolchain package that needs its binary shim rebuilt.
+      - name: Install dependencies with lifecycle scripts disabled
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Rebuild approved native toolchain package
+        run: pnpm rebuild esbuild
       - run: pnpm supabase:migration-evidence
       - name: Run documentation link check
         id: docs-links
