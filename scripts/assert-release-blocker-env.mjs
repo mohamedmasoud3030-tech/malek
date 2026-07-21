@@ -10,12 +10,13 @@ const required = [
 const missing = required.filter((name) => !process.env[name]?.trim());
 if (missing.length > 0) {
   console.error(`BLOCKED: missing release-blocker environment values: ${missing.join(', ')}`);
-  console.error('Authenticated launch-blocker tests are not allowed to skip when staging configuration is absent.');
+  console.error('Authenticated read-only verification must fail, not skip, when credentials are absent.');
   process.exit(1);
 }
 
-if (process.env.E2E_ENVIRONMENT_KIND !== 'staging') {
-  console.error('BLOCKED: E2E_ENVIRONMENT_KIND must equal "staging". Production is not an approved release-blocker test target.');
+if (process.env.E2E_ENVIRONMENT_KIND !== 'production-readonly') {
+  console.error('BLOCKED: E2E_ENVIRONMENT_KIND must equal "production-readonly" for the deployed Auth verification job.');
+  console.error('All financial and storage write rehearsals run only on the isolated ephemeral Supabase stack.');
   process.exit(1);
 }
 
@@ -38,13 +39,13 @@ try {
 }
 
 if (baseUrl.protocol !== 'https:' || supabaseUrl.protocol !== 'https:') {
-  console.error('BLOCKED: staging application and Supabase URLs must use HTTPS.');
+  console.error('BLOCKED: deployed application and Supabase URLs must use HTTPS.');
   process.exit(1);
 }
 
 if (['localhost', '127.0.0.1'].includes(baseUrl.hostname)) {
-  console.error('BLOCKED: real authentication tests require a deployed staging target, not a local mock server.');
+  console.error('BLOCKED: deployed Auth verification requires a real HTTPS target, not a local mock server.');
   process.exit(1);
 }
 
-console.log('Release-blocker environment preflight passed. Values remain redacted.');
+console.log('Read-only deployed environment preflight passed. Values remain redacted.');

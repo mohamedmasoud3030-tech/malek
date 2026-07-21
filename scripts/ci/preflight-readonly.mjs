@@ -8,7 +8,7 @@ const REQUIRED_ENV = [
 
 for (const name of REQUIRED_ENV) {
   if (!process.env[name]?.trim()) {
-    throw new Error(`${name} is required for authenticated staging preflight.`);
+    throw new Error(`${name} is required for authenticated read-only verification.`);
   }
 }
 
@@ -20,7 +20,7 @@ function parseHttpsUrl(name, value) {
     throw new Error(`${name} must be a valid URL.`);
   }
   if (parsed.protocol !== 'https:') {
-    throw new Error(`${name} must use HTTPS for staging.`);
+    throw new Error(`${name} must use HTTPS for deployed verification.`);
   }
   return parsed;
 }
@@ -39,20 +39,21 @@ const appUrl = parseHttpsUrl('E2E_BASE_URL', process.env.E2E_BASE_URL.trim());
 const supabaseUrl = parseHttpsUrl('VITE_SUPABASE_URL', process.env.VITE_SUPABASE_URL.trim());
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY.trim();
 
-const appResponse = await fetchWithTimeout(appUrl);
+const appResponse = await fetchWithTimeout(appUrl, { method: 'GET' });
 if (!appResponse.ok) {
-  throw new Error(`Staging application preflight failed with HTTP ${appResponse.status}.`);
+  throw new Error(`Deployed application preflight failed with HTTP ${appResponse.status}.`);
 }
 
 const authSettingsUrl = new URL('/auth/v1/settings', supabaseUrl);
 const authResponse = await fetchWithTimeout(authSettingsUrl, {
+  method: 'GET',
   headers: {
     apikey: anonKey,
     Authorization: `Bearer ${anonKey}`,
   },
 });
 if (!authResponse.ok) {
-  throw new Error(`Supabase Auth preflight failed with HTTP ${authResponse.status}.`);
+  throw new Error(`Supabase Auth read-only preflight failed with HTTP ${authResponse.status}.`);
 }
 
-console.log(`Staging preflight: app=${appResponse.status}, auth=${authResponse.status}`);
+console.log(`Read-only preflight: app=${appResponse.status}, auth=${authResponse.status}`);

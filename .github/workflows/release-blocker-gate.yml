@@ -41,7 +41,7 @@ jobs:
           bash -n scripts/ci/start-supabase-stable.sh
           bash -n scripts/ci/run-supabase-database-gate.sh
           node --check scripts/assert-release-blocker-env.mjs
-          node --check scripts/ci/preflight-staging.mjs
+          node --check scripts/ci/preflight-readonly.mjs
           node --check scripts/ci/check-cron-quoting.mjs
           node --check rentrix-app/scripts/storage-isolated-smoke.mjs
       - name: Typecheck application and tests
@@ -71,7 +71,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify pinned toolchain
         run: node scripts/ci/verify-tool-versions.mjs
-      - name: Replay every migration and run database plus isolated Storage blockers
+      - name: Replay migrations and run isolated lifecycle plus Storage blockers
         shell: bash
         run: bash scripts/ci/run-supabase-database-gate.sh
       - name: Upload database and Storage diagnostics
@@ -82,13 +82,16 @@ jobs:
           path: .ci-diagnostics/supabase
           if-no-files-found: ignore
 
+  # Keep the legacy job/check identifier so existing branch protection does not
+  # lose its required check. The job itself is production-readonly: financial
+  # and Storage writes are exercised only on the ephemeral local Supabase stack.
   release-blocker-authenticated-staging:
     name: release-blocker-authenticated-staging
     runs-on: ubuntu-latest
     timeout-minutes: 25
     needs: [release-blocker-code]
     env:
-      E2E_ENVIRONMENT_KIND: staging
+      E2E_ENVIRONMENT_KIND: production-readonly
       E2E_BASE_URL: ${{ secrets.E2E_STAGING_BASE_URL }}
       E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
@@ -104,10 +107,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify pinned toolchain
         run: node scripts/ci/verify-tool-versions.mjs
-      - name: Fail closed when staging credentials are unavailable
+      - name: Fail closed when deployed read-only credentials are unavailable
         run: node scripts/assert-release-blocker-env.mjs
-      - name: Verify staging application and Auth endpoints
-        run: node scripts/ci/preflight-staging.mjs
+      - name: Verify deployed application and Auth endpoints with GET-only preflight
+        run: node scripts/ci/preflight-readonly.mjs
       - name: Restore Chromium binary cache
         id: playwright-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -121,13 +124,13 @@ jobs:
         run: pnpm --filter ./rentrix-app exec playwright install chromium
       - name: Verify Chromium installation
         run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
-      - name: Run real authentication lifecycle tests with zero skips
+      - name: Run deployed read-only authentication lifecycle with zero skips
         run: pnpm --filter ./rentrix-app exec playwright test e2e/release-blocker-auth.spec.ts --config playwright.config.ts --project=chromium-desktop
-      - name: Upload failed authentication traces
+      - name: Upload failed read-only authentication traces
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: release-blocker-auth-failure
+          name: release-blocker-auth-readonly-failure
           path: |
             rentrix-app/playwright-report
             rentrix-app/test-results
