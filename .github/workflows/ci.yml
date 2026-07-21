@@ -69,7 +69,11 @@ jobs:
       - run: pnpm lint
       - name: Run architecture check
         run: pnpm --filter ./rentrix-app run check:architecture
-      - run: pnpm build
+      - name: Build production bundle
+        env:
+          VITE_SUPABASE_URL: https://nnggcnpcuomwfuupupwg.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_swlR7VYjd0H8mf4gZu0DXQ_PQuXs2vi
+        run: pnpm build
       - run: pnpm --filter ./rentrix-app run typecheck:test
       - name: Run full application tests
         id: full-tests
