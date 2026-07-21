@@ -4,8 +4,9 @@
 -- hidden by live-schema drift:
 --   1. journal_entries/audit_log identifiers are text on the verified live
 --      database but can be reconstructed as uuid by the historical replay.
---   2. journal_entries.date/source_id/entity_id are text on the live database
---      but can be reconstructed as date/uuid columns by the historical replay.
+--   2. journal_entries.date/source_id/entity_id and audit_log.user_id/entity_id
+--      are text on the live database but can be reconstructed as date/uuid
+--      columns by the historical replay.
 --   3. void_receipt_atomic(jsonb) depends on journal_entries.deleted_at,
 --      request_id, status, and batch_id. Those columns exist on the live database
 --      but were not all reconstructed by the historical migration chain.
@@ -64,22 +65,28 @@ begin
     end if;
   end loop;
 
-  select format_type(a.atttypid, a.atttypmod)
-  into v_column_type
-  from pg_attribute a
-  join pg_class c on c.oid = a.attrelid
-  join pg_namespace n on n.oid = c.relnamespace
-  where n.nspname = 'public'
-    and c.relname = 'audit_log'
-    and a.attname = 'id'
-    and a.attnum > 0
-    and not a.attisdropped;
+  foreach v_column_name in array array['id', 'user_id', 'entity_id'] loop
+    select format_type(a.atttypid, a.atttypmod)
+    into v_column_type
+    from pg_attribute a
+    join pg_class c on c.oid = a.attrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = 'audit_log'
+      and a.attname = v_column_name
+      and a.attnum > 0
+      and not a.attisdropped;
 
-  if v_column_type = 'uuid' then
-    execute 'alter table public.audit_log alter column id type text using id::text';
-  elsif v_column_type is distinct from 'text' then
-    raise exception 'Unsupported audit_log.id type: %', v_column_type;
-  end if;
+    if v_column_type is null then
+      execute format('alter table public.audit_log add column %I text', v_column_name);
+    elsif v_column_type <> 'text' then
+      execute format(
+        'alter table public.audit_log alter column %I type text using %I::text',
+        v_column_name,
+        v_column_name
+      );
+    end if;
+  end loop;
 end
 $block$;
 
