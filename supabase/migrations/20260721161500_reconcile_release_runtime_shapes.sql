@@ -1,8 +1,10 @@
 -- Reconcile clean-replay runtime shapes with the verified live schema.
 --
--- The ephemeral release rehearsal exposed two forward-compatibility gaps:
---   1. void_receipt_atomic(jsonb) expects journal_entries.deleted_at, which is
---      present on the live database but was missing after a clean migration replay.
+-- The ephemeral release rehearsal exposed forward-compatibility gaps that were
+-- hidden by live-schema drift:
+--   1. void_receipt_atomic(jsonb) depends on journal_entries.deleted_at,
+--      request_id, status, and batch_id. Those columns exist on the live database
+--      but were not all reconstructed by the historical migration chain.
 --   2. rpt_daily_collection(date,date) called _safe_date(date_time) without a
 --      stable cast. The live column is text while a clean replay can expose a
 --      timestamp-compatible shape, but _safe_date is intentionally defined for text.
@@ -14,6 +16,9 @@
 begin;
 
 alter table public.journal_entries
+  add column if not exists request_id text,
+  add column if not exists status text not null default 'posted',
+  add column if not exists batch_id uuid,
   add column if not exists deleted_at timestamptz;
 
 create or replace function public.rpt_daily_collection(p_from date, p_to date)
