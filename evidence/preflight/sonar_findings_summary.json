@@ -1,0 +1,217 @@
+{
+  "total": 888,
+  "by_type": {
+    "CODE_SMELL": 873,
+    "BUG": 1,
+    "VULNERABILITY": 14
+  },
+  "by_severity": {
+    "CRITICAL": 421,
+    "MAJOR": 228,
+    "MINOR": 239
+  },
+  "by_rule_top": [
+    [
+      "plsql:S1192",
+      390
+    ],
+    [
+      "typescript:S3358",
+      102
+    ],
+    [
+      "typescript:S6759",
+      81
+    ],
+    [
+      "typescript:S6571",
+      40
+    ],
+    [
+      "typescript:S1874",
+      31
+    ],
+    [
+      "typescript:S1128",
+      21
+    ],
+    [
+      "typescript:S6819",
+      20
+    ],
+    [
+      "typescript:S3776",
+      19
+    ],
+    [
+      "plsql:S125",
+      16
+    ],
+    [
+      "typescript:S1607",
+      12
+    ],
+    [
+      "githubactions:S6505",
+      12
+    ],
+    [
+      "typescript:S6848",
+      12
+    ],
+    [
+      "plsql:LiteralsNonPrintableCharactersCheck",
+      10
+    ],
+    [
+      "typescript:S7773",
+      9
+    ],
+    [
+      "typescript:S7780",
+      8
+    ],
+    [
+      "typescript:S4782",
+      6
+    ],
+    [
+      "typescript:S6551",
+      6
+    ],
+    [
+      "typescript:S4624",
+      6
+    ],
+    [
+      "typescript:S3863",
+      6
+    ],
+    [
+      "typescript:S9011",
+      5
+    ]
+  ],
+  "bugs_and_vulnerabilities": [
+    {
+      "type": "BUG",
+      "severity": "MAJOR",
+      "rule": "typescript:S6544",
+      "component": "rentrix-app/src/services/documents/DocumentRenderer.ts",
+      "line": 279,
+      "message": "Expected non-Promise value in a boolean conditional."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/release-blocker-gate.yml",
+      "line": 124,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/release-blocker-gate.yml",
+      "line": 126,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/browser-readiness.yml",
+      "line": 42,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/browser-readiness.yml",
+      "line": 44,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/browser-readiness.yml",
+      "line": 97,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/browser-readiness.yml",
+      "line": 99,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MINOR",
+      "rule": "javascript:S4036",
+      "component": "scripts/ci/verify-tool-versions.mjs",
+      "line": 29,
+      "message": "Make sure the \"PATH\" variable only contains fixed, unwriteable directories."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MINOR",
+      "rule": "javascript:S4036",
+      "component": "scripts/ci/verify-tool-versions.mjs",
+      "line": 31,
+      "message": "Make sure the \"PATH\" variable only contains fixed, unwriteable directories."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/release-blocker-gate.yml",
+      "line": 35,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/release-blocker-gate.yml",
+      "line": 71,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/release-blocker-gate.yml",
+      "line": 107,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/browser-readiness.yml",
+      "line": 29,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/browser-readiness.yml",
+      "line": 80,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    },
+    {
+      "type": "VULNERABILITY",
+      "severity": "MAJOR",
+      "rule": "githubactions:S6505",
+      "component": ".github/workflows/ci.yml",
+      "line": 29,
+      "message": "Omitting \"--ignore-scripts\" allows lifecycle scripts to run during package installation."
+    }
+  ]
+}

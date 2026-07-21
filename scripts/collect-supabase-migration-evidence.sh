@@ -53,6 +53,8 @@ printf 'First migration: %s\n' "${migration_files[0]}"
 printf 'Last migration: %s\n' "${migration_files[-1]}"
 printf 'Duplicate timestamp findings: %s\n' "$duplicate_versions"
 printf 'Ordering findings: %s\n' "$non_monotonic_versions"
+printf 'Local migration versions:\n'
+printf '  %s\n' "${migration_files[@]%.sql}"
 printf '\n'
 
 printf 'Environment access summary\n'
@@ -123,18 +125,35 @@ if [[ -n "${SUPABASE_DB_URL:-}" ]]; then
     exit 0
   fi
 
-  comm -23 "$local_tmp" "$live_tmp" > "$missing_tmp"
-  missing_count="$(wc -l < "$missing_tmp" | tr -d ' ')"
+  remote_only_tmp="$(mktemp)"
+  local_only_tmp="$(mktemp)"
+  trap 'rm -f "$live_tmp" "$local_tmp" "$missing_tmp" "$remote_only_tmp" "$local_only_tmp"' EXIT
+
+  comm -23 "$local_tmp" "$live_tmp" > "$local_only_tmp"
+  comm -13 "$local_tmp" "$live_tmp" > "$remote_only_tmp"
+  local_only_count="$(wc -l < "$local_only_tmp" | tr -d ' ')"
+  remote_only_count="$(wc -l < "$remote_only_tmp" | tr -d ' ')"
   printf 'Operation: read-only supabase_migrations.schema_migrations reconciliation\n'
   printf 'Live migration ledger entries read: %s\n' "$(wc -l < "$live_tmp" | tr -d ' ')"
-  printf 'Local migrations absent from live ledger: %s\n' "$missing_count"
-  if [[ "$missing_count" != "0" ]]; then
-    sed 's/^/Missing live migration: /' "$missing_tmp"
-    printf 'Status: FAILED - one or more local migrations are absent from the live ledger\n'
+  printf 'Local migration entries read: %s\n' "$(wc -l < "$local_tmp" | tr -d ' ')"
+  printf 'Local-only migrations absent from live ledger: %s\n' "$local_only_count"
+  printf 'Remote-only ledger entries absent from local migrations: %s\n' "$remote_only_count"
+
+  if [[ "$local_only_count" != "0" ]]; then
+    sed 's/^/Local-only migration: /' "$local_only_tmp"
+  fi
+
+  if [[ "$remote_only_count" != "0" ]]; then
+    sed 's/^/Remote-only ledger entry: /' "$remote_only_tmp"
+  fi
+
+  if [[ "$local_only_count" != "0" || "$remote_only_count" != "0" ]]; then
+    printf 'Status: FAILED - local and live migration ledgers differ\n'
+    printf 'Failure reason: migration drift detected by read-only comparison; do not run repair or push automatically\n'
     exit 1
   fi
 
-  printf 'Status: PASS - every local migration is present in the live ledger\n'
+  printf 'Status: PASS - local migrations and live ledger match exactly\n'
   exit 0
 fi
 
