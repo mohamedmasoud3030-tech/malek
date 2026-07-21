@@ -3,6 +3,7 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { AppCatchBoundary } from '@/components/error-boundary';
+import { PwaInstallPrompt } from '@/components/layout/pwa-install-prompt';
 import { getAppLanguageState } from '@/lib/i18n';
 
 function useVisualViewportCssVariable() {
@@ -57,6 +58,7 @@ export function RootRouteComponent() {
     <AppCatchBoundary>
       <Outlet />
       <Toaster richColors position="top-left" dir={getAppLanguageState().direction} />
+      <PwaInstallPrompt />
       {import.meta.env.DEV && !import.meta.env.VITE_E2E ? <TanStackRouterDevtools position="bottom-left" /> : null}
     </AppCatchBoundary>
   );
