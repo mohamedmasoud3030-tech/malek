@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ListControlSurfaceProps {
-  children: ReactNode;
-  className?: string;
-  ariaLabel?: string;
+  readonly children: ReactNode;
+  readonly className?: string;
+  readonly ariaLabel?: string;
 }
 
 /**

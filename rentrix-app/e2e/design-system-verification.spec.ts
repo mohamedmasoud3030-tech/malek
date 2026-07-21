@@ -21,16 +21,19 @@ const pages = [
     name: 'dashboard',
     url: '/login?e2e-dashboard-workspace=1',
     ready: 'main[data-e2e-dashboard-workspace]',
+    content: '[data-dashboard-kpi-grid]',
   },
   {
     name: 'properties',
     url: '/login?e2e-showcase-properties=1',
     ready: '[data-e2e-properties-workspace]',
+    content: '[data-list-results]',
   },
   {
     name: 'contracts',
     url: '/login?e2e-showcase-contracts=1',
     ready: 'main[data-e2e-contracts-workspace]',
+    content: '[data-page-header]',
   },
 ] as const;
 
@@ -67,7 +70,8 @@ for (const target of pages) {
   test(`${target.name}: renders without horizontal overflow and with real token utilities`, async ({ page }, testInfo) => {
     await page.goto(target.url);
     await expect(page.locator(target.ready).first()).toBeVisible({ timeout: 15_000 });
-    await page.waitForTimeout(400);
+    // Synchronize on an observable condition (content rendered) — not a fixed wait.
+    await expect(page.locator(target.content).first()).toBeVisible();
 
     await expectNoHorizontalOverflow(page, `${target.name} @${testInfo.project.name}`);
     await expectTokenUtilitiesReal(page);
@@ -117,8 +121,7 @@ test('theme dark follows the app toggle (data-theme), not prefers-color-scheme',
   await page.screenshot({ path: outPath, fullPage: true });
 });
 
-test('mobile: key actions keep ≥44px touch targets', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium-mobile', 'touch-target audit runs on the mobile project');
+test('key actions keep ≥44px touch targets on every viewport', async ({ page }) => {
   await page.goto('/login?e2e-showcase-contracts=1');
   await expect(page.locator('main[data-e2e-contracts-workspace]')).toBeVisible({ timeout: 15_000 });
 
@@ -126,10 +129,10 @@ test('mobile: key actions keep ≥44px touch targets', async ({ page }, testInfo
     const offenders: string[] = [];
     for (const el of Array.from(document.querySelectorAll<HTMLElement>('button, a[href]'))) {
       const rect = el.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) continue; // hidden
+      if (rect.width === 0 || rect.height === 0) continue; // hidden (e.g. desktop-only or mobile-only variants)
       if (rect.height < 40) offenders.push(`${el.tagName}:${(el.textContent ?? '').trim().slice(0, 20)}:${rect.height}`);
     }
     return offenders;
   });
-  expect(tooSmall, `touch targets below 40px on mobile: ${tooSmall.join(', ')}`).toHaveLength(0);
+  expect(tooSmall, `touch targets below 40px: ${tooSmall.join(', ')}`).toHaveLength(0);
 });

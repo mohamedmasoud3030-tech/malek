@@ -5,11 +5,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FilterTabs } from './filter-tabs';
 
-const options = [
+type TestFilter = 'all' | 'active' | 'expired';
+
+const options: Array<{ value: TestFilter; label: string; count?: number }> = [
   { value: 'all', label: 'الكل', count: 9 },
   { value: 'active', label: 'نشط', count: 4 },
   { value: 'expired', label: 'منتهي' },
-] as const;
+];
 
 describe('FilterTabs — ترميز الحالة وإتاحة الوصول', () => {
   it('renders every option with counts inside a labelled group', () => {
