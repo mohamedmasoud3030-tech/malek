@@ -32,6 +32,7 @@ export { FilterBar } from "./filter-bar";
 export { KpiCard } from "./kpi-card";
 export { InlineStatCard } from "./inline-stat-card";
 export { ResponsiveCardGrid } from "./responsive-card-grid";
+export { ViewModeToggle, type ViewMode, type ViewModeToggleProps } from "./view-mode-toggle";
 export { MobileCard } from "./mobile-card";
 export { DatePicker } from "./date-picker";
 export { Drawer } from "./drawer";
