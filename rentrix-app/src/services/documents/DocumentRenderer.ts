@@ -276,8 +276,9 @@ const PDF_GENERATION_FAILED_MESSAGE = 'تعذر إنشاء ملف PDF لهذا �
 /** Waits for web fonts to finish loading, tolerating environments without the Font Loading API. */
 async function waitForFontsReady(): Promise<void> {
   try {
-    if (typeof document !== 'undefined' && document.fonts?.ready) {
-      await document.fonts.ready;
+    const fonts = typeof document === 'undefined' ? undefined : document.fonts;
+    if (fonts) {
+      await fonts.ready;
     }
   } catch (error) {
     throw new DocumentRenderError(FONT_LOAD_FAILED_MESSAGE, error);
