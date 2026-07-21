@@ -178,6 +178,9 @@ select is(
   0::numeric,
   'voided payments are excluded from daily collection reporting'
 );
+
+reset role;
+
 select is(
   (
     select count(*)::integer
@@ -244,6 +247,7 @@ select set_config(
   '{"sub":"00000000-0000-0000-0000-000000001102","role":"authenticated","app_metadata":{"user_role":"USER"}}',
   true
 );
+set local role authenticated;
 select throws_ok(
   $$
     select public.create_deposit_atomic(jsonb_build_object(
@@ -413,6 +417,9 @@ select is(
   3,
   'deposit ledger contains held, deduction, and refund transactions'
 );
+
+reset role;
+
 select is(
   (
     select coalesce(sum(amount) filter (where upper(type) = 'DEBIT'), 0)::numeric
@@ -431,6 +438,13 @@ select is(
   400::numeric,
   'deposit lifecycle posts equal credits'
 );
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  true
+);
+set local role authenticated;
 
 select lives_ok(
   $$
@@ -466,6 +480,9 @@ select lives_ok(
   $$,
   'owner settlement draft replay is idempotent'
 );
+
+reset role;
+
 select is(
   (
     select count(*)::integer
@@ -484,6 +501,14 @@ select is(
   600::numeric,
   'settlement net payable reconciles gross minus fee and owner expenses'
 );
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  true
+);
+set local role authenticated;
+
 select throws_ok(
   $$
     select public.create_owner_settlement_draft_atomic(jsonb_build_object(
@@ -526,6 +551,9 @@ select lives_ok(
   $$,
   'settlement approval replay is idempotent'
 );
+
+reset role;
+
 select is(
   (
     select status::text from public.owner_settlements
@@ -534,6 +562,14 @@ select is(
   'APPROVED',
   'approved settlement reaches APPROVED status'
 );
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  true
+);
+set local role authenticated;
+
 select lives_ok(
   $$
     select public.pay_owner_settlement_atomic(jsonb_build_object(
@@ -562,6 +598,9 @@ select lives_ok(
   $$,
   'settlement payment replay is idempotent'
 );
+
+reset role;
+
 select is(
   (
     select status::text from public.owner_settlements
@@ -636,6 +675,14 @@ select is(
   3,
   'settlement lifecycle records create, approve, and pay audit evidence'
 );
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  true
+);
+set local role authenticated;
+
 select throws_ok(
   $$
     select public.pay_owner_settlement_atomic(jsonb_build_object(
@@ -667,6 +714,9 @@ select throws_ok(
   null,
   'a paid settlement cannot be cancelled directly'
 );
+
+reset role;
+
 select is(
   (
     select count(*)::integer
@@ -685,8 +735,6 @@ select is(
   3,
   'settlement lifecycle stores one idempotency record per successful operation'
 );
-
-reset role;
 
 select * from finish();
 rollback;
