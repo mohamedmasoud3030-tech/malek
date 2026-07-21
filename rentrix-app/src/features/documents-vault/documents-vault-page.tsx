@@ -158,7 +158,7 @@ export function DocumentsVaultPage() {
       anchor.download = document.fileName;
       anchor.target = '_blank';
       anchor.click();
-      toast.success('تم إنشاء رابط تنزيل مؤقت (60 دقيقة)');
+      toast.success('تم إنشاء رابط التنزيل');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل الملف');
     }
@@ -184,7 +184,7 @@ export function DocumentsVaultPage() {
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="إجمالي المستندات" value={documents.length.toLocaleString('ar')} icon={FolderKanban} accent="primary" sub="ملفات محفوظة في تخزين خاص" />
         <KpiCard label="ملفات PDF" value={totalPdfs.toLocaleString('ar')} icon={FileText} accent="sky" sub="مستندات" />
-        <KpiCard label="صور مرفقة" value={totalImages.toLocaleString('ar')} icon={ImageIcon} accent="emerald" sub="معاينات بروابط موقعة" />
+        <KpiCard label="صور مرفقة" value={totalImages.toLocaleString('ar')} icon={ImageIcon} accent="emerald" sub="معاينات متاحة" />
         <KpiCard
           label="التخزين الخاص"
           value={documents.reduce((sum, document) => sum + (document.fileSize || 0), 0) > 0
@@ -192,7 +192,7 @@ export function DocumentsVaultPage() {
             : '—'}
           icon={UploadCloud}
           accent="amber"
-          sub="Bucket غير عام"
+          sub="مساحة آمنة"
         />
       </ResponsiveCardGrid>
 
@@ -200,7 +200,7 @@ export function DocumentsVaultPage() {
         <CardHeader className="bg-muted/20 border-b">
           <CardTitle className="text-sm font-black">رفع مستند جديد</CardTitle>
           <CardDescription>
-            الحد الأقصى {vaultMaxFileSizeMb}MB. الأنواع المدعومة: PDF، JPEG، PNG، WebP. المعاينة والتنزيل بروابط موقعة مؤقتة فقط.
+            الحد الأقصى {vaultMaxFileSizeMb}MB. الأنواع المدعومة: PDF، JPEG، PNG، WebP. المعاينة والتنزيل مؤمنة.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 space-y-4">
@@ -373,7 +373,7 @@ export function DocumentsVaultPage() {
                 previewSignedUrl ? (
                   <img src={previewSignedUrl} alt={previewItem.title} className="max-h-80 object-contain" />
                 ) : (
-                  <p className="text-sm text-muted-foreground">جارٍ إنشاء رابط معاينة مؤقت...</p>
+                  <p className="text-sm text-muted-foreground">جارٍ تحميل المعاينة...</p>
                 )
               ) : (
                 <div className="text-center p-6 space-y-3">
@@ -388,7 +388,7 @@ export function DocumentsVaultPage() {
               <span>التصنيف: {vaultCategoryLabels[previewItem.category]} · تخزين خاص</span>
               <span>{new Date(previewItem.uploadedAt).toLocaleString('ar-OM')}</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">مسار التخزين: {previewItem.storagePath}</p>
+            <p className="text-[11px] text-muted-foreground hidden">مسار التخزين: {previewItem.storagePath}</p>
           </div>
         </div>
       ) : null}
