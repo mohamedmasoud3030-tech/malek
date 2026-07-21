@@ -6,6 +6,7 @@ const invalidSessionSeedMarker = 'rentrix-invalid-session-seeded';
 const fallbackEmailDomain = 'gmail.com';
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 const allowedAuthWritePaths = new Set(['/auth/v1/token', '/auth/v1/logout']);
+const readOnlyReportRpcPrefix = '/rest/v1/rpc/rpt_';
 
 function requireEnv(name: 'E2E_TEST_EMAIL' | 'E2E_TEST_PASSWORD'): string {
   const value = process.env[name]?.trim();
@@ -35,13 +36,15 @@ async function installReadOnlyNetworkGuard(page: Page) {
     }
 
     const { pathname } = new URL(request.url());
-    if (method === 'POST' && allowedAuthWritePaths.has(pathname)) {
+    const isAllowedAuthRequest = method === 'POST' && allowedAuthWritePaths.has(pathname);
+    const isReadOnlyReportRpc = method === 'POST' && pathname.startsWith(readOnlyReportRpcPrefix);
+    if (isAllowedAuthRequest || isReadOnlyReportRpc) {
       await route.continue();
       return;
     }
 
     await route.abort('blockedbyclient');
-    throw new Error(`Blocked unexpected ${method} request during read-only release verification: ${pathname}`);
+    throw new Error(`Blocked unexpected mutating ${method} request during read-only release verification: ${pathname}`);
   });
 }
 
