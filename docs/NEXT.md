@@ -2,7 +2,7 @@
 
 ## Current checkpoint
 
-> Verified starting `main` head: `495ae198` after merged PR #1230 on 2026-07-21.
+> Verified starting `main` head: `8088671b` on 2026-07-21; this includes merged PR #1230 and subsequent main updates.
 
 The bounded architecture refactor, migration-ledger consolidation, unit/contract integrity work, mobile form stabilization, theme expansion, action cleanup, stale-document removal, automation retry repair, live owner-settlement workspace, unified design system, mobile shell follow-up, private storage vault gate, and the documents/reports upgrade are complete in the repository. Do not reopen those phases from historical plans.
 
