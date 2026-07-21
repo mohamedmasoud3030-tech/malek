@@ -4,10 +4,12 @@
 -- hidden by live-schema drift:
 --   1. journal_entries/audit_log identifiers are text on the verified live
 --      database but can be reconstructed as uuid by the historical replay.
---   2. void_receipt_atomic(jsonb) depends on journal_entries.deleted_at,
+--   2. journal_entries.date/source_id/entity_id are text on the live database
+--      but can be reconstructed as date/uuid columns by the historical replay.
+--   3. void_receipt_atomic(jsonb) depends on journal_entries.deleted_at,
 --      request_id, status, and batch_id. Those columns exist on the live database
 --      but were not all reconstructed by the historical migration chain.
---   3. rpt_daily_collection(date,date) called _safe_date(date_time) without a
+--   4. rpt_daily_collection(date,date) called _safe_date(date_time) without a
 --      stable cast. The live column is text while a clean replay can expose a
 --      timestamp-compatible shape, but _safe_date is intentionally defined for text.
 --
@@ -19,11 +21,11 @@ begin;
 
 do $block$
 declare
-  v_journal_id_type text;
-  v_audit_id_type text;
+  v_column_type text;
+  v_column_name text;
 begin
   select format_type(a.atttypid, a.atttypmod)
-  into v_journal_id_type
+  into v_column_type
   from pg_attribute a
   join pg_class c on c.oid = a.attrelid
   join pg_namespace n on n.oid = c.relnamespace
@@ -33,14 +35,37 @@ begin
     and a.attnum > 0
     and not a.attisdropped;
 
-  if v_journal_id_type = 'uuid' then
+  if v_column_type = 'uuid' then
     execute 'alter table public.journal_entries alter column id type text using id::text';
-  elsif v_journal_id_type is distinct from 'text' then
-    raise exception 'Unsupported journal_entries.id type: %', v_journal_id_type;
+  elsif v_column_type is distinct from 'text' then
+    raise exception 'Unsupported journal_entries.id type: %', v_column_type;
   end if;
 
+  foreach v_column_name in array array['date', 'source_id', 'entity_id'] loop
+    select format_type(a.atttypid, a.atttypmod)
+    into v_column_type
+    from pg_attribute a
+    join pg_class c on c.oid = a.attrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = 'journal_entries'
+      and a.attname = v_column_name
+      and a.attnum > 0
+      and not a.attisdropped;
+
+    if v_column_type is null then
+      execute format('alter table public.journal_entries add column %I text', v_column_name);
+    elsif v_column_type <> 'text' then
+      execute format(
+        'alter table public.journal_entries alter column %I type text using %I::text',
+        v_column_name,
+        v_column_name
+      );
+    end if;
+  end loop;
+
   select format_type(a.atttypid, a.atttypmod)
-  into v_audit_id_type
+  into v_column_type
   from pg_attribute a
   join pg_class c on c.oid = a.attrelid
   join pg_namespace n on n.oid = c.relnamespace
@@ -50,10 +75,10 @@ begin
     and a.attnum > 0
     and not a.attisdropped;
 
-  if v_audit_id_type = 'uuid' then
+  if v_column_type = 'uuid' then
     execute 'alter table public.audit_log alter column id type text using id::text';
-  elsif v_audit_id_type is distinct from 'text' then
-    raise exception 'Unsupported audit_log.id type: %', v_audit_id_type;
+  elsif v_column_type is distinct from 'text' then
+    raise exception 'Unsupported audit_log.id type: %', v_column_type;
   end if;
 end
 $block$;
