@@ -25,7 +25,8 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await expect(page.getByText('خزينة المستندات')).toBeVisible();
       // Should frame the vault as private storage, not placehold.co mocks
       await expect(page.locator('body')).not.toContainText('placehold.co');
-      await expect(page.getByText('التخزين الخاص')).toBeVisible();
+      await expect(page.getByText('التخزين الخاص', { exact: true })).toBeVisible();
+      await expect(page.getByText('مساحة آمنة')).toBeVisible();
     });
 
     test(`deposits workspace loads with real ledger at ${vp.width}x${vp.height}`, async ({ page }) => {
