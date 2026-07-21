@@ -80,13 +80,18 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
       sections: [
         {
           title: 'جدول أداء واستغلال العقارات ونسب العائد والنفقات',
+          columns: ['العقار', 'إجمالي الوحدات', 'المشغولة', 'الشاغرة', 'نسبة الإشغال', 'إجمالي المصروفات'],
           rows: Array.from(propertyMap.values()).map((property) => {
             const units = property.occupied + property.vacant;
             const rate = units > 0 ? Math.round((property.occupied / units) * 100) : 0;
-            return {
-              label: property.title,
-              value: `الوحدات: ${units} (${property.occupied} مشغولة / ${property.vacant} شاغرة) | نسبة الإشغال: ${rate}% | إجمالي المصروفات: ${property.expenses.toLocaleString('ar-OM')} ${currencySymbol}`,
-            };
+            return [
+              property.title,
+              units,
+              property.occupied,
+              property.vacant,
+              `${rate}%`,
+              `${property.expenses.toLocaleString('ar-OM')} ${currencySymbol}`,
+            ];
           }),
         },
       ],

@@ -55,10 +55,15 @@ export function DeferredRevenueReportSection({
       },
       {
         title: 'جداول الاعتراف حسب العقد',
-        rows: schedule.schedules.map((row) => ({
-          label: `${row.tenantName} · ${row.propertyTitle} · عقد ${formatShortId(row.contractId)}`,
-          value: `المقدم ${row.totalCollected.toLocaleString('ar-OM')} ${currencySymbol} | شهريًا ${row.monthlyAmortizationAmount.toLocaleString('ar-OM')} ${currencySymbol} | المؤجل ${row.deferredRevenueRemaining.toLocaleString('ar-OM')} ${currencySymbol}`,
-        })),
+        columns: ['العقد', 'المستأجر', 'العقار', 'التحصيل المقدم', 'الاستهلاك الشهري', 'المؤجل المتبقي'],
+        rows: schedule.schedules.map((row) => [
+          formatShortId(row.contractId),
+          row.tenantName,
+          row.propertyTitle,
+          `${row.totalCollected.toLocaleString('ar-OM')} ${currencySymbol}`,
+          `${row.monthlyAmortizationAmount.toLocaleString('ar-OM')} ${currencySymbol}`,
+          `${row.deferredRevenueRemaining.toLocaleString('ar-OM')} ${currencySymbol}`,
+        ]),
       },
     ],
     totalSummary: `عقود مؤهلة: ${audit.candidateContractsCount} | إيصالات مقدمة: ${audit.candidateReceiptsCount} | تغطية الربط: ${Math.round(linkCoverage)}%`,

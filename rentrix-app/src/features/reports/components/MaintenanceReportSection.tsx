@@ -68,10 +68,14 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
         },
         {
           title: 'طلبات الصيانة الفعالة',
-          rows: activeRows.map((row) => ({
-            label: row.title ?? 'طلب صيانة',
-            value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | الأولوية: ${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority} | المسؤول: ${row.technician_name || row.assigned_to || 'غير مسند'} | الموعد: ${row.scheduled_date || 'غير مجدول'}`,
-          })),
+          columns: ['عنوان الطلب', 'الحالة', 'الأولوية', 'المسؤول', 'الموعد المجدول'],
+          rows: activeRows.map((row) => [
+            row.title ?? 'طلب صيانة',
+            maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status,
+            maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority,
+            row.technician_name || row.assigned_to || 'غير مسند',
+            row.scheduled_date || 'غير مجدول',
+          ]),
         },
       ],
       totalSummary: `إجمالي البلاغات: ${summary.total} | المكتمل: ${completedCount} | الفعال: ${activeRows.length} | العاجل الفعال: ${urgentActiveCount}`,

@@ -46,18 +46,22 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
       sections: [
         {
           title: 'توزيع المصروفات حسب التصنيف',
-          rows: categoryRows.map((row) => ({
-            label: row.category,
-            value: `المبلغ: ${row.total.toLocaleString('ar-OM')} ${currencySymbol} | عدد السندات: ${row.count}`,
-          })),
-          totals: ['إجمالي المصروفات التشغيلية', `${totalExpenses.toLocaleString('ar-OM')} ${currencySymbol}`],
+          columns: ['التصنيف', 'عدد السندات', 'المبلغ الإجمالي'],
+          rows: categoryRows.map((row) => [
+            row.category,
+            row.count,
+            `${row.total.toLocaleString('ar-OM')} ${currencySymbol}`,
+          ]),
+          totals: ['الإجمالي العام', '', `${totalExpenses.toLocaleString('ar-OM')} ${currencySymbol}`],
         },
         {
           title: 'توزيع المصروفات حسب العقارات',
-          rows: propertyRows.map((row) => ({
-            label: row.propertyTitle ?? formatShortId(row.propertyId),
-            value: `المبلغ: ${row.total.toLocaleString('ar-OM')} ${currencySymbol} | عدد الحركات: ${row.count}`,
-          })),
+          columns: ['العقار', 'عدد الحركات', 'المبلغ الإجمالي'],
+          rows: propertyRows.map((row) => [
+            row.propertyTitle ?? formatShortId(row.propertyId),
+            row.count,
+            `${row.total.toLocaleString('ar-OM')} ${currencySymbol}`,
+          ]),
         },
       ],
       totalSummary: `إجمالي النفقات: ${totalExpenses.toLocaleString('ar-OM')} ${currencySymbol} | عدد السندات: ${expensesCount}`,

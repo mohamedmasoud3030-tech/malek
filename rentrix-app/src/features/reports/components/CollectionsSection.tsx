@@ -55,20 +55,24 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
   const buildCollectionsReportData = (): ReportDocumentData => {
-    const todayStr = getTodayLocalDateString();
     return {
       reportTitle: 'كشف حركة التحصيلات اليومية والتدفقات النقدية',
       reportType: 'Daily_Collections_Report',
-      periodFrom: todayStr,
-      periodTo: todayStr,
+      periodFrom: getTodayLocalDateString(),
+      periodTo: getTodayLocalDateString(),
       sections: [
         {
           title: 'جدول المقبوضات حسب التاريخ وطرق السداد',
-          rows: rows.map((row) => ({
-            label: `تاريخ ${row.paymentDate} - (${row.paymentsCount} عمليات سداد)`,
-            value: `إجمالي اليوم: ${row.totalPaid.toLocaleString('ar-OM')} ${currencySymbol} | نقداً: ${row.methodTotals.cash} | تحويل: ${row.methodTotals.bank_transfer} | شيك: ${row.methodTotals.check}`,
-          })),
-          totals: ['إجمالي المقبوضات للفترة', `${totalCollected.toLocaleString('ar-OM')} ${currencySymbol}`],
+          columns: ['التاريخ', 'عدد العمليات', 'نقداً', 'تحويل بنكي', 'شيكات', 'إجمالي التحصيل'],
+          rows: rows.map((row) => [
+            row.paymentDate,
+            row.paymentsCount,
+            `${row.methodTotals.cash.toLocaleString('ar-OM')}`,
+            `${row.methodTotals.bank_transfer.toLocaleString('ar-OM')}`,
+            `${row.methodTotals.check.toLocaleString('ar-OM')}`,
+            `${row.totalPaid.toLocaleString('ar-OM')} ${currencySymbol}`,
+          ]),
+          totals: ['الإجمالي العام', '', '', '', '', `${totalCollected.toLocaleString('ar-OM')} ${currencySymbol}`],
         },
       ],
       totalSummary: `إجمالي المبلغ المحصل: ${totalCollected.toLocaleString('ar-OM')} ${currencySymbol} | كفاءة التحصيل: ${Math.round(collectionRate)}%`,

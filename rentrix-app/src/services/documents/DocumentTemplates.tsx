@@ -107,7 +107,8 @@ export interface ReportDocumentData {
   periodTo: string;
   sections: Array<{
     title: string;
-    rows: Array<{ label: string; value: string | number }>;
+    columns?: string[];
+    rows: Array<Array<string | number>> | Array<{ label: string; value: string | number }>;
     totals?: string[];
   }>;
   totalSummary?: string;
@@ -442,12 +443,17 @@ function buildTenantStatementModel(data: TenantStatementData, settings: Document
 
 function buildReportModel(data: ReportDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
   assertSettings(settings);
-  const tables = data.sections.map((section) => ({
-    title: section.title,
-    columns: section.rows.map((row) => row.label),
-    rows: [section.rows.map((row) => String(row.value))],
-    totals: section.totals,
-  }));
+  const tables = data.sections.map((section) => {
+    const isArrayRows = section.rows.length > 0 && Array.isArray(section.rows[0]);
+    return {
+      title: section.title,
+      columns: section.columns || ['البيان', 'النتيجة / القيمة'],
+      rows: isArrayRows
+        ? (section.rows as Array<Array<string | number>>).map((r) => r.map(String))
+        : (section.rows as Array<{ label: string; value: string | number }>).map((row) => [row.label, String(row.value)]),
+      totals: section.totals,
+    };
+  });
 
   return {
     type: 'report',

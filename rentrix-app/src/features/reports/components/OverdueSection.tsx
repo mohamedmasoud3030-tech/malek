@@ -55,11 +55,15 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
       sections: [
         {
           title: 'جدول الفواتير والذمم المتأخرة السداد',
-          rows: rows.map((row) => ({
-            label: `${row.tenantName || 'مستأجر'} - (فاتورة #${row.shortInvoiceId})`,
-            value: `المبلغ: ${row.remainingAmount} ${currencySymbol} | أيام التأخير: ${row.daysOverdue} يوم | الاستحقاق: ${row.dueDate}`,
-          })),
-          totals: ['إجمالي المتأخرات', `${totalOverdue.toLocaleString('ar-OM')} ${currencySymbol}`],
+          columns: ['رقم الفاتورة', 'المستأجر', 'تاريخ الاستحقاق', 'أيام التأخير', 'المبلغ المتبقي'],
+          rows: rows.map((row) => [
+            row.shortInvoiceId,
+            row.tenantName || 'غير محدد',
+            row.dueDate,
+            `${row.daysOverdue} يوم`,
+            `${row.remainingAmount} ${currencySymbol}`,
+          ]),
+          totals: ['إجمالي المتأخرات', '', '', '', `${totalOverdue.toLocaleString('ar-OM')} ${currencySymbol}`],
         },
       ],
       totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | متوسط التأخير: ${Math.round(averageDelay)} يوم | أكثر من 90 يوم: ${over90Amount.toLocaleString('ar-OM')} ${currencySymbol}`,

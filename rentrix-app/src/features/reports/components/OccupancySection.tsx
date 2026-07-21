@@ -49,18 +49,29 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
       sections: [
         {
           title: 'جدول نسبة الإشغال والشاغر حسب كل عقار',
-          rows: occupancyRows.map((row) => ({
-            label: row.property,
-            value: `إجمالي الوحدات: ${row.occupied + row.vacant} | المشغولة: ${row.occupied} | الشاغرة: ${row.vacant}`,
-          })),
-          totals: ['إجمالي إشغال المحفظة', `مشغولة: ${totalOccupied} / شاغرة: ${totalVacant} | نسبة الإشغال العامة: ${occupancyRate}%`],
+          columns: ['العقار', 'إجمالي الوحدات', 'المشغولة', 'الشاغرة', 'نسبة الإشغال'],
+          rows: occupancyRows.map((row) => {
+            const total = row.occupied + row.vacant;
+            const rate = total > 0 ? Math.round((row.occupied / total) * 100) : 0;
+            return [
+              row.property,
+              total,
+              row.occupied,
+              row.vacant,
+              `${rate}%`,
+            ];
+          }),
+          totals: ['الإجمالي العام', `${totalOccupied + totalVacant}`, `${totalOccupied}`, `${totalVacant}`, `${occupancyRate}%`],
         },
         {
           title: `العقود المنتهية خلال ${expiringContractWindowDays} يوم`,
-          rows: expiringRows.map((row) => ({
-            label: `${row.tenantName} · ${row.propertyTitle} · ${row.unitNumber}`,
-            value: `ينتهي في ${row.endDate} | متبقي ${row.daysRemaining} يوم`,
-          })),
+          columns: ['المستأجر', 'العقار والوحدة', 'تاريخ الانتهاء', 'الأيام المتبقية'],
+          rows: expiringRows.map((row) => [
+            row.tenantName,
+            `${row.propertyTitle} · ${row.unitNumber}`,
+            row.endDate,
+            `${row.daysRemaining} يوم`,
+          ]),
         },
       ],
       totalSummary: `معدل الإشغال: ${occupancyRate}% | الشواغر: ${totalVacant} | عقود قريبة من الانتهاء: ${expiringRows.length}`,
