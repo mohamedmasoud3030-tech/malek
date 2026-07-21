@@ -1,15 +1,17 @@
 import { expect, test, type Page, type Response } from '@playwright/test';
 
-const isReleaseBlockerRun = process.env.E2E_ENVIRONMENT_KIND === 'staging';
+const isReleaseBlockerRun = process.env.E2E_ENVIRONMENT_KIND === 'production-readonly';
 const authStorageKey = 'rentrix-auth-session';
 const invalidSessionSeedMarker = 'rentrix-invalid-session-seeded';
 const fallbackEmailDomain = 'gmail.com';
+const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
+const allowedAuthWritePaths = new Set(['/auth/v1/token', '/auth/v1/logout']);
 
 function requireEnv(name: 'E2E_TEST_EMAIL' | 'E2E_TEST_PASSWORD'): string {
   const value = process.env[name]?.trim();
   if (!value) {
     throw new Error(
-      `${name} is required. Release-blocker authentication tests must fail, not skip, when staging credentials are unavailable.`,
+      `${name} is required. Deployed read-only authentication tests must fail, not skip, when credentials are unavailable.`,
     );
   }
 
@@ -22,6 +24,26 @@ function requireEnv(name: 'E2E_TEST_EMAIL' | 'E2E_TEST_PASSWORD'): string {
 
 const email = isReleaseBlockerRun ? requireEnv('E2E_TEST_EMAIL') : '';
 const password = isReleaseBlockerRun ? requireEnv('E2E_TEST_PASSWORD') : '';
+
+async function installReadOnlyNetworkGuard(page: Page) {
+  await page.route('**/*', async (route) => {
+    const request = route.request();
+    const method = request.method().toUpperCase();
+    if (safeMethods.has(method)) {
+      await route.continue();
+      return;
+    }
+
+    const { pathname } = new URL(request.url());
+    if (method === 'POST' && allowedAuthWritePaths.has(pathname)) {
+      await route.continue();
+      return;
+    }
+
+    await route.abort('blockedbyclient');
+    throw new Error(`Blocked unexpected ${method} request during read-only release verification: ${pathname}`);
+  });
+}
 
 async function submitLogin(page: Page, candidatePassword: string): Promise<Response> {
   await page.goto('/login');
@@ -43,15 +65,19 @@ async function expectProtectedShell(page: Page) {
   await expect(page.getByText('لوحة التحكم').first()).toBeVisible();
 }
 
-test.describe('release blocker: real authentication lifecycle', () => {
+test.describe('release blocker: deployed read-only authentication lifecycle', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.skip(
     !isReleaseBlockerRun,
-    'The general browser smoke does not own staging credentials; the dedicated release-blocker job runs this suite with zero skips.',
+    'The general browser smoke does not own deployed credentials; the dedicated read-only release job runs this suite with zero skips.',
   );
 
-  test('valid staging credentials create a usable session that can be logged out', async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
+    await installReadOnlyNetworkGuard(page);
+  });
+
+  test('valid deployed credentials create a usable session that can be logged out', async ({ page }) => {
     const authResponse = await submitLogin(page, password);
     expect(authResponse.ok()).toBe(true);
     await expectProtectedShell(page);
