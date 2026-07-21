@@ -82,7 +82,7 @@ create policy company_members_admin_write on public.company_members
 
 insert into public.companies (id, name, slug, currency, locale, timezone)
 select
-  '00000000-0000-0000-0000-000000000001'::uuid,
+  '00000000-0000-4000-8000-000000000001'::uuid,
   coalesce(
     (select company_name from public.company_settings limit 1),
     'Rentrix Default Company'
@@ -98,7 +98,7 @@ on conflict (id) do nothing;
 -- من public.users (لو موجودين)
 insert into public.company_members (company_id, user_id, role)
 select
-  '00000000-0000-0000-0000-000000000001'::uuid,
+  '00000000-0000-4000-8000-000000000001'::uuid,
   u.id,
   case
     when u.role = 'ADMIN' then 'OWNER'
@@ -112,7 +112,7 @@ on conflict (company_id, user_id) do nothing;
 -- من auth.users مباشرة (لو في مستخدمين مش في public.users)
 insert into public.company_members (company_id, user_id, role)
 select
-  '00000000-0000-0000-0000-000000000001'::uuid,
+  '00000000-0000-4000-8000-000000000001'::uuid,
   au.id,
   'OWNER'
 from auth.users au
@@ -131,11 +131,11 @@ declare
 begin
   select count(*) into company_count
     from public.companies
-   where id = '00000000-0000-0000-0000-000000000001'::uuid;
+   where id = '00000000-0000-4000-8000-000000000001'::uuid;
 
   select count(*) into member_count
     from public.company_members
-   where company_id = '00000000-0000-0000-0000-000000000001'::uuid;
+   where company_id = '00000000-0000-4000-8000-000000000001'::uuid;
 
   raise notice '=== PHASE 1 VERIFICATION ===';
   raise notice 'Default company exists: %', company_count = 1;
