@@ -3,7 +3,7 @@ import { Outlet } from '@tanstack/react-router';
 export function AuthLayout() {
   return (
     <main
-      className="relative isolate min-h-screen min-h-dvh overflow-hidden bg-[hsl(var(--color-bg))]"
+      className="relative isolate min-h-screen min-h-dvh overflow-x-hidden bg-[hsl(var(--color-bg))]"
       dir="rtl"
     >
       {/* Subtle grid pattern — professional, not decorative */}
@@ -16,7 +16,7 @@ export function AuthLayout() {
           backgroundSize: '40px 40px',
         }}
       />
-      <div className="relative z-10 grid min-h-screen min-h-dvh place-items-center p-4 sm:p-6 lg:p-10">
+      <div className="relative z-10">
         <Outlet />
       </div>
     </main>
