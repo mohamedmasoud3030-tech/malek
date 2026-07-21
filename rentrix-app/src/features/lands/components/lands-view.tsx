@@ -1,53 +1,62 @@
-import { Archive, Edit, MapPinned, Plus, RotateCcw, Layers, TrendingUp, Tag } from 'lucide-react';
-import { useState } from 'react';
-import { AsyncContentState } from '@/components/async-content-state';
-import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { DataErrorScreen } from '@/components/data-error-screen';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
-import { WriteErrorCard } from '@/components/page-state-card';
-import { Card, CardContent } from '@/components/ui/card';
-import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { EntityForm } from '@/components/ui/entity-form';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { Textarea } from '@/components/ui/textarea';
-import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
-import type { LandFilters, LandFormValues, LandRecord } from '../types';
+import {
+  Archive,
+  Edit,
+  MapPinned,
+  Plus,
+  RotateCcw,
+  Layers,
+  TrendingUp,
+  Tag,
+} from "lucide-react";
+import { useState } from "react";
+import { AsyncContentState } from "@/components/async-content-state";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { DataErrorScreen } from "@/components/data-error-screen";
+import { PageHeader } from "@/components/layout/page-header";
+import { PageLayout } from "@/components/layout/page-layout";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
+import { WriteErrorCard } from "@/components/page-state-card";
+import { Card, CardContent } from "@/components/ui/card";
+import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
+import { EntityForm } from "@/components/ui/entity-form";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
+import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
+import type { LandFilters, LandFormValues, LandRecord } from "../types";
 
 const statusLabels: Record<string, string> = {
-  available: 'متاحة',
-  reserved: 'محجوزة',
-  sold: 'مباعة',
-  archived: 'مؤرشفة',
+  available: "متاحة",
+  reserved: "محجوزة",
+  sold: "مباعة",
+  archived: "مؤرشفة",
 };
 const categoryLabels: Record<string, string> = {
-  residential: 'سكني',
-  commercial: 'تجاري',
-  agricultural: 'زراعي',
-  investment: 'استثماري',
+  residential: "سكني",
+  commercial: "تجاري",
+  agricultural: "زراعي",
+  investment: "استثماري",
 };
 
 function money(value: number | null | undefined) {
-  if (value == null) return '—';
+  if (value == null) return "—";
   return formatMoney(value);
 }
 
 function area(value: number | null | undefined) {
-  if (value == null) return '—';
+  if (value == null) return "—";
   return `${formatNumber(value)} م²`;
 }
 
 function tone(status: string | null | undefined) {
-  if (status === 'available') return 'green' as const;
-  if (status === 'reserved') return 'gold' as const;
-  if (status === 'sold') return 'blue' as const;
-  return 'gray' as const;
+  if (status === "available") return "green" as const;
+  if (status === "reserved") return "gold" as const;
+  if (status === "sold") return "blue" as const;
+  return "gray" as const;
 }
 
 type Props = Readonly<{
@@ -73,27 +82,48 @@ type Props = Readonly<{
 
 export function LandsView(props: Props) {
   const {
-    rows, filters, draft, editingLand, formOpen,
-    isLoading, isSaving, isArchiving, error, writeError,
-    onFiltersChange, onDraftChange, onCreate, onEdit,
-    onFormOpenChange, onSubmit, onArchive, onRetry,
+    rows,
+    filters,
+    draft,
+    editingLand,
+    formOpen,
+    isLoading,
+    isSaving,
+    isArchiving,
+    error,
+    writeError,
+    onFiltersChange,
+    onDraftChange,
+    onCreate,
+    onEdit,
+    onFormOpenChange,
+    onSubmit,
+    onArchive,
+    onRetry,
   } = props;
-  const [archiveCandidate, setArchiveCandidate] = useState<LandRecord | null>(null);
-  const activeRows = rows.filter((r) => r.status !== 'archived').length;
-  const availableRows = rows.filter((r) => r.status === 'available').length;
+  const [archiveCandidate, setArchiveCandidate] = useState<LandRecord | null>(
+    null,
+  );
+  const activeRows = rows.filter((r) => r.status !== "archived").length;
+  const availableRows = rows.filter((r) => r.status === "available").length;
   const totalArea = rows.reduce((sum, r) => sum + (r.area ?? 0), 0);
-  const hasFilters = filters.query.trim().length > 0 || filters.status !== 'all';
+  const hasFilters =
+    filters.query.trim().length > 0 || filters.status !== "all";
 
   return (
     <PageLayout dir="rtl" lang="ar" className="space-y-4">
       <PageHeader
         title="قطع الأراضي التشغيلية"
         description="إدارة الأراضي ومتابعة حالتها ومساحاتها وقيمها التشغيلية."
-        count={isLoading ? '...' : rows.length}
+        count={isLoading ? "..." : rows.length}
         secondaryActions={
           <div className="hidden min-w-max items-center gap-2 rounded-2xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
             <Layers className="size-4" />
-            <span>{isLoading ? 'جارٍ حساب المساحة...' : `إجمالي المساحة ${area(totalArea)}`}</span>
+            <span>
+              {isLoading
+                ? "جارٍ حساب المساحة..."
+                : `إجمالي المساحة ${area(totalArea)}`}
+            </span>
           </div>
         }
         primaryAction={
@@ -106,60 +136,181 @@ export function LandsView(props: Props) {
 
       <ResponsiveCardGrid>
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl sm:h-28" />)
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl sm:h-28" />
+          ))
         ) : (
           <>
-            <KpiCard label="إجمالي السجلات" value={rows.length} icon={MapPinned} accent="primary" sub={`${activeRows} نشطة`} />
-            <KpiCard label="متاحة" value={availableRows} icon={TrendingUp} accent="emerald" sub="قابلة للتعامل" trend={availableRows > 0 ? 'up' : 'neutral'} trendValue={String(availableRows)} />
-            <KpiCard label="محجوزة" value={rows.filter((r) => r.status === 'reserved').length} icon={Tag} accent="amber" sub="قيد التفاوض" />
-            <KpiCard label="إجمالي المساحة" value={area(totalArea)} icon={Layers} accent="sky" sub="مجموع المساحات" />
+            <KpiCard
+              label="إجمالي السجلات"
+              value={rows.length}
+              icon={MapPinned}
+              accent="primary"
+              sub={`${activeRows} نشطة`}
+            />
+            <KpiCard
+              label="متاحة"
+              value={availableRows}
+              icon={TrendingUp}
+              accent="emerald"
+              sub="قابلة للتعامل"
+              trend={availableRows > 0 ? "up" : "neutral"}
+              trendValue={String(availableRows)}
+            />
+            <KpiCard
+              label="محجوزة"
+              value={rows.filter((r) => r.status === "reserved").length}
+              icon={Tag}
+              accent="amber"
+              sub="قيد التفاوض"
+            />
+            <KpiCard
+              label="إجمالي المساحة"
+              value={area(totalArea)}
+              icon={Layers}
+              accent="sky"
+              sub="مجموع المساحات"
+            />
           </>
         )}
       </ResponsiveCardGrid>
 
       <Card>
         <CardContent className="grid gap-3 p-3 sm:p-5 md:grid-cols-[1fr_12rem]">
-          <Input value={filters.query} onChange={(e) => onFiltersChange({ ...filters, query: e.target.value })} placeholder="بحث بالاسم، رقم القطعة، الموقع، التصنيف" aria-label="بحث الأراضي" />
-          <Select value={filters.status} onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })} aria-label="حالة الأرض">
+          <Input
+            value={filters.query}
+            onChange={(e) =>
+              onFiltersChange({ ...filters, query: e.target.value })
+            }
+            placeholder="بحث بالاسم، رقم القطعة، الموقع، التصنيف"
+            aria-label="بحث الأراضي"
+          />
+          <Select
+            value={filters.status}
+            onChange={(e) =>
+              onFiltersChange({ ...filters, status: e.target.value })
+            }
+            aria-label="حالة الأرض"
+          >
             <option value="all">كل الحالات</option>
-            {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </Select>
         </CardContent>
       </Card>
 
       {error ? (
         <div className="space-y-3">
-          <DataErrorScreen title="تعذر تحميل الأراضي" fallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة." error={error} />
-          <Button variant="secondary" onClick={onRetry} className="rounded-2xl"><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button>
+          <DataErrorScreen
+            title="تعذر تحميل الأراضي"
+            fallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."
+            error={error}
+          />
+          <Button variant="secondary" onClick={onRetry} className="rounded-2xl">
+            <RotateCcw className="me-2 size-4" />
+            إعادة المحاولة
+          </Button>
         </div>
       ) : null}
 
-      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل الأرض. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى.'} /> : null}
+      {writeError ? (
+        <WriteErrorCard
+          message={
+            writeError instanceof Error
+              ? writeError.message
+              : "تعذر حفظ التغيير على سجل الأرض. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."
+          }
+        />
+      ) : null}
 
       <AsyncContentState
-        status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
+        status={
+          isLoading
+            ? "loading"
+            : error
+              ? "error"
+              : rows.length === 0
+                ? "empty"
+                : "ready"
+        }
         error={error}
         errorTitle="تعذر تحميل الأراضي"
         errorFallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."
-        errorAction={<Button variant="secondary" onClick={onRetry} className="rounded-2xl"><RotateCcw className="me-2 size-4" />إعادة المحاولة</Button>}
-        emptyTitle={hasFilters ? 'لا توجد أراضٍ ضمن الفلاتر الحالية' : 'لا توجد سجلات أراضٍ بعد'}
-        emptyDescription={hasFilters ? 'غيّر البحث أو الحالة لعرض سجلات أراضٍ أخرى.' : 'أضف أول سجل أرض تشغيلي عند توفر بيانات قطعة أرض حقيقية.'}
-        emptyAction={!hasFilters ? <Button onClick={onCreate}><Plus className="me-2 size-4" />إضافة سجل أرض</Button> : undefined}
+        errorAction={
+          <Button variant="secondary" onClick={onRetry} className="rounded-2xl">
+            <RotateCcw className="me-2 size-4" />
+            إعادة المحاولة
+          </Button>
+        }
+        emptyTitle={
+          hasFilters
+            ? "لا توجد أراضٍ ضمن الفلاتر الحالية"
+            : "لا توجد سجلات أراضٍ بعد"
+        }
+        emptyDescription={
+          hasFilters
+            ? "غيّر البحث أو الحالة لعرض سجلات أراضٍ أخرى."
+            : "أضف أول سجل أرض تشغيلي عند توفر بيانات قطعة أرض حقيقية."
+        }
+        emptyAction={
+          !hasFilters ? (
+            <Button onClick={onCreate}>
+              <Plus className="me-2 size-4" />
+              إضافة سجل أرض
+            </Button>
+          ) : undefined
+        }
       >
-        <LandRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={setArchiveCandidate} />
+        <LandRows
+          rows={rows}
+          isArchiving={isArchiving}
+          onEdit={onEdit}
+          onArchiveClick={setArchiveCandidate}
+        />
       </AsyncContentState>
 
       <EntityForm.Overlay
         open={formOpen}
         onOpenChange={onFormOpenChange}
-        title={editingLand ? 'تعديل أرض' : 'إضافة أرض'}
+        title={editingLand ? "تعديل أرض" : "إضافة أرض"}
         description="أدخل بيانات الأرض ثم احفظ السجل."
         className="max-w-2xl"
       >
-        <EntityForm.Root className="md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); onSubmit(draft); }}>
-          <EntityForm.Field label="اسم الأرض"><Input required value={draft.name} onChange={(e) => onDraftChange({ ...draft, name: e.target.value })} /></EntityForm.Field>
-          <EntityForm.Field label="رقم القطعة"><Input value={draft.plot_no} onChange={(e) => onDraftChange({ ...draft, plot_no: e.target.value })} /></EntityForm.Field>
-          <EntityForm.Field label="الموقع"><Input value={draft.location} onChange={(e) => onDraftChange({ ...draft, location: e.target.value })} /></EntityForm.Field>
+        <EntityForm.Root
+          className="md:grid-cols-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit(draft);
+          }}
+        >
+          <EntityForm.Field label="اسم الأرض">
+            <Input
+              required
+              value={draft.name}
+              onChange={(e) =>
+                onDraftChange({ ...draft, name: e.target.value })
+              }
+            />
+          </EntityForm.Field>
+          <EntityForm.Field label="رقم القطعة">
+            <Input
+              value={draft.plot_no}
+              onChange={(e) =>
+                onDraftChange({ ...draft, plot_no: e.target.value })
+              }
+            />
+          </EntityForm.Field>
+          <EntityForm.Field label="الموقع">
+            <Input
+              value={draft.location}
+              onChange={(e) =>
+                onDraftChange({ ...draft, location: e.target.value })
+              }
+            />
+          </EntityForm.Field>
 
           <ChoiceField
             label="التصنيف"
@@ -175,29 +326,96 @@ export function LandsView(props: Props) {
             onChange={(status) => onDraftChange({ ...draft, status })}
           />
 
-          <EntityForm.Field label="معرف المالك"><Input value={draft.owner_id} onChange={(e) => onDraftChange({ ...draft, owner_id: e.target.value })} placeholder="اختياري" /></EntityForm.Field>
-          <EntityForm.Field label="سعر المالك"><Input type="number" min="0" inputMode="decimal" value={draft.owner_price} onChange={(e) => onDraftChange({ ...draft, owner_price: e.target.value })} /></EntityForm.Field>
-          <EntityForm.Field label="سعر الشراء"><Input type="number" min="0" inputMode="decimal" value={draft.purchase_price} onChange={(e) => onDraftChange({ ...draft, purchase_price: e.target.value })} /></EntityForm.Field>
-          <EntityForm.Field label="عمولة تقديرية"><Input type="number" min="0" inputMode="decimal" value={draft.commission} onChange={(e) => onDraftChange({ ...draft, commission: e.target.value })} /></EntityForm.Field>
-          <EntityForm.Field label="ملاحظات" className="md:col-span-2"><Textarea value={draft.notes} onChange={(e) => onDraftChange({ ...draft, notes: e.target.value })} /></EntityForm.Field>
-          <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} />
+          <EntityForm.Field label="معرف المالك">
+            <Input
+              value={draft.owner_id}
+              onChange={(e) =>
+                onDraftChange({ ...draft, owner_id: e.target.value })
+              }
+              placeholder="اختياري"
+            />
+          </EntityForm.Field>
+          <EntityForm.Field label="سعر المالك">
+            <Input
+              type="number"
+              min="0"
+              inputMode="decimal"
+              value={draft.owner_price}
+              onChange={(e) =>
+                onDraftChange({ ...draft, owner_price: e.target.value })
+              }
+            />
+          </EntityForm.Field>
+          <EntityForm.Field label="سعر الشراء">
+            <Input
+              type="number"
+              min="0"
+              inputMode="decimal"
+              value={draft.purchase_price}
+              onChange={(e) =>
+                onDraftChange({ ...draft, purchase_price: e.target.value })
+              }
+            />
+          </EntityForm.Field>
+          <EntityForm.Field label="عمولة تقديرية">
+            <Input
+              type="number"
+              min="0"
+              inputMode="decimal"
+              value={draft.commission}
+              onChange={(e) =>
+                onDraftChange({ ...draft, commission: e.target.value })
+              }
+            />
+          </EntityForm.Field>
+          <EntityForm.Field label="ملاحظات" className="md:col-span-2">
+            <Textarea
+              value={draft.notes}
+              onChange={(e) =>
+                onDraftChange({ ...draft, notes: e.target.value })
+              }
+            />
+          </EntityForm.Field>
+          <EntityForm.Actions
+            className="md:col-span-2"
+            onCancel={() => onFormOpenChange(false)}
+            isSubmitting={isSaving}
+            submitLabel={isSaving ? "جارٍ الحفظ..." : "حفظ"}
+          />
         </EntityForm.Root>
       </EntityForm.Overlay>
 
       <ConfirmDialog
         open={archiveCandidate != null}
-        onOpenChange={(open) => { if (!open) setArchiveCandidate(null); }}
-        title={`أرشفة الأرض ${archiveCandidate?.name ?? archiveCandidate?.plot_no ?? ''}؟`}
+        onOpenChange={(open) => {
+          if (!open) setArchiveCandidate(null);
+        }}
+        title={`أرشفة الأرض ${archiveCandidate?.name ?? archiveCandidate?.plot_no ?? ""}؟`}
         description="سيتم نقل سجل الأرض إلى الأرشيف ولن يظهر في القوائم النشطة."
         confirmLabel="تأكيد الأرشفة"
         isLoading={isArchiving}
-        onConfirm={() => { if (archiveCandidate) { onArchive(archiveCandidate.id); setArchiveCandidate(null); } }}
+        onConfirm={() => {
+          if (archiveCandidate) {
+            onArchive(archiveCandidate.id);
+            setArchiveCandidate(null);
+          }
+        }}
       />
     </PageLayout>
   );
 }
 
-function ChoiceField({ label, value, options, onChange }: Readonly<{ label: string; value: string; options: Record<string, string>; onChange: (value: string) => void }>) {
+function ChoiceField({
+  label,
+  value,
+  options,
+  onChange,
+}: Readonly<{
+  label: string;
+  value: string;
+  options: Record<string, string>;
+  onChange: (value: string) => void;
+}>) {
   return (
     <fieldset className="grid gap-2">
       <legend className="text-sm font-bold">{label}</legend>
@@ -206,7 +424,7 @@ function ChoiceField({ label, value, options, onChange }: Readonly<{ label: stri
           <Button
             key={optionValue}
             type="button"
-            variant={value === optionValue ? 'default' : 'secondary'}
+            variant={value === optionValue ? "default" : "secondary"}
             className="min-h-11 rounded-xl text-sm"
             aria-pressed={value === optionValue}
             onClick={() => onChange(optionValue)}
@@ -219,44 +437,175 @@ function ChoiceField({ label, value, options, onChange }: Readonly<{ label: stri
   );
 }
 
-function LandRows({ rows, isArchiving, onEdit, onArchiveClick }: Readonly<{ rows: LandRecord[]; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchiveClick: (row: LandRecord) => void }>) {
+function LandRows({
+  rows,
+  isArchiving,
+  onEdit,
+  onArchiveClick,
+}: Readonly<{
+  rows: LandRecord[];
+  isArchiving: boolean;
+  onEdit: (row: LandRecord) => void;
+  onArchiveClick: (row: LandRecord) => void;
+}>) {
   const columns: ColumnDef<LandRecord>[] = [
-    { key: 'name', header: 'الأرض', className: 'max-w-56', render: (row) => <><p className="whitespace-normal break-words font-bold">{row.name ?? row.plot_no ?? 'بدون اسم'}</p><p className="text-xs text-muted-foreground">{categoryLabels[row.category ?? ''] ?? row.category}</p></> },
-    { key: 'location', header: 'الموقع', className: 'max-w-72', render: (row) => <span className="whitespace-normal break-words">{row.location ?? '—'}</span> },
-    { key: 'area', header: 'المساحة', render: (row) => <span dir="ltr">{area(row.area)}</span> },
-    { key: 'value', header: 'القيمة', render: (row) => <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> },
-    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge> },
-    { key: 'actions', header: 'إجراءات', render: (row) => <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} /> },
+    {
+      key: "name",
+      header: "الأرض",
+      className: "max-w-56",
+      render: (row) => (
+        <>
+          <p className="whitespace-normal break-words font-bold">
+            {row.name ?? row.plot_no ?? "بدون اسم"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {categoryLabels[row.category ?? ""] ?? row.category}
+          </p>
+        </>
+      ),
+    },
+    {
+      key: "location",
+      header: "الموقع",
+      className: "max-w-72",
+      render: (row) => (
+        <span className="whitespace-normal break-words">
+          {row.location ?? "—"}
+        </span>
+      ),
+    },
+    {
+      key: "area",
+      header: "المساحة",
+      render: (row) => <span dir="ltr">{area(row.area)}</span>,
+    },
+    {
+      key: "value",
+      header: "القيمة",
+      render: (row) => (
+        <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span>
+      ),
+    },
+    {
+      key: "status",
+      header: "الحالة",
+      render: (row) => (
+        <StatusBadge tone={tone(row.status)}>
+          {statusLabels[row.status ?? ""] ?? row.status ?? "—"}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: "actions",
+      header: "إجراءات",
+      render: (row) => (
+        <RowActions
+          id={row.id}
+          disabled={isArchiving}
+          onEdit={() => onEdit(row)}
+          onArchiveClick={() => onArchiveClick(row)}
+        />
+      ),
+    },
   ];
 
-  return <EntityTable rows={rows} columns={columns} keyOf={(row) => row.id} aria-label="قائمة الأراضي" renderMobileCard={(row) => <LandCard row={row} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={onArchiveClick} />} />;
+  return (
+    <EntityTable
+      rows={rows}
+      columns={columns}
+      keyOf={(row) => row.id}
+      aria-label="قائمة الأراضي"
+      enableViewModeToggle
+      viewModeStorageKey="rentrix:view-mode:lands"
+      renderMobileCard={(row) => (
+        <LandCard
+          row={row}
+          isArchiving={isArchiving}
+          onEdit={onEdit}
+          onArchiveClick={onArchiveClick}
+        />
+      )}
+    />
+  );
 }
 
-function LandCard({ row, isArchiving, onEdit, onArchiveClick }: Readonly<{ row: LandRecord; isArchiving: boolean; onEdit: (row: LandRecord) => void; onArchiveClick: (row: LandRecord) => void }>) {
+function LandCard({
+  row,
+  isArchiving,
+  onEdit,
+  onArchiveClick,
+}: Readonly<{
+  row: LandRecord;
+  isArchiving: boolean;
+  onEdit: (row: LandRecord) => void;
+  onArchiveClick: (row: LandRecord) => void;
+}>) {
   return (
     <div className="rounded-2xl border border-border/60 bg-card p-4 transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-black">{row.name ?? row.plot_no ?? 'بدون اسم'}</p>
-          <p className="mt-0.5 truncate text-sm text-muted-foreground">{row.location ?? 'بدون موقع'}</p>
-          {row.category ? <p className="mt-1 text-xs text-muted-foreground/70">{categoryLabels[row.category] ?? row.category}</p> : null}
+          <p className="truncate font-black">
+            {row.name ?? row.plot_no ?? "بدون اسم"}
+          </p>
+          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+            {row.location ?? "بدون موقع"}
+          </p>
+          {row.category ? (
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              {categoryLabels[row.category] ?? row.category}
+            </p>
+          ) : null}
         </div>
-        <StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>
+        <StatusBadge tone={tone(row.status)}>
+          {statusLabels[row.status ?? ""] ?? row.status ?? "—"}
+        </StatusBadge>
       </div>
       <div className="mt-3 flex items-center gap-4 text-sm font-bold">
-        {row.area != null ? <span className="text-muted-foreground" dir="ltr">{area(row.area)}</span> : null}
-        {(row.owner_price ?? row.purchase_price) != null ? <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span> : null}
+        {row.area != null ? (
+          <span className="text-muted-foreground" dir="ltr">
+            {area(row.area)}
+          </span>
+        ) : null}
+        {(row.owner_price ?? row.purchase_price) != null ? (
+          <span dir="ltr">{money(row.owner_price ?? row.purchase_price)}</span>
+        ) : null}
       </div>
-      <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />
+      <RowActions
+        id={row.id}
+        disabled={isArchiving}
+        onEdit={() => onEdit(row)}
+        onArchiveClick={() => onArchiveClick(row)}
+      />
     </div>
   );
 }
 
-function RowActions({ id, disabled, onEdit, onArchiveClick }: Readonly<{ id: string; disabled: boolean; onEdit: () => void; onArchiveClick: () => void }>) {
+function RowActions({
+  id,
+  disabled,
+  onEdit,
+  onArchiveClick,
+}: Readonly<{
+  id: string;
+  disabled: boolean;
+  onEdit: () => void;
+  onArchiveClick: () => void;
+}>) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      <Button className="min-h-11" variant="secondary" onClick={onEdit}><Edit className="me-2 size-4" />تعديل</Button>
-      <Button className="min-h-11" variant="danger" disabled={disabled} onClick={onArchiveClick}><Archive className="me-2 size-4" />أرشفة</Button>
+      <Button className="min-h-11" variant="secondary" onClick={onEdit}>
+        <Edit className="me-2 size-4" />
+        تعديل
+      </Button>
+      <Button
+        className="min-h-11"
+        variant="danger"
+        disabled={disabled}
+        onClick={onArchiveClick}
+      >
+        <Archive className="me-2 size-4" />
+        أرشفة
+      </Button>
     </div>
   );
 }
