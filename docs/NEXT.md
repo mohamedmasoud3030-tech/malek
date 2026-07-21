@@ -21,7 +21,7 @@ The approved release model is:
 
 1. Every schema replay and write-heavy rehearsal runs on a fresh **ephemeral isolated Supabase stack inside GitHub Actions**.
 2. The stack starts from an empty database, applies the full migration chain, runs authenticated pgTAP lifecycle tests and the real Storage HTTP smoke, then is destroyed automatically with no backup.
-3. Production/deployed verification is **read-only except for Supabase Auth token/login/logout endpoints**. Playwright blocks any other non-GET request before it can reach the backend.
+3. Production/deployed verification permits safe GET/HEAD/OPTIONS requests, Supabase Auth token/login/logout requests, and explicitly read-only `rpt_*` PostgREST RPC calls. Playwright blocks every other non-safe request before it can reach the backend.
 4. No project named `Lena show`, no paid Supabase branch, and no persistent write smoke against Production are permitted.
 5. The existing required-check identifier `release-blocker-authenticated-staging` is retained only for branch-protection compatibility; its implementation is `production-readonly` and is not a Staging write job.
 
@@ -40,6 +40,8 @@ Branch `agent/ephemeral-release-rehearsal` adds the missing isolated lifecycle c
 
 All test data is wrapped in transactions or cleaned in `finally`; the GitHub Actions stack is stopped and removed on every exit path.
 
+The first isolated run exposed two clean-replay defects that were hidden by live-schema drift. Forward migration `20260721161500_reconcile_release_runtime_shapes.sql` now adds the missing idempotent `journal_entries.deleted_at` shape and makes `rpt_daily_collection` cast `payments.date_time` to the stable `_safe_date(text)` contract. The migration is committed to the replay chain only and has not been applied to Production.
+
 ## Live production state verified on 2026-07-21
 
 Production project: `nnggcnpcuomwfuupupwg` (`RENTRIX EGY (live)`).
@@ -49,8 +51,9 @@ Migration ledger:
 - `20260719123000_fix_automation_retry_self_duplicate` — applied.
 - `20260719150000_drop_rogue_permissive_attachments_upload_policy` — applied.
 - `20260721090000_harden_private_attachments_bucket` — not recorded in the migration ledger.
+- `20260721161500_reconcile_release_runtime_shapes` — repository-only pending release migration; not applied to Production.
 
-Live Storage state already matches the last migration contract:
+Live Storage state already matches the last storage migration contract:
 
 - `attachments.public = false`;
 - file-size limit = 5MB;
@@ -58,7 +61,7 @@ Live Storage state already matches the last migration contract:
 - every attachments mutation policy requires `is_admin_or_manager()`;
 - no broad `authenticated upload attachments` policy exists.
 
-Do not apply or repair-register `20260721090000` on Production without a restorable backup and explicit product-owner approval. The missing ledger row is a production-drift item, not permission to write automatically.
+Do not apply or repair-register `20260721090000` or apply `20260721161500` on Production without a restorable backup and explicit product-owner approval. The missing ledger row and forward migration are production-release items, not permission to write automatically.
 
 ## Release verification contract
 
@@ -67,7 +70,7 @@ For every release candidate:
 1. Run the full ephemeral migration replay and all pgTAP tests.
 2. Run the authenticated isolated lifecycle covering contracts, invoices, payment, receipt VOID, deposits, owner settlements, RLS, idempotency, journals, balances, and reports.
 3. Run the real isolated Storage HTTP smoke on the same temporary stack.
-4. Require deployed read-only Auth verification: valid login/logout, invalid credentials, invalid-session recovery, HTTPS health, and a network guard that blocks unexpected writes.
+4. Require deployed read-only Auth verification: valid login/logout, invalid credentials, invalid-session recovery, HTTPS health, safe reads, explicitly read-only `rpt_*` RPCs, and a network guard that blocks every other write-capable request.
 5. Run the final browser smoke on the exact deployed release candidate and record Go/No-Go.
 6. Before any Production schema or ledger repair: take a restorable backup, reconcile the merged migration chain with the live ledger, and obtain explicit approval.
 
@@ -75,7 +78,7 @@ For every release candidate:
 
 Code-side Go/No-Go is pending the CI result for `agent/ephemeral-release-rehearsal`.
 
-Persistent Staging is no longer a blocker because the approved zero-budget contract replaces it with an isolated ephemeral write environment. Production write approval remains required only for the unrecorded `20260721090000` ledger reconciliation or any future live schema/data mutation.
+Persistent Staging is no longer a blocker because the approved zero-budget contract replaces it with an isolated ephemeral write environment. Production write approval remains required for migration-ledger reconciliation, forward migration application, or any future live schema/data mutation.
 
 ## After the release gate
 
