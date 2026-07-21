@@ -25,13 +25,13 @@ The approved release model is:
 4. No project named `Lena show`, no paid Supabase branch, and no persistent write smoke against Production are permitted.
 5. The existing required-check identifier `release-blocker-authenticated-staging` is retained only for branch-protection compatibility; its implementation is `production-readonly` and is not a Staging write job.
 
-## Execute now — ephemeral release rehearsal
+## Completed — ephemeral release rehearsal
 
-Branch `agent/ephemeral-release-rehearsal` adds the missing isolated lifecycle coverage:
+PR #1231 (`agent/ephemeral-release-rehearsal`) adds the missing isolated lifecycle coverage:
 
 - contract creation through the authenticated privileged RPC;
 - invoice payment and linked receipt creation;
-- payment-backed receipt VOID, replay idempotency, invoice balance restoration, report exclusion, and journal reversal balance;
+- payment-backed receipt VOID, replay idempotency, invoice balance restoration, report exclusion, and balanced journal reversal;
 - tenant deposit create → replay → overdraw rejection → deduction → replay → refund → replay;
 - immutable deposit transactions and balanced deposit journal totals;
 - owner settlement draft → replay → duplicate-period rejection → approve → replay → pay → replay;
@@ -40,7 +40,24 @@ Branch `agent/ephemeral-release-rehearsal` adds the missing isolated lifecycle c
 
 All test data is wrapped in transactions or cleaned in `finally`; the GitHub Actions stack is stopped and removed on every exit path.
 
-The first isolated run exposed two clean-replay defects that were hidden by live-schema drift. Forward migration `20260721161500_reconcile_release_runtime_shapes.sql` now adds the missing idempotent `journal_entries.deleted_at` shape and makes `rpt_daily_collection` cast `payments.date_time` to the stable `_safe_date(text)` contract. The migration is committed to the replay chain only and has not been applied to Production.
+The rehearsal exposed clean-replay defects that were hidden by live-schema drift. Two forward migrations now reconcile both shapes without rewriting historical migrations:
+
+- `20260721161500_reconcile_release_runtime_shapes.sql` aligns the replayed `journal_entries` and `audit_log` identifier/date/source columns with their verified live text contracts, restores the missing journal lifecycle columns, and makes `rpt_daily_collection` call the stable `_safe_date(text)` signature.
+- `20260721162000_fix_void_and_deposit_replay_compatibility.sql` preserves the live epoch-millisecond `receipts.voided_at` contract and makes deposit RPCs safely support the text/UUID identifier shapes encountered across live and clean-replay databases.
+
+Both migrations are committed to the repository migration chain only. Neither has been applied to Production.
+
+## Verification evidence — PR #1231
+
+Verified green on head `a0f98fa6` on 2026-07-21:
+
+- `CI / Typecheck, Lint & Build` — success.
+- `Release Blocker Gate / release-blocker-code` — success.
+- `Release Blocker Gate / release-blocker-database` — success: full migration replay, all pgTAP suites including the new 60-assertion lifecycle rehearsal, and isolated Storage HTTP smoke.
+- `Release Blocker Gate / release-blocker-authenticated-staging` — success; despite the retained check identifier, the implementation is deployed `production-readonly` verification.
+- `Browser Readiness / E2E Smoke` — success.
+
+No Production schema or data write and no paid Supabase resource were used for this evidence.
 
 ## Live production state verified on 2026-07-21
 
@@ -52,8 +69,9 @@ Migration ledger:
 - `20260719150000_drop_rogue_permissive_attachments_upload_policy` — applied.
 - `20260721090000_harden_private_attachments_bucket` — not recorded in the migration ledger.
 - `20260721161500_reconcile_release_runtime_shapes` — repository-only pending release migration; not applied to Production.
+- `20260721162000_fix_void_and_deposit_replay_compatibility` — repository-only pending release migration; not applied to Production.
 
-Live Storage state already matches the last storage migration contract:
+Live Storage state already matches the storage-hardening contract:
 
 - `attachments.public = false`;
 - file-size limit = 5MB;
@@ -61,7 +79,7 @@ Live Storage state already matches the last storage migration contract:
 - every attachments mutation policy requires `is_admin_or_manager()`;
 - no broad `authenticated upload attachments` policy exists.
 
-Do not apply or repair-register `20260721090000` or apply `20260721161500` on Production without a restorable backup and explicit product-owner approval. The missing ledger row and forward migration are production-release items, not permission to write automatically.
+Do not apply or repair-register `20260721090000`, `20260721161500`, or `20260721162000` on Production without a restorable backup and explicit product-owner approval. The missing ledger row and forward migrations are production-release items, not permission to write automatically.
 
 ## Release verification contract
 
@@ -76,13 +94,14 @@ For every release candidate:
 
 ## Current Go/No-Go
 
-Code-side Go/No-Go is pending the CI result for `agent/ephemeral-release-rehearsal`.
+- **Repository/CI gate: GO** for PR #1231 after the green evidence above.
+- **Production database rollout: HOLD** until a restorable backup and explicit approval are available for the pending migrations/ledger reconciliation.
 
 Persistent Staging is no longer a blocker because the approved zero-budget contract replaces it with an isolated ephemeral write environment. Production write approval remains required for migration-ledger reconciliation, forward migration application, or any future live schema/data mutation.
 
 ## After the release gate
 
-Only after the gate is green proceed to bounded product/accounting completeness work:
+Only after the Production database rollout gate is explicitly completed proceed to bounded product/accounting completeness work:
 
 - property-management office-fee rules;
 - master-lease fixed owner obligations;
