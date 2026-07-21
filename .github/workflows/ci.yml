@@ -77,7 +77,7 @@ jobs:
       - name: Build production bundle
         env:
           VITE_SUPABASE_URL: https://nnggcnpcuomwfuupupwg.supabase.co
-          VITE_SUPABASE_ANON_KEY: sb_publishable_swlR7VYjd0H8mf4gZu0DXQ_PQuXs2vi
+          VITE_SUPABASE_ANON_KEY: sb_publishable_JeLckFV2xYl78rei1-Q_EA_WcHif6WW
         run: pnpm build
       - run: pnpm --filter ./rentrix-app run typecheck:test
       - name: Run full application tests
