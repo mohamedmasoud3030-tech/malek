@@ -276,6 +276,7 @@ function buildInvoiceModel(data: InvoiceDocumentData, settings: DocumentSettings
       { label: 'العقار والوحدة', value: `${data.propertyName} / ${data.unitNumber}` },
       { label: 'تاريخ الاستحقاق', value: formatDate(data.dueDate) },
       { label: 'وصف المطالبة', value: data.description },
+      { label: 'المبلغ تفقيطاً', value: amountToWords(data.totalAmount, settings) },
     ],
     tables: [
       {
@@ -370,6 +371,7 @@ function buildOwnerStatementModel(data: OwnerStatementData, settings: DocumentSe
       { label: 'إجمالي المصروفات', value: formatMoney(data.totalExpenses, settings) },
       { label: 'عمولة إدارة الأملاك', value: formatMoney(data.totalCommission, settings) },
       { label: 'صافي المستحق للمالك', value: formatMoney(data.netAmount, settings) },
+      { label: 'صافي المستحق تفقيطاً', value: amountToWords(data.netAmount, settings) },
     ],
     tables: [
       {
@@ -413,6 +415,7 @@ function buildTenantStatementModel(data: TenantStatementData, settings: Document
       { label: 'إجمالي الفواتير والمطالبات', value: formatMoney(data.totalInvoiced, settings) },
       { label: 'إجمالي السدادات والمقبوضات', value: formatMoney(data.totalPaid, settings) },
       { label: 'الرصيد المتبقي النهائي', value: formatMoney(data.closingBalance, settings) },
+      { label: 'الرصيد تفقيطاً', value: amountToWords(Math.abs(data.closingBalance), settings) },
     ],
     tables: [
       {

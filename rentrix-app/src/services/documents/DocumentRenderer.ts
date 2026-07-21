@@ -217,6 +217,9 @@ const buildRtlPrintHtml = (model: UnifiedDocumentModel, options: { withPageFoote
     'tr { page-break-inside: avoid; break-inside: avoid; }',
     'thead { display: table-header-group; }',
     'tfoot { display: table-footer-group; }',
+    '@media print {',
+    '  body { filter: grayscale(100%); }',
+    '}',
     '</style>',
     '</head><body>',
     '<div class="header-container">',
@@ -258,7 +261,7 @@ const buildRtlPrintHtml = (model: UnifiedDocumentModel, options: { withPageFoote
       ? [
           '<div class="footer-audit">',
           `  <span>${escapeDocumentHtml(model.footer.metadata || model.header.companyName)}</span>`,
-          `  <span>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-OM')}</span>`,
+          `  <span>وقت الإنشاء: ${new Date().toLocaleString('ar-OM', { dateStyle: 'short', timeStyle: 'short' })}</span>`,
           '</div>',
         ].join('')
       : '',
