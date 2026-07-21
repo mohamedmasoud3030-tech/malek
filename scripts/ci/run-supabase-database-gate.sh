@@ -88,12 +88,13 @@ if ! pnpm exec supabase migration list --local 2>/dev/null | grep -q '2026072109
   pnpm exec supabase migration up --local 2>&1 | tee -a "$LOG_DIR/supabase-migration-up.log"
 fi
 
-# pgTAP security/drift invariants on the exact stack the smoke will use.
+# pgTAP runs on the exact ephemeral stack and owns every write-heavy release
+# rehearsal: contracts, invoices, collections, VOID parity, deposits, owner
+# settlements, idempotency, RLS, journals, balances, and security invariants.
 pnpm exec supabase test db 2>&1 | tee "$LOG_DIR/supabase-test.log"
 
 # The Storage API smoke runs on the same isolated local stack. This tests the
-# real Auth + Storage HTTP path without using production or relying on
-# mislabeled external Staging secrets.
+# real Auth + Storage HTTP path without using production or any paid Staging.
 STATUS_ENV_FILE="$(mktemp)"
 pnpm exec supabase status --output env >"$STATUS_ENV_FILE" 2>"$LOG_DIR/supabase-status-env.stderr.log"
 sed -nE 's/^([A-Z0-9_]+)=.*/\1/p' "$STATUS_ENV_FILE" \
@@ -120,4 +121,4 @@ PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
 pnpm --filter ./rentrix-app exec node scripts/storage-isolated-smoke.mjs \
   2>&1 | tee "$LOG_DIR/storage-isolated-smoke.log"
 
-printf 'Full-stack migration replay, database/RLS tests, and isolated Storage API smoke completed successfully.\n'
+printf 'Ephemeral migration replay, authenticated financial lifecycle, RLS/accounting invariants, and isolated Storage smoke completed successfully.\n'
