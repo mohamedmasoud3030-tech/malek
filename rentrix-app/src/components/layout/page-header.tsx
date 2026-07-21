@@ -42,11 +42,11 @@ export function PageHeader({
     <header
       data-page-header
       className={cn(
-        'border-b border-border/60 pb-4',
+        'border-b border-border/60 pb-3 sm:pb-4',
         className,
       )}
     >
-      <div className="flex min-w-0 items-start justify-between gap-3">
+      <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-4">
         {/* Title + description */}
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -65,9 +65,9 @@ export function PageHeader({
           ) : null}
         </div>
 
-        {/* Actions — kept inline on all screen sizes; wrapping is intentional */}
+        {/* Actions — one inline rail on mobile (scrolls if needed); wraps from sm up */}
         {hasActions ? (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+          <div className="no-scrollbar flex max-w-[58vw] shrink-0 items-center justify-end gap-1.5 overflow-x-auto pb-0.5 sm:max-w-none sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
             {backTo ? (
               <Button variant="secondary" size="sm" asChild>
                 <Link to={backTo}>

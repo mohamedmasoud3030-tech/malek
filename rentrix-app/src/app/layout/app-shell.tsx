@@ -298,7 +298,7 @@ export function AppShell() {
                     id={notificationsMenuId}
                     role="dialog"
                     aria-label={sharedLabel('notificationsNone')}
-                    className="absolute end-0 top-11 z-50 w-64 rounded-xl border border-border bg-card p-3 text-start text-card-foreground shadow-elevated sm:w-72 sm:top-12"
+                    className="absolute end-0 top-11 z-50 w-64 max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-card p-3 text-start text-card-foreground shadow-elevated sm:w-72 sm:top-12"
                   >
                     <p className="text-xs font-semibold">{sharedLabel('notificationsNone')}</p>
                     <p className="mt-1 text-[11px] leading-5 text-muted-foreground">

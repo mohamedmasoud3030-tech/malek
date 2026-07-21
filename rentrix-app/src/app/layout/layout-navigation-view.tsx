@@ -215,6 +215,7 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/96 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-1px_0_0_hsl(var(--border)/0.6),0_-16px_40px_-20px_rgba(0,0,0,0.18)] backdrop-blur-xl lg:hidden"
       aria-label="التنقل الرئيسي"
+      data-mobile-bottom-nav
     >
       <div className="grid h-[3.75rem] min-w-0 grid-cols-5 items-stretch px-0.5">
         {mobileNavItems.map((item) => {
@@ -230,19 +231,19 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
               aria-label={sharedLabel(labelKey)}
               className={cn(
                 'group relative flex min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-2 text-muted-foreground',
-                'transition-colors duration-150 focus-visible:outline-none',
+                'transition-colors duration-150 focus-visible:outline-none motion-reduce:transition-none',
                 '[&.active]:text-primary',
               )}
             >
               {/* active pill background */}
               <span
                 aria-hidden="true"
-                className="absolute inset-x-1.5 inset-y-1 rounded-2xl bg-primary/0 transition-all duration-200 group-[.active]:bg-primary/[0.09]"
+                className="absolute inset-x-1.5 inset-y-1 rounded-2xl bg-primary/0 transition-all duration-200 motion-reduce:transition-none group-[.active]:bg-primary/[0.09]"
               />
               {/* active top hairline */}
               <span
                 aria-hidden="true"
-                className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary opacity-0 transition-all duration-200 group-[.active]:opacity-100"
+                className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary opacity-0 transition-all duration-200 motion-reduce:transition-none group-[.active]:opacity-100"
               />
               <Icon className="relative z-10 size-[1.2rem] shrink-0 transition-transform duration-150 group-active:scale-90" aria-hidden="true" />
               <span className="relative z-10 max-w-full truncate text-[9.5px] font-bold leading-none tracking-tight">{sharedLabel(labelKey)}</span>

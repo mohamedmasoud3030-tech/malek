@@ -5,6 +5,7 @@
   --app-page-gutter-inline: clamp(0.75rem, 2.4vw, 1.5rem);
   --app-page-gutter-block: clamp(0.75rem, 2vw, 1.5rem);
   --entity-form-action-clearance: 6rem;
+  --mobile-bottom-nav-height: 3.75rem;
 }
 
 #main-content {
@@ -70,6 +71,10 @@
 
 @media (max-width: 359px) {
   :root { --app-page-gutter-inline: 0.625rem; }
+
+  [data-entity-card] {
+    padding: 0.75rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -114,7 +119,8 @@
 }
 
 /* ── Active press states (mobile-first) ──── */
-@media (pointer: coarse) {
+@media (hover: none) and (pointer: coarse) {
+  /* hover:none keeps hybrid laptops (mouse + touchscreen) on the real hover styles */
   /* Slightly dim interactive cards on press */
   [data-entity-card]:active,
   [role='button']:active {
@@ -133,7 +139,9 @@
 /* Ensures content is never hidden behind the bottom nav on small screens */
 @media (max-width: 1023px) {
   [data-page-layout] {
-    padding-block-end: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    padding-block-end: calc(
+      var(--mobile-bottom-nav-height) + 0.75rem + env(safe-area-inset-bottom, 0px)
+    );
   }
 }
 
@@ -173,8 +181,9 @@
   background: linear-gradient(to left, var(--filter-tabs-fade-surface), transparent);
 }
 
-[data-filter-tabs-wrapper][data-can-scroll-start='true']::before,
-[data-filter-tabs-wrapper][data-can-scroll-end='true']::after {
+/* Fades drop while focus is inside the scroller so edge-tab focus rings stay fully visible */
+[data-filter-tabs-wrapper][data-can-scroll-start='true']:not(:focus-within)::before,
+[data-filter-tabs-wrapper][data-can-scroll-end='true']:not(:focus-within)::after {
   opacity: 1;
 }
 
@@ -191,22 +200,10 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Input zoom prevention (iOS 16-) ─────── */
-/* Already using text-base (16px) for search; this is a safety net */
+/* ── Input zoom prevention (iOS phones) ──── */
+/* <16px inputs trigger focus zoom in mobile Safari; keep the guard phone-width only */
 @supports (-webkit-touch-callout: none) {
-  input[type='text'],
-  input[type='search'],
-  input[type='email'],
-  input[type='tel'],
-  input[type='number'],
-  input[type='password'],
-  input[type='date'],
-  textarea,
-  select {
-    font-size: max(1rem, 16px);
-  }
-
-  @media (min-width: 640px) {
+  @media (max-width: 639px) {
     input[type='text'],
     input[type='search'],
     input[type='email'],
@@ -216,7 +213,7 @@
     input[type='date'],
     textarea,
     select {
-      font-size: 0.875rem;
+      font-size: max(1rem, 16px);
     }
   }
 }

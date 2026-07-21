@@ -36,6 +36,24 @@ describe('PageHeader — العنوان الموحد للصفحات', () => {
     expect(html).toContain('إجراءات ثانوية');
   });
 
+  it('keeps the actions rail constrained and scrollable on mobile, wrapping from sm up', () => {
+    const html = renderToStaticMarkup(
+      <PageHeader title="العقود" primaryAction={<button type="button">إنشاء عقد</button>} />,
+    );
+    expect(html).toContain('max-w-[58vw]');
+    expect(html).toContain('overflow-x-auto');
+    expect(html).toContain('sm:flex-wrap');
+    expect(html).toContain('sm:max-w-none');
+  });
+
+  it('groups secondary actions in a real wrapper — never a labelled display:contents box', () => {
+    const html = renderToStaticMarkup(
+      <PageHeader title="العقود" secondaryActions={<button type="button">تصدير CSV</button>} />,
+    );
+    expect(html).toContain('aria-label="إجراءات ثانوية"');
+    expect(html).not.toContain('class="contents"');
+  });
+
   it('keeps the deprecated action prop working while primaryAction takes precedence', () => {
     const html = renderToStaticMarkup(
       <PageHeader title="x" action={<b>قديم</b>} primaryAction={<i>جديد</i>} />,
