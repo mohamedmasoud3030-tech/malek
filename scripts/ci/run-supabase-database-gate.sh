@@ -38,7 +38,7 @@ read_status_value() {
 wait_for_supabase_api() {
   local api_url="$1"
   local anon_key="$2"
-  local deadline=$((SECONDS + 180))
+  local deadline=$((SECONDS + 300))
   local auth_code storage_code
 
   while (( SECONDS < deadline )); do
@@ -64,23 +64,36 @@ wait_for_supabase_api() {
 
 node scripts/ci/check-cron-quoting.mjs
 
-# Single stack bring-up for the whole gate. The helper honours
-# SUPABASE_EXCLUDED_SERVICES, so we start Postgres AND the HTTP services
-# (Kong gateway, GoTrue auth, Storage API, PostgREST) in one go. A second
-# `supabase start --exclude ...` against an already-running project does NOT
-# add services on CLI 2.105 — it reconciles to the first invocation's shape
-# and stops everything else, which is exactly the failure mode this gate had
-# in CI. Excluded names are valid for CLI 2.105 (mailpit, not inbucket).
+# Single full-stack bring-up on a FRESH project volume. `supabase start`
+# applies every migration under supabase/migrations to the empty database, so
+# the migration chain is replayed exactly once with no `db reset`. This is a
+# hard-earned constraint: `db reset` on CLI 2.105 restarts the service
+# containers and health-checks them through Kong inside a ~12s window, which
+# races the restarted Storage/GoTrue boot and fails with a 502. A second
+# `supabase start --exclude ...` against an already-running project is not a
+# substitute either — 2.105 reconciles to the first invocation's shape and
+# stops the newly needed services. Excluded names below are valid for CLI
+# 2.105 (mailpit, not inbucket); GoTrue/Kong/Storage/PostgREST stay up.
 export SUPABASE_EXCLUDED_SERVICES="realtime,imgproxy,mailpit,studio,edge-runtime,logflare,vector,supavisor"
 bash scripts/ci/start-supabase-stable.sh
 
 set -o pipefail
-pnpm exec supabase db reset --local 2>&1 | tee "$LOG_DIR/supabase-reset.log"
+
+# Belt-and-braces: prove the start-time replay covered every migration file,
+# including the storage-hardening one this gate exists for. `migration up` is
+# idempotent and, unlike `db reset`, does not restart any container.
+if ! pnpm exec supabase migration list --local 2>/dev/null | grep -q '20260721090000'; then
+  printf 'Migration list missed 20260721090000; applying pending migrations explicitly.\n' \
+    | tee "$LOG_DIR/supabase-migration-up.log"
+  pnpm exec supabase migration up --local 2>&1 | tee -a "$LOG_DIR/supabase-migration-up.log"
+fi
+
+# pgTAP security/drift invariants on the exact stack the smoke will use.
 pnpm exec supabase test db 2>&1 | tee "$LOG_DIR/supabase-test.log"
 
-# The Storage API smoke must run after every migration and pgTAP assertion on
-# the same isolated local stack. This tests the real Auth + Storage HTTP path
-# without using production or relying on mislabeled external Staging secrets.
+# The Storage API smoke runs on the same isolated local stack. This tests the
+# real Auth + Storage HTTP path without using production or relying on
+# mislabeled external Staging secrets.
 STATUS_ENV_FILE="$(mktemp)"
 pnpm exec supabase status --output env >"$STATUS_ENV_FILE" 2>"$LOG_DIR/supabase-status-env.stderr.log"
 sed -nE 's/^([A-Z0-9_]+)=.*/\1/p' "$STATUS_ENV_FILE" \
@@ -107,4 +120,4 @@ PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
 pnpm --filter ./rentrix-app exec node scripts/storage-isolated-smoke.mjs \
   2>&1 | tee "$LOG_DIR/storage-isolated-smoke.log"
 
-printf 'Empty database replay, database/RLS tests, and isolated Storage API smoke completed successfully.\n'
+printf 'Full-stack migration replay, database/RLS tests, and isolated Storage API smoke completed successfully.\n'
