@@ -1,10 +1,12 @@
 import { Paperclip, Upload, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAttachmentUpload } from '@/hooks/use-attachment-upload';
+import { ATTACHMENTS_ACCEPT, ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
+import { createSignedAttachmentUrl } from '@/services/documents/attachment-storage-service';
 import { cn } from '@/lib/utils';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_TYPES = ATTACHMENTS_ALLOWED_MIME_TYPES;
+const MAX_SIZE_BYTES = ATTACHMENTS_MAX_FILE_SIZE;
 
 type FileAttachmentFieldProps = {
   value: string | null;
@@ -18,22 +20,53 @@ function isImageUrl(url: string) {
   return /\.(jpg|jpeg|png|webp)(\?|$)/i.test(url);
 }
 
+/**
+ * Resolve the stored reference for display. Absolute http(s) values are legacy
+ * rows and render as-is; storage paths (new uploads, private bucket) are
+ * exchanged for a short-lived signed URL at render time. Resolution failures
+ * fall back to the raw value so forms stay usable offline/in fixtures.
+ */
+function useResolvedAttachmentUrl(value: string | null) {
+  const [resolved, setResolved] = useState<string | null>(value);
+
+  useEffect(() => {
+    let cancelled = false;
+    setResolved(value);
+    if (!value || /^https?:\/\//i.test(value)) return undefined;
+
+    createSignedAttachmentUrl(value)
+      .then((url) => {
+        if (!cancelled) setResolved(url);
+      })
+      .catch(() => {
+        if (!cancelled) setResolved(value);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [value]);
+
+  return resolved;
+}
+
 export function FileAttachmentField({
   value,
   onChange,
   label = 'مرفق',
   disabled = false,
-  accept = 'image/jpeg,image/png,image/webp,application/pdf',
+  accept = ATTACHMENTS_ACCEPT,
 }: FileAttachmentFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const uploadAttachment = useAttachmentUpload();
+  const resolvedUrl = useResolvedAttachmentUrl(value);
 
   const handleFile = async (file: File) => {
     setError(null);
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    if (!ALLOWED_TYPES.has(file.type)) {
       setError('نوع الملف غير مدعوم. المسموح: صور JPG/PNG/WEBP أو PDF');
       return;
     }
@@ -75,22 +108,26 @@ export function FileAttachmentField({
 
       {value ? (
         <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-3">
-          {isImageUrl(value) ? (
-            <img src={value} alt="مرفق" className="size-16 rounded-lg object-cover border border-border" />
+          {isImageUrl(value) && resolvedUrl ? (
+            <img src={resolvedUrl} alt="مرفق" className="size-16 rounded-lg object-cover border border-border" />
           ) : (
             <div className="grid size-16 place-items-center rounded-lg border border-border bg-background">
               <Paperclip className="size-6 text-muted-foreground" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <a
-              href={value}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block truncate text-sm font-bold text-primary hover:underline"
-            >
-              عرض المرفق
-            </a>
+            {resolvedUrl ? (
+              <a
+                href={resolvedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block truncate text-sm font-bold text-primary hover:underline"
+              >
+                عرض المرفق
+              </a>
+            ) : (
+              <span className="block truncate text-sm font-bold">مرفق محفوظ</span>
+            )}
             <p className="text-xs text-muted-foreground mt-0.5">
               {isImageUrl(value) ? 'صورة' : 'ملف PDF'}
             </p>

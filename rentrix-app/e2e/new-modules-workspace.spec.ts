@@ -23,9 +23,9 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await page.goto('/login?e2e-vault-workspace=1');
       await expect(page.locator('[data-e2e-vault-workspace]')).toBeVisible({ timeout: 10000 });
       await expect(page.getByText('خزينة المستندات')).toBeVisible();
-      // Should mention private bucket and signed URL, not placehold.co
+      // Should frame the vault as private storage, not placehold.co mocks
       await expect(page.locator('body')).not.toContainText('placehold.co');
-      await expect(page.getByText('private bucket')).toBeVisible();
+      await expect(page.getByText('Bucket غير عام')).toBeVisible();
     });
 
     test(`deposits workspace loads with real ledger at ${vp.width}x${vp.height}`, async ({ page }) => {
@@ -48,10 +48,14 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
     });
   }
 
-  test('vault upload form validates and shows private bucket notice', async ({ page }) => {
+  test('vault upload form validates and shows the 5MB signed-URL notice', async ({ page }) => {
     await page.goto('/login?e2e-vault-workspace=1');
-    await expect(page.getByText('رفع مستند جديد (Bucket خاص)')).toBeVisible();
-    await expect(page.getByText('لا يُستخدم getPublicUrl')).toBeVisible();
+    await expect(page.locator('[data-e2e-vault-workspace]')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('رفع مستند جديد')).toBeVisible();
+    await expect(page.getByText('الأنواع المدعومة: PDF، JPEG، PNG، WebP')).toBeVisible();
+    await expect(page.getByText('الحد الأقصى 5MB')).toBeVisible();
+    const fileInput = page.locator('[data-e2e-vault-workspace] input[type="file"]');
+    await expect(fileInput).toHaveAttribute('accept', 'application/pdf,image/jpeg,image/png,image/webp');
   });
 
   test('deposits shows balance guards and no false success', async ({ page }) => {

@@ -1,14 +1,13 @@
 -- General Supabase security/drift checks.
 --
 -- Unlike release_blockers.sql (which pins specific launch-critical RPC
--- behavior), this file asserts *global invariants* across every object in
--- `public`, so newly added tables/functions are automatically covered
--- without needing to update a hardcoded list every time.
+-- behavior), this file asserts global invariants across public and the
+-- launch-critical private Storage bucket.
 begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(5);
+select plan(7);
 
 -- 1. RLS must be enabled on every table in public, no exceptions.
 select ok(
@@ -23,10 +22,7 @@ select ok(
   'RLS is enabled on every table in the public schema'
 );
 
--- 2. Every SECURITY DEFINER function in public pins a non-empty search_path
--- (either "public" alone or "public, pg_temp"). An unpinned search_path lets
--- a caller who can influence session state redirect unqualified identifiers
--- to a hostile schema.
+-- 2. Every SECURITY DEFINER function in public pins a safe search_path.
 select ok(
   not exists (
     select 1
@@ -40,8 +36,6 @@ select ok(
 );
 
 -- 3. No SECURITY DEFINER function in public is executable by anon.
--- Privileged RPCs should only ever be reachable by authenticated sessions
--- (or not exposed via PostgREST at all).
 select ok(
   not exists (
     select 1
@@ -54,9 +48,7 @@ select ok(
   'no SECURITY DEFINER function in public is executable by anon'
 );
 
--- 4. Every trigger function (SECURITY DEFINER or not) also pins a safe
--- search_path. These run implicitly on DML and are just as exploitable as
--- RPCs if a hostile schema can shadow an unqualified reference.
+-- 4. Trigger functions bound to public tables also pin a safe search_path.
 select ok(
   not exists (
     select distinct p.oid
@@ -70,16 +62,10 @@ select ok(
   'every trigger function bound to a public table pins a safe search_path'
 );
 
--- Note: we deliberately do NOT assert "anon has no table-level GRANT" here.
--- Supabase's standard convention grants table-level INSERT/UPDATE/DELETE to
--- anon/authenticated by default and relies on RLS policies (checked above)
--- as the actual enforcement layer. Asserting on GRANT alone produces a
--- wall of false positives across nearly every table in this project and
--- tests the wrong layer of the security model.
+-- We deliberately do not assert on table-level GRANT alone. Supabase grants
+-- broad table privileges and relies on RLS as the enforcement layer.
 
--- 5. Every FK column named *_id referencing an owners/contracts/properties/
--- units/tenants/people row must have a supporting index, or RLS/FK joins on
--- these hot paths degrade to sequential scans as data grows.
+-- 5. Core-entity foreign keys must have a supporting index.
 select ok(
   not exists (
     select 1
@@ -98,6 +84,39 @@ select ok(
       )
   ),
   'every FK referencing a core entity table has a supporting index on the referencing column'
+);
+
+-- 6. The attachment vault must remain private and match the browser contract.
+select ok(
+  exists (
+    select 1
+    from storage.buckets b
+    where b.id = 'attachments'
+      and b.public is false
+      and b.file_size_limit = 5242880
+      and b.allowed_mime_types @> array['application/pdf','image/jpeg','image/png','image/webp']::text[]
+      and b.allowed_mime_types <@ array['application/pdf','image/jpeg','image/png','image/webp']::text[]
+  ),
+  'attachments bucket is private with the canonical 5MB PDF/image contract'
+);
+
+-- 7. Any mutation policy targeting attachments must require manager/admin.
+-- This catches legacy permissive policies such as a bucket_id-only INSERT rule.
+select ok(
+  not exists (
+    select 1
+    from pg_policies p
+    where p.schemaname = 'storage'
+      and p.tablename = 'objects'
+      and p.cmd in ('INSERT', 'UPDATE', 'DELETE', 'ALL')
+      and (
+        coalesce(p.qual, '') ilike '%attachments%'
+        or coalesce(p.with_check, '') ilike '%attachments%'
+        or p.policyname ilike '%attachments%'
+      )
+      and concat_ws(' ', p.qual, p.with_check) not ilike '%is_admin_or_manager()%'
+  ),
+  'every attachments mutation policy requires ADMIN or MANAGER'
 );
 
 select * from finish();
