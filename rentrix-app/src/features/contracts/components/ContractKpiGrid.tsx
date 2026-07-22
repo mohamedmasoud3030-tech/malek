@@ -2,6 +2,7 @@ import { CalendarClock, FileText, WalletCards } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import type { CompanySettingsContract } from '@/lib/companySettings';
+import { isContractStatus } from '@/lib/contractStatus';
 import { formatContractMoney } from '../contractDisplayFormatters';
 import type { ContractListItem } from '../services/contractService';
 import { isExpiringSoon } from '../hooks/useContractFilters';
@@ -10,7 +11,7 @@ export function summarizeContracts(contracts: ContractListItem[]) {
   return contracts.reduce(
     (summary, contract) => ({
       total: summary.total + 1,
-      active: summary.active + (contract.status === 'active' ? 1 : 0),
+      active: summary.active + (isContractStatus(contract.status, 'active') ? 1 : 0),
       expiringSoon: summary.expiringSoon + (isExpiringSoon(contract) ? 1 : 0),
       rentTotal: summary.rentTotal + (Number.isFinite(contract.rent_amount) ? contract.rent_amount : 0),
     }),

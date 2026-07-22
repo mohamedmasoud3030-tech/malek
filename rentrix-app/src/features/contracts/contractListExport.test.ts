@@ -45,6 +45,21 @@ describe('contract list CSV export helpers', () => {
     expect(escapeContractCsvCell('Line\nbreak')).toBe('"Line\nbreak"');
   });
 
+  it('renders legacy uppercase statuses with the same Arabic labels instead of blanks', () => {
+    // The contracts CHECK constraint allows legacy 'ACTIVE'/'ENDED' spellings.
+    const legacyRows: ContractListItem[] = [
+      { ...baseContract, id: 'contract-legacy-active', status: 'ACTIVE' as ContractListItem['status'] },
+      { ...baseContract, id: 'contract-legacy-ended', status: 'ENDED' as ContractListItem['status'] },
+    ];
+    const csv = buildContractsCsv(legacyRows);
+
+    const [, activeRow, endedRow] = csv.split('\n');
+    expect(activeRow).toContain('نشط');
+    expect(activeRow).not.toContain('undefined');
+    expect(endedRow).toContain('منتهي');
+    expect(endedRow).not.toContain('undefined');
+  });
+
   it('keeps contract export filenames deterministic from the provided date', () => {
     expect(getContractNumber(baseContract)).toBe('#contract');
     expect(buildContractsCsvFilename(new Date('2026-05-17T12:00:00Z'))).toBe('rentrix-contracts-2026-05-17.csv');

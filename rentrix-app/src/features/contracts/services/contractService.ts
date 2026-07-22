@@ -1,3 +1,4 @@
+import { getContractStatusVariants } from '@/lib/contractStatus';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Contract, Person, Property, Unit } from '@/types/domain';
@@ -39,7 +40,14 @@ export async function listContracts(params: ContractListParams): Promise<Paginat
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .range(from, to);
-  if (params.status !== 'all') query = query.eq('status', params.status);
+  // Cover every stored casing — legacy rows may hold 'ACTIVE'/'ENDED'. The
+  // generated column type only lists the modern lowercase spellings, so cast:
+  // the CHECK constraint (20250101000001_core_schema.sql) allows the legacy
+  // spellings and the server filter must match them too.
+  if (params.status !== 'all') {
+    const statusVariants = getContractStatusVariants(params.status) as Contract['status'][];
+    query = query.in('status', statusVariants);
+  }
   const { data, count, error } = await query.returns<ContractListItem[]>();
   if (error) throw error;
   return { rows: data ?? [], count: count ?? 0 };

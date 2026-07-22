@@ -9,13 +9,8 @@ import { getContractNumber } from '../contractListExport';
 import { formatContractDate, formatContractMoney } from '../contractDisplayFormatters';
 import type { ContractListItem } from '../services/contractService';
 import { getDaysUntilEnd, isExpiringSoon } from '../hooks/useContractFilters';
-
-const contractStatusTone: Record<string, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' | 'info' }> = {
-  ACTIVE: { label: 'نشط', tone: 'success' },
-  EXPIRED: { label: 'منتهي', tone: 'warning' },
-  TERMINATED: { label: 'مُنهى', tone: 'danger' },
-  DRAFT: { label: 'مسودة', tone: 'neutral' },
-};
+import { contractStatusLabels, contractStatusTone } from '../contractSchema';
+import { normalizeContractStatus } from '@/lib/contractStatus';
 
 function contractUrgencyClassName(daysRemaining: number) {
   if (daysRemaining <= 7) return 'bg-danger/10 text-danger';
@@ -37,8 +32,7 @@ export function ContractMobileCard({
   const navigate = useNavigate();
   const expiringSoon = isExpiringSoon(contract);
   const daysUntilEnd = getDaysUntilEnd(contract);
-  const normalizedStatus = contract.status.toUpperCase();
-  const statusMeta = contractStatusTone[normalizedStatus] ?? contractStatusTone.DRAFT;
+  const canonicalStatus = normalizeContractStatus(contract.status);
 
   return (
     <div className="space-y-1.5">
@@ -48,8 +42,8 @@ export function ContractMobileCard({
         subtitle={contract.units?.unit_number ?? contract.properties?.title ?? '—'}
         supportingText={`عقد ${getContractNumber(contract)}`}
         avatarIcon={User}
-        badge={<StatusBadge tone={statusMeta.tone} className="shrink-0">{statusMeta.label}</StatusBadge>}
-        className={cn(daysUntilEnd !== null && daysUntilEnd <= 7 && normalizedStatus === 'ACTIVE' && 'border-danger/40')}
+        badge={<StatusBadge tone={contractStatusTone[canonicalStatus]} className="shrink-0">{contractStatusLabels[canonicalStatus]}</StatusBadge>}
+        className={cn(daysUntilEnd !== null && daysUntilEnd <= 7 && canonicalStatus === 'active' && 'border-danger/40')}
         onClick={() => navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}
         stats={(
           <div className="flex items-center justify-between gap-3">
@@ -57,7 +51,7 @@ export function ContractMobileCard({
               <Calendar className="size-3.5 shrink-0" aria-hidden="true" />
               <span>{formatContractDate(companySettings, contract.end_date)}</span>
             </div>
-            {normalizedStatus === 'ACTIVE' && (
+            {canonicalStatus === 'active' && (
               <div className={cn('flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold', contractUrgencyClassName(daysUntilEnd ?? 0))}>
                 <Clock className="size-3" aria-hidden="true" />
                 {(daysUntilEnd ?? 0) <= 0 ? 'انتهى' : `${daysUntilEnd ?? 0} يوم`}

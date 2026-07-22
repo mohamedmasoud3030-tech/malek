@@ -1,6 +1,7 @@
 import { DEFAULT_CURRENCY } from '@/lib/formatters';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
+import { normalizeContractStatus } from '@/lib/contractStatus';
 import { contractStatusLabels, paymentCycleLabels } from './contractSchema';
 import type { ContractListItem } from './services/contractService';
 
@@ -41,7 +42,7 @@ export function buildContractsCsv(contracts: ContractListItem[]) {
     paymentCycleLabels[contract.payment_cycle],
     contract.start_date,
     contract.end_date,
-    contractStatusLabels[contract.status],
+    contractStatusLabels[normalizeContractStatus(contract.status)],
   ]);
 
   return [CSV_HEADERS, ...rows].map((row) => row.map(escapeContractCsvCell).join(',')).join('\n');
