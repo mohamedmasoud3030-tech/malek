@@ -4,8 +4,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { useContracts } from '@/features/contracts/useContracts';
 import type { Contract, Payment, Person, Property, Unit } from '@/types/domain';
 import { getTodayLocalDateString, isValidDateInput } from '../financials-date-utils';
-import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
-import { summarizeInvoices, type InvoiceStatusFilter, type InvoiceDetail } from '../invoices/invoiceService';
+import { toFinancialNumber } from '../financialMath';
+import { getInvoiceRemainingAmount, getInvoicePaymentValidationMessage } from '../invoices/invoice-payment-validation';
+import { summarizeInvoices, type InvoiceStatusFilter } from '../invoices/invoiceService';
 import { useGenerateInvoices, useInvoice, useInvoicesPaginated } from '../invoices/useInvoices';
 import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/paymentService';
 import { usePostPayment } from '../payments/usePayments';
@@ -13,31 +14,6 @@ import { useReceipt, useReceipts } from '../receipts/useReceipts';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import type { InvoiceFilterOption } from '../components/invoice-filters';
 import { exportInvoiceDocument as exportInvoiceDocumentPdf } from '../invoices/invoice-actions';
-
-function getAmountValidationMessage({
-  amount,
-  amountValue,
-  invoiceDetail,
-  paymentDate,
-  rawAmountValue,
-  selectedInvoiceId,
-}: Readonly<{
-  amount: string;
-  amountValue: number;
-  invoiceDetail: InvoiceDetail | undefined;
-  paymentDate: string;
-  rawAmountValue: number;
-  selectedInvoiceId: string;
-}>) {
-  if (!selectedInvoiceId || !invoiceDetail || invoiceDetail.id !== selectedInvoiceId) return 'اختر فاتورة صالحة أولاً';
-  if (!amount.trim()) return 'المبلغ مطلوب';
-  if (!Number.isFinite(rawAmountValue)) return 'المبلغ يجب أن يكون رقماً صالحاً';
-  if (amountValue <= 0) return 'المبلغ يجب أن يكون أكبر من صفر';
-  if (amountValue > getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount)) return 'المبلغ يجب ألا يتجاوز الرصيد المتبقي';
-  if (!paymentDate) return 'تاريخ الدفع مطلوب';
-  if (!isValidDateInput(paymentDate)) return 'تاريخ الدفع غير صالح';
-  return '';
-}
 
 const nowIso = () => new Date().toISOString();
 
@@ -128,14 +104,14 @@ export function useInvoiceWorkspaceController() {
   const summary = useMemo(() => summarizeInvoices(invoices), [invoices]);
   const invoiceDetail = invoiceQuery.data;
   const remaining = useMemo(
-    () => (invoiceDetail ? getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount) : 0),
+    () => (invoiceDetail ? getInvoiceRemainingAmount(invoiceDetail) : 0),
     [invoiceDetail],
   );
 
   const rawAmountValue = Number(amount);
   const amountValue = toFinancialNumber(amount);
   const amountValidationMessage = useMemo(
-    () => getAmountValidationMessage({ amount, amountValue, invoiceDetail, paymentDate, rawAmountValue, selectedInvoiceId }),
+    () => getInvoicePaymentValidationMessage({ amount, amountValue, invoiceDetail, paymentDate, rawAmountValue, selectedInvoiceId }),
     [amount, amountValue, invoiceDetail, paymentDate, rawAmountValue, selectedInvoiceId],
   );
 
@@ -164,7 +140,7 @@ export function useInvoiceWorkspaceController() {
     if (!canCreatePayment || quickPaySubmitRef.current || postPayment.isPending) return;
     if (!selectedInvoiceId || !invoiceDetail || invoiceDetail.id !== selectedInvoiceId) return;
 
-    const currentRemaining = getSafeRemainingAmount(invoiceDetail.amount, invoiceDetail.paid_amount);
+    const currentRemaining = getInvoiceRemainingAmount(invoiceDetail);
     const currentRawAmount = Number(amount);
     const currentAmount = toFinancialNumber(amount);
 

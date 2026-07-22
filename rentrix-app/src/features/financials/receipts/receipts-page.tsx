@@ -17,6 +17,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { canAccess, financialOperationPermissions, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { formatDate, formatMoney, formatShortId } from '../components/financials-formatters';
+import { getTodayLocalDateString } from '../financials-date-utils';
 import { ReceiptDetailCard } from '../components/receipt-detail-card';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import type { ReceiptRecord } from './receiptService';
@@ -42,6 +43,17 @@ export function sumPostedReceiptAmount(receipts: readonly ReceiptRecord[]) {
     (total, receipt) => total + (receipt.status === 'posted' ? receipt.amount : 0),
     0,
   );
+}
+
+export function sumPostedReceiptsForDate(receipts: readonly ReceiptRecord[], day: string) {
+  return receipts.reduce(
+    (total, receipt) => total + (receipt.status === 'posted' && receipt.payment_date === day ? receipt.amount : 0),
+    0,
+  );
+}
+
+export function countPostedReceiptsForDate(receipts: readonly ReceiptRecord[], day: string) {
+  return receipts.filter((receipt) => receipt.status === 'posted' && receipt.payment_date === day).length;
 }
 
 function receiptStatusTone(status: string): 'green' | 'gray' | 'red' | 'gold' {
@@ -142,13 +154,17 @@ function ReceiptsHistoryContent() {
   }), [deferredQuery, from, method, receipts, to]);
 
   const totalAmount = sumPostedReceiptAmount(filteredReceipts);
-  const selectedReceipt = selectedDetailQuery.data;
+  const todayString = getTodayLocalDateString();
+  const todayCollectedAmount = sumPostedReceiptsForDate(receipts, todayString);
+  const todayReceiptCount = countPostedReceiptsForDate(receipts, todayString);
   const hasFilters = query.trim().length > 0 || method !== 'all' || from.length > 0 || to.length > 0;
 
   const openVoidDialog = (receipt: ReceiptRecord) => setVoidDialog({ receipt, reason: '' });
   const closeVoidDialog = () => setVoidDialog({ receipt: null, reason: '' });
   const openReceiptPrintView = (receiptId: string) => {
-    globalThis.location.assign(createReceiptPrintHref(receiptId));
+    // Keep the cashier's filtered list untouched by printing in a new tab.
+    const printWindow = globalThis.open(createReceiptPrintHref(receiptId), '_blank', 'noopener');
+    if (!printWindow) globalThis.location.assign(createReceiptPrintHref(receiptId));
   };
 
   const handleConfirmVoid = () => {
@@ -199,7 +215,7 @@ function ReceiptsHistoryContent() {
         <KpiCard label="الإيصالات المعروضة" value={filteredReceipts.length} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
         <KpiCard label="إجمالي التحصيل" value={formatMoney(totalAmount)} sub="الإيصالات المنشورة فقط" icon={WalletCards} accent="emerald" />
         <KpiCard label="أحدث النتائج" value={receipts.length} sub="آخر 100 إيصال" icon={CalendarDays} accent="sky" />
-        <KpiCard label="الإيصال المحدد" value={selectedReceipt?.receipt_number ?? '—'} sub="جاهز للعرض والطباعة" icon={Printer} accent="violet" />
+        <KpiCard label="تحصيل اليوم" value={formatMoney(todayCollectedAmount)} sub={`${todayReceiptCount.toLocaleString('ar')} إيصال منشور اليوم`} icon={Wallet} accent="emerald" />
       </ResponsiveCardGrid>
 
       <FilterBar

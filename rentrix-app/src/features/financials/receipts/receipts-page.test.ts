@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 import type { ReceiptRecord } from './receiptService';
-import { canVoidReceipts, createReceiptPrintHref, sumPostedReceiptAmount } from './receipts-page';
+import { canVoidReceipts, countPostedReceiptsForDate, createReceiptPrintHref, sumPostedReceiptAmount, sumPostedReceiptsForDate } from './receipts-page';
 
 function authorization(role: AuthorizationContext['role']): AuthorizationContext {
   return {
@@ -49,5 +49,23 @@ describe('receipts page action helpers', () => {
       receipt('void-1', 999, 'void'),
       receipt('posted-2', 50, 'posted'),
     ])).toBe(150);
+  });
+
+  it("sums only posted receipts collected on the requested day (today's collections KPI)", () => {
+    expect(sumPostedReceiptsForDate([
+      { ...receipt('a', 100, 'posted'), payment_date: '2026-07-14' },
+      { ...receipt('b', 999, 'void'), payment_date: '2026-07-14' },
+      { ...receipt('c', 200, 'posted'), payment_date: '2026-07-13' },
+      { ...receipt('d', 50, 'posted'), payment_date: '2026-07-14' },
+    ], '2026-07-14')).toBe(150);
+  });
+
+  it('counts posted receipts collected on the requested day', () => {
+    expect(countPostedReceiptsForDate([
+      { ...receipt('a', 100, 'posted'), payment_date: '2026-07-14' },
+      { ...receipt('b', 999, 'void'), payment_date: '2026-07-14' },
+      { ...receipt('c', 200, 'posted'), payment_date: '2026-07-14' },
+      { ...receipt('d', 200, 'posted'), payment_date: '2026-07-10' },
+    ], '2026-07-14')).toBe(2);
   });
 });
