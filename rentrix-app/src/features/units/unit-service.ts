@@ -1,5 +1,6 @@
 import { getCrudWriteErrorMessage, type CrudWriteAction } from '@/lib/data/crud-write-error';
 import { supabase } from '@/lib/supabase';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { Unit } from '@/types/domain';
 import { normalizeUnitStatus, type UnitPayload } from './unit-schema';
@@ -66,27 +67,23 @@ export function normalizeUnitRecord(unit: UnitWithLegacyRent): Unit {
 }
 
 export async function listUnits(): Promise<Unit[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<UnitWithLegacyRent>(() => supabase
     .from('units')
     .select('*')
     .is('deleted_at', null)
     .order('property_id', { ascending: true })
-    .order('unit_number', { ascending: true })
-    .returns<UnitWithLegacyRent[]>();
-  if (error) throw error;
-  return (data ?? []).map(normalizeUnitRecord);
+    .order('unit_number', { ascending: true }) as any);
+  return rows.map(normalizeUnitRecord);
 }
 
 export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<UnitWithLegacyRent>(() => supabase
     .from('units')
     .select('*')
     .eq('property_id', propertyId)
     .is('deleted_at', null)
-    .order('unit_number', { ascending: true })
-    .returns<UnitWithLegacyRent[]>();
-  if (error) throw error;
-  return (data ?? []).map(normalizeUnitRecord);
+    .order('unit_number', { ascending: true }) as any);
+  return rows.map(normalizeUnitRecord);
 }
 
 export async function createUnit(propertyId: string, payload: UnitPayload): Promise<Unit> {

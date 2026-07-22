@@ -141,6 +141,11 @@ function addDays(date: Date, days: number) {
   return nextDate;
 }
 
+function isOccupiedUnitStatus(status: unknown) {
+  const normalized = String(status ?? '').trim().toLowerCase();
+  return normalized === 'occupied' || normalized === 'rented';
+}
+
 function toDateOnlyTimestamp(value: string) {
   return Date.parse(`${value}T00:00:00.000Z`);
 }
@@ -192,7 +197,7 @@ export function buildOccupancyRows(
     const hasTitle = Boolean(title);
     const existing = rowsByProperty.get(id);
     if (existing) {
-      if (unit.status === 'occupied') existing.occupied += 1;
+      if (isOccupiedUnitStatus(unit.status)) existing.occupied += 1;
       else existing.vacant += 1;
       continue;
     }
@@ -201,8 +206,8 @@ export function buildOccupancyRows(
       propertyId: id,
       shortPropertyId: id.slice(0, 8),
       hasTitle,
-      occupied: unit.status === 'occupied' ? 1 : 0,
-      vacant: unit.status === 'occupied' ? 0 : 1,
+      occupied: isOccupiedUnitStatus(unit.status) ? 1 : 0,
+      vacant: isOccupiedUnitStatus(unit.status) ? 0 : 1,
     };
     rowsByProperty.set(id, row);
   }

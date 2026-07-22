@@ -24,6 +24,9 @@ export function isUnitOperationallyManagedStatus(status: UnitStatus): boolean {
 export function normalizeUnitStatus(status: string): UnitStatus {
   const normalized = status.trim().toLowerCase();
 
+  // `rented` was accepted by the live compatibility trigger before the
+  // canonical value became `occupied`; preserve visibility of those rows.
+  if (normalized === 'rented') return 'occupied';
   if (unitStatusValues.includes(normalized as UnitStatus)) {
     return normalized as UnitStatus;
   }

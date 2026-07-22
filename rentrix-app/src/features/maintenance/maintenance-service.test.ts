@@ -6,6 +6,8 @@ function createQueryMock(result: unknown) {
     insert: vi.fn(() => chain),
     is: vi.fn(() => chain),
     order: vi.fn(() => chain),
+    in: vi.fn(() => chain),
+    range: vi.fn(() => Promise.resolve(result)),
     returns: vi.fn(() => Promise.resolve(result)),
     select: vi.fn(() => chain),
     single: vi.fn(() => ({ ...chain, returns: vi.fn(() => Promise.resolve(result)) })),

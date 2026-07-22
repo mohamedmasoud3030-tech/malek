@@ -3,6 +3,7 @@ import {
   getUnitWriteErrorMessage,
   normalizeUnitPayload,
   resolveUnitRentAmount,
+  normalizeUnitRecord,
 } from './unit-service';
 
 function createQueryMock(result: unknown) {
@@ -71,6 +72,13 @@ describe('unit service write workflow', () => {
       rent_default: null,
       rent: '80',
     })).toBe(80);
+  });
+
+  it('maps the historical rented unit status to occupied for all consuming views', () => {
+    expect(normalizeUnitRecord({
+      id: 'unit-1', property_id: 'property-1', unit_number: '101', floor: null,
+      status: ' RENTED ', rent_amount: 500, notes: null,
+    } as any).status).toBe('occupied');
   });
 
   it('returns an actionable duplicate-number message for the same property', () => {

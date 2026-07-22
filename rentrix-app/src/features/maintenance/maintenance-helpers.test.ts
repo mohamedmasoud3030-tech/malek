@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMaintenanceLocationLabel, filterMaintenanceRequests, summarizeMaintenanceRequests } from './maintenance-helpers';
+import { buildMaintenanceLocationLabel, filterMaintenanceRequests, normalizeMaintenanceRecord, summarizeMaintenanceRequests } from './maintenance-helpers';
 import type { Maintenance } from './maintenance-service';
 
 const baseRequest: Maintenance = {
@@ -65,5 +65,12 @@ describe('maintenance helpers', () => {
     const summary = summarizeMaintenanceRequests([baseRequest, secondRequest]);
 
     expect(summary).toEqual({ total: 2, open: 1, inProgress: 1, urgent: 1 });
+  });
+
+  it('normalizes historical casing and lifecycle aliases before filtering and KPI totals', () => {
+    const legacy = normalizeMaintenanceRecord({ ...baseRequest, status: 'COMPLETED' as any, priority: 'NORMAL' as any });
+    expect(legacy.status).toBe('resolved');
+    expect(legacy.priority).toBe('medium');
+    expect(filterMaintenanceRequests([legacy], { status: 'resolved', priority: 'medium', propertyId: '' })).toEqual([legacy]);
   });
 });
