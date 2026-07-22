@@ -87,7 +87,7 @@ export function ContractsListPage() {
         <PageHeader
           title="العقود"
           description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."
-          count={filteredContracts.length}
+          count={hasClientFilter ? filteredContracts.length : (contractsQuery.data?.count ?? filteredContracts.length)}
           primaryAction={
             <Button onClick={openCreate}>
               <Plus className="me-2 size-4" />إنشاء عقد
@@ -100,7 +100,7 @@ export function ContractsListPage() {
           }
         />
 
-        <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} />
+        <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
 
         <ListControlSurface>
           <ContractFilters

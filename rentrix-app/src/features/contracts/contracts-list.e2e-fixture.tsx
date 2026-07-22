@@ -131,6 +131,7 @@ export function ContractsListE2EFixture() {
           companySettings={defaultCompanySettingsContract}
           contracts={fixtureContracts}
           filteredContracts={filteredContracts}
+          totalCount={fixtureContracts.length}
         />
         <ListControlSurface>
           <ContractFilters

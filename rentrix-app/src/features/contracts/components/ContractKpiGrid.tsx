@@ -23,18 +23,21 @@ export function ContractKpiGrid({
   companySettings,
   contracts,
   filteredContracts,
+  totalCount,
 }: {
   companySettings: CompanySettingsContract;
   contracts: ContractListItem[];
   filteredContracts: ContractListItem[];
+  /** Server-exact row count for the current status filter — the loaded window is just one page. */
+  totalCount: number;
 }) {
   const listSummary = summarizeContracts(contracts);
   const visibleSummary = summarizeContracts(filteredContracts);
 
   return (
     <ResponsiveCardGrid desktopColumns={4}>
-      <KpiCard label="إجمالي العقود" value={listSummary.total} sub="حسب فلتر الحالة الحالي" icon={FileText} accent="primary" />
-      <KpiCard label="العقود النشطة" value={listSummary.active} sub="من إجمالي العقود المحملة" icon={WalletCards} accent="emerald" />
+      <KpiCard label="إجمالي العقود" value={totalCount} sub="حسب فلتر الحالة الحالي" icon={FileText} accent="primary" />
+      <KpiCard label="العقود النشطة" value={listSummary.active} sub="ضمن الصفحة المحملة" icon={WalletCards} accent="emerald" />
       <KpiCard label="تنتهي قريبًا" value={listSummary.expiringSoon} sub="خلال 30 يومًا" icon={CalendarClock} accent="amber" />
       <KpiCard label="إيجار الظاهرة" value={formatContractMoney(companySettings, visibleSummary.rentTotal)} sub="بعد البحث والفلاتر" icon={WalletCards} accent="sky" />
     </ResponsiveCardGrid>
