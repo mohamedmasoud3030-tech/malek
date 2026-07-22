@@ -12,11 +12,8 @@ import {
   formatContractDate,
   formatContractMoney,
 } from "../contractDisplayFormatters";
-import {
-  contractStatusLabels,
-  contractStatusTone,
-  paymentCycleLabels,
-} from "../contractSchema";
+import { contractStatusLabels, contractStatusTone, paymentCycleLabels } from "../contractSchema";
+import { normalizeContractStatus } from "@/lib/contractStatus";
 import type { ContractListItem } from "../services/contractService";
 import { getDaysUntilEnd, isExpiringSoon } from "../hooks/useContractFilters";
 import { ContractMobileCard } from "./ContractMobileCard";
@@ -124,8 +121,8 @@ export function ContractTable({
       key: "status",
       header: "الحالة",
       render: (contract) => (
-        <StatusBadge tone={contractStatusTone[contract.status]}>
-          {contractStatusLabels[contract.status]}
+        <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
+          {contractStatusLabels[normalizeContractStatus(contract.status)]}
         </StatusBadge>
       ),
     },
@@ -248,8 +245,8 @@ export function ContractTable({
             )}
           </DetailBox>
           <DetailBox label="الحالة">
-            <StatusBadge tone={contractStatusTone[contract.status]}>
-              {contractStatusLabels[contract.status]}
+            <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>
+              {contractStatusLabels[normalizeContractStatus(contract.status)]}
             </StatusBadge>
             <p
               className={cn(

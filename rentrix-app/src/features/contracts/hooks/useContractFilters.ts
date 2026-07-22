@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { isContractStatus } from '@/lib/contractStatus';
 import { getContractNumber } from '../contractListExport';
 import { getContractRemainingDays, parseContractDisplayDate } from '../contractDisplayFormatters';
 import type { ContractListItem, ContractStatusFilter } from '../services/contractService';
@@ -32,7 +33,7 @@ export function getDaysUntilEnd(contract: ContractListItem) {
 
 export function isExpiringSoon(contract: ContractListItem) {
   const days = getDaysUntilEnd(contract);
-  return contract.status === 'active' && days !== null && days >= 0 && days <= 30;
+  return isContractStatus(contract.status, 'active') && days !== null && days >= 0 && days <= 30;
 }
 
 function getSearchText(contract: ContractListItem) {

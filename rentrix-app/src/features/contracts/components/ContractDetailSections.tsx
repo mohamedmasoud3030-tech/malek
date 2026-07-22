@@ -7,13 +7,14 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { formatContractDate, formatContractDateTime, formatContractDayCount, formatContractMoney, getContractInclusiveDays, getContractRemainingDays } from '../contractDisplayFormatters';
 import { contractStatusLabels, contractStatusTone, paymentCycleLabels } from '../contractSchema';
+import { isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
 import type { ContractDetail } from '../services/contractService';
 
 type TimelineTone = 'blue' | 'green' | 'red' | 'gray' | 'gold';
 type TimelineItem = Readonly<{ title: string; value: string; description: string; tone: TimelineTone }>;
 
 export function getExpiryDescription(settings: CompanySettingsContract, contract: ContractDetail): string {
-  if (contract.status === 'terminated') return 'تم إنهاء العقد ولا توجد مدة متبقية معروضة.';
+  if (isContractStatus(contract.status, 'terminated')) return 'تم إنهاء العقد ولا توجد مدة متبقية معروضة.';
   const remainingDays = getContractRemainingDays(contract.end_date);
   if (remainingDays < 0) return `انتهى منذ ${formatContractDayCount(settings, Math.abs(remainingDays))} يوم.`;
   return remainingDays === 0 ? 'ينتهي اليوم حسب تاريخ نهاية العقد.' : `باقي ${formatContractDayCount(settings, remainingDays)} يوم حتى تاريخ النهاية.`;
@@ -22,7 +23,7 @@ export function getExpiryDescription(settings: CompanySettingsContract, contract
 function getTimeline(settings: CompanySettingsContract, contract: ContractDetail): TimelineItem[] {
   const expiryDays = getContractRemainingDays(contract.end_date);
   let expiryTone: TimelineTone = 'green';
-  if (contract.status === 'terminated') expiryTone = 'red';
+  if (isContractStatus(contract.status, 'terminated')) expiryTone = 'red';
   else if (expiryDays < 0) expiryTone = 'gray';
   else if (expiryDays <= 30) expiryTone = 'gold';
   return [
@@ -34,7 +35,7 @@ function getTimeline(settings: CompanySettingsContract, contract: ContractDetail
 }
 
 export function ContractOverviewSection({ contract, settings }: Readonly<{ contract: ContractDetail; settings: CompanySettingsContract }>) {
-  return <Card><CardHeader><CardTitle>بيانات العقد</CardTitle><CardDescription>الحقول الأساسية وربط العقار والوحدة والمستأجر.</CardDescription></CardHeader><CardContent><DetailFields fields={[{ label: 'العقد رقم', value: `#${contract.id.slice(0, 8)}` }, { label: 'المستأجر', value: contract.people?.full_name }, { label: 'الوحدة', value: contract.units?.unit_number }, { label: 'العقار', value: contract.properties?.title }, { label: 'تاريخ البداية', value: formatContractDate(settings, contract.start_date) }, { label: 'تاريخ النهاية', value: formatContractDate(settings, contract.end_date) }, { label: 'قيمة الإيجار', value: formatContractMoney(settings, contract.rent_amount) }, { label: 'دورة السداد', value: paymentCycleLabels[contract.payment_cycle] }, { label: 'الحالة', value: <StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge> }, { label: 'اتفاقية الإدارة', value: contract.agreement_id ? `#${contract.agreement_id.slice(0, 8)}` : 'لا توجد اتفاقية مرتبطة' }, { label: 'سبب الإلغاء', value: contract.status === 'terminated' ? contract.cancellation_reason?.trim() || '—' : 'غير مطبق' }, { label: 'ملاحظات', value: contract.notes, wide: true }]} /></CardContent></Card>;
+  return <Card><CardHeader><CardTitle>بيانات العقد</CardTitle><CardDescription>الحقول الأساسية وربط العقار والوحدة والمستأجر.</CardDescription></CardHeader><CardContent><DetailFields fields={[{ label: 'العقد رقم', value: `#${contract.id.slice(0, 8)}` }, { label: 'المستأجر', value: contract.people?.full_name }, { label: 'الوحدة', value: contract.units?.unit_number }, { label: 'العقار', value: contract.properties?.title }, { label: 'تاريخ البداية', value: formatContractDate(settings, contract.start_date) }, { label: 'تاريخ النهاية', value: formatContractDate(settings, contract.end_date) }, { label: 'قيمة الإيجار', value: formatContractMoney(settings, contract.rent_amount) }, { label: 'دورة السداد', value: paymentCycleLabels[contract.payment_cycle] }, { label: 'الحالة', value: <StatusBadge tone={contractStatusTone[normalizeContractStatus(contract.status)]}>{contractStatusLabels[normalizeContractStatus(contract.status)]}</StatusBadge> }, { label: 'اتفاقية الإدارة', value: contract.agreement_id ? `#${contract.agreement_id.slice(0, 8)}` : 'لا توجد اتفاقية مرتبطة' }, { label: 'سبب الإلغاء', value: isContractStatus(contract.status, 'terminated') ? contract.cancellation_reason?.trim() || '—' : 'غير مطبق' }, { label: 'ملاحظات', value: contract.notes, wide: true }]} /></CardContent></Card>;
 }
 
 export function ContractLifecycleSection({ contract, settings, renewalAllowed, onRenew, canTerminate, onTerminate }: Readonly<{ contract: ContractDetail; settings: CompanySettingsContract; renewalAllowed: boolean; onRenew: () => void; canTerminate: boolean; onTerminate: () => void }>) {
