@@ -39,6 +39,7 @@ import {
   listOwnerSettlementTargets,
   processOwnerPayout,
   settlementStatusLabels,
+  summarizeLiveOwnerSettlements,
   type CreateSettlementDraftPayload,
   type OwnerSettlementRecord,
   type OwnerSettlementTarget,
@@ -148,22 +149,7 @@ export function OwnerSettlementWorkspace() {
   const targets = targetsQuery.data ?? [];
   const selectedTarget = targets.find((target) => targetKey(target) === draftForm.targetKey) ?? null;
 
-  const totals = useMemo(
-    // Cancelled drafts never create a payable or collection. Including them made
-    // the control totals look larger than the ledger-backed live settlements.
-    () => settlements
-      .filter((settlement) => settlement.status !== 'cancelled')
-      .reduce(
-        (summary, settlement) => ({
-          gross: summary.gross + settlement.gross_rent_collected,
-          fees: summary.fees + settlement.management_fee_amount,
-          deductions: summary.deductions + settlement.maintenance_deductions + settlement.utility_deductions,
-          net: summary.net + settlement.net_payable_amount,
-        }),
-        { gross: 0, fees: 0, deductions: 0, net: 0 },
-      ),
-    [settlements],
-  );
+  const totals = useMemo(() => summarizeLiveOwnerSettlements(settlements), [settlements]);
 
   const activeMutationError = createMutation.error ?? approveMutation.error ?? payoutMutation.error;
   const backgroundRefreshError = settlements.length > 0 && settlementsQuery.isError

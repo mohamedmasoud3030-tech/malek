@@ -182,7 +182,15 @@ export async function listBankAccounts(): Promise<BankAccount[]> {
 export async function listBankStatementLines(filters: BankReconciliationFilters): Promise<BankStatementLine[]> {
   try {
     const { rows } = await fetchAllRows<BankStatementLine>(() => {
-      let query: any = supabase.from('bank_statement_lines').select('*').is('deleted_at', null).order('transaction_date', { ascending: false });
+      // `.range()`-based pagination requires a fully deterministic order —
+      // transaction_date alone can tie across rows, which could otherwise
+      // skip or duplicate a row at a page boundary. `id` breaks every tie.
+      let query: any = supabase
+        .from('bank_statement_lines')
+        .select('*')
+        .is('deleted_at', null)
+        .order('transaction_date', { ascending: false })
+        .order('id', { ascending: false });
       if (filters.bankAccountId) query = query.eq('bank_account_id', filters.bankAccountId);
       if (filters.status !== 'all') query = query.in('status', getBankStatementStatusVariants(normalizeBankStatementLineStatus(filters.status)));
       if (filters.from) query = query.gte('transaction_date', filters.from);
