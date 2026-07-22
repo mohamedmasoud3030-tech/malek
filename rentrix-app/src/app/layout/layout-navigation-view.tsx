@@ -112,10 +112,7 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
       aria-label="التنقل الرئيسي"
       data-mobile-bottom-nav
     >
-      <div
-        className="grid h-[3.75rem] min-w-0 items-stretch px-0.5"
-        style={{ gridTemplateColumns: `repeat(${visibleItems.length}, minmax(0, 1fr))` }}
-      >
+      <div className="flex h-[3.75rem] min-w-0 items-stretch overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {visibleItems.map(([to, labelKey, Icon]) => (
           <Link
             key={to}
@@ -123,7 +120,9 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
             activeOptions={{ exact: to === '/dashboard' }}
             aria-label={sharedLabel(labelKey)}
             className={cn(
-              'group relative flex min-h-0 min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-2 text-muted-foreground',
+              // min-w-11 keeps the 44px touch target; below ~308px viewport the
+              // bar scrolls horizontally instead of crushing labels (#1242).
+              'group relative flex min-h-0 min-w-11 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1 py-2 text-muted-foreground',
               'transition-colors duration-150 focus-visible:outline-none motion-reduce:transition-none',
               '[&.active]:text-primary',
             )}

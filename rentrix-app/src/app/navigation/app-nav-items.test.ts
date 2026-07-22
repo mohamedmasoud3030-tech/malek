@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { mobileNavItems, navGroups, type NavItem } from './app-nav-items';
+import { mobileNavItems, navGroups, quickCreateItems, type NavItem } from './app-nav-items';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const routePaths = new Set(Array.from(routeTreeSource.matchAll(/path: '([^']+)'/g), (match) => match[1]));
@@ -89,14 +89,16 @@ describe('app route and navigation parity', () => {
     const navPaths = navItems.map(([to]) => to);
     const navKeys = navItems.map(([to, labelKey]) => `${to}:${labelKey}`);
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
+    const quickCreatePaths = quickCreateItems.map(([to]) => to);
 
     expect(new Set(navKeys).size).toBe(navKeys.length);
     expect(new Set(mobileNavPaths).size).toBe(mobileNavPaths.length);
-    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobileNavPaths]));
+    expect(new Set(quickCreatePaths).size).toBe(quickCreatePaths.length);
+    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobileNavPaths, ...quickCreatePaths]));
   });
 
   it('keeps permissioned navigation links aligned with route guards', () => {
-    for (const [to, , , , permission] of navItems) {
+    for (const [to, , , , permission] of [...navItems, ...quickCreateItems]) {
       if (!permission) continue;
 
       expect(getRouteDefinition(to)).toContain(`requirePermission('${permission}')`);

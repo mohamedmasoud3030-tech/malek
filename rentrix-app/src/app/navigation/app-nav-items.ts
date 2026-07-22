@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileCheck, FileSpreadsheet, FileText, FolderKanban, HandCoins, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileCheck, FileSpreadsheet, FileText, FolderKanban, HandCoins, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserPlus, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -76,4 +76,12 @@ export const mobileNavItems: readonly MobileNavItem[] = [
   ['/invoices', 'invoices', FileSpreadsheet],
   ['/receipts', 'receipts', ReceiptText],
   ['/reports', 'reports', BarChart3],
+];
+
+// Quick-create actions surfaced in the app header (+). Permissions mirror the
+// destination route guards so restricted roles only see what they can open.
+export const quickCreateItems: readonly MobileNavItem[] = [
+  ['/contracts/new', 'newContract', FileText, 'contracts.write'],
+  ['/properties/new', 'newProperty', Building2, 'properties.write'],
+  ['/people/new', 'newPerson', UserPlus],
 ];
