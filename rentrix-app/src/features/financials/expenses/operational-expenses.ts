@@ -41,6 +41,18 @@ export function getExpenseChargedToLabel(chargedTo: string | null | undefined): 
 
 export type OperationalExpenseCategory = (typeof OPERATIONAL_EXPENSE_CATEGORIES)[number];
 
+/**
+ * Filter options = the canonical categories plus any category actually
+ * present in the loaded data. The DB column is free text (no CHECK), so
+ * legacy/imported rows may carry values outside the canonical list — without
+ * the union those rows could never be isolated by the category filter.
+ */
+export function buildExpenseCategoryOptions(expenses: readonly Expense[]): string[] {
+  const observed = new Set(expenses.map((expense) => expense.category).filter((category) => category.trim().length > 0));
+  const extras = [...observed].filter((category) => !(OPERATIONAL_EXPENSE_CATEGORIES as readonly string[]).includes(category)).sort((a, b) => a.localeCompare(b, 'ar'));
+  return [...OPERATIONAL_EXPENSE_CATEGORIES, ...extras];
+}
+
 export type OperationalExpenseFilterValues = {
   propertyId: string;
   category: string;

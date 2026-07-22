@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Expense, Property } from '@/types/domain';
-import { buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses } from './operational-expenses';
+import { buildExpenseCategoryOptions, buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses } from './operational-expenses';
 
 function makeExpense(overrides: Partial<Expense> = {}): Expense {
   return {
@@ -90,5 +90,26 @@ describe('expense charged_to helpers', () => {
     expect(getExpenseChargedToLabel('TENANT')).toBe('المستأجر');
     expect(getExpenseChargedToLabel('COMPANY')).toBe('الشركة');
     expect(getExpenseChargedToLabel(undefined)).toBe('الشركة');
+  });
+});
+
+describe('buildExpenseCategoryOptions', () => {
+  it('keeps canonical categories first and appends observed legacy values', () => {
+    const rows = [
+      makeExpense({ category: 'صيانة' }),
+      makeExpense({ id: 'expense-2', category: 'كهرباء قديمة' }),
+      makeExpense({ id: 'expense-3', category: 'مرافق' }),
+    ];
+
+    const options = buildExpenseCategoryOptions(rows);
+
+    expect(options.slice(0, 5)).toEqual(['صيانة', 'مرافق', 'إدارية', 'تأمين', 'أخرى']);
+    expect(options).toContain('كهرباء قديمة');
+    expect(options.indexOf('كهرباء قديمة')).toBeGreaterThan(4);
+  });
+
+  it('does not duplicate canonical categories that appear in the data', () => {
+    const options = buildExpenseCategoryOptions([makeExpense({ category: 'صيانة' })]);
+    expect(options.filter((category) => category === 'صيانة')).toHaveLength(1);
   });
 });

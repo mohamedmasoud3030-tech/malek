@@ -20,7 +20,7 @@ import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import { escapeCsvValue } from '@/lib/csvExport';
 import type { Expense, Property } from '@/types/domain';
 import { formatDate, formatMoney } from './financials-formatters';
-import { EXPENSE_CHARGED_TO_LABELS, EXPENSE_CHARGED_TO_VALUES, buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses, OPERATIONAL_EXPENSE_CATEGORIES, type ExpenseChargedTo, type OperationalExpenseCategory, type OperationalExpenseFilterValues } from '../expenses/operational-expenses';
+import { EXPENSE_CHARGED_TO_LABELS, EXPENSE_CHARGED_TO_VALUES, buildExpenseCategoryOptions, buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses, OPERATIONAL_EXPENSE_CATEGORIES, type ExpenseChargedTo, type OperationalExpenseCategory, type OperationalExpenseFilterValues } from '../expenses/operational-expenses';
 import { downloadExpenseCsv, exportExpenseVoucher as exportExpenseVoucherPdf, printExpenses } from '../expenses/expense-actions';
 import { getTodayLocalDateString } from '../financials-date-utils';
 
@@ -97,6 +97,7 @@ export function ExpensesSection({
   const propertyById = new Map(propertyRows.map((property) => [property.id, property]));
   const costCenterById = new Map(costCenterRows.map((costCenter) => [costCenter.id, costCenter]));
   const summary = summarizeOperationalExpenses(expenses);
+  const categoryOptions = buildExpenseCategoryOptions(expenses);
   const hasFilters = Boolean(filters.propertyId || filters.category || filters.costCenterId || filters.from || filters.to);
   const companySettings = useCompanySettingsContract();
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
@@ -193,7 +194,7 @@ export function ExpensesSection({
                 <span className="sr-only">التصنيف</span>
                 <Select aria-label="التصنيف" value={filters.category} onChange={(event) => onFiltersChange({ ...filters, category: event.target.value })}>
                   <option value="">كل التصنيفات</option>
-                  {OPERATIONAL_EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                  {categoryOptions.map((category) => <option key={category} value={category}>{category}</option>)}
                 </Select>
               </label>
               <label className="min-w-0 space-y-1 text-sm font-bold">
