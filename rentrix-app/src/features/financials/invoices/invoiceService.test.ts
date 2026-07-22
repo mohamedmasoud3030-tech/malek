@@ -16,10 +16,10 @@ type QueryLogEntry = { table: string; method: string; args: unknown[] };
 type InvoiceSummaryFixture = Pick<Invoice, 'amount' | 'paid_amount'>;
 type InvoiceFixture = InvoiceSummaryFixture & Pick<Invoice, 'id' | 'status'> & { contracts: null };
 type PaymentFixture = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'deleted_at'>;
-type ChainMethod = 'select' | 'is' | 'eq' | 'or' | 'order';
+type ChainMethod = 'select' | 'is' | 'eq' | 'in' | 'or' | 'order';
 type QueryBuilder = Record<ChainMethod | 'single' | 'returns', ReturnType<typeof vi.fn>>;
 
-const chainMethods: ChainMethod[] = ['select', 'is', 'eq', 'or', 'order'];
+const chainMethods: ChainMethod[] = ['select', 'is', 'eq', 'in', 'or', 'order'];
 
 function createInvoiceFixture(overrides: Partial<InvoiceFixture> = {}): InvoiceFixture {
   return {
@@ -116,7 +116,7 @@ describe('invoiceService financial reconciliation', () => {
 
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
-      { table: 'invoices', method: 'eq', args: ['status', 'PARTIALLY_PAID'] },
+      { table: 'invoices', method: 'in', args: ['status', ['partial', 'PARTIALLY_PAID']] },
       { table: 'invoices', method: 'or', args: ['id.ilike."%invoice\\_\\%%",status.ilike."%invoice\\_\\%%"'] },
     ]));
     expect(supabaseMock.rpc).not.toHaveBeenCalled();

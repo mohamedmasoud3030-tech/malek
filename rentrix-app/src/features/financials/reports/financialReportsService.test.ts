@@ -89,6 +89,17 @@ describe('financialReportsService aggregation helpers', () => {
         contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
       },
       {
+        id: 'inv_in_range_upper',
+        contract_id: 'contract_1',
+        issue_date: '2026-05-11',
+        due_date: '2026-05-30',
+        amount: 100,
+        paid_amount: 10,
+        status: 'PARTIALLY_PAID' as const,
+        deleted_at: null,
+        contracts: { id: 'contract_1', property_id: 'property_1', tenant_id: 'tenant_1' },
+      },
+      {
         id: 'inv_deleted',
         contract_id: 'contract_1',
         issue_date: '2026-05-11',
@@ -129,7 +140,7 @@ describe('financialReportsService aggregation helpers', () => {
       propertyId: 'property_1',
       tenantId: 'tenant_1',
       status: 'partial',
-    }).map((invoice) => invoice.id)).toEqual(['inv_in_range']);
+    }).map((invoice) => invoice.id)).toEqual(['inv_in_range', 'inv_in_range_upper']);
   });
 
   it('uses financialMath helpers to safely aggregate invoice, payment, and expense values', async () => {
@@ -852,7 +863,7 @@ describe('financialReportsService Supabase queries', () => {
 
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
-      { table: 'invoices', method: 'in', args: ['status', ['issued', 'partial', 'overdue']] },
+      { table: 'invoices', method: 'in', args: ['status', ['unpaid', 'UNPAID', 'issued', 'partial', 'PARTIALLY_PAID', 'overdue', 'OVERDUE']] },
       { table: 'invoices', method: 'eq', args: ['contract_id', 'contract_1'] },
       { table: 'people', method: 'in', args: ['id', ['tenant_1']] },
       { table: 'properties', method: 'in', args: ['id', ['property_1']] },
@@ -889,7 +900,7 @@ describe('financialReportsService Supabase queries', () => {
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
       { table: 'invoices', method: 'gte', args: ['issue_date', '2026-05-01'] },
       { table: 'invoices', method: 'lte', args: ['issue_date', '2026-05-31'] },
-      { table: 'invoices', method: 'eq', args: ['status', 'partial'] },
+      { table: 'invoices', method: 'in', args: ['status', ['partial', 'PARTIALLY_PAID']] },
       { table: 'invoices', method: 'eq', args: ['contract_id', 'contract_1'] },
     ]));
   });

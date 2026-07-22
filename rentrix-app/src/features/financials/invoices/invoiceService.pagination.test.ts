@@ -61,7 +61,7 @@ describe('listInvoicesPaginated', () => {
     expect(result.pageSize).toBe(10);
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'is', args: ['deleted_at', null] },
-      { table: 'invoices', method: 'eq', args: ['status', 'UNPAID'] },
+      { table: 'invoices', method: 'in', args: ['status', ['unpaid', 'UNPAID', 'issued']] },
       { table: 'invoices', method: 'gte', args: ['issue_date', '2026-01-01'] },
       { table: 'invoices', method: 'lte', args: ['issue_date', '2026-12-31'] },
       { table: 'invoices', method: 'in', args: ['contract_id', ['c1']] },

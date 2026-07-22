@@ -8,16 +8,20 @@ import { getSafeRemainingAmount } from '../financialMath';
 import { isInvoiceCollectible } from '../invoices/quick-collect';
 import { getInvoiceGrossAmount, type InvoiceListItem, type InvoiceStatusFilter, type InvoiceSummary } from '../invoices/invoiceService';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
+import { normalizeInvoiceStatus } from './invoice-status-labels';
 import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
 import { InvoiceSummaryCards } from './invoice-summary-cards';
 
+// Keyed by the CANONICAL status — live rows mix lowercase and UPPERCASE raw values.
 const invoiceStatusTone = {
   paid: 'green',
-  partially_paid: 'gold',
+  partial: 'gold',
   overdue: 'red',
   unpaid: 'blue',
   cancelled: 'gray',
+  draft: 'gray',
   void: 'gray',
+  other: 'gray',
 } as const;
 
 type InvoiceListSectionProps = {
@@ -160,7 +164,7 @@ export function InvoiceListSection({
               return formatMoney(getSafeRemainingAmount(grossAmount, invoice.paid_amount));
             } },
             { key: 'status', header: 'الحالة', render: (invoice) => (
-              <StatusBadge tone={invoiceStatusTone[invoice.status as keyof typeof invoiceStatusTone] ?? 'gray'}>
+              <StatusBadge tone={invoiceStatusTone[normalizeInvoiceStatus(invoice.status)]}>
                 {formatInvoiceStatusLabel(invoice.status)}
               </StatusBadge>
             ) },
@@ -192,12 +196,12 @@ export function InvoiceListSection({
             const grossAmount = getInvoiceGrossAmount(invoice);
             const rowRemaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
             const isSelected = selectedInvoiceId === invoice.id;
-            const tone = invoiceStatusTone[invoice.status as keyof typeof invoiceStatusTone] ?? 'gray';
+            const tone = invoiceStatusTone[normalizeInvoiceStatus(invoice.status)];
             const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
             return (
               <MobileCard
                 variant={isSelected ? 'elevated' : 'default'}
-                accent={invoice.status === 'overdue' ? 'danger' : rowRemaining > 0 ? 'warning' : 'success'}
+                accent={normalizeInvoiceStatus(invoice.status) === 'overdue' ? 'danger' : rowRemaining > 0 ? 'warning' : 'success'}
                 className={isSelected ? 'ring-2 ring-primary/20' : undefined}
                 title={`فاتورة #${invoice.id.slice(0, 8)}`}
                 subtitle={`استحقاق ${formatDate(invoice.due_date)}`}
