@@ -71,6 +71,21 @@ export const collectDocumentTextChunks = (model: UnifiedDocumentModel): string[]
 export const modelHasArabicText = (model: UnifiedDocumentModel): boolean =>
   collectDocumentTextChunks(model).some((x) => ARABIC_REGEX.test(x));
 
+/**
+ * A column is treated as numeric (amounts/counts/balances) — right-to-left
+ * text alignment does not apply to figures, so these are aligned left and
+ * bolded — only when its cell values actually look numeric. Plain-text
+ * columns (e.g. "تفاصيل الخدمات") must stay right-aligned like every other
+ * text column, even when they happen to be the last column.
+ */
+const NUMERIC_CELL_REGEX = /^[\s\-+]*[\d,.]+(?:\s?(?:ر\.?ع\.?|OMR|SAR|AED|USD|%))?\s*$/;
+
+const isNumericColumn = (rows: string[][], columnIndex: number): boolean => {
+  const values = rows.map((r) => r[columnIndex]).filter((v): v is string => Boolean(v && v.trim()));
+  if (values.length === 0) return false;
+  return values.every((v) => NUMERIC_CELL_REGEX.test(v.trim()));
+};
+
 const buildHtmlRows = (rows: string[][]) =>
   rows
     .map(
@@ -79,19 +94,19 @@ const buildHtmlRows = (rows: string[][]) =>
           .map(
             (c, i) =>
               `<td style="border: 1px solid #CBD5E1; padding: 8px 10px; font-size: 13px; color: #1E293B; ${
-                i === r.length - 1 ? 'font-weight: 700; text-align: left;' : ''
+                isNumericColumn(rows, i) ? 'font-weight: 700; text-align: left;' : 'text-align: right;'
               }">${escapeDocumentHtml(c)}</td>`,
           )
           .join('')}</tr>`,
     )
     .join('');
 
-const buildHtmlTableHead = (columns: string[]) =>
+const buildHtmlTableHead = (columns: string[], rows: string[][]) =>
   `<thead><tr>${columns
     .map(
       (column, i) =>
         `<th style="background-color: #0F172A; color: #FFFFFF; font-weight: 700; font-size: 13px; padding: 10px; border: 1px solid #0F172A; text-align: ${
-          i === columns.length - 1 ? 'left' : 'right'
+          isNumericColumn(rows, i) ? 'left' : 'right'
         };">${escapeDocumentHtml(column)}</th>`,
     )
     .join('')}</tr></thead>`;
@@ -101,6 +116,9 @@ const buildHtmlTableFoot = (totals: string[] | undefined) =>
     ? `<tfoot><tr style="background-color: #F8FAFC; font-weight: 800;">${totals
         .map(
           (total, i) =>
+            // The totals row legitimately ends in the grand-total figure, so
+            // its last cell is always the numeric one regardless of what the
+            // corresponding body column contained.
             `<th style="border: 1px solid #CBD5E1; padding: 10px; font-size: 14px; color: #0284C7; text-align: ${
               i === totals.length - 1 ? 'left' : 'right'
             };">${escapeDocumentHtml(total)}</th>`,
@@ -126,7 +144,7 @@ const buildHtmlTable = (table: UnifiedDocumentModel['tables'][number]) => {
       const isLastChunk = chunkIndex === chunks.length - 1;
       return `
       <table style="width: 100%; border-collapse: collapse; margin-top: 6px; ${chunkIndex > 0 ? 'page-break-before: always; break-before: page;' : ''}">
-        ${buildHtmlTableHead(table.columns)}
+        ${buildHtmlTableHead(table.columns, table.rows)}
         <tbody>${buildHtmlRows(chunkRows)}</tbody>
         ${isLastChunk ? buildHtmlTableFoot(table.totals) : ''}
       </table>
@@ -210,16 +228,13 @@ const buildRtlPrintHtml = (model: UnifiedDocumentModel, options: { withPageFoote
     '.company-brand { font-size: 20px; font-weight: 900; color: #0284C7; letter-spacing: -0.5px; margin: 0 0 4px 0; }',
     '.company-sub { font-size: 11px; color: #475569; margin: 2px 0; }',
     '.doc-title-badge { background: #0F172A; color: #FFFFFF; font-size: 18px; font-weight: 800; padding: 8px 20px; border-radius: 8px; text-align: center; display: inline-block; }',
-    '.doc-meta { font-size: 11px; color: #475569; margin-top: 6px; text-align: left; }',
+    '.doc-meta { font-size: 11px; color: #475569; margin-top: 6px; text-align: right; }',
     '.stamp-box { border: 2px dashed #0284C7; border-radius: 12px; padding: 12px; text-align: center; background: #F0F9FF; width: 140px; }',
     '.footer-audit { border-top: 1px solid #E2E8F0; padding-top: 12px; margin-top: 30px; display: flex; justify-content: space-between; font-size: 10px; color: #64748B; }',
     'table { page-break-inside: auto; }',
     'tr { page-break-inside: avoid; break-inside: avoid; }',
     'thead { display: table-header-group; }',
     'tfoot { display: table-footer-group; }',
-    '@media print {',
-    '  body { filter: grayscale(100%); }',
-    '}',
     '</style>',
     '</head><body>',
     '<div class="header-container">',
@@ -228,7 +243,7 @@ const buildRtlPrintHtml = (model: UnifiedDocumentModel, options: { withPageFoote
     `    <h1 class="company-brand">${escapeDocumentHtml(model.header.companyName)}</h1>`,
     contactLines,
     '  </div>',
-    '  <div style="text-align: left;">',
+    '  <div style="text-align: right;">',
     `    <div class="doc-title-badge">${escapeDocumentHtml(model.header.title)}</div>`,
     model.header.documentNo
       ? `    <p class="doc-meta">رقم المستند: <strong>${escapeDocumentHtml(model.header.documentNo)}</strong></p>`
