@@ -22,6 +22,8 @@ type ArrearsWorkflowSectionProps = Readonly<{
   onSearchChange: (value: string) => void;
   onBucketFilterChange: (value: ArrearsBucketFilter) => void;
   onSelectInvoice: (invoiceId: string) => void;
+  /** Optional «تحصيل» deep-link action, supplied when the user may record payments. */
+  onCollectInvoice?: (invoiceId: string) => void;
 }>;
 
 export function ArrearsWorkflowSection({
@@ -39,6 +41,7 @@ export function ArrearsWorkflowSection({
   onSearchChange,
   onBucketFilterChange,
   onSelectInvoice,
+  onCollectInvoice,
 }: ArrearsWorkflowSectionProps) {
   const overdueRows = overdueReport?.rows ?? [];
   const filteredRows = filterOverdueInvoiceRows(overdueRows, search, bucketFilter);
@@ -90,11 +93,11 @@ export function ArrearsWorkflowSection({
         ) : null}
 
         {canShowRows && hasFilteredRows ? (
-          <OverdueInvoicesTable rows={filteredRows} selectedInvoiceId={selectedInvoiceId} onSelectInvoice={onSelectInvoice} />
+          <OverdueInvoicesTable rows={filteredRows} selectedInvoiceId={selectedInvoiceId} onSelectInvoice={onSelectInvoice} onCollectInvoice={onCollectInvoice} />
         ) : null}
 
         {canShowRows && (hasOverdueRows || hasFilters) ? (
-          <SelectedOverdueInvoiceCard row={selectedOverdueRow} onShowInvoice={onSelectInvoice} />
+          <SelectedOverdueInvoiceCard row={selectedOverdueRow} onShowInvoice={onSelectInvoice} onCollectInvoice={onCollectInvoice} />
         ) : null}
       </CardContent>
     </Card>

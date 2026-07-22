@@ -1,10 +1,21 @@
+import { useRouter } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
+import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
+import { useAuth } from '@/hooks/use-auth';
 import type { ArrearsBucketFilter } from './arrears-workflow-helpers';
 import { ArrearsWorkflowSection } from './arrears-workflow-section';
+import { createInvoiceCollectHref } from '../invoices/quick-collect';
 import { getTodayLocalDateString } from '../financials-date-utils';
 import { useAgedReceivablesReport, useArrearsSummaryReport, useOverdueInvoicesReport } from '../reports/useFinancialReports';
 
 export function ArrearsWorkspaceSection() {
+  const { authorization } = useAuth();
+  const router = useRouter();
+  const canCollectPayments = canAccess(authorization, financialOperationPermissions.createPayment);
+  const onCollectInvoice = (invoiceId: string) => {
+    if (!canCollectPayments) return;
+    void router.navigate({ href: createInvoiceCollectHref(invoiceId) });
+  };
   const [arrearsAsOf, setArrearsAsOf] = useState(() => getTodayLocalDateString());
   const [arrearsSearch, setArrearsSearch] = useState('');
   const [arrearsBucketFilter, setArrearsBucketFilter] = useState<ArrearsBucketFilter>('all');
@@ -34,6 +45,7 @@ export function ArrearsWorkspaceSection() {
       onSearchChange={setArrearsSearch}
       onBucketFilterChange={setArrearsBucketFilter}
       onSelectInvoice={setSelectedInvoiceId}
+      onCollectInvoice={canCollectPayments ? onCollectInvoice : undefined}
     />
   );
 }
