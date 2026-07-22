@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthorizationContext } from '@/features/auth/permissions';
 import type { ReceiptRecord } from './receiptService';
-import { canVoidReceipts, countPostedReceiptsForDate, createReceiptPrintHref, sumPostedReceiptAmount, sumPostedReceiptsForDate } from './receipts-page';
+import { canLoadMoreReceipts, canVoidReceipts, countPostedReceiptsForDate, createReceiptPrintHref, describeReceiptsViewport, nextReceiptsLimit, RECEIPTS_PAGE_SIZE, sumPostedReceiptAmount, sumPostedReceiptsForDate } from './receipts-page';
 
 function authorization(role: AuthorizationContext['role']): AuthorizationContext {
   return {
@@ -67,5 +67,22 @@ describe('receipts page action helpers', () => {
       { ...receipt('c', 200, 'posted'), payment_date: '2026-07-14' },
       { ...receipt('d', 200, 'posted'), payment_date: '2026-07-10' },
     ], '2026-07-14')).toBe(2);
+  });
+});
+
+describe('receipts viewport (load more)', () => {
+  it('allows loading more only while the fetched window is full', () => {
+    expect(canLoadMoreReceipts(RECEIPTS_PAGE_SIZE, RECEIPTS_PAGE_SIZE)).toBe(true);
+    expect(canLoadMoreReceipts(RECEIPTS_PAGE_SIZE - 1, RECEIPTS_PAGE_SIZE)).toBe(false);
+    expect(canLoadMoreReceipts(0, RECEIPTS_PAGE_SIZE)).toBe(false);
+  });
+
+  it('extends the window by one page size per click', () => {
+    expect(nextReceiptsLimit(RECEIPTS_PAGE_SIZE)).toBe(RECEIPTS_PAGE_SIZE * 2);
+  });
+
+  it('describes the current viewport scope for the cashier', () => {
+    expect(describeReceiptsViewport(100, true)).toContain('أقدم');
+    expect(describeReceiptsViewport(37, false)).toContain('كل الإيصالات');
   });
 });
