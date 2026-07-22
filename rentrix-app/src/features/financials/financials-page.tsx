@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronLeft, ClipboardList, FileCheck, FileText, Landmark, ReceiptText, WalletCards } from 'lucide-react';
+import { ChevronLeft, ClipboardList, FileCheck, FileText, HandCoins, Landmark, ReceiptText, WalletCards } from 'lucide-react';
 import { useMemo } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
+import { useAuth } from '@/hooks/use-auth';
+import { canShowNavigationItem, type AppPermission } from '@/features/auth/permissions';
 import { PageLayout } from '@/components/layout/page-layout';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { getTodayLocalDateString } from './financials-date-utils';
@@ -22,17 +24,23 @@ function getCurrentMonthReportRange() {
 // entry). The hub no longer embeds duplicate workspaces — it is a summary
 // screen plus a directory into the dedicated workspaces.
 const financialWorkspaces = [
-  ['/invoices', 'الفواتير والتحصيل', 'مراجعة وتسجيل دفعات الفواتير', FileText],
-  ['/receipts', 'السدادات والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText],
-  ['/expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards],
-  ['/arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList],
-  ['/deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck],
-  ['/bank-reconciliation', 'مطابقة كشف البنك', 'مطابقة السجلات مع الحسابات البنكية', Landmark],
-] as const;
+  ['/invoices', 'الفواتير والتحصيل', 'مراجعة وتسجيل دفعات الفواتير', FileText, undefined],
+  ['/receipts', 'السدادات والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText, undefined],
+  ['/expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards, 'expenses.write'],
+  ['/arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList, 'arrears.view'],
+  ['/deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck, undefined],
+  ['/owner-settlements', 'تسويات الملاك', 'إعداد واعتماد وصرف تسويات أصحاب العقارات', HandCoins, 'financial.owner_settlements.approve'],
+  ['/bank-reconciliation', 'مطابقة كشف البنك', 'مطابقة السجلات مع الحسابات البنكية', Landmark, 'financial.bank_reconciliation.view'],
+] as const satisfies readonly (readonly [string, string, string, typeof FileText, AppPermission | undefined])[];
 
 export function FinancialsPage() {
+  const { authorization } = useAuth();
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
   const collectionReport = useCollectionSummaryReport(reportFilters);
+  // Mirror the sidebar: only surface workspace cards the user can actually open.
+  const visibleWorkspaces = financialWorkspaces.filter(([, , , , permission]) =>
+    canShowNavigationItem(authorization, permission),
+  );
 
   return (
     <PageLayout dir="rtl" size="wide">
@@ -57,7 +65,7 @@ export function FinancialsPage() {
           </p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {financialWorkspaces.map(([to, label, description, Icon]) => (
+          {visibleWorkspaces.map(([to, label, description, Icon]) => (
             <Link
               key={to}
               to={to}

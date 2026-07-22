@@ -27,6 +27,7 @@ const requiredOperationalRoutes = [
   '/contracts/$contractId/edit',
   '/financials',
   '/deposits',
+  '/owner-settlements',
   '/invoices',
   '/receipts',
   '/expenses',
@@ -134,9 +135,10 @@ describe('app route and navigation parity', () => {
     const financialsPaths = financialsGroup?.[1].map(([to]) => to) ?? [];
 
     expect(financialsPaths).toEqual(
-      expect.arrayContaining(['/financials', '/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/bank-reconciliation']),
+      expect.arrayContaining(['/financials', '/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation']),
     );
     expect(mobileNavPaths).not.toContain('/arrears');
+    expect(mobileNavPaths).not.toContain('/owner-settlements');
     expect(mobileNavPaths).not.toContain('/expenses');
     expect(mobileNavPaths).not.toContain('/bank-reconciliation');
   });

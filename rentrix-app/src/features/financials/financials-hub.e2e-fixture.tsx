@@ -1,4 +1,4 @@
-import { ChevronLeft, ClipboardList, FileCheck, FileText, Landmark, ReceiptText, TrendingUp, WalletCards } from 'lucide-react';
+import { ChevronLeft, ClipboardList, FileCheck, FileText, HandCoins, Landmark, ReceiptText, TrendingUp, WalletCards } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +17,7 @@ const financialWorkspaces = [
   ['expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards],
   ['arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList],
   ['deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck],
+  ['settlements', 'تسويات الملاك', 'إعداد واعتماد وصرف تسويات أصحاب العقارات', HandCoins],
   ['reconciliation', 'مطابقة كشف البنك', 'مطابقة السجلات مع الحسابات البنكية', Landmark],
 ] as const;
 

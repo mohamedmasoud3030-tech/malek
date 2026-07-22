@@ -46,6 +46,7 @@ const sharedTranslationEntries = [
   ['financials', 'المالية', 'Financials'],
   ['financialOverview', 'الملخص المالي', 'Financial overview'],
   ['deposits', 'التأمينات', 'Deposits'],
+  ['ownerSettlements', 'تسويات الملاك', 'Owner settlements'],
   ['invoices', 'الفواتير', 'Invoices'],
   ['receipts', 'الإيصالات', 'Receipts'],
   ['collectionsReceipts', 'التحصيلات والإيصالات', 'Collections & receipts'],
