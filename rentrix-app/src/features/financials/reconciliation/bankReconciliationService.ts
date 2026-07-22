@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { BankAccount, BankMatchCandidate, BankReconciliationFilters, BankReconciliationMatch, BankReconciliationMatchValues, BankStatementImportValues, BankStatementLine, BankStatementLineFormValues, ReconciliationSummary } from './types';
 
@@ -11,6 +12,23 @@ type ProcessBankReconciliationMatchAtomicResult = Database['public']['Functions'
 
 
 const matchEntityTypes = ['payment', 'receipt', 'expense', 'manual_adjustment'] as const;
+
+export type CanonicalBankStatementLineStatus = 'unmatched' | 'matched' | 'ignored';
+
+/** Accept historical casing while keeping reconciliation totals and filters aligned. */
+export function normalizeBankStatementLineStatus(status: unknown): CanonicalBankStatementLineStatus {
+  switch (String(status ?? '').trim().toLowerCase()) {
+    case 'matched': return 'matched';
+    case 'ignored': return 'ignored';
+    case 'unmatched':
+    default: return 'unmatched';
+  }
+}
+
+function getBankStatementStatusVariants(status: CanonicalBankStatementLineStatus): string[] {
+  return [status, status.toUpperCase()];
+}
+
 
 const bankAccountIdSchema = z.string().trim().min(1, 'اختر الحساب البنكي.');
 const dateInputSchema = z.string().trim().refine(isValidDateInput, 'اختر تاريخاً صحيحاً بصيغة YYYY-MM-DD.');
@@ -143,13 +161,16 @@ export function toBankReconciliationMatchPayload(values: BankReconciliationMatch
 
 
 export function summarizeReconciliation(lines: readonly Pick<BankStatementLine, 'amount' | 'status'>[]): ReconciliationSummary {
-  return lines.reduce<ReconciliationSummary>((summary, line) => ({
-    totalLines: summary.totalLines + 1,
-    unmatchedCount: summary.unmatchedCount + (line.status === 'unmatched' ? 1 : 0),
-    matchedCount: summary.matchedCount + (line.status === 'matched' ? 1 : 0),
-    ignoredCount: summary.ignoredCount + (line.status === 'ignored' ? 1 : 0),
-    unmatchedAmount: summary.unmatchedAmount + (line.status === 'unmatched' ? Number(line.amount) || 0 : 0),
-  }), { totalLines: 0, unmatchedCount: 0, matchedCount: 0, ignoredCount: 0, unmatchedAmount: 0 });
+  return lines.reduce<ReconciliationSummary>((summary, line) => {
+    const status = normalizeBankStatementLineStatus(line.status);
+    return {
+      totalLines: summary.totalLines + 1,
+      unmatchedCount: summary.unmatchedCount + (status === 'unmatched' ? 1 : 0),
+      matchedCount: summary.matchedCount + (status === 'matched' ? 1 : 0),
+      ignoredCount: summary.ignoredCount + (status === 'ignored' ? 1 : 0),
+      unmatchedAmount: summary.unmatchedAmount + (status === 'unmatched' ? Number(line.amount) || 0 : 0),
+    };
+  }, { totalLines: 0, unmatchedCount: 0, matchedCount: 0, ignoredCount: 0, unmatchedAmount: 0 });
 }
 
 export async function listBankAccounts(): Promise<BankAccount[]> {
@@ -159,14 +180,21 @@ export async function listBankAccounts(): Promise<BankAccount[]> {
 }
 
 export async function listBankStatementLines(filters: BankReconciliationFilters): Promise<BankStatementLine[]> {
-  let query = supabase.from('bank_statement_lines').select('*').is('deleted_at', null).order('transaction_date', { ascending: false });
-  if (filters.bankAccountId) query = query.eq('bank_account_id', filters.bankAccountId);
-  if (filters.status !== 'all') query = query.eq('status', filters.status);
-  if (filters.from) query = query.gte('transaction_date', filters.from);
-  if (filters.to) query = query.lte('transaction_date', filters.to);
-  const { data, error } = await query.returns<BankStatementLine[]>();
-  if (error) handleSupabaseError(error, 'تعذر تحميل حركات كشف البنك');
-  return data ?? [];
+  try {
+    const { rows } = await fetchAllRows<BankStatementLine>(() => {
+      let query: any = supabase.from('bank_statement_lines').select('*').is('deleted_at', null).order('transaction_date', { ascending: false });
+      if (filters.bankAccountId) query = query.eq('bank_account_id', filters.bankAccountId);
+      if (filters.status !== 'all') query = query.in('status', getBankStatementStatusVariants(normalizeBankStatementLineStatus(filters.status)));
+      if (filters.from) query = query.gte('transaction_date', filters.from);
+      if (filters.to) query = query.lte('transaction_date', filters.to);
+      return query.returns();
+    });
+    // Database types predate some live rows; normalize status at this boundary.
+    return rows.map((row) => ({ ...row, status: normalizeBankStatementLineStatus(row.status) } as BankStatementLine));
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل حركات كشف البنك');
+    throw error;
+  }
 }
 
 export async function createBankStatementLine(values: BankStatementLineFormValues): Promise<BankStatementLine> {

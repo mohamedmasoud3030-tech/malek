@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 
 export type DepositStatus = 'held' | 'partially_refunded' | 'refunded' | 'forfeited_damage' | 'forfeited_arrears' | 'partially_deducted';
 
@@ -112,24 +113,25 @@ function mapRow(row: any): DepositRecord {
 }
 
 export async function listTenantDeposits(): Promise<DepositRecord[]> {
-  const { data, error } = await supabase
-    .from('tenant_deposits')
-    .select(`
-      *,
-      properties:property_id(id,title),
-      units:unit_id(id,unit_number)
-    `)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .limit(200)
-    .returns<DepositRow[]>();
-
-  if (error) {
-    if ((error as any).code === '42P01') return [];
+  try {
+    // A `.limit(200)` here used to silently hide older held deposits. Deposits
+    // remain a liability until settled, so every row must participate in this view.
+    const { rows } = await fetchAllRows<DepositRow>(() => supabase
+      .from('tenant_deposits')
+      .select(`
+        *,
+        properties:property_id(id,title),
+        units:unit_id(id,unit_number)
+      `)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .returns<DepositRow>() as any);
+    return rows.map(mapRow);
+  } catch (error) {
+    if ((error as any)?.code === '42P01') return [];
     handleSupabaseError(error, 'تعذر تحميل ودائع التأمين');
+    throw error;
   }
-
-  return (data ?? []).map(mapRow);
 }
 
 export async function createTenantDeposit(payload: DepositCreatePayload): Promise<DepositRecord> {
@@ -243,12 +245,15 @@ export async function recordDepositRefund(payload: DepositRefundPayload): Promis
 }
 
 export async function listDepositTransactions(depositId: string) {
-  const { data, error } = await supabase
-    .from('deposit_transactions')
-    .select('*')
-    .eq('deposit_id', depositId)
-    .order('created_at', { ascending: true });
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل سجل حركات الوديعة');
-  return data ?? [];
+  try {
+    const { rows } = await fetchAllRows<any>(() => supabase
+      .from('deposit_transactions')
+      .select('*')
+      .eq('deposit_id', depositId)
+      .order('created_at', { ascending: true }) as any);
+    return rows;
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل سجل حركات الوديعة');
+    throw error;
+  }
 }
