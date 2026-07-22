@@ -10,7 +10,12 @@ export const receiptKeys = {
 };
 
 export function useReceipts(params: ReceiptListParams = {}) {
-  return useQuery({ queryKey: receiptKeys.list(params), queryFn: () => listReceipts(params) });
+  return useQuery({
+    queryKey: receiptKeys.list(params),
+    queryFn: () => listReceipts(params),
+    // Keep the current window visible while a larger one («عرض المزيد») loads.
+    placeholderData: (previousData) => previousData,
+  });
 }
 
 export function useReceipt(receiptOrPaymentId: string) {
