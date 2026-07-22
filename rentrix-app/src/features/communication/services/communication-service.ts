@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from '../types';
 
@@ -30,9 +31,13 @@ export async function listCommunicationRecords(filters: CommunicationFilters) {
     query = query.or(`contact_name.ilike.${term},contact_phone.ilike.${term},contact_email.ilike.${term},subject.ilike.${term},body.ilike.${term}`);
   }
 
-  const { data, error } = await query.returns<CommunicationRecord[]>();
-  if (error) handleSupabaseError(error, 'تعذر تحميل سجل التواصل');
-  return data ?? [];
+  try {
+    const { rows } = await fetchAllRows<CommunicationRecord>(() => query as any);
+    return rows;
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل سجل التواصل');
+    throw error;
+  }
 }
 
 export async function createCommunicationRecord(values: CommunicationFormValues) {

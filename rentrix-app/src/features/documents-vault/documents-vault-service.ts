@@ -1,6 +1,7 @@
 import { ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 
 export type VaultCategory = 'all' | 'contracts' | 'identity' | 'receipts' | 'maintenance' | 'expenses' | 'utilities' | 'other';
 
@@ -45,7 +46,7 @@ export const VAULT_ALLOWED_MIME_TYPES = ATTACHMENTS_ALLOWED_MIME_TYPES;
 const SIGNED_URL_EXPIRY_SECONDS = 60 * 60;
 
 export async function listVaultDocuments(params: VaultListParams = {}): Promise<VaultDocumentItem[]> {
-  let query = (supabase as any).from('vault_documents').select('*').is('deleted_at', null).order('created_at', { ascending: false }).limit(100);
+  let query = (supabase as any).from('vault_documents').select('*').is('deleted_at', null).order('created_at', { ascending: false });
 
   if (params.category && params.category !== 'all') query = query.eq('category', params.category);
   if (params.relatedEntityType) query = query.eq('related_entity_type', params.relatedEntityType);
@@ -55,10 +56,15 @@ export async function listVaultDocuments(params: VaultListParams = {}): Promise<
     query = query.or(`title.ilike.${term},file_name.ilike.${term}`);
   }
 
-  const { data, error } = await query;
-  if (error) handleSupabaseError(error, 'تعذر تحميل المستندات');
+  let rows: any[];
+  try {
+    ({ rows } = await fetchAllRows<any>(() => query));
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل المستندات');
+    throw error;
+  }
 
-  return ((data ?? []) as any[]).map((row: any) => ({
+  return rows.map((row: any) => ({
     id: row.id,
     title: row.title,
     category: row.category as VaultCategory,

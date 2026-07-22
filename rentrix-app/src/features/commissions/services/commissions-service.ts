@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from '../types';
 
@@ -55,9 +56,13 @@ export async function listCommissions(filters: CommissionFilters) {
     query = query.or(`staff_name.ilike.${term},source_id.ilike.${term},type.ilike.${term}`);
   }
 
-  const { data, error } = await query.returns<CommissionRecord[]>();
-  if (error) handleSupabaseError(error, 'تعذر تحميل العمولات');
-  return data ?? [];
+  try {
+    const { rows } = await fetchAllRows<CommissionRecord>(() => query as any);
+    return rows;
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل العمولات');
+    throw error;
+  }
 }
 
 function validateCommission(values: CommissionFormValues) {

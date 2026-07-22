@@ -1,4 +1,5 @@
 import { getContractStatusVariants } from '@/lib/contractStatus';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import { env } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
@@ -67,17 +68,19 @@ function isActivePayment(payment: PaymentSnapshotRow): boolean {
 }
 
 async function fetchOverdueInvoices(asOf: string) {
-  const { data, error } = await supabase
-    .from('invoices')
-    .select('id, contract_id, due_date, amount, paid_amount, status, deleted_at')
-    .is('deleted_at', null)
-    .lte('due_date', asOf)
-    .order('due_date', { ascending: true })
-    .limit(sampleLimit)
-    .returns<InvoiceContextRow[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تجهيز ملخص الفواتير المتأخرة');
-  const rows = (data ?? [])
+  let data: InvoiceContextRow[];
+  try {
+    ({ rows: data } = await fetchAllRows<InvoiceContextRow>(() => supabase
+      .from('invoices')
+      .select('id, contract_id, due_date, amount, paid_amount, status, deleted_at')
+      .is('deleted_at', null)
+      .lte('due_date', asOf)
+      .order('due_date', { ascending: true }) as any));
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تجهيز ملخص الفواتير المتأخرة');
+    throw error;
+  }
+  const rows = data
     .filter((invoice) => isOpenInvoiceStatus(invoice.status) && remainingAmount(invoice) > 0)
     .sort((a, b) => a.due_date.localeCompare(b.due_date));
 
@@ -101,29 +104,24 @@ async function fetchContractRenewals(asOf: string, until: string) {
 }
 
 async function fetchSnapshotRows(asOf: string, thirtyDaysAgo: string, ninetyDaysAgo: string) {
-  const [propertiesResult, unitsResult, invoicesResult, paymentsResult, expenses90Result, expenses30Result] = await Promise.all([
-    supabase.from('properties').select('id, status, deleted_at').is('deleted_at', null).limit(sampleLimit).returns<PropertySnapshotRow[]>(),
-    supabase.from('units').select('id, status, deleted_at').is('deleted_at', null).limit(sampleLimit).returns<UnitSnapshotRow[]>(),
-    supabase.from('invoices').select('id, contract_id, due_date, amount, paid_amount, status, deleted_at').is('deleted_at', null).lte('due_date', asOf).limit(sampleLimit).returns<InvoiceContextRow[]>(),
-    supabase.from('payments').select('id, amount, payment_date, status, deleted_at').is('deleted_at', null).gte('payment_date', thirtyDaysAgo).lte('payment_date', asOf).limit(sampleLimit).returns<PaymentSnapshotRow[]>(),
-    supabase.from('expenses').select('id, amount, expense_date, deleted_at').is('deleted_at', null).gte('expense_date', ninetyDaysAgo).lte('expense_date', asOf).limit(sampleLimit).returns<ExpenseSnapshotRow[]>(),
-    supabase.from('expenses').select('id, amount, expense_date, deleted_at').is('deleted_at', null).gte('expense_date', thirtyDaysAgo).lte('expense_date', asOf).limit(sampleLimit).returns<ExpenseSnapshotRow[]>(),
+  // Context totals are sent to the assistant as facts. Sampling them at 500
+  // silently changed portfolio-level answers once a tenant grew beyond that.
+  const results = await Promise.all([
+    fetchAllRows<PropertySnapshotRow>(() => supabase.from('properties').select('id, status, deleted_at').is('deleted_at', null) as any),
+    fetchAllRows<UnitSnapshotRow>(() => supabase.from('units').select('id, status, deleted_at').is('deleted_at', null) as any),
+    fetchAllRows<InvoiceContextRow>(() => supabase.from('invoices').select('id, contract_id, due_date, amount, paid_amount, status, deleted_at').is('deleted_at', null).lte('due_date', asOf) as any),
+    fetchAllRows<PaymentSnapshotRow>(() => supabase.from('payments').select('id, amount, payment_date, status, deleted_at').is('deleted_at', null).gte('payment_date', thirtyDaysAgo).lte('payment_date', asOf) as any),
+    fetchAllRows<ExpenseSnapshotRow>(() => supabase.from('expenses').select('id, amount, expense_date, deleted_at').is('deleted_at', null).gte('expense_date', ninetyDaysAgo).lte('expense_date', asOf) as any),
+    fetchAllRows<ExpenseSnapshotRow>(() => supabase.from('expenses').select('id, amount, expense_date, deleted_at').is('deleted_at', null).gte('expense_date', thirtyDaysAgo).lte('expense_date', asOf) as any),
   ]);
 
-  if (propertiesResult.error) handleSupabaseError(propertiesResult.error, 'تعذر تجهيز ملخص العقارات');
-  if (unitsResult.error) handleSupabaseError(unitsResult.error, 'تعذر تجهيز ملخص الوحدات');
-  if (invoicesResult.error) handleSupabaseError(invoicesResult.error, 'تعذر تجهيز ملخص الفواتير');
-  if (paymentsResult.error) handleSupabaseError(paymentsResult.error, 'تعذر تجهيز ملخص التحصيلات');
-  if (expenses90Result.error) handleSupabaseError(expenses90Result.error, 'تعذر تجهيز ملخص المصاريف');
-  if (expenses30Result.error) handleSupabaseError(expenses30Result.error, 'تعذر تجهيز ملخص المصاريف');
-
   return {
-    properties: propertiesResult.data ?? [],
-    units: unitsResult.data ?? [],
-    invoices: invoicesResult.data ?? [],
-    payments: paymentsResult.data ?? [],
-    expenses90: expenses90Result.data ?? [],
-    expenses30: expenses30Result.data ?? [],
+    properties: results[0].rows,
+    units: results[1].rows,
+    invoices: results[2].rows,
+    payments: results[3].rows,
+    expenses90: results[4].rows,
+    expenses30: results[5].rows,
   };
 }
 
@@ -145,7 +143,7 @@ export async function buildAiAssistantContext(): Promise<AiAssistantContext> {
   const invoiceAmountLast30Days = snapshot.invoices
     .filter((invoice) => invoice.due_date >= thirtyDaysAgo && isOpenInvoiceStatus(invoice.status))
     .map((invoice) => Number(invoice.amount ?? 0));
-  const occupiedUnitCount = snapshot.units.filter((unit) => unit.status === 'occupied').length;
+  const occupiedUnitCount = snapshot.units.filter((unit) => ['occupied', 'rented'].includes(String(unit.status ?? '').trim().toLowerCase())).length;
   const unitCount = snapshot.units.length;
 
   return {
@@ -178,7 +176,7 @@ export async function buildAiAssistantContext(): Promise<AiAssistantContext> {
     },
     propertyFinancialSnapshot: {
       propertyCount: snapshot.properties.length,
-      activePropertyCount: snapshot.properties.filter((property) => property.status === 'active').length,
+      activePropertyCount: snapshot.properties.filter((property) => String(property.status ?? '').trim().toLowerCase() === 'active').length,
       unitCount,
       occupiedUnitCount,
       occupancyRate: unitCount > 0 ? Number(((occupiedUnitCount / unitCount) * 100).toFixed(2)) : 0,
