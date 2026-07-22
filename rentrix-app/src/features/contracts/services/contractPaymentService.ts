@@ -4,6 +4,7 @@ import {
   getSafeRemainingAmount,
   toFinancialNumber,
 } from '@/features/financials/financialMath';
+import { getInvoiceGrossAmount } from '@/features/financials/invoices/invoiceService';
 import { formatReceiptNumber } from '@/features/financials/receipts/receiptService';
 
 export type ContractInvoicePaymentRow = Readonly<{
@@ -53,7 +54,7 @@ type InvoiceRow = Pick<
   | 'paid_amount'
   | 'status'
   | 'notes'
->;
+> & Partial<Pick<Invoice, 'tax_amount'>>;
 type PaymentRow = Pick<
   Payment,
   | 'id'
@@ -108,7 +109,7 @@ export async function getContractPaymentsSnapshot(
 ): Promise<ContractPaymentsSnapshot> {
   const { data: invoices, error: invoicesError } = await supabase
     .from('invoices')
-    .select('id, issue_date, due_date, amount, paid_amount, status, notes')
+    .select('id, issue_date, due_date, amount, tax_amount, paid_amount, status, notes')
     .eq('contract_id', contractId)
     .is('deleted_at', null)
     .order('due_date', { ascending: false })
@@ -156,8 +157,10 @@ export async function getContractPaymentsSnapshot(
     due_date: invoice.due_date,
     amount: invoice.amount,
     paid_amount: invoice.paid_amount,
+    // Gross-based like every other surfaces: net + VAT − paid. Using the net
+    // amount here under-reported taxed invoices in the contract payments tab.
     remaining_amount: getSafeRemainingAmount(
-      invoice.amount,
+      getInvoiceGrossAmount(invoice),
       invoice.paid_amount,
     ),
     status: invoice.status,
