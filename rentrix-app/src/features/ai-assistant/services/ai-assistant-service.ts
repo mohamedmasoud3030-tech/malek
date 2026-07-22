@@ -1,3 +1,4 @@
+import { getContractStatusVariants } from '@/lib/contractStatus';
 import { env } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
@@ -88,7 +89,7 @@ async function fetchContractRenewals(asOf: string, until: string) {
     .from('contracts')
     .select('id, property_id, tenant_id, unit_id, end_date, rent_amount, status, deleted_at')
     .is('deleted_at', null)
-    .eq('status', 'active')
+    .in('status', getContractStatusVariants('active') as Contract['status'][]) // legacy rows may be stored as 'ACTIVE'
     .gte('end_date', asOf)
     .lte('end_date', until)
     .order('end_date', { ascending: true })

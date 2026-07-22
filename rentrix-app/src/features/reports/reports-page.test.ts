@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
-import { buildAgingBucketChartRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
+import { buildAgingBucketChartRows, buildExpiringContractsRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 import { buildReportCsvFilename, escapeCsvValue, toDateInputValue } from './reports-page';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
@@ -122,6 +122,29 @@ describe('ReportsPage shaping helpers', () => {
         endDate: '2026-12-31',
       },
     ]);
+  });
+
+  it('keeps legacy-cased expiring contracts visible in the renewals window report', () => {
+    // Fixture mirrors live data: legacy rows stored as 'ACTIVE'/'ENDED'.
+    const rows = buildExpiringContractsRows([
+      createContract({ id: 'contract_legacy_active', status: 'ACTIVE' as ContractListItem['status'], end_date: '2026-08-10' }),
+      createContract({ id: 'contract_modern_active', end_date: '2026-08-05' }),
+      createContract({ id: 'contract_legacy_ended', status: 'ENDED' as ContractListItem['status'], end_date: '2026-08-01' }),
+      createContract({ id: 'contract_out_of_window', end_date: '2026-12-31' }),
+    ], new Date('2026-07-01T00:00:00'));
+
+    // 60-day window from 2026-07-01 ends 2026-08-30; legacy ENDED is expired, not active.
+    expect(rows.map((row) => row.contractId)).toEqual(['contract_modern_active', 'contract_legacy_active']);
+  });
+
+  it('labels legacy-cased statuses in the rent roll instead of rendering blanks', () => {
+    const labels = { active: 'نشط', draft: 'مسودة', expired: 'منتهي', terminated: 'منهى' } as const;
+    const rows = buildRentRollRows([
+      createContract({ id: 'contract_legacy_active', status: 'ACTIVE' as ContractListItem['status'] }),
+      createContract({ id: 'contract_legacy_ended', status: 'ENDED' as ContractListItem['status'] }),
+    ], labels);
+
+    expect(rows.map((row) => row.statusLabel)).toEqual(['نشط', 'منتهي']);
   });
 
   it('creates receipt print links with the merged query-string route only', () => {

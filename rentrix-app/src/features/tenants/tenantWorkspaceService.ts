@@ -1,3 +1,4 @@
+import { isContractStatus } from '@/lib/contractStatus';
 import { supabase } from '@/lib/supabase';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
@@ -63,7 +64,7 @@ function groupBy<TItem, TKey extends string>(items: TItem[], getKey: (item: TIte
 }
 
 function getPrimaryContract(contracts: TenantContract[]) {
-  return contracts.find((contract) => contract.status === 'active') ?? contracts[0] ?? null;
+  return contracts.find((contract) => isContractStatus(contract.status, 'active')) ?? contracts[0] ?? null;
 }
 
 function isInvoiceInArrears(invoice: TenantInvoice, today: string) {
@@ -87,7 +88,7 @@ function buildTenantRow(person: TenantPerson, contracts: TenantContract[], invoi
   const invoiceSummary = summarizeTenantInvoices(invoices, today);
   return {
     person,
-    activeContractCount: contracts.filter((contract) => contract.status === 'active').length,
+    activeContractCount: contracts.filter((contract) => isContractStatus(contract.status, 'active')).length,
     propertyTitle: primaryContract?.properties?.title ?? null,
     unitNumber: primaryContract?.units?.unit_number ?? null,
     primaryContractId: primaryContract?.id ?? null,

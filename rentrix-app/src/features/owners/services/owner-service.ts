@@ -1,3 +1,4 @@
+import { getContractStatusVariants } from '@/lib/contractStatus';
 import { supabase } from '@/lib/supabase';
 import { getSafeRemainingAmount, sumFinancialValues } from '@/features/financials/financialMath';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
@@ -349,7 +350,7 @@ export async function listActiveContractsForProperties(propertyIds: string[]): P
     .from('contracts')
     .select('id,property_id')
     .in('property_id', propertyIds)
-    .eq('status', 'active')
+    .in('status', getContractStatusVariants('active') as Contract['status'][]) // legacy rows may be stored as 'ACTIVE'
     .is('deleted_at', null)
     .returns<OwnerActiveContract[]>();
 
