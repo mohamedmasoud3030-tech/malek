@@ -17,10 +17,13 @@ describe('payment-backed receipt shared identity migration', () => {
     expect(migration).toContain('new.receipt_id is null');
     expect(migration).toContain('new.id := new.receipt_id');
     expect(migration).toContain('payments_enforce_receipt_shared_identity');
+    expect(migration).toContain('before insert on public.payments');
+    expect(migration).toContain('payments.id and payments.receipt_id are immutable after insert');
   });
 
   it('prevents multiple payments from being associated with one receipt', () => {
     expect(migration).toContain('payments_receipt_id_unique unique (receipt_id)');
     expect(migration).toContain('payments_receipt_id_fkey');
+    expect(migration).toContain('payment_receipt_identity_preflight');
   });
 });
