@@ -1,3 +1,4 @@
+import { HandCoins } from 'lucide-react';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,8 @@ type OverdueInvoicesTableProps = Readonly<{
   rows: OverdueInvoiceReportRow[];
   selectedInvoiceId: string;
   onSelectInvoice: (invoiceId: string) => void;
+  /** Optional «تحصيل» deep-link action for collectible rows. */
+  onCollectInvoice?: (invoiceId: string) => void;
 }>;
 
 function getContextLabel(row: OverdueInvoiceReportRow) {
@@ -18,7 +21,7 @@ function getContextLabel(row: OverdueInvoiceReportRow) {
   return parts.length > 0 ? parts.join(' · ') : EMPTY_FIELD_VALUE;
 }
 
-export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice }: OverdueInvoicesTableProps) {
+export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice, onCollectInvoice }: OverdueInvoicesTableProps) {
   const columns: ColumnDef<OverdueInvoiceReportRow>[] = [
     {
       key: 'invoice_id',
@@ -51,6 +54,15 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice 
       header: 'العمر',
       render: (row) => getArrearsBucketLabel(getOverdueRowBucketKey(row)),
     },
+    ...(onCollectInvoice ? [{
+      key: 'actions',
+      header: 'إجراء',
+      render: (row: OverdueInvoiceReportRow) => (
+        <Button className="h-8" onClick={() => onCollectInvoice(row.invoiceId)} title="انتقال مباشر لتسجيل دفعة على هذه الفاتورة">
+          <HandCoins className="me-1 size-4" />تحصيل
+        </Button>
+      ),
+    }] : []),
   ];
 
   return (
@@ -80,6 +92,11 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice 
               <div><p className="text-xs text-muted-foreground">المتبقي</p><p className="font-black text-destructive">{formatMoney(row.remainingAmount)}</p></div>
               <div><p className="text-xs text-muted-foreground">الحالة</p><span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">{formatInvoiceStatusLabel(row.status)}</span></div>
             </div>
+            {onCollectInvoice ? (
+              <Button className="min-h-11 w-full rounded-xl text-xs" onClick={() => onCollectInvoice(row.invoiceId)}>
+                <HandCoins className="me-1 size-4" />تحصيل هذه الفاتورة
+              </Button>
+            ) : null}
           </div>
         );
       }}
@@ -90,9 +107,11 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice 
 type SelectedOverdueInvoiceCardProps = Readonly<{
   row: OverdueInvoiceReportRow | undefined;
   onShowInvoice: (invoiceId: string) => void;
+  /** Optional «تحصيل» deep-link action replacing the read-only notice. */
+  onCollectInvoice?: (invoiceId: string) => void;
 }>;
 
-export function SelectedOverdueInvoiceCard({ row, onShowInvoice }: SelectedOverdueInvoiceCardProps) {
+export function SelectedOverdueInvoiceCard({ row, onShowInvoice, onCollectInvoice }: SelectedOverdueInvoiceCardProps) {
   if (!row) {
     return (
       <div className="rounded-3xl border border-dashed bg-muted/20 p-5 text-sm text-muted-foreground">
@@ -118,8 +137,15 @@ export function SelectedOverdueInvoiceCard({ row, onShowInvoice }: SelectedOverd
         <div><dt className="text-xs text-muted-foreground">المتبقي</dt><dd className="font-black text-destructive">{formatMoney(row.remainingAmount)}</dd></div>
       </dl>
       <div className="mt-4 flex flex-wrap items-center gap-2">
+        {onCollectInvoice ? (
+          <Button onClick={() => onCollectInvoice(row.invoiceId)}>
+            <HandCoins className="me-2 size-4" />بدء التحصيل الآن
+          </Button>
+        ) : null}
         <Button variant="secondary" onClick={() => onShowInvoice(row.invoiceId)}>عرض الفاتورة في قسم الفواتير</Button>
-        <p className="text-xs text-muted-foreground">لا توجد إجراءات دفع أو مراسلات في هذا القسم ضمن هذا الإصدار.</p>
+        {!onCollectInvoice ? (
+          <p className="text-xs text-muted-foreground">لا توجد إجراءات دفع أو مراسلات في هذا القسم ضمن هذا الإصدار.</p>
+        ) : null}
       </div>
     </div>
   );

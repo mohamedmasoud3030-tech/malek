@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  createInvoiceCollectHref,
   findNextCollectibleInvoiceId,
   getQuickCollectPreset,
   isInvoiceCollectible,
+  parseQuickCollectSearch,
   toQuickCollectAmountString,
 } from './quick-collect';
 
@@ -72,5 +74,29 @@ describe('findNextCollectibleInvoiceId', () => {
     expect(findNextCollectibleInvoiceId([
       { id: 'inv-a', amount: 100, tax_amount: 0, paid_amount: 100 },
     ])).toBeNull();
+  });
+});
+
+describe('createInvoiceCollectHref', () => {
+  it('builds the deep link with the invoice id and collect flag, url-encoded', () => {
+    expect(createInvoiceCollectHref('inv-123')).toBe('/invoices?invoiceId=inv-123&collect=1');
+    expect(createInvoiceCollectHref('inv id/42')).toBe('/invoices?invoiceId=inv%20id%2F42&collect=1');
+  });
+});
+
+describe('parseQuickCollectSearch', () => {
+  it('reads the invoice id and collect flag from loose search params', () => {
+    expect(parseQuickCollectSearch({ invoiceId: 'inv-1', collect: '1' })).toEqual({ invoiceId: 'inv-1', collectRequested: true });
+    expect(parseQuickCollectSearch({ invoiceId: 'inv-1' })).toEqual({ invoiceId: 'inv-1', collectRequested: false });
+  });
+
+  it('ignores missing or non-string invoice ids', () => {
+    expect(parseQuickCollectSearch({})).toEqual({ invoiceId: '', collectRequested: false });
+    expect(parseQuickCollectSearch({ invoiceId: 42 })).toEqual({ invoiceId: '', collectRequested: false });
+  });
+
+  it('does not arm collection for unrelated collect values', () => {
+    expect(parseQuickCollectSearch({ invoiceId: 'inv-1', collect: '0' }).collectRequested).toBe(false);
+    expect(parseQuickCollectSearch({ invoiceId: 'inv-1', collect: 'yes' }).collectRequested).toBe(false);
   });
 });

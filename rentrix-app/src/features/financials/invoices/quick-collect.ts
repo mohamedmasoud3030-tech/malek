@@ -53,3 +53,20 @@ export function findNextCollectibleInvoiceId(
   );
   return next ? next.id : null;
 }
+
+/**
+ * Deep link into the invoice workspace pre-armed for collection: selects the
+ * invoice and asks the workspace to prefill the FULL gross remaining amount
+ * and focus the payment form once the invoice detail finishes loading.
+ */
+export function createInvoiceCollectHref(invoiceId: string): string {
+  return `/invoices?invoiceId=${encodeURIComponent(invoiceId)}&collect=1`;
+}
+
+/** Parses the invoice deep-link search params (tolerates loose casing/types). */
+export function parseQuickCollectSearch(search: Record<string, unknown>): { invoiceId: string; collectRequested: boolean } {
+  const invoiceId = typeof search.invoiceId === 'string' ? search.invoiceId : '';
+  const rawCollect = search.collect;
+  const collectRequested = rawCollect === '1' || rawCollect === 1 || rawCollect === true || rawCollect === 'true';
+  return { invoiceId, collectRequested };
+}

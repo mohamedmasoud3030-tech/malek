@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { useContracts } from '@/features/contracts/useContracts';
@@ -7,7 +8,7 @@ import { getTodayLocalDateString, isValidDateInput } from '../financials-date-ut
 import { toFinancialNumber } from '../financialMath';
 import { getInvoiceRemainingAmount, getInvoicePaymentValidationMessage } from '../invoices/invoice-payment-validation';
 import { summarizeInvoices, type InvoiceStatusFilter } from '../invoices/invoiceService';
-import { findNextCollectibleInvoiceId, getQuickCollectPreset } from '../invoices/quick-collect';
+import { findNextCollectibleInvoiceId, getQuickCollectPreset, parseQuickCollectSearch } from '../invoices/quick-collect';
 import { useGenerateInvoices, useInvoice, useInvoicesPaginated } from '../invoices/useInvoices';
 import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/paymentService';
 import { usePostPayment } from '../payments/usePayments';
@@ -145,6 +146,37 @@ export function useInvoiceWorkspaceController() {
       onSuccess: () => setGenerateDialogOpen(false),
     });
   };
+
+  /**
+   * Deep link (e.g. from the arrears «تحصيل» action): select the target
+   * invoice, and once its detail resolves, prefill the FULL gross remaining
+   * and focus the payment form — the collector lands one confirmation away
+   * from settling the debt they clicked. No permission → nothing is armed.
+   */
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const deepLink = useMemo(() => parseQuickCollectSearch(search), [search]);
+  const deepLinkInvoiceId = deepLink.invoiceId;
+  const deepLinkCollectRequested = deepLink.collectRequested;
+  const pendingDeepLinkCollectRef = useRef(false);
+
+  useEffect(() => {
+    if (!deepLinkInvoiceId) return;
+    setSelectedInvoiceId(deepLinkInvoiceId);
+    setCollectionSuccess(null);
+    pendingDeepLinkCollectRef.current = deepLinkCollectRequested;
+  }, [deepLinkInvoiceId, deepLinkCollectRequested]);
+
+  useEffect(() => {
+    if (!pendingDeepLinkCollectRef.current) return;
+    // Wait until the requested invoice detail actually resolves.
+    if (!invoiceDetail || invoiceDetail.id !== deepLinkInvoiceId) return;
+    pendingDeepLinkCollectRef.current = false;
+    if (!canCreatePayment) return;
+    const preset = getQuickCollectPreset(invoiceDetail);
+    if (!preset) return;
+    setAmount((current) => (current === '' ? preset.amount : current));
+    setCollectionFocusKey((key) => key + 1);
+  }, [invoiceDetail, deepLinkInvoiceId, canCreatePayment]);
 
   const onPostPayment = () => {
     if (!canCreatePayment || quickPaySubmitRef.current || postPayment.isPending) return;
