@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { CheckCircle2, Circle, ListChecks, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,13 @@ export function OnboardingChecklist({ progress }: Readonly<{ progress: Onboardin
   const doneRequired = requiredSteps.filter((step) => step.done).length;
   const allRequiredDone = doneRequired === requiredSteps.length;
   const progressPct = Math.round((doneRequired / requiredSteps.length) * 100);
+
+  // Auto-complete: once every required step is done the checklist should
+  // disappear permanently instead of lingering until a manual dismissal.
+  const { complete } = onboarding;
+  useEffect(() => {
+    if (allRequiredDone) complete();
+  }, [allRequiredDone, complete]);
 
   if (!onboarding.isVisible) return null;
 

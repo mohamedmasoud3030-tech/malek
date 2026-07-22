@@ -108,6 +108,7 @@ const expensesRoute = createRoute({ getParentRoute: () => protectedRoute, path: 
 const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', component: lazyRouteComponent(() => import('@/routes/_protected.invoices'), 'InvoicesRouteComponent'), staticData: { title: 'الفواتير' } });
 const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/arrears', beforeLoad: requirePermission('arrears.view'), component: lazyRouteComponent(() => import('@/routes/_protected.arrears'), 'ArrearsRouteComponent'), staticData: { title: 'المتأخرات' } });
 const bankReconciliationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/bank-reconciliation', beforeLoad: requirePermission('financial.bank_reconciliation.view'), component: lazyRouteComponent(() => import('@/routes/_protected.bank-reconciliation'), 'BankReconciliationRouteComponent'), staticData: { title: 'مطابقة البنك' } });
+const depositsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/deposits', component: lazyRouteComponent(() => import('@/routes/_protected.deposits'), 'DepositsRouteComponent'), staticData: { title: 'التأمينات' } });
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', beforeLoad: () => { throw redirect({ to: '/financials' }); }, staticData: { title: 'المالية' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: lazyRouteComponent(() => import('@/routes/_protected.reports'), 'ReportsRouteComponent'), staticData: { title: 'التقارير' } });
 const aiAssistantRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/ai-assistant', component: lazyRouteComponent(() => import('@/routes/_protected.ai-assistant'), 'AiAssistantRouteComponent'), staticData: { title: 'مساعد الذكاء الاصطناعي' } });
@@ -224,6 +225,7 @@ export const routeTree = rootRoute.addChildren([
     expensesRoute,
     invoicesRoute,
     arrearsRoute,
+    depositsRoute,
     bankReconciliationRoute,
     accountingRoute,
     reportsRoute,

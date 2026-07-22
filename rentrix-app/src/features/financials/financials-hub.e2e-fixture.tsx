@@ -1,29 +1,24 @@
-import { ClipboardList, FileCheck, FileText, Landmark, ReceiptText, TrendingUp, WalletCards } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronLeft, ClipboardList, FileCheck, FileText, Landmark, ReceiptText, TrendingUp, WalletCards } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { cn } from '@/lib/utils';
 
 /**
- * Static marketing/demo capture of the real financials hub — same page
- * header and tab chrome as production, with showcase invoices instead of
- * live PGlite queries. Rendered only behind VITE_E2E.
+ * Static marketing/demo capture of the real financials overview — same page
+ * header and workspace-directory chrome as production, with showcase invoices
+ * instead of live PGlite queries. Rendered only behind VITE_E2E.
  */
-const financialTabs = [
+const financialWorkspaces = [
   ['invoices', 'الفواتير والتحصيل', 'مراجعة وتسجيل دفعات الفواتير', FileText],
   ['receipts', 'السدادات والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText],
   ['expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards],
   ['arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList],
-  ['reconciliation', 'مطابقة كشف البنك', 'مطابقة السجلات مع الحسابات البنكية', Landmark],
   ['deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck],
+  ['reconciliation', 'مطابقة كشف البنك', 'مطابقة السجلات مع الحسابات البنكية', Landmark],
 ] as const;
-
-type FinancialsTabId = (typeof financialTabs)[number][0];
 
 type FixtureInvoice = {
   id: string;
@@ -55,22 +50,12 @@ const fixtureInvoices: FixtureInvoice[] = [
 const fmt = (value: number) => `${value.toLocaleString('en-US', { minimumFractionDigits: 0 })} ر.ع.`;
 
 export function FinancialsHubE2EFixture() {
-  const [activeTab, setActiveTab] = useState<FinancialsTabId>('invoices');
-
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-financials-workspace>
       <PageLayout dir="rtl" size="wide">
         <PageHeader
-          title="مركز إدارة الماليات والمحاسبة"
-          description="منظومة موحدة لإدارة الفواتير المستحقة، التحصيلات، الإيصالات المعتمدة، المصروفات التشغيلية، ومطابقة البنك."
-          secondaryActions={(
-            <>
-              <Button variant="secondary">الفواتير</Button>
-              <Button variant="secondary">الإيصالات</Button>
-              <Button variant="secondary">المصاريف</Button>
-              <Button variant="secondary">مطابقة البنك</Button>
-            </>
-          )}
+          title="الملخص المالي"
+          description="نظرة شاملة على التحصيلات والذمم خلال الشهر الحالي، مع انتقال مباشر إلى مساحات العمل المتخصصة لكل عملية مالية."
         />
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -80,61 +65,55 @@ export function FinancialsHubE2EFixture() {
           <KpiCard icon={WalletCards} label="مصروفات تشغيلية" value={fmt(730)} sub="صيانة ومرافق وعمولات" trend="neutral" trendValue="—" />
         </div>
 
+        <section aria-label="مساحات العمل المالية" className="space-y-3">
+          <div>
+            <h2 className="text-base font-bold">مساحات العمل المالية</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              كل عملية يومية لها صفحتها المستقلة — اختر القسم للمتابعة.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {financialWorkspaces.map(([key, label, description, Icon]) => (
+              <div
+                key={key}
+                className="group flex min-h-20 items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-right transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/5"
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                  <Icon className="size-5" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-bold">{label}</span>
+                  <span className="block truncate text-[11px] font-medium text-muted-foreground">{description}</span>
+                </span>
+                <ChevronLeft className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary" aria-hidden="true" />
+              </div>
+            ))}
+          </div>
+        </section>
+
         <Card>
           <CardContent className="space-y-5 p-3 sm:p-4">
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5" role="tablist" aria-label="أقسام المالية الموحدة">
-              {financialTabs.map(([tab, label, description, Icon]) => (
-                <button
-                  key={tab}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={cn(
-                    'flex min-h-16 items-center gap-3 rounded-2xl border px-3 py-3 text-right transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/5',
-                    activeTab === tab ? 'border-primary bg-primary text-primary-foreground shadow-sm' : 'border-border bg-background',
-                  )}
-                >
-                  <Icon className="size-5 shrink-0" aria-hidden="true" />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-bold">{label}</span>
-                    <span className={cn('block truncate text-[11px] font-medium', activeTab === tab ? 'text-primary-foreground/80' : 'text-muted-foreground')}>{description}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div role="tabpanel">
-              {activeTab === 'invoices' ? (
-                <DataTable
-                  aria-label="جدول الفواتير"
-                  rows={fixtureInvoices}
-                  keyOf={(row) => row.id}
-                  columns={[
-                    { key: 'number', header: 'رقم الفاتورة', render: (row) => <span className="font-mono text-xs font-bold">{row.number}</span> },
-                    { key: 'tenant', header: 'المستأجر', render: (row) => row.tenant },
-                    { key: 'property', header: 'العقار / الوحدة', render: (row) => row.property },
-                    { key: 'dueDate', header: 'تاريخ الاستحقاق', render: (row) => row.dueDate },
-                    { key: 'amount', header: 'المبلغ', render: (row) => <span className="font-bold">{fmt(row.amount)}</span> },
-                    {
-                      key: 'status',
-                      header: 'الحالة',
-                      render: (row) => (
-                        <StatusBadge tone={invoiceStatusMeta[row.status].tone} dot>
-                          {invoiceStatusMeta[row.status].label}
-                        </StatusBadge>
-                      ),
-                    },
-                  ]}
-                />
-              ) : (
-                <Card className="border-dashed bg-muted/20">
-                  <CardContent className="p-5 text-sm font-semibold text-muted-foreground">
-                    هذا القسم يعمل بالكامل داخل التطبيق — المعروض هنا تبويب الفواتير كمثال حي.
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            <DataTable
+              aria-label="جدول الفواتير"
+              rows={fixtureInvoices}
+              keyOf={(row) => row.id}
+              columns={[
+                { key: 'number', header: 'رقم الفاتورة', render: (row) => <span className="font-mono text-xs font-bold">{row.number}</span> },
+                { key: 'tenant', header: 'المستأجر', render: (row) => row.tenant },
+                { key: 'property', header: 'العقار / الوحدة', render: (row) => row.property },
+                { key: 'dueDate', header: 'تاريخ الاستحقاق', render: (row) => row.dueDate },
+                { key: 'amount', header: 'المبلغ', render: (row) => <span className="font-bold">{fmt(row.amount)}</span> },
+                {
+                  key: 'status',
+                  header: 'الحالة',
+                  render: (row) => (
+                    <StatusBadge tone={invoiceStatusMeta[row.status].tone} dot>
+                      {invoiceStatusMeta[row.status].label}
+                    </StatusBadge>
+                  ),
+                },
+              ]}
+            />
           </CardContent>
         </Card>
       </PageLayout>

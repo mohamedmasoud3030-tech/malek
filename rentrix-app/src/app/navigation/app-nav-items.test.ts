@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { mobileNavItems, navGroups, quickLinks, type NavItem } from './app-nav-items';
+import { mobileNavItems, navGroups, type NavItem } from './app-nav-items';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const routePaths = new Set(Array.from(routeTreeSource.matchAll(/path: '([^']+)'/g), (match) => match[1]));
@@ -26,6 +26,7 @@ const requiredOperationalRoutes = [
   '/contracts/$contractId',
   '/contracts/$contractId/edit',
   '/financials',
+  '/deposits',
   '/invoices',
   '/receipts',
   '/expenses',
@@ -83,15 +84,14 @@ describe('app route and navigation parity', () => {
     expect(routeTreeSource).toContain('notFoundComponent: NotFoundPage');
   });
 
-  it('maps every visible navigation, mobile navigation, and quick link to registered routes without duplicates', () => {
+  it('maps every visible navigation and mobile navigation item to registered routes without duplicates', () => {
     const navPaths = navItems.map(([to]) => to);
     const navKeys = navItems.map(([to, labelKey]) => `${to}:${labelKey}`);
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
-    const quickLinkPaths = quickLinks.map(([to]) => to);
 
     expect(new Set(navKeys).size).toBe(navKeys.length);
     expect(new Set(mobileNavPaths).size).toBe(mobileNavPaths.length);
-    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobileNavPaths, ...quickLinkPaths]));
+    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobileNavPaths]));
   });
 
   it('keeps permissioned navigation links aligned with route guards', () => {
@@ -115,16 +115,38 @@ describe('app route and navigation parity', () => {
     expect(navPaths).toEqual(expect.arrayContaining([...approvedExpansionRoutes]));
   });
 
-  it('keeps mobile bottom navigation concise while the drawer carries the full route inventory', () => {
-    expect(mobileNavItems).toHaveLength(5);
-    expect(mobileNavItems.map(([to]) => to)).toEqual(['/dashboard', '/properties', '/contracts', '/financials', '/reports']);
+  it('covers the daily field-work loop in mobile bottom navigation while the drawer carries the full route inventory', () => {
+    expect(mobileNavItems).toHaveLength(7);
+    expect(mobileNavItems.map(([to]) => to)).toEqual([
+      '/dashboard',
+      '/properties',
+      '/contracts',
+      '/maintenance',
+      '/invoices',
+      '/receipts',
+      '/reports',
+    ]);
   });
 
-  it('keeps arrears out of bottom navigation while still reachable from the financials group in the drawer', () => {
+  it('exposes every standalone financial workspace in the sidebar financials group', () => {
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
-    const financialsGroup = navGroups.find(([sectionTitle]) => sectionTitle === 'الماليات والمحاسبة');
+    const financialsGroup = navGroups.find(([sectionTitle]) => sectionTitle === 'المالية');
+    const financialsPaths = financialsGroup?.[1].map(([to]) => to) ?? [];
 
+    expect(financialsPaths).toEqual(
+      expect.arrayContaining(['/financials', '/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/bank-reconciliation']),
+    );
     expect(mobileNavPaths).not.toContain('/arrears');
-    expect(financialsGroup?.[1].map(([to]) => to)).toContain('/financials');
+    expect(mobileNavPaths).not.toContain('/expenses');
+    expect(mobileNavPaths).not.toContain('/bank-reconciliation');
+  });
+
+  it('keeps tenants and people visually distinct with different icons', () => {
+    const tenantsItem = navItems.find(([, labelKey]) => labelKey === 'tenants');
+    const peopleItem = navItems.find(([, labelKey]) => labelKey === 'peopleDirectory');
+
+    expect(tenantsItem).toBeDefined();
+    expect(peopleItem).toBeDefined();
+    expect(tenantsItem?.[3]).not.toBe(peopleItem?.[3]);
   });
 });
