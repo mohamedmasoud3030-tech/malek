@@ -38,9 +38,20 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
       log.push({ table, method: 'in', args });
       return builder;
     }),
-    returns: vi.fn(async () => {
+    // Thenable AND chainable: awaited directly by single-shot loaders, and
+    // still exposes .range() for loaders that page past the 1000-row cap.
+    returns: vi.fn(() => {
       log.push({ table, method: 'returns', args: [] });
-      return { data: responses[table as keyof TableResponses] ?? [], error: null };
+      const rows = (responses[table as keyof TableResponses] ?? []) as unknown[];
+      const payload = { data: rows, error: null };
+      return {
+        range: vi.fn(async (from: number, to: number) => {
+          log.push({ table, method: 'range', args: [from, to] });
+          return { data: rows.slice(from, to + 1), error: null };
+        }),
+        then: (onFulfilled?: (value: typeof payload) => unknown, onRejected?: (reason: unknown) => unknown) =>
+          Promise.resolve(payload).then(onFulfilled, onRejected),
+      };
     }),
   };
   return builder;
@@ -762,6 +773,33 @@ describe('financialReportsService Supabase queries', () => {
       { table: 'expenses', method: 'eq', args: ['category', 'صيانة'] },
       { table: 'properties', method: 'in', args: ['id', ['property_1', 'property_2']] },
       { table: 'properties', method: 'is', args: ['deleted_at', null] },
+    ]));
+  });
+
+  it('pages the expense loader past the silent 1000-row server cap', async () => {
+    // 1001 in-range expenses: the mock serves range pages with slice(), so a
+    // single-shot loader would only see the first 1000 rows.
+    const expenses = Array.from({ length: 1001 }, (_, index) => ({
+      id: `expense_${index}`,
+      property_id: 'property_1',
+      category: 'صيانة',
+      amount: 1,
+      expense_date: '2026-05-02',
+      deleted_at: null,
+    }));
+    const log = mockSupabaseTables({ expenses, properties: [{ id: 'property_1', title: 'Building A' }] });
+    const { getExpenseBreakdownReport } = await import('./financialReportsService');
+
+    const report = await getExpenseBreakdownReport({
+      dateFrom: '2026-05-01',
+      dateTo: '2026-05-31',
+    });
+
+    expect(report.totalExpenses).toBe(1001);
+    expect(report.expensesCount).toBe(1001);
+    expect(log).toEqual(expect.arrayContaining([
+      { table: 'expenses', method: 'range', args: [0, 999] },
+      { table: 'expenses', method: 'range', args: [1000, 1999] },
     ]));
   });
 

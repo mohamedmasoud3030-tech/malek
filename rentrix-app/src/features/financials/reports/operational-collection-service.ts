@@ -1,3 +1,4 @@
+import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import type { Payment } from '@/types/domain';
 import { getInvoiceStatusVariants, normalizeInvoiceStatus } from '../components/invoice-status-labels';
@@ -418,21 +419,26 @@ async function loadPayments(filters: FinancialReportFilters): Promise<PaymentWit
 }
 
 async function loadExpenses(filters: ExpenseBreakdownReportFilters): Promise<ExpenseReportRow[]> {
-  let query = supabase
-    .from('expenses')
-    .select(expenseReportSelect)
-    .is('deleted_at', null)
-    .gte('expense_date', filters.dateFrom)
-    .lte('expense_date', filters.dateTo);
+  const buildQuery = () => {
+    let query = supabase
+      .from('expenses')
+      .select(expenseReportSelect)
+      .is('deleted_at', null)
+      .gte('expense_date', filters.dateFrom)
+      .lte('expense_date', filters.dateTo);
 
-  if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
-  if (filters.category) query = query.eq('category', filters.category);
-  if (filters.costCenterId) query = query.eq('cost_center_id', filters.costCenterId);
+    if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
+    if (filters.category) query = query.eq('category', filters.category);
+    if (filters.costCenterId) query = query.eq('cost_center_id', filters.costCenterId);
+    return query;
+  };
 
-  const { data, error } = await query.returns<ExpenseReportRow[]>();
-  if (error) throw error;
+  // PostgREST silently caps a single response (default 1000 rows) — a wide
+  // date range across a large portfolio could truncate the expense totals in
+  // every report that reads this loader. Page forward until exhaustion.
+  const { rows } = await fetchAllRows<ExpenseReportRow>(() => buildQuery().returns<ExpenseReportRow[]>());
 
-  return filterExpensesForReport(data ?? [], filters);
+  return filterExpensesForReport(rows, filters);
 }
 
 export async function getInvoiceTotalsReport(filters: FinancialReportFilters): Promise<InvoiceTotalsReport> {
