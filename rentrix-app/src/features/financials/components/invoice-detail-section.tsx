@@ -5,6 +5,7 @@ import type { Payment } from '@/types/domain';
 import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceService';
 import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
 import { QuickPaymentForm } from './quick-payment-form';
+import { paymentMethodLabels } from './receipt-formatters';
 
 type InvoiceDetailSectionProps = {
   selectedInvoiceId: string;
@@ -106,13 +107,14 @@ export function InvoiceDetailSection({
                 <div key={payment.id} className="flex flex-col gap-1 rounded-xl bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
                   <span>{formatDate(payment.payment_date)}</span>
                   <span className="font-bold">{formatMoney(payment.amount)}</span>
-                  <span className="text-sm text-muted-foreground">{payment.payment_method}</span>
+                  <span className="text-sm text-muted-foreground">{paymentMethodLabels[payment.payment_method] ?? payment.payment_method}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <QuickPaymentForm
+            remainingAmount={remaining}
             amount={amount}
             method={method}
             paymentDate={paymentDate}
