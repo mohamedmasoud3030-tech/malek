@@ -95,6 +95,18 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('A-101');
   });
 
+  it('shows the server-exact totals instead of the loaded page size', () => {
+    // One page wired (1 row) while the server reports 342 matching contracts:
+    // header and the «إجمالي العقود» KPI must show 342, not 1.
+    contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 342 };
+
+    const html = renderToStaticMarkup(<ContractsListPage />);
+
+    expect(html).toContain('عدد السجلات 342');
+    expect(html).toContain('إجمالي العقود');
+    expect(html).toContain('>342<');
+  });
+
   it('renders the unified PageHeader (h1 + record count) and shared filter surface', () => {
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
 
