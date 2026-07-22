@@ -13,7 +13,8 @@ describe('listUnitContractConflicts', () => {
   it('fetches overlapping draft and active contracts in one batched query', async () => {
     await listUnitContractConflicts({ unitIds: ['unit-1', 'unit-2', 'unit-1'], startDate: '2026-09-01', endDate: '2027-08-31' });
     expect(query.in).toHaveBeenCalledWith('unit_id', ['unit-1', 'unit-2']);
-    expect(query.in).toHaveBeenCalledWith('status', ['draft', 'active']);
+    // Legacy 'ACTIVE' rows must also block the unit — DB guard compares lower(status)
+    expect(query.in).toHaveBeenCalledWith('status', ['draft', 'active', 'ACTIVE']);
     expect(query.lte).toHaveBeenCalledWith('start_date', '2027-08-31');
     expect(query.gte).toHaveBeenCalledWith('end_date', '2026-09-01');
   });
