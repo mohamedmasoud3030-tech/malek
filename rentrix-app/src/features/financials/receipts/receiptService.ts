@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
+import { formatReceiptNumber } from '../components/receipt-formatters';
+
+// Keep the public helper on this module for existing services/tests.
+export { formatReceiptNumber };
 
 export type ReceiptListParams = { limit?: number };
 
@@ -31,10 +35,6 @@ const DEFAULT_RECEIPT_LIMIT = 25;
 
 function uniqueStrings(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
-}
-
-export function formatReceiptNumber(paymentId: string) {
-  return `REC-${paymentId.slice(0, 8)}`;
 }
 
 function toReceiptRecord(
