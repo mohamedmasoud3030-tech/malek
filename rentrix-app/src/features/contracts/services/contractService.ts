@@ -1,4 +1,5 @@
 import { getContractStatusVariants } from '@/lib/contractStatus';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Contract, Person, Property, Unit } from '@/types/domain';
@@ -23,6 +24,7 @@ export type PaginatedContracts = {
   rows: ContractListItem[];
   count: number;
 };
+export type AllContractsRead = Readonly<{ rows: ContractListItem[]; truncated: boolean }>;
 export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_contract_id: string };
 
 // Shared select clauses - single source of truth for contract relations
@@ -51,6 +53,31 @@ export async function listContracts(params: ContractListParams): Promise<Paginat
   const { data, count, error } = await query.returns<ContractListItem[]>();
   if (error) throw error;
   return { rows: data ?? [], count: count ?? 0 };
+}
+
+/**
+ * Fetch EVERY contract matching the status filter by paging forward — a
+ * single listContracts call is silently capped at the server max-rows
+ * (default 1000), which quietly truncated the reports workspace (rent roll,
+ * renewals forecast, deferred-revenue audit, contract filter dropdown) for
+ * portfolios beyond 1000 contracts.
+ */
+export async function listAllContracts(status: ContractStatusFilter = 'all'): Promise<AllContractsRead> {
+  const buildQuery = () => {
+    let query = supabase
+      .from('contracts')
+      .select(CONTRACT_BASE_SELECT)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
+    if (status !== 'all') {
+      const statusVariants = getContractStatusVariants(status) as Contract['status'][];
+      query = query.in('status', statusVariants);
+    }
+    return query;
+  };
+
+  return fetchAllRows<ContractListItem>(() => buildQuery().returns<ContractListItem[]>());
 }
 
 export async function getContract(contractId: string): Promise<ContractDetail> {
