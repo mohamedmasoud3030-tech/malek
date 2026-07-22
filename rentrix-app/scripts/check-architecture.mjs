@@ -17,7 +17,7 @@ const featureDependencyAllowList = new Map([
   ['financials', new Set(['auth', 'contracts', 'properties', 'reports', 'settings'])],
   ['maintenance', new Set(['financials', 'properties', 'reports', 'units'])],
   ['onboarding', new Set(['owners'])],
-  ['owners', new Set(['financials', 'properties', 'reports', 'settings'])],
+  ['owners', new Set(['auth', 'financials', 'properties', 'reports', 'settings'])],
   ['people', new Set(['tenants'])],
   ['properties', new Set(['financials', 'owners', 'units'])],
   ['reports', new Set(['auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
