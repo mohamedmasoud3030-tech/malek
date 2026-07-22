@@ -20,9 +20,11 @@ type Step = Readonly<{
  * from existing data sources — no new queries or migrations are introduced.
  */
 export function OnboardingChecklist({ progress }: Readonly<{ progress: OnboardingProgress }>) {
-  const { data: owners } = useOwners();
-  const hasOwner = (owners?.length ?? 0) > 0;
   const onboarding = useOnboarding();
+  // #1168: never fetch the owners list when the checklist is hidden/completed —
+  // an unnecessary dashboard query for every legacy account.
+  const { data: owners } = useOwners({ enabled: onboarding.isVisible });
+  const hasOwner = (owners?.length ?? 0) > 0;
 
   const steps = useMemo<Step[]>(
     () => [
