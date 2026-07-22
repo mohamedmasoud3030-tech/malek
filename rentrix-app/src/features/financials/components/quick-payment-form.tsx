@@ -1,7 +1,9 @@
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import type { Payment } from '@/types/domain';
+import { QUICK_PAYMENT_AMOUNT_INPUT_ID, QUICK_PAYMENT_FORM_ID } from '../invoices/quick-collect';
 import { formatMoney } from './financials-formatters';
 
 const methods: Payment['payment_method'][] = ['cash', 'bank_transfer', 'card', 'check', 'other'];
@@ -24,6 +26,13 @@ type QuickPaymentFormProps = {
   amountValidationMessage: string;
   isPending: boolean;
   isPaymentDisabled: boolean;
+  /**
+   * Monotonic nonce from the «تحصيل» row action. Every increment scrolls the
+   * form into view and focuses the amount input so the collector can type
+   * (or confirm the prefilled full balance) immediately — even on mobile,
+   * where the form sits below the fold.
+   */
+  focusKey?: number;
   onAmountChange: (amount: string) => void;
   onMethodChange: (method: Payment['payment_method']) => void;
   onPaymentDateChange: (paymentDate: string) => void;
@@ -31,14 +40,27 @@ type QuickPaymentFormProps = {
   onPostPayment: () => void;
 };
 
-export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate, reference, amountValidationMessage, isPending, isPaymentDisabled, onAmountChange, onMethodChange, onPaymentDateChange, onReferenceChange, onPostPayment }: QuickPaymentFormProps) {
+export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate, reference, amountValidationMessage, isPending, isPaymentDisabled, focusKey = 0, onAmountChange, onMethodChange, onPaymentDateChange, onReferenceChange, onPostPayment }: QuickPaymentFormProps) {
+  const amountInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (focusKey <= 0) return;
+    document.getElementById(QUICK_PAYMENT_FORM_ID)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    amountInputRef.current?.focus({ preventScroll: true });
+  }, [focusKey]);
+
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isPaymentDisabled) onPostPayment();
+  };
+
   return (
     <div className="rounded-2xl border p-4">
       <h4 className="font-black">تسجيل دفعة سريعة</h4>
-      <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-start">
+      <form id={QUICK_PAYMENT_FORM_ID} className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-start" onSubmit={onSubmit}>
         <div>
           <div className="mb-1 flex items-center justify-between gap-2">
-            <label className="block text-xs font-bold text-muted-foreground">المبلغ</label>
+            <label className="block text-xs font-bold text-muted-foreground" htmlFor={QUICK_PAYMENT_AMOUNT_INPUT_ID}>المبلغ</label>
             {typeof remainingAmount === 'number' && remainingAmount > 0 ? (
               <button
                 type="button"
@@ -49,7 +71,7 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
               </button>
             ) : null}
           </div>
-          <Input type="number" min="0.01" inputMode="decimal" step="0.01" placeholder="المبلغ" value={amount} onChange={(event) => onAmountChange(event.target.value)} />
+          <Input id={QUICK_PAYMENT_AMOUNT_INPUT_ID} ref={amountInputRef} type="number" min="0.01" inputMode="decimal" step="0.01" placeholder="المبلغ" value={amount} onChange={(event) => onAmountChange(event.target.value)} />
           {amountValidationMessage ? <p className="mt-2 text-sm text-destructive">{amountValidationMessage}</p> : null}
         </div>
         <div>
@@ -66,8 +88,8 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
           <label className="mb-1 block text-xs font-bold text-muted-foreground">المرجع</label>
           <Input placeholder="اختياري" value={reference} onChange={(event) => onReferenceChange(event.target.value)} />
         </div>
-        <Button className="lg:mt-5" onClick={onPostPayment} disabled={isPaymentDisabled}>{isPending ? 'جارٍ التسجيل...' : 'تسجيل دفعة'}</Button>
-      </div>
+        <Button type="submit" className="lg:mt-5" disabled={isPaymentDisabled}>{isPending ? 'جارٍ التسجيل...' : 'تسجيل دفعة'}</Button>
+      </form>
     </div>
   );
 }

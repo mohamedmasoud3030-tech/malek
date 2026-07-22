@@ -103,7 +103,9 @@ export function InvoiceWorkspaceSection() {
         onGenerateInvoices={() => {
           if (ctrl.canGenerateInvoices) ctrl.setGenerateDialogOpen(true);
         }}
-        onSelectInvoice={ctrl.setSelectedInvoiceId}
+        onSelectInvoice={ctrl.onSelectInvoiceRow}
+        canCollectPayments={ctrl.canCreatePayment}
+        onCollectInvoice={ctrl.onCollectInvoice}
         onPrintInvoice={ctrl.canExportInvoices ? ctrl.onPrintInvoice : undefined}
         onExportInvoice={ctrl.canExportInvoices ? ctrl.onExportInvoiceList : undefined}
         onDateFromChange={ctrl.changeDateFrom}
@@ -134,6 +136,12 @@ export function InvoiceWorkspaceSection() {
         amountValidationMessage={ctrl.canCreatePayment ? ctrl.amountValidationMessage : 'ليس لديك صلاحية تسجيل دفعة مالية.'}
         isPaymentPending={ctrl.postPayment.isPending}
         isPaymentDisabled={ctrl.isPaymentDisabled}
+        collectionSuccess={ctrl.collectionSuccess}
+        hasNextCollectibleInvoice={Boolean(ctrl.nextCollectibleInvoiceId)}
+        collectionFocusKey={ctrl.collectionFocusKey}
+        onCollectNextInvoice={ctrl.onCollectNextInvoice}
+        onPrintCollectionReceipt={ctrl.onPrintCollectionReceipt}
+        onDismissCollection={ctrl.dismissCollectionSuccess}
         onAmountChange={ctrl.setAmount}
         onMethodChange={ctrl.setPaymentMethod}
         onPaymentDateChange={ctrl.setPaymentDate}

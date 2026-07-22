@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Printer, ReceiptText } from 'lucide-react';
+import { Download, HandCoins, Printer, ReceiptText } from 'lucide-react';
 import { EntityTable } from '@/components/ui/entity-table';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { getSafeRemainingAmount } from '../financialMath';
+import { isInvoiceCollectible } from '../invoices/quick-collect';
 import { getInvoiceGrossAmount, type InvoiceListItem, type InvoiceStatusFilter, type InvoiceSummary } from '../invoices/invoiceService';
 import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
 import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
@@ -44,6 +45,9 @@ type InvoiceListSectionProps = {
   onInvoiceSearchChange: (search: string) => void;
   onGenerateInvoices: () => void;
   onSelectInvoice: (invoiceId: string) => void;
+  /** Permission-gated «تحصيل» quick-collect action on collectible rows. */
+  canCollectPayments?: boolean;
+  onCollectInvoice?: (invoiceId: string) => void;
   onPrintInvoice?: (invoiceId: string) => void;
   onExportInvoice?: (invoiceId: string) => void;
   onDateFromChange: (value: string) => void;
@@ -78,6 +82,8 @@ export function InvoiceListSection({
   onInvoiceSearchChange,
   onGenerateInvoices,
   onSelectInvoice,
+  canCollectPayments = false,
+  onCollectInvoice,
   onPrintInvoice,
   onExportInvoice,
   onDateFromChange,
@@ -158,9 +164,16 @@ export function InvoiceListSection({
                 {formatInvoiceStatusLabel(invoice.status)}
               </StatusBadge>
             ) },
-            { key: 'actions', header: 'إجراءات', render: (invoice) => (
-              (onPrintInvoice || onExportInvoice) ? (
+            { key: 'actions', header: 'إجراءات', render: (invoice) => {
+              const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
+              if (!showCollect && !onPrintInvoice && !onExportInvoice) return null;
+              return (
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  {showCollect ? (
+                    <Button className="h-8" onClick={() => onCollectInvoice(invoice.id)} title="تسجيل دفعة على هذه الفاتورة مباشرة">
+                      <HandCoins className="me-1 size-4" />تحصيل
+                    </Button>
+                  ) : null}
                   {onPrintInvoice && (
                     <Button variant="outline" className="h-8" onClick={() => onPrintInvoice(invoice.id)} title="طباعة الفاتورة">
                       <Printer className="me-1 size-4" />طباعة
@@ -172,14 +185,15 @@ export function InvoiceListSection({
                     </Button>
                   )}
                 </div>
-              ) : null
-            ) },
+              );
+            } },
           ]}
           renderMobileCard={(invoice) => {
             const grossAmount = getInvoiceGrossAmount(invoice);
             const rowRemaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
             const isSelected = selectedInvoiceId === invoice.id;
             const tone = invoiceStatusTone[invoice.status as keyof typeof invoiceStatusTone] ?? 'gray';
+            const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
             return (
               <MobileCard
                 variant={isSelected ? 'elevated' : 'default'}
@@ -206,18 +220,27 @@ export function InvoiceListSection({
                   </div>
                 )}
                 footer={invoice.tax_amount ? `ضريبة القيمة المضافة: ${formatMoney(invoice.tax_amount)}` : undefined}
-                actions={(onPrintInvoice || onExportInvoice) ? (
-                  <div className="grid w-full grid-cols-2 gap-2">
-                    {onPrintInvoice && (
-                      <Button variant="secondary" className="min-h-11 rounded-xl text-xs" onClick={() => onPrintInvoice(invoice.id)}>
-                        <Printer className="me-1 size-4" />طباعة
+                actions={(showCollect || onPrintInvoice || onExportInvoice) ? (
+                  <div className="flex w-full flex-col gap-2">
+                    {showCollect ? (
+                      <Button className="min-h-11 w-full rounded-xl text-xs" onClick={() => onCollectInvoice(invoice.id)}>
+                        <HandCoins className="me-1 size-4" />تحصيل الفاتورة
                       </Button>
-                    )}
-                    {onExportInvoice && (
-                      <Button variant="secondary" className="min-h-11 rounded-xl text-xs" onClick={() => onExportInvoice(invoice.id)}>
-                        <Download className="me-1 size-4" />PDF
-                      </Button>
-                    )}
+                    ) : null}
+                    {(onPrintInvoice || onExportInvoice) ? (
+                      <div className="grid w-full grid-cols-2 gap-2">
+                        {onPrintInvoice && (
+                          <Button variant="secondary" className="min-h-11 rounded-xl text-xs" onClick={() => onPrintInvoice(invoice.id)}>
+                            <Printer className="me-1 size-4" />طباعة
+                          </Button>
+                        )}
+                        {onExportInvoice && (
+                          <Button variant="secondary" className="min-h-11 rounded-xl text-xs" onClick={() => onExportInvoice(invoice.id)}>
+                            <Download className="me-1 size-4" />PDF
+                          </Button>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 ) : undefined}
               />

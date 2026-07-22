@@ -22,7 +22,11 @@ import { ReceiptDetailCard } from '../components/receipt-detail-card';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import type { ReceiptRecord } from './receiptService';
 import { ReceiptDetailPage } from './receipt-detail-page';
+import { createReceiptPrintHref, openReceiptPrintTab } from './receipt-print';
 import { useReceipt, useReceipts, useVoidReceipt } from './useReceipts';
+
+// Keep the public helper reachable from this page (used by tests and older call sites).
+export { createReceiptPrintHref };
 
 type MethodFilter = 'all' | ReceiptRecord['payment_method'];
 
@@ -63,9 +67,7 @@ function receiptStatusTone(status: string): 'green' | 'gray' | 'red' | 'gold' {
   return 'gold';
 }
 
-export function createReceiptPrintHref(receiptId: string) {
-  return `/receipts?receiptId=${encodeURIComponent(receiptId)}`;
-}
+
 
 function createVoidRequestId() {
   return globalThis.crypto?.randomUUID?.() ?? `void-${Date.now()}`;
@@ -161,11 +163,8 @@ function ReceiptsHistoryContent() {
 
   const openVoidDialog = (receipt: ReceiptRecord) => setVoidDialog({ receipt, reason: '' });
   const closeVoidDialog = () => setVoidDialog({ receipt: null, reason: '' });
-  const openReceiptPrintView = (receiptId: string) => {
-    // Keep the cashier's filtered list untouched by printing in a new tab.
-    const printWindow = globalThis.open(createReceiptPrintHref(receiptId), '_blank', 'noopener');
-    if (!printWindow) globalThis.location.assign(createReceiptPrintHref(receiptId));
-  };
+  // Keep the cashier's filtered list untouched by printing in a new tab.
+  const openReceiptPrintView = (receiptId: string) => openReceiptPrintTab(receiptId);
 
   const handleConfirmVoid = () => {
     if (!voidDialog.receipt || voidDialog.receipt.status !== 'posted' || !voidDialog.reason.trim()) return;
