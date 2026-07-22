@@ -1,24 +1,31 @@
+import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Expense } from '@/types/domain';
 
 export type ExpenseFilters = { propertyId: string; category: string; costCenterId?: string; from: string; to: string };
+export type PagedExpenses = Readonly<{ rows: Expense[]; truncated: boolean }>;
 export type ExpensePayload = Pick<Expense, 'property_id' | 'category' | 'amount' | 'expense_date' | 'description'> & { attachment_url?: string | null; cost_center_id?: string | null; contract_id?: string | null; charged_to?: string | null };
 
-export async function listExpenses(filters: ExpenseFilters): Promise<Expense[]> {
+export async function listExpenses(filters: ExpenseFilters): Promise<PagedExpenses> {
   try {
-    let query = supabase.from('expenses').select('*').is('deleted_at', null).order('expense_date', { ascending: false });
-    if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
-    if (filters.category) query = query.eq('category', filters.category);
-    if (filters.costCenterId) query = query.eq('cost_center_id', filters.costCenterId);
-    if (filters.from) query = query.gte('expense_date', filters.from);
-    if (filters.to) query = query.lte('expense_date', filters.to);
-    const { data, error } = await query.returns<Expense[]>();
-    if (error) handleSupabaseError(error);
-    return data ?? [];
+    const buildQuery = () => {
+      let query = supabase.from('expenses').select('*').is('deleted_at', null).order('expense_date', { ascending: false }).order('id', { ascending: false });
+      if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
+      if (filters.category) query = query.eq('category', filters.category);
+      if (filters.costCenterId) query = query.eq('cost_center_id', filters.costCenterId);
+      if (filters.from) query = query.gte('expense_date', filters.from);
+      if (filters.to) query = query.lte('expense_date', filters.to);
+      return query;
+    };
+    // PostgREST silently caps a single response at the server max-rows
+    // (default 1000) — page forward so large portfolios don't lose expenses
+    // (and their KPI totals) to the cap. The secondary id order keeps paging
+    // deterministic when many expenses share the same date.
+    return await fetchAllRows<Expense>(() => buildQuery().returns<Expense[]>());
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل المصاريف');
-    return [];
+    return { rows: [], truncated: false };
   }
 }
 

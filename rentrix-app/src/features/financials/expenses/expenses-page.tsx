@@ -38,10 +38,11 @@ export function ExpensesPage() {
   const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });
   const costCentersQuery = useCostCenters();
   const expensesQuery = useExpenses(filters);
+  const expensesTruncated = expensesQuery.data?.truncated ?? false;
   const createExpense = useCreateExpenseAtomic();
   const updateExpense = useUpdateExpense();
   const propertyRows = propertiesQuery.data?.rows ?? [];
-  const expenses = expensesQuery.data ?? [];
+  const expenses = expensesQuery.data?.rows ?? [];
   const summary = summarizeOperationalExpenses(expenses);
 
   const expenseForm = useForm<ExpenseFormValues>({
@@ -118,6 +119,12 @@ export function ExpensesPage() {
         <KpiCard label="العقارات المتأثرة" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byPropertyCount)} sub="عقارات لديها مصاريف" icon={WalletCards} accent="amber" />
         <KpiCard label="التصنيفات" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byCategoryCount)} sub="تصنيفات مستخدمة" icon={CalendarDays} accent="sky" />
       </ResponsiveCardGrid>
+
+      {expensesTruncated ? (
+        <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm font-semibold text-warning" role="status">
+          يُعرض حتى 20,000 سجل حاليًا — ضيّق الفلاتر (العقار أو الفترة) لعرض باقي السجلات.
+        </p>
+      ) : null}
 
       {propertiesQuery.isError ? <EmptyState title="تعذر تحميل العقارات" description="يمكنك إعادة المحاولة بعد لحظات قبل تسجيل مصروف جديد." role="alert" ariaLive="assertive" /> : null}
       {expensesQuery.isError ? <EmptyState title="تعذر تحميل المصاريف" description="أعد المحاولة أو غيّر عوامل التصفية الحالية." role="alert" ariaLive="assertive" /> : null}
