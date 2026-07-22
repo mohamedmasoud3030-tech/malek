@@ -1,4 +1,5 @@
-import { Building2, DoorOpen, FileText, UserRoundCog, WalletCards } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { Building2, DoorOpen, FileText, HandCoins, UserRoundCog, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +15,27 @@ import { formatMoney } from '@/features/financials/components/financials-formatt
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
 import { getOwnerDisplayName } from '../services/owner-service';
+import { settlementStatusLabels, type OwnerSettlementRecord, type SettlementStatus } from '../services/owner-settlements-service';
 import type { OwnerDetailState } from '../types';
 
-export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>) {
+function settlementBadgeTone(status: SettlementStatus) {
+  if (status === 'paid') return 'success' as const;
+  if (status === 'approved') return 'info' as const;
+  if (status === 'cancelled') return 'danger' as const;
+  return 'warning' as const;
+}
+
+export function OwnerDetailView({
+  state,
+  settlements,
+  canOpenOwnerSettlements = false,
+}: Readonly<{
+  state: OwnerDetailState;
+  /** Owner settlements (latest first). When omitted the whole section is hidden. */
+  settlements?: readonly OwnerSettlementRecord[];
+  /** Whether the current role may open the dedicated settlements workspace. */
+  canOpenOwnerSettlements?: boolean;
+}>) {
   const companySettings = useCompanySettingsContract();
 
   if (state.status === 'loading') {
@@ -81,6 +100,53 @@ export function OwnerDetailView({ state }: Readonly<{ state: OwnerDetailState }>
         <KpiCard label="العقود النشطة" value={formatCompanyNumber(companySettings, activeContractsCount)} sub={`من أصل ${formatCompanyNumber(companySettings, contracts.length)} عقود`} icon={FileText} accent="emerald" />
         <KpiCard label="الرصيد المستحق" value={formatMoney(financialSummary.outstandingBalance)} sub={`${formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
       </ResponsiveCardGrid>
+
+      {settlements !== undefined ? (
+        <Card>
+          <CardHeader className="gap-3">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary"><HandCoins className="size-6" /></div>
+            <CardTitle className="text-base">تسويات المالك</CardTitle>
+            <CardDescription>أحدث التسويات المعدة لهذا المالك عبر كل عقاراته.</CardDescription>
+            {canOpenOwnerSettlements ? (
+              <Button variant="secondary" asChild>
+                <Link to="/owner-settlements">فتح مساحة التسويات</Link>
+              </Button>
+            ) : null}
+          </CardHeader>
+          <CardContent>
+            {settlements.length === 0 ? (
+              <p className="text-sm font-semibold text-muted-foreground">لا توجد تسويات مسجلة لهذا المالك حتى الآن.</p>
+            ) : (
+              <ul className="space-y-2" aria-label="قائمة تسويات المالك">
+                {settlements.slice(0, 5).map((settlement) => (
+                  <li
+                    key={settlement.id}
+                    className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-background px-3 py-2.5 text-sm"
+                  >
+                    <span className="font-semibold">{settlement.property_title}</span>
+                    <span className="text-xs text-muted-foreground" dir="ltr">
+                      {settlement.period_start} → {settlement.period_end}
+                    </span>
+                    <span className="ms-auto flex items-center gap-2">
+                      <StatusBadge tone={settlementBadgeTone(settlement.status)} dot>
+                        {settlementStatusLabels[settlement.status]}
+                      </StatusBadge>
+                      <span className="font-bold" title="الصافي المستحق للمالك">
+                        {formatMoney(settlement.net_payable_amount)}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {settlements.length > 5 && canOpenOwnerSettlements ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                تُعرض أحدث ٥ تسويات — افتح مساحة التسويات لاستعراض السجل الكامل.
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader><CardTitle>العقارات المرتبطة</CardTitle><CardDescription>تظهر فقط العلاقات النشطة الموجودة في `property_owners` مع عدد الوحدات والعقود لكل عقار.</CardDescription></CardHeader>

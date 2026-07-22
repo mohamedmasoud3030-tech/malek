@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { OwnerDetailView } from './components/owner-detail-view';
 import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './services/owner-service';
+import type { OwnerSettlementRecord } from './services/owner-settlements-service';
 
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
@@ -84,6 +85,61 @@ describe('Owner detail recovery states', () => {
     expect(html).toContain('٧٥٠');
     expect(html).toContain('/owners');
     expect(html).not.toContain('/owners-hub');
+  });
+
+  it('renders the owner settlements section when settlements are provided', () => {
+    const snapshot: OwnerDetailSnapshot = {
+      owner,
+      properties: [property],
+      units: [],
+      contracts: [],
+      invoices: [],
+      financialSummary: { outstandingBalance: 0, outstandingInvoicesCount: 0 },
+    };
+    const settlement: OwnerSettlementRecord = {
+      id: 'settlement-1',
+      owner_id: owner.id,
+      owner_name: owner.full_name,
+      property_id: property.id,
+      property_title: property.title,
+      period_start: '2026-07-01',
+      period_end: '2026-07-31',
+      gross_rent_collected: 1200,
+      management_fee_rate: 5,
+      management_fee_type: 'percentage',
+      management_fee_amount: 60,
+      maintenance_deductions: 40,
+      utility_deductions: 0,
+      net_payable_amount: 1100,
+      status: 'pending',
+      created_at: '2026-07-20T00:00:00.000Z',
+    };
+    const html = renderToStaticMarkup(
+      <OwnerDetailView
+        state={{ status: 'ready', snapshot }}
+        settlements={[settlement]}
+        canOpenOwnerSettlements
+      />,
+    );
+
+    expect(html).toContain('تسويات المالك');
+    expect(html).toContain('مسودة بانتظار الاعتماد');
+    expect(html).toContain('/owner-settlements');
+    expect(html).toContain('عقار موثق');
+  });
+
+  it('hides the settlements section when settlements are not provided', () => {
+    const snapshot: OwnerDetailSnapshot = {
+      owner,
+      properties: [property],
+      units: [],
+      contracts: [],
+      invoices: [],
+      financialSummary: { outstandingBalance: 0, outstandingInvoicesCount: 0 },
+    };
+    const html = renderToStaticMarkup(<OwnerDetailView state={{ status: 'ready', snapshot }} />);
+
+    expect(html).not.toContain('تسويات المالك');
   });
 
   it('renders the owner detail unavailable state', () => {

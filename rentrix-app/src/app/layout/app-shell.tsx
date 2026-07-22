@@ -1,16 +1,17 @@
-import { Outlet, useMatches, useRouter } from '@tanstack/react-router';
+import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bell, ChevronLeft, LogOut, Menu, Moon, ShieldAlert, Sun, X } from 'lucide-react';
+import { Bell, ChevronLeft, LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
+import { canShowNavigationItem, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import type { SyncStatus } from '@/types/domain';
 import { MobileBottomNav, NavigationLinks, type SharedLabel } from './layout-navigation-view';
+import { quickCreateItems } from '@/app/navigation/app-nav-items';
 
 function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
@@ -34,6 +35,89 @@ function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
           <p className="truncate text-[10px] font-medium text-sidebar-foreground/55">
             مكتبك العقاري في مساحة واحدة
           </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Header quick-create menu (#1240). Only offered to roles with write access;
+ * each entry additionally respects its destination route guard so MANAGER
+ * never sees actions they cannot complete.
+ */
+function QuickAddMenu({
+  authorization,
+  sharedLabel,
+}: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const visibleItems = quickCreateItems.filter(([, , , permission]) => canShowNavigationItem(authorization, permission));
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (menuRef.current?.contains(event.target as Node)) return;
+      setIsOpen(false);
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  if (visibleItems.length === 0) return null;
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-label={sharedLabel('quickAdd')}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? menuId : undefined}
+        className="pressable inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary/40 sm:size-10 sm:rounded-lg"
+      >
+        <Plus className="size-[1.1rem]" aria-hidden="true" />
+      </button>
+      {isOpen ? (
+        <div
+          ref={menuRef}
+          id={menuId}
+          role="menu"
+          aria-label={sharedLabel('quickAdd')}
+          className="absolute end-0 top-11 z-50 w-52 max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-card p-1.5 text-start text-card-foreground shadow-elevated sm:top-12"
+        >
+          <p className="border-b border-border/60 px-2.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
+            {sharedLabel('quickAdd')}
+          </p>
+          {visibleItems.map(([to, labelKey, Icon]) => (
+            <Link
+              key={to}
+              to={to}
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="mt-0.5 flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 text-[12px] font-semibold text-foreground/90 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+            >
+              <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{sharedLabel(labelKey)}</span>
+              <Plus className="size-3.5 shrink-0 opacity-40" aria-hidden="true" />
+            </Link>
+          ))}
         </div>
       ) : null}
     </div>
@@ -258,6 +342,11 @@ export function AppShell() {
 
             {/* Header actions */}
             <div className="flex items-center gap-0.5 sm:gap-1">
+              {/* Quick create — write-access roles only */}
+              {writeAccessState === 'full' ? (
+                <QuickAddMenu authorization={authorization} sharedLabel={sharedLabel} />
+              ) : null}
+
               {/* Sync status — desktop only */}
               <span className="hidden rounded-lg border border-border bg-card px-2.5 py-1 text-[10px] font-medium text-muted-foreground sm:inline-flex lg:text-[11px] lg:px-3 lg:py-1.5">
                 {statusLabel(syncStatus)}
