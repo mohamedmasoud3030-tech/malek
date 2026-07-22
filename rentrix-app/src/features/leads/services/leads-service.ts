@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { LeadFilters, LeadFormValues, LeadRecord } from '../types';
 
@@ -35,9 +36,13 @@ export async function listLeads(filters: LeadFilters) {
     query = query.or(`name.ilike.${term},phone.ilike.${term},email.ilike.${term},desired_unit_type.ilike.${term}`);
   }
 
-  const { data, error } = await query.returns<LeadRecord[]>();
-  if (error) handleSupabaseError(error, 'تعذر تحميل العملاء المحتملين');
-  return data ?? [];
+  try {
+    const { rows } = await fetchAllRows<LeadRecord>(() => query as any);
+    return rows;
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل العملاء المحتملين');
+    throw error;
+  }
 }
 
 export async function createLead(values: LeadFormValues) {

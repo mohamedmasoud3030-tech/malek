@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { LandFilters, LandFormValues, LandRecord } from '../types';
 
@@ -36,9 +37,13 @@ export async function listLands(filters: LandFilters) {
     query = query.or(`plot_no.ilike.${term},name.ilike.${term},location.ilike.${term},category.ilike.${term}`);
   }
 
-  const { data, error } = await query.returns<LandRecord[]>();
-  if (error) handleSupabaseError(error, 'تعذر تحميل الأراضي');
-  return data ?? [];
+  try {
+    const { rows } = await fetchAllRows<LandRecord>(() => query as any);
+    return rows;
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل الأراضي');
+    throw error;
+  }
 }
 
 export async function createLand(values: LandFormValues) {

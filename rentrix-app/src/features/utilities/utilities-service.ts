@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { fetchAllRows } from '@/lib/paginatedRead';
 
 export type UtilityType = 'electricity' | 'water' | 'sanitation' | 'internet' | 'gas' | 'other';
 export type ResponsibleParty = 'tenant' | 'landlord' | 'company';
@@ -176,9 +177,13 @@ export async function listUtilityMeters(propertyId?: string): Promise<UtilityMet
   let query: any = supabase.from('utility_meters' as any).select('*').is('deleted_at', null).order('created_at', { ascending: false });
   if (propertyId) query = query.eq('property_id', propertyId);
 
-  const { data, error } = await query;
-  if (error) handleSupabaseError(error, 'تعذر تحميل عدادات المرافق');
-  return (data ?? []).map(mapMeter);
+  try {
+    const { rows } = await fetchAllRows<any>(() => query);
+    return rows.map(mapMeter);
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل عدادات المرافق');
+    throw error;
+  }
 }
 
 export async function createUtilityMeter(values: UtilityMeterFormValues): Promise<UtilityMeter> {
@@ -243,14 +248,19 @@ export async function softDeleteUtilityMeter(id: string): Promise<void> {
 }
 
 export async function listUtilityBills(filter?: { propertyId?: string; status?: UtilityBillStatus; meterId?: string }): Promise<UtilityBill[]> {
-  let query = (supabase as any).from('utility_bills').select('*').is('deleted_at', null).order('due_date', { ascending: false }).limit(200);
+  let query = (supabase as any).from('utility_bills').select('*').is('deleted_at', null).order('due_date', { ascending: false });
   if (filter?.propertyId) query = query.eq('property_id', filter.propertyId);
   if (filter?.meterId) query = query.eq('meter_id', filter.meterId);
 
-  const { data, error } = await query;
-  if (error) handleSupabaseError(error, 'تعذر تحميل فواتير المرافق');
+  let rows: any[];
+  try {
+    ({ rows } = await fetchAllRows<any>(() => query));
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل فواتير المرافق');
+    throw error;
+  }
 
-  const bills = (data ?? []).map(mapBill);
+  const bills = rows.map(mapBill);
   return filter?.status ? bills.filter((bill: UtilityBill) => bill.status === filter.status) : bills;
 }
 
