@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Bot, Building2, ContactRound, DoorOpen, FileText, FolderKanban, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, SearchCheck, Settings, Settings2, ShieldCheck, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileCheck, FileSpreadsheet, FileText, FolderKanban, HandCoins, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -6,28 +6,42 @@ export type NavItem = readonly [to: string, labelKey: string, description: strin
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
+// UX overhaul (2026-07): groups now follow the daily work flow of a real-estate
+// office — assets, parties, contracts & operations, money, analysis, governance.
+// Every standalone financial workspace (/invoices, /receipts, /expenses,
+// /arrears, /deposits, /bank-reconciliation) is a first-class sidebar entry
+// instead of being buried inside the old /financials hub tabs.
 export const navGroups: readonly NavGroup[] = [
-  ['نظرة عامة', [['/dashboard', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
-  ['الأصول والعلاقات', [
+  ['الرئيسية', [['/dashboard', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
+  ['إدارة العقارات', [
     ['/properties', 'properties', 'ملفات العقارات والأصول', Building2],
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
     ['/lands', 'lands', 'إدارة قطع الأراضي ومتابعة حالتها', MapPinned, 'lands.view'],
-    ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
-    ['/people', 'people', 'دليل جهات التعامل', Users],
-    ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
-    ['/tenants', 'tenants', 'بيانات المستأجرين', Users],
   ]],
-  ['التشغيل اليومي', [
+  ['الأطراف', [
+    ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
+    ['/tenants', 'tenants', 'بيانات المستأجرين', UserCheck],
+    ['/people', 'peopleDirectory', 'دليل جهات التعامل', Users],
+    ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
+  ]],
+  ['العقود والتشغيل', [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
     ['/utilities', 'utilities', 'عدادات الكهرباء والمياه وفواتير المرافق', Zap],
-    ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'communication.view'],
+    ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
   ]],
-  ['الماليات والمحاسبة', [
-    ['/financials', 'financials', 'مركز إدارة الفواتير، الإيصالات، المصاريف، والمتأخرات', WalletCards],
+  ['المالية', [
+    ['/financials', 'financialOverview', 'نظرة شاملة على التحصيلات والمصروفات والذمم', PieChart],
+    ['/invoices', 'invoices', 'مراجعة الفواتير وتسجيل دفعاتها', FileSpreadsheet],
+    ['/receipts', 'receipts', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText],
+    ['/expenses', 'expenses', 'تسجيل ومراجعة نفقات العقارات', WalletCards, 'expenses.write'],
+    ['/arrears', 'arrears', 'متابعة الذمم وأعمار الديون', ClipboardList, 'arrears.view'],
+    ['/deposits', 'deposits', 'تتبع مبالغ أمانات وتأمينات المستأجرين', FileCheck],
+    ['/owner-settlements', 'ownerSettlements', 'إعداد تسويات الملاك واعتمادها وصرفها', HandCoins, 'financial.owner_settlements.approve'],
+    ['/bank-reconciliation', 'bankReconciliation', 'مطابقة السجلات مع الحسابات البنكية', Landmark, 'financial.bank_reconciliation.view'],
   ]],
-  ['التحليل والنمو', [
+  ['التقارير والتحليل', [
     [
       '/reports',
       'reportsAndStatements',
@@ -40,10 +54,10 @@ export const navGroups: readonly NavGroup[] = [
       'مساعد قراءة فقط لتلخيص المتأخرات والتجديدات واللقطات المالية',
       Bot,
     ],
-    ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
     ['/commissions', 'commissions', 'تتبع عمولات المكتب وحالات الاستحقاق', BadgeDollarSign, 'commissions.view'],
   ]],
-  ['الإعدادات والحوكمة', [
+  ['المستندات والحوكمة', [
+    ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
     ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، وسجلات الحوكمة', Settings, 'settings.manage'],
     ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة والعمليات', ListChecks, 'audit.view'],
     ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات والتطابق', SearchCheck, 'integrity.view'],
@@ -51,19 +65,15 @@ export const navGroups: readonly NavGroup[] = [
   ]],
 ];
 
+// Field-work first: dashboard, assets, contracts, maintenance, then the daily
+// money loop (invoices + receipts) and reports. Everything else stays one tap
+// away inside the mobile drawer.
 export const mobileNavItems: readonly MobileNavItem[] = [
   ['/dashboard', 'dashboard', LayoutDashboard],
   ['/properties', 'properties', Building2],
   ['/contracts', 'contracts', FileText],
-  ['/financials', 'financials', WalletCards],
+  ['/maintenance', 'maintenance', Wrench, 'maintenance.view'],
+  ['/invoices', 'invoices', FileSpreadsheet],
+  ['/receipts', 'receipts', ReceiptText],
   ['/reports', 'reports', BarChart3],
 ];
-
-export const quickLinks = [
-  ['/properties', 'العقارات', Building2],
-  ['/people', 'الأشخاص', Users],
-  ['/contracts', 'العقود', FileText],
-  ['/financials', 'المالية', WalletCards],
-] as const;
-
-export type QuickLinkRoute = (typeof quickLinks)[number][0];

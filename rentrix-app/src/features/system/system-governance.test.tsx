@@ -78,7 +78,7 @@ describe('system and governance route authorization', () => {
 
   it('exposes governance surfaces in navigation from v0.3 onwards', () => {
     const settingsAndGovernanceItems: readonly NavItem[] = navGroups
-      .find(([sectionTitle]) => sectionTitle === 'الإعدادات والحوكمة')?.[1] ?? [];
+      .find(([sectionTitle]) => sectionTitle === 'المستندات والحوكمة')?.[1] ?? [];
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = settingsAndGovernanceItems.map(([to]) => to);
 

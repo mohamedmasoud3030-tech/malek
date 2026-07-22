@@ -10,8 +10,7 @@ import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import type { SyncStatus } from '@/types/domain';
-import { CollapsedWorkspaceMenu, MobileBottomNav, NavigationLinks, WorkspaceCard, type SharedLabel } from './layout-navigation-view';
-import type { QuickLinkRoute } from '@/app/navigation/app-nav-items';
+import { MobileBottomNav, NavigationLinks, type SharedLabel } from './layout-navigation-view';
 
 function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
@@ -46,13 +45,11 @@ function MobileNavigationDrawer({
   sharedLabel,
   onClose,
   onLogout,
-  onQuickLink,
 }: Readonly<{
   authorization: AuthorizationContext | null;
   sharedLabel: SharedLabel;
   onClose: () => void;
   onLogout: () => void;
-  onQuickLink: (to: QuickLinkRoute) => void;
 }>) {
   return (
     <Dialog
@@ -90,7 +87,6 @@ function MobileNavigationDrawer({
             </div>
           )}
           <NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} onNavigate={onClose} />
-          <WorkspaceCard compact onQuickLink={onQuickLink} />
         </nav>
         <div className="border-t border-white/8 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
           <Button
@@ -138,11 +134,6 @@ export function AppShell() {
   useEffect(() => {
     document.title = `${pageTitle} | Rentrix`;
   }, [pageTitle]);
-
-  const navigateToQuickLink = async (to: QuickLinkRoute) => {
-    setMobileNavOpen(false);
-    await router.navigate({ to });
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -196,7 +187,6 @@ export function AppShell() {
           sharedLabel={sharedLabel}
           onClose={() => setMobileNavOpen(false)}
           onLogout={handleLogout}
-          onQuickLink={navigateToQuickLink}
         />
       ) : null}
 
@@ -213,10 +203,8 @@ export function AppShell() {
         </div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
           <NavigationLinks authorization={authorization} expanded={isSidebarExpanded} sharedLabel={sharedLabel} />
-          {isSidebarExpanded ? <WorkspaceCard onQuickLink={navigateToQuickLink} /> : null}
         </nav>
         <div className="border-t border-white/8 p-3">
-          {sidebarCollapsed ? <CollapsedWorkspaceMenu onQuickLink={navigateToQuickLink} /> : null}
           <Button
             variant="ghost"
             className={cn(
