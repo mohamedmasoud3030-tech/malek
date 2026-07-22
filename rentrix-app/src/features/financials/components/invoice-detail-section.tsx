@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react';
+import { CircleCheck, Download, HandCoins, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Payment } from '@/types/domain';
@@ -6,6 +6,12 @@ import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceSe
 import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
 import { QuickPaymentForm } from './quick-payment-form';
 import { paymentMethodLabels } from './receipt-formatters';
+
+export type CollectionSuccess = {
+  receiptId: string;
+  amount: number;
+  method: Payment['payment_method'];
+};
 
 type InvoiceDetailSectionProps = {
   selectedInvoiceId: string;
@@ -21,6 +27,17 @@ type InvoiceDetailSectionProps = {
   amountValidationMessage: string;
   isPaymentPending: boolean;
   isPaymentDisabled: boolean;
+  /**
+   * Last successfully posted payment within this workspace. Drives the
+   * inline success panel (print receipt / collect next invoice) so the
+   * collector keeps flow without hunting for the receipt list.
+   */
+  collectionSuccess?: CollectionSuccess | null;
+  hasNextCollectibleInvoice?: boolean;
+  collectionFocusKey?: number;
+  onCollectNextInvoice?: () => void;
+  onPrintCollectionReceipt?: () => void;
+  onDismissCollection?: () => void;
   onAmountChange: (amount: string) => void;
   onMethodChange: (method: Payment['payment_method']) => void;
   onPaymentDateChange: (paymentDate: string) => void;
@@ -43,6 +60,12 @@ export function InvoiceDetailSection({
   amountValidationMessage,
   isPaymentPending,
   isPaymentDisabled,
+  collectionSuccess = null,
+  hasNextCollectibleInvoice = false,
+  collectionFocusKey = 0,
+  onCollectNextInvoice,
+  onPrintCollectionReceipt,
+  onDismissCollection,
   onAmountChange,
   onMethodChange,
   onPaymentDateChange,
@@ -113,6 +136,41 @@ export function InvoiceDetailSection({
             </div>
           </div>
 
+          {collectionSuccess ? (
+            <div className="rounded-2xl border border-success/40 bg-success/10 p-4" role="status">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-success/15 text-success">
+                    <CircleCheck className="size-5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-black text-success">تم تسجيل الدفعة بنجاح</p>
+                    <p className="mt-1 text-sm font-bold text-muted-foreground">
+                      تم تحصيل {formatMoney(collectionSuccess.amount)} ({paymentMethodLabels[collectionSuccess.method] ?? collectionSuccess.method}) — يمكنك طباعة إيصال القبض أو متابعة التحصيل مباشرة.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {onPrintCollectionReceipt ? (
+                    <Button type="button" variant="outline" className="min-h-10" onClick={onPrintCollectionReceipt}>
+                      <Printer className="me-1 size-4" />طباعة الإيصال
+                    </Button>
+                  ) : null}
+                  {hasNextCollectibleInvoice && onCollectNextInvoice ? (
+                    <Button type="button" className="min-h-10" onClick={onCollectNextInvoice}>
+                      <HandCoins className="me-1 size-4" />تحصيل الفاتورة التالية
+                    </Button>
+                  ) : null}
+                  {onDismissCollection ? (
+                    <Button type="button" variant="ghost" className="min-h-10 px-2" onClick={onDismissCollection} aria-label="إغلاق تنبيه النجاح">
+                      <X className="size-4" />
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <QuickPaymentForm
             remainingAmount={remaining}
             amount={amount}
@@ -122,6 +180,7 @@ export function InvoiceDetailSection({
             amountValidationMessage={amountValidationMessage}
             isPending={isPaymentPending}
             isPaymentDisabled={isPaymentDisabled}
+            focusKey={collectionFocusKey}
             onAmountChange={onAmountChange}
             onMethodChange={onMethodChange}
             onPaymentDateChange={onPaymentDateChange}

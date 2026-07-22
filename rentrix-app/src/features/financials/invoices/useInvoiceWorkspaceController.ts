@@ -7,9 +7,11 @@ import { getTodayLocalDateString, isValidDateInput } from '../financials-date-ut
 import { toFinancialNumber } from '../financialMath';
 import { getInvoiceRemainingAmount, getInvoicePaymentValidationMessage } from '../invoices/invoice-payment-validation';
 import { summarizeInvoices, type InvoiceStatusFilter } from '../invoices/invoiceService';
+import { findNextCollectibleInvoiceId, getQuickCollectPreset } from '../invoices/quick-collect';
 import { useGenerateInvoices, useInvoice, useInvoicesPaginated } from '../invoices/useInvoices';
 import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/paymentService';
 import { usePostPayment } from '../payments/usePayments';
+import { openReceiptPrintTab } from '../receipts/receipt-print';
 import { useReceipt, useReceipts } from '../receipts/useReceipts';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import type { InvoiceFilterOption } from '../components/invoice-filters';
@@ -49,6 +51,8 @@ export function useInvoiceWorkspaceController() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [amount, setAmount] = useState('');
+  const [collectionSuccess, setCollectionSuccess] = useState<{ receiptId: string; amount: number; method: Payment['payment_method'] } | null>(null);
+  const [collectionFocusKey, setCollectionFocusKey] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Payment['payment_method']>('cash');
   const [paymentDate, setPaymentDate] = useState(() => getTodayLocalDateString());
   const [paymentReference, setPaymentReference] = useState('');
@@ -107,6 +111,12 @@ export function useInvoiceWorkspaceController() {
     () => (invoiceDetail ? getInvoiceRemainingAmount(invoiceDetail) : 0),
     [invoiceDetail],
   );
+  // The «collector walk»: next unpaid/partial invoice on the current page,
+  // skipping the one that was just settled.
+  const nextCollectibleInvoiceId = useMemo(
+    () => findNextCollectibleInvoiceId(invoices, selectedInvoiceId || undefined),
+    [invoices, selectedInvoiceId],
+  );
 
   const rawAmountValue = Number(amount);
   const amountValue = toFinancialNumber(amount);
@@ -160,6 +170,7 @@ export function useInvoiceWorkspaceController() {
       {
         onSuccess: (result) => {
           setSelectedReceiptId(result.receipt_id);
+          setCollectionSuccess({ receiptId: result.receipt_id, amount: currentAmount, method: paymentMethod });
           setAmount('');
           setPaymentReference('');
           resetPaymentRequestId(quickPayRequestIdRef);
@@ -169,6 +180,39 @@ export function useInvoiceWorkspaceController() {
         },
       },
     );
+  };
+
+  /**
+   * «تحصيل» row action: select the invoice, prefill the FULL gross remaining
+   * (dominant rent-collection case; partial payers edit freely), then bump
+   * the focus nonce so the payment form scrolls into view and focuses the
+   * amount input once it renders.
+   */
+  const onCollectInvoice = (invoiceId: string) => {
+    setCollectionSuccess(null);
+    setSelectedInvoiceId(invoiceId);
+    if (!canCreatePayment) return;
+    const row = invoices.find((candidate) => candidate.id === invoiceId);
+    const preset = row ? getQuickCollectPreset(row) : null;
+    if (preset) setAmount(preset.amount);
+    setCollectionFocusKey((key) => key + 1);
+  };
+
+  const onCollectNextInvoice = () => {
+    if (!nextCollectibleInvoiceId) return;
+    onCollectInvoice(nextCollectibleInvoiceId);
+  };
+
+  const onPrintCollectionReceipt = () => {
+    if (collectionSuccess?.receiptId) openReceiptPrintTab(collectionSuccess.receiptId);
+  };
+
+  const dismissCollectionSuccess = () => setCollectionSuccess(null);
+
+  // Plain row clicks keep their browsing role but close a stale success panel.
+  const onSelectInvoiceRow = (invoiceId: string) => {
+    setSelectedInvoiceId(invoiceId);
+    setCollectionSuccess(null);
   };
 
   const exportInvoiceDocument = (invoice: any) => {
@@ -235,6 +279,14 @@ export function useInvoiceWorkspaceController() {
     canExportInvoices,
     isPaymentDisabled,
     canExportInvoiceDocument,
+    collectionSuccess,
+    collectionFocusKey,
+    nextCollectibleInvoiceId,
+    onCollectInvoice,
+    onCollectNextInvoice,
+    onPrintCollectionReceipt,
+    dismissCollectionSuccess,
+    onSelectInvoiceRow,
     setGenerateDialogOpen,
     setSelectedInvoiceId,
     setSelectedReceiptId,
