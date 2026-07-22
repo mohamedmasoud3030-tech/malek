@@ -65,6 +65,16 @@ describe('ReportsPage shaping helpers', () => {
     ]);
   });
 
+  it('counts historical upper-case and rented statuses as occupied in cross-feature occupancy reports', () => {
+    expect(buildOccupancyRows([
+      { property_id: 'alpha_property', status: ' OCCUPIED ' as any },
+      { property_id: 'alpha_property', status: 'rented' as any },
+      { property_id: 'alpha_property', status: 'available' },
+    ])).toEqual([
+      { property: 'عقار بدون اسم', propertyId: 'alpha_property', shortPropertyId: 'alpha_pr', hasTitle: false, occupied: 2, vacant: 1 },
+    ]);
+  });
+
   it('uses the property title and orders titled rows first when titles are supplied', () => {
     expect(buildOccupancyRows(
       [

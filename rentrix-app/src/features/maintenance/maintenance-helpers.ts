@@ -1,5 +1,7 @@
 import type { Property, Unit } from '@/types/domain';
 import type { Maintenance } from './maintenance-service';
+import { normalizeMaintenancePriority, normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
+export { normalizeMaintenancePriority, normalizeMaintenanceStatus } from '@/lib/maintenanceStatus';
 
 export type MaintenancePriorityFilter = Maintenance['priority'] | 'all';
 export type MaintenanceStatusFilter = Maintenance['status'] | 'all';
@@ -16,6 +18,16 @@ export type MaintenanceSummary = Readonly<{
   inProgress: number;
   urgent: number;
 }>;
+
+export function normalizeMaintenanceRecord(row: Maintenance): Maintenance {
+  return {
+    ...row,
+    // Generated types predate legacy production values; values are normalized
+    // defensively after read rather than trusting a literal status comparison.
+    status: normalizeMaintenanceStatus(row.status) as Maintenance['status'],
+    priority: normalizeMaintenancePriority(row.priority) as Maintenance['priority'],
+  };
+}
 
 type MaintenanceLocationRequest = Pick<Maintenance, 'property_id' | 'unit_id'>;
 type MaintenancePropertyLabel = Pick<Property, 'id' | 'title'>;
@@ -36,8 +48,8 @@ export function buildMaintenanceLocationLabel(
 
 export function filterMaintenanceRequests(rows: Maintenance[], filters: MaintenanceFilters): Maintenance[] {
   return rows.filter((row) => {
-    const statusMatches = filters.status === 'all' || row.status === filters.status;
-    const priorityMatches = filters.priority === 'all' || row.priority === filters.priority;
+    const statusMatches = filters.status === 'all' || normalizeMaintenanceStatus(row.status) === filters.status;
+    const priorityMatches = filters.priority === 'all' || normalizeMaintenancePriority(row.priority) === filters.priority;
     const propertyMatches = !filters.propertyId || row.property_id === filters.propertyId;
 
     return statusMatches && priorityMatches && propertyMatches;
@@ -48,9 +60,9 @@ export function summarizeMaintenanceRequests(rows: Maintenance[]): MaintenanceSu
   return rows.reduce<MaintenanceSummary>(
     (summary, row) => ({
       total: summary.total + 1,
-      open: summary.open + (row.status === 'open' ? 1 : 0),
-      inProgress: summary.inProgress + (row.status === 'in_progress' ? 1 : 0),
-      urgent: summary.urgent + (row.priority === 'urgent' ? 1 : 0),
+      open: summary.open + (normalizeMaintenanceStatus(row.status) === 'open' ? 1 : 0),
+      inProgress: summary.inProgress + (normalizeMaintenanceStatus(row.status) === 'in_progress' ? 1 : 0),
+      urgent: summary.urgent + (normalizeMaintenancePriority(row.priority) === 'urgent' ? 1 : 0),
     }),
     { total: 0, open: 0, inProgress: 0, urgent: 0 },
   );
