@@ -41,8 +41,8 @@ async function invalidateOwnerAndPropertyQueries(queryClient: ReturnType<typeof 
   ]);
 }
 
-export function useOwners() {
-  return useQuery({ queryKey: ownerKeys.lists(), queryFn: listOwners });
+export function useOwners(options?: Readonly<{ enabled?: boolean }>) {
+  return useQuery({ queryKey: ownerKeys.lists(), queryFn: listOwners, enabled: options?.enabled ?? true });
 }
 
 export function useOwner(ownerId: string) {

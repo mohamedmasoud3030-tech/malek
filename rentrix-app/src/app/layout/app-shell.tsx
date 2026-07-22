@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Bell, ChevronLeft, LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
+import { ChevronLeft, LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import type { SyncStatus } from '@/types/domain';
 import { MobileBottomNav, NavigationLinks, type SharedLabel } from './layout-navigation-view';
+import { NotificationsMenu } from './notifications-menu';
 import { quickCreateItems } from '@/app/navigation/app-nav-items';
 
 function statusLabel(status: SyncStatus) {
@@ -226,31 +227,6 @@ export function AppShell() {
     await router.navigate({ to: '/login' });
   };
 
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const notificationsTriggerRef = useRef<HTMLButtonElement>(null);
-  const notificationsMenuRef = useRef<HTMLDivElement>(null);
-  const notificationsMenuId = useId();
-
-  useEffect(() => {
-    if (!notificationsOpen) return;
-    function handlePointerDown(event: PointerEvent) {
-      if (notificationsMenuRef.current?.contains(event.target as Node)) return;
-      setNotificationsOpen(false);
-    }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setNotificationsOpen(false);
-        notificationsTriggerRef.current?.focus();
-      }
-    }
-    document.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [notificationsOpen]);
-
   return (
     <div
       className="min-h-screen min-h-dvh overflow-x-hidden bg-background text-foreground"
@@ -355,35 +331,8 @@ export function AppShell() {
                   : ''}
               </span>
 
-              {/* Notifications */}
-              <div className="relative">
-                <button
-                  ref={notificationsTriggerRef}
-                  type="button"
-                  onClick={() => setNotificationsOpen((open) => !open)}
-                  aria-label={sharedLabel('notificationsNone')}
-                  aria-haspopup="dialog"
-                  aria-expanded={notificationsOpen}
-                  aria-controls={notificationsOpen ? notificationsMenuId : undefined}
-                  className="pressable inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 sm:size-10 sm:rounded-lg"
-                >
-                  <Bell className="size-[1rem]" aria-hidden="true" />
-                </button>
-                {notificationsOpen ? (
-                  <div
-                    ref={notificationsMenuRef}
-                    id={notificationsMenuId}
-                    role="dialog"
-                    aria-label={sharedLabel('notificationsNone')}
-                    className="absolute end-0 top-11 z-50 w-64 max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-card p-3 text-start text-card-foreground shadow-elevated sm:w-72 sm:top-12"
-                  >
-                    <p className="text-xs font-semibold">{sharedLabel('notificationsNone')}</p>
-                    <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                      {sharedLabel('notificationsHint')}
-                    </p>
-                  </div>
-                ) : null}
-              </div>
+              {/* Notifications — real alerts from the shared dashboard snapshot */}
+              <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
 
               {/* Theme toggle */}
               <Button
