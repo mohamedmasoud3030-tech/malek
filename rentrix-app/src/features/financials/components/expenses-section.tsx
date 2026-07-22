@@ -20,13 +20,7 @@ import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import { escapeCsvValue } from '@/lib/csvExport';
 import type { Expense, Property } from '@/types/domain';
 import { formatDate, formatMoney } from './financials-formatters';
-import {
-  buildExpensePropertyLabel,
-  OPERATIONAL_EXPENSE_CATEGORIES,
-  summarizeOperationalExpenses,
-  type OperationalExpenseCategory,
-  type OperationalExpenseFilterValues,
-} from '../expenses/operational-expenses';
+import { EXPENSE_CHARGED_TO_LABELS, EXPENSE_CHARGED_TO_VALUES, buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses, OPERATIONAL_EXPENSE_CATEGORIES, type ExpenseChargedTo, type OperationalExpenseCategory, type OperationalExpenseFilterValues } from '../expenses/operational-expenses';
 import { downloadExpenseCsv, exportExpenseVoucher as exportExpenseVoucherPdf, printExpenses } from '../expenses/expense-actions';
 import { getTodayLocalDateString } from '../financials-date-utils';
 
@@ -34,6 +28,7 @@ export type ExpenseFormValues = {
   property_id: string;
   category: OperationalExpenseCategory;
   cost_center_id?: string;
+  charged_to: ExpenseChargedTo;
   amount: number;
   expense_date: string;
   description?: string;
@@ -120,7 +115,7 @@ export function ExpensesSection({
 
   const openCreateForm = () => {
     setEditingExpense(null);
-    expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', amount: 0, expense_date: getTodayLocalDateString(), description: '', attachment_url: null });
+    expenseForm.reset({ property_id: '', category: 'صيانة', cost_center_id: '', charged_to: 'COMPANY', amount: 0, expense_date: getTodayLocalDateString(), description: '', attachment_url: null });
     setFormOpen(true);
   };
 
@@ -130,6 +125,7 @@ export function ExpensesSection({
       property_id: expense.property_id,
       category: expense.category as OperationalExpenseCategory,
       cost_center_id: expense.cost_center_id ?? '',
+      charged_to: normalizeExpenseChargedTo(getExpenseChargedTo(expense)),
       amount: Number(expense.amount ?? 0),
       expense_date: expense.expense_date,
       description: expense.description ?? '',
@@ -228,7 +224,8 @@ export function ExpensesSection({
             { key: 'label', header: 'العقار والتصنيف', render: (expense) => {
               const label = buildExpensePropertyLabel(expense, propertyById);
               const costCenterLabel = expense.cost_center_id ? costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف' : null;
-              return <span className="min-w-0 truncate">{label} — {expense.category}{costCenterLabel ? ` — ${costCenterLabel}` : ''}</span>;
+              const chargedToLabel = getExpenseChargedToLabel(getExpenseChargedTo(expense));
+              return <span className="min-w-0 truncate">{label} — {expense.category}{costCenterLabel ? ` — ${costCenterLabel}` : ''}{chargedToLabel !== 'الشركة' ? ` — يتحمّلها ${chargedToLabel}` : ''}</span>;
             } },
             { key: 'amount', header: 'المبلغ', render: (expense) => <span className="font-bold tabular-nums">{formatMoney(expense.amount)}</span> },
             { key: 'actions', header: 'إجراءات', render: (expense) => (
@@ -249,7 +246,7 @@ export function ExpensesSection({
             return (
               <MobileCard
                 title={label}
-                subtitle={`${formatDate(expense.expense_date)} · ${expense.category}${costCenterLabel ? ` · ${costCenterLabel}` : ''}`}
+                subtitle={`${formatDate(expense.expense_date)} · ${expense.category}${costCenterLabel ? ` · ${costCenterLabel}` : ''}${getExpenseChargedToLabel(getExpenseChargedTo(expense)) !== 'الشركة' ? ` · يتحمّلها ${getExpenseChargedToLabel(getExpenseChargedTo(expense))}` : ''}`}
                 stats={<span className="text-base font-black tabular-nums" dir="ltr">{formatMoney(expense.amount)}</span>}
                 actions={(
                   <Button type="button" variant="secondary" className="min-h-11 w-full px-3 text-xs" onClick={() => openEditForm(expense)}>
@@ -290,6 +287,14 @@ export function ExpensesSection({
                 <Select {...expenseForm.register('category')} aria-invalid={Boolean(expenseForm.formState.errors.category)}>
                   {OPERATIONAL_EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                 </Select>
+              </label>
+
+              <label className="space-y-1.5 text-sm font-bold sm:col-span-2">
+                <span>يتحمّل المصروف</span>
+                <Select {...expenseForm.register('charged_to')} aria-invalid={Boolean(expenseForm.formState.errors.charged_to)}>
+                  {EXPENSE_CHARGED_TO_VALUES.map((value) => <option key={value} value={value}>{EXPENSE_CHARGED_TO_LABELS[value]}</option>)}
+                </Select>
+                <span className="text-xs font-normal text-muted-foreground">اختيار «المالك» يُظهر المصروف في كشف حساب المالك.</span>
               </label>
 
               <label className="space-y-1.5 text-sm font-bold">
@@ -343,6 +348,7 @@ export function ExpensesSection({
           <div className="space-y-3 text-sm">
             <p className="rounded-2xl border p-3"><strong>العقار:</strong> {buildExpensePropertyLabel(detailsExpense, propertyById)}</p>
             <p className="rounded-2xl border p-3"><strong>المبلغ:</strong> <span dir="ltr">{formatMoney(detailsExpense.amount)}</span></p>
+            <p className="rounded-2xl border p-3"><strong>يتحمّل المصروف:</strong> {getExpenseChargedToLabel(getExpenseChargedTo(detailsExpense))}</p>
             <p className="rounded-2xl border p-3"><strong>الوصف:</strong> {detailsExpense.description || '—'}</p>
             {detailsExpense.attachment_url ? <a className="inline-flex min-h-11 items-center rounded-xl border px-4 font-bold" href={detailsExpense.attachment_url}>فتح المرفق</a> : null}
           </div>

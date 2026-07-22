@@ -16,13 +16,14 @@ import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
 import { getTodayLocalDateString } from '../financials-date-utils';
-import { OPERATIONAL_EXPENSE_CATEGORIES, summarizeOperationalExpenses, type OperationalExpenseFilterValues } from './operational-expenses';
+import { EXPENSE_CHARGED_TO_VALUES, OPERATIONAL_EXPENSE_CATEGORIES, summarizeOperationalExpenses, type OperationalExpenseFilterValues } from './operational-expenses';
 import { useCreateExpenseAtomic, useExpenses, useUpdateExpense } from './useExpenses';
 
 const expenseSchema = z.object({
   property_id: z.string().trim().min(1, 'اختر العقار'),
   category: z.enum(OPERATIONAL_EXPENSE_CATEGORIES, { message: 'اختر التصنيف' }),
   cost_center_id: z.string().optional(),
+  charged_to: z.enum(EXPENSE_CHARGED_TO_VALUES, { message: 'اختر من يتحمل المصروف' }),
   amount: z.coerce.number().positive('المبلغ يجب أن يكون أكبر من صفر'),
   expense_date: z.string().min(1, 'اختر التاريخ'),
   description: z.string().optional(),
@@ -51,6 +52,7 @@ export function ExpensesPage() {
       property_id: '',
       category: 'صيانة',
       cost_center_id: '',
+      charged_to: 'COMPANY',
       amount: 0,
       expense_date: toLocalDateInputValue(),
       description: '',
@@ -67,6 +69,7 @@ export function ExpensesPage() {
         amount: values.amount,
         expenseDate: values.expense_date,
         costCenterId: values.cost_center_id?.trim() || null,
+        chargedTo: values.charged_to,
         description: values.description?.trim() ? values.description.trim() : null,
         attachmentUrl: values.attachment_url ?? null,
       },
@@ -75,6 +78,7 @@ export function ExpensesPage() {
           property_id: '',
           category: 'صيانة',
           cost_center_id: '',
+          charged_to: 'COMPANY',
           amount: 0,
           expense_date: toLocalDateInputValue(),
           description: '',
@@ -94,6 +98,7 @@ export function ExpensesPage() {
         amount: values.amount,
         expense_date: values.expense_date,
         cost_center_id: values.cost_center_id?.trim() || null,
+        charged_to: values.charged_to,
         description: values.description?.trim() ? values.description.trim() : null,
         attachment_url: values.attachment_url ?? null,
       },
