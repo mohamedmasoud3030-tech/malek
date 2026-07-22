@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Expense, Property } from '@/types/domain';
-import { buildExpensePropertyLabel, summarizeOperationalExpenses } from './operational-expenses';
+import { buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses } from './operational-expenses';
 
 function makeExpense(overrides: Partial<Expense> = {}): Expense {
   return {
@@ -65,5 +65,30 @@ describe('operational expenses helpers', () => {
       byPropertyCount: 2,
       byCategoryCount: 2,
     });
+  });
+});
+
+describe('expense charged_to helpers', () => {
+  it('reads charged_to defensively from the operational write fields', () => {
+    expect(getExpenseChargedTo(makeExpense())).toBeNull();
+    expect(getExpenseChargedTo(makeExpense() as never)).toBeNull();
+    const charged = { ...makeExpense(), charged_to: 'OWNER' } as never;
+    expect(getExpenseChargedTo(charged)).toBe('OWNER');
+  });
+
+  it('normalizes stored casings onto the canonical enum values', () => {
+    expect(normalizeExpenseChargedTo('OWNER')).toBe('OWNER');
+    expect(normalizeExpenseChargedTo('owner')).toBe('OWNER');
+    expect(normalizeExpenseChargedTo(' tenant ')).toBe('TENANT');
+    expect(normalizeExpenseChargedTo(null)).toBe('COMPANY');
+    expect(normalizeExpenseChargedTo('')).toBe('COMPANY');
+    expect(normalizeExpenseChargedTo('CARRIER')).toBe('COMPANY');
+  });
+
+  it('labels every canonical value in Arabic', () => {
+    expect(getExpenseChargedToLabel('OWNER')).toBe('المالك');
+    expect(getExpenseChargedToLabel('TENANT')).toBe('المستأجر');
+    expect(getExpenseChargedToLabel('COMPANY')).toBe('الشركة');
+    expect(getExpenseChargedToLabel(undefined)).toBe('الشركة');
   });
 });
