@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Payment } from '@/types/domain';
+import { getInvoiceStatusVariants, normalizeInvoiceStatus } from '../components/invoice-status-labels';
 import { sumFinancialValues, toFinancialNumber } from '../financialMath';
 import {
   type ExpenseReportRow,
@@ -140,7 +141,8 @@ export function filterInvoicesForReport(invoices: InvoiceReportRow[], filters: F
     // callers/tests and as a defensive boundary around manually hydrated rows.
     if (invoice.deleted_at) return false;
     if (!isWithinDateRange(invoice.issue_date, filters)) return false;
-    if (hasStatusFilter(filters.status) && invoice.status !== filters.status) return false;
+    // Live statuses mix legacy lowercase with modern UPPERCASE — compare canonically.
+    if (hasStatusFilter(filters.status) && normalizeInvoiceStatus(invoice.status) !== normalizeInvoiceStatus(filters.status)) return false;
     return matchesInvoiceContext(invoice, filters);
   });
 }
@@ -352,7 +354,8 @@ async function loadInvoices(filters: FinancialReportFilters): Promise<InvoiceRep
     .gte('issue_date', filters.dateFrom)
     .lte('issue_date', filters.dateTo);
 
-  if (hasStatusFilter(filters.status)) query = query.eq('status', filters.status);
+  // Supabase filters are exact — cover every live casing of the requested status.
+  if (hasStatusFilter(filters.status)) query = query.in('status', getInvoiceStatusVariants(filters.status));
   if (filters.contractId) query = query.eq('contract_id', filters.contractId);
 
   const { data, error } = await query.returns<InvoiceReportRow[]>();

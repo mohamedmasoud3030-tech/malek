@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Invoice, Payment } from '@/types/domain';
+import { getInvoiceStatusVariants } from '../components/invoice-status-labels';
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
 
 export type InvoiceStatusFilter = 'unpaid' | 'partial' | 'paid' | 'overdue' | 'all';
@@ -11,11 +12,9 @@ export type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid:
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
 
 function applyStatusFilter(query: ReturnType<typeof supabase.from>, status: InvoiceStatusFilter) {
-  if (status === 'unpaid') return query.eq('status', 'UNPAID');
-  if (status === 'partial') return query.eq('status', 'PARTIALLY_PAID');
-  if (status === 'paid') return query.eq('status', 'PAID');
-  if (status === 'overdue') return query.eq('status', 'OVERDUE');
-  return query;
+  // Cover every casing present in live rows (legacy lowercase + modern UPPERCASE).
+  if (status === 'all') return query;
+  return query.in('status', getInvoiceStatusVariants(status));
 }
 
 export function getInvoiceGrossAmount(invoice: Pick<Invoice, 'amount'> & Partial<Pick<Invoice, 'tax_amount'>>): number {

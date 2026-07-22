@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Invoice } from '@/types/domain';
+import { getInvoiceStatusVariants, normalizeInvoiceStatus } from '../components/invoice-status-labels';
 import { sumFinancialValues, toFinancialNumber } from '../financialMath';
 import {
   type ContractContext,
@@ -104,7 +105,16 @@ const agingBucketLabels: Record<AgingBucketKey, string> = {
 };
 
 const agingBucketOrder: AgingBucketKey[] = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
-const receivableInvoiceStatuses: Invoice['status'][] = ['issued', 'partial', 'overdue'];
+/**
+ * Receivable statuses in EVERY casing found in live data. The previous
+ * lowercase-only list silently hid every modern UPPERCASE-status invoice
+ * (schema default 'UNPAID', RPC writers) from the whole arrears workspace.
+ */
+const receivableInvoiceStatuses: Invoice['status'][] = [
+  ...getInvoiceStatusVariants('unpaid'),
+  ...getInvoiceStatusVariants('partial'),
+  ...getInvoiceStatusVariants('overdue'),
+];
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
 const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id, unit_id)';
@@ -139,7 +149,8 @@ export function getAgingBucketKey(dueDate: string | null | undefined, asOf: stri
 }
 
 function isReceivableInvoiceStatus(status: Invoice['status']) {
-  return receivableInvoiceStatuses.includes(status);
+  const canonical = normalizeInvoiceStatus(status);
+  return canonical === 'unpaid' || canonical === 'partial' || canonical === 'overdue';
 }
 
 export function filterInvoicesForArrearsReport(invoices: InvoiceReportRow[], filters: ArrearsReportFilters) {
