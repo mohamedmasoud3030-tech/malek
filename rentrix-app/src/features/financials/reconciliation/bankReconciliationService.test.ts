@@ -70,4 +70,19 @@ describe('bank reconciliation helpers', () => {
     expect(() => toBankReconciliationMatchPayload({ statement_line_id: 'line-1', matched_entity_type: 'payment', matched_entity_id: ' ', matched_amount: '250', notes: '' })).toThrow('معرف الحركة');
   });
 
+
+  it('normalizes legacy upper-case statement statuses before calculating totals', () => {
+    expect(summarizeReconciliation([
+      { amount: 100, status: 'UNMATCHED' as any },
+      { amount: 50, status: 'MATCHED' as any },
+      { amount: -10, status: 'IGNORED' as any },
+    ])).toEqual({
+      totalLines: 3,
+      unmatchedCount: 1,
+      matchedCount: 1,
+      ignoredCount: 1,
+      unmatchedAmount: 100,
+    });
+  });
+
 });

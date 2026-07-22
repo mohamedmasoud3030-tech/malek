@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { fetchAllRows } from '@/lib/paginatedRead';
 
 export type SettlementStatus = 'pending' | 'approved' | 'paid' | 'cancelled';
 export type CommissionType = 'percentage' | 'fixed';
@@ -137,15 +138,19 @@ async function loadEntityLabels(
 }
 
 export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
-  const { data: settlements, error: settlementError } = await (supabase as any)
-    .from('owner_settlements')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (settlementError) {
+  let settlements: any[];
+  try {
+    // Settlements feed owner statements and payout KPIs: never accept PostgREST's
+    // silent 1,000-row cap as a complete financial history.
+    ({ rows: settlements } = await fetchAllRows<any>(() => (supabase as any)
+      .from('owner_settlements')
+      .select('*')
+      .order('created_at', { ascending: false })));
+  } catch (error) {
+    const settlementError = error;
     throw new Error(messageFromError(settlementError, 'تعذر تحميل تسويات الملاك.'));
   }
-  if (!settlements?.length) return [];
+  if (!settlements.length) return [];
 
   const { ownerMap, propertyMap } = await loadEntityLabels(
     uniqueIds(settlements, 'owner_id'),

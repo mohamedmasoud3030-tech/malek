@@ -149,15 +149,19 @@ export function OwnerSettlementWorkspace() {
   const selectedTarget = targets.find((target) => targetKey(target) === draftForm.targetKey) ?? null;
 
   const totals = useMemo(
-    () => settlements.reduce(
-      (summary, settlement) => ({
-        gross: summary.gross + settlement.gross_rent_collected,
-        fees: summary.fees + settlement.management_fee_amount,
-        deductions: summary.deductions + settlement.maintenance_deductions + settlement.utility_deductions,
-        net: summary.net + settlement.net_payable_amount,
-      }),
-      { gross: 0, fees: 0, deductions: 0, net: 0 },
-    ),
+    // Cancelled drafts never create a payable or collection. Including them made
+    // the control totals look larger than the ledger-backed live settlements.
+    () => settlements
+      .filter((settlement) => settlement.status !== 'cancelled')
+      .reduce(
+        (summary, settlement) => ({
+          gross: summary.gross + settlement.gross_rent_collected,
+          fees: summary.fees + settlement.management_fee_amount,
+          deductions: summary.deductions + settlement.maintenance_deductions + settlement.utility_deductions,
+          net: summary.net + settlement.net_payable_amount,
+        }),
+        { gross: 0, fees: 0, deductions: 0, net: 0 },
+      ),
     [settlements],
   );
 
