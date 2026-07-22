@@ -107,6 +107,31 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(userContext, 'financial.bank_reconciliation.view')).toBe(false);
   });
 
+  it('grants dedicated view permissions for guarded workspaces', () => {
+    const adminContext = getAuthorizationContextFromUser(userWithRole('ADMIN'));
+    const managerContext = getAuthorizationContextFromUser(userWithRole('MANAGER'));
+    const userContext = getAuthorizationContextFromUser(userWithRole('USER'));
+    const workspaceViewPermissions = [
+      'automation.view',
+      'expenses.view',
+      'financial.deposits.view',
+      'financial.owner_settlements.view',
+    ] as const;
+
+    for (const permission of workspaceViewPermissions) {
+      expect(appPermissions.includes(permission)).toBe(true);
+      expect(canAccess(adminContext, permission)).toBe(true);
+      expect(canAccess(managerContext, permission)).toBe(true);
+      expect(canAccess(userContext, permission)).toBe(false);
+    }
+
+    // Settlement approval/payout remain a restricted financial control.
+    expect(canAccess(managerContext, 'financial.owner_settlements.approve')).toBe(false);
+    expect(canAccess(managerContext, 'financial.owner_settlements.pay')).toBe(false);
+    expect(canAccess(adminContext, 'financial.owner_settlements.approve')).toBe(true);
+    expect(canAccess(adminContext, 'financial.owner_settlements.pay')).toBe(true);
+  });
+
 
   it('enforces explicit financial operation permissions by role', () => {
     const adminContext = getAuthorizationContextFromUser(userWithRole('ADMIN'));

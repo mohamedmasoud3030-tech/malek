@@ -18,6 +18,8 @@ import {
   Wallet,
 } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { useAuth } from '@/hooks/use-auth';
+import { canAccess } from '@/features/auth/permissions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -93,6 +95,12 @@ function settlementTone(status: OwnerSettlementRecord['status']) {
 
 export function OwnerSettlementWorkspace() {
   const queryClient = useQueryClient();
+  // Financial-control gate: opening this page only requires
+  // financial.owner_settlements.view, but approval and payout execution stay
+  // behind their dedicated permissions (ADMIN by default).
+  const { authorization } = useAuth();
+  const canApproveSettlement = canAccess(authorization, 'financial.owner_settlements.approve');
+  const canPaySettlement = canAccess(authorization, 'financial.owner_settlements.pay');
   const documentSettings = useDocumentSettings();
   const [draftOpen, setDraftOpen] = useState(false);
   const [draftForm, setDraftForm] = useState<DraftFormState>(initialDraftForm);
@@ -392,7 +400,7 @@ export function OwnerSettlementWorkspace() {
                       {settlement.payout_reference ? ` · مرجع الصرف: ${settlement.payout_reference}` : ''}
                     </span>
                     <div className="flex flex-wrap gap-2">
-                      {settlement.status === 'pending' ? (
+                      {settlement.status === 'pending' && canApproveSettlement ? (
                         <Button
                           size="sm"
                           variant="secondary"
@@ -403,7 +411,7 @@ export function OwnerSettlementWorkspace() {
                           {isApproving ? 'جارٍ الاعتماد…' : 'اعتماد التسوية'}
                         </Button>
                       ) : null}
-                      {settlement.status === 'approved' ? (
+                      {settlement.status === 'approved' && canPaySettlement ? (
                         <Button size="sm" onClick={() => setSelectedSettlement(settlement)} disabled={payoutMutation.isPending}>
                           <Send className="size-3.5" />
                           تسجيل صرف المستحق

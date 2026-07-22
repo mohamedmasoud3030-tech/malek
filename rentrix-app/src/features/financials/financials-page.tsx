@@ -26,10 +26,10 @@ function getCurrentMonthReportRange() {
 const financialWorkspaces = [
   ['/invoices', 'الفواتير والتحصيل', 'مراجعة وتسجيل دفعات الفواتير', FileText, undefined],
   ['/receipts', 'السدادات والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText, undefined],
-  ['/expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards, 'expenses.write'],
+  ['/expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards, 'expenses.view'],
   ['/arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList, 'arrears.view'],
-  ['/deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck, undefined],
-  ['/owner-settlements', 'تسويات الملاك', 'إعداد واعتماد وصرف تسويات أصحاب العقارات', HandCoins, 'financial.owner_settlements.approve'],
+  ['/deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck, 'financial.deposits.view'],
+  ['/owner-settlements', 'تسويات الملاك', 'إعداد واعتماد وصرف تسويات أصحاب العقارات', HandCoins, 'financial.owner_settlements.view'],
   ['/bank-reconciliation', 'مطابقة كشف البنك', 'مطابقة السجلات مع الحسابات البنكية', Landmark, 'financial.bank_reconciliation.view'],
 ] as const satisfies readonly (readonly [string, string, string, typeof FileText, AppPermission | undefined])[];
 
