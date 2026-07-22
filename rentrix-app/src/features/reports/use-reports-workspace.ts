@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useContracts } from '@/features/contracts/useContracts';
+import { useAllContracts } from '@/features/contracts/useContracts';
 import { useOwners } from '@/features/owners/useOwners';
 import { useReceipts } from '@/features/financials/receipts/useReceipts';
 import {
@@ -68,7 +68,9 @@ export function useReportsWorkspace(filters: FilterState) {
   const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
   const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
   const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters);
-  const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
+  // Full paged read — the 1000-row single-shot cap used to truncate the rent roll,
+  // renewals forecast, deferred-revenue audit, and the contract filter dropdown.
+  const contractsQuery = useAllContracts('all');
   const ownersQuery = useOwners();
   const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined);
   const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters);
