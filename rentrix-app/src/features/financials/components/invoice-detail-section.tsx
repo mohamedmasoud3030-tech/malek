@@ -3,9 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Payment } from '@/types/domain';
 import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceService';
+import { openReceiptPrintTab } from '../receipts/receipt-print';
 import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
 import { QuickPaymentForm } from './quick-payment-form';
-import { paymentMethodLabels } from './receipt-formatters';
+import { formatReceiptNumber, getPaymentReceiptBinding, paymentMethodLabels } from './receipt-formatters';
 
 export type CollectionSuccess = {
   receiptId: string;
@@ -126,13 +127,25 @@ export function InvoiceDetailSection({
             <h4 className="font-black">سجل المدفوعات</h4>
             <div className="mt-3 space-y-2">
               {invoiceDetail.payments.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد مدفوعات مسجلة لهذه الفاتورة</p> : null}
-              {invoiceDetail.payments.map((payment) => (
-                <div key={payment.id} className="flex flex-col gap-1 rounded-xl bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span>{formatDate(payment.payment_date)}</span>
-                  <span className="font-bold">{formatMoney(payment.amount)}</span>
-                  <span className="text-sm text-muted-foreground">{paymentMethodLabels[payment.payment_method] ?? payment.payment_method}</span>
-                </div>
-              ))}
+              {invoiceDetail.payments.map((payment) => {
+                const binding = getPaymentReceiptBinding(payment);
+                return (
+                  <div key={payment.id} className={`flex flex-col gap-2 rounded-xl p-3 sm:flex-row sm:items-center sm:justify-between ${binding.isVoid ? 'border border-dashed border-danger/40 bg-muted/10' : 'bg-muted/30'}`}>
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                      <span>{formatDate(payment.payment_date)}</span>
+                      <span className="text-sm text-muted-foreground">{paymentMethodLabels[payment.payment_method] ?? payment.payment_method}</span>
+                      <span className={binding.isVoid ? 'font-bold text-danger' : 'font-bold'}>{formatMoney(payment.amount)}</span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="rounded-lg bg-background px-2 py-1 text-xs font-bold tabular-nums text-muted-foreground" dir="ltr">{binding.receiptNumber}</span>
+                      {binding.isVoid ? <span className="text-xs font-bold text-danger">{binding.statusLabel}</span> : null}
+                      <Button type="button" variant="outline" className="h-8 px-2.5 text-xs" onClick={() => openReceiptPrintTab(payment.id)} title={`طباعة إيصال ${binding.receiptNumber}`}>
+                        <Printer className="me-1 size-4" />إيصال
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -146,7 +159,7 @@ export function InvoiceDetailSection({
                   <div className="min-w-0">
                     <p className="font-black text-success">تم تسجيل الدفعة بنجاح</p>
                     <p className="mt-1 text-sm font-bold text-muted-foreground">
-                      تم تحصيل {formatMoney(collectionSuccess.amount)} ({paymentMethodLabels[collectionSuccess.method] ?? collectionSuccess.method}) — يمكنك طباعة إيصال القبض أو متابعة التحصيل مباشرة.
+                      تم تحصيل {formatMoney(collectionSuccess.amount)} ({paymentMethodLabels[collectionSuccess.method] ?? collectionSuccess.method}) — إيصال القبض <span className="tabular-nums" dir="ltr">{formatReceiptNumber(collectionSuccess.receiptId)}</span> جاهز للطباعة أو يمكنك متابعة التحصيل مباشرة.
                     </p>
                   </div>
                 </div>
