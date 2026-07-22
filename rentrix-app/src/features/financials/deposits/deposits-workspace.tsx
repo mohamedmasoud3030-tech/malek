@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { getContractStatusVariants } from '@/lib/contractStatus';
 import { CheckCircle2, DollarSign, FileCheck, MinusCircle, Printer, ShieldAlert, Wallet, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,7 +48,7 @@ function useContracts() {
         .from('contracts')
         .select('id, tenant_id, property_id, unit_id')
         .is('deleted_at', null)
-        .eq('status', 'active')
+        .in('status', getContractStatusVariants('active') as Contract['status'][]) // legacy rows may be stored as 'ACTIVE'
         .limit(100)
         .returns<Contract[]>();
       if (error) handleSupabaseError(error, 'تعذر تحميل العقود');

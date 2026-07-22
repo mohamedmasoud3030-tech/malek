@@ -1,4 +1,5 @@
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+import { isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
 import type {
   AgedReceivablesBucket,
   DailyCollectionReportRow,
@@ -149,7 +150,7 @@ export function buildExpiringContractsRows(contracts: ContractListItem[], fromDa
   const cutoffValue = toDateInputValue(addDays(fromDate, expiringContractWindowDays));
 
   return contracts
-    .filter((contract) => contract.status === 'active' && contract.end_date >= todayValue && contract.end_date <= cutoffValue)
+    .filter((contract) => isContractStatus(contract.status, 'active') && contract.end_date >= todayValue && contract.end_date <= cutoffValue)
     .sort((a, b) => a.end_date.localeCompare(b.end_date))
     .slice(0, 12)
     .map((contract) => ({
@@ -263,7 +264,8 @@ export function buildRentRollRows(
       unitNumber: valueOrDash(contract.units?.unit_number),
       rentAmount: contract.rent_amount,
       paymentCycle: paymentCycleLabels[contract.payment_cycle],
-      statusLabel: statusLabels[contract.status],
+      // Index by the canonical status so legacy 'ACTIVE'/'ENDED' rows still render labels
+      statusLabel: statusLabels[normalizeContractStatus(contract.status)],
       startDate: contract.start_date,
       endDate: contract.end_date,
     }))
