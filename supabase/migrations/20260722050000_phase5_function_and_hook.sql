@@ -79,10 +79,31 @@ begin
 end;
 $function$;
 
--- Auth invokes this hook through its dedicated database role. Do not leave a
--- SECURITY DEFINER function executable by browser roles or PUBLIC.
+-- SECURITY DEFINER functions must never inherit PostgreSQL's default PUBLIC
+-- execute grant. Explicit grants created by earlier migrations (for example to
+-- authenticated) are preserved; browser-anonymous execution is removed.
+do $revoke$
+declare
+  target_function regprocedure;
+begin
+  for target_function in
+    select p.oid::regprocedure
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.prosecdef
+  loop
+    execute format(
+      'revoke execute on function %s from public, anon',
+      target_function
+    );
+  end loop;
+end;
+$revoke$;
+
+-- Auth invokes this hook only through its dedicated database role.
 revoke all on function public.custom_access_token_hook(jsonb)
-  from public, anon, authenticated;
+  from authenticated;
 grant execute on function public.custom_access_token_hook(jsonb)
   to supabase_auth_admin;
 
