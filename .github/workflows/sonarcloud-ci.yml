@@ -30,7 +30,7 @@ jobs:
       - name: Rebuild approved native toolchain
         run: pnpm rebuild esbuild
       - name: Generate LCOV coverage
-        run: pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts --coverage
+        run: pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts --coverage --coverage.reporter=lcov
       - name: Run SonarCloud analysis with repository scope
         uses: SonarSource/sonarqube-scan-action@v5.3.1
         env:
