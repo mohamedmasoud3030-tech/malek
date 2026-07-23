@@ -20,16 +20,11 @@ for the authoritative current status.
 
 ## Required before release sign-off
 
-1. Inspect the one production payment row rejected by the payment/receipt
-   identity preflight.
-2. Produce an approved, transactionally guarded repair plan that preserves
-   allocations, invoices, journals, and audit history.
-3. Verify a restorable database and Storage backup before any production write.
-4. Apply the minimal approved repair, then rerun Supabase Preview and the
-   release-blocker database gate.
-5. Resolve SonarCloud’s Automatic Analysis scope or switch to CI-based analysis,
-   then rerun the quality gate.
-6. Rerun all required GitHub checks and record the final commit and check URLs.
+1. The single known QA VOID payment mismatch was repaired to the existing receipt UUID; verify the read-only invariant before release.
+2. Verify a restorable database and Storage backup before any further production write.
+3. Rerun Supabase Preview and the release-blocker database gate.
+4. Resolve SonarCloud’s Automatic Analysis scope or switch to CI-based analysis, then rerun the quality gate.
+5. Rerun all required GitHub checks and record the final commit and check URLs.
 
 ## Safety rules
 

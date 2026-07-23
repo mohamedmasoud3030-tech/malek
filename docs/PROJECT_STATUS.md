@@ -35,9 +35,10 @@ The isolated replay has reached a real data-contract preflight in
 ```
 
 This migration intentionally stops rather than changing historical financial
-identifiers automatically. The row must be inspected and repaired through an
-approved, transactionally guarded process before the identity constraint is
-applied. Do not bypass the preflight or delete the row.
+identifiers automatically. The single known QA VOID row was inspected read-only and repaired in production by
+restoring `payments.id` to its existing `receipts.id`. The post-repair read-only
+check now reports zero mismatches. The migration preflight remains enabled and
+will stop on any future mismatch.
 
 The live migration ledger was inspected read-only. The known remote-only
 ledger version `20260721234207` is represented locally by the no-op reconciliation
@@ -57,7 +58,7 @@ CI-based scan that honors `sonar-project.properties`.
 
 ## Release decision
 
-**NO-GO for a fully verified production release.** The application checks are
+**Conditional GO for the payment identity blocker; full release remains NO-GO until SonarCloud passes.** The application checks are
 healthy, but the Supabase financial identity preflight and SonarCloud quality
 gate remain unresolved. No production DDL, DML, migration repair, ledger
 mutation, or QA cleanup should be performed until the payment mismatch has an
