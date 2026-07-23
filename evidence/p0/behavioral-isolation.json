@@ -1,0 +1,323 @@
+{
+  "generatedAt": "2026-07-23T10:45:17.617Z",
+  "fixFile": null,
+  "replayErrors": [],
+  "fixture": {
+    "A_PAY": 1000,
+    "B_PAY": 6000,
+    "A_EXP": 200,
+    "B_EXP": 900,
+    "B_JE": 8000
+  },
+  "probes": [
+    {
+      "fn": "rpt_cash_flow",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "financing": {
+              "note": "not_applicable_single_office",
+              "amount": 0
+            },
+            "investing": {
+              "note": "not_applicable_single_office",
+              "amount": 0
+            },
+            "operating": {
+              "expenses": 1100,
+              "receipts": 7000,
+              "net_operating": 5900
+            },
+            "net_change": 5900
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_dashboard_overview",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "financial": {
+              "net_revenue": 5900,
+              "total_expenses": 1100,
+              "total_collected": 7000,
+              "total_overdue_invoices": 0
+            },
+            "operational": {
+              "units": 2,
+              "properties": 2,
+              "vacantUnits": 0,
+              "activeContracts": 2,
+              "overdueInvoices": 0,
+              "expiringContracts30Days": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_trial_balance",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: could not determine data type of parameter $1"
+      }
+    },
+    {
+      "fn": "rpt_income_statement",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "revenue": [
+              {
+                "label": "الإيرادات التشغيلية",
+                "amount": 7000
+              }
+            ],
+            "expenses": [
+              {
+                "label": "maintenance",
+                "amount": 1100
+              }
+            ],
+            "net_income": 5900,
+            "total_revenue": 7000,
+            "total_expenses": 1100
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_balance_sheet",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: could not determine data type of parameter $1"
+      }
+    },
+    {
+      "fn": "rpt_vat_return",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "invoice_count": 2,
+            "total_tax_amount": 0,
+            "total_sales_amount": 7000
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_financial_summary",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": "(7000.00,1100.00,5900.00,7000.00,5900.00,0,0,2,2,2,100.00,2,2026-07-01,2026-07-31)"
+        }
+      ]
+    },
+    {
+      "fn": "rpt_daily_collection",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "to": "2026-07-31",
+            "from": "2026-07-01",
+            "rows": [
+              {
+                "pos": 0,
+                "bank": 0,
+                "cash": 7000,
+                "date": "2026-07-15",
+                "count": 2,
+                "other": 0,
+                "total": 7000
+              }
+            ],
+            "total": 7000,
+            "source": "payments"
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_owner_statement",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period_to": "2026-07-31",
+            "total_net": 900,
+            "owner_name": "مالك ألف",
+            "period_from": "2026-07-01",
+            "total_gross": 1000,
+            "transactions": [
+              {
+                "net": 900,
+                "date": "2026-07-15",
+                "type": "payment",
+                "gross": 1000,
+                "details": "تحصيل — عقار ألف / A-1 (6a000000-0000-4000-8000-00000000000a)",
+                "deduction": 100,
+                "property_name": "عقار ألف"
+              }
+            ],
+            "commission_type": "RATE",
+            "commission_value": 10,
+            "total_deductions": 100
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_tenant_statement",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: function public.rpt_tenant_statement(uuid, date, date) does not exist"
+      }
+    },
+    {
+      "fn": "rpt_aged_receivables",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: could not determine data type of parameter $1"
+      }
+    },
+    {
+      "fn": "rpt_overdue_invoices",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: could not determine data type of parameter $1"
+      }
+    },
+    {
+      "fn": "rpt_rent_roll",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: could not determine data type of parameter $1"
+      }
+    },
+    {
+      "fn": "create_owner_settlement_draft_atomic[fabricated-amounts]",
+      "kind": "exploit",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "status": "DRAFT",
+            "success": true,
+            "idempotent": false,
+            "request_id": "9a000000-0000-4000-8000-0000000000e1",
+            "net_payable": 999999,
+            "settlement_id": "5225d3a0-e90a-4760-9579-a958b1d889c9",
+            "settlement_no": "OST-202607-5225D3A0"
+          }
+        }
+      ]
+    },
+    {
+      "fn": "create_owner_settlement_draft_atomic[cross-company-owner]",
+      "kind": "guard",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "status": "DRAFT",
+            "success": true,
+            "idempotent": false,
+            "request_id": "9a000000-0000-4000-8000-0000000000e2",
+            "net_payable": 999999,
+            "settlement_id": "2108c7e8-f8d3-4d89-b501-818481218c6c",
+            "settlement_no": "OST-202607-2108C7E8"
+          }
+        }
+      ]
+    },
+    {
+      "fn": "create_owner_settlement_draft_atomic[low-role-user]",
+      "kind": "guard",
+      "actor": "userB@B",
+      "asCompany": "B",
+      "before": {
+        "error": "error: ADMIN or MANAGER role is required to create owner settlements."
+      }
+    },
+    {
+      "fn": "record_invoice_payment_atomic[cross-company-invoice]",
+      "kind": "guard",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: null value in column \"company_id\" of relation \"contract_balances\" violates not-null constraint"
+      }
+    },
+    {
+      "fn": "rpt_cash_flow[anon-execute]",
+      "kind": "guard",
+      "actor": "anon",
+      "asCompany": null,
+      "before": {
+        "error": "error: permission denied for function rpt_cash_flow"
+      }
+    },
+    {
+      "fn": "RLS[table-read-isolation]",
+      "kind": "guard",
+      "actor": "authenticated@A",
+      "asCompany": "A",
+      "before": {
+        "payments": 2,
+        "expenses": 2,
+        "owner_settlements": {
+          "error": "error: permission denied for table owner_settlements"
+        },
+        "invoices": 2,
+        "contracts": 2
+      }
+    }
+  ]
+}

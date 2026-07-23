@@ -1,0 +1,1710 @@
+{
+  "summary": {
+    "generatedAt": "2026-07-23T10:30:15.005Z",
+    "totalFunctions": 91,
+    "exposureFunctions": 33,
+    "staticFailed": [
+      "create_deposit_atomic",
+      "create_expense_with_journal_atomic",
+      "create_owner_settlement_draft_atomic",
+      "deduct_deposit_atomic",
+      "record_invoice_payment_atomic",
+      "refund_deposit_atomic",
+      "rpt_aged_receivables",
+      "rpt_balance_sheet",
+      "rpt_cash_flow",
+      "rpt_daily_collection",
+      "rpt_dashboard_overview",
+      "rpt_financial_summary",
+      "rpt_income_statement",
+      "rpt_overdue_invoices",
+      "rpt_owner_statement",
+      "rpt_rent_roll",
+      "rpt_trial_balance",
+      "rpt_vat_return",
+      "update_expense_with_journal_atomic",
+      "void_receipt_atomic"
+    ],
+    "financialIntegrityRisks": [
+      "create_deposit_atomic",
+      "create_expense_with_journal_atomic",
+      "create_owner_settlement_draft_atomic",
+      "deduct_deposit_atomic",
+      "record_invoice_payment_atomic",
+      "refund_deposit_atomic",
+      "update_expense_with_journal_atomic"
+    ],
+    "spoofSurfaces": []
+  },
+  "rows": [
+    {
+      "name": "_owner_statement_expenses",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "_r3",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "_safe_date",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "approve_owner_settlement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "assert_owner_agreement_covers_linked_contracts",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260713000100_owner_agreement_temporal_controls.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "assert_owner_agreement_has_ownership",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718113322_repair_core_entity_contract_links.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "assert_property_owner_temporal_integrity",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260713000100_owner_agreement_temporal_controls.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "audit_journal_entry_insert",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260711123000_bank_reconciliation_atomic_and_journal_status_hardening.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "cancel_owner_settlement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "check_unit_maintenance_block",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718215711_reconcile_ui_database_value_contracts.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "close_journal_batch",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260713000008_add_journal_batch_balance_check.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "create_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "create_deposit_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [
+        "amount"
+      ],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "مبالغ موثوقة من العميل: amount"
+      ]
+    },
+    {
+      "name": "create_expense_with_journal_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [
+        "amount"
+      ],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "مبالغ موثوقة من العميل: amount"
+      ]
+    },
+    {
+      "name": "create_owner_agreement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "create_owner_settlement_draft_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [
+        "gross_collected",
+        "office_fee",
+        "owner_expenses",
+        "tax_amount"
+      ],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "مبالغ موثوقة من العميل: gross_collected, office_fee, owner_expenses, tax_amount"
+      ]
+    },
+    {
+      "name": "create_property_with_agreement",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "current_app_role",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260715000006_fix_current_app_role_enum_compatibility.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "current_company_id",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722050000_phase5_function_and_hook.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated"
+      ],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "custom_access_token_hook",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722050000_phase5_function_and_hook.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "supabase_auth_admin"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "deduct_deposit_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [
+        "amount"
+      ],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "مبالغ موثوقة من العميل: amount"
+      ]
+    },
+    {
+      "name": "enforce_payment_receipt_shared_identity",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "enforce_unit_operational_status",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718231106_unit_operational_status_sync.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "execute_automation_rule",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "execute_automation_rule_internal",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "find_payment_account_id",
+      "kind": "helper-or-other",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "generate_invoices_from_active_contracts",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "is_admin",
+      "kind": "helper-or-other",
+      "latestDefinition": "20250101000002_rls_policies_and_grants.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "is_admin_or_manager",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718075311_fix_authorization_helper_grants_and_recursion.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "is_app_user",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718075311_fix_authorization_helper_grants_and_recursion.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "normalize_invoice_due_date_text",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720180500_reconcile_core_field_contracts.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "normalize_unit_status_contract",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718163626_pin_normalize_unit_status_contract_search_path.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "pay_owner_settlement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "payment_receipt_identity_preflight",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "post_receipt_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "prevent_owner_delete_with_balances",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260713000002_fix_owner_balances_cascade.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "prevent_payment_receipt_identity_mutation",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "prevent_posted_journal_entry_mutation",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260711123000_bank_reconciliation_atomic_and_journal_status_hardening.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "process_bank_reconciliation_match_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "recalculate_all_balances",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "recalculate_invoice_status",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "recalculate_owner_balance",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718113414_align_owner_balance_source.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "recalculate_unit_statuses",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718231106_unit_operational_status_sync.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "record_invoice_payment_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [
+        "amount"
+      ],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id",
+        "مبالغ موثوقة من العميل: amount"
+      ]
+    },
+    {
+      "name": "refresh_property_owner_projection",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718113322_repair_core_entity_contract_links.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "refund_deposit_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [
+        "amount"
+      ],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "مبالغ موثوقة من العميل: amount"
+      ]
+    },
+    {
+      "name": "renew_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "resolve_maintenance_with_expense",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "resolve_unit_operational_status",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718232912_replay_compatible_unit_status_date_casts.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "retry_automation_run",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260719123000_fix_automation_retry_self_duplicate.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "rpt_aged_receivables",
+      "kind": "report-read",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "REVOKE public/anon غير مؤكد",
+        "GRANT authenticated غير مؤكد"
+      ]
+    },
+    {
+      "name": "rpt_balance_sheet",
+      "kind": "report-read",
+      "latestDefinition": "20260711000003_add_rpt_balance_sheet.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "rpt_cash_flow",
+      "kind": "report-read",
+      "latestDefinition": "20260714000004_fix_rpt_cash_flow_void_filter.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "rpt_daily_collection",
+      "kind": "report-read",
+      "latestDefinition": "20260721161500_reconcile_release_runtime_shapes.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "rpt_dashboard_overview",
+      "kind": "report-read",
+      "latestDefinition": "20260718075504_fix_dashboard_overview_live_type_compatibility.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "rpt_financial_summary",
+      "kind": "report-read",
+      "latestDefinition": "20260714000006_fix_rpt_financial_summary_status.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "rpt_income_statement",
+      "kind": "report-read",
+      "latestDefinition": "20260711000002_add_rpt_income_statement.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "rpt_overdue_invoices",
+      "kind": "report-read",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "REVOKE public/anon غير مؤكد",
+        "GRANT authenticated غير مؤكد"
+      ]
+    },
+    {
+      "name": "rpt_owner_statement",
+      "kind": "report-read",
+      "latestDefinition": "20260718161218_fix_owner_statement_owner_schema_compatibility.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "rpt_rent_roll",
+      "kind": "report-read",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "REVOKE public/anon غير مؤكد",
+        "GRANT authenticated غير مؤكد"
+      ]
+    },
+    {
+      "name": "rpt_tenant_statement",
+      "kind": "report-read",
+      "latestDefinition": "20260706025554_fix_rpt_tenant_statement_contract_id_and_tenants_table.sql",
+      "calledByFrontend": true,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "rpt_trial_balance",
+      "kind": "report-read",
+      "latestDefinition": "20260711000001_add_rpt_trial_balance.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "rpt_vat_return",
+      "kind": "report-read",
+      "latestDefinition": "20260714000005_fix_rpt_vat_return_void_filter.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    },
+    {
+      "name": "run_scheduled_automation_rules",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718101201_automation_scheduling_and_fixed_exception.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "set_owner_agreements_updated_at",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260628100000_owner_agreements_core.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "set_updated_at",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718163419_pin_set_updated_at_search_path.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "soft_delete_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "sync_contract_rent_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720180500_reconcile_core_field_contracts.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "sync_owner_compatibility_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720180500_reconcile_core_field_contracts.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "sync_payment_reference_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723110100_reconcile_payment_reference_fields.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "sync_property_compatibility_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720180500_reconcile_core_field_contracts.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "sync_property_owner_projection",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718113322_repair_core_entity_contract_links.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "sync_unit_rent_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720162500_reconcile_unit_legacy_rent.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "terminate_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "touch_updated_at",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "update_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_contract_balance_from_allocation",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_contract_balance_from_invoice",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_contract_balance_on_receipt_allocation",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_expense_with_journal_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [
+        "amount"
+      ],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "مبالغ موثوقة من العميل: amount"
+      ]
+    },
+    {
+      "name": "update_invoice_status",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_owner_agreement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_owner_balance_from_operation",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_owner_balance_on_expense",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_tenant_balance",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "update_unit_status",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "update_unit_status_from_activity",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "update_updated_at",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260627000000_restore_update_updated_at_alias.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "validate_journal_batch_balance",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260713000008_add_journal_batch_balance_check.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "validate_property_owner_active_totals",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "calledByFrontend": false,
+      "securityDefiner": false,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
+      "revokedFromPublicAnon": false,
+      "grantedTo": [],
+      "status": "ℹ️ داخلي/مساعد",
+      "gaps": []
+    },
+    {
+      "name": "void_receipt_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "calledByFrontend": true,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": false,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
+      "gaps": [
+        "لا يشتق company_id"
+      ]
+    }
+  ]
+}

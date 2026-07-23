@@ -1,0 +1,2038 @@
+{
+  "summary": {
+    "generatedAt": "2026-07-23T10:28:12.415Z",
+    "migrationsScanned": 152,
+    "tables": {
+      "total": 68,
+      "referencedByFrontend": 34,
+      "serverOwned": [
+        "account_balances",
+        "accounts",
+        "bank_reconciliation_matches",
+        "companies",
+        "contract_balances",
+        "financial_operation_idempotency",
+        "journal_entries",
+        "owner_balances",
+        "receipt_allocations",
+        "receipts",
+        "tenant_balances",
+        "users"
+      ],
+      "atticCandidates": [
+        "app_notifications",
+        "auto_backups",
+        "automation_jobs",
+        "automation_run_logs",
+        "budgets",
+        "company-assets",
+        "deposit_txs",
+        "governance",
+        "kpi_snapshots",
+        "missions",
+        "notification_templates",
+        "notifications",
+        "outgoing_notifications",
+        "profiles",
+        "schema_refactor_notes",
+        "serials",
+        "sessions",
+        "settings",
+        "snapshots",
+        "status_history",
+        "status_transition_rules",
+        "tenants"
+      ]
+    },
+    "functions": {
+      "total": 91,
+      "calledByFrontend": 32,
+      "byKind": {
+        "helper-or-other": 25,
+        "financial-write": 20,
+        "trigger-or-internal": 33,
+        "report-read": 13
+      },
+      "deadReportRpcs": [
+        "rpt_aged_receivables",
+        "rpt_daily_collection",
+        "rpt_financial_summary",
+        "rpt_overdue_invoices",
+        "rpt_rent_roll"
+      ]
+    },
+    "views": [
+      "v_balance_reconciliation",
+      "v_balance_reconciliation_drift",
+      "vw_active_owner_agreements"
+    ]
+  },
+  "tables": [
+    {
+      "name": "account_balances",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "accounts",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "app_notifications",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "attachments",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "audit_log",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "auto_backups",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "automation_jobs",
+      "createdIn": "20260705000001_baseline_capture_untracked_tables_batch_b.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "automation_notifications",
+      "createdIn": "20260718101006_real_automation_execution.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "automation_rules",
+      "createdIn": "20260718101006_real_automation_execution.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "automation_run_logs",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "automation_runs",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "bank_accounts",
+      "createdIn": "20260705000005_bank_reconciliation_foundation.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "bank_reconciliation_matches",
+      "createdIn": "20260705000005_bank_reconciliation_foundation.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "bank_statement_imports",
+      "createdIn": "20260705000005_bank_reconciliation_foundation.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "bank_statement_lines",
+      "createdIn": "20260705000005_bank_reconciliation_foundation.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "budgets",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "commissions",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "communication_records",
+      "createdIn": "20260616090000_complete_planned_product_modules.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "companies",
+      "createdIn": "20260722010000_phase1_create_companies_and_seed.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "company_members",
+      "createdIn": "20260722010000_phase1_create_companies_and_seed.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "company_settings",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "company-assets",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "contract_balances",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "contract_documents",
+      "createdIn": "20260703010000_contract_documents.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 3,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "contracts",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "cost_centers",
+      "createdIn": "20260628000100_add_cost_centers.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "deposit_transactions",
+      "createdIn": "20260718100928_real_deposits_ledger.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "deposit_txs",
+      "createdIn": "20260704000000_prepare_baseline_capture_key_compatibility.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "expenses",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "financial_operation_idempotency",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "governance",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "invoices",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "journal_entries",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "kpi_snapshots",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "lands",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "leads",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "maintenance_records",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "missions",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "notification_templates",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "notifications",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "outgoing_notifications",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "owner_agreements",
+      "createdIn": "20260628100000_owner_agreements_core.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 4,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "owner_balances",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "owner_settlements",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "owners",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "payment_terms_templates",
+      "createdIn": "20260628000300_add_payment_terms.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "payments",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "people",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "profiles",
+      "createdIn": "20260705000001_baseline_capture_untracked_tables_batch_b.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 3,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "properties",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "property_owners",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "receipt_allocations",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "receipts",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "schema_refactor_notes",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "serials",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "sessions",
+      "createdIn": "20260705000001_baseline_capture_untracked_tables_batch_b.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 3,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "settings",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "snapshots",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "status_history",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "status_transition_rules",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "tenant_balances",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "tenant_deposits",
+      "createdIn": "20260718100928_real_deposits_ledger.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "tenants",
+      "createdIn": "20260705000001_baseline_capture_untracked_tables_batch_b.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 1,
+      "referencedByFrontend": false,
+      "classification": "attic-candidate"
+    },
+    {
+      "name": "units",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "users",
+      "createdIn": "20250101000001_core_schema.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": false,
+      "classification": "server-owned"
+    },
+    {
+      "name": "utility_bills",
+      "createdIn": "20260705000002_baseline_capture_untracked_tables_batch_a.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 3,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "utility_meters",
+      "createdIn": "20260717000001_real_utility_meters_and_enhance_bills.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    },
+    {
+      "name": "vault_documents",
+      "createdIn": "20260717000002_real_documents_vault.sql",
+      "dropped": null,
+      "rlsEnabled": true,
+      "policies": 2,
+      "referencedByFrontend": true,
+      "classification": "live"
+    }
+  ],
+  "functions": [
+    {
+      "name": "_owner_statement_expenses",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "signature": "p_owner_id uuid, p_from date, p_to date",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "_r3",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "signature": "v numeric",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "_safe_date",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "signature": "v text",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "approve_owner_settlement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "assert_owner_agreement_covers_linked_contracts",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260713000100_owner_agreement_temporal_controls.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "assert_owner_agreement_has_ownership",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718113322_repair_core_entity_contract_links.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "assert_property_owner_temporal_integrity",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260713000100_owner_agreement_temporal_controls.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "audit_journal_entry_insert",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260711123000_bank_reconciliation_atomic_and_journal_status_hardening.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "cancel_owner_settlement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "check_unit_maintenance_block",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718215711_reconcile_ui_database_value_contracts.sql",
+      "signature": "p_unit_id uuid",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "close_journal_batch",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260713000008_add_journal_batch_balance_check.sql",
+      "signature": "p_batch_id uuid",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": [
+        "20260713000008_add_journal_batch_balance_check.sql:(uuid)"
+      ]
+    },
+    {
+      "name": "create_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_property_id text, p_unit_id uuid, p_tenant_id uuid, p_agreement_id uuid, p_start_date date, p_end_date date, p_rent_amount numeric, p_payment_cycle text, p_payment_terms_id uuid, p_status text, p_cancellation_reason text, p_notes text, p_attachment_url text",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "create_deposit_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "create_expense_with_journal_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "create_owner_agreement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "create_owner_settlement_draft_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "create_property_with_agreement",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_title text, p_type text, p_address text, p_owner_id uuid, p_agreement_type text, p_commission_type text, p_commission_value numeric, p_agreement_starts_on date, p_agreement_ends_on date DEFAULT NULL::date, p_owner_name text DEFAULT NULL::text, p_purchase_value numeric DEFAULT NULL::numeric, p_current_value numeric DEFAULT NULL::numeric, p_status text DEFAULT 'active'::text, p_notes text DEFAULT NULL::text",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "current_app_role",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260715000006_fix_current_app_role_enum_compatibility.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "current_company_id",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722050000_phase5_function_and_hook.sql",
+      "signature": "",
+      "grants": [
+        "authenticated"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "custom_access_token_hook",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722050000_phase5_function_and_hook.sql",
+      "signature": "event jsonb",
+      "grants": [
+        "supabase_auth_admin"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "deduct_deposit_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "enforce_payment_receipt_shared_identity",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "enforce_unit_operational_status",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718231106_unit_operational_status_sync.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "execute_automation_rule",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_rule_id text",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "execute_automation_rule_internal",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "signature": "p_rule_id text",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "find_payment_account_id",
+      "kind": "helper-or-other",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "signature": "account_role text",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "generate_invoices_from_active_contracts",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "is_admin",
+      "kind": "helper-or-other",
+      "latestDefinition": "20250101000002_rls_policies_and_grants.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "is_admin_or_manager",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718075311_fix_authorization_helper_grants_and_recursion.sql",
+      "signature": "",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "is_app_user",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718075311_fix_authorization_helper_grants_and_recursion.sql",
+      "signature": "",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "normalize_invoice_due_date_text",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720180500_reconcile_core_field_contracts.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "normalize_unit_status_contract",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718163626_pin_normalize_unit_status_contract_search_path.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "pay_owner_settlement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "payment_receipt_identity_preflight",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "post_receipt_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "signature": "payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "prevent_owner_delete_with_balances",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260713000002_fix_owner_balances_cascade.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "prevent_payment_receipt_identity_mutation",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "prevent_posted_journal_entry_mutation",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260711123000_bank_reconciliation_atomic_and_journal_status_hardening.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": [
+        "20260711120000_production_hardening_security_rls_performance.sql:()"
+      ]
+    },
+    {
+      "name": "process_bank_reconciliation_match_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "recalculate_all_balances",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "signature": "",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "recalculate_invoice_status",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "signature": "p_invoice_id uuid",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "recalculate_owner_balance",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718113414_align_owner_balance_source.sql",
+      "signature": "p_owner_id uuid",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "recalculate_unit_statuses",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718231106_unit_operational_status_sync.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "record_invoice_payment_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "refresh_property_owner_projection",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718113322_repair_core_entity_contract_links.sql",
+      "signature": "p_property_id text",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "refund_deposit_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "renew_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "old_contract_id text, new_contract_data jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": [
+        "20260706022859_drop_stale_renew_contract_atomic_uuid_overload.sql:(uuid, jsonb)"
+      ]
+    },
+    {
+      "name": "resolve_maintenance_with_expense",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "signature": "p_request_id text, p_cost numeric, p_notes text DEFAULT NULL",
+      "grants": [
+        "authenticated"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "resolve_unit_operational_status",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718232912_replay_compatible_unit_status_date_casts.sql",
+      "signature": "p_unit_id uuid, p_fallback_status text default 'available'",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "retry_automation_run",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260719123000_fix_automation_retry_self_duplicate.sql",
+      "signature": "p_run_id uuid",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_aged_receivables",
+      "kind": "report-read",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "signature": "p_as_of date",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_balance_sheet",
+      "kind": "report-read",
+      "latestDefinition": "20260711000003_add_rpt_balance_sheet.sql",
+      "signature": "p_as_of date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_cash_flow",
+      "kind": "report-read",
+      "latestDefinition": "20260714000004_fix_rpt_cash_flow_void_filter.sql",
+      "signature": "p_from_date date, p_to_date date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_daily_collection",
+      "kind": "report-read",
+      "latestDefinition": "20260721161500_reconcile_release_runtime_shapes.sql",
+      "signature": "p_from date, p_to date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": [
+        "20260716000003_restore_payment_void_report_parity.sql:(date, date)"
+      ]
+    },
+    {
+      "name": "rpt_dashboard_overview",
+      "kind": "report-read",
+      "latestDefinition": "20260718075504_fix_dashboard_overview_live_type_compatibility.sql",
+      "signature": "p_from date, p_to date, p_as_of date default current_date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_financial_summary",
+      "kind": "report-read",
+      "latestDefinition": "20260714000006_fix_rpt_financial_summary_status.sql",
+      "signature": "p_from date, p_to date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": [
+        "20260714000006_fix_rpt_financial_summary_status.sql:(date, date)"
+      ]
+    },
+    {
+      "name": "rpt_income_statement",
+      "kind": "report-read",
+      "latestDefinition": "20260711000002_add_rpt_income_statement.sql",
+      "signature": "p_from date, p_to date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_overdue_invoices",
+      "kind": "report-read",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "signature": "p_as_of date DEFAULT current_date",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_owner_statement",
+      "kind": "report-read",
+      "latestDefinition": "20260718161218_fix_owner_statement_owner_schema_compatibility.sql",
+      "signature": "p_owner_id uuid, p_from date, p_to date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_rent_roll",
+      "kind": "report-read",
+      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "signature": "p_as_of date DEFAULT current_date",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_tenant_statement",
+      "kind": "report-read",
+      "latestDefinition": "20260706025554_fix_rpt_tenant_statement_contract_id_and_tenants_table.sql",
+      "signature": "p_contract_id uuid",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_trial_balance",
+      "kind": "report-read",
+      "latestDefinition": "20260711000001_add_rpt_trial_balance.sql",
+      "signature": "p_as_of date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "rpt_vat_return",
+      "kind": "report-read",
+      "latestDefinition": "20260714000005_fix_rpt_vat_return_void_filter.sql",
+      "signature": "p_from_date date, p_to_date date",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "run_scheduled_automation_rules",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260718101201_automation_scheduling_and_fixed_exception.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "set_owner_agreements_updated_at",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260628100000_owner_agreements_core.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "set_updated_at",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718163419_pin_set_updated_at_search_path.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "soft_delete_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_contract_id text",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": [
+        "20260715000001_drop_stale_soft_delete_contract_uuid_overload.sql:(uuid)"
+      ]
+    },
+    {
+      "name": "sync_contract_rent_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720180500_reconcile_core_field_contracts.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "sync_owner_compatibility_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720180500_reconcile_core_field_contracts.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "sync_payment_reference_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723110100_reconcile_payment_reference_fields.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "sync_property_compatibility_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720180500_reconcile_core_field_contracts.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "sync_property_owner_projection",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260718113322_repair_core_entity_contract_links.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "sync_unit_rent_fields",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260720162500_reconcile_unit_legacy_rent.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "terminate_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_contract_id text, p_reason text",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "touch_updated_at",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_contract_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_contract_id text, p_property_id text, p_unit_id uuid, p_tenant_id uuid, p_agreement_id uuid, p_start_date date, p_end_date date, p_rent_amount numeric, p_payment_cycle text, p_payment_terms_id uuid, p_status text, p_cancellation_reason text, p_notes text, p_attachment_url text",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_contract_balance_from_allocation",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_contract_balance_from_invoice",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_contract_balance_on_receipt_allocation",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_expense_with_journal_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": [
+        "20260713000007_add_update_expense_with_journal_atomic.sql:(jsonb)"
+      ]
+    },
+    {
+      "name": "update_invoice_status",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_owner_agreement_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "p_agreement_id uuid, payload jsonb",
+      "grants": [
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_owner_balance_from_operation",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_owner_balance_on_expense",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_tenant_balance",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_unit_status",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_unit_status_from_activity",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "update_updated_at",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260627000000_restore_update_updated_at_alias.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "validate_journal_batch_balance",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20260713000008_add_journal_batch_balance_check.sql",
+      "signature": "",
+      "grants": [
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public"
+      ],
+      "calledByFrontend": false,
+      "droppedSignatures": [
+        "20260713000008_add_journal_batch_balance_check.sql:()"
+      ]
+    },
+    {
+      "name": "validate_property_owner_active_totals",
+      "kind": "trigger-or-internal",
+      "latestDefinition": "20250101000003_functions_triggers_and_rpcs.sql",
+      "signature": "",
+      "grants": [],
+      "revokes": [],
+      "calledByFrontend": false,
+      "droppedSignatures": []
+    },
+    {
+      "name": "void_receipt_atomic",
+      "kind": "financial-write",
+      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "signature": "payload jsonb",
+      "grants": [
+        "anon",
+        "authenticated",
+        "service_role"
+      ],
+      "revokes": [
+        "anon",
+        "authenticated",
+        "public",
+        "service_role"
+      ],
+      "calledByFrontend": true,
+      "droppedSignatures": [
+        "20260706023153_fix_void_receipt_atomic_receipt_id_type_mismatch.sql:(uuid, bigint, jsonb, jsonb)",
+        "20260718170255_drop_legacy_void_receipt_overload.sql:(text, bigint, jsonb, jsonb)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,182 @@
+[
+  {
+    "name": "approve_owner_settlement_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "cancel_owner_settlement_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "create_contract_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "create_deposit_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "create_expense_with_journal_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "create_owner_agreement_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "create_owner_settlement_draft_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "deduct_deposit_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "pay_owner_settlement_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "post_receipt_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "process_bank_reconciliation_match_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "record_invoice_payment_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "refund_deposit_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "renew_contract_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "rpt_aged_receivables",
+    "security": "INVOKER",
+    "acl": ""
+  },
+  {
+    "name": "rpt_balance_sheet",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_cash_flow",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_daily_collection",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_dashboard_overview",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_financial_summary",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_income_statement",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_overdue_invoices",
+    "security": "INVOKER",
+    "acl": ""
+  },
+  {
+    "name": "rpt_owner_statement",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_rent_roll",
+    "security": "INVOKER",
+    "acl": ""
+  },
+  {
+    "name": "rpt_tenant_statement",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_trial_balance",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "rpt_vat_return",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "soft_delete_contract_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "terminate_contract_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "update_contract_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "update_expense_with_journal_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "update_owner_agreement_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "void_receipt_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres}"
+  },
+  {
+    "name": "void_receipt_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "void_receipt_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "void_receipt_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres}"
+  }
+]
