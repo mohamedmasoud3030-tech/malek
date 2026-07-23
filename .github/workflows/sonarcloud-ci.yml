@@ -1,6 +1,7 @@
 name: SonarCloud CI Analysis
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, fix/sonar-quality-gate]
   pull_request:
