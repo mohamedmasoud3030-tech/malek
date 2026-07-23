@@ -30,7 +30,8 @@
   },
   "pnpm": {
     "overrides": {
-      "dompurify": "^3.4.11"
+      "dompurify": ">=3.4.12",
+      "ws": ">=8.21.0"
     }
   }
 }
