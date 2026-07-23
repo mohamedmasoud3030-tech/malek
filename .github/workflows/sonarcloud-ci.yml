@@ -1,0 +1,26 @@
+name: SonarCloud CI Analysis
+
+on:
+  push:
+    branches: [main, fix/sonar-quality-gate]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sonar:
+    name: SonarCloud CI Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - name: Run SonarCloud analysis with repository scope
+        uses: SonarSource/sonarqube-scan-action@v5.3.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
