@@ -2437,6 +2437,7 @@ CREATE OR REPLACE FUNCTION public.void_receipt_atomic(payload jsonb)
 AS $function$
 DECLARE
   v_actor_id uuid := auth.uid();
+  v_company_id uuid := (auth.jwt() -> 'app_metadata' ->> 'company_id')::uuid;
   v_requested_id text := nullif(btrim(payload->>'receipt_id'), '');
   v_reason text := nullif(btrim(payload->>'reason'), '');
   v_request_id text := nullif(btrim(payload->>'request_id'), '');
@@ -2488,6 +2489,7 @@ BEGIN
   INTO v_payment
   FROM public.payments p
   WHERE p.id::text = v_requested_id
+    AND p.company_id = v_company_id
     AND p.deleted_at IS NULL
   FOR UPDATE;
 
@@ -2496,6 +2498,7 @@ BEGIN
     INTO v_receipt
     FROM public.receipts r
     WHERE r.id::text = coalesce(nullif(v_payment.receipt_id::text, ''), v_payment.id::text)
+      AND r.company_id = v_company_id
       AND r.deleted_at IS NULL
     FOR UPDATE;
   ELSE
@@ -2503,6 +2506,7 @@ BEGIN
     INTO v_receipt
     FROM public.receipts r
     WHERE r.id::text = v_requested_id
+      AND r.company_id = v_company_id
       AND r.deleted_at IS NULL
     FOR UPDATE;
 
@@ -2511,11 +2515,17 @@ BEGIN
       INTO v_payment
       FROM public.payments p
       WHERE p.receipt_id::text = v_receipt.id::text
+        AND p.company_id = v_company_id
         AND p.deleted_at IS NULL
       ORDER BY p.created_at DESC NULLS LAST, p.id
       LIMIT 1
       FOR UPDATE;
     END IF;
+  END IF;
+
+  IF v_company_id IS NULL THEN
+    RAISE EXCEPTION 'تعذر تحديد الشركة النشطة'
+      USING ERRCODE = '42501';
   END IF;
 
   IF v_payment.id IS NULL OR v_receipt.id IS NULL THEN
@@ -2533,6 +2543,7 @@ BEGIN
   INTO v_original_count, v_original_debits, v_original_credits
   FROM public.journal_entries je
   WHERE je.source_id::text = v_receipt.id::text
+    AND je.company_id = v_company_id
     AND je.deleted_at IS NULL
     AND coalesce(je.request_id, '') <> v_reversal_request_id
     AND coalesce(je.entity_type, '') <> 'receipt_void';
@@ -2546,6 +2557,7 @@ BEGIN
   INTO v_existing_reversal_count
   FROM public.journal_entries je
   WHERE je.request_id = v_reversal_request_id
+    AND je.company_id = v_company_id
     AND je.deleted_at IS NULL;
 
   IF NOT v_receipt_was_void THEN
@@ -2553,6 +2565,7 @@ BEGIN
       SELECT ra.invoice_id, sum(ra.amount)::numeric AS amount
       FROM public.receipt_allocations ra
       WHERE ra.receipt_id::text = v_receipt.id::text
+        AND ra.company_id = v_company_id
       GROUP BY ra.invoice_id
     )
     UPDATE public.invoices i
@@ -2566,23 +2579,26 @@ BEGIN
       END,
       updated_at = now()
     FROM allocated
-    WHERE i.id = allocated.invoice_id;
+    WHERE i.id = allocated.invoice_id
+      AND i.company_id = v_company_id;
   END IF;
 
   UPDATE public.receipts
   SET status = 'VOID', voided_at = floor(extract(epoch from clock_timestamp()) * 1000)::bigint, updated_at = now()
-  WHERE id::text = v_receipt.id::text;
+  WHERE id::text = v_receipt.id::text
+    AND company_id = v_company_id;
 
   UPDATE public.payments
   SET status = 'VOID', updated_at = now()
-  WHERE id = v_payment.id;
+  WHERE id = v_payment.id
+    AND company_id = v_company_id;
 
   IF v_original_count > 0 AND v_existing_reversal_count = 0 THEN
     v_reversal_batch_id := gen_random_uuid();
 
     INSERT INTO public.journal_entries (
       id, no, date, account_id, amount, type, source_id, entity_type,
-      entity_id, created_at, request_id, status, batch_id
+      entity_id, created_at, request_id, status, batch_id, company_id
     )
     SELECT
       gen_random_uuid()::text,
@@ -2597,9 +2613,11 @@ BEGIN
       now(),
       v_reversal_request_id,
       'posted',
-      v_reversal_batch_id
+      v_reversal_batch_id,
+      v_company_id
     FROM public.journal_entries je
     WHERE je.source_id::text = v_receipt.id::text
+      AND je.company_id = v_company_id
       AND je.deleted_at IS NULL
       AND coalesce(je.request_id, '') <> v_reversal_request_id
       AND coalesce(je.entity_type, '') <> 'receipt_void';
