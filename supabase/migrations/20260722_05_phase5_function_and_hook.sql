@@ -65,7 +65,7 @@ begin
     into user_company
     from public.company_members cm
    where cm.user_id = (event->>'user_id')::uuid
-     and cm.is_active
+   order by cm.created_at, cm.id
    limit 1;
 
   if user_company is not null then
