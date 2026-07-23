@@ -1153,6 +1153,7 @@ DECLARE
   v_allocations jsonb;
   v_journal_entries jsonb;
   v_request_id text;
+  v_company_id uuid;
   v_existing_id public.receipts.id%TYPE;
   v_invoice_id_text text;
   v_invoice record;
@@ -1191,6 +1192,17 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
+  v_company_id := (auth.jwt() -> 'app_metadata' ->> 'company_id')::uuid;
+  IF v_company_id IS NULL OR NOT EXISTS (
+    SELECT 1
+    FROM public.company_members AS membership
+    WHERE membership.user_id = auth.uid()
+      AND membership.company_id = v_company_id
+  ) THEN
+    RAISE EXCEPTION 'تعذر تحديد الشركة النشطة'
+      USING ERRCODE = '42501';
+  END IF;
+
   v_receipt := coalesce(payload->'receipt', '{}'::jsonb);
   v_allocations := coalesce(payload->'allocations', '[]'::jsonb);
   v_journal_entries := coalesce(payload->'journal_entries', '[]'::jsonb);
@@ -1204,6 +1216,7 @@ BEGIN
     INTO v_existing_id
   FROM public.receipts AS receipt_record
   WHERE receipt_record.request_id = v_request_id
+    AND receipt_record.company_id = v_company_id
   LIMIT 1;
 
   IF v_existing_id IS NOT NULL THEN
@@ -1230,6 +1243,7 @@ BEGIN
     INTO v_invoice
     FROM public.invoices AS invoice_record
     WHERE invoice_record.id::text = v_invoice_id_text
+      AND invoice_record.company_id = v_company_id
     FOR UPDATE;
 
     IF NOT FOUND THEN
@@ -1281,7 +1295,8 @@ BEGIN
     check_status,
     created_at,
     request_id,
-    tenant_id
+    tenant_id,
+    company_id
   ) VALUES (
     v_receipt_id,
     v_receipt->>'no',
@@ -1298,7 +1313,8 @@ BEGIN
     nullif(v_receipt->>'check_status', ''),
     now(),
     v_request_id,
-    v_receipt_tenant_id
+    v_receipt_tenant_id,
+    v_company_id
   );
 
   -- Insert corresponding payments row (shadow record)
@@ -1314,7 +1330,8 @@ BEGIN
     status,
     notes,
     created_by,
-    created_at
+    created_at,
+    company_id
   ) VALUES (
     v_receipt_id,
     v_receipt_contract_id,
@@ -1327,7 +1344,8 @@ BEGIN
     v_receipt_status,
     nullif(v_receipt_notes, ''),
     auth.uid(),
-    now()
+    now(),
+    v_company_id
   );
 
   -- Insert receipt allocations
@@ -1346,14 +1364,16 @@ BEGIN
       invoice_id,
       amount,
       created_at,
-      tenant_id
+      tenant_id,
+      company_id
     ) VALUES (
       v_allocation_id,
       v_allocation_receipt_id,
       v_allocation_invoice_id,
       (v_allocation->>'amount')::numeric,
       now(),
-      v_allocation_tenant_id
+      v_allocation_tenant_id,
+      v_company_id
     );
   END LOOP;
 
@@ -1377,7 +1397,8 @@ BEGIN
       ELSE invoice_record.status
     END
   FROM allocation_totals
-  WHERE invoice_record.id::text = allocation_totals.invoice_id;
+  WHERE invoice_record.id::text = allocation_totals.invoice_id
+    AND invoice_record.company_id = v_company_id;
 
   -- Insert journal entries
   FOR v_journal IN
@@ -1398,7 +1419,8 @@ BEGIN
       source_id,
       entity_type,
       entity_id,
-      created_at
+      created_at,
+      company_id
     ) VALUES (
       v_journal_id,
       v_journal->>'no',
@@ -1409,7 +1431,8 @@ BEGIN
       v_journal_source_id,
       nullif(v_journal->>'entity_type', ''),
       nullif(v_journal->>'entity_id', ''),
-      now()
+      now(),
+      v_company_id
     );
   END LOOP;
 
