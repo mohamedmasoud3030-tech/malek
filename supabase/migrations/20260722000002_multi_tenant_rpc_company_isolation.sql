@@ -2967,7 +2967,14 @@ CREATE OR REPLACE FUNCTION public.update_tenant_balance()
 AS $function$
 declare
   v_tenant_id text;
+  v_company_id uuid;
 begin
+  if tg_op = 'DELETE' then
+    v_company_id := old.company_id;
+  else
+    v_company_id := new.company_id;
+  end if;
+
   if tg_table_name = 'invoices' then
     if tg_op = 'DELETE' then
       select tenant_id
@@ -2996,20 +3003,25 @@ begin
   insert into public.tenant_balances (
     tenant_id,
     balance_due,
-    updated_at
+    updated_at,
+    company_id
   )
   select
     c.tenant_id,
     coalesce(sum(i.amount + coalesce(i.tax_amount, 0) - i.paid_amount), 0),
-    now()
+    now(),
+    v_company_id
   from public.contracts c
   left join public.invoices i
     on i.contract_id = c.id
    and i.deleted_at is null
   where c.tenant_id = v_tenant_id
+    and c.company_id = v_company_id
+    and (i.id is null or i.company_id = v_company_id)
   group by c.tenant_id
   on conflict (tenant_id) do update set
     balance_due = excluded.balance_due,
+    company_id = excluded.company_id,
     updated_at = now();
 
   return coalesce(new, old);
