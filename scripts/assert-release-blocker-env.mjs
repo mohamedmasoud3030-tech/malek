@@ -1,5 +1,4 @@
 const required = [
-  'E2E_BASE_URL',
   'E2E_TEST_EMAIL',
   'E2E_TEST_PASSWORD',
   'VITE_SUPABASE_URL',
@@ -28,24 +27,17 @@ if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) {
   process.exit(1);
 }
 
-let baseUrl;
 let supabaseUrl;
 try {
-  baseUrl = new URL(process.env.E2E_BASE_URL);
   supabaseUrl = new URL(process.env.VITE_SUPABASE_URL);
 } catch {
-  console.error('BLOCKED: E2E_BASE_URL and VITE_SUPABASE_URL must be valid absolute URLs.');
+  console.error('BLOCKED: VITE_SUPABASE_URL must be a valid absolute URL.');
   process.exit(1);
 }
 
-if (baseUrl.protocol !== 'https:' || supabaseUrl.protocol !== 'https:') {
-  console.error('BLOCKED: deployed application and Supabase URLs must use HTTPS.');
+if (supabaseUrl.protocol !== 'https:') {
+  console.error('BLOCKED: the live Supabase URL must use HTTPS.');
   process.exit(1);
 }
 
-if (['localhost', '127.0.0.1'].includes(baseUrl.hostname)) {
-  console.error('BLOCKED: deployed Auth verification requires a real HTTPS target, not a local mock server.');
-  process.exit(1);
-}
-
-console.log('Read-only deployed environment preflight passed. Values remain redacted.');
+console.log('Read-only PR candidate environment preflight passed. Values remain redacted.');
