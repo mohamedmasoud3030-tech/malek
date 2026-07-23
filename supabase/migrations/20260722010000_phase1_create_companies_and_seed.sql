@@ -80,13 +80,13 @@ create policy companies_member_read on public.companies
 -- عضو يشوف عضويته + الأدمن يشوفوا الكل
 create policy company_members_read_own on public.company_members
   for select to authenticated
-  using (user_id = auth.uid() or public.is_admin());
+  using (user_id = auth.uid() or (auth.jwt() -> 'app_metadata' ->> 'role') in ('ADMIN', 'OWNER'));
 
 -- الأدمن يديروا العضويات
 create policy company_members_admin_write on public.company_members
   for all to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
+  using ((auth.jwt() -> 'app_metadata' ->> 'role') in ('ADMIN', 'OWNER'))
+  with check ((auth.jwt() -> 'app_metadata' ->> 'role') in ('ADMIN', 'OWNER'));
 
 -- ── 1d. بذرة الشركة الافتراضية ───────────────────────────────────────────
 
