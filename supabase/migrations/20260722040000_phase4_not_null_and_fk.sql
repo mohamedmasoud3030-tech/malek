@@ -15,6 +15,7 @@ begin;
 do $$
 declare
   tbl text;
+  constraint_name text;
 begin
   -- Tier 1 + Tier 2
   foreach tbl in array array[
@@ -36,18 +37,35 @@ begin
     'communication_records', 'missions', 'attachments'
   ] loop
     execute format('alter table public.%I alter column company_id set not null', tbl);
-    execute format(
-      'alter table public.%I add constraint %I_company_id_fkey foreign key (company_id) references public.companies(id) on delete restrict',
-      tbl, tbl
-    );
+    constraint_name := tbl || '_company_id_fkey';
+    if not exists (
+      select 1 from pg_constraint c
+       where c.conrelid = format('public.%I', tbl)::regclass
+         and c.conname = constraint_name
+    ) then
+      execute format(
+        'alter table public.%I add constraint %I foreign key (company_id) references public.companies(id) on delete restrict',
+        tbl, constraint_name
+      );
+    end if;
   end loop;
 end;
 $$;
 
 -- company-assets (special name with hyphen)
 alter table public."company-assets" alter column company_id set not null;
-alter table public."company-assets"
-  add constraint "company-assets_company_id_fkey"
-  foreign key (company_id) references public.companies(id) on delete restrict;
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint c
+     where c.conrelid = 'public.company-assets'::regclass
+       and c.conname = 'company-assets_company_id_fkey'
+  ) then
+    alter table public."company-assets"
+      add constraint "company-assets_company_id_fkey"
+      foreign key (company_id) references public.companies(id) on delete restrict;
+  end if;
+end;
+$$;
 
 commit;
