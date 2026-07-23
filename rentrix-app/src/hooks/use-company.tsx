@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { supabase } from '@/lib/supabase';
 
+export const ACTIVE_COMPANY_ERROR = 'تعذر تحديد الشركة النشطة';
+
 /* ── Types ──────────────────────────────────────────── */
 
 export type Company = {
@@ -9,8 +11,6 @@ export type Company = {
   slug: string;
   currency: string;
   locale: string;
-  timezone: string;
-  is_active: boolean;
 };
 
 export type CompanyMemberRole = 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
@@ -31,17 +31,20 @@ const CompanyContext = createContext<CompanyContextValue | null>(null);
 type MembershipRow = {
   company_id: string;
   role: string;
-  is_active: boolean;
   companies: {
     id: string;
     name: string;
     slug: string;
     currency: string;
     locale: string;
-    timezone: string;
-    is_active: boolean;
   } | null;
 };
+
+function readCompanyIdFromAppMetadata(appMetadata: unknown): string | null {
+  if (!appMetadata || typeof appMetadata !== 'object') return null;
+  const companyId = (appMetadata as Record<string, unknown>).company_id;
+  return typeof companyId === 'string' && companyId.length > 0 ? companyId : null;
+}
 
 /* ── Provider ───────────────────────────────────────── */
 
@@ -49,96 +52,122 @@ export function CompanyProvider({ children }: PropsWithChildren) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasAuthenticatedSession, setHasAuthenticatedSession] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [currentRole, setCurrentRole] = useState<CompanyMemberRole | null>(null);
+  const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadCompanies() {
+      setIsLoading(true);
+      setLoadError(null);
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) {
-          if (mounted) setIsLoading(false);
+          if (mounted) {
+            setHasAuthenticatedSession(false);
+            setCompanies([]);
+            setActiveCompany(null);
+            setCurrentRole(null);
+          }
           return;
         }
 
-        // Fetch companies the user belongs to via join
+        if (mounted) setHasAuthenticatedSession(true);
+
+        // Production currently exposes only these stable columns. Do not request
+        // optional columns that are absent from the live schema.
         const { data, error } = await supabase
           .from('company_members')
-          .select('company_id, role, is_active, companies!inner(id, name, slug, currency, locale, timezone, is_active)')
-          .eq('user_id', session.user.id)
-          .eq('is_active', true);
+          .select('company_id, role, companies!inner(id, name, slug, currency, locale)')
+          .eq('user_id', session.user.id);
 
-        if (error) {
-          console.error('Failed to load companies:', error);
-          if (mounted) setIsLoading(false);
-          return;
-        }
-
+        if (error) throw error;
         if (!mounted) return;
 
         const memberships = (data ?? []) as unknown as MembershipRow[];
+        const companyList = memberships
+          .map((membership) => membership.companies)
+          .filter((company): company is NonNullable<MembershipRow['companies']> => company !== null);
 
-        const companyList: Company[] = memberships
-          .filter((m) => m.companies?.is_active)
-          .map((m) => ({
-            id: m.companies!.id,
-            name: m.companies!.name,
-            slug: m.companies!.slug,
-            currency: m.companies!.currency,
-            locale: m.companies!.locale,
-            timezone: m.companies!.timezone,
-            is_active: m.companies!.is_active,
-          }));
+        if (companyList.length === 0) {
+          throw new Error(ACTIVE_COMPANY_ERROR);
+        }
+
+        let jwtCompanyId = readCompanyIdFromAppMetadata(session.user.app_metadata);
+        let selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
+
+        // Financial RPCs and RLS read app_metadata.company_id. Refresh an older
+        // session once so the access-token hook can inject the current company.
+        if (!selectedCompany) {
+          const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError) throw refreshError;
+          jwtCompanyId = readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata);
+          selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
+        }
+
+        if (!selectedCompany) {
+          throw new Error(ACTIVE_COMPANY_ERROR);
+        }
 
         setCompanies(companyList);
-
-        // Determine active company from JWT or auto-select first
-        const appMeta = session.user.app_metadata as Record<string, unknown> | undefined;
-        const jwtCompanyId = appMeta?.company_id as string | undefined;
-        const jwtCompany = companyList.find(c => c.id === jwtCompanyId);
-        const autoSelected = jwtCompany || companyList[0] || null;
-        setActiveCompany(autoSelected);
+        setActiveCompany(selectedCompany);
 
         const activeMembership = memberships.find(
-          (m) => m.company_id === autoSelected?.id
+          (membership) => membership.company_id === selectedCompany.id,
         );
         setCurrentRole((activeMembership?.role as CompanyMemberRole) ?? null);
-      } catch (err) {
-        console.error('CompanyProvider error:', err);
+      } catch (error) {
+        console.error('CompanyProvider error:', error);
+        if (mounted) {
+          setCompanies([]);
+          setActiveCompany(null);
+          setCurrentRole(null);
+          setLoadError(ACTIVE_COMPANY_ERROR);
+        }
       } finally {
         if (mounted) setIsLoading(false);
       }
     }
 
-    loadCompanies();
+    void loadCompanies();
     return () => { mounted = false; };
-  }, []);
+  }, [reloadVersion]);
 
   const switchCompany = useCallback(async (companyId: string) => {
-    const company = companies.find(c => c.id === companyId);
-    if (!company) return;
+    const company = companies.find((candidate) => candidate.id === companyId);
+    if (!company) throw new Error(ACTIVE_COMPANY_ERROR);
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error(ACTIVE_COMPANY_ERROR);
 
-      // Update user metadata to set active company_id
-      await supabase.auth.updateUser({ data: { company_id: companyId } });
-      setActiveCompany(company);
+    if (readCompanyIdFromAppMetadata(session.user.app_metadata) !== companyId) {
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { company_id: companyId },
+      });
+      if (updateError) throw updateError;
 
-      // Fetch role in new company
-      const { data: membership } = await supabase
-        .from('company_members')
-        .select('role')
-        .eq('company_id', companyId)
-        .eq('user_id', session.user.id)
-        .single();
-
-      setCurrentRole((membership?.role as CompanyMemberRole) ?? null);
-    } catch (err) {
-      console.error('Failed to switch company:', err);
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) throw refreshError;
+      if (readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata) !== companyId) {
+        throw new Error(ACTIVE_COMPANY_ERROR);
+      }
     }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('company_members')
+      .select('role')
+      .eq('company_id', companyId)
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (membershipError) throw membershipError;
+
+    setActiveCompany(company);
+    setCurrentRole((membership?.role as CompanyMemberRole) ?? null);
   }, [companies]);
 
   const value = useMemo<CompanyContextValue>(() => ({
@@ -149,6 +178,34 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     hasMultipleCompanies: companies.length > 1,
     currentRole,
   }), [companies, activeCompany, isLoading, switchCompany, currentRole]);
+
+  if (isLoading) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl" aria-busy="true">
+        <p className="text-sm font-semibold text-muted-foreground">جاري تحديد الشركة النشطة…</p>
+      </main>
+    );
+  }
+
+  if (hasAuthenticatedSession && (loadError || !activeCompany)) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl">
+        <section className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-sm" role="alert">
+          <h1 className="text-lg font-bold text-foreground">{ACTIVE_COMPANY_ERROR}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            لم يتم فتح التطبيق لحماية البيانات ومنع إنشاء سجلات بدون شركة.
+          </p>
+          <button
+            type="button"
+            className="mt-5 min-h-11 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground"
+            onClick={() => setReloadVersion((version) => version + 1)}
+          >
+            إعادة المحاولة
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>;
 }
