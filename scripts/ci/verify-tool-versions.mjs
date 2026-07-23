@@ -26,11 +26,9 @@ if (!lockfile.includes(`'@playwright/test':\n        specifier: ${EXPECTED_PLAYW
   throw new Error('pnpm-lock.yaml does not pin the expected Playwright specifier.');
 }
 
-const pnpmBin = resolve('node_modules/.bin/pnpm');
-const playwrightBin = resolve('rentrix-app/node_modules/.bin/playwright');
-const supabaseVersion = execFileSync(pnpmBin, ['exec', 'supabase', '--version'], { encoding: 'utf8' }).trim();
+const supabaseVersion = execFileSync('pnpm', ['exec', 'supabase', '--version'], { encoding: 'utf8' }).trim();
 const playwrightVersion = execFileSync(
-  pnpmBin,
+  'pnpm',
   ['--filter', './rentrix-app', 'exec', 'playwright', '--version'],
   { encoding: 'utf8' },
 ).trim();
