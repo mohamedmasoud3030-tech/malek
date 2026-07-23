@@ -41,12 +41,12 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install Chromium system dependencies
-        run: node rentrix-app/node_modules/playwright/cli.js install-deps chromium
+        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: node rentrix-app/node_modules/playwright/cli.js install chromium
+        run: pnpm --filter ./rentrix-app exec playwright install chromium
       - name: Verify Chromium installation
-        run: node rentrix-app/node_modules/playwright/cli.js install --dry-run chromium
+        run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
       - name: Run complete browser readiness suite
         run: pnpm e2e
       - name: Upload Playwright report
@@ -101,12 +101,12 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install Chromium system dependencies
-        run: node rentrix-app/node_modules/playwright/cli.js install-deps chromium
+        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: node rentrix-app/node_modules/playwright/cli.js install chromium
+        run: pnpm --filter ./rentrix-app exec playwright install chromium
       - name: Verify Chromium installation
-        run: node rentrix-app/node_modules/playwright/cli.js install --dry-run chromium
+        run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
       - name: Run complete seeded staging suite
         run: pnpm e2e
       - name: Upload seeded staging Playwright report
