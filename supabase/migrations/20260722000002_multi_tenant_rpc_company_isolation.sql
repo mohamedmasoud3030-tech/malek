@@ -2611,14 +2611,13 @@ CREATE OR REPLACE FUNCTION public.update_contract_balance_from_allocation()
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  -- Production schema uses text for contracts.id, invoices.contract_id, and
-  -- contract_balances.contract_id. Keep all local ID variables text to avoid
-  -- invalid text = uuid comparisons inside invoice/allocation triggers.
-  v_contract_id text;
+  -- Bind identifiers to the destination schema so fresh replay and
+  -- production-compatible schemas cannot drift into text/uuid comparisons.
+  v_contract_id public.contract_balances.contract_id%TYPE;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id text;
-  v_unit_id text;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
 BEGIN
   -- Get contract_id from the invoice referenced by this allocation
   IF TG_OP = 'DELETE' THEN
@@ -2644,7 +2643,7 @@ BEGIN
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
-  WHERE c.id::text = v_contract_id
+  WHERE c.id = v_contract_id
   GROUP BY c.tenant_id, c.unit_id;
 
   -- If the referenced contract cannot be found, do not fail invoice/allocation
@@ -2687,11 +2686,11 @@ CREATE OR REPLACE FUNCTION public.update_contract_balance_from_invoice()
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_contract_id text;
+  v_contract_id public.contract_balances.contract_id%TYPE;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id text;
-  v_unit_id text;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
   v_company_id uuid;
 BEGIN
   IF TG_OP = 'DELETE' THEN
@@ -2713,7 +2712,7 @@ BEGIN
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id, v_company_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
-  WHERE c.id::text = v_contract_id
+  WHERE c.id = v_contract_id
   GROUP BY c.tenant_id, c.unit_id, c.company_id;
 
   IF NOT FOUND THEN
