@@ -11,7 +11,7 @@
 - ✅ أمسكت بوابة الإصدار على الـPR انحدارًا تشغيليًا حقيقيًا (42803 في `update_contract_balance_from_allocation()` — `company_id` دون GROUP BY)، أُعيد إنتاجه محليًا دون Docker عبر `src/p0/zz-release-gate-repro.test.ts` وأُصلح في الهجرة؛ **فرق الأعطال قبل/بعد = صفر** عبر حزم pgTAP. حارس انحداري دائم مضاف ضمن `src/p0/`.
 - 🔶 تصنيف التقارير الستة المكسورة على main (تعريف SQL فعلي، فشل مغلق بلا تسريب، مثبت superuser‑مطابق): مؤجلة كوظيفية غير أمنية — إصلاحها في مرحلة تصليح التقارير (P‑لاحقة): `rpt_trial_balance`, `rpt_balance_sheet` (operator text<=date)؛ `rpt_aged_receivables`, `rpt_overdue_invoices`, `rpt_rent_roll` (حمل `_safe_date(date)` مفقود)؛ `rpt_tenant_statement` (uuid=text).
 - 🔶 فروق بيئة PGlite↔Supabase موثقة (منحة USAGE على schema auth) في `evidence/p0/cause/env-parity.md`.
-- ⏳ المتبقي حوكمي فقط: خُضر CI على #1276 → دمج squash → فحص حي آمن (CI live أو BEGIN/ROLLBACK بدور واقعي). **P1 (أرقام التسوية الموثوقة من العميل — الإثبات مستقل وجاهز) يبدأ بعد الدمج من أحدث main في PR مستقل.**
+- ✅ **CI على #1276 كله أخضر على `02696f6`**: `isolated-replay` و`release-blocker-database` (إعادة تشغيل الهجرات كاملة + pgTAP على Supabase الحقيقي) ✅، `release-blocker-code`/`release-blocker-authenticated-staging`/`build`/`browser-smoke`/`codacy`/`aikido`/`vercel`/`**SonarCloud**` ✅. المتبقي حوكمي فقط: دمج squash → فحص حي آمن قراءة‑فقط بعد الدمج. **P1 (أرقام التسوية الموثوقة من العميل — الإثبات مستقل وجاهز) يبدأ بعد الدمج من أحدث main في PR مستقل.**
 
 ## الأولوية القادمة — تحديث
 
