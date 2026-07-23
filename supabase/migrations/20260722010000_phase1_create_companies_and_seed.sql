@@ -60,6 +60,11 @@ create index if not exists idx_company_members_company_active
 alter table public.companies enable row level security;
 alter table public.company_members enable row level security;
 
+-- Policies may exist in the live-compatible baseline; replace them idempotently.
+drop policy if exists companies_member_read on public.companies;
+drop policy if exists company_members_read_own on public.company_members;
+drop policy if exists company_members_admin_write on public.company_members;
+
 -- عضو الشركة يشوف بيانات شركته
 create policy companies_member_read on public.companies
   for select to authenticated
