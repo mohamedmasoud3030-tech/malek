@@ -102,7 +102,7 @@ jobs:
     needs: [release-blocker-code]
     env:
       E2E_ENVIRONMENT_KIND: production-readonly
-      E2E_BASE_URL: ${{ secrets.E2E_STAGING_BASE_URL }}
+      E2E_PORT: '5173'
       E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
@@ -122,9 +122,9 @@ jobs:
         run: pnpm rebuild esbuild
       - name: Verify pinned toolchain
         run: node scripts/ci/verify-tool-versions.mjs
-      - name: Fail closed when deployed read-only credentials are unavailable
+      - name: Fail closed when candidate read-only credentials are unavailable
         run: node scripts/assert-release-blocker-env.mjs
-      - name: Verify deployed application and Auth endpoints with GET-only preflight
+      - name: Verify the live Auth endpoint with GET-only preflight
         run: node scripts/ci/preflight-readonly.mjs
       - name: Restore Chromium binary cache
         id: playwright-cache
@@ -139,7 +139,7 @@ jobs:
         run: pnpm --filter ./rentrix-app exec playwright install chromium
       - name: Verify Chromium installation
         run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
-      - name: Run deployed read-only authentication lifecycle with zero skips
+      - name: Run PR candidate read-only authentication lifecycle with zero skips
         run: pnpm --filter ./rentrix-app exec playwright test e2e/release-blocker-auth.spec.ts --config playwright.config.ts --project=chromium-desktop
       - name: Upload failed read-only authentication traces
         if: failure()
