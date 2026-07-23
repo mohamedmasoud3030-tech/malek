@@ -375,7 +375,7 @@ BEGIN
     FOR UPDATE;
   ELSE
     SELECT r.*
-    INTO r_receipt
+    INTO v_receipt
     FROM public.receipts r
     WHERE r.id::text = v_requested_id
       AND r.deleted_at IS NULL
