@@ -330,6 +330,12 @@ def build_function_fixes() -> dict[str, str]:
     t = rep(t,
             "    v_total_invoiced - v_total_paid,\n    now()\n  )",
             "    v_total_invoiced - v_total_paid,\n    now(),\n    v_company_id\n  )", 'ucba.vals')
+    # c.company_id is selected above, so it must be grouped (fixes runtime
+    # 42803 caught by the release gate: the WHERE pins a single contract, so
+    # grouping by company_id is identity-preserving).
+    t = rep(t,
+            "  GROUP BY c.tenant_id, c.unit_id;",
+            "  GROUP BY c.tenant_id, c.unit_id, c.company_id;", 'ucba.groupby')
     bodies['update_contract_balance_from_allocation'] = t
 
     t = load('create_owner_agreement_atomic')

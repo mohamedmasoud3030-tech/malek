@@ -1899,7 +1899,7 @@ BEGIN
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id::text = c.id::text AND i.deleted_at IS NULL
   WHERE c.id::text = v_contract_id::text
-  GROUP BY c.tenant_id, c.unit_id;
+  GROUP BY c.tenant_id, c.unit_id, c.company_id;
 
   IF NOT FOUND THEN
     RETURN COALESCE(NEW, OLD);
