@@ -1,0 +1,1494 @@
+{
+  "people": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "full_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "email",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "national_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "type",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "address",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "journal_entries": [
+    {
+      "column_name": "id",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "no",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "date",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_DATE"
+    },
+    {
+      "column_name": "account_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "type",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "source_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "entity_type",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "entity_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "cost_center_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'posted'::text"
+    },
+    {
+      "column_name": "batch_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "request_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "payments": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "invoice_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_method",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_date",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_DATE"
+    },
+    {
+      "column_name": "reference_number",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "reference_no",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "contract_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "date_time",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "channel",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'POSTED'::text"
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "receipt_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "receipts": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "no",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "contract_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "date_time",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "channel",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "ref",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'POSTED'::text"
+    },
+    {
+      "column_name": "check_number",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "check_bank",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "check_date",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "check_status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "voided_at",
+      "data_type": "bigint",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "request_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "tenant_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "owner_settlements": [
+    {
+      "column_name": "id",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "no",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "owner_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "date",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "method",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "ref",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'DRAFT'::text"
+    },
+    {
+      "column_name": "property_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "period_start",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "period_end",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "gross_collected",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "column_name": "office_fee",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "column_name": "owner_expenses",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "column_name": "tax_amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "column_name": "net_payable",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "column_name": "request_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "approved_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "approved_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "paid_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "paid_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_reference",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "cancelled_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "cancelled_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "cancellation_reason",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "companies": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "slug",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "currency",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'OMR'::text"
+    },
+    {
+      "column_name": "locale",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'ar-OM'::text"
+    },
+    {
+      "column_name": "timezone",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'Asia/Muscat'::text"
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    }
+  ],
+  "users": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "email",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "role",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "column_default": "'USER'::user_role"
+    },
+    {
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "YES",
+      "column_default": "'ACTIVE'::entity_status"
+    },
+    {
+      "column_name": "full_name",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "column_name": "password_hash",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "last_login",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "now()"
+    }
+  ],
+  "accounts": [
+    {
+      "column_name": "id",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "no",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "contracts": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "property_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "unit_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "tenant_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "start_date",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "end_date",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "rent_amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_cycle",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'monthly'::text"
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'active'::text"
+    },
+    {
+      "column_name": "cancellation_reason",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "renewed_from_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "attachment_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_terms_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "agreement_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "units": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "property_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "unit_number",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "floor",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'available'::text"
+    },
+    {
+      "column_name": "rent_amount",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "invoices": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "contract_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "issue_date",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "due_date",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "paid_amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "column_name": "tax_amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'UNPAID'::text"
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "tax_rate",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "column_default": "0"
+    },
+    {
+      "column_name": "no",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "expenses": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "property_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "category",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "expense_date",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "attachment_url",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "cost_center_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "contract_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "charged_to",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": "'POSTED'::text"
+    },
+    {
+      "column_name": "date_time",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "no",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "owner_agreements": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "owner_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "property_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "agreement_type",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "commission_type",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "commission_value",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "starts_on",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "ends_on",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    }
+  ],
+  "property_owners": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "property_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "owner_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "ownership_percentage",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": "100"
+    },
+    {
+      "column_name": "is_primary",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "column_name": "starts_on",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "ends_on",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "company_members": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "role",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'MEMBER'::text"
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    }
+  ],
+  "properties": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "title",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "type",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "address",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "owner_name",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "purchase_value",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "current_value",
+      "data_type": "numeric",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "'active'::text"
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "owner_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "owners": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "full_name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "display_name",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "email",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "national_id",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "tax_number",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "address",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "column_default": "true"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": "''::text"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ]
+}

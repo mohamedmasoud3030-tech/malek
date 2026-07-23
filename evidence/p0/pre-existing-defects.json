@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-07-23T17:13:04.837Z",
+  "scope": "Six report RPCs functionally broken on origin/main. Classified per review protocol: all are DEFINITION-level defects (proven by superuser-identical errors), fail-closed (no data exposure), and therefore deferred as non-security work.",
+  "functions": {
+    "rpt_trial_balance": {
+      "classification": "defect: `payments/invoices date columns are text; operator text <= date does not resolve` (definition-level)",
+      "error_authenticated_before": "error: operator does not exist: text <= date",
+      "error_authenticated_after": "error: operator does not exist: text <= date",
+      "error_superuser": "error: operator does not exist: text <= date",
+      "rulesOutFixture": true,
+      "rulesOutRlsOrGrants": true,
+      "securityImpact": "none — call fails closed (error), no company data returned in any context",
+      "deferralJustification": "non-security functional defect; reproduced byte-identically on origin/main chain replay; repair queued for the reports-hardening phase (see docs/NEXT.md)"
+    },
+    "rpt_balance_sheet": {
+      "classification": "defect: same operator family (text <= date) (definition-level)",
+      "error_authenticated_before": "error: operator does not exist: text <= date",
+      "error_authenticated_after": "error: operator does not exist: text <= date",
+      "error_superuser": "error: operator does not exist: text <= date",
+      "rulesOutFixture": true,
+      "rulesOutRlsOrGrants": true,
+      "securityImpact": "none — call fails closed (error), no company data returned in any context",
+      "deferralJustification": "non-security functional defect; reproduced byte-identically on origin/main chain replay; repair queued for the reports-hardening phase (see docs/NEXT.md)"
+    },
+    "rpt_aged_receivables": {
+      "classification": "defect: calls public._safe_date(date) — only _safe_date(text) exists (missing overload; definition-level)",
+      "error_authenticated_before": "error: function public._safe_date(date) does not exist",
+      "error_authenticated_after": "error: function public._safe_date(date) does not exist",
+      "error_superuser": "error: function public._safe_date(date) does not exist",
+      "rulesOutFixture": true,
+      "rulesOutRlsOrGrants": true,
+      "securityImpact": "none — call fails closed (error), no company data returned in any context",
+      "deferralJustification": "non-security functional defect; reproduced byte-identically on origin/main chain replay; repair queued for the reports-hardening phase (see docs/NEXT.md)"
+    },
+    "rpt_overdue_invoices": {
+      "classification": "defect: same missing _safe_date(date) overload (definition-level)",
+      "error_authenticated_before": "error: function public._safe_date(date) does not exist",
+      "error_authenticated_after": "error: function public._safe_date(date) does not exist",
+      "error_superuser": "error: function public._safe_date(date) does not exist",
+      "rulesOutFixture": true,
+      "rulesOutRlsOrGrants": true,
+      "securityImpact": "none — call fails closed (error), no company data returned in any context",
+      "deferralJustification": "non-security functional defect; reproduced byte-identically on origin/main chain replay; repair queued for the reports-hardening phase (see docs/NEXT.md)"
+    },
+    "rpt_rent_roll": {
+      "classification": "defect: same missing _safe_date(date) overload (definition-level)",
+      "error_authenticated_before": "error: function public._safe_date(date) does not exist",
+      "error_authenticated_after": "error: function public._safe_date(date) does not exist",
+      "error_superuser": "error: function public._safe_date(date) does not exist",
+      "rulesOutFixture": true,
+      "rulesOutRlsOrGrants": true,
+      "securityImpact": "none — call fails closed (error), no company data returned in any context",
+      "deferralJustification": "non-security functional defect; reproduced byte-identically on origin/main chain replay; repair queued for the reports-hardening phase (see docs/NEXT.md)"
+    },
+    "rpt_tenant_statement": {
+      "classification": "defect: `c.id = p_contract_id::text` compares uuid to text (definition-level)",
+      "error_authenticated_before": "error: operator does not exist: uuid = text",
+      "error_authenticated_after": "error: operator does not exist: uuid = text",
+      "error_superuser": "error: operator does not exist: uuid = text",
+      "rulesOutFixture": true,
+      "rulesOutRlsOrGrants": true,
+      "securityImpact": "none — call fails closed (error), no company data returned in any context",
+      "deferralJustification": "non-security functional defect; reproduced byte-identically on origin/main chain replay; repair queued for the reports-hardening phase (see docs/NEXT.md)"
+    }
+  }
+}

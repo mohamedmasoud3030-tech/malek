@@ -1,0 +1,103 @@
+[
+  {
+    "kind": "schema+policy",
+    "columns": [
+      "id",
+      "owner_id",
+      "property_id",
+      "agreement_type",
+      "commission_type",
+      "commission_value",
+      "starts_on",
+      "ends_on",
+      "notes",
+      "created_at",
+      "updated_at"
+    ],
+    "rls": {
+      "rls": true,
+      "forced": false,
+      "owner": "postgres"
+    },
+    "policies": [
+      {
+        "policyname": "owner_agreements_select",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "SELECT",
+        "qual": "is_app_user()",
+        "with_check": ""
+      },
+      {
+        "policyname": "owner_agreements_insert",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "INSERT",
+        "qual": "",
+        "with_check": "is_admin_or_manager()"
+      },
+      {
+        "policyname": "owner_agreements_update",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "UPDATE",
+        "qual": "is_admin_or_manager()",
+        "with_check": "is_admin_or_manager()"
+      },
+      {
+        "policyname": "owner_agreements_delete",
+        "roles": [
+          "authenticated"
+        ],
+        "cmd": "DELETE",
+        "qual": "is_admin_or_manager()",
+        "with_check": ""
+      }
+    ]
+  },
+  {
+    "op": "SELECT",
+    "identity": "A-admin",
+    "query": "owner_agreements JOIN owners",
+    "expected": "agreements of A owners only",
+    "actual": "2 rows, owner_companies=2",
+    "verdict": "production-bug"
+  },
+  {
+    "op": "INSERT-cross-link",
+    "identity": "A-admin",
+    "query": "INSERT INTO owner_agreements (owner_id=<B>, property_id=<B>, …)",
+    "expected": "rejected — agreement must not bind foreign owner/property",
+    "actual": "error: conflicting key value violates exclusion constraint \"owner_agreements_no_overlap\"",
+    "verdict": "contained"
+  },
+  {
+    "op": "RPC-create-owner-agreement",
+    "variant": "own-A-refs",
+    "identity": "A-admin",
+    "query": "SELECT public.create_owner_agreement_atomic(payload→own-A-refs)",
+    "expected": "inserts agreement for A",
+    "actual": "error: column \"company_id\" of relation \"owner_agreements\" does not exist",
+    "verdict": "recorded"
+  },
+  {
+    "op": "RPC-create-owner-agreement",
+    "variant": "cross-B-refs",
+    "identity": "A-admin",
+    "query": "SELECT public.create_owner_agreement_atomic(payload→cross-B-refs)",
+    "expected": "rejected — foreign owner/property",
+    "actual": "error: column \"company_id\" of relation \"owner_agreements\" does not exist",
+    "verdict": "recorded"
+  },
+  {
+    "op": "RPC-owner-statement-cross-param",
+    "identity": "A-admin",
+    "query": "SELECT public.rpt_owner_statement(<B owner>, …)",
+    "expected": "{'error':'owner not found'} — B owner invisible to A",
+    "actual": "owner_name=مالك باء total_gross=6000",
+    "verdict": "production-bug"
+  }
+]

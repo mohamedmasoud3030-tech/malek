@@ -1,0 +1,639 @@
+{
+  "generatedAt": "2026-07-23T17:13:04.883Z",
+  "fixFile": "20260724120000_p0_company_isolation_reports_rls.sql",
+  "replayErrors": [],
+  "fixture": {
+    "A_PAY": 1000,
+    "B_PAY": 6000,
+    "A_EXP": 200,
+    "B_EXP": 900,
+    "B_JE": 8000,
+    "B_RENT": 24000
+  },
+  "probes": [
+    {
+      "fn": "rpt_cash_flow",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "financing": {
+              "note": "not_applicable_single_office",
+              "amount": 0
+            },
+            "investing": {
+              "note": "not_applicable_single_office",
+              "amount": 0
+            },
+            "operating": {
+              "expenses": 1100,
+              "receipts": 7000,
+              "net_operating": 5900
+            },
+            "net_change": 5900
+          }
+        }
+      ],
+      "after": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "financing": {
+              "note": "not_applicable_single_office",
+              "amount": 0
+            },
+            "investing": {
+              "note": "not_applicable_single_office",
+              "amount": 0
+            },
+            "operating": {
+              "expenses": 200,
+              "receipts": 1000,
+              "net_operating": 800
+            },
+            "net_change": 800
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_dashboard_overview",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "financial": {
+              "net_revenue": 5900,
+              "total_expenses": 1100,
+              "total_collected": 7000,
+              "total_overdue_invoices": 0
+            },
+            "operational": {
+              "units": 2,
+              "properties": 3,
+              "vacantUnits": 0,
+              "activeContracts": 2,
+              "overdueInvoices": 0,
+              "expiringContracts30Days": 0
+            }
+          }
+        }
+      ],
+      "after": [
+        {
+          "out": {
+            "financial": {
+              "net_revenue": 800,
+              "total_expenses": 200,
+              "total_collected": 1000,
+              "total_overdue_invoices": 0
+            },
+            "operational": {
+              "units": 1,
+              "properties": 2,
+              "vacantUnits": 0,
+              "activeContracts": 1,
+              "overdueInvoices": 0,
+              "expiringContracts30Days": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_trial_balance",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: operator does not exist: text <= date"
+      },
+      "after": {
+        "error": "error: operator does not exist: text <= date"
+      }
+    },
+    {
+      "fn": "rpt_income_statement",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "revenue": [
+              {
+                "label": "الإيرادات التشغيلية",
+                "amount": 7000
+              }
+            ],
+            "expenses": [
+              {
+                "label": "maintenance",
+                "amount": 1100
+              }
+            ],
+            "net_income": 5900,
+            "total_revenue": 7000,
+            "total_expenses": 1100
+          }
+        }
+      ],
+      "after": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "revenue": [
+              {
+                "label": "الإيرادات التشغيلية",
+                "amount": 1000
+              }
+            ],
+            "expenses": [
+              {
+                "label": "maintenance",
+                "amount": 200
+              }
+            ],
+            "net_income": 800,
+            "total_revenue": 1000,
+            "total_expenses": 200
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_balance_sheet",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: operator does not exist: text <= date"
+      },
+      "after": {
+        "error": "error: operator does not exist: text <= date"
+      }
+    },
+    {
+      "fn": "rpt_vat_return",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "invoice_count": 2,
+            "total_tax_amount": 0,
+            "total_sales_amount": 7000
+          }
+        }
+      ],
+      "after": [
+        {
+          "out": {
+            "period": {
+              "to": "2026-07-31",
+              "from": "2026-07-01"
+            },
+            "invoice_count": 1,
+            "total_tax_amount": 0,
+            "total_sales_amount": 1000
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_financial_summary",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "collected": "7000.00",
+          "expenses": "1100.00",
+          "net": "5900.00",
+          "revenue": "7000.00",
+          "net_income": "5900.00",
+          "overdue_amount": "0",
+          "overdue_count": 0,
+          "active_contracts": 2,
+          "total_units": 2,
+          "occupied_units": 2,
+          "occupancy_rate": "100.00",
+          "pending_invoices": 2,
+          "period_from": "2026-07-01T00:00:00.000Z",
+          "period_to": "2026-07-31T00:00:00.000Z"
+        }
+      ],
+      "after": [
+        {
+          "collected": "1000.00",
+          "expenses": "200.00",
+          "net": "800.00",
+          "revenue": "1000.00",
+          "net_income": "800.00",
+          "overdue_amount": "0",
+          "overdue_count": 0,
+          "active_contracts": 1,
+          "total_units": 1,
+          "occupied_units": 1,
+          "occupancy_rate": "100.00",
+          "pending_invoices": 1,
+          "period_from": "2026-07-01T00:00:00.000Z",
+          "period_to": "2026-07-31T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "fn": "rpt_daily_collection",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "to": "2026-07-31",
+            "from": "2026-07-01",
+            "rows": [
+              {
+                "pos": 0,
+                "bank": 0,
+                "cash": 7000,
+                "date": "2026-07-15",
+                "count": 2,
+                "other": 0,
+                "total": 7000
+              }
+            ],
+            "total": 7000,
+            "source": "payments"
+          }
+        }
+      ],
+      "after": [
+        {
+          "out": {
+            "to": "2026-07-31",
+            "from": "2026-07-01",
+            "rows": [
+              {
+                "pos": 0,
+                "bank": 0,
+                "cash": 1000,
+                "date": "2026-07-15",
+                "count": 1,
+                "other": 0,
+                "total": 1000
+              }
+            ],
+            "total": 1000,
+            "source": "payments"
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_owner_statement",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period_to": "2026-07-31",
+            "total_net": 900,
+            "owner_name": "مالك ألف",
+            "period_from": "2026-07-01",
+            "total_gross": 1000,
+            "transactions": [
+              {
+                "net": 900,
+                "date": "2026-07-15",
+                "type": "payment",
+                "gross": 1000,
+                "details": "تحصيل — عقار ألف / A-1 (6a000000-0000-4000-8000-00000000000a)",
+                "deduction": 100,
+                "property_name": "عقار ألف"
+              }
+            ],
+            "commission_type": "RATE",
+            "commission_value": 10,
+            "total_deductions": 100
+          }
+        }
+      ],
+      "after": [
+        {
+          "out": {
+            "period_to": "2026-07-31",
+            "total_net": 900,
+            "owner_name": "مالك ألف",
+            "period_from": "2026-07-01",
+            "total_gross": 1000,
+            "transactions": [
+              {
+                "net": 900,
+                "date": "2026-07-15",
+                "type": "payment",
+                "gross": 1000,
+                "details": "تحصيل — عقار ألف / A-1 (6a000000-0000-4000-8000-00000000000a)",
+                "deduction": 100,
+                "property_name": "عقار ألف"
+              }
+            ],
+            "commission_type": "RATE",
+            "commission_value": 10,
+            "total_deductions": 100
+          }
+        }
+      ]
+    },
+    {
+      "fn": "rpt_tenant_statement",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: operator does not exist: uuid = text"
+      },
+      "after": {
+        "error": "error: operator does not exist: uuid = text"
+      }
+    },
+    {
+      "fn": "rpt_aged_receivables",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: function public._safe_date(date) does not exist"
+      },
+      "after": {
+        "error": "error: function public._safe_date(date) does not exist"
+      }
+    },
+    {
+      "fn": "rpt_overdue_invoices",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: function public._safe_date(date) does not exist"
+      },
+      "after": {
+        "error": "error: function public._safe_date(date) does not exist"
+      }
+    },
+    {
+      "fn": "rpt_rent_roll",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: function public._safe_date(date) does not exist"
+      },
+      "after": {
+        "error": "error: function public._safe_date(date) does not exist"
+      }
+    },
+    {
+      "fn": "create_owner_settlement_draft_atomic[fabricated-amounts]",
+      "kind": "exploit",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "status": "DRAFT",
+            "success": true,
+            "idempotent": false,
+            "request_id": "9a000000-0000-4000-8000-0000000000e1",
+            "net_payable": 999999,
+            "settlement_id": "72436f11-1c81-4fe3-9396-58f70cbe74e9",
+            "settlement_no": "OST-202607-72436F11"
+          }
+        }
+      ],
+      "after": [
+        {
+          "out": {
+            "status": "DRAFT",
+            "success": true,
+            "idempotent": false,
+            "request_id": "9a000000-0000-4000-8000-0000000000e1",
+            "net_payable": 999999,
+            "settlement_id": "80922ce5-f934-4a11-9846-8883f00951b8",
+            "settlement_no": "OST-202607-80922CE5"
+          }
+        }
+      ]
+    },
+    {
+      "fn": "create_owner_settlement_draft_atomic[cross-company-owner]",
+      "kind": "guard",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "status": "DRAFT",
+            "success": true,
+            "idempotent": false,
+            "request_id": "9a000000-0000-4000-8000-0000000000e2",
+            "net_payable": 999999,
+            "settlement_id": "9540ad82-5c4b-4353-b9fb-442fa33f8455",
+            "settlement_no": "OST-202607-9540AD82"
+          }
+        }
+      ],
+      "after": {
+        "error": "error: Settlement target owner is not in your company."
+      }
+    },
+    {
+      "fn": "create_owner_settlement_draft_atomic[low-role-user]",
+      "kind": "guard",
+      "actor": "userB@B",
+      "asCompany": "B",
+      "before": {
+        "error": "error: ADMIN or MANAGER role is required to create owner settlements."
+      },
+      "after": {
+        "error": "error: ADMIN or MANAGER role is required to create owner settlements."
+      }
+    },
+    {
+      "fn": "record_invoice_payment_atomic[cross-company-invoice]",
+      "kind": "guard",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: null value in column \"company_id\" of relation \"contract_balances\" violates not-null constraint"
+      },
+      "after": {
+        "error": "error: Invoice not found"
+      }
+    },
+    {
+      "fn": "post_receipt_atomic[cross-company-contract]",
+      "kind": "guard",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: null value in column \"company_id\" of relation \"contract_balances\" violates not-null constraint"
+      },
+      "after": {
+        "error": "error: فاتورة غير موجودة: 5b000000-0000-4000-8000-00000000000b"
+      }
+    },
+    {
+      "fn": "create_owner_agreement_atomic[own-refs]",
+      "kind": "guard",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: column \"company_id\" of relation \"owner_agreements\" does not exist"
+      },
+      "after": [
+        {
+          "out": "(a9cda682-e468-482b-95d3-f718002c1e62,0a000000-0000-4000-8000-00000000000a,1a000000-0000-4000-8000-0000000000a2,property_management,RATE,12.0000,2026-08-01,,,\"2026-07-23 17:13:04.853+00\",\"2026-07-23 17:13:04.853+00\",ca000000-0000-4000-8000-00000000000a)"
+        }
+      ]
+    },
+    {
+      "fn": "create_owner_agreement_atomic[cross-refs]",
+      "kind": "guard",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": {
+        "error": "error: column \"company_id\" of relation \"owner_agreements\" does not exist"
+      },
+      "after": {
+        "error": "error: Agreement owner is not in your company."
+      }
+    },
+    {
+      "fn": "rpt_owner_statement[cross-owner-param]",
+      "kind": "report-leak",
+      "actor": "adminA@A",
+      "asCompany": "A",
+      "before": [
+        {
+          "out": {
+            "period_to": "2026-07-31",
+            "total_net": 5400,
+            "owner_name": "مالك باء",
+            "period_from": "2026-07-01",
+            "total_gross": 6000,
+            "transactions": [
+              {
+                "net": 5400,
+                "date": "2026-07-15",
+                "type": "payment",
+                "gross": 6000,
+                "details": "تحصيل — عقار باء / B-1 (6b000000-0000-4000-8000-00000000000b)",
+                "deduction": 600,
+                "property_name": "عقار باء"
+              }
+            ],
+            "commission_type": "RATE",
+            "commission_value": 10,
+            "total_deductions": 600
+          }
+        }
+      ],
+      "after": [
+        {
+          "out": {
+            "error": "owner not found"
+          }
+        }
+      ]
+    },
+    {
+      "fn": "REST[direct-table-ops]",
+      "kind": "guard",
+      "actor": "authenticated@A",
+      "asCompany": "A",
+      "before": {
+        "selectPayments": 2,
+        "foreignTargets": {
+          "payment": "6b000000-0000-4000-8000-00000000000b",
+          "expense": "8b000000-0000-4000-8000-00000000000b"
+        },
+        "updateForeign": 1,
+        "deleteForeign": 1,
+        "insertSpoofExpense": "inserted",
+        "insertOwnExpense": "inserted"
+      },
+      "after": {
+        "selectPayments": 1,
+        "foreignTargets": {
+          "payment": null,
+          "expense": null
+        },
+        "updateForeign": "no-foreign-row-visible",
+        "deleteForeign": "no-foreign-row-visible",
+        "insertSpoofExpense": "error: new row violates row-level security policy \"p0_tenant_isolation\" for table \"expenses\"",
+        "insertOwnExpense": "inserted"
+      }
+    },
+    {
+      "fn": "rpt_cash_flow[anon-execute]",
+      "kind": "guard",
+      "actor": "anon",
+      "asCompany": null,
+      "before": {
+        "error": "error: permission denied for function rpt_cash_flow"
+      },
+      "after": {
+        "error": "error: permission denied for function rpt_cash_flow"
+      }
+    },
+    {
+      "fn": "RLS[table-read-isolation]",
+      "kind": "guard",
+      "actor": "authenticated@A",
+      "asCompany": "A",
+      "before": {
+        "payments": 2,
+        "expenses": 2,
+        "owner_settlements": {
+          "error": "error: permission denied for table owner_settlements"
+        },
+        "invoices": 2,
+        "contracts": 2
+      },
+      "after": {
+        "payments": 1,
+        "expenses": 1,
+        "owner_settlements": {
+          "error": "error: permission denied for table owner_settlements"
+        },
+        "invoices": 1,
+        "contracts": 1
+      }
+    }
+  ]
+}

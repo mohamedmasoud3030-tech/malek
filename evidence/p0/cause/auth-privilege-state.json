@@ -1,0 +1,23 @@
+{
+  "has_schema_usage_super": {
+    "v": true
+  },
+  "has_jwt_exec": {
+    "v": true
+  },
+  "has_uid_exec": {
+    "v": true
+  },
+  "direct_auth_jwt": {
+    "ok": "ca000000-0000-4000-8000-00000000000a"
+  },
+  "direct_auth_uid": {
+    "ok": "aa000000-0000-4000-8000-000000000001"
+  },
+  "direct_current_company_id": {
+    "ok": "ca000000-0000-4000-8000-00000000000a"
+  },
+  "has_schema_usage_as_role": {
+    "ok": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "current_user": "authenticated",
+  "session_user": "postgres",
+  "jwt_claims": "{\"sub\":\"aa000000-0000-4000-8000-000000000001\",\"role\":\"authenticated\",\"app_metadata\":{\"company_id\":\"ca000000-0000-4000-8000-00000000000a\"}}",
+  "auth_uid": {
+    "ok": true,
+    "detail": "aa000000-0000-4000-8000-000000000001"
+  },
+  "current_company_id": "ca000000-0000-4000-8000-00000000000a",
+  "is_app_user": true,
+  "role_attrs": {
+    "rolsuper": false,
+    "rolbypassrls": false
+  },
+  "owns_payments": false
+}

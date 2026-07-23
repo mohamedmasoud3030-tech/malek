@@ -1,0 +1,50 @@
+[
+  {
+    "probe": "payments foreign-row visibility vs mutability (identity A-admin)",
+    "target": "6b000000-0000-4000-8000-00000000000b",
+    "finding": {
+      "visible": 1,
+      "is_admin_or_manager": true,
+      "is_app_user": true,
+      "update": {
+        "ok": true,
+        "detail": {
+          "n": 1
+        }
+      },
+      "delete": {
+        "ok": true,
+        "detail": {
+          "affected": 1
+        }
+      }
+    },
+    "explanation": "target id resolved from the table itself (shadow-trigger-proof); verdict column derives from real affected-row counts."
+  },
+  {
+    "op": "INSERT-expenses",
+    "variant": "own-A",
+    "identity": "A-admin",
+    "query": "INSERT INTO public.expenses (…, company_id=$foreign)",
+    "expected": "allowed",
+    "actual": "inserted with company_id=A",
+    "verdict": "ok"
+  },
+  {
+    "op": "INSERT-expenses",
+    "variant": "spoof-B",
+    "identity": "A-admin",
+    "query": "INSERT INTO public.expenses (…, company_id=$foreign)",
+    "expected": "rejected by company-scoped WITH CHECK",
+    "actual": "inserted with company_id=B (!)",
+    "verdict": "production-bug"
+  },
+  {
+    "op": "INSERT-owner-agreement-cross-link",
+    "identity": "A-admin",
+    "query": "INSERT INTO owner_agreements (owner_id=<B>, property_id=<A>, starts_on='2030-01-01')",
+    "expected": "rejected — agreement must not bind foreign owner/property (needs company predicate)",
+    "actual": "error: مالك الاتفاقية لا يملك العقار طوال فترة الاتفاقية.",
+    "verdict": "contained"
+  }
+]

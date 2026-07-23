@@ -1,0 +1,161 @@
+{
+  "generatedAt": "2026-07-23T12:33:54.254Z",
+  "total": 19,
+  "covered": 19,
+  "allCovered": true,
+  "allSignatureInclSecurityMatch": true,
+  "rows": [
+    {
+      "function": "require_company_id",
+      "existedBeforeP0": false,
+      "replaceKind": "create",
+      "rollbackAction": "drop function (created by P0)",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": null
+    },
+    {
+      "function": "rpt_cash_flow",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_dashboard_overview",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_daily_collection",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_vat_return",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_financial_summary",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_trial_balance",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_income_statement",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_balance_sheet",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_owner_statement",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_tenant_statement",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_aged_receivables",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_overdue_invoices",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "rpt_rent_roll",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "create_owner_settlement_draft_atomic",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "record_invoice_payment_atomic",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "post_receipt_atomic",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "update_contract_balance_from_allocation",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    },
+    {
+      "function": "create_owner_agreement_atomic",
+      "existedBeforeP0": true,
+      "replaceKind": "replace",
+      "rollbackAction": "restore pre-P0 body",
+      "rollbackCovered": true,
+      "signatureInclSecurityMatch": true
+    }
+  ]
+}

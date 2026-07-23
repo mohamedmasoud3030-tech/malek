@@ -2,6 +2,17 @@
 
 للحالة الفعلية الحالية للتطبيق (الميزات، الجودة، الجاهزية): **[`APP_STATUS.md`](APP_STATUS.md)** — دايماً المصدر الوحيد المعتمد، آخر تحقق مباشر بتاريخه المذكور فيه.
 
+## P0 — التحقق متعدد الشركات (مكتمل تقنيًا — 2026-07-24، فرع `agent/p0-multi-tenant-verification` → PR #1276)
+
+- ✅ جرد آلي قابل لإعادة التشغيل (`scripts/p0/inventory.mjs`), مصفوفة أمان (`rpc-security-matrix.mjs`), إعادة معزولة كاملة **152/152**.
+- ✅ **عزل سببي بثلاث هويات × SELECT/INSERT/UPDATE/DELETE/RPC** مع إثبات هوية الجلسة (`current_user=authenticated`, session_user, JWT, `current_company_id()`, لا BYPASSRLS/لا ملكية): تأكدت تسريبات القراءة (A/B/بلا عضوية يرون الشركتين)، الكتابة المتقاطعة (UPDATE/DELETE/INSERT‑spoof ناجحة عبر REST)، انتحال معامل `rpt_owner_statement`، انتحال مالك التسوية (T7)، مسار كتابة الفاتورة/الإيصال المتقاطع، وموت RPC إنشاء الاتفاقيات على main. سبب «0 صفوف» الأولي وثّق كأثر محاكاة (ترايغر ظل يعيد كتابة معرفات المدفوعات) وصُحّح بالاستهداف الديناميكي.
+- ✅ الإصلاح (هجرة `20260724120000_p0_company_isolation_reports_rls.sql` + rollback): 13 دالة تقارير بقيود شركة صارمة، سياسة RESTRICTIVE موحدة (56) + DEFAULT للختم (55)، إحياء `owner_agreements.company_id` مع تحليل أثر موثق، حُرّاس F‑SET/F‑WR/F‑AGR. **تغطية التراجع 19/19** وبصمة ما بعد الـrollback مطابقة تمامًا لما قبل P0 (`p0-forward-rollback.test.ts`).
+- ✅ البوابات المحلية كلها خضراء: typecheck/lint/typecheck:test/**test (1000)**/build/check:architecture + حزم P0 المستقلة (57).
+- ✅ أمسكت بوابة الإصدار على الـPR انحدارًا تشغيليًا حقيقيًا (42803 في `update_contract_balance_from_allocation()` — `company_id` دون GROUP BY)، أُعيد إنتاجه محليًا دون Docker عبر `src/p0/zz-release-gate-repro.test.ts` وأُصلح في الهجرة؛ **فرق الأعطال قبل/بعد = صفر** عبر حزم pgTAP. حارس انحداري دائم مضاف ضمن `src/p0/`.
+- 🔶 تصنيف التقارير الستة المكسورة على main (تعريف SQL فعلي، فشل مغلق بلا تسريب، مثبت superuser‑مطابق): مؤجلة كوظيفية غير أمنية — إصلاحها في مرحلة تصليح التقارير (P‑لاحقة): `rpt_trial_balance`, `rpt_balance_sheet` (operator text<=date)؛ `rpt_aged_receivables`, `rpt_overdue_invoices`, `rpt_rent_roll` (حمل `_safe_date(date)` مفقود)؛ `rpt_tenant_statement` (uuid=text).
+- 🔶 فروق بيئة PGlite↔Supabase موثقة (منحة USAGE على schema auth) في `evidence/p0/cause/env-parity.md`.
+- ✅ **CI على #1276 كله أخضر على `02696f6`**: `isolated-replay` و`release-blocker-database` (إعادة تشغيل الهجرات كاملة + pgTAP على Supabase الحقيقي) ✅، `release-blocker-code`/`release-blocker-authenticated-staging`/`build`/`browser-smoke`/`codacy`/`aikido`/`vercel`/`**SonarCloud**` ✅. المتبقي حوكمي فقط: دمج squash → فحص حي آمن قراءة‑فقط بعد الدمج. **P1 (أرقام التسوية الموثوقة من العميل — الإثبات مستقل وجاهز) يبدأ بعد الدمج من أحدث main في PR مستقل.**
+
 ## الأولوية القادمة — تحديث
 
 `supabase/migrations_consolidated/` اتشال نهائياً (2026-07-23): كان مجلد ميت ومتناقض مع نفسه — الـ README بتاعه بيشاور لملفين (`CONSOLIDATION_MAPPING.md`, `CANDIDATES_FOR_REMOVAL.md`) اتمسحوا من زمان في PR #1201، ومستند `supabase/migrations/README.md` كان بيقول إن المجلد ده "اتشال" من 2026-07-18 بينما هو لسه موجود فعلياً. اتأكد إن مفيش أي CI/script بيعتمد عليه قبل الحذف.

@@ -1,0 +1,265 @@
+{
+  "companies": [
+    {
+      "column_name": "name",
+      "data_type": "text"
+    },
+    {
+      "column_name": "slug",
+      "data_type": "text"
+    }
+  ],
+  "company_members": [
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "uuid"
+    }
+  ],
+  "users": [
+    {
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "email",
+      "data_type": "text"
+    },
+    {
+      "column_name": "name",
+      "data_type": "text"
+    }
+  ],
+  "owners": [
+    {
+      "column_name": "full_name",
+      "data_type": "text"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "properties": [
+    {
+      "column_name": "title",
+      "data_type": "text"
+    },
+    {
+      "column_name": "type",
+      "data_type": "text"
+    },
+    {
+      "column_name": "address",
+      "data_type": "text"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "property_owners": [
+    {
+      "column_name": "property_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "owner_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "owner_agreements": [
+    {
+      "column_name": "owner_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "property_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "agreement_type",
+      "data_type": "text"
+    },
+    {
+      "column_name": "commission_type",
+      "data_type": "text"
+    },
+    {
+      "column_name": "commission_value",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "starts_on",
+      "data_type": "date"
+    }
+  ],
+  "units": [
+    {
+      "column_name": "property_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "unit_number",
+      "data_type": "text"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "contracts": [
+    {
+      "column_name": "property_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "tenant_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "start_date",
+      "data_type": "date"
+    },
+    {
+      "column_name": "end_date",
+      "data_type": "date"
+    },
+    {
+      "column_name": "rent_amount",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "invoices": [
+    {
+      "column_name": "contract_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "issue_date",
+      "data_type": "date"
+    },
+    {
+      "column_name": "due_date",
+      "data_type": "date"
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "payments": [
+    {
+      "column_name": "amount",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "payment_method",
+      "data_type": "text"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "receipts": [
+    {
+      "column_name": "amount",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "receipt_allocations": [
+    {
+      "column_name": "receipt_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "expenses": [
+    {
+      "column_name": "property_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "category",
+      "data_type": "text"
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "expense_date",
+      "data_type": "date"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "accounts": [
+    {
+      "column_name": "id",
+      "data_type": "text"
+    },
+    {
+      "column_name": "name",
+      "data_type": "text"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "journal_entries": [
+    {
+      "column_name": "amount",
+      "data_type": "numeric"
+    },
+    {
+      "column_name": "type",
+      "data_type": "text"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "owner_settlements": [
+    {
+      "column_name": "id",
+      "data_type": "text"
+    },
+    {
+      "column_name": "company_id",
+      "data_type": "uuid"
+    }
+  ],
+  "audit_log": []
+}

@@ -1,0 +1,110 @@
+[
+  {
+    "name": "create_owner_agreement_atomic",
+    "args": "payload jsonb",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "create_owner_settlement_draft_atomic",
+    "args": "p_payload jsonb",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "post_receipt_atomic",
+    "args": "payload jsonb",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "record_invoice_payment_atomic",
+    "args": "payload jsonb",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_aged_receivables",
+    "args": "p_as_of date",
+    "security_definer": false,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_balance_sheet",
+    "args": "p_as_of date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_cash_flow",
+    "args": "p_from_date date, p_to_date date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_daily_collection",
+    "args": "p_from date, p_to date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_dashboard_overview",
+    "args": "p_from date, p_to date, p_as_of date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_financial_summary",
+    "args": "p_from date, p_to date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_income_statement",
+    "args": "p_from date, p_to date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_overdue_invoices",
+    "args": "p_as_of date",
+    "security_definer": false,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_owner_statement",
+    "args": "p_owner_id uuid, p_from date, p_to date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_rent_roll",
+    "args": "p_as_of date",
+    "security_definer": false,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_tenant_statement",
+    "args": "p_contract_id uuid",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_trial_balance",
+    "args": "p_as_of date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "rpt_vat_return",
+    "args": "p_from_date date, p_to_date date",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  },
+  {
+    "name": "update_contract_balance_from_allocation",
+    "args": "",
+    "security_definer": true,
+    "proconfig": "{\"search_path=public, pg_temp\"}"
+  }
+]

@@ -1,0 +1,408 @@
+{
+  "roles": [
+    {
+      "rolname": "anon",
+      "rolsuper": false,
+      "rolbypassrls": false,
+      "rolcanlogin": false
+    },
+    {
+      "rolname": "authenticated",
+      "rolsuper": false,
+      "rolbypassrls": false,
+      "rolcanlogin": false
+    },
+    {
+      "rolname": "postgres",
+      "rolsuper": true,
+      "rolbypassrls": true,
+      "rolcanlogin": true
+    },
+    {
+      "rolname": "service_role",
+      "rolsuper": false,
+      "rolbypassrls": false,
+      "rolcanlogin": false
+    },
+    {
+      "rolname": "supabase_admin",
+      "rolsuper": false,
+      "rolbypassrls": false,
+      "rolcanlogin": false
+    }
+  ],
+  "tableFlagsAndOwners": [
+    {
+      "table": "accounts",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "contract_balances",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "contracts",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "expenses",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "invoices",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "journal_entries",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "owner_agreements",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "owner_settlements",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": true
+    },
+    {
+      "table": "owners",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "payments",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "people",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "properties",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "receipt_allocations",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "receipts",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    },
+    {
+      "table": "units",
+      "owner": "postgres",
+      "rls_enabled": true,
+      "rls_forced": false
+    }
+  ],
+  "tableGrants": [
+    {
+      "grantee": "authenticated",
+      "table_name": "accounts",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "accounts",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "accounts",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "accounts",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "contract_balances",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "contract_balances",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "contract_balances",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "contract_balances",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "contracts",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "contracts",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "contracts",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "contracts",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "expenses",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "expenses",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "expenses",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "expenses",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "invoices",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "invoices",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "invoices",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "invoices",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "journal_entries",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "journal_entries",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "journal_entries",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "journal_entries",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "owner_agreements",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "owner_agreements",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "owner_agreements",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "owner_agreements",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "owners",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "owners",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "owners",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "owners",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "payments",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "payments",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "payments",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "payments",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "people",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "people",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "people",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "people",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "properties",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "properties",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "properties",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "properties",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "receipt_allocations",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "receipt_allocations",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "receipt_allocations",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "receipt_allocations",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "receipts",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "receipts",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "receipts",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "receipts",
+      "privilege_type": "UPDATE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "units",
+      "privilege_type": "DELETE"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "units",
+      "privilege_type": "INSERT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "units",
+      "privilege_type": "SELECT"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "units",
+      "privilege_type": "UPDATE"
+    }
+  ]
+}

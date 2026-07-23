@@ -1,0 +1,684 @@
+{
+  "companyIdColumns": [
+    {
+      "table_name": "account_balances",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "accounts",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "app_notifications",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "attachments",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "automation_notifications",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "automation_rules",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "automation_run_logs",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "automation_runs",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "bank_accounts",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "bank_reconciliation_matches",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "bank_statement_imports",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "bank_statement_lines",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "budgets",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "commissions",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "communication_records",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "company-assets",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "company_members",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "company_settings",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "contract_balances",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "contract_documents",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "contracts",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "deposit_transactions",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "deposit_txs",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "expenses",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "invoices",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "journal_entries",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "kpi_snapshots",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "lands",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "leads",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "maintenance_records",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "missions",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "notification_templates",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "notifications",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "outgoing_notifications",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "owner_balances",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "owner_settlements",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "owners",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "payments",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "people",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "properties",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "property_owners",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "receipt_allocations",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "receipts",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "serials",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "snapshots",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "status_history",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "status_transition_rules",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "tenant_balances",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "tenant_deposits",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "tenants",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "units",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "utility_bills",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "utility_meters",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "vault_documents",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "triggers": [
+    {
+      "tbl": "automation_rules",
+      "trigger_name": "trg_automation_rules_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "company_settings",
+      "trigger_name": "set_company_settings_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "contracts",
+      "trigger_name": "update_unit_status_after_contract_change",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "contracts",
+      "trigger_name": "update_unit_status_after_contract_change",
+      "action_timing": "AFTER",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "contracts",
+      "trigger_name": "update_unit_status_after_contract_change",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "contracts",
+      "trigger_name": "set_contracts_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "cost_centers",
+      "trigger_name": "update_cost_centers_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "expenses",
+      "trigger_name": "trigger_update_owner_balance_on_expense",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "expenses",
+      "trigger_name": "trigger_update_owner_balance_on_expense",
+      "action_timing": "AFTER",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "expenses",
+      "trigger_name": "trigger_update_owner_balance_on_expense",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "expenses",
+      "trigger_name": "set_expenses_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "invoices",
+      "trigger_name": "trg_invoices_update_contract_balance",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "invoices",
+      "trigger_name": "trg_invoices_update_contract_balance",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "invoices",
+      "trigger_name": "trg_invoices_update_contract_balance",
+      "action_timing": "AFTER",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "invoices",
+      "trigger_name": "set_invoices_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "journal_entries",
+      "trigger_name": "validate_journal_batch_balance",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "journal_entries",
+      "trigger_name": "audit_journal_entry_insert",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "journal_entries",
+      "trigger_name": "prevent_journal_entries_mutation_after_posting",
+      "action_timing": "BEFORE",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "journal_entries",
+      "trigger_name": "prevent_journal_entries_mutation_after_posting",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "maintenance_records",
+      "trigger_name": "update_unit_status_after_maintenance_change",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "maintenance_records",
+      "trigger_name": "update_unit_status_after_maintenance_change",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "maintenance_records",
+      "trigger_name": "update_unit_status_after_maintenance_change",
+      "action_timing": "AFTER",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "maintenance_records",
+      "trigger_name": "set_maintenance_records_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "owner_agreements",
+      "trigger_name": "trg_owner_agreement_requires_ownership",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "owner_agreements",
+      "trigger_name": "trg_owner_agreements_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "owner_agreements",
+      "trigger_name": "trg_owner_agreements_contract_coverage",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "owner_agreements",
+      "trigger_name": "trg_owner_agreements_contract_coverage",
+      "action_timing": "BEFORE",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "owner_agreements",
+      "trigger_name": "trg_owner_agreement_requires_ownership",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "owners",
+      "trigger_name": "trg_sync_owner_compatibility_fields",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "owners",
+      "trigger_name": "trg_sync_owner_compatibility_fields",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "owners",
+      "trigger_name": "trg_prevent_owner_delete_with_balances",
+      "action_timing": "BEFORE",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "owners",
+      "trigger_name": "set_owners_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "payment_terms_templates",
+      "trigger_name": "update_payment_terms_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "trigger_update_owner_balance_on_payment",
+      "action_timing": "AFTER",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "trigger_update_owner_balance_on_payment",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "trigger_update_owner_balance_on_payment",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "payments_sync_reference_fields",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "set_payments_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "payments_enforce_receipt_shared_identity",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "payments_prevent_receipt_identity_mutation",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "payments_sync_reference_fields",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "people",
+      "trigger_name": "set_people_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "properties",
+      "trigger_name": "set_properties_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "properties",
+      "trigger_name": "trg_sync_property_compatibility_fields",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "properties",
+      "trigger_name": "trg_sync_property_compatibility_fields",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_sync_property_owner_projection",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_sync_property_owner_projection",
+      "action_timing": "AFTER",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_sync_property_owner_projection",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "validate_property_owner_active_totals",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "set_property_owners_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_property_owners_temporal_integrity",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "validate_property_owner_active_totals",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_property_owners_temporal_integrity",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "receipt_allocations",
+      "trigger_name": "trg_receipt_allocations_update_contract_balance",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "receipt_allocations",
+      "trigger_name": "trg_receipt_allocations_update_contract_balance",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "receipt_allocations",
+      "trigger_name": "set_receipt_allocations_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "receipts",
+      "trigger_name": "set_receipts_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "tenant_deposits",
+      "trigger_name": "trg_tenant_deposits_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "tenants",
+      "trigger_name": "tenants_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "units",
+      "trigger_name": "enforce_unit_operational_status_on_units",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "units",
+      "trigger_name": "units_normalize_status_contract",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "units",
+      "trigger_name": "units_normalize_status_contract",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "units",
+      "trigger_name": "set_units_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "units",
+      "trigger_name": "enforce_unit_operational_status_on_units",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "users",
+      "trigger_name": "set_users_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "utility_bills",
+      "trigger_name": "trg_utility_bills_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "utility_meters",
+      "trigger_name": "trg_utility_meters_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "vault_documents",
+      "trigger_name": "trg_vault_documents_updated_at",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    }
+  ]
+}

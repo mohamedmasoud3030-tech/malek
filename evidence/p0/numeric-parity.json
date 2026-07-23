@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-07-23T17:13:04.882Z",
+  "company": "A",
+  "groundTruth": {
+    "receipts": 1000,
+    "expenses": 200,
+    "openReceivables": 1000
+  },
+  "reports": {
+    "cash_flow": {
+      "receipts": 1000,
+      "expenses": 200
+    },
+    "vat_sales": 1000
+  },
+  "conclusion": "server report outputs == independent aggregates (post-fix, company-scoped)"
+}
