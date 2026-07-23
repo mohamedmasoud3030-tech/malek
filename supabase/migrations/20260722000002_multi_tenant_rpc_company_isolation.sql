@@ -2644,7 +2644,7 @@ BEGIN
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
-  WHERE c.id = v_contract_id
+  WHERE c.id::text = v_contract_id
   GROUP BY c.tenant_id, c.unit_id;
 
   -- If the referenced contract cannot be found, do not fail invoice/allocation
@@ -2713,7 +2713,7 @@ BEGIN
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id, v_company_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
-  WHERE c.id = v_contract_id
+  WHERE c.id::text = v_contract_id
   GROUP BY c.tenant_id, c.unit_id, c.company_id;
 
   IF NOT FOUND THEN
