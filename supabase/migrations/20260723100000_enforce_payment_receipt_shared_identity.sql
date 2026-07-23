@@ -12,7 +12,7 @@ begin
   select count(*) into mismatch_count
   from public.payments p
   where p.receipt_id is null
-     or p.id is distinct from p.receipt_id;
+     or p.id::text is distinct from p.receipt_id::text;
 
   if mismatch_count > 0 then
     raise exception
@@ -95,9 +95,9 @@ language sql stable set search_path = public, pg_temp
 as $function$
   select
     (select count(*) from public.payments p where p.receipt_id is null),
-    (select count(*) from public.payments p where p.receipt_id is not null and p.id is distinct from p.receipt_id),
+    (select count(*) from public.payments p where p.receipt_id is not null and p.id::text is distinct from p.receipt_id::text),
     (select count(*) from (select p.receipt_id from public.payments p group by p.receipt_id having count(*) > 1) d),
-    (select count(*) from public.receipts r where not exists (select 1 from public.payments p where p.receipt_id = r.id));
+    (select count(*) from public.receipts r where not exists (select 1 from public.payments p where p.receipt_id::text = r.id::text));
 $function$;
 
 commit;
