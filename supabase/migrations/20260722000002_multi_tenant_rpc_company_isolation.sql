@@ -298,21 +298,31 @@ begin
   EXECUTE format(
     'insert into public.tenant_deposits
       (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, notes, request_id, company_id)
-     values ($1, $2::%s, $3, $4::%s, $5::%s, $6, $6, ''held'', $7, $8, $9, v_company_id)',
+     values ($1, $2::%s, $3, $4::%s, $5::%s, $6, $6, ''held'', $7, $8, $9, $10)',
     v_contract_id_type,
     v_property_id_type,
     v_unit_id_type
   )
   USING v_deposit_id, v_contract_id_raw, v_tenant_id, v_property_id_raw, v_unit_id_raw,
-        v_amount, v_received_date, v_notes, v_request_id;
+        v_amount, v_received_date, v_notes, v_request_id, v_company_id;
 
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, request_id, company_id)
   values (v_deposit_id, 'held', v_amount, 'initial_deposit', 'استلام وديعة تأمين', v_request_id || '-held', v_company_id);
 
-  v_cash_account_id := (select id from public.accounts where no='1111' limit 1);
-  v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);
+  v_cash_account_id := (
+    select id from public.accounts
+    where no='1111' and company_id = v_company_id
+    limit 1
+  );
+  v_deposit_account_id := (
+    select id from public.accounts
+    where no='2200' and company_id = v_company_id
+    limit 1
+  );
   if v_deposit_account_id is null then
-    insert into public.accounts (id, no, name) values ('2200','2200','Tenant Deposits Payable') on conflict (id) do nothing;
+    insert into public.accounts (id, no, name, company_id)
+    values ('2200','2200','Tenant Deposits Payable', v_company_id)
+    on conflict (id) do nothing;
     v_deposit_account_id := '2200';
   end if;
 
@@ -320,7 +330,7 @@ begin
     insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, company_id)
     values
       (gen_random_uuid()::text, 'DEP-'||substr(v_deposit_id,1,6)||'-D', v_received_date, v_cash_account_id, v_amount, 'DEBIT', v_deposit_id, 'deposit', v_deposit_id, v_company_id),
-      (gen_random_uuid()::text, 'DEP-'||substr(v_deposit_id,1,6)||'-C', v_received_date, v_deposit_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit', v_deposit_id);
+      (gen_random_uuid()::text, 'DEP-'||substr(v_deposit_id,1,6)||'-C', v_received_date, v_deposit_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit', v_deposit_id, v_company_id);
   end if;
 
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'request_id',v_request_id,'amount',v_amount);
@@ -1110,8 +1120,10 @@ begin
   if not found then raise exception 'Owner settlement not found.'; end if;
   if v_row.status <> 'APPROVED' then raise exception 'Only APPROVED settlements can be paid.'; end if;
 
-  select id into v_owner_payable_account from public.accounts where no = '2000' limit 1;
-  select id into v_cash_account from public.accounts where no = '1111' limit 1;
+  select id into v_owner_payable_account
+  from public.accounts where no = '2000' and company_id = v_company_id limit 1;
+  select id into v_cash_account
+  from public.accounts where no = '1111' and company_id = v_company_id limit 1;
   if v_owner_payable_account is null or v_cash_account is null then
     raise exception 'Owner payable or cash accounting account is not configured.';
   end if;
@@ -1120,7 +1132,7 @@ begin
   insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, batch_id, created_at, company_id)
   values
     (gen_random_uuid(), v_entry_no || '-D', current_date, v_owner_payable_account, v_row.net_payable, 'DEBIT', v_id::uuid, 'owner_settlement_payment', v_id, v_batch_id, now(), v_company_id),
-    (gen_random_uuid(), v_entry_no || '-C', current_date, v_cash_account, v_row.net_payable, 'CREDIT', v_id::uuid, 'owner_settlement_payment', v_id, v_batch_id, now());
+    (gen_random_uuid(), v_entry_no || '-C', current_date, v_cash_account, v_row.net_payable, 'CREDIT', v_id::uuid, 'owner_settlement_payment', v_id, v_batch_id, now(), v_company_id);
 
   update public.owner_settlements
      set status = 'PAID', method = v_method, payment_reference = v_reference,
