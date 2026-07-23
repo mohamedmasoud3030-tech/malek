@@ -81,7 +81,7 @@ declare
   total_nulls bigint := 0;
   failing_tables text[] := '{}';
 begin
-  for tbl in array[
+  foreach tbl in array array[
     'properties', 'property_owners', 'owners', 'units', 'people',
     'tenants', 'contracts', 'invoices', 'payments', 'receipts',
     'receipt_allocations', 'expenses', 'maintenance_records',

@@ -75,7 +75,7 @@ declare
   updated bigint;
   total_updated bigint := 0;
 begin
-  for tbl in array[
+  foreach tbl in array ARRAY[
     'properties', 'property_owners', 'owners', 'units', 'people',
     'tenants', 'contracts', 'invoices', 'payments', 'receipts',
     'receipt_allocations', 'expenses', 'maintenance_records',

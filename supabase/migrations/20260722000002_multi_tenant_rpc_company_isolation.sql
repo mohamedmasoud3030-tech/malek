@@ -298,21 +298,31 @@ begin
   EXECUTE format(
     'insert into public.tenant_deposits
       (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, notes, request_id, company_id)
-     values ($1, $2::%s, $3, $4::%s, $5::%s, $6, $6, ''held'', $7, $8, $9, v_company_id)',
+     values ($1, $2::%s, $3, $4::%s, $5::%s, $6, $6, ''held'', $7, $8, $9, $10)',
     v_contract_id_type,
     v_property_id_type,
     v_unit_id_type
   )
   USING v_deposit_id, v_contract_id_raw, v_tenant_id, v_property_id_raw, v_unit_id_raw,
-        v_amount, v_received_date, v_notes, v_request_id;
+        v_amount, v_received_date, v_notes, v_request_id, v_company_id;
 
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, request_id, company_id)
   values (v_deposit_id, 'held', v_amount, 'initial_deposit', 'استلام وديعة تأمين', v_request_id || '-held', v_company_id);
 
-  v_cash_account_id := (select id from public.accounts where no='1111' limit 1);
-  v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);
+  v_cash_account_id := (
+    select id from public.accounts
+    where no='1111' and company_id = v_company_id
+    limit 1
+  );
+  v_deposit_account_id := (
+    select id from public.accounts
+    where no='2200' and company_id = v_company_id
+    limit 1
+  );
   if v_deposit_account_id is null then
-    insert into public.accounts (id, no, name) values ('2200','2200','Tenant Deposits Payable') on conflict (id) do nothing;
+    insert into public.accounts (id, no, name, company_id)
+    values ('2200','2200','Tenant Deposits Payable', v_company_id)
+    on conflict (id) do nothing;
     v_deposit_account_id := '2200';
   end if;
 
@@ -320,7 +330,7 @@ begin
     insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, company_id)
     values
       (gen_random_uuid()::text, 'DEP-'||substr(v_deposit_id,1,6)||'-D', v_received_date, v_cash_account_id, v_amount, 'DEBIT', v_deposit_id, 'deposit', v_deposit_id, v_company_id),
-      (gen_random_uuid()::text, 'DEP-'||substr(v_deposit_id,1,6)||'-C', v_received_date, v_deposit_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit', v_deposit_id);
+      (gen_random_uuid()::text, 'DEP-'||substr(v_deposit_id,1,6)||'-C', v_received_date, v_deposit_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit', v_deposit_id, v_company_id);
   end if;
 
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'request_id',v_request_id,'amount',v_amount);
@@ -691,10 +701,20 @@ for update;
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, request_id, company_id)
   values (v_deposit_id, 'deduction', v_amount, v_reason, v_description, v_request_id, v_company_id);
 
-  v_expense_account_id := (select id from public.accounts where no='6100' limit 1);
-  v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);
+  v_expense_account_id := (
+    select id from public.accounts
+    where no='6100' and company_id = v_company_id
+    limit 1
+  );
+  v_deposit_account_id := (
+    select id from public.accounts
+    where no='2200' and company_id = v_company_id
+    limit 1
+  );
   if v_expense_account_id is null then
-    insert into public.accounts (id, no, name) values ('6100','6100','Operating Expenses') on conflict (id) do nothing;
+    insert into public.accounts (id, no, name, company_id)
+    values ('6100','6100','Operating Expenses', v_company_id)
+    on conflict (id) do nothing;
     v_expense_account_id := '6100';
   end if;
 
@@ -713,7 +733,7 @@ for update;
     EXECUTE format(
       'insert into public.expenses
         (id, property_id, category, amount, expense_date, description, status, no, company_id)
-       values ($1, $2::%s, $3, $4, $5, $6, $7, $8, v_company_id)',
+       values ($1, $2::%s, $3, $4, $5, $6, $7, $8, $9)',
       v_expense_property_id_type
     )
     USING v_expense_id,
@@ -723,12 +743,13 @@ for update;
           v_charged_date,
           'خصم تأمين: '||coalesce(v_description,''),
           'POSTED',
-          'EXP-DEP-'||substr(v_deposit_id,1,6);
+          'EXP-DEP-'||substr(v_deposit_id,1,6),
+          v_company_id;
 
     insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, company_id)
     values
       (gen_random_uuid()::text, 'DEP-DED-'||substr(v_deposit_id,1,6)||'-D', v_charged_date, v_deposit_account_id, v_amount, 'DEBIT', v_deposit_id, 'deposit_deduction', v_deposit_id, v_company_id),
-      (gen_random_uuid()::text, 'DEP-DED-'||substr(v_deposit_id,1,6)||'-C', v_charged_date, v_expense_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit_deduction', v_deposit_id);
+      (gen_random_uuid()::text, 'DEP-DED-'||substr(v_deposit_id,1,6)||'-C', v_charged_date, v_expense_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit_deduction', v_deposit_id, v_company_id);
   end if;
 
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'deducted',v_amount,'remaining', v_deposit.remaining_amount - v_amount,'request_id',v_request_id, 'new_status', (case when (v_deposit.deposit_amount - (v_deposit.deducted_amount + v_amount) - v_deposit.refunded_amount) <=0 then 'forfeited_damage' else 'partially_deducted' end));
@@ -1110,8 +1131,10 @@ begin
   if not found then raise exception 'Owner settlement not found.'; end if;
   if v_row.status <> 'APPROVED' then raise exception 'Only APPROVED settlements can be paid.'; end if;
 
-  select id into v_owner_payable_account from public.accounts where no = '2000' limit 1;
-  select id into v_cash_account from public.accounts where no = '1111' limit 1;
+  select id into v_owner_payable_account
+  from public.accounts where no = '2000' and company_id = v_company_id limit 1;
+  select id into v_cash_account
+  from public.accounts where no = '1111' and company_id = v_company_id limit 1;
   if v_owner_payable_account is null or v_cash_account is null then
     raise exception 'Owner payable or cash accounting account is not configured.';
   end if;
@@ -1120,7 +1143,7 @@ begin
   insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, batch_id, created_at, company_id)
   values
     (gen_random_uuid(), v_entry_no || '-D', current_date, v_owner_payable_account, v_row.net_payable, 'DEBIT', v_id::uuid, 'owner_settlement_payment', v_id, v_batch_id, now(), v_company_id),
-    (gen_random_uuid(), v_entry_no || '-C', current_date, v_cash_account, v_row.net_payable, 'CREDIT', v_id::uuid, 'owner_settlement_payment', v_id, v_batch_id, now());
+    (gen_random_uuid(), v_entry_no || '-C', current_date, v_cash_account, v_row.net_payable, 'CREDIT', v_id::uuid, 'owner_settlement_payment', v_id, v_batch_id, now(), v_company_id);
 
   update public.owner_settlements
      set status = 'PAID', method = v_method, payment_reference = v_reference,
@@ -1153,6 +1176,7 @@ DECLARE
   v_allocations jsonb;
   v_journal_entries jsonb;
   v_request_id text;
+  v_company_id uuid;
   v_existing_id public.receipts.id%TYPE;
   v_invoice_id_text text;
   v_invoice record;
@@ -1160,6 +1184,7 @@ DECLARE
 
   v_receipt_id public.receipts.id%TYPE;
   v_receipt_contract_id public.receipts.contract_id%TYPE;
+  v_payment_invoice_id public.payments.invoice_id%TYPE;
   v_receipt_date_time public.receipts.date_time%TYPE;
   v_receipt_tenant_id public.receipts.tenant_id%TYPE;
   v_receipt_check_date public.receipts.check_date%TYPE;
@@ -1191,6 +1216,17 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
+  v_company_id := (auth.jwt() -> 'app_metadata' ->> 'company_id')::uuid;
+  IF v_company_id IS NULL OR NOT EXISTS (
+    SELECT 1
+    FROM public.company_members AS membership
+    WHERE membership.user_id = auth.uid()
+      AND membership.company_id = v_company_id
+  ) THEN
+    RAISE EXCEPTION 'تعذر تحديد الشركة النشطة'
+      USING ERRCODE = '42501';
+  END IF;
+
   v_receipt := coalesce(payload->'receipt', '{}'::jsonb);
   v_allocations := coalesce(payload->'allocations', '[]'::jsonb);
   v_journal_entries := coalesce(payload->'journal_entries', '[]'::jsonb);
@@ -1204,6 +1240,7 @@ BEGIN
     INTO v_existing_id
   FROM public.receipts AS receipt_record
   WHERE receipt_record.request_id = v_request_id
+    AND receipt_record.company_id = v_company_id
   LIMIT 1;
 
   IF v_existing_id IS NOT NULL THEN
@@ -1230,6 +1267,7 @@ BEGIN
     INTO v_invoice
     FROM public.invoices AS invoice_record
     WHERE invoice_record.id::text = v_invoice_id_text
+      AND invoice_record.company_id = v_company_id
     FOR UPDATE;
 
     IF NOT FOUND THEN
@@ -1281,7 +1319,8 @@ BEGIN
     check_status,
     created_at,
     request_id,
-    tenant_id
+    tenant_id,
+    company_id
   ) VALUES (
     v_receipt_id,
     v_receipt->>'no',
@@ -1298,36 +1337,48 @@ BEGIN
     nullif(v_receipt->>'check_status', ''),
     now(),
     v_request_id,
-    v_receipt_tenant_id
+    v_receipt_tenant_id,
+    v_company_id
   );
+
+  SELECT nullif(allocation_record->>'invoice_id', '')
+    INTO v_payment_invoice_id
+  FROM jsonb_array_elements(v_allocations) AS allocation_record
+  LIMIT 1;
 
   -- Insert corresponding payments row (shadow record)
   INSERT INTO public.payments(
     receipt_id,
     contract_id,
+    invoice_id,
     amount,
     payment_date,
     payment_method,
     reference_no,
+    reference_number,
     date_time,
     channel,
     status,
     notes,
     created_by,
-    created_at
+    created_at,
+    company_id
   ) VALUES (
     v_receipt_id,
     v_receipt_contract_id,
+    v_payment_invoice_id,
     v_receipt_amount,
     (v_receipt_date_time::date),
     v_receipt_channel,
+    nullif(v_receipt_ref, ''),
     nullif(v_receipt_ref, ''),
     v_receipt_date_time,
     v_receipt_channel,
     v_receipt_status,
     nullif(v_receipt_notes, ''),
     auth.uid(),
-    now()
+    now(),
+    v_company_id
   );
 
   -- Insert receipt allocations
@@ -1346,14 +1397,16 @@ BEGIN
       invoice_id,
       amount,
       created_at,
-      tenant_id
+      tenant_id,
+      company_id
     ) VALUES (
       v_allocation_id,
       v_allocation_receipt_id,
       v_allocation_invoice_id,
       (v_allocation->>'amount')::numeric,
       now(),
-      v_allocation_tenant_id
+      v_allocation_tenant_id,
+      v_company_id
     );
   END LOOP;
 
@@ -1377,7 +1430,8 @@ BEGIN
       ELSE invoice_record.status
     END
   FROM allocation_totals
-  WHERE invoice_record.id::text = allocation_totals.invoice_id;
+  WHERE invoice_record.id::text = allocation_totals.invoice_id
+    AND invoice_record.company_id = v_company_id;
 
   -- Insert journal entries
   FOR v_journal IN
@@ -1398,7 +1452,8 @@ BEGIN
       source_id,
       entity_type,
       entity_id,
-      created_at
+      created_at,
+      company_id
     ) VALUES (
       v_journal_id,
       v_journal->>'no',
@@ -1409,7 +1464,8 @@ BEGIN
       v_journal_source_id,
       nullif(v_journal->>'entity_type', ''),
       nullif(v_journal->>'entity_id', ''),
-      now()
+      now(),
+      v_company_id
     );
   END LOOP;
 
@@ -1769,14 +1825,22 @@ for update;
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, payment_method, request_id, company_id)
   values (v_deposit_id, 'refund', v_amount, 'refund_partial', v_notes, v_payment_method, v_request_id, v_company_id);
 
-  v_cash_account_id := (select id from public.accounts where no='1111' limit 1);
-  v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);
+  v_cash_account_id := (
+    select id from public.accounts
+    where no='1111' and company_id = v_company_id
+    limit 1
+  );
+  v_deposit_account_id := (
+    select id from public.accounts
+    where no='2200' and company_id = v_company_id
+    limit 1
+  );
 
   if v_cash_account_id is not null and v_deposit_account_id is not null then
     insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, company_id)
     values
       (gen_random_uuid()::text, 'DEP-REF-'||substr(v_deposit_id,1,6)||'-D', v_refund_date, v_deposit_account_id, v_amount, 'DEBIT', v_deposit_id, 'deposit_refund', v_deposit_id, v_company_id),
-      (gen_random_uuid()::text, 'DEP-REF-'||substr(v_deposit_id,1,6)||'-C', v_refund_date, v_cash_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit_refund', v_deposit_id);
+      (gen_random_uuid()::text, 'DEP-REF-'||substr(v_deposit_id,1,6)||'-C', v_refund_date, v_cash_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit_refund', v_deposit_id, v_company_id);
   end if;
 
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'refunded',v_amount,'remaining', v_deposit.remaining_amount - v_amount,'request_id',v_request_id);
@@ -2373,6 +2437,7 @@ CREATE OR REPLACE FUNCTION public.void_receipt_atomic(payload jsonb)
 AS $function$
 DECLARE
   v_actor_id uuid := auth.uid();
+  v_company_id uuid := (auth.jwt() -> 'app_metadata' ->> 'company_id')::uuid;
   v_requested_id text := nullif(btrim(payload->>'receipt_id'), '');
   v_reason text := nullif(btrim(payload->>'reason'), '');
   v_request_id text := nullif(btrim(payload->>'request_id'), '');
@@ -2424,6 +2489,7 @@ BEGIN
   INTO v_payment
   FROM public.payments p
   WHERE p.id::text = v_requested_id
+    AND p.company_id = v_company_id
     AND p.deleted_at IS NULL
   FOR UPDATE;
 
@@ -2432,6 +2498,7 @@ BEGIN
     INTO v_receipt
     FROM public.receipts r
     WHERE r.id::text = coalesce(nullif(v_payment.receipt_id::text, ''), v_payment.id::text)
+      AND r.company_id = v_company_id
       AND r.deleted_at IS NULL
     FOR UPDATE;
   ELSE
@@ -2439,6 +2506,7 @@ BEGIN
     INTO v_receipt
     FROM public.receipts r
     WHERE r.id::text = v_requested_id
+      AND r.company_id = v_company_id
       AND r.deleted_at IS NULL
     FOR UPDATE;
 
@@ -2447,11 +2515,17 @@ BEGIN
       INTO v_payment
       FROM public.payments p
       WHERE p.receipt_id::text = v_receipt.id::text
+        AND p.company_id = v_company_id
         AND p.deleted_at IS NULL
       ORDER BY p.created_at DESC NULLS LAST, p.id
       LIMIT 1
       FOR UPDATE;
     END IF;
+  END IF;
+
+  IF v_company_id IS NULL THEN
+    RAISE EXCEPTION 'تعذر تحديد الشركة النشطة'
+      USING ERRCODE = '42501';
   END IF;
 
   IF v_payment.id IS NULL OR v_receipt.id IS NULL THEN
@@ -2469,6 +2543,7 @@ BEGIN
   INTO v_original_count, v_original_debits, v_original_credits
   FROM public.journal_entries je
   WHERE je.source_id::text = v_receipt.id::text
+    AND je.company_id = v_company_id
     AND je.deleted_at IS NULL
     AND coalesce(je.request_id, '') <> v_reversal_request_id
     AND coalesce(je.entity_type, '') <> 'receipt_void';
@@ -2482,6 +2557,7 @@ BEGIN
   INTO v_existing_reversal_count
   FROM public.journal_entries je
   WHERE je.request_id = v_reversal_request_id
+    AND je.company_id = v_company_id
     AND je.deleted_at IS NULL;
 
   IF NOT v_receipt_was_void THEN
@@ -2489,6 +2565,7 @@ BEGIN
       SELECT ra.invoice_id, sum(ra.amount)::numeric AS amount
       FROM public.receipt_allocations ra
       WHERE ra.receipt_id::text = v_receipt.id::text
+        AND ra.company_id = v_company_id
       GROUP BY ra.invoice_id
     )
     UPDATE public.invoices i
@@ -2502,23 +2579,26 @@ BEGIN
       END,
       updated_at = now()
     FROM allocated
-    WHERE i.id = allocated.invoice_id;
+    WHERE i.id = allocated.invoice_id
+      AND i.company_id = v_company_id;
   END IF;
 
   UPDATE public.receipts
   SET status = 'VOID', voided_at = floor(extract(epoch from clock_timestamp()) * 1000)::bigint, updated_at = now()
-  WHERE id::text = v_receipt.id::text;
+  WHERE id::text = v_receipt.id::text
+    AND company_id = v_company_id;
 
   UPDATE public.payments
   SET status = 'VOID', updated_at = now()
-  WHERE id = v_payment.id;
+  WHERE id = v_payment.id
+    AND company_id = v_company_id;
 
   IF v_original_count > 0 AND v_existing_reversal_count = 0 THEN
     v_reversal_batch_id := gen_random_uuid();
 
     INSERT INTO public.journal_entries (
       id, no, date, account_id, amount, type, source_id, entity_type,
-      entity_id, created_at, request_id, status, batch_id
+      entity_id, created_at, request_id, status, batch_id, company_id
     )
     SELECT
       gen_random_uuid()::text,
@@ -2533,9 +2613,11 @@ BEGIN
       now(),
       v_reversal_request_id,
       'posted',
-      v_reversal_batch_id
+      v_reversal_batch_id,
+      v_company_id
     FROM public.journal_entries je
     WHERE je.source_id::text = v_receipt.id::text
+      AND je.company_id = v_company_id
       AND je.deleted_at IS NULL
       AND coalesce(je.request_id, '') <> v_reversal_request_id
       AND coalesce(je.entity_type, '') <> 'receipt_void';
@@ -2611,14 +2693,14 @@ CREATE OR REPLACE FUNCTION public.update_contract_balance_from_allocation()
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  -- Production schema uses text for contracts.id, invoices.contract_id, and
-  -- contract_balances.contract_id. Keep all local ID variables text to avoid
-  -- invalid text = uuid comparisons inside invoice/allocation triggers.
-  v_contract_id text;
+  -- Bind identifiers to the destination schema so fresh replay and
+  -- production-compatible schemas cannot drift into text/uuid comparisons.
+  v_contract_id public.contract_balances.contract_id%TYPE;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id text;
-  v_unit_id text;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
+  v_company_id uuid;
 BEGIN
   -- Get contract_id from the invoice referenced by this allocation
   IF TG_OP = 'DELETE' THEN
@@ -2640,12 +2722,13 @@ BEGIN
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
     c.tenant_id,
-    c.unit_id::text
-  INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
+    c.unit_id::text,
+    c.company_id
+  INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id, v_company_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
   WHERE c.id = v_contract_id
-  GROUP BY c.tenant_id, c.unit_id;
+  GROUP BY c.tenant_id, c.unit_id, c.company_id;
 
   -- If the referenced contract cannot be found, do not fail invoice/allocation
   -- writes. This should not happen with valid FK data, but keeps the trigger
@@ -2656,7 +2739,7 @@ BEGIN
 
   -- Upsert contract_balances
   INSERT INTO public.contract_balances (
-    contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at
+    contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, company_id, updated_at
   ) VALUES (
     v_contract_id,
     v_tenant_id,
@@ -2664,6 +2747,7 @@ BEGIN
     v_total_invoiced,
     v_total_paid,
     v_total_invoiced - v_total_paid,
+    v_company_id,
     now()
   )
   ON CONFLICT (contract_id) DO UPDATE SET
@@ -2672,6 +2756,7 @@ BEGIN
     total_invoiced = EXCLUDED.total_invoiced,
     total_paid = EXCLUDED.total_paid,
     balance_due = EXCLUDED.balance_due,
+    company_id = EXCLUDED.company_id,
     updated_at = now();
 
   RETURN COALESCE(NEW, OLD);
@@ -2687,11 +2772,11 @@ CREATE OR REPLACE FUNCTION public.update_contract_balance_from_invoice()
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_contract_id text;
+  v_contract_id public.contract_balances.contract_id%TYPE;
   v_total_invoiced numeric;
   v_total_paid numeric;
-  v_tenant_id text;
-  v_unit_id text;
+  v_tenant_id public.contract_balances.tenant_id%TYPE;
+  v_unit_id public.contract_balances.unit_id%TYPE;
   v_company_id uuid;
 BEGIN
   IF TG_OP = 'DELETE' THEN
@@ -2906,7 +2991,14 @@ CREATE OR REPLACE FUNCTION public.update_tenant_balance()
 AS $function$
 declare
   v_tenant_id text;
+  v_company_id uuid;
 begin
+  if tg_op = 'DELETE' then
+    v_company_id := old.company_id;
+  else
+    v_company_id := new.company_id;
+  end if;
+
   if tg_table_name = 'invoices' then
     if tg_op = 'DELETE' then
       select tenant_id
@@ -2935,20 +3027,25 @@ begin
   insert into public.tenant_balances (
     tenant_id,
     balance_due,
-    updated_at
+    updated_at,
+    company_id
   )
   select
     c.tenant_id,
     coalesce(sum(i.amount + coalesce(i.tax_amount, 0) - i.paid_amount), 0),
-    now()
+    now(),
+    v_company_id
   from public.contracts c
   left join public.invoices i
     on i.contract_id = c.id
    and i.deleted_at is null
   where c.tenant_id = v_tenant_id
+    and c.company_id = v_company_id
+    and (i.id is null or i.company_id = v_company_id)
   group by c.tenant_id
   on conflict (tenant_id) do update set
     balance_due = excluded.balance_due,
+    company_id = excluded.company_id,
     updated_at = now();
 
   return coalesce(new, old);

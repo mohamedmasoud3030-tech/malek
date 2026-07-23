@@ -4,6 +4,7 @@ import type { Maintenance } from './maintenance-service';
 
 const baseRequest: Maintenance = {
   id: 'maintenance-1',
+  company_id: '00000000-0000-4000-8000-000000000001',
   no: null,
   property_id: 'property-1',
   unit_id: 'unit-1',

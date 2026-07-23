@@ -28,6 +28,7 @@ const fixtureUnits: Unit[] = [
 ];
 
 const base = {
+  company_id: '00000000-0000-4000-8000-000000000001',
   no: null, description: null, assigned_to: null, cost: null, charged_to: null,
   notes: null, work_description: null, response_time_hours: null, expense_id: null,
   invoice_id: null, reported_by: null, unit_id: null, technician_name: null,

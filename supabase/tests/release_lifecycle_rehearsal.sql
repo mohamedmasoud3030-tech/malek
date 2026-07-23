@@ -50,28 +50,34 @@ values
 on conflict (id) do update
 set role = excluded.role, status = excluded.status, is_active = excluded.is_active;
 
-insert into public.accounts (id, no, name)
-values ('1111', '1111', 'Cash')
+insert into public.company_members (company_id, user_id, role)
+values
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000001101', 'OWNER'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000001102', 'MEMBER')
+on conflict (company_id, user_id) do update set role = excluded.role;
+
+insert into public.accounts (id, no, name, company_id)
+values ('1111', '1111', 'Cash', '00000000-0000-4000-8000-000000000001')
 on conflict (id) do nothing;
 
-insert into public.owners (id, full_name)
-values ('00000000-0000-0000-0000-000000001201', 'Lifecycle Owner');
+insert into public.owners (id, full_name, company_id)
+values ('00000000-0000-0000-0000-000000001201', 'Lifecycle Owner', '00000000-0000-4000-8000-000000000001');
 
-insert into public.properties (id, title, type, address, status)
-values ('00000000-0000-0000-0000-000000001301', 'Lifecycle Property', 'residential', 'Release Gate', 'active');
+insert into public.properties (id, title, type, address, status, company_id)
+values ('00000000-0000-0000-0000-000000001301', 'Lifecycle Property', 'residential', 'Release Gate', 'active', '00000000-0000-4000-8000-000000000001');
 
-insert into public.units (id, property_id, unit_number, status, rent_amount)
-values ('00000000-0000-0000-0000-000000001401', '00000000-0000-0000-0000-000000001301', 'LC-1', 'available', 1000);
+insert into public.units (id, property_id, unit_number, status, rent_amount, company_id)
+values ('00000000-0000-0000-0000-000000001401', '00000000-0000-0000-0000-000000001301', 'LC-1', 'available', 1000, '00000000-0000-4000-8000-000000000001');
 
-insert into public.people (id, full_name, type)
-values ('00000000-0000-0000-0000-000000001501', 'Lifecycle Tenant', 'tenant');
+insert into public.people (id, full_name, type, company_id)
+values ('00000000-0000-0000-0000-000000001501', 'Lifecycle Tenant', 'tenant', '00000000-0000-4000-8000-000000000001');
 
 insert into public.property_owners (
-  property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on
+  property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on, company_id
 ) values (
   '00000000-0000-0000-0000-000000001301',
   '00000000-0000-0000-0000-000000001201',
-  100, true, date '2026-01-01', date '2027-12-31'
+  100, true, date '2026-01-01', date '2027-12-31', '00000000-0000-4000-8000-000000000001'
 );
 
 insert into public.owner_agreements (
@@ -85,7 +91,7 @@ insert into public.owner_agreements (
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -104,7 +110,7 @@ select lives_ok(
   'authenticated ADMIN creates the lifecycle contract'
 );
 
-insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status)
+insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
   '00000000-0000-0000-0000-000000001701',
   id,
@@ -113,7 +119,8 @@ select
   1000,
   0,
   0,
-  'UNPAID'
+  'UNPAID',
+  '00000000-0000-4000-8000-000000000001'
 from public.contracts
 where notes = 'release-lifecycle-contract';
 
@@ -244,7 +251,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001102","role":"authenticated","app_metadata":{"user_role":"USER"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001102","role":"authenticated","app_metadata":{"user_role":"USER","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -267,7 +274,7 @@ select throws_ok(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 
@@ -441,7 +448,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -504,7 +511,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -565,7 +572,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -678,7 +685,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;

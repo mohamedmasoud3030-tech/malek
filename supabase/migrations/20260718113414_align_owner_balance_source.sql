@@ -14,7 +14,17 @@ DECLARE
   v_expenses numeric := 0;
   v_commission numeric := 0;
   v_balance_owner_id public.owner_balances.owner_id%TYPE := p_owner_id;
+  v_company_id uuid;
 BEGIN
+  SELECT owner_record.company_id
+    INTO v_company_id
+  FROM public.owners AS owner_record
+  WHERE owner_record.id = p_owner_id;
+
+  IF v_company_id IS NULL THEN
+    RAISE EXCEPTION 'Owner company scope could not be resolved.';
+  END IF;
+
   SELECT COALESCE(sum(p.amount), 0),
     COALESCE(sum(CASE WHEN oa.commission_type = 'RATE'
       THEN p.amount * oa.commission_value / 100 ELSE 0 END), 0)
@@ -22,7 +32,10 @@ BEGIN
   FROM public.payments p
   JOIN public.contracts c ON c.id = p.contract_id AND c.deleted_at IS NULL
   JOIN public.owner_agreements oa ON oa.id = c.agreement_id AND oa.owner_id = p_owner_id
-  WHERE p.deleted_at IS NULL AND upper(COALESCE(p.status, '')) <> 'VOID';
+  WHERE p.deleted_at IS NULL
+    AND p.company_id = v_company_id
+    AND c.company_id = v_company_id
+    AND upper(COALESCE(p.status, '')) <> 'VOID';
 
   -- The clean canonical expense table deliberately has no owner/office charge
   -- classifier. Do not guess ownership there. The legacy live table can still
@@ -43,25 +56,29 @@ BEGIN
       WHERE e.deleted_at IS NULL
         AND upper(COALESCE(e.status, '')) = 'POSTED'
         AND upper(COALESCE(e.charged_to, '')) = 'OWNER'
+        AND e.company_id = $2
         AND EXISTS (
           SELECT 1 FROM public.property_owners po
           WHERE po.property_id = e.property_id AND po.owner_id = $1
             AND (po.starts_on IS NULL OR po.starts_on <= public._safe_date(e.date_time))
             AND (po.ends_on IS NULL OR po.ends_on >= public._safe_date(e.date_time))
         )
-    $owner_expenses$ INTO v_expenses USING p_owner_id;
+    $owner_expenses$ INTO v_expenses USING p_owner_id, v_company_id;
   ELSE
     v_expenses := 0;
   END IF;
 
-  INSERT INTO public.owner_balances(owner_id, total_income, total_expenses, commission, net_balance, updated_at)
+  INSERT INTO public.owner_balances(
+    owner_id, total_income, total_expenses, commission, net_balance, updated_at, company_id
+  )
   VALUES (v_balance_owner_id, public._r3(v_income), public._r3(v_expenses), public._r3(v_commission),
-    public._r3(v_income - v_expenses - v_commission), now())
+    public._r3(v_income - v_expenses - v_commission), now(), v_company_id)
   ON CONFLICT (owner_id) DO UPDATE SET
     total_income = EXCLUDED.total_income,
     total_expenses = EXCLUDED.total_expenses,
     commission = EXCLUDED.commission,
     net_balance = EXCLUDED.net_balance,
+    company_id = EXCLUDED.company_id,
     updated_at = now();
 END;
 $$;

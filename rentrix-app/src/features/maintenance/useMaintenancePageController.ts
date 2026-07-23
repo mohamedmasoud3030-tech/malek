@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useProperties } from '@/features/properties/use-properties';
+import { ACTIVE_COMPANY_ERROR, useActiveCompanyId } from '@/hooks/use-company';
 import { useAllUnits, useUnits } from '@/features/units/use-units';
 import {
   useCreateMaintenance,
@@ -68,6 +69,7 @@ export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 're
  * MaintenanceList and the overlay components and stays render-only.
  */
 export function useMaintenancePageController() {
+  const activeCompanyId = useActiveCompanyId();
   const [statusFilter, setStatusFilter] = useState<MaintenanceStatusFilter>('all');
   const [priorityFilter, setPriorityFilter] = useState<MaintenancePriorityFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
@@ -172,7 +174,13 @@ export function useMaintenancePageController() {
   };
 
   const onSubmit = (values: MaintenanceFormValues) => {
+    if (!activeCompanyId) {
+      form.setError('root', { message: ACTIVE_COMPANY_ERROR });
+      return;
+    }
+
     const payload = {
+      company_id: activeCompanyId,
       property_id: values.property_id,
       unit_id: values.unit_id,
       title: values.title,
