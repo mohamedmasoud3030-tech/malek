@@ -23,7 +23,7 @@ There is no separate `lib/` package at the workspace root. The workspace's only 
 - `store/ui-store.ts` — Zustand store for local UI-only state (theme, sidebar, sync status). Not a data-persistence layer.
 - `types/database.ts` — generated Supabase database types; `types/domain.ts` — shared domain-adjacent types used across features.
 
-Active execution priorities are maintained in [`NEXT.md`](./NEXT.md); verified implementation and live-state caveats are maintained in [`CURRENT_STATE.md`](./CURRENT_STATE.md).
+Active execution priorities are maintained in [`NEXT.md`](./NEXT.md); verified implementation and live-state caveats are maintained in [`APP_STATUS.md`](./APP_STATUS.md).
 
 ## Routing
 

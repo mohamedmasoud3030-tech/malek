@@ -1,36 +1,22 @@
-# Next Actions
+# الخطوات القادمة
 
-## Current checkpoint
+للحالة الفعلية الحالية للتطبيق (الميزات، الجودة، الجاهزية): **[`APP_STATUS.md`](APP_STATUS.md)** — دايماً المصدر الوحيد المعتمد، آخر تحقق مباشر بتاريخه المذكور فيه.
 
-All previously open repository PRs (#1233, #1269, and #1271) are merged, and
-GitHub currently reports zero open PRs. See [`PROJECT_STATUS.md`](PROJECT_STATUS.md)
-for the authoritative current status.
+## الأولوية القادمة (تحتاج جلسة مستقلة، حسب توجيه سابق)
 
-## Completed repository work
+**توحيد ملفات migrations**: 151 ملف في `supabase/migrations/` مقابل 3 بس في `supabase/migrations_consolidated/`. لازم فحص كامل لمطابقة الـ ledger والـ schema قبل أي حذف لملفات — لا تُخلط مع أي شغل تاني.
 
-- Migration-history reconciliation and company-isolation fixes are present on
-  `main`.
-- Paginated financial reads have deterministic ordering and regression tests.
-- Build, typecheck, lint, application tests, financial tests, deployment, and
-  report-status checks are passing.
-- The remote-only migration ledger version `20260721234207` has a matching
-  local no-op reconciliation marker.
-- Replay compatibility fixes cover legacy `companies`, `company_members`,
-  policies, company foreign keys, and UUID/text payment comparisons.
+## بنود قايمة (بعد التوحيد)
 
-## Required before release sign-off
+- معالجة الـ 224 ملاحظة أداء من Supabase Advisor (79 `auth_rls_initplan`، 20 `multiple_permissive_policies`، فهارس مفقودة/غير مستخدمة) — مش عاجلة عند الحجم الحالي للبيانات، لكن لازم تتعالج قبل أول عميل حقيقي بحجم بيانات كبير
+- تفعيل Leaked Password Protection في Supabase Auth (إصلاح فوري، بدون تكلفة)
+- توحيد التعريف المكرر في `sonar-project.properties` (`sonar.exclusions`/`sonar.cpd.exclusions` معرّفين مرتين، الثاني بيلغي الأول)
+- تنضيف الفروع القديمة على GitHub (250+ فرع تراكمي) — خارج نطاق أي جلسة تقنية حالية، يحتاج قرار مستقل
+- استكمال pgTAP لسيناريوهات VOID/الودائع/تسويات الملاك بمزيد من التكرار (الميزات مربوطة بالكامل، لكن بدون بيانات استخدام حقيقية بعد)
 
-1. The single known QA VOID payment mismatch was repaired to the existing receipt UUID; verify the read-only invariant before release.
-2. Verify a restorable database and Storage backup before any further production write.
-3. Rerun Supabase Preview and the release-blocker database gate.
-4. Resolve SonarCloud’s Automatic Analysis scope or switch to CI-based analysis, then rerun the quality gate.
-5. Rerun all required GitHub checks and record the final commit and check URLs.
+## قواعد الأمان الثابتة
 
-## Safety rules
-
-- Do not bypass the payment identity preflight.
-- Do not use `supabase db repair`, `supabase db push`, or direct production SQL
-  until the backup and repair plan are approved.
-- Do not delete QA or financial rows ad hoc.
-- Do not claim production readiness from local tests alone.
-- Revoke any credentials shared during troubleshooting.
+- بدون تعديلات إنتاج بدون موافقة صريحة لكل تغيير على حدة
+- Squash-merge فقط، PR واحد لكل وحدة عمل
+- تحديث `docs/APP_STATUS.md` بعد أي جلسة تمس الجاهزية أو الميزات
+- أي migration جديدة عبر `apply_migration` فقط، أبداً `execute_sql` للـ DDL
