@@ -303,7 +303,7 @@ select throws_ok(
   'overpayment is rejected atomically'
 );
 select is(
-  (select count(*)::integer from public.payments where invoice_id = '00000000-0000-0000-0000-000000000701'),
+  (select count(*)::integer from public.receipt_allocations where invoice_id = '00000000-0000-0000-0000-000000000701'),
   1,
   'failed overpayment leaves no partial payment row'
 );
