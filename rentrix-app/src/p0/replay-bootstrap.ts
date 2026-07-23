@@ -12,7 +12,7 @@
  *     modules (btree_gist, pgcrypto, uuid_ossp) are loaded via PGlite extensions.
  */
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
@@ -40,7 +40,7 @@ export async function createReplayedDatabase(): Promise<ReplayResult> {
   // explicitly for its post-fix phase.
   const files = readdirSync(migDir)
     .filter((f) => f.endsWith('.sql') && !f.includes('p0_company_isolation'))
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
   const applied: string[] = [];
   const failed: { file: string; error: string }[] = [];
 

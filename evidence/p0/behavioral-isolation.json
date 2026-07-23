@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T13:35:36.352Z",
+  "generatedAt": "2026-07-23T17:13:04.883Z",
   "fixFile": "20260724120000_p0_company_isolation_reports_rls.sql",
   "replayErrors": [],
   "fixture": {
@@ -430,8 +430,8 @@
             "idempotent": false,
             "request_id": "9a000000-0000-4000-8000-0000000000e1",
             "net_payable": 999999,
-            "settlement_id": "3c5d12ec-74a4-4353-9059-946d70b22563",
-            "settlement_no": "OST-202607-3C5D12EC"
+            "settlement_id": "72436f11-1c81-4fe3-9396-58f70cbe74e9",
+            "settlement_no": "OST-202607-72436F11"
           }
         }
       ],
@@ -443,8 +443,8 @@
             "idempotent": false,
             "request_id": "9a000000-0000-4000-8000-0000000000e1",
             "net_payable": 999999,
-            "settlement_id": "b09b2a5f-140a-4e50-a45c-daf607be4681",
-            "settlement_no": "OST-202607-B09B2A5F"
+            "settlement_id": "80922ce5-f934-4a11-9846-8883f00951b8",
+            "settlement_no": "OST-202607-80922CE5"
           }
         }
       ]
@@ -462,8 +462,8 @@
             "idempotent": false,
             "request_id": "9a000000-0000-4000-8000-0000000000e2",
             "net_payable": 999999,
-            "settlement_id": "247e1b98-3f3f-4b74-ab0b-bd23ac909739",
-            "settlement_no": "OST-202607-247E1B98"
+            "settlement_id": "9540ad82-5c4b-4353-b9fb-442fa33f8455",
+            "settlement_no": "OST-202607-9540AD82"
           }
         }
       ],
@@ -517,7 +517,7 @@
       },
       "after": [
         {
-          "out": "(0d72634c-6332-4ec6-8f40-aa7c061cd6e0,0a000000-0000-4000-8000-00000000000a,1a000000-0000-4000-8000-0000000000a2,property_management,RATE,12.0000,2026-08-01,,,\"2026-07-23 13:35:36.328+00\",\"2026-07-23 13:35:36.328+00\",ca000000-0000-4000-8000-00000000000a)"
+          "out": "(a9cda682-e468-482b-95d3-f718002c1e62,0a000000-0000-4000-8000-00000000000a,1a000000-0000-4000-8000-0000000000a2,property_management,RATE,12.0000,2026-08-01,,,\"2026-07-23 17:13:04.853+00\",\"2026-07-23 17:13:04.853+00\",ca000000-0000-4000-8000-00000000000a)"
         }
       ]
     },
