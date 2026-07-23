@@ -1,6 +1,6 @@
 # Rentrix — Multi-Tenant Architecture
 
-> تاريخ التحويل: 2026-07-22 | Migration: `20260722000001_multi_tenant_company_isolation.sql`
+> تاريخ التحويل: 2026-07-22 | Migration: `20260722010000_phase1_create_companies_and_seed.sql`
 
 ---
 

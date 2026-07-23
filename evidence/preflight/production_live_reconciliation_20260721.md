@@ -1,4 +1,5 @@
 # Production Live Reconciliation Evidence
+> **Historical snapshot notice (2026-07-23):** This report predates the merge of PRs #1233, #1269, and #1271. It is retained as evidence, not as the current repository status. See [`docs/PROJECT_STATUS.md`](../../docs/PROJECT_STATUS.md).
 
 Date: 2026-07-21 UTC  
 Project: `nnggcnpcuomwfuupupwg` (`RENTRIX EGY (live)`)  
