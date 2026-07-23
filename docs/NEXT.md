@@ -2,16 +2,15 @@
 
 للحالة الفعلية الحالية للتطبيق (الميزات، الجودة، الجاهزية): **[`APP_STATUS.md`](APP_STATUS.md)** — دايماً المصدر الوحيد المعتمد، آخر تحقق مباشر بتاريخه المذكور فيه.
 
-## P0 — التحقق متعدد الشركات (قيد التنفيذ — 2026-07-23، فرع `agent/p0-multi-tenant-verification`)
+## P0 — التحقق متعدد الشركات (مكتمل تقنيًا — 2026-07-24، فرع `agent/p0-multi-tenant-verification` → PR #1276)
 
-مرحلة إثبات وتحقق معتمدة من المالك (لا تعديلات واسعة). ما تم حتى الآن:
-
-- ✅ جرد آلي قابل لإعادة التشغيل (`scripts/p0/inventory.mjs`): 152 هجرة، 68 جدول public، 91 دالة (32 تستدعيها الواجهة، 5 `rpt_*` ميتة).
-- ✅ مصفوفة أمان ساكنة لكل دالة (`scripts/p0/rpc-security-matrix.mjs`).
-- ✅ إعادة تشغيل معزولة كاملة: **152/152 هجرة** على PGlite (`rentrix-app/src/p0/replay-bootstrap.ts`).
-- ✅ تثبيت سلوكي ببيانات شركةين مرقّمة: **تسرب تجميعي مؤكد** في تقارير SECURITY DEFINER (`rpt_cash_flow/rpt_dashboard_overview/rpt_daily_collection` أعادت 7000 بدل 1000)، **سياسات RLS دور-فقط بلا مرشّح شركة** (قراءة payments كشركة A أعادت صفي الشركتين)، **تسوية مالك بمبالغ مصطنعة مقبولة**، و**مسودة تسوية لمالك شركة أخرى تُنشأ بلا تحقق ملكية**. الأدوار المتأثرة بخلل التسوية: ADMIN وMANAGER (USER مرفوض).
-- التقرير المرحلي الكامل: [`docs/audits/P0_MULTI_TENANT_VERIFICATION_20260723.md`](audits/P0_MULTI_TENANT_VERIFICATION_20260723.md).
-- ⏳ التالي: هجرة إصلاح P0 (مرشّح الشركة لدوال التقارير الـ13 + سياسة RESTRICTIVE موحدة للعزل + عمود `owner_agreements.company_id` + تحقق ملكية هدف التسوية) مع rollback وعقد اختبار، ثم إعادة إثبات العزل أخضر + parity، ثم بوابات CI وقرار GO/NO-GO لـP1.
+- ✅ جرد آلي قابل لإعادة التشغيل (`scripts/p0/inventory.mjs`), مصفوفة أمان (`rpc-security-matrix.mjs`), إعادة معزولة كاملة **152/152**.
+- ✅ **عزل سببي بثلاث هويات × SELECT/INSERT/UPDATE/DELETE/RPC** مع إثبات هوية الجلسة (`current_user=authenticated`, session_user, JWT, `current_company_id()`, لا BYPASSRLS/لا ملكية): تأكدت تسريبات القراءة (A/B/بلا عضوية يرون الشركتين)، الكتابة المتقاطعة (UPDATE/DELETE/INSERT‑spoof ناجحة عبر REST)، انتحال معامل `rpt_owner_statement`، انتحال مالك التسوية (T7)، مسار كتابة الفاتورة/الإيصال المتقاطع، وموت RPC إنشاء الاتفاقيات على main. سبب «0 صفوف» الأولي وثّق كأثر محاكاة (ترايغر ظل يعيد كتابة معرفات المدفوعات) وصُحّح بالاستهداف الديناميكي.
+- ✅ الإصلاح (هجرة `20260724120000_p0_company_isolation_reports_rls.sql` + rollback): 13 دالة تقارير بقيود شركة صارمة، سياسة RESTRICTIVE موحدة (56) + DEFAULT للختم (55)، إحياء `owner_agreements.company_id` مع تحليل أثر موثق، حُرّاس F‑SET/F‑WR/F‑AGR. **تغطية التراجع 19/19** وبصمة ما بعد الـrollback مطابقة تمامًا لما قبل P0 (`p0-forward-rollback.test.ts`).
+- ✅ البوابات المحلية كلها خضراء: typecheck/lint/typecheck:test/**test (1000)**/build/check:architecture + حزم P0 المستقلة (56).
+- 🔶 تصنيف التقارير الستة المكسورة على main (تعريف SQL فعلي، فشل مغلق بلا تسريب، مثبت superuser‑مطابق): مؤجلة كوظيفية غير أمنية — إصلاحها في مرحلة تصليح التقارير (P‑لاحقة): `rpt_trial_balance`, `rpt_balance_sheet` (operator text<=date)؛ `rpt_aged_receivables`, `rpt_overdue_invoices`, `rpt_rent_roll` (حمل `_safe_date(date)` مفقود)؛ `rpt_tenant_statement` (uuid=text).
+- 🔶 فروق بيئة PGlite↔Supabase موثقة (منحة USAGE على schema auth) في `evidence/p0/cause/env-parity.md`.
+- ⏳ المتبقي حوكمي فقط: خُضر CI على #1276 → دمج squash → فحص حي آمن (CI live أو BEGIN/ROLLBACK بدور واقعي). **P1 (أرقام التسوية الموثوقة من العميل — الإثبات مستقل وجاهز) يبدأ بعد الدمج من أحدث main في PR مستقل.**
 
 ## الأولوية القادمة — تحديث
 

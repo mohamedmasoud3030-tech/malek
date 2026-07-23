@@ -1,7 +1,7 @@
 # P0 — مصفوفة أمان الدوال (فحص ساكن، أحدث تعريف)
-أُنشئ: 2026-07-23T10:30:15.005Z
+أُنشئ: 2026-07-23T12:25:32.810Z
 
-الدوال: 91 · منكشفة (تقارير/كتابة مالية): 33 · بحاجة لفحص سلوكي: 20
+الدوال: 92 · منكشفة (تقارير/كتابة مالية): 33 · بحاجة لفحص سلوكي: 19
 
 | الدالة | النوع | secdef | search_path | اشتقاق شركة | انتحال شركة | مبالغ من العميل | REVOKE p/a | منح | الحالة |
 |---|---|---|---|---|---|---|---|---|---|
@@ -48,24 +48,25 @@
 | `recalculate_invoice_status` | trigger-or-internal | ✅ | ✅ | — | — | — | ⚠️ | — | ✅ سليم ساكنًا |
 | `recalculate_owner_balance` | trigger-or-internal | ✅ | ✅ | — | — | — | ✅ | — | ✅ سليم ساكنًا |
 | `recalculate_unit_statuses` | trigger-or-internal | ✅ | ✅ | — | — | — | ✅ | service_role | ✅ سليم ساكنًا |
-| `record_invoice_payment_atomic` | financial-write | ✅ | ✅ | — | — | 🔴 amount | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
+| `record_invoice_payment_atomic` | financial-write | ✅ | ✅ | ✅ | — | 🔴 amount | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `refresh_property_owner_projection` | trigger-or-internal | ✅ | ✅ | — | — | — | ✅ | — | ✅ سليم ساكنًا |
 | `refund_deposit_atomic` | financial-write | ✅ | ✅ | ✅ | — | 🔴 amount | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `renew_contract_atomic` | financial-write | ✅ | ✅ | ✅ | — | — | ✅ | authenticated,service_role | ✅ سليم ساكنًا |
+| `require_company_id` | helper-or-other | ✅ | ✅ | ✅ | — | — | ✅ | authenticated,service_role | ✅ سليم ساكنًا |
 | `resolve_maintenance_with_expense` | helper-or-other | ✅ | ✅ | — | — | — | ✅ | authenticated | ✅ سليم ساكنًا |
 | `resolve_unit_operational_status` | trigger-or-internal | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ✅ سليم ساكنًا |
 | `retry_automation_run` | helper-or-other | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ✅ سليم ساكنًا |
-| `rpt_aged_receivables` | report-read | — | ✅ | — | — | — | ⚠️ | — | ⚠️ فجوات — يخضع للفحص السلوكي |
+| `rpt_aged_receivables` | report-read | — | ✅ | ✅ | — | — | ⚠️ | — | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `rpt_balance_sheet` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `rpt_cash_flow` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `rpt_daily_collection` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `rpt_dashboard_overview` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
-| `rpt_financial_summary` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
+| `rpt_financial_summary` | report-read | ✅ | ✅ | ✅ | — | — | ✅ | authenticated,service_role | ✅ سليم ساكنًا |
 | `rpt_income_statement` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
-| `rpt_overdue_invoices` | report-read | — | ✅ | — | — | — | ⚠️ | — | ⚠️ فجوات — يخضع للفحص السلوكي |
+| `rpt_overdue_invoices` | report-read | — | ✅ | ✅ | — | — | ⚠️ | — | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `rpt_owner_statement` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
-| `rpt_rent_roll` | report-read | — | ✅ | — | — | — | ⚠️ | — | ⚠️ فجوات — يخضع للفحص السلوكي |
-| `rpt_tenant_statement` | report-read | — | ✅ | — | — | — | ✅ | authenticated,service_role | ✅ سليم ساكنًا |
+| `rpt_rent_roll` | report-read | — | ✅ | ✅ | — | — | ⚠️ | — | ⚠️ فجوات — يخضع للفحص السلوكي |
+| `rpt_tenant_statement` | report-read | — | ✅ | ✅ | — | — | ✅ | authenticated,service_role | ✅ سليم ساكنًا |
 | `rpt_trial_balance` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `rpt_vat_return` | report-read | ✅ | ✅ | — | — | — | ✅ | authenticated,service_role | ⚠️ فجوات — يخضع للفحص السلوكي |
 | `run_scheduled_automation_rules` | helper-or-other | ✅ | ✅ | — | — | — | ✅ | service_role | ✅ سليم ساكنًا |

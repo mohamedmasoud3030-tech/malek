@@ -1,7 +1,7 @@
 {
   "summary": {
-    "generatedAt": "2026-07-23T10:30:15.005Z",
-    "totalFunctions": 91,
+    "generatedAt": "2026-07-23T12:25:32.810Z",
+    "totalFunctions": 92,
     "exposureFunctions": 33,
     "staticFailed": [
       "create_deposit_atomic",
@@ -15,7 +15,6 @@
       "rpt_cash_flow",
       "rpt_daily_collection",
       "rpt_dashboard_overview",
-      "rpt_financial_summary",
       "rpt_income_statement",
       "rpt_overdue_invoices",
       "rpt_owner_statement",
@@ -298,7 +297,7 @@
     {
       "name": "create_owner_agreement_atomic",
       "kind": "financial-write",
-      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -317,7 +316,7 @@
     {
       "name": "create_owner_settlement_draft_atomic",
       "kind": "financial-write",
-      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -664,7 +663,7 @@
     {
       "name": "post_receipt_atomic",
       "kind": "financial-write",
-      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": false,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -823,11 +822,11 @@
     {
       "name": "record_invoice_payment_atomic",
       "kind": "financial-write",
-      "latestDefinition": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
-      "derivesCompanyId": false,
+      "derivesCompanyId": true,
       "companySpoofSurface": false,
       "clientTrustedMoney": [
         "amount"
@@ -840,7 +839,6 @@
       ],
       "status": "⚠️ فجوات — يخضع للفحص السلوكي",
       "gaps": [
-        "لا يشتق company_id",
         "مبالغ موثوقة من العميل: amount"
       ]
     },
@@ -894,6 +892,25 @@
       "companySpoofSurface": false,
       "clientTrustedMoney": [],
       "idsFromPayload": true,
+      "revokedFromPublicAnon": true,
+      "grantedTo": [
+        "authenticated",
+        "service_role"
+      ],
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
+    },
+    {
+      "name": "require_company_id",
+      "kind": "helper-or-other",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
+      "calledByFrontend": false,
+      "securityDefiner": true,
+      "searchPathPinned": true,
+      "derivesCompanyId": true,
+      "companySpoofSurface": false,
+      "clientTrustedMoney": [],
+      "idsFromPayload": false,
       "revokedFromPublicAnon": true,
       "grantedTo": [
         "authenticated",
@@ -961,11 +978,11 @@
     {
       "name": "rpt_aged_receivables",
       "kind": "report-read",
-      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": false,
       "securityDefiner": false,
       "searchPathPinned": true,
-      "derivesCompanyId": false,
+      "derivesCompanyId": true,
       "companySpoofSurface": false,
       "clientTrustedMoney": [],
       "idsFromPayload": false,
@@ -980,7 +997,7 @@
     {
       "name": "rpt_balance_sheet",
       "kind": "report-read",
-      "latestDefinition": "20260711000003_add_rpt_balance_sheet.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -1001,7 +1018,7 @@
     {
       "name": "rpt_cash_flow",
       "kind": "report-read",
-      "latestDefinition": "20260714000004_fix_rpt_cash_flow_void_filter.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -1022,7 +1039,7 @@
     {
       "name": "rpt_daily_collection",
       "kind": "report-read",
-      "latestDefinition": "20260721161500_reconcile_release_runtime_shapes.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": false,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -1043,7 +1060,7 @@
     {
       "name": "rpt_dashboard_overview",
       "kind": "report-read",
-      "latestDefinition": "20260718075504_fix_dashboard_overview_live_type_compatibility.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -1064,11 +1081,11 @@
     {
       "name": "rpt_financial_summary",
       "kind": "report-read",
-      "latestDefinition": "20260714000006_fix_rpt_financial_summary_status.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": false,
       "securityDefiner": true,
       "searchPathPinned": true,
-      "derivesCompanyId": false,
+      "derivesCompanyId": true,
       "companySpoofSurface": false,
       "clientTrustedMoney": [],
       "idsFromPayload": false,
@@ -1077,15 +1094,13 @@
         "authenticated",
         "service_role"
       ],
-      "status": "⚠️ فجوات — يخضع للفحص السلوكي",
-      "gaps": [
-        "لا يشتق company_id"
-      ]
+      "status": "✅ سليم ساكنًا",
+      "gaps": []
     },
     {
       "name": "rpt_income_statement",
       "kind": "report-read",
-      "latestDefinition": "20260711000002_add_rpt_income_statement.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -1106,11 +1121,11 @@
     {
       "name": "rpt_overdue_invoices",
       "kind": "report-read",
-      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": false,
       "securityDefiner": false,
       "searchPathPinned": true,
-      "derivesCompanyId": false,
+      "derivesCompanyId": true,
       "companySpoofSurface": false,
       "clientTrustedMoney": [],
       "idsFromPayload": false,
@@ -1125,7 +1140,7 @@
     {
       "name": "rpt_owner_statement",
       "kind": "report-read",
-      "latestDefinition": "20260718161218_fix_owner_statement_owner_schema_compatibility.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -1146,11 +1161,11 @@
     {
       "name": "rpt_rent_roll",
       "kind": "report-read",
-      "latestDefinition": "20260718113405_align_owner_tenant_report_sources.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": false,
       "securityDefiner": false,
       "searchPathPinned": true,
-      "derivesCompanyId": false,
+      "derivesCompanyId": true,
       "companySpoofSurface": false,
       "clientTrustedMoney": [],
       "idsFromPayload": false,
@@ -1165,11 +1180,11 @@
     {
       "name": "rpt_tenant_statement",
       "kind": "report-read",
-      "latestDefinition": "20260706025554_fix_rpt_tenant_statement_contract_id_and_tenants_table.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": false,
       "searchPathPinned": true,
-      "derivesCompanyId": false,
+      "derivesCompanyId": true,
       "companySpoofSurface": false,
       "clientTrustedMoney": [],
       "idsFromPayload": false,
@@ -1184,7 +1199,7 @@
     {
       "name": "rpt_trial_balance",
       "kind": "report-read",
-      "latestDefinition": "20260711000001_add_rpt_trial_balance.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -1205,7 +1220,7 @@
     {
       "name": "rpt_vat_return",
       "kind": "report-read",
-      "latestDefinition": "20260714000005_fix_rpt_vat_return_void_filter.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": true,
       "securityDefiner": true,
       "searchPathPinned": true,
@@ -1447,7 +1462,7 @@
     {
       "name": "update_contract_balance_from_allocation",
       "kind": "trigger-or-internal",
-      "latestDefinition": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+      "latestDefinition": "20260724120000_p0_company_isolation_reports_rls.sql",
       "calledByFrontend": false,
       "securityDefiner": true,
       "searchPathPinned": true,

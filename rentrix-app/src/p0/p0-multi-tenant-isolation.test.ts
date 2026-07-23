@@ -3,14 +3,26 @@
  *
  * Protocol (per approved P0 gate):
  *   1. Replay the full migration chain EXCLUDING the P0 fix migration →
- *      confirms the vulnerabilities that exist on main (evidence only).
+ *      captures the vulnerabilities that exist on main (pre-fix evidence).
  *   2. Apply the P0 fix migration on the same database → proves the fix
  *      closes every confirmed leak WITHOUT changing single-company results
- *      (numeric parity gate).
+ *      (numeric parity gate against independent ground-truth aggregates).
+ *
+ * Assertion design notes:
+ *   - Assertions are EXACT NUMERICS per report function (row counts, totals),
+ *     not substring sweeps. Substring sweeps are unsafe here: every fixture
+ *     UUID legitimately contains the group '8000', and company A's owner
+ *     statement legitimately nets to 900 (== B_EXP). Exact expected values
+ *     are computed from a two-company fixture where company B's magnitudes
+ *     (payment 6000, expense 900, JE 8000, rent 24000) cannot coincide with
+ *     any company-A aggregate — so any cross-company contamination flips a
+ *     number deterministically.
+ *   - Probes run as role `authenticated` with pinned JWT claims
+ *     (app_metadata.company_id), exactly like the production JWT hook.
  *
  * Nothing here touches production; the database is disposable.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -35,6 +47,7 @@ const OWNER_A = '0a000000-0000-4000-8000-00000000000a';
 const OWNER_B = '0b000000-0000-4000-8000-00000000000b';
 const PROPERTY_A = '1a000000-0000-4000-8000-00000000000a';
 const PROPERTY_B = '1b000000-0000-4000-8000-00000000000b';
+const PROPERTY_A2 = '1a000000-0000-4000-8000-0000000000a2';
 const TENANT_A = '2a000000-0000-4000-8000-00000000000a';
 const TENANT_B = '2b000000-0000-4000-8000-00000000000b';
 const UNIT_A = '3a000000-0000-4000-8000-00000000000a';
@@ -49,7 +62,7 @@ const AGREEMENT_A = '7a000000-0000-4000-8000-00000000000a';
 const AGREEMENT_B = '7b000000-0000-4000-8000-00000000000b';
 
 // Distinct fingerprints per company — any cross-contamination shows numerically.
-const A_PAY = 1000, B_PAY = 6000, A_EXP = 200, B_EXP = 900, B_JE = 8000;
+const A_PAY = 1000, B_PAY = 6000, A_EXP = 200, B_EXP = 900, B_JE = 8000, B_RENT = 24000;
 
 async function assume(db: PGlite, userId: string, companyId: string | null, role = 'authenticated') {
   const claims = JSON.stringify({
@@ -87,13 +100,16 @@ INSERT INTO public.owners (id, full_name, name, company_id) VALUES
 
 INSERT INTO public.properties (id, title, name, type, address, company_id) VALUES
   ('${PROPERTY_A}', 'عقار ألف', 'عقار ألف', 'سكني', 'مسقط', '${COMPANY_A}'),
-  ('${PROPERTY_B}', 'عقار باء', 'عقار باء', 'سكني', 'مسقط', '${COMPANY_B}');
+  ('${PROPERTY_B}', 'عقار باء', 'عقار باء', 'سكني', 'مسقط', '${COMPANY_B}'),
+  ('${PROPERTY_A2}', 'عقار ألف ٢', 'عقار ألف ٢', 'سكني', 'مسقط', '${COMPANY_A}');
 
 INSERT INTO public.property_owners (property_id, owner_id, ownership_percentage, is_primary, company_id) VALUES
   ('${PROPERTY_A}', '${OWNER_A}', 100, true, '${COMPANY_A}'),
-  ('${PROPERTY_B}', '${OWNER_B}', 100, true, '${COMPANY_B}');
+  ('${PROPERTY_B}', '${OWNER_B}', 100, true, '${COMPANY_B}'),
+  ('${PROPERTY_A2}', '${OWNER_A}', 100, true, '${COMPANY_A}');
 
--- NOTE (P0 finding): owner_agreements has NO company_id column in live schema.
+-- NOTE (P0 finding F-AGMT): owner_agreements has NO company_id column in the
+-- pre-fix schema; the fix migration adds it and backfills from owners.
 INSERT INTO public.owner_agreements (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on) VALUES
   ('${AGREEMENT_A}', '${OWNER_A}', '${PROPERTY_A}', 'property_management', 'RATE', 10, '2026-01-01'),
   ('${AGREEMENT_B}', '${OWNER_B}', '${PROPERTY_B}', 'property_management', 'RATE', 10, '2026-01-01');
@@ -108,7 +124,7 @@ INSERT INTO public.people (id, full_name, type, company_id) VALUES
 
 INSERT INTO public.contracts (id, property_id, unit_id, tenant_id, start_date, end_date, rent_amount, status, agreement_id, company_id) VALUES
   ('${CONTRACT_A}', '${PROPERTY_A}', '${UNIT_A}', '${TENANT_A}', '2026-01-01', '2026-12-31', 12000, 'active', '${AGREEMENT_A}', '${COMPANY_A}'),
-  ('${CONTRACT_B}', '${PROPERTY_B}', '${UNIT_B}', '${TENANT_B}', '2026-01-01', '2026-12-31', 24000, 'active', '${AGREEMENT_B}', '${COMPANY_B}');
+  ('${CONTRACT_B}', '${PROPERTY_B}', '${UNIT_B}', '${TENANT_B}', '2026-01-01', '2026-12-31', ${B_RENT}, 'active', '${AGREEMENT_B}', '${COMPANY_B}');
 
 INSERT INTO public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id) VALUES
   ('${INVOICE_A}', '${CONTRACT_A}', '2026-07-01', '2026-07-31', ${A_PAY}, 0, 0, 'UNPAID', '${COMPANY_A}'),
@@ -153,17 +169,18 @@ const probes: Probe[] = [];
 const errors: string[] = [];
 let db: PGlite;
 
-async function call(db: PGlite, sql: string, params: unknown[] = []) {
-  return (await db.query(sql, params)).rows;
+async function call(db: PGlite, sql: string, params: unknown[] = []): Promise<any[]> {
+  return (await db.query(sql, params)).rows as any[];
+}
+
+function recordProbe(fn: string, kind: Probe['kind'], actor: string, asCompany: string | null, when: 'before' | 'after', data: unknown) {
+  const existing = probes.find((p) => p.fn === fn);
+  if (existing) existing[when] = data;
+  else probes.push({ fn, kind, actor, asCompany, before: when === 'before' ? data : undefined, after: when === 'after' ? data : undefined });
 }
 
 async function probeReport(db: PGlite, when: 'before' | 'after') {
   const window = { from: '2026-07-01', to: '2026-07-31' };
-  const record = (fn: string, kind: Probe['kind'], data: unknown) => {
-    const existing = probes.find((p) => p.fn === fn);
-    if (existing) existing[when === 'before' ? 'before' : 'after'] = data;
-    else probes.push({ fn, kind, actor: 'adminA@A', asCompany: 'A', before: when === 'before' ? data : undefined });
-  };
   const runAs = async (fn: string, kind: Probe['kind'], sql: string, params: unknown[] = []) => {
     await assume(db, ADMIN_A, COMPANY_A);
     await db.exec('SET LOCAL ROLE authenticated;').catch(() => db.exec('SET ROLE authenticated;'));
@@ -174,26 +191,27 @@ async function probeReport(db: PGlite, when: 'before' | 'after') {
       data = { error: String(e).slice(0, 200) };
     }
     await db.exec('RESET ROLE;');
-    record(fn, kind, data);
+    recordProbe(fn, kind, 'adminA@A', 'A', when, data);
   };
 
   await runAs('rpt_cash_flow', 'report-leak', `SELECT public.rpt_cash_flow($1::date, $2::date) AS out`, [window.from, window.to]);
   await runAs('rpt_dashboard_overview', 'report-leak', `SELECT public.rpt_dashboard_overview($1::date, $2::date, $2::date) AS out`, [window.from, window.to]);
-  await runAs('rpt_trial_balance', 'report-leak', `SELECT public.rpt_trial_balance($2::date) AS out`, [window.from, window.to]);
+  await runAs('rpt_trial_balance', 'report-leak', `SELECT public.rpt_trial_balance($1::date) AS out`, [window.to]);
   await runAs('rpt_income_statement', 'report-leak', `SELECT public.rpt_income_statement($1::date, $2::date) AS out`, [window.from, window.to]);
-  await runAs('rpt_balance_sheet', 'report-leak', `SELECT public.rpt_balance_sheet($2::date) AS out`, [window.from, window.to]);
+  await runAs('rpt_balance_sheet', 'report-leak', `SELECT public.rpt_balance_sheet($1::date) AS out`, [window.to]);
   await runAs('rpt_vat_return', 'report-leak', `SELECT public.rpt_vat_return($1::date, $2::date) AS out`, [window.from, window.to]);
-  await runAs('rpt_financial_summary', 'report-leak', `SELECT public.rpt_financial_summary($1::date, $2::date) AS out`, [window.from, window.to]);
+  await runAs('rpt_financial_summary', 'report-leak', `SELECT * FROM public.rpt_financial_summary($1::date, $2::date)`, [window.from, window.to]);
   await runAs('rpt_daily_collection', 'report-leak', `SELECT public.rpt_daily_collection($1::date, $2::date) AS out`, [window.from, window.to]);
   await runAs('rpt_owner_statement', 'report-leak', `SELECT public.rpt_owner_statement($3::uuid, $1::date, $2::date) AS out`, [window.from, window.to, OWNER_A]);
-  await runAs('rpt_tenant_statement', 'report-leak', `SELECT public.rpt_tenant_statement($3::uuid, $1::date, $2::date) AS out`, [window.from, window.to, TENANT_A]);
-  await runAs('rpt_aged_receivables', 'report-leak', `SELECT public.rpt_aged_receivables($2::date) AS out`, [window.from, window.to]);
-  await runAs('rpt_overdue_invoices', 'report-leak', `SELECT public.rpt_overdue_invoices($2::date) AS out`, [window.from, window.to]);
-  await runAs('rpt_rent_roll', 'report-leak', `SELECT public.rpt_rent_roll($2::date) AS out`, [window.from, window.to]);
+  await runAs('rpt_tenant_statement', 'report-leak', `SELECT public.rpt_tenant_statement($1::uuid) AS out`, [CONTRACT_A]);
+  await runAs('rpt_aged_receivables', 'report-leak', `SELECT public.rpt_aged_receivables($1::date) AS out`, [window.to]);
+  await runAs('rpt_overdue_invoices', 'report-leak', `SELECT public.rpt_overdue_invoices($1::date) AS out`, [window.to]);
+  await runAs('rpt_rent_roll', 'report-leak', `SELECT public.rpt_rent_roll($1::date) AS out`, [window.to]);
 }
 
-async function probeExploitAndGuards(db: PGlite) {
+async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   // T-EXP-1: settlement draft with fully fabricated amounts on OWN owner.
+  // P1 scope — P0 must NOT change amounts semantics; asserted to still succeed post-fix.
   await assume(db, ADMIN_A, COMPANY_A);
   const fabricated = {
     request_id: '9a000000-0000-4000-8000-0000000000e1',
@@ -216,9 +234,9 @@ async function probeExploitAndGuards(db: PGlite) {
   } finally {
     await db.exec('ROLLBACK;'); // safe-transaction protocol: nothing persists.
   }
-  probes.push({ fn: 'create_owner_settlement_draft_atomic[fabricated-amounts]', kind: 'exploit', actor: 'adminA@A', asCompany: 'A', before: exploit });
+  recordProbe('create_owner_settlement_draft_atomic[fabricated-amounts]', 'exploit', 'adminA@A', 'A', when, exploit);
 
-  // T-EXP-2: same call but targeting company B's owner (cross-tenant spoof).
+  // T-EXP-2: same call but targeting company B's owner (cross-tenant spoof, finding T7).
   await assume(db, ADMIN_A, COMPANY_A);
   let crossOwner: unknown;
   await db.exec('BEGIN;');
@@ -231,7 +249,7 @@ async function probeExploitAndGuards(db: PGlite) {
   } finally {
     await db.exec('ROLLBACK;');
   }
-  probes.push({ fn: 'create_owner_settlement_draft_atomic[cross-company-owner]', kind: 'guard', actor: 'adminA@A', asCompany: 'A', before: crossOwner });
+  recordProbe('create_owner_settlement_draft_atomic[cross-company-owner]', 'guard', 'adminA@A', 'A', when, crossOwner);
 
   // T-EXP-3: a USER (non-privileged role) of company B attempts the same exploit.
   await assume(db, USER_B, COMPANY_B);
@@ -246,7 +264,7 @@ async function probeExploitAndGuards(db: PGlite) {
   } finally {
     await db.exec('ROLLBACK;');
   }
-  probes.push({ fn: 'create_owner_settlement_draft_atomic[low-role-user]', kind: 'guard', actor: 'userB@B', asCompany: 'B', before: lowRole });
+  recordProbe('create_owner_settlement_draft_atomic[low-role-user]', 'guard', 'userB@B', 'B', when, lowRole);
 
   // T-WR-1: cross-tenant write — company A records a payment against B's invoice.
   await assume(db, ADMIN_A, COMPANY_A);
@@ -268,7 +286,138 @@ async function probeExploitAndGuards(db: PGlite) {
   } finally {
     await db.exec('ROLLBACK;');
   }
-  probes.push({ fn: 'record_invoice_payment_atomic[cross-company-invoice]', kind: 'guard', actor: 'adminA@A', asCompany: 'A', before: crossWrite });
+  recordProbe('record_invoice_payment_atomic[cross-company-invoice]', 'guard', 'adminA@A', 'A', when, crossWrite);
+
+  // T-WR-2: direct post_receipt_atomic against company B's contract+invoice.
+  await assume(db, ADMIN_A, COMPANY_A);
+  let directPost: unknown;
+  await db.exec('BEGIN;');
+  try {
+    directPost = await call(db, `SELECT public.post_receipt_atomic($1::jsonb) AS out`, [
+      JSON.stringify({
+        request_id: '9c000000-0000-4000-8000-0000000000e5',
+        receipt: {
+          id: '9b000000-0000-4000-8000-0000000000e5',
+          contract_id: CONTRACT_B,
+          date_time: '2026-07-21',
+          channel: 'cash',
+          amount: 5,
+          ref: 'p0-cross-post',
+          status: 'POSTED',
+        },
+        allocations: [{ id: '9e000000-0000-4000-8000-0000000000e5', invoice_id: INVOICE_B, amount: 5 }],
+        journal_entries: [],
+      }),
+    ]);
+  } catch (e) {
+    directPost = { error: String(e).slice(0, 250) };
+  } finally {
+    await db.exec('ROLLBACK;');
+  }
+  recordProbe('post_receipt_atomic[cross-company-contract]', 'guard', 'adminA@A', 'A', when, directPost);
+
+  // T-AGR-1: create_owner_agreement_atomic with own refs (dead pre-P0: missing column).
+  await assume(db, ADMIN_A, COMPANY_A);
+  let agrOwn: unknown;
+  await db.exec('BEGIN;');
+  try {
+    agrOwn = await call(db, `SELECT public.create_owner_agreement_atomic($1::jsonb) AS out`, [
+      JSON.stringify({
+        owner_id: OWNER_A, property_id: PROPERTY_A2, agreement_type: 'property_management',
+        commission_type: 'RATE', commission_value: 12, starts_on: '2026-08-01',
+      }),
+    ]);
+  } catch (e) {
+    agrOwn = { error: String(e).slice(0, 250) };
+  } finally {
+    await db.exec('ROLLBACK;');
+  }
+  recordProbe('create_owner_agreement_atomic[own-refs]', 'guard', 'adminA@A', 'A', when, agrOwn);
+
+  // T-AGR-2: create_owner_agreement_atomic binding company B refs (F-AGR must reject).
+  await assume(db, ADMIN_A, COMPANY_A);
+  let agrCross: unknown;
+  await db.exec('BEGIN;');
+  try {
+    agrCross = await call(db, `SELECT public.create_owner_agreement_atomic($1::jsonb) AS out`, [
+      JSON.stringify({
+        owner_id: OWNER_B, property_id: PROPERTY_B, agreement_type: 'property_management',
+        commission_type: 'RATE', commission_value: 12, starts_on: '2026-08-01',
+      }),
+    ]);
+  } catch (e) {
+    agrCross = { error: String(e).slice(0, 250) };
+  } finally {
+    await db.exec('ROLLBACK;');
+  }
+  recordProbe('create_owner_agreement_atomic[cross-refs]', 'guard', 'adminA@A', 'A', when, agrCross);
+
+  // T-RPT-PARAM: rpt_owner_statement(OWNER_B) executed as company A (param spoof).
+  await assume(db, ADMIN_A, COMPANY_A);
+  await db.exec('SET ROLE authenticated;');
+  let osCross: unknown;
+  try {
+    osCross = await call(db, `SELECT public.rpt_owner_statement('${OWNER_B}'::uuid, '2026-07-01'::date, '2026-07-31'::date) AS out`);
+  } catch (e) {
+    osCross = { error: String(e).slice(0, 200) };
+  }
+  await db.exec('RESET ROLE;');
+  recordProbe('rpt_owner_statement[cross-owner-param]', 'report-leak', 'adminA@A', 'A', when, osCross);
+
+  // T-REST-1: direct table ops against the foreign company (RLS layer).
+  // Each op runs in its OWN transaction so one failure cannot poison the block;
+  // foreign targets are resolved at runtime (none visible post-fix by design).
+  await assume(db, ADMIN_A, COMPANY_A);
+  await db.exec('SET ROLE authenticated;');
+  const rest: Record<string, unknown> = {};
+  const inTx = async (fn: () => Promise<unknown>) => {
+    await db.exec('BEGIN;');
+    try {
+      return await fn();
+    } finally {
+      await db.exec('ROLLBACK;');
+    }
+  };
+  try {
+    rest.selectPayments = await inTx(async () => (await call(db, `SELECT count(*)::int AS n FROM public.payments`))[0]?.n);
+    const targets = await inTx(async () => ({
+      payment: (await call(db, `SELECT id::text AS id FROM public.payments WHERE company_id = '${COMPANY_B}' ORDER BY 1 LIMIT 1`))[0]?.id ?? null,
+      expense: (await call(db, `SELECT id::text AS id FROM public.expenses WHERE company_id = '${COMPANY_B}' ORDER BY 1 LIMIT 1`))[0]?.id ?? null,
+    })) as { payment: string | null; expense: string | null };
+    rest.foreignTargets = targets;
+    if (targets.expense) {
+      rest.updateForeign = await inTx(async () => {
+        try {
+          return (await call(db, `WITH u AS (UPDATE public.expenses SET amount = amount + 1 WHERE id = '${targets.expense}' RETURNING id) SELECT count(*)::int AS n FROM u`))[0]?.n;
+        } catch (e) { return { error: String(e).slice(0, 150) }; }
+      });
+      rest.deleteForeign = await inTx(async () => {
+        try {
+          return (await call(db, `WITH d AS (DELETE FROM public.expenses WHERE id = '${targets.expense}' RETURNING id) SELECT count(*)::int AS n FROM d`))[0]?.n;
+        } catch (e) { return { error: String(e).slice(0, 150) }; }
+      });
+    } else {
+      rest.updateForeign = 'no-foreign-row-visible';
+      rest.deleteForeign = 'no-foreign-row-visible';
+    }
+    rest.insertSpoofExpense = await inTx(async () => {
+      try {
+        await call(db, `INSERT INTO public.expenses (id, property_id, category, amount, expense_date, status, charged_to, company_id)
+          VALUES (gen_random_uuid(), '${PROPERTY_B}', 'p0-spoof', 7, '2026-07-22', 'POSTED', 'office', '${COMPANY_B}')`);
+        return 'inserted';
+      } catch (e) { return String(e).slice(0, 180); }
+    });
+    rest.insertOwnExpense = await inTx(async () => {
+      try {
+        await call(db, `INSERT INTO public.expenses (id, property_id, category, amount, expense_date, status, charged_to, company_id)
+          VALUES (gen_random_uuid(), '${PROPERTY_A}', 'p0-own', 7, '2026-07-22', 'POSTED', 'office', '${COMPANY_A}')`);
+        return 'inserted';
+      } catch (e) { return String(e).slice(0, 180); }
+    });
+  } finally {
+    await db.exec('RESET ROLE;');
+  }
+  recordProbe('REST[direct-table-ops]', 'guard', 'authenticated@A', 'A', when, rest);
 
   // T-GRANT-1: anon must not execute report RPCs.
   await assume(db, ADMIN_A, null, 'anon');
@@ -280,7 +429,7 @@ async function probeExploitAndGuards(db: PGlite) {
     anonCall = { error: String(e).slice(0, 200) };
   }
   await db.exec('RESET ROLE;');
-  probes.push({ fn: 'rpt_cash_flow[anon-execute]', kind: 'guard', actor: 'anon', asCompany: null, before: anonCall });
+  recordProbe('rpt_cash_flow[anon-execute]', 'guard', 'anon', null, when, anonCall);
 
   // T-RLS-1: table-level RLS isolation (contrast with SECURITY DEFINER bypass).
   await assume(db, ADMIN_A, COMPANY_A);
@@ -295,7 +444,7 @@ async function probeExploitAndGuards(db: PGlite) {
     }
   }
   await db.exec('RESET ROLE;');
-  probes.push({ fn: 'RLS[table-read-isolation]', kind: 'guard', actor: 'authenticated@A', asCompany: 'A', before: rlsCounts });
+  recordProbe('RLS[table-read-isolation]', 'guard', 'authenticated@A', 'A', when, rlsCounts);
 }
 
 async function grantCatalog(db: PGlite) {
@@ -308,7 +457,7 @@ async function grantCatalog(db: PGlite) {
        JOIN pg_proc p ON p.proname = r.routine_name
        JOIN pg_namespace n ON n.oid = p.pronamespace AND n.nspname = 'public'
       WHERE r.specific_schema = 'public'
-        AND (r.routine_name LIKE 'rpt\_%' ESCAPE '\' OR r.routine_name LIKE '%\_atomic' ESCAPE '\')
+        AND (r.routine_name LIKE 'rpt\\_%' ESCAPE '\\' OR r.routine_name LIKE '%\\_atomic' ESCAPE '\\')
       ORDER BY 1`,
   );
   return rows;
@@ -320,9 +469,22 @@ async function directAggregates(db: PGlite, companyId: string) {
   return { receipts: Number(pay?.v ?? 0), expenses: Number(exp?.v ?? 0) };
 }
 
+function fnProbe(fn: string) {
+  const p = probes.find((x) => x.fn === fn);
+  expect(p, `probe recorded for ${fn}`).toBeTruthy();
+  return p as Probe;
+}
+function outOf(p: Probe, when: 'before' | 'after'): any {
+  const rows: any = p[when];
+  expect(rows, `${p.fn} ${when} rows`).toBeTruthy();
+  expect(rows?.[0]?.out?.error, `${p.fn} ${when} must not error: ${JSON.stringify(rows?.[0]?.out?.error ?? '')}`).toBeUndefined();
+  return rows[0].out;
+}
+const num = (v: unknown) => Number(v ?? NaN);
+
 beforeAll(async () => {
   // Fresh replay — migrations are applied WITHOUT any P0 fix file so `before`
-  // captures main's real behavior; then the fix is applied for the `after` pass.
+  // captures main's real behavior; the fix is applied for the `after` pass.
   db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
   await db.exec(STUB_SQL_HEADER);
   const files = readdirSync(migDir).filter((f) => f.endsWith('.sql')).sort();
@@ -348,7 +510,7 @@ afterAll(() => {
   writeFileSync(
     join(evidenceDir, 'behavioral-isolation.json'),
     JSON.stringify(
-      { generatedAt: new Date().toISOString(), fixFile: FIX_FILE, replayErrors: errors, fixture: { A_PAY, B_PAY, A_EXP, B_EXP, B_JE }, probes },
+      { generatedAt: new Date().toISOString(), fixFile: FIX_FILE, replayErrors: errors, fixture: { A_PAY, B_PAY, A_EXP, B_EXP, B_JE, B_RENT }, probes },
       null,
       2,
     ),
@@ -358,7 +520,7 @@ afterAll(() => {
 describe('P0 — behavioral isolation: current main (pre-fix evidence)', () => {
   it('runs report-leak + exploit + guard probes against replayed main', async () => {
     await probeReport(db, 'before');
-    await probeExploitAndGuards(db);
+    await probeExploitAndGuards(db, 'before');
     const catalog = await grantCatalog(db);
     mkdirSync(evidenceDir, { recursive: true });
     writeFileSync(join(evidenceDir, 'grant-catalog.json'), JSON.stringify(catalog, null, 2));
@@ -368,19 +530,256 @@ describe('P0 — behavioral isolation: current main (pre-fix evidence)', () => {
 });
 
 describe('P0 — post-fix verification (only when the P0 fix migration exists)', () => {
-  it.skipIf(!FIX_FILE)('applies fix: all report leaks closed + parity intact', async () => {
-    await db.exec(readFileSync(join(migDir, FIX_FILE as string), 'utf8'));
-    await probeReport(db, 'after');
+  it.skipIf(!FIX_FILE)('applies the P0 fix migration cleanly on top of replayed main', async () => {
+    let applyError: unknown = null;
+    try {
+      await db.exec(readFileSync(join(migDir, FIX_FILE as string), 'utf8'));
+    } catch (e) {
+      applyError = e;
+    }
+    expect(applyError, `fix migration must apply cleanly: ${String(applyError).slice(0, 400)}`).toBeNull();
+  }, 300_000);
 
-    const expectedA = await directAggregates(db, COMPANY_A);
-    const cash = probes.find((p) => p.fn === 'rpt_cash_flow');
-    const operating = (cash?.after as any)?.[0]?.out?.operating;
-    expect(Number(operating?.receipts)).toBe(expectedA.receipts);
-    expect(Number(operating?.expenses)).toBe(expectedA.expenses);
-    // Cross-company fingerprint (B_PAY/B_EXP/B_JE) must not appear anywhere.
-    const serialized = JSON.stringify(probes.filter((p) => p.kind === 'report-leak').map((p) => p.after ?? null));
-    expect(serialized).not.toContain(String(B_PAY));
-    expect(serialized).not.toContain(String(B_EXP));
-    expect(serialized).not.toContain(String(B_JE));
+  it.skipIf(!FIX_FILE)('closes every report leak with numeric parity vs ground truth (company A only)', async () => {
+    await probeReport(db, 'after');
+    const truth = await directAggregates(db, COMPANY_A);
+    expect(truth).toEqual({ receipts: A_PAY, expenses: A_EXP }); // fixture self-check
+
+    // cash_flow — proven leak pre-fix (returned 7000/1100); must now equal ground truth.
+    const cash = outOf(fnProbe('rpt_cash_flow'), 'after');
+    expect(num(cash?.operating?.receipts)).toBe(A_PAY);
+    expect(num(cash?.operating?.expenses)).toBe(A_EXP);
+    expect(num(cash?.net_change)).toBe(A_PAY - A_EXP);
+
+    // daily_collection — proven leak pre-fix; exactly one A row of 1000.
+    const daily = outOf(fnProbe('rpt_daily_collection'), 'after');
+    expect(num(daily?.total)).toBe(A_PAY);
+    expect(daily?.rows).toHaveLength(1);
+    expect(num(daily?.rows?.[0]?.total)).toBe(A_PAY);
+    expect(num(daily?.rows?.[0]?.count)).toBe(1);
+
+    // dashboard_overview — proven leak pre-fix (production dashboard).
+    const dash = outOf(fnProbe('rpt_dashboard_overview'), 'after');
+    expect(num(dash?.financial?.total_collected)).toBe(A_PAY);
+    expect(num(dash?.financial?.total_expenses)).toBe(A_EXP);
+    expect(num(dash?.operational?.properties)).toBe(2); // PROPERTY_A + PROPERTY_A2 (fixture)
+
+    expect(num(dash?.operational?.units)).toBe(1);
+    expect(num(dash?.operational?.activeContracts)).toBe(1);
+    expect(num(dash?.operational?.overdueInvoices)).toBe(0);
+
+    // financial_summary (TABLE-returning) — collected/expenses/net + counts, A only.
+    const fsRows: any = fnProbe('rpt_financial_summary').after;
+    const fs = fsRows?.[0];
+    expect(fs, 'financial_summary after row').toBeTruthy();
+    expect(num(fs?.collected)).toBe(A_PAY);
+    expect(num(fs?.expenses)).toBe(A_EXP);
+    expect(num(fs?.active_contracts)).toBe(1);
+    expect(num(fs?.total_units)).toBe(1);
+
+    // income_statement — A revenue 1000, A expenses 200.
+    const inc = outOf(fnProbe('rpt_income_statement'), 'after');
+    expect(num(inc?.total_revenue)).toBe(A_PAY);
+    expect(num(inc?.total_expenses)).toBe(A_EXP);
+    expect(num(inc?.net_income)).toBe(A_PAY - A_EXP);
+
+    // vat_return — one A invoice, 1000 taxable, 0 vat.
+    const vat = outOf(fnProbe('rpt_vat_return'), 'after');
+    expect(num(vat?.total_sales_amount)).toBe(A_PAY);
+    expect(num(vat?.total_tax_amount)).toBe(0);
+    expect(num(vat?.invoice_count)).toBe(1);
+
+    // PRE-EXISTING defects on main (identical before/after; NOT isolation
+    // regressions — P0 keeps business logic byte-identical): trial_balance &
+    // balance_sheet fail with `text <= date`, aged/overdue/rent_roll with a
+    // missing `_safe_date(date)` overload, tenant_statement with `uuid = text`.
+    // They stay exactly as broken as main; their company predicates are already
+    // in place for their repair phase. Assert byte-identical error = NO regression.
+    // Classification protocol (per review): each defect must be bucketed as
+    //   (a) broken before P0, unaffected by P0 changes  — PROVEN by error-identity
+    //       pre/post against the same replayed database;
+    //   (b) broken by insufficient fixture             — RULED OUT: the same call
+    //       fails as the table owner (superuser) with the FULL two-company fixture;
+    //   (c) broken by permissions/RLS                  — RULED OUT: superuser
+    //       bypasses RLS and the error persists at definition (parse) level;
+    //   (d) broken by an actual SQL definition defect  — CONCLUDED from (a)-(c).
+    // None returns company data (fail-closed); deferral per protocol is allowed
+    // ONLY for non-security functional defects. origin/main presence is proven
+    // because the replay chain is byte-identical to origin/main migrations.
+    const BROKEN_CALLS: Record<string, { sql: string; params?: unknown[] }> = {
+      rpt_trial_balance: { sql: `SELECT public.rpt_trial_balance('2026-07-31'::date)` },
+      rpt_balance_sheet: { sql: `SELECT public.rpt_balance_sheet('2026-07-31'::date)` },
+      rpt_aged_receivables: { sql: `SELECT public.rpt_aged_receivables('2026-07-31'::date)` },
+      rpt_overdue_invoices: { sql: `SELECT public.rpt_overdue_invoices('2026-07-31'::date)` },
+      rpt_rent_roll: { sql: `SELECT public.rpt_rent_roll('2026-07-31'::date)` },
+      rpt_tenant_statement: { sql: `SELECT public.rpt_tenant_statement($1::uuid)`, params: [CONTRACT_A] },
+    };
+    const CLASSIFICATION = {
+      rpt_trial_balance: 'defect: `payments/invoices date columns are text; operator text <= date does not resolve` (definition-level)',
+      rpt_balance_sheet: 'defect: same operator family (text <= date) (definition-level)',
+      rpt_aged_receivables: 'defect: calls public._safe_date(date) — only _safe_date(text) exists (missing overload; definition-level)',
+      rpt_overdue_invoices: 'defect: same missing _safe_date(date) overload (definition-level)',
+      rpt_rent_roll: 'defect: same missing _safe_date(date) overload (definition-level)',
+      rpt_tenant_statement: 'defect: `c.id = p_contract_id::text` compares uuid to text (definition-level)',
+    } as const;
+    const preExisting: Record<string, unknown> = {};
+    for (const [fn, spec] of Object.entries(BROKEN_CALLS)) {
+      const pr = fnProbe(fn);
+      const beforeErr = (pr.before as any)?.error ?? JSON.stringify(pr.before);
+      const afterErr = (pr.after as any)?.error ?? JSON.stringify(pr.after);
+      // (b)+(c) rule-out: identical error as superuser (RLS bypassed, full fixture).
+      let superuserErr: string;
+      try {
+        const r = await call(db, spec.sql, spec.params ?? []);
+        superuserErr = `UNEXPECTED SUCCESS: ${JSON.stringify(r).slice(0, 160)}`;
+      } catch (e) {
+        superuserErr = String(e).slice(0, 200);
+      }
+      preExisting[fn] = {
+        classification: (CLASSIFICATION as any)[fn],
+        error_authenticated_before: beforeErr,
+        error_authenticated_after: afterErr,
+        error_superuser: superuserErr,
+        rulesOutFixture: superuserErr.startsWith('UNEXPECTED') === false,
+        rulesOutRlsOrGrants: superuserErr.startsWith('UNEXPECTED') === false,
+        securityImpact: 'none — call fails closed (error), no company data returned in any context',
+        deferralJustification: 'non-security functional defect; reproduced byte-identically on origin/main chain replay; repair queued for the reports-hardening phase (see docs/NEXT.md)',
+      };
+      expect(afterErr, `${fn} must remain error-identical to main (P0 changes filters, not logic)`).toBe(beforeErr);
+      expect(String(beforeErr)).not.toMatch(/^\[\{"out"/); // it really is an error on main
+      expect(superuserErr).not.toMatch(/^UNEXPECTED/); // same defect at definition level
+      expect(superuserErr.replace(/^error: /, '')).toContain(String(beforeErr).replace(/^error: /, '').slice(0, 40));
+    }
+    mkdirSync(evidenceDir, { recursive: true });
+    writeFileSync(join(evidenceDir, 'pre-existing-defects.json'), JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      scope: 'Six report RPCs functionally broken on origin/main. Classified per review protocol: all are DEFINITION-level defects (proven by superuser-identical errors), fail-closed (no data exposure), and therefore deferred as non-security work.',
+      functions: preExisting,
+    }, null, 2));
+
+    // owner_statement — owner-scoped; PARITY with pre-fix (math must not change):
+    // gross 1000 − commission 10% (100) = net 900.
+    const os = outOf(fnProbe('rpt_owner_statement'), 'after');
+    const osBefore = outOf(fnProbe('rpt_owner_statement'), 'before');
+    expect(num(os?.total_gross)).toBe(num(osBefore?.total_gross));
+    expect(num(os?.total_deductions)).toBe(num(osBefore?.total_deductions));
+    expect(num(os?.total_net)).toBe(num(osBefore?.total_net));
+    expect(num(os?.total_gross)).toBe(A_PAY);
+    expect(num(os?.total_deductions)).toBe(A_PAY * 0.1);
+    expect(num(os?.total_net)).toBe(A_PAY - A_PAY * 0.1);
+
+  }, 300_000);
+
+  it.skipIf(!FIX_FILE)('closes the cross-company settlement guard without changing P1-scoped amounts semantics', async () => {
+    await probeExploitAndGuards(db, 'after');
+
+    // Pre-fix exploit (both companies visible): fabricated amounts succeeded — and
+    // MUST STILL succeed post-fix on own owner (P1 owns the amounts semantics).
+    const fabricated = fnProbe('create_owner_settlement_draft_atomic[fabricated-amounts]');
+    expect((fabricated.before as any)?.[0]?.out?.error).toBeUndefined();
+    const fabAfter: any = fabricated.after;
+    expect(fabAfter?.[0]?.out, 'own-owner fabricated draft still succeeds (P1 scope untouched)').toBeTruthy();
+    expect((fabAfter?.[0]?.out as any)?.error, JSON.stringify(fabAfter?.[0]?.out)).toBeUndefined();
+
+    // T7 — cross-company settlement spoof: SUCCEEDED pre-fix, must now raise 42501.
+    const crossOwner = fnProbe('create_owner_settlement_draft_atomic[cross-company-owner]');
+    expect((crossOwner.before as any)?.[0]?.out?.error).toBeUndefined(); // proven exploit on main
+    const crossAfter: any = crossOwner.after;
+    const crossErr = String((crossAfter?.error ?? (crossAfter?.[0]?.out as any)?.error) ?? '');
+    expect(crossErr).toContain('not in your company');
+
+    // T-WR-1 — cross-tenant invoice payment via record_invoice_payment_atomic:
+    // pre-fix it was 'contained' ONLY by an accidental NOT NULL failure on the
+    // un-hardened allocation-balance trigger; F-WR makes the invoice invisible.
+    const wr1 = fnProbe('record_invoice_payment_atomic[cross-company-invoice]');
+    expect(String((wr1.before as any)?.error ?? '')).toMatch(/contract_balances|company_id/i); // accidental containment on main
+    expect(String((wr1.after as any)?.error ?? JSON.stringify(wr1.after))).toMatch(/Invoice not found/i);
+
+    // T-WR-2 — direct post_receipt_atomic against B's contract/invoice (F-WR guards
+    // the sink too, so both entry paths close).
+    const wr2 = fnProbe('post_receipt_atomic[cross-company-contract]');
+    expect(String((wr2.after as any)?.error ?? JSON.stringify(wr2.after))).toMatch(/فاتورة غير موجودة|العقد لا ينتمي|not in your company/i);
+
+    // T-AGR — create_owner_agreement_atomic was DEAD on main (references the
+    // company_id column that phase 2 never added). F-AGMT revives it; F-AGR
+    // validates owner/property against the caller's company.
+    const agrOwn = fnProbe('create_owner_agreement_atomic[own-refs]');
+    expect(String((agrOwn.before as any)?.error ?? '')).toMatch(/column "company_id" of relation "owner_agreements" does not exist/i);
+    const agrOwnAfter: any = agrOwn.after;
+    expect(agrOwnAfter?.[0]?.out?.error ?? agrOwnAfter?.error, JSON.stringify(agrOwnAfter).slice(0, 300)).toBeUndefined();
+    const agrCross = fnProbe('create_owner_agreement_atomic[cross-refs]');
+    expect(String((agrCross.after as any)?.error ?? JSON.stringify(agrCross.after))).toContain('not in your company');
+
+    // T-RPT-PARAM — owner_statement cross-owner param: pre-fix returned B's full
+    // statement; post-fix the owner lookup is company-scoped.
+    const osCross = fnProbe('rpt_owner_statement[cross-owner-param]');
+    const osBefore = (osCross.before as any)?.[0]?.out;
+    expect(osBefore?.owner_name, `pre-fix must leak B statement: ${JSON.stringify(osBefore).slice(0, 200)}`).toBe('مالك باء');
+    expect(num(osBefore?.total_gross)).toBe(B_PAY);
+    const osAfter = (osCross.after as any)?.[0]?.out;
+    expect(osAfter?.error, JSON.stringify(osAfter).slice(0, 200)).toBe('owner not found');
+
+    // T-REST-1 — direct table ops: pre-fix (cause matrix) showed select=2,
+    // update/delete foreign=1 row, spoof insert succeeded; post-fix all closed.
+    const rest = fnProbe('REST[direct-table-ops]');
+    const rb = rest.before as any;
+    expect(rb?.selectPayments).toBe(2);
+    expect(num(rb?.updateForeign), `pre-fix cross-tenant UPDATE: ${JSON.stringify(rb)}`).toBe(1);
+    expect(num(rb?.deleteForeign), `pre-fix cross-tenant DELETE: ${JSON.stringify(rb)}`).toBe(1);
+    expect(String(rb?.insertSpoofExpense)).toBe('inserted');
+    const ra = rest.after as any;
+    expect(ra?.selectPayments).toBe(1);
+    // post-fix the foreign row is invisible to A ⇒ no target can even be addressed.
+    expect(ra?.foreignTargets?.expense ?? null).toBeNull();
+    expect(String(ra?.updateForeign)).toBe('no-foreign-row-visible');
+    expect(String(ra?.insertSpoofExpense)).toMatch(/row-level security|policy/i);
+    expect(String(ra?.insertOwnExpense)).toBe('inserted');
+
+    // Guards that already held pre-fix must keep holding (no regression):
+    const lowRole: any = fnProbe('create_owner_settlement_draft_atomic[low-role-user]').after;
+    expect(String(lowRole?.error ?? '')).toMatch(/ADMIN or MANAGER|42501|required/i);
+    const anon: any = fnProbe('rpt_cash_flow[anon-execute]').after;
+    expect(String(anon?.error ?? '')).toMatch(/permission denied/i);
+
+    // T-RLS-1 — table reads as company A: pre-fix saw BOTH companies (2 rows);
+    // post-fix must see exactly company A's single row per table.
+    // owner_settlements has NO table grant for authenticated even pre-fix —
+    // permission denied in both phases is the correct, unchanged posture.
+    const rls = fnProbe('RLS[table-read-isolation]');
+    expect(rls.before).toMatchObject({ payments: 2, expenses: 2, invoices: 2, contracts: 2 });
+    expect(String((rls.before as any)?.owner_settlements?.error ?? '')).toMatch(/permission denied/i);
+    expect(rls.after).toMatchObject({ payments: 1, expenses: 1, invoices: 1, contracts: 1 });
+    expect(String((rls.after as any)?.owner_settlements?.error ?? '')).toMatch(/permission denied/i);
+  }, 300_000);
+
+  it.skipIf(!FIX_FILE)('keeps server report numbers numerically consistent with independent SQL (parity report)', async () => {
+    // Server-vs-independent-math parity: recompute everything without the report RPCs.
+    const truth = await directAggregates(db, COMPANY_A);
+    const cash = outOf(fnProbe('rpt_cash_flow'), 'after');
+    expect(num(cash?.operating?.receipts)).toBe(truth.receipts);
+    expect(num(cash?.operating?.expenses)).toBe(truth.expenses);
+
+    const [openA] = (await call(db, `SELECT coalesce(sum(amount + coalesce(tax_amount,0) - coalesce(paid_amount,0)),0)::numeric AS v FROM public.invoices WHERE company_id=$1 AND deleted_at IS NULL`, [COMPANY_A])) as Array<{ v: unknown }>;
+    const [grossA] = (await call(db, `SELECT coalesce(sum(amount),0)::numeric AS v FROM public.invoices WHERE company_id=$1 AND deleted_at IS NULL`, [COMPANY_A])) as Array<{ v: unknown }>;
+    expect(num(grossA?.v)).toBe(A_PAY); // independent math: A invoices gross exactly A_PAY
+
+    mkdirSync(evidenceDir, { recursive: true });
+    writeFileSync(
+      join(evidenceDir, 'numeric-parity.json'),
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          company: 'A',
+          groundTruth: { ...truth, openReceivables: num(openA?.v) },
+          reports: {
+            cash_flow: { receipts: num(cash?.operating?.receipts), expenses: num(cash?.operating?.expenses) },
+            vat_sales: num((fnProbe('rpt_vat_return').after as any)?.[0]?.out?.total_sales_amount),
+          },
+          conclusion: 'server report outputs == independent aggregates (post-fix, company-scoped)',
+        },
+        null,
+        2,
+      ),
+    );
   }, 300_000);
 });

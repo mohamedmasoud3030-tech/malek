@@ -35,7 +35,12 @@ export async function createReplayedDatabase(): Promise<ReplayResult> {
   await db.exec(STUB_SQL);
 
   const migDir = join(repoRoot, 'supabase', 'migrations');
-  const files = readdirSync(migDir).filter((f) => f.endsWith('.sql')).sort();
+  // The P0 fix migration is deliberately EXCLUDED from the shared replay so
+  // every probe observes pre-fix main; the behavioral suite applies it
+  // explicitly for its post-fix phase.
+  const files = readdirSync(migDir)
+    .filter((f) => f.endsWith('.sql') && !f.includes('p0_company_isolation'))
+    .sort();
   const applied: string[] = [];
   const failed: { file: string; error: string }[] = [];
 

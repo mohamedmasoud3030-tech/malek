@@ -1,0 +1,332 @@
+[
+  {
+    "tablename": "accounts",
+    "policyname": "admin_write_accounts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin()",
+    "with_check": "is_admin()"
+  },
+  {
+    "tablename": "accounts",
+    "policyname": "app_read_accounts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "contract_balances",
+    "policyname": "app_read_contract_balances",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "contracts",
+    "policyname": "app_read_contracts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "contracts",
+    "policyname": "manager_write_contracts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "expenses",
+    "policyname": "app_read_expenses",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "expenses",
+    "policyname": "manager_write_expenses",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "invoices",
+    "policyname": "app_read_invoices",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "invoices",
+    "policyname": "manager_write_invoices",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "journal_entries",
+    "policyname": "admin_read_journal_entries",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_admin_or_manager()",
+    "with_check": ""
+  },
+  {
+    "tablename": "journal_entries",
+    "policyname": "no_browser_write_journal_entries",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "false",
+    "with_check": "false"
+  },
+  {
+    "tablename": "owner_agreements",
+    "policyname": "owner_agreements_delete",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "DELETE",
+    "qual": "is_admin_or_manager()",
+    "with_check": ""
+  },
+  {
+    "tablename": "owner_agreements",
+    "policyname": "owner_agreements_insert",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "INSERT",
+    "qual": "",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "owner_agreements",
+    "policyname": "owner_agreements_select",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "owner_agreements",
+    "policyname": "owner_agreements_update",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "UPDATE",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "owner_settlements",
+    "policyname": "app_user_owner_settlements",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "app_private.is_app_user()",
+    "with_check": "app_private.is_app_user()"
+  },
+  {
+    "tablename": "owners",
+    "policyname": "app_read_owners",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "owners",
+    "policyname": "manager_write_owners",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "payments",
+    "policyname": "app_read_payments",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "payments",
+    "policyname": "manager_write_payments",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "people",
+    "policyname": "app_read_people",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "people",
+    "policyname": "manager_write_people",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "properties",
+    "policyname": "app_read_properties",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "properties",
+    "policyname": "manager_write_properties",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "receipt_allocations",
+    "policyname": "app_read_receipt_allocations",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "receipt_allocations",
+    "policyname": "manager_write_receipt_allocations",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "receipts",
+    "policyname": "app_read_receipts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "receipts",
+    "policyname": "manager_write_receipts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  },
+  {
+    "tablename": "units",
+    "policyname": "app_read_units",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "SELECT",
+    "qual": "is_app_user()",
+    "with_check": ""
+  },
+  {
+    "tablename": "units",
+    "policyname": "manager_write_units",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin_or_manager()",
+    "with_check": "is_admin_or_manager()"
+  }
+]

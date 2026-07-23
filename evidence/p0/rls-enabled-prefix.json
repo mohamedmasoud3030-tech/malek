@@ -1,0 +1,342 @@
+[
+  {
+    "tablename": "account_balances",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "accounts",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "app_notifications",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "attachments",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "audit_log",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "auto_backups",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "automation_jobs",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "automation_notifications",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "automation_rules",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "automation_run_logs",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "automation_runs",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "bank_accounts",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "bank_reconciliation_matches",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "bank_statement_imports",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "bank_statement_lines",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "budgets",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "commissions",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "communication_records",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "companies",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "company-assets",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "company_members",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "company_settings",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "contract_balances",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "contract_documents",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "contracts",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "cost_centers",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "deposit_transactions",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "deposit_txs",
+    "rls_enabled": true,
+    "rls_forced": true
+  },
+  {
+    "tablename": "expenses",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "financial_operation_idempotency",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "governance",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "invoices",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "journal_entries",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "kpi_snapshots",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "lands",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "leads",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "maintenance_records",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "missions",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "notification_templates",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "notifications",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "outgoing_notifications",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "owner_agreements",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "owner_balances",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "owner_settlements",
+    "rls_enabled": true,
+    "rls_forced": true
+  },
+  {
+    "tablename": "owners",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "payment_terms_templates",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "payments",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "people",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "profiles",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "properties",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "property_owners",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "receipt_allocations",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "receipts",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "schema_refactor_notes",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "serials",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "sessions",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "settings",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "snapshots",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "status_history",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "status_transition_rules",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "tenant_balances",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "tenant_deposits",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "tenants",
+    "rls_enabled": true,
+    "rls_forced": true
+  },
+  {
+    "tablename": "units",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "users",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "utility_bills",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "utility_meters",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "vault_documents",
+    "rls_enabled": true,
+    "rls_forced": false
+  }
+]

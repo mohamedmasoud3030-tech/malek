@@ -1,10 +1,10 @@
 # P0 — جرد آلي لسطح قاعدة البيانات × استخدام الواجهة
-أُنشئ: 2026-07-23T10:28:12.415Z · الهجرات المفحوصة: 152
+أُنشئ: 2026-07-23T12:25:32.752Z · الهجرات المفحوصة: 153
 
 ## الخلاصة
 - الجداول: **68** (تستخدمها الواجهة: **34**)
-- الدوال: **91** (تستدعيها الواجهة: **32**)
-- حسب النوع: helper-or-other=25 · financial-write=20 · trigger-or-internal=33 · report-read=13
+- الدوال: **92** (تستدعيها الواجهة: **32**)
+- حسب النوع: helper-or-other=26 · financial-write=20 · trigger-or-internal=33 · report-read=13
 - دوال تقارير لا تستدعيها الواجهة: `rpt_aged_receivables`, `rpt_daily_collection`, `rpt_financial_summary`, `rpt_overdue_invoices`, `rpt_rent_roll`
 
 ## جداول خادمية (تُدار بالمحفزات/RPCs — لا تقرأها الواجهة وهذا متوقع)

@@ -73,6 +73,13 @@ DO $$ BEGIN CREATE ROLE supabase_auth_admin; EXCEPTION WHEN duplicate_object THE
 DO $$ BEGIN CREATE ROLE supabase_storage_admin; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE ROLE supabase_functions_admin; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE ROLE supabase_admin; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- Mirror the Supabase platform grants the real environment ships with:
+-- anon/authenticated/service_role can USE schema auth and execute auth.jwt()/
+-- auth.uid()/auth.role() (required by every RLS policy that calls auth.*()).
+-- PG defaults already grant function EXECUTE to PUBLIC; the schema USAGE grant
+-- is the real Supabase default that the bare replay lacks (env-parity.md).
+GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
 `;
 
 export const REPLAY_TRANSFORMS: { file: string; pattern: RegExp; replacement: string; reason: string }[] = [
