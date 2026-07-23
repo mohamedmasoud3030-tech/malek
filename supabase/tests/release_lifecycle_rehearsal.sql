@@ -126,7 +126,7 @@ select lives_ok(
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status)
 select
   '00000000-0000-0000-0000-000000001701',
-  id,
+  id::uuid,
   date '2026-09-01',
   date '2026-09-05',
   1000,

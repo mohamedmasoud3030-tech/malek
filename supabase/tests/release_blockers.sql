@@ -235,7 +235,7 @@ select is(
 
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status)
 select
-  '00000000-0000-0000-0000-000000000701', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
+  '00000000-0000-0000-0000-000000000701', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
 from public.contracts
 where notes = 'release-blocker-contract';
 
@@ -329,7 +329,7 @@ select throws_ok(
 
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status)
 select
-  '00000000-0000-0000-0000-000000000702', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
+  '00000000-0000-0000-0000-000000000702', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
 from public.contracts
 where notes = 'release-blocker-fixed-contract';
 
