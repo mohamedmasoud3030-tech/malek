@@ -701,10 +701,20 @@ for update;
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, request_id, company_id)
   values (v_deposit_id, 'deduction', v_amount, v_reason, v_description, v_request_id, v_company_id);
 
-  v_expense_account_id := (select id from public.accounts where no='6100' limit 1);
-  v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);
+  v_expense_account_id := (
+    select id from public.accounts
+    where no='6100' and company_id = v_company_id
+    limit 1
+  );
+  v_deposit_account_id := (
+    select id from public.accounts
+    where no='2200' and company_id = v_company_id
+    limit 1
+  );
   if v_expense_account_id is null then
-    insert into public.accounts (id, no, name) values ('6100','6100','Operating Expenses') on conflict (id) do nothing;
+    insert into public.accounts (id, no, name, company_id)
+    values ('6100','6100','Operating Expenses', v_company_id)
+    on conflict (id) do nothing;
     v_expense_account_id := '6100';
   end if;
 
@@ -723,7 +733,7 @@ for update;
     EXECUTE format(
       'insert into public.expenses
         (id, property_id, category, amount, expense_date, description, status, no, company_id)
-       values ($1, $2::%s, $3, $4, $5, $6, $7, $8, v_company_id)',
+       values ($1, $2::%s, $3, $4, $5, $6, $7, $8, $9)',
       v_expense_property_id_type
     )
     USING v_expense_id,
@@ -733,12 +743,13 @@ for update;
           v_charged_date,
           'خصم تأمين: '||coalesce(v_description,''),
           'POSTED',
-          'EXP-DEP-'||substr(v_deposit_id,1,6);
+          'EXP-DEP-'||substr(v_deposit_id,1,6),
+          v_company_id;
 
     insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, company_id)
     values
       (gen_random_uuid()::text, 'DEP-DED-'||substr(v_deposit_id,1,6)||'-D', v_charged_date, v_deposit_account_id, v_amount, 'DEBIT', v_deposit_id, 'deposit_deduction', v_deposit_id, v_company_id),
-      (gen_random_uuid()::text, 'DEP-DED-'||substr(v_deposit_id,1,6)||'-C', v_charged_date, v_expense_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit_deduction', v_deposit_id);
+      (gen_random_uuid()::text, 'DEP-DED-'||substr(v_deposit_id,1,6)||'-C', v_charged_date, v_expense_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit_deduction', v_deposit_id, v_company_id);
   end if;
 
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'deducted',v_amount,'remaining', v_deposit.remaining_amount - v_amount,'request_id',v_request_id, 'new_status', (case when (v_deposit.deposit_amount - (v_deposit.deducted_amount + v_amount) - v_deposit.refunded_amount) <=0 then 'forfeited_damage' else 'partially_deducted' end));
@@ -1173,6 +1184,7 @@ DECLARE
 
   v_receipt_id public.receipts.id%TYPE;
   v_receipt_contract_id public.receipts.contract_id%TYPE;
+  v_payment_invoice_id public.payments.invoice_id%TYPE;
   v_receipt_date_time public.receipts.date_time%TYPE;
   v_receipt_tenant_id public.receipts.tenant_id%TYPE;
   v_receipt_check_date public.receipts.check_date%TYPE;
@@ -1329,10 +1341,16 @@ BEGIN
     v_company_id
   );
 
+  SELECT nullif(allocation_record->>'invoice_id', '')
+    INTO v_payment_invoice_id
+  FROM jsonb_array_elements(v_allocations) AS allocation_record
+  LIMIT 1;
+
   -- Insert corresponding payments row (shadow record)
   INSERT INTO public.payments(
     receipt_id,
     contract_id,
+    invoice_id,
     amount,
     payment_date,
     payment_method,
@@ -1347,6 +1365,7 @@ BEGIN
   ) VALUES (
     v_receipt_id,
     v_receipt_contract_id,
+    v_payment_invoice_id,
     v_receipt_amount,
     (v_receipt_date_time::date),
     v_receipt_channel,
@@ -1804,14 +1823,22 @@ for update;
   insert into public.deposit_transactions (deposit_id, type, amount, reason, description, payment_method, request_id, company_id)
   values (v_deposit_id, 'refund', v_amount, 'refund_partial', v_notes, v_payment_method, v_request_id, v_company_id);
 
-  v_cash_account_id := (select id from public.accounts where no='1111' limit 1);
-  v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);
+  v_cash_account_id := (
+    select id from public.accounts
+    where no='1111' and company_id = v_company_id
+    limit 1
+  );
+  v_deposit_account_id := (
+    select id from public.accounts
+    where no='2200' and company_id = v_company_id
+    limit 1
+  );
 
   if v_cash_account_id is not null and v_deposit_account_id is not null then
     insert into public.journal_entries (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, company_id)
     values
       (gen_random_uuid()::text, 'DEP-REF-'||substr(v_deposit_id,1,6)||'-D', v_refund_date, v_deposit_account_id, v_amount, 'DEBIT', v_deposit_id, 'deposit_refund', v_deposit_id, v_company_id),
-      (gen_random_uuid()::text, 'DEP-REF-'||substr(v_deposit_id,1,6)||'-C', v_refund_date, v_cash_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit_refund', v_deposit_id);
+      (gen_random_uuid()::text, 'DEP-REF-'||substr(v_deposit_id,1,6)||'-C', v_refund_date, v_cash_account_id, v_amount, 'CREDIT', v_deposit_id, 'deposit_refund', v_deposit_id, v_company_id);
   end if;
 
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'refunded',v_amount,'remaining', v_deposit.remaining_amount - v_amount,'request_id',v_request_id);
