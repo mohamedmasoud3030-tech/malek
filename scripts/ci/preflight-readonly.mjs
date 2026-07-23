@@ -1,5 +1,4 @@
 const REQUIRED_ENV = [
-  'E2E_BASE_URL',
   'E2E_TEST_EMAIL',
   'E2E_TEST_PASSWORD',
   'VITE_SUPABASE_URL',
@@ -35,14 +34,8 @@ async function fetchWithTimeout(url, init = {}) {
   }
 }
 
-const appUrl = parseHttpsUrl('E2E_BASE_URL', process.env.E2E_BASE_URL.trim());
 const supabaseUrl = parseHttpsUrl('VITE_SUPABASE_URL', process.env.VITE_SUPABASE_URL.trim());
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY.trim();
-
-const appResponse = await fetchWithTimeout(appUrl, { method: 'GET' });
-if (!appResponse.ok) {
-  throw new Error(`Deployed application preflight failed with HTTP ${appResponse.status}.`);
-}
 
 const authSettingsUrl = new URL('/auth/v1/settings', supabaseUrl);
 const authResponse = await fetchWithTimeout(authSettingsUrl, {
@@ -56,4 +49,4 @@ if (!authResponse.ok) {
   throw new Error(`Supabase Auth read-only preflight failed with HTTP ${authResponse.status}.`);
 }
 
-console.log(`Read-only preflight: app=${appResponse.status}, auth=${authResponse.status}`);
+console.log(`Read-only preflight: app=local-PR-candidate, auth=${authResponse.status}`);
