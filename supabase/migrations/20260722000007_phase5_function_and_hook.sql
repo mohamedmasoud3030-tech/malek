@@ -79,4 +79,10 @@ begin
 end;
 $function$;
 
+-- CREATE OR REPLACE does not preserve prior GRANT/REVOKE state, so the
+-- original least-privilege contract (only the Auth service may invoke this
+-- hook) must be reasserted here, same as in 20250101000003_functions_triggers_and_rpcs.sql.
+revoke all on function public.custom_access_token_hook(jsonb) from public, anon, authenticated;
+grant execute on function public.custom_access_token_hook(jsonb) to supabase_auth_admin;
+
 commit;
