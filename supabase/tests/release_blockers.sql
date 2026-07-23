@@ -67,21 +67,27 @@ values
   ('00000000-0000-0000-0000-000000000102', 'release-user@rentrix.test', 'Release User', 'USER', 'ACTIVE', true)
 on conflict (id) do update set role = excluded.role, status = excluded.status, is_active = excluded.is_active;
 
-insert into public.owners (id, full_name)
-values ('00000000-0000-0000-0000-000000000201', 'Release Owner');
-
-insert into public.properties (id, title, type, address, status)
+insert into public.company_members (company_id, user_id, role)
 values
-  ('00000000-0000-0000-0000-000000000301', 'Release Rate Property', 'residential', 'Release Gate', 'active'),
-  ('00000000-0000-0000-0000-000000000302', 'Release Fixed Property', 'residential', 'Release Gate', 'active');
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000101', 'OWNER'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000102', 'MEMBER')
+on conflict (company_id, user_id) do update set role = excluded.role;
 
-insert into public.units (id, property_id, unit_number, status, rent_amount)
+insert into public.owners (id, full_name, company_id)
+values ('00000000-0000-0000-0000-000000000201', 'Release Owner', '00000000-0000-4000-8000-000000000001');
+
+insert into public.properties (id, title, type, address, status, company_id)
 values
-  ('00000000-0000-0000-0000-000000000401', '00000000-0000-0000-0000-000000000301', 'RG-1', 'available', 100),
-  ('00000000-0000-0000-0000-000000000402', '00000000-0000-0000-0000-000000000302', 'FG-1', 'available', 100);
+  ('00000000-0000-0000-0000-000000000301', 'Release Rate Property', 'residential', 'Release Gate', 'active', '00000000-0000-4000-8000-000000000001'),
+  ('00000000-0000-0000-0000-000000000302', 'Release Fixed Property', 'residential', 'Release Gate', 'active', '00000000-0000-4000-8000-000000000001');
 
-insert into public.people (id, full_name, type)
-values ('00000000-0000-0000-0000-000000000501', 'Release Tenant', 'tenant');
+insert into public.units (id, property_id, unit_number, status, rent_amount, company_id)
+values
+  ('00000000-0000-0000-0000-000000000401', '00000000-0000-0000-0000-000000000301', 'RG-1', 'available', 100, '00000000-0000-4000-8000-000000000001'),
+  ('00000000-0000-0000-0000-000000000402', '00000000-0000-0000-0000-000000000302', 'FG-1', 'available', 100, '00000000-0000-4000-8000-000000000001');
+
+insert into public.people (id, full_name, type, company_id)
+values ('00000000-0000-0000-0000-000000000501', 'Release Tenant', 'tenant', '00000000-0000-4000-8000-000000000001');
 
 select is(
   (select name from public.owners where id = '00000000-0000-0000-0000-000000000201'),
@@ -95,17 +101,17 @@ select is(
 );
 
 insert into public.property_owners (
-  property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on
+  property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on, company_id
 ) values
   (
     '00000000-0000-0000-0000-000000000301',
     '00000000-0000-0000-0000-000000000201',
-    100, true, date '2026-01-01', date '2027-12-31'
+    100, true, date '2026-01-01', date '2027-12-31', '00000000-0000-4000-8000-000000000001'
   ),
   (
     '00000000-0000-0000-0000-000000000302',
     '00000000-0000-0000-0000-000000000201',
-    100, true, date '2026-01-01', date '2027-12-31'
+    100, true, date '2026-01-01', date '2027-12-31', '00000000-0000-4000-8000-000000000001'
   );
 
 insert into public.owner_agreements (
@@ -134,7 +140,7 @@ reset role;
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000000102","role":"authenticated","app_metadata":{"user_role":"USER"}}',
+  '{"sub":"00000000-0000-0000-0000-000000000102","role":"authenticated","app_metadata":{"user_role":"USER","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -157,7 +163,7 @@ reset role;
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000000101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000000101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -214,9 +220,9 @@ select is(
   'the fixed-fee contract is linked and persisted independently'
 );
 
-insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status)
+insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
-  '00000000-0000-0000-0000-000000000701', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
+  '00000000-0000-0000-0000-000000000701', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
 from public.contracts
 where notes = 'release-blocker-contract';
 
@@ -308,9 +314,9 @@ select throws_ok(
   'negative payments are rejected'
 );
 
-insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status)
+insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
-  '00000000-0000-0000-0000-000000000702', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
+  '00000000-0000-0000-0000-000000000702', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
 from public.contracts
 where notes = 'release-blocker-fixed-contract';
 
@@ -354,7 +360,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000000102","role":"authenticated","app_metadata":{"user_role":"USER"}}',
+  '{"sub":"00000000-0000-0000-0000-000000000102","role":"authenticated","app_metadata":{"user_role":"USER","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 select throws_ok(
