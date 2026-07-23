@@ -2680,6 +2680,7 @@ DECLARE
   v_total_paid numeric;
   v_tenant_id public.contract_balances.tenant_id%TYPE;
   v_unit_id public.contract_balances.unit_id%TYPE;
+  v_company_id uuid;
 BEGIN
   -- Get contract_id from the invoice referenced by this allocation
   IF TG_OP = 'DELETE' THEN
@@ -2701,12 +2702,13 @@ BEGIN
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
     c.tenant_id,
-    c.unit_id::text
-  INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
+    c.unit_id::text,
+    c.company_id
+  INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id, v_company_id
   FROM public.contracts c
   LEFT JOIN public.invoices i ON i.contract_id = c.id AND i.deleted_at IS NULL
   WHERE c.id = v_contract_id
-  GROUP BY c.tenant_id, c.unit_id;
+  GROUP BY c.tenant_id, c.unit_id, c.company_id;
 
   -- If the referenced contract cannot be found, do not fail invoice/allocation
   -- writes. This should not happen with valid FK data, but keeps the trigger
@@ -2717,7 +2719,7 @@ BEGIN
 
   -- Upsert contract_balances
   INSERT INTO public.contract_balances (
-    contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at
+    contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, company_id, updated_at
   ) VALUES (
     v_contract_id,
     v_tenant_id,
@@ -2725,6 +2727,7 @@ BEGIN
     v_total_invoiced,
     v_total_paid,
     v_total_invoiced - v_total_paid,
+    v_company_id,
     now()
   )
   ON CONFLICT (contract_id) DO UPDATE SET
@@ -2733,6 +2736,7 @@ BEGIN
     total_invoiced = EXCLUDED.total_invoiced,
     total_paid = EXCLUDED.total_paid,
     balance_due = EXCLUDED.balance_due,
+    company_id = EXCLUDED.company_id,
     updated_at = now();
 
   RETURN COALESCE(NEW, OLD);
