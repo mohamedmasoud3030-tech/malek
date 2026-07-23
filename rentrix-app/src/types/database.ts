@@ -490,6 +490,7 @@ export type Database = {
       maintenance_records: {
         Row: {
           id: string;
+          company_id: string;
           no: string | null;
           property_id: string | null;
           unit_id: string | null;
