@@ -19,6 +19,7 @@ describe('active company write guard', () => {
 
   it('refreshes the JWT claim and blocks the app when no active company can be resolved', () => {
     expect(companyHook).toContain('supabase.auth.refreshSession()');
+    expect(companyHook).toContain('companyList.length === 1');
     expect(companyHook).toContain('hasAuthenticatedSession && (loadError || !activeCompany)');
     expect(companyHook).toContain('لم يتم فتح التطبيق لحماية البيانات ومنع إنشاء سجلات بدون شركة');
   });

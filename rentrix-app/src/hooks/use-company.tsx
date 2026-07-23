@@ -109,6 +109,16 @@ export function CompanyProvider({ children }: PropsWithChildren) {
           selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
         }
 
+        // A single membership is already an explicit authorization decision.
+        // Use it as the safe local selection when an older/stale access token
+        // has not yet received app_metadata.company_id from the auth hook.
+        // This avoids locking out valid single-company users while preserving
+        // the membership/RLS boundary; a multi-company session still requires
+        // an explicit JWT company claim.
+        if (!selectedCompany && companyList.length === 1) {
+          selectedCompany = companyList[0];
+        }
+
         if (!selectedCompany) {
           throw new Error(ACTIVE_COMPANY_ERROR);
         }
