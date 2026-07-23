@@ -79,4 +79,11 @@ begin
 end;
 $function$;
 
+-- Auth invokes this hook through its dedicated database role. Do not leave a
+-- SECURITY DEFINER function executable by browser roles or PUBLIC.
+revoke all on function public.custom_access_token_hook(jsonb)
+  from public, anon, authenticated;
+grant execute on function public.custom_access_token_hook(jsonb)
+  to supabase_auth_admin;
+
 commit;
