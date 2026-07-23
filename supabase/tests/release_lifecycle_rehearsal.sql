@@ -104,7 +104,7 @@ insert into public.owner_agreements (
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -263,7 +263,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001102","role":"authenticated","app_metadata":{"user_role":"USER"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001102","role":"authenticated","app_metadata":{"user_role":"USER","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -286,7 +286,7 @@ select throws_ok(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 
@@ -460,7 +460,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -523,7 +523,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -584,7 +584,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -697,7 +697,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
