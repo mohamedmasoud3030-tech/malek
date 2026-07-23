@@ -45,6 +45,11 @@ create table if not exists public.company_members (
   unique (company_id, user_id)
 );
 
+-- The table may already exist in the baseline schema. Make the phase
+-- replay-safe before creating the partial index.
+alter table public.company_members
+  add column if not exists is_active boolean not null default true;
+
 create index if not exists idx_company_members_user_id
   on public.company_members (user_id);
 create index if not exists idx_company_members_company_active
