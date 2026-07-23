@@ -116,6 +116,9 @@ export async function listTenantDeposits(): Promise<DepositRecord[]> {
   try {
     // A `.limit(200)` here used to silently hide older held deposits. Deposits
     // remain a liability until settled, so every row must participate in this view.
+    // `.range()`-based pagination needs a fully deterministic order — created_at
+    // alone can tie across rows, which could otherwise skip or duplicate a row
+    // at a page boundary. `id` breaks every tie.
     const { rows } = await fetchAllRows<DepositRow>(() => supabase
       .from('tenant_deposits')
       .select(`
@@ -125,6 +128,7 @@ export async function listTenantDeposits(): Promise<DepositRecord[]> {
       `)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
       .returns<DepositRow>() as any);
     return rows.map(mapRow);
   } catch (error) {
@@ -246,11 +250,15 @@ export async function recordDepositRefund(payload: DepositRefundPayload): Promis
 
 export async function listDepositTransactions(depositId: string) {
   try {
+    // `.range()`-based pagination needs a fully deterministic order — created_at
+    // alone can tie across rows, which could otherwise skip or duplicate a row
+    // at a page boundary. `id` breaks every tie.
     const { rows } = await fetchAllRows<any>(() => supabase
       .from('deposit_transactions')
       .select('*')
       .eq('deposit_id', depositId)
-      .order('created_at', { ascending: true }) as any);
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true }) as any);
     return rows;
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل سجل حركات الوديعة');

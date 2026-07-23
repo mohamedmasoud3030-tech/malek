@@ -37,6 +37,32 @@ export type OwnerSettlementTarget = {
   commission_value: number;
 };
 
+export type OwnerSettlementTotals = {
+  gross: number;
+  fees: number;
+  deductions: number;
+  net: number;
+};
+
+/**
+ * Cancelled drafts never create a payable or collection, so they must be
+ * excluded from control totals — otherwise the totals look larger than the
+ * ledger-backed live settlements they're meant to summarize.
+ */
+export function summarizeLiveOwnerSettlements(settlements: readonly OwnerSettlementRecord[]): OwnerSettlementTotals {
+  return settlements
+    .filter((settlement) => settlement.status !== 'cancelled')
+    .reduce<OwnerSettlementTotals>(
+      (summary, settlement) => ({
+        gross: summary.gross + settlement.gross_rent_collected,
+        fees: summary.fees + settlement.management_fee_amount,
+        deductions: summary.deductions + settlement.maintenance_deductions + settlement.utility_deductions,
+        net: summary.net + settlement.net_payable_amount,
+      }),
+      { gross: 0, fees: 0, deductions: 0, net: 0 },
+    );
+}
+
 export type CreateSettlementDraftPayload = {
   owner_id: string;
   property_id: string;
@@ -142,10 +168,14 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
   try {
     // Settlements feed owner statements and payout KPIs: never accept PostgREST's
     // silent 1,000-row cap as a complete financial history.
+    // `.range()`-based pagination needs a fully deterministic order —
+    // created_at alone can tie across rows, which could otherwise skip or
+    // duplicate a row at a page boundary. `id` breaks every tie.
     ({ rows: settlements } = await fetchAllRows<any>(() => (supabase as any)
       .from('owner_settlements')
       .select('*')
-      .order('created_at', { ascending: false })));
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })));
   } catch (error) {
     const settlementError = error;
     throw new Error(messageFromError(settlementError, 'تعذر تحميل تسويات الملاك.'));
