@@ -1,5 +1,5 @@
 # Production Access & Backup Preflight Evidence
-> **Historical snapshot notice (2026-07-23):** This report predates the merge of PRs #1233, #1269, and #1271. It is retained as evidence, not as the current repository status. See [`docs/PROJECT_STATUS.md`](../../docs/PROJECT_STATUS.md).
+> **Historical snapshot notice (2026-07-23):** This report predates the merge of PRs #1233, #1269, and #1271. It is retained as evidence, not as the current repository status. See [`docs/APP_STATUS.md`](../../docs/APP_STATUS.md).
 
 Date: 2026-07-21 (Asia/Muscat).
 Repository HEAD inspected: `0d3b7f32b2992921cd420e38dbf026ec0f595167` (`main`).

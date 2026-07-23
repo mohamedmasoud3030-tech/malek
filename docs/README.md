@@ -6,7 +6,7 @@ This directory contains the maintained sources of truth for the Rentrix reposito
 
 - [`../AGENTS.md`](../AGENTS.md) — contributor and agent operating rules.
 - [`agent-context/CONTEXT_MAP.md`](agent-context/CONTEXT_MAP.md) — mandatory task-routing map.
-- [`CURRENT_STATE.md`](CURRENT_STATE.md) — verified current implementation and live-state caveats.
+- [`APP_STATUS.md`](APP_STATUS.md) — verified current implementation, feature coverage, and live-state caveats.
 - [`NEXT.md`](NEXT.md) — active product, data-correctness, and release backlog.
 
 ## Product and domain
@@ -29,12 +29,14 @@ This directory contains the maintained sources of truth for the Rentrix reposito
 - [`ENGINEERING_GOVERNANCE.md`](ENGINEERING_GOVERNANCE.md) — engineering policy.
 - [`GOVERNANCE.md`](GOVERNANCE.md) and [`GOVERNANCE_LOG.md`](GOVERNANCE_LOG.md) — production-change controls and approval evidence.
 - [`RELEASE_READINESS.md`](RELEASE_READINESS.md) — current release criteria and blockers.
-- [`RELEASE_BLOCKER_GATE.md`](RELEASE_BLOCKER_GATE.md) — executable gate for the five launch-blocking risks only.
+- CI still enforces the executable gate for the five launch-blocking risks via `.github/workflows/release-blocker-gate.yml`; the narrative doc describing it (`RELEASE_BLOCKER_GATE.md`) went stale relative to the live gate and is archived — verify current gate status directly against the workflow and `APP_STATUS.md` rather than a point-in-time narrative.
 - [`RELEASE_EVIDENCE_LEDGER.md`](RELEASE_EVIDENCE_LEDGER.md) — evidence recorded for an exact release candidate.
 - [`SEEDED_STAGING_READINESS_RUNBOOK.md`](SEEDED_STAGING_READINESS_RUNBOOK.md) — controlled staging validation.
 
 ## Documentation policy
 
-Keep only maintained sources in the active tree. Historical audits, completed execution plans, superseded reviews, and one-off reports remain available through Git history and must not be recreated as archive folders.
+Keep only maintained sources in the active tree. Historical audits, completed execution plans, superseded reviews, and one-off reports remain available through Git history and should not be recreated as archive folders as a matter of routine.
 
-Do not create another standalone status report. Update the maintained source above or add a decision record when a durable decision is required.
+**Narrow exception (2026-07-23):** `PROJECT_STATUS.md`, `RELEASE_BLOCKER_GATE.md`, and `CURRENT_STATE.md` had drifted into direct contradiction with each other (different PR numbers, different verified-as-of dates spanning over a week) and with the live database/CI state. They were consolidated into the single `APP_STATUS.md` and moved to `docs/archive/` with dated filenames rather than deleted outright, specifically because their prior content had been cited as authoritative in past sessions and silent deletion would erase that trail. This is not a precedent for routinely archiving documents going forward — the default remains Git history, not an archive folder.
+
+Do not create another standalone status report. Update `APP_STATUS.md` or add a decision record when a durable decision is required.
