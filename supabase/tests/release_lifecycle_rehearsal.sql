@@ -1,5 +1,24 @@
 begin;
 
+-- Set ephemeral defaults for company_id during testing
+do $$
+declare
+  r record;
+begin
+  for r in
+    select table_name
+    from information_schema.columns
+    where table_schema = 'public'
+      and column_name = 'company_id'
+  loop
+    execute format(
+      'alter table public.%I alter column company_id set default ''00000000-0000-4000-8000-000000000001''::uuid',
+      r.table_name
+    );
+  end loop;
+end;
+$$;
+
 create extension if not exists pgtap with schema extensions;
 
 select plan(60);
@@ -113,7 +132,7 @@ select lives_ok(
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
   '00000000-0000-0000-0000-000000001701',
-  id,
+  id::uuid,
   date '2026-09-01',
   date '2026-09-05',
   1000,

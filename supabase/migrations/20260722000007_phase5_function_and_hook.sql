@@ -79,6 +79,7 @@ begin
 end;
 $function$;
 
+<<<<<<<< HEAD:supabase/migrations/20260722050000_phase5_function_and_hook.sql
 -- SECURITY DEFINER functions must never inherit PostgreSQL's default PUBLIC
 -- execute grant. Explicit grants created by earlier migrations (for example to
 -- authenticated) are preserved; browser-anonymous execution is removed.
@@ -106,5 +107,12 @@ revoke all on function public.custom_access_token_hook(jsonb)
   from authenticated;
 grant execute on function public.custom_access_token_hook(jsonb)
   to supabase_auth_admin;
+========
+-- CREATE OR REPLACE does not preserve prior GRANT/REVOKE state, so the
+-- original least-privilege contract (only the Auth service may invoke this
+-- hook) must be reasserted here, same as in 20250101000003_functions_triggers_and_rpcs.sql.
+revoke all on function public.custom_access_token_hook(jsonb) from public, anon, authenticated;
+grant execute on function public.custom_access_token_hook(jsonb) to supabase_auth_admin;
+>>>>>>>> origin/fix/phase2-backfill-foreach-syntax:supabase/migrations/20260722000007_phase5_function_and_hook.sql
 
 commit;

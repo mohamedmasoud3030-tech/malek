@@ -75,7 +75,11 @@ declare
   updated bigint;
   total_updated bigint := 0;
 begin
+<<<<<<<< HEAD:supabase/migrations/20260722020000_phase2_add_company_id_and_backfill.sql
   foreach tbl in array ARRAY[
+========
+  foreach tbl in array array[
+>>>>>>>> origin/fix/phase2-backfill-foreach-syntax:supabase/migrations/20260722000004_phase2_add_company_id_and_backfill.sql
     'properties', 'property_owners', 'owners', 'units', 'people',
     'tenants', 'contracts', 'invoices', 'payments', 'receipts',
     'receipt_allocations', 'expenses', 'maintenance_records',

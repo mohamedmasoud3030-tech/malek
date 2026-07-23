@@ -1,5 +1,24 @@
 begin;
 
+-- Set ephemeral defaults for company_id during testing
+do $$
+declare
+  r record;
+begin
+  for r in
+    select table_name
+    from information_schema.columns
+    where table_schema = 'public'
+      and column_name = 'company_id'
+  loop
+    execute format(
+      'alter table public.%I alter column company_id set default ''00000000-0000-4000-8000-000000000001''::uuid',
+      r.table_name
+    );
+  end loop;
+end;
+$$;
+
 create extension if not exists pgtap with schema extensions;
 
 select plan(32);
@@ -222,7 +241,8 @@ select is(
 
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
-  '00000000-0000-0000-0000-000000000701', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
+  '00000000-0000-0000-0000-000000000701', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
+  '00000000-0000-0000-0000-000000000701', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
 from public.contracts
 where notes = 'release-blocker-contract';
 
@@ -316,7 +336,8 @@ select throws_ok(
 
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
-  '00000000-0000-0000-0000-000000000702', id, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
+  '00000000-0000-0000-0000-000000000702', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
+  '00000000-0000-0000-0000-000000000702', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID'
 from public.contracts
 where notes = 'release-blocker-fixed-contract';
 
