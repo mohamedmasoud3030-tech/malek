@@ -31,6 +31,17 @@ create table if not exists public.companies (
   updated_at timestamptz not null default now()
 );
 
+-- The live-compatible baseline can already contain a legacy companies table.
+-- Complete its phase-one shape before the seed insert below.
+alter table public.companies add column if not exists name text not null default 'Rentrix Default Company';
+alter table public.companies add column if not exists slug text not null default 'default';
+alter table public.companies add column if not exists currency text not null default 'OMR';
+alter table public.companies add column if not exists locale text not null default 'ar-OM';
+alter table public.companies add column if not exists timezone text not null default 'Asia/Muscat';
+alter table public.companies add column if not exists is_active boolean not null default true;
+alter table public.companies add column if not exists created_at timestamptz not null default now();
+alter table public.companies add column if not exists updated_at timestamptz not null default now();
+
 -- ── 1b. جدول ربط المستخدمين بالمكاتب (Many-to-Many) ─────────────────────
 
 create table if not exists public.company_members (
