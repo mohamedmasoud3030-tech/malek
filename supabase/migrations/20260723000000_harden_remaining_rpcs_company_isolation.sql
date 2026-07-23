@@ -375,7 +375,7 @@ BEGIN
     FOR UPDATE;
   ELSE
     SELECT r.*
-    INTO v_receipt
+    INTO r_receipt
     FROM public.receipts r
     WHERE r.id::text = v_requested_id
       AND r.deleted_at IS NULL
@@ -682,8 +682,8 @@ BEGIN
   DELETE FROM contract_balances WHERE true;
   INSERT INTO contract_balances (contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at, company_id)
   SELECT
-    c.id,
-    c.tenant_id,
+    c.id::text,
+    c.tenant_id::text,
     c.unit_id::text,
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
@@ -698,7 +698,7 @@ BEGIN
   DELETE FROM tenant_balances WHERE true;
   INSERT INTO tenant_balances (tenant_id, balance_due, updated_at, company_id)
   SELECT
-    c.tenant_id,
+    c.tenant_id::text,
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0) - i.paid_amount), 0),
     now(),
     c.company_id
@@ -833,7 +833,7 @@ BEGIN
   SELECT 
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
-    c.tenant_id,
+    c.tenant_id::text,
     c.unit_id::text
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id
   FROM public.contracts c
@@ -849,9 +849,9 @@ BEGIN
   INSERT INTO public.contract_balances (
     contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, updated_at
   ) VALUES (
-    v_contract_id,
-    v_tenant_id,
-    v_unit_id,
+    v_contract_id::uuid,
+    v_tenant_id::uuid,
+    v_unit_id::uuid,
     v_total_invoiced,
     v_total_paid,
     v_total_invoiced - v_total_paid,
@@ -897,7 +897,7 @@ BEGIN
   SELECT 
     COALESCE(SUM(i.amount + COALESCE(i.tax_amount, 0)), 0),
     COALESCE(SUM(i.paid_amount), 0),
-    c.tenant_id,
+    c.tenant_id::text,
     c.unit_id::text,
     c.company_id
   INTO v_total_invoiced, v_total_paid, v_tenant_id, v_unit_id, v_company_id
@@ -913,9 +913,9 @@ BEGIN
   INSERT INTO public.contract_balances (
     contract_id, tenant_id, unit_id, total_invoiced, total_paid, balance_due, company_id, updated_at
   ) VALUES (
-    v_contract_id,
-    v_tenant_id,
-    v_unit_id,
+    v_contract_id::uuid,
+    v_tenant_id::uuid,
+    v_unit_id::uuid,
     v_total_invoiced,
     v_total_paid,
     v_total_invoiced - v_total_paid,
