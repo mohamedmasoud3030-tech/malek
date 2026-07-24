@@ -823,9 +823,9 @@ select is(
     select count(*)::integer
     from public.financial_operation_idempotency
     where operation_name in (
-      'create_owner_settlement_draft_atomic',
-      'approve_owner_settlement_atomic',
-      'pay_owner_settlement_atomic'
+      'create_owner_settlement_draft_atomic:00000000-0000-4000-8000-000000000001',
+      'approve_owner_settlement_atomic:00000000-0000-4000-8000-000000000001',
+      'pay_owner_settlement_atomic:00000000-0000-4000-8000-000000000001'
     )
       and request_id in (
         '10000000-0000-0000-0000-000000000001',

@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-07-24T22:00:47.444Z",
+  "sameRawRequestIdCrossCompanyReplay": false,
+  "legacyGlobalSettlementRequestUniqueCollision": "fails loudly",
+  "crossCompanyTarget": "not found",
+  "missingCanonicalAccount": "2000 is not configured for company",
+  "settlementStatusAfterFailures": "APPROVED",
+  "journalRowsAfterFailures": 0,
+  "idempotencyRowsAfterFailures": 0
+}

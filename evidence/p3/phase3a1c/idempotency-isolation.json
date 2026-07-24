@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-07-24T22:00:47.444Z",
+  "rule": "request_id identifies one immutable logical financial request inside one company",
+  "createReplay": true,
+  "differentTargetRejected": true,
+  "changedPayloadRejected": true,
+  "approveReplay": true,
+  "payReplay": true,
+  "cancelReplay": true,
+  "journalRowsAfterReplay": 2,
+  "auditRowsAfterReplay": 3
+}

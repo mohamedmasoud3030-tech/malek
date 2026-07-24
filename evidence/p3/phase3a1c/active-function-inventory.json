@@ -1,0 +1,64 @@
+{
+  "generatedAt": "2026-07-24T22:00:47.344Z",
+  "scope": [
+    "create_owner_settlement_draft_atomic",
+    "approve_owner_settlement_atomic",
+    "pay_owner_settlement_atomic",
+    "cancel_owner_settlement_atomic"
+  ],
+  "untouchedDependencies": [
+    "calculate_owner_net_payout",
+    "require_company_account_id"
+  ],
+  "productionMutation": false,
+  "catalog": [
+    {
+      "proname": "approve_owner_settlement_atomic",
+      "body_md5": "a3ec2fa2d272593e9502f8b0b9f5a187",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "comment": "Phase 3A-1C: company-scoped approval with immutable request binding and exact row-count assertion.",
+      "public_execute": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_role_execute": true
+    },
+    {
+      "proname": "cancel_owner_settlement_atomic",
+      "body_md5": "c78abb0ce7d755f0a23d2789ac57751d",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "comment": "Phase 3A-1C: company-scoped cancellation with immutable request binding and exact row-count assertion.",
+      "public_execute": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_role_execute": true
+    },
+    {
+      "proname": "create_owner_settlement_draft_atomic",
+      "body_md5": "766760123b2d65f9832c3e3099855746",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "comment": "Phase 3A-1C: P1-derived settlement draft with company-scoped immutable request binding.",
+      "public_execute": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_role_execute": true
+    },
+    {
+      "proname": "pay_owner_settlement_atomic",
+      "body_md5": "69ae9c0e0e391358778b83dad1a2328c",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "comment": "Phase 3A-1C: company-canonical 2000/1111 payout with immutable request binding and atomic assertions.",
+      "public_execute": false,
+      "anon_execute": false,
+      "authenticated_execute": true,
+      "service_role_execute": true
+    }
+  ]
+}

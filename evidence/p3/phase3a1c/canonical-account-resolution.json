@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-07-24T22:00:47.444Z",
+  "settlementId": "0b916ff8-2ace-4bf1-9441-51fd5a0c1d60",
+  "status": "PAID",
+  "duplicateAccountNumbersAcrossCompanies": true,
+  "selectedAccounts": [
+    {
+      "no": "1111",
+      "id": "p3a1c-b-1111",
+      "company_id": "c31b0000-0000-4000-8000-000000000002"
+    },
+    {
+      "no": "2000",
+      "id": "p3a1c-b-2000",
+      "company_id": "c31b0000-0000-4000-8000-000000000002"
+    }
+  ],
+  "selectedOnlyCurrentCompany": true
+}
