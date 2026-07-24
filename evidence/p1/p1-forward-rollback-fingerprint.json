@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T00:38:53.227Z",
+  "generatedAt": "2026-07-24T04:51:41.237Z",
   "migrationFile": "20260725000000_p1_owner_settlement_server_derivation.sql",
   "rollbackFile": "supabase/rollback/20260725_rollback_p1_owner_settlement_derivation.sql",
   "baselineFunctions": 90,
