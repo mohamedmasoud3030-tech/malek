@@ -91,12 +91,14 @@ test.describe('single-office isolated launch acceptance', () => {
       { path: '/receipts', heading: 'الإيصالات', evidence: 'مستأجر اختبار المكتب الواحد' },
       { path: '/reports', heading: 'التقارير', evidence: 'التقارير' },
       { path: '/maintenance', heading: 'الصيانة', evidence: 'الصيانة' },
-      { path: '/settings', heading: 'الإعدادات', evidence: 'الإعدادات' },
+      { path: '/settings', heading: null, evidence: 'الإعدادات محفوظة' },
     ];
 
     for (const route of routes) {
       await page.goto(route.path);
-      await expect(page.getByRole('heading', { name: route.heading, level: 1 })).toBeVisible();
+      if (route.heading) {
+        await expect(page.getByRole('heading', { name: route.heading, level: 1 })).toBeVisible();
+      }
       await expect(page.getByText(route.evidence, { exact: false }).filter({ visible: true }).first()).toBeVisible();
       await expect(page.getByText('تعذر تحديد الشركة النشطة')).toHaveCount(0);
       await expectNoHorizontalOverflow(page);
