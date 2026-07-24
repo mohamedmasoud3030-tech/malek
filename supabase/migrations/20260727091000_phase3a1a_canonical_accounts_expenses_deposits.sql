@@ -19,6 +19,12 @@ begin
  select count(*),min(id) into v_count,v_id from public.accounts where company_id=p_company_id and no=btrim(p_account_no);
  if v_count>1 then raise exception 'Account % is ambiguous for company %',p_account_no,p_company_id using errcode='23505'; end if;
  if v_count=1 then return v_id; end if;
+ -- Phase 3A-1A deliberately leaves the legacy global UNIQUE(no) in place.
+ -- Fail before attempting an insert so a caller never receives an opaque
+ -- accounts_no_key error or another company's account id.
+ if exists (select 1 from public.accounts where no = btrim(p_account_no) and company_id <> p_company_id) then
+   raise exception 'ACCOUNT_NUMBER_GLOBAL_UNIQUENESS_BLOCKED: account % is owned by another company until Phase 3A-2', p_account_no using errcode='23505';
+ end if;
  v_id := 'coa:'||p_company_id::text||':'||btrim(p_account_no);
  insert into public.accounts(id,no,name,company_id) values(v_id,btrim(p_account_no),p_account_name,p_company_id)
  on conflict (id) do nothing;
@@ -26,10 +32,12 @@ begin
  if v_count<>1 then raise exception 'Cannot safely ensure account % for company %',p_account_no,p_company_id using errcode='23505'; end if;
  return v_id;
 end $$;
-revoke all on function public.require_company_account_id(uuid,text) from public,anon;
-revoke all on function public.ensure_company_account(uuid,text,text) from public,anon;
-grant execute on function public.require_company_account_id(uuid,text) to authenticated,service_role;
-grant execute on function public.ensure_company_account(uuid,text,text) to authenticated,service_role;
+revoke all on function public.require_company_account_id(uuid,text) from public,anon,authenticated;
+revoke all on function public.ensure_company_account(uuid,text,text) from public,anon,authenticated;
+-- These helpers are implementation details for SECURITY DEFINER financial RPCs;
+-- direct authenticated callers must not choose an arbitrary company id.
+grant execute on function public.require_company_account_id(uuid,text) to service_role;
+grant execute on function public.ensure_company_account(uuid,text,text) to service_role;
 CREATE OR REPLACE FUNCTION public.create_expense_with_journal_atomic(p_payload jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -80,13 +88,13 @@ begin
 
   if not exists (
     select 1 from public.properties p
-    where p.id::text = v_property_id::text and p.deleted_at is null
+    where p.id::text = v_property_id::text and p.company_id = v_company_id and p.deleted_at is null
   ) then
     raise exception 'Property not found.';
   end if;
 
   if v_cost_center_id is not null and not exists (
-    select 1 from public.cost_centers cc where cc.id::text = v_cost_center_id::text
+    select 1 from public.cost_centers cc where cc.id::text = v_cost_center_id::text and cc.company_id = v_company_id
   ) then
     raise exception 'Cost center not found.';
   end if;
@@ -95,6 +103,7 @@ begin
     select 1 from public.contracts c
     where c.id::text = v_contract_id::text
       and c.property_id::text = v_property_id::text
+      and c.company_id = v_company_id
       and c.deleted_at is null
   ) then
     raise exception 'Contract does not belong to the selected property.';
@@ -175,6 +184,7 @@ declare
   v_cash_account_id public.accounts.id%type;
   v_reversal_no text;
   v_new_entry_no text;
+  v_row_count integer;
   v_result jsonb;
   v_cached jsonb;
 begin
@@ -201,7 +211,7 @@ begin
 
   select * into v_expense
   from public.expenses
-  where id::text = v_expense_id::text and deleted_at is null
+  where id::text = v_expense_id::text and company_id = v_company_id and deleted_at is null
   for update;
   if not found then raise exception 'Expense not found or has been deleted.'; end if;
 
@@ -231,13 +241,13 @@ begin
 
   if not exists (
     select 1 from public.properties p
-    where p.id::text = v_property_id::text and p.deleted_at is null
+    where p.id::text = v_property_id::text and p.company_id = v_company_id and p.deleted_at is null
   ) then
     raise exception 'Property not found.';
   end if;
 
   if v_cost_center_id is not null and not exists (
-    select 1 from public.cost_centers cc where cc.id::text = v_cost_center_id::text
+    select 1 from public.cost_centers cc where cc.id::text = v_cost_center_id::text and cc.company_id = v_company_id
   ) then
     raise exception 'Cost center not found.';
   end if;
@@ -246,6 +256,7 @@ begin
     select 1 from public.contracts c
     where c.id::text = v_contract_id::text
       and c.property_id::text = v_property_id::text
+      and c.company_id = v_company_id
       and c.deleted_at is null
   ) then
     raise exception 'Contract does not belong to the selected property.';
@@ -267,7 +278,10 @@ begin
       attachment_url = v_attachment_url,
       updated_at = now()
   where id::text = v_expense_id::text
-    AND company_id = v_company_id;
+    AND company_id = v_company_id
+    AND deleted_at is null;
+  get diagnostics v_row_count = row_count;
+  if v_row_count <> 1 then raise exception 'Expense update failed due to company scope or deleted record.' using errcode='42501'; end if;
 
   if v_amount_changed or v_date_changed then
     v_expense_account_id := public.ensure_company_account(v_company_id, '6100', 'Operating Expenses');
@@ -283,9 +297,9 @@ begin
       (id, no, date, account_id, amount, type, source_id, entity_type, entity_id, created_at, company_id)
     values
       (gen_random_uuid()::text, v_reversal_no || '-D', v_expense.expense_date::text, v_expense_account_id, v_expense.amount, 'CREDIT', v_expense_id, 'expense_reversal', v_expense_id, now(), v_company_id),
-      (gen_random_uuid()::text, v_reversal_no || '-C', v_expense.expense_date::text, v_cash_account_id, v_expense.amount, 'DEBIT', v_expense_id, 'expense_reversal', v_expense_id, now()),
-      (gen_random_uuid()::text, v_new_entry_no || '-D', v_expense_date::text, v_expense_account_id, v_amount, 'DEBIT', v_expense_id, 'expense_update', v_expense_id, now()),
-      (gen_random_uuid()::text, v_new_entry_no || '-C', v_expense_date::text, v_cash_account_id, v_amount, 'CREDIT', v_expense_id, 'expense_update', v_expense_id, now());
+      (gen_random_uuid()::text, v_reversal_no || '-C', v_expense.expense_date::text, v_cash_account_id, v_expense.amount, 'DEBIT', v_expense_id, 'expense_reversal', v_expense_id, now(), v_company_id),
+      (gen_random_uuid()::text, v_new_entry_no || '-D', v_expense_date::text, v_expense_account_id, v_amount, 'DEBIT', v_expense_id, 'expense_update', v_expense_id, now(), v_company_id),
+      (gen_random_uuid()::text, v_new_entry_no || '-C', v_expense_date::text, v_cash_account_id, v_amount, 'CREDIT', v_expense_id, 'expense_update', v_expense_id, now(), v_company_id);
   end if;
 
   insert into public.audit_log
@@ -344,6 +358,7 @@ declare
   v_cached jsonb;
   v_cash_account_id text;
   v_deposit_account_id text;
+  v_contract record;
   v_result jsonb;
 begin
   if auth.uid() is null or not public.is_admin_or_manager() then
@@ -382,6 +397,22 @@ begin
   END IF;
 
   perform pg_advisory_xact_lock(hashtextextended('create_deposit:'||v_request_id,0));
+
+  select c.* into v_contract
+  from public.contracts c
+  where c.id::text = v_contract_id_raw
+    and c.company_id = v_company_id
+    and c.deleted_at is null
+  for share;
+  if not found then raise exception 'Contract not found in current company.' using errcode='42501'; end if;
+  if (v_tenant_id is not null and v_tenant_id <> v_contract.tenant_id::text)
+     or (v_property_id_raw is not null and v_property_id_raw <> v_contract.property_id::text)
+     or (v_unit_id_raw is not null and v_unit_id_raw <> v_contract.unit_id::text) then
+    raise exception 'Deposit payload does not match canonical contract parties.' using errcode='22023';
+  end if;
+  v_tenant_id := v_contract.tenant_id::text;
+  v_property_id_raw := v_contract.property_id::text;
+  v_unit_id_raw := v_contract.unit_id::text;
 
   v_deposit_id := gen_random_uuid()::text;
 
