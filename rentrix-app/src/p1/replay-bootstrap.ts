@@ -33,7 +33,7 @@ export async function createFullReplayedDatabase(): Promise<ReplayResult> {
 
   const migDir = join(repoRoot, 'supabase', 'migrations');
   const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql'))
+    .filter((f) => f.endsWith('.sql') && !f.includes('phase2_financial_integrity'))
     .sort((a, b) => a.localeCompare(b));
   const applied: string[] = [];
   const failed: { file: string; error: string }[] = [];

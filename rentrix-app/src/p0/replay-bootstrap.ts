@@ -42,7 +42,7 @@ export async function createReplayedDatabase(): Promise<ReplayResult> {
   // full-chain replay) so the P0 suites keep measuring the P0 delta only and
   // the P0 forward-rollback fingerprint stays byte-exact.
   const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && !f.includes('p0_company_isolation') && !f.includes('p1_owner_settlement'))
+    .filter((f) => f.endsWith('.sql') && !f.includes('p0_company_isolation') && !f.includes('p1_owner_settlement') && !f.includes('phase2_financial_integrity'))
     .sort((a, b) => a.localeCompare(b));
   const applied: string[] = [];
   const failed: { file: string; error: string }[] = [];

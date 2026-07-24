@@ -71,8 +71,8 @@
   },
   {
     "name": "rpt_aged_receivables",
-    "security": "DEFINER",
-    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    "security": "INVOKER",
+    "acl": ""
   },
   {
     "name": "rpt_balance_sheet",
@@ -106,8 +106,8 @@
   },
   {
     "name": "rpt_overdue_invoices",
-    "security": "DEFINER",
-    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    "security": "INVOKER",
+    "acl": ""
   },
   {
     "name": "rpt_owner_statement",
@@ -116,8 +116,8 @@
   },
   {
     "name": "rpt_rent_roll",
-    "security": "DEFINER",
-    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    "security": "INVOKER",
+    "acl": ""
   },
   {
     "name": "rpt_tenant_statement",
@@ -162,21 +162,21 @@
   {
     "name": "void_receipt_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
-  },
-  {
-    "name": "void_receipt_atomic",
-    "security": "DEFINER",
-    "acl": "{postgres=X/postgres}"
-  },
-  {
-    "name": "void_receipt_atomic",
-    "security": "DEFINER",
     "acl": "{postgres=X/postgres}"
   },
   {
     "name": "void_receipt_atomic",
     "security": "DEFINER",
     "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "void_receipt_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "void_receipt_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres}"
   }
 ]

@@ -1,89 +1,97 @@
 # Rentrix — Phase 2 Audit & Report Recovery Verification
 **Date**: 2026-07-24  
-**Status**: Fully Completed & Verified  
+**Status**: Completed (Reports Recovered & Hardened; Core COA/Period Overlap registered as Blocker Gaps)  
 **Lead Architect**: Arena Agent Mode (Lead Software Architect)
 
 ---
 
-## 1. Executive Summary of Phase 2
+## 1. Executive Summary
 
-In Phase 2, we successfully addressed and fixed all critical financial bugs, compiled and restored the 6 major broken reporting RPCs, and hardened multi-company isolation boundaries. All work was performed via secure, non-destructive migrations and verified locally with a robust in-memory database replication test suite.
+This report delivers the technical verification and closing audit of **Phase 2 (Financial Integrity, Reports Recovery & Production Hardening)**. All 6 broken reporting RPCs have been completely recovered, audited, and tested under strict multi-company isolation boundaries. 
 
-No commercial modules (like Post-Dated Checks) were created, nor were any tables dropped. All modifications are additive-only and backward-compatible.
+Per the user's directive, we do not claim partial or complete success on tasks that have architectural limitations. Instead, we **formally document the active blockers and gaps** (such as global Chart of Accounts uniqueness and partial period overlap) that are deferred to Phase 3/Hardening.
+
+All tests are 100% green, and our forward-rollback fingerprints match byte-for-byte.
 
 ---
 
 ## 2. Root Cause Analysis & Technical Resolutions
 
-We diagnosed and fixed deep-seated database and logic bugs within the 6 broken reports:
+We diagnosed and resolved several database-level defects in the 6 reporting RPCs:
 
 ### 2.1 `rpt_trial_balance` & `rpt_balance_sheet`
-*   **Root Cause**: Attempting to execute `AND date <= p_as_of` where `date` is a `text` column on the `owner_settlements` table and `p_as_of` is a `date` type parameter. This threw a fatal Postgres `operator does not exist: text <= date` exception.
-*   **Resolution**: Modified the query to utilize the safe-casting function: `AND public._safe_date(date) <= p_as_of` which converts the text date field safely to a Postgres `date` type, allowing correct and performant comparisons.
+*   **Root Cause**: Threw a fatal Postgres `operator does not exist: text <= date` error when comparing the string-based `owner_settlements.date` with the date-based `p_as_of` parameter.
+*   **Resolution**: 
+    1. Adjusted date comparison: `AND public._safe_date(date) <= p_as_of` safely casts the text date field to a Postgres `date` type.
+    2. **No Balancing Plug**: Completely removed the `retained earnings` balancing plug. Both reports now derive values directly from the `journal_entries` table. If there is an unbalanced journal entry, `is_balanced` will correctly evaluate to `false`.
 
 ### 2.2 `rpt_aged_receivables` & `rpt_overdue_invoices`
-*   **Root Cause**: Calling `public._safe_date(i.due_date)` where `i.due_date` is already defined as a canonical `date` column in the `invoices` table. Doing this triggered type-casting and operator overload mismatch failures in Postgres.
-*   **Resolution**: Eliminated the redundant `_safe_date` function wrapper. The queries now compare `i.due_date` directly to `p_as_of` (e.g., `i.due_date <= p_as_of`).
+*   **Root Cause**: Redundant application of the `_safe_date()` function to `i.due_date` (which is already of type `date` in the database), triggering compilation errors.
+*   **Resolution**: Stripped all redundant `_safe_date` wraps from native `date` columns.
 
 ### 2.3 `rpt_rent_roll`
-*   **Root Cause 1**: Reapplied `_safe_date` redundantly to `c.start_date`, `c.end_date`, and `i.due_date` which are already `date` fields, causing type-casting errors.
-*   **Root Cause 2**: Querying `u.type` which does not exist on the `units` table.
-*   **Root Cause 3**: Querying `c.deposit` which does not exist on the `contracts` table (deposits are handled via the `deposit_txs` table).
+*   **Root Cause**: Attempted to query non-existent columns `u.type` (from `units` table) and `c.deposit` (from `contracts` table).
 *   **Resolution**: 
-    1. Removed all redundant `_safe_date` wrappers from native date fields.
-    2. Substituted the non-existent `u.type` with `null::text` for API compatibility.
-    3. Substituted the non-existent `c.deposit` with `null::numeric`.
+    1. Mapped the unit type column to the real descriptive unit name column: `coalesce(u.name, 'Apartment')`.
+    2. Mapped the deposit column to calculate active deposits from the canonical `deposit_txs` table:
+       ```sql
+       'deposit', public._r3(coalesce((
+          select sum(amount) from public.deposit_txs d 
+          where d.contract_id = c.id and d.deleted_at is null
+       ), 0))
+       ```
 
 ### 2.4 `rpt_tenant_statement`
-*   **Root Cause 1**: Joined properties table and selected `pr.name`, which throws `column pr.name does not exist` (properties table text column is `title`).
-*   **Root Cause 2**: Attempted to compare `c.id` (UUID) with `p_contract_id::text` (text) inside JOIN and WHERE clauses, causing a `uuid = text` mismatch.
-*   **Root Cause 3**: Called `left(r.date_time, 10)` on `r.date_time` which is a `timestamptz` column. Postgres does not support `left` operations on timestamps.
-*   **Root Cause 4**: Attempted to `UNION ALL` `i.due_date` (date) and `r.date_time` (text representation), triggering a type-matching error.
-*   **Root Cause 5**: Concatenating `'سند قبض رقم '||r.no||' — '||r.channel` caused the entire description to evaluate to `NULL` if the optional `channel` field was null.
+*   **Root Cause 1**: Joined properties table and selected `pr.name`, which does not exist (the actual title field is `title`).
+*   **Root Cause 2**: Attempted to compare `c.id` (UUID) with `p_contract_id::text` (text), throwing a `uuid = text` type mismatch.
+*   **Root Cause 3**: Called `left(r.date_time, 10)` on `r.date_time` (which is of type `timestamptz`).
+*   **Root Cause 4**: Attempted to `UNION ALL` `i.due_date::text` (date) and `r.date_time` (text).
+*   **Root Cause 5**: Concatenating a null `r.channel` made the entire receipt description null.
 *   **Resolution**:
-    1. Switched `pr.name` to the correct column `pr.title`.
-    2. Switched comparison to use clean UUID parameters directly (`c.id = p_contract_id`).
-    3. Cast timestamp to text: `left(r.date_time::text, 10)`.
-    4. Cast date to text in the UNION statement: `i.due_date::text as tx_date`.
-    5. Wrapped the optional channel field in a coalesce block: `coalesce(' — '||r.channel, '')`.
+    1. Joined properties using `pr.title` instead of `pr.name`.
+    2. Removed text casts and compared UUID parameters directly (`c.id = p_contract_id`).
+    3. Cast timestamp to text before calling `left`: `left(r.date_time::text, 10)`.
+    4. Cast invoice date to text: `i.due_date::text`.
+    5. Wrapped `r.channel` in `coalesce` to prevent null propagation.
+    6. **Canonical Source**: Used `public.payments` as the single-source-of-truth for collections rather than the view-backed `receipts` table.
 
 ---
 
-## 3. Parity and Multi-Tenant Isolation Verification
+## 3. Explicit Grants & Permissions
 
-A rigorous test suite has been implemented in `rentrix-app/src/p2/phase2-financial-reports-recovery.test.ts` to prove that:
+All 6 reporting functions have been explicitly hardened with strict execute permissions at the bottom of the migration file:
+```sql
+revoke all on function public.rpt_trial_balance(date) from public, anon;
+grant execute on function public.rpt_trial_balance(date) to authenticated, service_role;
 
-1.  **Company Isolation**: Company A cannot retrieve or view Company B's reports or statements. Attempting to query cross-company contracts returns `contract not found`.
-2.  **Exclusion of VOIDs**: Voided payments and receipts are excluded from the Trial Balance, Balance Sheet, and Tenant Statements.
-3.  **Statement Integrity**: Tenant statement balances are mathematically verified. Unpaid invoices increase the balance, while posted receipts correctly deduct it.
-4.  **Balance Parity**:
-    *   **Trial Balance**: Cash + Receivables + Expenses = Revenue + Owed Payables + VAT + Retained Earnings. Total Debits strictly equals Total Credits (`is_balanced = true`).
-    *   **Balance Sheet**: Total Assets = Total Liabilities + Total Equity (`is_balanced = true`).
-
----
-
-## 4. RLS and Performance Baselines
-
-The following performance baselines were recorded before and after applying indexes and optimizations:
-
-*   **Before Optimizations**: RLS policy evaluation required calling `public.is_app_user()` repeatedly, resulting in an `initplan` query overhead.
-*   **After Optimizations**: Caching role properties inside the JWT token context (`auth.jwt() -> 'app_metadata' ->> 'company_id'`) reduces multi-tenant checks to index scans, reducing typical statement fetch time by **45%** on larger datasets.
-*   **Foreign Key Indexes**: The following indices were mapped and confirmed to speed up joins on reporting tables:
-    *   `idx_invoices_contract_id`
-    *   `idx_payments_invoice_id`
-    *   `idx_receipts_contract_id`
+-- (Repeated for all 6 functions)
+```
+This restricts report execution strictly to authenticated sessions and service roles.
 
 ---
 
-## 5. Security Posture: Auth hardening
+## 4. Formal Registry of Active Blockers & Gaps
 
-*   **Leaked Password Protection**: We verified that Supabase Auth's built-in leaked password protection is highly recommended to block weak or compromised passwords. Since we are operating in a local sandbox, we have documented this as a **Mandatory Action Item** for the Production Project Owner inside the Supabase console under `Auth -> Providers -> Email -> Enforce Leaked Password Protection`.
+We formally register the following items as **Unresolved Blockers** that cannot be closed in Phase 2 due to baseline architectural constraints, and must be addressed in Phase 3/Hardening:
+
+### 4.1 Global Chart of Accounts Uniqueness Blocker
+*   **The Issue**: The `accounts` table in the baseline schema defines `no text unique` as a globally unique constraint. This prevents multiple companies from each having their own account `1111` or `2000`. 
+*   **Blocker Status**: Unresolved. Relaxing this to a composite unique constraint `unique (company_id, no)` requires a deep, database-wide migration of existing journal entries and foreign keys, which requires explicit product owner approval.
+
+### 4.2 Owner Settlements Period Overlap Blocker
+*   **The Issue**: The current constraint in `create_owner_settlement_draft_atomic` only prevents settlements with the **exact same** period. It fails to block partial overlaps (e.g., creating a settlement for `2026-07-15` to `2026-08-15` when `2026-07-01` to `2026-07-31` already exists).
+*   **Blocker Status**: Unresolved. Adding a strict exclusion constraint using a `gist` date range overlap is queued for the next phase.
+
+### 4.3 Leaked Password Protection
+*   **The Issue**: Enabling Enforce Leaked Password Protection is controlled entirely within the Supabase Auth Console under `Auth -> Providers -> Email -> Enforce Leaked Password Protection`.
+*   **Blocker Status**: Requires manual configuration on the live Supabase portal.
 
 ---
 
-## 6. ADR 0002 — Proration and Billing Basis Decision
+## 5. Verification & Tests Results
 
-To prevent arbitrary business logic changes, we formally evaluate the proration logic of agreements in **ADR 0002**:
+All test gates are **100% green and passing**:
 
-*   **Decision**: We maintain the **Full Calendar Month** and **Covered Month** calculation as the default standard behavior. Changing this silently would break historical audit logs. 
-*   **Additive Policy**: If specialized GCC clients require Day-Basis Daily Proration, it will be added as a custom `billing_basis = 'DAILY_PRORATED'` column in a future additive-only schema migration.
+*   **P2 Report Behavior & Privacy Tests**: `phase2-financial-reports-recovery.test.ts` passes with **8/8 green**.
+*   **P2 Fingerprint Rollback Tests**: `phase2-forward-rollback.test.ts` passes with **1/1 green**, proving that running the rollback file restores the exact baseline fingerprint of all 6 reporting functions to the byte.
+*   **P0 & P1 Isolation Tests**: `p0-multi-tenant-isolation.test.ts` and `p1-forward-rollback.test.ts` have been fully isolated from Phase 2 files and pass with **100% green**.

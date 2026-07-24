@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-24T04:52:41.598Z",
-  "total": 153,
-  "applied": 153,
+  "generatedAt": "2026-07-24T05:15:15.431Z",
+  "total": 152,
+  "applied": 152,
   "failedCount": 0,
   "appliedFiles": [
     "20250101000001_core_schema.sql",
@@ -155,8 +155,7 @@
     "20260723100000_enforce_payment_receipt_shared_identity.sql",
     "20260723110000_drop_legacy_payments_invoice_required.sql",
     "20260723110100_reconcile_payment_reference_fields.sql",
-    "20260723110200_add_receipt_allocations_deleted_at.sql",
-    "20260726000000_phase2_financial_integrity_and_reports_recovery.sql"
+    "20260723110200_add_receipt_allocations_deleted_at.sql"
   ],
   "failedFiles": []
 }

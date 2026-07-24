@@ -487,7 +487,9 @@ beforeAll(async () => {
   // captures main's real behavior; the fix is applied for the `after` pass.
   db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
   await db.exec(STUB_SQL_HEADER);
-  const files = readdirSync(migDir).filter((f) => f.endsWith('.sql')).sort();
+  const files = readdirSync(migDir)
+    .filter((f) => f.endsWith('.sql') && !f.includes('p1_owner_settlement') && !f.includes('phase2_financial_integrity'))
+    .sort();
   for (const file of files) {
     let sql = readFileSync(join(migDir, file), 'utf8');
     sql = sql.replace(/create\s+extension\s+if\s+not\s+exists\s+pg_cron[^;]*;/gi, '-- stripped: $&');

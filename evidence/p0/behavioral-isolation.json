@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T04:50:57.327Z",
+  "generatedAt": "2026-07-24T05:15:06.655Z",
   "fixFile": "20260724120000_p0_company_isolation_reports_rls.sql",
   "replayErrors": [],
   "fixture": {
@@ -117,7 +117,7 @@
       "actor": "adminA@A",
       "asCompany": "A",
       "before": {
-        "error": "error: function public.require_company_id() does not exist"
+        "error": "error: operator does not exist: text <= date"
       },
       "after": {
         "error": "error: operator does not exist: text <= date"
@@ -185,7 +185,7 @@
       "actor": "adminA@A",
       "asCompany": "A",
       "before": {
-        "error": "error: function public.require_company_id() does not exist"
+        "error": "error: operator does not exist: text <= date"
       },
       "after": {
         "error": "error: operator does not exist: text <= date"
@@ -375,7 +375,7 @@
       "actor": "adminA@A",
       "asCompany": "A",
       "before": {
-        "error": "error: function public.require_company_id() does not exist"
+        "error": "error: operator does not exist: uuid = text"
       },
       "after": {
         "error": "error: operator does not exist: uuid = text"
@@ -387,7 +387,7 @@
       "actor": "adminA@A",
       "asCompany": "A",
       "before": {
-        "error": "error: function public.require_company_id() does not exist"
+        "error": "error: function public._safe_date(date) does not exist"
       },
       "after": {
         "error": "error: function public._safe_date(date) does not exist"
@@ -399,7 +399,7 @@
       "actor": "adminA@A",
       "asCompany": "A",
       "before": {
-        "error": "error: function public.require_company_id() does not exist"
+        "error": "error: function public._safe_date(date) does not exist"
       },
       "after": {
         "error": "error: function public._safe_date(date) does not exist"
@@ -411,7 +411,7 @@
       "actor": "adminA@A",
       "asCompany": "A",
       "before": {
-        "error": "error: function public.require_company_id() does not exist"
+        "error": "error: function public._safe_date(date) does not exist"
       },
       "after": {
         "error": "error: function public._safe_date(date) does not exist"
@@ -422,9 +422,19 @@
       "kind": "exploit",
       "actor": "adminA@A",
       "asCompany": "A",
-      "before": {
-        "error": "error: column oa.company_id does not exist"
-      },
+      "before": [
+        {
+          "out": {
+            "status": "DRAFT",
+            "success": true,
+            "idempotent": false,
+            "request_id": "9a000000-0000-4000-8000-0000000000e1",
+            "net_payable": 999999,
+            "settlement_id": "03171da2-97be-4e89-86f3-7778ac2517b8",
+            "settlement_no": "OST-202607-03171DA2"
+          }
+        }
+      ],
       "after": [
         {
           "out": {
@@ -433,8 +443,8 @@
             "idempotent": false,
             "request_id": "9a000000-0000-4000-8000-0000000000e1",
             "net_payable": 999999,
-            "settlement_id": "75bd090c-6c6d-4662-a9ff-7b0d289e72ac",
-            "settlement_no": "OST-202607-75BD090C"
+            "settlement_id": "f8592a30-e667-417f-b75a-edf424f36b82",
+            "settlement_no": "OST-202607-F8592A30"
           }
         }
       ]
@@ -444,9 +454,19 @@
       "kind": "guard",
       "actor": "adminA@A",
       "asCompany": "A",
-      "before": {
-        "error": "error: Settlement target owner is not in your company."
-      },
+      "before": [
+        {
+          "out": {
+            "status": "DRAFT",
+            "success": true,
+            "idempotent": false,
+            "request_id": "9a000000-0000-4000-8000-0000000000e2",
+            "net_payable": 999999,
+            "settlement_id": "9c717a23-5433-4613-8703-ea5a85746b63",
+            "settlement_no": "OST-202607-9C717A23"
+          }
+        }
+      ],
       "after": {
         "error": "error: Settlement target owner is not in your company."
       }
@@ -497,7 +517,7 @@
       },
       "after": [
         {
-          "out": "(d098bfcc-27e6-42c3-8d49-c88a0d61ed6b,0a000000-0000-4000-8000-00000000000a,1a000000-0000-4000-8000-0000000000a2,property_management,RATE,12.0000,2026-08-01,,,\"2026-07-24 04:50:57.301+00\",\"2026-07-24 04:50:57.301+00\",ca000000-0000-4000-8000-00000000000a)"
+          "out": "(fe2a7137-38b1-4551-ae74-6fe0250b45be,0a000000-0000-4000-8000-00000000000a,1a000000-0000-4000-8000-0000000000a2,property_management,RATE,12.0000,2026-08-01,,,\"2026-07-24 05:15:06.631+00\",\"2026-07-24 05:15:06.631+00\",ca000000-0000-4000-8000-00000000000a)"
         }
       ]
     },
