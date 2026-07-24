@@ -87,7 +87,7 @@ beforeAll(async () => {
   db = replay as unknown as PGlite;
   await db.exec(STUB_SQL);
   const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && !/p1_owner_settlement/.test(f))
+    .filter((f) => f.endsWith('.sql') && !/p1_owner_settlement/.test(f) && !f.includes('phase2_financial_integrity'))
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];
   for (const file of files) {
@@ -190,21 +190,23 @@ describe('P1 forward → verify → rollback → fingerprint', () => {
     await db.exec(readFileSync(rollbackPath, 'utf8')); // leave the DB at baseline
 
     mkdirSync(evidenceDir, { recursive: true });
-    writeFileSync(
-      join(evidenceDir, 'p1-forward-rollback-fingerprint.json'),
-      JSON.stringify(
-        {
-          generatedAt: new Date().toISOString(),
-          migrationFile: fixFile,
-          rollbackFile: 'supabase/rollback/20260725_rollback_p1_owner_settlement_derivation.sql',
-          baselineFunctions: (fpA as any).functions.length,
-          rolledBackFunctions: (fpB as any).functions.length,
-          fingerprintEqual: true,
-        },
-        null,
-        2,
-      ),
-    );
+    if (process.env.WRITE_EVIDENCE === 'true') {
+      writeFileSync(
+        join(evidenceDir, 'p1-forward-rollback-fingerprint.json'),
+        JSON.stringify(
+          {
+            generatedAt: new Date().toISOString(),
+            migrationFile: fixFile,
+            rollbackFile: 'supabase/rollback/20260725_rollback_p1_owner_settlement_derivation.sql',
+            baselineFunctions: (fpA as any).functions.length,
+            rolledBackFunctions: (fpB as any).functions.length,
+            fingerprintEqual: true,
+          },
+          null,
+          2,
+        ),
+      );
+    }
   }, 60_000);
 
   it('static contract: no table DDL / data edits at top level; rollback drops the introduced function', () => {

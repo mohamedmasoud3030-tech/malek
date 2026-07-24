@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T17:13:04.837Z",
+  "generatedAt": "2026-07-24T05:15:06.618Z",
   "scope": "Six report RPCs functionally broken on origin/main. Classified per review protocol: all are DEFINITION-level defects (proven by superuser-identical errors), fail-closed (no data exposure), and therefore deferred as non-security work.",
   "functions": {
     "rpt_trial_balance": {

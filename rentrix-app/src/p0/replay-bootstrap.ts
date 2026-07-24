@@ -1,15 +1,5 @@
 /**
  * P0 — Isolated multi-tenant replay bootstrap (PGlite, Docker-free).
- *
- * Replays the real supabase/migrations chain (chronological) onto a disposable
- * PGlite instance so P0 can *behaviorally* verify company isolation instead of
- * trusting static reading. Supabase platform surface that PGlite cannot provide
- * is stubbed (auth.jwt/uid, storage buckets/objects, cron) — the stubs mirror
- * the shapes the migrations depend on, nothing more.
- *
- * Transform applied ONLY in-memory (repository files are never modified):
- *   - `CREATE EXTENSION …;` statements are commented out; the needed contrib
- *     modules (btree_gist, pgcrypto, uuid_ossp) are loaded via PGlite extensions.
  */
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -30,28 +20,34 @@ export type ReplayResult = {
 
 import { STUB_SQL_HEADER as STUB_SQL, REPLAY_TRANSFORMS as TRANSFORMS } from './replay-stubs';
 
-export async function createReplayedDatabase(): Promise<ReplayResult> {
+export async function createReplayedDatabase(options?: {
+  throughMigration?: string;
+  excludeMigrations?: string[];
+}): Promise<ReplayResult> {
   const db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
   await db.exec(STUB_SQL);
 
   const migDir = join(repoRoot, 'supabase', 'migrations');
-  // The P0 fix migration is deliberately EXCLUDED from the shared replay so
-  // every probe observes pre-fix main; the behavioral suite applies it
-  // explicitly for its post-fix phase. P1-owned files are likewise excluded:
-  // they are verified by the dedicated P1 harness (src/p1/replay-bootstrap.ts,
-  // full-chain replay) so the P0 suites keep measuring the P0 delta only and
-  // the P0 forward-rollback fingerprint stays byte-exact.
-  const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && !f.includes('p0_company_isolation') && !f.includes('p1_owner_settlement'))
+  let files = readdirSync(migDir)
+    .filter((f) => f.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b));
+
+  // Determine exclusions: default includes p0_company_isolation, p1_owner_settlement, phase2_financial_integrity
+  const excludes = options?.excludeMigrations ?? ['p0_company_isolation', 'p1_owner_settlement', 'phase2_financial_integrity'];
+  files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
+
+  if (options?.throughMigration) {
+    const targetIdx = files.findIndex((f) => f.includes(options.throughMigration!));
+    if (targetIdx !== -1) {
+      files = files.slice(0, targetIdx + 1);
+    }
+  }
+
   const applied: string[] = [];
   const failed: { file: string; error: string }[] = [];
 
   for (const file of files) {
     const raw = readFileSync(join(migDir, file), 'utf8');
-    // In-memory only: pg_cron is not a PGlite contrib module — its CREATE
-    // EXTENSION is neutralized; scheduling is stubbed via cron.* above.
-    // All other extensions (btree_gist, pgcrypto, uuid-ossp) run natively.
     let sql = raw.replace(/create\s+extension\s+if\s+not\s+exists\s+pg_cron[^;]*;/gi, (m) => `-- p0-harness stripped: ${m}`);
     for (const t of TRANSFORMS) {
       if (t.file === file) sql = sql.replace(t.pattern, t.replacement);
@@ -61,29 +57,31 @@ export async function createReplayedDatabase(): Promise<ReplayResult> {
       applied.push(file);
     } catch (error) {
       failed.push({ file, error: String(error).slice(0, 400) });
-      // Guard: never let an aborted transaction poison subsequent files.
       await db.exec('ROLLBACK;').catch(() => undefined);
-      // `set_config` frames below keep the harness runnable around failed DDL.
       await db.exec("SELECT set_config('request.jwt.claims','{}', false);").catch(() => undefined);
     }
   }
 
-  mkdirSync(evidenceDir, { recursive: true });
-  writeFileSync(
-    join(evidenceDir, 'replay-coverage.json'),
-    JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        total: files.length,
-        applied: applied.length,
-        failedCount: failed.length,
-        appliedFiles: applied,
-        failedFiles: failed,
-      },
-      null,
-      2,
-    ),
-  );
+  // Only write replay-coverage.json inside evidence/p0/ if options are empty (representing default P0 behavior),
+  // preventing rewriting historical evidence directories.
+  if (!options) {
+    mkdirSync(evidenceDir, { recursive: true });
+    writeFileSync(
+      join(evidenceDir, 'replay-coverage.json'),
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          total: files.length,
+          applied: applied.length,
+          failedCount: failed.length,
+          appliedFiles: applied,
+          failedFiles: failed,
+        },
+        null,
+        2,
+      ),
+    );
+  }
 
   return { db, applied, failed };
 }

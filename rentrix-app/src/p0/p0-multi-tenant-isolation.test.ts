@@ -487,7 +487,9 @@ beforeAll(async () => {
   // captures main's real behavior; the fix is applied for the `after` pass.
   db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
   await db.exec(STUB_SQL_HEADER);
-  const files = readdirSync(migDir).filter((f) => f.endsWith('.sql')).sort();
+  const files = readdirSync(migDir)
+    .filter((f) => f.endsWith('.sql') && !f.includes('p1_owner_settlement') && !f.includes('phase2_financial_integrity'))
+    .sort();
   for (const file of files) {
     let sql = readFileSync(join(migDir, file), 'utf8');
     sql = sql.replace(/create\s+extension\s+if\s+not\s+exists\s+pg_cron[^;]*;/gi, '-- stripped: $&');
@@ -506,15 +508,17 @@ beforeAll(async () => {
 }, 600_000);
 
 afterAll(() => {
-  mkdirSync(evidenceDir, { recursive: true });
-  writeFileSync(
-    join(evidenceDir, 'behavioral-isolation.json'),
-    JSON.stringify(
-      { generatedAt: new Date().toISOString(), fixFile: FIX_FILE, replayErrors: errors, fixture: { A_PAY, B_PAY, A_EXP, B_EXP, B_JE, B_RENT }, probes },
-      null,
-      2,
-    ),
-  );
+  if (process.env.WRITE_EVIDENCE === 'true') {
+    mkdirSync(evidenceDir, { recursive: true });
+    writeFileSync(
+      join(evidenceDir, 'behavioral-isolation.json'),
+      JSON.stringify(
+        { generatedAt: new Date().toISOString(), fixFile: FIX_FILE, replayErrors: errors, fixture: { A_PAY, B_PAY, A_EXP, B_EXP, B_JE, B_RENT }, probes },
+        null,
+        2,
+      ),
+    );
+  }
 });
 
 describe('P0 — behavioral isolation: current main (pre-fix evidence)', () => {
