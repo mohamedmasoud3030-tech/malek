@@ -74,12 +74,18 @@ describe('Phase 3A-1C owner-settlement execution', () => {
   });
 
   it('binds create/approve/pay/cancel request IDs and replays without side effects', async () => {
-    const created = await createSettlement('A', '2026-07', request(1), 'immutable');
+    const created = await createSettlement('A', '2026-07', request(1), '  immutable  ');
     const sid = String(created.settlement_id);
     const replay = await createSettlement('A', '2026-07', request(1), 'immutable');
     expect(replay.settlement_id).toBe(sid);
     expect(replay.idempotent).toBe(true);
     expect((await counts(sid))!.settlements).toBe(1);
+    const normalized = await queryOne(
+      db,
+      `select notes from public.owner_settlements where id::text = $1`,
+      [sid],
+    );
+    expect(normalized!.notes).toBe('immutable');
 
     await expect(createSettlement('A', '2026-06', request(1), 'immutable')).rejects.toThrow(
       /IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/,

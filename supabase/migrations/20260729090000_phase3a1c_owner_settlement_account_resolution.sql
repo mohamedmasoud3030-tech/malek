@@ -164,7 +164,7 @@ begin
   ) values (
     v_id, v_no, v_owner_id, v_property_id, v_period_end::text, v_period_start, v_period_end,
     v_gross, v_fee, v_expenses, v_tax, v_net,
-    v_net, 'DRAFT', v_request_id::uuid, p_payload->>'notes', now(), now(), v_company_id
+    v_net, 'DRAFT', v_request_id::uuid, v_notes, now(), now(), v_company_id
   );
 
   insert into public.audit_log (
