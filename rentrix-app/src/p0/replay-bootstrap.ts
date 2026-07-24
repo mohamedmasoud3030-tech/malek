@@ -37,9 +37,12 @@ export async function createReplayedDatabase(): Promise<ReplayResult> {
   const migDir = join(repoRoot, 'supabase', 'migrations');
   // The P0 fix migration is deliberately EXCLUDED from the shared replay so
   // every probe observes pre-fix main; the behavioral suite applies it
-  // explicitly for its post-fix phase.
+  // explicitly for its post-fix phase. P1-owned files are likewise excluded:
+  // they are verified by the dedicated P1 harness (src/p1/replay-bootstrap.ts,
+  // full-chain replay) so the P0 suites keep measuring the P0 delta only and
+  // the P0 forward-rollback fingerprint stays byte-exact.
   const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && !f.includes('p0_company_isolation'))
+    .filter((f) => f.endsWith('.sql') && !f.includes('p0_company_isolation') && !f.includes('p1_owner_settlement'))
     .sort((a, b) => a.localeCompare(b));
   const applied: string[] = [];
   const failed: { file: string; error: string }[] = [];

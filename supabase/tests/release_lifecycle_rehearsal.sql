@@ -21,7 +21,7 @@ $$;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(60);
+select plan(65);
 
 select has_table('public', 'tenant_deposits', 'tenant deposits table exists after a clean migration replay');
 select has_table('public', 'deposit_transactions', 'deposit transactions table exists after a clean migration replay');
@@ -465,6 +465,13 @@ select is(
   'deposit lifecycle posts equal credits'
 );
 
+-- P1 fixture evolution (failure category: incomplete fixture/harness — the old
+-- assertions pinned the client-trusted-amounts behavior itself). The settlement
+-- block below now proves SERVER-side derivation: a second, non-voided payment
+-- of 750 on 2026-09-10 (the 250 payment from the void lifecycle stays VOID and
+-- must be excluded) and one POSTED OWNER-charged expense of 50 on 2026-09-12.
+-- Derived tuple for 2026-09-01..2026-09-30 under the RATE 10% agreement:
+-- gross 750, fee 75, expenses 50, tax 0 (company VAT disabled) ⇒ net 625.
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
@@ -474,20 +481,51 @@ set local role authenticated;
 
 select lives_ok(
   $$
+    select public.record_invoice_payment_atomic(jsonb_build_object(
+      'invoice_id', '00000000-0000-0000-0000-000000001701',
+      'amount', 750,
+      'method', 'bank_transfer',
+      'date', '2026-09-10',
+      'reference', 'RL-PAYMENT-2',
+      'request_id', 'release-lifecycle-payment-2'
+    ))
+  $$,
+  'second lifecycle payment stays posted for settlement derivation'
+);
+
+reset role;
+
+insert into public.expenses (property_id, category, amount, expense_date, date_time, status, charged_to, description, company_id)
+values (
+  '00000000-0000-0000-0000-000000001301', 'maintenance', 50, date '2026-09-12', '2026-09-12',
+  'POSTED', 'OWNER', 'release lifecycle owner expense', '00000000-0000-4000-8000-000000000001'
+);
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+set local role authenticated;
+
+-- The payload deliberately carries FORGED amounts (9999/1/1/1): P1 must ignore
+-- every client-sent amount key and persist the server-derived tuple instead.
+select lives_ok(
+  $$
     select public.create_owner_settlement_draft_atomic(jsonb_build_object(
       'owner_id', '00000000-0000-0000-0000-000000001201',
       'property_id', '00000000-0000-0000-0000-000000001301',
       'period_start', '2026-09-01',
       'period_end', '2026-09-30',
-      'gross_collected', 1000,
-      'office_fee', 350,
-      'owner_expenses', 50,
-      'tax_amount', 0,
+      'gross_collected', 9999,
+      'office_fee', 1,
+      'owner_expenses', 1,
+      'tax_amount', 1,
       'notes', 'release lifecycle settlement',
       'request_id', '10000000-0000-0000-0000-000000000001'
     ))
   $$,
-  'owner settlement draft is created'
+  'owner settlement draft is created despite forged client amounts'
 );
 select lives_ok(
   $$
@@ -496,10 +534,10 @@ select lives_ok(
       'property_id', '00000000-0000-0000-0000-000000001301',
       'period_start', '2026-09-01',
       'period_end', '2026-09-30',
-      'gross_collected', 1000,
-      'office_fee', 350,
-      'owner_expenses', 50,
-      'tax_amount', 0,
+      'gross_collected', 9999,
+      'office_fee', 1,
+      'owner_expenses', 1,
+      'tax_amount', 1,
       'notes', 'release lifecycle settlement',
       'request_id', '10000000-0000-0000-0000-000000000001'
     ))
@@ -520,12 +558,48 @@ select is(
 );
 select is(
   (
+    select gross_collected::numeric
+    from public.owner_settlements
+    where request_id = '10000000-0000-0000-0000-000000000001'::uuid
+  ),
+  750::numeric,
+  'settlement gross is server-derived from posted collections (voided 250 excluded), not the forged payload'
+);
+select is(
+  (
+    select office_fee::numeric
+    from public.owner_settlements
+    where request_id = '10000000-0000-0000-0000-000000000001'::uuid
+  ),
+  75::numeric,
+  'settlement office fee is server-derived from the RATE agreement: 10% of 750'
+);
+select is(
+  (
+    select owner_expenses::numeric
+    from public.owner_settlements
+    where request_id = '10000000-0000-0000-0000-000000000001'::uuid
+  ),
+  50::numeric,
+  'settlement owner expenses are server-derived from POSTED OWNER expenses'
+);
+select is(
+  (
+    select tax_amount::numeric
+    from public.owner_settlements
+    where request_id = '10000000-0000-0000-0000-000000000001'::uuid
+  ),
+  0::numeric,
+  'settlement tax stays zero while company VAT is disabled (ADR 0001: disabled by default)'
+);
+select is(
+  (
     select net_payable::numeric
     from public.owner_settlements
     where request_id = '10000000-0000-0000-0000-000000000001'::uuid
   ),
-  600::numeric,
-  'settlement net payable reconciles gross minus fee and owner expenses'
+  625::numeric,
+  'settlement net payable reconciles the derived tuple: 750 - 75 - 50'
 );
 
 select set_config(
@@ -542,10 +616,10 @@ select throws_ok(
       'property_id', '00000000-0000-0000-0000-000000001301',
       'period_start', '2026-09-01',
       'period_end', '2026-09-30',
-      'gross_collected', 1000,
-      'office_fee', 350,
-      'owner_expenses', 50,
-      'tax_amount', 0,
+      'gross_collected', 9999,
+      'office_fee', 1,
+      'owner_expenses', 1,
+      'tax_amount', 1,
       'request_id', '10000000-0000-0000-0000-000000000002'
     ))
   $$,
@@ -658,8 +732,8 @@ select is(
         where request_id = '10000000-0000-0000-0000-000000000001'::uuid
       )
   ),
-  600::numeric,
-  'settlement payment debits owner payable for the net amount'
+  625::numeric,
+  'settlement payment debits owner payable for the server-derived net amount'
 );
 select is(
   (
@@ -671,8 +745,8 @@ select is(
         where request_id = '10000000-0000-0000-0000-000000000001'::uuid
       )
   ),
-  600::numeric,
-  'settlement payment credits cash for the net amount'
+  625::numeric,
+  'settlement payment credits cash for the server-derived net amount'
 );
 select is(
   (

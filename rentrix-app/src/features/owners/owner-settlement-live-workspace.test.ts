@@ -51,4 +51,28 @@ describe('owner settlement live workspace contract', () => {
     expect(service).toContain("throw new Error(messageFromError(settlementError");
     expect(service).not.toContain("console.error('Error fetching owner settlements:'");
   });
+
+  it('P1: previews via calculate_owner_net_payout and renders the server breakdown read-only', () => {
+    expect(service).toContain("rpc('calculate_owner_net_payout'");
+    expect(service).toContain('previewOwnerSettlement');
+    expect(workspace).toContain('previewOwnerSettlement');
+    expect(workspace).toContain('owner-settlement-preview');
+    expect(workspace).toContain('معاينة المبالغ');
+    expect(workspace).toContain('submitDisabled={!preview || previewLoading}');
+  });
+
+  it('P1: the draft form never computes or sends amounts — no local calculators remain', () => {
+    // no reduce/fee-math on the client
+    expect(workspace).not.toContain('recommendedFee');
+    expect(workspace).not.toContain('handleGrossChange');
+    expect(workspace).not.toContain('grossCollected');
+    // payload type carries no amount fields
+    const payloadType = service.match(/export type CreateSettlementDraftPayload = \{[\s\S]*?\};/)?.[0] ?? '';
+    for (const banned of ['gross_collected', 'office_fee', 'owner_expenses', 'tax_amount', 'net_payable']) {
+      expect(payloadType, `CreateSettlementDraftPayload must not declare ${banned}`).not.toContain(`${banned}:`);
+    }
+    // the write RPC call passes the caller-held attempt key, no fresh id per click
+    expect(service).toContain('request_id: payload.request_id');
+    expect(workspace).toContain('draftRequestId');
+  });
 });
