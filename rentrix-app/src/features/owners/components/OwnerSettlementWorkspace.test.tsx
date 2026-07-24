@@ -94,7 +94,7 @@ vi.mock('@/features/settings/useDocumentSettings', () => ({
 describe('OwnerSettlementWorkspace full coverage tests', () => {
   it('renders workspace with KPI cards and settlement rows', () => {
     const html = renderToStaticMarkup(<OwnerSettlementWorkspace />);
-    expect(html).toContain('تسويات الملاك');
+    expect(html).toContain('مركز تسويات ومحاسبة الملاك');
     expect(html).toContain('إنشاء مسودة تسوية');
     expect(html).toContain('عقار الخوض');
     expect(html).toContain('أحمد المالكي');
