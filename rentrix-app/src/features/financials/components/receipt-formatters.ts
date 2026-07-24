@@ -10,6 +10,8 @@ export const paymentMethodLabels: Record<string, string> = {
 
 export const receiptStatusLabels: Record<string, string> = {
   posted: 'مرحّل',
+  void: 'ملغي',
+  VOID: 'ملغي',
 };
 
 export function formatReceiptContext(receipt: { tenant_name: string | null; unit_number: string | null; property_title: string | null }) {

@@ -121,4 +121,36 @@ PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
 pnpm --filter ./rentrix-app exec node scripts/storage-isolated-smoke.mjs \
   2>&1 | tee "$LOG_DIR/storage-isolated-smoke.log"
 
-printf 'Ephemeral migration replay, authenticated financial lifecycle, RLS/accounting invariants, and isolated Storage smoke completed successfully.\n'
+E2E_ENVIRONMENT_KIND=local \
+E2E_SINGLE_OFFICE_EMAIL=single-office-admin@rentrix.test \
+E2E_SINGLE_OFFICE_PASSWORD='SingleOffice-Aa1!' \
+VITE_SUPABASE_URL="$API_URL" \
+VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
+SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
+SINGLE_OFFICE_EVIDENCE_PATH="$LOG_DIR/single-office-seed.json" \
+pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs seed \
+  2>&1 | tee "$LOG_DIR/single-office-seed.log"
+
+E2E_ENVIRONMENT_KIND=local \
+E2E_SINGLE_OFFICE_ENABLED=1 \
+E2E_SINGLE_OFFICE_EMAIL=single-office-admin@rentrix.test \
+E2E_SINGLE_OFFICE_PASSWORD='SingleOffice-Aa1!' \
+VITE_SUPABASE_URL="$API_URL" \
+VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
+pnpm --filter ./rentrix-app exec playwright test e2e/single-office-isolated.spec.ts \
+  --config playwright.config.ts \
+  2>&1 | tee "$LOG_DIR/single-office-browser.log"
+
+E2E_ENVIRONMENT_KIND=local \
+E2E_SINGLE_OFFICE_EMAIL=single-office-admin@rentrix.test \
+E2E_SINGLE_OFFICE_PASSWORD='SingleOffice-Aa1!' \
+VITE_SUPABASE_URL="$API_URL" \
+VITE_SUPABASE_ANON_KEY="$ANON_KEY" \
+SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+PRODUCTION_SUPABASE_PROJECT_REF=nnggcnpcuomwfuupupwg \
+SINGLE_OFFICE_EVIDENCE_PATH="$LOG_DIR/single-office-lifecycle.json" \
+pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs verify \
+  2>&1 | tee "$LOG_DIR/single-office-verify.log"
+
+printf 'Ephemeral migration replay, authenticated single-office browser lifecycle, RLS/accounting invariants, and isolated Storage smoke completed successfully.\n'

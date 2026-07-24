@@ -24,19 +24,18 @@
 - ✅ **مُدمج ومتحقق منه على production**: PR #1277 اندمج squash على `fc9c5b6d` (2026-07-24، 07:11 بتوقيت عُمان) بعد إصلاح فشل بوابة `release-blocker-database` — السبب كان `search_path` غير مثبّت على دالة `enforce_owner_settlement_amount_immutability` (الدرس: أي دالة trigger جديدة لازم تُفحص لـsearch_path قبل فتح الـPR، مش بعد فشل الـCI). تحقق مباشر لاحق على `nnggcnpcuomwfuupupwg` (2026-07-25) أكّد: migration `20260725000000` في الـledger، الدوال الثلاث حيّة بالضبط كما في الكود، والـtrigger مفعّل فعليًا (لا يكفي دمج GitHub وحده لإثبات التفعيل على production — لازم فحص مباشر بعد كل دمج migration).
 - 🔶 **P2 القادم**: تشديد حارس التداخل الجزئي للفترات + مكافحة ازدواج الأتعاب عبر الفترات + بنية دليل الحسابات لكل شركة.
 
-## Phase 3A-1B — حسابات قياسية للفاتورة والدفع والسند وVOID (2026-07-24، فرع `phase3a/invoice-payment-receipt-void-account-resolution` من `39e7086`)
+## Phase 3A-1B — حسابات قياسية للفاتورة والدفع والسند وVOID (مكتملة، 2026-07-25)
 
 - ✅ **الجرد التنفيذي** (من إعادة تشغيل الكتالوج الحية، `evidence/p3/phase3a1b/active-financial-function-inventory.json` بصورتَي قبل/بعد): 8 تواقيع حية لـ 7 أسماء — أثبت أن `find_payment_account_id` كان يجيب حساب أي شركة بـ`LIMIT 1`، وأن مولّد الفواتير كان يلف على عقود **كل الشركات** بـ`WHERE no='1201' LIMIT 1` + `company_settings` عالمية، وأن VOID كان **بدون أي قيد شركة**، وأن حسابات قيود السند كانت تُقبل من العميل كما هي.
 - ✅ **الإصلاح**: الحلول كلها عبر مساعدي 3A-1A (`require_company_account_id` — دون تغيير سلوكهما، md5 ثابت عبر السلسلة)؛ 2100 (VAT) مطلوب فقط عند فرض الضريبة؛ حلقة العقود + إعدادات VAT + فحص حسابات القيود كلها مقيّدة بالشركة؛ VOID يستنسخ **نفس حسابات القيد الأصلية** (بلا إعادة بحث بالرقم) ويرفض عبر الشركات بسلوك P0002 قبل أي كتابة؛ التكرار أصبح `<operation>:<company_uuid>` مع ثبات مخطط `financial_operation_idempotency` (23205 لاصطدام `receipts.request_id` العالمي موثق حتى 3A-2، وتخزين request_id الخام محفوظ لعقد البوابة).
 - ✅ **التواقيع legacy محفوظة**: overload القديم `void_receipt_atomic(uuid,timestamptz,jsonb,jsonb)` بلا إثبات عدم استخدام ⇒ بقي **حرفيًا** (غير مكشوف أصلًا).
 - ✅ **التغطية**: دورات الفاتورة/الدفع/السند/VOID + العزل + منع التكرار + forward→rollback→بصمة ≡ → إعادة تطبيق (لا صف مالي يُحذف أو يُعدّل أثناء الـrollback) — الكل ‏1068/1068، financials ‏271/271، P0 ‏57/57، pgTAP ‏65/65، typecheck/lint/architecture/build ✓.
-- 🔶 **مؤجّل بالتصميم**: تسويات الملاك ‏→ 3A-1C · `UNIQUE(company_id,no)` المركّب + إمداد دليل الحسابات ‏→ 3A-2 · تداخل فترات التسوية/ادعاءات المصدر · PDC · واجهة المركز المالي. التقرير: `docs/audits/PHASE3A1B_INVOICE_PAYMENT_RECEIPT_VOID.md` + ADR `docs/decisions/0005-account-resolution-payment-receipt-void.md`. **Draft PR مفتوح — لا auto-merge ولا مساس بـProduction.**
+- ✅ **مُدمجة ومطبقة**: PR #1281 اندمج squash على `946a7b37`، وتحقق الفحص الحي قراءة فقط من وجود migration `20260728090000` على Production. التقرير: `docs/audits/PHASE3A1B_INVOICE_PAYMENT_RECEIPT_VOID.md` + ADR `docs/decisions/0005-account-resolution-payment-receipt-void.md`.
+- 🔶 **مؤجّل بالتصميم**: `UNIQUE(company_id,no)` المركّب + إمداد دليل الحسابات للشركات الإضافية ‏→ 3A-2 · تداخل فترات التسوية/ادعاءات المصدر · PDC · واجهة المركز المالي.
 
-## الأولوية القادمة — تحديث
+## Phase 3A-1C — حسابات تسويات الملاك القياسية (مكتملة، 2026-07-25)
 
-## Phase 3A-1C — حسابات تسويات الملاك القياسية (قيد التنفيذ، 2026-07-25)
-
-- ✅ فرع مستقل من دمج #1281:
+- ✅ نُفذت على فرع مستقل من دمج #1281:
   `phase3a/owner-settlement-account-resolution`.
 - ✅ تحويل صرف التسوية من بحث `accounts.no ... LIMIT 1` إلى
   `require_company_account_id(company, '2000'/'1111')`.
@@ -47,13 +46,27 @@
   fail-closed + forward/rollback/reapply ببصمة catalog مطابقة.
 - ✅ البوابات المحلية: Phase 3A-1C ‏7/7، full Vitest ‏1075/1075،
   financials ‏271/271، pgTAP ‏65/65، typecheck/lint/architecture/docs/build ✓.
-- ⏳ المتبقي قبل الإغلاق: commit/push وDraft PR، ثم انتظار CI والمراجعة.
-  لا Production mutation ولا auto-merge.
+- ✅ PR #1282 اندمج squash على `8feddc3f`، وتحقق الفحص الحي قراءة فقط من وجود
+  migration `20260729090000` على Production.
 
 التقرير:
 `docs/audits/PHASE3A1C_OWNER_SETTLEMENT_ACCOUNT_RESOLUTION.md`،
 والقرار:
 `docs/decisions/0006-owner-settlement-account-resolution-and-request-binding.md`.
+
+## الأولوية الحالية — إطلاق مكتب واحد بأقل نطاق آمن
+
+- تشغيل الشركة الوحيدة الموجودة بدل انتظار متطلبات تعدد المكاتب.
+- بوابة قبول آلية على Supabase مؤقت: ADMIN حقيقي + بيانات مترابطة + رحلة
+  فاتورة → دفعة → إيصال → VOID من الواجهة، ثم إثبات حالة قاعدة البيانات والقيد
+  العكسي.
+- فحص المساحات اليومية على desktop/tablet/mobile: العقارات، الوحدات، العقود،
+  الفواتير، الإيصالات، التقارير، الصيانة، والإعدادات.
+- Production يبقى قراءة فقط أثناء الإثبات؛ لا تُنفذ عليه دورة مالية تجريبية.
+- قبل GO: CI أخضر على SHA واحد، تفعيل Leaked Password Protection، وفحص يدوي
+  غير متلف للرابط المنشور.
+
+عقد الإطلاق: [`SINGLE_OFFICE_LAUNCH.md`](SINGLE_OFFICE_LAUNCH.md).
 
 `supabase/migrations_consolidated/` اتشال نهائياً (2026-07-23): كان مجلد ميت ومتناقض مع نفسه — الـ README بتاعه بيشاور لملفين (`CONSOLIDATION_MAPPING.md`, `CANDIDATES_FOR_REMOVAL.md`) اتمسحوا من زمان في PR #1201، ومستند `supabase/migrations/README.md` كان بيقول إن المجلد ده "اتشال" من 2026-07-18 بينما هو لسه موجود فعلياً. اتأكد إن مفيش أي CI/script بيعتمد عليه قبل الحذف.
 
