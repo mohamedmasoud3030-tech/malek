@@ -16,10 +16,11 @@ permissions:
 jobs:
   isolated-replay:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       CI_DIAGNOSTICS_DIR: .ci-diagnostics/pr1233-isolated-replay
+      PLAYWRIGHT_VERSION: '1.61.1'
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
@@ -29,6 +30,19 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm rebuild esbuild
+      - name: Restore Chromium binary cache
+        id: playwright-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install Chromium system dependencies
+        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+      - name: Install Chromium binary on cache miss
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter ./rentrix-app exec playwright install chromium
+      - name: Verify Chromium installation
+        run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
       - name: Fresh Docker-backed replay, pgTAP lifecycle, RLS and cleanup
         run: bash scripts/ci/run-supabase-database-gate.sh
       - name: Upload isolated replay diagnostics
@@ -36,5 +50,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: pr1233-isolated-supabase-diagnostics
-          path: .ci-diagnostics/pr1233-isolated-replay
+          path: |
+            .ci-diagnostics/pr1233-isolated-replay
+            rentrix-app/playwright-report
           if-no-files-found: ignore
