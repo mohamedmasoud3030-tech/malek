@@ -1,0 +1,272 @@
+{
+  "generatedAt": "2026-07-24T05:37:03.607Z",
+  "replayCoverage": {
+    "total": 155,
+    "applied": 155,
+    "failed": []
+  },
+  "anonViolations": [],
+  "rptTrialBalance": {
+    "as_of": "2026-07-31",
+    "accounts": [
+      {
+        "code": "1111",
+        "name": "Cash",
+        "type": "asset",
+        "balance": 0,
+        "balance_type": "debit"
+      },
+      {
+        "code": "1201",
+        "name": "Tenant Receivables",
+        "type": "asset",
+        "balance": 0,
+        "balance_type": "debit"
+      },
+      {
+        "code": "6100",
+        "name": "Operating Expenses",
+        "type": "expense",
+        "balance": 0,
+        "balance_type": "debit"
+      },
+      {
+        "code": "4000",
+        "name": "Rental Revenue",
+        "type": "revenue",
+        "balance": 0,
+        "balance_type": "credit"
+      },
+      {
+        "code": "2000",
+        "name": "Owner Payables",
+        "type": "liability",
+        "balance": 0,
+        "balance_type": "credit"
+      },
+      {
+        "code": "2100",
+        "name": "VAT Payable",
+        "type": "liability",
+        "balance": 0,
+        "balance_type": "credit"
+      },
+      {
+        "code": "3000",
+        "name": "Retained Earnings",
+        "type": "equity",
+        "balance": 0,
+        "balance_type": "credit"
+      }
+    ],
+    "is_balanced": true,
+    "total_debits": 0,
+    "total_credits": 0
+  },
+  "rptBalanceSheet": {
+    "as_of": "2026-07-31",
+    "assets": [
+      {
+        "code": "1111",
+        "name": "Cash",
+        "amount": 0
+      },
+      {
+        "code": "1201",
+        "name": "Tenant Receivables",
+        "amount": 0
+      }
+    ],
+    "equity": [
+      {
+        "code": "3000",
+        "name": "Retained Earnings",
+        "amount": 0
+      }
+    ],
+    "is_balanced": true,
+    "liabilities": [
+      {
+        "code": "2000",
+        "name": "Owner Payables",
+        "amount": 0
+      },
+      {
+        "code": "2100",
+        "name": "VAT Payable",
+        "amount": 0
+      }
+    ],
+    "total_assets": 0,
+    "total_equity": 0,
+    "total_liabilities": 0
+  },
+  "rptAgedReceivables": {
+    "as_of": "2026-07-31",
+    "lines": [
+      {
+        "1_30": 250,
+        "31_60": 0,
+        "61_90": 0,
+        "total": 250,
+        "90plus": 0,
+        "current": 0,
+        "tenant_id": "f1000000-0000-4000-8000-000000000001",
+        "unit_name": "R-1",
+        "tenant_name": "مستأجر ن",
+        "tenant_phone": null,
+        "property_name": "عقار النسبة"
+      }
+    ],
+    "totals": {
+      "1_30": 250,
+      "31_60": 0,
+      "61_90": 0,
+      "total": 250,
+      "90plus": 0,
+      "current": 0
+    }
+  },
+  "rptOverdueInvoices": {
+    "rows": [
+      {
+        "paid": 0,
+        "amount": 250,
+        "due_date": "2026-07-20",
+        "remaining": 250,
+        "unit_name": "R-1",
+        "invoice_id": "dd000000-0000-4000-8000-000000000003",
+        "invoice_no": null,
+        "contract_id": "cc000000-0000-4000-8000-000000000001",
+        "tenant_name": "مستأجر ن",
+        "days_overdue": 11,
+        "tenant_phone": null,
+        "property_name": "عقار النسبة"
+      }
+    ],
+    "as_of": "2026-07-31",
+    "count": 1,
+    "total_overdue": 250
+  },
+  "rptRentRoll": {
+    "rows": [
+      {
+        "status": "occupied",
+        "deposit": 0,
+        "unit_name": "F-1",
+        "unit_type": "E-3",
+        "rent_amount": 9000,
+        "tenant_name": "مستأجر ث",
+        "contract_end": "2026-12-31",
+        "tenant_phone": null,
+        "property_name": "عقار الثابت",
+        "contract_start": "2026-01-01",
+        "days_to_expiry": 153,
+        "overdue_balance": 0
+      },
+      {
+        "status": "occupied",
+        "deposit": 0,
+        "unit_name": "M-1",
+        "unit_type": "E-4",
+        "rent_amount": 15000,
+        "tenant_name": "مستأجر م",
+        "contract_end": "2026-12-31",
+        "tenant_phone": null,
+        "property_name": "عقار الماستر",
+        "contract_start": "2026-01-01",
+        "days_to_expiry": 153,
+        "overdue_balance": 0
+      },
+      {
+        "status": "occupied",
+        "deposit": 500,
+        "unit_name": "R-1",
+        "unit_type": "E-1",
+        "rent_amount": 12000,
+        "tenant_name": "مستأجر ن",
+        "contract_end": "2026-12-31",
+        "tenant_phone": null,
+        "property_name": "عقار النسبة",
+        "contract_start": "2026-01-01",
+        "days_to_expiry": 153,
+        "overdue_balance": 250
+      },
+      {
+        "status": "occupied",
+        "deposit": 0,
+        "unit_name": "R-2",
+        "unit_type": "E-2",
+        "rent_amount": 6000,
+        "tenant_name": "مستأجر ن٢",
+        "contract_end": "2026-12-31",
+        "tenant_phone": null,
+        "property_name": "عقار النسبة ٢",
+        "contract_start": "2026-01-01",
+        "days_to_expiry": 153,
+        "overdue_balance": 0
+      }
+    ],
+    "as_of": "2026-07-31"
+  },
+  "rptTenantStatement": {
+    "lines": [
+      {
+        "date": "2026-07-05",
+        "type": "receipt",
+        "debit": 0,
+        "credit": 1000,
+        "balance": -1000,
+        "description": "سند قبض رقم REC-01 — cash"
+      },
+      {
+        "date": "2026-07-05",
+        "type": "invoice",
+        "debit": 1000,
+        "credit": 0,
+        "balance": 0,
+        "description": null
+      },
+      {
+        "date": "2026-07-12",
+        "type": "receipt",
+        "debit": 0,
+        "credit": 500,
+        "balance": -500,
+        "description": "سند قبض رقم REC-02 — cash"
+      },
+      {
+        "date": "2026-07-12",
+        "type": "invoice",
+        "debit": 500,
+        "credit": 0,
+        "balance": 0,
+        "description": null
+      },
+      {
+        "date": "2026-07-20",
+        "type": "invoice",
+        "debit": 250,
+        "credit": 0,
+        "balance": 250,
+        "description": null
+      },
+      {
+        "date": "2026-08-02",
+        "type": "invoice",
+        "debit": 400,
+        "credit": 0,
+        "balance": 650,
+        "description": null
+      }
+    ],
+    "end_date": "2026-12-31",
+    "unit_name": "E-1",
+    "start_date": "2026-01-01",
+    "contract_id": "cc000000-0000-4000-8000-000000000001",
+    "tenant_name": "مستأجر ن",
+    "tenant_phone": null,
+    "final_balance": 650,
+    "property_name": "عقار النسبة"
+  }
+}

@@ -1,13 +1,5 @@
 /**
  * P1 — Owner-settlement integrity replay bootstrap (PGlite, Docker-free).
- *
- * Unlike the P0 bootstrap (which deliberately excludes the P0 fix migration to
- * capture pre-fix main), the P1 harness replays the FULL migration chain —
- * including the merged P0 fix and the pending P1 migration — because the P1
- * behavioral assertions describe the end state on top of P0.
- *
- * Stubs/transforms are shared with the P0 harness (same Supabase surface that
- * PGlite cannot provide: auth.jwt/uid, storage buckets, cron).
  */
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,21 +19,36 @@ export type ReplayResult = {
   failed: { file: string; error: string }[];
 };
 
-export async function createFullReplayedDatabase(): Promise<ReplayResult> {
+export async function createFullReplayedDatabase(options?: {
+  throughMigration?: string;
+  excludeMigrations?: string[];
+}): Promise<ReplayResult> {
   const db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
   await db.exec(STUB_SQL);
 
   const migDir = join(repoRoot, 'supabase', 'migrations');
-  const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && !f.includes('phase2_financial_integrity'))
+  let files = readdirSync(migDir)
+    .filter((f) => f.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b));
+
+  if (options?.throughMigration) {
+    const targetIdx = files.findIndex((f) => f.includes(options.throughMigration!));
+    if (targetIdx !== -1) {
+      files = files.slice(0, targetIdx + 1);
+    }
+  }
+
+  if (options?.excludeMigrations) {
+    files = files.filter((f) => {
+      return !options.excludeMigrations!.some((ex) => f.includes(ex));
+    });
+  }
+
   const applied: string[] = [];
   const failed: { file: string; error: string }[] = [];
 
   for (const file of files) {
     const raw = readFileSync(join(migDir, file), 'utf8');
-    // In-memory only — repository files are never modified: pg_cron has no
-    // PGlite contrib module; see the P0 harness for the same transform.
     let sql = raw.replace(/create\s+extension\s+if\s+not\s+exists\s+pg_cron[^;]*;/gi, (m) => `-- p1-harness stripped: ${m}`);
     for (const t of TRANSFORMS) {
       if (t.file === file) sql = sql.replace(t.pattern, t.replacement);
@@ -56,21 +63,27 @@ export async function createFullReplayedDatabase(): Promise<ReplayResult> {
     }
   }
 
-  mkdirSync(evidenceDir, { recursive: true });
-  writeFileSync(
-    join(evidenceDir, 'replay-coverage.json'),
-    JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        total: files.length,
-        applied: applied.length,
-        failedCount: failed.length,
-        failedFiles: failed,
-      },
-      null,
-      2,
-    ),
-  );
+  // Only write replay-coverage inside evidence/p1/ if options are empty (representing default P1 behavior),
+  // or we can skip writing to avoid modifying historical directories.
+  // The user explicitly requested: "Phase 2 does not rewrite historical evidence directories; only write P2 evidence in evidence/p2/".
+  // So we skip writing replay-coverage to evidence/p1/ if we are running in P2 or full suite contexts.
+  if (!options) {
+    mkdirSync(evidenceDir, { recursive: true });
+    writeFileSync(
+      join(evidenceDir, 'replay-coverage.json'),
+      JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          total: files.length,
+          applied: applied.length,
+          failedCount: failed.length,
+          failedFiles: failed,
+        },
+        null,
+        2,
+      ),
+    );
+  }
 
   return { db, applied, failed };
 }

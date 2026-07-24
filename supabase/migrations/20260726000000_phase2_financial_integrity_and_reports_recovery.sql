@@ -31,60 +31,61 @@ DECLARE
   v_total_credits numeric := 0;
   v_company_id uuid := public.require_company_id();
 BEGIN
-  -- Cash on hand: posted, non-deleted payments received up to the as-of date.
-  SELECT COALESCE(SUM(amount), 0)
+  -- Derived Cash balance from general ledger (1111 account)
+  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
     INTO v_cash
-    FROM public.payments
-   WHERE deleted_at IS NULL
-     AND company_id = v_company_id
-     AND (status IS NULL OR upper(status) <> 'VOID')
-     AND payment_date <= p_as_of;
-
-  -- Tenant receivables: open (unpaid) invoice principal + tax up to the as-of date.
-  SELECT COALESCE(SUM(GREATEST(amount + COALESCE(tax_amount, 0) - COALESCE(paid_amount, 0), 0)), 0)
-    INTO v_ar
-    FROM public.invoices
-   WHERE deleted_at IS NULL
-     AND company_id = v_company_id
-     AND (status IS NULL OR lower(status) <> 'void')
-     AND issue_date <= p_as_of;
-
-  -- Operating expenses incurred up to the as-of date.
-  SELECT COALESCE(SUM(amount), 0)
-    INTO v_expenses
-    FROM public.expenses
-   WHERE deleted_at IS NULL
-     AND company_id = v_company_id
-     AND expense_date <= p_as_of;
-
-  -- Rental revenue invoiced up to the as-of date.
-  SELECT COALESCE(SUM(amount), 0)
-    INTO v_revenue
-    FROM public.invoices
-   WHERE deleted_at IS NULL
-     AND company_id = v_company_id
-     AND (status IS NULL OR lower(status) <> 'void')
-     AND issue_date <= p_as_of;
-
-  -- Owner payables recorded up to the as-of date (settlements not cancelled).
-  SELECT COALESCE(SUM(amount), 0)
-    INTO v_owner_pay
-    FROM public.owner_settlements
+    FROM public.journal_entries
    WHERE company_id = v_company_id
-     AND (status IS NULL OR status <> 'CANCELLED')
+     AND account_id = '1111'
      AND public._safe_date(date) <= p_as_of;
 
-  -- VAT payable on invoiced revenue up to the as-of date.
-  SELECT COALESCE(SUM(COALESCE(tax_amount, 0)), 0)
-    INTO v_vat
-    FROM public.invoices
-   WHERE deleted_at IS NULL
-     AND company_id = v_company_id
-     AND (status IS NULL OR lower(status) <> 'void')
-     AND issue_date <= p_as_of;
+  -- Derived Tenant Receivables balance from general ledger (1201 account)
+  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
+    INTO v_ar
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '1201'
+     AND public._safe_date(date) <= p_as_of;
 
-  -- Retained earnings is the balancing figure so debits == credits.
-  v_retained := v_cash + v_ar + v_expenses - v_revenue - v_owner_pay - v_vat;
+  -- Derived Operating Expenses balance from general ledger (6100 account)
+  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
+    INTO v_expenses
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '6100'
+     AND public._safe_date(date) <= p_as_of;
+
+  -- Derived Rental Revenue balance from general ledger (4000 account)
+  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
+    INTO v_revenue
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '4000'
+     AND public._safe_date(date) <= p_as_of;
+
+  -- Derived Owner Payables balance from general ledger (2000 account)
+  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
+    INTO v_owner_pay
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '2000'
+     AND public._safe_date(date) <= p_as_of;
+
+  -- Derived VAT Payable balance from general ledger (2100 account)
+  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
+    INTO v_vat
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '2100'
+     AND public._safe_date(date) <= p_as_of;
+
+  -- Derived Retained Earnings balance from general ledger (3000 account)
+  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
+    INTO v_retained
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '3000'
+     AND public._safe_date(date) <= p_as_of;
 
   v_accounts := jsonb_build_array(
     jsonb_build_object('code', '1111', 'name', 'Cash', 'type', 'asset', 'balance_type', 'debit', 'balance', round(v_cash, 2)),
@@ -129,40 +130,47 @@ DECLARE
   v_equity_rows jsonb;
   v_company_id uuid := public.require_company_id();
 BEGIN
-  SELECT COALESCE(SUM(amount), 0)
+  -- Assets: Cash + Tenant Receivables (from general ledger)
+  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
     INTO v_cash
-    FROM public.payments
-   WHERE deleted_at IS NULL
-     AND company_id = v_company_id
-     AND (status IS NULL OR upper(status) <> 'VOID')
-     AND payment_date <= p_as_of;
-
-  SELECT COALESCE(SUM(GREATEST(amount + COALESCE(tax_amount, 0) - COALESCE(paid_amount, 0), 0)), 0)
-    INTO v_ar
-    FROM public.invoices
-   WHERE deleted_at IS NULL
-     AND company_id = v_company_id
-     AND (status IS NULL OR lower(status) <> 'void')
-     AND issue_date <= p_as_of;
-
-  SELECT COALESCE(SUM(amount), 0)
-    INTO v_owner_pay
-    FROM public.owner_settlements
+    FROM public.journal_entries
    WHERE company_id = v_company_id
-     AND (status IS NULL OR status <> 'CANCELLED')
+     AND account_id = '1111'
      AND public._safe_date(date) <= p_as_of;
 
-  SELECT COALESCE(SUM(COALESCE(tax_amount, 0)), 0)
+  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
+    INTO v_ar
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '1201'
+     AND public._safe_date(date) <= p_as_of;
+
+  -- Liabilities: Owner Payables + VAT Payable (from general ledger)
+  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
+    INTO v_owner_pay
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '2000'
+     AND public._safe_date(date) <= p_as_of;
+
+  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
     INTO v_vat
-    FROM public.invoices
-   WHERE deleted_at IS NULL
-     AND company_id = v_company_id
-     AND (status IS NULL OR lower(status) <> 'void')
-     AND issue_date <= p_as_of;
+    FROM public.journal_entries
+   WHERE company_id = v_company_id
+     AND account_id = '2100'
+     AND public._safe_date(date) <= p_as_of;
+
+  -- Equity: Retained Earnings + Net Income (Revenue - Expenses)
+  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
+    INTO v_equity
+    FROM public.journal_entries j
+    JOIN public.accounts a on a.id = j.account_id
+   WHERE j.company_id = v_company_id
+     AND public._safe_date(j.date) <= p_as_of
+     AND (a.no like '3%' or a.no like '4%' or a.no like '5%' or a.no like '6%');
 
   v_assets := round(v_cash + v_ar, 2);
   v_liabilities := round(v_owner_pay + v_vat, 2);
-  v_equity := round(v_assets - v_liabilities, 2);
 
   v_asset_rows := jsonb_build_array(
     jsonb_build_object('code', '1111', 'name', 'Cash', 'amount', round(v_cash, 2)),
@@ -183,8 +191,8 @@ BEGIN
     'equity', v_equity_rows,
     'total_assets', v_assets,
     'total_liabilities', v_liabilities,
-    'total_equity', v_equity,
-    'is_balanced', (v_assets = v_liabilities + v_equity)
+    'total_equity', round(v_equity, 2),
+    'is_balanced', (v_assets = v_liabilities + round(v_equity, 2))
   );
 END;
 $$;
@@ -207,10 +215,10 @@ BEGIN
       public._r3(i.amount + COALESCE(i.tax_amount, 0) - i.paid_amount) remaining,
       (p_as_of - i.due_date)::int days_overdue
     FROM public.invoices i
-    JOIN public.contracts c ON c.id = i.contract_id AND c.deleted_at IS NULL
-    JOIN public.people t ON t.id = c.tenant_id AND t.type = 'tenant' AND t.deleted_at IS NULL
-    JOIN public.units u ON u.id = c.unit_id AND u.deleted_at IS NULL
-    JOIN public.properties pr ON pr.id = c.property_id AND pr.deleted_at IS NULL
+    JOIN public.contracts c ON c.id::text = i.contract_id::text AND c.deleted_at IS NULL
+    JOIN public.people t ON t.id::text = c.tenant_id::text AND t.type = 'tenant' AND t.deleted_at IS NULL
+    JOIN public.units u ON u.id::text = c.unit_id::text AND u.deleted_at IS NULL
+    JOIN public.properties pr ON pr.id::text = c.property_id::text AND pr.deleted_at IS NULL
     WHERE upper(COALESCE(i.status, '')) NOT IN ('PAID', 'VOID', 'CANCELLED')
       AND i.deleted_at IS NULL
       AND i.company_id = v_company_id
@@ -270,10 +278,10 @@ BEGIN
     public._r3(sum(i.amount + COALESCE(i.tax_amount, 0) - i.paid_amount)), count(*)
   INTO v_rows, v_total, v_count
   FROM public.invoices i
-  JOIN public.contracts c ON c.id = i.contract_id AND c.deleted_at IS NULL
-  JOIN public.people t ON t.id = c.tenant_id AND t.type = 'tenant' AND t.deleted_at IS NULL
-  JOIN public.units u ON u.id = c.unit_id AND u.deleted_at IS NULL
-  JOIN public.properties pr ON pr.id = c.property_id AND pr.deleted_at IS NULL
+  JOIN public.contracts c ON c.id::text = i.contract_id::text AND c.deleted_at IS NULL
+  JOIN public.people t ON t.id::text = c.tenant_id::text AND t.type = 'tenant' AND t.deleted_at IS NULL
+  JOIN public.units u ON u.id::text = c.unit_id::text AND u.deleted_at IS NULL
+  JOIN public.properties pr ON pr.id::text = c.property_id::text AND pr.deleted_at IS NULL
   WHERE upper(COALESCE(i.status, '')) NOT IN ('PAID', 'VOID', 'CANCELLED')
     AND i.deleted_at IS NULL
     AND i.company_id = v_company_id
@@ -301,28 +309,32 @@ DECLARE
   v_company_id uuid := public.require_company_id();
 BEGIN
   SELECT jsonb_agg(jsonb_build_object(
-    'property_name', pr.title, 'unit_name', u.unit_number, 'unit_type', null::text,
+    'property_name', pr.title, 'unit_name', u.unit_number, 'unit_type', coalesce(u.name, 'Apartment'),
     'status', u.status, 'tenant_name', t.full_name, 'tenant_phone', t.phone,
     'contract_start', c.start_date, 'contract_end', c.end_date,
-    'rent_amount', c.rent_amount, 'deposit', null::numeric,
+    'rent_amount', c.rent_amount, 
+    'deposit', public._r3(coalesce((
+       select sum(amount) from public.deposit_txs d 
+       where d.contract_id::text = c.id::text and d.deleted_at is null
+    ), 0)),
     'days_to_expiry', (c.end_date - p_as_of)::int,
     'overdue_balance', public._r3(COALESCE((
       SELECT sum(i.amount + COALESCE(i.tax_amount, 0) - i.paid_amount)
       FROM public.invoices i
-      WHERE i.contract_id = c.id AND i.deleted_at IS NULL
+      WHERE i.contract_id::text = c.id::text AND i.deleted_at IS NULL
         AND i.company_id = v_company_id
         AND upper(COALESCE(i.status, '')) NOT IN ('PAID', 'VOID', 'CANCELLED')
         AND i.due_date < p_as_of
     ), 0))) ORDER BY pr.title, u.unit_number)
   INTO v_rows
   FROM public.units u
-  JOIN public.properties pr ON pr.id = u.property_id AND pr.deleted_at IS NULL
-  LEFT JOIN public.contracts c ON c.unit_id = u.id
+  JOIN public.properties pr ON pr.id::text = u.property_id::text AND pr.deleted_at IS NULL
+  LEFT JOIN public.contracts c ON c.unit_id::text = u.id::text
     AND lower(COALESCE(c.status, '')) = 'active'
     AND c.deleted_at IS NULL
     AND c.start_date <= p_as_of
     AND c.end_date >= p_as_of
-  LEFT JOIN public.people t ON t.id = c.tenant_id AND t.type = 'tenant' AND t.deleted_at IS NULL
+  LEFT JOIN public.people t ON t.id::text = c.tenant_id::text AND t.type = 'tenant' AND t.deleted_at IS NULL
   WHERE u.deleted_at IS NULL
     AND u.company_id = v_company_id;
 
@@ -348,10 +360,10 @@ BEGIN
     u.name as unit_name, pr.title as property_name
   INTO v_contract 
   FROM public.contracts c
-  JOIN public.people t ON t.id = c.tenant_id AND t.deleted_at IS NULL
-  JOIN public.units u ON u.id = c.unit_id AND u.deleted_at IS NULL
-  JOIN public.properties pr ON pr.id = u.property_id AND pr.deleted_at IS NULL 
-  WHERE c.id = p_contract_id
+  JOIN public.people t ON t.id::text = c.tenant_id::text AND t.deleted_at IS NULL
+  JOIN public.units u ON u.id::text = c.unit_id::text AND u.deleted_at IS NULL
+  JOIN public.properties pr ON pr.id::text = u.property_id::text AND pr.deleted_at IS NULL 
+  WHERE c.id::text = p_contract_id::text
     AND c.company_id = v_company_id;
     
   IF NOT FOUND THEN 
@@ -363,17 +375,20 @@ BEGIN
       'فاتورة رقم '||i.no as description,
       'invoice' as tx_type, i.amount+coalesce(i.tax_amount,0) as debit, 0 as credit, i.no as ref_no
     FROM public.invoices i 
-    WHERE i.contract_id = p_contract_id 
+    WHERE i.contract_id::text = p_contract_id::text 
       AND i.deleted_at IS NULL
       AND i.company_id = v_company_id
+      AND upper(coalesce(i.status, '')) NOT IN ('VOID', 'CANCELLED')
     UNION ALL
-    SELECT left(r.date_time::text,10), 'سند قبض رقم '||r.no||coalesce(' — '||r.channel, ''),
-      'receipt', 0, r.amount, r.no
-    FROM public.receipts r 
-    WHERE r.contract_id = p_contract_id 
-      AND r.status='POSTED' 
-      AND r.deleted_at IS NULL
-      AND r.company_id = v_company_id
+    SELECT coalesce(p.payment_date, public._safe_date(p.created_at::text))::text as tx_date,
+      'سند قبض رقم '||coalesce(r.no, p.id::text)||coalesce(' — '||p.payment_method, '') as description,
+      'receipt' as tx_type, 0 as debit, p.amount as credit, coalesce(r.no, p.id::text) as ref_no
+    FROM public.payments p
+    LEFT JOIN public.receipts r on r.id::text = p.receipt_id::text and r.deleted_at is null
+    WHERE p.contract_id::text = p_contract_id::text
+      AND p.deleted_at is null
+      AND upper(coalesce(p.status, '')) = 'POSTED'
+      AND p.company_id = v_company_id
   ),
   with_balance AS (
     SELECT tx_date, description, tx_type, debit, credit, ref_no,
@@ -405,5 +420,24 @@ BEGIN
   );
 END;
 $function$;
+
+-- Secure All 6 Recovered Functions from anonymous execute leak!
+REVOKE ALL ON FUNCTION public.rpt_trial_balance(date) FROM public, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.rpt_trial_balance(date) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.rpt_balance_sheet(date) FROM public, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.rpt_balance_sheet(date) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.rpt_aged_receivables(date) FROM public, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.rpt_aged_receivables(date) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.rpt_overdue_invoices(date) FROM public, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.rpt_overdue_invoices(date) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.rpt_rent_roll(date) FROM public, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.rpt_rent_roll(date) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.rpt_tenant_statement(uuid) FROM public, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.rpt_tenant_statement(uuid) TO authenticated, service_role;
 
 COMMIT;

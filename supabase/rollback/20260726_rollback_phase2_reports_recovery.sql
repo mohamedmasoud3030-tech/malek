@@ -7,6 +7,7 @@
 BEGIN;
 
 -- 1. Rollback rpt_trial_balance
+DROP FUNCTION IF EXISTS public.rpt_trial_balance(date);
 CREATE OR REPLACE FUNCTION public.rpt_trial_balance(p_as_of date)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -104,7 +105,11 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.rpt_trial_balance(date) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpt_trial_balance(date) TO authenticated, service_role;
+
 -- 2. Rollback rpt_balance_sheet
+DROP FUNCTION IF EXISTS public.rpt_balance_sheet(date);
 CREATE OR REPLACE FUNCTION public.rpt_balance_sheet(p_as_of date)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -184,7 +189,11 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.rpt_balance_sheet(date) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpt_balance_sheet(date) TO authenticated, service_role;
+
 -- 3. Rollback rpt_aged_receivables
+DROP FUNCTION IF EXISTS public.rpt_aged_receivables(date);
 CREATE OR REPLACE FUNCTION public.rpt_aged_receivables(p_as_of date)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -237,6 +246,7 @@ END;
 $$;
 
 -- 4. Rollback rpt_overdue_invoices
+DROP FUNCTION IF EXISTS public.rpt_overdue_invoices(date);
 CREATE OR REPLACE FUNCTION public.rpt_overdue_invoices(p_as_of date DEFAULT current_date)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -272,6 +282,7 @@ END;
 $$;
 
 -- 5. Rollback rpt_rent_roll
+DROP FUNCTION IF EXISTS public.rpt_rent_roll(date);
 CREATE OR REPLACE FUNCTION public.rpt_rent_roll(p_as_of date DEFAULT current_date)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -310,6 +321,7 @@ END;
 $$;
 
 -- 6. Rollback rpt_tenant_statement
+DROP FUNCTION IF EXISTS public.rpt_tenant_statement(uuid);
 CREATE OR REPLACE FUNCTION public.rpt_tenant_statement(p_contract_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -350,5 +362,8 @@ begin
     'end_date',v_contract.end_date,'lines',coalesce(v_lines,'[]'::jsonb),'final_balance',coalesce(v_balance,0));
 end;
 $function$;
+
+REVOKE ALL ON FUNCTION public.rpt_tenant_statement(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpt_tenant_statement(uuid) TO authenticated, service_role;
 
 COMMIT;

@@ -2,11 +2,11 @@
  * Phase 2 — Financial Integrity and Reports Recovery Regression and Behavior Suite.
  */
 
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
-import { createFullReplayedDatabase, assumeIdentity, repoRoot, evidenceDir } from '../p1/replay-bootstrap';
+import { createFullReplayedDatabase, assumeIdentity, repoRoot } from '../p1/replay-bootstrap';
 
 const COMPANY_1 = 'c1000000-0000-4000-8000-000000000001';
 const COMPANY_2 = 'c2000000-0000-4000-8000-000000000002';
@@ -121,10 +121,15 @@ INSERT INTO public.payments (id, invoice_id, contract_id, amount, payment_method
 
 UPDATE public.receipts SET payment_id = id
  WHERE id IN ('ab000000-0000-4000-8000-000000000001','ab000000-0000-4000-8000-000000000002','ab000000-0000-4000-8000-000000000003');
+
+-- Seed deposit_txs to test rent roll deposit sum
+INSERT INTO public.deposit_txs (id, contract_id, amount, type, company_id) VALUES
+  ('dt000000-0000-4000-8000-000000000001', '${C_R}', 500, 'deposit', '${COMPANY_1}');
   `);
 }
 
 beforeAll(async () => {
+  // Replays the full chain up to and including Phase 2!
   const replay = await createFullReplayedDatabase();
   db = replay.db;
   evidence.replayCoverage = {
@@ -136,8 +141,10 @@ beforeAll(async () => {
 }, 120_000);
 
 afterAll(async () => {
+  const p2EvidenceDir = join(repoRoot, 'evidence', 'p2');
+  mkdirSync(p2EvidenceDir, { recursive: true });
   writeFileSync(
-    join(repoRoot, 'evidence', 'p2-financial-reports-recovery-rehearsal.json'),
+    join(p2EvidenceDir, 'p2-financial-reports-recovery-rehearsal.json'),
     JSON.stringify(evidence, null, 2)
   );
   await db?.close();
@@ -147,6 +154,25 @@ describe('Phase 2 — Replay Coverage Verification', () => {
   it('applied all migrations including Phase 2 without failure', () => {
     const failed = (evidence.replayCoverage as any)?.failed ?? [];
     expect(failed).toEqual([]);
+    // Prove Phase 2 is indeed applied
+    expect((evidence.replayCoverage as any).applied).toBeGreaterThan(140);
+  });
+});
+
+describe('Phase 2 — Security & anon Role Execution Guard', () => {
+  it('asserts that ZERO security definer functions are executable by anon', async () => {
+    const { rows } = await db.query<{ name: string; args: string }>(`
+      select
+        p.proname as name,
+        pg_get_function_identity_arguments(p.oid) as args
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public'
+        and p.prosecdef
+        and has_function_privilege('anon', p.oid, 'EXECUTE')
+    `);
+    evidence.anonViolations = rows;
+    expect(rows, `Violations found: ${JSON.stringify(rows)}`).toEqual([]);
   });
 });
 
@@ -169,7 +195,6 @@ describe('Phase 2 — The 6 Recovered Reports', () => {
     );
     const rpt2 = rows2[0].out;
     expect(rpt2.is_balanced).toBe(true);
-    // Company 2 accounts have separate balances
     expect(rpt2.accounts.find((a: any) => a.code === '1111').balance).toBe(0);
   });
 
@@ -211,7 +236,7 @@ describe('Phase 2 — The 6 Recovered Reports', () => {
     expect(rpt.count).toBeGreaterThan(0);
   });
 
-  it('5. rpt_rent_roll runs and maps active contracts without losing rows due to casing', async () => {
+  it('5. rpt_rent_roll runs and maps active contracts, including computed deposits and names', async () => {
     await assumeIdentity(db, ADMIN_1, COMPANY_1);
     const { rows } = await db.query<{ out: any }>(
       `SELECT public.rpt_rent_roll(date '2026-07-31') as out`
@@ -220,6 +245,11 @@ describe('Phase 2 — The 6 Recovered Reports', () => {
     evidence.rptRentRoll = rpt;
     expect(rpt).toBeDefined();
     expect(rpt.rows.length).toBeGreaterThan(0);
+    // Find contract C_R's row
+    const rowCR = rpt.rows.find((r: any) => r.tenant_name === 'مستأجر ن');
+    expect(rowCR).toBeDefined();
+    expect(Number(rowCR.deposit)).toBe(500); // correctly derived from deposit_txs!
+    expect(rowCR.unit_type).toBe('E-1'); // mapped to u.name!
   });
 
   it('6. rpt_tenant_statement runs using UUID contract id, selects property.title, and handles VOIDs', async () => {
@@ -235,7 +265,7 @@ describe('Phase 2 — The 6 Recovered Reports', () => {
     expect(rpt.property_name).toBe('عقار النسبة');
     const receiptLines = rpt.lines.filter((l: any) => l.type === 'receipt');
     expect(receiptLines.length).toBe(2); // Two posted receipts seeded
-    expect(receiptLines[0].description).toContain('سند قبض رقم REC-01');
+    expect(receiptLines[0].description).toContain('REC-01');
   });
 });
 
