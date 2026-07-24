@@ -508,15 +508,17 @@ beforeAll(async () => {
 }, 600_000);
 
 afterAll(() => {
-  mkdirSync(evidenceDir, { recursive: true });
-  writeFileSync(
-    join(evidenceDir, 'behavioral-isolation.json'),
-    JSON.stringify(
-      { generatedAt: new Date().toISOString(), fixFile: FIX_FILE, replayErrors: errors, fixture: { A_PAY, B_PAY, A_EXP, B_EXP, B_JE, B_RENT }, probes },
-      null,
-      2,
-    ),
-  );
+  if (process.env.WRITE_EVIDENCE === 'true') {
+    mkdirSync(evidenceDir, { recursive: true });
+    writeFileSync(
+      join(evidenceDir, 'behavioral-isolation.json'),
+      JSON.stringify(
+        { generatedAt: new Date().toISOString(), fixFile: FIX_FILE, replayErrors: errors, fixture: { A_PAY, B_PAY, A_EXP, B_EXP, B_JE, B_RENT }, probes },
+        null,
+        2,
+      ),
+    );
+  }
 });
 
 describe('P0 — behavioral isolation: current main (pre-fix evidence)', () => {

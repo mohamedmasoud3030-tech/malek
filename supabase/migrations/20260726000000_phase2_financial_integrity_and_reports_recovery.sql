@@ -19,90 +19,71 @@ SECURITY DEFINER
 SET search_path TO 'public', 'pg_temp'
 AS $$
 DECLARE
-  v_cash numeric := 0;
-  v_ar numeric := 0;
-  v_expenses numeric := 0;
-  v_revenue numeric := 0;
-  v_owner_pay numeric := 0;
-  v_vat numeric := 0;
-  v_retained numeric := 0;
   v_accounts jsonb;
   v_total_debits numeric := 0;
   v_total_credits numeric := 0;
   v_company_id uuid := public.require_company_id();
 BEGIN
-  -- Derived Cash balance from general ledger (1111 account)
-  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
-    INTO v_cash
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '1111'
-     AND public._safe_date(date) <= p_as_of;
+  -- Sum all debits and credits from journal_entries directly
+  SELECT public._r3(COALESCE(SUM(CASE WHEN j.type = 'DEBIT' THEN j.amount ELSE 0 END), 0)),
+         public._r3(COALESCE(SUM(CASE WHEN j.type = 'CREDIT' THEN j.amount ELSE 0 END), 0))
+    INTO v_total_debits, v_total_credits
+    FROM public.journal_entries j
+   WHERE j.company_id = v_company_id
+     AND public._safe_date(j.date) <= p_as_of;
 
-  -- Derived Tenant Receivables balance from general ledger (1201 account)
-  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
-    INTO v_ar
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '1201'
-     AND public._safe_date(date) <= p_as_of;
-
-  -- Derived Operating Expenses balance from general ledger (6100 account)
-  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
-    INTO v_expenses
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '6100'
-     AND public._safe_date(date) <= p_as_of;
-
-  -- Derived Rental Revenue balance from general ledger (4000 account)
-  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
-    INTO v_revenue
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '4000'
-     AND public._safe_date(date) <= p_as_of;
-
-  -- Derived Owner Payables balance from general ledger (2000 account)
-  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
-    INTO v_owner_pay
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '2000'
-     AND public._safe_date(date) <= p_as_of;
-
-  -- Derived VAT Payable balance from general ledger (2100 account)
-  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
-    INTO v_vat
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '2100'
-     AND public._safe_date(date) <= p_as_of;
-
-  -- Derived Retained Earnings balance from general ledger (3000 account)
-  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
-    INTO v_retained
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '3000'
-     AND public._safe_date(date) <= p_as_of;
-
-  v_accounts := jsonb_build_array(
-    jsonb_build_object('code', '1111', 'name', 'Cash', 'type', 'asset', 'balance_type', 'debit', 'balance', round(v_cash, 2)),
-    jsonb_build_object('code', '1201', 'name', 'Tenant Receivables', 'type', 'asset', 'balance_type', 'debit', 'balance', round(v_ar, 2)),
-    jsonb_build_object('code', '6100', 'name', 'Operating Expenses', 'type', 'expense', 'balance_type', 'debit', 'balance', round(v_expenses, 2)),
-    jsonb_build_object('code', '4000', 'name', 'Rental Revenue', 'type', 'revenue', 'balance_type', 'credit', 'balance', round(v_revenue, 2)),
-    jsonb_build_object('code', '2000', 'name', 'Owner Payables', 'type', 'liability', 'balance_type', 'credit', 'balance', round(v_owner_pay, 2)),
-    jsonb_build_object('code', '2100', 'name', 'VAT Payable', 'type', 'liability', 'balance_type', 'credit', 'balance', round(v_vat, 2)),
-    jsonb_build_object('code', '3000', 'name', 'Retained Earnings', 'type', 'equity', 'balance_type', 'credit', 'balance', round(v_retained, 2))
-  );
-
-  v_total_debits := round(v_cash + v_ar + v_expenses, 2);
-  v_total_credits := round(v_revenue + v_owner_pay + v_vat + v_retained, 2);
+  -- Dynamically aggregate accounts left join journal_entries
+  WITH account_sums AS (
+    SELECT 
+      a.id,
+      a.no,
+      a.name,
+      COALESCE(SUM(CASE WHEN j.type = 'DEBIT' THEN j.amount ELSE 0 END), 0) AS debits,
+      COALESCE(SUM(CASE WHEN j.type = 'CREDIT' THEN j.amount ELSE 0 END), 0) AS credits
+    FROM public.accounts a
+    LEFT JOIN public.journal_entries j 
+      ON j.account_id = a.id 
+     AND j.company_id = v_company_id
+     AND public._safe_date(j.date) <= p_as_of
+    WHERE a.company_id = v_company_id
+    GROUP BY a.id, a.no, a.name
+  ), account_balances AS (
+    SELECT 
+      s.no AS code,
+      s.name,
+      CASE 
+        WHEN s.no LIKE '1%' THEN 'asset'
+        WHEN s.no LIKE '2%' THEN 'liability'
+        WHEN s.no LIKE '3%' THEN 'equity'
+        WHEN s.no LIKE '4%' THEN 'revenue'
+        ELSE 'expense'
+      END AS type,
+      CASE 
+        WHEN s.no LIKE '1%' OR s.no LIKE '5%' OR s.no LIKE '6%' THEN 'debit'
+        ELSE 'credit'
+      END AS balance_type,
+      s.debits,
+      s.credits,
+      CASE 
+        WHEN s.no LIKE '1%' OR s.no LIKE '5%' OR s.no LIKE '6%' THEN s.debits - s.credits
+        ELSE s.credits - s.debits
+      END AS raw_balance
+    FROM account_sums s
+    WHERE s.debits <> 0 OR s.credits <> 0
+  )
+  SELECT jsonb_agg(jsonb_build_object(
+    'code', b.code,
+    'name', b.name,
+    'type', b.type,
+    'balance_type', b.balance_type,
+    'balance', public._r3(b.raw_balance)
+  ) ORDER BY b.code)
+  INTO v_accounts
+  FROM account_balances b;
 
   RETURN jsonb_build_object(
     'as_of', p_as_of,
-    'accounts', v_accounts,
+    'accounts', COALESCE(v_accounts, '[]'::jsonb),
     'total_debits', v_total_debits,
     'total_credits', v_total_credits,
     'is_balanced', (v_total_debits = v_total_credits)
@@ -118,10 +99,6 @@ SECURITY DEFINER
 SET search_path TO 'public', 'pg_temp'
 AS $$
 DECLARE
-  v_cash numeric := 0;
-  v_ar numeric := 0;
-  v_owner_pay numeric := 0;
-  v_vat numeric := 0;
   v_assets numeric := 0;
   v_liabilities numeric := 0;
   v_equity numeric := 0;
@@ -130,69 +107,80 @@ DECLARE
   v_equity_rows jsonb;
   v_company_id uuid := public.require_company_id();
 BEGIN
-  -- Assets: Cash + Tenant Receivables (from general ledger)
-  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
-    INTO v_cash
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '1111'
-     AND public._safe_date(date) <= p_as_of;
-
-  SELECT COALESCE(SUM(CASE WHEN type = 'DEBIT' then amount else -amount end), 0)
-    INTO v_ar
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '1201'
-     AND public._safe_date(date) <= p_as_of;
-
-  -- Liabilities: Owner Payables + VAT Payable (from general ledger)
-  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
-    INTO v_owner_pay
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '2000'
-     AND public._safe_date(date) <= p_as_of;
-
-  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
-    INTO v_vat
-    FROM public.journal_entries
-   WHERE company_id = v_company_id
-     AND account_id = '2100'
-     AND public._safe_date(date) <= p_as_of;
-
-  -- Equity: Retained Earnings + Net Income (Revenue - Expenses)
-  SELECT COALESCE(SUM(CASE WHEN type = 'CREDIT' then amount else -amount end), 0)
-    INTO v_equity
+  -- Dynamic Assets sum (1%)
+  SELECT public._r3(COALESCE(SUM(CASE WHEN j.type = 'DEBIT' THEN j.amount ELSE -j.amount END), 0))
+    INTO v_assets
     FROM public.journal_entries j
-    JOIN public.accounts a on a.id = j.account_id
+    JOIN public.accounts a ON a.id = j.account_id
    WHERE j.company_id = v_company_id
      AND public._safe_date(j.date) <= p_as_of
-     AND (a.no like '3%' or a.no like '4%' or a.no like '5%' or a.no like '6%');
+     AND a.no LIKE '1%';
 
-  v_assets := round(v_cash + v_ar, 2);
-  v_liabilities := round(v_owner_pay + v_vat, 2);
+  -- Dynamic Liabilities sum (2%)
+  SELECT public._r3(COALESCE(SUM(CASE WHEN j.type = 'CREDIT' THEN j.amount ELSE -j.amount END), 0))
+    INTO v_liabilities
+    FROM public.journal_entries j
+    JOIN public.accounts a ON a.id = j.account_id
+   WHERE j.company_id = v_company_id
+     AND public._safe_date(j.date) <= p_as_of
+     AND a.no LIKE '2%';
 
-  v_asset_rows := jsonb_build_array(
-    jsonb_build_object('code', '1111', 'name', 'Cash', 'amount', round(v_cash, 2)),
-    jsonb_build_object('code', '1201', 'name', 'Tenant Receivables', 'amount', round(v_ar, 2))
-  );
-  v_liability_rows := jsonb_build_array(
-    jsonb_build_object('code', '2000', 'name', 'Owner Payables', 'amount', round(v_owner_pay, 2)),
-    jsonb_build_object('code', '2100', 'name', 'VAT Payable', 'amount', round(v_vat, 2))
-  );
-  v_equity_rows := jsonb_build_array(
-    jsonb_build_object('code', '3000', 'name', 'Retained Earnings', 'amount', round(v_equity, 2))
-  );
+  -- Dynamic Equity (including Net Income) sum (3% + 4% - 5% - 6%)
+  SELECT public._r3(COALESCE(SUM(CASE WHEN j.type = 'CREDIT' THEN j.amount ELSE -j.amount END), 0))
+    INTO v_equity
+    FROM public.journal_entries j
+    JOIN public.accounts a ON a.id = j.account_id
+   WHERE j.company_id = v_company_id
+     AND public._safe_date(j.date) <= p_as_of
+     AND (a.no LIKE '3%' OR a.no LIKE '4%' OR a.no LIKE '5%' OR a.no LIKE '6%');
+
+  -- Aggregate individual assets rows
+  SELECT jsonb_agg(jsonb_build_object('code', s.no, 'name', s.name, 'amount', public._r3(s.debits - s.credits)) ORDER BY s.no)
+    INTO v_asset_rows
+    FROM (
+      SELECT a.no, a.name,
+        COALESCE(SUM(CASE WHEN j.type = 'DEBIT' THEN j.amount ELSE 0 END), 0) as debits,
+        COALESCE(SUM(CASE WHEN j.type = 'CREDIT' THEN j.amount ELSE 0 END), 0) as credits
+      FROM public.accounts a
+      JOIN public.journal_entries j ON j.account_id = a.id AND j.company_id = v_company_id AND public._safe_date(j.date) <= p_as_of
+      WHERE a.company_id = v_company_id AND a.no LIKE '1%'
+      GROUP BY a.no, a.name
+    ) s;
+
+  -- Aggregate individual liabilities rows
+  SELECT jsonb_agg(jsonb_build_object('code', s.no, 'name', s.name, 'amount', public._r3(s.credits - s.debits)) ORDER BY s.no)
+    INTO v_liability_rows
+    FROM (
+      SELECT a.no, a.name,
+        COALESCE(SUM(CASE WHEN j.type = 'DEBIT' THEN j.amount ELSE 0 END), 0) as debits,
+        COALESCE(SUM(CASE WHEN j.type = 'CREDIT' THEN j.amount ELSE 0 END), 0) as credits
+      FROM public.accounts a
+      JOIN public.journal_entries j ON j.account_id = a.id AND j.company_id = v_company_id AND public._safe_date(j.date) <= p_as_of
+      WHERE a.company_id = v_company_id AND a.no LIKE '2%'
+      GROUP BY a.no, a.name
+    ) s;
+
+  -- Aggregate individual equity + revenue + expense rows
+  SELECT jsonb_agg(jsonb_build_object('code', s.no, 'name', s.name, 'amount', public._r3(s.balance)) ORDER BY s.no)
+    INTO v_equity_rows
+    FROM (
+      SELECT a.no, a.name,
+        COALESCE(SUM(CASE WHEN j.type = 'CREDIT' THEN j.amount ELSE -j.amount END), 0) as balance
+      FROM public.accounts a
+      JOIN public.journal_entries j ON j.account_id = a.id AND j.company_id = v_company_id AND public._safe_date(j.date) <= p_as_of
+      WHERE a.company_id = v_company_id AND (a.no LIKE '3%' OR a.no LIKE '4%' OR a.no LIKE '5%' OR a.no LIKE '6%')
+      GROUP BY a.no, a.name
+    ) s;
 
   RETURN jsonb_build_object(
     'as_of', p_as_of,
-    'assets', v_asset_rows,
-    'liabilities', v_liability_rows,
-    'equity', v_equity_rows,
+    'assets', COALESCE(v_asset_rows, '[]'::jsonb),
+    'liabilities', COALESCE(v_liability_rows, '[]'::jsonb),
+    'equity', COALESCE(v_equity_rows, '[]'::jsonb),
     'total_assets', v_assets,
     'total_liabilities', v_liabilities,
-    'total_equity', round(v_equity, 2),
-    'is_balanced', (v_assets = v_liabilities + round(v_equity, 2))
+    'total_equity', v_equity,
+    'is_balanced', (v_assets = v_liabilities + v_equity)
   );
 END;
 $$;
@@ -302,7 +290,7 @@ CREATE OR REPLACE FUNCTION public.rpt_rent_roll(p_as_of date DEFAULT current_dat
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path TO 'public', 'pg_temp'
 AS $$
 DECLARE 
   v_rows jsonb;
@@ -372,8 +360,8 @@ BEGIN
 
   WITH tx AS (
     SELECT i.due_date::text as tx_date,
-      'فاتورة رقم '||i.no as description,
-      'invoice' as tx_type, i.amount+coalesce(i.tax_amount,0) as debit, 0 as credit, i.no as ref_no
+      'فاتورة رقم '||coalesce(nullif(i.no, ''), i.id::text) as description,
+      'invoice' as tx_type, i.amount+coalesce(i.tax_amount,0) as debit, 0 as credit, coalesce(nullif(i.no, ''), i.id::text) as ref_no
     FROM public.invoices i 
     WHERE i.contract_id::text = p_contract_id::text 
       AND i.deleted_at IS NULL

@@ -243,7 +243,9 @@ beforeAll(async () => {
 }, 300_000);
 
 afterAll(async () => {
-  writeFileSync(join(evidenceDir, 'p1-settlement-derivation.json'), JSON.stringify(evidence, null, 2));
+  if (process.env.WRITE_EVIDENCE === 'true') {
+    writeFileSync(join(evidenceDir, 'p1-settlement-derivation.json'), JSON.stringify(evidence, null, 2));
+  }
   await db?.close();
 });
 

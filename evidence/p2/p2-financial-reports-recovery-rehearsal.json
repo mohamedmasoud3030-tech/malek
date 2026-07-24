@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T06:10:04.463Z",
+  "generatedAt": "2026-07-24T06:19:19.078Z",
   "replayCoverage": {
     "total": 155,
     "applied": 155,
@@ -17,51 +17,16 @@
         "balance_type": "debit"
       },
       {
-        "code": "1201",
-        "name": "Tenant Receivables",
-        "type": "asset",
-        "balance": 0,
-        "balance_type": "debit"
-      },
-      {
         "code": "6100",
         "name": "Operating Expenses",
         "type": "expense",
         "balance": 200,
         "balance_type": "debit"
-      },
-      {
-        "code": "4000",
-        "name": "Rental Revenue",
-        "type": "revenue",
-        "balance": 1000,
-        "balance_type": "credit"
-      },
-      {
-        "code": "2000",
-        "name": "Owner Payables",
-        "type": "liability",
-        "balance": 0,
-        "balance_type": "credit"
-      },
-      {
-        "code": "2100",
-        "name": "VAT Payable",
-        "type": "liability",
-        "balance": 0,
-        "balance_type": "credit"
-      },
-      {
-        "code": "3000",
-        "name": "Retained Earnings",
-        "type": "equity",
-        "balance": 0,
-        "balance_type": "credit"
       }
     ],
     "is_balanced": true,
-    "total_debits": 1000,
-    "total_credits": 1000
+    "total_debits": 1200,
+    "total_credits": 1200
   },
   "rptBalanceSheet": {
     "as_of": "2026-07-31",
@@ -70,33 +35,17 @@
         "code": "1111",
         "name": "Cash",
         "amount": 800
-      },
-      {
-        "code": "1201",
-        "name": "Tenant Receivables",
-        "amount": 0
       }
     ],
     "equity": [
       {
-        "code": "3000",
-        "name": "Retained Earnings",
-        "amount": 800
+        "code": "6100",
+        "name": "Operating Expenses",
+        "amount": -200
       }
     ],
     "is_balanced": true,
-    "liabilities": [
-      {
-        "code": "2000",
-        "name": "Owner Payables",
-        "amount": 0
-      },
-      {
-        "code": "2100",
-        "name": "VAT Payable",
-        "amount": 0
-      }
-    ],
+    "liabilities": [],
     "total_assets": 800,
     "total_equity": 800,
     "total_liabilities": 0
@@ -108,9 +57,9 @@
         "1_30": 250,
         "31_60": 0,
         "61_90": 0,
-        "total": 250,
+        "total": 350,
         "90plus": 0,
-        "current": 0,
+        "current": 100,
         "tenant_id": "f1000000-0000-4000-8000-000000000001",
         "unit_name": "R-1",
         "tenant_name": "مستأجر ن",
@@ -122,9 +71,9 @@
       "1_30": 250,
       "31_60": 0,
       "61_90": 0,
-      "total": 250,
+      "total": 350,
       "90plus": 0,
-      "current": 0
+      "current": 100
     }
   },
   "rptOverdueInvoices": {
@@ -225,7 +174,7 @@
         "debit": 1000,
         "credit": 0,
         "balance": 0,
-        "description": null
+        "description": "فاتورة رقم dd000000-0000-4000-8000-000000000001"
       },
       {
         "date": "2026-07-12",
@@ -241,7 +190,7 @@
         "debit": 500,
         "credit": 0,
         "balance": 0,
-        "description": null
+        "description": "فاتورة رقم dd000000-0000-4000-8000-000000000002"
       },
       {
         "date": "2026-07-20",
@@ -249,15 +198,23 @@
         "debit": 250,
         "credit": 0,
         "balance": 250,
-        "description": null
+        "description": "فاتورة رقم dd000000-0000-4000-8000-000000000003"
+      },
+      {
+        "date": "2026-07-31",
+        "type": "invoice",
+        "debit": 100,
+        "credit": 0,
+        "balance": 350,
+        "description": "فاتورة رقم dd000000-0000-4000-8000-000000000099"
       },
       {
         "date": "2026-08-02",
         "type": "invoice",
         "debit": 400,
         "credit": 0,
-        "balance": 650,
-        "description": null
+        "balance": 750,
+        "description": "فاتورة رقم dd000000-0000-4000-8000-000000000004"
       }
     ],
     "end_date": "2026-12-31",
@@ -266,7 +223,7 @@
     "contract_id": "cc000000-0000-4000-8000-000000000001",
     "tenant_name": "مستأجر ن",
     "tenant_phone": null,
-    "final_balance": 650,
+    "final_balance": 750,
     "property_name": "عقار النسبة"
   }
 }

@@ -151,10 +151,12 @@ describe('P0 forward → security → rollback → fingerprint', () => {
     await db.exec(readFileSync(rollbackPath, 'utf8'));
     const fpAfter = await fingerprint();
     mkdirSync(evidenceDir, { recursive: true });
-    writeFileSync(
-      join(evidenceDir, 'forward-rollback-fingerprint.json'),
-      JSON.stringify({ generatedAt: new Date().toISOString(), before: fpBefore, afterRollback: fpAfter, identical: JSON.stringify(fpBefore) === JSON.stringify(fpAfter) }, null, 2),
-    );
+    if (process.env.WRITE_EVIDENCE === 'true') {
+      writeFileSync(
+        join(evidenceDir, 'forward-rollback-fingerprint.json'),
+        JSON.stringify({ generatedAt: new Date().toISOString(), before: fpBefore, afterRollback: fpAfter, identical: JSON.stringify(fpBefore) === JSON.stringify(fpAfter) }, null, 2),
+      );
+    }
     expect(JSON.stringify(fpAfter), 'schema fingerprint after rollback must equal pre-P0 fingerprint').toBe(JSON.stringify(fpBefore));
   }, 300_000);
 });

@@ -123,6 +123,10 @@ INSERT INTO public.invoices (id, contract_id, issue_date, due_date, amount, paid
   ('dd000000-0000-4000-8000-000000000006', '${C_F}',  '2026-07-10', '2026-07-15', 700,  700,  0, 'PAID', '${COMPANY_1}'),
   ('dd000000-0000-4000-8000-000000000007', '${C_M}',  '2026-07-10', '2026-07-15', 900,  900,  0, 'PAID', '${COMPANY_1}');
 
+-- Invoice with empty no (using non-overlapping issue date) to test description / ref_no fallback
+INSERT INTO public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id, no) VALUES
+  ('dd000000-0000-4000-8000-000000000099', '${C_R}', '2026-07-25', '2026-07-31', 100, 0, 0, 'UNPAID', '${COMPANY_1}', '');
+
 INSERT INTO public.receipts (id, no, amount, status, contract_id, company_id) VALUES
   ('ab000000-0000-4000-8000-000000000001', 'REC-01', 1000, 'POSTED', '${C_R}', '${COMPANY_1}'),
   ('ab000000-0000-4000-8000-000000000002', 'REC-02', 500,  'POSTED', '${C_R}', '${COMPANY_1}'),
@@ -201,7 +205,7 @@ describe('Phase 2 — The 6 Recovered Reports', () => {
     expect(rpt.is_balanced).toBe(true);
     expect(Number(rpt.total_debits)).toBe(Number(rpt.total_credits));
 
-    // Test unbalanced detection (running safely inside local savepoint transaction)
+    // Test unbalanced detection (running safely inside local transaction savepoint)
     await db.exec('BEGIN; SAVEPOINT sp_unbalanced;');
     try {
       await db.query(`
@@ -225,16 +229,6 @@ describe('Phase 2 — The 6 Recovered Reports', () => {
     );
     const rpt = rows[0].out;
     evidence.rptBalanceSheet = rpt;
-    
-    // Debug log to inspect values
-    const je = await db.query('SELECT j.*, a.no FROM public.journal_entries j JOIN public.accounts a on a.id = j.account_id');
-    console.log('DEBUG BALANCES:', {
-      assets: rpt.total_assets,
-      liabilities: rpt.total_liabilities,
-      equity: rpt.total_equity,
-      is_balanced: rpt.is_balanced,
-      journal_entries: je.rows,
-    });
 
     expect(rpt).toBeDefined();
     expect(rpt.is_balanced).toBe(true);
@@ -275,13 +269,6 @@ describe('Phase 2 — The 6 Recovered Reports', () => {
     const rpt = rows[0].out;
     evidence.rptRentRoll = rpt;
 
-    // Debug tenant deposits mapping
-    const td = await db.query('SELECT * FROM public.tenant_deposits');
-    console.log('DEBUG DEPOSITS:', {
-      rptRows: rpt.rows,
-      tenantDeposits: td.rows,
-    });
-
     expect(rpt).toBeDefined();
     expect(rpt.rows.length).toBeGreaterThan(0);
     // Find contract C_R's row
@@ -305,6 +292,16 @@ describe('Phase 2 — The 6 Recovered Reports', () => {
     const receiptLines = rpt.lines.filter((l: any) => l.type === 'receipt');
     expect(receiptLines.length).toBe(2); // Two posted receipts seeded
     expect(receiptLines[0].description).toContain('REC-01');
+
+    // Prove that all invoice lines have descriptions and references that are NOT null (including fallback id)
+    const invoiceLines = rpt.lines.filter((l: any) => l.type === 'invoice');
+    expect(invoiceLines.length).toBeGreaterThan(0);
+    for (const line of invoiceLines) {
+      expect(line.description).toBeDefined();
+      expect(line.description).not.toBeNull();
+      expect(line.balance).toBeDefined();
+      expect(line.balance).not.toBeNull();
+    }
   });
 });
 
