@@ -251,7 +251,7 @@ async function verify() {
   ) ?? [];
   const reversalEntries = assertNoError(
     'load lifecycle reversal journal',
-    await serviceClient.from('journal_entries').select('id,debit,credit,entity_type,entity_id')
+    await serviceClient.from('journal_entries').select('id,amount,type,entity_type,entity_id')
       .eq('entity_type', 'receipt_void').eq('entity_id', payment.receipt_id),
   ) ?? [];
   const idempotencyRows = assertNoError(
@@ -293,8 +293,12 @@ async function verify() {
     );
   }
 
-  const debit = reversalEntries.reduce((sum, entry) => sum + Number(entry.debit ?? 0), 0);
-  const credit = reversalEntries.reduce((sum, entry) => sum + Number(entry.credit ?? 0), 0);
+  const debit = reversalEntries
+    .filter((entry) => String(entry.type).toUpperCase() === 'DEBIT')
+    .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
+  const credit = reversalEntries
+    .filter((entry) => String(entry.type).toUpperCase() === 'CREDIT')
+    .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
   if (Math.abs(debit - credit) > 0.0001 || debit !== 1000) {
     throw new Error(`Reversal journal is not balanced for 1000: debit=${debit} credit=${credit}.`);
   }

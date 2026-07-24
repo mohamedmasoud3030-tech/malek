@@ -13,6 +13,9 @@ describe('single-office launch gate contract', () => {
     expect(script).toContain('Refusing to run the single-office mutation smoke against Production.');
     expect(script).toContain('productionMutation: false');
     expect(script).toContain('must exist exactly once for the launch company');
+    expect(script).toContain("select('id,amount,type,entity_type,entity_id')");
+    expect(script).toContain("String(entry.type).toUpperCase() === 'DEBIT'");
+    expect(script).toContain("String(entry.type).toUpperCase() === 'CREDIT'");
   });
 
   it('binds the release gate to the real authenticated payment and VOID browser path', () => {
