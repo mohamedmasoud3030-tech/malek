@@ -68,11 +68,44 @@ export type CreateSettlementDraftPayload = {
   property_id: string;
   period_start: string;
   period_end: string;
+  /**
+   * Idempotency key, generated ONCE per creation attempt by the caller and kept
+   * stable across retries/double-clicks — the server replays the cached result
+   * instead of writing twice (financial_operation_idempotency).
+   */
+  request_id: string;
+  notes?: string;
+  // P1: no amount fields. gross_collected/office_fee/owner_expenses/tax_amount/
+  // net_payable are DERIVED SERVER-SIDE by calculate_owner_net_payout inside
+  // create_owner_settlement_draft_atomic; the client is never the source of
+  // financial numbers (see docs/audits/P1_OWNER_SETTLEMENT_INTEGRITY_20260723.md).
+};
+
+/** Row shape of public.calculate_owner_net_payout (the server-side preview). */
+export type OwnerSettlementPreview = {
   gross_collected: number;
   office_fee: number;
   owner_expenses: number;
   tax_amount: number;
-  notes?: string;
+  net_payable: number;
+  breakdown: {
+    source?: string;
+    policy?: string;
+    payments_count?: number;
+    collected_gross?: number;
+    rate_fees?: number;
+    fixed_fees?: number;
+    master_obligations?: number;
+    vat?: { enabled?: boolean; rate?: number; company_scoped?: boolean };
+    agreements?: unknown[];
+  } | null;
+};
+
+export type PreviewSettlementPayload = {
+  owner_id: string;
+  property_id?: string | null;
+  period_start: string;
+  period_end: string;
 };
 
 export type ApproveSettlementPayload = {
@@ -255,9 +288,40 @@ export async function listOwnerSettlementTargets(): Promise<OwnerSettlementTarge
   );
 }
 
+/**
+ * Server-derived preview of a settlement before the draft exists. Calls the
+ * same derivation RPC the write path uses, so the visible numbers are EXACTLY
+ * what gets stored — never a client-side re-computation.
+ */
+export async function previewOwnerSettlement(payload: PreviewSettlementPayload): Promise<OwnerSettlementPreview> {
+  const { data, error } = await (supabase as any).rpc('calculate_owner_net_payout', {
+    p_owner_id: payload.owner_id,
+    p_period_start: payload.period_start,
+    p_period_end: payload.period_end,
+    p_property_id: payload.property_id ?? null,
+  });
+
+  if (error) {
+    throw new Error(messageFromError(error, 'تعذر حساب معاينة التسوية من الخادم.'));
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) throw new Error('لم تُرجع قاعدة البيانات معاينة التسوية.');
+  return {
+    gross_collected: Number(row.gross_collected ?? 0),
+    office_fee: Number(row.office_fee ?? 0),
+    owner_expenses: Number(row.owner_expenses ?? 0),
+    tax_amount: Number(row.tax_amount ?? 0),
+    net_payable: Number(row.net_payable ?? 0),
+    breakdown: (row.breakdown ?? null) as OwnerSettlementPreview['breakdown'],
+  };
+}
+
 export async function createOwnerSettlementDraft(payload: CreateSettlementDraftPayload): Promise<string> {
   const { data, error } = await (supabase as any).rpc('create_owner_settlement_draft_atomic', {
-    p_payload: { ...payload, request_id: crypto.randomUUID() },
+    // Spread only; request_id stays exactly the attempt key the caller holds —
+    // retrying with the same key replays the cached server response instead of
+    // creating a second draft.
+    p_payload: { ...payload, request_id: payload.request_id },
   });
 
   if (error) {

@@ -37,10 +37,12 @@ import {
   createOwnerSettlementDraft,
   listOwnerSettlements,
   listOwnerSettlementTargets,
+  previewOwnerSettlement,
   processOwnerPayout,
   settlementStatusLabels,
   summarizeLiveOwnerSettlements,
   type CreateSettlementDraftPayload,
+  type OwnerSettlementPreview,
   type OwnerSettlementRecord,
   type OwnerSettlementTarget,
   type ProcessPayoutPayload,
@@ -48,15 +50,16 @@ import {
 
 const settlementsQueryKey = ['owner-settlements'] as const;
 const settlementTargetsQueryKey = ['owner-settlement-targets'] as const;
+const settlementPreviewQueryKey = 'owner-settlement-preview' as const;
 
+// P1: the draft form holds NO amount fields — every number comes from the
+// server-derived preview (calculate_owner_net_payout) and is stored by the
+// write RPC itself. The client only sends scope (owner/property/period), a
+// per-attempt idempotency key, and optional notes.
 type DraftFormState = {
   targetKey: string;
   periodStart: string;
   periodEnd: string;
-  grossCollected: string;
-  officeFee: string;
-  ownerExpenses: string;
-  taxAmount: string;
   notes: string;
 };
 
@@ -66,21 +69,12 @@ function initialDraftForm(): DraftFormState {
     targetKey: '',
     periodStart: `${today.slice(0, 7)}-01`,
     periodEnd: today,
-    grossCollected: '',
-    officeFee: '',
-    ownerExpenses: '0',
-    taxAmount: '0',
     notes: '',
   };
 }
 
 function targetKey(target: Pick<OwnerSettlementTarget, 'owner_id' | 'property_id'>) {
   return `${target.owner_id}:${target.property_id}`;
-}
-
-function numberOrZero(value: string) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : 0;
 }
 
 function errorMessage(error: unknown) {
@@ -106,6 +100,9 @@ export function OwnerSettlementWorkspace() {
   const [draftOpen, setDraftOpen] = useState(false);
   const [draftForm, setDraftForm] = useState<DraftFormState>(initialDraftForm);
   const [draftValidationError, setDraftValidationError] = useState('');
+  // One idempotency key per creation attempt: generated when the overlay opens,
+  // kept stable across retries and double-clicks, replaced on the next attempt.
+  const [draftRequestId, setDraftRequestId] = useState<string | null>(null);
   const [selectedSettlement, setSelectedSettlement] = useState<OwnerSettlementRecord | null>(null);
   const [payoutRef, setPayoutRef] = useState('');
   const [payoutMethod, setPayoutMethod] = useState<ProcessPayoutPayload['payout_method']>('bank_transfer');
@@ -149,6 +146,22 @@ export function OwnerSettlementWorkspace() {
   const targets = targetsQuery.data ?? [];
   const selectedTarget = targets.find((target) => targetKey(target) === draftForm.targetKey) ?? null;
 
+  const previewScopeValid = Boolean(selectedTarget)
+    && Boolean(draftForm.periodStart)
+    && Boolean(draftForm.periodEnd)
+    && draftForm.periodStart <= draftForm.periodEnd;
+  const previewQuery = useQuery({
+    queryKey: [settlementPreviewQueryKey, draftForm.targetKey, draftForm.periodStart, draftForm.periodEnd],
+    queryFn: () => previewOwnerSettlement({
+      owner_id: selectedTarget!.owner_id,
+      property_id: selectedTarget!.property_id,
+      period_start: draftForm.periodStart,
+      period_end: draftForm.periodEnd,
+    }),
+    enabled: previewScopeValid,
+  });
+  const preview = previewQuery.data ?? null;
+
   const totals = useMemo(() => summarizeLiveOwnerSettlements(settlements), [settlements]);
 
   const activeMutationError = createMutation.error ?? approveMutation.error ?? payoutMutation.error;
@@ -158,9 +171,13 @@ export function OwnerSettlementWorkspace() {
 
   const handleDraftOpenChange = (open: boolean) => {
     setDraftOpen(open);
-    if (!open) {
+    if (open) {
+      // fresh attempt → fresh idempotency key
+      setDraftRequestId(crypto.randomUUID());
+    } else {
       setDraftForm(initialDraftForm());
       setDraftValidationError('');
+      setDraftRequestId(null);
       createMutation.reset();
     }
   };
@@ -220,32 +237,7 @@ export function OwnerSettlementWorkspace() {
   };
 
   const handleTargetChange = (value: string) => {
-    const target = targets.find((item) => targetKey(item) === value);
-    const gross = numberOrZero(draftForm.grossCollected);
-    const recommendedFee = target
-      ? target.commission_type === 'percentage'
-        ? gross * target.commission_value / 100
-        : target.commission_value
-      : 0;
-    setDraftForm((current) => ({
-      ...current,
-      targetKey: value,
-      officeFee: target ? String(Number(recommendedFee.toFixed(3))) : '',
-    }));
-  };
-
-  const handleGrossChange = (value: string) => {
-    const gross = numberOrZero(value);
-    const recommendedFee = selectedTarget?.commission_type === 'percentage'
-      ? gross * selectedTarget.commission_value / 100
-      : selectedTarget?.commission_type === 'fixed'
-        ? selectedTarget.commission_value
-        : numberOrZero(draftForm.officeFee);
-    setDraftForm((current) => ({
-      ...current,
-      grossCollected: value,
-      officeFee: selectedTarget ? String(Number(recommendedFee.toFixed(3))) : current.officeFee,
-    }));
+    setDraftForm((current) => ({ ...current, targetKey: value }));
   };
 
   const handleCreateDraft = (event: FormEvent<HTMLFormElement>) => {
@@ -259,27 +251,29 @@ export function OwnerSettlementWorkspace() {
       setDraftValidationError('حدد فترة صحيحة؛ تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.');
       return;
     }
-
-    const amounts = [
-      numberOrZero(draftForm.grossCollected),
-      numberOrZero(draftForm.officeFee),
-      numberOrZero(draftForm.ownerExpenses),
-      numberOrZero(draftForm.taxAmount),
-    ];
-    if (amounts.some((amount) => amount < 0) || amounts[0] <= 0) {
-      setDraftValidationError('يجب أن يكون المحصل أكبر من صفر، وجميع المبالغ غير سالبة.');
+    // Drafts are created exclusively from a SUCCESSFUL server preview — no
+    // local arithmetic and no client-supplied amounts ever reach the write RPC.
+    if (!preview) {
+      setDraftValidationError(
+        previewQuery.isError
+          ? errorMessage(previewQuery.error)
+          : 'انتظر اكتمال معاينة الخادم قبل إنشاء المسودة.',
+      );
       return;
     }
 
+    // Stable per-attempt idempotency key: double-clicks/retries reuse the SAME
+    // request_id, so the server replays the cached result instead of writing
+    // two drafts (server guard: financial_operation_idempotency + duplicate
+    // period rejection).
+    const requestId = draftRequestId ?? crypto.randomUUID();
+    if (!draftRequestId) setDraftRequestId(requestId);
     const payload: CreateSettlementDraftPayload = {
       owner_id: selectedTarget.owner_id,
       property_id: selectedTarget.property_id,
       period_start: draftForm.periodStart,
       period_end: draftForm.periodEnd,
-      gross_collected: amounts[0],
-      office_fee: amounts[1],
-      owner_expenses: amounts[2],
-      tax_amount: amounts[3],
+      request_id: requestId,
       notes: draftForm.notes.trim() || undefined,
     };
     createMutation.mutate(payload);
@@ -427,7 +421,9 @@ export function OwnerSettlementWorkspace() {
         mutationError={createMutation.error}
         isSubmitting={createMutation.isPending}
         onTargetChange={handleTargetChange}
-        onGrossChange={handleGrossChange}
+        preview={preview}
+        previewLoading={previewQuery.isLoading || previewQuery.isFetching}
+        previewError={previewQuery.isError ? errorMessage(previewQuery.error) : ''}
         onSubmit={handleCreateDraft}
       />
 
@@ -490,7 +486,9 @@ type DraftOverlayProps = {
   mutationError: unknown;
   isSubmitting: boolean;
   onTargetChange: (value: string) => void;
-  onGrossChange: (value: string) => void;
+  preview: OwnerSettlementPreview | null;
+  previewLoading: boolean;
+  previewError: string;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
@@ -505,7 +503,9 @@ function DraftOverlay({
   mutationError,
   isSubmitting,
   onTargetChange,
-  onGrossChange,
+  preview,
+  previewLoading,
+  previewError,
   onSubmit,
 }: DraftOverlayProps) {
   return (
@@ -513,7 +513,7 @@ function DraftOverlay({
       open={open}
       onOpenChange={onOpenChange}
       title="إنشاء مسودة تسوية مالك"
-      description="الأتعاب المقترحة تُحسب من اتفاقية العقار، ويمكن مراجعتها قبل الحفظ."
+      description="المبالغ تُشتق آليًا من الخادم (التحصيلات المرحّلة، الاتفاقية الحاكمة، المصروفات المعتمدة) وتُحفظ كما تظهر هنا."
     >
       <EntityForm.Root onSubmit={onSubmit} aria-busy={isSubmitting}>
         <EntityForm.ErrorSummary message={validationError || (mutationError ? errorMessage(mutationError) : undefined)} />
@@ -537,15 +537,44 @@ function DraftOverlay({
           ) : null}
         </EntityForm.Section>
 
-        <EntityForm.Section title="الفترة والمبالغ">
+        <EntityForm.Section title="الفترة">
           <div className="grid gap-4 sm:grid-cols-2">
             <DraftField label="بداية الفترة" type="date" value={form.periodStart} onChange={(value) => setForm((current) => ({ ...current, periodStart: value }))} />
             <DraftField label="نهاية الفترة" type="date" value={form.periodEnd} onChange={(value) => setForm((current) => ({ ...current, periodEnd: value }))} />
-            <DraftField label="إجمالي المحصل" value={form.grossCollected} min="0.001" onChange={onGrossChange} />
-            <DraftField label="أتعاب المكتب" value={form.officeFee} onChange={(value) => setForm((current) => ({ ...current, officeFee: value }))} />
-            <DraftField label="مصروفات على المالك" value={form.ownerExpenses} onChange={(value) => setForm((current) => ({ ...current, ownerExpenses: value }))} />
-            <DraftField label="الضريبة" value={form.taxAmount} onChange={(value) => setForm((current) => ({ ...current, taxAmount: value }))} />
           </div>
+        </EntityForm.Section>
+
+        <EntityForm.Section
+          title="معاينة المبالغ (من الخادم)"
+          description="قراءة فقط؛ تُعاد هذه الأرقام نفسها عند الإنشاء والاعتماد والدفع، ولا يمكن تعديلها من هنا."
+        >
+          {previewLoading ? (
+            <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">جارٍ حساب المعاينة من الخادم…</p>
+          ) : previewError ? (
+            <p className="rounded-xl bg-destructive/10 p-3 text-xs font-medium text-destructive">{previewError}</p>
+          ) : preview ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-5">
+                <Metric label="تحصيلات الفترة" value={preview.gross_collected} />
+                <Metric label="أتعاب المكتب" value={preview.office_fee} tone="primary" />
+                <Metric label="مصروفات على المالك" value={preview.owner_expenses} tone="danger" />
+                <Metric label="ضريبة القيمة المضافة" value={preview.tax_amount} tone="danger" />
+                <Metric label="الصافي للمالك" value={preview.net_payable} tone="success" />
+              </div>
+              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
+                {`الفترة ${form.periodStart} إلى ${form.periodEnd}`}
+                {typeof preview.breakdown?.payments_count === 'number' ? ` · ${preview.breakdown.payments_count} دفعة مرحّلة` : ''}
+                {preview.breakdown?.source ? ` · المصدر: ${preview.breakdown.source}` : ''}
+                {preview.breakdown?.vat?.enabled
+                  ? ` · ضريبة ${preview.breakdown.vat.rate ?? 0}% على أتعاب المكتب`
+                  : ' · الضريبة غير مفعّلة لهذه الشركة'}
+              </p>
+            </>
+          ) : (
+            <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
+              اختر اتفاقية المالك/العقار وحدد الفترة لعرض المعاينة الخادمية.
+            </p>
+          )}
           <EntityForm.Field label="ملاحظات" description="اختياري؛ تحفظ داخل التسوية.">
             <Input value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
           </EntityForm.Field>
@@ -555,6 +584,7 @@ function DraftOverlay({
           submitLabel={isSubmitting ? 'جارٍ إنشاء المسودة…' : 'إنشاء المسودة'}
           onCancel={() => onOpenChange(false)}
           isSubmitting={isSubmitting}
+          submitDisabled={!preview || previewLoading}
         />
       </EntityForm.Root>
     </EntityForm.Overlay>

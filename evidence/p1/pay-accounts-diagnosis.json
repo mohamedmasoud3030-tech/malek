@@ -1,0 +1,340 @@
+{
+  "generatedAt": "2026-07-23T21:37:36.715Z",
+  "after": {
+    "accountsGlobal": [
+      {
+        "id": "1111",
+        "no": "1111",
+        "company_id": "00000000-0000-4000-8000-000000000001"
+      },
+      {
+        "id": "2000",
+        "no": "2000",
+        "company_id": "00000000-0000-4000-8000-000000000001"
+      }
+    ],
+    "accountsNoUniqueConstraint": {
+      "n": 1
+    },
+    "companySeedTrigger": {
+      "n": 0
+    },
+    "identity": {
+      "current_user": "postgres",
+      "session_user": "postgres",
+      "claims": "{\"sub\":\"a9000000-0000-4000-8000-000000000001\",\"role\":\"authenticated\",\"app_metadata\":{\"company_id\":\"c9000000-0000-4000-8000-000000000001\"}}",
+      "auth_uid": "a9000000-0000-4000-8000-000000000001",
+      "jwt_role": "authenticated",
+      "current_company_id": "c9000000-0000-4000-8000-000000000001",
+      "current_app_role": "ADMIN",
+      "is_admin_or_manager": true,
+      "is_app_user": true
+    },
+    "guardProbe": {
+      "owner_payable_account": null,
+      "cash_account": null
+    },
+    "pgProc": [
+      {
+        "proname": "approve_owner_settlement_atomic",
+        "prosecdef": true,
+        "proacl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=public, pg_temp"
+        ]
+      },
+      {
+        "proname": "calculate_owner_net_payout",
+        "prosecdef": true,
+        "proacl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=public, pg_temp"
+        ]
+      },
+      {
+        "proname": "create_owner_settlement_draft_atomic",
+        "prosecdef": true,
+        "proacl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=public, pg_temp"
+        ]
+      },
+      {
+        "proname": "pay_owner_settlement_atomic",
+        "prosecdef": true,
+        "proacl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=public, pg_temp"
+        ]
+      }
+    ],
+    "payBodyMd5": {
+      "md5": "9ad0ef78fd7ff3dd61a73ee73e2a3da4"
+    },
+    "pgClass": [
+      {
+        "relname": "account_balances",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "owner": "postgres",
+        "relkind": "r"
+      },
+      {
+        "relname": "audit_log",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "owner": "postgres",
+        "relkind": "r"
+      },
+      {
+        "relname": "journal_entries",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "owner": "postgres",
+        "relkind": "r"
+      },
+      {
+        "relname": "owner_balances",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "owner": "postgres",
+        "relkind": "r"
+      },
+      {
+        "relname": "owner_settlements",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true,
+        "owner": "postgres",
+        "relkind": "r"
+      }
+    ],
+    "triggers": [
+      {
+        "tbl": "journal_entries",
+        "tgname": "audit_journal_entry_insert",
+        "tgenabled": "O"
+      },
+      {
+        "tbl": "journal_entries",
+        "tgname": "prevent_journal_entries_mutation_after_posting",
+        "tgenabled": "O"
+      },
+      {
+        "tbl": "journal_entries",
+        "tgname": "validate_journal_batch_balance",
+        "tgenabled": "O"
+      }
+    ],
+    "miniCycle": {
+      "create": {
+        "status": "DRAFT",
+        "success": true,
+        "idempotent": false,
+        "request_id": "d1000000-0000-4000-8000-000000000001",
+        "net_payable": 0,
+        "settlement_id": "442bcdb3-3327-48c7-be82-de639580c1e9",
+        "settlement_no": "OST-202607-442BCDB3",
+        "amounts_source": "server_derived"
+      },
+      "storedRow": {
+        "id": "442bcdb3-3327-48c7-be82-de639580c1e9",
+        "status": "DRAFT",
+        "gross_collected": "0.000",
+        "office_fee": "0.000",
+        "owner_expenses": "0.000",
+        "tax_amount": "0",
+        "net_payable": "0.000",
+        "company_id": "c9000000-0000-4000-8000-000000000001"
+      },
+      "approve": {
+        "status": "APPROVED",
+        "success": true,
+        "idempotent": false,
+        "request_id": "d2000000-0000-4000-8000-000000000002",
+        "net_payable": 0,
+        "settlement_id": "442bcdb3-3327-48c7-be82-de639580c1e9"
+      },
+      "pay": null,
+      "payError": {
+        "code": "P0001",
+        "message": "Owner payable or cash accounting account is not configured.",
+        "detail": null,
+        "hint": null,
+        "where": "PL/pgSQL function pay_owner_settlement_atomic(jsonb) line 37 at RAISE",
+        "severity": "ERROR",
+        "routine": "exec_stmt_raise"
+      }
+    }
+  },
+  "before": {
+    "accountsGlobal": [
+      {
+        "id": "1111",
+        "no": "1111",
+        "company_id": "00000000-0000-4000-8000-000000000001"
+      },
+      {
+        "id": "2000",
+        "no": "2000",
+        "company_id": "00000000-0000-4000-8000-000000000001"
+      }
+    ],
+    "accountsNoUniqueConstraint": {
+      "n": 1
+    },
+    "companySeedTrigger": {
+      "n": 0
+    },
+    "identity": {
+      "current_user": "postgres",
+      "session_user": "postgres",
+      "claims": "{\"sub\":\"a9000000-0000-4000-8000-000000000001\",\"role\":\"authenticated\",\"app_metadata\":{\"company_id\":\"c9000000-0000-4000-8000-000000000001\"}}",
+      "auth_uid": "a9000000-0000-4000-8000-000000000001",
+      "jwt_role": "authenticated",
+      "current_company_id": "c9000000-0000-4000-8000-000000000001",
+      "current_app_role": "ADMIN",
+      "is_admin_or_manager": true,
+      "is_app_user": true
+    },
+    "guardProbe": {
+      "owner_payable_account": null,
+      "cash_account": null
+    },
+    "pgProc": [
+      {
+        "proname": "approve_owner_settlement_atomic",
+        "prosecdef": true,
+        "proacl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=public, pg_temp"
+        ]
+      },
+      {
+        "proname": "create_owner_settlement_draft_atomic",
+        "prosecdef": true,
+        "proacl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=public, pg_temp"
+        ]
+      },
+      {
+        "proname": "pay_owner_settlement_atomic",
+        "prosecdef": true,
+        "proacl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "owner": "postgres",
+        "proconfig": [
+          "search_path=public, pg_temp"
+        ]
+      }
+    ],
+    "payBodyMd5": {
+      "md5": "9ad0ef78fd7ff3dd61a73ee73e2a3da4"
+    },
+    "pgClass": [
+      {
+        "relname": "account_balances",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "owner": "postgres",
+        "relkind": "r"
+      },
+      {
+        "relname": "audit_log",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "owner": "postgres",
+        "relkind": "r"
+      },
+      {
+        "relname": "journal_entries",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "owner": "postgres",
+        "relkind": "r"
+      },
+      {
+        "relname": "owner_balances",
+        "relrowsecurity": true,
+        "relforcerowsecurity": false,
+        "owner": "postgres",
+        "relkind": "r"
+      },
+      {
+        "relname": "owner_settlements",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true,
+        "owner": "postgres",
+        "relkind": "r"
+      }
+    ],
+    "triggers": [
+      {
+        "tbl": "journal_entries",
+        "tgname": "audit_journal_entry_insert",
+        "tgenabled": "O"
+      },
+      {
+        "tbl": "journal_entries",
+        "tgname": "prevent_journal_entries_mutation_after_posting",
+        "tgenabled": "O"
+      },
+      {
+        "tbl": "journal_entries",
+        "tgname": "validate_journal_batch_balance",
+        "tgenabled": "O"
+      }
+    ],
+    "miniCycle": {
+      "create": {
+        "status": "DRAFT",
+        "success": true,
+        "idempotent": false,
+        "request_id": "d1000000-0000-4000-8000-000000000001",
+        "net_payable": 960,
+        "settlement_id": "34baf8da-3c43-4c81-ba81-e55a4b361350",
+        "settlement_no": "OST-202607-34BAF8DA"
+      },
+      "storedRow": {
+        "id": "34baf8da-3c43-4c81-ba81-e55a4b361350",
+        "status": "DRAFT",
+        "gross_collected": "1230",
+        "office_fee": "150",
+        "owner_expenses": "120",
+        "tax_amount": "0",
+        "net_payable": "960",
+        "company_id": "c9000000-0000-4000-8000-000000000001"
+      },
+      "approve": {
+        "status": "APPROVED",
+        "success": true,
+        "idempotent": false,
+        "request_id": "d2000000-0000-4000-8000-000000000002",
+        "net_payable": 960,
+        "settlement_id": "34baf8da-3c43-4c81-ba81-e55a4b361350"
+      },
+      "pay": null,
+      "payError": {
+        "code": "P0001",
+        "message": "Owner payable or cash accounting account is not configured.",
+        "detail": null,
+        "hint": null,
+        "where": "PL/pgSQL function pay_owner_settlement_atomic(jsonb) line 37 at RAISE",
+        "severity": "ERROR",
+        "routine": "exec_stmt_raise"
+      }
+    }
+  },
+  "classification": {
+    "category": "fixture-harness",
+    "productionDefect": false,
+    "p0Regression": false,
+    "pgliteVsSupabase": false,
+    "verdict": "pay_owner_settlement_atomic raises the configuration guard because accounts.no is globally unique and the 1111/2000 rows are provisioned once (demo company), with no trigger to provision a chart for a new company row. Identical before/after P1; the P1 fixture must assign the provisioned chart to its operating company (harness-only change)."
+  }
+}

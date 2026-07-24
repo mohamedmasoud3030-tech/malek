@@ -1,0 +1,492 @@
+{
+  "generatedAt": "2026-07-24T00:38:07.916Z",
+  "replay": {
+    "total": 154,
+    "applied": 154,
+    "failed": []
+  },
+  "rateProperty": {
+    "gross_collected": "1500.000",
+    "office_fee": "150.000",
+    "owner_expenses": "120.000",
+    "tax_amount": "0",
+    "net_payable": "1230.000",
+    "breakdown": {
+      "vat": {
+        "rate": 0,
+        "enabled": false
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 150,
+      "agreements": [
+        {
+          "property_id": "d1000000-0000-4000-8000-000000000001",
+          "agreement_type": "property_management",
+          "months_covered": 1,
+          "commission_type": "RATE",
+          "commission_value": 10
+        }
+      ],
+      "fixed_fees": 0,
+      "payments_count": 2,
+      "collected_gross": 1500,
+      "master_obligations": 0
+    }
+  },
+  "rateOwnerLevel": {
+    "gross_collected": "1700.000",
+    "office_fee": "161.111",
+    "owner_expenses": "160.000",
+    "tax_amount": "0",
+    "net_payable": "1378.889",
+    "breakdown": {
+      "vat": {
+        "rate": 0,
+        "enabled": false
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 161.111,
+      "agreements": [
+        {
+          "property_id": "d1000000-0000-4000-8000-000000000001",
+          "agreement_type": "property_management",
+          "months_covered": 1,
+          "commission_type": "RATE",
+          "commission_value": 10
+        },
+        {
+          "property_id": "d1000000-0000-4000-8000-000000000002",
+          "agreement_type": "property_management",
+          "months_covered": 1,
+          "commission_type": "RATE",
+          "commission_value": 5.5555
+        }
+      ],
+      "fixed_fees": 0,
+      "payments_count": 3,
+      "collected_gross": 1700,
+      "master_obligations": 0
+    }
+  },
+  "fixedClipped": {
+    "gross_collected": "700.000",
+    "office_fee": "400.000",
+    "owner_expenses": "0.000",
+    "tax_amount": "0",
+    "net_payable": "300.000",
+    "breakdown": {
+      "vat": {
+        "rate": 0,
+        "enabled": false
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 0,
+      "agreements": [
+        {
+          "property_id": "d1000000-0000-4000-8000-000000000003",
+          "agreement_type": "property_management",
+          "months_covered": 2,
+          "commission_type": "FIXED_MONTHLY",
+          "commission_value": 200
+        }
+      ],
+      "fixed_fees": 400,
+      "payments_count": 1,
+      "collected_gross": 700,
+      "master_obligations": 0
+    }
+  },
+  "masterLease": {
+    "gross_collected": "300.000",
+    "office_fee": "0.000",
+    "owner_expenses": "45.000",
+    "tax_amount": "0",
+    "net_payable": "255.000",
+    "breakdown": {
+      "vat": {
+        "rate": 0,
+        "enabled": false
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 0,
+      "agreements": [
+        {
+          "property_id": "d1000000-0000-4000-8000-000000000004",
+          "agreement_type": "master_lease",
+          "months_covered": 1,
+          "commission_type": "FIXED_MONTHLY",
+          "commission_value": 300
+        }
+      ],
+      "fixed_fees": 0,
+      "payments_count": 0,
+      "collected_gross": 0,
+      "master_obligations": 300
+    }
+  },
+  "vatEnabled": {
+    "gross_collected": "1500.000",
+    "office_fee": "150.000",
+    "owner_expenses": "120.000",
+    "tax_amount": "7.500",
+    "net_payable": "1222.500",
+    "breakdown": {
+      "vat": {
+        "rate": 5,
+        "enabled": true
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 150,
+      "agreements": [
+        {
+          "property_id": "d1000000-0000-4000-8000-000000000001",
+          "agreement_type": "property_management",
+          "months_covered": 1,
+          "commission_type": "RATE",
+          "commission_value": 10
+        }
+      ],
+      "fixed_fees": 0,
+      "payments_count": 2,
+      "collected_gross": 1500,
+      "master_obligations": 0
+    }
+  },
+  "vatIsolation": {
+    "gross_collected": "100.000",
+    "office_fee": "10.000",
+    "owner_expenses": "0.000",
+    "tax_amount": "0",
+    "net_payable": "90.000",
+    "breakdown": {
+      "vat": {
+        "rate": 0,
+        "enabled": false
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 10,
+      "agreements": [
+        {
+          "property_id": "d2000000-0000-4000-8000-000000000001",
+          "agreement_type": "property_management",
+          "months_covered": 1,
+          "commission_type": "RATE",
+          "commission_value": 10
+        }
+      ],
+      "fixed_fees": 0,
+      "payments_count": 1,
+      "collected_gross": 100,
+      "master_obligations": 0
+    }
+  },
+  "emptyPeriod": {
+    "gross_collected": "0.000",
+    "office_fee": "200.000",
+    "owner_expenses": "0.000",
+    "tax_amount": "0",
+    "net_payable": "0",
+    "breakdown": {
+      "vat": {
+        "rate": 5,
+        "enabled": false
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 0,
+      "agreements": [
+        {
+          "property_id": "d1000000-0000-4000-8000-000000000003",
+          "agreement_type": "property_management",
+          "months_covered": 1,
+          "commission_type": "FIXED_MONTHLY",
+          "commission_value": 200
+        }
+      ],
+      "fixed_fees": 200,
+      "payments_count": 0,
+      "collected_gross": 0,
+      "master_obligations": 0
+    }
+  },
+  "expiredAgreement": {
+    "gross_collected": "0.000",
+    "office_fee": "0.000",
+    "owner_expenses": "0.000",
+    "tax_amount": "0",
+    "net_payable": "0.000",
+    "breakdown": {
+      "vat": {
+        "rate": 5,
+        "enabled": false
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 0,
+      "agreements": [],
+      "fixed_fees": 0,
+      "payments_count": 0,
+      "collected_gross": 0,
+      "master_obligations": 0
+    }
+  },
+  "sequentialAgreements": {
+    "gross_collected": "0.000",
+    "office_fee": "250.000",
+    "owner_expenses": "0.000",
+    "tax_amount": "0",
+    "net_payable": "0",
+    "breakdown": {
+      "vat": {
+        "rate": 5,
+        "enabled": false
+      },
+      "policy": {
+        "basis": "collected_cash (ADR 0001)",
+        "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+        "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+        "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+      },
+      "source": "server_derived",
+      "rate_fees": 0,
+      "agreements": [
+        {
+          "property_id": "d1000000-0000-4000-8000-000000000005",
+          "agreement_type": "property_management",
+          "months_covered": 1,
+          "commission_type": "FIXED_MONTHLY",
+          "commission_value": 250
+        }
+      ],
+      "fixed_fees": 250,
+      "payments_count": 0,
+      "collected_gross": 0,
+      "master_obligations": 0
+    }
+  },
+  "rptParity": {
+    "calc": {
+      "gross_collected": "1700.000",
+      "office_fee": "161.111",
+      "owner_expenses": "160.000",
+      "tax_amount": "0",
+      "net_payable": "1378.889",
+      "breakdown": {
+        "vat": {
+          "rate": 5,
+          "enabled": false
+        },
+        "policy": {
+          "basis": "collected_cash (ADR 0001)",
+          "rounding": "public._r3 with per-payment rate-fee rounding (rpt_owner_statement parity)",
+          "master_lease_basis": "obligation basis: gross = value × months, fee = 0",
+          "fixed_monthly_accrual": "commission_value × calendar months covered by the period, clipped to agreement validity"
+        },
+        "source": "server_derived",
+        "rate_fees": 161.111,
+        "agreements": [
+          {
+            "property_id": "d1000000-0000-4000-8000-000000000001",
+            "agreement_type": "property_management",
+            "months_covered": 1,
+            "commission_type": "RATE",
+            "commission_value": 10
+          },
+          {
+            "property_id": "d1000000-0000-4000-8000-000000000002",
+            "agreement_type": "property_management",
+            "months_covered": 1,
+            "commission_type": "RATE",
+            "commission_value": 5.5555
+          }
+        ],
+        "fixed_fees": 0,
+        "payments_count": 3,
+        "collected_gross": 1700,
+        "master_obligations": 0
+      }
+    },
+    "rpt": {
+      "period_to": "2026-07-31",
+      "total_net": 1378.889,
+      "owner_name": "مالك النسبة",
+      "period_from": "2026-07-01",
+      "total_gross": 1540,
+      "transactions": [
+        {
+          "net": 900,
+          "date": "2026-07-05",
+          "type": "payment",
+          "gross": 1000,
+          "details": "تحصيل — عقار النسبة / R-1 (ab000000-0000-4000-8000-000000000001)",
+          "deduction": 100,
+          "property_name": "عقار النسبة"
+        },
+        {
+          "net": 188.889,
+          "date": "2026-07-08",
+          "type": "payment",
+          "gross": 200,
+          "details": "تحصيل — عقار النسبة ٢ / R-2 (ab000000-0000-4000-8000-000000000005)",
+          "deduction": 11.111,
+          "property_name": "عقار النسبة ٢"
+        },
+        {
+          "net": -120,
+          "date": "2026-07-10",
+          "type": "expense",
+          "gross": -120,
+          "details": "مصروف — مصروف مؤهل",
+          "deduction": 0,
+          "property_name": "عقار النسبة"
+        },
+        {
+          "net": 450,
+          "date": "2026-07-12",
+          "type": "payment",
+          "gross": 500,
+          "details": "تحصيل — عقار النسبة / R-1 (ab000000-0000-4000-8000-000000000002)",
+          "deduction": 50,
+          "property_name": "عقار النسبة"
+        },
+        {
+          "net": -40,
+          "date": "2026-07-14",
+          "type": "expense",
+          "gross": -40,
+          "details": "مصروف — مؤهل للعقار الثاني",
+          "deduction": 0,
+          "property_name": "عقار النسبة ٢"
+        }
+      ],
+      "commission_type": "RATE",
+      "commission_value": 10,
+      "total_deductions": 161.111
+    }
+  },
+  "forgeryAttempt": {
+    "response": {
+      "status": "DRAFT",
+      "success": true,
+      "idempotent": false,
+      "request_id": "11000000-0000-4000-8000-000000000001",
+      "net_payable": 1230,
+      "settlement_id": "b6b20273-88ba-4470-9e11-1d0e93eb8cdd",
+      "settlement_no": "OST-202607-B6B20273",
+      "amounts_source": "server_derived"
+    },
+    "stored": {
+      "gross_collected": "1500.000",
+      "office_fee": "150.000",
+      "owner_expenses": "120.000",
+      "tax_amount": "0",
+      "net_payable": "1230.000",
+      "status": "DRAFT"
+    }
+  },
+  "lifecycle": {
+    "sid": "b3c627f8-5eeb-4a3b-8670-17805ee4cd1c",
+    "journal": {
+      "n": 2,
+      "debits": "1230.00",
+      "credits": "1230.00",
+      "batches": 1
+    },
+    "journalAfter": {
+      "n": 2
+    }
+  },
+  "accountsCensus": {
+    "columns": "id,no,name,created_at,company_id",
+    "rows": [
+      {
+        "id": "1111",
+        "no": "1111",
+        "company_id": "c1000000-0000-4000-8000-000000000001"
+      },
+      {
+        "id": "2000",
+        "no": "2000",
+        "company_id": "c1000000-0000-4000-8000-000000000001"
+      }
+    ]
+  },
+  "accountsGuard": {
+    "sid2": "3dffd07d-fe21-4f36-b3d8-b71b7360b9c8",
+    "payRejected": "Owner payable or cash accounting account is not configured.",
+    "journalRows": 0
+  },
+  "immutability": {
+    "sid": "ade2ab55-7d04-4404-ae4d-23e65f8ac7fd",
+    "blockedUpdates": 2,
+    "nonAmountUpdateAllowed": true,
+    "net_payable": 1230
+  },
+  "invalidAttempts": {
+    "payDraft": "rejected",
+    "payMember": "42501",
+    "payNoClaim": "42501",
+    "approvePaid": "rejected",
+    "approveCancelled": "rejected"
+  },
+  "previewParity": {
+    "sid": "842216da-b85e-4592-9ce0-e035fbdb24e7",
+    "tuple": {
+      "gross_collected": "1500.000",
+      "office_fee": "150.000",
+      "owner_expenses": "120.000",
+      "tax_amount": "0",
+      "net_payable": "1230.000"
+    },
+    "journal": {
+      "d": "1230.00",
+      "c": "1230.00"
+    }
+  }
+}
