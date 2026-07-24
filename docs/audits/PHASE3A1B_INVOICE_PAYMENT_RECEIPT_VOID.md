@@ -69,11 +69,36 @@ migrations. No historical migration was modified.
 `<operation_name>:<company_uuid>`:
 
 - `record_invoice_payment_atomic:<company>` (lookup, insert, advisory lock key);
+- `post_receipt_atomic:<company>` (lookup, insert, advisory lock key);
 - `void_receipt_atomic:<company>` (lookup, insert, advisory lock key).
 
 Same `request_id` in two companies can therefore never replay across tenants —
 proven with execution tests for record, post, and void
 (`evidence/p3/phase3a1b/idempotency-isolation.json`).
+
+Within a company, **`request_id` identifies one immutable logical financial
+request**. Each of the three RPCs computes a canonical SHA-256 fingerprint from only the
+financially effective client fields after removing `request_id`; receipt
+allocations and journal lines are sorted before hashing, so JSON array order
+does not create a different request. Generated UUIDs, `created_at`, `now()`, and
+other server defaults are excluded. The idempotency row stores an internal
+envelope:
+
+```json
+{
+  "_request_fingerprint": "…",
+  "_target_id": "…",
+  "response": {}
+}
+```
+
+The external RPC shape is unchanged because replay returns only `response`.
+Reusing a key for a different invoice/receipt/contract, amount, allocation,
+journal, or VOID reason fails before any write with SQLSTATE `22023` and
+`IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST`. A legacy/unverified cached
+payload without the envelope fails closed with
+`IDEMPOTENCY_CACHED_RESPONSE_UNVERIFIED`; it is never replayed and the operation
+is never executed a second time silently.
 
 **`receipts.request_id` doctrine:** post_receipt stores the RAW request id
 (gate contract: `supabase/tests/release_blockers.sql` counts raw rows). The
@@ -115,13 +140,21 @@ tenant → contract → invoices`):
   invoice/journal), cross-company loop isolation, loud `P0001` for the
   unprovisioned company. → `invoice-posting-lifecycle.json`
 - **Payment/receipt**: partial → settlement, idempotent retry (same receipt,
-  one row, RAW request_id), overpay guard, multi-invoice allocation receipt,
-  contract-balance trigger parity, shared identity (`payments.id =
+  one row, RAW request_id), immutable request binding (different invoice/amount
+  rejected), overpay guard, multi-invoice allocation receipt, order-independent
+  allocation/journal fingerprinting, contract-balance trigger parity, shared identity (`payments.id =
   payments.receipt_id = receipts.id`). → `payment-receipt-lifecycle.json`,
   `payment-receipt-identity.json`
 - **VOID**: void → same-request retry → new-request retry → void-by-payment
-  identity; single mirrored reversal batch, statuses, invoice restoration, no
-  deletion. → `void-reversal-lifecycle.json`
+  identity; same key on another receipt or changed reason rejected; single
+  mirrored reversal batch, statuses, invoice restoration, no deletion.
+  → `void-reversal-lifecycle.json`
+- **Invoice UPDATE scope**: allocation validation is repeated in the set-based
+  UPDATE with `invoice_record.company_id = v_company_id` and
+  `deleted_at IS NULL`; `GET DIAGNOSTICS ROW_COUNT` must equal the number of
+  distinct allocation invoice IDs. A trigger-driven deletion between validation
+  and UPDATE proves the mismatch aborts the whole receipt/payment/allocation
+  transaction with no partial state. → `payment-receipt-lifecycle.json`
 - **Idempotency isolation**: shared request ids across A/B for record (B fails
   loud on unprovisioned accounts), post (B hits loud 23505), void (B receives its
   OWN response). → `idempotency-isolation.json`
@@ -166,7 +199,9 @@ Neighboring-suite maintenance (all before/after-verified):
 - `supabase/migrations/20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql`
   — redefines `find_payment_account_id`, `generate_invoices_from_active_contracts`,
   `record_invoice_payment_atomic(jsonb)`, `post_receipt_atomic(jsonb)`,
-  `void_receipt_atomic(jsonb)`; no grants re-issued; legacy overload untouched.
+  `void_receipt_atomic(jsonb)`; adds immutable request binding and the
+  company-scoped invoice row-count assertion; no grants re-issued; legacy
+  overload untouched.
 - `supabase/rollback/20260728_rollback_phase3a1b_invoice_payment_receipt_void.sql`
   — restores the five previous definitions (bodies captured from the origin/main
   replayed catalog via `pg_get_functiondef`); preserves boosts/overloads; never

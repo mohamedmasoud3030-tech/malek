@@ -293,6 +293,9 @@ DECLARE
   v_existing_result jsonb;
   v_result jsonb;
   v_company_id uuid;
+  v_request_fingerprint text;
+  v_cached_fingerprint text;
+  v_cached_target_id text;
 BEGIN
   actor_id := auth.uid();
   IF actor_id IS NULL THEN
@@ -315,21 +318,7 @@ BEGIN
     RAISE EXCEPTION 'request_id is required for idempotent payment recording';
   END IF;
 
-  PERFORM pg_advisory_xact_lock(
-    hashtextextended('record_invoice_payment_atomic:' || v_company_id::text || ':' || v_request_id, 0)
-  );
-
-  SELECT response_payload
-    INTO v_existing_result
-  FROM public.financial_operation_idempotency
-  WHERE operation_name = 'record_invoice_payment_atomic:' || v_company_id::text
-    AND request_id = v_request_id
-  FOR UPDATE;
-
-  IF v_existing_result IS NOT NULL THEN
-    RETURN v_existing_result;
-  END IF;
-
+  -- Parse and validate the immutable logical request before considering replay.
   v_invoice_id_raw := nullif(payload->>'invoice_id', '');
   IF v_invoice_id_raw IS NULL THEN
     RAISE EXCEPTION 'invoice_id is required';
@@ -347,6 +336,44 @@ BEGIN
 
   IF v_amount <= 0 THEN
     RAISE EXCEPTION 'Payment amount must be greater than zero';
+  END IF;
+
+  v_request_fingerprint := encode(sha256(convert_to(jsonb_build_object(
+    'invoice_id', v_invoice_id::text,
+    'amount', trim_scale(v_amount),
+    'method', v_method,
+    -- Preserve omission as NULL: current_date is an execution default, not part
+    -- of the immutable client request.
+    'date', nullif(payload->>'date', '')::date,
+    'reference', v_reference
+  )::text, 'UTF8')), 'hex');
+
+  PERFORM pg_advisory_xact_lock(
+    hashtextextended('record_invoice_payment_atomic:' || v_company_id::text || ':' || v_request_id, 0)
+  );
+
+  SELECT response_payload
+    INTO v_existing_result
+  FROM public.financial_operation_idempotency
+  WHERE operation_name = 'record_invoice_payment_atomic:' || v_company_id::text
+    AND request_id = v_request_id
+  FOR UPDATE;
+
+  IF v_existing_result IS NOT NULL THEN
+    v_cached_fingerprint := v_existing_result->>'_request_fingerprint';
+    v_cached_target_id := v_existing_result->>'_target_id';
+    IF v_cached_fingerprint IS NULL
+       OR v_cached_target_id IS NULL
+       OR NOT (v_existing_result ? 'response') THEN
+      RAISE EXCEPTION 'IDEMPOTENCY_CACHED_RESPONSE_UNVERIFIED'
+        USING ERRCODE = '22023';
+    END IF;
+    IF v_cached_fingerprint <> v_request_fingerprint
+       OR v_cached_target_id <> v_invoice_id::text THEN
+      RAISE EXCEPTION 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST'
+        USING ERRCODE = '22023';
+    END IF;
+    RETURN v_existing_result->'response';
   END IF;
 
   SELECT to_jsonb(invoice_record)
@@ -456,7 +483,11 @@ BEGIN
   ) VALUES (
     'record_invoice_payment_atomic:' || v_company_id::text,
     v_request_id,
-    v_result
+    jsonb_build_object(
+      '_request_fingerprint', v_request_fingerprint,
+      '_target_id', v_invoice_id::text,
+      'response', v_result
+    )
   )
   ON CONFLICT (operation_name, request_id) DO NOTHING;
 
@@ -514,6 +545,16 @@ DECLARE
   v_journal_source_id public.journal_entries.source_id%TYPE;
 
   v_company_id uuid;
+  v_canonical_allocations jsonb;
+  v_canonical_journals jsonb;
+  v_request_fingerprint text;
+  v_target_id text;
+  v_cached jsonb;
+  v_cached_fingerprint text;
+  v_cached_target_id text;
+  v_result jsonb;
+  v_expected_invoice_update_count integer := 0;
+  v_updated_invoice_count integer := 0;
 BEGIN
   IF NOT EXISTS (
     SELECT 1
@@ -541,21 +582,116 @@ BEGIN
     RAISE EXCEPTION 'معرّف الطلب مطلوب لضمان عدم التكرار.';
   END IF;
 
-  -- 3A-1B: replay lookup is company-scoped — no cross-company response leakage.
+  -- Canonicalize only financially effective client fields. Generated ids,
+  -- created_at values, and now() defaults never participate in the binding.
+  SELECT coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'invoice_id', allocation_record.value->>'invoice_id',
+        'amount', trim_scale((allocation_record.value->>'amount')::numeric),
+        'tenant_id', nullif(allocation_record.value->>'tenant_id', '')
+      )
+      ORDER BY allocation_record.value->>'invoice_id',
+               trim_scale((allocation_record.value->>'amount')::numeric),
+               nullif(allocation_record.value->>'tenant_id', '')
+    ),
+    '[]'::jsonb
+  )
+  INTO v_canonical_allocations
+  FROM jsonb_array_elements(v_allocations) AS allocation_record(value);
+
+  SELECT coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'account_id', journal_record.value->>'account_id',
+        'amount', trim_scale((journal_record.value->>'amount')::numeric),
+        'type', journal_record.value->>'type',
+        'date', nullif(journal_record.value->>'date', '')::date,
+        'entity_type', nullif(journal_record.value->>'entity_type', ''),
+        'entity_id', nullif(journal_record.value->>'entity_id', ''),
+        'source_binding', CASE
+          WHEN nullif(journal_record.value->>'source_id', '') IS NULL THEN NULL
+          WHEN journal_record.value->>'source_id' = v_receipt->>'id' THEN 'receipt'
+          ELSE journal_record.value->>'source_id'
+        END
+      )
+      ORDER BY journal_record.value->>'account_id',
+               journal_record.value->>'type',
+               nullif(journal_record.value->>'date', '')::date,
+               trim_scale((journal_record.value->>'amount')::numeric),
+               nullif(journal_record.value->>'entity_type', ''),
+               nullif(journal_record.value->>'entity_id', ''),
+               CASE
+                 WHEN nullif(journal_record.value->>'source_id', '') IS NULL THEN NULL
+                 WHEN journal_record.value->>'source_id' = v_receipt->>'id' THEN 'receipt'
+                 ELSE journal_record.value->>'source_id'
+               END
+    ),
+    '[]'::jsonb
+  )
+  INTO v_canonical_journals
+  FROM jsonb_array_elements(v_journal_entries) AS journal_record(value);
+
+  v_target_id := CASE
+    WHEN nullif(v_receipt->>'id', '') IS NOT NULL
+      THEN 'receipt:' || (v_receipt->>'id')
+    ELSE 'contract:' || coalesce(nullif(v_receipt->>'contract_id', ''), '<none>')
+  END;
+  v_request_fingerprint := encode(sha256(convert_to(jsonb_build_object(
+    'receipt_id', nullif(v_receipt->>'id', ''),
+    'contract_id', nullif(v_receipt->>'contract_id', ''),
+    'amount', trim_scale((v_receipt->>'amount')::numeric),
+    'channel', nullif(v_receipt->>'channel', ''),
+    'date_time', nullif(v_receipt->>'date_time', '')::timestamptz,
+    'status', coalesce(nullif(v_receipt->>'status', ''), 'POSTED'),
+    'tenant_id', nullif(v_receipt->>'tenant_id', ''),
+    'check_number', nullif(v_receipt->>'check_number', ''),
+    'check_bank', nullif(v_receipt->>'check_bank', ''),
+    'check_date', nullif(v_receipt->>'check_date', '')::date,
+    'check_status', nullif(v_receipt->>'check_status', ''),
+    'allocations', v_canonical_allocations,
+    'journal_entries', v_canonical_journals
+  )::text, 'UTF8')), 'hex');
+
+  PERFORM pg_advisory_xact_lock(
+    hashtextextended('post_receipt_atomic:' || v_company_id::text || ':' || v_request_id, 0)
+  );
+
+  SELECT response_payload
+    INTO v_cached
+  FROM public.financial_operation_idempotency
+  WHERE operation_name = 'post_receipt_atomic:' || v_company_id::text
+    AND request_id = v_request_id
+  FOR UPDATE;
+
+  IF v_cached IS NOT NULL THEN
+    v_cached_fingerprint := v_cached->>'_request_fingerprint';
+    v_cached_target_id := v_cached->>'_target_id';
+    IF v_cached_fingerprint IS NULL
+       OR v_cached_target_id IS NULL
+       OR NOT (v_cached ? 'response') THEN
+      RAISE EXCEPTION 'IDEMPOTENCY_CACHED_RESPONSE_UNVERIFIED'
+        USING ERRCODE = '22023';
+    END IF;
+    IF v_cached_fingerprint <> v_request_fingerprint
+       OR v_cached_target_id <> v_target_id THEN
+      RAISE EXCEPTION 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST'
+        USING ERRCODE = '22023';
+    END IF;
+    RETURN (v_cached->'response') || jsonb_build_object('idempotent', true);
+  END IF;
+
+  -- A receipt left by an unbound/legacy implementation must never be replayed
+  -- or executed again silently.
   SELECT receipt_record.id
     INTO v_existing_id
   FROM public.receipts AS receipt_record
   WHERE receipt_record.request_id = v_request_id
     AND receipt_record.company_id = v_company_id
   LIMIT 1;
-
   IF v_existing_id IS NOT NULL THEN
-    RETURN jsonb_build_object(
-      'success', true,
-      'idempotent', true,
-      'request_id', v_request_id,
-      'receipt_id', v_existing_id
-    );
+    RAISE EXCEPTION 'IDEMPOTENCY_CACHED_RESPONSE_UNVERIFIED'
+      USING ERRCODE = '22023';
   END IF;
 
   -- Validate allocations don't exceed invoice balances
@@ -736,7 +872,21 @@ BEGIN
       ELSE invoice_record.status
     END
   FROM allocation_totals
-  WHERE invoice_record.id::text = allocation_totals.invoice_id;
+  WHERE invoice_record.id::text = allocation_totals.invoice_id
+    AND invoice_record.company_id = v_company_id
+    AND invoice_record.deleted_at IS NULL;
+
+  GET DIAGNOSTICS v_updated_invoice_count = ROW_COUNT;
+  SELECT count(DISTINCT allocation_record.value->>'invoice_id')::integer
+    INTO v_expected_invoice_update_count
+  FROM jsonb_array_elements(v_allocations) AS allocation_record(value);
+  IF v_updated_invoice_count <> v_expected_invoice_update_count THEN
+    RAISE EXCEPTION
+      'INVOICE_ALLOCATION_UPDATE_COUNT_MISMATCH: expected %, updated %',
+      v_expected_invoice_update_count,
+      v_updated_invoice_count
+      USING ERRCODE = 'P0001';
+  END IF;
 
   -- Insert journal entries (3A-1B: account must belong to the caller's company)
   FOR v_journal IN
@@ -783,12 +933,29 @@ BEGIN
     );
   END LOOP;
 
-  RETURN jsonb_build_object(
+  v_result := jsonb_build_object(
     'success', true,
     'idempotent', false,
     'request_id', v_request_id,
     'receipt_id', v_receipt_id
   );
+
+  INSERT INTO public.financial_operation_idempotency(
+    operation_name,
+    request_id,
+    response_payload
+  ) VALUES (
+    'post_receipt_atomic:' || v_company_id::text,
+    v_request_id,
+    jsonb_build_object(
+      '_request_fingerprint', v_request_fingerprint,
+      '_target_id', v_target_id,
+      'response', v_result
+    )
+  )
+  ON CONFLICT (operation_name, request_id) DO NOTHING;
+
+  RETURN v_result;
 END;
 $function$;
 
@@ -828,6 +995,9 @@ DECLARE
   v_original_credits numeric := 0;
   v_result jsonb;
   v_company_id uuid;
+  v_request_fingerprint text;
+  v_cached_fingerprint text;
+  v_cached_target_id text;
 BEGIN
   IF v_actor_id IS NULL OR NOT EXISTS (
     SELECT 1
@@ -855,17 +1025,6 @@ BEGIN
   PERFORM pg_advisory_xact_lock(
     hashtextextended('void_receipt_atomic:' || v_company_id::text || ':' || v_request_id, 0)
   );
-
-  SELECT response_payload
-  INTO v_cached
-  FROM public.financial_operation_idempotency
-  WHERE operation_name = 'void_receipt_atomic:' || v_company_id::text
-    AND request_id = v_request_id
-  FOR UPDATE;
-
-  IF v_cached IS NOT NULL THEN
-    RETURN v_cached || jsonb_build_object('idempotent', true);
-  END IF;
 
   -- 3A-1B: resolution is company-scoped — cross-company identifiers behave
   -- exactly like "not found" (no existence leakage, no cross-company locks).
@@ -910,6 +1069,38 @@ BEGIN
   IF v_payment.id IS NULL OR v_receipt.id IS NULL THEN
     RAISE EXCEPTION 'Linked payment and receipt were not found for identifier %.', v_requested_id
       USING ERRCODE = 'P0002';
+  END IF;
+
+  v_request_fingerprint := encode(sha256(convert_to(jsonb_build_object(
+    'receipt_id', v_receipt.id::text,
+    'reason', v_reason,
+    'note', nullif(btrim(payload->>'note'), ''),
+    'date', nullif(payload->>'date', '')::date,
+    'voided_at', nullif(payload->>'voided_at', '')::timestamptz
+  )::text, 'UTF8')), 'hex');
+
+  SELECT response_payload
+  INTO v_cached
+  FROM public.financial_operation_idempotency
+  WHERE operation_name = 'void_receipt_atomic:' || v_company_id::text
+    AND request_id = v_request_id
+  FOR UPDATE;
+
+  IF v_cached IS NOT NULL THEN
+    v_cached_fingerprint := v_cached->>'_request_fingerprint';
+    v_cached_target_id := v_cached->>'_target_id';
+    IF v_cached_fingerprint IS NULL
+       OR v_cached_target_id IS NULL
+       OR NOT (v_cached ? 'response') THEN
+      RAISE EXCEPTION 'IDEMPOTENCY_CACHED_RESPONSE_UNVERIFIED'
+        USING ERRCODE = '22023';
+    END IF;
+    IF v_cached_fingerprint <> v_request_fingerprint
+       OR v_cached_target_id <> v_receipt.id::text THEN
+      RAISE EXCEPTION 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST'
+        USING ERRCODE = '22023';
+    END IF;
+    RETURN (v_cached->'response') || jsonb_build_object('idempotent', true);
   END IF;
 
   v_receipt_was_void := upper(coalesce(v_receipt.status, '')) = 'VOID';
@@ -1044,7 +1235,13 @@ BEGIN
   INSERT INTO public.financial_operation_idempotency (
     operation_name, request_id, response_payload
   ) VALUES (
-    'void_receipt_atomic:' || v_company_id::text, v_request_id, v_result
+    'void_receipt_atomic:' || v_company_id::text,
+    v_request_id,
+    jsonb_build_object(
+      '_request_fingerprint', v_request_fingerprint,
+      '_target_id', v_receipt.id::text,
+      'response', v_result
+    )
   )
   ON CONFLICT (operation_name, request_id) DO NOTHING;
 

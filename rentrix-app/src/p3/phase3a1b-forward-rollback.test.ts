@@ -102,6 +102,23 @@ async function lifecycleSmoke(tag: string) {
     date: '2026-07-24',
   });
   expect(paid.success).toBe(true);
+  const replayedPaid = await rpcJsonb(db, 'record_invoice_payment_atomic', {
+    request_id: `p3a1b-chain-${tag}-pay`,
+    invoice_id: INVOICE_A1,
+    amount: 100,
+    method: 'CASH',
+    date: '2026-07-24',
+  });
+  expect(replayedPaid).toEqual(paid);
+  await expect(
+    rpcJsonb(db, 'record_invoice_payment_atomic', {
+      request_id: `p3a1b-chain-${tag}-pay`,
+      invoice_id: INVOICE_A1,
+      amount: 101,
+      method: 'CASH',
+      date: '2026-07-24',
+    }),
+  ).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
   const receiptId = String(paid.receipt_id);
   const voided = await rpcJsonb(db, 'void_receipt_atomic', {
     receipt_id: receiptId,
@@ -110,6 +127,19 @@ async function lifecycleSmoke(tag: string) {
   });
   expect(voided.success).toBe(true);
   expect(Number(voided.journal_reversal_entries)).toBe(2);
+  const replayedVoid = await rpcJsonb(db, 'void_receipt_atomic', {
+    receipt_id: receiptId,
+    reason: `chain smoke ${tag}`,
+    request_id: `p3a1b-chain-${tag}-void`,
+  });
+  expect(replayedVoid.idempotent).toBe(true);
+  await expect(
+    rpcJsonb(db, 'void_receipt_atomic', {
+      receipt_id: receiptId,
+      reason: `changed chain smoke ${tag}`,
+      request_id: `p3a1b-chain-${tag}-void`,
+    }),
+  ).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
   return receiptId;
 }
 
@@ -188,6 +218,8 @@ describe('Phase 3A-1B forward / rollback / reapply chain', () => {
           lifecycle: {
             forwardReceipt: receiptAfterFwd,
             reappliedReceipt: receiptAfterReapply,
+            immutableRequestBindingPassed: true,
+            voidSingleReversalReplayPassed: true,
           },
           fingerprintBaseline: baselineFp,
         },

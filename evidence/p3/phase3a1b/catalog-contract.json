@@ -1,6 +1,24 @@
 {
-  "generatedAt": "2026-07-24T17:40:21.178Z",
+  "generatedAt": "2026-07-24T18:53:22.400Z",
   "posture": "post-3a1b",
+  "controls": {
+    "immutableRequestBinding": true,
+    "envelopeFields": [
+      "_request_fingerprint",
+      "_target_id",
+      "response"
+    ],
+    "failClosedLegacyPayload": true,
+    "reuseError": {
+      "code": "22023",
+      "message": "IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST"
+    },
+    "invoiceUpdate": {
+      "companyScoped": true,
+      "excludesDeletedInvoices": true,
+      "rowCountMatchesDistinctAllocationInvoiceIds": true
+    }
+  },
   "functions": [
     {
       "name": "ensure_company_account",
@@ -28,14 +46,14 @@
       "args": "payload jsonb",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "71dc64bf20df7a7697d4ed0c89dce3a3"
+      "md5": "36b3061a071389f72d96102bceefa39d"
     },
     {
       "name": "record_invoice_payment_atomic",
       "args": "payload jsonb",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "c23363be982854b777d13da1e90278c6"
+      "md5": "512523d0d61c2ce80d2e05793d132264"
     },
     {
       "name": "require_company_account_id",
@@ -56,7 +74,7 @@
       "args": "payload jsonb",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "2e0fc5668f53bc53a30cfab5e1bc8dd6"
+      "md5": "42187196410f32dc15498193f2ca20f6"
     }
   ]
 }

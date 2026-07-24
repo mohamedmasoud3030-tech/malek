@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-07-24T17:40:09.030Z",
+  "generatedAt": "2026-07-24T18:53:19.840Z",
   "scenario": "void → retry(same req) → retry(new req) → void-by-payment-id",
   "receipt2": {
-    "id": "a4b2bf00-65c0-4f50-9fd8-3019ec0739e1",
+    "id": "2d227286-4929-4373-a711-6a410ae52fd1",
     "status": "VOID",
     "paymentStatus": "VOID",
     "reversalEntries": 2,
@@ -17,5 +17,11 @@
   "idempotentRetries": {
     "sameRequest": true,
     "newRequestOnVoidReceipt": true
+  },
+  "requestBinding": {
+    "differentReceiptRejected": true,
+    "changedReasonRejected": true,
+    "secondReceiptRemainedPosted": true,
+    "noAdditionalReversalOrAudit": true
   }
 }

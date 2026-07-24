@@ -13,6 +13,10 @@
 --     rewrites IDs, never touches shared identity records, and never deletes
 --     idempotency/audit rows to make the rollback succeed — this file only
 --     redefines functions.
+--   * the JSONB RPC bodies below are the exact definitions from before the
+--     immutable request-binding patch (no fingerprint envelope and no invoice
+--     UPDATE row-count assertion), so rollback returns the catalog byte-for-byte
+--     to the baseline without touching financial data.
 begin;
 
 -- ── restore find_payment_account_id(account_role text) ────────────────────────────────────

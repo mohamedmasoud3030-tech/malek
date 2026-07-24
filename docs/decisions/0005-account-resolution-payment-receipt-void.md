@@ -64,6 +64,19 @@ request-id storage; the legacy overload
    and unexposed; no overload is dropped without proof of non-usage.
 8. **Company derivation is JWT-only** (`app_metadata.company_id` /
    `current_company_id()`); RLS is never relied upon inside `SECURITY DEFINER`.
+9. **One key, one immutable request.** Inside one company, `request_id`
+   identifies exactly one logical financial request. Payment, receipt, and VOID
+   cache rows bind a canonical request fingerprint and target id to the stored
+   response. Receipt allocation and journal arrays are sorted before hashing;
+   generated UUIDs and server-time defaults are excluded. Reuse for another
+   target or changed financially effective payload raises
+   `IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST` (`22023`) before any write.
+   Cached payloads without a verifiable fingerprint envelope fail closed.
+10. **Defense-in-depth at the invoice UPDATE.** `post_receipt_atomic` repeats
+    company and soft-delete scoping in the set-based invoice UPDATE, then
+    requires its `ROW_COUNT` to equal the number of distinct allocated invoice
+    ids. A changed/deleted invoice between validation and UPDATE aborts the
+    entire operation.
 
 ## Consequences
 
@@ -73,7 +86,11 @@ request-id storage; the legacy overload
   nomination are all closed with fail-before-write semantics (atomically rolled
   back, no audit/idempotency response).
 - Idempotency replay is physically incapable of leaking across companies even
-  though the base table gains no new column.
+  though the base table gains no new column, and a key cannot silently replay a
+  response for another target or changed payload inside the same company.
+- Receipt creation, payment shadowing, allocations, invoice state, journals,
+  and the idempotency row roll back together if invoice update cardinality
+  changes after validation.
 - Rollback restores the previous definitions byte-for-byte without touching any
   financial row (proven by fingerprint + financial snapshot equality).
 
@@ -96,3 +113,6 @@ request-id storage; the legacy overload
   unexposed and harmless, and dropping becomes trivially safe to decide later.
 - **Trust RLS inside SECURITY DEFINER:** rejected (standing policy) — definer
   contexts bypass row policies.
+- **Treat request-id uniqueness as a client-only convention:** rejected — a
+  reused key previously returned stale success for a different target. The
+  database now proves target and payload identity before replay.

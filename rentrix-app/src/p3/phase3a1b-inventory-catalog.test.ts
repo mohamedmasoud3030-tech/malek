@@ -290,7 +290,11 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
     // un-namespaced operation_name lookup.
     for (const row of rows as any[]) {
       if (isLegacyVoid(row)) continue;
-      if (row.name !== 'record_invoice_payment_atomic' && row.name !== 'void_receipt_atomic') continue;
+      if (
+        row.name !== 'record_invoice_payment_atomic'
+        && row.name !== 'post_receipt_atomic'
+        && row.name !== 'void_receipt_atomic'
+      ) continue;
       const op = row.name;
       const nsBinding = new RegExp(`operation_name\\s*=\\s*'${op}:'\\s*\\|\\|\\s*v_company_id`);
       const plainLookup = new RegExp(`operation_name\\s*=\\s*'${op}'\\s*\\n\\s*AND`, 'i');
@@ -298,6 +302,19 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
       if (plainLookup.test(row.def)) problems.push(`${op}: plain operation_name lookup still present`);
       const nsInsert = new RegExp(`'${op}:'\\s*\\|\\|\\s*v_company_id`);
       if (!nsInsert.test(row.def)) problems.push(`${op}: namespaced operation value never produced`);
+      if (!row.def.includes('_request_fingerprint') || !row.def.includes('_target_id')) {
+        problems.push(`${op}: cached response is not bound to an immutable request fingerprint and target`);
+      }
+      if (!row.def.includes('IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST')) {
+        problems.push(`${op}: request-id reuse does not fail closed`);
+      }
+    }
+    const post = (rows as any[]).find((row) => row.name === 'post_receipt_atomic');
+    if (!/invoice_record\.company_id\s*=\s*v_company_id/.test(post?.def ?? '')) {
+      problems.push('post_receipt_atomic: invoice UPDATE is not company-scoped');
+    }
+    if (!/GET DIAGNOSTICS\s+v_updated_invoice_count\s*=\s*ROW_COUNT/i.test(post?.def ?? '')) {
+      problems.push('post_receipt_atomic: invoice UPDATE row count is not asserted');
     }
     expect(problems).toEqual([]);
   }, 60_000);
@@ -360,7 +377,22 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
     mkdirSync(OUT_DIR, { recursive: true });
     writeFileSync(
       join(OUT_DIR, 'catalog-contract.json'),
-      `${JSON.stringify({ generatedAt: new Date().toISOString(), posture: 'post-3a1b', functions: rows }, null, 2)}\n`,
+      `${JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        posture: 'post-3a1b',
+        controls: {
+          immutableRequestBinding: true,
+          envelopeFields: ['_request_fingerprint', '_target_id', 'response'],
+          failClosedLegacyPayload: true,
+          reuseError: { code: '22023', message: 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST' },
+          invoiceUpdate: {
+            companyScoped: true,
+            excludesDeletedInvoices: true,
+            rowCountMatchesDistinctAllocationInvoiceIds: true,
+          },
+        },
+        functions: rows,
+      }, null, 2)}\n`,
     );
   }, 60_000);
 });

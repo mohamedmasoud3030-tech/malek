@@ -1,12 +1,55 @@
 {
-  "generatedAt": "2026-07-24T17:40:09.030Z",
+  "generatedAt": "2026-07-24T18:53:19.840Z",
   "scenario": "same request_id executed by A and B for record / post / void",
   "namespacing": "<operation_name>:<company_uuid>",
+  "immutableLogicalRequestRule": "request_id identifies one immutable logical financial request inside one company",
+  "requestBinding": {
+    "sameRequestReplay": {
+      "payment": true,
+      "receiptWithReorderedJson": true,
+      "void": true
+    },
+    "differentTargetRejected": {
+      "payment": true,
+      "void": true
+    },
+    "changedPayloadRejected": {
+      "paymentAmount": true,
+      "receiptAllocationContractOrAmount": true,
+      "voidReason": true
+    },
+    "unverifiedLegacyEnvelopeRejected": true,
+    "noAdditionalFinancialSideEffects": true
+  },
   "recordShared": "B failed loudly on canonical accounts (P0001), A response never replayed",
   "postShared": "B hit loud 23505 on the global receipts.request_id UNIQUE (raw storage kept; relax in 3A-2)",
   "voidShared": "A and B each received their OWN response",
   "invoiceGeneration": "n/a by design — generate_invoices_from_active_contracts has no request_id channel; isolation is the company-scoped contract loop",
   "rows": [
+    {
+      "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-pay-1"
+    },
+    {
+      "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-pay-2"
+    },
+    {
+      "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-post-1"
+    },
+    {
+      "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-shared-pay"
+    },
+    {
+      "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-shared-post"
+    },
+    {
+      "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000002",
+      "request_id": "p3a1b-post-b"
+    },
     {
       "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
       "request_id": "p3a1b-pay-1"
@@ -14,6 +57,10 @@
     {
       "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
       "request_id": "p3a1b-pay-2"
+    },
+    {
+      "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-pay-legacy-envelope"
     },
     {
       "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
