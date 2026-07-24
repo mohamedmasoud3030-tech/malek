@@ -1,0 +1,302 @@
+[
+  {
+    "function": "find_payment_account_id",
+    "signature": "account_role text",
+    "latest_definition_migration": "20250101000003_functions_triggers_and_rpcs.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "recalculate_invoice_status",
+    "signature": "p_invoice_id uuid",
+    "latest_definition_migration": "20250101000003_functions_triggers_and_rpcs.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "post_receipt_atomic",
+    "signature": "payload jsonb",
+    "latest_definition_migration": "20260724120000_p0_company_isolation_reports_rls.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "record_invoice_payment_atomic",
+    "signature": "payload jsonb",
+    "latest_definition_migration": "20260724120000_p0_company_isolation_reports_rls.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "generate_invoices_from_active_contracts",
+    "signature": "",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "void_receipt_atomic",
+    "signature": "p_receipt_id uuid, p_voided_at timestamptz default now(",
+    "latest_definition_migration": "20250101000003_functions_triggers_and_rpcs.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "void_receipt_atomic",
+    "signature": "payload jsonb",
+    "latest_definition_migration": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "resolve_maintenance_with_expense",
+    "signature": "p_request_id text, p_cost numeric, p_notes text DEFAULT NULL",
+    "latest_definition_migration": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "void_receipt_atomic",
+    "signature": "p_receipt_id text, p_voided_at bigint, p_invoice_updates jsonb DEFAULT '[]'::jsonb, p_reverse_entries jsonb DEFAULT '[]'::jsonb",
+    "latest_definition_migration": "20260706090000_fix_record_invoice_payment_void_receipt_shared_id.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "create_expense_with_journal_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "update_owner_balance_on_expense",
+    "signature": "",
+    "latest_definition_migration": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "update_expense_with_journal_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "update_contract_balance_from_invoice",
+    "signature": "",
+    "latest_definition_migration": "20260723000000_harden_remaining_rpcs_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "create_owner_settlement_draft_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260725000000_p1_owner_settlement_server_derivation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "approve_owner_settlement_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "pay_owner_settlement_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "cancel_owner_settlement_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "create_deposit_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "deduct_deposit_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "refund_deposit_atomic",
+    "signature": "p_payload jsonb",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "redefine"
+  },
+  {
+    "function": "_owner_statement_expenses",
+    "signature": "p_owner_id uuid, p_from date, p_to date",
+    "latest_definition_migration": "20260718113405_align_owner_tenant_report_sources.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "rpt_overdue_invoices",
+    "signature": "p_as_of date DEFAULT current_date",
+    "latest_definition_migration": "20260726000000_phase2_financial_integrity_and_reports_recovery.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "normalize_invoice_due_date_text",
+    "signature": "",
+    "latest_definition_migration": "20260720180500_reconcile_core_field_contracts.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "update_contract_balance_on_receipt_allocation",
+    "signature": "",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "update_invoice_status",
+    "signature": "",
+    "latest_definition_migration": "20260722000002_multi_tenant_rpc_company_isolation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "enforce_payment_receipt_shared_identity",
+    "signature": "",
+    "latest_definition_migration": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "prevent_payment_receipt_identity_mutation",
+    "signature": "",
+    "latest_definition_migration": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "payment_receipt_identity_preflight",
+    "signature": "",
+    "latest_definition_migration": "20260723100000_enforce_payment_receipt_shared_identity.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "sync_payment_reference_fields",
+    "signature": "",
+    "latest_definition_migration": "20260723110100_reconcile_payment_reference_fields.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  },
+  {
+    "function": "enforce_owner_settlement_amount_immutability",
+    "signature": "",
+    "latest_definition_migration": "20260725000000_p1_owner_settlement_server_derivation.sql",
+    "active": true,
+    "issues": [
+      "requires catalog-level SQL review; historical definitions are not active"
+    ],
+    "action": "review"
+  }
+]

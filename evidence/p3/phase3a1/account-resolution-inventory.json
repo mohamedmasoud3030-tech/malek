@@ -1,0 +1,757 @@
+{
+  "generated_from": [
+    "supabase/migrations",
+    "supabase/rollback",
+    "supabase/tests",
+    "rentrix-app/src"
+  ],
+  "entries": [
+    {
+      "file": "supabase/migrations/20250101000001_core_schema.sql",
+      "line": 302,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name)"
+    },
+    {
+      "file": "supabase/migrations/20260711000004_add_create_expense_with_journal_atomic.sql",
+      "line": 14,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "INSERT INTO public.accounts (id, no, name)"
+    },
+    {
+      "file": "supabase/migrations/20260711000004_add_create_expense_with_journal_atomic.sql",
+      "line": 71,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_expense_account_id := (SELECT id FROM public.accounts WHERE no = '6100' LIMIT 1);"
+    },
+    {
+      "file": "supabase/migrations/20260711000004_add_create_expense_with_journal_atomic.sql",
+      "line": 72,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_cash_account_id := (SELECT id FROM public.accounts WHERE no = '1111' LIMIT 1);"
+    },
+    {
+      "file": "supabase/migrations/20260713000004_fix_expense_rpc_role_check.sql",
+      "line": 88,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_expense_account_id := (SELECT id FROM public.accounts WHERE no = '6100' LIMIT 1);"
+    },
+    {
+      "file": "supabase/migrations/20260713000004_fix_expense_rpc_role_check.sql",
+      "line": 89,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_cash_account_id := (SELECT id FROM public.accounts WHERE no = '1111' LIMIT 1);"
+    },
+    {
+      "file": "supabase/migrations/20260713000007_add_update_expense_with_journal_atomic.sql",
+      "line": 124,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_expense_account_id := (SELECT id FROM public.accounts WHERE no = '6100' LIMIT 1);"
+    },
+    {
+      "file": "supabase/migrations/20260713000007_add_update_expense_with_journal_atomic.sql",
+      "line": 125,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_cash_account_id := (SELECT id FROM public.accounts WHERE no = '1111' LIMIT 1);"
+    },
+    {
+      "file": "supabase/migrations/20260714000001_seed_revenue_account.sql",
+      "line": 30,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "INSERT INTO public.accounts (id, no, name)"
+    },
+    {
+      "file": "supabase/migrations/20260714000001_seed_revenue_account.sql",
+      "line": 35,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "INSERT INTO public.accounts (id, no, name)"
+    },
+    {
+      "file": "supabase/migrations/20260714000002_hardened_invoice_generation.sql",
+      "line": 94,
+      "account_no": "1201",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "SELECT id INTO v_ar_account_id FROM public.accounts WHERE no = '1201' LIMIT 1;"
+    },
+    {
+      "file": "supabase/migrations/20260714000002_hardened_invoice_generation.sql",
+      "line": 95,
+      "account_no": "4000",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "SELECT id INTO v_revenue_account_id FROM public.accounts WHERE no = '4000' LIMIT 1;"
+    },
+    {
+      "file": "supabase/migrations/20260716000002_owner_settlement_atomic_lifecycle_rpcs.sql",
+      "line": 9,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name)"
+    },
+    {
+      "file": "supabase/migrations/20260716000002_owner_settlement_atomic_lifecycle_rpcs.sql",
+      "line": 173,
+      "account_no": "2000",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_owner_payable_account from public.accounts where no = '2000' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260716000002_owner_settlement_atomic_lifecycle_rpcs.sql",
+      "line": 174,
+      "account_no": "1111",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_cash_account from public.accounts where no = '1111' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260718100928_real_deposits_ledger.sql",
+      "line": 205,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_cash_account_id := (select id from public.accounts where no='1111' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718100928_real_deposits_ledger.sql",
+      "line": 206,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718100928_real_deposits_ledger.sql",
+      "line": 208,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name) values ('2200','2200','Tenant Deposits Payable') on conflict (id) do nothing;"
+    },
+    {
+      "file": "supabase/migrations/20260718100928_real_deposits_ledger.sql",
+      "line": 286,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_expense_account_id := (select id from public.accounts where no='6100' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718100928_real_deposits_ledger.sql",
+      "line": 287,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718100928_real_deposits_ledger.sql",
+      "line": 289,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name) values ('6100','6100','Operating Expenses') on conflict (id) do nothing;"
+    },
+    {
+      "file": "supabase/migrations/20260718100928_real_deposits_ledger.sql",
+      "line": 391,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_cash_account_id := (select id from public.accounts where no='1111' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718100928_real_deposits_ledger.sql",
+      "line": 392,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql",
+      "line": 93,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_expense_account_id := (select id from public.accounts where no='6100' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql",
+      "line": 94,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql",
+      "line": 96,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name) values ('6100','6100','Operating Expenses') on conflict (id) do nothing;"
+    },
+    {
+      "file": "supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql",
+      "line": 222,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_cash_account_id := (select id from public.accounts where no='1111' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql",
+      "line": 223,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260718101117_add_partially_deducted_status_and_null_guard.sql",
+      "line": 225,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name) values ('2200','2200','Tenant Deposits Payable') on conflict (id) do nothing;"
+    },
+    {
+      "file": "supabase/migrations/20260720180600_reconcile_expense_write_fields.sql",
+      "line": 70,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_expense_account_id from public.accounts where no = '6100' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260720180600_reconcile_expense_write_fields.sql",
+      "line": 71,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_cash_account_id from public.accounts where no = '1111' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260720180600_reconcile_expense_write_fields.sql",
+      "line": 235,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_expense_account_id from public.accounts where no = '6100' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260720180600_reconcile_expense_write_fields.sql",
+      "line": 236,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_cash_account_id from public.accounts where no = '1111' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260721162000_fix_void_and_deposit_replay_compatibility.sql",
+      "line": 139,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_cash_account_id := (select id from public.accounts where no='1111' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260721162000_fix_void_and_deposit_replay_compatibility.sql",
+      "line": 140,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260721162000_fix_void_and_deposit_replay_compatibility.sql",
+      "line": 142,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name)"
+    },
+    {
+      "file": "supabase/migrations/20260721162000_fix_void_and_deposit_replay_compatibility.sql",
+      "line": 238,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_expense_account_id := (select id from public.accounts where no='6100' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260721162000_fix_void_and_deposit_replay_compatibility.sql",
+      "line": 239,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260721162000_fix_void_and_deposit_replay_compatibility.sql",
+      "line": 241,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name)"
+    },
+    {
+      "file": "supabase/migrations/20260721162000_fix_void_and_deposit_replay_compatibility.sql",
+      "line": 359,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_cash_account_id := (select id from public.accounts where no='1111' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260721162000_fix_void_and_deposit_replay_compatibility.sql",
+      "line": 360,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 314,
+      "account_no": "1111",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "where no='1111' and company_id = v_company_id"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 319,
+      "account_no": "2200",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "where no='2200' and company_id = v_company_id"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 323,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name, company_id)"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 417,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_expense_account_id from public.accounts where no = '6100' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 418,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_cash_account_id from public.accounts where no = '1111' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 706,
+      "account_no": "6100",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "where no='6100' and company_id = v_company_id"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 711,
+      "account_no": "2200",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "where no='2200' and company_id = v_company_id"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 715,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "insert into public.accounts (id, no, name, company_id)"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 942,
+      "account_no": "1201",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "SELECT id INTO v_ar_account_id FROM public.accounts WHERE no = '1201' LIMIT 1;"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 943,
+      "account_no": "4000",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "SELECT id INTO v_revenue_account_id FROM public.accounts WHERE no = '4000' LIMIT 1;"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 1135,
+      "account_no": "2000",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "from public.accounts where no = '2000' and company_id = v_company_id limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 1137,
+      "account_no": "1111",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "from public.accounts where no = '1111' and company_id = v_company_id limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 1830,
+      "account_no": "1111",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "where no='1111' and company_id = v_company_id"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 1835,
+      "account_no": "2200",
+      "usage": "lookup",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "where no='2200' and company_id = v_company_id"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 2337,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_expense_account_id from public.accounts where no = '6100' limit 1;"
+    },
+    {
+      "file": "supabase/migrations/20260722000002_multi_tenant_rpc_company_isolation.sql",
+      "line": 2338,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "migration definition; inspect latest override",
+      "requires_redefinition": true,
+      "excerpt": "select id into v_cash_account_id from public.accounts where no = '1111' limit 1;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 290,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "v_cash_account_id := (select id from public.accounts where no='1111' limit 1);"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 291,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 293,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "insert into public.accounts (id, no, name) values ('2200','2200','Tenant Deposits Payable') on conflict (id) do nothing;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 381,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "select id into v_expense_account_id from public.accounts where no = '6100' limit 1;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 382,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "select id into v_cash_account_id from public.accounts where no = '1111' limit 1;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 651,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "v_expense_account_id := (select id from public.accounts where no='6100' limit 1);"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 652,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 654,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "insert into public.accounts (id, no, name) values ('6100','6100','Operating Expenses') on conflict (id) do nothing;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 873,
+      "account_no": "1201",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "SELECT id INTO v_ar_account_id FROM public.accounts WHERE no = '1201' LIMIT 1;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 874,
+      "account_no": "4000",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "SELECT id INTO v_revenue_account_id FROM public.accounts WHERE no = '4000' LIMIT 1;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 1061,
+      "account_no": "2000",
+      "usage": "lookup",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "select id into v_owner_payable_account from public.accounts where no = '2000' limit 1;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 1062,
+      "account_no": "1111",
+      "usage": "lookup",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "select id into v_cash_account from public.accounts where no = '1111' limit 1;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 1706,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "v_cash_account_id := (select id from public.accounts where no='1111' limit 1);"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 1707,
+      "account_no": "2200",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "v_deposit_account_id := (select id from public.accounts where no='2200' limit 1);"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 2266,
+      "account_no": "6100",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "select id into v_expense_account_id from public.accounts where no = '6100' limit 1;"
+    },
+    {
+      "file": "supabase/rollback/20260722_rollback_multi_tenant_rpc.sql",
+      "line": 2267,
+      "account_no": "1111",
+      "usage": "journal_write",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "select id into v_cash_account_id from public.accounts where no = '1111' limit 1;"
+    },
+    {
+      "file": "supabase/tests/release_lifecycle_rehearsal.sql",
+      "line": 78,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "insert into public.accounts (id, no, name, company_id)"
+    },
+    {
+      "file": "rentrix-app/src/p0/p0-multi-tenant-isolation.test.ts",
+      "line": 147,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "INSERT INTO public.accounts (id, name, company_id) VALUES"
+    },
+    {
+      "file": "rentrix-app/src/p1/p1-owner-settlement-integrity.test.ts",
+      "line": 629,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "db.query(`insert into public.accounts (id, no, name, company_id) values ('x-1111', '1111', 'dup', '${COMPANY_2}')`),"
+    },
+    {
+      "file": "rentrix-app/src/p1/p1-owner-settlement-integrity.test.ts",
+      "line": 636,
+      "account_no": "2000",
+      "usage": "lookup",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "`select (select id from public.accounts where no = '2000' and company_id = public.current_company_id()) as pay_acct,"
+    },
+    {
+      "file": "rentrix-app/src/p1/p1-owner-settlement-integrity.test.ts",
+      "line": 637,
+      "account_no": "1111",
+      "usage": "lookup",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "(select id from public.accounts where no = '1111' and company_id = public.current_company_id()) as cash_acct`,"
+    },
+    {
+      "file": "rentrix-app/src/p2/phase2-financial-reports-recovery.test.ts",
+      "line": 104,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "INSERT INTO public.accounts (id, no, name, company_id) VALUES"
+    },
+    {
+      "file": "rentrix-app/src/features/financials/expenses/expense-atomic-migration-contract.test.ts",
+      "line": 37,
+      "account_no": "6100",
+      "usage": "lookup",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "expect(sql).toContain(\"SELECT id FROM public.accounts WHERE no = '6100' LIMIT 1\");"
+    },
+    {
+      "file": "rentrix-app/src/features/financials/expenses/expense-atomic-migration-contract.test.ts",
+      "line": 38,
+      "account_no": null,
+      "usage": "insert",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "expect(sql).toContain(\"INSERT INTO public.accounts (id, no, name)\\nVALUES ('6100', '6100', 'Operating Expenses')\");"
+    },
+    {
+      "file": "rentrix-app/src/features/financials/reports/owner-settlement-rpcs-migration-contract.test.ts",
+      "line": 58,
+      "account_no": "2000",
+      "usage": "lookup",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "expect(sql).toContain(\"where no = '2000'\");"
+    },
+    {
+      "file": "rentrix-app/src/features/financials/reports/owner-settlement-rpcs-migration-contract.test.ts",
+      "line": 59,
+      "account_no": "1111",
+      "usage": "lookup",
+      "classification": "historical/fixture",
+      "requires_redefinition": false,
+      "excerpt": "expect(sql).toContain(\"where no = '1111'\");"
+    }
+  ]
+}
