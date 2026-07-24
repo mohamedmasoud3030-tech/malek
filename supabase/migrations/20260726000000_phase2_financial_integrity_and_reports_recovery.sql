@@ -314,8 +314,8 @@ BEGIN
     'contract_start', c.start_date, 'contract_end', c.end_date,
     'rent_amount', c.rent_amount, 
     'deposit', public._r3(coalesce((
-       select sum(amount) from public.deposit_txs d 
-       where d.contract_id::text = c.id::text and d.deleted_at is null
+       select sum(remaining_amount) from public.tenant_deposits d 
+       where d.contract_id::text = c.id::text and d.deleted_at is null and d.company_id = v_company_id
     ), 0)),
     'days_to_expiry', (c.end_date - p_as_of)::int,
     'overdue_balance', public._r3(COALESCE((

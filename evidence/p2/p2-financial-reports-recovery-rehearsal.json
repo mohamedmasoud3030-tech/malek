@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T05:37:03.607Z",
+  "generatedAt": "2026-07-24T06:10:04.463Z",
   "replayCoverage": {
     "total": 155,
     "applied": 155,
@@ -13,7 +13,7 @@
         "code": "1111",
         "name": "Cash",
         "type": "asset",
-        "balance": 0,
+        "balance": 800,
         "balance_type": "debit"
       },
       {
@@ -27,14 +27,14 @@
         "code": "6100",
         "name": "Operating Expenses",
         "type": "expense",
-        "balance": 0,
+        "balance": 200,
         "balance_type": "debit"
       },
       {
         "code": "4000",
         "name": "Rental Revenue",
         "type": "revenue",
-        "balance": 0,
+        "balance": 1000,
         "balance_type": "credit"
       },
       {
@@ -60,8 +60,8 @@
       }
     ],
     "is_balanced": true,
-    "total_debits": 0,
-    "total_credits": 0
+    "total_debits": 1000,
+    "total_credits": 1000
   },
   "rptBalanceSheet": {
     "as_of": "2026-07-31",
@@ -69,7 +69,7 @@
       {
         "code": "1111",
         "name": "Cash",
-        "amount": 0
+        "amount": 800
       },
       {
         "code": "1201",
@@ -81,7 +81,7 @@
       {
         "code": "3000",
         "name": "Retained Earnings",
-        "amount": 0
+        "amount": 800
       }
     ],
     "is_balanced": true,
@@ -97,8 +97,8 @@
         "amount": 0
       }
     ],
-    "total_assets": 0,
-    "total_equity": 0,
+    "total_assets": 800,
+    "total_equity": 800,
     "total_liabilities": 0
   },
   "rptAgedReceivables": {

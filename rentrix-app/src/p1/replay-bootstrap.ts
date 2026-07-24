@@ -22,6 +22,7 @@ export type ReplayResult = {
 export async function createFullReplayedDatabase(options?: {
   throughMigration?: string;
   excludeMigrations?: string[];
+  writeEvidence?: boolean;
 }): Promise<ReplayResult> {
   const db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
   await db.exec(STUB_SQL);
@@ -63,11 +64,8 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  // Only write replay-coverage inside evidence/p1/ if options are empty (representing default P1 behavior),
-  // or we can skip writing to avoid modifying historical directories.
-  // The user explicitly requested: "Phase 2 does not rewrite historical evidence directories; only write P2 evidence in evidence/p2/".
-  // So we skip writing replay-coverage to evidence/p1/ if we are running in P2 or full suite contexts.
-  if (!options) {
+  // Only write replay-coverage inside evidence/p1/ if writeEvidence is explicitly true (retaining default P1 behavior)
+  if (options?.writeEvidence === true) {
     mkdirSync(evidenceDir, { recursive: true });
     writeFileSync(
       join(evidenceDir, 'replay-coverage.json'),
