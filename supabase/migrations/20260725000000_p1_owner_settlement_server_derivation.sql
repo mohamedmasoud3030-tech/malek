@@ -398,7 +398,7 @@ $function$
 create or replace function public.enforce_owner_settlement_amount_immutability()
 returns trigger
 language plpgsql
-set search_path to ''
+set search_path = public, pg_temp
 as $function$
 begin
   if new.gross_collected is distinct from old.gross_collected
