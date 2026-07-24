@@ -1,0 +1,26 @@
+{
+  "phase": "Phase 3A-1A",
+  "evidenceType": "company-scoped idempotency contract",
+  "sourceTest": "rentrix-app/src/p3/phase3a1a-execution.test.ts",
+  "legacySchema": {
+    "table": "public.financial_operation_idempotency",
+    "key": ["operation_name", "request_id"],
+    "companyIdColumn": false
+  },
+  "temporaryResolution": "Namespace operation_name as <operation>:<company_uuid> and isolate legacy implementation request IDs with a company-derived internal prefix.",
+  "operations": [
+    "create_expense_with_journal_atomic",
+    "update_expense_with_journal_atomic",
+    "create_deposit_atomic",
+    "deduct_deposit_atomic",
+    "refund_deposit_atomic"
+  ],
+  "assertions": [
+    "same request within one company returns the original entity as idempotent",
+    "different companies cannot read each other's cached payload",
+    "retry does not duplicate expense, deposit, transaction or journal rows"
+  ],
+  "passCondition": "The source test must pass in the repository full-test CI job on the reviewed commit.",
+  "schemaLevelFollowUp": "Add company_id to the idempotency key in a later bounded migration.",
+  "productionMutation": false
+}
