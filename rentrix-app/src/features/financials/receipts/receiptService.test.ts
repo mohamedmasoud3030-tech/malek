@@ -34,7 +34,7 @@ function createPaymentFixture(overrides: Partial<Payment> = {}): Payment {
   return { ...basePayment, ...overrides };
 }
 
-type TableName = 'payments' | 'invoices' | 'contracts' | 'units' | 'properties' | 'people';
+type TableName = 'payments' | 'receipt_allocations' | 'invoices' | 'contracts' | 'units' | 'properties' | 'people';
 type TableResponses = Partial<Record<TableName, unknown[]>>;
 
 type QueryLogEntry = { table: string; method: string; args: unknown[] };
@@ -137,9 +137,10 @@ describe('receiptService', () => {
         property_title: 'Tower A',
       },
     ]);
-    expect(supabaseMock.from).toHaveBeenCalledTimes(6);
+    expect(supabaseMock.from).toHaveBeenCalledTimes(7);
     expect(supabaseMock.from.mock.calls.map(([table]) => table)).toEqual([
       'payments',
+      'receipt_allocations',
       'invoices',
       'contracts',
       'units',
@@ -147,12 +148,35 @@ describe('receiptService', () => {
       'people',
     ]);
     expect(log.filter((entry) => entry.method === 'in')).toEqual([
+      { table: 'receipt_allocations', method: 'in', args: ['receipt_id', ['pay_1234567890abcdef']] },
       { table: 'invoices', method: 'in', args: ['id', ['inv_1']] },
       { table: 'contracts', method: 'in', args: ['id', ['contract_1']] },
       { table: 'units', method: 'in', args: ['id', ['unit_1']] },
       { table: 'properties', method: 'in', args: ['id', ['property_1']] },
       { table: 'people', method: 'in', args: ['id', ['tenant_1']] },
     ]);
+  });
+
+  it('recovers the invoice context from a single receipt allocation when the payment shadow row has no invoice_id', async () => {
+    mockSupabaseTables({
+      payments: [createPaymentFixture({ id: 'payment_123', receipt_id: 'payment_123', invoice_id: null })],
+      receipt_allocations: [{ receipt_id: 'payment_123', invoice_id: 'inv_1' }],
+      invoices: [{ id: 'inv_1', contract_id: 'contract_1', status: 'paid' }],
+      contracts: [{ id: 'contract_1', property_id: 'property_1', unit_id: 'unit_1', tenant_id: 'tenant_1' }],
+      units: [{ id: 'unit_1', unit_number: 'A-101' }],
+      properties: [{ id: 'property_1', title: 'Tower A' }],
+      people: [{ id: 'tenant_1', full_name: 'Test Tenant' }],
+    });
+    const { listReceipts } = await import('./receiptService');
+
+    await expect(listReceipts()).resolves.toMatchObject([{
+      id: 'payment_123',
+      invoice_id: 'inv_1',
+      contract_id: 'contract_1',
+      tenant_name: 'Test Tenant',
+      unit_number: 'A-101',
+      property_title: 'Tower A',
+    }]);
   });
 
   it('projects receipt detail from a single payment id', async () => {

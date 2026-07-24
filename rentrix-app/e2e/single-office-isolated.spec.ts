@@ -48,24 +48,33 @@ test.describe('single-office isolated launch acceptance', () => {
     await expect(amount).toHaveValue('1000');
     await paymentForm.locator('input[type="date"]').fill('2026-07-25');
     await paymentForm.getByPlaceholder('اختياري').fill(PAYMENT_REFERENCE);
+    const paymentResponsePromise = page.waitForResponse((response) => (
+      response.url().includes('/rest/v1/rpc/record_invoice_payment_atomic')
+    ));
     await paymentForm.getByRole('button', { name: 'تسجيل دفعة' }).click();
-    await expect(page.getByText('تم تسجيل الدفعة بنجاح')).toBeVisible();
+    const paymentResponse = await paymentResponsePromise;
+    expect(paymentResponse.ok()).toBe(true);
 
     await page.goto('/receipts');
-    await expect(page.getByRole('heading', { name: 'الإيصالات' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'الإيصالات', level: 1 })).toBeVisible();
     await page.getByLabel('بحث في الإيصالات').fill(PAYMENT_REFERENCE);
 
-    const receiptRow = page.getByRole('table', { name: 'جدول الإيصالات' })
-      .getByRole('row')
-      .filter({ hasText: 'مستأجر اختبار المكتب الواحد' });
-    await expect(receiptRow).toHaveCount(1);
+    const receiptTable = page.getByRole('table', { name: 'جدول الإيصالات' });
+    await expect(receiptTable.getByRole('row')).toHaveCount(2);
+    const receiptRow = receiptTable.getByRole('row').nth(1);
+    await expect(receiptRow).toContainText('مستأجر اختبار المكتب الواحد');
     await expect(receiptRow).toContainText('مرحّل');
     await receiptRow.getByRole('button', { name: 'إلغاء' }).click();
 
     const dialog = page.getByRole('dialog', { name: /إلغاء الإيصال/ });
     await expect(dialog).toBeVisible();
     await dialog.getByLabel('السبب').fill('اختبار إلغاء معزول قبل إطلاق المكتب الأول');
+    const voidResponsePromise = page.waitForResponse((response) => (
+      response.url().includes('/rest/v1/rpc/void_receipt_atomic')
+    ));
     await dialog.getByRole('button', { name: 'تأكيد الإلغاء' }).click();
+    const voidResponse = await voidResponsePromise;
+    expect(voidResponse.ok()).toBe(true);
     await expect(dialog).toBeHidden();
     await expect(receiptRow).toContainText('ملغي');
     expect(serverErrors).toEqual([]);

@@ -23,7 +23,8 @@ describe('single-office launch gate contract', () => {
     expect(databaseGate).toContain('single-office-isolated-smoke.mjs seed');
     expect(databaseGate).toContain('single-office-isolated.spec.ts');
     expect(databaseGate).toContain('single-office-isolated-smoke.mjs verify');
-    expect(spec).toContain('تم تسجيل الدفعة بنجاح');
+    expect(spec).toContain('/rest/v1/rpc/record_invoice_payment_atomic');
+    expect(spec).toContain('/rest/v1/rpc/void_receipt_atomic');
     expect(spec).toContain('تأكيد الإلغاء');
     expect(spec).toContain('test.describe.configure({ retries: 0 })');
   });
