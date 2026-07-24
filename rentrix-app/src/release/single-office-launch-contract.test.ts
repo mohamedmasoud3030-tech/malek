@@ -16,6 +16,9 @@ describe('single-office launch gate contract', () => {
     expect(script).toContain("select('id,amount,type,entity_type,entity_id')");
     expect(script).toContain("String(entry.type).toUpperCase() === 'DEBIT'");
     expect(script).toContain("String(entry.type).toUpperCase() === 'CREDIT'");
+    expect(script).toContain('auth.admin.listUsers({ page, perPage: 1000 })');
+    expect(script).toContain('reportTotal !== 0 || reportPaymentCount !== 0 || reportRows.length !== 0');
+    expect(script).not.toContain('JSON.stringify(reportRows).includes(PAYMENT_REFERENCE)');
   });
 
   it('binds the release gate to the real authenticated payment and VOID browser path', () => {

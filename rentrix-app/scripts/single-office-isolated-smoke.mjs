@@ -65,10 +65,14 @@ async function writeEvidence(payload) {
 }
 
 async function ensureIdentity() {
-  const usersResult = await serviceClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (usersResult.error) throw usersResult.error;
+  let user = null;
+  for (let page = 1; !user; page += 1) {
+    const usersResult = await serviceClient.auth.admin.listUsers({ page, perPage: 1000 });
+    if (usersResult.error) throw usersResult.error;
+    user = usersResult.data.users.find((candidate) => candidate.email === EMAIL) ?? null;
+    if (usersResult.data.users.length < 1000) break;
+  }
 
-  let user = usersResult.data.users.find((candidate) => candidate.email === EMAIL) ?? null;
   if (!user) {
     const created = await serviceClient.auth.admin.createUser({
       email: EMAIL,
@@ -308,9 +312,16 @@ async function verify() {
     p_to: PAYMENT_DATE,
   });
   assertNoError('run daily collection report after VOID', report);
-  const reportRows = Array.isArray(report.data) ? report.data : (report.data ?? []);
-  if (JSON.stringify(reportRows).includes(PAYMENT_REFERENCE)) {
-    throw new Error('VOID payment unexpectedly remained in daily collection reporting.');
+  const reportPayload = report.data ?? {};
+  const reportRows = Array.isArray(reportPayload) ? reportPayload : (reportPayload.rows ?? []);
+  const reportTotal = Array.isArray(reportPayload)
+    ? reportRows.reduce((sum, row) => sum + Number(row.total ?? 0), 0)
+    : Number(reportPayload.total ?? 0);
+  const reportPaymentCount = reportRows.reduce((sum, row) => sum + Number(row.count ?? 0), 0);
+  if (reportTotal !== 0 || reportPaymentCount !== 0 || reportRows.length !== 0) {
+    throw new Error(
+      `VOID payment remained in daily collection reporting: total=${reportTotal} count=${reportPaymentCount} rows=${reportRows.length}.`,
+    );
   }
 
   const evidence = {
@@ -328,7 +339,7 @@ async function verify() {
       postReceiptKeys: postReceiptKeys.length,
       voidKeys: voidKeys.length,
     },
-    dailyCollectionAfterVoid: reportRows,
+    dailyCollectionAfterVoid: { total: reportTotal, count: reportPaymentCount, rows: reportRows },
     verifiedAt: new Date().toISOString(),
   };
   await writeEvidence(evidence);
