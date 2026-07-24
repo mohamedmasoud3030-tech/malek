@@ -150,7 +150,7 @@ begin
   );
 
   insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
-  values ('create_expense_with_journal_atomic', v_request_id, v_result)
+  values ('create_expense_with_journal_atomic'||':'||v_company_id::text, v_request_id, v_result)
   on conflict (operation_name, request_id) do nothing;
 
   return v_result;
@@ -327,7 +327,7 @@ begin
   );
 
   insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
-  values ('update_expense_with_journal_atomic', v_request_id, v_result)
+  values ('update_expense_with_journal_atomic'||':'||v_company_id::text, v_request_id, v_result)
   on conflict (operation_name, request_id) do nothing;
 
   return v_result;
@@ -369,7 +369,7 @@ begin
 
   if v_request_id is null then v_request_id := gen_random_uuid()::text; end if;
 
-  select response_payload into v_cached from public.financial_operation_idempotency where operation_name='create_deposit_atomic' and request_id=v_request_id;
+  select response_payload into v_cached from public.financial_operation_idempotency where operation_name='create_deposit_atomic'||':'||v_company_id::text and request_id=v_request_id;
   if v_cached is not null then return v_cached || jsonb_build_object('idempotent', true); end if;
 
   if v_contract_id_raw is null then raise exception 'contract_id required'; end if;
@@ -443,7 +443,7 @@ begin
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'request_id',v_request_id,'amount',v_amount);
 
   insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
-  values ('create_deposit_atomic', v_request_id, v_result) on conflict (operation_name, request_id) do nothing;
+  values ('create_deposit_atomic'||':'||v_company_id::text, v_request_id, v_result) on conflict (operation_name, request_id) do nothing;
 
   return v_result;
 end;
@@ -480,7 +480,7 @@ begin
   v_company_id := (auth.jwt() -> 'app_metadata' ->> 'company_id')::uuid;
 
   if v_request_id is null then v_request_id := gen_random_uuid()::text; end if;
-  select response_payload into v_cached from public.financial_operation_idempotency where operation_name='deduct_deposit_atomic' and request_id=v_request_id;
+  select response_payload into v_cached from public.financial_operation_idempotency where operation_name='deduct_deposit_atomic'||':'||v_company_id::text and request_id=v_request_id;
   if v_cached is not null then return v_cached || jsonb_build_object('idempotent', true); end if;
 
   if v_deposit_id is null then raise exception 'deposit_id required'; end if;
@@ -553,7 +553,7 @@ for update;
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'deducted',v_amount,'remaining', v_deposit.remaining_amount - v_amount,'request_id',v_request_id, 'new_status', (case when (v_deposit.deposit_amount - (v_deposit.deducted_amount + v_amount) - v_deposit.refunded_amount) <=0 then 'forfeited_damage' else 'partially_deducted' end));
 
   insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
-  values ('deduct_deposit_atomic', v_request_id, v_result) on conflict (operation_name, request_id) do nothing;
+  values ('deduct_deposit_atomic'||':'||v_company_id::text, v_request_id, v_result) on conflict (operation_name, request_id) do nothing;
 
   return v_result;
 end;
@@ -587,7 +587,7 @@ begin
   v_company_id := (auth.jwt() -> 'app_metadata' ->> 'company_id')::uuid;
 
   if v_request_id is null then v_request_id := gen_random_uuid()::text; end if;
-  select response_payload into v_cached from public.financial_operation_idempotency where operation_name='refund_deposit_atomic' and request_id=v_request_id;
+  select response_payload into v_cached from public.financial_operation_idempotency where operation_name='refund_deposit_atomic'||':'||v_company_id::text and request_id=v_request_id;
   if v_cached is not null then return v_cached || jsonb_build_object('idempotent', true); end if;
 
   if v_deposit_id is null then raise exception 'deposit_id required'; end if;
@@ -629,7 +629,7 @@ for update;
   v_result := jsonb_build_object('success',true,'deposit_id',v_deposit_id,'refunded',v_amount,'remaining', v_deposit.remaining_amount - v_amount,'request_id',v_request_id);
 
   insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
-  values ('refund_deposit_atomic', v_request_id, v_result) on conflict (operation_name, request_id) do nothing;
+  values ('refund_deposit_atomic'||':'||v_company_id::text, v_request_id, v_result) on conflict (operation_name, request_id) do nothing;
 
   return v_result;
 end;
