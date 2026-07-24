@@ -34,6 +34,27 @@
 
 ## الأولوية القادمة — تحديث
 
+## Phase 3A-1C — حسابات تسويات الملاك القياسية (قيد التنفيذ، 2026-07-25)
+
+- ✅ فرع مستقل من دمج #1281:
+  `phase3a/owner-settlement-account-resolution`.
+- ✅ تحويل صرف التسوية من بحث `accounts.no ... LIMIT 1` إلى
+  `require_company_account_id(company, '2000'/'1111')`.
+- ✅ ربط `request_id` بطلب مالي immutable داخل الشركة في create/approve/pay/cancel،
+  مع رفض تغيير الهدف أو payload قبل أي كتابة.
+- ✅ حصر قراءة/تحديث التسوية بالشركة، وrow-count assertions للتحديث وقيدي الصرف.
+- ✅ PGlite: lifecycle + عزل شركتين + حساب مفقود + rollback ذري + cache قديم
+  fail-closed + forward/rollback/reapply ببصمة catalog مطابقة.
+- ✅ البوابات المحلية: Phase 3A-1C ‏7/7، full Vitest ‏1075/1075،
+  financials ‏271/271، pgTAP ‏65/65، typecheck/lint/architecture/docs/build ✓.
+- ⏳ المتبقي قبل الإغلاق: commit/push وDraft PR، ثم انتظار CI والمراجعة.
+  لا Production mutation ولا auto-merge.
+
+التقرير:
+`docs/audits/PHASE3A1C_OWNER_SETTLEMENT_ACCOUNT_RESOLUTION.md`،
+والقرار:
+`docs/decisions/0006-owner-settlement-account-resolution-and-request-binding.md`.
+
 `supabase/migrations_consolidated/` اتشال نهائياً (2026-07-23): كان مجلد ميت ومتناقض مع نفسه — الـ README بتاعه بيشاور لملفين (`CONSOLIDATION_MAPPING.md`, `CANDIDATES_FOR_REMOVAL.md`) اتمسحوا من زمان في PR #1201، ومستند `supabase/migrations/README.md` كان بيقول إن المجلد ده "اتشال" من 2026-07-18 بينما هو لسه موجود فعلياً. اتأكد إن مفيش أي CI/script بيعتمد عليه قبل الحذف.
 
 باقي: **149 ملف في `supabase/migrations/` نفسها** — الملفات دي هي الترحيلات الحقيقية والمطبقة فعلياً على production (تطابق 149/149 مع الـ ledger، تحقق منه في `APP_STATUS.md`). التوحيد المطلوب هنا مش حذف ملفات فعلية، لكن فحص الأزواج متشابهة الاسم (زي `reconcile_unit_legacy_rent` مرتين) للتأكد إنها كلها نمط stub/alias موثق ومش تكرار خفي لمنطق متضارب — ده شغل تدقيق منفصل لكل ملف، مش عملية حذف جماعية.

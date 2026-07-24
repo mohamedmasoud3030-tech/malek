@@ -87,7 +87,12 @@ beforeAll(async () => {
   db = replay as unknown as PGlite;
   await db.exec(STUB_SQL);
   const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && !/p1_owner_settlement/.test(f) && !f.includes('phase2_financial_integrity'))
+    .filter((f) =>
+      f.endsWith('.sql')
+      && !/p1_owner_settlement/.test(f)
+      && !f.includes('phase2_financial_integrity')
+      && !f.includes('phase3a1c_owner_settlement')
+    )
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];
   for (const file of files) {

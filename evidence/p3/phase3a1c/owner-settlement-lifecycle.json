@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-07-24T21:43:23.728Z",
+  "settlementId": "ce1ea750-73d8-41e9-ab98-8dac99cb04d9",
+  "status": "PAID",
+  "netPayable": 895,
+  "journalBatchId": "82f052d7-afff-464b-98bc-90a2a9a5e951",
+  "journalLines": [
+    {
+      "type": "CREDIT",
+      "amount": "895.00",
+      "no": "1111",
+      "account_company": "c31b0000-0000-4000-8000-000000000001"
+    },
+    {
+      "type": "DEBIT",
+      "amount": "895.00",
+      "no": "2000",
+      "account_company": "c31b0000-0000-4000-8000-000000000001"
+    }
+  ],
+  "balanced": true,
+  "exactJournalRows": 2
+}

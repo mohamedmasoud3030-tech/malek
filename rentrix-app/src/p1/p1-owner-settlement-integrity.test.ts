@@ -504,7 +504,7 @@ describe('P1 — create_owner_settlement_draft_atomic ignores ALL client-sent am
     const cross = { ...payload, request_id: '11000000-0000-4000-8000-000000000004', owner_id: OWNER_2, property_id: P_2 };
     await expect(
       db.query(`select public.create_owner_settlement_draft_atomic($1::jsonb) as out`, [JSON.stringify(cross)]),
-    ).rejects.toThrow(/not in your company/);
+    ).rejects.toThrow(/not found/);
   }, 60_000);
 
   it('full lifecycle on derived amounts: create → approve → pay posts a BALANCED journal; cancel paths hold', async () => {

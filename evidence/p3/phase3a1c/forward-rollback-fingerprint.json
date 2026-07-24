@@ -1,0 +1,136 @@
+{
+  "generatedAt": "2026-07-24T21:43:28.768Z",
+  "migration": "20260729090000_phase3a1c_owner_settlement_account_resolution.sql",
+  "rollback": "20260729_rollback_phase3a1c_owner_settlement_account_resolution.sql",
+  "redefined": [
+    "create_owner_settlement_draft_atomic",
+    "approve_owner_settlement_atomic",
+    "pay_owner_settlement_atomic",
+    "cancel_owner_settlement_atomic"
+  ],
+  "preserved": [
+    "calculate_owner_net_payout",
+    "require_company_account_id"
+  ],
+  "baselineEqualsRolledBack": true,
+  "forwardEqualsReapplied": true,
+  "aclOwnerAndSearchPathUnchanged": true,
+  "commentsRestoredExactly": true,
+  "financialRowsUntouchedByRollback": true,
+  "snapshotAfterForward": {
+    "settlements": 1,
+    "paid": 1,
+    "payout_journals": 2,
+    "idempotency": 3,
+    "settlement_audits": 3
+  },
+  "snapshotAfterRollback": {
+    "settlements": 1,
+    "paid": 1,
+    "payout_journals": 2,
+    "idempotency": 3,
+    "settlement_audits": 3
+  },
+  "lifecycle": {
+    "forward": {
+      "settlementId": "98026c41-42c8-48cf-9326-b2816fde0759",
+      "journalBatchId": "b9b5a95a-e29f-44a6-975a-242e8cadd3b3",
+      "trace": {
+        "rows": 2,
+        "batches": 1,
+        "debit": "895.00",
+        "credit": "895.00"
+      }
+    },
+    "reapply": {
+      "settlementId": "ddffbce2-5f4d-4f64-9222-a970646a4e7c",
+      "journalBatchId": "15df2d5d-3984-4dc8-a7e9-8c9c296bb089",
+      "trace": {
+        "rows": 2,
+        "batches": 1,
+        "debit": "268.50",
+        "credit": "268.50"
+      }
+    }
+  },
+  "baselineFingerprint": [
+    {
+      "signature": "public.approve_owner_settlement_atomic(p_payload jsonb)",
+      "body_md5": "d37575af0a6f06d7f3bcb98cdadecb9f",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "comment": null,
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    },
+    {
+      "signature": "public.calculate_owner_net_payout(p_owner_id uuid, p_period_start date, p_period_end date, p_property_id uuid)",
+      "body_md5": "7ad380dcccad991daade29b41747a866",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      "comment": "P1 canonical owner-settlement derivation (ADR 0001, collected-cash basis). Client inputs are never financial sources. Establishes the FIXED_MONTHLY months accrual previously deferred by 20260718113414; supersede only via a new written decision record.",
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    },
+    {
+      "signature": "public.cancel_owner_settlement_atomic(p_payload jsonb)",
+      "body_md5": "4c7402e5fb945b419d730701c8ed3acc",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "comment": null,
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    },
+    {
+      "signature": "public.create_owner_settlement_draft_atomic(p_payload jsonb)",
+      "body_md5": "8e1bc12de032176acc307dd5ab491adf",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "comment": null,
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    },
+    {
+      "signature": "public.pay_owner_settlement_atomic(p_payload jsonb)",
+      "body_md5": "9ad0ef78fd7ff3dd61a73ee73e2a3da4",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "comment": null,
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    },
+    {
+      "signature": "public.require_company_account_id(p_company_id uuid, p_account_no text)",
+      "body_md5": "c188a4d3f10b200e2d1b64c6dac075c6",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "acl": "{postgres=X/postgres,service_role=X/postgres}",
+      "comment": null,
+      "pub": false,
+      "anon": false,
+      "auth": false,
+      "svc": true
+    }
+  ]
+}

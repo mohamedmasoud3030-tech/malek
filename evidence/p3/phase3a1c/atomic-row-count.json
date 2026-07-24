@@ -1,0 +1,9 @@
+{
+  "generatedAt": "2026-07-24T21:43:23.728Z",
+  "assertion": "OWNER_SETTLEMENT_UPDATE_COUNT_MISMATCH",
+  "statusAfterFailure": "APPROVED",
+  "journalRowsAfterFailure": 0,
+  "payAuditRowsAfterFailure": 0,
+  "cacheRowsAfterFailure": 0,
+  "transactionRolledBack": true
+}
