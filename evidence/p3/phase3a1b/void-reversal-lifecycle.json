@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-07-24T17:40:09.030Z",
+  "scenario": "void → retry(same req) → retry(new req) → void-by-payment-id",
+  "receipt2": {
+    "id": "a4b2bf00-65c0-4f50-9fd8-3019ec0739e1",
+    "status": "VOID",
+    "paymentStatus": "VOID",
+    "reversalEntries": 2,
+    "balancedWithOriginals": true
+  },
+  "invoiceRestored": {
+    "paid": 200,
+    "status": "PARTIALLY_PAID"
+  },
+  "noDoubleReversal": true,
+  "noRecordDeletion": true,
+  "idempotentRetries": {
+    "sameRequest": true,
+    "newRequestOnVoidReceipt": true
+  }
+}

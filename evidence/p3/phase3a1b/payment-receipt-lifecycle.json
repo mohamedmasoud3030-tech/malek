@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-07-24T17:40:09.030Z",
+  "scenario": "multi-invoice allocation + overpay/foreign-account rejections (atomic)",
+  "receiptId": "77cc31b0-0000-4000-8000-000000000001",
+  "allocationTotal": 700,
+  "invoiceStates": {
+    "a1": {
+      "paid": 200,
+      "status": "PARTIALLY_PAID"
+    },
+    "a2": {
+      "paid": 500,
+      "status": "PAID"
+    }
+  },
+  "journal": {
+    "debit": 700,
+    "credit": 700,
+    "companyOk": true,
+    "count": 2
+  },
+  "contractBalanceMatchesInvoices": true,
+  "recordLifecycle": {
+    "receipt1": "a3b33709-7153-406f-8189-99aee2aa5242",
+    "receipt2": "a4b2bf00-65c0-4f50-9fd8-3019ec0739e1",
+    "retrySameReceipt": true,
+    "rawRequestIdStored": true,
+    "finalInvoice": {
+      "paid": 1000,
+      "status": "PAID"
+    },
+    "overpayRejected": true
+  }
+}

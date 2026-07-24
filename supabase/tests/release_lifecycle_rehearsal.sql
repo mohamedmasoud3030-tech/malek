@@ -211,7 +211,8 @@ select is(
   (
     select count(*)::integer
     from public.financial_operation_idempotency
-    where operation_name = 'void_receipt_atomic'
+    -- Phase 3A-1B: idempotency keys are company-namespaced (<op>:<company_uuid>).
+    where operation_name = 'void_receipt_atomic:00000000-0000-4000-8000-000000000001'
       and request_id = 'release-lifecycle-void-1'
   ),
   1,

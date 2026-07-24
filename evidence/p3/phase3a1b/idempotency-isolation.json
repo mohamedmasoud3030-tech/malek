@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-07-24T17:40:09.030Z",
+  "scenario": "same request_id executed by A and B for record / post / void",
+  "namespacing": "<operation_name>:<company_uuid>",
+  "recordShared": "B failed loudly on canonical accounts (P0001), A response never replayed",
+  "postShared": "B hit loud 23505 on the global receipts.request_id UNIQUE (raw storage kept; relax in 3A-2)",
+  "voidShared": "A and B each received their OWN response",
+  "invoiceGeneration": "n/a by design — generate_invoices_from_active_contracts has no request_id channel; isolation is the company-scoped contract loop",
+  "rows": [
+    {
+      "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-pay-1"
+    },
+    {
+      "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-pay-2"
+    },
+    {
+      "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-shared-pay"
+    },
+    {
+      "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-shared-void"
+    },
+    {
+      "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-void-1"
+    },
+    {
+      "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-void-2"
+    },
+    {
+      "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+      "request_id": "p3a1b-void-3"
+    },
+    {
+      "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000002",
+      "request_id": "p3a1b-shared-void"
+    }
+  ]
+}

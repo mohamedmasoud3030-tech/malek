@@ -1,0 +1,24 @@
+{
+  "generatedAt": "2026-07-24T17:40:09.030Z",
+  "multiReceipt": {
+    "receiptId": "77cc31b0-0000-4000-8000-000000000001",
+    "paymentId": "77cc31b0-0000-4000-8000-000000000001",
+    "sharedIdentity": true
+  },
+  "recordedReceipts": [
+    {
+      "receiptId": "a3b33709-7153-406f-8189-99aee2aa5242",
+      "paymentId": "a3b33709-7153-406f-8189-99aee2aa5242",
+      "shared": true
+    },
+    {
+      "receiptId": "a4b2bf00-65c0-4f50-9fd8-3019ec0739e1",
+      "paymentId": "a4b2bf00-65c0-4f50-9fd8-3019ec0739e1",
+      "shared": true
+    }
+  ],
+  "idempotencyRows": {
+    "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
+    "request_id": "p3a1b-pay-1"
+  }
+}

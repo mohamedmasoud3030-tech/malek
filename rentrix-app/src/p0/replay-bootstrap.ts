@@ -32,8 +32,11 @@ export async function createReplayedDatabase(options?: {
     .filter((f) => f.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b));
 
-  // Determine exclusions: default includes p0_company_isolation, p1_owner_settlement, phase2_financial_integrity
-  const excludes = options?.excludeMigrations ?? ['p0_company_isolation', 'p1_owner_settlement', 'phase2_financial_integrity'];
+  // Determine exclusions: default includes later phases that REDEFINE functions
+  // this suite fingerprints (p0 fix, p1 settlements, phase2 reports, 3a-1b
+  // invoice/payment/receipt/void canonical accounts) — rollback equivalence is
+  // measured at the P0 checkpoint.
+  const excludes = options?.excludeMigrations ?? ['p0_company_isolation', 'p1_owner_settlement', 'phase2_financial_integrity', 'phase3a1b_canonical_accounts'];
   files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
 
   if (options?.throughMigration) {

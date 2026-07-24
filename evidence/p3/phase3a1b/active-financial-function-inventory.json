@@ -1,0 +1,685 @@
+{
+  "generatedAt": "2026-07-24T17:40:13.738Z",
+  "scope": "phase3a1b",
+  "preRemediation": {
+    "note": "replayed full chain EXCLUDING the Phase 3A-1B migration — the active definitions as found on origin/main",
+    "functions": [
+      {
+        "signature": "public.ensure_company_account(p_company_id uuid, p_account_no text, p_account_name text)",
+        "lastDefiningMigration": "20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql",
+        "securityDefiner": true,
+        "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+        "owner": "postgres",
+        "aclRaw": "{postgres=X/postgres,service_role=X/postgres}",
+        "effectiveExecute": {
+          "public": false,
+          "anon": false,
+          "authenticated": false,
+          "serviceRole": true
+        },
+        "bodyMd5": "30611a38be631b2536f6e3d3bd400c12",
+        "appCallSites": [],
+        "internalCallers": [
+          "create_expense_with_journal_atomic_phase3a1a_impl",
+          "update_expense_with_journal_atomic_phase3a1a_impl",
+          "create_deposit_atomic",
+          "deduct_deposit_atomic_phase3a1a_impl",
+          "refund_deposit_atomic_phase3a1a_impl",
+          "update_expense_with_journal_atomic"
+        ],
+        "classification": "active (internal)",
+        "legacyNoLookupLimit1": false,
+        "hardcodedAccountIds": false,
+        "onConflictIdDoNothing": true,
+        "accountNumbersReferenced": [],
+        "usesFindPaymentAccountId": false,
+        "usesRequireHelper": false,
+        "usesEnsureHelper": true,
+        "writesJournal": false,
+        "usesIdempotencyTable": false,
+        "usesReceiptsRequestId": false,
+        "advisoryLock": true,
+        "rowLocks": false,
+        "companyFromJwt": false
+      },
+      {
+        "signature": "public.find_payment_account_id(account_role text)",
+        "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+        "securityDefiner": true,
+        "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+        "owner": "postgres",
+        "aclRaw": "{postgres=X/postgres}",
+        "effectiveExecute": {
+          "public": false,
+          "anon": false,
+          "authenticated": false,
+          "serviceRole": false
+        },
+        "bodyMd5": "2fd915662a29236d9af958b6c4163ee0",
+        "appCallSites": [],
+        "internalCallers": [
+          "record_invoice_payment_atomic"
+        ],
+        "classification": "active (internal)",
+        "legacyNoLookupLimit1": false,
+        "hardcodedAccountIds": false,
+        "onConflictIdDoNothing": false,
+        "accountNumbersReferenced": [
+          "1111",
+          "1201"
+        ],
+        "usesFindPaymentAccountId": true,
+        "usesRequireHelper": false,
+        "usesEnsureHelper": false,
+        "writesJournal": false,
+        "usesIdempotencyTable": false,
+        "usesReceiptsRequestId": false,
+        "advisoryLock": false,
+        "rowLocks": false,
+        "companyFromJwt": false
+      },
+      {
+        "signature": "public.generate_invoices_from_active_contracts()",
+        "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+        "securityDefiner": true,
+        "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+        "owner": "postgres",
+        "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "effectiveExecute": {
+          "public": false,
+          "anon": false,
+          "authenticated": true,
+          "serviceRole": true
+        },
+        "bodyMd5": "74d29d191b6fd13a8f2c3207c9c65a7a",
+        "appCallSites": [
+          "/home/user/rentrix/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+        ],
+        "internalCallers": [],
+        "classification": "active (app)",
+        "legacyNoLookupLimit1": true,
+        "hardcodedAccountIds": false,
+        "onConflictIdDoNothing": false,
+        "accountNumbersReferenced": [
+          "1201",
+          "2100",
+          "4000"
+        ],
+        "usesFindPaymentAccountId": false,
+        "usesRequireHelper": false,
+        "usesEnsureHelper": false,
+        "writesJournal": true,
+        "usesIdempotencyTable": false,
+        "usesReceiptsRequestId": false,
+        "advisoryLock": true,
+        "rowLocks": false,
+        "companyFromJwt": true
+      },
+      {
+        "signature": "public.post_receipt_atomic(payload jsonb)",
+        "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+        "securityDefiner": true,
+        "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+        "owner": "postgres",
+        "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "effectiveExecute": {
+          "public": false,
+          "anon": false,
+          "authenticated": true,
+          "serviceRole": true
+        },
+        "bodyMd5": "6ebcf142fd3a81062b9315f4263b6bfe",
+        "appCallSites": [],
+        "internalCallers": [
+          "record_invoice_payment_atomic"
+        ],
+        "classification": "active (internal)",
+        "legacyNoLookupLimit1": false,
+        "hardcodedAccountIds": false,
+        "onConflictIdDoNothing": false,
+        "accountNumbersReferenced": [],
+        "usesFindPaymentAccountId": false,
+        "usesRequireHelper": false,
+        "usesEnsureHelper": false,
+        "writesJournal": true,
+        "usesIdempotencyTable": false,
+        "usesReceiptsRequestId": true,
+        "advisoryLock": false,
+        "rowLocks": true,
+        "companyFromJwt": true
+      },
+      {
+        "signature": "public.record_invoice_payment_atomic(payload jsonb)",
+        "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+        "securityDefiner": true,
+        "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+        "owner": "postgres",
+        "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "effectiveExecute": {
+          "public": false,
+          "anon": false,
+          "authenticated": true,
+          "serviceRole": true
+        },
+        "bodyMd5": "e08d85c78e99f2ceee337a5c3123e616",
+        "appCallSites": [
+          "/home/user/rentrix/rentrix-app/src/features/financials/payments/paymentService.ts"
+        ],
+        "internalCallers": [],
+        "classification": "active (app)",
+        "legacyNoLookupLimit1": false,
+        "hardcodedAccountIds": false,
+        "onConflictIdDoNothing": false,
+        "accountNumbersReferenced": [],
+        "usesFindPaymentAccountId": true,
+        "usesRequireHelper": false,
+        "usesEnsureHelper": false,
+        "writesJournal": false,
+        "usesIdempotencyTable": true,
+        "usesReceiptsRequestId": false,
+        "advisoryLock": true,
+        "rowLocks": true,
+        "companyFromJwt": true
+      },
+      {
+        "signature": "public.require_company_account_id(p_company_id uuid, p_account_no text)",
+        "lastDefiningMigration": "20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql",
+        "securityDefiner": true,
+        "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+        "owner": "postgres",
+        "aclRaw": "{postgres=X/postgres,service_role=X/postgres}",
+        "effectiveExecute": {
+          "public": false,
+          "anon": false,
+          "authenticated": false,
+          "serviceRole": true
+        },
+        "bodyMd5": "c188a4d3f10b200e2d1b64c6dac075c6",
+        "appCallSites": [],
+        "internalCallers": [],
+        "classification": "internal-only (no direct callers)",
+        "legacyNoLookupLimit1": false,
+        "hardcodedAccountIds": false,
+        "onConflictIdDoNothing": false,
+        "accountNumbersReferenced": [],
+        "usesFindPaymentAccountId": false,
+        "usesRequireHelper": true,
+        "usesEnsureHelper": false,
+        "writesJournal": false,
+        "usesIdempotencyTable": false,
+        "usesReceiptsRequestId": false,
+        "advisoryLock": false,
+        "rowLocks": false,
+        "companyFromJwt": false
+      },
+      {
+        "signature": "public.void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)",
+        "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+        "securityDefiner": true,
+        "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+        "owner": "postgres",
+        "aclRaw": "{postgres=X/postgres}",
+        "effectiveExecute": {
+          "public": false,
+          "anon": false,
+          "authenticated": false,
+          "serviceRole": false
+        },
+        "bodyMd5": "4bba49f9581d56f3ec0fd1fb802c5628",
+        "appCallSites": [
+          "/home/user/rentrix/rentrix-app/src/features/financials/receipts/receiptService.ts"
+        ],
+        "internalCallers": [],
+        "classification": "active (app)",
+        "legacyNoLookupLimit1": false,
+        "hardcodedAccountIds": false,
+        "onConflictIdDoNothing": false,
+        "accountNumbersReferenced": [],
+        "usesFindPaymentAccountId": false,
+        "usesRequireHelper": false,
+        "usesEnsureHelper": false,
+        "writesJournal": false,
+        "usesIdempotencyTable": false,
+        "usesReceiptsRequestId": false,
+        "advisoryLock": false,
+        "rowLocks": true,
+        "companyFromJwt": false
+      },
+      {
+        "signature": "public.void_receipt_atomic(payload jsonb)",
+        "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+        "securityDefiner": true,
+        "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+        "owner": "postgres",
+        "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+        "effectiveExecute": {
+          "public": false,
+          "anon": false,
+          "authenticated": true,
+          "serviceRole": true
+        },
+        "bodyMd5": "7d8075c7938b472d2bd7adc90991fd6b",
+        "appCallSites": [
+          "/home/user/rentrix/rentrix-app/src/features/financials/receipts/receiptService.ts"
+        ],
+        "internalCallers": [],
+        "classification": "active (app)",
+        "legacyNoLookupLimit1": false,
+        "hardcodedAccountIds": false,
+        "onConflictIdDoNothing": false,
+        "accountNumbersReferenced": [],
+        "usesFindPaymentAccountId": false,
+        "usesRequireHelper": false,
+        "usesEnsureHelper": false,
+        "writesJournal": true,
+        "usesIdempotencyTable": true,
+        "usesReceiptsRequestId": true,
+        "advisoryLock": true,
+        "rowLocks": true,
+        "companyFromJwt": false
+      }
+    ]
+  },
+  "functions": [
+    {
+      "signature": "public.ensure_company_account(p_company_id uuid, p_account_no text, p_account_name text)",
+      "lastDefiningMigration": "20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql",
+      "securityDefiner": true,
+      "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "aclRaw": "{postgres=X/postgres,service_role=X/postgres}",
+      "effectiveExecute": {
+        "public": false,
+        "anon": false,
+        "authenticated": false,
+        "serviceRole": true
+      },
+      "bodyMd5": "30611a38be631b2536f6e3d3bd400c12",
+      "appCallSites": [],
+      "internalCallers": [
+        "create_expense_with_journal_atomic_phase3a1a_impl",
+        "update_expense_with_journal_atomic_phase3a1a_impl",
+        "create_deposit_atomic",
+        "deduct_deposit_atomic_phase3a1a_impl",
+        "refund_deposit_atomic_phase3a1a_impl",
+        "update_expense_with_journal_atomic"
+      ],
+      "classification": "active (internal)",
+      "legacyNoLookupLimit1": false,
+      "hardcodedAccountIds": false,
+      "onConflictIdDoNothing": true,
+      "accountNumbersReferenced": [],
+      "usesFindPaymentAccountId": false,
+      "usesRequireHelper": false,
+      "usesEnsureHelper": true,
+      "writesJournal": false,
+      "usesIdempotencyTable": false,
+      "usesReceiptsRequestId": false,
+      "advisoryLock": true,
+      "rowLocks": false,
+      "companyFromJwt": false
+    },
+    {
+      "signature": "public.find_payment_account_id(account_role text)",
+      "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+      "securityDefiner": true,
+      "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "aclRaw": "{postgres=X/postgres}",
+      "effectiveExecute": {
+        "public": false,
+        "anon": false,
+        "authenticated": false,
+        "serviceRole": false
+      },
+      "bodyMd5": "d3a6e8aa73ef4b0db2f0698cdeed5f06",
+      "appCallSites": [],
+      "internalCallers": [
+        "record_invoice_payment_atomic"
+      ],
+      "classification": "active (internal)",
+      "legacyNoLookupLimit1": false,
+      "hardcodedAccountIds": false,
+      "onConflictIdDoNothing": false,
+      "accountNumbersReferenced": [
+        "1111",
+        "1201"
+      ],
+      "usesFindPaymentAccountId": true,
+      "usesRequireHelper": true,
+      "usesEnsureHelper": false,
+      "writesJournal": false,
+      "usesIdempotencyTable": false,
+      "usesReceiptsRequestId": false,
+      "advisoryLock": false,
+      "rowLocks": false,
+      "companyFromJwt": true
+    },
+    {
+      "signature": "public.generate_invoices_from_active_contracts()",
+      "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+      "securityDefiner": true,
+      "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "effectiveExecute": {
+        "public": false,
+        "anon": false,
+        "authenticated": true,
+        "serviceRole": true
+      },
+      "bodyMd5": "e6ca8897425c194140ddfb2079c5af01",
+      "appCallSites": [
+        "/home/user/rentrix/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+      ],
+      "internalCallers": [],
+      "classification": "active (app)",
+      "legacyNoLookupLimit1": false,
+      "hardcodedAccountIds": false,
+      "onConflictIdDoNothing": false,
+      "accountNumbersReferenced": [
+        "1201",
+        "2100",
+        "4000"
+      ],
+      "usesFindPaymentAccountId": false,
+      "usesRequireHelper": true,
+      "usesEnsureHelper": false,
+      "writesJournal": true,
+      "usesIdempotencyTable": false,
+      "usesReceiptsRequestId": false,
+      "advisoryLock": true,
+      "rowLocks": false,
+      "companyFromJwt": true
+    },
+    {
+      "signature": "public.post_receipt_atomic(payload jsonb)",
+      "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+      "securityDefiner": true,
+      "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "effectiveExecute": {
+        "public": false,
+        "anon": false,
+        "authenticated": true,
+        "serviceRole": true
+      },
+      "bodyMd5": "71dc64bf20df7a7697d4ed0c89dce3a3",
+      "appCallSites": [],
+      "internalCallers": [
+        "record_invoice_payment_atomic"
+      ],
+      "classification": "active (internal)",
+      "legacyNoLookupLimit1": false,
+      "hardcodedAccountIds": false,
+      "onConflictIdDoNothing": false,
+      "accountNumbersReferenced": [],
+      "usesFindPaymentAccountId": false,
+      "usesRequireHelper": false,
+      "usesEnsureHelper": false,
+      "writesJournal": true,
+      "usesIdempotencyTable": false,
+      "usesReceiptsRequestId": true,
+      "advisoryLock": false,
+      "rowLocks": true,
+      "companyFromJwt": true
+    },
+    {
+      "signature": "public.record_invoice_payment_atomic(payload jsonb)",
+      "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+      "securityDefiner": true,
+      "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "effectiveExecute": {
+        "public": false,
+        "anon": false,
+        "authenticated": true,
+        "serviceRole": true
+      },
+      "bodyMd5": "c23363be982854b777d13da1e90278c6",
+      "appCallSites": [
+        "/home/user/rentrix/rentrix-app/src/features/financials/payments/paymentService.ts"
+      ],
+      "internalCallers": [],
+      "classification": "active (app)",
+      "legacyNoLookupLimit1": false,
+      "hardcodedAccountIds": false,
+      "onConflictIdDoNothing": false,
+      "accountNumbersReferenced": [],
+      "usesFindPaymentAccountId": true,
+      "usesRequireHelper": false,
+      "usesEnsureHelper": false,
+      "writesJournal": false,
+      "usesIdempotencyTable": true,
+      "usesReceiptsRequestId": false,
+      "advisoryLock": true,
+      "rowLocks": true,
+      "companyFromJwt": true
+    },
+    {
+      "signature": "public.require_company_account_id(p_company_id uuid, p_account_no text)",
+      "lastDefiningMigration": "20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql",
+      "securityDefiner": true,
+      "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "aclRaw": "{postgres=X/postgres,service_role=X/postgres}",
+      "effectiveExecute": {
+        "public": false,
+        "anon": false,
+        "authenticated": false,
+        "serviceRole": true
+      },
+      "bodyMd5": "c188a4d3f10b200e2d1b64c6dac075c6",
+      "appCallSites": [],
+      "internalCallers": [
+        "find_payment_account_id",
+        "generate_invoices_from_active_contracts"
+      ],
+      "classification": "active (internal)",
+      "legacyNoLookupLimit1": false,
+      "hardcodedAccountIds": false,
+      "onConflictIdDoNothing": false,
+      "accountNumbersReferenced": [],
+      "usesFindPaymentAccountId": false,
+      "usesRequireHelper": true,
+      "usesEnsureHelper": false,
+      "writesJournal": false,
+      "usesIdempotencyTable": false,
+      "usesReceiptsRequestId": false,
+      "advisoryLock": false,
+      "rowLocks": false,
+      "companyFromJwt": false
+    },
+    {
+      "signature": "public.void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)",
+      "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+      "securityDefiner": true,
+      "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "aclRaw": "{postgres=X/postgres}",
+      "effectiveExecute": {
+        "public": false,
+        "anon": false,
+        "authenticated": false,
+        "serviceRole": false
+      },
+      "bodyMd5": "4bba49f9581d56f3ec0fd1fb802c5628",
+      "appCallSites": [
+        "/home/user/rentrix/rentrix-app/src/features/financials/receipts/receiptService.ts"
+      ],
+      "internalCallers": [],
+      "classification": "active (app)",
+      "legacyNoLookupLimit1": false,
+      "hardcodedAccountIds": false,
+      "onConflictIdDoNothing": false,
+      "accountNumbersReferenced": [],
+      "usesFindPaymentAccountId": false,
+      "usesRequireHelper": false,
+      "usesEnsureHelper": false,
+      "writesJournal": false,
+      "usesIdempotencyTable": false,
+      "usesReceiptsRequestId": false,
+      "advisoryLock": false,
+      "rowLocks": true,
+      "companyFromJwt": false
+    },
+    {
+      "signature": "public.void_receipt_atomic(payload jsonb)",
+      "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+      "securityDefiner": true,
+      "searchPathConfig": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "effectiveExecute": {
+        "public": false,
+        "anon": false,
+        "authenticated": true,
+        "serviceRole": true
+      },
+      "bodyMd5": "2e0fc5668f53bc53a30cfab5e1bc8dd6",
+      "appCallSites": [
+        "/home/user/rentrix/rentrix-app/src/features/financials/receipts/receiptService.ts"
+      ],
+      "internalCallers": [],
+      "classification": "active (app)",
+      "legacyNoLookupLimit1": false,
+      "hardcodedAccountIds": false,
+      "onConflictIdDoNothing": false,
+      "accountNumbersReferenced": [],
+      "usesFindPaymentAccountId": false,
+      "usesRequireHelper": false,
+      "usesEnsureHelper": false,
+      "writesJournal": true,
+      "usesIdempotencyTable": true,
+      "usesReceiptsRequestId": true,
+      "advisoryLock": true,
+      "rowLocks": true,
+      "companyFromJwt": true
+    }
+  ],
+  "droppedOverloads": [
+    {
+      "signature": "public.void_receipt_atomic(uuid, bigint, jsonb, jsonb)",
+      "droppedIn": [
+        "20260706023153_fix_void_receipt_atomic_receipt_id_type_mismatch.sql",
+        "20260718170255_drop_legacy_void_receipt_overload.sql"
+      ]
+    },
+    {
+      "signature": "public.void_receipt_atomic(text, bigint, jsonb, jsonb)",
+      "droppedIn": [
+        "20260706023153_fix_void_receipt_atomic_receipt_id_type_mismatch.sql",
+        "20260718170255_drop_legacy_void_receipt_overload.sql"
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "table_name": "public.contracts",
+      "trigger_name": "set_contracts_updated_at",
+      "function_name": "touch_updated_at",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.contracts",
+      "trigger_name": "update_unit_status_after_contract_change",
+      "function_name": "update_unit_status_from_activity",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.invoices",
+      "trigger_name": "set_invoices_updated_at",
+      "function_name": "touch_updated_at",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.invoices",
+      "trigger_name": "trg_invoices_update_contract_balance",
+      "function_name": "update_contract_balance_from_invoice",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.journal_entries",
+      "trigger_name": "audit_journal_entry_insert",
+      "function_name": "audit_journal_entry_insert",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.journal_entries",
+      "trigger_name": "prevent_journal_entries_mutation_after_posting",
+      "function_name": "prevent_posted_journal_entry_mutation",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.journal_entries",
+      "trigger_name": "validate_journal_batch_balance",
+      "function_name": "validate_journal_batch_balance",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.payments",
+      "trigger_name": "payments_enforce_receipt_shared_identity",
+      "function_name": "enforce_payment_receipt_shared_identity",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.payments",
+      "trigger_name": "payments_prevent_receipt_identity_mutation",
+      "function_name": "prevent_payment_receipt_identity_mutation",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.payments",
+      "trigger_name": "payments_sync_reference_fields",
+      "function_name": "sync_payment_reference_fields",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.payments",
+      "trigger_name": "set_payments_updated_at",
+      "function_name": "touch_updated_at",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.payments",
+      "trigger_name": "trigger_update_owner_balance_on_payment",
+      "function_name": "update_owner_balance_from_operation",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.receipt_allocations",
+      "trigger_name": "set_receipt_allocations_updated_at",
+      "function_name": "touch_updated_at",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.receipt_allocations",
+      "trigger_name": "trg_receipt_allocations_update_contract_balance",
+      "function_name": "update_contract_balance_from_allocation",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.receipts",
+      "trigger_name": "set_receipts_updated_at",
+      "function_name": "touch_updated_at",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    }
+  ]
+}

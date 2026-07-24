@@ -488,7 +488,7 @@ beforeAll(async () => {
   db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
   await db.exec(STUB_SQL_HEADER);
   const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && !f.includes('p1_owner_settlement') && !f.includes('phase2_financial_integrity'))
+    .filter((f) => f.endsWith('.sql') && !f.includes('p1_owner_settlement') && !f.includes('phase2_financial_integrity') && !f.includes('phase3a1b_canonical_accounts'))
     .sort();
   for (const file of files) {
     let sql = readFileSync(join(migDir, file), 'utf8');
