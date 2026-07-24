@@ -1,6 +1,7 @@
 # Phase 3A-1B — Canonical Account Resolution for Invoice, Payment, Receipt & VOID
 
 Date: 2026-07-24
+PR: #1281 (draft)  
 Branch: `phase3a/invoice-payment-receipt-void-account-resolution`
 Base: `39e70867cfb44c05f0c5298d278811e8da640d56` (origin/main, Phase 3A-1A #1280)
 
