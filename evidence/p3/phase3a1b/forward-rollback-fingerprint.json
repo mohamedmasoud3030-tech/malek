@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-07-24T18:53:27.010Z",
+  "migration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+  "rollback": "20260728_rollback_phase3a1b_invoice_payment_receipt_void.sql",
+  "signatures": {
+    "redefinedByForward": [
+      "public.find_payment_account_id(account_role text)",
+      "public.generate_invoices_from_active_contracts()",
+      "public.record_invoice_payment_atomic(payload jsonb)",
+      "public.post_receipt_atomic(payload jsonb)",
+      "public.void_receipt_atomic(payload jsonb)"
+    ],
+    "preservedAcrossChain": [
+      "public.void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)",
+      "public.require_company_account_id(p_company_id uuid, p_account_no text)",
+      "public.ensure_company_account(p_company_id uuid, p_account_no text, p_account_name text)"
+    ]
+  },
+  "baselineEqualsRolledBack": true,
+  "forwardEqualsReapplied": true,
+  "aclUnchangedAcrossChain": true,
+  "financialRowsUntouchedByRollback": true,
+  "snapshotAfterForward": {
+    "invoices": 3,
+    "receipts": 1,
+    "receipts_void": 1,
+    "payments": 1,
+    "payments_void": 1,
+    "allocations": 1,
+    "journals": 4,
+    "idempotency": 3,
+    "void_audits": 1,
+    "receipts_sum": "100.00",
+    "invoices_paid_sum": "0.00"
+  },
+  "lifecycle": {
+    "forwardReceipt": "daac2332-5bdf-4726-abb7-e10df398b510",
+    "reappliedReceipt": "6ae11c50-2899-4ad0-afa3-c543fae458b6",
+    "immutableRequestBindingPassed": true,
+    "voidSingleReversalReplayPassed": true
+  },
+  "fingerprintBaseline": [
+    {
+      "signature": "public.ensure_company_account(p_company_id uuid, p_account_no text, p_account_name text)",
+      "body_md5": "30611a38be631b2536f6e3d3bd400c12",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "pub": false,
+      "anon": false,
+      "auth": false,
+      "svc": true
+    },
+    {
+      "signature": "public.find_payment_account_id(account_role text)",
+      "body_md5": "2fd915662a29236d9af958b6c4163ee0",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "pub": false,
+      "anon": false,
+      "auth": false,
+      "svc": false
+    },
+    {
+      "signature": "public.generate_invoices_from_active_contracts()",
+      "body_md5": "74d29d191b6fd13a8f2c3207c9c65a7a",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    },
+    {
+      "signature": "public.post_receipt_atomic(payload jsonb)",
+      "body_md5": "6ebcf142fd3a81062b9315f4263b6bfe",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    },
+    {
+      "signature": "public.record_invoice_payment_atomic(payload jsonb)",
+      "body_md5": "e08d85c78e99f2ceee337a5c3123e616",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    },
+    {
+      "signature": "public.require_company_account_id(p_company_id uuid, p_account_no text)",
+      "body_md5": "c188a4d3f10b200e2d1b64c6dac075c6",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "pub": false,
+      "anon": false,
+      "auth": false,
+      "svc": true
+    },
+    {
+      "signature": "public.void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)",
+      "body_md5": "4bba49f9581d56f3ec0fd1fb802c5628",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "pub": false,
+      "anon": false,
+      "auth": false,
+      "svc": false
+    },
+    {
+      "signature": "public.void_receipt_atomic(payload jsonb)",
+      "body_md5": "7d8075c7938b472d2bd7adc90991fd6b",
+      "security_definer": true,
+      "search_path_config": "{\"search_path=public, pg_temp\"}",
+      "owner": "postgres",
+      "pub": false,
+      "anon": false,
+      "auth": true,
+      "svc": true
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "name": "find_payment_account_id",
+    "args": "account_role text",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": false,
+    "svc": false
+  },
+  {
+    "name": "post_receipt_atomic",
+    "args": "payload jsonb",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": true,
+    "svc": true
+  },
+  {
+    "name": "record_invoice_payment_atomic",
+    "args": "payload jsonb",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": true,
+    "svc": true
+  },
+  {
+    "name": "void_receipt_atomic",
+    "args": "p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": false,
+    "svc": false
+  },
+  {
+    "name": "generate_invoices_from_active_contracts",
+    "args": "",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": true,
+    "svc": true
+  },
+  {
+    "name": "void_receipt_atomic",
+    "args": "payload jsonb",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": true,
+    "svc": true
+  },
+  {
+    "name": "require_company_account_id",
+    "args": "p_company_id uuid, p_account_no text",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": false,
+    "svc": true
+  },
+  {
+    "name": "ensure_company_account",
+    "args": "p_company_id uuid, p_account_no text, p_account_name text",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": false,
+    "svc": true
+  }
+]

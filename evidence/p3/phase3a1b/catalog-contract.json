@@ -1,0 +1,80 @@
+{
+  "generatedAt": "2026-07-24T18:53:22.400Z",
+  "posture": "post-3a1b",
+  "controls": {
+    "immutableRequestBinding": true,
+    "envelopeFields": [
+      "_request_fingerprint",
+      "_target_id",
+      "response"
+    ],
+    "failClosedLegacyPayload": true,
+    "reuseError": {
+      "code": "22023",
+      "message": "IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST"
+    },
+    "invoiceUpdate": {
+      "companyScoped": true,
+      "excludesDeletedInvoices": true,
+      "rowCountMatchesDistinctAllocationInvoiceIds": true
+    }
+  },
+  "functions": [
+    {
+      "name": "ensure_company_account",
+      "args": "p_company_id uuid, p_account_no text, p_account_name text",
+      "definer": true,
+      "cfg": "{\"search_path=public, pg_temp\"}",
+      "md5": "30611a38be631b2536f6e3d3bd400c12"
+    },
+    {
+      "name": "find_payment_account_id",
+      "args": "account_role text",
+      "definer": true,
+      "cfg": "{\"search_path=public, pg_temp\"}",
+      "md5": "d3a6e8aa73ef4b0db2f0698cdeed5f06"
+    },
+    {
+      "name": "generate_invoices_from_active_contracts",
+      "args": "",
+      "definer": true,
+      "cfg": "{\"search_path=public, pg_temp\"}",
+      "md5": "e6ca8897425c194140ddfb2079c5af01"
+    },
+    {
+      "name": "post_receipt_atomic",
+      "args": "payload jsonb",
+      "definer": true,
+      "cfg": "{\"search_path=public, pg_temp\"}",
+      "md5": "36b3061a071389f72d96102bceefa39d"
+    },
+    {
+      "name": "record_invoice_payment_atomic",
+      "args": "payload jsonb",
+      "definer": true,
+      "cfg": "{\"search_path=public, pg_temp\"}",
+      "md5": "512523d0d61c2ce80d2e05793d132264"
+    },
+    {
+      "name": "require_company_account_id",
+      "args": "p_company_id uuid, p_account_no text",
+      "definer": true,
+      "cfg": "{\"search_path=public, pg_temp\"}",
+      "md5": "c188a4d3f10b200e2d1b64c6dac075c6"
+    },
+    {
+      "name": "void_receipt_atomic",
+      "args": "p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb",
+      "definer": true,
+      "cfg": "{\"search_path=public, pg_temp\"}",
+      "md5": "4bba49f9581d56f3ec0fd1fb802c5628"
+    },
+    {
+      "name": "void_receipt_atomic",
+      "args": "payload jsonb",
+      "definer": true,
+      "cfg": "{\"search_path=public, pg_temp\"}",
+      "md5": "42187196410f32dc15498193f2ca20f6"
+    }
+  ]
+}

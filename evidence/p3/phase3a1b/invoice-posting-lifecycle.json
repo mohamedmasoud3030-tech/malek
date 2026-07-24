@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-07-24T18:53:19.840Z",
+  "scenario": "generate → retry → B-require-failure",
+  "generatedInvoiceId": "13f200a9-bf9e-41e9-9f06-48fe45787204",
+  "totals": {
+    "amount": 1000,
+    "tax": 50,
+    "due": 1050
+  },
+  "journalLines": [
+    {
+      "account_id": "1201",
+      "account_no": "1201",
+      "account_company": "c31b0000-0000-4000-8000-000000000001",
+      "amount": "1050.00",
+      "type": "DEBIT",
+      "company_id": "c31b0000-0000-4000-8000-000000000001"
+    },
+    {
+      "account_id": "2100",
+      "account_no": "2100",
+      "account_company": "c31b0000-0000-4000-8000-000000000001",
+      "amount": "50.00",
+      "type": "CREDIT",
+      "company_id": "c31b0000-0000-4000-8000-000000000001"
+    },
+    {
+      "account_id": "4000",
+      "account_no": "4000",
+      "account_company": "c31b0000-0000-4000-8000-000000000001",
+      "amount": "1000.00",
+      "type": "CREDIT",
+      "company_id": "c31b0000-0000-4000-8000-000000000001"
+    }
+  ],
+  "retryCreatedDuplicates": false,
+  "companyBRequireError": "1201 is not configured for company",
+  "crossCompanyWrites": 0
+}
