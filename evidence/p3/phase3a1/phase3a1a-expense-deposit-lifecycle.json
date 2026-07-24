@@ -1,0 +1,26 @@
+{
+  "phase": "Phase 3A-1A",
+  "evidenceType": "execution-backed lifecycle contract",
+  "sourceTest": "rentrix-app/src/p3/phase3a1a-execution.test.ts",
+  "databaseHarness": "full-chain PGlite replay",
+  "covered": {
+    "expense": [
+      "create",
+      "same-request retry",
+      "amount and date update",
+      "balanced reversal and repost",
+      "company-scoped property, contract, cost center and expense"
+    ],
+    "deposit": [
+      "receive from canonical contract",
+      "same-request retry",
+      "partial deduction",
+      "partial refund",
+      "over-refund rejection",
+      "canonical property enforcement",
+      "balanced company journals"
+    ]
+  },
+  "passCondition": "The source test must pass in the repository full-test CI job on the reviewed commit.",
+  "productionMutation": false
+}
