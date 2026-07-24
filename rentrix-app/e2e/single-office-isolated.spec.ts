@@ -16,7 +16,7 @@ async function login(page: Page) {
   await page.getByPlaceholder('••••••••').fill(PASSWORD);
   await page.getByRole('button', { name: /تسجيل الدخول/ }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByText('لوحة التحكم').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'لوحة التحكم', level: 1 })).toBeVisible();
   await expect(page.getByText('تعذر تحديد الشركة النشطة')).toHaveCount(0);
 }
 
@@ -41,7 +41,7 @@ test.describe('single-office isolated launch acceptance', () => {
 
     await login(page);
     await page.goto(`/invoices?invoiceId=${INVOICE_ID}&collect=1`);
-    await expect(page.getByRole('heading', { name: 'الفواتير' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'الفواتير', level: 1 })).toBeVisible();
 
     const paymentForm = page.locator('#quick-payment-form');
     const amount = paymentForm.locator('#quick-payment-amount');
@@ -87,8 +87,8 @@ test.describe('single-office isolated launch acceptance', () => {
 
     for (const route of routes) {
       await page.goto(route.path);
-      await expect(page.getByRole('heading', { name: route.heading }).first()).toBeVisible();
-      await expect(page.getByText(route.evidence, { exact: false }).first()).toBeVisible();
+      await expect(page.getByRole('heading', { name: route.heading, level: 1 })).toBeVisible();
+      await expect(page.getByText(route.evidence, { exact: false }).filter({ visible: true }).first()).toBeVisible();
       await expect(page.getByText('تعذر تحديد الشركة النشطة')).toHaveCount(0);
       await expectNoHorizontalOverflow(page);
     }
