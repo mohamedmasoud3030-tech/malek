@@ -30,7 +30,7 @@ export function ProblemSolution() {
 
           <div className="space-y-4">
             {t.problems.items.map((item, i) => (
-              <Reveal key={item.pain} delay={i * 0.06}>
+              <Reveal key={item.pain}>
                 <div className="grid items-stretch gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-4">
                   {/* Pain */}
                   <div className="group flex items-start gap-3 rounded-2xl border border-danger/30 bg-danger-bg p-5 transition duration-300 hover:border-danger/40 hover:bg-danger-bg">
@@ -56,7 +56,7 @@ export function ProblemSolution() {
             ))}
           </div>
 
-          <Reveal delay={0.15} className="mt-10 flex justify-center">
+          <Reveal className="mt-10 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-brand-600/20 bg-brand-50 px-5 py-2.5 text-sm font-bold text-brand-700">
               <Sparkles className="size-4" />
               {t.problems.footnote}

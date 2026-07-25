@@ -15,6 +15,13 @@ import { toast } from 'sonner';
 import { openWhatsApp, shareOrCopy } from '@/services/action-service';
 import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
 
+
+function receiptDetailStatusTone(status: string): 'success' | 'danger' | 'warning' {
+  if (status === 'posted') return 'success';
+  if (status === 'void') return 'danger';
+  return 'warning';
+}
+
 export function ReceiptDetailPage() {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
   const receiptId = typeof searchParams.receiptId === 'string' ? searchParams.receiptId : '';
@@ -132,7 +139,7 @@ export function ReceiptDetailPage() {
     );
   }
 
-  const statusTone = receipt.status === 'posted' ? 'success' : receipt.status === 'void' ? 'danger' : 'warning';
+  const statusTone = receiptDetailStatusTone(receipt.status);
 
   return (
     <PageLayout dir="rtl" lang="ar" size="wide" className="print:block" contentClassName="print:max-w-none print:space-y-0 print:p-0">

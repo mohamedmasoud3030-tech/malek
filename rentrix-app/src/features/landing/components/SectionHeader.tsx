@@ -41,9 +41,7 @@ export function SectionHeader({
       </h2>
       {subtitle ? (
         <p
-          className={`mt-4 text-base leading-8 sm:text-lg ${
-            isDark ? 'text-muted-foreground' : 'text-muted-foreground'
-          }`}
+          className="mt-4 text-base leading-8 text-muted-foreground sm:text-lg"
         >
           {subtitle}
         </p>

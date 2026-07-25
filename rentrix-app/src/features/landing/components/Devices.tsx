@@ -44,7 +44,7 @@ export function Devices() {
             </div>
           </Reveal>
 
-          <Reveal delay={0.15} className="relative mx-auto">
+          <Reveal className="relative mx-auto">
             <PhoneFrame src="/landing/mobile-light.png" alt={t.devices.mobileLabel} />
             <span className="absolute -top-4 start-1/2 z-10 inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-border/70 bg-card/95 px-4 py-2 text-xs font-bold text-muted-foreground shadow-xl backdrop-blur">
               <Smartphone className="size-3.5 text-success" />
@@ -57,7 +57,7 @@ export function Devices() {
           {t.devices.bullets.map((bullet, i) => {
             const Icon = BULLET_ICONS[i];
             return (
-              <Reveal key={bullet} delay={i * 0.08} className="h-full">
+              <Reveal key={bullet} className="h-full">
                 <div className="glass-card flex h-full items-center gap-3 rounded-2xl p-5">
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
                     <Icon className="size-5" aria-hidden="true" />
@@ -69,7 +69,7 @@ export function Devices() {
           })}
         </div>
 
-        <Reveal delay={0.1} className="mt-8 flex justify-center">
+        <Reveal className="mt-8 flex justify-center">
           <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
             <CheckCircle2 className="size-4 text-success" />
             {t.hero.trustItems[2]}

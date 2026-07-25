@@ -1,6 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { AlertTriangle, Building2, Receipt, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';

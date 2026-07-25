@@ -7,9 +7,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatDate } from '@/features/financials/components/financials-formatters';
 import {
   maintenancePriorityLabels,
-  maintenancePriorityTone,
   maintenanceStatusLabels,
-  maintenanceStatusTone,
 } from '@/features/maintenance/components/maintenance-list';
 import type { MaintenanceSummary } from '@/features/maintenance/maintenance-helpers';
 import type { Maintenance } from '@/features/maintenance/maintenance-service';

@@ -37,6 +37,13 @@ const utilityIcons: Record<UtilityType, typeof Zap> = {
   other: ShieldCheck,
 };
 
+
+function utilityBillStatusTone(status: UtilityBillStatus): 'success' | 'warning' | 'danger' {
+  if (status === 'paid') return 'success';
+  if (status === 'partially_paid') return 'warning';
+  return 'danger';
+}
+
 export function UtilitiesPage() {
   const [utilityFilter, setUtilityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<UtilityBillStatus | 'all'>('all');
@@ -461,7 +468,7 @@ export function UtilitiesPage() {
                 <div key={bill.id} className="space-y-2 rounded-2xl border bg-background p-4">
                   <div className="flex items-center justify-between gap-2 border-b pb-2">
                     <span className="font-bold text-sm">فاتورة {bill.bill_number || bill.id.slice(0, 8)}</span>
-                    <StatusBadge tone={bill.status === 'paid' ? 'success' : bill.status === 'partially_paid' ? 'warning' : 'danger'}>{utilityBillStatusLabels[bill.status]}</StatusBadge>
+                    <StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <div>المبلغ: <strong className="text-foreground">{formatMoney(bill.amount)}</strong></div>

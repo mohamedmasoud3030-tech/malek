@@ -23,7 +23,7 @@ export function Faq() {
           {t.faq.items.map((item, i) => {
             const isOpen = i === open;
             return (
-              <Reveal key={item.q} delay={i * 0.04}>
+              <Reveal key={item.q}>
                 <div
                   className={`overflow-hidden rounded-2xl border transition duration-300 ${
                     isOpen

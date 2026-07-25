@@ -89,7 +89,7 @@ export function ChangePasswordPage() {
               />
             </label>
             {validationError ? <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-bold text-destructive" role="alert">{validationError}</p> : null}
-            {succeeded ? <p className="rounded-xl bg-success/10 px-3 py-2 text-sm font-bold text-success" role="status">تم تحديث كلمة المرور بنجاح.</p> : null}
+            {succeeded ? <output className="block rounded-xl bg-success/10 px-3 py-2 text-sm font-bold text-success" aria-live="polite">تم تحديث كلمة المرور بنجاح.</output> : null}
             <Button type="submit" disabled={isSubmitting} className="min-h-11">{isSubmitting ? 'جارٍ الحفظ...' : 'تحديث كلمة المرور'}</Button>
           </form>
         </CardContent>

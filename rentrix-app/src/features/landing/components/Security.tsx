@@ -28,7 +28,7 @@ export function Security() {
             {t.security.items.map((item, i) => {
               const Icon = ITEM_ICONS[i % ITEM_ICONS.length];
               return (
-                <Reveal key={item.title} delay={i * 0.07} className="h-full">
+                <Reveal key={item.title} className="h-full">
                   <div className="light-card group h-full rounded-2xl p-6 transition duration-300 hover:shadow-[0_24px_50px_-20px_rgba(12,26,54,0.25)]">
                     <div className="mb-4 grid size-11 place-items-center rounded-xl bg-success-bg/12 text-success transition duration-300 group-hover:scale-110">
                       <Icon className="size-5" aria-hidden="true" />

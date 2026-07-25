@@ -22,7 +22,7 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';

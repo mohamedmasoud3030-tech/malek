@@ -82,7 +82,7 @@ export function FeaturesBento() {
           {t.features.cards.map((card, i) => {
             const Icon = CARD_ICONS[i % CARD_ICONS.length];
             return (
-              <Reveal key={card.title} delay={(i % 4) * 0.07} className="h-full">
+              <Reveal key={card.title} className="h-full">
                 <div className="glass-card group h-full rounded-2xl p-6 transition duration-300 hover:border-primary/30 hover:bg-background/[0.06] hover:shadow-[0_24px_50px_-20px_rgba(59,110,246,0.35)]">
                   <div className="mb-4 grid size-11 place-items-center rounded-xl bg-primary/15 text-primary transition duration-300 group-hover:scale-110 group-hover:bg-primary/25">
                     <Icon className="size-5" aria-hidden="true" />

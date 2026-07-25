@@ -7,6 +7,12 @@ import { useAuth } from '@/hooks/use-auth';
 import { DataIntegrityView } from './components/data-integrity-view';
 import { runDataIntegrityAudit } from './services/data-integrity-service';
 
+function getDataIntegrityViewState(query: { isPending: boolean; isError: boolean; error: unknown; data: any }) {
+  if (query.isPending) return { status: 'loading' } as const;
+  if (query.isError) return { status: 'error', error: query.error } as const;
+  return { status: 'ready', result: query.data } as const;
+}
+
 export function DataIntegrityPage() {
   const { authorization } = useAuth();
   const integrityQuery = useQuery({ queryKey: ['data-integrity-audit'], queryFn: runDataIntegrityAudit, enabled: canAccess(authorization, 'integrity.view') });
@@ -15,11 +21,7 @@ export function DataIntegrityPage() {
     return <AccessDenied message="فحوصات سلامة البيانات متاحة فقط للمدير أو المسؤول." />;
   }
 
-  const state = integrityQuery.isPending
-    ? ({ status: 'loading' } as const)
-    : integrityQuery.isError
-      ? ({ status: 'error', error: integrityQuery.error } as const)
-      : ({ status: 'ready', result: integrityQuery.data } as const);
+  const state = getDataIntegrityViewState(integrityQuery);
 
   return (
     <PageLayout dir="rtl" lang="ar">

@@ -1,12 +1,9 @@
 import type { ReactNode } from 'react';
 
-type RevealProps = {
+type RevealProps = Readonly<{
   children: ReactNode;
-  delay?: number;
-  y?: number;
   className?: string;
-  once?: boolean;
-};
+}>;
 
 /**
  * Static reveal wrapper.

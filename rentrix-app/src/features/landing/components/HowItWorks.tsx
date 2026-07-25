@@ -33,7 +33,7 @@ export function HowItWorks() {
             {t.how.steps.map((step, i) => {
               const Icon = STEP_ICONS[i];
               return (
-                <Reveal key={step.title} delay={i * 0.12}>
+                <Reveal key={step.title}>
                   <div className="relative text-center">
                     <div className="relative z-10 mx-auto grid size-20 place-items-center rounded-3xl">
                       <span

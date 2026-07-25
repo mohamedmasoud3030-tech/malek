@@ -32,6 +32,13 @@ const channelIcon: Record<AutomationChannel, typeof MessageCircle> = {
 
 type StatusFilter = 'all' | 'enabled' | 'disabled';
 
+
+function automationRunStatusTone(status: string): 'success' | 'danger' | 'warning' {
+  if (status === 'success') return 'success';
+  if (status === 'failed') return 'danger';
+  return 'warning';
+}
+
 function mapRuleTypeToCategory(type: string) {
   switch (type) {
     case 'contract_expiry':
@@ -250,7 +257,7 @@ export function AutomationCenterView() {
                       بدء: {new Date(Number(run.started_at)).toLocaleString('ar-OM')} · معالجة: {run.items_processed} · فشل: {run.items_failed}
                     </p>
                   </div>
-                  <StatusBadge tone={run.status === 'success' ? 'success' : run.status === 'failed' ? 'danger' : 'warning'}>{run.status}</StatusBadge>
+                  <StatusBadge tone={automationRunStatusTone(run.status)}>{run.status}</StatusBadge>
                 </div>
               ))
             )}
