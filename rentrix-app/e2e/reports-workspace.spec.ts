@@ -112,3 +112,20 @@ for (const viewport of viewportMatrix) {
     });
   }
 }
+
+test('reports accounting tab exposes working scoped PDF actions', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await openFixture(page, 'light');
+
+  await page.getByRole('tab', { name: 'المحاسبة', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'المحاسبة', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ميزان المراجعة', exact: true })).toBeVisible();
+
+  await expect(page.getByRole('button', { name: /طباعة الميزان/ })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /طباعة الدخل/ })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /طباعة المركز المالي/ })).toBeEnabled();
+
+  const pdfButtons = page.getByRole('button', { name: 'PDF' });
+  await expect(pdfButtons).toHaveCount(3);
+  await expect(pdfButtons.first()).toBeEnabled();
+});

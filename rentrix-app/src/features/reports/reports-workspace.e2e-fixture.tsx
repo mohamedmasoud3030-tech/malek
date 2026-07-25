@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/page-header';
+import { companySettingsKeys } from '@/features/settings/useCompanySettings';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters, type FilterState } from './reports-page.helpers';
 import type { ReportsWorkspaceModel } from './use-reports-workspace';
@@ -202,9 +204,34 @@ const fixtureModel: ReportsWorkspaceModel = {
       asOf: fixtureDate,
       from: '2026-07-01',
       to: fixtureDate,
-      trialBalance: undefined,
-      incomeStatement: undefined,
-      balanceSheet: undefined,
+      trialBalance: {
+        asOf: fixtureDate,
+        accounts: [
+          { code: '1111', name: 'الصندوق', type: 'asset', balanceType: 'debit', balance: 10450 },
+          { code: '4000', name: 'إيرادات الإيجار', type: 'revenue', balanceType: 'credit', balance: 10450 },
+        ],
+        totalDebits: 10450,
+        totalCredits: 10450,
+        isBalanced: true,
+      },
+      incomeStatement: {
+        period: { from: '2026-07-01', to: fixtureDate },
+        revenue: [{ label: 'إيرادات الإيجار', amount: 12800 }],
+        totalRevenue: 12800,
+        expenses: [{ label: 'مصروفات تشغيلية', amount: 1875 }],
+        totalExpenses: 1875,
+        netIncome: 10925,
+      },
+      balanceSheet: {
+        asOf: fixtureDate,
+        assets: [{ code: '1111', name: 'النقدية', amount: 10450 }],
+        totalAssets: 10450,
+        liabilities: [{ code: '2100', name: 'ذمم دائنة', amount: 2350 }],
+        totalLiabilities: 2350,
+        equity: [{ code: '3000', name: 'حقوق الملكية', amount: 8100 }],
+        totalEquity: 8100,
+        isBalanced: true,
+      },
       isTrialBalanceLoading: false,
       isIncomeStatementLoading: false,
       isBalanceSheetLoading: false,
@@ -235,12 +262,28 @@ const fixtureModel: ReportsWorkspaceModel = {
 };
 
 export function ReportsWorkspaceE2EFixture() {
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<FilterState>(() => ({
     ...getCurrentMonthFilters(),
     from: '2026-07-01',
     to: fixtureDate,
     asOf: fixtureDate,
   }));
+
+  useEffect(() => {
+    queryClient.setQueryData(companySettingsKeys.detail(), {
+      company_name: 'رينتريكس لإدارة العقارات',
+      currency: 'OMR',
+      address: 'صحار، سلطنة عمان',
+      phone: '+968 24000000',
+      email: 'ops@rentrix.test',
+      tax_number: 'VAT-100',
+      registration_number: 'CR-200',
+      invoice_prefix: 'INV',
+      contract_prefix: 'CON',
+      receipt_prefix: 'REC',
+    });
+  }, [queryClient]);
 
   return (
     <main
