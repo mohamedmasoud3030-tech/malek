@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-07-25T00:00:00+04:00",
+  "target_project": "nnggcnpcuomwfuupupwg",
+  "mode": "read_only",
+  "production_mutation": false,
+  "main_sha": "8feddc3f3427d3d46d16c5fdcb705c43474e081c",
+  "company_count": 1,
+  "canonical_accounts": {
+    "company_id": "00000000-0000-4000-8000-000000000001",
+    "1111": 1,
+    "1201": 1,
+    "2000": 1,
+    "2100": 1,
+    "4000": 1
+  },
+  "applied_launch_migrations": [
+    "20260724120000_p0_company_isolation_reports_rls",
+    "20260725000000_p1_owner_settlement_server_derivation",
+    "20260726000000_phase2_financial_integrity_and_reports_recovery",
+    "20260727091000_phase3a1a_canonical_accounts_expenses_deposits",
+    "20260727092000_phase3a1a_execution_hardening",
+    "20260727093000_phase3a1a_cost_center_and_reason_hardening",
+    "20260727094000_phase3a1a_update_expense_type_safety",
+    "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void",
+    "20260729090000_phase3a1c_owner_settlement_account_resolution"
+  ],
+  "security_advisor": {
+    "blocking_setup": [
+      "auth_leaked_password_protection"
+    ],
+    "reviewed_non_blocking": [
+      "audit_journal_entry_insert is SECURITY INVOKER, has no anon/authenticated EXECUTE grant, and uses qualified public/auth objects; pinning search_path remains a follow-up hardening change",
+      "authenticated SECURITY DEFINER warnings are expected for app RPC endpoints and remain covered by role/company checks and release tests"
+    ]
+  },
+  "verdict": "backend_ready_for_single_office_release_gate"
+}

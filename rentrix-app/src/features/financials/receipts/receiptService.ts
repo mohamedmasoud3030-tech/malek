@@ -30,6 +30,7 @@ type ReceiptContractContext = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 
 type ReceiptUnitContext = Pick<Unit, 'id' | 'unit_number'>;
 type ReceiptPropertyContext = Pick<Property, 'id' | 'title'>;
 type ReceiptTenantContext = Pick<Person, 'id' | 'full_name'>;
+type ReceiptAllocationContext = { receipt_id: string; invoice_id: string | null };
 
 const DEFAULT_RECEIPT_LIMIT = 25;
 
@@ -39,13 +40,16 @@ function uniqueStrings(values: Array<string | null | undefined>) {
 
 function toReceiptRecord(
   payment: Payment,
+  invoiceIdByReceiptId: Map<string, string>,
   invoiceById: Map<string, ReceiptInvoiceContext>,
   contractById: Map<string, ReceiptContractContext>,
   unitById: Map<string, ReceiptUnitContext>,
   propertyById: Map<string, ReceiptPropertyContext>,
   tenantById: Map<string, ReceiptTenantContext>,
 ): ReceiptRecord {
-  const invoice = payment.invoice_id ? (invoiceById.get(payment.invoice_id) ?? null) : null;
+  const receiptId = payment.receipt_id ?? payment.id;
+  const invoiceId = payment.invoice_id ?? invoiceIdByReceiptId.get(receiptId) ?? null;
+  const invoice = invoiceId ? (invoiceById.get(invoiceId) ?? null) : null;
   const contract = invoice?.contract_id ? contractById.get(invoice.contract_id) ?? null : null;
   const unit = contract?.unit_id ? unitById.get(contract.unit_id) ?? null : null;
   const property = contract?.property_id ? propertyById.get(contract.property_id) ?? null : null;
@@ -55,7 +59,7 @@ function toReceiptRecord(
     id: payment.id,
     receipt_number: formatReceiptNumber(payment.id),
     payment_id: payment.id,
-    invoice_id: payment.invoice_id ?? null,
+    invoice_id: invoice?.id ?? invoiceId,
     invoice_status: invoice?.status ?? null,
     contract_id: invoice?.contract_id ?? null,
     payment_date: payment.payment_date ?? '',
@@ -73,7 +77,31 @@ function toReceiptRecord(
 async function loadReceiptRecords(payments: Payment[]): Promise<ReceiptRecord[]> {
   if (payments.length === 0) return [];
 
-  const invoiceIds = uniqueStrings(payments.map((payment) => payment.invoice_id));
+  const receiptIds = uniqueStrings(payments.map((payment) => payment.receipt_id ?? payment.id));
+  const { data: allocationRows, error: allocationsError } = await supabase
+    .from('receipt_allocations')
+    .select('receipt_id, invoice_id')
+    .in('receipt_id', receiptIds)
+    .is('deleted_at', null)
+    .returns<ReceiptAllocationContext[]>();
+  if (allocationsError) throw allocationsError;
+
+  const allocationInvoiceIdsByReceipt = new Map<string, Set<string>>();
+  for (const allocation of allocationRows ?? []) {
+    if (!allocation.invoice_id) continue;
+    const ids = allocationInvoiceIdsByReceipt.get(allocation.receipt_id) ?? new Set<string>();
+    ids.add(allocation.invoice_id);
+    allocationInvoiceIdsByReceipt.set(allocation.receipt_id, ids);
+  }
+  const invoiceIdByReceiptId = new Map(
+    [...allocationInvoiceIdsByReceipt.entries()]
+      .filter(([, ids]) => ids.size === 1)
+      .map(([receiptId, ids]) => [receiptId, [...ids][0]]),
+  );
+  const invoiceIds = uniqueStrings([
+    ...payments.map((payment) => payment.invoice_id),
+    ...invoiceIdByReceiptId.values(),
+  ]);
   const { data: invoices, error: invoicesError } = await supabase
     .from('invoices')
     .select('id, contract_id, status')
@@ -121,7 +149,15 @@ async function loadReceiptRecords(payments: Payment[]): Promise<ReceiptRecord[]>
   const propertyById = new Map((propertiesResult.data ?? []).map((property) => [property.id, property]));
   const tenantById = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant]));
 
-  return payments.map((payment) => toReceiptRecord(payment, invoiceById, contractById, unitById, propertyById, tenantById));
+  return payments.map((payment) => toReceiptRecord(
+    payment,
+    invoiceIdByReceiptId,
+    invoiceById,
+    contractById,
+    unitById,
+    propertyById,
+    tenantById,
+  ));
 }
 
 export async function listReceipts(params: ReceiptListParams = {}): Promise<ReceiptRecord[]> {
