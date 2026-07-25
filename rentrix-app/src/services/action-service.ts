@@ -1,3 +1,5 @@
+import { buildWhatsAppUrl, openWhatsApp } from './whatsapp';
+
 /**
  * Browser action boundary for release-candidate surfaces.
  *
@@ -33,17 +35,7 @@ export async function shareOrCopy(payload: SharePayload): Promise<'shared' | 'co
   return 'unavailable';
 }
 
-export function buildWhatsAppUrl(to: string | null | undefined, message: string): string {
-  const normalized = (to ?? '').replace(/[^\d+]/g, '');
-  const phone = normalized.startsWith('+') ? normalized.slice(1) : normalized;
-  const target = phone || '';
-  return `https://wa.me/${target}?text=${encodeURIComponent(message)}`;
-}
-
-export function openWhatsApp(to: string | null | undefined, message: string): void {
-  if (typeof window === 'undefined') return;
-  window.open(buildWhatsAppUrl(to, message), '_blank', 'noopener,noreferrer');
-}
+export { buildWhatsAppUrl, openWhatsApp };
 
 export function downloadTextFile(filename: string, contents: string, mimeType = 'text/plain;charset=utf-8'): void {
   if (typeof document === 'undefined' || typeof URL === 'undefined') return;

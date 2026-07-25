@@ -1,4 +1,4 @@
-import { BellRing, CalendarClock, Mail, MessageCircle, PauseCircle, PlayCircle, Smartphone, Wrench, RefreshCw, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, BellRing, CalendarClock, ExternalLink, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { listAutomationRules, toggleAutomationRule, executeAutomationRule, listAutomationRuns, listAutomationNotifications } from '../automation-service';
 import { automationTemplatePreviews } from '../automation-catalog';
+import { buildTemplateWhatsAppDemoUrl } from '../automation-whatsapp';
 import type { AutomationChannel } from '../types';
 
 const channelLabel: Record<AutomationChannel, string> = {
@@ -292,6 +293,7 @@ export function AutomationCenterView() {
         <div className="grid gap-3 md:grid-cols-2">
           {automationTemplatePreviews.map((template) => {
             const Icon = channelIcon[template.channel as AutomationChannel] || MessageCircle;
+            const whatsappPreviewUrl = buildTemplateWhatsAppDemoUrl(template);
             return (
               <Card key={template.id}>
                 <CardHeader className="pb-2">
@@ -301,8 +303,16 @@ export function AutomationCenterView() {
                   </CardTitle>
                   <CardDescription>{channelLabel[template.channel as AutomationChannel]}</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                   <pre className="whitespace-pre-wrap rounded-2xl bg-muted/50 p-3 text-xs font-bold leading-6 text-muted-foreground">{template.body}</pre>
+                  {whatsappPreviewUrl ? (
+                    <Button type="button" variant="secondary" size="sm" asChild>
+                      <a href={whatsappPreviewUrl} target="_blank" rel="noreferrer">
+                        <ExternalLink className="me-2 size-3.5" aria-hidden="true" />
+                        معاينة واتساب
+                      </a>
+                    </Button>
+                  ) : null}
                 </CardContent>
               </Card>
             );

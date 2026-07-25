@@ -186,3 +186,56 @@ describe('DocumentTemplates print/PDF pairs', () => {
     expect(r.downloadDocumentPdf).not.toHaveBeenCalled();
   });
 });
+
+describe('accounting PDF templates', () => {
+  beforeEach(async () => {
+    const r = await renderer();
+    r.printDocument.mockClear();
+    r.downloadDocumentPdf.mockClear();
+  });
+
+  it('builds dedicated trial balance, income statement, and balance sheet models', async () => {
+    const t = await templates();
+    const r = await renderer();
+
+    await t.printTrialBalanceDocument({
+      asOf: '2026-07-31',
+      accounts: [
+        { code: '1111', name: 'الصندوق', balanceType: 'debit', balance: 100 },
+        { code: '4000', name: 'إيرادات الإيجار', balanceType: 'credit', balance: 100 },
+      ],
+      totalDebits: 100,
+      totalCredits: 100,
+      isBalanced: true,
+    }, settings);
+    expect(lastPrintedModel(r.printDocument).type).toBe('trial_balance');
+    expect(lastPrintedModel(r.printDocument).header.title).toBe('ميزان المراجعة');
+    expect(lastPrintedModel(r.printDocument).tables[0].columns).toEqual(['رقم الحساب', 'اسم الحساب', 'طبيعة الرصيد', 'مدين', 'دائن']);
+
+    await t.downloadIncomeStatementPdf({
+      periodFrom: '2026-07-01',
+      periodTo: '2026-07-31',
+      revenue: [{ label: 'إيرادات الإيجار', amount: 500 }],
+      expenses: [{ label: 'صيانة', amount: 125 }],
+      totalRevenue: 500,
+      totalExpenses: 125,
+      netIncome: 375,
+    }, settings);
+    expect(lastPrintedModel(r.downloadDocumentPdf).type).toBe('income_statement');
+    expect(lastPrintedModel(r.downloadDocumentPdf).header.title).toBe('قائمة الدخل');
+    expect(lastPrintedModel(r.downloadDocumentPdf).tables.map((table) => table.title)).toEqual(['الإيرادات', 'المصروفات', 'صافي النتيجة']);
+
+    await t.downloadBalanceSheetPdf({
+      asOf: '2026-07-31',
+      assets: [{ name: 'النقدية', amount: 1000 }],
+      liabilities: [{ name: 'ذمم دائنة', amount: 250 }],
+      equity: [{ name: 'رأس المال', amount: 750 }],
+      totalAssets: 1000,
+      totalLiabilities: 250,
+      totalEquity: 750,
+    }, settings);
+    expect(lastPrintedModel(r.downloadDocumentPdf).type).toBe('balance_sheet');
+    expect(lastPrintedModel(r.downloadDocumentPdf).header.title).toBe('قائمة المركز المالي');
+    expect(lastPrintedModel(r.downloadDocumentPdf).tables.map((table) => table.title)).toEqual(['الأصول', 'الالتزامات', 'حقوق الملكية']);
+  });
+});

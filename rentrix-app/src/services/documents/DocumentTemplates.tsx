@@ -114,6 +114,40 @@ export interface ReportDocumentData {
   totalSummary?: string;
 }
 
+
+export interface TrialBalanceDocumentData {
+  asOf: string;
+  accounts: Array<{
+    code: string;
+    name: string;
+    balanceType: 'debit' | 'credit';
+    balance: number;
+  }>;
+  totalDebits: number;
+  totalCredits: number;
+  isBalanced: boolean;
+}
+
+export interface IncomeStatementDocumentData {
+  periodFrom: string;
+  periodTo: string;
+  revenue: Array<{ label: string; amount: number }>;
+  expenses: Array<{ label: string; amount: number }>;
+  totalRevenue: number;
+  totalExpenses: number;
+  netIncome: number;
+}
+
+export interface BalanceSheetDocumentData {
+  asOf: string;
+  assets: Array<{ name: string; amount: number }>;
+  liabilities: Array<{ name: string; amount: number }>;
+  equity: Array<{ name: string; amount: number }>;
+  totalAssets: number;
+  totalLiabilities: number;
+  totalEquity: number;
+}
+
 export interface CompanyInfo {
   name: string;
   legalName?: string;
@@ -441,6 +475,156 @@ function buildTenantStatementModel(data: TenantStatementData, settings: Document
   };
 }
 
+
+function buildTrialBalanceModel(data: TrialBalanceDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
+  return {
+    type: 'trial_balance',
+    fileName: `trial-balance-${data.asOf}`,
+    header: {
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
+      title: 'ميزان المراجعة',
+      documentNo: 'Trial_Balance',
+      dateLabel: 'كما في',
+      dateValue: formatDate(data.asOf),
+      currency: currencySymbolOf(settings),
+    },
+    kpis: [
+      { label: 'إجمالي المدين', value: formatMoney(data.totalDebits, settings) },
+      { label: 'إجمالي الدائن', value: formatMoney(data.totalCredits, settings) },
+      { label: 'حالة الميزان', value: data.isBalanced ? 'متوازن' : 'غير متوازن' },
+    ],
+    tables: [
+      {
+        title: 'أرصدة الحسابات',
+        columns: ['رقم الحساب', 'اسم الحساب', 'طبيعة الرصيد', 'مدين', 'دائن'],
+        rows: data.accounts.map((account) => [
+          account.code,
+          account.name,
+          account.balanceType === 'debit' ? 'مدين' : 'دائن',
+          account.balanceType === 'debit' ? formatMoney(account.balance, settings) : '—',
+          account.balanceType === 'credit' ? formatMoney(account.balance, settings) : '—',
+        ]),
+        totals: ['الإجمالي', '', '', formatMoney(data.totalDebits, settings), formatMoney(data.totalCredits, settings)],
+      },
+    ],
+    footer: {
+      signatures: ['accountant', 'general_manager'],
+      companyStampLabel: null,
+      metadata: `ميزان المراجعة كما في ${data.asOf}`,
+    },
+  };
+}
+
+function buildIncomeStatementModel(data: IncomeStatementDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
+  return {
+    type: 'income_statement',
+    fileName: `income-statement-${data.periodFrom}-${data.periodTo}`,
+    header: {
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
+      title: 'قائمة الدخل',
+      documentNo: 'Income_Statement',
+      dateLabel: 'فترة التقرير',
+      dateValue: `${formatDate(data.periodFrom)} - ${formatDate(data.periodTo)}`,
+      currency: currencySymbolOf(settings),
+    },
+    kpis: [
+      { label: 'إجمالي الإيرادات', value: formatMoney(data.totalRevenue, settings) },
+      { label: 'إجمالي المصروفات', value: formatMoney(data.totalExpenses, settings) },
+      { label: 'صافي الدخل', value: formatMoney(data.netIncome, settings) },
+    ],
+    tables: [
+      {
+        title: 'الإيرادات',
+        columns: ['البند', 'المبلغ'],
+        rows: data.revenue.map((row) => [row.label, formatMoney(row.amount, settings)]),
+        totals: ['إجمالي الإيرادات', formatMoney(data.totalRevenue, settings)],
+      },
+      {
+        title: 'المصروفات',
+        columns: ['البند', 'المبلغ'],
+        rows: data.expenses.map((row) => [row.label, formatMoney(row.amount, settings)]),
+        totals: ['إجمالي المصروفات', formatMoney(data.totalExpenses, settings)],
+      },
+      {
+        title: 'صافي النتيجة',
+        columns: ['البيان', 'المبلغ'],
+        rows: [['صافي الدخل / الخسارة', formatMoney(data.netIncome, settings)]],
+      },
+    ],
+    footer: {
+      signatures: ['accountant', 'general_manager'],
+      companyStampLabel: null,
+      metadata: `قائمة الدخل للفترة ${data.periodFrom} إلى ${data.periodTo}`,
+    },
+  };
+}
+
+function buildBalanceSheetModel(data: BalanceSheetDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
+  assertSettings(settings);
+  return {
+    type: 'balance_sheet',
+    fileName: `balance-sheet-${data.asOf}`,
+    header: {
+      companyName: settings.company.name,
+      companyAddress: settings.company.address ?? null,
+      companyPhone: settings.company.phone ?? null,
+      companyEmail: settings.company.email ?? null,
+      companyLogoUrl: settings.company.logoUrl ?? null,
+      companyTaxNumber: settings.company.taxNumber ?? null,
+      companyRegistrationNumber: settings.company.registrationNumber ?? null,
+      title: 'قائمة المركز المالي',
+      documentNo: 'Balance_Sheet',
+      dateLabel: 'كما في',
+      dateValue: formatDate(data.asOf),
+      currency: currencySymbolOf(settings),
+    },
+    kpis: [
+      { label: 'إجمالي الأصول', value: formatMoney(data.totalAssets, settings) },
+      { label: 'إجمالي الالتزامات', value: formatMoney(data.totalLiabilities, settings) },
+      { label: 'حقوق الملكية', value: formatMoney(data.totalEquity, settings) },
+    ],
+    tables: [
+      {
+        title: 'الأصول',
+        columns: ['البند', 'المبلغ'],
+        rows: data.assets.map((item) => [item.name, formatMoney(item.amount, settings)]),
+        totals: ['إجمالي الأصول', formatMoney(data.totalAssets, settings)],
+      },
+      {
+        title: 'الالتزامات',
+        columns: ['البند', 'المبلغ'],
+        rows: data.liabilities.map((item) => [item.name, formatMoney(item.amount, settings)]),
+        totals: ['إجمالي الالتزامات', formatMoney(data.totalLiabilities, settings)],
+      },
+      {
+        title: 'حقوق الملكية',
+        columns: ['البند', 'المبلغ'],
+        rows: data.equity.map((item) => [item.name, formatMoney(item.amount, settings)]),
+        totals: ['إجمالي حقوق الملكية', formatMoney(data.totalEquity, settings)],
+      },
+    ],
+    footer: {
+      signatures: ['accountant', 'general_manager'],
+      companyStampLabel: null,
+      metadata: `قائمة المركز المالي كما في ${data.asOf}`,
+    },
+  };
+}
+
 function buildReportModel(data: ReportDocumentData, settings: DocumentSettings): UnifiedDocumentModel {
   assertSettings(settings);
   const tables = data.sections.map((section) => {
@@ -526,6 +710,28 @@ export function downloadTenantStatementPdf(data: TenantStatementData, settings: 
   return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildTenantStatementModel(data, settings)));
 }
 
+
+export function printTrialBalanceDocument(data: TrialBalanceDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildTrialBalanceModel(data, settings)));
+}
+export function downloadTrialBalancePdf(data: TrialBalanceDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildTrialBalanceModel(data, settings)));
+}
+
+export function printIncomeStatementDocument(data: IncomeStatementDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildIncomeStatementModel(data, settings)));
+}
+export function downloadIncomeStatementPdf(data: IncomeStatementDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildIncomeStatementModel(data, settings)));
+}
+
+export function printBalanceSheetDocument(data: BalanceSheetDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.printDocument(buildBalanceSheetModel(data, settings)));
+}
+export function downloadBalanceSheetPdf(data: BalanceSheetDocumentData, settings: DocumentSettings): Promise<void> {
+  return runOrThrow(() => DocumentRenderer.downloadDocumentPdf(buildBalanceSheetModel(data, settings)));
+}
+
 export function printReportDocument(data: ReportDocumentData, settings: DocumentSettings): Promise<void> {
   return runOrThrow(() => DocumentRenderer.printDocument(buildReportModel(data, settings)));
 }
@@ -544,6 +750,12 @@ export const DocumentTemplates = {
   downloadOwnerStatementPdf,
   printTenantStatementDocument,
   downloadTenantStatementPdf,
+  printTrialBalanceDocument,
+  downloadTrialBalancePdf,
+  printIncomeStatementDocument,
+  downloadIncomeStatementPdf,
+  printBalanceSheetDocument,
+  downloadBalanceSheetPdf,
   printReportDocument,
   downloadReportPdf,
 };

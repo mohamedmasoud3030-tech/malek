@@ -106,6 +106,12 @@ export const automationTemplatePreviews: readonly AutomationTemplatePreview[] = 
     body: 'عقدكم على {{property_title}} / {{unit_number}} ينتهي بتاريخ {{end_date}}. يسعدنا ترتيب التجديد.',
   },
   {
+    id: 'tpl-overdue-escalation',
+    title: 'تصعيد متأخرات',
+    channel: 'whatsapp',
+    body: 'مرحباً {{tenant_name}}، توجد مطالبة متأخرة منذ {{days_overdue}} أيام على وحدة {{unit_number}}. المبلغ المستحق: {{amount}}، تاريخ الاستحقاق {{due_date}}.',
+  },
+  {
     id: 'tpl-owner-report',
     title: 'تقرير مالك',
     channel: 'email',

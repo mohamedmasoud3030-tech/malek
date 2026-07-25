@@ -1,3 +1,5 @@
+import { buildWhatsAppUrl, renderMessageTemplate } from '@/services/whatsapp';
+
 /**
  * Outbound communication service boundary.
  *
@@ -90,16 +92,6 @@ export const notificationTemplates: readonly NotificationTemplate[] = [
   },
 ] as const;
 
-function renderTemplate(body: string, variables: Record<string, string> = {}): string {
-  return body.replace(/\{\{(\w+)\}\}/g, (_, key: string) => variables[key] ?? `{{${key}}}`);
-}
-
-function buildWhatsAppPreviewUrl(to: string, body: string): string {
-  const digits = to.replace(/[^\d+]/g, '');
-  const phone = digits.startsWith('+') ? digits.slice(1) : digits;
-  return `https://wa.me/${phone}?text=${encodeURIComponent(body)}`;
-}
-
 /**
  * Queue/preview an outbound message without binding UI to a paid provider.
  * Current behavior is a local preview adapter suitable for product UX.
@@ -108,7 +100,7 @@ export async function sendOutboundMessage(
   request: OutboundMessageRequest,
 ): Promise<OutboundMessageResult> {
   const body = request.templateId
-    ? renderTemplate(
+    ? renderMessageTemplate(
         notificationTemplates.find((template) => template.id === request.templateId)?.body ?? request.body,
         request.variables,
       )
@@ -126,7 +118,7 @@ export async function sendOutboundMessage(
     return {
       accepted: true,
       provider: 'local-preview',
-      previewUrl: buildWhatsAppPreviewUrl(request.to, body),
+      previewUrl: buildWhatsAppUrl(request.to, body),
       message: 'تم تجهيز رابط واتساب للمعاينة. لم يتم الإرسال التلقائي.',
     };
   }
