@@ -43,7 +43,7 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
       await page.setViewportSize(vp);
       await page.goto('/login?e2e-automation-workspace=1');
       await expect(page.locator('[data-e2e-automation-workspace]')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('مركز الأتمتة الحقيقي')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'قواعد الأتمتة' })).toBeVisible();
       // Should show real rules, not local-preview only message
       await expect(page.locator('body')).not.toContainText('لم يتم تشغيل عامل أتمتة خارجي');
     });
@@ -67,7 +67,7 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
 
   test('automation shows scheduling and duplicate prevention', async ({ page }) => {
     await page.goto('/login?e2e-automation-workspace=1');
-    await expect(page.getByText('قواعد أتمتة حقيقية محفوظة')).toBeVisible();
+    await expect(page.getByText('قواعد محفوظة في قاعدة البيانات')).toBeVisible();
     await expect(page.getByText('منع تكرار').first()).toBeVisible();
   });
 });
