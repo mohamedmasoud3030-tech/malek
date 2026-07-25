@@ -42,7 +42,7 @@ export function MaintenanceDetailsOverlay({ request, onOpenChange }: Maintenance
             <div>
               <span className="text-xs font-medium text-muted-foreground">الحالة</span>
               <div className="mt-1">
-                <StatusBadge tone={maintenanceStatusTone[request.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>
+                <StatusBadge tone={maintenanceStatusTone[request.status as keyof typeof maintenanceStatusTone] ?? 'neutral'}>
                   {maintenanceStatusLabels[request.status as keyof typeof maintenanceStatusLabels] ?? request.status ?? '—'}
                 </StatusBadge>
               </div>
@@ -51,7 +51,7 @@ export function MaintenanceDetailsOverlay({ request, onOpenChange }: Maintenance
             <div>
               <span className="text-xs font-medium text-muted-foreground">الأولوية</span>
               <div className="mt-1">
-                <StatusBadge tone={maintenancePriorityTone[request.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
+                <StatusBadge tone={maintenancePriorityTone[request.priority as keyof typeof maintenancePriorityTone] ?? 'neutral'}>
                   {maintenancePriorityLabels[request.priority as keyof typeof maintenancePriorityLabels] ?? request.priority ?? '—'}
                 </StatusBadge>
               </div>
