@@ -172,7 +172,7 @@ export function UtilitiesPage() {
   const error = (metersQuery.error as Error) || (billsQuery.error as Error);
 
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
         title="إدارة المرافق والعدادات"
         description="إدارة حقيقية لعدادات الكهرباء والمياه والخدمات مع ربط العقار والوحدة وتسجيل القراءات والفواتير."
@@ -257,7 +257,7 @@ export function UtilitiesPage() {
                       ))}
                     </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="grid gap-2">
                       <Label>نوع المرفق *</Label>
                       <Select value={meterForm.utility_type} onChange={(e) => setMeterForm((f) => ({ ...f, utility_type: e.target.value as UtilityType }))}>
@@ -278,7 +278,7 @@ export function UtilitiesPage() {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="grid gap-2">
                       <Label>رقم العداد *</Label>
                       <Input value={meterForm.meter_number} onChange={(e) => setMeterForm((f) => ({ ...f, meter_number: e.target.value }))} placeholder="E-123456" />
@@ -317,7 +317,7 @@ export function UtilitiesPage() {
                   <DialogDescription>سجل قراءة استهلاك ومبلغ مستحق.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-2">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="grid gap-2">
                       <Label>العقار *</Label>
                       <Select value={billForm.property_id} onChange={(e) => setBillForm((f) => ({ ...f, property_id: e.target.value }))}>
@@ -341,7 +341,7 @@ export function UtilitiesPage() {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-3">
                     <div className="grid gap-2">
                       <Label>السابق</Label>
                       <Input type="number" value={billForm.previous_reading ?? ''} onChange={(e) => setBillForm((f) => ({ ...f, previous_reading: e.target.value ? Number(e.target.value) : null }))} />
@@ -355,7 +355,7 @@ export function UtilitiesPage() {
                       <Input type="number" value={billForm.consumption_units ?? ''} onChange={(e) => setBillForm((f) => ({ ...f, consumption_units: e.target.value ? Number(e.target.value) : null }))} placeholder="تلقائي" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="grid gap-2">
                       <Label>المبلغ *</Label>
                       <Input type="number" step="0.001" value={billForm.amount} onChange={(e) => setBillForm((f) => ({ ...f, amount: Number(e.target.value) || 0 }))} />
@@ -365,7 +365,7 @@ export function UtilitiesPage() {
                       <Input type="date" value={billForm.due_date} onChange={(e) => setBillForm((f) => ({ ...f, due_date: e.target.value }))} />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div className="grid gap-2">
                       <Label>المسؤول</Label>
                       <Select value={billForm.responsible_party} onChange={(e) => setBillForm((f) => ({ ...f, responsible_party: e.target.value as ResponsibleParty }))}>
@@ -411,7 +411,7 @@ export function UtilitiesPage() {
       >
         <div className="grid gap-6 lg:grid-cols-2">
           <Card className="border-border/60">
-            <CardHeader className="bg-muted/20 border-b">
+            <CardHeader className="border-b border-border/60">
               <CardTitle className="text-sm font-black">العدادات المسجلة ({meters.length})</CardTitle>
               <CardDescription>قائمة العدادات المرتبطة بالعقارات.</CardDescription>
             </CardHeader>
@@ -431,7 +431,7 @@ export function UtilitiesPage() {
                       </div>
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => deleteMeterMut.mutate(meter.id)} disabled={deleteMeterMut.isPending}>
+                      <Button variant="ghost" size="sm" aria-label="حذف العداد" onClick={() => deleteMeterMut.mutate(meter.id)} disabled={deleteMeterMut.isPending}>
                         <Trash2 className="size-4" />
                       </Button>
                     </div>
@@ -443,16 +443,16 @@ export function UtilitiesPage() {
           </Card>
 
           <Card className="border-border/60">
-            <CardHeader className="bg-muted/20 border-b">
+            <CardHeader className="border-b border-border/60">
               <CardTitle className="text-sm font-black">فواتير المرافق ({filteredBills.length})</CardTitle>
               <CardDescription>سجل الاستهلاك والمبالغ المستحقة.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 p-4">
               {filteredBills.map((bill) => (
-                <div key={bill.id} className="rounded-2xl border bg-background p-4 space-y-2">
-                  <div className="flex justify-between items-center border-b pb-2">
+                <div key={bill.id} className="space-y-2 rounded-2xl border bg-background p-4">
+                  <div className="flex items-center justify-between gap-2 border-b pb-2">
                     <span className="font-bold text-sm">فاتورة {bill.bill_number || bill.id.slice(0, 8)}</span>
-                    <StatusBadge tone={bill.status === 'paid' ? 'green' : bill.status === 'partially_paid' ? 'gold' : 'red'}>{utilityBillStatusLabels[bill.status]}</StatusBadge>
+                    <StatusBadge tone={bill.status === 'paid' ? 'success' : bill.status === 'partially_paid' ? 'warning' : 'danger'}>{utilityBillStatusLabels[bill.status]}</StatusBadge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <div>المبلغ: <strong className="text-foreground">{formatMoney(bill.amount)}</strong></div>
@@ -462,7 +462,7 @@ export function UtilitiesPage() {
                     {bill.consumption_units != null && <div className="col-span-2">الاستهلاك: <strong className="text-foreground">{bill.consumption_units} وحدة</strong> {bill.previous_reading != null && `(${bill.previous_reading} → ${bill.current_reading})`}</div>}
                   </div>
                   <div className="flex justify-end">
-                    <Button variant="ghost" size="sm" onClick={() => deleteBillMut.mutate(bill.id)} disabled={deleteBillMut.isPending}><Trash2 className="size-4" /></Button>
+                    <Button variant="ghost" size="sm" aria-label="حذف فاتورة المرافق" onClick={() => deleteBillMut.mutate(bill.id)} disabled={deleteBillMut.isPending}><Trash2 className="size-4" /></Button>
                   </div>
                 </div>
               ))}

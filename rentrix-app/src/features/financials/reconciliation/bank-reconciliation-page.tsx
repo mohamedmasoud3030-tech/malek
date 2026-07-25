@@ -11,6 +11,7 @@ import {
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
+import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityCard } from '@/components/ui/entity-card';
@@ -42,14 +43,48 @@ function formatDate(value: string | null | undefined) {
   return formatCompanyDate(defaultCompanyLocalSettings, value ? `${value}T00:00:00` : value);
 }
 
-function statusTone(status: BankStatementLine['status']): 'green' | 'gray' | 'gold' {
-  if (status === 'matched') return 'green';
-  if (status === 'ignored') return 'gray';
-  return 'gold';
+function statusTone(status: BankStatementLine['status']): 'success' | 'neutral' | 'warning' {
+  if (status === 'matched') return 'success';
+  if (status === 'ignored') return 'neutral';
+  return 'warning';
 }
 
 export function BankReconciliationPage() {
   const ctrl = useBankReconciliationController();
+  const activeFilters: ActiveFilterItem[] = [];
+  if (ctrl.filters.bankAccountId) {
+    const account = ctrl.accounts.find((item) => item.id === ctrl.filters.bankAccountId);
+    activeFilters.push({
+      key: 'bankAccountId',
+      label: 'الحساب',
+      value: account?.account_name ?? ctrl.filters.bankAccountId,
+      onRemove: () => ctrl.setFilters({ ...ctrl.filters, bankAccountId: '' }),
+    });
+  }
+  if (ctrl.filters.status !== 'all') {
+    activeFilters.push({
+      key: 'status',
+      label: 'الحالة',
+      value: statusLabels[ctrl.filters.status],
+      onRemove: () => ctrl.setFilters({ ...ctrl.filters, status: 'all' }),
+    });
+  }
+  if (ctrl.filters.from) {
+    activeFilters.push({
+      key: 'from',
+      label: 'من',
+      value: formatDate(ctrl.filters.from),
+      onRemove: () => ctrl.setFilters({ ...ctrl.filters, from: '' }),
+    });
+  }
+  if (ctrl.filters.to) {
+    activeFilters.push({
+      key: 'to',
+      label: 'إلى',
+      value: formatDate(ctrl.filters.to),
+      onRemove: () => ctrl.setFilters({ ...ctrl.filters, to: '' }),
+    });
+  }
 
   return (
     <PageLayout dir="rtl" size="wide">
@@ -94,6 +129,7 @@ export function BankReconciliationPage() {
               aria-label="الحساب البنكي"
               value={ctrl.filters.bankAccountId}
               onChange={(event) => ctrl.setFilters({ ...ctrl.filters, bankAccountId: event.target.value })}
+              className="w-full sm:w-52"
             >
               <option value="">كل الحسابات</option>
               {ctrl.accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
@@ -102,22 +138,18 @@ export function BankReconciliationPage() {
               aria-label="حالة المطابقة"
               value={ctrl.filters.status}
               onChange={(event) => ctrl.setFilters({ ...ctrl.filters, status: event.target.value as BankReconciliationFilters['status'] })}
+              className="w-full sm:w-44"
             >
               {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
-            <Input aria-label="من تاريخ" type="date" value={ctrl.filters.from} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, from: event.target.value })} />
-            <Input aria-label="إلى تاريخ" type="date" value={ctrl.filters.to} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, to: event.target.value })} />
+            <Input className="w-full sm:w-40" aria-label="من تاريخ" type="date" value={ctrl.filters.from} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, from: event.target.value })} />
+            <Input className="w-full sm:w-40" aria-label="إلى تاريخ" type="date" value={ctrl.filters.to} onChange={(event) => ctrl.setFilters({ ...ctrl.filters, to: event.target.value })} />
           </>
         )}
-        actions={ctrl.hasFilters ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => ctrl.setFilters({ bankAccountId: '', status: 'all', from: '', to: '' })}
-          >
-            مسح الفلاتر
-          </Button>
-        ) : undefined}
+      />
+      <ActiveFilterBar
+        filters={activeFilters}
+        onClearAll={() => ctrl.setFilters({ bankAccountId: '', status: 'all', from: '', to: '' })}
       />
 
       {ctrl.writeError ? <WriteErrorCard message={ctrl.writeError instanceof Error ? ctrl.writeError.message : 'تعذر حفظ التغيير في مطابقة البنك.'} /> : null}

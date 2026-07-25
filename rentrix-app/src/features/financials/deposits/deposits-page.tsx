@@ -4,7 +4,7 @@ import { DepositsWorkspace } from './deposits-workspace';
 
 export function DepositsPage() {
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
         title="تأمين وأمانات المستأجرين"
         description="تسجيل مبالغ التأمين المحتجزة للعقود النشطة، ومتابعة الخصومات والاستردادات مع مستندات الطباعة."

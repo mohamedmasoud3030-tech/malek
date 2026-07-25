@@ -82,10 +82,10 @@ function errorMessage(error: unknown) {
 }
 
 function settlementTone(status: OwnerSettlementRecord['status']) {
-  if (status === 'paid') return 'green' as const;
-  if (status === 'approved') return 'blue' as const;
-  if (status === 'cancelled') return 'red' as const;
-  return 'gold' as const;
+  if (status === 'paid') return 'success' as const;
+  if (status === 'approved') return 'info' as const;
+  if (status === 'cancelled') return 'danger' as const;
+  return 'warning' as const;
 }
 
 export function OwnerSettlementWorkspace() {
@@ -299,30 +299,28 @@ export function OwnerSettlementWorkspace() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-border/60 bg-muted/20">
-        <CardHeader className="gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div>
-            <CardTitle className="text-sm font-bold">مركز تسويات ومحاسبة الملاك</CardTitle>
-            <CardDescription>
-              مسودات حقيقية من قاعدة البيانات، ثم اعتماد وصرف ذري مع سجل تدقيق وقيد يومية متوازن.
-            </CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
-              <RefreshCw className="size-4" />
-              تحديث
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleDraftOpenChange(true)}
-              disabled={targetsQuery.isPending || targets.length === 0}
-            >
-              <Plus className="size-4" />
-              إنشاء مسودة تسوية
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-3xl">
+          <h2 className="text-base font-bold tracking-tight">مركز تسويات ومحاسبة الملاك</h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            مسودات حقيقية من قاعدة البيانات، ثم اعتماد وصرف ذري مع سجل تدقيق وقيد يومية متوازن.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:shrink-0">
+          <Button variant="outline" size="sm" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
+            <RefreshCw className="size-4" />
+            تحديث
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handleDraftOpenChange(true)}
+            disabled={targetsQuery.isPending || targets.length === 0}
+          >
+            <Plus className="size-4" />
+            إنشاء مسودة تسوية
+          </Button>
+        </div>
+      </section>
 
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="إجمالي المقبوضات" value={formatMoney(totals.gross)} icon={Wallet} accent="emerald" sub="تحصيلات مثبتة داخل التسويات" />
@@ -340,7 +338,7 @@ export function OwnerSettlementWorkspace() {
       ) : null}
 
       <Card className="border-border/60">
-        <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+        <CardHeader className="border-b border-border/60 px-4 py-3 sm:px-5">
           <CardTitle className="text-sm font-bold">التسويات المسجلة</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4 sm:p-5">
@@ -465,7 +463,7 @@ function Metric({ label, value, tone = 'default' }: { label: string; value: numb
     : tone === 'danger'
       ? 'text-destructive'
       : tone === 'success'
-        ? 'text-emerald-600'
+        ? 'text-success'
         : 'text-foreground';
   return (
     <div className="rounded-xl bg-muted/20 p-2">

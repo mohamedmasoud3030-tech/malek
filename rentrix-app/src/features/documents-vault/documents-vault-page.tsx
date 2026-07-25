@@ -14,6 +14,7 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   vaultCategoryLabels,
@@ -175,7 +176,7 @@ export function DocumentsVaultPage() {
   };
 
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
         title="خزينة المستندات والمرفقات"
         description="أرشيف خاص؛ تحفظ مسارات التخزين فقط، وتتم المعاينة والتنزيل عبر روابط موقعة مؤقتة لمدة 60 دقيقة."
@@ -197,13 +198,13 @@ export function DocumentsVaultPage() {
       </ResponsiveCardGrid>
 
       <Card className="border-border/60">
-        <CardHeader className="bg-muted/20 border-b">
+        <CardHeader className="border-b border-border/60">
           <CardTitle className="text-sm font-black">رفع مستند جديد</CardTitle>
           <CardDescription>
             الحد الأقصى {vaultMaxFileSizeMb}MB. الأنواع المدعومة: PDF، JPEG، PNG، WebP. المعاينة والتنزيل مؤمنة.
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="space-y-4 p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label>عنوان المستند *</Label>
@@ -291,8 +292,8 @@ export function DocumentsVaultPage() {
           {documents.map((document) => {
             const signedUrl = signedMap[document.id];
             return (
-              <Card key={document.id} className="border-border/60 overflow-hidden hover:border-primary/40 transition">
-                <CardHeader className="bg-muted/15 border-b p-4">
+              <Card key={document.id} className="overflow-hidden border-border/60 transition hover:border-primary/40">
+                <CardHeader className="border-b border-border/60 p-4">
                   <div className="flex justify-between gap-2">
                     <div className="min-w-0">
                       <CardTitle className="text-sm font-bold truncate">{document.title}</CardTitle>
@@ -300,16 +301,16 @@ export function DocumentsVaultPage() {
                         {document.fileName} · {document.relatedEntityTitle || 'غير مرتبط'} · تخزين خاص
                       </CardDescription>
                     </div>
-                    <StatusBadge tone={document.mimeType?.includes('pdf') ? 'blue' : 'gold'}>
+                    <StatusBadge tone={document.mimeType?.includes('pdf') ? 'info' : 'warning'}>
                       {document.category ? vaultCategoryLabels[document.category] : '—'}
                     </StatusBadge>
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 space-y-3">
-                  <div className="aspect-video w-full rounded-xl border bg-muted/30 grid place-items-center overflow-hidden">
+                  <div className="grid aspect-video w-full place-items-center overflow-hidden rounded-xl border bg-muted/30">
                     {document.mimeType?.startsWith('image/') ? (
                       signedUrl ? (
-                        <img src={signedUrl} alt={document.title} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={signedUrl} alt={document.title} className="h-full w-full object-cover" loading="lazy" />
                       ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <ImageIcon className="size-8 animate-pulse" />
@@ -328,18 +329,18 @@ export function DocumentsVaultPage() {
                     <span>{document.fileSize ? `${(document.fileSize / 1024).toFixed(1)} KB` : ''} · خاص</span>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => handlePreview(document)}>
+                    <Button size="sm" variant="outline" className="min-h-10 flex-1 gap-1" onClick={() => handlePreview(document)}>
                       <Eye className="size-3.5" />
                       معاينة
                     </Button>
-                    <Button size="sm" variant="secondary" className="flex-1 gap-1" onClick={() => handleDownload(document)}>
+                    <Button size="sm" variant="secondary" className="min-h-10 flex-1 gap-1" onClick={() => handleDownload(document)}>
                       <Download className="size-3.5" />
                       تنزيل
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="gap-1 text-destructive"
+                      className="min-h-10 gap-1 text-destructive"
                       onClick={() => setDeleteTarget(document)}
                     >
                       <Trash2 className="size-3.5" />
@@ -352,23 +353,24 @@ export function DocumentsVaultPage() {
         </div>
       </AsyncContentState>
 
-      {previewItem ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-3xl bg-background border p-5 space-y-4 shadow-2xl">
-            <div className="flex justify-between border-b pb-3">
-              <h3 className="font-black text-base truncate">{previewItem.title}</h3>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setPreviewItem(null);
-                  setPreviewSignedUrl(null);
-                }}
-              >
-                إغلاق
-              </Button>
-            </div>
-            <div className="aspect-video w-full rounded-2xl border bg-muted/20 grid place-items-center overflow-hidden">
+      <Dialog
+        open={Boolean(previewItem)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPreviewItem(null);
+            setPreviewSignedUrl(null);
+          }
+        }}
+      >
+        {previewItem ? (
+          <DialogContent dir="rtl" className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="truncate">{previewItem.title}</DialogTitle>
+              <DialogDescription>
+                التصنيف: {vaultCategoryLabels[previewItem.category]} · تخزين خاص · {new Date(previewItem.uploadedAt).toLocaleString('ar-OM')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid aspect-video w-full place-items-center overflow-hidden rounded-2xl border bg-muted/20">
               {previewItem.mimeType?.startsWith('image/') ? (
                 previewSignedUrl ? (
                   <img src={previewSignedUrl} alt={previewItem.title} className="max-h-80 object-contain" />
@@ -376,22 +378,18 @@ export function DocumentsVaultPage() {
                   <p className="text-sm text-muted-foreground">جارٍ تحميل المعاينة...</p>
                 )
               ) : (
-                <div className="text-center p-6 space-y-3">
-                  <FileText className="size-16 text-primary mx-auto" />
-                  <p className="font-bold text-sm">{previewItem.fileName}</p>
-                  <p className="text-xs text-muted-foreground">يتم تنزيل الملف عبر رابط موقع مؤقت لمدة 60 دقيقة.</p>
+                <div className="space-y-3 p-6 text-center">
+                  <FileText className="mx-auto size-16 text-primary" />
+                  <p className="text-sm font-bold">{previewItem.fileName}</p>
+                  <p className="text-xs text-muted-foreground">يتم تنزيل الملف عبر رابط موقّع مؤقت لمدة 60 دقيقة.</p>
                   <Button onClick={() => handleDownload(previewItem)}>تنزيل الملف</Button>
                 </div>
               )}
             </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>التصنيف: {vaultCategoryLabels[previewItem.category]} · تخزين خاص</span>
-              <span>{new Date(previewItem.uploadedAt).toLocaleString('ar-OM')}</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground hidden">مسار التخزين: {previewItem.storagePath}</p>
-          </div>
-        </div>
-      ) : null}
+            <p className="hidden text-[11px] text-muted-foreground">مسار التخزين: {previewItem.storagePath}</p>
+          </DialogContent>
+        ) : null}
+      </Dialog>
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

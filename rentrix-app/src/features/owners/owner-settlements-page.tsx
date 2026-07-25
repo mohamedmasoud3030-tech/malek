@@ -4,7 +4,7 @@ import { OwnerSettlementWorkspace } from './components/OwnerSettlementWorkspace'
 
 export function OwnerSettlementsPage() {
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
         title="تسويات الملاك"
         description="إعداد تسويات كل مالك عن الفترة، اعتمادها للصرف، وتنفيذ دفعات الصافي المستحق مع مستندات الطباعة."

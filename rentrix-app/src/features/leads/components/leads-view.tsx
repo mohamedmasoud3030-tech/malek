@@ -8,14 +8,15 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useState } from "react";
+import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
 import { Button } from "@/components/ui/button";
 import { AsyncContentState } from "@/components/async-content-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { PageLayout } from "@/components/layout/page-layout";
 import { WriteErrorCard } from "@/components/page-state-card";
-import { Card, CardContent } from "@/components/ui/card";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { EntityForm } from "@/components/ui/entity-form";
 import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/ui/kpi-card";
@@ -40,13 +41,13 @@ const sourceLabels: Record<string, string> = {
   social: "منصات اجتماعية",
   website: "الموقع",
 };
-const statusTone: Record<string, "blue" | "green" | "red" | "gray" | "gold"> = {
-  new: "blue",
-  contacted: "gold",
-  qualified: "green",
-  converted: "green",
-  lost: "red",
-  archived: "gray",
+const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "neutral"> = {
+  new: "info",
+  contacted: "warning",
+  qualified: "success",
+  converted: "success",
+  lost: "danger",
+  archived: "neutral",
 };
 
 type Props = Readonly<{
@@ -107,6 +108,31 @@ export function LeadsView(props: Props) {
     filters.query.trim().length > 0 ||
     filters.status !== "all" ||
     filters.source !== "all";
+  const activeFilters: ActiveFilterItem[] = [];
+  if (filters.query.trim()) {
+    activeFilters.push({
+      key: "query",
+      label: "بحث",
+      value: filters.query,
+      onRemove: () => onFiltersChange({ ...filters, query: "" }),
+    });
+  }
+  if (filters.status !== "all") {
+    activeFilters.push({
+      key: "status",
+      label: "الحالة",
+      value: statusLabels[filters.status] ?? filters.status,
+      onRemove: () => onFiltersChange({ ...filters, status: "all" }),
+    });
+  }
+  if (filters.source !== "all") {
+    activeFilters.push({
+      key: "source",
+      label: "المصدر",
+      value: sourceLabels[filters.source] ?? filters.source,
+      onRemove: () => onFiltersChange({ ...filters, source: "all" }),
+    });
+  }
   const listStatus = isLoading
     ? "loading"
     : error
@@ -164,46 +190,50 @@ export function LeadsView(props: Props) {
         />
       </ResponsiveCardGrid>
 
-      <Card>
-        <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]">
-          <Input
-            value={filters.query}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, query: event.target.value })
-            }
-            placeholder="بحث بالاسم، الهاتف، البريد، نوع الوحدة"
-            aria-label="بحث العملاء المحتملين"
-          />
-          <Select
-            value={filters.status}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, status: event.target.value })
-            }
-            aria-label="حالة العميل المحتمل"
-          >
-            <option value="all">كل الحالات</option>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-          <Select
-            value={filters.source}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, source: event.target.value })
-            }
-            aria-label="مصدر العميل المحتمل"
-          >
-            <option value="all">كل المصادر</option>
-            {Object.entries(sourceLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </CardContent>
-      </Card>
+      <FilterBar
+        searchValue={filters.query}
+        onSearchChange={(query) => onFiltersChange({ ...filters, query })}
+        searchPlaceholder="بحث بالاسم، الهاتف، البريد، نوع الوحدة"
+        searchAriaLabel="بحث العملاء المحتملين"
+        filters={
+          <>
+            <Select
+              value={filters.status}
+              onChange={(event) =>
+                onFiltersChange({ ...filters, status: event.target.value })
+              }
+              aria-label="حالة العميل المحتمل"
+              className="w-full sm:w-48"
+            >
+              <option value="all">كل الحالات</option>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              value={filters.source}
+              onChange={(event) =>
+                onFiltersChange({ ...filters, source: event.target.value })
+              }
+              aria-label="مصدر العميل المحتمل"
+              className="w-full sm:w-48"
+            >
+              <option value="all">كل المصادر</option>
+              {Object.entries(sourceLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </>
+        }
+      />
+      <ActiveFilterBar
+        filters={activeFilters}
+        onClearAll={() => onFiltersChange({ query: "", status: "all", source: "all" })}
+      />
 
       {writeError ? (
         <WriteErrorCard
@@ -430,7 +460,7 @@ function LeadRows({
       key: "status",
       header: "الحالة",
       render: (row) => (
-        <StatusBadge tone={statusTone[row.status ?? ""] ?? "gray"}>
+        <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>
           {statusLabels[row.status ?? ""] ?? row.status ?? "—"}
         </StatusBadge>
       ),
@@ -489,7 +519,7 @@ function LeadCard({
             {row.phone ?? row.email ?? "بدون بيانات اتصال"}
           </p>
         </div>
-        <StatusBadge tone={statusTone[row.status ?? ""] ?? "gray"}>
+        <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>
           {statusLabels[row.status ?? ""] ?? row.status ?? "—"}
         </StatusBadge>
       </div>
