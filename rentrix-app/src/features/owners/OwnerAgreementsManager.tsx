@@ -47,7 +47,7 @@ function getOwnerName(owners: readonly Owner[], ownerId: string) {
   return owner?.display_name || owner?.full_name || 'مالك غير معروف';
 }
 
-function AgreementRow({ agreement, owners, onEdit, tone }: { agreement: OwnerAgreement; owners: readonly Owner[]; onEdit: (agreement: OwnerAgreement) => void; tone: 'green' | 'blue' | 'gray' }) {
+function AgreementRow({ agreement, owners, onEdit, tone }: { agreement: OwnerAgreement; owners: readonly Owner[]; onEdit: (agreement: OwnerAgreement) => void; tone: 'success' | 'info' | 'neutral' }) {
   return (
     <div className="rounded-2xl border border-border bg-background p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -155,14 +155,14 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
         {agreementsQuery.isError ? <p className="text-sm text-destructive">تعذر تحميل اتفاقيات المالك لهذا العقار.</p> : null}
         {ownershipQuery.isError ? <p className="text-sm text-destructive">تعذر تحميل ملاك العقار وفترات ملكيتهم.</p> : null}
         {!loading && !ownershipQuery.isError && !hasOwnershipLinks ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
             اربط مالكاً بالعقار وحدد فترة ملكيته قبل إنشاء اتفاقية مكتب ومالك.
           </p>
         ) : null}
         <div className="grid gap-4 lg:grid-cols-3">
-          <section className="space-y-3"><h3 className="text-sm font-bold">السارية</h3>{grouped.current.length ? grouped.current.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="green" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقية سارية اليوم.</p>}</section>
-          <section className="space-y-3"><h3 className="text-sm font-bold">المجدولة</h3>{grouped.scheduled.length ? grouped.scheduled.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="blue" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات مستقبلية.</p>}</section>
-          <section className="space-y-3"><h3 className="text-sm font-bold">المنتهية</h3>{grouped.ended.length ? grouped.ended.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="gray" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات منتهية.</p>}</section>
+          <section className="space-y-3"><h3 className="text-sm font-bold">السارية</h3>{grouped.current.length ? grouped.current.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="success" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقية سارية اليوم.</p>}</section>
+          <section className="space-y-3"><h3 className="text-sm font-bold">المجدولة</h3>{grouped.scheduled.length ? grouped.scheduled.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="info" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات مستقبلية.</p>}</section>
+          <section className="space-y-3"><h3 className="text-sm font-bold">المنتهية</h3>{grouped.ended.length ? grouped.ended.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="neutral" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات منتهية.</p>}</section>
         </div>
       </CardContent>
       <EntityForm.Overlay

@@ -32,7 +32,7 @@ export function OwnerRelationshipsList({ linkedProperties, endLinkPending, onEdi
           <div key={link.id} className="rounded-2xl border border-border bg-muted/25 p-4">
             <div className="flex items-start justify-between gap-3">
               <div><p className="font-semibold">{property.title}</p><p className="text-xs text-muted-foreground">{property.address}</p></div>
-              <StatusBadge tone={link.is_primary ? 'blue' : 'gray'}>{link.is_primary ? 'أساسي' : 'ثانوي'}</StatusBadge>
+              <StatusBadge tone={link.is_primary ? 'info' : 'neutral'}>{link.is_primary ? 'أساسي' : 'ثانوي'}</StatusBadge>
             </div>
             <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
               <span>نسبة الملكية: <b className="text-foreground">{link.ownership_percentage}%</b></span>

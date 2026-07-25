@@ -82,7 +82,7 @@ export function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogPr
       title={isEditing ? 'تعديل بيانات المالك' : 'إضافة مالك'}
       description="بيانات تعريفية خفيفة للملاك بدون إضافة أرصدة أو تسويات مالية."
       className="max-w-2xl"
-      headerExtra={isDirty && !isPending ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
+      headerExtra={isDirty && !isPending ? <StatusBadge tone="warning">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
       <EntityForm.Root onSubmit={handleSubmit} aria-busy={isPending}>
         <EntityForm.ErrorSummary message={error} />
