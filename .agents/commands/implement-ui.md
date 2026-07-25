@@ -66,7 +66,7 @@ route, and component layer for the ticket at `tickets/&lt;ticket-slug&gt;.md`.
 3. Run: `pnpm --filter ./rentrix-app test -- &lt;feature-glob&gt;`
 4. Run: `pnpm build`
 5. For nav/sidebar changes, re-read
-   `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md` and verify you haven't
+   `docs/archive/ui-2026-07-11-phase/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md` and verify you haven't
    broken mobile drawer behavior.
 
 ## Summarize

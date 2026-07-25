@@ -9,7 +9,7 @@ lists — not the whole table, and not every file in the repo.
 Each row tells you: what to read in `docs/agent-context/DOMAIN.md` (if
 anything applies), when `docs/agent-context/WORKFLOW.md` is worth reading in
 full, which code/backend/test files to check, and any known live caveat. For
-UI/navigation work, also check `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md`
+UI/navigation work, also check `docs/archive/ui-2026-07-11-phase/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md`
 when changing sidebar, mobile navigation, safe-area, responsive, or RTL behavior.
 
 ## Financial change (invoice / payment / receipt / expense / settlement)
@@ -133,7 +133,7 @@ when changing sidebar, mobile navigation, safe-area, responsive, or RTL behavior
 - Workflow: `docs/agent-context/WORKFLOW.md` not required — this is a
   trivial/low-risk task type. If the change affects navigation, mobile layout,
   responsive shell behavior, safe areas, or RTL ergonomics, also read
-  `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md`.
+  `docs/archive/ui-2026-07-11-phase/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md`.
 - Start: the specific feature folder's page component; `docs/PRODUCT.md` if
   you need to confirm what a section is for.
 - Code: `rentrix-app/src/components/ui/` and `components/layout/` if the

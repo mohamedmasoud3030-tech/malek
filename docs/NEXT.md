@@ -75,6 +75,11 @@
 
 باقي: **149 ملف في `supabase/migrations/` نفسها** — الملفات دي هي الترحيلات الحقيقية والمطبقة فعلياً على production (تطابق 149/149 مع الـ ledger، تحقق منه في `APP_STATUS.md`). التوحيد المطلوب هنا مش حذف ملفات فعلية، لكن فحص الأزواج متشابهة الاسم (زي `reconcile_unit_legacy_rent` مرتين) للتأكد إنها كلها نمط stub/alias موثق ومش تكرار خفي لمنطق متضارب — ده شغل تدقيق منفصل لكل ملف، مش عملية حذف جماعية.
 
+## تنظيف الفروع والدوكس (2026-07-25)
+
+- **فروع GitHub**: حُذف 66 فرع من أصل 328 (60 مسارات ميتة فقط `docs/archive/tickets/evidence`، 6 مدمجة بالكامل في `main` بنفس المحتوى حرفيًا — تأكيد عبر مطابقة blob SHA). الـ262 المتبقية مصنّفة: 101 مدمج جزئيًا، 153 غير مدمج إطلاقًا (منها 19 فرع يلمس migrations، مرشحة كمُدخل لجلسة توحيد الـmigrations القادمة — ملحوظ إن فرع `codex/rebuild-supabase-migrations-as-code-first-baseline` بالذات تاريخ migrations بديل كامل بترقيم مستقل، مُدخل مباشر لتلك الجلسة).
+- **مجلد `docs/`**: أُرشفت (مش اتمسحت) 3 ملفات من `docs/handover/` (`RELEASE_BLOCKERS.md`, `INTEGRATED_TODO_LIST.md`, `MODERN_FORMS_AND_PDF_TODO_LIST.md` — تأكدت أنها مكتملة/محالة فعليًا لـ`NEXT.md` قبل النقل) و5 ملفات UX من `docs/ui/` (استُبدلت رسميًا بـ`docs/ui-ux/RENTRIX_VISUAL_DIRECTION.md`). التفاصيل والمنطق في `docs/archive/README.md`. `docs/handover/HANDOVER_CHECKLIST.md`, `POST_LAUNCH_BACKLOG.md`, و`FORGOTTEN_PLANS_TODO_LIST.md` بقيوا لوجود بنود مفتوحة أو غرض تشغيلي دائم مختلف عن ملفات الحالة.
+
 ## بنود قايمة (بعد التوحيد)
 
 - معالجة الـ 224 ملاحظة أداء من Supabase Advisor (79 `auth_rls_initplan`، 20 `multiple_permissive_policies`، فهارس مفقودة/غير مستخدمة) — مش عاجلة عند الحجم الحالي للبيانات، لكن لازم تتعالج قبل أول عميل حقيقي بحجم بيانات كبير
