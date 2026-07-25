@@ -84,7 +84,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
       className="max-w-2xl"
       headerExtra={
         form.formState.isDirty && !submitting ? (
-          <StatusBadge tone="gold">
+          <StatusBadge tone="warning">
             {translateSharedLabel('unsavedChanges', getAppLanguageState().language)}
           </StatusBadge>
         ) : undefined
