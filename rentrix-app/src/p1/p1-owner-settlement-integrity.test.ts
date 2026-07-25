@@ -87,7 +87,7 @@ function num(v: unknown) {
 async function calcRow(ownerId: string, propertyId: string | null, from = JULY.from, to = JULY.to) {
   const { rows } = await db.query(
     `select gross_collected, office_fee, owner_expenses, tax_amount, net_payable, breakdown
-       from public.calculate_owner_net_payout($1::uuid, $2::date, $3::date, $4::uuid)`,
+       from public.calculate_owner_net_payout($1::uuid, $2::date, $3::date, $4::text)`,
     [ownerId, from, to, propertyId],
   );
   return rows[0] as any;
@@ -418,7 +418,7 @@ describe('P1 — calculate_owner_net_payout derivation (server-side, canonical s
 
   it('is not executable by anon even at the ACL level', async () => {
     const { rows } = await db.query<{ allowed: boolean }>(
-      `select has_function_privilege('anon', 'public.calculate_owner_net_payout(uuid,date,date,uuid)', 'EXECUTE') as allowed`,
+      `select has_function_privilege('anon', 'public.calculate_owner_net_payout(uuid,date,date,text)', 'EXECUTE') as allowed`,
     );
     expect(rows[0]?.allowed).toBe(false);
   }, 60_000);
