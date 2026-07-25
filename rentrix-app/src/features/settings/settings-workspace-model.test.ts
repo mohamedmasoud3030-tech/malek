@@ -59,6 +59,6 @@ describe('buildSettingsSummaryTiles', () => {
     });
 
     expect(tiles.map((tile) => tile.value)).toEqual(['0/3', 'غير محفوظة', 'تحتاج مراجعة']);
-    expect(tiles.map((tile) => tile.tone)).toEqual(['red', 'gold', 'gold']);
+    expect(tiles.map((tile) => tile.tone)).toEqual(['danger', 'warning', 'warning']);
   });
 });

@@ -84,7 +84,7 @@ export function SettingsAppearanceSection({
           <div className="mt-3 space-y-2 rounded-xl border bg-background p-3 shadow-sm">
             <div className="flex items-center justify-between gap-2">
               <p className="font-black">{preview.companyName}</p>
-              <StatusBadge tone="green">نشط</StatusBadge>
+              <StatusBadge tone="success">نشط</StatusBadge>
             </div>
             <p className="text-xs font-bold text-muted-foreground">
               {preview.defaultCurrency} · {preview.locale}

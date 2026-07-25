@@ -148,7 +148,7 @@ export function CostCentersSettingsSection() {
             <p className="text-sm font-black">مراكز التكلفة الحالية</p>
             <p className="mt-1 text-[11px] text-muted-foreground">{costCenters.length} مركز مسجل</p>
           </div>
-          <StatusBadge tone={costCenters.length > 0 ? 'green' : 'gray'}>{costCenters.length > 0 ? 'مفعلة' : 'فارغة'}</StatusBadge>
+          <StatusBadge tone={costCenters.length > 0 ? 'success' : 'neutral'}>{costCenters.length > 0 ? 'مفعلة' : 'فارغة'}</StatusBadge>
         </div>
 
         {costCenters.length === 0 ? (
@@ -166,7 +166,7 @@ export function CostCentersSettingsSection() {
                       {getPropertyTitle(properties, costCenter.property_id)} · {getParentName(costCenters, costCenter.parent_id)}
                     </p>
                   </div>
-                  <StatusBadge tone={costCenter.is_active === false ? 'gray' : 'green'}>{costCenter.is_active === false ? 'غير نشط' : 'نشط'}</StatusBadge>
+                  <StatusBadge tone={costCenter.is_active === false ? 'neutral' : 'success'}>{costCenter.is_active === false ? 'غير نشط' : 'نشط'}</StatusBadge>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button type="button" variant="secondary" className="min-h-9 px-3 py-1.5 text-xs" onClick={() => handleEdit(costCenter)} disabled={isBusy}>

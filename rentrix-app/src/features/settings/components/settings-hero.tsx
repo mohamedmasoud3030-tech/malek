@@ -20,7 +20,7 @@ export function SettingsHero({
             </p>
           </div>
         </div>
-        <StatusBadge tone={hasUnsavedChanges ? 'gold' : 'green'}>
+        <StatusBadge tone={hasUnsavedChanges ? 'warning' : 'success'}>
           {hasUnsavedChanges ? 'تغييرات غير محفوظة' : 'الإعدادات محفوظة'}
         </StatusBadge>
       </div>
@@ -32,7 +32,7 @@ type OverviewTile = Readonly<{
   label: string;
   value: string;
   helper: string;
-  tone: 'green' | 'blue' | 'gold' | 'red' | 'gray';
+  tone: 'success' | 'info' | 'warning' | 'danger' | 'neutral';
 }>;
 
 export function OverviewRow({ tiles }: Readonly<{ tiles: readonly OverviewTile[] }>) {
