@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { AccessDenied } from '@/components/layout/access-denied';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { canAccess } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { DataIntegrityView } from './components/data-integrity-view';
@@ -13,9 +15,20 @@ export function DataIntegrityPage() {
     return <AccessDenied message="فحوصات سلامة البيانات متاحة فقط للمدير أو المسؤول." />;
   }
 
-  if (integrityQuery.isPending) return <DataIntegrityView state={{ status: 'loading' }} />;
-  if (integrityQuery.isError) return <DataIntegrityView state={{ status: 'error', error: integrityQuery.error }} />;
+  const state = integrityQuery.isPending
+    ? ({ status: 'loading' } as const)
+    : integrityQuery.isError
+      ? ({ status: 'error', error: integrityQuery.error } as const)
+      : ({ status: 'ready', result: integrityQuery.data } as const);
 
-  return <DataIntegrityView state={{ status: 'ready', result: integrityQuery.data }} />;
+  return (
+    <PageLayout dir="rtl" lang="ar">
+      <PageHeader
+        title="سلامة البيانات"
+        description="فحص قراءة فقط للعلاقات الأساسية في مخطط Rentrix الحالي. لا ينفذ أي تغييرات على البيانات."
+      />
+      <DataIntegrityView state={state} />
+    </PageLayout>
+  );
 }
 

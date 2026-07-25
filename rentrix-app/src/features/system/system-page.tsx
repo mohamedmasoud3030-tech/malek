@@ -1,5 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { KeyRound, ListChecks, SearchCheck, Settings, ShieldCheck } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Button } from '@/components/ui/button';
@@ -33,35 +35,26 @@ export function SystemPage() {
   const visibleLinks = governanceLinks.filter((item) => canAccess(authorization, item.permission));
 
   return (
-    <section className="space-y-6" dir="rtl">
-      {/* Governance principles banner */}
-      <Card className="overflow-hidden">
-        <div className="h-1.5 bg-primary" />
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <ShieldCheck className="size-5 text-primary" />
-            النظام والحوكمة
-          </CardTitle>
-          <CardDescription>
-            مركز وصول آمن للوظائف النظامية. جميع العمليات هنا قراءة فقط أو محدودة الصلاحية.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveCardGrid desktopColumns={4}>
-            {governancePrinciples.map((p) => (
-              <div key={p.label} className="rounded-2xl border border-border bg-muted/30 p-4">
-                <p className="text-xs font-bold text-muted-foreground">{p.label}</p>
-                <p className="mt-1 text-lg font-black">{p.value}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{p.description}</p>
-              </div>
-            ))}
-          </ResponsiveCardGrid>
-        </CardContent>
-      </Card>
+    <PageLayout dir="rtl" lang="ar">
+      <PageHeader
+        title="النظام والحوكمة"
+        description="مركز وصول آمن للوظائف النظامية. جميع العمليات هنا قراءة فقط أو محدودة الصلاحية."
+      />
 
-      {/* Navigation cards */}
+      <ResponsiveCardGrid desktopColumns={4}>
+        {governancePrinciples.map((principle) => (
+          <Card key={principle.label} variant="muted">
+            <CardContent className="p-4">
+              <p className="text-xs font-bold text-muted-foreground">{principle.label}</p>
+              <p className="mt-1 text-lg font-black">{principle.value}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{principle.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </ResponsiveCardGrid>
+
       {visibleLinks.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-muted/20 px-6 py-10 text-center text-muted-foreground text-sm">
+        <div className="rounded-2xl border border-border bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">
           لا توجد وظائف نظامية متاحة لصلاحياتك الحالية.
         </div>
       ) : (
@@ -69,11 +62,11 @@ export function SystemPage() {
           {visibleLinks.map((item) => {
             const Icon = item.icon;
             return (
-              <Card key={item.to} className="rounded-2xl transition-shadow hover:shadow-md">
+              <Card key={item.to} className="rounded-2xl transition-shadow hover:shadow-card-hover">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10">
-                      <Icon className="size-5 text-primary" />
+                    <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="size-5" />
                     </span>
                     {item.title}
                   </CardTitle>
@@ -89,6 +82,6 @@ export function SystemPage() {
           })}
         </div>
       )}
-    </section>
+    </PageLayout>
   );
 }

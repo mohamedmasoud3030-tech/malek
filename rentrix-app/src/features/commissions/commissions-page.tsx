@@ -1,3 +1,4 @@
+import { PageLayout } from '@/components/layout/page-layout';
 import { useCrudFormState } from '@/hooks/use-crud-form-state';
 import { useState } from 'react';
 import { CommissionsView } from './components/commissions-view';
@@ -26,25 +27,27 @@ export function CommissionsPage() {
   const archiveCommission = useArchiveCommission();
 
   return (
-    <CommissionsView
-      rows={commissionsQuery.data ?? []}
-      filters={filters}
-      draft={formState.draft}
-      editingCommission={formState.editingRecord}
-      formOpen={formState.formOpen}
-      isLoading={commissionsQuery.isLoading}
-      isSaving={saveCommission.isPending}
-      isArchiving={archiveCommission.isPending}
-      error={commissionsQuery.error}
-      writeError={saveCommission.error ?? archiveCommission.error}
-      onFiltersChange={setFilters}
-      onDraftChange={formState.setDraft}
-      onCreate={formState.openCreate}
-      onEdit={formState.openEdit}
-      onFormOpenChange={formState.setFormOpen}
-      onSubmit={(values) => saveCommission.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
-      onArchive={(id) => archiveCommission.mutate(id)}
-      onRetry={() => void commissionsQuery.refetch()}
-    />
+    <PageLayout dir="rtl" lang="ar">
+      <CommissionsView
+        rows={commissionsQuery.data ?? []}
+        filters={filters}
+        draft={formState.draft}
+        editingCommission={formState.editingRecord}
+        formOpen={formState.formOpen}
+        isLoading={commissionsQuery.isLoading}
+        isSaving={saveCommission.isPending}
+        isArchiving={archiveCommission.isPending}
+        error={commissionsQuery.error}
+        writeError={saveCommission.error ?? archiveCommission.error}
+        onFiltersChange={setFilters}
+        onDraftChange={formState.setDraft}
+        onCreate={formState.openCreate}
+        onEdit={formState.openEdit}
+        onFormOpenChange={formState.setFormOpen}
+        onSubmit={(values) => saveCommission.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
+        onArchive={(id) => archiveCommission.mutate(id)}
+        onRetry={() => void commissionsQuery.refetch()}
+      />
+    </PageLayout>
   );
 }

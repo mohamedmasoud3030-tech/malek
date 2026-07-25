@@ -8,18 +8,19 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { useState } from "react";
+import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageStateCard, WriteErrorCard } from "@/components/page-state-card";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { EntityForm } from "@/components/ui/entity-form";
 import { EntityTable } from "@/components/ui/entity-table";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
@@ -46,11 +47,11 @@ const typeLabels: Record<string, string> = {
   lead: "عميل محتمل",
   land: "أرض",
 };
-const statusTone: Record<string, "blue" | "green" | "red" | "gray" | "gold"> = {
-  pending: "gold",
-  approved: "blue",
-  paid: "green",
-  cancelled: "red",
+const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "neutral"> = {
+  pending: "warning",
+  approved: "info",
+  paid: "success",
+  cancelled: "danger",
 };
 
 function money(value: number | null) {
@@ -113,6 +114,31 @@ export function CommissionsView(props: Props) {
     filters.query.trim().length > 0 ||
     filters.status !== "all" ||
     filters.type !== "all";
+  const activeFilters: ActiveFilterItem[] = [];
+  if (filters.query.trim()) {
+    activeFilters.push({
+      key: "query",
+      label: "بحث",
+      value: filters.query,
+      onRemove: () => onFiltersChange({ ...filters, query: "" }),
+    });
+  }
+  if (filters.status !== "all") {
+    activeFilters.push({
+      key: "status",
+      label: "الحالة",
+      value: statusLabels[filters.status] ?? filters.status,
+      onRemove: () => onFiltersChange({ ...filters, status: "all" }),
+    });
+  }
+  if (filters.type !== "all") {
+    activeFilters.push({
+      key: "type",
+      label: "النوع",
+      value: typeLabels[filters.type] ?? filters.type,
+      onRemove: () => onFiltersChange({ ...filters, type: "all" }),
+    });
+  }
 
   return (
     <section className="space-y-5">
@@ -153,44 +179,52 @@ export function CommissionsView(props: Props) {
         />
       </ResponsiveCardGrid>
 
-      <Card>
-        <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]">
-          <Input
-            value={filters.query}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, query: event.target.value })
-            }
-            placeholder="بحث بالموظف، المصدر، النوع"
-            aria-label="بحث العمولات"
-          />
-          <Select
-            value={filters.status}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, status: event.target.value })
-            }
-          >
-            <option value="all">كل الحالات</option>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-          <Select
-            value={filters.type}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, type: event.target.value })
-            }
-          >
-            <option value="all">كل الأنواع</option>
-            {Object.entries(typeLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </CardContent>
-      </Card>
+      <FilterBar
+        searchValue={filters.query}
+        onSearchChange={(query) => onFiltersChange({ ...filters, query })}
+        searchPlaceholder="بحث بالموظف، المصدر، النوع"
+        searchAriaLabel="بحث العمولات"
+        filters={
+          <>
+            <Select
+              value={filters.status}
+              onChange={(event) =>
+                onFiltersChange({ ...filters, status: event.target.value })
+              }
+              aria-label="حالة العمولة"
+              className="w-full sm:w-48"
+            >
+              <option value="all">كل الحالات</option>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              value={filters.type}
+              onChange={(event) =>
+                onFiltersChange({ ...filters, type: event.target.value })
+              }
+              aria-label="نوع العمولة"
+              className="w-full sm:w-48"
+            >
+              <option value="all">كل الأنواع</option>
+              {Object.entries(typeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </>
+        }
+      />
+      <ActiveFilterBar
+        filters={activeFilters}
+        onClearAll={() =>
+          onFiltersChange({ query: "", status: "all", type: "all" })
+        }
+      />
 
       {error ? (
         <ErrorCard message="تعذر تحميل العمولات" onRetry={onRetry} />
@@ -414,7 +448,7 @@ function CommissionRows({
           key: "status",
           header: "الحالة",
           render: (row) => (
-            <StatusBadge tone={statusTone[row.status ?? ""] ?? "gray"}>
+            <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>
               {statusLabels[row.status ?? ""] ?? row.status ?? "—"}
             </StatusBadge>
           ),
@@ -443,7 +477,7 @@ function CommissionRows({
                 {typeLabels[row.type ?? ""] ?? row.type ?? "—"}
               </p>
             </div>
-            <StatusBadge tone={statusTone[row.status ?? ""] ?? "gray"}>
+            <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>
               {statusLabels[row.status ?? ""] ?? row.status ?? "—"}
             </StatusBadge>
           </div>
