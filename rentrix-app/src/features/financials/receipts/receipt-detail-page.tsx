@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Printer, MessageCircle, Share2, Copy, ExternalLink } from 'lucide-react';
+import { ArrowRight, Printer, MessageCircle, Share2, Copy, ExternalLink, Download } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -25,11 +25,10 @@ export function ReceiptDetailPage() {
 
   const receipt = receiptQuery.data;
 
-  const handlePrint = useCallback(() => {
-    if (!receipt) return;
-    setIsPrinting(true);
-    DocumentTemplates.printReceiptDocument(
-      {
+  const buildReceiptDocument = useCallback(() => {
+    if (!receipt) return null;
+    return {
+      data: {
         receiptNumber: receipt.receipt_number,
         paymentDate: receipt.payment_date,
         tenantName: receipt.tenant_name ?? '—',
@@ -41,7 +40,7 @@ export function ReceiptDetailPage() {
         reference: receipt.reference_number ?? undefined,
         notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
       },
-      {
+      settings: {
         company: {
           name: companySettings.companyName || 'رينتريكس لإدارة العقارات',
           phone: '+968 24000000',
@@ -50,9 +49,22 @@ export function ReceiptDetailPage() {
         currency: 'OMR',
         currencySymbol: 'ر.ع',
       },
-    );
-    window.setTimeout(() => setIsPrinting(false), 1000);
+    };
   }, [receipt, companySettings]);
+
+  const handlePrint = useCallback(() => {
+    const document = buildReceiptDocument();
+    if (!document) return;
+    setIsPrinting(true);
+    void DocumentTemplates.printReceiptDocument(document.data, document.settings)
+      .finally(() => window.setTimeout(() => setIsPrinting(false), 300));
+  }, [buildReceiptDocument]);
+
+  const handleDownloadPdf = useCallback(() => {
+    const document = buildReceiptDocument();
+    if (!document) return;
+    void DocumentTemplates.downloadReceiptPdf(document.data, document.settings);
+  }, [buildReceiptDocument]);
 
   const handleWhatsApp = useCallback(() => {
     if (!receipt) return;
@@ -137,7 +149,11 @@ export function ReceiptDetailPage() {
         )}
         secondaryActions={(
           <>
-            <Button variant="secondary" onClick={handleWhatsApp} className="min-h-11">
+            <Button variant="secondary" onClick={handleDownloadPdf} className="min-h-11">
+          <Download className="me-2 size-4" />
+          تنزيل PDF
+        </Button>
+        <Button variant="secondary" onClick={handleWhatsApp} className="min-h-11">
               <MessageCircle className="me-2 size-4" />
               واتساب
             </Button>

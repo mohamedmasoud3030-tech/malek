@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BadgeCheck,
   CheckCircle2,
+  Download,
   DollarSign,
   Landmark,
   Plus,
@@ -189,51 +190,55 @@ export function OwnerSettlementWorkspace() {
     payoutMutation.reset();
   };
 
+  const buildOwnerStatementData = (settlement: OwnerSettlementRecord) => ({
+    ownerName: settlement.owner_name,
+    periodFrom: settlement.period_start,
+    periodTo: settlement.period_end,
+    propertyTitle: settlement.property_title,
+    totalRent: settlement.gross_rent_collected,
+    totalExpenses: settlement.maintenance_deductions + settlement.utility_deductions,
+    totalCommission: settlement.management_fee_amount,
+    netAmount: settlement.net_payable_amount,
+    transactions: [
+      {
+        date: settlement.period_start,
+        type: 'إيجارات مقبوضة',
+        description: `تحصيلات إيجارات ${settlement.property_title}`,
+        amount: settlement.gross_rent_collected,
+      },
+      {
+        date: settlement.period_end,
+        type: 'أتعاب إدارة',
+        description: 'أتعاب المكتب المعتمدة في التسوية',
+        amount: -settlement.management_fee_amount,
+      },
+      ...(settlement.maintenance_deductions > 0
+        ? [{
+            date: settlement.period_end,
+            type: 'مصروفات على المالك',
+            description: 'مصروفات مخصومة من مستحق المالك',
+            amount: -settlement.maintenance_deductions,
+          }]
+        : []),
+      ...(settlement.utility_deductions > 0
+        ? [{
+            date: settlement.period_end,
+            type: 'ضريبة التسوية',
+            description: 'ضريبة مسجلة مستقلة داخل التسوية',
+            amount: -settlement.utility_deductions,
+          }]
+        : []),
+    ],
+  });
+
   const handlePrint = (settlement: OwnerSettlementRecord) => {
     if (!documentSettings.isReady) return;
-    DocumentTemplates.printOwnerStatementDocument(
-      {
-        ownerName: settlement.owner_name,
-        periodFrom: settlement.period_start,
-        periodTo: settlement.period_end,
-        propertyTitle: settlement.property_title,
-        totalRent: settlement.gross_rent_collected,
-        totalExpenses: settlement.maintenance_deductions + settlement.utility_deductions,
-        totalCommission: settlement.management_fee_amount,
-        netAmount: settlement.net_payable_amount,
-        transactions: [
-          {
-            date: settlement.period_start,
-            type: 'إيجارات مقبوضة',
-            description: `تحصيلات إيجارات ${settlement.property_title}`,
-            amount: settlement.gross_rent_collected,
-          },
-          {
-            date: settlement.period_end,
-            type: 'أتعاب إدارة',
-            description: 'أتعاب المكتب المعتمدة في التسوية',
-            amount: -settlement.management_fee_amount,
-          },
-          ...(settlement.maintenance_deductions > 0
-            ? [{
-                date: settlement.period_end,
-                type: 'مصروفات على المالك',
-                description: 'مصروفات مخصومة من مستحق المالك',
-                amount: -settlement.maintenance_deductions,
-              }]
-            : []),
-          ...(settlement.utility_deductions > 0
-            ? [{
-                date: settlement.period_end,
-                type: 'ضريبة التسوية',
-                description: 'ضريبة مسجلة مستقلة داخل التسوية',
-                amount: -settlement.utility_deductions,
-              }]
-            : []),
-        ],
-      },
-      documentSettings.settings,
-    );
+    void DocumentTemplates.printOwnerStatementDocument(buildOwnerStatementData(settlement), documentSettings.settings);
+  };
+
+  const handleDownloadPdf = (settlement: OwnerSettlementRecord) => {
+    if (!documentSettings.isReady) return;
+    void DocumentTemplates.downloadOwnerStatementPdf(buildOwnerStatementData(settlement), documentSettings.settings);
   };
 
   const handleTargetChange = (value: string) => {
@@ -365,6 +370,10 @@ export function OwnerSettlementWorkspace() {
                       <Button variant="outline" size="sm" onClick={() => handlePrint(settlement)} disabled={!documentSettings.isReady}>
                         <Printer className="size-3.5" />
                         طباعة الكشف
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadPdf(settlement)} disabled={!documentSettings.isReady}>
+                        <Download className="size-3.5" />
+                        PDF
                       </Button>
                     </div>
                   </div>

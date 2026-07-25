@@ -16,7 +16,7 @@ import { openReceiptPrintTab } from '../receipts/receipt-print';
 import { useReceipt, useReceipts } from '../receipts/useReceipts';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import type { InvoiceFilterOption } from '../components/invoice-filters';
-import { exportInvoiceDocument as exportInvoiceDocumentPdf } from '../invoices/invoice-actions';
+import { exportInvoiceDocument as exportInvoiceDocumentPdf, printInvoiceDocument as printInvoiceDocumentAction } from '../invoices/invoice-actions';
 
 const nowIso = () => new Date().toISOString();
 
@@ -247,16 +247,23 @@ export function useInvoiceWorkspaceController() {
     setCollectionSuccess(null);
   };
 
+  const invoiceDocumentContext = (invoice: any) => {
+    const contract = contractsQuery.data?.rows.find((candidate) => candidate.id === invoice.contract_id);
+    return contract ? { settings: pdfSettings, ...contractContextForDocument(contract) } : null;
+  };
+
   const exportInvoiceDocument = (invoice: any) => {
     if (!canExportInvoices) return;
+    const context = invoiceDocumentContext(invoice);
+    if (!context) return;
+    void exportInvoiceDocumentPdf(invoice, context);
+  };
 
-    const contract = contractsQuery.data?.rows.find((candidate) => candidate.id === invoice.contract_id);
-    if (!contract) return;
-
-    exportInvoiceDocumentPdf(invoice, {
-      settings: pdfSettings,
-      ...contractContextForDocument(contract),
-    });
+  const printInvoiceDocument = (invoice: any) => {
+    if (!canExportInvoices) return;
+    const context = invoiceDocumentContext(invoice);
+    if (!context) return;
+    void printInvoiceDocumentAction(invoice, context);
   };
 
   const onExportInvoicePdf = () => {
@@ -268,7 +275,7 @@ export function useInvoiceWorkspaceController() {
     const invoice = invoices.find((candidate) => candidate.id === invoiceId);
     if (!invoice) return;
 
-    exportInvoiceDocument(invoice);
+    printInvoiceDocument(invoice);
   };
 
   const onExportInvoiceList = (invoiceId: string) => {

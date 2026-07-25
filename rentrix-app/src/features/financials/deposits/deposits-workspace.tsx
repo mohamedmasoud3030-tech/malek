@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { getContractStatusVariants } from '@/lib/contractStatus';
-import { CheckCircle2, DollarSign, FileCheck, MinusCircle, Printer, ShieldAlert, Wallet, Plus } from 'lucide-react';
+import { CheckCircle2, DollarSign, Download, FileCheck, MinusCircle, Printer, ShieldAlert, Wallet, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -155,33 +155,38 @@ export function DepositsWorkspace() {
   const totalRefunded = useMemo(() => deposits.reduce((sum, deposit) => sum + deposit.refunded_amount, 0), [deposits]);
   const contentStatus = getContentStatus(depositsQuery.isLoading, depositsQuery.isError, deposits.length === 0);
 
-  const handlePrint = (deposit: DepositRecord) => {
+  const buildDepositClearanceDocument = (deposit: DepositRecord) => {
     const printableAmount = deposit.remaining_amount > 0 ? deposit.remaining_amount : deposit.deposit_amount;
     const tafqeet = numberToArabicWords(printableAmount, OMR_CURRENCY_CONFIG);
-    DocumentTemplates.printReportDocument(
-      {
-        reportTitle: 'سند تسوية ومخالصة مبلغ التأمين',
-        reportType: 'Tenant_Security_Deposit_Clearance',
-        periodFrom: deposit.received_date,
-        periodTo: getTodayLocalDateString(),
-        sections: [
-          {
-            title: 'بيانات الوديعة',
-            rows: [
-              { label: 'معرف العقد', value: deposit.contract_id },
-              { label: 'مبلغ التأمين الأصلي', value: `${deposit.deposit_amount} ر.ع` },
-              { label: 'الخصومات', value: `${deposit.deducted_amount} ر.ع` },
-              { label: 'المسترد', value: `${deposit.refunded_amount} ر.ع` },
-              { label: 'المتبقي', value: `${deposit.remaining_amount} ر.ع` },
-              { label: 'تفقيط المتبقي', value: tafqeet },
-            ],
-            totals: ['الصافي', `${deposit.remaining_amount} ر.ع`],
-          },
-        ],
-        totalSummary: `تاريخ المخالصة: ${getTodayLocalDateString()}`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'سند تسوية ومخالصة مبلغ التأمين',
+      reportType: 'Tenant_Security_Deposit_Clearance',
+      periodFrom: deposit.received_date,
+      periodTo: getTodayLocalDateString(),
+      sections: [
+        {
+          title: 'بيانات الوديعة',
+          rows: [
+            { label: 'معرف العقد', value: deposit.contract_id },
+            { label: 'مبلغ التأمين الأصلي', value: `${deposit.deposit_amount} ر.ع` },
+            { label: 'الخصومات', value: `${deposit.deducted_amount} ر.ع` },
+            { label: 'المسترد', value: `${deposit.refunded_amount} ر.ع` },
+            { label: 'المتبقي', value: `${deposit.remaining_amount} ر.ع` },
+            { label: 'تفقيط المتبقي', value: tafqeet },
+          ],
+          totals: ['الصافي', `${deposit.remaining_amount} ر.ع`],
+        },
+      ],
+      totalSummary: `تاريخ المخالصة: ${getTodayLocalDateString()}`,
+    };
+  };
+
+  const handlePrint = (deposit: DepositRecord) => {
+    void DocumentTemplates.printReportDocument(buildDepositClearanceDocument(deposit), defaultSettings);
+  };
+
+  const handleDownloadPdf = (deposit: DepositRecord) => {
+    void DocumentTemplates.downloadReportPdf(buildDepositClearanceDocument(deposit), defaultSettings);
   };
 
   const executeSelectedAction = () => {
@@ -239,6 +244,10 @@ export function DepositsWorkspace() {
                     <Button variant="outline" size="sm" onClick={() => handlePrint(deposit)} className="gap-1">
                       <Printer className="size-3.5" />
                       طباعة
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadPdf(deposit)} className="gap-1">
+                      <Download className="size-3.5" />
+                      PDF
                     </Button>
                   </div>
                 </div>

@@ -59,7 +59,7 @@ export function ReportCard({
 }: ReportCardProps) {
   const menuItems = buildReportActions({
     onExcel: onExportCsv,
-    onPrint: onPrint ?? (() => window.print()),
+    onPrint,
     onPdf: onExportPdf,
   });
 
@@ -77,10 +77,12 @@ export function ReportCard({
           PDF
         </Button>
       ) : null}
-      <Button variant="secondary" onClick={onPrint ?? (() => window.print())}>
-        <Printer className="me-2 size-4" />
-        طباعة
-      </Button>
+      {onPrint ? (
+        <Button variant="secondary" onClick={onPrint}>
+          <Printer className="me-2 size-4" />
+          طباعة
+        </Button>
+      ) : null}
       <ActionMenu items={menuItems} label="إجراءات التقرير" />
       {action}
     </div>

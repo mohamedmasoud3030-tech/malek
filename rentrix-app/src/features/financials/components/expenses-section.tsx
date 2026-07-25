@@ -21,7 +21,7 @@ import { escapeCsvValue } from '@/lib/csvExport';
 import type { Expense, Property } from '@/types/domain';
 import { formatDate, formatMoney } from './financials-formatters';
 import { EXPENSE_CHARGED_TO_LABELS, EXPENSE_CHARGED_TO_VALUES, buildExpenseCategoryOptions, buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses, OPERATIONAL_EXPENSE_CATEGORIES, type ExpenseChargedTo, type OperationalExpenseCategory, type OperationalExpenseFilterValues } from '../expenses/operational-expenses';
-import { downloadExpenseCsv, exportExpenseVoucher as exportExpenseVoucherPdf, printExpenses } from '../expenses/expense-actions';
+import { downloadExpenseCsv, exportExpenseVoucher as exportExpenseVoucherPdf, printExpenseVoucher as printExpenseVoucherDocument } from '../expenses/expense-actions';
 import { getTodayLocalDateString } from '../financials-date-utils';
 
 export type ExpenseFormValues = {
@@ -104,7 +104,11 @@ export function ExpensesSection({
   const exportVisibleExpenses = () => downloadExpenseCsv(`rentrix-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
   const exportExpenseVoucher = (expense: Expense) => {
     const property = propertyById.get(expense.property_id);
-    exportExpenseVoucherPdf(expense, property, companySettings.companyName, companySettings.defaultCurrency);
+    void exportExpenseVoucherPdf(expense, property, companySettings.companyName, companySettings.defaultCurrency);
+  };
+  const printExpenseVoucher = (expense: Expense) => {
+    const property = propertyById.get(expense.property_id);
+    void printExpenseVoucherDocument(expense, property, companySettings.companyName, companySettings.defaultCurrency);
   };
 
   useEffect(() => {
@@ -236,7 +240,7 @@ export function ExpensesSection({
                   { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => setDetailsExpense(expense) },
                   { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEditForm(expense), disabled: !onUpdateExpense },
                   { id: 'pdf', label: 'تصدير PDF', icon: Download, onClick: () => exportExpenseVoucher(expense) },
-                  { id: 'print', label: 'طباعة', icon: Printer, onClick: printExpenses },
+                  { id: 'print', label: 'طباعة', icon: Printer, onClick: () => printExpenseVoucher(expense) },
                 ]}
               />
             ) },

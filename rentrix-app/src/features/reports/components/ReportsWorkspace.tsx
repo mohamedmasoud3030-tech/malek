@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { AlertTriangle, Building2, Printer, Receipt, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Building2, Receipt, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -160,10 +160,6 @@ export function ReportsWorkspace({
               </p>
             </div>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => window.print()} className="min-h-10 shrink-0 gap-2 text-xs">
-            <Printer className="size-4" aria-hidden="true" />
-            طباعة التبويب
-          </Button>
         </div>
 
         <div className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur sm:px-4">

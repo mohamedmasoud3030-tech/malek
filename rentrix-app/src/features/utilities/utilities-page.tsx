@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, AlertCircle, CheckCircle2, Droplets, Flame, Plus, Printer, ShieldCheck, Wifi, Zap, Edit, Trash2 } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, Download, Droplets, Flame, Plus, Printer, ShieldCheck, Wifi, Zap, Edit, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -143,28 +143,33 @@ export function UtilitiesPage() {
     }
   };
 
-  const handlePrint = () => {
+  const buildUtilitiesReport = () => {
     const today = getTodayLocalDateString();
-    DocumentTemplates.printReportDocument(
-      {
-        reportTitle: 'كشف مطالبات وقراءات المرافق',
-        reportType: 'Property_Utilities_Statement',
-        periodFrom: today,
-        periodTo: today,
-        sections: [
-          {
-            title: 'جدول فواتير المرافق',
-            rows: filteredBills.map((b) => ({
-              label: `فاتورة ${b.bill_number || b.id.slice(0, 8)}`,
-              value: `المبلغ: ${b.amount} ر.ع | المسدد: ${b.paid_amount} | المسؤول: ${responsiblePartyLabels[b.responsible_party]} | الاستحقاق: ${b.due_date}`,
-            })),
-            totals: ['إجمالي المطالبات', `${totalBilled} ر.ع`],
-          },
-        ],
-        totalSummary: `الإجمالي: ${totalBilled} ر.ع | المسدد: ${totalPaid} ر.ع | المتبقي: ${totalUnpaid} ر.ع`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'كشف مطالبات وقراءات المرافق',
+      reportType: 'Property_Utilities_Statement',
+      periodFrom: today,
+      periodTo: today,
+      sections: [
+        {
+          title: 'جدول فواتير المرافق',
+          rows: filteredBills.map((b) => ({
+            label: `فاتورة ${b.bill_number || b.id.slice(0, 8)}`,
+            value: `المبلغ: ${b.amount} ر.ع | المسدد: ${b.paid_amount} | المسؤول: ${responsiblePartyLabels[b.responsible_party]} | الاستحقاق: ${b.due_date}`,
+          })),
+          totals: ['إجمالي المطالبات', `${totalBilled} ر.ع`],
+        },
+      ],
+      totalSummary: `الإجمالي: ${totalBilled} ر.ع | المسدد: ${totalPaid} ر.ع | المتبقي: ${totalUnpaid} ر.ع`,
+    };
+  };
+
+  const handlePrint = () => {
+    void DocumentTemplates.printReportDocument(buildUtilitiesReport(), defaultSettings);
+  };
+
+  const handleDownloadPdf = () => {
+    void DocumentTemplates.downloadReportPdf(buildUtilitiesReport(), defaultSettings);
   };
 
   const isLoading = metersQuery.isLoading || billsQuery.isLoading;
@@ -177,10 +182,14 @@ export function UtilitiesPage() {
         title="إدارة المرافق والعدادات"
         description="إدارة حقيقية لعدادات الكهرباء والمياه والخدمات مع ربط العقار والوحدة وتسجيل القراءات والفواتير."
         primaryAction={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={handlePrint} className="min-h-11 gap-2 font-bold">
               <Printer className="size-4 text-primary" aria-hidden="true" />
               طباعة كشف المرافق A4
+            </Button>
+            <Button type="button" variant="secondary" onClick={handleDownloadPdf} className="min-h-11 gap-2 font-bold">
+              <Download className="size-4" aria-hidden="true" />
+              تنزيل PDF
             </Button>
           </div>
         }
