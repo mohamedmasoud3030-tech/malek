@@ -12,8 +12,8 @@ type EntityCellProps = Readonly<{
 
 const toneStyles: Record<NonNullable<EntityCellProps['tone']>, string> = {
   primary: 'bg-primary/10 text-primary',
-  emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
-  slate: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  emerald: 'bg-success-bg text-success',
+  slate: 'bg-neutral-bg text-neutral',
 };
 
 /**

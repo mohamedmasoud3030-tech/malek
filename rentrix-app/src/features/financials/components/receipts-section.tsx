@@ -68,7 +68,7 @@ export function ReceiptsSection({
                 className={isSelected ? 'ring-2 ring-primary/20' : undefined}
                 title={`إيصال ${receipt.receipt_number}`}
                 subtitle={`${formatDate(receipt.payment_date)} · ${paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}`}
-                badge={<StatusBadge tone={isVoid ? 'red' : 'green'}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge>}
+                badge={<StatusBadge tone={isVoid ? 'danger' : 'success'}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge>}
                 onClick={() => onSelectReceipt(receipt.id)}
                 meta={(
                   <div className="space-y-1">

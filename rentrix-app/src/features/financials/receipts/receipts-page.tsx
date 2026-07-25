@@ -79,11 +79,11 @@ export function countPostedReceiptsForDate(receipts: readonly ReceiptRecord[], d
   return receipts.filter((receipt) => receipt.status === 'posted' && receipt.payment_date === day).length;
 }
 
-function receiptStatusTone(status: string): 'green' | 'gray' | 'red' | 'gold' {
-  if (status === 'posted') return 'green';
-  if (status === 'void' || status === 'voided' || status === 'cancelled') return 'red';
-  if (status === 'draft') return 'gray';
-  return 'gold';
+function receiptStatusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
+  if (status === 'posted') return 'success';
+  if (status === 'void' || status === 'voided' || status === 'cancelled') return 'danger';
+  if (status === 'draft') return 'neutral';
+  return 'warning';
 }
 
 
@@ -118,7 +118,7 @@ function VoidReceiptDialog({
       onOpenChange={(open) => { if (!open && !isLoading) onClose(); }}
       title={`إلغاء الإيصال ${state.receipt?.receipt_number ?? ''}`}
       description="أدخل سبب الإلغاء لتوثيق العملية. يتم تحديث الدفعة والفاتورة وإنشاء القيد العكسي داخل عملية ذرية واحدة."
-      headerExtra={<StatusBadge tone="red"><Ban className="me-1 size-3" aria-hidden="true" />إجراء حساس</StatusBadge>}
+      headerExtra={<StatusBadge tone="danger"><Ban className="me-1 size-3" aria-hidden="true" />إجراء حساس</StatusBadge>}
       className="max-w-lg"
     >
       <EntityForm.Root
@@ -305,7 +305,7 @@ function ReceiptsHistoryContent() {
                   <div className="grid gap-2 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <span className="flex min-w-0 items-center gap-2 font-bold"><Wallet className="size-4 shrink-0" aria-hidden="true" />{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span>
-                      <strong className="whitespace-nowrap text-base font-black tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(receipt.amount)}</strong>
+                      <strong className="whitespace-nowrap text-base font-black tabular-nums text-success">{formatMoney(receipt.amount)}</strong>
                     </div>
                     <div className="line-clamp-2 leading-5">{formatReceiptContext(receipt)}</div>
                     <div className="text-[10px] text-muted-foreground/75">فاتورة #{formatShortId(receipt.invoice_id)}</div>

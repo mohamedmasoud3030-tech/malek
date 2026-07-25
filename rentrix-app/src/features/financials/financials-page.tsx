@@ -70,16 +70,16 @@ export function FinancialsPage() {
               key={to}
               to={to}
               aria-label={label}
-              className="group flex min-h-20 items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-right transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="group flex min-h-20 items-center gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3 text-right shadow-card transition hover:border-primary/25 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                 <Icon className="size-5" aria-hidden="true" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold">{label}</span>
                 <span className="block truncate text-[11px] font-medium text-muted-foreground">{description}</span>
               </span>
-              <ChevronLeft className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary" aria-hidden="true" />
+              <ChevronLeft className="size-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" aria-hidden="true" />
             </Link>
           ))}
         </div>

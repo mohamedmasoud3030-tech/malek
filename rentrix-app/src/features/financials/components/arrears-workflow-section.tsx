@@ -53,7 +53,7 @@ export function ArrearsWorkflowSection({
   const hasFilteredRows = filteredRows.length > 0;
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
+    <Card className="border-border/70">
       <CardHeader className="space-y-2">
         <CardTitle>Workflow تحصيل المتأخرات</CardTitle>
         <p className="text-sm text-muted-foreground">
