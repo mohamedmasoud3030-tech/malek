@@ -165,7 +165,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}
       title="إضافة عقار جديد"
       className="max-w-2xl"
-      headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
+      headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="warning">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
       <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
         <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
@@ -277,7 +277,7 @@ function PropertyEditModal({
       onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}
       title="تعديل عقار"
       className="max-w-2xl"
-      headerExtra={form.formState.isDirty && !updateMutation.isPending ? <StatusBadge tone="gold">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
+      headerExtra={form.formState.isDirty && !updateMutation.isPending ? <StatusBadge tone="warning">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
       {propertyQuery.isLoading ? (
         <RouteLoadingState />

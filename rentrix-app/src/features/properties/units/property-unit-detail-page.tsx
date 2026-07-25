@@ -40,7 +40,7 @@ export function PropertyUnitDetailPage() {
             backTo={`/properties/${propertyId}/units`}
             backLabel="العودة للوحدات"
             status={
-              <StatusBadge tone={unitStatusTone[unit.status as keyof typeof unitStatusTone] ?? 'gray'}>
+              <StatusBadge tone={unitStatusTone[unit.status as keyof typeof unitStatusTone] ?? 'neutral'}>
                 {unitStatusLabels[unit.status as keyof typeof unitStatusLabels] ?? unit.status}
               </StatusBadge>
             }
