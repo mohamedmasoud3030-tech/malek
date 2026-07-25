@@ -12,4 +12,4 @@ export function whatsappLink(message: string): string {
 export const APP_HOST =
   typeof window !== 'undefined' && window.location.host
     ? window.location.host
-    : 'rentrix-alpha.vercel.app';
+    : 'rentrixapp.vercel.app';
