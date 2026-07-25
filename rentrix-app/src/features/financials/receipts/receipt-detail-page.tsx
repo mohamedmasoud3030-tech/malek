@@ -1,6 +1,8 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Printer, MessageCircle, Share2, Copy, ExternalLink } from 'lucide-react';
+import { ArrowRight, Printer, MessageCircle, Share2, Copy, ExternalLink, Download } from 'lucide-react';
 import { useState, useCallback } from 'react';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,6 +15,13 @@ import { toast } from 'sonner';
 import { openWhatsApp, shareOrCopy } from '@/services/action-service';
 import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
 
+
+function receiptDetailStatusTone(status: string): 'success' | 'danger' | 'warning' {
+  if (status === 'posted') return 'success';
+  if (status === 'void') return 'danger';
+  return 'warning';
+}
+
 export function ReceiptDetailPage() {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
   const receiptId = typeof searchParams.receiptId === 'string' ? searchParams.receiptId : '';
@@ -23,11 +32,10 @@ export function ReceiptDetailPage() {
 
   const receipt = receiptQuery.data;
 
-  const handlePrint = useCallback(() => {
-    if (!receipt) return;
-    setIsPrinting(true);
-    DocumentTemplates.printReceiptDocument(
-      {
+  const buildReceiptDocument = useCallback(() => {
+    if (!receipt) return null;
+    return {
+      data: {
         receiptNumber: receipt.receipt_number,
         paymentDate: receipt.payment_date,
         tenantName: receipt.tenant_name ?? '—',
@@ -39,7 +47,7 @@ export function ReceiptDetailPage() {
         reference: receipt.reference_number ?? undefined,
         notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
       },
-      {
+      settings: {
         company: {
           name: companySettings.companyName || 'رينتريكس لإدارة العقارات',
           phone: '+968 24000000',
@@ -48,9 +56,22 @@ export function ReceiptDetailPage() {
         currency: 'OMR',
         currencySymbol: 'ر.ع',
       },
-    );
-    window.setTimeout(() => setIsPrinting(false), 1000);
+    };
   }, [receipt, companySettings]);
+
+  const handlePrint = useCallback(() => {
+    const document = buildReceiptDocument();
+    if (!document) return;
+    setIsPrinting(true);
+    void DocumentTemplates.printReceiptDocument(document.data, document.settings)
+      .finally(() => window.setTimeout(() => setIsPrinting(false), 300));
+  }, [buildReceiptDocument]);
+
+  const handleDownloadPdf = useCallback(() => {
+    const document = buildReceiptDocument();
+    if (!document) return;
+    void DocumentTemplates.downloadReceiptPdf(document.data, document.settings);
+  }, [buildReceiptDocument]);
 
   const handleWhatsApp = useCallback(() => {
     if (!receipt) return;
@@ -84,29 +105,29 @@ export function ReceiptDetailPage() {
 
   if (receiptQuery.isLoading) {
     return (
-      <div className="space-y-4 p-4" dir="rtl">
-        <Skeleton className="h-24 w-full" />
+      <PageLayout dir="rtl" lang="ar" size="wide">
+        <Skeleton className="h-20 w-full" />
         <Skeleton className="h-48 w-full" />
         <Skeleton className="h-24 w-full" />
-      </div>
+      </PageLayout>
     );
   }
 
   if (receiptQuery.isError || !receipt) {
     return (
-      <div className="space-y-4 p-4" dir="rtl">
-        <Card>
-          <CardContent className="flex items-center gap-4 p-6">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+      <PageLayout dir="rtl" lang="ar" size="wide">
+        <Card role="alert" aria-live="assertive">
+          <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
+            <div className="grid size-12 place-items-center rounded-2xl bg-destructive/10 text-destructive">
               <Printer className="size-6" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="font-bold text-destructive">تعذر تحميل الإيصال</p>
               <p className="text-sm text-muted-foreground">
                 {getErrorMessage(receiptQuery.error, 'حدث خطأ أثناء تحميل بيانات الإيصال.')}
               </p>
             </div>
-            <Button asChild variant="secondary" className="mr-auto">
+            <Button asChild variant="secondary">
               <Link to="/receipts">
                 <ArrowRight className="me-2 size-4" />
                 العودة لقائمة الإيصالات
@@ -114,42 +135,49 @@ export function ReceiptDetailPage() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     );
   }
 
-  const statusTone = receipt.status === 'posted' ? 'green' : receipt.status === 'void' ? 'red' : 'gold';
+  const statusTone = receiptDetailStatusTone(receipt.status);
 
   return (
-    <div className="space-y-4 p-4 print:space-y-0 print:p-0 md:p-6" dir="rtl">
-      {/* Action Bar */}
-      <div className="flex flex-wrap items-center gap-2 print:hidden">
-        <Button variant="primary" onClick={handlePrint} disabled={isPrinting} className="min-h-11">
-          <Printer className="me-2 size-4" />
-          {isPrinting ? 'جارٍ الطباعة...' : 'طباعة الإيصال المعتمد A4'}
+    <PageLayout dir="rtl" lang="ar" size="wide" className="print:block" contentClassName="print:max-w-none print:space-y-0 print:p-0">
+      <PageHeader
+        title="إيصال استلام نقدية"
+        description={`رقم الإيصال: ${receipt.receipt_number}`}
+        backTo="/receipts"
+        backLabel="الإيصالات"
+        primaryAction={(
+          <Button variant="primary" onClick={handlePrint} disabled={isPrinting} className="min-h-11">
+            <Printer className="me-2 size-4" />
+            {isPrinting ? 'جارٍ الطباعة...' : 'طباعة A4'}
+          </Button>
+        )}
+        secondaryActions={(
+          <>
+            <Button variant="secondary" onClick={handleDownloadPdf} className="min-h-11">
+          <Download className="me-2 size-4" />
+          تنزيل PDF
         </Button>
         <Button variant="secondary" onClick={handleWhatsApp} className="min-h-11">
-          <MessageCircle className="me-2 size-4" />
-          إرسال واتساب
-        </Button>
-        <Button variant="secondary" onClick={handleShare} disabled={isSharing} className="min-h-11">
-          <Share2 className="me-2 size-4" />
-          {isSharing ? 'جارٍ المشاركة...' : 'مشاركة'}
-        </Button>
-        <Button variant="secondary" onClick={handleCopyReceiptNumber} className="min-h-11">
-          <Copy className="me-2 size-4" />
-          نسخ الرقم
-        </Button>
-        <Button asChild variant="secondary" className="mr-auto min-h-11">
-          <Link to="/receipts">
-            <ArrowRight className="me-2 size-4" />
-            العودة
-          </Link>
-        </Button>
-      </div>
+              <MessageCircle className="me-2 size-4" />
+              واتساب
+            </Button>
+            <Button variant="secondary" onClick={handleShare} disabled={isSharing} className="min-h-11">
+              <Share2 className="me-2 size-4" />
+              {isSharing ? 'جارٍ المشاركة...' : 'مشاركة'}
+            </Button>
+            <Button variant="secondary" onClick={handleCopyReceiptNumber} className="min-h-11">
+              <Copy className="me-2 size-4" />
+              نسخ الرقم
+            </Button>
+          </>
+        )}
+      />
 
       {/* Receipt Card */}
-      <Card className="border-primary/20 bg-gradient-to-l from-primary/5">
+      <Card className="border-primary/20">
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div>
             <CardTitle className="text-2xl font-black">إيصال استلام نقدية</CardTitle>
@@ -188,7 +216,7 @@ export function ReceiptDetailPage() {
           {/* Financial Info */}
           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
             <p className="text-xs font-bold text-muted-foreground">المبلغ المدفوع</p>
-            <p className="mt-1 text-3xl font-black text-emerald-600" dir="ltr">
+            <p className="mt-1 text-3xl font-black text-success" dir="ltr">
               {formatMoney(receipt.amount)}
             </p>
             <div className="mt-3 grid gap-2 text-sm">
@@ -242,13 +270,13 @@ export function ReceiptDetailPage() {
       {/* Mobile Action */}
       <div className="fixed bottom-20 left-4 right-4 print:hidden md:hidden">
         <Button
-          className="w-full min-h-14 bg-primary text-white"
+          className="min-h-14 w-full"
           onClick={handlePrint}
         >
           <Printer className="me-2 size-5" />
           طباعة الإيصال المعتمد A4
         </Button>
       </div>
-    </div>
+    </PageLayout>
   );
 }

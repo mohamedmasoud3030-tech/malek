@@ -63,8 +63,8 @@ export function ConfirmDialog({
         <div className="mb-4 flex items-start gap-3 pe-10">
           <div className={
             variant === 'danger'
-              ? 'grid size-10 place-items-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'
-              : 'grid size-10 place-items-center rounded-2xl bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400'
+              ? 'grid size-10 place-items-center rounded-2xl bg-danger-bg text-danger'
+              : 'grid size-10 place-items-center rounded-2xl bg-warning-bg text-warning'
           }>
             <AlertTriangle className="size-5" />
           </div>

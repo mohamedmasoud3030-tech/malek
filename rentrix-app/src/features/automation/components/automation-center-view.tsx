@@ -1,10 +1,11 @@
-import { BellRing, CalendarClock, Mail, MessageCircle, PauseCircle, PlayCircle, Settings2, Smartphone, Wrench, RefreshCw, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, BellRing, CalendarClock, ExternalLink, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { MobileCard } from '@/components/ui/mobile-card';
+import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionHeader } from '@/components/ui/section-header';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -13,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { listAutomationRules, toggleAutomationRule, executeAutomationRule, listAutomationRuns, listAutomationNotifications } from '../automation-service';
 import { automationTemplatePreviews } from '../automation-catalog';
+import { buildTemplateWhatsAppDemoUrl } from '../automation-whatsapp';
 import type { AutomationChannel } from '../types';
 
 const channelLabel: Record<AutomationChannel, string> = {
@@ -30,6 +32,13 @@ const channelIcon: Record<AutomationChannel, typeof MessageCircle> = {
 };
 
 type StatusFilter = 'all' | 'enabled' | 'disabled';
+
+
+function automationRunStatusTone(status: string): 'success' | 'danger' | 'warning' {
+  if (status === 'success') return 'success';
+  if (status === 'failed') return 'danger';
+  return 'warning';
+}
 
 function mapRuleTypeToCategory(type: string) {
   switch (type) {
@@ -92,36 +101,48 @@ export function AutomationCenterView() {
 
   return (
     <section className="space-y-5" dir="rtl">
-      <Card className="border-primary/10 bg-gradient-to-l from-primary/10 via-card to-card">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Settings2 className="size-5" />
-              مركز الأتمتة الحقيقي
-            </CardTitle>
-            <CardDescription>قواعد أتمتة حقيقية محفوظة في قاعدة البيانات مع سجل تشغيل وإشعارات داخلية ومنع تكرار.</CardDescription>
+      <h2 className="sr-only">مركز الأتمتة</h2>
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-3xl">
+            <h2 className="text-base font-bold tracking-tight">قواعد الأتمتة</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              قواعد محفوظة في قاعدة البيانات مع سجل تشغيل وإشعارات داخل النظام ومنع تكرار.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="success" dot>
-              {counts.enabled} مفعّل
-            </Badge>
-            <Badge variant="warning" dot>
-              {counts.disabled} متوقف
-            </Badge>
-            <Badge variant="outline" dot>
-              {counts.all} الكل
-            </Badge>
+            <StatusBadge tone="success" dot>{counts.enabled} مفعّل</StatusBadge>
+            <StatusBadge tone="warning" dot>{counts.disabled} متوقف</StatusBadge>
+            <StatusBadge tone="neutral" dot>{counts.all} الكل</StatusBadge>
           </div>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveCardGrid>
-            <SummaryCard icon={CalendarClock} label="قواعد العقود" value={String(rules.filter((r) => r.rule_type === 'contract_expiry').length)} />
-            <SummaryCard icon={MessageCircle} label="قواعد الإيجار" value={String(rules.filter((r) => r.rule_type === 'overdue_invoice').length)} />
-            <SummaryCard icon={Mail} label="إجمالي التشغيلات" value={String(runsQuery.data?.length ?? 0)} />
-            <SummaryCard icon={Wrench} label="إشعارات داخلية" value={String(notificationsQuery.data?.length ?? 0)} />
-          </ResponsiveCardGrid>
-        </CardContent>
-      </Card>
+        </div>
+        <ResponsiveCardGrid>
+          <KpiCard
+            label="قواعد العقود"
+            value={String(rules.filter((rule) => rule.rule_type === 'contract_expiry').length)}
+            icon={CalendarClock}
+            accent="primary"
+          />
+          <KpiCard
+            label="قواعد الإيجار"
+            value={String(rules.filter((rule) => rule.rule_type === 'overdue_invoice').length)}
+            icon={MessageCircle}
+            accent="amber"
+          />
+          <KpiCard
+            label="إجمالي التشغيلات"
+            value={String(runsQuery.data?.length ?? 0)}
+            icon={Mail}
+            accent="sky"
+          />
+          <KpiCard
+            label="إشعارات النظام"
+            value={String(notificationsQuery.data?.length ?? 0)}
+            icon={Wrench}
+            accent="emerald"
+          />
+        </ResponsiveCardGrid>
+      </div>
 
       <FilterTabs
         value={statusFilter}
@@ -237,7 +258,7 @@ export function AutomationCenterView() {
                       بدء: {new Date(Number(run.started_at)).toLocaleString('ar-OM')} · معالجة: {run.items_processed} · فشل: {run.items_failed}
                     </p>
                   </div>
-                  <StatusBadge tone={run.status === 'success' ? 'green' : run.status === 'failed' ? 'red' : 'gold'}>{run.status}</StatusBadge>
+                  <StatusBadge tone={automationRunStatusTone(run.status)}>{run.status}</StatusBadge>
                 </div>
               ))
             )}
@@ -246,7 +267,7 @@ export function AutomationCenterView() {
       </section>
 
       <section className="space-y-3">
-        <SectionHeader title="الإشعارات الداخلية" description="الإشعارات التي أنشأتها قواعد الأتمتة (داخل النظام فقط، لا إرسال خارجي)." />
+        <SectionHeader title="إشعارات النظام" description="الإشعارات التي أنشأتها قواعد الأتمتة داخل النظام فقط، دون إرسال خارجي." />
         <Card>
           <CardContent className="p-4 space-y-2">
             {(notificationsQuery.data ?? []).length === 0 ? (
@@ -272,6 +293,7 @@ export function AutomationCenterView() {
         <div className="grid gap-3 md:grid-cols-2">
           {automationTemplatePreviews.map((template) => {
             const Icon = channelIcon[template.channel as AutomationChannel] || MessageCircle;
+            const whatsappPreviewUrl = buildTemplateWhatsAppDemoUrl(template);
             return (
               <Card key={template.id}>
                 <CardHeader className="pb-2">
@@ -281,8 +303,16 @@ export function AutomationCenterView() {
                   </CardTitle>
                   <CardDescription>{channelLabel[template.channel as AutomationChannel]}</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                   <pre className="whitespace-pre-wrap rounded-2xl bg-muted/50 p-3 text-xs font-bold leading-6 text-muted-foreground">{template.body}</pre>
+                  {whatsappPreviewUrl ? (
+                    <Button type="button" variant="secondary" size="sm" asChild>
+                      <a href={whatsappPreviewUrl} target="_blank" rel="noreferrer">
+                        <ExternalLink className="me-2 size-3.5" aria-hidden="true" />
+                        معاينة واتساب
+                      </a>
+                    </Button>
+                  ) : null}
                 </CardContent>
               </Card>
             );
@@ -290,29 +320,17 @@ export function AutomationCenterView() {
         </div>
       </section>
 
-      <Card className="border-amber-200 bg-amber-50/50">
+      <Card className="border-warning/40 bg-warning/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-900">
+          <CardTitle className="flex items-center gap-2 text-warning">
             <AlertTriangle className="size-5" />
             ملاحظات الأمان
           </CardTitle>
-          <CardDescription className="text-amber-800/80">
-            لا يتم إرسال رسائل واتساب/بريد/ SMS خارجية فعلياً من هذا المركز بدون إعداد مزود. النظام يسجل إشعارات داخلية فقط ويسجل runs/logs مع منع تكرار عبر قفل الصفوف. لإضافة إرسال خارجي: اضبط متغيرات المزود في Edge Function منفصلة.
+          <CardDescription>
+            لا يتم إرسال رسائل واتساب/بريد/ SMS خارجية فعلياً من هذا المركز بدون إعداد مزود. النظام يسجل إشعارات داخل النظام فقط ويسجل runs/logs مع منع تكرار عبر قفل الصفوف. لإضافة إرسال خارجي: اضبط متغيرات المزود في Edge Function منفصلة.
           </CardDescription>
         </CardHeader>
       </Card>
     </section>
-  );
-}
-
-function SummaryCard({ icon: Icon, label, value }: Readonly<{ icon: typeof CalendarClock; label: string; value: string }>) {
-  return (
-    <div className="rounded-2xl border bg-background/70 p-4">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <Icon className="size-4" />
-        <p className="text-xs font-bold">{label}</p>
-      </div>
-      <p className="mt-2 text-2xl font-black">{value}</p>
-    </div>
   );
 }

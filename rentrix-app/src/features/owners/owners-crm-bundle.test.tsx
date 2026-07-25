@@ -96,7 +96,7 @@ describe('Approved CRM module views', () => {
   it('renders communication as an internal log without external sends', () => {
     const html = renderToStaticMarkup(<CommunicationHubView rows={[]} filters={{ query: '', channel: 'all', status: 'all' }} draft={{ contact_name: '', contact_phone: '', contact_email: '', channel: 'phone', direction: 'outbound', status: 'logged', subject: '', body: '', related_entity_type: '', related_entity_id: '' }} editingRecord={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
 
-    expect(html).toContain('سجل داخلي');
+    expect(html).toContain('سجل تشغيلي');
     expect(html).not.toContain('WhatsApp');
   });
 });

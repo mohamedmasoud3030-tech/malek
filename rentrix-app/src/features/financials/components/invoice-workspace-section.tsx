@@ -53,7 +53,7 @@ function GenerateInvoicesDialog({ open, isGenerating, onOpenChange, onConfirm }:
             </ul>
           </div>
 
-          <div className="flex gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6 text-amber-800">
+          <div className="flex gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm leading-6 text-warning">
             <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
             <p>هذه عملية مالية جماعية. استخدمها عند جاهزية العقود النشطة للمراجعة الشهرية.</p>
           </div>

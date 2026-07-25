@@ -31,10 +31,10 @@ export interface MobileCardProps {
 }
 
 const accentColors: Record<NonNullable<MobileCardProps['accent']>, string> = {
-  primary: 'border-l-primary bg-primary/5 dark:bg-primary/10',
-  success: 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30',
-  warning: 'border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/30',
-  danger: 'border-l-red-500 bg-red-50/50 dark:bg-red-950/30',
+  primary: 'border-l-primary bg-primary/5',
+  success: 'border-l-success bg-success-bg',
+  warning: 'border-l-warning bg-warning-bg',
+  danger: 'border-l-danger bg-danger-bg',
   none: '',
 };
 
@@ -81,7 +81,7 @@ export function MobileCard({
   if (loading) {
     return (
       <div className={cn('rounded-3xl border bg-card p-4 shadow-sm', className)}>
-        <div className="animate-pulse space-y-3">
+        <div className="space-y-3">
           <div className="h-5 w-2/3 rounded bg-muted" />
           <div className="h-3 w-1/3 rounded bg-muted" />
           <div className="h-12 rounded-2xl bg-muted" />
@@ -160,9 +160,9 @@ export function StatCard({
 }: StatCardProps) {
   const accentStyles = {
     primary: 'text-primary',
-    success: 'text-emerald-600',
-    warning: 'text-amber-600',
-    danger: 'text-red-600',
+    success: 'text-success',
+    warning: 'text-warning',
+    danger: 'text-danger',
   };
 
   const trendIcons = {
@@ -187,8 +187,8 @@ export function StatCard({
           {trend && (
             <span className={cn(
               'text-sm',
-              trend === 'up' && 'text-emerald-600',
-              trend === 'down' && 'text-red-600',
+              trend === 'up' && 'text-success',
+              trend === 'down' && 'text-danger',
               trend === 'neutral' && 'text-muted-foreground',
             )}>
               {trendIcons[trend]}

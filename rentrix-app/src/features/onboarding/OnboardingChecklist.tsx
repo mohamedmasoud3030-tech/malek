@@ -105,7 +105,7 @@ export function OnboardingChecklist({ progress }: Readonly<{ progress: Onboardin
                 className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-2.5 transition hover:border-primary/40"
               >
                 {step.done ? (
-                  <CheckCircle2 className="size-5 shrink-0 text-emerald-500" aria-hidden="true" />
+                  <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden="true" />
                 ) : (
                   <Circle className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 )}

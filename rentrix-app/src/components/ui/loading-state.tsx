@@ -25,7 +25,7 @@ export function LoadingState({
         aria-label={label}
         className={cn('flex items-center gap-2 text-sm font-medium text-muted-foreground', className)}
       >
-        <span className="size-4 animate-pulse rounded-full bg-primary/30" />
+        <span className="size-4 rounded-full bg-primary/30" />
         <span>{label}</span>
       </div>
     );

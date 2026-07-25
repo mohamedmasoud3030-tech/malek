@@ -122,7 +122,7 @@ export function QuickActionBar({ actions, className }: QuickActionBarProps) {
             className={cn('min-h-10 gap-2', action.className)}
           >
             {action.loading ? (
-              <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              <span className="size-4 rounded-full border-2 border-current border-t-transparent" />
             ) : (
               <Icon className="size-4" aria-hidden="true" />
             )}

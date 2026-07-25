@@ -12,12 +12,12 @@ import { paymentMethodLabels } from '@/features/financials/components/receipt-fo
 import type { ContractPaymentsSnapshot } from './services/contractPaymentService';
 import { useContractPayments } from './useContractPayments';
 
-const invoiceStatusTone: Record<string, string> = {
-  draft: 'gray', issued: 'blue', UNPAID: 'blue',
-  partial: 'gold', PARTIALLY_PAID: 'gold',
-  paid: 'green', PAID: 'green',
-  overdue: 'red', OVERDUE: 'red',
-  void: 'gray', VOID: 'gray',
+const invoiceStatusTone: Record<string, 'neutral' | 'info' | 'warning' | 'success' | 'danger'> = {
+  draft: 'neutral', issued: 'info', UNPAID: 'info',
+  partial: 'warning', PARTIALLY_PAID: 'warning',
+  paid: 'success', PAID: 'success',
+  overdue: 'danger', OVERDUE: 'danger',
+  void: 'neutral', VOID: 'neutral',
 };
 
 function formatDate(value: string): string {
@@ -50,7 +50,7 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
     {
       key: 'status', header: 'الحالة',
       render: (inv) => (
-        <StatusBadge tone={(invoiceStatusTone[inv.status ?? ''] ?? 'gray') as 'gray' | 'blue' | 'gold' | 'green' | 'red'}>
+        <StatusBadge tone={invoiceStatusTone[inv.status ?? ''] ?? 'neutral'}>
           {invoiceStatusLabels[inv.status]}
         </StatusBadge>
       ),
@@ -110,7 +110,7 @@ export function ContractPaymentsTab({ contractId }: Readonly<{ contractId: strin
               عرض قراءة فقط للفواتير والدفعات ومراجع الإيصالات المرتبطة بهذا العقد فقط.
             </CardDescription>
           </div>
-          <StatusBadge tone="gray">
+          <StatusBadge tone="neutral">
             <LockKeyhole className="me-1 size-3" />
             قراءة فقط
           </StatusBadge>

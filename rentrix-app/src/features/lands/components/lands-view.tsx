@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { AsyncContentState } from "@/components/async-content-state";
+import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataErrorScreen } from "@/components/data-error-screen";
@@ -18,8 +19,8 @@ import { PageLayout } from "@/components/layout/page-layout";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
 import { WriteErrorCard } from "@/components/page-state-card";
-import { Card, CardContent } from "@/components/ui/card";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { EntityForm } from "@/components/ui/entity-form";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -53,10 +54,10 @@ function area(value: number | null | undefined) {
 }
 
 function tone(status: string | null | undefined) {
-  if (status === "available") return "green" as const;
-  if (status === "reserved") return "gold" as const;
-  if (status === "sold") return "blue" as const;
-  return "gray" as const;
+  if (status === "available") return "success" as const;
+  if (status === "reserved") return "warning" as const;
+  if (status === "sold") return "info" as const;
+  return "neutral" as const;
 }
 
 type Props = Readonly<{
@@ -109,6 +110,23 @@ export function LandsView(props: Props) {
   const totalArea = rows.reduce((sum, r) => sum + (r.area ?? 0), 0);
   const hasFilters =
     filters.query.trim().length > 0 || filters.status !== "all";
+  const activeFilters: ActiveFilterItem[] = [];
+  if (filters.query.trim()) {
+    activeFilters.push({
+      key: "query",
+      label: "بحث",
+      value: filters.query,
+      onRemove: () => onFiltersChange({ ...filters, query: "" }),
+    });
+  }
+  if (filters.status !== "all") {
+    activeFilters.push({
+      key: "status",
+      label: "الحالة",
+      value: statusLabels[filters.status] ?? filters.status,
+      onRemove: () => onFiltersChange({ ...filters, status: "all" }),
+    });
+  }
 
   return (
     <PageLayout dir="rtl" lang="ar" className="space-y-4">
@@ -175,22 +193,19 @@ export function LandsView(props: Props) {
         )}
       </ResponsiveCardGrid>
 
-      <Card>
-        <CardContent className="grid gap-3 p-3 sm:p-5 md:grid-cols-[1fr_12rem]">
-          <Input
-            value={filters.query}
-            onChange={(e) =>
-              onFiltersChange({ ...filters, query: e.target.value })
-            }
-            placeholder="بحث بالاسم، رقم القطعة، الموقع، التصنيف"
-            aria-label="بحث الأراضي"
-          />
+      <FilterBar
+        searchValue={filters.query}
+        onSearchChange={(query) => onFiltersChange({ ...filters, query })}
+        searchPlaceholder="بحث بالاسم، رقم القطعة، الموقع، التصنيف"
+        searchAriaLabel="بحث الأراضي"
+        filters={
           <Select
             value={filters.status}
-            onChange={(e) =>
-              onFiltersChange({ ...filters, status: e.target.value })
+            onChange={(event) =>
+              onFiltersChange({ ...filters, status: event.target.value })
             }
             aria-label="حالة الأرض"
+            className="w-full sm:w-48"
           >
             <option value="all">كل الحالات</option>
             {Object.entries(statusLabels).map(([value, label]) => (
@@ -199,8 +214,12 @@ export function LandsView(props: Props) {
               </option>
             ))}
           </Select>
-        </CardContent>
-      </Card>
+        }
+      />
+      <ActiveFilterBar
+        filters={activeFilters}
+        onClearAll={() => onFiltersChange({ query: "", status: "all" })}
+      />
 
       {error ? (
         <div className="space-y-3">

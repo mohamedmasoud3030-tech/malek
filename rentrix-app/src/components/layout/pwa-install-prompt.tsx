@@ -59,7 +59,7 @@ export function PwaInstallPrompt() {
       data-pwa-install-prompt
       role="region"
       aria-label="تثبيت تطبيق Rentrix"
-      className="animate-in slide-in-from-bottom fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[calc(var(--mobile-bottom-nav-height,3.75rem)+env(safe-area-inset-bottom,0px)+0.75rem)] pt-2 duration-300 motion-reduce:animate-none lg:pb-6"
+      className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[calc(var(--mobile-bottom-nav-height,3.75rem)+env(safe-area-inset-bottom,0px)+0.75rem)] pt-2 lg:pb-6"
     >
       <div className="flex w-full max-w-md items-start gap-3 rounded-2xl border border-border bg-card p-3.5 text-card-foreground shadow-elevated">
         <div

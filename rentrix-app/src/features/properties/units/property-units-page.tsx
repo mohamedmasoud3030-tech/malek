@@ -8,7 +8,7 @@ export function PropertyUnitsPage() {
   const unitsQuery = useUnits(propertyId);
 
   return (
-    <div className="space-y-6 animate-in fade-in-50 duration-200">
+    <div className="space-y-6">
       <UnitsList propertyId={propertyId} unitsQuery={unitsQuery} />
     </div>
   );

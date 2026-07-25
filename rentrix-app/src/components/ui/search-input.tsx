@@ -30,7 +30,7 @@ export function SearchInput({
 
   return (
     <div className={cn('relative', className)}>
-      <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Search className="pointer-events-none absolute inset-y-0 end-3 my-auto size-4 text-muted-foreground" />
       <input
         ref={inputRef}
         type="search"
@@ -49,7 +49,7 @@ export function SearchInput({
         <button
           type="button"
           onClick={() => { onChange(''); inputRef.current?.focus(); }}
-          className="absolute end-5 top-1/2 grid min-h-11 min-w-11 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10"
+          className="absolute inset-y-0 end-1 grid w-11 place-items-center rounded-full text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-4 focus:ring-primary/10"
           aria-label="مسح البحث"
         >
           <X className="size-3.5" />

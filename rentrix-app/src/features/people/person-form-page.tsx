@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useParams, useRouter } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,16 +56,18 @@ export function PersonFormPage() {
 
   if (isEdit && personQuery.isError) {
     return (
-      <Card className="mx-auto max-w-3xl">
-        <CardHeader>
-          <CardTitle>تعذر تحميل بيانات الشخص</CardTitle>
-          <CardDescription>{personQuery.error instanceof Error ? personQuery.error.message : 'حدث خطأ أثناء التحميل.'}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
-          <Button type="button" onClick={retryPerson}>إعادة المحاولة</Button>
-          <Button variant="secondary" asChild><Link to="/people">العودة</Link></Button>
-        </CardContent>
-      </Card>
+      <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl">
+        <Card role="alert" aria-live="assertive">
+          <CardHeader>
+            <CardTitle>تعذر تحميل بيانات الشخص</CardTitle>
+            <CardDescription>{personQuery.error instanceof Error ? personQuery.error.message : 'حدث خطأ أثناء التحميل.'}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            <Button type="button" onClick={retryPerson}>إعادة المحاولة</Button>
+            <Button variant="secondary" asChild><Link to="/people">العودة</Link></Button>
+          </CardContent>
+        </Card>
+      </PageLayout>
     );
   }
 
@@ -74,15 +77,15 @@ export function PersonFormPage() {
   };
 
   return (
-    <Card className="mx-auto max-w-5xl">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
-        <div>
-          <CardTitle>{isEdit ? 'تعديل شخص' : 'إضافة شخص'}</CardTitle>
-          <CardDescription>الجدول موحد للمستأجرين والملاك وجهات الاتصال.</CardDescription>
-        </div>
-        <Button variant="secondary" asChild><Link to="/people"><ArrowLeft className="me-2 size-4" />العودة</Link></Button>
-      </CardHeader>
-      <CardContent>
+    <PageLayout dir="rtl" lang="ar" contentClassName="max-w-5xl">
+      <PageHeader
+        title={isEdit ? 'تعديل شخص' : 'إضافة شخص'}
+        description="الجدول موحد للمستأجرين والملاك وجهات الاتصال."
+        backTo="/people"
+        backLabel="الأشخاص"
+      />
+      <Card>
+        <CardContent className="p-4 sm:p-5">
         <EntityForm.Root
           className="md:grid-cols-2"
           aria-busy={isSubmitting}
@@ -111,6 +114,7 @@ export function PersonFormPage() {
           />
         </EntityForm.Root>
       </CardContent>
-    </Card>
+      </Card>
+    </PageLayout>
   );
 }

@@ -191,7 +191,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
                   title={row.tenantName}
                   subtitle={`${row.propertyTitle} · ${row.unitNumber} · ${formatDate(row.endDate)}`}
                   meta={<SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} />}
-                  value={<StatusBadge tone={row.daysRemaining <= 15 ? 'red' : 'gold'}>{formatCompanyNumber(defaultCompanyLocalSettings, row.daysRemaining)} يوم</StatusBadge>}
+                  value={<StatusBadge tone={row.daysRemaining <= 15 ? 'danger' : 'warning'}>{formatCompanyNumber(defaultCompanyLocalSettings, row.daysRemaining)} يوم</StatusBadge>}
                 />
               ))}
             </ReportList>

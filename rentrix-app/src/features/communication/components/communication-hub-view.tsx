@@ -2,24 +2,23 @@ import {
   Archive,
   CheckCircle2,
   Edit,
-  MessageSquareText,
-  Plus,
   RotateCcw,
   Rows3,
   UserRoundSearch,
 } from "lucide-react";
 import { useState } from "react";
+import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageStateCard, WriteErrorCard } from "@/components/page-state-card";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { EntityForm } from "@/components/ui/entity-form";
 import { Input } from "@/components/ui/input";
 import { KpiCard } from "@/components/ui/kpi-card";
@@ -38,12 +37,12 @@ const channelLabels: Record<string, string> = {
   whatsapp: "واتساب مسجل",
   email: "بريد إلكتروني",
   meeting: "اجتماع",
-  note: "ملاحظة داخلية",
+  note: "ملاحظة تشغيلية",
 };
 const directionLabels: Record<string, string> = {
   inbound: "وارد",
   outbound: "صادر",
-  internal: "داخلي",
+  internal: "تشغيلي",
 };
 const statusLabels: Record<string, string> = {
   logged: "مسجل",
@@ -51,11 +50,11 @@ const statusLabels: Record<string, string> = {
   resolved: "مغلق",
   archived: "مؤرشف",
 };
-const statusTone: Record<string, "blue" | "green" | "red" | "gray" | "gold"> = {
-  logged: "blue",
-  follow_up: "gold",
-  resolved: "green",
-  archived: "gray",
+const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "neutral"> = {
+  logged: "info",
+  follow_up: "warning",
+  resolved: "success",
+  archived: "neutral",
 };
 
 type Props = Readonly<{
@@ -109,99 +108,120 @@ export function CommunicationHubView(props: Props) {
     filters.query.trim().length > 0 ||
     filters.channel !== "all" ||
     filters.status !== "all";
+  const activeFilters: ActiveFilterItem[] = [];
+  if (filters.query.trim()) {
+    activeFilters.push({
+      key: "query",
+      label: "بحث",
+      value: filters.query,
+      onRemove: () => onFiltersChange({ ...filters, query: "" }),
+    });
+  }
+  if (filters.channel !== "all") {
+    activeFilters.push({
+      key: "channel",
+      label: "القناة",
+      value: channelLabels[filters.channel] ?? filters.channel,
+      onRemove: () => onFiltersChange({ ...filters, channel: "all" }),
+    });
+  }
+  if (filters.status !== "all") {
+    activeFilters.push({
+      key: "status",
+      label: "الحالة",
+      value: statusLabels[filters.status] ?? filters.status,
+      onRemove: () => onFiltersChange({ ...filters, status: "all" }),
+    });
+  }
   const showRows = !isLoading && !error && rows.length > 0;
   const showEmpty = !isLoading && !error && rows.length === 0;
 
   return (
     <section className="space-y-5">
-      <Card className="border-primary/10 bg-gradient-to-l from-primary/10 via-card to-card">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquareText className="size-5" /> سجل التواصل
-            </CardTitle>
-            <CardDescription>
-              سجل داخلي للمكالمات والرسائل والاجتماعات. لا يرسل رسائل خارجية ولا
-              يستدعي مزودين مدفوعين.
-            </CardDescription>
-          </div>
-          <Button onClick={onCreate}>
-            <Plus className="me-2 size-4" />
-            إضافة تواصل
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveCardGrid>
-            <KpiCard
-              label="إجمالي السجلات"
-              value={rows.length}
-              icon={Rows3}
-              accent="primary"
-              compact
-            />
-            <KpiCard
-              label="متابعة مطلوبة"
-              value={followUps}
-              icon={UserRoundSearch}
-              accent="amber"
-              compact
-            />
-            <KpiCard
-              label="مغلقة"
-              value={resolved}
-              icon={CheckCircle2}
-              accent="emerald"
-              compact
-            />
-            <KpiCard
-              label="مؤرشفة"
-              value={archived}
-              icon={Archive}
-              accent="sky"
-              compact
-            />
-          </ResponsiveCardGrid>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="grid gap-3 pt-6 md:grid-cols-[1fr_12rem_12rem]">
-          <Input
-            value={filters.query}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, query: event.target.value })
-            }
-            placeholder="بحث بالاسم، الهاتف، الموضوع، المحتوى"
-            aria-label="بحث سجل التواصل"
+      <div className="space-y-3">
+        <div className="max-w-3xl">
+          <h2 className="text-base font-bold tracking-tight">سجل التواصل</h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            سجل تشغيلي للمكالمات والرسائل والاجتماعات. لا يرسل رسائل خارجية ولا
+            يستدعي مزودين مدفوعين.
+          </p>
+        </div>
+        <ResponsiveCardGrid>
+          <KpiCard
+            label="إجمالي السجلات"
+            value={rows.length}
+            icon={Rows3}
+            accent="primary"
+            compact
           />
-          <Select
-            value={filters.channel}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, channel: event.target.value })
-            }
-          >
-            <option value="all">كل القنوات</option>
-            {Object.entries(channelLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-          <Select
-            value={filters.status}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, status: event.target.value })
-            }
-          >
-            <option value="all">كل الحالات</option>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </CardContent>
-      </Card>
+          <KpiCard
+            label="متابعة مطلوبة"
+            value={followUps}
+            icon={UserRoundSearch}
+            accent="amber"
+            compact
+          />
+          <KpiCard
+            label="مغلقة"
+            value={resolved}
+            icon={CheckCircle2}
+            accent="emerald"
+            compact
+          />
+          <KpiCard
+            label="مؤرشفة"
+            value={archived}
+            icon={Archive}
+            accent="sky"
+            compact
+          />
+        </ResponsiveCardGrid>
+      </div>
+
+      <FilterBar
+        searchValue={filters.query}
+        onSearchChange={(query) => onFiltersChange({ ...filters, query })}
+        searchPlaceholder="بحث بالاسم، الهاتف، الموضوع، المحتوى"
+        searchAriaLabel="بحث سجل التواصل"
+        filters={
+          <>
+            <Select
+              value={filters.channel}
+              onChange={(event) =>
+                onFiltersChange({ ...filters, channel: event.target.value })
+              }
+              aria-label="قناة التواصل"
+              className="w-full sm:w-48"
+            >
+              <option value="all">كل القنوات</option>
+              {Object.entries(channelLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              value={filters.status}
+              onChange={(event) =>
+                onFiltersChange({ ...filters, status: event.target.value })
+              }
+              aria-label="حالة التواصل"
+              className="w-full sm:w-48"
+            >
+              <option value="all">كل الحالات</option>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </>
+        }
+      />
+      <ActiveFilterBar
+        filters={activeFilters}
+        onClearAll={() => onFiltersChange({ query: "", channel: "all", status: "all" })}
+      />
 
       {error ? (
         <ErrorCard message="تعذر تحميل سجل التواصل" onRetry={onRetry} />
@@ -226,7 +246,7 @@ export function CommunicationHubView(props: Props) {
           description={
             hasFilters
               ? "غيّر البحث أو القناة أو الحالة لعرض سجلات تواصل أخرى."
-              : "أضف أول سجل داخلي عند حدوث اتصال أو اجتماع أو ملاحظة. لا يتم إرسال أي رسالة خارجية."
+              : "أضف أول سجل تشغيلي عند حدوث اتصال أو اجتماع أو ملاحظة. لا يتم إرسال أي رسالة خارجية."
           }
           action={
             hasFilters ? undefined : (
@@ -248,7 +268,7 @@ export function CommunicationHubView(props: Props) {
         open={formOpen}
         onOpenChange={onFormOpenChange}
         title={editingRecord ? "تعديل سجل تواصل" : "إضافة سجل تواصل"}
-        description="هذا تسجيل داخلي فقط، ولن يرسل النظام أي رسالة خارجية عند الحفظ."
+        description="هذا تسجيل تشغيلي فقط، ولن يرسل النظام أي رسالة خارجية عند الحفظ."
         className="max-w-2xl"
       >
         <EntityForm.Root
@@ -482,7 +502,7 @@ function CommunicationRows({
       key: "status",
       header: "الحالة",
       render: (row) => (
-        <StatusBadge tone={statusTone[row.status] ?? "gray"}>
+        <StatusBadge tone={statusTone[row.status] ?? "neutral"}>
           {statusLabels[row.status] ?? row.status}
         </StatusBadge>
       ),
@@ -542,7 +562,7 @@ function CommunicationCard({
             {directionLabels[row.direction] ?? row.direction}
           </p>
         </div>
-        <StatusBadge tone={statusTone[row.status] ?? "gray"}>
+        <StatusBadge tone={statusTone[row.status] ?? "neutral"}>
           {statusLabels[row.status] ?? row.status}
         </StatusBadge>
       </div>

@@ -58,7 +58,7 @@ describe('BottomSheet mobile interaction contract', () => {
     expect(document.activeElement).toBe(input);
   });
 
-  it('exposes a tappable grab handle and honours reduced motion on its entrance animations', () => {
+  it('exposes a tappable grab handle without decorative entrance animation classes', () => {
     act(() => {
       root.render(
         <BottomSheet open onClose={vi.fn()} title="إضافة شخص">
@@ -74,9 +74,8 @@ describe('BottomSheet mobile interaction contract', () => {
     expect(handle).not.toBeNull();
     expect(handle?.getAttribute('aria-label')).toBe('مقبض اللوحة — اضغط للإغلاق');
     expect(handle?.className).toContain('cursor-grab');
-    expect(backdrop?.className).toContain('fade-in');
-    expect(backdrop?.className).toContain('motion-reduce:animate-none');
-    expect(panel?.className).toContain('motion-reduce:animate-none');
+    expect(backdrop?.className).not.toMatch(/animate-|fade-in|slide-in/);
+    expect(panel?.className).not.toMatch(/animate-|fade-in|slide-in/);
   });
 
   it('restores document scroll ownership after the sheet leaves the tree', () => {

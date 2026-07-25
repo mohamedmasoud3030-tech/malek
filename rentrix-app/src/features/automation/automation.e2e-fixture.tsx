@@ -68,7 +68,7 @@ export function AutomationE2EFixture() {
 
         <div className="grid gap-3 md:grid-cols-2">
           {fixtureRules.map(({ id, icon: Icon, title, description, schedule, channel, active }) => (
-            <Card key={id} className={cn('transition hover:-translate-y-0.5 hover:border-primary/25', !active && 'opacity-70')}>
+            <Card key={id} className={cn('transition hover:border-primary/25', !active && 'opacity-70')}>
               <CardContent className="flex items-start gap-4 p-5">
                 <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
                   <Icon className="size-5" aria-hidden="true" />

@@ -70,7 +70,7 @@ export function MaintenanceRequestForm({
         </EntityForm.Section>
 
         {isEditingResolvedRequest ? (
-          <p className="rounded-xl border border-amber-300/70 bg-amber-50/70 p-3 text-xs font-medium text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">
+          <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs font-medium text-warning">
             لا يمكن تغيير موقع طلب تم حله أو إغلاقه حتى يبقى مرتبطاً بالمصروف المسجل.
           </p>
         ) : null}

@@ -11,20 +11,10 @@
    tokens.css (@theme inline) هو ما يولّد فئات النظام.
    ============================================ */
 
-/* ── Subtle, professional animations only ───── */
-@keyframes route-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
 @keyframes shimmer {
   100% { transform: translateX(-100%); }
 }
 
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 
 /* ============================================
    Base layer
@@ -63,7 +53,6 @@
   button, input, textarea, select { font: inherit; }
   img, video, canvas, svg { max-width: 100%; }
 
-  main { animation: route-in 0.18s ease-out both; }
 
   ::selection {
     background: hsl(var(--primary) / 0.15);
@@ -78,9 +67,6 @@
    ============================================ */
 
 @layer utilities {
-  .animate-route-in       { animation: route-in 0.18s ease-out both; }
-  .animate-slide-up       { animation: slide-up 0.2s ease-out both; }
-
   /* Subtle card interaction */
   .hover-card {
     transition: box-shadow 0.18s ease, border-color 0.18s ease;
@@ -274,31 +260,6 @@
   --color-brand-600: #2554eb;
   --color-brand-700: #1d42d8;
 
-  --animate-float: float 7s ease-in-out infinite;
-  --animate-float-slow: float 11s ease-in-out infinite;
-  --animate-pulse-ring: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-14px);
-    }
-  }
-
-  @keyframes pulse-ring {
-    0% {
-      box-shadow: 0 0 0 0 rgba(59, 110, 246, 0.35);
-    }
-    70% {
-      box-shadow: 0 0 0 18px rgba(59, 110, 246, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(59, 110, 246, 0);
-    }
-  }
 }
 
 /* Subtle blueprint grid used on dark landing sections */
@@ -328,23 +289,23 @@
 
 /* Glassy card borders on dark */
 .glass-card {
-  @apply border border-white/10 bg-white/[0.04] backdrop-blur-sm;
+  @apply border border-border/70 bg-card shadow-card;
 }
 
 .light-card {
-  @apply border border-slate-200/80 bg-white shadow-[0_8px_30px_-12px_rgba(12,26,54,0.12)];
+  @apply border border-border/70 bg-card shadow-card;
 }
 
-/* Gradient headline text */
+/* Landing headline text follows the app token system. */
 .text-gradient {
-  @apply bg-gradient-to-l from-brand-300 via-brand-400 to-cyan-300 bg-clip-text text-transparent;
+  @apply text-primary;
 }
 
 .text-gradient-light {
-  @apply bg-gradient-to-l from-brand-600 via-brand-500 to-cyan-500 bg-clip-text text-transparent;
+  @apply text-primary;
 }
 
-/* Light landing sections share this base */
+/* Light landing sections share the app surface baseline. */
 .section-light {
-  @apply bg-slate-50 text-slate-900;
+  @apply bg-background text-foreground;
 }

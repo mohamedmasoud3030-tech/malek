@@ -1,7 +1,13 @@
-import { Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BalanceSheetReport, IncomeStatementReport, TrialBalanceReport } from '@/features/financials/reports/financialReportsService';
-import { exportBalanceSheetToPdf, exportIncomeStatementToPdf, exportTrialBalanceToPdf } from '@/services/pdfService';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import {
+  DocumentTemplates,
+  type BalanceSheetDocumentData,
+  type IncomeStatementDocumentData,
+  type TrialBalanceDocumentData,
+} from '@/services/documents/DocumentTemplates';
 import { BalanceSheetPanel } from './accounting/balance-sheet-panel';
 import { IncomeStatementPanel } from './accounting/income-statement-panel';
 import { TrialBalancePanel } from './accounting/trial-balance-panel';
@@ -22,6 +28,15 @@ type AccountingReportsSectionProps = Readonly<{
   isLoading: boolean;
 }>;
 
+type AccountingDocumentBuilder<T> = () => T | null;
+type AccountingDocumentActions<T> = Readonly<{
+  label: string;
+  builder: AccountingDocumentBuilder<T>;
+  print: (data: T) => Promise<void>;
+  pdf: (data: T) => Promise<void>;
+  disabled: boolean;
+}>;
+
 export function AccountingReportsSection({
   asOf,
   from,
@@ -37,61 +52,70 @@ export function AccountingReportsSection({
   balanceSheetError,
   isLoading,
 }: AccountingReportsSectionProps) {
-  const handlePrintTrialBalance = () => {
-    if (!trialBalance) return;
-    exportTrialBalanceToPdf(
-      {
-        lines: trialBalance.accounts.map((account) => ({
-          no: account.code,
-          name: account.name,
-          debit: account.balanceType === 'debit' ? account.balance : 0,
-          credit: account.balanceType === 'credit' ? account.balance : 0,
-        })),
-        totalDebit: trialBalance.totalDebits,
-        totalCredit: trialBalance.totalCredits,
-      },
-      {},
-      asOf || '—',
-    );
+  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+
+  const buildTrialBalanceDocument = (): TrialBalanceDocumentData | null => {
+    if (!trialBalance) return null;
+    return {
+      asOf: asOf || '—',
+      accounts: trialBalance.accounts,
+      totalDebits: trialBalance.totalDebits,
+      totalCredits: trialBalance.totalCredits,
+      isBalanced: trialBalance.isBalanced,
+    };
   };
 
-  const handlePrintIncomeStatement = () => {
-    if (!incomeStatement) return;
-    exportIncomeStatementToPdf(
-      {
-        totalRevenue: incomeStatement.totalRevenue,
-        totalExpense: incomeStatement.totalExpenses,
-        netIncome: incomeStatement.netIncome,
-        revenues: incomeStatement.revenue,
-        expenses: incomeStatement.expenses,
-      },
-      {},
-      `${from || '—'} إلى ${to || '—'}`,
-    );
+  const buildIncomeStatementDocument = (): IncomeStatementDocumentData | null => {
+    if (!incomeStatement) return null;
+    return {
+      periodFrom: from || '—',
+      periodTo: to || '—',
+      revenue: incomeStatement.revenue,
+      expenses: incomeStatement.expenses,
+      totalRevenue: incomeStatement.totalRevenue,
+      totalExpenses: incomeStatement.totalExpenses,
+      netIncome: incomeStatement.netIncome,
+    };
   };
 
-  const handlePrintBalanceSheet = () => {
-    if (!balanceSheet) return;
-    exportBalanceSheetToPdf(
-      {
-        assets: balanceSheet.assets.map((item) => ({ label: item.name, amount: item.amount })),
-        liabilities: balanceSheet.liabilities.map((item) => ({ label: item.name, amount: item.amount })),
-        equity: balanceSheet.equity.map((item) => ({ label: item.name, amount: item.amount })),
-        totalAssets: balanceSheet.totalAssets,
-        totalLiabilities: balanceSheet.totalLiabilities,
-        totalEquity: balanceSheet.totalEquity,
-      },
-      {},
-      asOf || '—',
-    );
+  const buildBalanceSheetDocument = (): BalanceSheetDocumentData | null => {
+    if (!balanceSheet) return null;
+    return {
+      asOf: asOf || '—',
+      assets: balanceSheet.assets,
+      liabilities: balanceSheet.liabilities,
+      equity: balanceSheet.equity,
+      totalAssets: balanceSheet.totalAssets,
+      totalLiabilities: balanceSheet.totalLiabilities,
+      totalEquity: balanceSheet.totalEquity,
+    };
   };
 
-  const printButton = (label: string, handler: () => void, disabled: boolean) => (
-    <Button type="button" size="sm" variant="outline" onClick={handler} disabled={disabled} className="min-h-10 gap-1.5 text-xs">
-      <Printer className="size-3.5" aria-hidden="true" />
-      {label}
-    </Button>
-  );
+  const documentActions = <T,>({ label, builder, print, pdf, disabled }: AccountingDocumentActions<T>) => {
+    const runPrint = () => {
+      const data = builder();
+      if (!data || !isDocumentSettingsReady) return;
+      void print(data);
+    };
+    const runPdf = () => {
+      const data = builder();
+      if (!data || !isDocumentSettingsReady) return;
+      void pdf(data);
+    };
+
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        <Button type="button" size="sm" variant="outline" onClick={runPrint} disabled={disabled || !isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+          <Printer className="size-3.5" aria-hidden="true" />
+          {label}
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={runPdf} disabled={disabled || !isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+          <Download className="size-3.5" aria-hidden="true" />
+          PDF
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -100,7 +124,13 @@ export function AccountingReportsSection({
         report={trialBalance}
         error={trialBalanceError}
         isLoading={isTrialBalanceLoading || isLoading}
-        action={printButton('طباعة الميزان', handlePrintTrialBalance, !trialBalance)}
+        action={documentActions({
+          label: 'طباعة الميزان',
+          builder: buildTrialBalanceDocument,
+          print: (data) => DocumentTemplates.printTrialBalanceDocument(data, documentSettings),
+          pdf: (data) => DocumentTemplates.downloadTrialBalancePdf(data, documentSettings),
+          disabled: !trialBalance,
+        })}
       />
 
       <IncomeStatementPanel
@@ -109,7 +139,13 @@ export function AccountingReportsSection({
         report={incomeStatement}
         error={incomeStatementError}
         isLoading={isIncomeStatementLoading || isLoading}
-        action={printButton('طباعة الدخل', handlePrintIncomeStatement, !incomeStatement)}
+        action={documentActions({
+          label: 'طباعة الدخل',
+          builder: buildIncomeStatementDocument,
+          print: (data) => DocumentTemplates.printIncomeStatementDocument(data, documentSettings),
+          pdf: (data) => DocumentTemplates.downloadIncomeStatementPdf(data, documentSettings),
+          disabled: !incomeStatement,
+        })}
       />
 
       <BalanceSheetPanel
@@ -117,7 +153,13 @@ export function AccountingReportsSection({
         report={balanceSheet}
         error={balanceSheetError}
         isLoading={isBalanceSheetLoading || isLoading}
-        action={printButton('طباعة المركز المالي', handlePrintBalanceSheet, !balanceSheet)}
+        action={documentActions({
+          label: 'طباعة المركز المالي',
+          builder: buildBalanceSheetDocument,
+          print: (data) => DocumentTemplates.printBalanceSheetDocument(data, documentSettings),
+          pdf: (data) => DocumentTemplates.downloadBalanceSheetPdf(data, documentSettings),
+          disabled: !balanceSheet,
+        })}
       />
     </div>
   );

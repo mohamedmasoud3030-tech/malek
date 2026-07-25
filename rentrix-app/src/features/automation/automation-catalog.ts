@@ -9,7 +9,7 @@ export const automationRulesCatalog: readonly AutomationRule[] = [
   {
     id: 'contract-expiry-30',
     name: 'تذكير انتهاء العقود (30 يوماً)',
-    description: 'إشعار داخلي ورسالة للمستأجر/المالك قبل انتهاء العقد بثلاثين يوماً.',
+    description: 'إشعار داخل النظام ورسالة للمستأجر/المالك قبل انتهاء العقد بثلاثين يوماً.',
     category: 'contracts',
     channel: 'whatsapp',
     status: 'active',
@@ -51,7 +51,7 @@ export const automationRulesCatalog: readonly AutomationRule[] = [
   {
     id: 'rent-overdue-escalation',
     name: 'تصعيد المتأخرات',
-    description: 'تنبيه تصعيدي بعد 7 أيام من التأخر مع نسخة داخلية للمتابعة.',
+    description: 'تنبيه تصعيدي بعد 7 أيام من التأخر مع نسخة تشغيلية للمتابعة.',
     category: 'collections',
     channel: 'email',
     status: 'paused',
@@ -104,6 +104,12 @@ export const automationTemplatePreviews: readonly AutomationTemplatePreview[] = 
     title: 'تجديد عقد',
     channel: 'whatsapp',
     body: 'عقدكم على {{property_title}} / {{unit_number}} ينتهي بتاريخ {{end_date}}. يسعدنا ترتيب التجديد.',
+  },
+  {
+    id: 'tpl-overdue-escalation',
+    title: 'تصعيد متأخرات',
+    channel: 'whatsapp',
+    body: 'مرحباً {{tenant_name}}، توجد مطالبة متأخرة منذ {{days_overdue}} أيام على وحدة {{unit_number}}. المبلغ المستحق: {{amount}}، تاريخ الاستحقاق {{due_date}}.',
   },
   {
     id: 'tpl-owner-report',

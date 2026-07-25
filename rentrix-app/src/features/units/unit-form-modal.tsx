@@ -75,7 +75,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
       className="max-w-2xl"
       headerExtra={
         form.formState.isDirty && !isSubmitting ? (
-          <StatusBadge tone="gold">
+          <StatusBadge tone="warning">
             {translateSharedLabel('unsavedChanges', getAppLanguageState().language)}
           </StatusBadge>
         ) : undefined
@@ -142,7 +142,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
           {managedStatus && unit ? (
             <div className="space-y-2 rounded-xl border bg-muted/30 p-3">
               <input type="hidden" {...form.register('status')} />
-              <StatusBadge tone={unit.status === 'occupied' ? 'green' : 'gold'}>
+              <StatusBadge tone={unit.status === 'occupied' ? 'success' : 'warning'}>
                 {unitStatusLabels[unit.status]}
               </StatusBadge>
               <p className="text-xs leading-5 text-muted-foreground">

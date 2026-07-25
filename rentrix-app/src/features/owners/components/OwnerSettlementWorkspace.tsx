@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   BadgeCheck,
   CheckCircle2,
+  Download,
   DollarSign,
   Landmark,
   Plus,
@@ -21,7 +22,7 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -82,10 +83,10 @@ function errorMessage(error: unknown) {
 }
 
 function settlementTone(status: OwnerSettlementRecord['status']) {
-  if (status === 'paid') return 'green' as const;
-  if (status === 'approved') return 'blue' as const;
-  if (status === 'cancelled') return 'red' as const;
-  return 'gold' as const;
+  if (status === 'paid') return 'success' as const;
+  if (status === 'approved') return 'info' as const;
+  if (status === 'cancelled') return 'danger' as const;
+  return 'warning' as const;
 }
 
 export function OwnerSettlementWorkspace() {
@@ -189,51 +190,55 @@ export function OwnerSettlementWorkspace() {
     payoutMutation.reset();
   };
 
+  const buildOwnerStatementData = (settlement: OwnerSettlementRecord) => ({
+    ownerName: settlement.owner_name,
+    periodFrom: settlement.period_start,
+    periodTo: settlement.period_end,
+    propertyTitle: settlement.property_title,
+    totalRent: settlement.gross_rent_collected,
+    totalExpenses: settlement.maintenance_deductions + settlement.utility_deductions,
+    totalCommission: settlement.management_fee_amount,
+    netAmount: settlement.net_payable_amount,
+    transactions: [
+      {
+        date: settlement.period_start,
+        type: 'إيجارات مقبوضة',
+        description: `تحصيلات إيجارات ${settlement.property_title}`,
+        amount: settlement.gross_rent_collected,
+      },
+      {
+        date: settlement.period_end,
+        type: 'أتعاب إدارة',
+        description: 'أتعاب المكتب المعتمدة في التسوية',
+        amount: -settlement.management_fee_amount,
+      },
+      ...(settlement.maintenance_deductions > 0
+        ? [{
+            date: settlement.period_end,
+            type: 'مصروفات على المالك',
+            description: 'مصروفات مخصومة من مستحق المالك',
+            amount: -settlement.maintenance_deductions,
+          }]
+        : []),
+      ...(settlement.utility_deductions > 0
+        ? [{
+            date: settlement.period_end,
+            type: 'ضريبة التسوية',
+            description: 'ضريبة مسجلة مستقلة داخل التسوية',
+            amount: -settlement.utility_deductions,
+          }]
+        : []),
+    ],
+  });
+
   const handlePrint = (settlement: OwnerSettlementRecord) => {
     if (!documentSettings.isReady) return;
-    DocumentTemplates.printOwnerStatementDocument(
-      {
-        ownerName: settlement.owner_name,
-        periodFrom: settlement.period_start,
-        periodTo: settlement.period_end,
-        propertyTitle: settlement.property_title,
-        totalRent: settlement.gross_rent_collected,
-        totalExpenses: settlement.maintenance_deductions + settlement.utility_deductions,
-        totalCommission: settlement.management_fee_amount,
-        netAmount: settlement.net_payable_amount,
-        transactions: [
-          {
-            date: settlement.period_start,
-            type: 'إيجارات مقبوضة',
-            description: `تحصيلات إيجارات ${settlement.property_title}`,
-            amount: settlement.gross_rent_collected,
-          },
-          {
-            date: settlement.period_end,
-            type: 'أتعاب إدارة',
-            description: 'أتعاب المكتب المعتمدة في التسوية',
-            amount: -settlement.management_fee_amount,
-          },
-          ...(settlement.maintenance_deductions > 0
-            ? [{
-                date: settlement.period_end,
-                type: 'مصروفات على المالك',
-                description: 'مصروفات مخصومة من مستحق المالك',
-                amount: -settlement.maintenance_deductions,
-              }]
-            : []),
-          ...(settlement.utility_deductions > 0
-            ? [{
-                date: settlement.period_end,
-                type: 'ضريبة التسوية',
-                description: 'ضريبة مسجلة مستقلة داخل التسوية',
-                amount: -settlement.utility_deductions,
-              }]
-            : []),
-        ],
-      },
-      documentSettings.settings,
-    );
+    void DocumentTemplates.printOwnerStatementDocument(buildOwnerStatementData(settlement), documentSettings.settings);
+  };
+
+  const handleDownloadPdf = (settlement: OwnerSettlementRecord) => {
+    if (!documentSettings.isReady) return;
+    void DocumentTemplates.downloadOwnerStatementPdf(buildOwnerStatementData(settlement), documentSettings.settings);
   };
 
   const handleTargetChange = (value: string) => {
@@ -299,30 +304,28 @@ export function OwnerSettlementWorkspace() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-border/60 bg-muted/20">
-        <CardHeader className="gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <div>
-            <CardTitle className="text-sm font-bold">مركز تسويات ومحاسبة الملاك</CardTitle>
-            <CardDescription>
-              مسودات حقيقية من قاعدة البيانات، ثم اعتماد وصرف ذري مع سجل تدقيق وقيد يومية متوازن.
-            </CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
-              <RefreshCw className="size-4" />
-              تحديث
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => handleDraftOpenChange(true)}
-              disabled={targetsQuery.isPending || targets.length === 0}
-            >
-              <Plus className="size-4" />
-              إنشاء مسودة تسوية
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-3xl">
+          <h2 className="text-base font-bold tracking-tight">مركز تسويات ومحاسبة الملاك</h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            مسودات حقيقية من قاعدة البيانات، ثم اعتماد وصرف ذري مع سجل تدقيق وقيد يومية متوازن.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:shrink-0">
+          <Button variant="outline" size="sm" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
+            <RefreshCw className="size-4" />
+            تحديث
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handleDraftOpenChange(true)}
+            disabled={targetsQuery.isPending || targets.length === 0}
+          >
+            <Plus className="size-4" />
+            إنشاء مسودة تسوية
+          </Button>
+        </div>
+      </section>
 
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="إجمالي المقبوضات" value={formatMoney(totals.gross)} icon={Wallet} accent="emerald" sub="تحصيلات مثبتة داخل التسويات" />
@@ -340,7 +343,7 @@ export function OwnerSettlementWorkspace() {
       ) : null}
 
       <Card className="border-border/60">
-        <CardHeader className="border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+        <CardHeader className="border-b border-border/60 px-4 py-3 sm:px-5">
           <CardTitle className="text-sm font-bold">التسويات المسجلة</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4 sm:p-5">
@@ -367,6 +370,10 @@ export function OwnerSettlementWorkspace() {
                       <Button variant="outline" size="sm" onClick={() => handlePrint(settlement)} disabled={!documentSettings.isReady}>
                         <Printer className="size-3.5" />
                         طباعة الكشف
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadPdf(settlement)} disabled={!documentSettings.isReady}>
+                        <Download className="size-3.5" />
+                        PDF
                       </Button>
                     </div>
                   </div>
@@ -465,7 +472,7 @@ function Metric({ label, value, tone = 'default' }: { label: string; value: numb
     : tone === 'danger'
       ? 'text-destructive'
       : tone === 'success'
-        ? 'text-emerald-600'
+        ? 'text-success'
         : 'text-foreground';
   return (
     <div className="rounded-xl bg-muted/20 p-2">

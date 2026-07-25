@@ -159,7 +159,7 @@ export function FileAttachmentField({
         >
           {uploading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Upload className="size-4 animate-bounce" />
+              <Upload className="size-4" />
               جار الرفع...
             </div>
           ) : (

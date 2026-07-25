@@ -29,7 +29,7 @@ type DialogContentProps = ComponentPropsWithoutRef<typeof DialogPrimitive.Conten
 };
 
 export const DialogContent = forwardRef<DialogContentElement, DialogContentProps>(
-  function DialogContent({ className, children, showCloseButton = true, ...props }, forwardedRef) {
+  function DialogContent({ className, children, showCloseButton = true, style, ...props }, forwardedRef) {
     const [contentNode, setContentNode] = useState<DialogContentElement | null>(null);
     const [containsDataEntryControls, setContainsDataEntryControls] = useState(false);
 
@@ -68,9 +68,10 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
           data-dialog-content
           data-dialog-form={containsDataEntryControls ? 'true' : undefined}
           className={cn(
-            'fixed left-1/2 top-[var(--visual-viewport-center-y,50%)] z-[101] grid max-h-[calc(var(--visual-viewport-height,100dvh)-1rem)] min-h-0 w-[calc(100vw-1rem)] max-w-[42rem] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] text-card-foreground shadow-elevated [scrollbar-gutter:stable] sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-3rem),54rem)] sm:w-[min(92vw,42rem)] sm:p-6 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(1.5rem+env(safe-area-inset-top,0px))]',
+            'fixed left-1/2 top-[var(--visual-viewport-center-y,50%)] z-[101] grid max-h-[calc(var(--visual-viewport-height,100dvh)-1rem)] min-h-0 w-[calc(100vw-1rem)] max-w-[42rem] gap-4 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] text-card-foreground shadow-elevated [scrollbar-gutter:stable] sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-3rem),54rem)] sm:w-[min(92vw,42rem)] sm:p-6 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(1.5rem+env(safe-area-inset-top,0px))]',
             className,
           )}
+          style={{ transform: 'translate3d(-50%, -50%, 0)', ...style }}
           {...props}
         >
           {children}

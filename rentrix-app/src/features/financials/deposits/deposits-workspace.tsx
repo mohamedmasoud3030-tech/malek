@@ -1,16 +1,15 @@
 import { useMemo, useState } from 'react';
 import { getContractStatusVariants } from '@/lib/contractStatus';
-import { CheckCircle2, DollarSign, FileCheck, MinusCircle, Printer, ShieldAlert, Wallet, Plus } from 'lucide-react';
+import { CheckCircle2, DollarSign, Download, FileCheck, MinusCircle, Printer, ShieldAlert, Wallet, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AsyncContentState } from '@/components/async-content-state';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { numberToArabicWords, OMR_CURRENCY_CONFIG } from '@/lib/numberToArabicWords';
@@ -57,10 +56,10 @@ function useContracts() {
   });
 }
 
-function getDepositTone(status: DepositStatus): 'green' | 'blue' | 'gold' {
-  if (status === 'refunded') return 'green';
-  if (status === 'held') return 'blue';
-  return 'gold';
+function getDepositTone(status: DepositStatus): 'success' | 'info' | 'warning' {
+  if (status === 'refunded') return 'success';
+  if (status === 'held') return 'info';
+  return 'warning';
 }
 
 function getContentStatus(isLoading: boolean, isError: boolean, isEmpty: boolean) {
@@ -156,33 +155,38 @@ export function DepositsWorkspace() {
   const totalRefunded = useMemo(() => deposits.reduce((sum, deposit) => sum + deposit.refunded_amount, 0), [deposits]);
   const contentStatus = getContentStatus(depositsQuery.isLoading, depositsQuery.isError, deposits.length === 0);
 
-  const handlePrint = (deposit: DepositRecord) => {
+  const buildDepositClearanceDocument = (deposit: DepositRecord) => {
     const printableAmount = deposit.remaining_amount > 0 ? deposit.remaining_amount : deposit.deposit_amount;
     const tafqeet = numberToArabicWords(printableAmount, OMR_CURRENCY_CONFIG);
-    DocumentTemplates.printReportDocument(
-      {
-        reportTitle: 'سند تسوية ومخالصة مبلغ التأمين',
-        reportType: 'Tenant_Security_Deposit_Clearance',
-        periodFrom: deposit.received_date,
-        periodTo: getTodayLocalDateString(),
-        sections: [
-          {
-            title: 'بيانات الوديعة',
-            rows: [
-              { label: 'معرف العقد', value: deposit.contract_id },
-              { label: 'مبلغ التأمين الأصلي', value: `${deposit.deposit_amount} ر.ع` },
-              { label: 'الخصومات', value: `${deposit.deducted_amount} ر.ع` },
-              { label: 'المسترد', value: `${deposit.refunded_amount} ر.ع` },
-              { label: 'المتبقي', value: `${deposit.remaining_amount} ر.ع` },
-              { label: 'تفقيط المتبقي', value: tafqeet },
-            ],
-            totals: ['الصافي', `${deposit.remaining_amount} ر.ع`],
-          },
-        ],
-        totalSummary: `تاريخ المخالصة: ${getTodayLocalDateString()}`,
-      },
-      defaultSettings,
-    );
+    return {
+      reportTitle: 'سند تسوية ومخالصة مبلغ التأمين',
+      reportType: 'Tenant_Security_Deposit_Clearance',
+      periodFrom: deposit.received_date,
+      periodTo: getTodayLocalDateString(),
+      sections: [
+        {
+          title: 'بيانات الوديعة',
+          rows: [
+            { label: 'معرف العقد', value: deposit.contract_id },
+            { label: 'مبلغ التأمين الأصلي', value: `${deposit.deposit_amount} ر.ع` },
+            { label: 'الخصومات', value: `${deposit.deducted_amount} ر.ع` },
+            { label: 'المسترد', value: `${deposit.refunded_amount} ر.ع` },
+            { label: 'المتبقي', value: `${deposit.remaining_amount} ر.ع` },
+            { label: 'تفقيط المتبقي', value: tafqeet },
+          ],
+          totals: ['الصافي', `${deposit.remaining_amount} ر.ع`],
+        },
+      ],
+      totalSummary: `تاريخ المخالصة: ${getTodayLocalDateString()}`,
+    };
+  };
+
+  const handlePrint = (deposit: DepositRecord) => {
+    void DocumentTemplates.printReportDocument(buildDepositClearanceDocument(deposit), defaultSettings);
+  };
+
+  const handleDownloadPdf = (deposit: DepositRecord) => {
+    void DocumentTemplates.downloadReportPdf(buildDepositClearanceDocument(deposit), defaultSettings);
   };
 
   const executeSelectedAction = () => {
@@ -195,26 +199,24 @@ export function DepositsWorkspace() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-border/60 bg-muted/20">
-        <CardHeader className="px-4 py-3 sm:px-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-sm font-bold">دفتر أمانات وتأمينات المستأجرين</CardTitle>
-              <CardDescription>مسار مالي حقيقي مع سجل غير قابل للتلاعب، منع تجاوز الرصيد، وقيود محاسبية.</CardDescription>
-            </div>
-            <Button onClick={() => setActionType('create')} className="min-h-11 gap-2">
-              <Plus className="size-4" />
-              تسجيل وديعة جديدة
-            </Button>
-          </div>
-        </CardHeader>
-      </Card>
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-3xl">
+          <h2 className="text-base font-bold tracking-tight">دفتر أمانات وتأمينات المستأجرين</h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            مسار مالي حقيقي مع سجل غير قابل للتلاعب، منع تجاوز الرصيد، وقيود محاسبية.
+          </p>
+        </div>
+        <Button onClick={() => setActionType('create')} className="min-h-11 gap-2 sm:shrink-0">
+          <Plus className="size-4" />
+          تسجيل وديعة جديدة
+        </Button>
+      </section>
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} sub="واجب الرد" />
-        <KpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} sub="أضرار وصيانة" />
-        <KpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} sub="تم رده" />
-        <KpiCard label="عدد الودائع" value={deposits.length.toLocaleString('ar')} icon={FileCheck} sub="سجلات" />
+        <KpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" />
+        <KpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} accent="rose" sub="أضرار وصيانة" />
+        <KpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} accent="emerald" sub="تم رده" />
+        <KpiCard label="عدد الودائع" value={deposits.length.toLocaleString('ar')} icon={FileCheck} accent="sky" sub="سجلات" />
       </ResponsiveCardGrid>
 
       <AsyncContentState
@@ -243,12 +245,16 @@ export function DepositsWorkspace() {
                       <Printer className="size-3.5" />
                       طباعة
                     </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadPdf(deposit)} className="gap-1">
+                      <Download className="size-3.5" />
+                      PDF
+                    </Button>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                   <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">الأصلي</span><strong dir="ltr">{formatMoney(deposit.deposit_amount)}</strong></div>
                   <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">المخصوم</span><strong className="text-destructive" dir="ltr">{formatMoney(deposit.deducted_amount)}</strong></div>
-                  <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">المسترد</span><strong className="text-emerald-600" dir="ltr">{formatMoney(deposit.refunded_amount)}</strong></div>
+                  <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">المسترد</span><strong className="text-success" dir="ltr">{formatMoney(deposit.refunded_amount)}</strong></div>
                   <div className="rounded-xl bg-primary/10 p-2"><span className="block text-muted-foreground">المتبقي</span><strong className="text-primary" dir="ltr">{formatMoney(deposit.remaining_amount)}</strong></div>
                 </div>
                 {deposit.remaining_amount > 0 && (
@@ -269,91 +275,102 @@ export function DepositsWorkspace() {
         </div>
       </AsyncContentState>
 
-      <Dialog open={actionType === 'create'} onOpenChange={(open) => { if (!open) setActionType(null); }}>
-        <DialogContent dir="rtl" className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>تسجيل وديعة تأمين جديدة</DialogTitle>
-            <DialogDescription>يتم حفظ الوديعة عبر RPC ذري مع قيد محاسبي: مدين نقدية / دائن التزامات ودائع.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label>العقد النشط *</Label>
-              <Select value={createForm.contract_id} onChange={(event) => setCreateForm((form) => ({ ...form, contract_id: event.target.value }))}>
+      <EntityForm.Overlay
+        open={actionType === 'create'}
+        onOpenChange={(open) => { if (!open) setActionType(null); }}
+        title="تسجيل وديعة تأمين جديدة"
+        description="يتم حفظ الوديعة عبر RPC ذري مع قيد محاسبي: مدين نقدية / دائن التزامات ودائع."
+      >
+        <EntityForm.Root
+          aria-busy={createMut.isPending}
+          onSubmit={(event) => {
+            event.preventDefault();
+            createMut.mutate();
+          }}
+        >
+          <EntityForm.ErrorSummary message={createMut.isError ? (createMut.error as Error).message : undefined} />
+          <EntityForm.Section title="بيانات الوديعة">
+            <EntityForm.Field label="العقد النشط *">
+              <Select required value={createForm.contract_id} onChange={(event) => setCreateForm((form) => ({ ...form, contract_id: event.target.value }))}>
                 <option value="">اختر العقد</option>
                 {contractsQuery.data?.map((contract) => (
                   <option key={contract.id} value={contract.id}>{contract.id.slice(0, 8)} - عقار {contract.property_id?.slice(0, 6)}</option>
                 ))}
               </Select>
+            </EntityForm.Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <EntityForm.Field label="المبلغ *">
+                <Input required type="number" dir="ltr" value={createForm.amount} onChange={(event) => setCreateForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} />
+              </EntityForm.Field>
+              <EntityForm.Field label="تاريخ الاستلام *">
+                <Input required type="date" value={createForm.received_date} onChange={(event) => setCreateForm((form) => ({ ...form, received_date: event.target.value }))} />
+              </EntityForm.Field>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label>المبلغ *</Label>
-                <Input type="number" dir="ltr" value={createForm.amount} onChange={(event) => setCreateForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} />
-              </div>
-              <div className="grid gap-2">
-                <Label>تاريخ الاستلام *</Label>
-                <Input type="date" value={createForm.received_date} onChange={(event) => setCreateForm((form) => ({ ...form, received_date: event.target.value }))} />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label>ملاحظات</Label>
+            <EntityForm.Field label="ملاحظات">
               <Input value={createForm.notes} onChange={(event) => setCreateForm((form) => ({ ...form, notes: event.target.value }))} placeholder="ملاحظات الاستلام..." />
-            </div>
-            {createMut.isError && <p className="text-sm text-destructive">{(createMut.error as Error).message}</p>}
-            <Button onClick={() => createMut.mutate()} disabled={createMut.isPending || !createForm.contract_id || createForm.amount <= 0} className="min-h-11">
-              {createMut.isPending ? 'جارٍ الحفظ...' : 'حفظ الوديعة'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </EntityForm.Field>
+          </EntityForm.Section>
+          <EntityForm.Actions
+            submitLabel={createMut.isPending ? 'جارٍ الحفظ...' : 'حفظ الوديعة'}
+            onCancel={() => setActionType(null)}
+            isSubmitting={createMut.isPending}
+            submitDisabled={!createForm.contract_id || createForm.amount <= 0}
+          />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
 
-      <Dialog open={actionType === 'deduct' || actionType === 'refund'} onOpenChange={(open) => { if (!open) { setActionType(null); setSelectedDeposit(null); } }}>
-        <DialogContent dir="rtl" className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{actionType === 'deduct' ? 'خصم من وديعة التأمين' : 'رد وديعة التأمين'}</DialogTitle>
-            <DialogDescription>{selectedDeposit ? `المتبقي: ${formatMoney(selectedDeposit.remaining_amount)} - لن يسمح النظام بتجاوز الرصيد` : ''}</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label>المبلغ *</Label>
-              <Input type="number" dir="ltr" value={amountInput} onChange={(event) => setAmountInput(Number(event.target.value) || 0)} max={selectedDeposit?.remaining_amount} />
-            </div>
+      <EntityForm.Overlay
+        open={actionType === 'deduct' || actionType === 'refund'}
+        onOpenChange={(open) => { if (!open) { setActionType(null); setSelectedDeposit(null); } }}
+        title={actionType === 'deduct' ? 'خصم من وديعة التأمين' : 'رد وديعة التأمين'}
+        description={selectedDeposit ? `المتبقي: ${formatMoney(selectedDeposit.remaining_amount)} - لن يسمح النظام بتجاوز الرصيد` : undefined}
+      >
+        <EntityForm.Root
+          aria-busy={deductMut.isPending || refundMut.isPending}
+          onSubmit={(event) => {
+            event.preventDefault();
+            executeSelectedAction();
+          }}
+        >
+          <EntityForm.ErrorSummary message={(deductMut.error as Error)?.message || (refundMut.error as Error)?.message} />
+          <EntityForm.Section title="بيانات العملية">
+            <EntityForm.Field label="المبلغ *">
+              <Input required type="number" dir="ltr" value={amountInput} onChange={(event) => setAmountInput(Number(event.target.value) || 0)} max={selectedDeposit?.remaining_amount} />
+            </EntityForm.Field>
             {actionType === 'deduct' ? (
               <>
-                <div className="grid gap-2">
-                  <Label>سبب الخصم *</Label>
+                <EntityForm.Field label="سبب الخصم *">
                   <Select value={reasonInput} onChange={(event) => setReasonInput(event.target.value as DepositDeductionPayload['reason'])}>
                     {Object.entries(deductionReasonLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
                   </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>وصف تفصيلي *</Label>
+                </EntityForm.Field>
+                <EntityForm.Field label="وصف تفصيلي *">
                   <Textarea value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} placeholder="تفاصيل الأضرار..." />
-                </div>
+                </EntityForm.Field>
               </>
             ) : (
               <>
-                <div className="grid gap-2">
-                  <Label>طريقة الدفع *</Label>
+                <EntityForm.Field label="طريقة الدفع *">
                   <Select value={paymentMethodInput} onChange={(event) => setPaymentMethodInput(event.target.value as DepositRefundPayload['payment_method'])}>
                     <option value="bank_transfer">تحويل بنكي</option>
                     <option value="cash">نقداً</option>
                     <option value="check">شيك</option>
                   </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>ملاحظات</Label>
+                </EntityForm.Field>
+                <EntityForm.Field label="ملاحظات">
                   <Input value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} placeholder="ملاحظات الاسترداد..." />
-                </div>
+                </EntityForm.Field>
               </>
             )}
-            {(deductMut.isError || refundMut.isError) && <p className="text-sm text-destructive">{(deductMut.error as Error)?.message || (refundMut.error as Error)?.message}</p>}
-            <Button onClick={executeSelectedAction} disabled={amountInput <= 0 || !selectedDeposit || amountInput > selectedDeposit.remaining_amount || deductMut.isPending || refundMut.isPending} className="min-h-11">
-              {deductMut.isPending || refundMut.isPending ? 'جارٍ التنفيذ...' : 'تأكيد العملية'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </EntityForm.Section>
+          <EntityForm.Actions
+            submitLabel={deductMut.isPending || refundMut.isPending ? 'جارٍ التنفيذ...' : 'تأكيد العملية'}
+            onCancel={() => { setActionType(null); setSelectedDeposit(null); }}
+            isSubmitting={deductMut.isPending || refundMut.isPending}
+            submitDisabled={amountInput <= 0 || !selectedDeposit || amountInput > selectedDeposit.remaining_amount}
+          />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
     </div>
   );
 }

@@ -20,7 +20,7 @@ export function SettingsSaveBar({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-black">مسودة إعدادات المكتب</p>
-            <StatusBadge tone={isDirty ? 'gold' : 'green'}>
+            <StatusBadge tone={isDirty ? 'warning' : 'success'}>
               {isDirty ? 'تغييرات غير محفوظة' : 'محفوظة'}
             </StatusBadge>
           </div>

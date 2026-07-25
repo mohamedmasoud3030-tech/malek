@@ -1,4 +1,4 @@
-import { CheckCircle2, SearchCheck, TriangleAlert } from 'lucide-react';
+import { CheckCircle2, TriangleAlert } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
@@ -35,11 +35,9 @@ export function DataIntegrityView({ state }: Readonly<{ state: DataIntegrityView
   return (
     <section className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><SearchCheck className="size-5 text-primary" />تدقيق سلامة البيانات</CardTitle>
-          <CardDescription>فحص قراءة فقط للعلاقات الأساسية في مخطط Rentrix الحالي. آخر فحص: {checkedAt}</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4 p-4 sm:p-5">
+          <h2 className="sr-only">تدقيق سلامة البيانات</h2>
+          <p className="text-sm leading-6 text-muted-foreground">آخر فحص: {checkedAt}</p>
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-2xl border border-border bg-background p-4">
               <p className="text-xs font-bold text-muted-foreground">الفحوصات</p>
@@ -61,10 +59,10 @@ export function DataIntegrityView({ state }: Readonly<{ state: DataIntegrityView
         {state.result.snapshot.checks.map((check) => {
           const Icon = check.count > 0 ? TriangleAlert : CheckCircle2;
           return (
-            <Card key={check.id} className={check.count > 0 ? 'border-amber-300 bg-amber-50/60 dark:bg-amber-950/15' : undefined}>
+            <Card key={check.id} className={check.count > 0 ? 'border-warning/40 bg-warning/10' : undefined}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-3 text-base">
-                  <span className="flex items-center gap-2"><Icon className={check.count > 0 ? 'size-5 text-amber-600' : 'size-5 text-emerald-600'} />{check.label}</span>
+                  <span className="flex items-center gap-2"><Icon className={check.count > 0 ? 'size-5 text-warning' : 'size-5 text-success'} />{check.label}</span>
                   <span className="rounded-full bg-background px-3 py-1 text-sm font-black">{check.count}</span>
                 </CardTitle>
                 <CardDescription>{check.description}</CardDescription>

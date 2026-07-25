@@ -56,7 +56,7 @@ export function ReportsFilterSurface({
         className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card"
         aria-label="نطاق التقرير"
       >
-        <div className="flex min-w-0 flex-col gap-3 border-b border-border/60 bg-gradient-to-l from-primary/8 via-transparent to-transparent p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <div className="flex min-w-0 flex-col gap-3 border-b border-border/60 p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <SlidersHorizontal className="size-[1.125rem]" aria-hidden="true" />

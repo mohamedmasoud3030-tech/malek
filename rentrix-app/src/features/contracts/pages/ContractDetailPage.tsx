@@ -55,7 +55,7 @@ export function ContractDetailPage() {
   const openTermination = () => setTerminateOpen(true);
   const handleShare = () => shareContractLink(contract);
   const contractMenuActions = buildContractActions({
-    onPrint: printContractView,
+    onPrint: () => printContractView(contract, companySettings),
     onPdf: () => exportContractPdf(contract, companySettings),
     onWhatsApp: () => openContractWhatsApp(contract),
     onShare: handleShare,
@@ -63,7 +63,7 @@ export function ContractDetailPage() {
     onTerminate: terminationAllowed ? openTermination : undefined,
   });
 
-  return <PageLayout dir="rtl" size="wide"><EntityDetailHeader title="تفاصيل العقد" subtitle={`العقد رقم #${contract.id.slice(0, 8)} — عرض كامل للعقد وسجل مراحله.`} backTo="/contracts" actions={<><Button variant="secondary" className="hidden sm:inline-flex" disabled={!renewalAllowed} onClick={openRenewal}><RefreshCw className="me-2 size-4" />تجديد</Button>{terminationAllowed && <Button variant="destructive" className="hidden sm:inline-flex" onClick={openTermination}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>}<Button variant="secondary" className="hidden md:inline-flex" onClick={printContractView}><Printer className="me-2 size-4" />طباعة</Button><Button variant="secondary" className="hidden md:inline-flex" onClick={() => exportContractPdf(contract, companySettings)}>تصدير PDF</Button><Button variant="secondary" className="hidden lg:inline-flex" onClick={() => openContractWhatsApp(contract)}><MessageCircle className="me-2 size-4" />واتساب</Button><Button variant="secondary" className="hidden lg:inline-flex" onClick={handleShare}><Share2 className="me-2 size-4" />مشاركة</Button><ActionMenu items={contractMenuActions} label="إجراءات العقد" /><Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button></>} />
+  return <PageLayout dir="rtl" size="wide"><EntityDetailHeader title="تفاصيل العقد" subtitle={`العقد رقم #${contract.id.slice(0, 8)} — عرض كامل للعقد وسجل مراحله.`} backTo="/contracts" actions={<><Button variant="secondary" className="hidden sm:inline-flex" disabled={!renewalAllowed} onClick={openRenewal}><RefreshCw className="me-2 size-4" />تجديد</Button>{terminationAllowed && <Button variant="destructive" className="hidden sm:inline-flex" onClick={openTermination}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>}<Button variant="secondary" className="hidden md:inline-flex" onClick={() => printContractView(contract, companySettings)}><Printer className="me-2 size-4" />طباعة</Button><Button variant="secondary" className="hidden md:inline-flex" onClick={() => exportContractPdf(contract, companySettings)}>تصدير PDF</Button><Button variant="secondary" className="hidden lg:inline-flex" onClick={() => openContractWhatsApp(contract)}><MessageCircle className="me-2 size-4" />واتساب</Button><Button variant="secondary" className="hidden lg:inline-flex" onClick={handleShare}><Share2 className="me-2 size-4" />مشاركة</Button><ActionMenu items={contractMenuActions} label="إجراءات العقد" /><Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button></>} />
     <ContractOverviewSection contract={contract} settings={companySettings} />
     <ContractLifecycleSection contract={contract} settings={companySettings} renewalAllowed={renewalAllowed} onRenew={openRenewal} canTerminate={terminationAllowed} onTerminate={openTermination} />
     <ContractPaymentsTab contractId={contract.id} />

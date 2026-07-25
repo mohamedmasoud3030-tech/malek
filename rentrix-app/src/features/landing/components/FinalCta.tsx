@@ -13,7 +13,7 @@ export function FinalCta() {
     : 'Hi, I would like to book a live demo of Rentrix.';
 
   return (
-    <section className="relative overflow-hidden bg-ink-950">
+    <section className="relative overflow-hidden bg-background">
       <div className="bg-grid-dark absolute inset-0 opacity-70" aria-hidden="true" />
       <div
         aria-hidden="true"
@@ -21,20 +21,20 @@ export function FinalCta() {
       />
       <div
         aria-hidden="true"
-        className="animate-float absolute start-[8%] top-16 size-64 rounded-full bg-brand-600/20 blur-[110px]"
+        className="absolute start-[8%] top-16 size-64 rounded-full bg-primary/20 blur-[110px]"
       />
       <div
         aria-hidden="true"
-        className="animate-float-slow absolute end-[6%] bottom-24 size-64 rounded-full bg-cyan-500/15 blur-[110px]"
+        className="absolute end-[6%] bottom-24 size-64 rounded-full bg-info-bg blur-[110px]"
       />
 
       <div className="relative mx-auto max-w-4xl px-4 py-24 text-center sm:px-6 sm:py-32">
         <Reveal>
-          <h2 className="text-3xl font-extrabold leading-[1.25] tracking-tight text-white sm:text-5xl sm:leading-[1.2]">
+          <h2 className="text-3xl font-extrabold leading-[1.25] tracking-tight text-primary-foreground sm:text-5xl sm:leading-[1.2]">
             {t.cta.titleA}{' '}
             <span className="text-gradient">{t.cta.titleB}</span>
           </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-400 sm:text-lg">
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
             {t.cta.subtitle}
           </p>
 
@@ -42,7 +42,7 @@ export function FinalCta() {
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Link
                 to="/login"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-9 py-4 text-base font-bold text-white shadow-[0_20px_45px_-12px_rgba(37,84,235,0.6)] transition hover:bg-brand-500 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-9 py-4 text-base font-bold text-primary-foreground shadow-[0_20px_45px_-12px_rgba(37,84,235,0.6)] transition hover:bg-primary sm:w-auto"
               >
                 {t.cta.primary}
                 <ForwardArrow className="size-5" />
@@ -54,24 +54,24 @@ export function FinalCta() {
               href={whatsappLink(waMessage)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-9 py-4 text-base font-bold text-emerald-300 transition hover:bg-emerald-500/20 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-success/30 bg-success-bg/10 px-9 py-4 text-base font-bold text-success transition hover:bg-success-bg/20 sm:w-auto"
             >
               <MessageCircle className="size-5" />
               {t.cta.whatsapp}
             </motion.a>
           </div>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-400">
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-semibold text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <Zap className="size-4 text-amber-300" />
+              <Zap className="size-4 text-warning" />
               {t.cta.note.split('•')[0]}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Headset className="size-4 text-brand-300" />
+              <Headset className="size-4 text-primary" />
               {t.cta.note.split('•')[1]}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Handshake className="size-4 text-emerald-300" />
+              <Handshake className="size-4 text-success" />
               {t.cta.note.split('•')[2]}
             </span>
           </div>

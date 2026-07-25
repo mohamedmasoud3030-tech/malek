@@ -2,7 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useParams, useRouter } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
+import { PageHeader } from '@/components/layout/page-header';
+import { PageLayout } from '@/components/layout/page-layout';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,33 +107,35 @@ export function PropertyFormPage() {
   if (isEdit && propertyQuery.isLoading) return <RouteLoadingState />;
   if (isEdit && propertyQuery.isError) {
     return (
-      <Card className="mx-auto max-w-3xl" role="alert" aria-live="assertive">
-        <CardHeader>
-          <CardTitle>تعذر تحميل العقار للتعديل</CardTitle>
-          <CardDescription>{propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          <Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>
-          <Button variant="secondary" asChild><Link to="/properties">العودة للعقارات</Link></Button>
-        </CardContent>
-      </Card>
+      <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl">
+        <Card role="alert" aria-live="assertive">
+          <CardHeader>
+            <CardTitle>تعذر تحميل العقار للتعديل</CardTitle>
+            <CardDescription>{propertyQuery.error instanceof Error ? propertyQuery.error.message : 'تحقق من الصلاحيات أو الاتصال ثم أعد المحاولة.'}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button onClick={() => propertyQuery.refetch()}>إعادة المحاولة</Button>
+            <Button variant="secondary" asChild><Link to="/properties">العودة للعقارات</Link></Button>
+          </CardContent>
+        </Card>
+      </PageLayout>
     );
   }
 
   return (
     <>
-      <div className="mx-auto max-w-5xl space-y-5">
-        <EntityDetailHeader
+      <PageLayout dir="rtl" lang="ar" contentClassName="max-w-5xl">
+        <PageHeader
           title={isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}
-          subtitle="أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك."
-          actions={(
+          description="أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك."
+          secondaryActions={(
             <Button variant="secondary" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
               العودة
             </Button>
           )}
         />
         <Card>
-          <CardContent>
+          <CardContent className="p-4 sm:p-5">
             <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
               <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
               <EntityForm.Field label="اسم العقار" error={form.formState.errors.title?.message}>
@@ -173,7 +176,7 @@ export function PropertyFormPage() {
             </EntityForm.Root>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
 
       <DirtyRouteNavigationGuard
         isDirty={form.formState.isDirty}

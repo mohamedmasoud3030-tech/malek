@@ -33,14 +33,14 @@ export function PropertyUnitDetailPage() {
       emptyTitle="الوحدة غير موجودة"
     >
       {unit && (
-        <div className="space-y-6 animate-in fade-in-50 duration-200">
+        <div className="space-y-6">
           <EntityDetailHeader
             title={`وحدة ${unit.unit_number}`}
             subtitle={property ? property.title : undefined}
             backTo={`/properties/${propertyId}/units`}
             backLabel="العودة للوحدات"
             status={
-              <StatusBadge tone={unitStatusTone[unit.status as keyof typeof unitStatusTone] ?? 'gray'}>
+              <StatusBadge tone={unitStatusTone[unit.status as keyof typeof unitStatusTone] ?? 'neutral'}>
                 {unitStatusLabels[unit.status as keyof typeof unitStatusLabels] ?? unit.status}
               </StatusBadge>
             }

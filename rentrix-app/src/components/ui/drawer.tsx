@@ -19,11 +19,11 @@ type DrawerProps = {
 
 const sideClasses: Record<DrawerSide, string> = {
   right:
-    'fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(24rem,92vw)] max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-border p-0 sm:max-h-none sm:p-0',
+    'fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(24rem,92vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-border p-0 sm:max-h-none sm:p-0',
   left:
-    'fixed bottom-0 left-0 right-auto top-0 z-[101] flex h-dvh w-[min(24rem,92vw)] max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 border-r border-border p-0 sm:max-h-none sm:p-0',
+    'fixed bottom-0 left-0 right-auto top-0 z-[101] flex h-dvh w-[min(24rem,92vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-r border-border p-0 sm:max-h-none sm:p-0',
   bottom:
-    'fixed inset-x-0 bottom-0 top-auto z-[101] flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border-0 border-t border-border p-0 sm:max-w-none sm:p-0',
+    'fixed inset-x-0 bottom-0 top-auto z-[101] flex max-h-[88dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-t-3xl border-0 border-t border-border p-0 sm:max-w-none sm:p-0',
 };
 
 /**

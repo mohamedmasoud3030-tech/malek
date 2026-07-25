@@ -1,10 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { ShieldCheck } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
@@ -50,11 +49,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
   return (
     <section className="space-y-4">
       <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ShieldCheck className="size-5 text-primary" />سجل التدقيق</CardTitle>
-          <CardDescription>عرض قراءة فقط لأحداث الحوكمة المتاحة من مصدر التدقيق الحالي.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 p-3 sm:p-4">
           {/* Mobile cards */}
           <div className="grid gap-3 md:hidden">
             {state.result.records.map((record) => (

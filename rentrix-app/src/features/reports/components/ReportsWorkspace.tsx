@@ -1,6 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { AlertTriangle, Building2, Printer, Receipt, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { AlertTriangle, Building2, Receipt, TrendingUp } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -145,7 +144,7 @@ export function ReportsWorkspace({
       ) : null}
 
       <section className="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card" aria-label="أقسام التقارير">
-        <div className="flex flex-col gap-3 border-b border-border/60 bg-gradient-to-l from-primary/10 via-primary/[0.025] to-transparent p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div className="flex min-w-0 items-start gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <ActiveSectionIcon className="size-5" aria-hidden="true" />
@@ -153,17 +152,13 @@ export function ReportsWorkspace({
             <div className="min-w-0" aria-live="polite">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-extrabold sm:text-lg">{activeSectionMeta.label}</h2>
-                <StatusBadge tone="blue">{activeSectionMeta.group}</StatusBadge>
+                <StatusBadge tone="info">{activeSectionMeta.group}</StatusBadge>
               </div>
               <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm">
                 {activeSectionMeta.description}
               </p>
             </div>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => window.print()} className="min-h-10 shrink-0 gap-2 text-xs">
-            <Printer className="size-4" aria-hidden="true" />
-            طباعة التبويب
-          </Button>
         </div>
 
         <div className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur sm:px-4">
@@ -178,7 +173,7 @@ export function ReportsWorkspace({
         </div>
       </section>
 
-      <div className="min-w-0 animate-slide-up" key={activeSection}>
+      <div className="min-w-0" key={activeSection}>
         <Suspense fallback={<SectionFallback />}>
           {activeSection === 'overview' && (
             <SectionTabPanel id="overview" activeId={activeSection}>

@@ -196,7 +196,7 @@ export function AiAssistantPage() {
               ))}
               {pending ? (
                 <div className="me-auto flex max-w-[90%] items-center gap-2 rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-                  <Loader2 className="size-4 animate-spin" />جارٍ تجهيز الرد من السياق المسموح...
+                  <Loader2 className="size-4" />جارٍ تجهيز الرد من السياق المسموح...
                 </div>
               ) : null}
             </div>

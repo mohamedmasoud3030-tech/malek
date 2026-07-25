@@ -4,7 +4,7 @@ import { AutomationCenterView } from './components/automation-center-view';
 
 export function AutomationPage() {
   return (
-    <PageLayout>
+    <PageLayout dir="rtl" lang="ar">
       <PageHeader
         title="مركز الأتمتة"
         description="إدارة تذكيرات انتهاء العقود، استحقاق الإيجار، تقارير الملاك، وتنبيهات الصيانة من مكان واحد."

@@ -74,7 +74,7 @@ function TenantSafeLinks({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceR
         </Button>
       )}
       {tenant.hasArrears && (
-        <Button variant="secondary" className="min-h-11 px-3 text-amber-700" asChild>
+        <Button variant="secondary" className="min-h-11 px-3 text-warning" asChild>
           <Link to="/arrears">
             <TriangleAlert className="me-1 size-4" />المتأخرات
           </Link>

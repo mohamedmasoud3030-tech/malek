@@ -1,6 +1,8 @@
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { Button } from '@/components/ui/button';
 import { CommunicationHubView } from './components/communication-hub-view';
 import { CommunicationOutboundPanel } from './components/communication-outbound-panel';
 import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from './types';
@@ -32,11 +34,29 @@ export function CommunicationPage() {
   const saveRecord = useSaveCommunicationRecord();
   const archiveRecord = useArchiveCommunicationRecord();
 
+  const openCreate = () => {
+    setEditingRecord(null);
+    setDraft(emptyForm);
+    setFormOpen(true);
+  };
+
+  const openEdit = (record: CommunicationRecord) => {
+    setEditingRecord(record);
+    setDraft(formFromRecord(record));
+    setFormOpen(true);
+  };
+
   return (
-    <PageLayout>
+    <PageLayout dir="rtl" lang="ar">
       <PageHeader
         title="مركز التواصل"
         description="سجل تشغيلي للتواصل مع الأطراف، مع واجهة قوالب وواتساب وبريد قابلة للتوسعة دون ربط مزود خارجي داخل الواجهة."
+        primaryAction={
+          <Button onClick={openCreate}>
+            <Plus className="me-2 size-4" />
+            إضافة تواصل
+          </Button>
+        }
       />
       <CommunicationOutboundPanel />
       <CommunicationHubView
@@ -52,8 +72,8 @@ export function CommunicationPage() {
         writeError={saveRecord.error ?? archiveRecord.error}
         onFiltersChange={setFilters}
         onDraftChange={setDraft}
-        onCreate={() => { setEditingRecord(null); setDraft(emptyForm); setFormOpen(true); }}
-        onEdit={(record) => { setEditingRecord(record); setDraft(formFromRecord(record)); setFormOpen(true); }}
+        onCreate={openCreate}
+        onEdit={openEdit}
         onFormOpenChange={setFormOpen}
         onSubmit={(values) => saveRecord.mutate({ id: editingRecord?.id, values }, { onSuccess: () => setFormOpen(false) })}
         onArchive={(id) => archiveRecord.mutate(id)}

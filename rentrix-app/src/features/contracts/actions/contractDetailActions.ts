@@ -1,25 +1,63 @@
 import { toast } from 'sonner';
-import { openWhatsApp, printCurrentView, shareOrCopy } from '@/services/action-service';
-import { exportContractToPdf } from '@/services/pdfService';
+import { openWhatsApp, shareOrCopy } from '@/services/action-service';
+import { DocumentTemplates, type ContractDocumentData, type DocumentSettings } from '@/services/documents/DocumentTemplates';
 import type { CompanySettingsContract } from '@/lib/companySettings';
-import type { Person, Property, Unit } from '@/types/domain';
 import type { ContractDetail } from '../services/contractService';
 
-const toPdfTenant = (person: ContractDetail['people']): Person | null => person ? { ...person, type: 'tenant', address: null, notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
-const toPdfUnit = (unit: ContractDetail['units'], propertyId: string): Unit | null => unit ? { ...unit, name: null, property_id: propertyId, notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
-const toPdfProperty = (property: ContractDetail['properties']): Property | null => property ? { ...property, type: 'residential', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null } : null;
-
-export function exportContractPdf(contract: ContractDetail, companySettings: CompanySettingsContract) {
-  const tenant = toPdfTenant(contract.people);
-  const unit = toPdfUnit(contract.units, contract.property_id);
-  const property = toPdfProperty(contract.properties);
-  exportContractToPdf(contract, {
-    settings: { general: { company: { name: companySettings.companyName } }, operational: { currency: companySettings.defaultCurrency } },
-    contracts: [contract], tenants: tenant ? [tenant] : [], units: unit ? [unit] : [], properties: property ? [property] : [],
-  });
+function toDocumentSettings(companySettings: CompanySettingsContract): DocumentSettings {
+  return {
+    company: { name: companySettings.companyName },
+    currency: companySettings.defaultCurrency,
+  };
 }
 
-export function printContractView() { printCurrentView(); }
+function toContractStatus(status: ContractDetail['status']): ContractDocumentData['contractStatus'] {
+  if (status === 'draft' || status === 'active' || status === 'expired' || status === 'terminated') return status;
+  return undefined;
+}
+
+function toContractDocumentData(contract: ContractDetail): ContractDocumentData {
+  return {
+    contractId: contract.id,
+    contractNumber: contract.id.slice(0, 8),
+    contractStatus: toContractStatus(contract.status),
+    tenantName: contract.people?.full_name ?? '—',
+    tenantPhone: contract.people?.phone ?? '—',
+    tenantEmail: contract.people?.email ?? '—',
+    tenantNationalId: contract.people?.national_id ?? '—',
+    propertyName: contract.properties?.title ?? '—',
+    unitNumber: contract.units?.unit_number ?? '—',
+    unitFloor: contract.units?.floor ?? undefined,
+    ownerName: '—',
+    startDate: contract.start_date,
+    endDate: contract.end_date,
+    rentAmount: Number(contract.rent_amount ?? 0),
+    paymentCycle: contract.payment_cycle,
+    notes: contract.notes ?? undefined,
+  };
+}
+
+async function runDocumentAction(action: () => Promise<void>, fallback: string) {
+  try {
+    await action();
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : fallback);
+  }
+}
+
+export function exportContractPdf(contract: ContractDetail, companySettings: CompanySettingsContract) {
+  void runDocumentAction(
+    () => DocumentTemplates.downloadContractPdf(toContractDocumentData(contract), toDocumentSettings(companySettings)),
+    'تعذر تصدير العقد كملف PDF.',
+  );
+}
+
+export function printContractView(contract: ContractDetail, companySettings: CompanySettingsContract) {
+  void runDocumentAction(
+    () => DocumentTemplates.printContractDocument(toContractDocumentData(contract), toDocumentSettings(companySettings)),
+    'تعذرت طباعة العقد.',
+  );
+}
 
 export async function shareContractLink(contract: ContractDetail) {
   const title = `عقد #${contract.id.slice(0, 8)}`;

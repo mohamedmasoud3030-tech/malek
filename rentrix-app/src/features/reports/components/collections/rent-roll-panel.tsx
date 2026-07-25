@@ -34,7 +34,7 @@ export function RentRollPanel({
                 key={row.contractId}
                 title={row.tenantName}
                 subtitle={`${row.propertyTitle} · ${row.unitNumber}`}
-                badge={<StatusBadge tone={row.statusLabel === 'نشط' ? 'green' : 'gray'}>{row.statusLabel}</StatusBadge>}
+                badge={<StatusBadge tone={row.statusLabel === 'نشط' ? 'success' : 'neutral'}>{row.statusLabel}</StatusBadge>}
                 meta={`${row.paymentCycle} · ${formatDate(row.startDate)} — ${formatDate(row.endDate)}`}
                 stats={(
                   <div className="flex items-center justify-between gap-2">

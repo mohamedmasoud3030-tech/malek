@@ -48,7 +48,7 @@ export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading,
             <span>اضغط لتوسيع تفاصيل الإيصال {receiptDetail.receipt_number}</span>
             <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] text-primary transition-transform group-open:rotate-180">⌄</span>
           </summary>
-          <div className="space-y-3 border-t border-border/70 p-4 animate-panel-in">
+          <div className="space-y-3 border-t border-border/70 p-4">
           <div className="flex justify-end print:hidden">
             <Button variant="secondary" asChild>
               <a href={getReceiptPrintHref(receiptDetail.id)}><Printer className="me-2 size-4" />عرض/طباعة الإيصال</a>

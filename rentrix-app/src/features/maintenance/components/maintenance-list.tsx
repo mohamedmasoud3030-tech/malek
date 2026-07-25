@@ -20,10 +20,10 @@ export const maintenanceStatusLabels = {
 } as const;
 
 export const maintenanceStatusTone = {
-  open: "blue",
-  in_progress: "gold",
-  resolved: "green",
-  closed: "gray",
+  open: "info",
+  in_progress: "warning",
+  resolved: "success",
+  closed: "neutral",
 } as const;
 
 export const maintenancePriorityLabels = {
@@ -34,10 +34,10 @@ export const maintenancePriorityLabels = {
 } as const;
 
 export const maintenancePriorityTone = {
-  low: "gray",
-  medium: "blue",
-  high: "gold",
-  urgent: "red",
+  low: "neutral",
+  medium: "info",
+  high: "warning",
+  urgent: "danger",
 } as const;
 
 const priorityAccent = {
@@ -84,7 +84,7 @@ function MaintenanceCard({
           tone={
             maintenanceStatusTone[
               row.status as keyof typeof maintenanceStatusTone
-            ] ?? "gray"
+            ] ?? "neutral"
           }
         >
           {maintenanceStatusLabels[
@@ -104,7 +104,7 @@ function MaintenanceCard({
             tone={
               maintenancePriorityTone[
                 row.priority as keyof typeof maintenancePriorityTone
-              ] ?? "gray"
+              ] ?? "neutral"
             }
           >
             {maintenancePriorityLabels[
@@ -197,7 +197,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
               tone={
                 maintenanceStatusTone[
                   row.status as keyof typeof maintenanceStatusTone
-                ] ?? "gray"
+                ] ?? "neutral"
               }
             >
               {maintenanceStatusLabels[
@@ -216,7 +216,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
               tone={
                 maintenancePriorityTone[
                   row.priority as keyof typeof maintenancePriorityTone
-                ] ?? "gray"
+                ] ?? "neutral"
               }
             >
               {maintenancePriorityLabels[

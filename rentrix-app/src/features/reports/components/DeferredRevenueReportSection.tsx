@@ -180,7 +180,7 @@ export function DeferredRevenueReportSection({
             eyebrow="جودة البيانات"
             icon={Link2}
             isLoading={isLoading}
-            action={<StatusBadge tone={linkCoverage >= 90 ? 'green' : linkCoverage >= 70 ? 'gold' : 'red'}>{Math.round(linkCoverage)}% مرتبط</StatusBadge>}
+            action={<StatusBadge tone={linkCoverage >= 90 ? 'success' : linkCoverage >= 70 ? 'warning' : 'danger'}>{Math.round(linkCoverage)}% مرتبط</StatusBadge>}
           >
             <div className="space-y-3 p-4">
               <ReportProgress
