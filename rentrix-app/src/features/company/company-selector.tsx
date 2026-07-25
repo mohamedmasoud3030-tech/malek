@@ -64,7 +64,7 @@ export function CompanySelectorPage() {
                 </div>
                 {isActive && <Check className="size-5 shrink-0 text-primary" />}
                 {isSwitchingThis && (
-                  <span className="size-5 shrink-0 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="size-5 shrink-0 rounded-full border-2 border-primary border-t-transparent" />
                 )}
               </button>
             );

@@ -313,7 +313,7 @@ export function DocumentsVaultPage() {
                         <img src={signedUrl} alt={document.title} className="h-full w-full object-cover" loading="lazy" />
                       ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                          <ImageIcon className="size-8 animate-pulse" />
+                          <ImageIcon className="size-8" />
                           <span className="text-xs">جارٍ تحميل المعاينة...</span>
                         </div>
                       )

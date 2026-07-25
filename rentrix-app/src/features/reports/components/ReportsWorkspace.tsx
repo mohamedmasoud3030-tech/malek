@@ -178,7 +178,7 @@ export function ReportsWorkspace({
         </div>
       </section>
 
-      <div className="min-w-0 animate-slide-up" key={activeSection}>
+      <div className="min-w-0" key={activeSection}>
         <Suspense fallback={<SectionFallback />}>
           {activeSection === 'overview' && (
             <SectionTabPanel id="overview" activeId={activeSection}>

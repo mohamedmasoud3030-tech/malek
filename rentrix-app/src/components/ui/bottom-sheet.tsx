@@ -97,7 +97,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
     >
       <button
         type="button"
-        className="animate-in fade-in absolute inset-0 cursor-default touch-none bg-black/45 backdrop-blur-sm duration-200 motion-reduce:animate-none"
+        className="absolute inset-0 cursor-default touch-none bg-black/45 backdrop-blur-sm"
         aria-label="إغلاق اللوحة"
         onClick={onClose}
       />
@@ -113,7 +113,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
         className={cn(
           'relative z-10 flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-t-3xl border border-b-0 border-border/50 bg-card outline-none',
           'shadow-[0_-8px_48px_-8px_rgba(0,0,0,0.18),0_-1px_0_0_hsl(var(--border)/0.5)]',
-          'animate-in slide-in-from-bottom duration-300 ease-out motion-reduce:animate-none',
+          '',
           'max-h-[calc(var(--visual-viewport-height,100dvh)-0.5rem)]',
           'ps-[env(safe-area-inset-left,0px)] pe-[env(safe-area-inset-right,0px)]',
           className,

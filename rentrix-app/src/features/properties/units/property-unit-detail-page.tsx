@@ -33,7 +33,7 @@ export function PropertyUnitDetailPage() {
       emptyTitle="الوحدة غير موجودة"
     >
       {unit && (
-        <div className="space-y-6 animate-in fade-in-50 duration-200">
+        <div className="space-y-6">
           <EntityDetailHeader
             title={`وحدة ${unit.unit_number}`}
             subtitle={property ? property.title : undefined}

@@ -42,10 +42,10 @@ export function Showcase() {
   }, [videoOpen]);
 
   return (
-    <section id="showcase" className="section-light relative overflow-hidden border-t border-slate-200/70">
+    <section id="showcase" className="section-light relative overflow-hidden border-t border-border/70">
       <div
         aria-hidden="true"
-        className="absolute -top-32 end-[-6%] size-[420px] rounded-full bg-brand-500/10 blur-[110px]"
+        className="absolute -top-32 end-[-6%] size-[420px] rounded-full bg-primary/10 blur-[110px]"
       />
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28">
         <SectionHeader
@@ -59,14 +59,14 @@ export function Showcase() {
           <button
             type="button"
             onClick={() => setVideoOpen(true)}
-            className="group inline-flex items-center gap-3 rounded-full border border-brand-200 bg-white px-6 py-3 text-sm font-extrabold text-brand-700 shadow-[0_14px_30px_-14px_rgba(37,84,235,0.5)] transition duration-300 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-[0_20px_40px_-16px_rgba(37,84,235,0.55)]"
+            className="group inline-flex items-center gap-3 rounded-full border border-primary/20 bg-background px-6 py-3 text-sm font-extrabold text-brand-700 shadow-[0_14px_30px_-14px_rgba(37,84,235,0.5)] transition duration-300 hover:border-primary/40 hover:shadow-[0_20px_40px_-16px_rgba(37,84,235,0.55)]"
           >
-            <span className="relative grid size-9 place-items-center rounded-full bg-brand-600 text-white transition group-hover:scale-105">
-              <span aria-hidden="true" className="absolute inset-0 rounded-full bg-brand-500/50 motion-safe:animate-ping" />
+            <span className="relative grid size-9 place-items-center rounded-full bg-primary text-primary-foreground transition group-hover:scale-105">
+              <span aria-hidden="true" className="absolute inset-0 rounded-full bg-primary/50 " />
               <Play className="relative size-4 fill-current" aria-hidden="true" />
             </span>
             {t.showcase.watchVideo}
-            <span className="text-xs font-bold text-slate-400">3:22</span>
+            <span className="text-xs font-bold text-muted-foreground">3:22</span>
           </button>
         </Reveal>
 
@@ -85,15 +85,15 @@ export function Showcase() {
                     onClick={() => setActive(i)}
                     className={`group flex min-w-[200px] items-center gap-3 rounded-2xl border p-4 text-start transition duration-300 lg:min-w-0 ${
                       isActive
-                        ? 'border-brand-600 bg-white shadow-[0_16px_40px_-16px_rgba(37,84,235,0.45)]'
-                        : 'border-slate-200 bg-white/60 hover:border-brand-300 hover:bg-white'
+                        ? 'border-brand-600 bg-background shadow-[0_16px_40px_-16px_rgba(37,84,235,0.45)]'
+                        : 'border-border/70 bg-background/80 hover:border-primary/30 hover:bg-background'
                     }`}
                   >
                     <span
                       className={`grid size-10 shrink-0 place-items-center rounded-xl transition ${
                         isActive
-                          ? 'bg-brand-600 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:bg-brand-50 group-hover:text-brand-600'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground group-hover:bg-primary/5 group-hover:text-primary'
                       }`}
                     >
                       <Icon className="size-5" aria-hidden="true" />
@@ -101,12 +101,12 @@ export function Showcase() {
                     <span className="min-w-0">
                       <span
                         className={`block text-sm font-extrabold ${
-                          isActive ? 'text-slate-900' : 'text-slate-600'
+                          isActive ? 'text-foreground' : 'text-muted-foreground'
                         }`}
                       >
                         {copy.label}
                       </span>
-                      <span className="mt-0.5 hidden text-xs leading-5 text-slate-500 lg:block">
+                      <span className="mt-0.5 hidden text-xs leading-5 text-muted-foreground lg:block">
                         {copy.caption}
                       </span>
                     </span>
@@ -119,9 +119,9 @@ export function Showcase() {
             <div className="relative">
               <div
                 aria-hidden="true"
-                className="absolute -inset-6 rounded-[2rem] bg-gradient-to-t from-brand-500/15 to-cyan-400/10 blur-2xl"
+                className="absolute -inset-6 rounded-[2rem] bg-primary/5 bg-primary/5 blur-2xl"
               />
-              <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_35px_70px_-25px_rgba(12,26,54,0.35)]">
+              <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-background shadow-[0_35px_70px_-25px_rgba(12,26,54,0.35)]">
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={current.id}
@@ -134,7 +134,7 @@ export function Showcase() {
                     className="block w-full"
                   />
                 </AnimatePresence>
-                <div className="border-t border-slate-100 bg-slate-50/80 px-5 py-3.5 text-sm font-semibold text-slate-600">
+                <div className="border-t border-border/60 bg-muted/40 px-5 py-3.5 text-sm font-semibold text-muted-foreground">
                   {t.showcase.tabs[active].caption}
                 </div>
               </div>
@@ -155,7 +155,7 @@ export function Showcase() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 grid place-items-center bg-ink-950/85 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 grid place-items-center bg-background/85 p-4 backdrop-blur-sm"
             onClick={() => setVideoOpen(false)}
           >
             <motion.div
@@ -170,7 +170,7 @@ export function Showcase() {
                 type="button"
                 onClick={() => setVideoOpen(false)}
                 aria-label={t.showcase.closeVideo}
-                className="absolute -top-12 end-0 grid size-10 place-items-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+                className="absolute -top-12 end-0 grid size-10 place-items-center rounded-full border border-white/15 bg-muted/50 text-primary-foreground transition hover:bg-background/20"
               >
                 <X className="size-5" aria-hidden="true" />
               </button>
@@ -179,7 +179,7 @@ export function Showcase() {
                 controls
                 autoPlay
                 playsInline
-                className="w-full rounded-2xl border border-white/10 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]"
+                className="w-full rounded-2xl border border-border/70 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.9)]"
               />
             </motion.div>
           </motion.div>

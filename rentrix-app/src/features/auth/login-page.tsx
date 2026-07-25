@@ -151,7 +151,7 @@ export function LoginPage() {
                 البريد الإلكتروني
               </label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <Mail className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
                 <Input
                   id="login-email"
                   className="pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm"
@@ -175,7 +175,7 @@ export function LoginPage() {
                 كلمة المرور
               </label>
               <div className="relative">
-                <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <LockKeyhole className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
                 <Input
                   id="login-password"
                   className="ps-10 pe-12 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm"
@@ -194,7 +194,7 @@ export function LoginPage() {
                 />
                 <button
                   type="button"
-                  className="absolute left-1 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                  className="absolute inset-y-0 left-1 my-auto grid size-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                   onClick={() => setIsPasswordVisible((v) => !v)}
                   aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
                   disabled={isSubmitting || Boolean(runtimeError)}
@@ -250,7 +250,7 @@ export function LoginPage() {
               {isSubmitting ? (
                 <>
                   <span
-                    className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
+                    className="size-4 rounded-full border-2 border-current border-t-transparent"
                     aria-hidden="true"
                   />
                   جارٍ تسجيل الدخول...

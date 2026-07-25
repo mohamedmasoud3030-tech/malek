@@ -81,7 +81,7 @@ export function MobileCard({
   if (loading) {
     return (
       <div className={cn('rounded-3xl border bg-card p-4 shadow-sm', className)}>
-        <div className="animate-pulse space-y-3">
+        <div className="space-y-3">
           <div className="h-5 w-2/3 rounded bg-muted" />
           <div className="h-3 w-1/3 rounded bg-muted" />
           <div className="h-12 rounded-2xl bg-muted" />

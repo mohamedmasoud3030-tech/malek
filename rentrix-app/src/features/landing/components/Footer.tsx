@@ -13,34 +13,29 @@ export function Footer() {
   ];
 
   return (
-    <footer className="border-t border-white/5 bg-ink-950">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+    <footer className="border-t border-border bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
-          {/* Brand */}
           <div>
             <div className="flex items-center gap-2.5">
               <img src="/icon-rentrix-192.png" alt="Rentrix" width="36" height="36" loading="lazy" className="size-9 rounded-xl" />
-              <span className="text-xl font-extrabold tracking-tight text-white" dir="ltr">
+              <span className="text-xl font-extrabold tracking-tight text-foreground" dir="ltr">
                 Rentrix
               </span>
             </div>
-            <p className="mt-4 max-w-xs text-sm leading-7 text-slate-400">{t.footer.tagline}</p>
-            <p className="mt-5 inline-flex items-center gap-1.5 text-xs text-slate-500">
-              <Heart className="size-3.5 text-rose-400" />
+            <p className="mt-4 max-w-xs text-sm leading-7 text-muted-foreground">{t.footer.tagline}</p>
+            <p className="mt-5 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Heart className="size-3.5 text-danger" />
               {t.footer.motto}
             </p>
           </div>
 
-          {/* Product */}
           <nav aria-label={t.footer.productTitle}>
-            <h3 className="text-sm font-extrabold text-white">{t.footer.productTitle}</h3>
+            <h3 className="text-sm font-extrabold text-foreground">{t.footer.productTitle}</h3>
             <ul className="mt-4 space-y-2.5">
-              {t.footer.productLinks.map((link, i) => (
+              {t.footer.productLinks.map((link, index) => (
                 <li key={link}>
-                  <a
-                    href={productHrefs[i]}
-                    className="text-sm text-slate-400 transition hover:text-white"
-                  >
+                  <a href={productHrefs[index]} className="text-sm text-muted-foreground transition hover:text-foreground">
                     {link}
                   </a>
                 </li>
@@ -48,44 +43,36 @@ export function Footer() {
             </ul>
           </nav>
 
-          {/* Company */}
           <nav aria-label={t.footer.companyTitle}>
-            <h3 className="text-sm font-extrabold text-white">{t.footer.companyTitle}</h3>
+            <h3 className="text-sm font-extrabold text-foreground">{t.footer.companyTitle}</h3>
             <ul className="mt-4 space-y-2.5">
-              {t.footer.companyLinks.map((link, i) => (
+              {t.footer.companyLinks.map((link, index) => (
                 <li key={link}>
                   <a
-                    href={companyHrefs[i]}
-                    target={i === 0 ? '_blank' : undefined}
-                    rel={i === 0 ? 'noreferrer' : undefined}
-                    className="inline-flex items-center gap-2 text-sm text-slate-400 transition hover:text-white"
+                    href={companyHrefs[index]}
+                    target={index === 0 ? '_blank' : undefined}
+                    rel={index === 0 ? 'noreferrer' : undefined}
+                    className="inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground"
                   >
-                    {i === 0 ? <MessageCircle className="size-4" /> : <Mail className="size-4" />}
+                    {index === 0 ? <MessageCircle className="size-4" /> : <Mail className="size-4" />}
                     {link}
                   </a>
                 </li>
               ))}
               <li>
-                <Link
-                  to="/login"
-                  className="text-sm text-brand-400 transition hover:text-brand-300"
-                >
+                <Link to="/login" className="text-sm text-primary transition hover:text-primary/80">
                   <span dir="ltr">{APP_HOST}</span>
                 </Link>
               </li>
             </ul>
           </nav>
 
-          {/* Legal */}
           <nav aria-label={t.footer.legalTitle}>
-            <h3 className="text-sm font-extrabold text-white">{t.footer.legalTitle}</h3>
+            <h3 className="text-sm font-extrabold text-foreground">{t.footer.legalTitle}</h3>
             <ul className="mt-4 space-y-2.5">
-              {t.footer.legalLinks.map((link, i) => (
+              {t.footer.legalLinks.map((link, index) => (
                 <li key={link}>
-                  <Link
-                    to={i === 0 ? '/privacy' : '/terms'}
-                    className="text-sm text-slate-400 transition hover:text-white"
-                  >
+                  <Link to={index === 0 ? '/privacy' : '/terms'} className="text-sm text-muted-foreground transition hover:text-foreground">
                     {link}
                   </Link>
                 </li>
@@ -93,22 +80,16 @@ export function Footer() {
             </ul>
           </nav>
 
-          {/* Contact */}
           <div>
-            <h3 className="text-sm font-extrabold text-white">{t.footer.contactTitle}</h3>
-            <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
+            <h3 className="text-sm font-extrabold text-foreground">{t.footer.contactTitle}</h3>
+            <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
               <li>
-                <a href={`mailto:${CONTACT_EMAIL}`} className="transition hover:text-white" dir="ltr">
+                <a href={`mailto:${CONTACT_EMAIL}`} className="transition hover:text-foreground" dir="ltr">
                   {CONTACT_EMAIL}
                 </a>
               </li>
               <li>
-                <a
-                  href={whatsappLink(isArabic ? 'مرحباً' : 'Hi')}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="transition hover:text-white"
-                >
+                <a href={whatsappLink(isArabic ? 'مرحباً' : 'Hi')} target="_blank" rel="noreferrer" className="transition hover:text-foreground">
                   {isArabic ? 'واتساب — رد سريع' : 'WhatsApp — quick reply'}
                 </a>
               </li>
@@ -116,11 +97,11 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/5 pt-6 sm:flex-row">
-          <p className="text-xs text-slate-500">
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
+          <p className="text-xs text-muted-foreground">
             © {year} <span dir="ltr">Rentrix</span>. {t.footer.rights}
           </p>
-          <p className="text-xs text-slate-600" dir="ltr">
+          <p className="text-xs text-muted-foreground" dir="ltr">
             {APP_HOST} — property management, simplified.
           </p>
         </div>

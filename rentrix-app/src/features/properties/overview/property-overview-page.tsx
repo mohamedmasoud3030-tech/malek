@@ -19,7 +19,7 @@ export function PropertyOverview() {
       emptyTitle="العقار غير موجود"
     >
       {property && (
-        <div className="space-y-6 animate-in fade-in-50 duration-200">
+        <div className="space-y-6">
           <PropertyIdentityCard property={property} />
           <PropertyUnitsSummaryCard units={unitsQuery.data ?? []} />
           <PropertyOwnerAgreementsSection propertyId={propertyId} />

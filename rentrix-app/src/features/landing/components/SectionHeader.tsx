@@ -25,7 +25,7 @@ export function SectionHeader({
       <span
         className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold tracking-wide ${
           isDark
-            ? 'border-brand-400/30 bg-brand-500/10 text-brand-300'
+            ? 'border-primary/40/30 bg-primary/10 text-primary'
             : 'border-brand-600/20 bg-brand-50 text-brand-700'
         }`}
       >
@@ -34,7 +34,7 @@ export function SectionHeader({
       </span>
       <h2
         className={`mt-5 text-3xl font-bold leading-[1.25] tracking-tight sm:text-4xl lg:text-[2.75rem] lg:leading-[1.2] ${
-          isDark ? 'text-white' : 'text-slate-900'
+          isDark ? 'text-primary-foreground' : 'text-foreground'
         }`}
       >
         {title}
@@ -42,7 +42,7 @@ export function SectionHeader({
       {subtitle ? (
         <p
           className={`mt-4 text-base leading-8 sm:text-lg ${
-            isDark ? 'text-slate-400' : 'text-slate-600'
+            isDark ? 'text-muted-foreground' : 'text-muted-foreground'
           }`}
         >
           {subtitle}

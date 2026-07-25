@@ -26,17 +26,17 @@ export function BrowserFrame({
       {glow ? (
         <div
           aria-hidden="true"
-          className="absolute -inset-8 rounded-[2.5rem] bg-gradient-to-t from-brand-500/25 via-brand-400/10 to-transparent blur-2xl"
+          className="absolute -inset-8 rounded-[2.5rem] bg-primary/5 blur-2xl"
         />
       ) : null}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-ink-850 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)]">
-        <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.03] px-4 py-2.5">
+      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)]">
+        <div className="flex items-center gap-3 border-b border-border/70 bg-muted/30 px-4 py-2.5">
           <div className="flex gap-1.5">
-            <span className="size-3 rounded-full bg-rose-400/80" />
-            <span className="size-3 rounded-full bg-amber-400/80" />
-            <span className="size-3 rounded-full bg-emerald-400/80" />
+            <span className="size-3 rounded-full bg-danger" />
+            <span className="size-3 rounded-full bg-warning" />
+            <span className="size-3 rounded-full bg-success" />
           </div>
-          <div className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-white/5 px-3 py-1 text-[11px] text-slate-400">
+          <div className="mx-auto flex w-full max-w-xs items-center justify-center gap-2 rounded-lg bg-muted/40 px-3 py-1 text-[11px] text-muted-foreground">
             <svg viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="4" y="10" width="16" height="10" rx="2" />
               <path d="M8 10V7a4 4 0 1 1 8 0v3" />
@@ -68,10 +68,10 @@ export function PhoneFrame({
 }) {
   return (
     <div
-      className={`relative mx-auto w-[240px] rounded-[2.6rem] border border-white/15 bg-ink-900 p-2 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] sm:w-[270px] ${className}`}
+      className={`relative mx-auto w-[240px] rounded-[2.6rem] border border-white/15 bg-card p-2 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] sm:w-[270px] ${className}`}
     >
-      <div className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-b-2xl bg-ink-900" />
-      <div className="overflow-hidden rounded-[2rem] border border-white/5 bg-black">
+      <div className="absolute left-1/2 top-2 z-10 h-5 w-24 rounded-b-2xl bg-card" />
+      <div className="overflow-hidden rounded-[2rem] border border-border/60 bg-black">
         <img src={src} alt={alt} loading="lazy" className="block w-full" />
       </div>
     </div>
@@ -80,6 +80,6 @@ export function PhoneFrame({
 
 export function FrameCaption({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-4 text-center text-xs text-slate-500">{children}</p>
+    <p className="mt-4 text-center text-xs text-muted-foreground">{children}</p>
   );
 }
