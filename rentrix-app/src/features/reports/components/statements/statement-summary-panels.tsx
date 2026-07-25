@@ -33,7 +33,7 @@ function SelectionItem({ label, value, ready }: Readonly<{ label: string; value:
         <p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
         <p className="mt-1 truncate text-sm font-bold">{value}</p>
       </div>
-      <StatusBadge tone={ready ? 'green' : 'gray'}>{ready ? 'جاهز' : 'مطلوب'}</StatusBadge>
+      <StatusBadge tone={ready ? 'success' : 'neutral'}>{ready ? 'جاهز' : 'مطلوب'}</StatusBadge>
     </div>
   );
 }

@@ -26,6 +26,21 @@ import {
   ReportState,
 } from './report-section-primitives';
 
+
+const reportMaintenanceStatusTone = {
+  open: 'info',
+  in_progress: 'warning',
+  resolved: 'success',
+  closed: 'neutral',
+} as const;
+
+const reportMaintenancePriorityTone = {
+  low: 'neutral',
+  medium: 'info',
+  high: 'warning',
+  urgent: 'danger',
+} as const;
+
 export type MaintenanceReportProps = Readonly<{
   rows: Maintenance[];
   summary: MaintenanceSummary;
@@ -158,12 +173,12 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
                   title={row.title ?? 'طلب صيانة'}
                   subtitle={`${row.created_at ? formatDate(row.created_at) : '—'} · ${row.technician_name || row.assigned_to || 'غير مسند'} · ${row.scheduled_date ? `موعد ${formatDate(row.scheduled_date)}` : 'غير مجدول'}`}
                   meta={(
-                    <StatusBadge tone={maintenancePriorityTone[row.priority as keyof typeof maintenancePriorityTone] ?? 'gray'}>
+                    <StatusBadge tone={reportMaintenancePriorityTone[row.priority as keyof typeof reportMaintenancePriorityTone] ?? 'neutral'}>
                       {maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority}
                     </StatusBadge>
                   )}
                   value={(
-                    <StatusBadge tone={maintenanceStatusTone[row.status as keyof typeof maintenanceStatusTone] ?? 'gray'}>
+                    <StatusBadge tone={reportMaintenanceStatusTone[row.status as keyof typeof reportMaintenanceStatusTone] ?? 'neutral'}>
                       {maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status}
                     </StatusBadge>
                   )}

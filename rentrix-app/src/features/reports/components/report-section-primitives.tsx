@@ -29,7 +29,7 @@ export function ReportPanel({
 }: ReportPanelProps) {
   return (
     <Card className={cn('min-w-0 overflow-hidden rounded-2xl border-border/60 shadow-card', className)}>
-      <CardHeader className="flex flex-col gap-3 border-b border-border/60 bg-gradient-to-l from-primary/[0.045] via-transparent to-transparent px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:px-5 sm:py-4">
+      <CardHeader className="flex flex-col gap-3 border-b border-border/60 px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:px-5 sm:py-4">
         <div className="flex min-w-0 items-start gap-3">
           {Icon ? (
             <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/10 text-primary shadow-sm">

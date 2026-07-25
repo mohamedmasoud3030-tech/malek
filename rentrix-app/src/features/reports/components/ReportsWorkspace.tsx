@@ -145,7 +145,7 @@ export function ReportsWorkspace({
       ) : null}
 
       <section className="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card" aria-label="أقسام التقارير">
-        <div className="flex flex-col gap-3 border-b border-border/60 bg-gradient-to-l from-primary/10 via-primary/[0.025] to-transparent p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div className="flex min-w-0 items-start gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <ActiveSectionIcon className="size-5" aria-hidden="true" />
@@ -153,7 +153,7 @@ export function ReportsWorkspace({
             <div className="min-w-0" aria-live="polite">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-extrabold sm:text-lg">{activeSectionMeta.label}</h2>
-                <StatusBadge tone="blue">{activeSectionMeta.group}</StatusBadge>
+                <StatusBadge tone="info">{activeSectionMeta.group}</StatusBadge>
               </div>
               <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm">
                 {activeSectionMeta.description}

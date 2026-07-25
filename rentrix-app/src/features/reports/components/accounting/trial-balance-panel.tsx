@@ -47,7 +47,7 @@ export function TrialBalancePanel({
             ))}
           </ReportList>
           <div className="border-t border-border/60 p-4">
-            <StatusBadge tone={report.isBalanced ? 'green' : 'red'}>
+            <StatusBadge tone={report.isBalanced ? 'success' : 'danger'}>
               {report.isBalanced ? 'الميزان متوازن' : 'الميزان غير متوازن'}
             </StatusBadge>
           </div>
