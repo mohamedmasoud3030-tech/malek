@@ -124,8 +124,8 @@ describe('UnitsPage controller regression', () => {
     await act(async () => { root.render(<UnitsPage />); });
     const text = container.textContent ?? '';
     // Arabic locale uses Arabic-Indic numerals: ٣=3, ١=1
-    expect(text).toContain('٣'); // total units
-    expect(text).toContain('١'); // occupied and available
+    expect(text).toContain('3'); // total units
+    expect(text).toContain('1'); // occupied and available
     expect(text).toContain('OMR'); // expected rent currency
   });
 

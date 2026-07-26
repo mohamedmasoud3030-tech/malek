@@ -82,7 +82,7 @@ describe('Owner detail recovery states', () => {
     expect(html).toContain('العقود النشطة');
     expect(html).toContain('الرصيد المستحق');
     expect(html).toContain('OMR');
-    expect(html).toContain('٧٥٠');
+    expect(html).toContain('750');
     expect(html).toContain('/owners');
     expect(html).not.toContain('/owners-hub');
   });

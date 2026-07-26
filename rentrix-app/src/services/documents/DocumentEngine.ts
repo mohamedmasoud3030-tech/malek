@@ -1,4 +1,5 @@
 import type { Contract, Expense, Invoice, Person, Property, Receipt, Unit } from '@/types/domain';
+import '@/lib/formatters';
 import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@/lib/numberToArabicWords';
 import { TableGenerator } from './TableGenerator';
 import type { DocumentCompanyIdentity, DocumentRequest, SignatureRole, UnifiedDocumentModel } from './types';
