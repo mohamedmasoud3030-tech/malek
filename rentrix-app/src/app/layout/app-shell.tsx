@@ -331,7 +331,7 @@ export function AppShell() {
               <span className="hidden rounded-lg border border-border bg-card px-2.5 py-1 text-[10px] font-medium text-muted-foreground sm:inline-flex lg:text-[11px] lg:px-3 lg:py-1.5">
                 {statusLabel(syncStatus)}
                 {lastSyncedAt
-                  ? ` · ${new Date(lastSyncedAt).toLocaleTimeString(appLanguage.locale)}`
+                  ? ` · ${new Date(lastSyncedAt).toLatinLocaleTimeString(appLanguage.locale)}`
                   : ''}
               </span>
 

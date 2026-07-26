@@ -143,6 +143,10 @@ declare global {
       locales?: string | string[],
       options?: Intl.DateTimeFormatOptions
     ): string;
+    toLatinLocaleTimeString(
+      locales?: string | string[],
+      options?: Intl.DateTimeFormatOptions
+    ): string;
   }
 }
 
@@ -198,7 +202,27 @@ export function toLatinLocaleDateString(
   return date.toLocaleDateString(targetLocales, options);
 }
 
-// Patch Number and Date prototypes to make .toLatinLocaleString and .toLatinLocaleDateString globally available
+export function toLatinLocaleTimeString(
+  value: Date | string | null | undefined,
+  locales?: string | string[],
+  options?: Intl.DateTimeFormatOptions
+): string {
+  if (value === null || value === undefined) return '';
+
+  let targetLocales = locales;
+  if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
+    if (!targetLocales.includes('-u-nu-')) {
+      targetLocales = `${targetLocales}-u-nu-latn`;
+    }
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return date.toLocaleTimeString(targetLocales, options);
+}
+
+// Patch Number and Date prototypes to make .toLatinLocaleString, .toLatinLocaleDateString, and .toLatinLocaleTimeString globally available
 if (typeof Number.prototype.toLatinLocaleString !== 'function') {
   Object.defineProperty(Number.prototype, 'toLatinLocaleString', {
     value: function (locales?: string | string[], options?: Intl.NumberFormatOptions) {
@@ -241,6 +265,22 @@ if (typeof Date.prototype.toLatinLocaleDateString !== 'function') {
         }
       }
       return this.toLocaleDateString(targetLocales, options);
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
+if (typeof Date.prototype.toLatinLocaleTimeString !== 'function') {
+  Object.defineProperty(Date.prototype, 'toLatinLocaleTimeString', {
+    value: function (locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
+      let targetLocales = locales;
+      if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
+        if (!targetLocales.includes('-u-nu-')) {
+          targetLocales = `${targetLocales}-u-nu-latn`;
+        }
+      }
+      return this.toLocaleTimeString(targetLocales, options);
     },
     writable: true,
     configurable: true,
