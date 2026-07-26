@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-24T06:20:10.847Z",
+  "generatedAt": "2026-07-26T15:52:36.648Z",
   "migrationFile": "20260726000000_phase2_financial_integrity_and_reports_recovery.sql",
-  "rollbackFile": "/home/user/rentrix-repo/supabase/rollback/20260726_rollback_phase2_reports_recovery.sql",
+  "rollbackFile": "/home/user/rentrixxx/supabase/rollback/20260726_rollback_phase2_reports_recovery.sql",
   "fingerprintEqual": true
 }

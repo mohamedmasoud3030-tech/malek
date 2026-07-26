@@ -44,11 +44,11 @@ describe('buildDashboardSummaryCards', () => {
       'تنتهي خلال 30 يوم',
     ]);
     expect(cards.map((card) => card.value)).toEqual([
-      '‏١٬٢٠٠٫٠٠٠ OMR',
-      '‏٩٠٠٫٠٠٠ OMR',
-      '‏٣٠٠٫٠٠٠ OMR',
-      '‏١٢٥٫٠٠٠ OMR',
-      '‏٧٧٥٫٠٠٠ OMR',
+      '‏1,200.000 OMR',
+      '‏900.000 OMR',
+      '‏300.000 OMR',
+      '‏125.000 OMR',
+      '‏775.000 OMR',
       '70%',
       2,
     ]);
@@ -59,11 +59,11 @@ describe('buildDashboardSummaryCards', () => {
     const cards = buildDashboardSummaryCards(undefined, formatters);
 
     expect(cards.map((card) => card.value)).toEqual([
-      '‏٠٫٠٠٠ OMR',
-      '‏٠٫٠٠٠ OMR',
-      '‏٠٫٠٠٠ OMR',
-      '‏٠٫٠٠٠ OMR',
-      '‏٠٫٠٠٠ OMR',
+      '‏0.000 OMR',
+      '‏0.000 OMR',
+      '‏0.000 OMR',
+      '‏0.000 OMR',
+      '‏0.000 OMR',
       '0%',
       0,
     ]);

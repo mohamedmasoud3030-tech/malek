@@ -1,23 +1,23 @@
 {
-  "generatedAt": "2026-07-26T15:04:43.818Z",
+  "generatedAt": "2026-07-26T15:51:19.844Z",
   "expense": {
     "created": {
       "success": true,
-      "expense_id": "1a5a0b39-7b52-4e02-b5dd-da27269cfe57",
+      "expense_id": "3bf06d58-8eff-4877-830e-979dce61f9d9",
       "expense_no": "EXP-20260726-phase3",
       "idempotent": false,
       "request_id": "phase3a-expense-shared"
     },
     "retried": {
       "success": true,
-      "expense_id": "1a5a0b39-7b52-4e02-b5dd-da27269cfe57",
+      "expense_id": "3bf06d58-8eff-4877-830e-979dce61f9d9",
       "expense_no": "EXP-20260726-phase3",
       "idempotent": true,
       "request_id": "phase3a-expense-shared"
     },
     "updated": {
       "success": true,
-      "expense_id": "1a5a0b39-7b52-4e02-b5dd-da27269cfe57",
+      "expense_id": "3bf06d58-8eff-4877-830e-979dce61f9d9",
       "idempotent": false,
       "new_amount": 15.125,
       "old_amount": 12.35,
@@ -35,13 +35,13 @@
     "created": {
       "amount": 100,
       "success": true,
-      "deposit_id": "a7392e67-64fc-4621-9765-b6251fe5fc5c",
+      "deposit_id": "b9ca24c9-ec67-4a9a-a2ec-2b822a785011",
       "request_id": "phase3a-deposit-create"
     },
     "retried": {
       "amount": 100,
       "success": true,
-      "deposit_id": "a7392e67-64fc-4621-9765-b6251fe5fc5c",
+      "deposit_id": "b9ca24c9-ec67-4a9a-a2ec-2b822a785011",
       "idempotent": true,
       "request_id": "phase3a-deposit-create"
     },
@@ -49,7 +49,7 @@
       "success": true,
       "deducted": 25,
       "remaining": 75,
-      "deposit_id": "a7392e67-64fc-4621-9765-b6251fe5fc5c",
+      "deposit_id": "b9ca24c9-ec67-4a9a-a2ec-2b822a785011",
       "new_status": "partially_deducted",
       "request_id": "phase3a-deposit-deduct"
     },
@@ -57,7 +57,7 @@
       "success": true,
       "refunded": 30,
       "remaining": 45,
-      "deposit_id": "a7392e67-64fc-4621-9765-b6251fe5fc5c",
+      "deposit_id": "b9ca24c9-ec67-4a9a-a2ec-2b822a785011",
       "request_id": "phase3a-deposit-refund"
     },
     "balance": {

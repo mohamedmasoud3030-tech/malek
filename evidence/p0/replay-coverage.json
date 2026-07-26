@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-26T15:05:48.799Z",
-  "total": 156,
-  "applied": 156,
+  "generatedAt": "2026-07-26T15:53:43.689Z",
+  "total": 157,
+  "applied": 157,
   "failedCount": 0,
   "appliedFiles": [
     "20250101000001_core_schema.sql",
@@ -159,7 +159,8 @@
     "20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql",
     "20260727092000_phase3a1a_execution_hardening.sql",
     "20260727093000_phase3a1a_cost_center_and_reason_hardening.sql",
-    "20260727094000_phase3a1a_update_expense_type_safety.sql"
+    "20260727094000_phase3a1a_update_expense_type_safety.sql",
+    "20260730090000_fix_automation_rule_contract_expiry_date_cast.sql"
   ],
   "failedFiles": []
 }

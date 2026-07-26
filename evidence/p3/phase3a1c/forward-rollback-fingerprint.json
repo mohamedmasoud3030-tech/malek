@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T15:05:43.158Z",
+  "generatedAt": "2026-07-26T15:52:13.955Z",
   "migration": "20260729090000_phase3a1c_owner_settlement_account_resolution.sql",
   "rollback": "20260729_rollback_phase3a1c_owner_settlement_account_resolution.sql",
   "redefined": [
@@ -33,8 +33,8 @@
   },
   "lifecycle": {
     "forward": {
-      "settlementId": "73147cd6-5f9c-4344-b94b-656b29315e57",
-      "journalBatchId": "ba0ee103-f36d-4aa3-895e-9592e082534a",
+      "settlementId": "3314ff24-92ea-43c9-b513-d8e86d4cb29e",
+      "journalBatchId": "831631c5-be30-4fbd-a021-06e119a4d681",
       "trace": {
         "rows": 2,
         "batches": 1,
@@ -43,8 +43,8 @@
       }
     },
     "reapply": {
-      "settlementId": "3ccd0d1a-86ec-402f-9b0f-5e952e30a2ab",
-      "journalBatchId": "eb28387f-5371-4de6-9884-8e177011d7e4",
+      "settlementId": "bfec8c07-8139-4803-beb8-b2cb941f761f",
+      "journalBatchId": "f2f41d33-6157-4116-838e-8d7d8ff889a2",
       "trace": {
         "rows": 2,
         "batches": 1,

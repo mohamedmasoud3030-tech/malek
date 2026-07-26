@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T15:04:06.853Z",
+  "generatedAt": "2026-07-26T15:50:45.446Z",
   "scenario": "same request_id executed by A and B for record / post / void",
   "namespacing": "<operation_name>:<company_uuid>",
   "immutableLogicalRequestRule": "request_id identifies one immutable logical financial request inside one company",

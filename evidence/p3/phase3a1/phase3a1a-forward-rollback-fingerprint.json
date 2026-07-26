@@ -1,7 +1,42 @@
 {
-  "generatedAt": "2026-07-26T15:04:43.818Z",
-  "result": {
-    "rollback": "passed",
-    "reapply": "passed"
-  }
+  "generatedAt": "2026-07-26T15:52:32.092Z",
+  "migrations": [
+    "20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql",
+    "20260727092000_phase3a1a_execution_hardening.sql",
+    "20260727093000_phase3a1a_cost_center_and_reason_hardening.sql",
+    "20260727094000_phase3a1a_update_expense_type_safety.sql"
+  ],
+  "rollbacks": [
+    "20260727_rollback_phase3a1a_update_expense_type_safety.sql",
+    "20260727_rollback_phase3a1a_cost_center_and_reason_hardening.sql",
+    "20260727_rollback_phase3a1a_execution_hardening.sql",
+    "20260727_rollback_phase3a1a_canonical_accounts_expenses_deposits.sql"
+  ],
+  "before": {
+    "accounts": 6,
+    "journals": 0,
+    "expenses": 0,
+    "deposits": 0,
+    "impls": 4
+  },
+  "rolledBack": {
+    "accounts": 6,
+    "journals": 0,
+    "expenses": 0,
+    "deposits": 0,
+    "require_helper": false,
+    "ensure_helper": false,
+    "impls": 0
+  },
+  "reapplied": {
+    "accounts": 6,
+    "journals": 0,
+    "expenses": 0,
+    "deposits": 0,
+    "require_helper": true,
+    "ensure_helper": true,
+    "impls": 4,
+    "authenticated_helper_execute": false
+  },
+  "result": "passed"
 }

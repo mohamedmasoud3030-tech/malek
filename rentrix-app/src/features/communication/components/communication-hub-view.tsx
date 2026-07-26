@@ -623,7 +623,7 @@ function formatRelatedContext(row: CommunicationRecord) {
 
 function formatCommunicationTimestamp(value: string | null | undefined) {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("ar", {
+  return new Intl.DateTimeFormat("ar-u-nu-latn", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
