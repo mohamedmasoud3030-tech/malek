@@ -68,7 +68,7 @@ const sharedTranslationEntries = [
   ['notifications', 'الإشعارات', 'Notifications'],
   ['notificationsNone', 'لا توجد إشعارات حالياً', 'No notifications right now'],
   ['notifOverdueInvoices', 'فواتير متأخرة', 'Overdue invoices'],
-  ['notifExpiringContracts', 'عقود تنتهي خلال ٣٠ يومًا', 'Contracts expiring within 30 days'],
+  ['notifExpiringContracts', 'عقود تنتهي خلال 30 يومًا', 'Contracts expiring within 30 days'],
   ['notifUrgentMaintenance', 'طلبات صيانة عاجلة', 'Urgent maintenance requests'],
   ['notificationsHint', 'ستظهر هنا تنبيهات العقود القريبة من الانتهاء والفواتير المتأخرة.', 'Contract expiry and overdue invoice alerts will appear here.'],
   ['configureAiAssistant', 'ضبط إعدادات الذكاء الاصطناعي', 'Configure AI assistant'],
