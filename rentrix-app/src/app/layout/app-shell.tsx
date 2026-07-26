@@ -280,7 +280,11 @@ export function AppShell() {
       </aside>
 
       {/* Main content area */}
-      <div className={cn('w-full transition-all duration-250 lg:pe-64', sidebarCollapsed && 'lg:pe-[4.5rem]')}>
+      {/* pr-* (physical) not pe-* (logical): the sidebar is fixed to the physical
+          right edge (`right-0`) regardless of document direction. In RTL, `pe-*`
+          resolves to padding-left, leaving no reserved space on the right and
+          causing content to render underneath the sidebar. */}
+      <div className={cn('w-full transition-all duration-250 lg:pr-64', sidebarCollapsed && 'lg:pr-[4.5rem]')}>
         {/* Sticky header — clean, flat, mobile-optimised */}
         <header className="sticky top-0 z-20 border-b border-border/70 bg-background/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md">
           <div className="flex min-h-[3.25rem] items-center gap-1 px-2 py-1.5 sm:min-h-[3.5rem] sm:gap-2 sm:px-4">

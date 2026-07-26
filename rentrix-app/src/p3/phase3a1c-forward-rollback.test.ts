@@ -18,6 +18,7 @@ import {
 
 const MIGRATION = '20260729090000_phase3a1c_owner_settlement_account_resolution.sql';
 const MIGRATION_KEY = 'phase3a1c_owner_settlement_account_resolution';
+const FOLLOW_UP_COMPATIBILITY_KEY = 'p1_owner_settlement_property_text_compatibility';
 const ROLLBACK = '20260729_rollback_phase3a1c_owner_settlement_account_resolution.sql';
 const OUT_DIR = join(repoRoot, 'evidence', 'p3', 'phase3a1c');
 const NAMES = [
@@ -120,7 +121,10 @@ async function lifecycle(tag: 'forward' | 'reapply', month: string, n: number) {
 
 describe('Phase 3A-1C forward / rollback / reapply', () => {
   beforeAll(async () => {
-    const replay = await createFullReplayedDatabase({ excludeMigrations: [MIGRATION_KEY], writeEvidence: false });
+    const replay = await createFullReplayedDatabase({
+      excludeMigrations: [MIGRATION_KEY, FOLLOW_UP_COMPATIBILITY_KEY],
+      writeEvidence: false,
+    });
     expect(replay.failed).toEqual([]);
     db = replay.db;
     await seedPhase3a1cFixture(db);

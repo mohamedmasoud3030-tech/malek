@@ -65,9 +65,15 @@ test.describe('New Real Modules - Utilities, Vault, Deposits, Automation', () =>
     await expect(page.getByText('منع تجاوز الرصيد')).toBeVisible();
   });
 
-  test('automation shows scheduling and duplicate prevention', async ({ page }) => {
+  test('automation shows scheduling, duplicate prevention, and WhatsApp preview links', async ({ page }) => {
     await page.goto('/login?e2e-automation-workspace=1');
     await expect(page.getByText('قواعد محفوظة في قاعدة البيانات')).toBeVisible();
     await expect(page.getByText('منع تكرار').first()).toBeVisible();
+
+    const whatsappPreview = page.getByRole('link', { name: 'معاينة واتساب' }).first();
+    await expect(whatsappPreview).toBeVisible();
+    const href = await whatsappPreview.getAttribute('href');
+    expect(href).toContain('https://wa.me/');
+    expect(decodeURIComponent(href?.split('text=')[1] ?? '')).toContain('مرحباً');
   });
 });

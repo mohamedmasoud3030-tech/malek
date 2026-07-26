@@ -6,7 +6,7 @@ External skills were originally copied on 2026-07-07 from the following upstream
 - mattpocock/skills: 8515a080a74dbcf5019a1a78efc24b5fcafb36b8
 - obra/superpowers: d884ae04edebef577e82ff7c4e143debd0bbec99
 
-On 2026-07-08 the set was pruned from 21 to 10, then grown back to 15 after mapping candidates against active work in `docs/NEXT.md`, `docs/FEATURE_GAP_REGISTER.md`, and `docs/ui/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md` (see `README.md` for the current index and rationale).
+On 2026-07-08 the set was pruned from 21 to 10, then grown back to 15 after mapping candidates against active work in `docs/NEXT.md`, `docs/FEATURE_GAP_REGISTER.md`, and `docs/archive/ui-2026-07-11-phase/UX_NAVIGATION_AND_RESPONSIVE_AUDIT.md` (see `README.md` for the current index and rationale).
 
 Only one externally-sourced skill is vendored from the three upstream repos above:
 
