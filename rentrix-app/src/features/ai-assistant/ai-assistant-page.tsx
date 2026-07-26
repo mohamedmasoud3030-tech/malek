@@ -32,7 +32,7 @@ const assistantActions = [
   {
     action: 'summarize_contract_renewals',
     title: 'العقود القريبة من التجديد',
-    description: 'قراءة العقود النشطة التي تنتهي خلال ٩٠ يوماً.',
+    description: 'قراءة العقود النشطة التي تنتهي خلال 90 يوماً.',
     prompt: 'لخص العقود القريبة من التجديد واقترح خطوات متابعة غير تنفيذية.',
   },
   {

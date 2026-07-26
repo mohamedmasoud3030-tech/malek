@@ -141,7 +141,7 @@ export function OwnerDetailView({
             )}
             {settlements.length > 5 && canOpenOwnerSettlements ? (
               <p className="mt-2 text-xs text-muted-foreground">
-                تُعرض أحدث ٥ تسويات — افتح مساحة التسويات لاستعراض السجل الكامل.
+                تُعرض أحدث 5 تسويات — افتح مساحة التسويات لاستعراض السجل الكامل.
               </p>
             ) : null}
           </CardContent>

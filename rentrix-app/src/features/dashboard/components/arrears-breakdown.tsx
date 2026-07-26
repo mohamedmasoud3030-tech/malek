@@ -6,25 +6,25 @@ import type { DashboardSnapshot } from '../dashboard-snapshot';
 const BUCKET_CONFIG = [
   {
     key: 'days_1_30',
-    label: '١–٣٠ يوم',
+    label: '1–30 يوم',
     borderClass: 'border-s-warning',
     textClass: 'text-warning',
   },
   {
     key: 'days_31_60',
-    label: '٣١–٦٠ يوم',
+    label: '31–60 يوم',
     borderClass: 'border-s-danger/60',
     textClass: 'text-danger/80',
   },
   {
     key: 'days_61_90',
-    label: '٦١–٩٠ يوم',
+    label: '61–90 يوم',
     borderClass: 'border-s-danger',
     textClass: 'text-danger',
   },
   {
     key: 'days_90_plus',
-    label: '+٩٠ يوم',
+    label: '+90 يوم',
     borderClass: 'border-s-danger',
     textClass: 'text-danger font-bold',
   },
