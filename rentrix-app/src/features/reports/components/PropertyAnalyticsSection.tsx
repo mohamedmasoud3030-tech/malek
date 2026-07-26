@@ -180,7 +180,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
                 <ReportListRow
                   key={row.propertyId}
                   title={row.property}
-                  subtitle={`${formatLatinNumber(row.occupied, 'ar')} مشغولة · ${formatLatinNumber(row.vacant, 'ar')} شاغرة · ${formatLatinNumber(expense?.count, 'ar') ?? '٠'} مصروفات`}
+                  subtitle={`${formatLatinNumber(row.occupied, 'ar')} مشغولة · ${formatLatinNumber(row.vacant, 'ar')} شاغرة · ${formatLatinNumber(expense?.count ?? 0, 'ar')} مصروفات`}
                   meta={`${formatLatinNumber(units, 'ar')} وحدة · ${formatMoney(propertyExpensePerOccupied)} للوحدة المشغولة`}
                   value={(
                     <div className="text-end">
