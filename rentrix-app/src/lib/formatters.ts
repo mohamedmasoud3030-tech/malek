@@ -160,7 +160,7 @@ export function formatLatinNumber(
 export function formatLatinDateTime(
   value: Date | string | number | null | undefined,
   locale?: string | string[],
-  options?: Intl.DateTimeFormatOptions,
+  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' },
 ): string {
   if (value === null || value === undefined) return '';
   const date = value instanceof Date ? value : new Date(value as string | number);
@@ -184,7 +184,7 @@ export function formatLatinDate(
 export function formatLatinTime(
   value: Date | string | null | undefined,
   locale?: string | string[],
-  options?: Intl.DateTimeFormatOptions,
+  options: Intl.DateTimeFormatOptions = { timeStyle: 'medium' },
 ): string {
   if (value === null || value === undefined) return '';
   const date = value instanceof Date ? value : new Date(value as string);
