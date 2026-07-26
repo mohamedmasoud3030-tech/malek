@@ -12,7 +12,7 @@ function toOptionalNumber(value: string) {
   return trimmed ? Number(trimmed) : null;
 }
 
-function leadPayload(values: LeadFormValues): LeadInsert {
+export function leadPayload(values: LeadFormValues): LeadInsert {
   return {
     id: crypto.randomUUID(),
     name: values.name.trim(),

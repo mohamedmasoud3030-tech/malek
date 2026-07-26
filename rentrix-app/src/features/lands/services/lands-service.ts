@@ -12,7 +12,7 @@ function toOptionalNumber(value: string) {
   return trimmed ? Number(trimmed) : null;
 }
 
-function toPayload(values: LandFormValues): LandInsert {
+export function toPayload(values: LandFormValues): LandInsert {
   return {
     id: crypto.randomUUID(),
     plot_no: values.plot_no.trim() || null,
