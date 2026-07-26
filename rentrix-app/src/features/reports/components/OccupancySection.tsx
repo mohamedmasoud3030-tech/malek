@@ -20,6 +20,7 @@ import {
   ReportProgress,
   ReportState,
 } from './report-section-primitives';
+import { formatLatinNumber } from '@/lib/formatters';
 
 export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Readonly<{
   occupancyRows: ReturnType<typeof buildOccupancyRows>;
@@ -97,23 +98,23 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
   return (
     <div className="space-y-4">
       <ResponsiveCardGrid>
-        <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(defaultCompanyLocalSettings, totalUnits)} icon={Building2} sub={`${occupancyRows.length.toLatinLocaleString('ar')} عقارات`} />
-        <KpiCard label="نسبة الإشغال" value={`${occupancyRate}%`} icon={TrendingUp} sub={`${totalOccupied.toLatinLocaleString('ar')} وحدة مشغولة`} />
-        <KpiCard label="الوحدات الشاغرة" value={formatCompanyNumber(defaultCompanyLocalSettings, totalVacant)} icon={DoorOpen} sub={`${Math.round(vacancyRate).toLatinLocaleString('ar')}% من المحفظة`} />
-        <KpiCard label="عقود تنتهي قريبًا" value={expiringRows.length.toLatinLocaleString('ar')} icon={CalendarClock} sub={`خلال ${expiringContractWindowDays} يوم`} />
+        <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(defaultCompanyLocalSettings, totalUnits)} icon={Building2} sub={`${formatLatinNumber(occupancyRows.length, 'ar')} عقارات`} />
+        <KpiCard label="نسبة الإشغال" value={`${occupancyRate}%`} icon={TrendingUp} sub={`${formatLatinNumber(totalOccupied, 'ar')} وحدة مشغولة`} />
+        <KpiCard label="الوحدات الشاغرة" value={formatCompanyNumber(defaultCompanyLocalSettings, totalVacant)} icon={DoorOpen} sub={`${formatLatinNumber(Math.round(vacancyRate), 'ar')}% من المحفظة`} />
+        <KpiCard label="عقود تنتهي قريبًا" value={formatLatinNumber(expiringRows.length, 'ar')} icon={CalendarClock} sub={`خلال ${expiringContractWindowDays} يوم`} />
       </ResponsiveCardGrid>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReportProgress
           label="إشغال المحفظة"
           value={occupancyRate}
-          helper={`${totalOccupied.toLatinLocaleString('ar')} مشغولة من ${totalUnits.toLatinLocaleString('ar')} وحدة`}
+          helper={`${formatLatinNumber(totalOccupied, 'ar')} مشغولة من ${formatLatinNumber(totalUnits, 'ar')} وحدة`}
           tone={occupancyRate >= 90 ? 'good' : occupancyRate >= 75 ? 'warning' : 'critical'}
         />
         <ReportProgress
           label="ضغط التجديد القادم"
           value={renewalPressure}
-          helper={`${expiringRows.length.toLatinLocaleString('ar')} عقود من ${totalOccupied.toLatinLocaleString('ar')} وحدات مشغولة`}
+          helper={`${formatLatinNumber(expiringRows.length, 'ar')} عقود من ${formatLatinNumber(totalOccupied, 'ar')} وحدات مشغولة`}
           tone={renewalPressure <= 15 ? 'good' : renewalPressure <= 30 ? 'warning' : 'critical'}
         />
       </div>
@@ -165,7 +166,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
                       </span>
                     )}
                     subtitle={`${formatCompanyNumber(defaultCompanyLocalSettings, row.occupied)} مشغولة · ${formatCompanyNumber(defaultCompanyLocalSettings, row.vacant)} شاغرة`}
-                    meta={`${propertyTotal.toLatinLocaleString('ar')} وحدة`}
+                    meta={`${formatLatinNumber(propertyTotal, 'ar')} وحدة`}
                     value={<span dir="ltr">{rate}%</span>}
                   />
                 );

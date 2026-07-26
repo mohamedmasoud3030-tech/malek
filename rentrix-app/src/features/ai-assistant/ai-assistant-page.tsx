@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { env } from '@/lib/env';
+import { formatLatinNumber } from '@/lib/formatters';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { AiAssistantAction, AiAssistantContext, AiAssistantMessage } from './types';
@@ -74,7 +75,7 @@ function createMessage(role: AiAssistantMessage['role'], content: string, action
 }
 
 function toArabicCount(value: number): string {
-  return new Intl.NumberFormat('ar').format(value);
+  return formatLatinNumber(value, 'ar');
 }
 
 function getErrorMessage(error: unknown): string | null {

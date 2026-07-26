@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
 import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from './financials-formatters';
+import { formatLatinNumber } from '@/lib/formatters';
 
 type OverdueInvoicesTableProps = Readonly<{
   rows: OverdueInvoiceReportRow[];
@@ -36,7 +37,7 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
     { key: 'context', header: 'العقار / الوحدة', render: (row) => getContextLabel(row) },
     { key: 'contract_id', header: 'العقد', render: (row) => formatShortId(row.contractId) },
     { key: 'due_date', header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
-    { key: 'days_overdue', header: 'أيام التأخير', render: (row) => row.daysOverdue.toLatinLocaleString(ARABIC_LOCALE) },
+    { key: 'days_overdue', header: 'أيام التأخير', render: (row) => formatLatinNumber(row.daysOverdue, ARABIC_LOCALE) },
     { key: 'amount', header: 'الإجمالي', render: (row) => formatMoney(row.amount) },
     { key: 'paid', header: 'المدفوع', render: (row) => formatMoney(row.paidAmount) },
     { key: 'remaining', header: 'المتبقي', render: (row) => <span className="font-black text-destructive">{formatMoney(row.remainingAmount)}</span> },
@@ -88,7 +89,7 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
               <div><p className="text-xs text-muted-foreground">المستأجر</p><p className="font-medium">{row.tenantName ?? EMPTY_FIELD_VALUE}</p></div>
               <div><p className="text-xs text-muted-foreground">الموقع</p><p className="font-medium">{getContextLabel(row)}</p></div>
               <div><p className="text-xs text-muted-foreground">الاستحقاق</p><p className="font-medium">{formatDate(row.dueDate)}</p></div>
-              <div><p className="text-xs text-muted-foreground">أيام التأخير</p><p className="font-bold text-destructive">{row.daysOverdue.toLatinLocaleString(ARABIC_LOCALE)}</p></div>
+              <div><p className="text-xs text-muted-foreground">أيام التأخير</p><p className="font-bold text-destructive">{formatLatinNumber(row.daysOverdue, ARABIC_LOCALE)}</p></div>
               <div><p className="text-xs text-muted-foreground">المتبقي</p><p className="font-black text-destructive">{formatMoney(row.remainingAmount)}</p></div>
               <div><p className="text-xs text-muted-foreground">الحالة</p><span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">{formatInvoiceStatusLabel(row.status)}</span></div>
             </div>

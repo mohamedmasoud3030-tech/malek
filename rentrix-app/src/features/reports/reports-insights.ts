@@ -5,6 +5,7 @@ import {
   calculateDeferredRevenueSchedule,
   type DeferredRevenueSummary,
 } from '@/features/financials/reports/deferred-revenue-service';
+import { formatLatinNumber } from '@/lib/formatters';
 
 export type ReportHealthInsight = Readonly<{
   label: string;
@@ -34,7 +35,7 @@ function safeRatio(numerator: number, denominator: number) {
 }
 
 export function formatPercent(value: number) {
-  return `${Math.round(value).toLatinLocaleString('ar')}%`;
+  return `${formatLatinNumber(Math.round(value), 'ar')}%`;
 }
 
 export function getRatioTone(value: number, goodThreshold: number, warningThreshold: number): ReportHealthInsight['tone'] {

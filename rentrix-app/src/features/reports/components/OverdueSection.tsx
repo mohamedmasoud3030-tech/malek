@@ -12,6 +12,7 @@ import { agingBucketKeys, buildAgingBucketChartRows, buildReportCsvFilename, dow
 import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
 import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
 import { OverdueInvoicesPanel } from './overdue/overdue-invoices-panel';
+import { formatLatinNumber } from '@/lib/formatters';
 
 export function OverdueSection({ rows, agedReport, summary, canExportReports, isLoading }: Readonly<{
   rows: OverdueInvoiceReportRow[];
@@ -63,10 +64,10 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
             `${row.daysOverdue} يوم`,
             `${row.remainingAmount} ${currencySymbol}`,
           ]),
-          totals: ['إجمالي المتأخرات', '', '', '', `${totalOverdue.toLatinLocaleString('ar-OM')} ${currencySymbol}`],
+          totals: ['إجمالي المتأخرات', '', '', '', `${formatLatinNumber(totalOverdue, 'ar-OM')} ${currencySymbol}`],
         },
       ],
-      totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | متوسط التأخير: ${Math.round(averageDelay)} يوم | أكثر من 90 يوم: ${over90Amount.toLatinLocaleString('ar-OM')} ${currencySymbol}`,
+      totalSummary: `عدد الفواتير المتأخرة: ${rows.length} | متوسط التأخير: ${Math.round(averageDelay)} يوم | أكثر من 90 يوم: ${formatLatinNumber(over90Amount, 'ar-OM')} ${currencySymbol}`,
     };
   };
 
@@ -119,9 +120,9 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
     <div className="space-y-4">
       <ResponsiveCardGrid>
         <KpiCard label="إجمالي المتأخر" value={formatMoney(totalOverdue)} icon={WalletCards} sub="رصيد يحتاج تحصيل" />
-        <KpiCard label="الفواتير المتأخرة" value={(summary?.overdueInvoiceCount ?? rows.length).toLatinLocaleString('ar')} icon={ReceiptText} sub="فواتير مفتوحة" />
-        <KpiCard label="متوسط التأخير" value={`${Math.round(averageDelay).toLatinLocaleString('ar')} يوم`} icon={CalendarClock} sub="متوسط عمر الفواتير المتأخرة" />
-        <KpiCard label="أكثر من 90 يوم" value={formatMoney(over90Amount)} icon={AlertTriangle} sub={`${over90Count.toLatinLocaleString('ar')} فواتير عالية المخاطر`} />
+        <KpiCard label="الفواتير المتأخرة" value={formatLatinNumber((summary?.overdueInvoiceCount ?? rows.length), 'ar')} icon={ReceiptText} sub="فواتير مفتوحة" />
+        <KpiCard label="متوسط التأخير" value={`${formatLatinNumber(Math.round(averageDelay), 'ar')} يوم`} icon={CalendarClock} sub="متوسط عمر الفواتير المتأخرة" />
+        <KpiCard label="أكثر من 90 يوم" value={formatMoney(over90Amount)} icon={AlertTriangle} sub={`${formatLatinNumber(over90Count, 'ar')} فواتير عالية المخاطر`} />
       </ResponsiveCardGrid>
 
       <OverdueInvoicesPanel rows={rows} action={invoiceActions} isLoading={isLoading} />

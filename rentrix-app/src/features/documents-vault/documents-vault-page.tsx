@@ -28,6 +28,7 @@ import {
 } from './documents-vault-service';
 import { toast } from 'sonner';
 import { ATTACHMENTS_ACCEPT } from '@/lib/attachments-contract';
+import { formatLatinDate, formatLatinDateTime, formatLatinNumber } from '@/lib/formatters';
 
 const vaultMaxFileSizeMb = VAULT_MAX_FILE_SIZE / 1024 / 1024;
 const vaultAccept = ATTACHMENTS_ACCEPT;
@@ -183,9 +184,9 @@ export function DocumentsVaultPage() {
       />
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="إجمالي المستندات" value={documents.length.toLatinLocaleString('ar')} icon={FolderKanban} accent="primary" sub="ملفات محفوظة في تخزين خاص" />
-        <KpiCard label="ملفات PDF" value={totalPdfs.toLatinLocaleString('ar')} icon={FileText} accent="sky" sub="مستندات" />
-        <KpiCard label="صور مرفقة" value={totalImages.toLatinLocaleString('ar')} icon={ImageIcon} accent="emerald" sub="معاينات متاحة" />
+        <KpiCard label="إجمالي المستندات" value={formatLatinNumber(documents.length, 'ar')} icon={FolderKanban} accent="primary" sub="ملفات محفوظة في تخزين خاص" />
+        <KpiCard label="ملفات PDF" value={formatLatinNumber(totalPdfs, 'ar')} icon={FileText} accent="sky" sub="مستندات" />
+        <KpiCard label="صور مرفقة" value={formatLatinNumber(totalImages, 'ar')} icon={ImageIcon} accent="emerald" sub="معاينات متاحة" />
         <KpiCard
           label="التخزين الخاص"
           value={documents.reduce((sum, document) => sum + (document.fileSize || 0), 0) > 0
@@ -325,7 +326,7 @@ export function DocumentsVaultPage() {
                     )}
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{new Date(document.uploadedAt).toLatinLocaleDateString('ar-OM')}</span>
+                    <span>{formatLatinDate(new Date(document.uploadedAt), 'ar-OM')}</span>
                     <span>{document.fileSize ? `${(document.fileSize / 1024).toFixed(1)} KB` : ''} · خاص</span>
                   </div>
                   <div className="flex gap-2">
@@ -367,7 +368,7 @@ export function DocumentsVaultPage() {
             <DialogHeader>
               <DialogTitle className="truncate">{previewItem.title}</DialogTitle>
               <DialogDescription>
-                التصنيف: {vaultCategoryLabels[previewItem.category]} · تخزين خاص · {new Date(previewItem.uploadedAt).toLatinLocaleString('ar-OM')}
+                التصنيف: {vaultCategoryLabels[previewItem.category]} · تخزين خاص · {formatLatinDateTime(new Date(previewItem.uploadedAt), 'ar-OM')}
               </DialogDescription>
             </DialogHeader>
             <div className="grid aspect-video w-full place-items-center overflow-hidden rounded-2xl border bg-muted/20">

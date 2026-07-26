@@ -23,6 +23,7 @@ import {
   ReportProgress,
   ReportState,
 } from './report-section-primitives';
+import { formatLatinNumber } from '@/lib/formatters';
 
 
 const reportMaintenanceStatusTone = {
@@ -114,29 +115,29 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
   return (
     <div className="space-y-4">
       <ResponsiveCardGrid>
-        <KpiCard label="إجمالي البلاغات" value={summary.total.toLatinLocaleString('ar')} icon={Wrench} sub={`${completedCount.toLatinLocaleString('ar')} طلبات مكتملة`} />
-        <KpiCard label="طلبات مفتوحة" value={summary.open.toLatinLocaleString('ar')} icon={AlertCircle} sub="تحتاج بدء المتابعة" />
-        <KpiCard label="قيد التنفيذ" value={summary.inProgress.toLatinLocaleString('ar')} icon={Clock} sub={`${assignedCount.toLatinLocaleString('ar')} طلبات مسندة`} />
-        <KpiCard label="عاجلة ونشطة" value={urgentActiveCount.toLatinLocaleString('ar')} icon={Flame} sub="أولوية تدخل فوري" />
+        <KpiCard label="إجمالي البلاغات" value={formatLatinNumber(summary.total, 'ar')} icon={Wrench} sub={`${formatLatinNumber(completedCount, 'ar')} طلبات مكتملة`} />
+        <KpiCard label="طلبات مفتوحة" value={formatLatinNumber(summary.open, 'ar')} icon={AlertCircle} sub="تحتاج بدء المتابعة" />
+        <KpiCard label="قيد التنفيذ" value={formatLatinNumber(summary.inProgress, 'ar')} icon={Clock} sub={`${formatLatinNumber(assignedCount, 'ar')} طلبات مسندة`} />
+        <KpiCard label="عاجلة ونشطة" value={formatLatinNumber(urgentActiveCount, 'ar')} icon={Flame} sub="أولوية تدخل فوري" />
       </ResponsiveCardGrid>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <ReportProgress
           label="معدل الإغلاق"
           value={completionRate}
-          helper={`${completedCount.toLatinLocaleString('ar')} من ${summary.total.toLatinLocaleString('ar')} بلاغات`}
+          helper={`${formatLatinNumber(completedCount, 'ar')} من ${formatLatinNumber(summary.total, 'ar')} بلاغات`}
           tone={completionRate >= 75 ? 'good' : completionRate >= 50 ? 'warning' : 'critical'}
         />
         <ReportProgress
           label="تغطية الإسناد"
           value={assignmentCoverage}
-          helper={`${assignedCount.toLatinLocaleString('ar')} من ${activeRows.length.toLatinLocaleString('ar')} طلبات فعالة`}
+          helper={`${formatLatinNumber(assignedCount, 'ar')} من ${formatLatinNumber(activeRows.length, 'ar')} طلبات فعالة`}
           tone={assignmentCoverage >= 90 ? 'good' : assignmentCoverage >= 70 ? 'warning' : 'critical'}
         />
         <ReportProgress
           label="تغطية الجدولة"
           value={schedulingCoverage}
-          helper={`${scheduledCount.toLatinLocaleString('ar')} من ${activeRows.length.toLatinLocaleString('ar')} طلبات فعالة`}
+          helper={`${formatLatinNumber(scheduledCount, 'ar')} من ${formatLatinNumber(activeRows.length, 'ar')} طلبات فعالة`}
           tone={schedulingCoverage >= 85 ? 'good' : schedulingCoverage >= 60 ? 'warning' : 'critical'}
         />
       </div>
@@ -189,7 +190,7 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
         <div className="space-y-4">
           <ReportInsightNote title="قراءة التشغيل">
             {urgentActiveCount > 0
-              ? `يوجد ${urgentActiveCount.toLatinLocaleString('ar')} طلبات عاجلة فعالة؛ راجع الإسناد والجدولة قبل الطلبات العادية.`
+              ? `يوجد ${formatLatinNumber(urgentActiveCount, 'ar')} طلبات عاجلة فعالة؛ راجع الإسناد والجدولة قبل الطلبات العادية.`
               : assignmentCoverage < 90
                 ? 'بعض الطلبات الفعالة غير مسندة لمسؤول؛ إكمال الإسناد سيجعل المتابعة والمساءلة أوضح.'
                 : schedulingCoverage < 85
@@ -205,10 +206,10 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
             isLoading={isLoading}
           >
             <ReportList>
-              <ReportListRow title="مفتوحة" subtitle="لم يبدأ التنفيذ بعد" value={summary.open.toLatinLocaleString('ar')} />
-              <ReportListRow title="قيد التنفيذ" subtitle="يعمل عليها الفريق حاليًا" value={summary.inProgress.toLatinLocaleString('ar')} />
-              <ReportListRow title="مكتملة" subtitle="محلولة أو مغلقة" value={completedCount.toLatinLocaleString('ar')} />
-              <ReportListRow title="عاجلة فعالة" subtitle="أولوية تدخل مباشر" value={urgentActiveCount.toLatinLocaleString('ar')} />
+              <ReportListRow title="مفتوحة" subtitle="لم يبدأ التنفيذ بعد" value={formatLatinNumber(summary.open, 'ar')} />
+              <ReportListRow title="قيد التنفيذ" subtitle="يعمل عليها الفريق حاليًا" value={formatLatinNumber(summary.inProgress, 'ar')} />
+              <ReportListRow title="مكتملة" subtitle="محلولة أو مغلقة" value={formatLatinNumber(completedCount, 'ar')} />
+              <ReportListRow title="عاجلة فعالة" subtitle="أولوية تدخل مباشر" value={formatLatinNumber(urgentActiveCount, 'ar')} />
             </ReportList>
           </ReportPanel>
         </div>

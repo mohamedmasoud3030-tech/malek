@@ -4,6 +4,7 @@ import { formatMoney, formatShortId, getErrorMessage } from '@/features/financia
 import type { OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import { createReceiptPrintHref } from '../../reports-page.helpers';
 import { ReportList, ReportListRow, ReportPanel, ReportPanelSkeleton, ReportState } from '../report-section-primitives';
+import { formatLatinNumber } from '@/lib/formatters';
 
 type ReceiptRow = Readonly<{
   id: string;
@@ -101,7 +102,7 @@ export function TenantStatementPanel({
             <ReportListRow
               key={row.contractId}
               title={row.tenantName ?? 'مستأجر غير محدد'}
-              subtitle={`${row.invoiceCount.toLatinLocaleString('ar')} فواتير · عقد ${formatShortId(row.contractId)}`}
+              subtitle={`${formatLatinNumber(row.invoiceCount, 'ar')} فواتير · عقد ${formatShortId(row.contractId)}`}
               meta={`متأخر ${formatMoney(row.totalOverdue)}`}
               value={<span dir="ltr">{formatMoney(row.totalOutstanding)}</span>}
             />
@@ -192,7 +193,7 @@ export function OwnerStatementPanel({
             <ReportListRow
               key={row.propertyId}
               title={row.propertyTitle ?? formatShortId(row.propertyId)}
-              subtitle={`${row.count.toLatinLocaleString('ar')} حركة مصروفات`}
+              subtitle={`${formatLatinNumber(row.count, 'ar')} حركة مصروفات`}
               value={<span dir="ltr">{formatMoney(row.total)}</span>}
             />
           ))}
