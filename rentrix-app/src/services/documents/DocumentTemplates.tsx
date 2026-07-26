@@ -14,6 +14,7 @@ import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@
 import '@/lib/formatters';
 import { DocumentRenderer, DocumentRenderError } from './DocumentRenderer';
 import type { UnifiedDocumentModel } from './types';
+import { formatLatinDate, formatLatinNumber } from '@/lib/formatters';
 
 export interface ContractDocumentData {
   contractId: string;
@@ -197,7 +198,7 @@ function amountToWords(amount: number, settings: DocumentSettings): string {
 
 function formatMoney(amount: number, settings: DocumentSettings): string {
   const symbol = currencySymbolOf(settings);
-  return `${amount.toLatinLocaleString('ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${symbol}`;
+  return `${formatLatinNumber(amount, 'ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${symbol}`;
 }
 
 function formatDate(dateStr: string, locale = 'ar-OM'): string {
@@ -206,7 +207,7 @@ function formatDate(dateStr: string, locale = 'ar-OM'): string {
   if (parts.length < 3) return dateStr;
   const [year, month, day] = parts;
   const date = new Date(Number(year), Number(month) - 1, Number(day));
-  return date.toLatinLocaleDateString(locale, {
+  return formatLatinDate(date, locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

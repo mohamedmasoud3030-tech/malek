@@ -11,6 +11,7 @@ import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-
 import { normalizeInvoiceStatus } from './invoice-status-labels';
 import { InvoiceFilters, type InvoiceFilterOption } from './invoice-filters';
 import { InvoiceSummaryCards } from './invoice-summary-cards';
+import { formatLatinNumber } from '@/lib/formatters';
 
 // Keyed by the CANONICAL status — live rows mix lowercase and UPPERCASE raw values.
 const invoiceStatusTone = {
@@ -254,7 +255,7 @@ export function InvoiceListSection({
 
         <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
-            إجمالي {total.toLatinLocaleString('ar')} فاتورة · صفحة {page.toLatinLocaleString('ar')} من {totalPages.toLatinLocaleString('ar')}
+            إجمالي {formatLatinNumber(total, 'ar')} فاتورة · صفحة {formatLatinNumber(page, 'ar')} من {formatLatinNumber(totalPages, 'ar')}
           </p>
           <div className="grid grid-cols-2 gap-2 sm:flex">
             <Button variant="outline" className="min-h-11 rounded-xl" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>

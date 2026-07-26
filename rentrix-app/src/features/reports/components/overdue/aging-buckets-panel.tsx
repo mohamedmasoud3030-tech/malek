@@ -2,6 +2,7 @@ import { Hourglass } from 'lucide-react';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import type { AgingBucketChartRow } from '../../reports-page.helpers';
 import { ReportList, ReportListRow, ReportPanel, ReportState } from '../report-section-primitives';
+import { formatLatinNumber } from '@/lib/formatters';
 
 export function AgingBucketsPanel({
   rows,
@@ -32,7 +33,7 @@ export function AgingBucketsPanel({
               <ReportListRow
                 key={row.bucket}
                 title={row.bucket}
-                subtitle={`${row.invoiceCount.toLatinLocaleString('ar')} فواتير`}
+                subtitle={`${formatLatinNumber(row.invoiceCount, 'ar')} فواتير`}
                 meta={(
                   <span className="block h-1.5 w-24 overflow-hidden rounded-full bg-muted">
                     <span className="block h-full rounded-full bg-primary" style={{ width: `${width}%` }} />

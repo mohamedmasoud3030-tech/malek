@@ -4,6 +4,7 @@ import { MobileCard } from '@/components/ui/mobile-card';
 import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { ReportPanel, ReportState } from '../report-section-primitives';
+import { formatLatinNumber } from '@/lib/formatters';
 
 export function DailyCollectionsPanel({
   rows,
@@ -31,7 +32,7 @@ export function DailyCollectionsPanel({
               <MobileCard
                 key={row.paymentDate}
                 title={formatDate(row.paymentDate)}
-                subtitle={`${row.paymentsCount.toLatinLocaleString('ar')} مدفوعات`}
+                subtitle={`${formatLatinNumber(row.paymentsCount, 'ar')} مدفوعات`}
                 stats={<span className="text-base font-bold" dir="ltr">{formatMoney(row.totalPaid)}</span>}
                 meta={(
                   <div className="grid grid-cols-2 gap-1.5 text-xs text-muted-foreground">
@@ -52,7 +53,7 @@ export function DailyCollectionsPanel({
               columns={[
                 { key: 'date', header: 'التاريخ', render: (row) => formatDate(row.paymentDate) },
                 { key: 'total', header: 'الإجمالي', render: (row) => <span className="font-bold" dir="ltr">{formatMoney(row.totalPaid)}</span> },
-                { key: 'count', header: 'المدفوعات', render: (row) => row.paymentsCount.toLatinLocaleString('ar') },
+                { key: 'count', header: 'المدفوعات', render: (row) => formatLatinNumber(row.paymentsCount, 'ar') },
                 { key: 'cash', header: 'نقدًا', render: (row) => <span dir="ltr">{formatMoney(row.methodTotals.cash)}</span> },
                 { key: 'transfer', header: 'تحويل', render: (row) => <span dir="ltr">{formatMoney(row.methodTotals.bank_transfer)}</span> },
                 { key: 'card', header: 'بطاقة', render: (row) => <span dir="ltr">{formatMoney(row.methodTotals.card)}</span> },

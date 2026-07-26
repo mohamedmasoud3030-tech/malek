@@ -32,6 +32,7 @@ import {
 import type { Contract } from '@/types/domain';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import { formatLatinNumber } from '@/lib/formatters';
 
 const defaultSettings: DocumentSettings = {
   company: { name: 'رينتريكس لإدارة العقارات', address: 'سلطنة عمان - مسقط', phone: '+968 24000000' },
@@ -216,7 +217,7 @@ export function DepositsWorkspace() {
         <KpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" />
         <KpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} accent="rose" sub="أضرار وصيانة" />
         <KpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} accent="emerald" sub="تم رده" />
-        <KpiCard label="عدد الودائع" value={deposits.length.toLatinLocaleString('ar')} icon={FileCheck} accent="sky" sub="سجلات" />
+        <KpiCard label="عدد الودائع" value={formatLatinNumber(deposits.length, 'ar')} icon={FileCheck} accent="sky" sub="سجلات" />
       </ResponsiveCardGrid>
 
       <AsyncContentState

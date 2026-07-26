@@ -3,6 +3,7 @@ import '@/lib/formatters';
 import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@/lib/numberToArabicWords';
 import { TableGenerator } from './TableGenerator';
 import type { DocumentCompanyIdentity, DocumentRequest, SignatureRole, UnifiedDocumentModel } from './types';
+import { formatLatinDate, formatLatinNumber } from '@/lib/formatters';
 
 /**
  * Company identity is a required input, never a fallback. Every document
@@ -106,7 +107,7 @@ export class MissingCompanyIdentityError extends Error {
   }
 }
 
-const fmtDate = (v?: string | null) => (v ? new Date(v).toLatinLocaleDateString('ar-OM') : '-');
+const fmtDate = (v?: string | null) => (v ? formatLatinDate(new Date(v), 'ar-OM') : '-');
 
 function assertCompanyIdentity(settings: DocumentSettings): DocumentCompanyIdentity {
   const company = settings?.company;
@@ -121,7 +122,7 @@ const wordsOf = (amount: number, s: DocumentSettings) =>
   numberToArabicWords(amount, getCurrencyWordConfig(assertCompanyIdentity(s).defaultCurrency));
 
 const toMoney = (value: number, s: DocumentSettings) =>
-  `${Number.isFinite(value) ? value.toLatinLocaleString('ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '0.000'} ${currencyOf(s)}`;
+  `${Number.isFinite(value) ? formatLatinNumber(value, 'ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '0.000'} ${currencyOf(s)}`;
 
 const baseHeader = (s: DocumentSettings, title: string, dateValue?: string, documentNo?: string) => {
   const company = assertCompanyIdentity(s);
@@ -145,7 +146,7 @@ const formatDocumentValue = (value: unknown): string => {
   if (value == null) return '—';
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '—' : value.toLatinLocaleDateString('ar-OM');
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '—' : formatLatinDate(value, 'ar-OM');
   if (Array.isArray(value) || typeof value === 'object') {
     try {
       return JSON.stringify(value);

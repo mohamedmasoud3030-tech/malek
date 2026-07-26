@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas-pro';
 import type { SignatureRole, UnifiedDocumentModel } from './types';
+import { formatLatinDateTime, formatLatinNumber } from '@/lib/formatters';
 
 const ARABIC_REGEX = /[\u0600-\u06FF]/;
 const DEFAULT_SIGNATURE_LABELS = new Set(['توقيع المالك', 'توقيع المستأجر', 'توقيع المحاسب', 'توقيع المدير العام']);
@@ -276,7 +277,7 @@ const buildRtlPrintHtml = (model: UnifiedDocumentModel, options: { withPageFoote
       ? [
           '<div class="footer-audit">',
           `  <span>${escapeDocumentHtml(model.footer.metadata || model.header.companyName)}</span>`,
-          `  <span>وقت الإنشاء: ${new Date().toLatinLocaleString('ar-OM', { dateStyle: 'short', timeStyle: 'short' })}</span>`,
+          `  <span>وقت الإنشاء: ${formatLatinDateTime(new Date(), 'ar-OM', { dateStyle: 'short', timeStyle: 'short' })}</span>`,
           '</div>',
         ].join('')
       : '',

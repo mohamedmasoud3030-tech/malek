@@ -16,6 +16,7 @@ import { listAutomationRules, toggleAutomationRule, executeAutomationRule, listA
 import { automationTemplatePreviews } from '../automation-catalog';
 import { buildTemplateWhatsAppDemoUrl } from '../automation-whatsapp';
 import type { AutomationChannel } from '../types';
+import { formatLatinDateTime, formatLatinNumber } from '@/lib/formatters';
 
 const channelLabel: Record<AutomationChannel, string> = {
   whatsapp: 'واتساب',
@@ -172,7 +173,7 @@ export function AutomationCenterView() {
               meta={
                 <div className="space-y-1 text-xs">
                   <p>النوع: {mapRuleTypeToCategory(rule.rule_type)}</p>
-                  <p>آخر تشغيل: {rule.last_run_at ? new Date(rule.last_run_at).toLatinLocaleString('ar-OM') : 'لم يشغل بعد'}</p>
+                  <p>آخر تشغيل: {rule.last_run_at ? formatLatinDateTime(new Date(rule.last_run_at), 'ar-OM') : 'لم يشغل بعد'}</p>
                   <p>النتيجة: {rule.last_run_result || '—'}</p>
                 </div>
               }
@@ -214,7 +215,7 @@ export function AutomationCenterView() {
                   </div>
                   <p className="text-sm leading-6 text-muted-foreground">{rule.description}</p>
                   <div className="flex flex-wrap gap-3 text-xs font-bold text-muted-foreground">
-                    <span>آخر تشغيل: {rule.last_run_at ? new Date(rule.last_run_at).toLatinLocaleString('ar-OM') : '—'}</span>
+                    <span>آخر تشغيل: {rule.last_run_at ? formatLatinDateTime(new Date(rule.last_run_at), 'ar-OM') : '—'}</span>
                     <span>النتيجة: {rule.last_run_result || '—'}</span>
                   </div>
                 </div>
@@ -255,7 +256,7 @@ export function AutomationCenterView() {
                   <div>
                     <p className="font-bold">{run.job_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      بدء: {new Date(Number(run.started_at)).toLatinLocaleString('ar-OM')} · معالجة: {run.items_processed} · فشل: {run.items_failed}
+                      بدء: {formatLatinDateTime(new Date(Number(run.started_at)), 'ar-OM')} · معالجة: {run.items_processed} · فشل: {run.items_failed}
                     </p>
                   </div>
                   <StatusBadge tone={automationRunStatusTone(run.status)}>{run.status}</StatusBadge>
@@ -277,7 +278,7 @@ export function AutomationCenterView() {
                 <div key={notif.id} className="rounded-xl border p-3 space-y-1">
                   <div className="flex justify-between">
                     <p className="font-bold text-sm">{notif.title}</p>
-                    <span className="text-xs text-muted-foreground">{new Date(notif.created_at).toLatinLocaleString('ar-OM')}</span>
+                    <span className="text-xs text-muted-foreground">{formatLatinDateTime(new Date(notif.created_at), 'ar-OM')}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{notif.body}</p>
                   {notif.related_entity_type && <p className="text-xs">مرتبط: {notif.related_entity_type} {notif.related_entity_id?.slice(0, 8)}</p>}

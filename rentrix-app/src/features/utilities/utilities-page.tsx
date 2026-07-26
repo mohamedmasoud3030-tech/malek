@@ -21,6 +21,7 @@ import { DocumentTemplates, type DocumentSettings } from '@/services/documents/D
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { useUtilityBills, useUtilityMeters, useCreateUtilityMeter, useCreateUtilityBill, useDeleteUtilityMeter, useDeleteUtilityBill } from './use-utilities';
 import { responsiblePartyLabels, utilityBillStatusLabels, utilityTypeLabels, type UtilityBillStatus, type UtilityMeterFormValues, type UtilityBillFormValues, type UtilityType, type ResponsibleParty } from './utilities-service';
+import { formatLatinNumber } from '@/lib/formatters';
 
 const defaultSettings: DocumentSettings = {
   company: { name: 'رينتريكس لإدارة العقارات', address: 'سلطنة عمان - مسقط', phone: '+968 24000000' },
@@ -203,7 +204,7 @@ export function UtilitiesPage() {
       />
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="العدادات المسجلة" value={meters.length.toLatinLocaleString('ar')} icon={Zap} accent="primary" sub="عدادات نشطة" />
+        <KpiCard label="العدادات المسجلة" value={formatLatinNumber(meters.length, 'ar')} icon={Zap} accent="primary" sub="عدادات نشطة" />
         <KpiCard label="إجمالي الفواتير" value={formatMoney(totalBilled)} icon={Activity} accent="sky" sub="مطالبات مسجلة" />
         <KpiCard label="المسدد" value={formatMoney(totalPaid)} icon={CheckCircle2} accent="emerald" sub="مدفوعات" />
         <KpiCard label="المتبقي" value={formatMoney(totalUnpaid)} icon={AlertCircle} accent="rose" sub="مستحق" />

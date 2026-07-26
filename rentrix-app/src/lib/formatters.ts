@@ -48,11 +48,28 @@ export function getCurrencyMinorUnit(value: unknown): number {
 }
 
 /**
- * Normalizes any Arabic locale to use Latin numbers via the Unicode extension (-u-nu-latn).
+ * Ensures Latin (Western Arabic) numerals for any locale by appending -u-nu-latn
+ * when the locale is Arabic-based and does not already specify a numbering system.
+ * Supports bare locales, locales with Unicode extensions, and locale arrays.
  */
-export function normalizeLocale(locale?: string): string {
+export function normalizeLocale(locale?: string | string[]): string | string[] {
+  if (Array.isArray(locale)) {
+    return locale.map((l) => normalizeLocaleString(l));
+  }
+  return normalizeLocaleString(locale);
+}
+
+function normalizeLocaleString(locale?: string): string {
   if (!locale) return `${DEFAULT_LOCALE}-u-nu-latn`;
-  if (locale.startsWith('ar') && !locale.includes('-u-nu-')) {
+  // Already has Unicode numbering extension — don't override
+  if (locale.includes('-u-') && locale.includes('-nu-')) {
+    return locale;
+  }
+  // Check if it's an Arabic locale
+  if (/^ar(-|$)/i.test(locale)) {
+    if (locale.includes('-u-')) {
+      return `${locale}-nu-latn`;
+    }
     return `${locale}-u-nu-latn`;
   }
   return locale;
@@ -62,8 +79,7 @@ export function formatMoney({ amount, currency = DEFAULT_CURRENCY, locale = DEFA
   const metadata = getCurrencyMetadata(currency);
   const safeAmount = normalizeMoneyNumber(amount);
   const targetLocale = normalizeLocale(locale);
-
-  return new Intl.NumberFormat(targetLocale, {
+  return new Intl.NumberFormat(targetLocale as string, {
     style: 'currency',
     currency: metadata.code,
     currencyDisplay,
@@ -74,7 +90,7 @@ export function formatMoney({ amount, currency = DEFAULT_CURRENCY, locale = DEFA
 
 export type NumberFormatOptions = {
   value: number | null | undefined;
-  locale?: string;
+  locale?: string | string[];
   maximumFractionDigits?: number;
   minimumFractionDigits?: number;
 };
@@ -87,7 +103,7 @@ export function formatNumber({
 }: NumberFormatOptions) {
   const safeValue = normalizeMoneyNumber(value);
   const targetLocale = normalizeLocale(locale);
-  return new Intl.NumberFormat(targetLocale, {
+  return new Intl.NumberFormat(targetLocale as string, {
     maximumFractionDigits,
     minimumFractionDigits,
   }).format(safeValue);
@@ -95,17 +111,17 @@ export function formatNumber({
 
 export type DateFormatOptions = {
   value: string | number | Date | null | undefined;
-  locale?: string;
+  locale?: string | string[];
   timeZone?: string;
   dateStyle?: Intl.DateTimeFormatOptions['dateStyle'];
 };
 
 export function formatDate({ value, locale = DEFAULT_LOCALE, timeZone, dateStyle = 'medium' }: DateFormatOptions) {
   if (value === null || value === undefined || value === '') return '—';
-  const date = value instanceof Date ? value : new Date(value);
+  const date = value instanceof Date ? value : new Date(value as string | number);
   if (Number.isNaN(date.getTime())) return '—';
   const targetLocale = normalizeLocale(locale);
-  return new Intl.DateTimeFormat(targetLocale, { dateStyle, timeZone }).format(date);
+  return new Intl.DateTimeFormat(targetLocale as string, { dateStyle, timeZone }).format(date);
 }
 
 export type DateTimeFormatOptions = DateFormatOptions & {
@@ -120,169 +136,95 @@ export function formatDateTime({
   timeStyle = 'short',
 }: DateTimeFormatOptions) {
   if (value === null || value === undefined || value === '') return '—';
-  const date = value instanceof Date ? value : new Date(value);
+  const date = value instanceof Date ? value : new Date(value as string | number);
   if (Number.isNaN(date.getTime())) return '—';
   const targetLocale = normalizeLocale(locale);
-  return new Intl.DateTimeFormat(targetLocale, { dateStyle, timeStyle, timeZone }).format(date);
+  return new Intl.DateTimeFormat(targetLocale as string, { dateStyle, timeStyle, timeZone }).format(date);
 }
 
-// Declare global prototype methods for TypeScript type checking
-declare global {
-  interface Number {
-    toLatinLocaleString(
-      locales?: string | string[],
-      options?: Intl.NumberFormatOptions
-    ): string;
-  }
-  interface Date {
-    toLatinLocaleString(
-      locales?: string | string[],
-      options?: Intl.DateTimeFormatOptions
-    ): string;
-    toLatinLocaleDateString(
-      locales?: string | string[],
-      options?: Intl.DateTimeFormatOptions
-    ): string;
-    toLatinLocaleTimeString(
-      locales?: string | string[],
-      options?: Intl.DateTimeFormatOptions
-    ): string;
-  }
+// ──────────────────────────────────────────────────────────────────────────────
+// Explicit standalone Latin-numeral formatters.
+// These replace all former prototype patches.
+// ──────────────────────────────────────────────────────────────────────────────
+
+export function formatLatinNumber(
+  value: number | null | undefined,
+  locale?: string | string[],
+  options?: Intl.NumberFormatOptions,
+): string {
+  if (value === null || value === undefined) return '';
+  const targetLocale = normalizeLocale(locale);
+  return new Intl.NumberFormat(targetLocale as string, options).format(value);
 }
 
-// Standalone formatting functions that force Latin numerals for Arabic locales
+export function formatLatinDateTime(
+  value: Date | string | number | null | undefined,
+  locale?: string | string[],
+  options: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' },
+): string {
+  if (value === null || value === undefined) return '';
+  const date = value instanceof Date ? value : new Date(value as string | number);
+  if (Number.isNaN(date.getTime())) return String(value ?? '');
+  const targetLocale = normalizeLocale(locale);
+  return new Intl.DateTimeFormat(targetLocale as string, options).format(date);
+}
+
+export function formatLatinDate(
+  value: Date | string | null | undefined,
+  locale?: string | string[],
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  if (value === null || value === undefined) return '';
+  const date = value instanceof Date ? value : new Date(value as string);
+  if (Number.isNaN(date.getTime())) return String(value ?? '');
+  const targetLocale = normalizeLocale(locale);
+  return new Intl.DateTimeFormat(targetLocale as string, options).format(date);
+}
+
+export function formatLatinTime(
+  value: Date | string | null | undefined,
+  locale?: string | string[],
+  options: Intl.DateTimeFormatOptions = { timeStyle: 'medium' },
+): string {
+  if (value === null || value === undefined) return '';
+  const date = value instanceof Date ? value : new Date(value as string);
+  if (Number.isNaN(date.getTime())) return String(value ?? '');
+  const targetLocale = normalizeLocale(locale);
+  return new Intl.DateTimeFormat(targetLocale as string, options).format(date);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Backwards-compatible aliases (used during the migration away from prototypes).
+// New code should use the formatLatin* functions directly.
+// ──────────────────────────────────────────────────────────────────────────────
+
 export function toLatinLocaleString(
   value: number | Date | string | null | undefined,
   locales?: string | string[],
-  options?: any
+  options?: Intl.NumberFormatOptions | Intl.DateTimeFormatOptions,
 ): string {
   if (value === null || value === undefined) return '';
-
-  let targetLocales = locales;
-  if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
-    if (!targetLocales.includes('-u-nu-')) {
-      targetLocales = `${targetLocales}-u-nu-latn`;
-    }
-  }
-
-  if (value instanceof Date) {
-    return value.toLocaleString(targetLocales, options);
-  } else if (typeof value === 'number') {
-    return value.toLocaleString(targetLocales, options);
-  } else {
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) {
-      return parsed.toLocaleString(targetLocales, options);
-    }
-    const num = Number(value);
-    if (!Number.isNaN(num)) {
-      return num.toLocaleString(targetLocales, options);
-    }
-    return String(value);
-  }
+  if (value instanceof Date) return formatLatinDateTime(value, locales, options as Intl.DateTimeFormatOptions);
+  if (typeof value === 'number') return formatLatinNumber(value, locales, options as Intl.NumberFormatOptions);
+  const trimmed = String(value).trim();
+  if (trimmed !== '' && !Number.isNaN(Number(trimmed))) return formatLatinNumber(Number(trimmed), locales, options as Intl.NumberFormatOptions);
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) return formatLatinDateTime(parsed, locales, options as Intl.DateTimeFormatOptions);
+  return String(value);
 }
 
 export function toLatinLocaleDateString(
   value: Date | string | null | undefined,
   locales?: string | string[],
-  options?: Intl.DateTimeFormatOptions
+  options?: Intl.DateTimeFormatOptions,
 ): string {
-  if (value === null || value === undefined) return '';
-
-  let targetLocales = locales;
-  if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
-    if (!targetLocales.includes('-u-nu-')) {
-      targetLocales = `${targetLocales}-u-nu-latn`;
-    }
-  }
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-
-  return date.toLocaleDateString(targetLocales, options);
+  return formatLatinDate(value, locales, options);
 }
 
 export function toLatinLocaleTimeString(
   value: Date | string | null | undefined,
   locales?: string | string[],
-  options?: Intl.DateTimeFormatOptions
+  options?: Intl.DateTimeFormatOptions,
 ): string {
-  if (value === null || value === undefined) return '';
-
-  let targetLocales = locales;
-  if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
-    if (!targetLocales.includes('-u-nu-')) {
-      targetLocales = `${targetLocales}-u-nu-latn`;
-    }
-  }
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-
-  return date.toLocaleTimeString(targetLocales, options);
-}
-
-// Patch Number and Date prototypes to make .toLatinLocaleString, .toLatinLocaleDateString, and .toLatinLocaleTimeString globally available
-if (typeof Number.prototype.toLatinLocaleString !== 'function') {
-  Object.defineProperty(Number.prototype, 'toLatinLocaleString', {
-    value: function (locales?: string | string[], options?: Intl.NumberFormatOptions) {
-      let targetLocales = locales;
-      if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
-        if (!targetLocales.includes('-u-nu-')) {
-          targetLocales = `${targetLocales}-u-nu-latn`;
-        }
-      }
-      return this.toLocaleString(targetLocales, options);
-    },
-    writable: true,
-    configurable: true,
-  });
-}
-
-if (typeof Date.prototype.toLatinLocaleString !== 'function') {
-  Object.defineProperty(Date.prototype, 'toLatinLocaleString', {
-    value: function (locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
-      let targetLocales = locales;
-      if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
-        if (!targetLocales.includes('-u-nu-')) {
-          targetLocales = `${targetLocales}-u-nu-latn`;
-        }
-      }
-      return this.toLocaleString(targetLocales, options);
-    },
-    writable: true,
-    configurable: true,
-  });
-}
-
-if (typeof Date.prototype.toLatinLocaleDateString !== 'function') {
-  Object.defineProperty(Date.prototype, 'toLatinLocaleDateString', {
-    value: function (locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
-      let targetLocales = locales;
-      if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
-        if (!targetLocales.includes('-u-nu-')) {
-          targetLocales = `${targetLocales}-u-nu-latn`;
-        }
-      }
-      return this.toLocaleDateString(targetLocales, options);
-    },
-    writable: true,
-    configurable: true,
-  });
-}
-
-if (typeof Date.prototype.toLatinLocaleTimeString !== 'function') {
-  Object.defineProperty(Date.prototype, 'toLatinLocaleTimeString', {
-    value: function (locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
-      let targetLocales = locales;
-      if (typeof targetLocales === 'string' && targetLocales.startsWith('ar')) {
-        if (!targetLocales.includes('-u-nu-')) {
-          targetLocales = `${targetLocales}-u-nu-latn`;
-        }
-      }
-      return this.toLocaleTimeString(targetLocales, options);
-    },
-    writable: true,
-    configurable: true,
-  });
+  return formatLatinTime(value, locales, options);
 }
