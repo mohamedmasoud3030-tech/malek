@@ -183,9 +183,9 @@ export function DocumentsVaultPage() {
       />
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="إجمالي المستندات" value={documents.length.toLocaleString('ar')} icon={FolderKanban} accent="primary" sub="ملفات محفوظة في تخزين خاص" />
-        <KpiCard label="ملفات PDF" value={totalPdfs.toLocaleString('ar')} icon={FileText} accent="sky" sub="مستندات" />
-        <KpiCard label="صور مرفقة" value={totalImages.toLocaleString('ar')} icon={ImageIcon} accent="emerald" sub="معاينات متاحة" />
+        <KpiCard label="إجمالي المستندات" value={documents.length.toLatinLocaleString('ar')} icon={FolderKanban} accent="primary" sub="ملفات محفوظة في تخزين خاص" />
+        <KpiCard label="ملفات PDF" value={totalPdfs.toLatinLocaleString('ar')} icon={FileText} accent="sky" sub="مستندات" />
+        <KpiCard label="صور مرفقة" value={totalImages.toLatinLocaleString('ar')} icon={ImageIcon} accent="emerald" sub="معاينات متاحة" />
         <KpiCard
           label="التخزين الخاص"
           value={documents.reduce((sum, document) => sum + (document.fileSize || 0), 0) > 0
@@ -325,7 +325,7 @@ export function DocumentsVaultPage() {
                     )}
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{new Date(document.uploadedAt).toLocaleDateString('ar-OM')}</span>
+                    <span>{new Date(document.uploadedAt).toLatinLocaleDateString('ar-OM')}</span>
                     <span>{document.fileSize ? `${(document.fileSize / 1024).toFixed(1)} KB` : ''} · خاص</span>
                   </div>
                   <div className="flex gap-2">
@@ -367,7 +367,7 @@ export function DocumentsVaultPage() {
             <DialogHeader>
               <DialogTitle className="truncate">{previewItem.title}</DialogTitle>
               <DialogDescription>
-                التصنيف: {vaultCategoryLabels[previewItem.category]} · تخزين خاص · {new Date(previewItem.uploadedAt).toLocaleString('ar-OM')}
+                التصنيف: {vaultCategoryLabels[previewItem.category]} · تخزين خاص · {new Date(previewItem.uploadedAt).toLatinLocaleString('ar-OM')}
               </DialogDescription>
             </DialogHeader>
             <div className="grid aspect-video w-full place-items-center overflow-hidden rounded-2xl border bg-muted/20">

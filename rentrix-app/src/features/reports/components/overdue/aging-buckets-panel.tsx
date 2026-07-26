@@ -32,7 +32,7 @@ export function AgingBucketsPanel({
               <ReportListRow
                 key={row.bucket}
                 title={row.bucket}
-                subtitle={`${row.invoiceCount.toLocaleString('ar')} فواتير`}
+                subtitle={`${row.invoiceCount.toLatinLocaleString('ar')} فواتير`}
                 meta={(
                   <span className="block h-1.5 w-24 overflow-hidden rounded-full bg-muted">
                     <span className="block h-full rounded-full bg-primary" style={{ width: `${width}%` }} />

@@ -97,23 +97,23 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
   return (
     <div className="space-y-4">
       <ResponsiveCardGrid>
-        <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(defaultCompanyLocalSettings, totalUnits)} icon={Building2} sub={`${occupancyRows.length.toLocaleString('ar')} عقارات`} />
-        <KpiCard label="نسبة الإشغال" value={`${occupancyRate}%`} icon={TrendingUp} sub={`${totalOccupied.toLocaleString('ar')} وحدة مشغولة`} />
-        <KpiCard label="الوحدات الشاغرة" value={formatCompanyNumber(defaultCompanyLocalSettings, totalVacant)} icon={DoorOpen} sub={`${Math.round(vacancyRate).toLocaleString('ar')}% من المحفظة`} />
-        <KpiCard label="عقود تنتهي قريبًا" value={expiringRows.length.toLocaleString('ar')} icon={CalendarClock} sub={`خلال ${expiringContractWindowDays} يوم`} />
+        <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(defaultCompanyLocalSettings, totalUnits)} icon={Building2} sub={`${occupancyRows.length.toLatinLocaleString('ar')} عقارات`} />
+        <KpiCard label="نسبة الإشغال" value={`${occupancyRate}%`} icon={TrendingUp} sub={`${totalOccupied.toLatinLocaleString('ar')} وحدة مشغولة`} />
+        <KpiCard label="الوحدات الشاغرة" value={formatCompanyNumber(defaultCompanyLocalSettings, totalVacant)} icon={DoorOpen} sub={`${Math.round(vacancyRate).toLatinLocaleString('ar')}% من المحفظة`} />
+        <KpiCard label="عقود تنتهي قريبًا" value={expiringRows.length.toLatinLocaleString('ar')} icon={CalendarClock} sub={`خلال ${expiringContractWindowDays} يوم`} />
       </ResponsiveCardGrid>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <ReportProgress
           label="إشغال المحفظة"
           value={occupancyRate}
-          helper={`${totalOccupied.toLocaleString('ar')} مشغولة من ${totalUnits.toLocaleString('ar')} وحدة`}
+          helper={`${totalOccupied.toLatinLocaleString('ar')} مشغولة من ${totalUnits.toLatinLocaleString('ar')} وحدة`}
           tone={occupancyRate >= 90 ? 'good' : occupancyRate >= 75 ? 'warning' : 'critical'}
         />
         <ReportProgress
           label="ضغط التجديد القادم"
           value={renewalPressure}
-          helper={`${expiringRows.length.toLocaleString('ar')} عقود من ${totalOccupied.toLocaleString('ar')} وحدات مشغولة`}
+          helper={`${expiringRows.length.toLatinLocaleString('ar')} عقود من ${totalOccupied.toLatinLocaleString('ar')} وحدات مشغولة`}
           tone={renewalPressure <= 15 ? 'good' : renewalPressure <= 30 ? 'warning' : 'critical'}
         />
       </div>
@@ -165,7 +165,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
                       </span>
                     )}
                     subtitle={`${formatCompanyNumber(defaultCompanyLocalSettings, row.occupied)} مشغولة · ${formatCompanyNumber(defaultCompanyLocalSettings, row.vacant)} شاغرة`}
-                    meta={`${propertyTotal.toLocaleString('ar')} وحدة`}
+                    meta={`${propertyTotal.toLatinLocaleString('ar')} وحدة`}
                     value={<span dir="ltr">{rate}%</span>}
                   />
                 );

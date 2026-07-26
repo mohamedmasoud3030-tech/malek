@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T18:53:19.840Z",
+  "generatedAt": "2026-07-26T15:04:06.853Z",
   "scenario": "record-on-foreign-invoice · post-on-foreign-contract · foreign allocation · foreign journal account · foreign VOID",
   "vectorsRejected": 5,
   "failureBeforeAnyWrite": {

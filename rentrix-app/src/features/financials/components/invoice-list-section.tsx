@@ -254,7 +254,7 @@ export function InvoiceListSection({
 
         <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs font-bold text-muted-foreground" aria-live="polite">
-            إجمالي {total.toLocaleString('ar')} فاتورة · صفحة {page.toLocaleString('ar')} من {totalPages.toLocaleString('ar')}
+            إجمالي {total.toLatinLocaleString('ar')} فاتورة · صفحة {page.toLatinLocaleString('ar')} من {totalPages.toLatinLocaleString('ar')}
           </p>
           <div className="grid grid-cols-2 gap-2 sm:flex">
             <Button variant="outline" className="min-h-11 rounded-xl" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>

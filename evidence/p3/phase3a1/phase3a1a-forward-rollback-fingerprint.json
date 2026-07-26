@@ -1,0 +1,7 @@
+{
+  "generatedAt": "2026-07-26T15:04:43.818Z",
+  "result": {
+    "rollback": "passed",
+    "reapply": "passed"
+  }
+}

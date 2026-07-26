@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-07-24T06:19:19.078Z",
+  "generatedAt": "2026-07-26T15:07:22.699Z",
   "replayCoverage": {
-    "total": 155,
-    "applied": 155,
+    "total": 162,
+    "applied": 162,
     "failed": []
   },
   "anonViolations": [],

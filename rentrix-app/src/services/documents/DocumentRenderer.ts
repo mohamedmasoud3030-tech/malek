@@ -276,7 +276,7 @@ const buildRtlPrintHtml = (model: UnifiedDocumentModel, options: { withPageFoote
       ? [
           '<div class="footer-audit">',
           `  <span>${escapeDocumentHtml(model.footer.metadata || model.header.companyName)}</span>`,
-          `  <span>وقت الإنشاء: ${new Date().toLocaleString('ar-OM', { dateStyle: 'short', timeStyle: 'short' })}</span>`,
+          `  <span>وقت الإنشاء: ${new Date().toLatinLocaleString('ar-OM', { dateStyle: 'short', timeStyle: 'short' })}</span>`,
           '</div>',
         ].join('')
       : '',

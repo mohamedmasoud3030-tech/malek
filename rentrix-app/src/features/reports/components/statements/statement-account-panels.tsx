@@ -101,7 +101,7 @@ export function TenantStatementPanel({
             <ReportListRow
               key={row.contractId}
               title={row.tenantName ?? 'مستأجر غير محدد'}
-              subtitle={`${row.invoiceCount.toLocaleString('ar')} فواتير · عقد ${formatShortId(row.contractId)}`}
+              subtitle={`${row.invoiceCount.toLatinLocaleString('ar')} فواتير · عقد ${formatShortId(row.contractId)}`}
               meta={`متأخر ${formatMoney(row.totalOverdue)}`}
               value={<span dir="ltr">{formatMoney(row.totalOutstanding)}</span>}
             />
@@ -192,7 +192,7 @@ export function OwnerStatementPanel({
             <ReportListRow
               key={row.propertyId}
               title={row.propertyTitle ?? formatShortId(row.propertyId)}
-              subtitle={`${row.count.toLocaleString('ar')} حركة مصروفات`}
+              subtitle={`${row.count.toLatinLocaleString('ar')} حركة مصروفات`}
               value={<span dir="ltr">{formatMoney(row.total)}</span>}
             />
           ))}

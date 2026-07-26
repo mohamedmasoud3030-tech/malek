@@ -30,7 +30,7 @@ export function ArrearsSummaryCards({ overdueReport, agedReceivablesReport, arre
       <KpiCard label="فواتير متأخرة" value={overdueInvoiceCount} icon={FileWarning} accent="amber" />
       <KpiCard
         label="متوسط أيام التأخير"
-        value={`${averageDaysOverdue.toLocaleString(ARABIC_LOCALE, { maximumFractionDigits: 1 })} يوم`}
+        value={`${averageDaysOverdue.toLatinLocaleString(ARABIC_LOCALE, { maximumFractionDigits: 1 })} يوم`}
         icon={Clock}
         accent="amber"
       />

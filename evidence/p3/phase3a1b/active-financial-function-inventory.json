@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T18:53:15.334Z",
+  "generatedAt": "2026-07-26T15:04:18.243Z",
   "scope": "phase3a1b",
   "preRemediation": {
     "note": "replayed full chain EXCLUDING the Phase 3A-1B migration — the active definitions as found on origin/main",
@@ -93,7 +93,7 @@
         },
         "bodyMd5": "74d29d191b6fd13a8f2c3207c9c65a7a",
         "appCallSites": [
-          "/workspace/scratch/49ffb6599479/rentrixxx/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+          "/home/user/rentrixxx/rentrix-app/src/features/financials/invoices/invoiceService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -163,7 +163,7 @@
         },
         "bodyMd5": "e08d85c78e99f2ceee337a5c3123e616",
         "appCallSites": [
-          "/workspace/scratch/49ffb6599479/rentrixxx/rentrix-app/src/features/financials/payments/paymentService.ts"
+          "/home/user/rentrixxx/rentrix-app/src/features/financials/payments/paymentService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -196,8 +196,10 @@
         },
         "bodyMd5": "c188a4d3f10b200e2d1b64c6dac075c6",
         "appCallSites": [],
-        "internalCallers": [],
-        "classification": "internal-only (no direct callers)",
+        "internalCallers": [
+          "pay_owner_settlement_atomic"
+        ],
+        "classification": "active (internal)",
         "legacyNoLookupLimit1": false,
         "hardcodedAccountIds": false,
         "onConflictIdDoNothing": false,
@@ -227,7 +229,7 @@
         },
         "bodyMd5": "4bba49f9581d56f3ec0fd1fb802c5628",
         "appCallSites": [
-          "/workspace/scratch/49ffb6599479/rentrixxx/rentrix-app/src/features/financials/receipts/receiptService.ts"
+          "/home/user/rentrixxx/rentrix-app/src/features/financials/receipts/receiptService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -260,7 +262,7 @@
         },
         "bodyMd5": "7d8075c7938b472d2bd7adc90991fd6b",
         "appCallSites": [
-          "/workspace/scratch/49ffb6599479/rentrixxx/rentrix-app/src/features/financials/receipts/receiptService.ts"
+          "/home/user/rentrixxx/rentrix-app/src/features/financials/receipts/receiptService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -370,7 +372,7 @@
       },
       "bodyMd5": "e6ca8897425c194140ddfb2079c5af01",
       "appCallSites": [
-        "/workspace/scratch/49ffb6599479/rentrixxx/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+        "/home/user/rentrixxx/rentrix-app/src/features/financials/invoices/invoiceService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",
@@ -440,7 +442,7 @@
       },
       "bodyMd5": "512523d0d61c2ce80d2e05793d132264",
       "appCallSites": [
-        "/workspace/scratch/49ffb6599479/rentrixxx/rentrix-app/src/features/financials/payments/paymentService.ts"
+        "/home/user/rentrixxx/rentrix-app/src/features/financials/payments/paymentService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",
@@ -475,7 +477,8 @@
       "appCallSites": [],
       "internalCallers": [
         "find_payment_account_id",
-        "generate_invoices_from_active_contracts"
+        "generate_invoices_from_active_contracts",
+        "pay_owner_settlement_atomic"
       ],
       "classification": "active (internal)",
       "legacyNoLookupLimit1": false,
@@ -507,7 +510,7 @@
       },
       "bodyMd5": "4bba49f9581d56f3ec0fd1fb802c5628",
       "appCallSites": [
-        "/workspace/scratch/49ffb6599479/rentrixxx/rentrix-app/src/features/financials/receipts/receiptService.ts"
+        "/home/user/rentrixxx/rentrix-app/src/features/financials/receipts/receiptService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",
@@ -540,7 +543,7 @@
       },
       "bodyMd5": "42187196410f32dc15498193f2ca20f6",
       "appCallSites": [
-        "/workspace/scratch/49ffb6599479/rentrixxx/rentrix-app/src/features/financials/receipts/receiptService.ts"
+        "/home/user/rentrixxx/rentrix-app/src/features/financials/receipts/receiptService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",

@@ -50,9 +50,9 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
           rows: categoryRows.map((row) => [
             row.category,
             row.count,
-            `${row.total.toLocaleString('ar-OM')} ${currencySymbol}`,
+            `${row.total.toLatinLocaleString('ar-OM')} ${currencySymbol}`,
           ]),
-          totals: ['الإجمالي العام', '', `${totalExpenses.toLocaleString('ar-OM')} ${currencySymbol}`],
+          totals: ['الإجمالي العام', '', `${totalExpenses.toLatinLocaleString('ar-OM')} ${currencySymbol}`],
         },
         {
           title: 'توزيع المصروفات حسب العقارات',
@@ -60,11 +60,11 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
           rows: propertyRows.map((row) => [
             row.propertyTitle ?? formatShortId(row.propertyId),
             row.count,
-            `${row.total.toLocaleString('ar-OM')} ${currencySymbol}`,
+            `${row.total.toLatinLocaleString('ar-OM')} ${currencySymbol}`,
           ]),
         },
       ],
-      totalSummary: `إجمالي النفقات: ${totalExpenses.toLocaleString('ar-OM')} ${currencySymbol} | عدد السندات: ${expensesCount}`,
+      totalSummary: `إجمالي النفقات: ${totalExpenses.toLatinLocaleString('ar-OM')} ${currencySymbol} | عدد السندات: ${expensesCount}`,
     };
   };
 
@@ -111,8 +111,8 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
       <ResponsiveCardGrid>
         <KpiCard label="إجمالي المصروفات" value={formatMoney(totalExpenses)} icon={WalletCards} sub={`${expensesCount} مصروفات`} />
         <KpiCard label="متوسط المصروف" value={formatMoney(averageExpense)} icon={ReceiptText} sub="لكل حركة مسجلة" />
-        <KpiCard label="التصنيفات" value={categoryRows.length.toLocaleString('ar')} icon={ClipboardList} sub={topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات'} />
-        <KpiCard label="العقارات المتأثرة" value={propertyRows.length.toLocaleString('ar')} icon={Building2} sub={topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات'} />
+        <KpiCard label="التصنيفات" value={categoryRows.length.toLatinLocaleString('ar')} icon={ClipboardList} sub={topCategory ? `الأعلى: ${topCategory.category}` : 'لا توجد تصنيفات'} />
+        <KpiCard label="العقارات المتأثرة" value={propertyRows.length.toLatinLocaleString('ar')} icon={Building2} sub={topProperty ? `الأعلى: ${topProperty.propertyTitle ?? formatShortId(topProperty.propertyId)}` : 'لا توجد عقارات'} />
       </ResponsiveCardGrid>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -155,7 +155,7 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
                 <ReportListRow
                   key={row.category}
                   title={row.category}
-                  subtitle={`${row.count.toLocaleString('ar')} حركة`}
+                  subtitle={`${row.count.toLatinLocaleString('ar')} حركة`}
                   value={<span dir="ltr">{formatMoney(row.total)}</span>}
                 />
               ))}
@@ -178,7 +178,7 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
                 <ReportListRow
                   key={row.propertyId}
                   title={row.propertyTitle ?? formatShortId(row.propertyId)}
-                  subtitle={`${row.count.toLocaleString('ar')} حركة`}
+                  subtitle={`${row.count.toLatinLocaleString('ar')} حركة`}
                   value={<span dir="ltr">{formatMoney(row.total)}</span>}
                 />
               ))}

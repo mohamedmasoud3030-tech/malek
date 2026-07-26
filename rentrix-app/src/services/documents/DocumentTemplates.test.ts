@@ -76,7 +76,7 @@ describe('DocumentTemplates print/PDF pairs', () => {
     expect(invoiceModel.header.companyName).toBe('Rentrix LLC');
     expect(invoiceModel.header.title).toContain('فاتورة');
     expect(invoiceModel.kpis.map((kpi) => kpi.value)).toEqual(expect.arrayContaining(['أحمد علي', 'برج صحار / A-1']));
-    expect(invoiceModel.tables[0].rows.flat()).toEqual(expect.arrayContaining(['إيجار شهر يوليو', '١٠٠٫٠٠٠ ر.ع', '٥٫٠٠٠ ر.ع']));
+    expect(invoiceModel.tables[0].rows.flat()).toEqual(expect.arrayContaining(['إيجار شهر يوليو', '100.000 ر.ع', '5.000 ر.ع']));
 
     await t.downloadInvoicePdf({
       invoiceNumber: 'INV-100',
@@ -130,7 +130,7 @@ describe('DocumentTemplates print/PDF pairs', () => {
       reference: 'TRX-1',
     }, settings);
     expect(lastPrintedModel(r.downloadDocumentPdf).header.title).toContain('إيصال');
-    expect(lastPrintedModel(r.downloadDocumentPdf).tables[0].totals).toEqual(['المبلغ الإجمالي المقبوض', '٢٥٠٫٠٠٠ ر.ع']);
+    expect(lastPrintedModel(r.downloadDocumentPdf).tables[0].totals).toEqual(['المبلغ الإجمالي المقبوض', '250.000 ر.ع']);
 
     await t.printOwnerStatementDocument({
       ownerName: 'مالك العقار',

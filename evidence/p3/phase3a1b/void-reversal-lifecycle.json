@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-07-24T18:53:19.840Z",
+  "generatedAt": "2026-07-26T15:04:06.853Z",
   "scenario": "void → retry(same req) → retry(new req) → void-by-payment-id",
   "receipt2": {
-    "id": "2d227286-4929-4373-a711-6a410ae52fd1",
+    "id": "ffc0304f-ee39-4ae9-b8b6-680107eae1ba",
     "status": "VOID",
     "paymentStatus": "VOID",
     "reversalEntries": 2,

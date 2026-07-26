@@ -55,7 +55,7 @@ export function nextReceiptsLimit(limit: number, step: number = RECEIPTS_PAGE_SI
 }
 
 export function describeReceiptsViewport(loadedCount: number, canLoadMore: boolean) {
-  const loaded = loadedCount.toLocaleString('ar');
+  const loaded = loadedCount.toLatinLocaleString('ar');
   return canLoadMore
     ? `يعرض أحدث ${loaded} إيصال — توجد إيصالات أقدم لم تُحمّل بعد`
     : `يعرض كل الإيصالات المتاحة (${loaded})`;
@@ -235,8 +235,8 @@ function ReceiptsHistoryContent() {
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="الإيصالات المعروضة" value={filteredReceipts.length} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
         <KpiCard label="إجمالي التحصيل" value={formatMoney(totalAmount)} sub="الإيصالات المنشورة فقط" icon={WalletCards} accent="emerald" />
-        <KpiCard label="أحدث النتائج" value={receipts.length} sub={hasMoreReceipts ? `ضمن أحدث ${receiptsLimit.toLocaleString('ar')} إيصال` : 'كل الإيصالات المتاحة'} icon={CalendarDays} accent="sky" />
-        <KpiCard label="تحصيل اليوم" value={formatMoney(todayCollectedAmount)} sub={`${todayReceiptCount.toLocaleString('ar')} إيصال منشور اليوم`} icon={Wallet} accent="emerald" />
+        <KpiCard label="أحدث النتائج" value={receipts.length} sub={hasMoreReceipts ? `ضمن أحدث ${receiptsLimit.toLatinLocaleString('ar')} إيصال` : 'كل الإيصالات المتاحة'} icon={CalendarDays} accent="sky" />
+        <KpiCard label="تحصيل اليوم" value={formatMoney(todayCollectedAmount)} sub={`${todayReceiptCount.toLatinLocaleString('ar')} إيصال منشور اليوم`} icon={Wallet} accent="emerald" />
       </ResponsiveCardGrid>
 
       <FilterBar
@@ -340,7 +340,7 @@ function ReceiptsHistoryContent() {
               </p>
               {hasMoreReceipts ? (
                 <Button variant="outline" className="min-h-11 rounded-xl" onClick={loadMoreReceipts} disabled={receiptsQuery.isFetching}>
-                  {receiptsQuery.isFetching ? 'جارٍ التحميل...' : `عرض ${RECEIPTS_PAGE_SIZE.toLocaleString('ar')} إيصال أقدم`}
+                  {receiptsQuery.isFetching ? 'جارٍ التحميل...' : `عرض ${RECEIPTS_PAGE_SIZE.toLatinLocaleString('ar')} إيصال أقدم`}
                 </Button>
               ) : null}
             </div>

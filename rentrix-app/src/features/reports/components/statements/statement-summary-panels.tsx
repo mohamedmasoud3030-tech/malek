@@ -64,10 +64,10 @@ export function OfficeSummaryPanel({
       icon={Landmark}
     >
       <ResponsiveCardGrid className="p-4" gap="sm">
-        <KpiCard label="فواتير الفترة" value={formatMoney(invoiced)} icon={ReceiptText} sub={`${invoicesCount.toLocaleString('ar')} فواتير`} compact />
-        <KpiCard label="تحصيلات الفترة" value={formatMoney(collections)} icon={WalletCards} sub={`${paymentsCount.toLocaleString('ar')} مدفوعات`} compact />
-        <KpiCard label="مصروفات الفترة" value={formatMoney(expenses)} icon={WalletCards} sub={`${expensesCount.toLocaleString('ar')} مصروفات`} compact />
-        <KpiCard label="الرصيد المستحق" value={formatMoney(outstanding)} icon={Scale} sub={`${receiptsCount.toLocaleString('ar')} إيصالات`} compact />
+        <KpiCard label="فواتير الفترة" value={formatMoney(invoiced)} icon={ReceiptText} sub={`${invoicesCount.toLatinLocaleString('ar')} فواتير`} compact />
+        <KpiCard label="تحصيلات الفترة" value={formatMoney(collections)} icon={WalletCards} sub={`${paymentsCount.toLatinLocaleString('ar')} مدفوعات`} compact />
+        <KpiCard label="مصروفات الفترة" value={formatMoney(expenses)} icon={WalletCards} sub={`${expensesCount.toLatinLocaleString('ar')} مصروفات`} compact />
+        <KpiCard label="الرصيد المستحق" value={formatMoney(outstanding)} icon={Scale} sub={`${receiptsCount.toLatinLocaleString('ar')} إيصالات`} compact />
       </ResponsiveCardGrid>
     </ReportPanel>
   );
@@ -104,7 +104,7 @@ export function RegulatorySummaryPanels({
           <ResponsiveCardGrid className="p-4" gap="sm">
             <KpiCard label="المبيعات الخاضعة" value={formatMoney(vatReturn?.totalSalesAmount ?? 0)} icon={ReceiptText} compact />
             <KpiCard label="إجمالي الضريبة" value={formatMoney(vatReturn?.totalTaxAmount ?? 0)} icon={Scale} compact />
-            <KpiCard label="عدد الفواتير" value={(vatReturn?.invoiceCount ?? 0).toLocaleString('ar')} icon={ReceiptText} compact />
+            <KpiCard label="عدد الفواتير" value={(vatReturn?.invoiceCount ?? 0).toLatinLocaleString('ar')} icon={ReceiptText} compact />
             <KpiCard label="الفترة" value={vatReturn?.period.from ? 'محددة' : '—'} icon={CalendarRange} sub={vatReturn?.period.from && vatReturn.period.to ? `${vatReturn.period.from} — ${vatReturn.period.to}` : 'لا توجد فترة'} compact />
           </ResponsiveCardGrid>
         )}

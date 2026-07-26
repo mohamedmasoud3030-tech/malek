@@ -216,7 +216,7 @@ export function DepositsWorkspace() {
         <KpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" />
         <KpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} accent="rose" sub="أضرار وصيانة" />
         <KpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} accent="emerald" sub="تم رده" />
-        <KpiCard label="عدد الودائع" value={deposits.length.toLocaleString('ar')} icon={FileCheck} accent="sky" sub="سجلات" />
+        <KpiCard label="عدد الودائع" value={deposits.length.toLatinLocaleString('ar')} icon={FileCheck} accent="sky" sub="سجلات" />
       </ResponsiveCardGrid>
 
       <AsyncContentState

@@ -112,7 +112,7 @@ export function PaymentTermsSettingsSection() {
             <div>
               <p className="font-black">{term.name}</p>
               <p className="text-muted-foreground">
-                {(term.installments ?? 1).toLocaleString('ar')} دفعات · {paymentTermsIntervalLabels[(term.interval_type as PaymentTermsFormValues['interval_type'])] ?? term.interval_type ?? 'غير محدد'}
+                {(term.installments ?? 1).toLatinLocaleString('ar')} دفعات · {paymentTermsIntervalLabels[(term.interval_type as PaymentTermsFormValues['interval_type'])] ?? term.interval_type ?? 'غير محدد'}
                 {term.is_active === false ? ' · غير نشط' : ''}
               </p>
               {term.notes ? <p className="mt-1 text-xs text-muted-foreground">{term.notes}</p> : null}

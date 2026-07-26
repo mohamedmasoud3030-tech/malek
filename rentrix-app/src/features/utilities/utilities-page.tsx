@@ -203,7 +203,7 @@ export function UtilitiesPage() {
       />
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="العدادات المسجلة" value={meters.length.toLocaleString('ar')} icon={Zap} accent="primary" sub="عدادات نشطة" />
+        <KpiCard label="العدادات المسجلة" value={meters.length.toLatinLocaleString('ar')} icon={Zap} accent="primary" sub="عدادات نشطة" />
         <KpiCard label="إجمالي الفواتير" value={formatMoney(totalBilled)} icon={Activity} accent="sky" sub="مطالبات مسجلة" />
         <KpiCard label="المسدد" value={formatMoney(totalPaid)} icon={CheckCircle2} accent="emerald" sub="مدفوعات" />
         <KpiCard label="المتبقي" value={formatMoney(totalUnpaid)} icon={AlertCircle} accent="rose" sub="مستحق" />

@@ -8,7 +8,7 @@ type ArrearsAgingBucketsProps = Readonly<{
 
 function formatPercentage(value: number | null) {
   if (value === null) return EMPTY_FIELD_VALUE;
-  return `${value.toLocaleString(ARABIC_LOCALE, { maximumFractionDigits: 1 })}%`;
+  return `${value.toLatinLocaleString(ARABIC_LOCALE, { maximumFractionDigits: 1 })}%`;
 }
 
 export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucketsProps) {
@@ -36,7 +36,7 @@ export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucke
                 <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold text-secondary-foreground">{formatPercentage(percentage)}</span>
               </div>
               <p className="mt-3 text-lg font-black">{formatMoney(amount)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{count.toLocaleString(ARABIC_LOCALE)} فاتورة</p>
+              <p className="mt-1 text-xs text-muted-foreground">{count.toLatinLocaleString(ARABIC_LOCALE)} فاتورة</p>
             </div>
           );
         })}

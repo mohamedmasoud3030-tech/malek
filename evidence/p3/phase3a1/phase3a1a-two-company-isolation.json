@@ -1,17 +1,12 @@
 {
-  "phase": "Phase 3A-1A",
-  "evidenceType": "two-company isolation contract",
-  "sourceTest": "rentrix-app/src/p3/phase3a1a-execution.test.ts",
-  "identities": ["company A admin", "company B admin"],
-  "assertions": [
-    "account helpers are not executable by PUBLIC, anon or authenticated",
-    "financial RPCs derive company from JWT app_metadata",
-    "cross-company expense identifiers are rejected",
-    "cross-company contract and deposit identifiers are rejected",
-    "journal rows use accounts and company_id from the active company",
-    "a company B request cannot receive company A cached response"
-  ],
-  "temporaryConstraint": "Global UNIQUE(accounts.no) remains until Phase 3A-2; a second-company duplicate number fails explicitly with ACCOUNT_NUMBER_GLOBAL_UNIQUENESS_BLOCKED.",
-  "passCondition": "The source test must pass in the repository full-test CI job on the reviewed commit.",
-  "productionMutation": false
+  "generatedAt": "2026-07-26T15:04:43.818Z",
+  "crossCompanyIdempotency": {
+    "isolated": true,
+    "requestId": "phase3a-expense-shared"
+  },
+  "helperAcl": {
+    "require_auth": false,
+    "ensure_auth": false,
+    "ensure_service": true
+  }
 }

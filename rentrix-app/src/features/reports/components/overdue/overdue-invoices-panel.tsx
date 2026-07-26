@@ -33,7 +33,7 @@ export function OverdueInvoicesPanel({
                 key={row.invoiceId}
                 title={row.tenantName ?? 'مستأجر غير محدد'}
                 subtitle={`${formatDate(row.dueDate)} · ${formatInvoiceStatusLabel(row.status)}`}
-                badge={<span className="text-xs font-bold text-destructive">{row.daysOverdue.toLocaleString('ar')} يوم</span>}
+                badge={<span className="text-xs font-bold text-destructive">{row.daysOverdue.toLatinLocaleString('ar')} يوم</span>}
                 meta={<SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={`عقد ${formatShortId(row.contractId)}`} />}
                 stats={(
                   <div className="flex items-center justify-between gap-2">
@@ -54,7 +54,7 @@ export function OverdueInvoicesPanel({
                 { key: 'contract', header: 'العقد', render: (row) => <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={formatShortId(row.contractId)} /> },
                 { key: 'tenant', header: 'المستأجر', render: (row) => row.tenantName ?? '—' },
                 { key: 'dueDate', header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
-                { key: 'days', header: 'التأخير', render: (row) => `${row.daysOverdue.toLocaleString('ar')} يوم` },
+                { key: 'days', header: 'التأخير', render: (row) => `${row.daysOverdue.toLatinLocaleString('ar')} يوم` },
                 { key: 'remaining', header: 'المتبقي', render: (row) => <span className="font-bold text-destructive" dir="ltr">{formatMoney(row.remainingAmount)}</span> },
                 { key: 'status', header: 'الحالة', render: (row) => formatInvoiceStatusLabel(row.status) },
               ]}

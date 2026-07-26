@@ -1,26 +1,25 @@
 {
-  "phase": "Phase 3A-1A",
-  "evidenceType": "catalog security contract",
-  "sourceTests": [
-    "rentrix-app/src/p3/phase3a1a-execution.test.ts",
-    "rentrix-app/src/p3-phase3a1a-account-resolution.test.ts"
-  ],
+  "generatedAt": "2026-07-26T15:04:43.818Z",
   "functions": [
-    "require_company_account_id(uuid,text)",
-    "ensure_company_account(uuid,text,text)",
-    "create_expense_with_journal_atomic(jsonb)",
-    "update_expense_with_journal_atomic(jsonb)",
-    "create_deposit_atomic(jsonb)",
-    "deduct_deposit_atomic(jsonb)",
-    "refund_deposit_atomic(jsonb)"
-  ],
-  "assertions": [
-    "SECURITY DEFINER financial RPCs use search_path=public, pg_temp",
-    "account helpers are not directly executable by PUBLIC, anon or authenticated",
-    "active account resolution is constrained by company_id and account number",
-    "active expense and deposit paths do not select global fixed account IDs",
-    "canonical wrappers preserve current public signatures"
-  ],
-  "passCondition": "Both source tests and full migration replay must pass on the reviewed commit.",
-  "productionMutation": false
+    {
+      "proname": "create_expense_with_journal_atomic",
+      "prosecdef": true,
+      "config": "search_path=public, pg_temp"
+    },
+    {
+      "proname": "deduct_deposit_atomic",
+      "prosecdef": true,
+      "config": "search_path=public, pg_temp"
+    },
+    {
+      "proname": "refund_deposit_atomic",
+      "prosecdef": true,
+      "config": "search_path=public, pg_temp"
+    },
+    {
+      "proname": "update_expense_with_journal_atomic",
+      "prosecdef": true,
+      "config": "search_path=public, pg_temp"
+    }
+  ]
 }

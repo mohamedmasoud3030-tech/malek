@@ -67,15 +67,15 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
           rows: rows.map((row) => [
             row.paymentDate,
             row.paymentsCount,
-            `${row.methodTotals.cash.toLocaleString('ar-OM')}`,
-            `${row.methodTotals.bank_transfer.toLocaleString('ar-OM')}`,
-            `${row.methodTotals.check.toLocaleString('ar-OM')}`,
-            `${row.totalPaid.toLocaleString('ar-OM')} ${currencySymbol}`,
+            `${row.methodTotals.cash.toLatinLocaleString('ar-OM')}`,
+            `${row.methodTotals.bank_transfer.toLatinLocaleString('ar-OM')}`,
+            `${row.methodTotals.check.toLatinLocaleString('ar-OM')}`,
+            `${row.totalPaid.toLatinLocaleString('ar-OM')} ${currencySymbol}`,
           ]),
-          totals: ['الإجمالي العام', '', '', '', '', `${totalCollected.toLocaleString('ar-OM')} ${currencySymbol}`],
+          totals: ['الإجمالي العام', '', '', '', '', `${totalCollected.toLatinLocaleString('ar-OM')} ${currencySymbol}`],
         },
       ],
-      totalSummary: `إجمالي المبلغ المحصل: ${totalCollected.toLocaleString('ar-OM')} ${currencySymbol} | كفاءة التحصيل: ${Math.round(collectionRate)}%`,
+      totalSummary: `إجمالي المبلغ المحصل: ${totalCollected.toLatinLocaleString('ar-OM')} ${currencySymbol} | كفاءة التحصيل: ${Math.round(collectionRate)}%`,
     };
   };
 
@@ -122,10 +122,10 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   return (
     <div className="space-y-4">
       <ResponsiveCardGrid>
-        <KpiCard label="إجمالي التحصيل" value={formatMoney(totalCollected)} icon={WalletCards} sub={`${paymentsCount.toLocaleString('ar')} مدفوعات`} />
-        <KpiCard label="كفاءة التحصيل" value={`${Math.round(collectionRate).toLocaleString('ar')}%`} icon={CalendarDays} sub={`${formatMoney(summary?.outstanding ?? 0)} مستحق`} />
-        <KpiCard label="متوسط الدفعة" value={formatMoney(averagePayment)} icon={ReceiptText} sub={`${receiptRows.length.toLocaleString('ar')} إيصالات متاحة`} />
-        <KpiCard label="العقود النشطة" value={activeContracts.toLocaleString('ar')} icon={Building2} sub={`${rentRollRows.length.toLocaleString('ar')} عقود بالسجل`} />
+        <KpiCard label="إجمالي التحصيل" value={formatMoney(totalCollected)} icon={WalletCards} sub={`${paymentsCount.toLatinLocaleString('ar')} مدفوعات`} />
+        <KpiCard label="كفاءة التحصيل" value={`${Math.round(collectionRate).toLatinLocaleString('ar')}%`} icon={CalendarDays} sub={`${formatMoney(summary?.outstanding ?? 0)} مستحق`} />
+        <KpiCard label="متوسط الدفعة" value={formatMoney(averagePayment)} icon={ReceiptText} sub={`${receiptRows.length.toLatinLocaleString('ar')} إيصالات متاحة`} />
+        <KpiCard label="العقود النشطة" value={activeContracts.toLatinLocaleString('ar')} icon={Building2} sub={`${rentRollRows.length.toLatinLocaleString('ar')} عقود بالسجل`} />
       </ResponsiveCardGrid>
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

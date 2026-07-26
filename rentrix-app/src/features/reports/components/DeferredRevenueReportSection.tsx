@@ -47,10 +47,10 @@ export function DeferredRevenueReportSection({
       {
         title: 'ملخص الاستحقاق',
         rows: [
-          { label: 'التحصيلات المقدمة الموثقة', value: `${schedule.totalUpfrontCollections.toLocaleString('ar-OM')} ${currencySymbol}` },
-          { label: 'الإيراد المعترف به للشهر الحالي', value: `${schedule.totalRecognizedRevenueCurrentMonth.toLocaleString('ar-OM')} ${currencySymbol}` },
-          { label: 'الإيراد المعترف به حتى التاريخ', value: `${schedule.totalRecognizedRevenueToDate.toLocaleString('ar-OM')} ${currencySymbol}` },
-          { label: 'الالتزام المؤجل المتبقي', value: `${schedule.totalDeferredLiability.toLocaleString('ar-OM')} ${currencySymbol}` },
+          { label: 'التحصيلات المقدمة الموثقة', value: `${schedule.totalUpfrontCollections.toLatinLocaleString('ar-OM')} ${currencySymbol}` },
+          { label: 'الإيراد المعترف به للشهر الحالي', value: `${schedule.totalRecognizedRevenueCurrentMonth.toLatinLocaleString('ar-OM')} ${currencySymbol}` },
+          { label: 'الإيراد المعترف به حتى التاريخ', value: `${schedule.totalRecognizedRevenueToDate.toLatinLocaleString('ar-OM')} ${currencySymbol}` },
+          { label: 'الالتزام المؤجل المتبقي', value: `${schedule.totalDeferredLiability.toLatinLocaleString('ar-OM')} ${currencySymbol}` },
         ],
       },
       {
@@ -60,9 +60,9 @@ export function DeferredRevenueReportSection({
           formatShortId(row.contractId),
           row.tenantName,
           row.propertyTitle,
-          `${row.totalCollected.toLocaleString('ar-OM')} ${currencySymbol}`,
-          `${row.monthlyAmortizationAmount.toLocaleString('ar-OM')} ${currencySymbol}`,
-          `${row.deferredRevenueRemaining.toLocaleString('ar-OM')} ${currencySymbol}`,
+          `${row.totalCollected.toLatinLocaleString('ar-OM')} ${currencySymbol}`,
+          `${row.monthlyAmortizationAmount.toLatinLocaleString('ar-OM')} ${currencySymbol}`,
+          `${row.deferredRevenueRemaining.toLatinLocaleString('ar-OM')} ${currencySymbol}`,
         ]),
       },
     ],
@@ -125,9 +125,9 @@ export function DeferredRevenueReportSection({
   return (
     <div className="space-y-4">
       <ResponsiveCardGrid>
-        <KpiCard label="تحصيلات مقدمة موثقة" value={formatMoney(schedule.totalUpfrontCollections)} icon={WalletCards} sub={`${audit.candidateReceiptsCount.toLocaleString('ar')} إيصالات`} />
+        <KpiCard label="تحصيلات مقدمة موثقة" value={formatMoney(schedule.totalUpfrontCollections)} icon={WalletCards} sub={`${audit.candidateReceiptsCount.toLatinLocaleString('ar')} إيصالات`} />
         <KpiCard label="اعتراف الشهر الحالي" value={formatMoney(schedule.totalRecognizedRevenueCurrentMonth)} icon={CalendarRange} sub={`حتى ${asOf}`} />
-        <KpiCard label="معترف به حتى التاريخ" value={formatMoney(schedule.totalRecognizedRevenueToDate)} icon={Scale} sub={`${audit.candidateContractsCount.toLocaleString('ar')} عقود`} />
+        <KpiCard label="معترف به حتى التاريخ" value={formatMoney(schedule.totalRecognizedRevenueToDate)} icon={Scale} sub={`${audit.candidateContractsCount.toLatinLocaleString('ar')} عقود`} />
         <KpiCard label="التزام مؤجل متبقٍ" value={formatMoney(schedule.totalDeferredLiability)} icon={Link2} sub="سيُعترف به خلال مدد العقود" />
       </ResponsiveCardGrid>
 
@@ -158,7 +158,7 @@ export function DeferredRevenueReportSection({
                     </a>
                   )}
                   subtitle={`${row.propertyTitle} · ${row.periodStart} — ${row.periodEnd}`}
-                  meta={`${row.elapsedMonths.toLocaleString('ar')} من ${row.totalMonths.toLocaleString('ar')} شهر`}
+                  meta={`${row.elapsedMonths.toLatinLocaleString('ar')} من ${row.totalMonths.toLatinLocaleString('ar')} شهر`}
                   value={(
                     <div className="text-end">
                       <p dir="ltr">{formatMoney(row.deferredRevenueRemaining)}</p>
@@ -186,7 +186,7 @@ export function DeferredRevenueReportSection({
               <ReportProgress
                 label="تغطية ربط الإيصالات"
                 value={linkCoverage}
-                helper={`${audit.linkedReceiptsCount.toLocaleString('ar')} من ${audit.postedReceiptsCount.toLocaleString('ar')} إيصالات منشورة`}
+                helper={`${audit.linkedReceiptsCount.toLatinLocaleString('ar')} من ${audit.postedReceiptsCount.toLatinLocaleString('ar')} إيصالات منشورة`}
                 tone={linkCoverage >= 90 ? 'good' : linkCoverage >= 70 ? 'warning' : 'critical'}
               />
               <div className="grid grid-cols-2 gap-2">
@@ -211,7 +211,7 @@ function SourceMetric({ label, value, amount }: Readonly<{ label: string; value:
   return (
     <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
       <p className="text-[10px] font-semibold text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-extrabold tabular-nums" dir="ltr">{value.toLocaleString('ar')}</p>
+      <p className="mt-1 text-lg font-extrabold tabular-nums" dir="ltr">{value.toLatinLocaleString('ar')}</p>
       {amount > 0 ? <p className="mt-1 text-[10px] text-muted-foreground" dir="ltr">{formatMoney(amount)}</p> : null}
     </div>
   );

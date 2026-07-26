@@ -22,7 +22,7 @@
   {
     "name": "create_expense_with_journal_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "create_owner_agreement_atomic",
@@ -37,7 +37,7 @@
   {
     "name": "deduct_deposit_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "pay_owner_settlement_atomic",
@@ -62,7 +62,7 @@
   {
     "name": "refund_deposit_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "renew_contract_atomic",
@@ -152,7 +152,7 @@
   {
     "name": "update_expense_with_journal_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "update_owner_agreement_atomic",
@@ -172,11 +172,11 @@
   {
     "name": "void_receipt_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+    "acl": "{postgres=X/postgres}"
   },
   {
     "name": "void_receipt_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres}"
+    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
   }
 ]

@@ -1,26 +1,74 @@
 {
-  "phase": "Phase 3A-1A",
-  "evidenceType": "execution-backed lifecycle contract",
-  "sourceTest": "rentrix-app/src/p3/phase3a1a-execution.test.ts",
-  "databaseHarness": "full-chain PGlite replay",
-  "covered": {
-    "expense": [
-      "create",
-      "same-request retry",
-      "amount and date update",
-      "balanced reversal and repost",
-      "company-scoped property, contract, cost center and expense"
-    ],
-    "deposit": [
-      "receive from canonical contract",
-      "same-request retry",
-      "partial deduction",
-      "partial refund",
-      "over-refund rejection",
-      "canonical property enforcement",
-      "balanced company journals"
-    ]
+  "generatedAt": "2026-07-26T15:04:43.818Z",
+  "expense": {
+    "created": {
+      "success": true,
+      "expense_id": "1a5a0b39-7b52-4e02-b5dd-da27269cfe57",
+      "expense_no": "EXP-20260726-phase3",
+      "idempotent": false,
+      "request_id": "phase3a-expense-shared"
+    },
+    "retried": {
+      "success": true,
+      "expense_id": "1a5a0b39-7b52-4e02-b5dd-da27269cfe57",
+      "expense_no": "EXP-20260726-phase3",
+      "idempotent": true,
+      "request_id": "phase3a-expense-shared"
+    },
+    "updated": {
+      "success": true,
+      "expense_id": "1a5a0b39-7b52-4e02-b5dd-da27269cfe57",
+      "idempotent": false,
+      "new_amount": 15.125,
+      "old_amount": 12.35,
+      "request_id": "phase3a-expense-update",
+      "date_changed": true,
+      "amount_changed": true
+    },
+    "balance": {
+      "debit": 39.83,
+      "credit": 39.83,
+      "companyOk": true
+    }
   },
-  "passCondition": "The source test must pass in the repository full-test CI job on the reviewed commit.",
-  "productionMutation": false
+  "deposit": {
+    "created": {
+      "amount": 100,
+      "success": true,
+      "deposit_id": "a7392e67-64fc-4621-9765-b6251fe5fc5c",
+      "request_id": "phase3a-deposit-create"
+    },
+    "retried": {
+      "amount": 100,
+      "success": true,
+      "deposit_id": "a7392e67-64fc-4621-9765-b6251fe5fc5c",
+      "idempotent": true,
+      "request_id": "phase3a-deposit-create"
+    },
+    "deducted": {
+      "success": true,
+      "deducted": 25,
+      "remaining": 75,
+      "deposit_id": "a7392e67-64fc-4621-9765-b6251fe5fc5c",
+      "new_status": "partially_deducted",
+      "request_id": "phase3a-deposit-deduct"
+    },
+    "refunded": {
+      "success": true,
+      "refunded": 30,
+      "remaining": 45,
+      "deposit_id": "a7392e67-64fc-4621-9765-b6251fe5fc5c",
+      "request_id": "phase3a-deposit-refund"
+    },
+    "balance": {
+      "debit": 155,
+      "credit": 155,
+      "companyOk": true
+    },
+    "deposit": {
+      "remaining": "45.00",
+      "company_id": "c3000000-0000-4000-8000-000000000001",
+      "property_id": "d3000000-0000-4000-8000-000000000001"
+    }
+  }
 }

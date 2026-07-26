@@ -1,4 +1,5 @@
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+import '@/lib/formatters';
 import type { ReceiptRecord } from '@/features/financials/receipts/receiptService';
 import {
   calculateDeferredRevenueSchedule,
@@ -33,7 +34,7 @@ function safeRatio(numerator: number, denominator: number) {
 }
 
 export function formatPercent(value: number) {
-  return `${Math.round(value).toLocaleString('ar')}%`;
+  return `${Math.round(value).toLatinLocaleString('ar')}%`;
 }
 
 export function getRatioTone(value: number, goodThreshold: number, warningThreshold: number): ReportHealthInsight['tone'] {
