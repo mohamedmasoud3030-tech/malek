@@ -2,7 +2,7 @@
 
 ## What Rentrix is
 
-Rentrix is a web application for managing rental property operations for a single real-estate office: properties, units, owners, tenants, contracts, invoicing, payments/receipts, expenses, maintenance, and reporting. The UI is Arabic-first (route titles and navigation labels are in Arabic; see `rentrix-app/src/components/layout/app-nav-items.ts`).
+Rentrix is a web application for managing rental property operations for a single real-estate office: properties, units, owners, tenants, contracts, invoicing, payments/receipts, expenses, maintenance, and reporting. The UI is Arabic-first (route titles and navigation labels are in Arabic; see `rentrix-app/src/app/navigation/app-nav-items.ts`).
 
 ## Intended users
 
@@ -11,13 +11,13 @@ Office staff who operate day-to-day property management tasks: recording contrac
 ## Areas of the product (as reflected in navigation and routes)
 
 - **Portfolio**: Properties, Units, Lands
-- **People & relationships**: People directory, Owners (with owner agreements), Tenants
-- **Operations**: Contracts, Maintenance, Communication log
-- **Financials & collections**: Invoices, Receipts, Expenses, Arrears
-- **Reporting**: Reports (collections, occupancy, overdue, statements, overview)
-- **Sales**: Leads, Commissions
-- **Settings**: Company settings, cost centers, payment terms, role simulation
-- **System**: Audit log, data integrity checks, system governance
+- **Relationships & customers**: Owners (with owner agreements), Tenants, People directory, Leads, Communication log
+- **Contracts & operations**: Contracts, Maintenance, Utilities, Automation, Documents vault
+- **Financials**: Financial overview, Invoices, Receipts, Expenses, Arrears, Deposits, Owner settlements, Bank reconciliation, Commissions
+- **Reports & decisions**: Reports (collections, occupancy, overdue, statements, overview), read-only AI assistant
+- **Administration & governance**: Company settings, Change password, Audit log, Data integrity checks, System governance
+
+The phone bottom bar intentionally exposes five stable daily hubs only: Dashboard, Properties, Contracts, Financial overview, and Reports. Every authorized workspace remains available in the full mobile drawer. This avoids seven competing bottom-bar destinations and gives invoices, receipts, expenses, deposits, and settlements one predictable financial entry point.
 
 Each area above corresponds to a route under `rentrix-app/src/routes/` and a feature folder under `rentrix-app/src/features/`. Treat this list as a map to the code, not a claim about completeness of any one area — check `docs/CURRENT_STATE.md` and the relevant feature folder before relying on specific behavior.
 
@@ -27,4 +27,4 @@ The application exists to give a property management office one system of record
 
 ## Product decision: receipts and collections
 
-Until a product decision changes it, collection reporting is based on posted payments. Voided receipts/payments are retained as history but are not revenue/collection. Owner settlements, multi-currency, deposits, and deferred revenue remain separate product decisions and should not be inferred from receipt reporting work.
+Until a product decision changes it, collection reporting is based on posted payments. Voided receipts/payments are retained as history but are not revenue/collection. Owner settlements and tenant deposits now have dedicated, auditable lifecycles; multi-currency and deferred-revenue accounting remain separate product decisions and must not be inferred from receipt reporting work.

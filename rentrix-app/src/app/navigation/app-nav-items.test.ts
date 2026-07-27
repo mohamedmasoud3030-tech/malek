@@ -118,31 +118,51 @@ describe('app route and navigation parity', () => {
     expect(navPaths).toEqual(expect.arrayContaining([...approvedExpansionRoutes]));
   });
 
-  it('covers the daily field-work loop in mobile bottom navigation while the drawer carries the full route inventory', () => {
-    expect(mobileNavItems).toHaveLength(7);
+  it('keeps mobile bottom navigation focused on five daily hubs while the drawer carries the full route inventory', () => {
+    expect(mobileNavItems).toHaveLength(5);
     expect(mobileNavItems.map(([to]) => to)).toEqual([
       '/dashboard',
       '/properties',
       '/contracts',
-      '/maintenance',
-      '/invoices',
-      '/receipts',
+      '/financials',
       '/reports',
     ]);
   });
 
-  it('exposes every standalone financial workspace in the sidebar financials group', () => {
+  it('exposes every standalone financial workspace in the sidebar financials group without duplicating children in mobile navigation', () => {
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
     const financialsGroup = navGroups.find(([sectionTitle]) => sectionTitle === 'المالية');
     const financialsPaths = financialsGroup?.[1].map(([to]) => to) ?? [];
 
     expect(financialsPaths).toEqual(
-      expect.arrayContaining(['/financials', '/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation']),
+      expect.arrayContaining(['/financials', '/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions']),
     );
+    expect(mobileNavPaths).toContain('/financials');
+    expect(mobileNavPaths).not.toContain('/invoices');
+    expect(mobileNavPaths).not.toContain('/receipts');
     expect(mobileNavPaths).not.toContain('/arrears');
     expect(mobileNavPaths).not.toContain('/owner-settlements');
     expect(mobileNavPaths).not.toContain('/expenses');
     expect(mobileNavPaths).not.toContain('/bank-reconciliation');
+  });
+
+  it('groups every feature by the office workflow and keeps account security discoverable', () => {
+    const groupPaths = new Map(
+      navGroups.map(([sectionTitle, items]) => [sectionTitle, items.map(([to]) => to)]),
+    );
+
+    expect(groupPaths.get('العلاقات والعملاء')).toEqual(
+      expect.arrayContaining(['/owners', '/tenants', '/people', '/leads', '/communication']),
+    );
+    expect(groupPaths.get('العقود والتشغيل')).toEqual(
+      expect.arrayContaining(['/contracts', '/maintenance', '/utilities', '/automation', '/documents-vault']),
+    );
+    expect(groupPaths.get('التقارير والقرار')).toEqual(
+      expect.arrayContaining(['/reports', '/ai-assistant']),
+    );
+    expect(groupPaths.get('الإدارة والحوكمة')).toEqual(
+      expect.arrayContaining(['/settings', '/change-password', '/audit-log', '/data-integrity', '/system']),
+    );
   });
 
   it('keeps tenants and people visually distinct with different icons', () => {

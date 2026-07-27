@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileCheck, FileSpreadsheet, FileText, FolderKanban, HandCoins, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserPlus, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
+import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileCheck, FileSpreadsheet, FileText, FolderKanban, HandCoins, KeyRound, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserPlus, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -13,23 +13,24 @@ export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]
 // instead of being buried inside the old /financials hub tabs.
 export const navGroups: readonly NavGroup[] = [
   ['الرئيسية', [['/dashboard', 'dashboard', 'ملخص الأداء اليومي', LayoutDashboard]]],
-  ['إدارة العقارات', [
+  ['المحفظة العقارية', [
     ['/properties', 'properties', 'ملفات العقارات والأصول', Building2],
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
     ['/lands', 'lands', 'إدارة قطع الأراضي ومتابعة حالتها', MapPinned, 'lands.view'],
   ]],
-  ['الأطراف', [
+  ['العلاقات والعملاء', [
     ['/owners', 'owners', 'إدارة ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
     ['/tenants', 'tenants', 'بيانات المستأجرين', UserCheck],
     ['/people', 'peopleDirectory', 'دليل جهات التعامل', Users],
     ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
+    ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
   ]],
   ['العقود والتشغيل', [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
     ['/utilities', 'utilities', 'عدادات الكهرباء والمياه وفواتير المرافق', Zap],
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'automation.view'],
-    ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
+    ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
   ]],
   ['المالية', [
     ['/financials', 'financialOverview', 'نظرة شاملة على التحصيلات والمصروفات والذمم', PieChart],
@@ -40,8 +41,9 @@ export const navGroups: readonly NavGroup[] = [
     ['/deposits', 'deposits', 'تتبع مبالغ أمانات وتأمينات المستأجرين', FileCheck, 'financial.deposits.view'],
     ['/owner-settlements', 'ownerSettlements', 'إعداد تسويات الملاك واعتمادها وصرفها', HandCoins, 'financial.owner_settlements.view'],
     ['/bank-reconciliation', 'bankReconciliation', 'مطابقة السجلات مع الحسابات البنكية', Landmark, 'financial.bank_reconciliation.view'],
+    ['/commissions', 'commissions', 'تتبع عمولات المكتب وحالات الاستحقاق', BadgeDollarSign, 'commissions.view'],
   ]],
-  ['التقارير والتحليل', [
+  ['التقارير والقرار', [
     [
       '/reports',
       'reportsAndStatements',
@@ -54,27 +56,25 @@ export const navGroups: readonly NavGroup[] = [
       'مساعد قراءة فقط لتلخيص المتأخرات والتجديدات واللقطات المالية',
       Bot,
     ],
-    ['/commissions', 'commissions', 'تتبع عمولات المكتب وحالات الاستحقاق', BadgeDollarSign, 'commissions.view'],
   ]],
-  ['المستندات والحوكمة', [
-    ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
+  ['الإدارة والحوكمة', [
     ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، وسجلات الحوكمة', Settings, 'settings.manage'],
+    ['/change-password', 'changePassword', 'تغيير كلمة مرور حسابك وإنهاء استخدام الكلمات الضعيفة', KeyRound, 'auth.password.change'],
     ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة والعمليات', ListChecks, 'audit.view'],
     ['/data-integrity', 'dataIntegrity', 'فحوصات سلامة البيانات والتطابق', SearchCheck, 'integrity.view'],
     ['/system', 'system', 'إدارة حوكمة النظام وإسناد الأدوار', ShieldCheck, 'system.view'],
   ]],
 ];
 
-// Field-work first: dashboard, assets, contracts, maintenance, then the daily
-// money loop (invoices + receipts) and reports. Everything else stays one tap
-// away inside the mobile drawer.
+// Five stable hubs fit on a phone without horizontal scrolling or competing
+// financial destinations. Maintenance, invoices, receipts, and every advanced
+// workspace remain one tap away in the full mobile drawer; /financials is their
+// purpose-built daily directory.
 export const mobileNavItems: readonly MobileNavItem[] = [
   ['/dashboard', 'dashboard', LayoutDashboard],
   ['/properties', 'properties', Building2],
   ['/contracts', 'contracts', FileText],
-  ['/maintenance', 'maintenance', Wrench, 'maintenance.view'],
-  ['/invoices', 'invoices', FileSpreadsheet],
-  ['/receipts', 'receipts', ReceiptText],
+  ['/financials', 'financialOverview', PieChart],
   ['/reports', 'reports', BarChart3],
 ];
 

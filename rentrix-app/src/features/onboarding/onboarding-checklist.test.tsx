@@ -39,16 +39,47 @@ describe('OnboardingChecklist unnecessary query gating (#1168)', () => {
   it('does not enable the owners query when the checklist is hidden', () => {
     onboardingControls.current = { ...onboardingControls.current, isVisible: false };
 
-    const html = renderToStaticMarkup(<OnboardingChecklist progress={emptyProgress} />);
+    const html = renderToStaticMarkup(
+      <OnboardingChecklist progress={emptyProgress} canManageSetup />,
+    );
 
     expect(html).toBe('');
     expect(useOwnersSpy).toHaveBeenCalledWith({ enabled: false });
   });
 
   it('enables the owners query only while the checklist is visible', () => {
-    const html = renderToStaticMarkup(<OnboardingChecklist progress={emptyProgress} />);
+    const html = renderToStaticMarkup(
+      <OnboardingChecklist progress={emptyProgress} canManageSetup />,
+    );
 
     expect(html).toContain('إعداد حسابك');
     expect(useOwnersSpy).toHaveBeenCalledWith({ enabled: true });
+  });
+
+  it('hides setup actions from read-only users instead of linking them to forbidden routes', () => {
+    const html = renderToStaticMarkup(
+      <OnboardingChecklist progress={emptyProgress} canManageSetup={false} />,
+    );
+
+    expect(html).toBe('');
+    expect(useOwnersSpy).toHaveBeenCalledWith({ enabled: false });
+  });
+
+  it('orders setup by real dependencies: owner, property, unit, contract, then optional invoice', () => {
+    const html = renderToStaticMarkup(
+      <OnboardingChecklist progress={emptyProgress} canManageSetup />,
+    );
+
+    const owner = html.indexOf('إضافة أول مالك');
+    const property = html.indexOf('إنشاء أول عقار');
+    const unit = html.indexOf('إنشاء أول وحدة');
+    const contract = html.indexOf('إنشاء أول عقد');
+    const invoice = html.indexOf('إصدار أول فاتورة');
+
+    expect(owner).toBeGreaterThan(-1);
+    expect(owner).toBeLessThan(property);
+    expect(property).toBeLessThan(unit);
+    expect(unit).toBeLessThan(contract);
+    expect(contract).toBeLessThan(invoice);
   });
 });

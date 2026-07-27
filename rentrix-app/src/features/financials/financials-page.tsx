@@ -25,7 +25,7 @@ function getCurrentMonthReportRange() {
 // screen plus a directory into the dedicated workspaces.
 const financialWorkspaces = [
   ['/invoices', 'الفواتير والتحصيل', 'مراجعة وتسجيل دفعات الفواتير', FileText, undefined],
-  ['/receipts', 'السدادات والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText, undefined],
+  ['/receipts', 'التحصيل والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText, undefined],
   ['/expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards, 'expenses.view'],
   ['/arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList, 'arrears.view'],
   ['/deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck, 'financial.deposits.view'],

@@ -4,6 +4,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { PageLayout } from '@/components/layout/page-layout';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
+import { useAuth } from '@/hooks/use-auth';
 import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist';
 import type { OnboardingProgress } from '@/features/onboarding/useOnboarding';
 import { getDashboardSnapshot } from './dashboard-snapshot';
@@ -18,6 +19,8 @@ import { AlertCenter } from './components/alert-center';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 
 export function DashboardPage() {
+  const { authorization } = useAuth();
+  const canManageSetup = authorization?.role === 'ADMIN' || authorization?.role === 'MANAGER';
   const now = useMemo(() => new Date(), []);
   const settings = useCompanyFormatters();
   const today = toDateInputValue(now);
@@ -55,7 +58,7 @@ export function DashboardPage() {
     <PageLayout className="space-y-6 pb-8" data-dashboard-v2>
       <HeroBanner snapshot={snapshot} isLoading={isLoading} settings={settings} today={today} />
 
-      <OnboardingChecklist progress={progress} />
+      <OnboardingChecklist progress={progress} canManageSetup={canManageSetup} />
 
       {isError ? (
         <ErrorState

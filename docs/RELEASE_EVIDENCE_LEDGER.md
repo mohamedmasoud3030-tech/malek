@@ -17,15 +17,15 @@ This ledger is the evidence checklist for any future Rentrix 99.9% readiness cla
 
 | Evidence item | Required state | Current branch status | Artifact to archive |
 | --- | --- | --- | --- |
-| Install/typecheck/lint/build/test suite | CI pass | Local commands are available; CI artifact required per release commit | CI run URL and commit SHA |
-| Financial tests and readiness gates | CI pass | Local financial/readiness tests exist | CI test output for `test:financials` and readiness tests |
-| Browser smoke across desktop/tablet/mobile | CI pass | Playwright smoke exists; local pass is not a release artifact | Browser readiness workflow run, screenshots, traces on failure |
-| Seeded authenticated staging journey | CI pass or operator verified | Blocked until `E2E_BASE_URL` and seeded `E2E_TEST_*` credentials exist | Workflow dispatch URL, seeded tenant/owner/property ids, screenshots |
-| Supabase live read-only readiness | Operator verified | Blocked until `SUPABASE_DB_URL` and `psql` are available in an approved environment | `supabase:live-readiness` output and target project id |
-| Financial invoice -> payment -> receipt -> void -> report proof | Operator verified | Required; must not run against production without approved staging/seed plan | Runbook output, receipt/payment/report identifiers, rollback notes |
+| Install/typecheck/lint/build/test suite | CI pass | CI pass: run `30224710133` on `07cd112e`, squash-merged to `44ec873d` | CI run URL and commit SHA |
+| Financial tests and readiness gates | CI pass | CI pass: runs `30224710133` and `30224710108` | CI test output for `test:financials` and readiness tests |
+| Browser smoke across desktop/tablet/mobile | CI pass | CI pass: run `30224710110`; 243 passed, 204 intentional skips, 0 failed | Browser readiness workflow run and Playwright report artifact |
+| Seeded authenticated staging journey | CI pass or operator verified | Release Blocker authenticated read-only job passed with zero skips; isolated local Supabase journey passed separately | Workflow run `30224710108`, seeded local launch evidence |
+| Supabase live read-only readiness | Operator verified | Operator verified on project `nnggcnpcuomwfuupupwg` at 2026-07-27 | Latest ledger, company/account counts, advisors |
+| Financial invoice -> payment -> receipt -> void -> report proof | Operator verified | Verified in disposable local Supabase gate; intentionally not executed against Production | Single-office launch artifact from run `30224710108` |
 | Backend financial RPC/RLS/grant authorization proof | Operator verified | Required; frontend permissions do not prove backend enforcement | Read-only SQL output for `pg_policies`, `pg_proc`, grants, and denied-action checks |
 | Product/accounting decision gates | Product decided | Product decisions are recorded in `docs/decisions/0001-product-accounting-policies.md`, `docs/decisions/0002-staging-live-verification-and-release-evidence.md`, and `docs/decisions/0003-financial-security-ux-reporting-and-reconciliation-scope.md`; implementation evidence remains required | Decision records plus implementation/evidence links for each affected workflow |
-| Manual RTL/mobile/device validation | Operator verified | Required for high-traffic authenticated workflows | Device/browser matrix, screenshots, issues opened |
+| Manual RTL/mobile/device validation | Operator verified | Desktop RTL blocker closed in #1292; automated matrix passed. Final real-device operator sign-off remains part of Pilot day 1 | Device/browser matrix, screenshots, operator note |
 
 ## Release rule
 

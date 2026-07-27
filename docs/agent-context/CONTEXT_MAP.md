@@ -69,7 +69,8 @@ when changing sidebar, mobile navigation, safe-area, responsive, or RTL behavior
 - Workflow: read `docs/agent-context/WORKFLOW.md`'s high-risk section for
   RLS — this is one of the areas it covers explicitly.
 - Code: `rentrix-app/src/features/auth/permissions.ts`,
-  `rentrix-app/src/features/auth/route-guards.ts`, `rentrix-app/src/routeTree.ts`
+  `rentrix-app/src/features/auth/route-guards.ts`,
+  `rentrix-app/src/app/router/route-tree.ts`
   (route-level `beforeLoad` guards and `staticData`).
 - Backend: live `pg_policies` for the affected table(s) — do not rely on a
   migration file alone; `custom_access_token_hook`
