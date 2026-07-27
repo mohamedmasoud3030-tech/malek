@@ -25,7 +25,11 @@ function formFromRecord(record: CommunicationRecord): CommunicationFormValues {
   };
 }
 
-export function CommunicationPage() {
+type CommunicationWorkspaceProps = Readonly<{
+  embedded?: boolean;
+}>;
+
+export function CommunicationWorkspace({ embedded = false }: CommunicationWorkspaceProps) {
   const [filters, setFilters] = useState<CommunicationFilters>({ query: '', channel: 'all', status: 'all' });
   const [editingRecord, setEditingRecord] = useState<CommunicationRecord | null>(null);
   const [draft, setDraft] = useState<CommunicationFormValues>(emptyForm);
@@ -46,18 +50,15 @@ export function CommunicationPage() {
     setFormOpen(true);
   };
 
-  return (
-    <PageLayout dir="rtl" lang="ar">
-      <PageHeader
-        title="مركز التواصل"
-        description="سجل تشغيلي للتواصل مع الأطراف، مع واجهة قوالب وواتساب وبريد قابلة للتوسعة دون ربط مزود خارجي داخل الواجهة."
-        primaryAction={
-          <Button onClick={openCreate}>
-            <Plus className="me-2 size-4" />
-            إضافة تواصل
-          </Button>
-        }
-      />
+  const createAction = (
+    <Button onClick={openCreate}>
+      <Plus className="me-2 size-4" />
+      إضافة تواصل
+    </Button>
+  );
+
+  const workspaceContent = (
+    <>
       <CommunicationOutboundPanel />
       <CommunicationHubView
         rows={recordsQuery.data ?? []}
@@ -79,6 +80,30 @@ export function CommunicationPage() {
         onArchive={(id) => archiveRecord.mutate(id)}
         onRetry={() => void recordsQuery.refetch()}
       />
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <section data-workspace="communication" dir="rtl" lang="ar" className="space-y-5">
+        <div className="flex justify-end">{createAction}</div>
+        {workspaceContent}
+      </section>
+    );
+  }
+
+  return (
+    <PageLayout dir="rtl" lang="ar">
+      <PageHeader
+        title="مركز التواصل"
+        description="سجل تشغيلي للتواصل مع الأطراف، مع واجهة قوالب وواتساب وبريد قابلة للتوسعة دون ربط مزود خارجي داخل الواجهة."
+        primaryAction={createAction}
+      />
+      {workspaceContent}
     </PageLayout>
   );
+}
+
+export function CommunicationPage() {
+  return <CommunicationWorkspace />;
 }
