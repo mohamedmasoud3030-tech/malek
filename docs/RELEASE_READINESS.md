@@ -13,13 +13,16 @@ This is not a claim of universal or multi-office production completeness. The Pi
 ## Verified release baseline
 
 - Production alias: `https://rentrixapp.vercel.app`
-- Current `main`: `44ec873d`
-- CI candidate evidence head: `07cd112e` (squash-merged to the `main` commit above)
-- CI run `30224710133`: typecheck, lint/typecheck alias, architecture, build, full tests, financial tests — passed
-- Browser Readiness run `30224710110`: 243 passed, 204 intentional skips, 0 failed across desktop/tablet/mobile
-- Release Blocker run `30224710108`: code gate, isolated Supabase lifecycle, authenticated single-office journey, and Production authenticated read-only checks — passed
+- Latest application release: `4c354f34` from PR #1299
+- CI candidate evidence head: `7dde0036` (squash-merged to the application release above)
+- CI run `30227200374`: typecheck, lint/typecheck alias, architecture, build, full tests, financial tests — passed
+- Browser Readiness run `30227200393`: 243 passed, 204 intentional skips, 0 failed in 9.1m across desktop/tablet/mobile
+- Release Blocker run `30227200394`: code gate, isolated Supabase lifecycle, authenticated single-office journey, and Production authenticated read-only checks — passed
+- Sonar run `30227200359` — passed
+- Vercel deployment `dpl_GB7bQucwLdCCFEePFPWNP6ZvPdia`: Production `READY`; official `/login` returned `200`; zero runtime errors in the verification hour
 - Desktop RTL sidebar blocker: fixed by PR #1292 and included in Production
 - Latin `0–9` UI consistency: completed by PR #1298 and included in Production
+- Navigation and first-run office workflow: organized by PR #1299 and included in Production
 - Production read-only state: one company; accounts `1111`, `1201`, `2000`, `2100`, `4000` each present once; latest ledger migration `20260730090500`
 - Isolated financial proof: invoice → payment → receipt → VOID, balanced reversal, and idempotent retry behavior
 
