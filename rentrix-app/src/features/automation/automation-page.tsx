@@ -1,15 +1,13 @@
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
-import { AutomationCenterView } from './components/automation-center-view';
+import { AutomationWorkspace } from './components/automation-workspace';
 
+/**
+ * Standalone /automation route entry point. Renders the shared
+ * AutomationWorkspace in "standalone" mode (full PageLayout + PageHeader).
+ * The same workspace also powers the embedded "الأتمتة والتنبيهات" tab
+ * inside the operations hub — see src/features/operations-hub.
+ */
 export function AutomationPage() {
-  return (
-    <PageLayout dir="rtl" lang="ar">
-      <PageHeader
-        title="مركز الأتمتة"
-        description="إدارة تذكيرات انتهاء العقود، استحقاق الإيجار، تقارير الملاك، وتنبيهات الصيانة من مكان واحد."
-      />
-      <AutomationCenterView />
-    </PageLayout>
-  );
+  return <AutomationWorkspace mode="standalone" />;
 }
+
+export default AutomationPage;
