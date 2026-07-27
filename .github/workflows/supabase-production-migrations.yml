@@ -1,0 +1,152 @@
+name: Supabase Production Migrations (manual, approval-gated)
+
+on:
+  workflow_dispatch:
+    inputs:
+      approved_sha:
+        description: Exact 40-character main SHA reviewed for this run
+        required: true
+        type: string
+      action:
+        description: preflight is read-only; deploy requires production approval
+        required: true
+        default: preflight
+        type: choice
+        options:
+          - preflight
+          - deploy
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  preflight:
+    name: preflight / dry-run
+    runs-on: ubuntu-latest
+    outputs:
+      approved_sha: ${{ steps.verify.outputs.approved_sha }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - id: verify
+        name: Verify reviewed main SHA
+        shell: bash
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$APPROVED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo 'approved_sha must be a full lowercase 40-character SHA' >&2; exit 1; }
+          git fetch --no-tags origin main
+          actual=$(git rev-parse HEAD)
+          remote=$(git rev-parse origin/main)
+          [[ "$actual" == "$APPROVED_SHA" ]] || { echo "checked-out main is $actual, not approved SHA" >&2; exit 1; }
+          [[ "$remote" == "$APPROVED_SHA" ]] || { echo "origin/main is $remote, not approved SHA" >&2; exit 1; }
+          git merge-base --is-ancestor "$APPROVED_SHA" origin/main || { echo 'Approved SHA is not on origin/main' >&2; exit 1; }
+          echo "approved_sha=$actual" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Build local migration evidence (no Production access)
+        run: |
+          set -euo pipefail
+          mkdir -p migration-evidence
+          find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort | tee migration-evidence/local-migration-manifest.txt
+          pnpm exec supabase migration list --local | tee migration-evidence/local-migration-status.txt
+          sha256sum supabase/migrations/*.sql > migration-evidence/local-migration-sha256.txt
+      - name: Upload preflight evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: production-migration-preflight-${{ github.run_id }}
+          path: migration-evidence
+          retention-days: 30
+
+  approved-deploy:
+    name: approved migration deploy
+    needs: preflight
+    if: ${{ inputs.action == 'deploy' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Re-verify exact SHA after approval
+        shell: bash
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$APPROVED_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          git fetch --no-tags origin main
+          actual=$(git rev-parse HEAD)
+          remote=$(git rev-parse origin/main)
+          [[ "$actual" == "$APPROVED_SHA" ]] || { echo "checked-out main changed to $actual" >&2; exit 1; }
+          [[ "$remote" == "$APPROVED_SHA" ]] || { echo "origin/main advanced to $remote while approval was pending" >&2; exit 1; }
+          git merge-base --is-ancestor "$APPROVED_SHA" origin/main
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Link project and capture approved dry-run evidence
+        shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo 'Missing SUPABASE_ACCESS_TOKEN' >&2; exit 1; }
+          test -n "$SUPABASE_PROJECT_REF" || { echo 'Missing SUPABASE_PROJECT_REF' >&2; exit 1; }
+          test -n "$SUPABASE_DB_PASSWORD" || { echo 'Missing SUPABASE_DB_PASSWORD' >&2; exit 1; }
+          mkdir -p migration-evidence
+          pnpm exec supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          pnpm exec supabase migration list --linked --password "$SUPABASE_DB_PASSWORD" | tee migration-evidence/remote-migration-status.txt
+          pnpm exec supabase db push --linked --password "$SUPABASE_DB_PASSWORD" --dry-run | tee migration-evidence/production-dry-run.txt
+      - name: Re-verify exact SHA immediately before apply
+        shell: bash
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          actual=$(git rev-parse HEAD)
+          remote=$(git rev-parse origin/main)
+          [[ "$actual" == "$APPROVED_SHA" && "$remote" == "$APPROVED_SHA" ]] || { echo 'Approved SHA is no longer the current main tip' >&2; exit 1; }
+      - name: Apply migrations
+        shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" && test -n "$SUPABASE_PROJECT_REF" && test -n "$SUPABASE_DB_PASSWORD"
+          pnpm exec supabase db push --linked --password "$SUPABASE_DB_PASSWORD" --yes | tee migration-evidence/deploy-output.txt
+      - name: Record deployment evidence
+        if: always()
+        run: |
+          mkdir -p migration-evidence
+          {
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "sha=$(git rev-parse HEAD)"
+            echo "completed_at=$(date -u +%FT%TZ)"
+          } > migration-evidence/deployment-summary.txt
+      - name: Upload deployment evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: production-migration-deployment-${{ github.run_id }}
+          path: migration-evidence
+          retention-days: 90
