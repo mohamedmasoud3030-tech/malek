@@ -37,7 +37,8 @@
 
 - [x] آخر migration في ledger هي `20260730090500`.
 - [x] شركة واحدة فقط، والحسابات `1111`, `1201`, `2000`, `2100`, `4000` موجودة لها مرة واحدة.
-- [x] CI وBrowser وRelease Blocker خضراء على PR head `07cd112e` الذي اندمج squash إلى `main` عند `44ec873d`.
+- [x] CI وBrowser وRelease Blocker وSonar خضراء على PR head `7dde0036` الذي اندمج squash إلى إصدار التطبيق `4c354f34` في PR #1299.
+- [x] Vercel Production للإصدار `4c354f34` بحالة `READY`، والرابط الرسمي `/login` يعيد `200` بلا Runtime Errors في ساعة التحقق.
 - [ ] Leaked Password Protection مفعّلة من Supabase Auth.
 - [x] فحص حي قراءة فقط يثبت حالة Production والـmigration ledger.
 - [x] اختبار غير متلف يثبت login وتحميل الصفحات الأساسية وRTL والهاتف والطباعة والتصدير.
