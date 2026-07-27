@@ -3,26 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Rentrix — نظام إدارة العقارات الذكي</title>
-    <meta name="description" content="Rentrix نظام إدارة العقارات الذكي — إدارة شاملة للعقود والمستأجرين والمالية والتقارير." />
+    <title>MALIK — كل مُلكك في مكان واحد</title>
+    <meta name="description" content="MALIK منصة عربية متكاملة لإدارة العقارات والوحدات والعقود والتحصيلات والصيانة والتقارير." />
     <meta name="robots" content="index, follow" />
     <!-- Favicon & Icons -->
-    <link rel="icon" href="/icon-rentrix-192.png" type="image/png" />
-    <link rel="shortcut icon" href="/icon-rentrix-192.png" type="image/png" />
-    <link rel="apple-touch-icon" href="/icon-rentrix-192.png" />
+    <link rel="icon" href="/malik-mark.svg" type="image/svg+xml" />
+    <link rel="shortcut icon" href="/malik-mark.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/malik-mark.svg" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" content="#0f172a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Rentrix" />
+    <meta name="apple-mobile-web-app-title" content="MALIK" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Rentrix" />
-    <meta property="og:title" content="Rentrix | نظام واحد لإدارة عقاراتك الإيجارية بالكامل" />
+    <meta property="og:site_name" content="MALIK" />
+    <meta property="og:title" content="MALIK | كل مُلكك في مكان واحد" />
     <meta property="og:description" content="منصة عربية متكاملة لإدارة العقارات والوحدات والعقود والفواتير والتحصيلات والصيانة والتقارير — بديلاً عن جداول Excel والدفاتر المتناثرة." />
     <meta property="og:locale" content="ar_AR" />
     <meta property="og:locale:alternate" content="en_US" />
@@ -32,7 +32,7 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Rentrix | نظام واحد لإدارة عقاراتك الإيجارية بالكامل" />
+    <meta name="twitter:title" content="MALIK | كل مُلكك في مكان واحد" />
     <meta name="twitter:description" content="عقارات، عقود، فواتير، تحصيلات، صيانة وتقارير — في مساحة عمل عربية واحدة." />
     <meta name="twitter:image" content="/opengraph.jpg" />
 
@@ -41,7 +41,7 @@
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "Rentrix",
+        "name": "MALIK",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
         "inLanguage": ["ar", "en"],
@@ -93,6 +93,7 @@
 
       html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
       body { font-family: 'Cairo', 'Noto Sans Arabic', 'Tajawal', sans-serif; background-color: hsl(var(--color-bg)); color: hsl(var(--color-text-primary)); line-height: 1.6; }
+      .malik-wordmark { font-family: 'Sora', ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.16em; }
       * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
       *, *::before, *::after { box-sizing: border-box; }
       .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -111,10 +112,10 @@
       })();
     </script>
     <script nonce="rentrix-static">
-      window.addEventListener('load', function loadCairoFont() {
+      window.addEventListener('load', function loadProductFonts() {
         const stylesheet = document.createElement('link');
         stylesheet.rel = 'stylesheet';
-        stylesheet.href = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap';
+        stylesheet.href = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap';
         document.head.appendChild(stylesheet);
       }, { once: true });
     </script>
