@@ -206,16 +206,16 @@ begin
 
   if exists (
     select 1
-    from public.contracts c
-    where c.unit_id::text = v_unit_id::text
-      and c.id::text <> p_contract_id
-      and c.company_id = v_company_id
-      and c.deleted_at is null
-      and lower(c.status) in ('active', 'draft')
-      and btrim(coalesce(c.start_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$'
-      and btrim(coalesce(c.end_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$'
-      and btrim(c.start_date::text)::date <= p_end_date
-      and btrim(c.end_date::text)::date >= p_start_date
+    from public.contracts contract_record
+    where contract_record.unit_id::text = v_unit_id::text
+      and contract_record.id::text <> p_contract_id
+      and contract_record.company_id = v_company_id
+      and contract_record.deleted_at is null
+      and lower(contract_record.status) in ('active', 'draft')
+      and btrim(coalesce(contract_record.start_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$'
+      and btrim(coalesce(contract_record.end_date::text, '')) ~ '^\d{4}-\d{2}-\d{2}$'
+      and btrim(contract_record.start_date::text)::date <= p_end_date
+      and btrim(contract_record.end_date::text)::date >= p_start_date
   ) then
     raise exception 'الوحدة محجوزة خلال هذه الفترة';
   end if;
