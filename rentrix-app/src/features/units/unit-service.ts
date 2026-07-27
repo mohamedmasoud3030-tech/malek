@@ -113,6 +113,29 @@ export async function updateUnit(unitId: string, payload: UnitPayload): Promise<
 }
 
 export async function softDeleteUnit(unitId: string): Promise<void> {
+  const [contractsResult, maintenanceResult] = await Promise.all([
+    // Any contract row is historical evidence, including a soft-deleted legacy
+    // row, so archival must not hide the unit from that history.
+    supabase.from('contracts').select('id').eq('unit_id', unitId).limit(1),
+    supabase
+      .from('maintenance_records')
+      .select('id')
+      .eq('unit_id', unitId)
+      .in('status', ['open', 'in_progress'])
+      .is('deleted_at', null)
+      .limit(1),
+  ]);
+
+  if (contractsResult.error || maintenanceResult.error) {
+    throw new Error('تعذر التحقق من ارتباطات الوحدة قبل الأرشفة. أعد المحاولة.');
+  }
+  if ((contractsResult.data ?? []).length > 0) {
+    throw new Error('لا يمكن أرشفة وحدة مرتبطة بعقد محفوظ؛ يجب الحفاظ على الوحدة للسجل والتقارير.');
+  }
+  if ((maintenanceResult.data ?? []).length > 0) {
+    throw new Error('لا يمكن أرشفة الوحدة مع طلب صيانة مفتوح أو قيد التنفيذ.');
+  }
+
   const updatePayload: UnitUpdate = { deleted_at: new Date().toISOString() };
   const { error } = await supabase.from('units').update(updatePayload).eq('id', unitId).is('deleted_at', null);
   if (error) throw new Error(getUnitWriteErrorMessage('archive', error));
