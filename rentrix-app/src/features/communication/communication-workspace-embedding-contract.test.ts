@@ -13,15 +13,14 @@ describe('communication embeddable workspace contract', () => {
 
   it('renders embedded content without a nested page layout or page header', () => {
     expect(source).toContain('if (embedded)');
-    expect(source).toContain('data-workspace="communication"');
 
-    const embeddedBranch = source.slice(
-      source.indexOf('if (embedded)'),
-      source.indexOf('return (\n    <PageLayout'),
-    );
+    const embeddedSection = source.match(
+      /<section data-workspace="communication"[\s\S]*?<\/section>/,
+    )?.[0];
 
-    expect(embeddedBranch).not.toContain('<PageLayout');
-    expect(embeddedBranch).not.toContain('<PageHeader');
+    expect(embeddedSection).toBeDefined();
+    expect(embeddedSection).not.toContain('<PageLayout');
+    expect(embeddedSection).not.toContain('<PageHeader');
   });
 
   it('keeps create access available when embedded', () => {
