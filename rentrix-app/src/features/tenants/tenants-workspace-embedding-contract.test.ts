@@ -12,15 +12,13 @@ describe('tenants embeddable workspace contract', () => {
   });
 
   it('keeps the embedded branch free of nested page shells', () => {
-    expect(source).toContain('data-workspace="tenants"');
+    const embeddedSection = source.match(
+      /<section data-workspace="tenants"[\s\S]*?<\/section>/,
+    )?.[0];
 
-    const embeddedBranch = source.slice(
-      source.indexOf('const workspace = embedded ?'),
-      source.indexOf(') : (\n    <PageLayout'),
-    );
-
-    expect(embeddedBranch).not.toContain('<PageLayout');
-    expect(embeddedBranch).not.toContain('<PageHeader');
+    expect(embeddedSection).toBeDefined();
+    expect(embeddedSection).not.toContain('<PageLayout');
+    expect(embeddedSection).not.toContain('<PageHeader');
   });
 
   it('keeps create and modal actions available in both modes', () => {
