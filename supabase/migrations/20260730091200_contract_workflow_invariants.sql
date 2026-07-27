@@ -55,28 +55,30 @@ begin
       using errcode = '23514';
   end if;
 
-  if new.unit_id is null or not exists (
-    select 1
-    from public.units u
-    where u.id::text = new.unit_id::text
-      and u.property_id::text = new.property_id::text
-      and u.company_id = new.company_id
-      and u.deleted_at is null
-  ) then
-    raise exception 'Contract unit must belong to the selected property and company.'
-      using errcode = '23514';
-  end if;
+  if lower(new.status) in ('active', 'draft') then
+    if new.unit_id is null or not exists (
+      select 1
+      from public.units u
+      where u.id::text = new.unit_id::text
+        and u.property_id::text = new.property_id::text
+        and u.company_id = new.company_id
+        and u.deleted_at is null
+    ) then
+      raise exception 'Contract unit must belong to the selected property and company.'
+        using errcode = '23514';
+    end if;
 
-  if not exists (
-    select 1
-    from public.people person_record
-    where person_record.id::text = new.tenant_id::text
-      and person_record.company_id = new.company_id
-      and person_record.deleted_at is null
-      and person_record.type = 'tenant'
-  ) then
-    raise exception 'Contract tenant must be a live tenant in the same company.'
-      using errcode = '23514';
+    if not exists (
+      select 1
+      from public.people person_record
+      where person_record.id::text = new.tenant_id::text
+        and person_record.company_id = new.company_id
+        and person_record.deleted_at is null
+        and person_record.type = 'tenant'
+    ) then
+      raise exception 'Contract tenant must be a live tenant in the same company.'
+        using errcode = '23514';
+    end if;
   end if;
 
   if lower(new.status) in ('active', 'draft') and (
@@ -91,7 +93,6 @@ begin
        and owner_record.is_active
       where agreement_record.id = new.agreement_id
         and agreement_record.property_id::text = new.property_id::text
-        and agreement_record.company_id = new.company_id
         and agreement_record.starts_on <= v_start_date
         and (agreement_record.ends_on is null or agreement_record.ends_on >= v_end_date)
     )

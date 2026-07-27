@@ -115,4 +115,76 @@ grant execute on function public.create_property_with_agreement(
   text, numeric, numeric, text, text
 ) to authenticated;
 
+-- Property archive guard (DB-level enforcement)
+-- Prevents archiving a property that still has live units, owner agreements,
+-- open maintenance, or active/draft contracts. This mirrors the client-side
+-- assertPropertyCanBeArchived check so a direct Data API update cannot bypass
+-- it — matching the hardening already done for units and contracts.
+create or replace function public.guard_property_archive()
+returns trigger
+language plpgsql
+security definer
+set search_path to 'public', 'pg_temp'
+as $function$
+begin
+  if old.deleted_at is not null or new.deleted_at is null then
+    return new;
+  end if;
+
+  if exists (
+    select 1
+    from public.units u
+    where u.property_id::text = new.id::text
+      and u.company_id = new.company_id
+      and u.deleted_at is null
+  ) then
+    raise exception 'Cannot archive a property that still has non-archived units. Archive or reassign units first.'
+      using errcode = '23514';
+  end if;
+
+  if exists (
+    select 1
+    from public.owner_agreements a
+    where a.property_id::text = new.id::text
+      and a.company_id = new.company_id
+  ) then
+    raise exception 'Cannot archive a property with a saved owner agreement. Use inactive or sold status to preserve history.'
+      using errcode = '23514';
+  end if;
+
+  if exists (
+    select 1
+    from public.maintenance_records m
+    where m.property_id::text = new.id::text
+      and m.company_id = new.company_id
+      and m.deleted_at is null
+      and lower(coalesce(m.status, '')) in ('open', 'in_progress')
+  ) then
+    raise exception 'Cannot archive property while it has open or in-progress maintenance.'
+      using errcode = '23514';
+  end if;
+
+  if exists (
+    select 1
+    from public.contracts c
+    where c.property_id::text = new.id::text
+      and c.company_id = new.company_id
+      and c.deleted_at is null
+      and lower(c.status) in ('active', 'draft')
+  ) then
+    raise exception 'Cannot archive property with an active or draft contract. Complete the contract cycle first.'
+      using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function public.guard_property_archive() from public, anon, authenticated;
+
+drop trigger if exists properties_archive_guard on public.properties;
+create trigger properties_archive_guard
+before update of deleted_at on public.properties
+for each row execute function public.guard_property_archive();
+
 commit;

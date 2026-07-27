@@ -114,7 +114,7 @@ async function assertPropertyHasNoActiveContracts(propertyId: string, actionLabe
     .from('contracts')
     .select('id')
     .eq('property_id', propertyId)
-    .in('status', ['active', 'ACTIVE', 'draft'] as Contract['status'][])
+    .in('status', ['active', 'ACTIVE', 'draft', 'DRAFT'] as Contract['status'][])
     .is('deleted_at', null)
     .limit(1);
 

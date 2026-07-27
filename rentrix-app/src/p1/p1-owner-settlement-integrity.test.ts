@@ -169,9 +169,9 @@ INSERT INTO public.people (id, full_name, type, company_id) VALUES
 INSERT INTO public.contracts (id, property_id, unit_id, tenant_id, start_date, end_date, rent_amount, status, agreement_id, company_id) VALUES
   ('${C_R}',  '${P_R}',  '${U_R}',  '${T_R}',  '2026-01-01', '2026-12-31', 12000, 'active', '${AGR_R}',  '${COMPANY_1}'),
   ('${C_R2}', '${P_R2}', '${U_R2}', '${T_R2}', '2026-01-01', '2026-12-31', 6000,  'active', '${AGR_R2}', '${COMPANY_1}'),
-  ('${C_F}',  '${P_F}',  '${U_F}',  '${T_F}',  '2026-01-01', '2026-12-31', 9000,  'active', '${AGR_F}',  '${COMPANY_1}'),
+  ('${C_F}',  '${P_F}',  '${U_F}',  '${T_F}',  '2026-01-01', '2026-08-31', 9000,  'active', '${AGR_F}',  '${COMPANY_1}'),
   ('${C_M}',  '${P_M}',  '${U_M}',  '${T_M}',  '2026-01-01', '2026-12-31', 15000, 'active', '${AGR_M}',  '${COMPANY_1}'),
-  ('${C_G}',  '${P_G}',  '${U_G}',  '${T_G}',  '2026-01-01', '2026-12-31', 4000,  'active', '${AGR_G1}', '${COMPANY_1}'),
+  ('${C_G}',  '${P_G}',  '${U_G}',  '${T_G}',  '2026-01-01', '2026-06-30', 4000,  'active', '${AGR_G1}', '${COMPANY_1}'),
   ('${C_2}',  '${P_2}',  '${U_2}',  '${T_2}',  '2026-01-01', '2026-12-31', 8000,  'active', '${AGR_2}',  '${COMPANY_2}');
 
 -- Payout journal accounts (pay_owner_settlement_atomic resolves no='1111'/'2000'
