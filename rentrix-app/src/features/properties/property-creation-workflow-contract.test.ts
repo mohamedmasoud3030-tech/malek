@@ -31,7 +31,7 @@ describe('canonical property creation workflow', () => {
 
   it('binds the atomic database RPC to an active owner in the caller company', () => {
     const migration = readSource(
-      '../../../../supabase/migrations/20260730091000_property_owner_workflow_invariants.sql',
+      '../../../../supabase/migrations/20260730091300_property_owner_workflow_invariants.sql',
     ).toLowerCase();
 
     expect(migration).toContain('o.company_id = v_company_id');
