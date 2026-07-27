@@ -87,8 +87,8 @@ export function useContractForm({
   const endDate = useWatch({ control: form.control, name: 'end_date' });
 
   const propertiesQuery = useQuery({
-    queryKey: ['contracts', 'properties-options'],
-    queryFn: () => listProperties({ search: '', status: 'all', page: 1, pageSize: 200 }),
+    queryKey: ['contracts', 'properties-options', isEdit ? 'all' : 'active'],
+    queryFn: () => listProperties({ search: '', status: isEdit ? 'all' : 'active', page: 1, pageSize: 200 }),
   });
   const peopleQuery = useQuery({
     queryKey: ['contracts', 'tenant-options'],
