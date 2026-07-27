@@ -2,18 +2,20 @@ import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronLeft, LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { canShowNavigationItem, getWriteAccessState, type AuthorizationContext } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
+import { APP_BRAND_NAME } from '@/lib/brand';
+import { formatLatinTime } from '@/lib/formatters';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import type { SyncStatus } from '@/types/domain';
+import { quickCreateItems } from '@/app/navigation/app-nav-items';
 import { MobileBottomNav, NavigationLinks, type SharedLabel } from './layout-navigation-view';
 import { NotificationsMenu } from './notifications-menu';
-import { quickCreateItems } from '@/app/navigation/app-nav-items';
-import { formatLatinTime } from '@/lib/formatters';
 
 function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
@@ -23,24 +25,7 @@ function statusLabel(status: SyncStatus) {
 }
 
 function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
-  return (
-    <div className={cn('flex min-w-0 items-center gap-3', !expanded && 'justify-center')}>
-      <div
-        className="relative grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-base font-bold text-primary-foreground"
-        aria-hidden="true"
-      >
-        R
-      </div>
-      {expanded ? (
-        <div className="min-w-0">
-          <p className="truncate text-lg font-bold tracking-tight text-white">Rentrix</p>
-          <p className="truncate text-[10px] font-medium text-sidebar-foreground/55">
-            مكتبك العقاري في مساحة واحدة
-          </p>
-        </div>
-      ) : null}
-    </div>
-  );
+  return <MalikBrand compact={!expanded} inverse showTagline={expanded} />;
 }
 
 /**
@@ -150,7 +135,6 @@ function MobileNavigationDrawer({
         className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-white/10 bg-sidebar text-sidebar-foreground shadow-2xl sm:max-h-none sm:w-[min(20rem,88vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
-        {/* Brand bar */}
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/8 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
           <Brand expanded />
           <Button
@@ -215,10 +199,10 @@ export function AppShell() {
     ([...matches]
       .reverse()
       .find((match) => (match.staticData as { title?: string } | undefined)?.title)
-      ?.staticData as { title?: string } | undefined)?.title ?? 'Rentrix';
+      ?.staticData as { title?: string } | undefined)?.title ?? APP_BRAND_NAME;
 
   useEffect(() => {
-    document.title = `${pageTitle} | Rentrix`;
+    document.title = `${pageTitle} | ${APP_BRAND_NAME}`;
   }, [pageTitle]);
 
   const handleLogout = async () => {
@@ -233,7 +217,6 @@ export function AppShell() {
       className="min-h-screen min-h-dvh overflow-x-hidden bg-background text-foreground"
       dir={appLanguage.direction}
     >
-      {/* Skip to content */}
       <a
         href="#main-content"
         className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:right-4 focus:top-4"
@@ -241,7 +224,6 @@ export function AppShell() {
         {sharedLabel('skipToContent')}
       </a>
 
-      {/* Mobile nav drawer */}
       {mobileNavOpen ? (
         <MobileNavigationDrawer
           authorization={authorization}
@@ -251,7 +233,6 @@ export function AppShell() {
         />
       ) : null}
 
-      {/* Desktop sidebar — solid, clean, no gradient */}
       <aside
         data-sidebar
         className={cn(
@@ -280,16 +261,9 @@ export function AppShell() {
         </div>
       </aside>
 
-      {/* Main content area */}
-      {/* pr-* (physical) not pe-* (logical): the sidebar is fixed to the physical
-          right edge (`right-0`) regardless of document direction. In RTL, `pe-*`
-          resolves to padding-left, leaving no reserved space on the right and
-          causing content to render underneath the sidebar. */}
       <div className={cn('w-full transition-all duration-250 lg:pr-64', sidebarCollapsed && 'lg:pr-[4.5rem]')}>
-        {/* Sticky header — clean, flat, mobile-optimised */}
         <header className="sticky top-0 z-20 border-b border-border/70 bg-background/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md">
           <div className="flex min-h-[3.25rem] items-center gap-1 px-2 py-1.5 sm:min-h-[3.5rem] sm:gap-2 sm:px-4">
-            {/* Mobile menu toggle */}
             <Button
               variant="ghost"
               className="size-10 shrink-0 px-0 text-muted-foreground hover:text-foreground lg:hidden"
@@ -299,7 +273,6 @@ export function AppShell() {
               <Menu className="size-[1.1rem]" aria-hidden="true" />
             </Button>
 
-            {/* Desktop sidebar toggle */}
             <Button
               variant="ghost"
               className="hidden size-10 shrink-0 px-0 text-muted-foreground hover:text-foreground lg:inline-flex"
@@ -309,26 +282,20 @@ export function AppShell() {
               <Menu className="size-[1.1rem]" aria-hidden="true" />
             </Button>
 
-            {/* Page title — mobile shows title only, desktop shows breadcrumb */}
             <div className="min-w-0 flex-1">
-              {/* Desktop breadcrumb */}
               <div className="hidden items-center gap-1 sm:flex">
                 <span className="text-[11px] font-medium text-muted-foreground">{sharedLabel('home')}</span>
                 <ChevronLeft className="size-3 text-muted-foreground/60" aria-hidden="true" />
                 <span className="truncate text-[11px] font-semibold text-foreground">{pageTitle}</span>
               </div>
-              {/* Mobile: just the page title, compact */}
               <p className="truncate text-[0.9375rem] font-bold tracking-tight sm:hidden">{pageTitle}</p>
             </div>
 
-            {/* Header actions */}
             <div className="flex items-center gap-0.5 sm:gap-1">
-              {/* Quick create — write-access roles only */}
               {writeAccessState === 'full' ? (
                 <QuickAddMenu authorization={authorization} sharedLabel={sharedLabel} />
               ) : null}
 
-              {/* Sync status — desktop only */}
               <span className="hidden rounded-lg border border-border bg-card px-2.5 py-1 text-[10px] font-medium text-muted-foreground sm:inline-flex lg:text-[11px] lg:px-3 lg:py-1.5">
                 {statusLabel(syncStatus)}
                 {lastSyncedAt
@@ -336,10 +303,8 @@ export function AppShell() {
                   : ''}
               </span>
 
-              {/* Notifications — real alerts from the shared dashboard snapshot */}
               <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
 
-              {/* Theme toggle */}
               <Button
                 variant="ghost"
                 className="size-9 px-0 text-muted-foreground hover:text-foreground sm:size-10"
@@ -353,19 +318,17 @@ export function AppShell() {
                 )}
               </Button>
 
-              {/* User avatar — sm and up */}
               <span
                 className="hidden size-8 place-items-center rounded-lg bg-primary text-xs font-bold text-primary-foreground sm:grid xl:size-9"
                 title={user?.email}
                 aria-label={user?.email ?? undefined}
               >
-                {user?.email?.charAt(0).toUpperCase() || 'R'}
+                {user?.email?.charAt(0).toUpperCase() || 'M'}
               </span>
             </div>
           </div>
         </header>
 
-        {/* Main content */}
         <main id="main-content" tabIndex={-1} className="safe-bottom-app overflow-x-hidden p-3 outline-none sm:p-4 lg:p-6 lg:pb-6">
           {writeAccessNotice ? (
             <div
@@ -383,7 +346,6 @@ export function AppShell() {
         </main>
       </div>
 
-      {/* Mobile bottom nav */}
       <MobileBottomNav authorization={authorization} sharedLabel={sharedLabel} />
     </div>
   );
