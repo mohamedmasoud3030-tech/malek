@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">MALIK</title>
+  <rect width="512" height="512" rx="112" fill="#0f172a"/>
+  <path d="M88 402V134l110 94 58-61 58 61 110-94v268" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M88 402h336" fill="none" stroke="#38bdf8" stroke-width="36" stroke-linecap="round"/>
+  <path d="M171 300h38M303 300h38" fill="none" stroke="#38bdf8" stroke-width="30" stroke-linecap="round"/>
+</svg>
