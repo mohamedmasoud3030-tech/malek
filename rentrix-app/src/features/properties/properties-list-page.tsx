@@ -1,4 +1,4 @@
-import { Building2, Download, Edit, MapPin, Plus, Trash2 } from "lucide-react";
+import { Building2, Download, Edit, Handshake, MapPin, Plus, Trash2 } from "lucide-react";
 import { PropertyFormModal } from "./property-form-modal";
 import { usePropertyListController } from "./use-property-list-controller";
 import { AsyncContentState } from "@/components/async-content-state";
@@ -24,6 +24,32 @@ import {
   buildPropertiesCsvFilename,
 } from "./property-list-export";
 import { propertyStatusTone } from "./components/property-status";
+import type { PropertyListItem } from "./property-service";
+
+function PropertyWorkflowStatus({ property }: Readonly<{ property: PropertyListItem }>) {
+  const label = property.workflow_health === "ready"
+    ? "جاهز للتشغيل"
+    : property.workflow_health === "missing_owner"
+      ? "يحتاج مالكاً"
+      : property.workflow_health === "owner_unavailable"
+        ? "المالك غير نشط"
+        : "يحتاج اتفاقية";
+
+  const ownerSummary = property.workflow_health === "owner_unavailable"
+    ? property.current_owner_name
+      ? `المالك المرتبط غير نشط: ${property.current_owner_name}`
+      : "سجل المالك المرتبط غير متاح"
+    : property.current_owner_name
+      ? `المالك: ${property.current_owner_name}`
+      : "لا يوجد ربط ملكية ساري";
+
+  return (
+    <div className="space-y-1">
+      <StatusBadge tone={property.workflow_health === "ready" ? "success" : "warning"}>{label}</StatusBadge>
+      <p className="text-xs text-muted-foreground">{ownerSummary}</p>
+    </div>
+  );
+}
 
 export function PropertiesListPage() {
   const ctrl = usePropertyListController();
@@ -187,6 +213,11 @@ export function PropertiesListPage() {
                   ),
                 },
                 {
+                  key: "workflow",
+                  header: "المالك والتشغيل",
+                  render: (p) => <PropertyWorkflowStatus property={p} />,
+                },
+                {
                   key: "address",
                   header: "العنوان",
                   render: (p) => (
@@ -246,9 +277,7 @@ export function PropertiesListPage() {
                     </StatusBadge>
                   }
                   stats={
-                    <span className="text-xs text-muted-foreground">
-                      اضغط لفتح تفاصيل العقار
-                    </span>
+                    <PropertyWorkflowStatus property={p} />
                   }
                   onClick={() => ctrl.navigateToProperty(p.id)}
                   actions={
@@ -302,6 +331,26 @@ export function PropertiesListPage() {
                     {
                       icon: MapPin,
                       value: property.address ?? "العنوان غير محدد",
+                    },
+                    {
+                      icon: Handshake,
+                      value: property.workflow_health === "owner_unavailable"
+                        ? property.current_owner_name
+                          ? `المالك المرتبط غير نشط: ${property.current_owner_name}`
+                          : "سجل المالك المرتبط غير متاح"
+                        : property.current_owner_name
+                          ? `المالك: ${property.current_owner_name}`
+                          : "لا يوجد ربط ملكية ساري",
+                    },
+                    {
+                      icon: Building2,
+                      value: property.workflow_health === "ready"
+                        ? "جاهز للتشغيل"
+                        : property.workflow_health === "missing_owner"
+                          ? "يحتاج ربط مالك"
+                          : property.workflow_health === "owner_unavailable"
+                            ? "راجع حالة المالك المرتبط"
+                            : "يحتاج اتفاقية تشغيل",
                     },
                   ]}
                   onClick={() => ctrl.navigateToProperty(property.id)}

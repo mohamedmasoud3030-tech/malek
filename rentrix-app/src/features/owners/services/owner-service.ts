@@ -7,6 +7,9 @@ import type { Database } from '@/types/database';
 import type { Contract, Invoice, Property, Unit } from '@/types/domain';
 
 export type Owner = Database['public']['Tables']['owners']['Row'];
+export type OperationalOwner = Pick<Owner, 'id' | 'full_name' | 'display_name'> & {
+  name: string;
+};
 export type OwnerInsert = Database['public']['Tables']['owners']['Insert'];
 export type OwnerUpdate = Database['public']['Tables']['owners']['Update'];
 type OwnerInsertWithCompatibility = OwnerInsert & { name: string };
@@ -240,6 +243,19 @@ export async function listOwners(): Promise<Owner[]> {
     .returns<Owner[]>();
 
   if (error) handleSupabaseError(error, 'تعذر تحميل الملاك');
+  return data ?? [];
+}
+
+export async function listOperationalOwners(): Promise<OperationalOwner[]> {
+  const { data, error } = await supabase
+    .from('owners')
+    .select('id, full_name, display_name, name')
+    .is('deleted_at', null)
+    .eq('is_active', true)
+    .order('full_name', { ascending: true })
+    .returns<OperationalOwner[]>();
+
+  if (error) handleSupabaseError(error, 'تعذر تحميل الملاك النشطين');
   return data ?? [];
 }
 

@@ -122,6 +122,18 @@ describe('owner agreement ownership windows', () => {
       ends_on: null,
     })).not.toThrow();
   });
+
+  it('does not offer or accept an inactive owner for a new operating agreement', () => {
+    const inactive = ownershipLink('owner-inactive', null, null);
+    inactive.owner!.is_active = false;
+
+    expect(getEligibleAgreementOwners([inactive], '2026-07-27', null)).toEqual([]);
+    expect(() => assertAgreementOwnerHasOwnership([inactive], {
+      owner_id: 'owner-inactive',
+      starts_on: '2026-07-27',
+      ends_on: null,
+    })).toThrow('غير نشط');
+  });
 });
 
 describe('formatAgreementError', () => {

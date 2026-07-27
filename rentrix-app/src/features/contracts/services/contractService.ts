@@ -86,7 +86,38 @@ export async function getContract(contractId: string): Promise<ContractDetail> {
   return data;
 }
 
+async function assertContractPropertyIsOperational(propertyId: string, contractStatus?: string): Promise<void> {
+  // Only operational contracts (active/draft) require an active property.
+  // Non-operational statuses (expired, terminated, ended) can reference any
+  // non-archived property — matching the DB trigger's gating.
+  if (contractStatus && !['active', 'draft', 'ACTIVE', 'DRAFT'].includes(contractStatus)) {
+    const { data: exists, error: checkError } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('id', propertyId)
+      .is('deleted_at', null)
+      .maybeSingle();
+    if (checkError) throw new Error('تعذر التحقق من وجود العقار قبل تعديل العقد');
+    if (!exists) throw new Error('العقار غير موجود أو مؤرشف');
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select('id,status')
+    .eq('id', propertyId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) throw new Error('تعذر التحقق من حالة العقار قبل حفظ العقد');
+  if (!data) throw new Error('العقار غير موجود أو مؤرشف');
+  if (data.status !== 'active') {
+    throw new Error('لا يمكن إنشاء أو نقل عقد على عقار غير نشط. أعد تنشيط العقار أولاً.');
+  }
+}
+
 export async function createContract(payload: ContractPayload): Promise<Contract> {
+  await assertContractPropertyIsOperational(payload.property_id);
   const { data, error } = await supabase.rpc('create_contract_atomic', {
     p_property_id: payload.property_id,
     p_unit_id: payload.unit_id ?? null,
@@ -111,6 +142,7 @@ export async function updateContract(contractId: string, payload: ContractPayloa
   // property/unit-overlap and owner-agreement-coverage invariants are
   // re-validated on edit, matching create_contract_atomic's checks. See
   // supabase/migrations/20260708044657_contract_lifecycle_atomic_rpcs.sql.
+  await assertContractPropertyIsOperational(payload.property_id, payload.status);
   const { data, error } = await supabase.rpc('update_contract_atomic', {
     p_contract_id: contractId,
     p_property_id: payload.property_id,

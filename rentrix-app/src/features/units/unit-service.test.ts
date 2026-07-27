@@ -11,6 +11,8 @@ function createQueryMock(result: unknown) {
     eq: vi.fn(() => chain),
     insert: vi.fn(() => chain),
     is: vi.fn(() => chain),
+    in: vi.fn(() => chain),
+    limit: vi.fn(() => Promise.resolve(result)),
     select: vi.fn(() => chain),
     single: vi.fn(() => chain),
     update: vi.fn(() => chain),
@@ -110,5 +112,23 @@ describe('unit service write workflow', () => {
     await softDeleteUnit('unit-1');
     expect(chain.update).toHaveBeenCalledWith({ deleted_at: expect.any(String) });
     expect(chain.eq).toHaveBeenCalledWith('id', 'unit-1');
+  });
+
+  it('refuses to archive a unit that has contract history', async () => {
+    const emptyChain = createQueryMock({ data: [], error: null });
+    const contractsChain = createQueryMock({ data: [{ id: 'contract-1' }], error: null });
+    supabaseMock.from.mockImplementation((table: string) => table === 'contracts' ? contractsChain : emptyChain);
+    const { softDeleteUnit } = await import('./unit-service');
+
+    await expect(softDeleteUnit('unit-1')).rejects.toThrow('مرتبطة بعقد محفوظ');
+    expect(emptyChain.update).not.toHaveBeenCalled();
+  });
+
+  it('checks all contract history instead of only non-deleted contract rows', async () => {
+    const source = await import('node:fs/promises').then((fs) => fs.readFile(new URL('./unit-service.ts', import.meta.url), 'utf8'));
+    const archiveGuard = source.slice(source.indexOf('export async function softDeleteUnit'));
+
+    expect(archiveGuard).toContain("from('contracts').select('id').eq('unit_id', unitId).limit(1)");
+    expect(archiveGuard).not.toContain("eq('unit_id', unitId).is('deleted_at', null)");
   });
 });

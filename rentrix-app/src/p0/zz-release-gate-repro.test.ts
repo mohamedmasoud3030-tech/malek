@@ -24,7 +24,22 @@ import type { PGlite } from '@electric-sql/pglite';
 
 const migDir = join(repoRoot, 'supabase', 'migrations');
 const testsDir = join(repoRoot, 'supabase', 'tests');
-const fixFile = readdirSync(migDir).find((f) => f.includes('p0_company_isolation'))!;
+// The migration(s) under test for the CURRENT branch's regression check.
+// This used to be hardcoded to `p0_company_isolation` (a one-off migration
+// from an earlier PR); since that migration is already unconditionally part
+// of createReplayedDatabase()'s baseline chain (it is not in the default
+// excludeMigrations list), reapplying it a second time here tested nothing
+// about the current branch and produced a stale, non-representative signal.
+// Point this at the newest domain-workflow migration this branch introduces
+// so PRE/POST actually isolates its impact.
+const FIX_UNDER_TEST = 'contract_workflow_invariants';
+const fixFile = readdirSync(migDir).find((f) => f.includes(FIX_UNDER_TEST))!;
+if (!fixFile) {
+  throw new Error(
+    `zz-release-gate-repro: no migration file matching "${FIX_UNDER_TEST}" was found under supabase/migrations. ` +
+      'Update FIX_UNDER_TEST to the migration this branch is introducing.',
+  );
+}
 
 // Focused on the financial-lifecycle suites that actually exercise RLS,
 // report RPCs, and settlement flows under authenticated role contexts. The

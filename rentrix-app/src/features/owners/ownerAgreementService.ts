@@ -51,7 +51,7 @@ export function getEligibleAgreementOwners(
   const ownersById = new Map<string, Owner>();
 
   for (const link of ownershipLinks) {
-    if (!link.owner || !propertyOwnershipCoversAgreementRange(link, startsOn, endsOn)) continue;
+    if (!link.owner?.is_active || !propertyOwnershipCoversAgreementRange(link, startsOn, endsOn)) continue;
     ownersById.set(link.owner_id, link.owner);
   }
 
@@ -64,11 +64,12 @@ export function assertAgreementOwnerHasOwnership(
 ): void {
   const hasCoveringOwnership = ownershipLinks.some((link) => (
     link.owner_id === payload.owner_id
+    && link.owner?.is_active === true
     && propertyOwnershipCoversAgreementRange(link, payload.starts_on, payload.ends_on)
   ));
 
   if (!hasCoveringOwnership) {
-    throw new Error('المالك المحدد لا يملك العقار طوال فترة الاتفاقية. راجع تواريخ الملكية أو اختر مالكاً آخر.');
+    throw new Error('المالك المحدد غير نشط أو لا يملك العقار طوال فترة الاتفاقية. فعّل المالك وراجع تواريخ الملكية أو اختر مالكاً آخر.');
   }
 }
 

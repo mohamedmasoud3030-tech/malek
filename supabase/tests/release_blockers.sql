@@ -134,19 +134,19 @@ insert into public.property_owners (
   );
 
 insert into public.owner_agreements (
-  id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on
+  id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on, company_id
 ) values
   (
     '00000000-0000-0000-0000-000000000601',
     '00000000-0000-0000-0000-000000000201',
     '00000000-0000-0000-0000-000000000301',
-    'property_management', 'RATE', 5, date '2026-01-01', date '2027-12-31'
+    'property_management', 'RATE', 5, date '2026-01-01', date '2027-12-31', '00000000-0000-4000-8000-000000000001'
   ),
   (
     '00000000-0000-0000-0000-000000000602',
     '00000000-0000-0000-0000-000000000201',
     '00000000-0000-0000-0000-000000000302',
-    'property_management', 'FIXED_MONTHLY', 50, date '2026-01-01', date '2027-12-31'
+    'property_management', 'FIXED_MONTHLY', 50, date '2026-01-01', date '2027-12-31', '00000000-0000-4000-8000-000000000001'
   );
 
 set local role anon;

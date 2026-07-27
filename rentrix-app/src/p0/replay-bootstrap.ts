@@ -42,6 +42,9 @@ export async function createReplayedDatabase(options?: {
     'phase2_financial_integrity',
     'phase3a1b_canonical_accounts',
     'phase3a1c_owner_settlement',
+    'property_owner_workflow',
+    'unit_archive_history',
+    'contract_workflow',
   ];
   files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
 

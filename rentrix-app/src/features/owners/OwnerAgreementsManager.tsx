@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import { Link } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -89,7 +90,7 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
   const propertyOwners = useMemo(() => {
     const ownersById = new Map<string, Owner>();
     for (const link of ownershipLinks) {
-      if (link.owner) ownersById.set(link.owner_id, link.owner);
+      if (link.owner?.is_active) ownersById.set(link.owner_id, link.owner);
     }
     return [...ownersById.values()];
   }, [ownershipLinks]);
@@ -136,6 +137,8 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
   const saving = createMutation.isPending || updateMutation.isPending;
   const loading = agreementsQuery.isLoading || ownershipQuery.isLoading;
   const hasOwnershipLinks = ownershipLinks.length > 0;
+  const hasOperationalOwner = propertyOwners.length > 0;
+  const hasCurrentAgreement = grouped.current.length > 0;
 
   return (
     <Card className="rounded-2xl">
@@ -145,8 +148,8 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
             <CardTitle>اتفاقيات المكتب والمالك</CardTitle>
             <CardDescription>إدارة الاتفاقية السارية والمجدولة والمنتهية لهذا العقار مع حماية العقود وفترات الملكية.</CardDescription>
           </div>
-          <Button variant="secondary" onClick={startCreate} disabled={loading || !hasOwnershipLinks}>
-            <Plus className="me-2 size-4" /> اتفاقية لاحقة
+          <Button variant="secondary" onClick={startCreate} disabled={loading || !hasOperationalOwner}>
+            <Plus className="me-2 size-4" /> إضافة اتفاقية
           </Button>
         </div>
       </CardHeader>
@@ -155,9 +158,35 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
         {agreementsQuery.isError ? <p className="text-sm text-destructive">تعذر تحميل اتفاقيات المالك لهذا العقار.</p> : null}
         {ownershipQuery.isError ? <p className="text-sm text-destructive">تعذر تحميل ملاك العقار وفترات ملكيتهم.</p> : null}
         {!loading && !ownershipQuery.isError && !hasOwnershipLinks ? (
-          <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
-            اربط مالكاً بالعقار وحدد فترة ملكيته قبل إنشاء اتفاقية مكتب ومالك.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning/10 p-3">
+            <div>
+              <p className="text-sm font-bold text-warning">العقار غير جاهز للتشغيل: لا توجد ملكية سارية.</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">اربط مالكاً بالعقار وحدد فترة الملكية، ثم عُد لإنشاء اتفاقية المكتب.</p>
+            </div>
+            <Button type="button" variant="secondary" asChild>
+              <Link to="/owners">إدارة علاقات الملكية</Link>
+            </Button>
+          </div>
+        ) : null}
+        {!loading && hasOwnershipLinks && !hasOperationalOwner ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning/10 p-3" role="alert">
+            <div>
+              <p className="text-sm font-bold text-warning">المالك المرتبط غير نشط.</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">لا يمكن إنشاء اتفاقية تشغيل جديدة قبل تفعيل المالك أو ربط مالك نشط بالعقار.</p>
+            </div>
+            <Button type="button" variant="secondary" asChild>
+              <Link to="/owners">مراجعة المالك والملكية</Link>
+            </Button>
+          </div>
+        ) : null}
+        {!loading && hasOperationalOwner && !hasCurrentAgreement ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning/10 p-3" role="status">
+            <div>
+              <p className="text-sm font-bold text-warning">العقار غير جاهز لعقد إيجار اليوم.</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">أنشئ اتفاقية تشغيل تغطي فترة العقد المطلوبة قبل إضافة العقد.</p>
+            </div>
+            <Button type="button" variant="secondary" onClick={startCreate}>إنشاء الاتفاقية الآن</Button>
+          </div>
         ) : null}
         <div className="grid gap-4 lg:grid-cols-3">
           <section className="space-y-3"><h3 className="text-sm font-bold">السارية</h3>{grouped.current.length ? grouped.current.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="success" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقية سارية اليوم.</p>}</section>

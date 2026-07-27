@@ -1,14 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { RouteLoadingState } from '@/components/loading-state';
+import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCreatePropertyWithAgreement } from '@/features/owners/useOwnerAgreements';
-import { useOwners } from '@/features/owners/useOwners';
+import { useOperationalOwners } from '@/features/owners/useOwners';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperty, useUpdateProperty } from './use-properties';
@@ -102,7 +104,7 @@ export function PropertyFormModal({ open, onClose, propertyId }: PropertyFormMod
 // ─── Create modal ─────────────────────────────────────────────────────────────
 
 function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const ownersQuery = useOwners();
+  const ownersQuery = useOperationalOwners();
   const createMutation = useCreatePropertyWithAgreement();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<PropertyWithAgreementFormValues>({
@@ -133,6 +135,8 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
 
   const commissionType = form.watch('commission_type');
   const isSubmitting = createMutation.isPending;
+  const operationalOwners = useMemo(() => ownersQuery.data ?? [], [ownersQuery.data]);
+  const canCreateProperty = !ownersQuery.isLoading && !ownersQuery.isError && operationalOwners.length > 0;
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setSubmitError(null);
@@ -164,59 +168,109 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       open={open}
       onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}
       title="إضافة عقار جديد"
+      description="أنشئ العقار واربطه بمالكه واتفاقية التشغيل في خطوة واحدة متكاملة."
       className="max-w-2xl"
       headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="warning">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
       <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
         <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
 
-        {/* Core property fields (shared) */}
-        <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
-
-        {/* Agreement-specific fields (create only) */}
-        <EntityForm.Field label="المالك" className="md:col-span-2" error={form.formState.errors.owner_id?.message}>
-          <Select {...form.register('owner_id')} disabled={ownersQuery.isLoading}>
-            <option value="">اختر المالك</option>
-            {(ownersQuery.data ?? []).map((owner) => (
-              <option key={owner.id} value={owner.id}>{owner.display_name ?? owner.full_name ?? '—'}</option>
-            ))}
-          </Select>
-        </EntityForm.Field>
-        <EntityForm.Field label="نوع الاتفاقية" error={form.formState.errors.agreement_type?.message}>
-          <Select {...form.register('agreement_type')}>
-            <option value="property_management">إدارة عقارية</option>
-            <option value="master_lease">إيجار رئيسي</option>
-          </Select>
-        </EntityForm.Field>
-        <EntityForm.Field label="نوع العمولة" error={form.formState.errors.commission_type?.message}>
-          <Select {...form.register('commission_type')}>
-            <option value="FIXED_MONTHLY">مبلغ ثابت شهري</option>
-            <option value="RATE">نسبة مئوية %</option>
-          </Select>
-        </EntityForm.Field>
-        <EntityForm.Field label={`قيمة العمولة ${commissionType === 'RATE' ? '(%)' : '(ريال)'}`} error={form.formState.errors.commission_value?.message}>
-          <Input
-            type="number"
-            step="0.01"
-            inputMode="decimal"
-            min="0.01"
-            max={commissionType === 'RATE' ? 100 : undefined}
-            {...form.register('commission_value')}
-            placeholder={commissionType === 'RATE' ? '0 – 100' : '0.00'}
-          />
-        </EntityForm.Field>
-        <EntityForm.Field label="بداية الاتفاقية" error={form.formState.errors.agreement_starts_on?.message}>
-          <Input type="date" {...form.register('agreement_starts_on')} />
-        </EntityForm.Field>
-        <EntityForm.Field
-          label="نهاية الاتفاقية (اختياري)"
-          description="اتركه فارغاً للاتفاقيات مفتوحة الأجل"
-          error={form.formState.errors.agreement_ends_on?.message}
+        <EntityForm.Section
+          className="md:col-span-2"
+          title="1. بيانات العقار"
+          description="أدخل بيانات الأصل نفسه أولاً، ثم اربطه بالمالك واتفاقية تشغيل المكتب."
         >
-          <Input type="date" {...form.register('agreement_ends_on')} />
-        </EntityForm.Field>
+          <div className="grid gap-4 md:grid-cols-2">
+            <PropertyFormCoreFields register={form.register} errors={form.formState.errors} />
+          </div>
+        </EntityForm.Section>
 
-        <EntityForm.Actions className="md:col-span-2" onCancel={onClose} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ العقار'} />
+        <EntityForm.Section
+          className="md:col-span-2"
+          title="2. المالك"
+          description="لا يمكن إنشاء عقار تشغيلي بلا مالك نشط. الملكية واتفاقية المكتب تُحفظان مع العقار في عملية ذرية واحدة."
+        >
+          {ownersQuery.isError ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3" role="alert">
+              <p className="text-sm font-bold text-destructive">تعذر تحميل الملاك؛ لن يتم حفظ العقار قبل التحقق منهم.</p>
+              <Button type="button" variant="secondary" onClick={() => { void ownersQuery.refetch(); }}>إعادة المحاولة</Button>
+            </div>
+          ) : null}
+          {!ownersQuery.isLoading && !ownersQuery.isError && operationalOwners.length === 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/40 bg-warning/10 p-3" role="status">
+              <div>
+                <p className="text-sm font-bold text-warning">أضف مالكاً نشطاً أولاً</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">الترتيب الصحيح هو: مالك ← عقار ← وحدة ← عقد.</p>
+              </div>
+              <Button type="button" variant="secondary" asChild>
+                <Link to="/owners">الانتقال لإدارة الملاك</Link>
+              </Button>
+            </div>
+          ) : null}
+          <EntityForm.Field label="المالك" error={form.formState.errors.owner_id?.message}>
+            <Select {...form.register('owner_id')} disabled={ownersQuery.isLoading || ownersQuery.isError || operationalOwners.length === 0}>
+              <option value="">{ownersQuery.isLoading ? 'جار تحميل الملاك...' : 'اختر المالك'}</option>
+              {operationalOwners.map((owner) => (
+                <option key={owner.id} value={owner.id}>{owner.display_name ?? owner.full_name ?? owner.name}</option>
+              ))}
+            </Select>
+          </EntityForm.Field>
+          {operationalOwners.length > 0 ? (
+            <Button type="button" variant="ghost" className="w-fit" asChild>
+              <Link to="/owners">إدارة الملاك وعلاقات الملكية</Link>
+            </Button>
+          ) : null}
+        </EntityForm.Section>
+
+        <EntityForm.Section
+          className="md:col-span-2"
+          title="3. اتفاقية تشغيل المكتب"
+          description="تحدد الاتفاقية كيف يدير المكتب هذا العقار، وهي شرط قبل إنشاء أي عقد إيجار."
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <EntityForm.Field label="نوع الاتفاقية" error={form.formState.errors.agreement_type?.message}>
+              <Select {...form.register('agreement_type')}>
+                <option value="property_management">إدارة عقارية</option>
+                <option value="master_lease">إيجار رئيسي</option>
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="نوع العمولة" error={form.formState.errors.commission_type?.message}>
+              <Select {...form.register('commission_type')}>
+                <option value="FIXED_MONTHLY">مبلغ ثابت شهري</option>
+                <option value="RATE">نسبة مئوية %</option>
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label={`قيمة العمولة ${commissionType === 'RATE' ? '(%)' : '(ريال)'}`} error={form.formState.errors.commission_value?.message}>
+              <Input
+                type="number"
+                step="0.01"
+                inputMode="decimal"
+                min="0.01"
+                max={commissionType === 'RATE' ? 100 : undefined}
+                {...form.register('commission_value')}
+                placeholder={commissionType === 'RATE' ? '0 – 100' : '0.00'}
+              />
+            </EntityForm.Field>
+            <EntityForm.Field label="بداية الاتفاقية" error={form.formState.errors.agreement_starts_on?.message}>
+              <Input type="date" {...form.register('agreement_starts_on')} />
+            </EntityForm.Field>
+            <EntityForm.Field
+              label="نهاية الاتفاقية (اختياري)"
+              description="اتركه فارغاً للاتفاقيات مفتوحة الأجل"
+              error={form.formState.errors.agreement_ends_on?.message}
+            >
+              <Input type="date" {...form.register('agreement_ends_on')} />
+            </EntityForm.Field>
+          </div>
+        </EntityForm.Section>
+
+        <EntityForm.Actions
+          className="md:col-span-2"
+          onCancel={onClose}
+          isSubmitting={isSubmitting}
+          submitDisabled={!canCreateProperty}
+          submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ العقار والملكية والاتفاقية'}
+        />
       </EntityForm.Root>
     </EntityForm.Overlay>
   );
@@ -276,6 +330,7 @@ function PropertyEditModal({
       open={open}
       onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}
       title="تعديل عقار"
+      description="عدّل بيانات العقار الأساسية، مع بقاء الملكية واتفاقيات التشغيل في سجل العلاقات المخصص."
       className="max-w-2xl"
       headerExtra={form.formState.isDirty && !updateMutation.isPending ? <StatusBadge tone="warning">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >

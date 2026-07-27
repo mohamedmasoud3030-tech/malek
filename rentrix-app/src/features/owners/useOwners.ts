@@ -10,6 +10,7 @@ import {
   linkOwnerToProperty,
   listActiveContractsForProperties,
   listOwners,
+  listOperationalOwners,
   listPropertiesWithOwners,
   listPropertyOwners,
   unlinkOwnerFromProperty,
@@ -24,6 +25,7 @@ import {
 export const ownerKeys = {
   all: ['owners'] as const,
   lists: () => [...ownerKeys.all, 'list'] as const,
+  operational: () => [...ownerKeys.all, 'operational'] as const,
   hub: () => [...ownerKeys.all, 'hub'] as const,
   detail: (ownerId: string) => [...ownerKeys.all, 'detail', ownerId] as const,
   detailSnapshot: (ownerId: string) => [...ownerKeys.all, 'detail-snapshot', ownerId] as const,
@@ -43,6 +45,14 @@ async function invalidateOwnerAndPropertyQueries(queryClient: ReturnType<typeof 
 
 export function useOwners(options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({ queryKey: ownerKeys.lists(), queryFn: listOwners, enabled: options?.enabled ?? true });
+}
+
+export function useOperationalOwners(options?: Readonly<{ enabled?: boolean }>) {
+  return useQuery({
+    queryKey: ownerKeys.operational(),
+    queryFn: listOperationalOwners,
+    enabled: options?.enabled ?? true,
+  });
 }
 
 export function useOwner(ownerId: string) {

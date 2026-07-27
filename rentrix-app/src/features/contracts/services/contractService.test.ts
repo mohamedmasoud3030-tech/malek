@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const supabaseMock = vi.hoisted(() => ({
+  from: vi.fn(),
   rpc: vi.fn(),
 }));
 
@@ -75,6 +76,17 @@ describe('renewContract', () => {
 describe('updateContract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    const chain = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      is: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    chain.select.mockReturnValue(chain);
+    chain.eq.mockReturnValue(chain);
+    chain.is.mockReturnValue(chain);
+    chain.maybeSingle.mockResolvedValue({ data: { id: 'prop-1', status: 'active' }, error: null });
+    supabaseMock.from.mockReturnValue(chain);
   });
 
   const payload = {
@@ -115,6 +127,15 @@ describe('updateContract', () => {
     const { updateContract } = await import('./contractService');
 
     await expect(updateContract('contract-1', payload)).rejects.toThrow('الوحدة محجوزة');
+  });
+
+  it('rejects contracts on inactive properties before calling the write RPC', async () => {
+    const chain = supabaseMock.from();
+    chain.maybeSingle.mockResolvedValueOnce({ data: { id: 'prop-1', status: 'inactive' }, error: null });
+    const { updateContract } = await import('./contractService');
+
+    await expect(updateContract('contract-1', payload)).rejects.toThrow('عقار غير نشط');
+    expect(supabaseMock.rpc).not.toHaveBeenCalled();
   });
 });
 
