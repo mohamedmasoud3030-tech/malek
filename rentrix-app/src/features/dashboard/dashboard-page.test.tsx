@@ -12,6 +12,18 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
 }));
 
+// Keep dashboard tests focused on the snapshot boundary. The onboarding
+// component has its own ADMIN/MANAGER/USER permission matrix tests.
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({
+    authorization: {
+      userId: 'user-1',
+      email: 'user@example.com',
+      role: 'USER',
+    },
+  }),
+}));
+
 // Mock useCompanySettingsContract
 vi.mock('@/features/settings/useCompanySettings', () => ({
   useCompanySettingsContract: () => ({

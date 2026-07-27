@@ -13,7 +13,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
  */
 const financialWorkspaces = [
   ['invoices', 'الفواتير والتحصيل', 'مراجعة وتسجيل دفعات الفواتير', FileText],
-  ['receipts', 'السدادات والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText],
+  ['receipts', 'التحصيل والإيصالات', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText],
   ['expenses', 'المصروفات التشغيلية', 'تسجيل ومراجعة نفقات العقارات', WalletCards],
   ['arrears', 'جدول المتأخرات والديون', 'متابعة الذمم وأعمار الديون', ClipboardList],
   ['deposits', 'تأمين وأمانات المستأجرين', 'تتبع مبالغ أمانات وعقود التأمين', FileCheck],

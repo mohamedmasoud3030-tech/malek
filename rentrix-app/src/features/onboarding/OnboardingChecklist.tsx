@@ -19,18 +19,25 @@ type Step = Readonly<{
  * core setup steps are completed (or the user skips/dismisses). Progress is read
  * from existing data sources — no new queries or migrations are introduced.
  */
-export function OnboardingChecklist({ progress }: Readonly<{ progress: OnboardingProgress }>) {
+export function OnboardingChecklist({
+  progress,
+  canManageSetup,
+}: Readonly<{
+  progress: OnboardingProgress;
+  canManageSetup: boolean;
+}>) {
   const onboarding = useOnboarding();
+  const isVisible = onboarding.isVisible && canManageSetup;
   // #1168: never fetch the owners list when the checklist is hidden/completed —
   // an unnecessary dashboard query for every legacy account.
-  const { data: owners } = useOwners({ enabled: onboarding.isVisible });
+  const { data: owners } = useOwners({ enabled: isVisible });
   const hasOwner = (owners?.length ?? 0) > 0;
 
   const steps = useMemo<Step[]>(
     () => [
+      { id: 'owner', label: 'إضافة أول مالك', to: '/owners', done: hasOwner },
       { id: 'property', label: 'إنشاء أول عقار', to: '/properties/new', done: progress.hasProperty },
       { id: 'unit', label: 'إنشاء أول وحدة', to: '/properties', done: progress.hasUnit },
-      { id: 'owner', label: 'إضافة أول مالك أو شخص', to: '/owners', done: hasOwner },
       { id: 'contract', label: 'إنشاء أول عقد', to: '/contracts/new', done: progress.hasContract },
       {
         id: 'invoice',
@@ -52,10 +59,10 @@ export function OnboardingChecklist({ progress }: Readonly<{ progress: Onboardin
   // disappear permanently instead of lingering until a manual dismissal.
   const { complete } = onboarding;
   useEffect(() => {
-    if (allRequiredDone) complete();
-  }, [allRequiredDone, complete]);
+    if (isVisible && allRequiredDone) complete();
+  }, [allRequiredDone, complete, isVisible]);
 
-  if (!onboarding.isVisible) return null;
+  if (!isVisible) return null;
 
   return (
     <Card variant="default" className="border-primary/20 bg-primary/[0.03]">
@@ -67,7 +74,7 @@ export function OnboardingChecklist({ progress }: Readonly<{ progress: Onboardin
           <div>
             <CardTitle className="text-base">إعداد حسابك</CardTitle>
             <p className="mt-1 text-xs font-bold text-muted-foreground">
-              أكمل الخطوات الأساسية لبدء إدارة عقاراتك بكفاءة.
+              اتبع الترتيب التشغيلي الصحيح: المالك ثم العقار والوحدة والعقد.
             </p>
           </div>
         </div>

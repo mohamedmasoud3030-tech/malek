@@ -78,14 +78,14 @@ describe('system and governance route authorization', () => {
 
   it('exposes governance surfaces in navigation from v0.3 onwards', () => {
     const settingsAndGovernanceItems: readonly NavItem[] = navGroups
-      .find(([sectionTitle]) => sectionTitle === 'المستندات والحوكمة')?.[1] ?? [];
+      .find(([sectionTitle]) => sectionTitle === 'الإدارة والحوكمة')?.[1] ?? [];
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = settingsAndGovernanceItems.map(([to]) => to);
 
     expect(systemRoutes).toEqual(expect.arrayContaining(['/audit-log', '/data-integrity', '/system', '/settings']));
     expect(systemRoutes).toContain('/audit-log');
     expect(systemRoutes).toContain('/data-integrity');
-    expect(systemRoutes).not.toContain('/change-password');
+    expect(systemRoutes).toContain('/change-password');
     const filteredSettingsItems = settingsAndGovernanceItems.filter(([, , , , permission]) => {
       const canShow = canShowNavigationItem(adminContext, permission);
       return canShow;
