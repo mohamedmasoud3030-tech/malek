@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { PropertyPayload } from './property-schema';
-import { createProperty, getProperty, listProperties, softDeleteProperty, updateProperty, type PropertyListParams } from './property-service';
+import { getProperty, listProperties, softDeleteProperty, updateProperty, type PropertyListParams } from './property-service';
 
 export const propertyKeys = {
   all: ['properties'] as const,
@@ -22,19 +22,6 @@ export function useProperty(propertyId: string) {
     queryKey: propertyKeys.detail(propertyId),
     queryFn: () => getProperty(propertyId),
     enabled: Boolean(propertyId),
-  });
-}
-
-export function useCreateProperty() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: PropertyPayload) => createProperty(payload),
-    onSuccess: async (property) => {
-      queryClient.setQueryData(propertyKeys.detail(property.id), property);
-      await queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
-      toast.success('تم إنشاء العقار بنجاح');
-    },
-    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنشاء العقار'),
   });
 }
 

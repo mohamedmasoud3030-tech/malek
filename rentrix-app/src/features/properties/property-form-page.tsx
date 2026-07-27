@@ -14,16 +14,32 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { DirtyRouteNavigationGuard, useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
 import { propertySchema, propertyStatusLabels, propertyStatusValues, type PropertyFormValues } from './property-schema';
-import { useCreateProperty, useProperty, useUpdateProperty } from './use-properties';
+import { PropertyFormModal } from './property-form-modal';
+import { useProperty, useUpdateProperty } from './use-properties';
 
 export function PropertyFormPage() {
   const params = useParams({ strict: false });
   const propertyId = typeof params.propertyId === 'string' ? params.propertyId : undefined;
-  const isEdit = Boolean(propertyId);
+  return propertyId ? <PropertyEditFormPage propertyId={propertyId} /> : <PropertyCreateRoute />;
+}
+
+function PropertyCreateRoute() {
   const router = useRouter();
-  const propertyQuery = useProperty(propertyId ?? '');
-  const createMutation = useCreateProperty();
-  const updateMutation = useUpdateProperty(propertyId ?? '');
+
+  return (
+    <PropertyFormModal
+      open
+      onClose={() => {
+        void router.navigate({ to: '/properties' });
+      }}
+    />
+  );
+}
+
+function PropertyEditFormPage({ propertyId }: Readonly<{ propertyId: string }>) {
+  const router = useRouter();
+  const propertyQuery = useProperty(propertyId);
+  const updateMutation = useUpdateProperty(propertyId);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [pendingNavigateTo, setPendingNavigateTo] = useState<string | null>(null);
@@ -34,7 +50,6 @@ export function PropertyFormPage() {
       title: '',
       type: '',
       address: '',
-      owner_name: '',
       purchase_value: null,
       current_value: null,
       status: 'active',
@@ -50,7 +65,6 @@ export function PropertyFormPage() {
         title: propertyQuery.data.title,
         type: propertyQuery.data.type,
         address: propertyQuery.data.address,
-        owner_name: propertyQuery.data.owner_name ?? '',
         purchase_value: propertyQuery.data.purchase_value,
         current_value: propertyQuery.data.current_value,
         status: propertyQuery.data.status,
@@ -59,18 +73,13 @@ export function PropertyFormPage() {
     }
   }, [form, propertyQuery.data]);
 
-  const isMutationPending = createMutation.isPending || updateMutation.isPending;
-  const isSubmitting = isSubmittingGuard || isMutationPending;
+  const isSubmitting = isSubmittingGuard || updateMutation.isPending;
   const handleSubmit = form.handleSubmit(async (values) => {
     await runSubmit(async () => {
       setSubmitError(null);
       try {
         const payload = propertySchema.parse(values);
-        if (isEdit && propertyId) {
-          await updateMutation.mutateAsync(payload);
-        } else {
-          await createMutation.mutateAsync(payload);
-        }
+        await updateMutation.mutateAsync(payload);
         form.reset(undefined, { keepValues: true });
         await router.navigate({ to: '/properties' });
       } catch (error) {
@@ -104,8 +113,8 @@ export function PropertyFormPage() {
     setPendingNavigateTo(null);
   };
 
-  if (isEdit && propertyQuery.isLoading) return <RouteLoadingState />;
-  if (isEdit && propertyQuery.isError) {
+  if (propertyQuery.isLoading) return <RouteLoadingState />;
+  if (propertyQuery.isError) {
     return (
       <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl">
         <Card role="alert" aria-live="assertive">
@@ -126,8 +135,8 @@ export function PropertyFormPage() {
     <>
       <PageLayout dir="rtl" lang="ar" contentClassName="max-w-5xl">
         <PageHeader
-          title={isEdit ? 'تعديل عقار' : 'إضافة عقار جديد'}
-          description="أدخل بيانات العقار الأساسية. اسم المالك هنا للعرض الخفيف فقط وليس ربط ملكية أو حسابات ملاك."
+          title="تعديل عقار"
+          description="عدّل بيانات العقار الأساسية. تُدار الملكية واتفاقيات المالك من قسم علاقات الملاك لضمان سلامة الحسابات."
           secondaryActions={(
             <Button variant="secondary" onClick={() => requestNavigate('/properties')} disabled={isSubmitting}>
               العودة
@@ -146,12 +155,6 @@ export function PropertyFormPage() {
               </EntityForm.Field>
               <EntityForm.Field label="العنوان" className="md:col-span-2" error={form.formState.errors.address?.message}>
                 <Input {...form.register('address')} placeholder="المدينة، الحي، الشارع" />
-              </EntityForm.Field>
-              <EntityForm.Field
-                label="اسم المالك للعرض"
-                description="حقل نصي خفيف للعرض فقط، ولا ينشئ حساب مالك أو نسب ملكية."
-              >
-                <Input {...form.register('owner_name')} placeholder="اسم عرض اختياري يظهر في قائمة وتفاصيل العقار" />
               </EntityForm.Field>
               <EntityForm.Field label="الحالة" error={form.formState.errors.status?.message}>
                 <Select {...form.register('status')}>

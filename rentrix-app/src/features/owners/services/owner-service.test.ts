@@ -151,6 +151,14 @@ describe('owner service normalization helpers', () => {
     expect(ownerServiceSource).toContain('.update({ ends_on:');
     expect(ownerServiceSource).not.toContain('.delete()');
   });
+
+  it('loads property-form owner options from active, non-archived owners only', () => {
+    const ownerServiceSource = readFileSync(new URL('./owner-service.ts', import.meta.url), 'utf8');
+
+    expect(ownerServiceSource).toContain('export async function listOperationalOwners');
+    expect(ownerServiceSource).toContain(".is('deleted_at', null)");
+    expect(ownerServiceSource).toContain(".eq('is_active', true)");
+  });
 });
 
 describe('owner read helpers', () => {

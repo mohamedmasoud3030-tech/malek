@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act } from 'react';
+import { act, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { PropertiesListPage } from './properties-list-page';
 
@@ -10,6 +10,7 @@ let propertyRows: any[] = [];
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
+  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('./use-properties', () => ({
@@ -28,9 +29,11 @@ vi.mock('./use-properties', () => ({
   useSoftDeleteProperty: () => ({ isPending: false, mutateAsync: vi.fn().mockResolvedValue({}) }),
 }));
 vi.mock('@/features/owners/useOwners', () => ({
-  useOwners: () => ({
+  useOperationalOwners: () => ({
     data: [{ id: '11111111-1111-4111-8111-111111111111', display_name: 'مالك تجريبي', full_name: 'مالك تجريبي' }],
     isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   }),
 }));
 vi.mock('@/features/owners/useOwnerAgreements', () => ({
@@ -108,5 +111,19 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     const countBadge = container.querySelector('[aria-label^="عدد السجلات"]');
     expect(countBadge).toBeTruthy();
     expect(countBadge?.textContent?.trim()).toBe('0');
+  });
+
+  it('distinguishes an unavailable linked owner from a missing ownership link', async () => {
+    propertyRows = [{
+      ...propertyRows[0],
+      workflow_health: 'owner_unavailable',
+      current_owner_name: 'مالك مؤرشف',
+    }];
+
+    await act(async () => root.render(<PropertiesListPage />));
+
+    expect(container.textContent).toContain('المالك غير نشط');
+    expect(container.textContent).toContain('المالك المرتبط غير نشط: مالك مؤرشف');
+    expect(container.textContent).not.toContain('لا يوجد ربط ملكية ساري');
   });
 });

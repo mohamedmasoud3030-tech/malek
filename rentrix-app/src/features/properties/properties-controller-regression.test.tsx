@@ -9,7 +9,7 @@
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'react-dom/client';
-import { act } from 'react';
+import { act, type ReactNode } from 'react';
 import { PropertiesListPage } from './properties-list-page';
 
 const mockNavigate = vi.fn();
@@ -17,7 +17,10 @@ let propertyRows: any[] = [];
 let propertyCount = 0;
 const createPropertyWithAgreementMock = vi.fn();
 
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => mockNavigate }));
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => mockNavigate,
+  Link: ({ children, to }: { children: ReactNode; to: string }) => <a href={to}>{children}</a>,
+}));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('./use-properties', () => ({
   useProperties: () => ({
@@ -35,9 +38,11 @@ vi.mock('./use-properties', () => ({
   useSoftDeleteProperty: () => ({ isPending: false, mutateAsync: vi.fn().mockResolvedValue({}) }),
 }));
 vi.mock('@/features/owners/useOwners', () => ({
-  useOwners: () => ({
+  useOperationalOwners: () => ({
     data: [{ id: 'owner-1', display_name: 'مالك', full_name: 'مالك تجريبي' }],
     isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
   }),
 }));
 vi.mock('@/features/owners/useOwnerAgreements', () => ({
