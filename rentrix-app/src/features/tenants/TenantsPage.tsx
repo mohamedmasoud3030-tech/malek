@@ -128,7 +128,11 @@ function TenantWorkspaceContent({ isError, isLoading, onCreate, onEdit, onRetry,
   );
 }
 
-export function TenantsPage() {
+type TenantsWorkspaceProps = Readonly<{
+  embedded?: boolean;
+}>;
+
+export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
@@ -142,35 +146,56 @@ export function TenantsPage() {
   const openEdit = (personId: string) => { setEditingPersonId(personId); setFormOpen(true); };
   const closeForm = () => { setFormOpen(false); setEditingPersonId(undefined); tenantsQuery.refetch(); };
 
+  const createAction = <Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>;
+
+  const workspaceContent = (
+    <>
+      <FilterBar
+        searchValue={search}
+        onSearchChange={(value) => { setSearch(value); setPage(1); }}
+        searchPlaceholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
+        searchAriaLabel="بحث في المستأجرين"
+      />
+
+      <TenantWorkspaceContent isError={tenantsQuery.isError} isLoading={tenantsQuery.isLoading} onCreate={openCreate} onEdit={openEdit} onRetry={() => tenantsQuery.refetch()} rows={rows} />
+
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>الصفحة {page} من {totalPages}</span>
+        <div className="flex gap-2">
+          <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>السابق</Button>
+          <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>التالي</Button>
+        </div>
+      </div>
+    </>
+  );
+
+  const workspace = embedded ? (
+    <section data-workspace="tenants" dir="rtl" className="space-y-5">
+      <div className="flex justify-end">{createAction}</div>
+      {workspaceContent}
+    </section>
+  ) : (
+    <PageLayout dir="rtl" size="wide">
+      <PageHeader
+        title="المستأجرين"
+        description="عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية."
+        count={tenantsQuery.data?.count ?? 0}
+        action={createAction}
+      />
+      {workspaceContent}
+    </PageLayout>
+  );
+
   return (
     <>
-      <PageLayout dir="rtl" size="wide">
-        <PageHeader
-          title="المستأجرين"
-          description="عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية."
-          count={tenantsQuery.data?.count ?? 0}
-          action={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
-        />
-
-        <FilterBar
-          searchValue={search}
-          onSearchChange={(value) => { setSearch(value); setPage(1); }}
-          searchPlaceholder="بحث باسم المستأجر أو الهاتف أو الإيميل أو رقم الهوية"
-          searchAriaLabel="بحث في المستأجرين"
-        />
-
-        <TenantWorkspaceContent isError={tenantsQuery.isError} isLoading={tenantsQuery.isLoading} onCreate={openCreate} onEdit={openEdit} onRetry={() => tenantsQuery.refetch()} rows={rows} />
-
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>الصفحة {page} من {totalPages}</span>
-          <div className="flex gap-2">
-            <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((v) => Math.max(1, v - 1))}>السابق</Button>
-            <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((v) => Math.min(totalPages, v + 1))}>التالي</Button>
-          </div>
-        </div>
-      </PageLayout>
+      {workspace}
       <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
     </>
   );
 }
+
+export function TenantsPage() {
+  return <TenantsWorkspace />;
+}
+
 export default TenantsPage;
