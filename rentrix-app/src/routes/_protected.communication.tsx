@@ -1,1 +1,1 @@
-export { CommunicationPage as CommunicationRouteComponent } from '@/features/communication/communication-page';
+export { RelationshipsHubPage as CommunicationRouteComponent } from '@/features/relationships/relationships-hub-page';
