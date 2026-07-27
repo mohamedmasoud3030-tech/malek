@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { messages } from './messages';
+import { brandMessages } from './brand-messages';
 import type { Lang, Messages } from './messages';
 
 type LanguageContextValue = {
@@ -23,14 +23,12 @@ function detectInitialLang(): Lang {
   } catch {
     /* storage unavailable — fall through */
   }
-  return 'ar'; // Target market default: Arabic
+  return 'ar';
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(detectInitialLang);
 
-  // Landing pages control <html> dir/lang/title and scroll padding while mounted;
-  // the app's own chrome values are restored on unmount.
   useEffect(() => {
     const root = document.documentElement;
     const original = {
@@ -55,10 +53,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
     document.documentElement.dir = dir;
-    document.title = messages[lang].meta.title;
+    document.title = brandMessages[lang].meta.title;
     document
       .querySelector('meta[name="description"]')
-      ?.setAttribute('content', messages[lang].meta.description);
+      ?.setAttribute('content', brandMessages[lang].meta.description);
     try {
       window.localStorage.setItem(STORAGE_KEY, lang);
     } catch {
@@ -71,7 +69,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       lang,
       dir: lang === 'ar' ? 'rtl' : 'ltr',
       isArabic: lang === 'ar',
-      t: messages[lang],
+      t: brandMessages[lang],
       setLang: (next: Lang) => setLangState(next),
       toggle: () => setLangState((prev) => (prev === 'ar' ? 'en' : 'ar')),
     }),
