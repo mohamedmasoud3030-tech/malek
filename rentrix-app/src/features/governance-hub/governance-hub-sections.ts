@@ -18,7 +18,7 @@ export const governanceHubSections = [
   {
     id: 'users-roles',
     label: 'المستخدمون والأدوار',
-    description: 'حوكمة الوصول ومحاكي الأدوار وروابط النظام الإدارية.',
+    description: 'إدارة أدوار الحسابات الحالية وحالتها ضمن حوكمة الوصول.',
     icon: ShieldAlert,
     permission: 'system.view',
   },
