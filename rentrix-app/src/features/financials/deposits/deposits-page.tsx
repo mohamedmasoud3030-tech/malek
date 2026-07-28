@@ -1,18 +1,13 @@
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { DepositsWorkspace as DepositsWorkspaceBody } from './deposits-workspace';
 
-export type DepositsWorkspaceMode = 'standalone' | 'embedded';
-
-export type DepositsPageProps = Readonly<{
+export type DepositsWorkspaceProps = Readonly<{
   /**
-   * standalone: renders the full page shell (PageLayout + PageHeader) — used
-   * by the legacy /deposits route when visited directly.
-   * embedded: renders only the workspace body — used inside the
-   * deposits/settlements finance hub, which already supplies its own page
-   * shell and tab header.
+   * embedded: rendered inside the finance hub, which already supplies the page
+   * shell — the workspace body renders without a second layout or header.
+   * standalone (default): reached via /deposits, so it owns the page shell.
    */
-  mode?: DepositsWorkspaceMode;
+  embedded?: boolean;
 }>;
 
 /**
@@ -20,20 +15,20 @@ export type DepositsPageProps = Readonly<{
  * /deposits route and the embedded finance hub tab so business logic,
  * queries, and mutations are never duplicated.
  */
-export function DepositsPage({ mode = 'standalone' }: DepositsPageProps) {
-  if (mode === 'embedded') {
-    return <DepositsWorkspaceBody />;
-  }
-
+export function DepositsWorkspace({ embedded = false }: DepositsWorkspaceProps) {
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide">
-      <PageHeader
-        title="تأمين وأمانات المستأجرين"
-        description="تسجيل مبالغ التأمين المحتجزة للعقود النشطة، ومتابعة الخصومات والاستردادات مع مستندات الطباعة."
-      />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      title="تأمين وأمانات المستأجرين"
+      description="تسجيل مبالغ التأمين المحتجزة للعقود النشطة، ومتابعة الخصومات والاستردادات مع مستندات الطباعة."
+    >
       <DepositsWorkspaceBody />
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
+}
+
+export function DepositsPage() {
+  return <DepositsWorkspace />;
 }
 
 export default DepositsPage;

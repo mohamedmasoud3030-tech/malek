@@ -14,6 +14,10 @@ const featureDependencyAllowList = new Map([
   ['audit', new Set(['auth', 'settings'])],
   ['contracts', new Set(['financials', 'owners', 'people', 'properties', 'settings', 'units'])],
   ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding'])],
+  // finance-hub is the composition layer for the finance workspaces: it owns
+  // the shared page shell, tabs, URL sync, and per-tab permission checks, then
+  // lazily renders the section bodies that still live in their own features.
+  ['finance-hub', new Set(['auth', 'commissions', 'financials', 'owners'])],
   ['financials', new Set(['auth', 'contracts', 'properties', 'reports', 'settings'])],
   ['maintenance', new Set(['financials', 'properties', 'reports', 'units'])],
   ['onboarding', new Set(['owners'])],
