@@ -18,7 +18,7 @@ const TAB_META = [
   { id: 'entity-form', icon: ClipboardList, src: '/landing/entity-form.png' },
 ] as const;
 
-const DEMO_VIDEO_SRC = '/landing/malik-demo.mp4';
+const DEMO_VIDEO_SRC = '/landing/rentrix-demo.mp4';
 
 export function Showcase() {
   const { t } = useLanguage();

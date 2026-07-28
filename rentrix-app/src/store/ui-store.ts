@@ -19,7 +19,7 @@ type UiState = {
 
 const getInitialTheme = (): Theme => {
   if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem('malik-theme') as Theme | null) ?? 'light';
+  return (localStorage.getItem('rentrix-theme') as Theme | null) ?? 'light';
 };
 
 export const useUiStore = create<UiState>((set) => ({
@@ -30,7 +30,7 @@ export const useUiStore = create<UiState>((set) => ({
   onboardingDismissed: false,
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setTheme: (theme) => {
-    localStorage.setItem('malik-theme', theme);
+    localStorage.setItem('rentrix-theme', theme);
     document.documentElement.dataset.theme = theme;
     set({ theme });
   },

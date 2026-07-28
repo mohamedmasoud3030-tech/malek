@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Mail, MessageCircle, Heart } from 'lucide-react';
 import { APP_BRAND_NAME } from '@/lib/brand';
+import { MalikBrand } from '@/components/brand/malik-brand';
 import { useLanguage } from '../i18n/LanguageContext';
 import { APP_HOST, CONTACT_EMAIL, whatsappLink } from '../constants';
 
@@ -20,11 +21,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
           <div>
-            <div className="flex items-center gap-2.5">
-              <span className="malik-wordmark tracking-[0.16em] text-xl font-extrabold text-foreground" dir="ltr">
-                {APP_BRAND_NAME}
-              </span>
-            </div>
+            <MalikBrand showTagline />
             <p className="mt-4 max-w-xs text-sm leading-7 text-muted-foreground">{t.footer.tagline}</p>
             <p className="mt-5 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
               <Heart className="size-3.5 text-danger" />

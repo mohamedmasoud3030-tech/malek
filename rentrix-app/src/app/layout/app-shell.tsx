@@ -244,7 +244,7 @@ export function AppShell() {
           className={cn(
             'min-h-24 border-b border-white/8 py-5',
             // The collapsed rail is 4.5rem wide; tighten the inline padding so the
-            // full MALIK wordmark fits instead of being truncated.
+            // compact MALIK mark stays centered and has a comfortable touch target.
             isSidebarExpanded ? 'px-5' : 'px-1.5',
           )}
         >

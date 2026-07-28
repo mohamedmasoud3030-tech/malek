@@ -1,8 +1,9 @@
 import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import { cn } from '@/lib/utils';
+import { MalikMark } from './malik-mark';
 
 type MalikBrandProps = Readonly<{
-  /** Collapsed rail / narrow surface: shrink the wordmark instead of clipping it. */
+  /** Collapsed rail / narrow surface: render the mark where text would be illegible. */
   compact?: boolean;
   className?: string;
   wordmarkClassName?: string;
@@ -12,16 +13,10 @@ type MalikBrandProps = Readonly<{
 }>;
 
 /**
- * MALIK identity — a text-only wordmark.
- *
- * There is intentionally no logo file, no drawn `M` glyph, and no building or
- * geometric icon: the brand is the product name set in the geometric wordmark
- * face (Sora, applied by the global `.malik-wordmark` rule) while the Arabic
- * tagline stays on Cairo. Do not add an image, an inline SVG, or a decorative
- * letter tile to this component.
- *
- * The compact variant drops to a smaller size and tighter tracking so the full
- * five letters still fit the 4.5rem collapsed sidebar rail without truncating.
+ * MALIK identity lockup. The full lockup uses an angular mark, the Latin
+ * wordmark, and the fixed Arabic tagline; the compact variant keeps only the
+ * mark so it stays legible in the collapsed navigation rail and app icon-like
+ * surfaces.
  */
 export function MalikBrand({
   compact = false,
@@ -30,30 +25,40 @@ export function MalikBrand({
   showTagline = false,
   inverse = false,
 }: MalikBrandProps) {
+  if (compact) {
+    return (
+      <div role="img" className={cn('grid place-items-center', className)} aria-label={APP_BRAND_NAME}>
+        <MalikMark className="size-9" />
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('min-w-0', compact && 'text-center', className)}>
-      <p
-        dir="ltr"
-        aria-label={APP_BRAND_NAME}
-        className={cn(
-          'malik-wordmark font-extrabold uppercase leading-none',
-          compact ? 'text-[0.6875rem] tracking-[0.06em]' : 'truncate text-lg tracking-[0.16em]',
-          inverse ? 'text-white' : 'text-foreground',
-          wordmarkClassName,
-        )}
-      >
-        {APP_BRAND_NAME}
-      </p>
-      {showTagline && !compact ? (
+    <div className={cn('flex min-w-0 items-center gap-2.5', className)}>
+      <MalikMark className="size-9" />
+      <div className="min-w-0">
         <p
+          dir="ltr"
+          aria-label={APP_BRAND_NAME}
           className={cn(
-            'mt-1 truncate text-[10px] font-semibold',
-            inverse ? 'text-sidebar-foreground/60' : 'text-muted-foreground',
+            'malik-wordmark truncate text-lg font-extrabold uppercase leading-none tracking-[0.16em]',
+            inverse ? 'text-white' : 'text-foreground',
+            wordmarkClassName,
           )}
         >
-          {APP_BRAND_TAGLINE_AR}
+          {APP_BRAND_NAME}
         </p>
-      ) : null}
+        {showTagline ? (
+          <p
+            className={cn(
+              'mt-1 truncate text-[10px] font-semibold',
+              inverse ? 'text-sidebar-foreground/60' : 'text-muted-foreground',
+            )}
+          >
+            {APP_BRAND_TAGLINE_AR}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

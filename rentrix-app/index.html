@@ -14,8 +14,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="MALIK" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icon-malik-192.png" />
-    <link rel="mask-icon" href="/favicon.svg" color="#0f172a" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -52,7 +52,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <style nonce="malik-static">
+    <style nonce="rentrix-static">
       :root {
         --color-bg: 224 20% 97%;
         --color-card: 0 0% 100%;
@@ -105,11 +105,11 @@
     <!-- Theme init (before render to avoid flash) -->
     <script>
       (function() {
-        const theme = localStorage.getItem('malik-theme') || 'light';
+        const theme = localStorage.getItem('rentrix-theme') || 'light';
         document.documentElement.dataset.theme = theme;
       })();
     </script>
-    <script nonce="malik-static">
+    <script nonce="rentrix-static">
       window.addEventListener('load', function loadProductFonts() {
         const stylesheet = document.createElement('link');
         stylesheet.rel = 'stylesheet';

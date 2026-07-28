@@ -29,14 +29,15 @@ describe('public landing performance contract', () => {
     expect(showcaseSource).toContain('{videoOpen ? (');
   });
 
-  it('ships no brand image in the landing header or footer', () => {
-    // The MALIK identity is a text-only wordmark, so the first view costs no
-    // logo request at all. This also guards the legacy icons from creeping back.
+  it('keeps the landing brand mark lightweight and free of legacy icon assets', () => {
     const navBarSource = readSource('./components/NavBar.tsx');
     const footerSource = readSource('./components/Footer.tsx');
+    const publicRoot = new URL('../../../public/', import.meta.url);
+    const markBytes = statSync(new URL('malik-mark.svg', publicRoot)).size;
 
-    expect(navBarSource).not.toContain('<img');
-    expect(footerSource).not.toContain('<img');
+    expect(markBytes).toBeLessThan(2_000);
+    expect(navBarSource).toContain('MalikBrand');
+    expect(footerSource).toContain('MalikBrand');
     expect(navBarSource).not.toContain('icon-rentrix');
     expect(footerSource).not.toContain('icon-rentrix');
   });

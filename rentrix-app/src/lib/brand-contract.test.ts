@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -13,7 +13,8 @@ import {
  *
  * This is the regression net for the Rentrix -> MALIK rebrand. It scans the
  * shipped UI, document/print, and marketing surfaces and fails when the legacy
- * product name reaches a user again, or when a visual logo is reintroduced.
+ * product name reaches a user again, or when the approved mark/wordmark system
+ * is replaced with an unreviewed brand asset.
  *
  * It deliberately does NOT ban the lowercase `rentrix` technical prefix: the
  * auth session key, theme key, view-mode keys, workbox cache names, package
@@ -152,7 +153,7 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   ],
   [
     'src/store/ui-store.ts',
-    'Persisted theme key malik-theme, also read by the inline theme script in index.html.',
+    'Persisted theme key rentrix-theme, also read by the inline theme script in index.html.',
   ],
   [
     'src/components/ui/entity-table.tsx',
@@ -164,7 +165,7 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   ],
   [
     'src/features/landing/components/Showcase.tsx',
-    'Static asset path /landing/malik-demo.mp4.',
+    'Static asset path /landing/rentrix-demo.mp4.',
   ],
   [
     'src/styles/globals.css',
@@ -227,6 +228,11 @@ const SELF_PATH = 'src/lib/brand-contract.test.ts';
 const relativePath = (file: string) => relative(appRoot, file).split('\\').join('/');
 const read = (file: string) => readFileSync(file, 'utf8');
 const readApp = (relativeToApp: string) => readFileSync(join(appRoot, relativeToApp), 'utf8');
+const readPngDimensions = (relativeToApp: string) => {
+  const png = readFileSync(join(appRoot, relativeToApp));
+  expect(png.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
+};
 
 describe('MALIK brand contract — identity constants', () => {
   it('exposes MALIK as the single user-facing product name', () => {
@@ -294,14 +300,13 @@ describe('MALIK brand contract — no legacy name reaches a user', () => {
     expect(routeTree).not.toContain('Rentrix');
   });
 
-  it('keeps the sidebar, drawer, and login surfaces on the MALIK wordmark', () => {
+  it('keeps the sidebar, drawer, and login surfaces on the MALIK lockup', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
     // Both the expanded sidebar and the mobile drawer render the same <Brand/>.
     expect(appShell.match(/<Brand\s/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
-    expect(loginPage).toContain('APP_BRAND_NAME');
-    expect(loginPage).toContain('malik-wordmark');
+    expect(loginPage).toContain('MalikBrand');
     expect(loginPage).not.toContain('Rentrix');
   });
 
@@ -359,62 +364,45 @@ describe('MALIK brand contract — no legacy name reaches a user', () => {
   });
 });
 
-describe('MALIK brand contract — text-only wordmark, no visual mark', () => {
-  it('ships no malik-mark asset or similar visual mark', () => {
-    const forbidden = [
-      'public/malik-mark.svg',
-      'public/malik-logo.svg',
-      'public/icon-malik-192.png',
-      'public/icon-malik-512.png',
-      'src/components/brand/malik-mark.tsx',
-      'src/components/brand/malik-logo.tsx',
-    ];
+describe('MALIK brand contract — mark, wordmark, and tagline', () => {
+  it('ships one approved angular mark and keeps the runtime component on it', () => {
+    expect(existsSync(join(appRoot, 'public/malik-mark.svg'))).toBe(true);
+    expect(existsSync(join(appRoot, 'src/components/brand/malik-mark.tsx'))).toBe(true);
+    expect(existsSync(join(appRoot, 'public/malik-app-icon.svg'))).toBe(true);
+    expect(existsSync(join(appRoot, 'public/malik-app-icon-maskable.svg'))).toBe(true);
 
-    for (const asset of forbidden) {
-      expect(existsSync(join(appRoot, asset)), `${asset} must not exist — the identity is text-only`).toBe(false);
-    }
+    const mark = readApp('public/malik-mark.svg');
+    expect(mark).toMatch(/viewBox="0 0 64 64"/);
+    expect(mark).not.toMatch(/REAL ESTATE|PLATFORM|building/i);
 
-    const referencingMark = sourceFiles
-      .filter((file) => relativePath(file) !== SELF_PATH)
-      .filter((file) => /malik-mark|malik-logo|MalikMark|MalikLogo/.test(read(file)));
-    expect(referencingMark.map(relativePath)).toEqual([]);
+    const brandComponent = readApp('src/components/brand/malik-brand.tsx');
+    expect(brandComponent).toContain('MalikMark');
+    expect(brandComponent).toContain('APP_BRAND_NAME');
+    expect(brandComponent).toContain('APP_BRAND_TAGLINE_AR');
   });
 
-  it('keeps the collapsed sidebar rail able to show the whole wordmark', () => {
-    // The rail is 4.5rem (72px). At px-5 the 5-letter wordmark overflows, so the
-    // shell tightens the inline padding and the compact variant tightens tracking.
+  it('uses the mark alone in the collapsed sidebar rail', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
     const brandComponent = readApp('src/components/brand/malik-brand.tsx');
 
     expect(appShell).toMatch(/isSidebarExpanded \? 'px-5' : 'px-1\.5'/);
-    expect(brandComponent).toContain("compact ? 'text-[0.6875rem] tracking-[0.06em]'");
-    // A truncating wordmark in the collapsed rail would clip MALIK to "MALI…".
-    expect(brandComponent).not.toMatch(/compact \? '[^']*truncate/);
+    expect(appShell).toContain('compact={!expanded}');
+    expect(brandComponent).toMatch(/if \(compact\)/);
+    expect(brandComponent).toContain('<MalikMark className="size-9" />');
   });
 
-  it('keeps MalikBrand a pure text wordmark', () => {
-    const brandComponent = readApp('src/components/brand/malik-brand.tsx');
-
-    expect(brandComponent).not.toMatch(/<svg/i);
-    expect(brandComponent).not.toMatch(/<img/i);
-    expect(brandComponent).not.toMatch(/<path/i);
-    expect(brandComponent).not.toMatch(/backgroundImage|url\(/);
-    expect(brandComponent).toContain('APP_BRAND_NAME');
-    expect(brandComponent).toContain('malik-wordmark');
-  });
-
-  it('renders no brand image anywhere in the shell, login, or landing chrome', () => {
-    const chrome = [
-      'src/app/layout/app-shell.tsx',
+  it('places the complete lockup only on the high-visibility brand surfaces', () => {
+    for (const file of [
       'src/features/auth/login-page.tsx',
-      'src/features/landing/components/NavBar.tsx',
+      'src/features/auth/command-center-panel.tsx',
       'src/features/landing/components/Footer.tsx',
-    ];
-
-    for (const file of chrome) {
-      const source = readApp(file);
-      expect(source, `${file} must not reference a logo image`).not.toMatch(/icon-rentrix|icon-malik|logo\.(svg|png)/);
+      'src/features/landing/components/Hero.tsx',
+    ]) {
+      expect(readApp(file), `${file} must show the MALIK tagline`).toContain('showTagline');
     }
+
+    expect(readApp('src/features/landing/components/NavBar.tsx')).toContain('<MalikBrand />');
+    expect(readApp('src/components/layout/pwa-install-prompt.tsx')).toContain('MalikMark');
   });
 
   it('stops referencing the legacy Rentrix icons from the shipped shell', () => {
@@ -448,12 +436,12 @@ describe('MALIK brand contract — text-only wordmark, no visual mark', () => {
 });
 
 describe('MALIK brand contract — PWA and document metadata', () => {
-  it('brands the PWA manifest as MALIK with no icon entries', () => {
+  it('brands the PWA manifest with complete, truthful mark icons', () => {
     const manifest = JSON.parse(readApp('public/manifest.json')) as {
       name: string;
       short_name: string;
       description: string;
-      icons?: unknown[];
+      icons?: Array<{ src: string; sizes: string; type: string; purpose: string }>;
     };
 
     expect(manifest.short_name).toBe(APP_BRAND_NAME);
@@ -461,7 +449,25 @@ describe('MALIK brand contract — PWA and document metadata', () => {
     expect(manifest.name).toContain(APP_BRAND_TAGLINE_AR);
     expect(manifest.name).not.toContain('Rentrix');
     expect(manifest.description).not.toContain('Rentrix');
-    expect(manifest.icons ?? []).toEqual([]);
+    expect(manifest.icons).toEqual([
+      { src: '/icon-malik-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icon-malik-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ]);
+
+    for (const icon of manifest.icons ?? []) {
+      const declaredSize = Number(icon.sizes.split('x')[0]);
+      expect(readPngDimensions(`public${icon.src}`)).toEqual({
+        width: declaredSize,
+        height: declaredSize,
+      });
+      expect(statSync(join(appRoot, `public${icon.src}`)).size).toBeLessThan(100 * 1024);
+    }
+
+    const favicon = readApp('public/favicon.svg');
+    expect(favicon).toContain('#3B82F6');
+    expect(favicon).not.toMatch(/REAL ESTATE|PLATFORM|<text/i);
   });
 
   it('brands the HTML head, Open Graph, Twitter, and structured data as MALIK', () => {
@@ -473,16 +479,18 @@ describe('MALIK brand contract — PWA and document metadata', () => {
     expect(indexHtml).toContain(`twitter:title" content="${APP_BRAND_NAME} | ${APP_BRAND_TAGLINE_AR}"`);
     expect(indexHtml).toContain(`"name": "${APP_BRAND_NAME}"`);
     expect(indexHtml).toContain('apple-mobile-web-app-title" content="MALIK"');
+    expect(indexHtml).toContain('rel="icon" href="/favicon.svg"');
+    expect(indexHtml).toContain('rel="apple-touch-icon" href="/icon-malik-192.png"');
     expect(indexHtml).not.toContain('Rentrix');
   });
 
-  it('brands the offline shell as a MALIK wordmark', () => {
+  it('brands the offline shell with the complete MALIK lockup', () => {
     const offline = readApp('public/offline.html');
 
     expect(offline).toContain(APP_BRAND_NAME);
     expect(offline).not.toContain('Rentrix');
-    expect(offline).not.toMatch(/<svg/i);
-    expect(offline).not.toMatch(/<img/i);
+    expect(offline).toContain('/malik-mark.svg');
+    expect(offline).toContain(APP_BRAND_TAGLINE_AR);
   });
 
   it('brands the install prompt as MALIK', () => {

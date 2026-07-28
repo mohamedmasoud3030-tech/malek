@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
-import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
+import { MalikBrand } from '@/components/brand/malik-brand';
 import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
 import { CommandCenterPanel } from './command-center-panel';
 
@@ -91,21 +91,13 @@ export function LoginPage() {
         <div className="safe-top-app safe-bottom-overlay mx-auto w-full max-w-md">
           {/* Mobile brand header — only visible on small screens */}
           <header className="mb-6 md:hidden">
-            <div>
-              <p className="malik-wordmark tracking-[0.16em] text-lg font-extrabold leading-tight" dir="ltr">
-                {APP_BRAND_NAME}
-              </p>
-              <p className="mt-1 text-xs font-medium text-muted-foreground">{APP_BRAND_TAGLINE_AR}</p>
-            </div>
+            <MalikBrand showTagline />
           </header>
 
           {/* Desktop heading block */}
           <div className="mb-6 hidden md:block">
             <div className="mb-5">
-              <p className="malik-wordmark tracking-[0.16em] text-lg font-extrabold leading-tight" dir="ltr">
-                {APP_BRAND_NAME}
-              </p>
-              <p className="mt-1 text-xs font-medium text-muted-foreground">{APP_BRAND_TAGLINE_AR}</p>
+              <MalikBrand showTagline />
             </div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
