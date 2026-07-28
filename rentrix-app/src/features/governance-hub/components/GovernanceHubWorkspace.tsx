@@ -37,8 +37,8 @@ const TabFallback = () => <LoadingState variant="section" label="جارٍ تحم
  * it only decides which already-permitted surfaces to show as tabs.
  */
 export function GovernanceHubWorkspace() {
-  const { authorization } = useAuth();
-  const visibleSections = useMemo(() => getVisibleGovernanceHubSections(authorization), [authorization]);
+  const { canAccess } = useAuth();
+  const visibleSections = useMemo(() => getVisibleGovernanceHubSections(canAccess), [canAccess]);
 
   const [activeTab, setActiveTab] = useState<GovernanceHubSectionId>(
     () => visibleSections[0]?.id ?? 'office',
