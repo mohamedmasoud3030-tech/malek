@@ -1,13 +1,12 @@
 import { FolderKanban, Settings2, Wrench, Zap } from 'lucide-react';
 import type { SectionTabItem } from '@/components/ui/section-tabs';
-import type { AppPermission } from '@/features/auth/permissions';
 
 export type OperationsHubSectionId = 'maintenance' | 'utilities' | 'automation' | 'documents_vault';
 
 export type OperationsHubSection = SectionTabItem<OperationsHubSectionId> & Readonly<{
   description: string;
   /** null means no extra permission is required beyond being an authenticated user. */
-  permission: AppPermission | null;
+  permission: 'maintenance.view' | 'automation.view' | null;
 }>;
 
 /**
@@ -47,3 +46,14 @@ export const operationsHubSections: readonly OperationsHubSection[] = [
     permission: null,
   },
 ] as const;
+
+export type OperationsHubPermission = Exclude<OperationsHubSection['permission'], null>;
+
+/** Returns only tabs accepted by the shared authorization seam. */
+export function getVisibleOperationsHubSections(
+  canAccess: (permission: OperationsHubPermission) => boolean,
+) {
+  return operationsHubSections.filter(
+    (section) => section.permission === null || canAccess(section.permission),
+  );
+}
