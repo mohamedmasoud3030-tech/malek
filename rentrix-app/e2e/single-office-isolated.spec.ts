@@ -90,7 +90,7 @@ test.describe('single-office isolated launch acceptance', () => {
       { path: '/invoices', heading: 'الفواتير', evidence: '#00000000' },
       { path: '/receipts', heading: 'الإيصالات', evidence: 'مستأجر اختبار المكتب الواحد' },
       { path: '/reports', heading: 'التقارير', evidence: 'التقارير' },
-      { path: '/maintenance', heading: 'الصيانة', evidence: 'الصيانة' },
+      { path: '/maintenance', heading: 'مركز التشغيل', evidence: 'الصيانة' },
       { path: '/settings', heading: null, evidence: 'الإعدادات محفوظة' },
     ];
 
