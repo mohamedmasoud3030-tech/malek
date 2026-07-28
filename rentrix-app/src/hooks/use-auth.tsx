@@ -1,7 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
-import { getAuthorizationContextFromSession, getAuthorizationDiagnosticsFromSession, type AuthorizationContext, type AuthorizationDiagnostics } from '@/features/auth/permissions';
+import {
+  canAccess as canAccessPermission,
+  getAuthorizationContextFromSession,
+  getAuthorizationDiagnosticsFromSession,
+  type AppPermission,
+  type AuthorizationContext,
+  type AuthorizationDiagnostics,
+} from '@/features/auth/permissions';
 import { supabase } from '@/lib/supabase';
 import { getCurrentSession, signInWithEmail, signOut } from '@/services/auth-service';
 import { router } from '@/app/router/app-router';
@@ -11,6 +18,7 @@ type AuthContextValue = {
   user: User | null;
   authorization: AuthorizationContext | null;
   authorizationDiagnostics: AuthorizationDiagnostics;
+  canAccess: (permission: AppPermission) => boolean;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -112,6 +120,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
+  const authorization = useMemo(() => getAuthorizationContextFromSession(session), [session]);
   const authorizationDiagnostics = useMemo(() => getAuthorizationDiagnosticsFromSession(session), [session]);
 
   useEffect(() => {
@@ -129,8 +138,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () => ({
       session,
       user: session?.user ?? null,
-      authorization: getAuthorizationContextFromSession(session),
+      authorization,
       authorizationDiagnostics,
+      canAccess: (permission) => canAccessPermission(authorization, permission),
       isLoading,
       isAuthenticated: Boolean(session),
       login: async (email, password) => {
@@ -143,7 +153,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setSession(null);
       },
     }),
-    [authorizationDiagnostics, isLoading, session],
+    [authorization, authorizationDiagnostics, isLoading, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

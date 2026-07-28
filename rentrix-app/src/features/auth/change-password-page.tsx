@@ -22,7 +22,19 @@ export function validateChangePasswordForm(form: ChangePasswordFormState): strin
   return null;
 }
 
-export function ChangePasswordPage() {
+export type ChangePasswordWorkspaceVariant = 'standalone' | 'embedded';
+
+type ChangePasswordWorkspaceProps = Readonly<{
+  /**
+   * 'standalone' (default) preserves the historical /change-password route:
+   * content renders inside its own PageLayout + PageHeader. 'embedded'
+   * drops both so the content can be hosted inside the governance hub
+   * without duplicating page chrome.
+   */
+  variant?: ChangePasswordWorkspaceVariant;
+}>;
+
+export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswordWorkspaceProps = {}) {
   const [form, setForm] = useState<ChangePasswordFormState>({ password: '', confirmPassword: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -51,13 +63,8 @@ export function ChangePasswordPage() {
     setSucceeded(true);
   };
 
-  return (
-    <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl">
-      <PageHeader
-        title="تغيير كلمة المرور"
-        description="تحديث كلمة مرور حسابك الحالي فقط عبر جلسة Supabase النشطة، بدون أي تغيير على حسابات أخرى."
-      />
-
+  const body = (
+    <>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -95,6 +102,25 @@ export function ChangePasswordPage() {
         </CardContent>
       </Card>
       {serviceError ? <DataErrorScreen title="فشل تحديث كلمة المرور" fallbackMessage="تحقق من الجلسة الحالية وحاول مرة أخرى." error={serviceError} /> : null}
+    </>
+  );
+
+  if (variant === 'embedded') {
+    return <div className="max-w-3xl space-y-4">{body}</div>;
+  }
+
+  return (
+    <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl">
+      <PageHeader
+        title="تغيير كلمة المرور"
+        description="تحديث كلمة مرور حسابك الحالي فقط عبر جلسة Supabase النشطة، بدون أي تغيير على حسابات أخرى."
+      />
+      {body}
     </PageLayout>
   );
+}
+
+/** Standalone /change-password route entry point — preserves historical behavior exactly. */
+export function ChangePasswordPage() {
+  return <ChangePasswordWorkspace variant="standalone" />;
 }

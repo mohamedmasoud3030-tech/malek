@@ -1,1 +1,1 @@
-export { SettingsPage as SettingsRouteComponent } from '@/features/settings/settings-page';
+export { GovernanceHubPage as SettingsRouteComponent } from '@/features/governance-hub/governance-hub-page';
