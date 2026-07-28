@@ -1,4 +1,4 @@
-import type { AuthorizationRole } from '@/features/auth/permissions';
+import type { UserRole } from '@/domain/types';
 import { supabase } from '@/lib/supabase';
 
 export type GovernedUser = Readonly<{
@@ -6,7 +6,7 @@ export type GovernedUser = Readonly<{
   email: string;
   name: string;
   fullName: string | null;
-  role: AuthorizationRole | null;
+  role: UserRole | null;
   status: 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED' | null;
   isActive: boolean;
   lastLogin: string | null;
@@ -17,7 +17,7 @@ type UserRow = {
   email: string;
   name: string;
   full_name: string | null;
-  role: AuthorizationRole | null;
+  role: UserRole | null;
   status: GovernedUser['status'];
   is_active: boolean;
   last_login: string | null;
@@ -46,7 +46,7 @@ export async function fetchGovernedUsers(): Promise<GovernedUser[]> {
 
 export async function updateGovernedUserAccess(input: Readonly<{
   id: string;
-  role: AuthorizationRole;
+  role: UserRole;
   isActive: boolean;
 }>): Promise<void> {
   const { error } = await supabase

@@ -1,8 +1,8 @@
-import { authorizationRoles, type AuthorizationRole } from '@/features/auth/permissions';
+import type { UserRole } from '@/domain/types';
 
-export const governedUserRoles = authorizationRoles;
+export const governedUserRoles = ['ADMIN', 'MANAGER', 'USER'] as const satisfies readonly UserRole[];
 
-export function getRoleLabel(role: AuthorizationRole | null): string {
+export function getRoleLabel(role: UserRole | null): string {
   switch (role) {
     case 'ADMIN':
       return 'مسؤول';

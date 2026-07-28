@@ -8,12 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
-import { canAccess, type AuthorizationRole } from '@/features/auth/permissions';
+import type { UserRole } from '@/domain/types';
 import { useAuth } from '@/hooks/use-auth';
 import { canManageGovernedUser, getRoleLabel, governedUserRoles } from '../user-roles-model';
 import { fetchGovernedUsers, updateGovernedUserAccess, type GovernedUser } from '../user-roles-service';
 
-const roleDescriptions: ReadonlyArray<Readonly<{ role: AuthorizationRole; description: string }>> = [
+const roleDescriptions: ReadonlyArray<Readonly<{ role: UserRole; description: string }>> = [
   { role: 'ADMIN', description: 'إدارة كاملة للمكتب والمستخدمين والحوكمة.' },
   { role: 'MANAGER', description: 'تشغيل يومي ومالية ضمن الصلاحيات، دون إدارة المستخدمين.' },
   { role: 'USER', description: 'وصول محدود للوحة التحكم وكلمة المرور فقط.' },
@@ -23,9 +23,9 @@ function UserAccessCard({ user, currentUserId, isSaving, onSave }: Readonly<{
   user: GovernedUser;
   currentUserId: string | null | undefined;
   isSaving: boolean;
-  onSave: (input: Readonly<{ id: string; role: AuthorizationRole; isActive: boolean }>) => void;
+  onSave: (input: Readonly<{ id: string; role: UserRole; isActive: boolean }>) => void;
 }>) {
-  const [role, setRole] = useState<AuthorizationRole>(user.role ?? 'USER');
+  const [role, setRole] = useState<UserRole>(user.role ?? 'USER');
   const [isActive, setIsActive] = useState(user.isActive);
   const isCurrentUser = !canManageGovernedUser(currentUserId, user.id);
 
@@ -51,7 +51,7 @@ function UserAccessCard({ user, currentUserId, isSaving, onSave }: Readonly<{
       <CardContent className="space-y-3">
         <label className="block space-y-1.5 text-sm font-bold">
           <span>الدور</span>
-          <Select value={role} disabled={isCurrentUser || isSaving} onChange={(event) => setRole(event.target.value as AuthorizationRole)}>
+          <Select value={role} disabled={isCurrentUser || isSaving} onChange={(event) => setRole(event.target.value as UserRole)}>
             {governedUserRoles.map((candidate) => <option key={candidate} value={candidate}>{getRoleLabel(candidate)}</option>)}
           </Select>
         </label>
@@ -81,9 +81,10 @@ function UserAccessCard({ user, currentUserId, isSaving, onSave }: Readonly<{
  * intentionally remains outside the browser because it requires a privileged
  * auth-admin endpoint; this page never tries to manufacture a user client-side. */
 export function UserRolesWorkspace() {
-  const { authorization, user } = useAuth();
+  const { canAccess, user } = useAuth();
   const queryClient = useQueryClient();
-  const usersQuery = useQuery({ queryKey: ['governance-users'], queryFn: fetchGovernedUsers, enabled: canAccess(authorization, 'system.view') });
+  const canManageUsers = canAccess('system.view');
+  const usersQuery = useQuery({ queryKey: ['governance-users'], queryFn: fetchGovernedUsers, enabled: canManageUsers });
   const updateMutation = useMutation({
     mutationFn: updateGovernedUserAccess,
     onSuccess: async () => {
@@ -93,7 +94,7 @@ export function UserRolesWorkspace() {
     onError: () => toast.error('تعذر حفظ صلاحيات المستخدم. تحقق من صلاحيتك ثم أعد المحاولة.'),
   });
 
-  if (!canAccess(authorization, 'system.view')) {
+  if (!canManageUsers) {
     return <AccessDenied message="إدارة المستخدمين والأدوار متاحة للمسؤول فقط." />;
   }
 
