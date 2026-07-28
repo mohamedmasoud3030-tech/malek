@@ -151,9 +151,9 @@ function VoidReceiptDialog({
   );
 }
 
-function ReceiptsHistoryContent({ embedded }: Readonly<{ embedded: boolean }>) {
+function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Readonly<{ embedded: boolean; initialSelectedReceiptId?: string }>) {
   const { authorization } = useAuth();
-  const [selectedReceiptId, setSelectedReceiptId] = useState('');
+  const [selectedReceiptId, setSelectedReceiptId] = useState(initialSelectedReceiptId);
   const [query, setQuery] = useState('');
   const [method, setMethod] = useState<MethodFilter>('all');
   const [from, setFrom] = useState('');
@@ -381,10 +381,11 @@ export type ReceiptsWorkspaceProps = Readonly<{
  * /receipts route and the embedded finance hub tab so business logic,
  * queries, and mutations are never duplicated.
  *
- * `?receiptId=` opens the single-receipt print view. That view is a
- * full-bleed printable document with its own page shell, so it stays a
- * standalone-only concern: inside the hub the list remains visible and the
- * detail is reached through the existing /receipts route.
+ * `?receiptId=` opens the single-receipt document. Standalone that renders the
+ * full-bleed printable view (the /receipts route keeps serving it directly, so
+ * existing print links are untouched). Embedded, the hub already owns the page
+ * shell, so the list stays visible and the selected receipt is shown inline
+ * rather than nesting a second document shell inside a tab.
  */
 export function ReceiptsWorkspace({ embedded = false }: ReceiptsWorkspaceProps) {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
@@ -392,7 +393,7 @@ export function ReceiptsWorkspace({ embedded = false }: ReceiptsWorkspaceProps) 
 
   if (!embedded && receiptIdFromSearch) return <ReceiptDetailPage />;
 
-  return <ReceiptsHistoryContent embedded={embedded} />;
+  return <ReceiptsHistoryContent embedded={embedded} initialSelectedReceiptId={receiptIdFromSearch} />;
 }
 
 export function ReceiptsPage() {
