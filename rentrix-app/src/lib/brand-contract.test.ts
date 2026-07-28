@@ -167,26 +167,6 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'src/features/landing/components/Showcase.tsx',
     'Static asset path /landing/rentrix-demo.mp4.',
   ],
-  [
-    'src/styles/globals.css',
-    'Historical design-contract heading; not rendered to users.',
-  ],
-  [
-    'src/styles/tokens.css',
-    'Historical design-contract heading; not rendered to users.',
-  ],
-  [
-    'src/styles/page-polish.css',
-    'Historical design-contract heading; not rendered to users.',
-  ],
-  [
-    'src/styles/product-palette.css',
-    'Historical design-contract heading; not rendered to users.',
-  ],
-  [
-    'src/styles/ux-foundation.css',
-    'Historical design-contract heading; not rendered to users.',
-  ],
 ]);
 
 /** Persisted view-mode keys keep the legacy prefix; listing them keeps the scan honest. */
