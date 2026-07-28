@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -213,6 +214,8 @@ const readPngDimensions = (relativeToApp: string) => {
   expect(png.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
 };
+const readSha256 = (relativeToApp: string) =>
+  createHash('sha256').update(readFileSync(join(appRoot, relativeToApp))).digest('hex');
 
 describe('MALIK brand contract — identity constants', () => {
   it('exposes MALIK as the single user-facing product name', () => {
@@ -348,8 +351,6 @@ describe('MALIK brand contract — mark, wordmark, and tagline', () => {
   it('ships one approved angular mark and keeps the runtime component on it', () => {
     expect(existsSync(join(appRoot, 'public/malik-mark.svg'))).toBe(true);
     expect(existsSync(join(appRoot, 'src/components/brand/malik-mark.tsx'))).toBe(true);
-    expect(existsSync(join(appRoot, 'public/malik-app-icon.svg'))).toBe(true);
-    expect(existsSync(join(appRoot, 'public/malik-app-icon-maskable.svg'))).toBe(true);
 
     const mark = readApp('public/malik-mark.svg');
     expect(mark).toMatch(/viewBox="0 0 64 64"/);
@@ -416,7 +417,7 @@ describe('MALIK brand contract — mark, wordmark, and tagline', () => {
 });
 
 describe('MALIK brand contract — PWA and document metadata', () => {
-  it('brands the PWA manifest with complete, truthful mark icons', () => {
+  it('brands the PWA manifest with the approved full MALIK logo icon', () => {
     const manifest = JSON.parse(readApp('public/manifest.json')) as {
       name: string;
       short_name: string;
@@ -445,9 +446,18 @@ describe('MALIK brand contract — PWA and document metadata', () => {
       expect(statSync(join(appRoot, `public${icon.src}`)).size).toBeLessThan(100 * 1024);
     }
 
-    const favicon = readApp('public/favicon.svg');
-    expect(favicon).toContain('#3B82F6');
-    expect(favicon).not.toMatch(/REAL ESTATE|PLATFORM|<text/i);
+    expect(readSha256('public/icon-malik-192.png')).toBe(
+      '630c7848b9e2d7a30f89100215379d430d084fdc99596078f762072ebdb91223',
+    );
+    expect(readSha256('public/icon-malik-512.png')).toBe(
+      '5b4acae6abec762f386b8c28e7a0dfb939db9586bca627562b27390786862688',
+    );
+    expect(readFileSync(join(appRoot, 'public/icon-maskable-192.png'))).toEqual(
+      readFileSync(join(appRoot, 'public/icon-malik-192.png')),
+    );
+    expect(readFileSync(join(appRoot, 'public/icon-maskable-512.png'))).toEqual(
+      readFileSync(join(appRoot, 'public/icon-malik-512.png')),
+    );
   });
 
   it('brands the HTML head, Open Graph, Twitter, and structured data as MALIK', () => {
@@ -459,7 +469,7 @@ describe('MALIK brand contract — PWA and document metadata', () => {
     expect(indexHtml).toContain(`twitter:title" content="${APP_BRAND_NAME} | ${APP_BRAND_TAGLINE_AR}"`);
     expect(indexHtml).toContain(`"name": "${APP_BRAND_NAME}"`);
     expect(indexHtml).toContain('apple-mobile-web-app-title" content="MALIK"');
-    expect(indexHtml).toContain('rel="icon" href="/favicon.svg"');
+    expect(indexHtml).toContain('rel="icon" href="/icon-malik-192.png" type="image/png" sizes="192x192"');
     expect(indexHtml).toContain('rel="apple-touch-icon" href="/icon-malik-192.png"');
     expect(indexHtml).not.toContain('Rentrix');
   });
