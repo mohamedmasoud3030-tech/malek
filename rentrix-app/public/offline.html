@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#2563eb">
-  <title>غير متصل — Rentrix</title>
+  <meta name="theme-color" content="#0f172a">
+  <title>غير متصل — MALIK</title>
   <style>
     :root {
       color-scheme: light;
@@ -36,17 +36,14 @@
       box-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.45);
       text-align: center;
     }
-    .mark {
-      width: 3.5rem;
-      height: 3.5rem;
+    .wordmark {
       margin: 0 auto 1rem;
-      border-radius: 1rem;
-      display: grid;
-      place-items: center;
-      background: var(--primary);
-      color: white;
-      font-weight: 900;
+      font-family: 'Sora', ui-sans-serif, system-ui, sans-serif;
+      font-weight: 800;
       font-size: 1.35rem;
+      letter-spacing: 0.16em;
+      color: var(--text);
+      direction: ltr;
     }
     h1 {
       margin: 0 0 0.5rem;
@@ -83,13 +80,13 @@
 </head>
 <body>
   <main class="card" role="status" aria-live="polite">
-    <div class="mark" aria-hidden="true">R</div>
+    <p class="wordmark">MALIK</p>
     <h1>أنت غير متصل حالياً</h1>
     <p>
       يمكن فتح غلاف التطبيق فقط دون اتصال. لن يتم عرض أو تخزين بيانات مالية حساسة في وضع عدم الاتصال.
     </p>
     <button type="button" onclick="window.location.reload()">إعادة المحاولة</button>
-    <p class="note">Rentrix · تجربة PWA آمنة</p>
+    <p class="note">MALIK · تجربة PWA آمنة</p>
   </main>
 </body>
 </html>

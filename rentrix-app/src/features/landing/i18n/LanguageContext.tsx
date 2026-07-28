@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { brandMessages } from './brand-messages';
+import { messages } from './messages';
 import type { Lang, Messages } from './messages';
 
 type LanguageContextValue = {
@@ -53,10 +53,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
     document.documentElement.dir = dir;
-    document.title = brandMessages[lang].meta.title;
+    document.title = messages[lang].meta.title;
     document
       .querySelector('meta[name="description"]')
-      ?.setAttribute('content', brandMessages[lang].meta.description);
+      ?.setAttribute('content', messages[lang].meta.description);
     try {
       window.localStorage.setItem(STORAGE_KEY, lang);
     } catch {
@@ -69,7 +69,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       lang,
       dir: lang === 'ar' ? 'rtl' : 'ltr',
       isArabic: lang === 'ar',
-      t: brandMessages[lang],
+      t: messages[lang],
       setLang: (next: Lang) => setLangState(next),
       toggle: () => setLangState((prev) => (prev === 'ar' ? 'en' : 'ar')),
     }),

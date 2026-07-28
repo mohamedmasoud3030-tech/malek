@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
+import { APP_BRAND_FILE_SLUG } from '@/lib/brand';
 import { Controller } from 'react-hook-form';
 import { Building2, Download, Edit, Eye, Plus, Printer, ReceiptText, Tags, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -101,7 +102,7 @@ export function ExpensesSection({
   const hasFilters = Boolean(filters.propertyId || filters.category || filters.costCenterId || filters.from || filters.to);
   const companySettings = useCompanySettingsContract();
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
-  const exportVisibleExpenses = () => downloadExpenseCsv(`rentrix-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
+  const exportVisibleExpenses = () => downloadExpenseCsv(`${APP_BRAND_FILE_SLUG}-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
   const exportExpenseVoucher = (expense: Expense) => {
     const property = propertyById.get(expense.property_id);
     void exportExpenseVoucherPdf(expense, property, companySettings.companyName, companySettings.defaultCurrency);

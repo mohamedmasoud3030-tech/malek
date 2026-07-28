@@ -1,5 +1,7 @@
 # Domain
 
+> **Brand note:** MALIK is the product's current commercial name; the `rentrix-app/` path and other technical identifiers below intentionally keep the legacy `rentrix` spelling.
+
 Core types live in `rentrix-app/src/domain/types.ts` (Supabase-independent) and `rentrix-app/src/types/database.ts` (generated from the live Supabase schema). When the two disagree, verify against the live schema — generated types can drift from what migrations actually produced (for example, some primary key columns are `text`, not `uuid`, even where a type might otherwise be assumed).
 
 ## Core entities and relationships

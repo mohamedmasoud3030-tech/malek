@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, CheckCircle2, MessageCircle, Rocket, ChevronDown, TrendingUp, Home } from 'lucide-react';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { useLanguage } from '../i18n/LanguageContext';
 import { APP_HOST, whatsappLink } from '../constants';
 import { BrowserFrame, FrameCaption } from './Frames';
@@ -12,8 +13,8 @@ export function Hero() {
   const { t, isArabic } = useLanguage();
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const waMessage = isArabic
-    ? 'مرحباً، أريد حجز عرض تجريبي لنظام Rentrix لإدارة العقارات.'
-    : 'Hi, I would like to book a live demo of Rentrix.';
+    ? `مرحباً، أريد حجز عرض تجريبي لنظام ${APP_BRAND_NAME} لإدارة العقارات.`
+    : `Hi, I would like to book a live demo of ${APP_BRAND_NAME}.`;
 
   return (
     <section id="top" className="bg-noise relative overflow-hidden bg-background">
@@ -127,7 +128,7 @@ export function Hero() {
 
           <BrowserFrame
             src="/landing/dashboard.webp"
-            alt={isArabic ? 'لوحة تحكم Rentrix الحقيقية' : 'The real Rentrix dashboard'}
+            alt={isArabic ? `لوحة تحكم ${APP_BRAND_NAME} الحقيقية` : `The real ${APP_BRAND_NAME} dashboard`}
             url={`${APP_HOST}/dashboard`}
             loading="eager"
             fetchPriority="high"

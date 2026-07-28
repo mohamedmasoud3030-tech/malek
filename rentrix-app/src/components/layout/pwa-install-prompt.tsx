@@ -1,6 +1,7 @@
 import { useSyncExternalStore, useState } from 'react';
 import { Download, Share, SquarePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import {
   dismissInstallPrompt,
   getAppInstalledEventFired,
@@ -58,7 +59,7 @@ export function PwaInstallPrompt() {
     <div
       data-pwa-install-prompt
       role="region"
-      aria-label="تثبيت تطبيق Rentrix"
+      aria-label={`تثبيت تطبيق ${APP_BRAND_NAME}`}
       className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[calc(var(--mobile-bottom-nav-height,3.75rem)+env(safe-area-inset-bottom,0px)+0.75rem)] pt-2 lg:pb-6"
     >
       <div className="flex w-full max-w-md items-start gap-3 rounded-2xl border border-border bg-card p-3.5 text-card-foreground shadow-elevated">
@@ -70,7 +71,7 @@ export function PwaInstallPrompt() {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">ثبّت تطبيق Rentrix</p>
+          <p className="text-sm font-bold">{`ثبّت تطبيق ${APP_BRAND_NAME}`}</p>
           {iosManual ? (
             <p className="mt-0.5 text-[11px] leading-5 text-muted-foreground">
               من متصفح Safari: اضغط{' '}

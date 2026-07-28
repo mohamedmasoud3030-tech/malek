@@ -54,7 +54,7 @@ describe('LoginPage — structural contract', () => {
     const html = renderToStaticMarkup(<LoginPage />);
 
     expect(html).toContain('data-login-surface');
-    expect(html).toContain('Rentrix');
+    expect(html).toContain('MALIK');
     expect(html).toContain('مرحباً بعودتك');
     expect(html).toContain('دخول آمن لمساحة العمل');
     expect(html).toContain('جلسة عمل محمية');
@@ -283,7 +283,8 @@ describe('CommandCenterPanel — presentation only', () => {
     const html = renderToStaticMarkup(<CommandCenterPanel />);
 
     expect(html).not.toContain('<aside');
-    expect(html).toContain('مركز قيادة Rentrix');
+    expect(html).toContain('MALIK');
+    expect(html).toContain('كل مُلكك في مكان واحد');
     expect(html).toContain('وحدة');
     expect(html).toContain('عقد');
     expect(html).toContain('نسبة الإشغال');

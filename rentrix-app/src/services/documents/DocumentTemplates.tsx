@@ -1,5 +1,5 @@
 /**
- * Document Templates - RTL-Ready Enterprise Document Engine for Rentrix
+ * Document Templates - RTL-Ready Enterprise Document Engine for MALIK
  * Supports: Contract, Invoice, Receipt, Owner Statement, Tenant Statement, Financial Reports
  *
  * Every function here requires real company identity (`DocumentSettings.company`)

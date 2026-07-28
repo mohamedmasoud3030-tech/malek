@@ -1,4 +1,7 @@
-# Working on Rentrix
+# Working on MALIK
+
+> **Brand note:** MALIK هو الاسم التجاري الحالي للمنتج المعروف تقنيًا داخل بعض المسارات القديمة باسم Rentrix.
+> MALIK is the product's current commercial name. Some technical paths and identifiers — the `rentrix-app/` package directory, the `@workspace/rentrix` package name, persisted storage keys, and the current Vercel host — intentionally still read `rentrix`. They are invisible to users and are frozen in this release.
 
 This file is a starting point for any developer or agent picking up work in this repository. It is guidance, not policy — it does not restrict what you can build.
 
@@ -14,7 +17,7 @@ This file is a starting point for any developer or agent picking up work in this
 
 ## Repo-scoped Agent Skills
 
-Before modifying Rentrix, check `.agents/skills/README.md` and read every skill that applies to the task. The skill index is the single source of truth for available local skills — both the 4 Rentrix-specific skills and the curated general-purpose skills, kept in sync with active work tracked in `docs/NEXT.md` and `docs/FEATURE_GAP_REGISTER.md`. There is no separate `agentskills/` directory; do not create a second top-level skills directory.
+Before modifying MALIK, check `.agents/skills/README.md` and read every skill that applies to the task. The skill index is the single source of truth for available local skills — both the 4 product-specific skills and the curated general-purpose skills, kept in sync with active work tracked in `docs/NEXT.md` and `docs/FEATURE_GAP_REGISTER.md`. There is no separate `agentskills/` directory; do not create a second top-level skills directory.
 
 When domains overlap, apply all relevant skills together; do not choose only one. Do not claim a feature with a user-facing interface is complete until the route/screen exists, is connected to the real service/data source, and the frontend flow has been tested and documented.
 

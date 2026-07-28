@@ -1,8 +1,11 @@
 # Product
 
-## What Rentrix is
+> **Brand note:** MALIK هو الاسم التجاري الحالي للمنتج المعروف تقنيًا داخل بعض المسارات القديمة باسم Rentrix.
+> MALIK is the product's current commercial name. Some technical paths and identifiers — the `rentrix-app/` package directory, the `@workspace/rentrix` package name, persisted storage keys, and the current Vercel host — intentionally still read `rentrix`. They are invisible to users and are frozen in this release.
 
-Rentrix is a web application for managing rental property operations for a single real-estate office: properties, units, owners, tenants, contracts, invoicing, payments/receipts, expenses, maintenance, and reporting. The UI is Arabic-first (route titles and navigation labels are in Arabic; see `rentrix-app/src/app/navigation/app-nav-items.ts`).
+## What MALIK is
+
+MALIK is a web application for managing rental property operations for a single real-estate office: properties, units, owners, tenants, contracts, invoicing, payments/receipts, expenses, maintenance, and reporting. The UI is Arabic-first (route titles and navigation labels are in Arabic; see `rentrix-app/src/app/navigation/app-nav-items.ts`).
 
 ## Intended users
 

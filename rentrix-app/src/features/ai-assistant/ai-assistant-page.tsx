@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { env } from '@/lib/env';
 import { formatLatinNumber } from '@/lib/formatters';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
@@ -155,7 +156,7 @@ export function AiAssistantPage() {
     <PageLayout size="wide" dir="rtl" lang="ar">
       <PageHeader
         title="مساعد الذكاء الاصطناعي"
-        description="مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات Rentrix المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL."
+        description={`مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات ${APP_BRAND_NAME} المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL.`}
       />
 
       {configurationMissing ? (

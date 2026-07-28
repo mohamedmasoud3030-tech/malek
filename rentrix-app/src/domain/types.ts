@@ -1,5 +1,5 @@
 /**
- * Rentrix Pure Frontend Domain Entities
+ * MALIK Pure Frontend Domain Entities
  * Phase 1 Domain Foundation (Additive and decoupled from Supabase generated types)
  */
 

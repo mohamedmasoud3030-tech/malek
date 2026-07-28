@@ -27,7 +27,7 @@ export function AiAssistantE2EFixture() {
       <PageLayout size="wide" dir="rtl" lang="ar">
         <PageHeader
           title="مساعد الذكاء الاصطناعي"
-          description="مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات Rentrix المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL."
+          description="مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات MALIK المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL."
         />
 
         <div className="grid gap-3 md:grid-cols-3" aria-label="ملخص السياق المقروء">
@@ -63,7 +63,7 @@ export function AiAssistantE2EFixture() {
             <CardContent className="space-y-4">
               <div className="max-h-[32rem] space-y-3 overflow-y-auto rounded-2xl border bg-muted/20 p-3" aria-live="polite">
                 <div className="me-auto max-w-[90%] rounded-2xl border bg-card px-4 py-3 text-sm leading-7 shadow-sm">
-                  <p className="whitespace-pre-wrap">أهلاً بك في مساعد Rentrix. اسألني عن المتأخرات، التجديدات القادمة، أو لقطة مالية سريعة — أقرأ بياناتك بأمان ولا أنفذ أي تعديل.</p>
+                  <p className="whitespace-pre-wrap">أهلاً بك في مساعد MALIK. اسألني عن المتأخرات، التجديدات القادمة، أو لقطة مالية سريعة — أقرأ بياناتك بأمان ولا أنفذ أي تعديل.</p>
                 </div>
                 <div className="ms-auto max-w-[90%] rounded-2xl bg-primary px-4 py-3 text-sm leading-7 text-primary-foreground shadow-sm">
                   <p className="whitespace-pre-wrap">ما أهم المتأخرات التي تحتاج متابعة هذا الأسبوع؟</p>

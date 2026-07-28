@@ -60,7 +60,7 @@ describe('PwaInstallPrompt — رسالة تثبيت التطبيق عند أو�
 
     expect(banner).not.toBeNull();
     expect(banner?.getAttribute('role')).toBe('region');
-    expect(banner?.textContent).toContain('ثبّت تطبيق Rentrix');
+    expect(banner?.textContent).toContain('ثبّت تطبيق MALIK');
     expect(banner?.textContent).toContain('تثبيت التطبيق');
     expect(banner?.textContent).toContain('لاحقًا');
   });

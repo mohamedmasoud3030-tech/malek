@@ -1,28 +1,39 @@
+/**
+ * MALIK brand identity — the single source of truth for every user-facing
+ * product name and the fixed Arabic marketing line.
+ *
+ * The identity is a text-only wordmark. There is deliberately no logo asset,
+ * no drawn `M` glyph, and no building/property icon: the product name is set
+ * in the geometric wordmark face (Sora) while all Arabic body copy stays on
+ * Cairo. Never render the Arabic transliteration «مالك» as the product name.
+ */
 export const APP_BRAND_NAME = 'MALIK';
+
+/** Fixed Arabic marketing line. Must stay byte-identical wherever it appears. */
 export const APP_BRAND_TAGLINE_AR = 'كل مُلكك في مكان واحد';
+
 export const APP_BRAND_DESCRIPTION_AR =
   'منصة عربية متكاملة لإدارة العقارات والوحدات والعقود والتحصيلات والصيانة والتقارير.';
 
-const LEGACY_DISPLAY_BRAND_NAME = 'Rentrix';
-
-export function replaceLegacyBrandText(value: string): string {
-  return value.replaceAll(LEGACY_DISPLAY_BRAND_NAME, APP_BRAND_NAME);
-}
-
-export function applyBrandText<T>(value: T): T {
-  if (typeof value === 'string') return replaceLegacyBrandText(value) as T;
-  if (Array.isArray(value)) return value.map((item) => applyBrandText(item)) as T;
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, applyBrandText(item)]),
-    ) as T;
-  }
-  return value;
-}
+/** Lowercase slug for user-visible artifacts such as exported file names. */
+export const APP_BRAND_FILE_SLUG = 'malik';
 
 /**
- * Technical identifiers intentionally remain stable during the display rebrand.
- * Changing persisted storage prefixes, package names, repository paths, or deployed
- * hostnames in the same release could log users out or break existing integrations.
+ * Technical identifiers intentionally keep the legacy `rentrix` prefix during
+ * the display rebrand. Persisted storage keys, the auth session key, package
+ * names, repository paths, Supabase objects, and the deployed hostname are
+ * stable contracts — renaming them in the same release would sign users out,
+ * drop cached view preferences, or break existing integrations. They are
+ * invisible to users and are tracked as a separate follow-up.
  */
 export const LEGACY_TECHNICAL_BRAND_PREFIX = 'rentrix';
+
+/**
+ * Legacy visual assets kept on disk for git history and bundle-budget tests,
+ * but no longer referenced by the manifest, the HTML head, or any component.
+ * Safe to delete once the MALIK icon set is approved.
+ */
+export const LEGACY_UNUSED_BRAND_ASSETS = [
+  'public/icon-rentrix-192.png',
+  'public/icon-rentrix-512.png',
+] as const;

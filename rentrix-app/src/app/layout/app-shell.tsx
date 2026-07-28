@@ -240,7 +240,14 @@ export function AppShell() {
           sidebarCollapsed ? 'w-[4.5rem] overflow-visible' : 'w-64 overflow-hidden',
         )}
       >
-        <div className="min-h-24 border-b border-white/8 px-5 py-5">
+        <div
+          className={cn(
+            'min-h-24 border-b border-white/8 py-5',
+            // The collapsed rail is 4.5rem wide; tighten the inline padding so the
+            // full MALIK wordmark fits instead of being truncated.
+            isSidebarExpanded ? 'px-5' : 'px-1.5',
+          )}
+        >
           <Brand expanded={isSidebarExpanded} />
         </div>
         <nav className="sidebar-scroll flex-1 overflow-y-auto p-4">
