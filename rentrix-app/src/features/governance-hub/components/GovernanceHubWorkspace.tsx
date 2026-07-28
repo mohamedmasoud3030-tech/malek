@@ -13,8 +13,8 @@ import { getVisibleGovernanceHubSections, type GovernanceHubSectionId } from '..
 const SettingsWorkspace = lazy(() =>
   import('@/features/settings/settings-page').then((m) => ({ default: m.SettingsWorkspace })),
 );
-const SystemWorkspace = lazy(() =>
-  import('@/features/system/system-page').then((m) => ({ default: m.SystemWorkspace })),
+const UserRolesWorkspace = lazy(() =>
+  import('./UserRolesWorkspace').then((m) => ({ default: m.UserRolesWorkspace })),
 );
 const AuditLogWorkspace = lazy(() =>
   import('@/features/audit/audit-log-page').then((m) => ({ default: m.AuditLogWorkspace })),
@@ -109,7 +109,7 @@ export function GovernanceHubWorkspace() {
           )}
           {shouldRenderTab('users-roles') && (
             <SectionTabPanel id="users-roles" activeId={resolvedActiveTab}>
-              <SystemWorkspace variant="embedded" />
+              <UserRolesWorkspace />
             </SectionTabPanel>
           )}
           {shouldRenderTab('audit-log') && (
