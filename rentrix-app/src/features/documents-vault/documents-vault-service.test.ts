@@ -11,16 +11,21 @@ import {
   ATTACHMENTS_MAX_FILE_SIZE,
 } from '@/lib/attachments-contract';
 
+const readVaultWorkspace = () => readFileSync(
+  resolve(import.meta.dirname, './components/documents-vault-workspace.tsx'),
+  'utf8',
+);
+
 describe('documents vault real implementation', () => {
-  it('service and page do not contain hardcoded document mocks', () => {
+  it('service and workspace do not contain hardcoded document mocks', () => {
     const service = readFileSync(resolve(import.meta.dirname, './documents-vault-service.ts'), 'utf8');
-    const page = readFileSync(resolve(import.meta.dirname, './documents-vault-page.tsx'), 'utf8');
+    const workspace = readVaultWorkspace();
 
     for (const marker of ['placehold.co', 'doc-1', 'عقد إيجار موثق - شقة 102', 'ID+Card+Scan']) {
       expect(service).not.toContain(marker);
     }
     for (const marker of ['placehold.co', 'doc-1', 'Contract+PDF']) {
-      expect(page).not.toContain(marker);
+      expect(workspace).not.toContain(marker);
     }
   });
 
@@ -98,11 +103,11 @@ describe('documents vault real implementation', () => {
     expect(driftChecks).toContain('is_admin_or_manager()');
   });
 
-  it('page uses signed URLs for private previews', () => {
-    const page = readFileSync(resolve(import.meta.dirname, './documents-vault-page.tsx'), 'utf8');
-    expect(page).toContain('getVaultDocumentSignedUrl');
-    expect(page).toContain('signedMap');
-    expect(page).not.toContain('getPublicUrl');
+  it('shared workspace uses signed URLs for private previews', () => {
+    const workspace = readVaultWorkspace();
+    expect(workspace).toContain('getVaultDocumentSignedUrl');
+    expect(workspace).toContain('signedMap');
+    expect(workspace).not.toContain('getPublicUrl');
   });
 
   it('contract documents service no longer builds public URLs for the private bucket', () => {
