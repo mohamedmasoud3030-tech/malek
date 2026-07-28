@@ -13,7 +13,7 @@
  * - Uses only design tokens from the project's token system.
  */
 
-import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
+import { MalikBrand } from '@/components/brand/malik-brand';
 
 export function CommandCenterPanel() {
   return (
@@ -52,14 +52,7 @@ export function CommandCenterPanel() {
       <div className="relative z-10 flex h-full flex-col justify-between p-6 lg:p-8">
         {/* Header */}
         <header>
-          <div className="flex items-center gap-3">
-            <div>
-              <p className="malik-wordmark tracking-[0.16em] text-sm font-extrabold text-foreground" dir="ltr">
-                {APP_BRAND_NAME}
-              </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{APP_BRAND_TAGLINE_AR}</p>
-            </div>
-          </div>
+          <MalikBrand showTagline />
         </header>
 
         {/* Main illustration — Abstract cityscape with KPI indicators */}

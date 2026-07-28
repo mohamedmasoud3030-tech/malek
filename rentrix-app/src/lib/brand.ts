@@ -2,10 +2,9 @@
  * MALIK brand identity — the single source of truth for every user-facing
  * product name and the fixed Arabic marketing line.
  *
- * The identity is a text-only wordmark. There is deliberately no logo asset,
- * no drawn `M` glyph, and no building/property icon: the product name is set
- * in the geometric wordmark face (Sora) while all Arabic body copy stays on
- * Cairo. Never render the Arabic transliteration «مالك» as the product name.
+ * The identity pairs an angular geometric mark with the MALIK wordmark. The
+ * brand name is set in Sora while Arabic body copy stays on Cairo. Never render
+ * the Arabic transliteration «مالك» as the product name.
  */
 export const APP_BRAND_NAME = 'MALIK';
 
@@ -31,7 +30,7 @@ export const LEGACY_TECHNICAL_BRAND_PREFIX = 'rentrix';
 /**
  * Legacy visual assets kept on disk for git history and bundle-budget tests,
  * but no longer referenced by the manifest, the HTML head, or any component.
- * Safe to delete once the MALIK icon set is approved.
+ * Safe to delete after the MALIK icon migration has remained stable.
  */
 export const LEGACY_UNUSED_BRAND_ASSETS = [
   'public/icon-rentrix-192.png',

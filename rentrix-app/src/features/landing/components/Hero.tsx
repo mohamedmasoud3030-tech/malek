@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, CheckCircle2, MessageCircle, Rocket, ChevronDown, TrendingUp, Home } from 'lucide-react';
 import { APP_BRAND_NAME } from '@/lib/brand';
+import { MalikBrand } from '@/components/brand/malik-brand';
 import { useLanguage } from '../i18n/LanguageContext';
 import { APP_HOST, whatsappLink } from '../constants';
 import { BrowserFrame, FrameCaption } from './Frames';
@@ -40,6 +41,7 @@ export function Hero() {
           transition={{ duration: 0.7, ease: EASE }}
         >
           <div className="flex flex-col items-center gap-3">
+            <MalikBrand showTagline className="justify-center" wordmarkClassName="text-xl sm:text-2xl" />
             <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-4 py-1.5 text-xs font-semibold text-muted-foreground">
               <Home className="size-3.5 text-primary" />
               {t.hero.badge}

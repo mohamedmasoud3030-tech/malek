@@ -290,11 +290,12 @@ describe('CommandCenterPanel — presentation only', () => {
     expect(html).toContain('نسبة الإشغال');
   });
 
-  it('uses inline SVG, no <img> tags with external src', async () => {
+  it('uses the local MALIK mark without a remote image dependency', async () => {
     const { CommandCenterPanel } = await import('./command-center-panel');
     const html = renderToStaticMarkup(<CommandCenterPanel />);
 
-    expect(html).not.toContain('<img');
+    expect(html).toContain('src="/malik-mark.svg"');
+    expect(html).not.toMatch(/<img[^>]+src="https?:\/\//);
   });
 
   it('contains the preview data disclaimer text', async () => {

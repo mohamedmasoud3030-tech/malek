@@ -37,13 +37,26 @@
       text-align: center;
     }
     .wordmark {
-      margin: 0 auto 1rem;
+      margin: 0;
       font-family: 'Sora', ui-sans-serif, system-ui, sans-serif;
       font-weight: 800;
       font-size: 1.35rem;
       letter-spacing: 0.16em;
       color: var(--text);
       direction: ltr;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin: 0 auto 0.45rem;
+    }
+    .brand img { width: 2.5rem; height: 2.5rem; }
+    .tagline {
+      margin: 0 auto 1rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 700;
     }
     h1 {
       margin: 0 0 0.5rem;
@@ -80,7 +93,11 @@
 </head>
 <body>
   <main class="card" role="status" aria-live="polite">
-    <p class="wordmark">MALIK</p>
+    <div class="brand">
+      <img src="/malik-mark.svg" alt="" aria-hidden="true">
+      <p class="wordmark">MALIK</p>
+    </div>
+    <p class="tagline">كل مُلكك في مكان واحد</p>
     <h1>أنت غير متصل حالياً</h1>
     <p>
       يمكن فتح غلاف التطبيق فقط دون اتصال. لن يتم عرض أو تخزين بيانات مالية حساسة في وضع عدم الاتصال.
