@@ -7,9 +7,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { getVisibleGovernanceHubSections, type GovernanceHubSectionId } from '../governance-hub-sections';
 
 // Each tab's content lives in an existing feature module. Lazy-loading keeps
-// /settings' first paint light — only the office-settings tab (the default)
-// loads eagerly; the other four defer their JS (and any data-service
-// imports) until the user actually opens that tab.
+// /settings' first paint light — only the first visible tab loads initially;
+// every other workspace loads on first visit, then stays mounted so in-progress
+// form state is not discarded when the user switches between hub sections.
 const SettingsWorkspace = lazy(() =>
   import('@/features/settings/settings-page').then((m) => ({ default: m.SettingsWorkspace })),
 );
@@ -43,6 +43,9 @@ export function GovernanceHubWorkspace() {
   const [activeTab, setActiveTab] = useState<GovernanceHubSectionId>(
     () => visibleSections[0]?.id ?? 'office',
   );
+  const [mountedTabs, setMountedTabs] = useState<ReadonlySet<GovernanceHubSectionId>>(
+    () => new Set<GovernanceHubSectionId>([visibleSections[0]?.id ?? 'office']),
+  );
 
   // If the previously active tab is no longer visible (e.g. authorization
   // context resolved after an initial render), fall back to the first
@@ -50,6 +53,20 @@ export function GovernanceHubWorkspace() {
   const resolvedActiveTab = visibleSections.some((section) => section.id === activeTab)
     ? activeTab
     : (visibleSections[0]?.id ?? activeTab);
+
+  const handleTabChange = (nextTab: GovernanceHubSectionId) => {
+    setMountedTabs((current) => {
+      if (current.has(nextTab)) return current;
+      const next = new Set(current);
+      next.add(nextTab);
+      return next;
+    });
+    setActiveTab(nextTab);
+  };
+
+  const shouldRenderTab = (tab: GovernanceHubSectionId) =>
+    visibleSections.some((section) => section.id === tab) &&
+    (mountedTabs.has(tab) || resolvedActiveTab === tab);
 
   if (visibleSections.length === 0) {
     return (
@@ -77,35 +94,35 @@ export function GovernanceHubWorkspace() {
           <SectionTabs
             items={visibleSections}
             activeId={resolvedActiveTab}
-            onChange={setActiveTab}
+            onChange={handleTabChange}
             ariaLabel="أقسام الإدارة والحوكمة"
           />
         </div>
       </div>
 
-      <div className="min-w-0" key={resolvedActiveTab}>
+      <div className="min-w-0">
         <Suspense fallback={<TabFallback />}>
-          {resolvedActiveTab === 'office' && (
+          {shouldRenderTab('office') && (
             <SectionTabPanel id="office" activeId={resolvedActiveTab}>
               <SettingsWorkspace variant="embedded" />
             </SectionTabPanel>
           )}
-          {resolvedActiveTab === 'users-roles' && (
+          {shouldRenderTab('users-roles') && (
             <SectionTabPanel id="users-roles" activeId={resolvedActiveTab}>
               <SystemWorkspace variant="embedded" />
             </SectionTabPanel>
           )}
-          {resolvedActiveTab === 'audit-log' && (
+          {shouldRenderTab('audit-log') && (
             <SectionTabPanel id="audit-log" activeId={resolvedActiveTab}>
               <AuditLogWorkspace variant="embedded" />
             </SectionTabPanel>
           )}
-          {resolvedActiveTab === 'data-integrity' && (
+          {shouldRenderTab('data-integrity') && (
             <SectionTabPanel id="data-integrity" activeId={resolvedActiveTab}>
               <DataIntegrityWorkspace variant="embedded" />
             </SectionTabPanel>
           )}
-          {resolvedActiveTab === 'security' && (
+          {shouldRenderTab('security') && (
             <SectionTabPanel id="security" activeId={resolvedActiveTab}>
               <ChangePasswordWorkspace variant="embedded" />
             </SectionTabPanel>
