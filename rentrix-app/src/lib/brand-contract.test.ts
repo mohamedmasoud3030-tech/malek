@@ -152,7 +152,7 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   ],
   [
     'src/store/ui-store.ts',
-    'Persisted theme key rentrix-theme, also read by the inline theme script in index.html.',
+    'Persisted theme key malik-theme, also read by the inline theme script in index.html.',
   ],
   [
     'src/components/ui/entity-table.tsx',
@@ -164,7 +164,7 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   ],
   [
     'src/features/landing/components/Showcase.tsx',
-    'Static asset path /landing/rentrix-demo.mp4.',
+    'Static asset path /landing/malik-demo.mp4.',
   ],
   [
     'src/styles/globals.css',

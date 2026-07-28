@@ -17,7 +17,7 @@ export interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
-const PWA_INSTALL_DISMISS_KEY = 'rentrix.pwa-install-dismissed-at';
+const PWA_INSTALL_DISMISS_KEY = 'malik.pwa-install-dismissed-at';
 export const PWA_REASK_AFTER_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 

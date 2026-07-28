@@ -24,7 +24,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
 }
 
 export function AppCatchBoundary({ children }: PropsWithChildren) {
-  return <CatchBoundary getResetKey={() => 'rentrix-root'} errorComponent={RouteErrorFallback}>{children}</CatchBoundary>;
+  return <CatchBoundary getResetKey={() => 'malik-root'} errorComponent={RouteErrorFallback}>{children}</CatchBoundary>;
 }
 
 export { AppCatchBoundary as ErrorBoundary };
