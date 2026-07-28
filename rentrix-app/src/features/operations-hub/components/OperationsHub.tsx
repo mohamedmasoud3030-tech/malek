@@ -3,13 +3,15 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
-import { canAccess } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
-import { operationsHubSections, type OperationsHubSectionId } from '../operations-hub.sections';
+import {
+  getVisibleOperationsHubSections,
+  type OperationsHubSectionId,
+} from '../operations-hub.sections';
 
-// Each tab's workspace (and its data-service imports) is only loaded once the
-// user actually opens that tab — the first-viewed tab is the only one paid
-// for on initial /maintenance load.
+// Each tab's workspace (and its data-service imports) is loaded on first visit.
+// Visited panels stay mounted so switching sections does not discard drafts,
+// filters, or open workflow state.
 const MaintenanceWorkspace = lazy(() =>
   import('@/features/maintenance/components/maintenance-workspace').then((m) => ({ default: m.MaintenanceWorkspace })),
 );
@@ -31,41 +33,58 @@ export type OperationsHubProps = Readonly<{
 }>;
 
 /**
- * Unified operations hub: /maintenance now renders this instead of the bare
- * maintenance page, with tabs for Maintenance, Utilities, Automation, and
- * Documents Vault. Each tab embeds the same workspace component the
- * standalone route uses (mode="embedded") — no logic, queries, or forms are
- * duplicated. Tabs the current user lacks permission for are hidden, not
- * just disabled; permissions are read-only here and mirror route guards.
+ * Unified operations hub: /maintenance renders this workspace with tabs for
+ * Maintenance, Utilities, Automation, and Documents Vault. Each tab embeds
+ * the same workspace component its standalone route uses (mode="embedded") —
+ * no logic, queries, or forms are duplicated. Tabs the current user lacks
+ * permission for are hidden; existing route guards remain unchanged.
  */
 export function OperationsHub({ defaultSection = 'maintenance' }: OperationsHubProps) {
-  const { authorization } = useAuth();
+  const { canAccess } = useAuth();
 
   const visibleSections = useMemo(
-    () => operationsHubSections.filter((section) => !section.permission || canAccess(authorization, section.permission)),
-    [authorization],
+    () => getVisibleOperationsHubSections(canAccess),
+    [canAccess],
   );
 
   const initialSection = visibleSections.some((section) => section.id === defaultSection)
     ? defaultSection
     : visibleSections[0]?.id ?? defaultSection;
 
-  const [activeSection, setActiveSection] = useState<OperationsHubSectionId>(initialSection);
+  const [activeSection, setActiveSection] = useState<OperationsHubSectionId>(() => initialSection);
+  const [mountedSections, setMountedSections] = useState<ReadonlySet<OperationsHubSectionId>>(
+    () => new Set<OperationsHubSectionId>([initialSection]),
+  );
 
-  const activeSectionMeta = visibleSections.find((section) => section.id === activeSection) ?? visibleSections[0];
+  const resolvedActiveSection = visibleSections.some((section) => section.id === activeSection)
+    ? activeSection
+    : (visibleSections[0]?.id ?? activeSection);
+  const activeSectionMeta = visibleSections.find((section) => section.id === resolvedActiveSection);
+
+  const handleSectionChange = (nextSection: OperationsHubSectionId) => {
+    setMountedSections((current) => {
+      if (current.has(nextSection)) return current;
+      const next = new Set(current);
+      next.add(nextSection);
+      return next;
+    });
+    setActiveSection(nextSection);
+  };
+
+  const shouldRenderSection = (section: OperationsHubSectionId) =>
+    visibleSections.some((item) => item.id === section) &&
+    (mountedSections.has(section) || resolvedActiveSection === section);
 
   if (!activeSectionMeta) {
-    // No tab is permitted for this user (shouldn't happen since /maintenance
-    // itself is already permission-gated, but fail safe rather than crash).
     return (
-      <PageLayout dir="rtl" size="wide">
+      <PageLayout dir="rtl" lang="ar" size="wide">
         <PageHeader title="مركز التشغيل" description="لا تملك صلاحية الوصول إلى أي قسم من مركز التشغيل." />
       </PageLayout>
     );
   }
 
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" lang="ar" size="wide">
       <PageHeader
         title="مركز التشغيل"
         description="الصيانة، المرافق والعدادات، الأتمتة والتنبيهات، وخزينة المستندات في مكان واحد."
@@ -90,33 +109,33 @@ export function OperationsHub({ defaultSection = 'maintenance' }: OperationsHubP
           <div className="min-w-max">
             <SectionTabs
               items={visibleSections}
-              activeId={activeSection}
-              onChange={setActiveSection}
+              activeId={resolvedActiveSection}
+              onChange={handleSectionChange}
               ariaLabel="أقسام مركز التشغيل"
             />
           </div>
         </div>
       </section>
 
-      <div className="min-w-0" key={activeSection}>
+      <div className="min-w-0">
         <Suspense fallback={<SectionFallback />}>
-          {activeSection === 'maintenance' && (
-            <SectionTabPanel id="maintenance" activeId={activeSection}>
+          {shouldRenderSection('maintenance') && (
+            <SectionTabPanel id="maintenance" activeId={resolvedActiveSection}>
               <MaintenanceWorkspace mode="embedded" />
             </SectionTabPanel>
           )}
-          {activeSection === 'utilities' && (
-            <SectionTabPanel id="utilities" activeId={activeSection}>
+          {shouldRenderSection('utilities') && (
+            <SectionTabPanel id="utilities" activeId={resolvedActiveSection}>
               <UtilitiesWorkspace mode="embedded" />
             </SectionTabPanel>
           )}
-          {activeSection === 'automation' && (
-            <SectionTabPanel id="automation" activeId={activeSection}>
+          {shouldRenderSection('automation') && (
+            <SectionTabPanel id="automation" activeId={resolvedActiveSection}>
               <AutomationWorkspace mode="embedded" />
             </SectionTabPanel>
           )}
-          {activeSection === 'documents_vault' && (
-            <SectionTabPanel id="documents_vault" activeId={activeSection}>
+          {shouldRenderSection('documents_vault') && (
+            <SectionTabPanel id="documents_vault" activeId={resolvedActiveSection}>
               <DocumentsVaultWorkspace mode="embedded" />
             </SectionTabPanel>
           )}
