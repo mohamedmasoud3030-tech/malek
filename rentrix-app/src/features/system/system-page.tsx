@@ -30,17 +30,24 @@ const governancePrinciples = [
   { label: 'المخطط', value: 'بلا تغيير', description: 'لا DDL من الواجهة' },
 ] as const;
 
-export function SystemPage() {
+export type SystemWorkspaceVariant = 'standalone' | 'embedded';
+
+type SystemWorkspaceProps = Readonly<{
+  /**
+   * 'standalone' (default) preserves the historical /system route: content
+   * renders inside its own PageLayout + PageHeader. 'embedded' drops both
+   * so the content can be hosted inside the governance hub without
+   * duplicating page chrome.
+   */
+  variant?: SystemWorkspaceVariant;
+}>;
+
+export function SystemWorkspace({ variant = 'standalone' }: SystemWorkspaceProps = {}) {
   const { authorization } = useAuth();
   const visibleLinks = governanceLinks.filter((item) => canAccess(authorization, item.permission));
 
-  return (
-    <PageLayout dir="rtl" lang="ar">
-      <PageHeader
-        title="النظام والحوكمة"
-        description="مركز وصول آمن للوظائف النظامية. جميع العمليات هنا قراءة فقط أو محدودة الصلاحية."
-      />
-
+  const body = (
+    <>
       <ResponsiveCardGrid desktopColumns={4}>
         {governancePrinciples.map((principle) => (
           <Card key={principle.label} variant="muted">
@@ -82,6 +89,25 @@ export function SystemPage() {
           })}
         </div>
       )}
+    </>
+  );
+
+  if (variant === 'embedded') {
+    return <div className="space-y-5">{body}</div>;
+  }
+
+  return (
+    <PageLayout dir="rtl" lang="ar">
+      <PageHeader
+        title="النظام والحوكمة"
+        description="مركز وصول آمن للوظائف النظامية. جميع العمليات هنا قراءة فقط أو محدودة الصلاحية."
+      />
+      {body}
     </PageLayout>
   );
+}
+
+/** Standalone /system route entry point — preserves historical behavior exactly. */
+export function SystemPage() {
+  return <SystemWorkspace variant="standalone" />;
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { RefreshCcw } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,47 @@ export function preventSettingsUnload(event: BeforeUnloadEvent) {
 
 export { settingsSections };
 
-export function SettingsPage() {
+export type SettingsWorkspaceVariant = 'standalone' | 'embedded';
+
+type SettingsWorkspaceProps = Readonly<{
+  /**
+   * 'standalone' (default) keeps the historical /settings route behavior:
+   * the content renders inside its own <PageLayout>. 'embedded' drops the
+   * PageLayout wrapper so the content can be hosted inside another surface
+   * (e.g. the governance hub) without doubling page chrome.
+   */
+  variant?: SettingsWorkspaceVariant;
+}>;
+
+/**
+ * Wraps content in <PageLayout> for the standalone route, or renders it
+ * unwrapped for embedded contexts (e.g. inside the governance hub tabs)
+ * to avoid double page chrome (no nested PageLayout/PageHeader).
+ */
+function SettingsVariantShell({
+  variant,
+  dir,
+  lang,
+  contentClassName,
+  children,
+}: Readonly<{
+  variant: SettingsWorkspaceVariant;
+  dir: 'rtl' | 'ltr';
+  lang: string;
+  contentClassName: string;
+  children: ReactNode;
+}>) {
+  if (variant === 'embedded') {
+    return <div className={contentClassName}>{children}</div>;
+  }
+  return (
+    <PageLayout dir={dir} lang={lang} contentClassName={contentClassName}>
+      {children}
+    </PageLayout>
+  );
+}
+
+export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceProps = {}) {
   const controller = useSettingsPageController();
   const {
     theme,
@@ -52,7 +93,7 @@ export function SettingsPage() {
 
   if (companySettingsQuery.isError) {
     return (
-      <PageLayout dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-4">
+      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-4">
         <SettingsHero companyName="—" hasUnsavedChanges={false} />
         <Card>
           <CardHeader>
@@ -70,13 +111,13 @@ export function SettingsPage() {
             </Button>
           </CardContent>
         </Card>
-      </PageLayout>
+      </SettingsVariantShell>
     );
   }
 
   if (companySettingsQuery.isLoading || !draft) {
     return (
-      <PageLayout dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-4">
+      <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-4">
         <SettingsHero companyName="…" hasUnsavedChanges={false} />
         <Card>
           <CardHeader>
@@ -91,7 +132,7 @@ export function SettingsPage() {
             </div>
           </CardContent>
         </Card>
-      </PageLayout>
+      </SettingsVariantShell>
     );
   }
 
@@ -105,7 +146,8 @@ export function SettingsPage() {
   });
 
   return (
-    <PageLayout
+    <SettingsVariantShell
+      variant={variant}
       dir={pageLanguage.direction}
       lang={pageLanguage.locale}
       contentClassName="min-w-0 space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]"
@@ -174,6 +216,11 @@ export function SettingsPage() {
         disabled={isSaving}
         onDiscard={discardDraft}
       />
-    </PageLayout>
+    </SettingsVariantShell>
   );
+}
+
+/** Standalone /settings route entry point — preserves historical behavior exactly. */
+export function SettingsPage() {
+  return <SettingsWorkspace variant="standalone" />;
 }
