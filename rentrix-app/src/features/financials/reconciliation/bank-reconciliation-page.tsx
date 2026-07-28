@@ -8,8 +8,7 @@ import {
   ShieldCheck,
   Unlink,
 } from 'lucide-react';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { PageStateCard, WriteErrorCard } from '@/components/page-state-card';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,21 @@ function statusTone(status: BankStatementLine['status']): 'success' | 'neutral' 
   return 'warning';
 }
 
-export function BankReconciliationPage() {
+export type BankReconciliationWorkspaceProps = Readonly<{
+  /**
+   * embedded: rendered inside the finance hub, which already supplies the page
+   * shell — the workspace body renders without a second layout or header.
+   * standalone (default): reached via /bank-reconciliation, so it owns the shell.
+   */
+  embedded?: boolean;
+}>;
+
+/**
+ * Owns the bank reconciliation workspace body. Shared verbatim between the
+ * standalone /bank-reconciliation route and the embedded finance hub tab so
+ * business logic, queries, and mutations are never duplicated.
+ */
+export function BankReconciliationWorkspace({ embedded = false }: BankReconciliationWorkspaceProps) {
   const ctrl = useBankReconciliationController();
   const activeFilters: ActiveFilterItem[] = [];
   if (ctrl.filters.bankAccountId) {
@@ -87,33 +100,33 @@ export function BankReconciliationPage() {
   }
 
   return (
-    <PageLayout dir="rtl" size="wide">
-      <PageHeader
-        title="مطابقة البنك"
-        description="مراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات، بدون تكديس نماذج الإدخال داخل مساحة النتائج."
-        secondaryActions={(
-          <>
-            <Button variant="secondary" disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0} onClick={ctrl.openImportForm}>
-              <FileUp className="me-2 size-4" aria-hidden="true" />
-              استيراد CSV
-            </Button>
-            <Button variant="secondary" disabled={!ctrl.canManageReconciliation || ctrl.unmatchedLines.length === 0} onClick={ctrl.openMatchForm}>
-              <Link2 className="me-2 size-4" aria-hidden="true" />
-              مطابقة حركة
-            </Button>
-          </>
-        )}
-        primaryAction={(
-          <Button
-            disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0}
-            title={ctrl.canManageReconciliation ? undefined : 'ليس لديك صلاحية مطابقة البنك'}
-            onClick={ctrl.openManualLineForm}
-          >
-            <Plus className="me-2 size-4" aria-hidden="true" />
-            حركة يدوية
+    <EmbeddableWorkspace
+      embedded={embedded}
+      title="مطابقة البنك"
+      description="مراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات، بدون تكديس نماذج الإدخال داخل مساحة النتائج."
+      secondaryActions={(
+        <>
+          <Button variant="secondary" disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0} onClick={ctrl.openImportForm}>
+            <FileUp className="me-2 size-4" aria-hidden="true" />
+            استيراد CSV
           </Button>
-        )}
-      />
+          <Button variant="secondary" disabled={!ctrl.canManageReconciliation || ctrl.unmatchedLines.length === 0} onClick={ctrl.openMatchForm}>
+            <Link2 className="me-2 size-4" aria-hidden="true" />
+            مطابقة حركة
+          </Button>
+        </>
+      )}
+      primaryAction={(
+        <Button
+          disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0}
+          title={ctrl.canManageReconciliation ? undefined : 'ليس لديك صلاحية مطابقة البنك'}
+          onClick={ctrl.openManualLineForm}
+        >
+          <Plus className="me-2 size-4" aria-hidden="true" />
+          حركة يدوية
+        </Button>
+      )}
+    >
 
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
@@ -352,8 +365,12 @@ export function BankReconciliationPage() {
         isLoading={ctrl.ignoreLine.isPending}
         onConfirm={ctrl.handleIgnoreLineConfirm}
       />
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
+}
+
+export function BankReconciliationPage() {
+  return <BankReconciliationWorkspace />;
 }
 
 function BankStatementLinesTable({

@@ -101,16 +101,30 @@ const contractNewRoute = createRoute({ getParentRoute: () => protectedRoute, pat
 const contractDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId', component: lazyRouteComponent(() => import('@/routes/_protected.contracts.$contractId'), 'ContractDetailRouteComponent'), staticData: { title: 'تفاصيل العقد' } });
 const contractEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/contracts/$contractId/edit', beforeLoad: requirePermission('contracts.write'), component: lazyRouteComponent(() => import('@/routes/_protected.contracts.$contractId.edit'), 'ContractEditRouteComponent'), staticData: { title: 'تعديل عقد' } });
 const financialsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/financials', component: lazyRouteComponent(() => import('@/routes/_protected.financials'), 'FinancialsRouteComponent'), staticData: { title: 'المالية' } });
-const commissionsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/commissions', beforeLoad: requirePermission('commissions.view'), component: lazyRouteComponent(() => import('@/routes/_protected.commissions'), 'CommissionsRouteComponent'), staticData: { title: 'العمولات' } });
 const communicationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/communication', beforeLoad: requirePermission('communication.view'), component: lazyRouteComponent(() => import('@/routes/_protected.communication'), 'CommunicationRouteComponent'), staticData: { title: 'التواصل' } });
 const automationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/automation', beforeLoad: requirePermission('automation.view'), component: lazyRouteComponent(() => import('@/routes/_protected.automation'), 'AutomationRouteComponent'), staticData: { title: 'مركز الأتمتة' } });
-const receiptsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/receipts', component: lazyRouteComponent(() => import('@/routes/_protected.receipts'), 'ReceiptsRouteComponent'), staticData: { title: 'الإيصالات' } });
-const expensesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/expenses', beforeLoad: requirePermission('expenses.view'), component: lazyRouteComponent(() => import('@/routes/_protected.expenses'), 'ExpensesRouteComponent'), staticData: { title: 'المصاريف' } });
-const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', component: lazyRouteComponent(() => import('@/routes/_protected.invoices'), 'InvoicesRouteComponent'), staticData: { title: 'الفواتير' } });
-const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/arrears', beforeLoad: requirePermission('arrears.view'), component: lazyRouteComponent(() => import('@/routes/_protected.arrears'), 'ArrearsRouteComponent'), staticData: { title: 'المتأخرات' } });
-const bankReconciliationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/bank-reconciliation', beforeLoad: requirePermission('financial.bank_reconciliation.view'), component: lazyRouteComponent(() => import('@/routes/_protected.bank-reconciliation'), 'BankReconciliationRouteComponent'), staticData: { title: 'مطابقة البنك' } });
-const depositsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/deposits', beforeLoad: requirePermission('financial.deposits.view'), component: lazyRouteComponent(() => import('@/routes/_protected.deposits'), 'DepositsRouteComponent'), staticData: { title: 'التأمينات' } });
-const ownerSettlementsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owner-settlements', beforeLoad: requirePermission('financial.owner_settlements.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owner-settlements'), 'OwnerSettlementsRouteComponent'), staticData: { title: 'تسويات الملاك' } });
+
+// --- Merged finance hubs (2026-07 UX simplification) ---
+// 8 standalone finance destinations (invoices, receipts, expenses, arrears,
+// deposits, owner-settlements, bank-reconciliation, commissions) collapsed
+// into 4 tabbed hubs. Old routes below now redirect into the matching hub
+// so no bookmark or internal <Link to="/invoices"> etc. breaks.
+const financeCollectionsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/finance/collections', component: lazyRouteComponent(() => import('@/features/finance-hub/collections-hub-page'), 'CollectionsHubPage'), staticData: { title: 'التحصيل اليومي' } });
+const financeExpensesArrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/finance/expenses', beforeLoad: requirePermission('expenses.view'), component: lazyRouteComponent(() => import('@/features/finance-hub/expenses-arrears-hub-page'), 'ExpensesArrearsHubPage'), staticData: { title: 'المصروفات والذمم' } });
+const financeDepositsSettlementsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/finance/deposits', beforeLoad: requirePermission('financial.deposits.view'), component: lazyRouteComponent(() => import('@/features/finance-hub/deposits-settlements-hub-page'), 'DepositsSettlementsHubPage'), staticData: { title: 'تسويات وضمانات' } });
+const financeBankingCommissionsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/finance/banking', beforeLoad: requirePermission('financial.bank_reconciliation.view'), component: lazyRouteComponent(() => import('@/features/finance-hub/banking-commissions-hub-page'), 'BankingCommissionsHubPage'), staticData: { title: 'البنوك والعمولات' } });
+
+const commissionsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/commissions', beforeLoad: async () => { await requirePermission('commissions.view')(); throw redirect({ to: '/finance/banking', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'commissions' }) }); }, staticData: { title: 'العمولات' } });
+// /receipts?receiptId=… is the printable single-receipt document, not a hub
+// tab: it is a full-bleed A4 surface with its own shell. Only the list view
+// redirects into the hub, so print/detail links keep working unchanged.
+const receiptsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/receipts', beforeLoad: ({ search }) => { const requestedReceiptId = (search as Record<string, unknown>).receiptId; if (typeof requestedReceiptId === 'string' && requestedReceiptId !== '') return; throw redirect({ to: '/finance/collections', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'receipts' }) }); }, component: lazyRouteComponent(() => import('@/routes/_protected.receipts'), 'ReceiptsRouteComponent'), staticData: { title: 'الإيصالات' } });
+const expensesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/expenses', beforeLoad: async () => { await requirePermission('expenses.view')(); throw redirect({ to: '/finance/expenses', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'expenses' }) }); }, staticData: { title: 'المصاريف' } });
+const invoicesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/invoices', beforeLoad: () => { throw redirect({ to: '/finance/collections', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'invoices' }) }); }, staticData: { title: 'الفواتير' } });
+const arrearsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/arrears', beforeLoad: async () => { await requirePermission('arrears.view')(); throw redirect({ to: '/finance/expenses', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'arrears' }) }); }, staticData: { title: 'المتأخرات' } });
+const bankReconciliationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/bank-reconciliation', beforeLoad: async () => { await requirePermission('financial.bank_reconciliation.view')(); throw redirect({ to: '/finance/banking', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'bank_reconciliation' }) }); }, staticData: { title: 'مطابقة البنك' } });
+const depositsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/deposits', beforeLoad: async () => { await requirePermission('financial.deposits.view')(); throw redirect({ to: '/finance/deposits', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'deposits' }) }); }, staticData: { title: 'التأمينات' } });
+const ownerSettlementsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owner-settlements', beforeLoad: async () => { await requirePermission('financial.owner_settlements.view')(); throw redirect({ to: '/finance/deposits', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'owner_settlements' }) }); }, staticData: { title: 'تسويات الملاك' } });
 const accountingRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/accounting', beforeLoad: () => { throw redirect({ to: '/financials' }); }, staticData: { title: 'المالية' } });
 const reportsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/reports', component: lazyRouteComponent(() => import('@/routes/_protected.reports'), 'ReportsRouteComponent'), staticData: { title: 'التقارير' } });
 const aiAssistantRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/ai-assistant', component: lazyRouteComponent(() => import('@/routes/_protected.ai-assistant'), 'AiAssistantRouteComponent'), staticData: { title: 'مساعد الذكاء الاصطناعي' } });
@@ -222,6 +236,10 @@ export const routeTree = rootRoute.addChildren([
     contractDetailRoute,
     contractEditRoute,
     financialsRoute,
+    financeCollectionsRoute,
+    financeExpensesArrearsRoute,
+    financeDepositsSettlementsRoute,
+    financeBankingCommissionsRoute,
     commissionsRoute,
     receiptsRoute,
     expensesRoute,

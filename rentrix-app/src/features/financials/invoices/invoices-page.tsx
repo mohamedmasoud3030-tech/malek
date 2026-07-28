@@ -1,12 +1,32 @@
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { InvoiceWorkspaceSection } from '../components/invoice-workspace-section';
 
-export function InvoicesPage() {
+export type InvoicesWorkspaceProps = Readonly<{
+  /**
+   * embedded: rendered inside the finance hub, which already supplies the page
+   * shell — the workspace body renders without a second layout or header.
+   * standalone (default): reached via /invoices, so it owns the page shell.
+   */
+  embedded?: boolean;
+}>;
+
+/**
+ * Owns the invoices workspace body. Shared verbatim between the standalone
+ * /invoices route and the embedded finance hub tab so business logic,
+ * queries, and mutations are never duplicated.
+ */
+export function InvoicesWorkspace({ embedded = false }: InvoicesWorkspaceProps) {
   return (
-    <PageLayout dir="rtl" size="wide">
-      <PageHeader title="الفواتير" description="إدارة الفواتير المستحقة وتسجيل الدفعات من نفس نظام العرض المالي الموحد." />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      title="الفواتير"
+      description="إدارة الفواتير المستحقة وتسجيل الدفعات من نفس نظام العرض المالي الموحد."
+    >
       <InvoiceWorkspaceSection />
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
+}
+
+export function InvoicesPage() {
+  return <InvoicesWorkspace />;
 }

@@ -1,8 +1,7 @@
 import { Link, useSearch } from '@tanstack/react-router';
 import { ArrowRight, Ban, CalendarDays, CheckCircle2, Eye, Printer, ReceiptText, Wallet, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MobileCard } from '@/components/ui/mobile-card';
@@ -152,9 +151,9 @@ function VoidReceiptDialog({
   );
 }
 
-function ReceiptsHistoryContent() {
+function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Readonly<{ embedded: boolean; initialSelectedReceiptId?: string }>) {
   const { authorization } = useAuth();
-  const [selectedReceiptId, setSelectedReceiptId] = useState('');
+  const [selectedReceiptId, setSelectedReceiptId] = useState(initialSelectedReceiptId);
   const [query, setQuery] = useState('');
   const [method, setMethod] = useState<MethodFilter>('all');
   const [from, setFrom] = useState('');
@@ -223,15 +222,15 @@ function ReceiptsHistoryContent() {
   ];
 
   return (
-    <PageLayout dir="rtl" size="wide">
-      <PageHeader
-        title="الإيصالات"
-        description="مراجعة إيصالات الدفعات المنشورة، فتح التفاصيل والطباعة، وإدارة الإلغاء وفق الصلاحيات."
-        secondaryActions={<Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
-        primaryAction={selectedReceiptId ? (
-          <Button onClick={() => openReceiptPrintView(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
-        ) : undefined}
-      />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      title="الإيصالات"
+      description="مراجعة إيصالات الدفعات المنشورة، فتح التفاصيل والطباعة، وإدارة الإلغاء وفق الصلاحيات."
+      secondaryActions={<Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
+      primaryAction={selectedReceiptId ? (
+        <Button onClick={() => openReceiptPrintView(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
+      ) : undefined}
+    >
 
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="الإيصالات المعروضة" value={filteredReceipts.length} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
@@ -364,12 +363,39 @@ function ReceiptsHistoryContent() {
         onConfirm={handleConfirmVoid}
         onReasonChange={(reason) => setVoidDialog((current) => ({ ...current, reason }))}
       />
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
 }
 
-export function ReceiptsPage() {
+export type ReceiptsWorkspaceProps = Readonly<{
+  /**
+   * embedded: rendered inside the finance hub, which already supplies the page
+   * shell — the workspace body renders without a second layout or header.
+   * standalone (default): reached via /receipts, so it owns the page shell.
+   */
+  embedded?: boolean;
+}>;
+
+/**
+ * Owns the receipts workspace body. Shared verbatim between the standalone
+ * /receipts route and the embedded finance hub tab so business logic,
+ * queries, and mutations are never duplicated.
+ *
+ * `?receiptId=` opens the single-receipt document. Standalone that renders the
+ * full-bleed printable view (the /receipts route keeps serving it directly, so
+ * existing print links are untouched). Embedded, the hub already owns the page
+ * shell, so the list stays visible and the selected receipt is shown inline
+ * rather than nesting a second document shell inside a tab.
+ */
+export function ReceiptsWorkspace({ embedded = false }: ReceiptsWorkspaceProps) {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
   const receiptIdFromSearch = getReceiptIdFromSearch(searchParams);
-  return receiptIdFromSearch ? <ReceiptDetailPage /> : <ReceiptsHistoryContent />;
+
+  if (!embedded && receiptIdFromSearch) return <ReceiptDetailPage />;
+
+  return <ReceiptsHistoryContent embedded={embedded} initialSelectedReceiptId={receiptIdFromSearch} />;
+}
+
+export function ReceiptsPage() {
+  return <ReceiptsWorkspace />;
 }

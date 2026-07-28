@@ -41,7 +41,10 @@ test.describe('single-office isolated launch acceptance', () => {
 
     await login(page);
     await page.goto(`/invoices?invoiceId=${INVOICE_ID}&collect=1`);
-    await expect(page.getByRole('heading', { name: 'الفواتير', level: 1 })).toBeVisible();
+    // /invoices redirects into the collections hub, preserving the deep link.
+    // The hub owns the page heading; the active tab identifies the section.
+    await expect(page.getByRole('heading', { name: 'التحصيل اليومي', level: 1 })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'الفواتير', selected: true })).toBeVisible();
 
     const paymentForm = page.locator('#quick-payment-form');
     const amount = paymentForm.locator('#quick-payment-amount');
@@ -56,7 +59,8 @@ test.describe('single-office isolated launch acceptance', () => {
     expect(paymentResponse.ok()).toBe(true);
 
     await page.goto('/receipts');
-    await expect(page.getByRole('heading', { name: 'الإيصالات', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'التحصيل اليومي', level: 1 })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'التحصيل والإيصالات', selected: true })).toBeVisible();
     await page.getByLabel('بحث في الإيصالات').fill(PAYMENT_REFERENCE);
 
     const receiptTable = page.getByRole('table', { name: 'جدول الإيصالات' });
@@ -87,8 +91,8 @@ test.describe('single-office isolated launch acceptance', () => {
       { path: '/properties', heading: 'العقارات', evidence: 'عقار اختبار المكتب الواحد' },
       { path: '/units', heading: 'الوحدات', evidence: 'SO-E2E-1' },
       { path: '/contracts', heading: 'العقود', evidence: 'مستأجر اختبار المكتب الواحد' },
-      { path: '/invoices', heading: 'الفواتير', evidence: '#00000000' },
-      { path: '/receipts', heading: 'الإيصالات', evidence: 'مستأجر اختبار المكتب الواحد' },
+      { path: '/invoices', heading: 'التحصيل اليومي', tab: 'الفواتير', evidence: '#00000000' },
+      { path: '/receipts', heading: 'التحصيل اليومي', tab: 'التحصيل والإيصالات', evidence: 'مستأجر اختبار المكتب الواحد' },
       { path: '/reports', heading: 'التقارير', evidence: 'التقارير' },
       { path: '/maintenance', heading: 'الصيانة', evidence: 'الصيانة' },
       { path: '/settings', heading: null, evidence: 'الإعدادات محفوظة' },
@@ -98,6 +102,9 @@ test.describe('single-office isolated launch acceptance', () => {
       await page.goto(route.path);
       if (route.heading) {
         await expect(page.getByRole('heading', { name: route.heading, level: 1 })).toBeVisible();
+      }
+      if ('tab' in route && route.tab) {
+        await expect(page.getByRole('tab', { name: route.tab, selected: true })).toBeVisible();
       }
       await expect(page.getByText(route.evidence, { exact: false }).filter({ visible: true }).first()).toBeVisible();
       await expect(page.getByText('تعذر تحديد الشركة النشطة')).toHaveCount(0);

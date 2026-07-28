@@ -5,8 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { EmptyState } from '@/components/empty-state';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -34,7 +33,21 @@ export function toLocalDateInputValue(date: Date = new Date()) {
   return getTodayLocalDateString(date);
 }
 
-export function ExpensesPage() {
+export type ExpensesWorkspaceProps = Readonly<{
+  /**
+   * embedded: rendered inside the finance hub, which already supplies the page
+   * shell — the workspace body renders without a second layout or header.
+   * standalone (default): reached via /expenses, so it owns the page shell.
+   */
+  embedded?: boolean;
+}>;
+
+/**
+ * Owns the expenses workspace body. Shared verbatim between the standalone
+ * /expenses route and the embedded finance hub tab so business logic,
+ * queries, and mutations are never duplicated.
+ */
+export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) {
   const [filters, setFilters] = useState<OperationalExpenseFilterValues>({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
   const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });
   const costCentersQuery = useCostCenters();
@@ -106,17 +119,18 @@ export function ExpensesPage() {
   };
 
   return (
-    <PageLayout dir="rtl">
-      <PageHeader
-        title="المصاريف"
-        description="تسجيل ومراجعة مصاريف العقارات من مصدر البيانات الحالي مع فلاتر للعقار والتصنيف والتاريخ."
-        secondaryActions={(
-          <>
-            <Button variant="secondary" asChild><Link to="/financials"><ArrowLeft className="me-2 size-4" />المالية</Link></Button>
-            <Button variant="secondary" asChild><Link to="/reports"><ReceiptText className="me-2 size-4" />التقارير</Link></Button>
-          </>
-        )}
-      />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      size="default"
+      title="المصاريف"
+      description="تسجيل ومراجعة مصاريف العقارات من مصدر البيانات الحالي مع فلاتر للعقار والتصنيف والتاريخ."
+      secondaryActions={(
+        <>
+          <Button variant="secondary" asChild><Link to="/financials"><ArrowLeft className="me-2 size-4" />المالية</Link></Button>
+          <Button variant="secondary" asChild><Link to="/reports"><ReceiptText className="me-2 size-4" />التقارير</Link></Button>
+        </>
+      )}
+    >
 
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="عدد المصاريف" value={formatCompanyNumber(defaultCompanyLocalSettings, summary.visibleCount)} sub="ضمن الفلاتر الحالية" icon={ReceiptText} accent="primary" />
@@ -151,6 +165,10 @@ export function ExpensesPage() {
         isUpdateExpensePending={updateExpense.isPending}
         isUpdateExpenseSuccess={updateExpense.isSuccess}
       />
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
+}
+
+export function ExpensesPage() {
+  return <ExpensesWorkspace />;
 }
