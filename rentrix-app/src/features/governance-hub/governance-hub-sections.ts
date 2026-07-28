@@ -1,6 +1,4 @@
 import { Building2, KeyRound, ListChecks, SearchCheck, ShieldAlert } from 'lucide-react';
-import type { AppPermission, AuthorizationContext } from '@/features/auth/permissions';
-import { canAccess } from '@/features/auth/permissions';
 
 /**
  * Governance hub tab catalogue. Each tab maps 1:1 to a legacy standalone
@@ -50,14 +48,15 @@ export const governanceHubSections = [
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  permission: AppPermission;
+  permission: string;
 }>;
 
 export type GovernanceHubSectionId = (typeof governanceHubSections)[number]['id'];
+export type GovernanceHubPermission = (typeof governanceHubSections)[number]['permission'];
 
-/** Returns only the tabs the current authorization context is permitted to open. */
+/** Returns only the tabs accepted by the shared authorization seam. */
 export function getVisibleGovernanceHubSections(
-  authorization: AuthorizationContext | null | undefined,
+  canAccess: (permission: GovernanceHubPermission) => boolean,
 ) {
-  return governanceHubSections.filter((section) => canAccess(authorization, section.permission));
+  return governanceHubSections.filter((section) => canAccess(section.permission));
 }
