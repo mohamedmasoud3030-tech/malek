@@ -117,7 +117,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!import.meta.env.DEV || !authorizationDiagnostics.metadataMismatch) return;
 
-    console.warn('Rentrix authorization role metadata is missing or unrecognized.', {
+    console.warn('MALIK authorization role metadata is missing or unrecognized.', {
       resolvedRole: authorizationDiagnostics.resolvedRole,
       hasAppMetadataUserRole: authorizationDiagnostics.hasUserRoleMetadata,
       hasAppMetadataRole: authorizationDiagnostics.hasRoleMetadata,
