@@ -6,6 +6,7 @@ import {
   type SupportedLanguage,
   type TextDirection,
 } from './companySettings';
+import { APP_BRAND_NAME } from './brand';
 
 const I18N_NAMESPACE = 'common';
 
@@ -13,7 +14,7 @@ type SharedTranslationResources = Readonly<Record<string, string>>;
 type SharedTranslationEntry = readonly [key: string, arabicLabel: string, englishLabel: string];
 
 const sharedTranslationEntries = [
-  ['appName', 'Rentrix', 'Rentrix'],
+  ['appName', APP_BRAND_NAME, APP_BRAND_NAME],
   ['realEstateManagement', 'إدارة عقارية بوضوح وسرعة', 'Real estate operations with clarity'],
   ['home', 'الرئيسية', 'Home'],
   ['loading', 'جارٍ التحميل...', 'Loading...'],

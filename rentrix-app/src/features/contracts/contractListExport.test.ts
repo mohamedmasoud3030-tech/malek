@@ -62,6 +62,6 @@ describe('contract list CSV export helpers', () => {
 
   it('keeps contract export filenames deterministic from the provided date', () => {
     expect(getContractNumber(baseContract)).toBe('#contract');
-    expect(buildContractsCsvFilename(new Date('2026-05-17T12:00:00Z'))).toBe('rentrix-contracts-2026-05-17.csv');
+    expect(buildContractsCsvFilename(new Date('2026-05-17T12:00:00Z'))).toBe('malik-contracts-2026-05-17.csv');
   });
 });

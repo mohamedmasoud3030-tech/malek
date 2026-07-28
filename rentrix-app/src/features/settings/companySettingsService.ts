@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { normalizeCompanyLocale, normalizeCompanyLogoUrl, normalizeCountry, normalizeTimezone } from '@/lib/companySettings';
 import { normalizeCurrency } from '@/lib/formatters';
 import { handleSupabaseError } from '@/lib/supabase-error';
@@ -44,7 +45,7 @@ const defaultTimestamps = '1970-01-01T00:00:00.000Z';
 const defaultCompanySettings: CompanySettingsRecord = {
   id: DEFAULT_COMPANY_SETTINGS_ID,
   singleton_key: true,
-  company_name: 'Rentrix',
+  company_name: APP_BRAND_NAME,
   legal_name: null,
   tax_number: null,
   registration_number: null,

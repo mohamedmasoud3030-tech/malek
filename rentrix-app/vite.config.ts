@@ -112,9 +112,14 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: false,
-      includeAssets: ["offline.html", "icon-rentrix-192.png", "icon-rentrix-512.png", "favicon.svg"],
+      // MALIK ships a text-only wordmark: no logo asset is precached. The legacy
+      // Rentrix PNGs stay on disk as unreferenced assets pending deletion.
+      includeAssets: ["offline.html", "favicon.svg"],
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+        // Legacy Rentrix icons still sit in public/ for git history; keep them
+        // out of the precache so the MALIK build ships no legacy brand asset.
+        globIgnores: ["**/icon-rentrix-*.png"],
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],

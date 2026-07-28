@@ -1,5 +1,7 @@
 # Architecture
 
+> **Brand note:** MALIK is the product's current commercial name; the `rentrix-app/` path and other technical identifiers below intentionally keep the legacy `rentrix` spelling.
+
 ## Repository layout
 
 - `rentrix-app/` — the application (Vite + React + TypeScript). This is the only workspace package (see `pnpm-workspace.yaml`).
@@ -63,3 +65,19 @@ Tests are colocated with the code they cover (`*.test.ts(x)`, `*.spec.ts`) and r
 ## Financial reporting architecture note
 
 Payment-backed receipt screens and collection reports must use the same source: `public.payments` filtered to non-deleted, non-VOID rows for financial totals. The `rpt_daily_collection` RPC is expected to follow that same rule to avoid frontend/RPC drift.
+
+## Legacy brand assets
+
+The MALIK identity is a text-only wordmark: there is no logo file, no drawn `M`
+glyph, and no property/building icon anywhere in the shipped UI.
+
+Two legacy raster icons remain on disk but are no longer referenced by the PWA
+manifest, the HTML head, the service-worker precache list, or any component:
+
+- `rentrix-app/public/icon-rentrix-192.png`
+- `rentrix-app/public/icon-rentrix-512.png`
+
+They are kept so git history and existing bundle-budget expectations stay
+intact. They are safe to delete once a MALIK icon set is approved; nothing
+imports them today, and `rentrix-app/src/lib/brand-contract.test.ts` fails if
+anything starts referencing them again.

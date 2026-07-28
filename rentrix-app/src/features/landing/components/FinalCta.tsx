@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight, MessageCircle, Zap, Headset, Handshake } from 'lucide-react';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { useLanguage } from '../i18n/LanguageContext';
 import { whatsappLink } from '../constants';
 import { Reveal } from './Reveal';
@@ -9,8 +10,8 @@ export function FinalCta() {
   const { t, isArabic } = useLanguage();
   const ForwardArrow = isArabic ? ArrowLeft : ArrowRight;
   const waMessage = isArabic
-    ? 'مرحباً، أريد حجز عرض تجريبي لنظام Rentrix لإدارة العقارات.'
-    : 'Hi, I would like to book a live demo of Rentrix.';
+    ? `مرحباً، أريد حجز عرض تجريبي لنظام ${APP_BRAND_NAME} لإدارة العقارات.`
+    : `Hi, I would like to book a live demo of ${APP_BRAND_NAME}.`;
 
   return (
     <section className="relative overflow-hidden bg-background">

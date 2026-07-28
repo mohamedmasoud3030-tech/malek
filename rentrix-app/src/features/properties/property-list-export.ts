@@ -1,4 +1,5 @@
 import { DEFAULT_CURRENCY } from '@/lib/formatters';
+import { APP_BRAND_FILE_SLUG } from '@/lib/brand';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { Property } from '@/types/domain';
@@ -40,5 +41,5 @@ export function buildPropertiesCsvBlob(properties: Property[]) {
 }
 
 export function buildPropertiesCsvFilename(date: Date) {
-  return `rentrix-properties-${getTodayLocalDateString(date)}.csv`;
+  return `${APP_BRAND_FILE_SLUG}-properties-${getTodayLocalDateString(date)}.csv`;
 }

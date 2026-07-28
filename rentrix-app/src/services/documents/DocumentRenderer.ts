@@ -15,7 +15,7 @@ const signatureLabel: Record<SignatureRole, string> = {
 
 /**
  * Rows per rendered table "page fragment" before the table header repeats
- * on a fresh page. This is intentionally conservative — most Rentrix
+ * on a fresh page. This is intentionally conservative — most MALIK
  * documents have short tables that fit on one page, and this only matters
  * for long statements (owner/tenant statements, trial balance, etc.).
  */

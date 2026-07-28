@@ -1,5 +1,7 @@
 # Testing
 
+> **Brand note:** MALIK is the product's current commercial name; the `rentrix-app/` path and other technical identifiers below intentionally keep the legacy `rentrix` spelling.
+
 All commands run from the repository root using pnpm workspaces.
 
 ```bash

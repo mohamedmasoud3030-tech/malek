@@ -8,6 +8,7 @@ import {
   validateCompanySettingsDraft,
   type CompanySettingsDraft,
 } from './settingsForm';
+import { APP_BRAND_NAME } from '@/lib/brand';
 
 const validRecord = {
   id: 'settings_1',
@@ -147,7 +148,7 @@ describe('settingsForm helpers', () => {
       notification_email_enabled: false,
       notification_sms_enabled: true,
     })).toMatchObject({
-      company_name: 'Rentrix',
+      company_name: APP_BRAND_NAME,
       country: 'OM',
       currency: 'OMR',
       locale: 'en-OM',

@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Mail, MessageCircle, Heart } from 'lucide-react';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { useLanguage } from '../i18n/LanguageContext';
 import { APP_HOST, CONTACT_EMAIL, whatsappLink } from '../constants';
 
@@ -8,7 +9,9 @@ export function Footer() {
   const year = new Date().getFullYear();
   const productHrefs = ['#features', '#showcase', '#how', '#faq'];
   const companyHrefs = [
-    whatsappLink(isArabic ? 'مرحباً، أريد الاستفسار عن Rentrix.' : 'Hi, I want to ask about Rentrix.'),
+    whatsappLink(
+      isArabic ? `مرحباً، أريد الاستفسار عن ${APP_BRAND_NAME}.` : `Hi, I want to ask about ${APP_BRAND_NAME}.`,
+    ),
     `mailto:${CONTACT_EMAIL}`,
   ];
 
@@ -18,9 +21,8 @@ export function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2.5">
-              <img src="/icon-rentrix-192.png" alt="Rentrix" width="36" height="36" loading="lazy" className="size-9 rounded-xl" />
-              <span className="text-xl font-extrabold tracking-tight text-foreground" dir="ltr">
-                Rentrix
+              <span className="malik-wordmark tracking-[0.16em] text-xl font-extrabold text-foreground" dir="ltr">
+                {APP_BRAND_NAME}
               </span>
             </div>
             <p className="mt-4 max-w-xs text-sm leading-7 text-muted-foreground">{t.footer.tagline}</p>
@@ -99,7 +101,7 @@ export function Footer() {
 
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            © {year} <span dir="ltr">Rentrix</span>. {t.footer.rights}
+            © {year} <span className="malik-wordmark tracking-[0.16em] font-extrabold" dir="ltr">{APP_BRAND_NAME}</span>. {t.footer.rights}
           </p>
           <p className="text-xs text-muted-foreground" dir="ltr">
             {APP_HOST} — property management, simplified.

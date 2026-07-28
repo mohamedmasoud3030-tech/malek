@@ -1,7 +1,7 @@
 /**
  * CommandCenterPanel — Presentation-only visual component.
  *
- * Renders a "Rentrix Command Center" decorative illustration using
+ * Renders a "MALIK Command Center" decorative illustration using
  * inline SVG and CSS. All metrics shown are static preview data —
  * they are NOT connected to any API, database, or real user data.
  *
@@ -12,6 +12,8 @@
  * - Respects prefers-reduced-motion.
  * - Uses only design tokens from the project's token system.
  */
+
+import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 
 export function CommandCenterPanel() {
   return (
@@ -51,12 +53,11 @@ export function CommandCenterPanel() {
         {/* Header */}
         <header>
           <div className="flex items-center gap-3">
-            <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-              R
-            </div>
             <div>
-              <p className="text-sm font-bold text-foreground">مركز قيادة Rentrix</p>
-              <p className="text-[11px] text-muted-foreground">لوحة تحكم عقارية متكاملة</p>
+              <p className="malik-wordmark tracking-[0.16em] text-sm font-extrabold text-foreground" dir="ltr">
+                {APP_BRAND_NAME}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{APP_BRAND_TAGLINE_AR}</p>
             </div>
           </div>
         </header>

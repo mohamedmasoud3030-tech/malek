@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_BRAND_NAME } from '@/lib/brand';
 
 const supabaseMock = vi.hoisted(() => ({
   from: vi.fn(),
@@ -70,14 +71,14 @@ describe('companySettingsService', () => {
       company_name: objectValue,
       legal_name: objectValue,
     } as Parameters<typeof normalizeCompanySettingsRecord>[0])).toMatchObject({
-      company_name: 'Rentrix',
+      company_name: APP_BRAND_NAME,
       legal_name: null,
     });
     expect(normalizeCompanySettingsUpdatePayload({
       company_name: objectValue,
       legal_name: objectValue,
     } as Parameters<typeof normalizeCompanySettingsUpdatePayload>[0])).toEqual({
-      company_name: 'Rentrix',
+      company_name: APP_BRAND_NAME,
       legal_name: null,
     });
   });
@@ -101,7 +102,7 @@ describe('companySettingsService', () => {
 
     await expect(getCompanySettings()).resolves.toMatchObject({
       id: DEFAULT_COMPANY_SETTINGS_ID,
-      company_name: 'Rentrix',
+      company_name: APP_BRAND_NAME,
       currency: 'OMR',
       locale: 'ar-OM',
       country: 'OM',

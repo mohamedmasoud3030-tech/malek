@@ -1,7 +1,8 @@
+import { APP_BRAND_NAME } from '@/lib/brand';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 
 export const testCompanySettingsContract: CompanySettingsContract = {
-  companyName: 'Rentrix',
+  companyName: APP_BRAND_NAME,
   logoUrl: null,
   defaultLanguage: 'ar',
   defaultCurrency: 'OMR',

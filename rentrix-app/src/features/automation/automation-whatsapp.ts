@@ -1,3 +1,4 @@
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { buildWhatsAppUrl, renderMessageTemplate } from '@/services/whatsapp';
 import { automationTemplatePreviews } from './automation-catalog';
 import type { AutomationTemplatePreview } from './types';
@@ -45,7 +46,7 @@ export function renderAutomationWhatsAppMessage(dispatch: AutomationDispatch): s
     .map(([key, value]) => `${key}: ${value}`)
     .join('\n');
   const attachmentLine = dispatch.attachments.length > 0
-    ? '\n\nمرفقات/مستندات مرتبطة متاحة من داخل Rentrix.'
+    ? `\n\nمرفقات/مستندات مرتبطة متاحة من داخل ${APP_BRAND_NAME}.`
     : '';
   return `${renderMessageTemplate(body, dispatch.templateVariables)}${attachmentLine}`;
 }

@@ -23,15 +23,25 @@ describe('public landing performance contract', () => {
   it('keeps first-view artwork compact and the demo video user-initiated', () => {
     const publicRoot = new URL('../../../public/', import.meta.url);
     const heroBytes = statSync(new URL('landing/dashboard.webp', publicRoot)).size;
-    const iconBytes = statSync(new URL('icon-rentrix-192.png', publicRoot)).size;
     const showcaseSource = readSource('./components/Showcase.tsx');
 
     expect(heroBytes).toBeLessThan(60_000);
-    expect(iconBytes).toBeLessThan(25_000);
     expect(showcaseSource).toContain('{videoOpen ? (');
   });
 
-  it('loads the remote Cairo stylesheet after the initial document load', () => {
+  it('ships no brand image in the landing header or footer', () => {
+    // The MALIK identity is a text-only wordmark, so the first view costs no
+    // logo request at all. This also guards the legacy icons from creeping back.
+    const navBarSource = readSource('./components/NavBar.tsx');
+    const footerSource = readSource('./components/Footer.tsx');
+
+    expect(navBarSource).not.toContain('<img');
+    expect(footerSource).not.toContain('<img');
+    expect(navBarSource).not.toContain('icon-rentrix');
+    expect(footerSource).not.toContain('icon-rentrix');
+  });
+
+  it('loads the remote brand fonts after the initial document load', () => {
     const globalStyles = readSource('../../styles/globals.css');
     const indexHtml = readSource('../../../index.html');
 

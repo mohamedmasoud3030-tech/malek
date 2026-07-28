@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Languages, Menu, X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { useLanguage } from '../i18n/LanguageContext';
 
 const SECTION_IDS = ['problems', 'features', 'showcase', 'how', 'security', 'faq'] as const;
@@ -29,10 +30,10 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
           href={anchoredToHome ? '/' : '#top'}
           {...(anchoredToHome ? { 'data-internal': true } : {})}
           className="flex items-center gap-2.5"
+          aria-label={APP_BRAND_NAME}
         >
-          <img src="/icon-rentrix-192.png" alt="Rentrix" width="36" height="36" className="size-9 rounded-xl" />
-          <span className="text-xl font-extrabold tracking-tight text-foreground" dir="ltr">
-            Rentrix
+          <span className="malik-wordmark tracking-[0.16em] text-xl font-extrabold text-foreground" dir="ltr">
+            {APP_BRAND_NAME}
           </span>
         </a>
 

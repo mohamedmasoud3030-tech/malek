@@ -23,14 +23,12 @@ function detectInitialLang(): Lang {
   } catch {
     /* storage unavailable — fall through */
   }
-  return 'ar'; // Target market default: Arabic
+  return 'ar';
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(detectInitialLang);
 
-  // Landing pages control <html> dir/lang/title and scroll padding while mounted;
-  // the app's own chrome values are restored on unmount.
   useEffect(() => {
     const root = document.documentElement;
     const original = {

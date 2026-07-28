@@ -1,6 +1,7 @@
 import type { ChangeEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import {
   supportedCompanyLocales,
   supportedCountries,
@@ -60,7 +61,7 @@ export function CompanyProfileSections({
           الإعدادات هنا مرتبطة بسجل إعدادات الشركة المحفوظ، وليست حالة محلية مؤقتة.
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <FormField label="اسم الشركة" field="company_name" draft={draft} errors={errors} disabled={isSaving} placeholder="Rentrix" onChange={onDraftChange} />
+          <FormField label="اسم الشركة" field="company_name" draft={draft} errors={errors} disabled={isSaving} placeholder={APP_BRAND_NAME} onChange={onDraftChange} />
           <FormField label="الاسم القانوني" field="legal_name" draft={draft} errors={errors} disabled={isSaving} placeholder="الاسم القانوني للشركة" onChange={onDraftChange} />
           <FormField label="الرقم الضريبي" field="tax_number" draft={draft} errors={errors} disabled={isSaving} onChange={onDraftChange} />
           <FormField label="رقم السجل التجاري" field="registration_number" draft={draft} errors={errors} disabled={isSaving} onChange={onDraftChange} />

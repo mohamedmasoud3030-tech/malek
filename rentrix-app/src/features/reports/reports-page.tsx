@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { useReportsWorkspace } from './use-reports-workspace';
@@ -26,7 +27,7 @@ export function ReportsPage() {
     <PageLayout dir="rtl" size="wide" className="space-y-5 pb-8">
       <PageHeader
         title="مركز التقارير والكشوف"
-        description="قراءة موحّدة للتحصيل والمتأخرات والإشغال والكشوف من نفس مصادر Rentrix المعتمدة."
+        description={`قراءة موحّدة للتحصيل والمتأخرات والإشغال والكشوف من نفس مصادر ${APP_BRAND_NAME} المعتمدة.`}
       />
 
       <ReportsWorkspace

@@ -1,3 +1,4 @@
+import { APP_BRAND_NAME } from './brand';
 import { DEFAULT_CURRENCY, normalizeCurrency, type SupportedCurrency } from './formatters';
 
 export const supportedLanguages = ['ar', 'en'] as const;
@@ -80,7 +81,7 @@ const countryAliases: Readonly<Record<string, SupportedCountry>> = {
 };
 
 export const defaultCompanyLocalSettings: CompanyLocalSettings = {
-  companyName: 'Rentrix',
+  companyName: APP_BRAND_NAME,
   logoUrl: null,
   address: null,
   phone: null,

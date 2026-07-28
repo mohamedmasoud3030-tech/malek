@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, lazyRouteComponent, redirect, isRedirect 
 import { RouteErrorFallback } from '@/components/error-boundary';
 import { NotFoundPage } from '@/app/not-found-page';
 import { RootRouteComponent } from '@/routes/__root';
+import { APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import type { AppPermission } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
 
@@ -165,7 +166,7 @@ const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: lazyRouteComponent(() => import('@/routes/landing'), 'LandingRouteComponent'),
-  staticData: { title: 'Rentrix — نظام إدارة العقارات' },
+  staticData: { title: `${APP_BRAND_NAME} — ${APP_BRAND_TAGLINE_AR}` },
 });
 
 const privacyRoute = createRoute({

@@ -2,13 +2,13 @@ export type Lang = 'ar' | 'en';
 
 const ar = {
   meta: {
-    title: 'Rentrix | نظام واحد لإدارة عقاراتك الإيجارية بالكامل',
+    title: 'MALIK | كل مُلكك في مكان واحد',
     description:
       'منصة عربية RTL بالكامل لإدارة العقارات الإيجارية: العقارات والوحدات والعقود والفواتير والتحصيلات والصيانة والتقارير.',
   },
   nav: {
     features: 'المزايا',
-    problems: 'لماذا Rentrix؟',
+    problems: 'لماذا MALIK؟',
     showcase: 'جولة في المنتج',
     how: 'كيف تبدأ',
     security: 'الأمان',
@@ -22,11 +22,11 @@ const ar = {
     titleA: 'ودّع جداول Excel،',
     titleB: 'وأدِر عقاراتك من مكان واحد',
     subtitle:
-      'Rentrix يجمع العقارات والوحدات والعقود والفواتير والتحصيلات والصيانة والتقارير في مساحة عمل عربية واحدة — عربي RTL أصيل، مصمم لمكاتب العقارات في الخليج.',
+      'MALIK يجمع العقارات والوحدات والعقود والفواتير والتحصيلات والصيانة والتقارير في مساحة عمل عربية واحدة — عربي RTL أصيل، مصمم لمكاتب العقارات في الخليج.',
     ctaPrimary: 'جرّب التطبيق الآن',
     ctaWhatsapp: 'اطلب عرضاً تجريبياً',
     trustItems: ['عربي RTL بالكامل', 'تقارير مالية دقيقة', 'يعمل من المتصفح مباشرة', 'صلاحيات آمنة'],
-    screenshotCaption: 'لقطة حقيقية من لوحة تحكم Rentrix — مؤشرات التحصيل والإشغال والمتأخرات لحظة بلحظة',
+    screenshotCaption: 'لقطة حقيقية من لوحة تحكم MALIK — مؤشرات التحصيل والإشغال والمتأخرات لحظة بلحظة',
     scroll: 'اكتشف المزيد',
   },
   stats: [
@@ -39,9 +39,9 @@ const ar = {
     kicker: 'المشكلة والحل',
     title: 'كل مشكلة تواجهك في إدارة الإيجارات… لها حل واضح',
     subtitle:
-      'بنينا Rentrix فوق فهم حقيقي ليوميات مكاتب العقارات: كل ألم تعرفه جيداً، قابله حل مصمم بدقة.',
+      'بنينا MALIK فوق فهم حقيقي ليوميات مكاتب العقارات: كل ألم تعرفه جيداً، قابله حل مصمم بدقة.',
     painTitle: 'ما تعانيه اليوم',
-    solutionTitle: 'ما يقدمه Rentrix',
+    solutionTitle: 'ما يقدمه MALIK',
     footnote: 'انتقال واحد… يلغي كل هذا العناء.',
     items: [
       {
@@ -119,7 +119,7 @@ const ar = {
   showcase: {
     kicker: 'جولة في المنتج',
     title: 'شاهد التطبيق الحقيقي — لا رسومات توضيحية',
-    subtitle: 'كل ما تراه هنا لقطات فعلية من أحدث نسخة من Rentrix.',
+    subtitle: 'كل ما تراه هنا لقطات فعلية من أحدث نسخة من MALIK.',
     watchVideo: 'شاهد الجولة بالفيديو',
     closeVideo: 'إغلاق الفيديو',
     tabs: [
@@ -237,7 +237,7 @@ const ar = {
     items: [
       {
         q: 'هل أحتاج إلى تثبيت برنامج على أجهزتي؟',
-        a: 'لا. Rentrix يعمل بالكامل من المتصفح — على حاسوبك وجوالك — بواجهة عربية كاملة، دون أي تثبيت أو تحديثات يدوية.',
+        a: 'لا. MALIK يعمل بالكامل من المتصفح — على حاسوبك وجوالك — بواجهة عربية كاملة، دون أي تثبيت أو تحديثات يدوية.',
       },
       {
         q: 'هل يدعم النظام عملتي المحلية؟',
@@ -253,7 +253,7 @@ const ar = {
       },
       {
         q: 'ماذا عن ضريبة القيمة المضافة؟',
-        a: 'يدعم Rentrix إعدادات الضريبة والرقم الضريبي لشركتك، مع تقرير إقرار ضريبة القيمة المضافة ضمن مركز التقارير.',
+        a: 'يدعم MALIK إعدادات الضريبة والرقم الضريبي لشركتك، مع تقرير إقرار ضريبة القيمة المضافة ضمن مركز التقارير.',
       },
       {
         q: 'كيف تُحمى بياناتي؟',
@@ -265,7 +265,7 @@ const ar = {
     titleA: 'جاهز تدير عقاراتك',
     titleB: 'بعقلية القرن الحالي؟',
     subtitle:
-      'كن من أوائل المكاتب التي تجرب Rentrix. اطلب عرضاً تجريبياً اليوم وسنجهز لك مساحة عمل تناسب محفظتك.',
+      'كن من أوائل المكاتب التي تجرب MALIK. اطلب عرضاً تجريبياً اليوم وسنجهز لك مساحة عمل تناسب محفظتك.',
     primary: 'جرّب التطبيق الآن',
     whatsapp: 'تواصل عبر واتساب',
     note: 'إعداد سريع • دعم عربي كامل • بدون التزام',
@@ -299,13 +299,13 @@ export type Messages = WidenLiteral<typeof ar>;
 
 const en: Messages = {
   meta: {
-    title: 'Rentrix | One system to run your entire rental portfolio',
+    title: 'MALIK | One system to run your entire rental portfolio',
     description:
       'A fully Arabic-RTL property management platform: properties, units, contracts, invoicing, collections, maintenance and reports — in one workspace.',
   },
   nav: {
     features: 'Features',
-    problems: 'Why Rentrix?',
+    problems: 'Why MALIK?',
     showcase: 'Product tour',
     how: 'How it works',
     security: 'Security',
@@ -319,11 +319,11 @@ const en: Messages = {
     titleA: 'Ditch the spreadsheets,',
     titleB: 'run your properties in one place',
     subtitle:
-      'Rentrix unites properties, units, contracts, invoices, collections, maintenance and reports in a single Arabic-first workspace — built for real-estate offices in the Gulf.',
+      'MALIK unites properties, units, contracts, invoices, collections, maintenance and reports in a single Arabic-first workspace — built for real-estate offices in the Gulf.',
     ctaPrimary: 'Try the app now',
     ctaWhatsapp: 'Book a live demo',
     trustItems: ['Fully Arabic RTL', 'Accurate financial reports', 'Runs straight in the browser', 'Secure permissions'],
-    screenshotCaption: 'A real screenshot of the Rentrix dashboard — collection, occupancy and arrears KPIs live',
+    screenshotCaption: 'A real screenshot of the MALIK dashboard — collection, occupancy and arrears KPIs live',
     scroll: 'Scroll to explore',
   },
   stats: [
@@ -336,9 +336,9 @@ const en: Messages = {
     kicker: 'Problem & solution',
     title: 'Every rental-management headache… has a clear cure',
     subtitle:
-      'We built Rentrix on a real understanding of daily life inside a property office: every pain you know by heart meets a purpose-built solution.',
+      'We built MALIK on a real understanding of daily life inside a property office: every pain you know by heart meets a purpose-built solution.',
     painTitle: 'What you suffer today',
-    solutionTitle: 'What Rentrix delivers',
+    solutionTitle: 'What MALIK delivers',
     footnote: 'One move… erases all of this.',
     items: [
       {
@@ -416,7 +416,7 @@ const en: Messages = {
   showcase: {
     kicker: 'Product tour',
     title: 'See the real product — not illustrations',
-    subtitle: 'Everything below is an actual capture from the latest Rentrix build.',
+    subtitle: 'Everything below is an actual capture from the latest MALIK build.',
     watchVideo: 'Watch the video tour',
     closeVideo: 'Close video',
     tabs: [
@@ -494,7 +494,7 @@ const en: Messages = {
     items: [
       {
         q: 'Do I need to install any software?',
-        a: 'No. Rentrix runs entirely in the browser — on your computer and your phone — with a full Arabic interface and no manual updates.',
+        a: 'No. MALIK runs entirely in the browser — on your computer and your phone — with a full Arabic interface and no manual updates.',
       },
       {
         q: 'Does it support my local currency?',
@@ -510,7 +510,7 @@ const en: Messages = {
       },
       {
         q: 'What about VAT?',
-        a: 'Rentrix supports tax settings and your company tax number, with a VAT return report inside the reports hub.',
+        a: 'MALIK supports tax settings and your company tax number, with a VAT return report inside the reports hub.',
       },
       {
         q: 'How is my data protected?',
@@ -522,7 +522,7 @@ const en: Messages = {
     titleA: 'Ready to run your properties',
     titleB: 'like it’s 2026?',
     subtitle:
-      'Be among the first offices to try Rentrix. Book a demo today and we’ll set up a workspace that fits your portfolio.',
+      'Be among the first offices to try MALIK. Book a demo today and we’ll set up a workspace that fits your portfolio.',
     primary: 'Try the app now',
     whatsapp: 'Chat on WhatsApp',
     note: 'Fast setup • Full Arabic support • No commitment',

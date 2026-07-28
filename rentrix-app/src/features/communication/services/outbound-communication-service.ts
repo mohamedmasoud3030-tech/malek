@@ -1,3 +1,4 @@
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { buildWhatsAppUrl, renderMessageTemplate } from '@/services/whatsapp';
 
 /**
@@ -132,7 +133,7 @@ export async function sendOutboundMessage(
       };
     }
 
-    const subject = request.subject ?? 'رسالة من Rentrix';
+    const subject = request.subject ?? `رسالة من ${APP_BRAND_NAME}`;
     const mailto = `mailto:${encodeURIComponent(request.to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     return {
       accepted: true,

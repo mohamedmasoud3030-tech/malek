@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { APP_BRAND_NAME } from '@/lib/brand';
 import { useLanguage } from '../i18n/LanguageContext';
 import { legalContent, type LegalSlug } from '../i18n/legal';
 import { NavBar } from './NavBar';
@@ -40,7 +41,9 @@ export function LegalPage({ slug }: { slug: LegalSlug }) {
                 </span>
                 <div>
                   <p className="text-xs font-bold text-muted-foreground">{content.effective}</p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">Rentrix</p>
+                  <p className="malik-wordmark tracking-[0.16em] mt-1 text-sm font-extrabold leading-6 text-foreground" dir="ltr">
+                    {APP_BRAND_NAME}
+                  </p>
                 </div>
               </div>
 
