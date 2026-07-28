@@ -5,7 +5,29 @@ import { Button } from '@/components/ui/button';
 import { PageLayout } from '@/components/layout/page-layout';
 import { ArrearsWorkspaceSection } from '../components/arrears-workspace-section';
 
-export function ArrearsPage() {
+export type ArrearsWorkspaceMode = 'standalone' | 'embedded';
+
+export type ArrearsWorkspaceProps = Readonly<{
+  /**
+   * standalone: renders the full page shell (PageLayout + PageHeader) — used
+   * by the legacy /arrears route when visited directly.
+   * embedded: renders only the workspace body — used inside the
+   * expenses/arrears finance hub, which already supplies its own page shell
+   * and tab header.
+   */
+  mode?: ArrearsWorkspaceMode;
+}>;
+
+/**
+ * Owns the arrears workspace body. Shared verbatim between the standalone
+ * /arrears route and the embedded finance hub tab so business logic,
+ * queries, and mutations are never duplicated.
+ */
+export function ArrearsWorkspace({ mode = 'standalone' }: ArrearsWorkspaceProps) {
+  if (mode === 'embedded') {
+    return <ArrearsWorkspaceSection />;
+  }
+
   return (
     <PageLayout dir="rtl" size="wide">
       <PageHeader
@@ -22,4 +44,8 @@ export function ArrearsPage() {
       <ArrearsWorkspaceSection />
     </PageLayout>
   );
+}
+
+export function ArrearsPage() {
+  return <ArrearsWorkspace />;
 }
