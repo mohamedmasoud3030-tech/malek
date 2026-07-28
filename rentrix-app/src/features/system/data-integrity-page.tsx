@@ -13,7 +13,19 @@ function getDataIntegrityViewState(query: { isPending: boolean; isError: boolean
   return { status: 'ready', result: query.data } as const;
 }
 
-export function DataIntegrityPage() {
+export type DataIntegrityWorkspaceVariant = 'standalone' | 'embedded';
+
+type DataIntegrityWorkspaceProps = Readonly<{
+  /**
+   * 'standalone' (default) preserves the historical /data-integrity route:
+   * content renders inside its own PageLayout + PageHeader. 'embedded'
+   * drops both so the content can be hosted inside the governance hub
+   * without duplicating page chrome.
+   */
+  variant?: DataIntegrityWorkspaceVariant;
+}>;
+
+export function DataIntegrityWorkspace({ variant = 'standalone' }: DataIntegrityWorkspaceProps = {}) {
   const { authorization } = useAuth();
   const integrityQuery = useQuery({ queryKey: ['data-integrity-audit'], queryFn: runDataIntegrityAudit, enabled: canAccess(authorization, 'integrity.view') });
 
@@ -22,6 +34,10 @@ export function DataIntegrityPage() {
   }
 
   const state = getDataIntegrityViewState(integrityQuery);
+
+  if (variant === 'embedded') {
+    return <DataIntegrityView state={state} />;
+  }
 
   return (
     <PageLayout dir="rtl" lang="ar">
@@ -32,5 +48,10 @@ export function DataIntegrityPage() {
       <DataIntegrityView state={state} />
     </PageLayout>
   );
+}
+
+/** Standalone /data-integrity route entry point — preserves historical behavior exactly. */
+export function DataIntegrityPage() {
+  return <DataIntegrityWorkspace variant="standalone" />;
 }
 

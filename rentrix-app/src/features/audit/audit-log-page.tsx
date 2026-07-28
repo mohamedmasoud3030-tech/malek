@@ -13,7 +13,19 @@ function getAuditLogViewState(query: { isPending: boolean; isError: boolean; err
   return { status: 'ready', result: query.data } as const;
 }
 
-export function AuditLogPage() {
+export type AuditLogWorkspaceVariant = 'standalone' | 'embedded';
+
+type AuditLogWorkspaceProps = Readonly<{
+  /**
+   * 'standalone' (default) preserves the historical /audit-log route:
+   * content renders inside its own PageLayout + PageHeader. 'embedded'
+   * drops both so the content can be hosted inside the governance hub
+   * without duplicating page chrome.
+   */
+  variant?: AuditLogWorkspaceVariant;
+}>;
+
+export function AuditLogWorkspace({ variant = 'standalone' }: AuditLogWorkspaceProps = {}) {
   const { authorization } = useAuth();
   const auditLogQuery = useQuery({ queryKey: ['audit-log'], queryFn: fetchAuditLog, enabled: canAccess(authorization, 'audit.view') });
 
@@ -22,6 +34,10 @@ export function AuditLogPage() {
   }
 
   const state = getAuditLogViewState(auditLogQuery);
+
+  if (variant === 'embedded') {
+    return <AuditLogView state={state} />;
+  }
 
   return (
     <PageLayout dir="rtl" lang="ar">
@@ -32,5 +48,10 @@ export function AuditLogPage() {
       <AuditLogView state={state} />
     </PageLayout>
   );
+}
+
+/** Standalone /audit-log route entry point — preserves historical behavior exactly. */
+export function AuditLogPage() {
+  return <AuditLogWorkspace variant="standalone" />;
 }
 
