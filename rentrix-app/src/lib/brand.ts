@@ -9,7 +9,7 @@
 export const APP_BRAND_NAME = 'MALIK';
 
 /** Fixed Arabic marketing line. Must stay byte-identical wherever it appears. */
-export const APP_BRAND_TAGLINE_AR = 'كل مُلكك في مكان واحد';
+export const APP_BRAND_TAGLINE_AR = 'كل أملاكك في مكان واحد';
 
 export const APP_BRAND_DESCRIPTION_AR =
   'منصة عربية متكاملة لإدارة العقارات والوحدات والعقود والتحصيلات والصيانة والتقارير.';

@@ -50,14 +50,20 @@ vi.mock('sonner', () => ({
 /* ── Static SSR contract (structural, no DOM needed) ── */
 
 describe('LoginPage — structural contract', () => {
-  it('renders brand, form heading, and security footer together', () => {
+  it('renders brand and form heading together', () => {
     const html = renderToStaticMarkup(<LoginPage />);
 
     expect(html).toContain('data-login-surface');
     expect(html).toContain('MALIK');
-    expect(html).toContain('مرحباً بعودتك');
-    expect(html).toContain('دخول آمن لمساحة العمل');
-    expect(html).toContain('جلسة عمل محمية');
+    expect(html).toContain('تسجيل الدخول');
+  });
+
+  it('does NOT contain security badges or secondary descriptions', () => {
+    const html = renderToStaticMarkup(<LoginPage />);
+
+    expect(html).not.toContain('دخول آمن لمساحة العمل');
+    expect(html).not.toContain('جلسة عمل محمية');
+    expect(html).not.toContain('أدخل بيانات حسابك للانتقال');
   });
 
   it('does NOT contain marketing-panel copy from previous iterations', () => {
@@ -167,7 +173,7 @@ describe('LoginPage — interaction behaviour', () => {
     fireEvent.submit(submitBtn.closest('form')!);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /جارٍ تسجيل الدخول/i })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /جارٍ التحقق.../i })).toBeDisabled();
     });
 
     expect(mockLogin).toHaveBeenCalledTimes(1);
@@ -176,6 +182,13 @@ describe('LoginPage — interaction behaviour', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /تسجيل الدخول/i })).not.toBeDisabled();
     });
+  });
+
+  it('renders contact information card on mobile', () => {
+    setup();
+    expect(screen.getByText('تحتاج مساعدة؟ تواصل معنا')).toBeInTheDocument();
+    expect(screen.getByText('+968 9192 8186')).toBeInTheDocument();
+    expect(screen.getByText('Ahmedmasoud@outlook.com')).toBeInTheDocument();
   });
 
   it('shows a safe generic error message when login fails', async () => {
@@ -278,30 +291,29 @@ describe('LoginPage — layout and accessibility', () => {
 /* ── Command-Center Visual Panel contract ───────────── */
 
 describe('CommandCenterPanel — presentation only', () => {
-  it('renders without crashing and contains preview metric labels', async () => {
+  it('renders without crashing and contains tagline', async () => {
     const { CommandCenterPanel } = await import('./command-center-panel');
     const html = renderToStaticMarkup(<CommandCenterPanel />);
 
     expect(html).not.toContain('<aside');
     expect(html).toContain('MALIK');
-    expect(html).toContain('كل مُلكك في مكان واحد');
-    expect(html).toContain('وحدة');
-    expect(html).toContain('عقد');
-    expect(html).toContain('نسبة الإشغال');
+    expect(html).toContain('كل أملاكك في مكان واحد');
   });
 
-  it('uses the local MALIK mark without a remote image dependency', async () => {
+  it('does NOT contain fake statistics', async () => {
     const { CommandCenterPanel } = await import('./command-center-panel');
     const html = renderToStaticMarkup(<CommandCenterPanel />);
 
-    expect(html).toContain('src="/malik-mark.svg"');
-    expect(html).not.toMatch(/<img[^>]+src="https?:\/\//);
+    expect(html).not.toContain('وحدة');
+    expect(html).not.toContain('عقد');
+    expect(html).not.toContain('نسبة الإشغال');
   });
 
-  it('contains the preview data disclaimer text', async () => {
+  it('uses the MalikMark component indirectly via MalikBrand', async () => {
     const { CommandCenterPanel } = await import('./command-center-panel');
     const html = renderToStaticMarkup(<CommandCenterPanel />);
 
-    expect(html).toContain('بيانات توضيحية فقط');
+    // MalikMark is an SVG component, it won't have an <img> tag with src
+    expect(html).toContain('svg');
   });
 });
