@@ -3,53 +3,47 @@ import { strict as assert } from 'node:assert';
 
 const path = '.github/workflows/supabase-production-migrations.yml';
 const text = readFileSync(path, 'utf8');
+const section = (source, name, next) => source.slice(source.indexOf(`  ${name}:`), next ? source.indexOf(`  ${next}:`) : undefined);
 
 function validate(t) {
   assert(/^on:\n  workflow_dispatch:/m.test(t), 'workflow must be dispatch-only');
   assert(!/^\s+(push|pull_request|schedule):/m.test(t), 'automatic trigger detected');
-  assert(/environment:\n\s+name: production/.test(t), 'production environment approval missing');
-  assert(/name: preflight \/ dry-run/.test(t) && /name: approved migration deploy/.test(t), 'required paths missing');
-  assert(/default: preflight/.test(t), 'deploy must not be the default');
-  assert(/\^\[0-9a-f\]\{40\}\$/.test(t), 'full SHA validation missing');
-  assert((t.match(/git fetch --no-tags origin main/g) || []).length >= 3, 'origin/main must be refreshed before every SHA decision');
-  assert((t.match(/git rev-parse HEAD/g) || []).length >= 3, 'SHA must be checked before approval, after approval, and before apply');
-  assert((t.match(/git rev-parse origin\/main/g) || []).length >= 3, 'origin/main must match the approved SHA at every gate');
-  assert(/git merge-base --is-ancestor/.test(t), 'main ancestry gate missing');
-  assert(/APPROVED_SHA: \$\{\{ inputs\.approved_sha \}\}/.test(t), 'approved SHA input missing');
-  assert(/supabase link --project-ref/.test(t), 'explicit Supabase project linking missing');
-  assert(/supabase migration list --linked/.test(t), 'remote migration evidence missing');
-  assert(/supabase db push --linked[^\n]*--dry-run/.test(t), 'approved dry-run missing');
-  assert(/supabase db push --linked[^\n]*--yes/.test(t), 'approved deploy command missing');
-  assert(/Upload preflight evidence/.test(t) && /Upload deployment evidence/.test(t), 'evidence artifacts missing');
+  assert(/permissions:\n\s+contents: read\n\s+actions: read/.test(t), 'required read permissions missing');
+  assert(/concurrency:\n\s+group: production-migrations\n\s+cancel-in-progress: false/.test(t), 'serialized production concurrency missing');
+  assert(/options: \[local-preflight, production-inspect, deploy\]/.test(t), 'three explicit actions missing');
+  const inputs = t.slice(t.indexOf('    inputs:'), t.indexOf('permissions:'));
+  for (const input of ['inspection_run_id', 'backup_reference', 'rollback_plan_reference']) {
+    assert(new RegExp(`^\\s{6}${input}:`, 'm').test(inputs), `${input} deploy input missing`);
+  }
+  for (const job of ['local-preflight', 'production-inspect', 'deploy']) assert(t.includes(`  ${job}:`), `${job} job missing`);
+  assert((t.match(/environment: \{ name: production \}/g) || []).length === 2, 'only inspect and deploy may use production environment');
 
-  const preflight = t.slice(t.indexOf('  preflight:'), t.indexOf('  approved-deploy:'));
-  assert(!/SUPABASE_(ACCESS_TOKEN|PROJECT_REF|DB_PASSWORD)/.test(preflight), 'preflight must not access Production secrets');
-  assert(!/supabase (link|db push|migration list --linked)/.test(preflight), 'preflight must not access or write Production');
-
-  const deploy = t.slice(t.indexOf('  approved-deploy:'));
-  assert(/if:.*inputs\.action == 'deploy'/.test(deploy), 'deploy must require explicit action');
-  assert((deploy.match(/Re-verify exact SHA/g) || []).length >= 2, 'SHA must be re-verified after approval and immediately before apply');
+  const local = section(t, 'local-preflight', 'production-inspect');
+  const inspect = section(t, 'production-inspect', 'deploy');
+  const deploy = section(t, 'deploy');
+  assert(!/SUPABASE_|migration list --linked|db push --linked|supabase link/.test(local), 'local preflight must not access Production');
+  assert(/supabase migration list --linked/.test(inspect), 'inspect ledger missing');
+  assert(/db push --linked[^\n]*--dry-run/.test(inspect), 'inspect dry-run missing');
+  assert(!/db push --linked[^\n]*--yes/.test(inspect), 'inspect must not apply');
+  assert(/production-inspect-\$\{\{ github.run_id \}\}/.test(inspect), 'inspect artifact missing');
+  assert(/inputs\.inspection_run_id/.test(deploy), 'deploy must depend on inspection run id');
+  assert(/actions\/download-artifact/.test(deploy), 'deploy must download inspection artifact');
+  assert(/action=production-inspect/.test(deploy), 'deploy must reject non-inspection artifact');
+  assert(/backup_reference/.test(deploy) && /rollback_plan_reference/.test(deploy), 'deploy recovery evidence missing');
+  assert(/db push --linked[^\n]*--yes/.test(deploy), 'deploy apply missing');
+  assert((deploy.match(/git fetch --no-tags origin main/g) || []).length >= 2, 'deploy SHA gates missing');
 }
 
 validate(text);
-
 for (const [label, mutate] of [
-  ['push trigger', t => t.replace('  workflow_dispatch:', '  push:\n    branches: [main]\n  workflow_dispatch:')],
-  ['missing environment', t => t.replace(/environment:\n\s+name: production/, '')],
-  ['deploy default', t => t.replace('default: preflight', 'default: deploy')],
-  ['missing final SHA check', t => t.replace('Re-verify exact SHA immediately before apply', 'Removed final SHA gate')],
-  ['preflight Production write', t => t.replace('Build local migration evidence (no Production access)', 'Build local migration evidence (no Production access)\n        run: pnpm exec supabase db push --linked --yes')],
-  ['missing dry-run', t => t.replace(/pnpm exec supabase db push --linked[^\n]*--dry-run[^\n]*/, 'echo dry-run removed')],
-  ['missing preflight artifact', t => t.replace(/      - name: Upload preflight evidence[\s\S]*?(?=\n  approved-deploy:)/, '')],
-  ['Production secret in preflight', t => t.replace('APPROVED_SHA: ${{ inputs.approved_sha }}', 'APPROVED_SHA: ${{ inputs.approved_sha }}\n          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}')],
+  ['automatic trigger', t => t.replace('  workflow_dispatch:', '  push:\n    branches: [main]\n  workflow_dispatch:')],
+  ['inspect apply', t => t.replace('production-inspect-${{ github.run_id }}', 'production-inspect-${{ github.run_id }}\n          # db push --linked --yes')],
+  ['missing inspection dependency', t => t.replaceAll('inputs.inspection_run_id', 'inputs.removed')],
+  ['missing backup input', t => t.replace('backup_reference:', 'removed_backup_reference:')],
+  ['missing concurrency', t => t.replace(/concurrency:[\s\S]*?\nenv:/, 'env:')],
 ]) {
   let failed = false;
-  try {
-    validate(mutate(text));
-  } catch {
-    failed = true;
-  }
+  try { validate(mutate(text)); } catch { failed = true; }
   assert(failed, `${label} regression was not detected`);
 }
-
-console.log('manual migration workflow guard: OK (positive + 8 negative cases)');
+console.log('manual migration workflow guard: OK');

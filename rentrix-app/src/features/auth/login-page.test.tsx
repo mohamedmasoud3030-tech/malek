@@ -40,6 +40,7 @@ describe('LoginPage — structural contract', () => {
     expect(html).toContain('data-login-surface');
     expect(html).toContain('MALIK');
     expect(html).toContain('تسجيل الدخول');
+    expect(html).not.toContain('مرحباً بعودتك');
   });
 
   it('does NOT contain security badges or secondary descriptions', () => {
@@ -148,7 +149,7 @@ describe('LoginPage — interaction behaviour', () => {
   });
 
   it('shows a safe generic error message when login fails', async () => {
-    mockLogin.mockRejectedValue(new Error('بيانات الدخول غير صحيحة'));
+    mockLogin.mockRejectedValue(new Error('Invalid login credentials'));
     setup();
     fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), {
       target: { value: 'bad@x.com' },
@@ -160,6 +161,9 @@ describe('LoginPage — interaction behaviour', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
     const form = screen.getByRole('button', { name: /تسجيل الدخول/i }).closest('form')!;
     expect(form.getAttribute('aria-describedby')).toBe('login-error');
+    expect(screen.getByRole('alert')).toHaveTextContent('تعذر تسجيل الدخول. راجع البريد الإلكتروني وكلمة المرور ثم حاول مرة أخرى.');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Invalid login credentials');
+    expect(screen.getByRole('button', { name: /تسجيل الدخول/i })).toBeEnabled();
   });
 
   it('toggles password visibility', () => {

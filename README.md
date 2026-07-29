@@ -1,6 +1,6 @@
 # MALIK
 
-**كل مُلكك في مكان واحد**
+**كل أملاكك في مكان واحد**
 
 MALIK is a rental-property management web application for properties, units, people, contracts, financial workflows, maintenance, reports, and settings.
 

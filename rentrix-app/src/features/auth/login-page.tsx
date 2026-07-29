@@ -16,6 +16,7 @@ import { MalikBrand } from '@/components/brand/malik-brand';
 import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
 import { SUPPORT_CONTACTS } from '@/lib/contact';
 import { CommandCenterPanel } from './command-center-panel';
+import { getLoginErrorMessage } from './login-error-message';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -44,7 +45,7 @@ export function LoginPage() {
         await login(email, password);
         toast.success('تم تسجيل الدخول بنجاح');
       } catch (error) {
-        setFormError(error instanceof Error ? error.message : 'تعذر تسجيل الدخول. راجع البيانات وحاول مرة أخرى.');
+        setFormError(getLoginErrorMessage(error));
       } finally {
         setIsSubmitting(false);
         isSubmittingRef.current = false;

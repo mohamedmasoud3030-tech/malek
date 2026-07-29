@@ -50,7 +50,7 @@ async function installReadOnlyNetworkGuard(page: Page) {
 
 async function submitLogin(page: Page, candidatePassword: string): Promise<Response> {
   await page.goto('/login');
-  await page.getByLabel('البريد الإلكتروني').fill(email);
+  await page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true }).fill(email);
   await page.getByPlaceholder('••••••••').fill(candidatePassword);
 
   const loginButton = page.getByRole('button', { name: /^تسجيل الدخول$/ });
@@ -90,7 +90,7 @@ test.describe('release blocker: deployed read-only authentication lifecycle', ()
 
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'تسجيل الدخول', exact: true })).toBeVisible();
   });
 
   test('invalid credentials do not create a session or enter the protected shell', async ({ page }) => {
@@ -100,7 +100,7 @@ test.describe('release blocker: deployed read-only authentication lifecycle', ()
     const loginButton = page.getByRole('button', { name: /^تسجيل الدخول$/ });
     await expect(loginButton).toBeEnabled();
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'تسجيل الدخول', exact: true })).toBeVisible();
     await expect(page.getByText('لوحة التحكم')).toHaveCount(0);
 
     const authStorageValue = await page.evaluate(
@@ -138,7 +138,7 @@ test.describe('release blocker: deployed read-only authentication lifecycle', ()
 
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
-    await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'تسجيل الدخول', exact: true })).toBeVisible();
     await expect(page.getByText('لوحة التحكم')).toHaveCount(0);
   });
 });
