@@ -50,7 +50,7 @@ async function installReadOnlyNetworkGuard(page: Page) {
 
 async function submitLogin(page: Page, candidatePassword: string): Promise<Response> {
   await page.goto('/login');
-  await page.getByLabel('البريد الإلكتروني').fill(email);
+  await page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true }).fill(email);
   await page.getByPlaceholder('••••••••').fill(candidatePassword);
 
   const loginButton = page.getByRole('button', { name: /^تسجيل الدخول$/ });

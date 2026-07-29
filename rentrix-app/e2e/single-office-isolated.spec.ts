@@ -12,7 +12,7 @@ test.skip(
 
 async function login(page: Page) {
   await page.goto('/login');
-  await page.getByLabel('البريد الإلكتروني').fill(EMAIL);
+  await page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true }).fill(EMAIL);
   await page.getByPlaceholder('••••••••').fill(PASSWORD);
   await page.getByRole('button', { name: /تسجيل الدخول/ }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
