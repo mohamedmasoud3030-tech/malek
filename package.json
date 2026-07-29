@@ -17,7 +17,8 @@
     "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh",
     "e2e": "pnpm --filter @workspace/rentrix run e2e",
     "e2e:install": "pnpm --filter @workspace/rentrix exec playwright install --with-deps chromium",
-    "supabase:live-readiness": "bash scripts/verify-supabase-live-readiness.sh"
+    "supabase:live-readiness": "bash scripts/verify-supabase-live-readiness.sh",
+    "test": "pnpm --filter @workspace/rentrix run test"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.4",

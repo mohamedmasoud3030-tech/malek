@@ -223,7 +223,7 @@ describe('MALIK brand contract — identity constants', () => {
   });
 
   it('pins the Arabic marketing line to the approved wording', () => {
-    expect(APP_BRAND_TAGLINE_AR).toBe('كل مُلكك في مكان واحد');
+    expect(APP_BRAND_TAGLINE_AR).toBe('كل أملاكك في مكان واحد');
   });
 
   it('keeps the legacy technical prefix available and unchanged', () => {
