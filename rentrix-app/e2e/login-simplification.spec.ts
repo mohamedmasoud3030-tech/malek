@@ -49,7 +49,7 @@ for (const viewport of viewportMatrix) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openLogin(page, theme);
 
-      await expect(page.getByRole('heading', { name: 'مرحباً بعودتك' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'تسجيل الدخول', exact: true })).toBeVisible();
       await expect(page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true })).toBeVisible();
       await expect(page.getByPlaceholder('••••••••')).toBeVisible();
       await expect(page.getByRole('button', { name: /تسجيل الدخول/ })).toBeVisible();
