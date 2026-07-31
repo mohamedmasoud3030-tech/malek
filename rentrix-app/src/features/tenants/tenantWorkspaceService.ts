@@ -1,4 +1,5 @@
 import { isContractStatus } from '@/lib/contractStatus';
+import { fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { normalizeInvoiceStatus } from '@/features/financials/components/invoice-status-labels';
@@ -101,34 +102,35 @@ async function listTenantContracts(tenantIds: string[]) {
   if (tenantIds.length === 0) {
     return [];
   }
-  const { data, error } = await supabase
+
+  const { rows } = await fetchAllRowsInBatches<TenantContract, string>(tenantIds, (tenantIdBatch) => supabase
     .from('contracts')
     .select(tenantContractSelect)
-    .in('tenant_id', tenantIds)
+    .in('tenant_id', [...tenantIdBatch])
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
-    .returns<TenantContract[]>();
-  if (error) {
-    throw error;
-  }
-  return data ?? [];
+    .returns<TenantContract[]>());
+
+  return rows;
 }
 
 async function listTenantInvoices(contractIds: string[]) {
   if (contractIds.length === 0) {
     return [];
   }
-  const { data, error } = await supabase
+
+  const { rows } = await fetchAllRowsInBatches<TenantInvoice, string>(contractIds, (contractIdBatch) => supabase
     .from('invoices')
     .select(tenantInvoiceSelect)
-    .in('contract_id', contractIds)
+    .in('contract_id', [...contractIdBatch])
     .is('deleted_at', null)
-    .returns<TenantInvoice[]>();
-  if (error) {
-    throw error;
-  }
-  return data ?? [];
+    .order('contract_id', { ascending: true })
+    .order('due_date', { ascending: true })
+    .order('id', { ascending: true })
+    .returns<TenantInvoice[]>());
+
+  return rows;
 }
 
 function getInvoicesByTenant(contractsByTenant: Record<string, TenantContract[]>, invoicesByContract: Record<string, TenantInvoice[]>) {

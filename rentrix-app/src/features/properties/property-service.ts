@@ -161,6 +161,7 @@ export async function listProperties(params: PropertyListParams): Promise<Pagina
     .select('*, property_owners(owner_id,is_primary,starts_on,ends_on,owner:owners(display_name,full_name,name,deleted_at,is_active)), owner_agreements(starts_on,ends_on)', { count: 'exact' })
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .range(from, to);
 
   const trimmedSearch = params.search.trim();

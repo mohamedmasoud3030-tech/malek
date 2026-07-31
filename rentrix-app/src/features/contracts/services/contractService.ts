@@ -41,6 +41,7 @@ export async function listContracts(params: ContractListParams): Promise<Paginat
     .select(CONTRACT_BASE_SELECT, { count: 'exact' })
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .range(from, to);
   // Cover every stored casing — legacy rows may hold 'ACTIVE'/'ENDED'. The
   // generated column type only lists the modern lowercase spellings, so cast:

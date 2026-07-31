@@ -1,4 +1,5 @@
 import { getContractStatusVariants } from '@/lib/contractStatus';
+import { fetchAllRows, fetchAllRowsInBatches } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
 import { getSafeRemainingAmount, sumFinancialValues } from '@/features/financials/financialMath';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
@@ -236,27 +237,25 @@ function getTodayLocalDate(): string {
 }
 
 export async function listOwners(): Promise<Owner[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<Owner>(() => supabase
     .from('owners')
     .select('*')
     .order('full_name', { ascending: true })
-    .returns<Owner[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل الملاك');
-  return data ?? [];
+    .order('id', { ascending: true })
+    .returns<Owner[]>());
+  return rows;
 }
 
 export async function listOperationalOwners(): Promise<OperationalOwner[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<OperationalOwner>(() => supabase
     .from('owners')
     .select('id, full_name, display_name, name')
     .is('deleted_at', null)
     .eq('is_active', true)
     .order('full_name', { ascending: true })
-    .returns<OperationalOwner[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل الملاك النشطين');
-  return data ?? [];
+    .order('id', { ascending: true })
+    .returns<OperationalOwner[]>());
+  return rows;
 }
 
 export async function getOwner(ownerId: string): Promise<Owner> {
@@ -297,28 +296,26 @@ export async function updateOwner(ownerId: string, payload: OwnerUpdatePayload):
 }
 
 export async function listPropertyOwners(propertyId: string): Promise<PropertyOwnerWithOwner[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<PropertyOwnerWithOwner>(() => supabase
     .from('property_owners')
     .select('*, owner:owners(*)')
     .eq('property_id', propertyId)
     .order('is_primary', { ascending: false })
     .order('created_at', { ascending: true })
-    .returns<PropertyOwnerWithOwner[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل ملاك العقار');
-  return data ?? [];
+    .order('id', { ascending: true })
+    .returns<PropertyOwnerWithOwner[]>());
+  return rows;
 }
 
 export async function listPropertiesWithOwners(): Promise<PropertyWithOwners[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<PropertyWithOwners>(() => supabase
     .from('properties')
     .select('*, property_owners(*, owner:owners(*))')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
-    .returns<PropertyWithOwners[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل العقارات وملاكها');
-  return data ?? [];
+    .order('id', { ascending: false })
+    .returns<PropertyWithOwners[]>());
+  return rows;
 }
 
 export async function linkOwnerToProperty(payload: PropertyOwnerPayload): Promise<PropertyOwner> {
@@ -362,74 +359,72 @@ export async function unlinkOwnerFromProperty(linkId: string, endsOn = getTodayL
 export async function listActiveContractsForProperties(propertyIds: string[]): Promise<OwnerActiveContract[]> {
   if (propertyIds.length === 0) return [];
 
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRowsInBatches<OwnerActiveContract, string>(propertyIds, (propertyIdBatch) => supabase
     .from('contracts')
     .select('id,property_id')
-    .in('property_id', propertyIds)
-    .in('status', getContractStatusVariants('active') as Contract['status'][]) // legacy rows may be stored as 'ACTIVE'
+    .in('property_id', [...propertyIdBatch])
+    .in('status', getContractStatusVariants('active') as Contract['status'][])
     .is('deleted_at', null)
-    .returns<OwnerActiveContract[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل العقود النشطة لعقارات الملاك');
-  return data ?? [];
+    .order('property_id', { ascending: true })
+    .order('id', { ascending: true })
+    .returns<OwnerActiveContract[]>());
+  return rows;
 }
 
 export async function listOwnerProperties(ownerId: string): Promise<OwnerProperty[]> {
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRows<OwnerProperty>(() => supabase
     .from('properties')
     .select('*, property_owners!inner(*)')
     .eq('property_owners.owner_id', ownerId)
     .or(`ends_on.is.null,ends_on.gte.${getTodayLocalDate()}`, { referencedTable: 'property_owners' })
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
-    .returns<OwnerProperty[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل عقارات المالك');
-  return data ?? [];
+    .order('id', { ascending: false })
+    .returns<OwnerProperty[]>());
+  return rows;
 }
 
 export async function listUnitsForProperties(propertyIds: readonly string[]): Promise<OwnerUnit[]> {
   if (propertyIds.length === 0) return [];
 
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRowsInBatches<OwnerUnit, string>(propertyIds, (propertyIdBatch) => supabase
     .from('units')
     .select('id, property_id, unit_number, floor, status, rent_amount')
-    .in('property_id', [...propertyIds])
+    .in('property_id', [...propertyIdBatch])
     .is('deleted_at', null)
+    .order('property_id', { ascending: true })
     .order('unit_number', { ascending: true })
-    .returns<OwnerUnit[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل وحدات المالك');
-  return data ?? [];
+    .order('id', { ascending: true })
+    .returns<OwnerUnit[]>());
+  return rows;
 }
 
 export async function listContractsForProperties(propertyIds: readonly string[]): Promise<OwnerContract[]> {
   if (propertyIds.length === 0) return [];
 
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRowsInBatches<OwnerContract, string>(propertyIds, (propertyIdBatch) => supabase
     .from('contracts')
     .select('id, property_id, unit_id, start_date, end_date, status')
-    .in('property_id', [...propertyIds])
+    .in('property_id', [...propertyIdBatch])
     .is('deleted_at', null)
     .order('start_date', { ascending: false })
-    .returns<OwnerContract[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل عقود المالك');
-  return data ?? [];
+    .order('id', { ascending: false })
+    .returns<OwnerContract[]>());
+  return rows;
 }
 
 export async function listInvoicesForContracts(contractIds: readonly string[]): Promise<OwnerInvoice[]> {
   if (contractIds.length === 0) return [];
 
-  const { data, error } = await supabase
+  const { rows } = await fetchAllRowsInBatches<OwnerInvoice, string>(contractIds, (contractIdBatch) => supabase
     .from('invoices')
     .select('id, contract_id, amount, paid_amount, status, deleted_at')
-    .in('contract_id', [...contractIds])
+    .in('contract_id', [...contractIdBatch])
     .is('deleted_at', null)
-    .returns<OwnerInvoice[]>();
-
-  if (error) handleSupabaseError(error, 'تعذر تحميل أرصدة فواتير المالك');
-  return data ?? [];
+    .order('contract_id', { ascending: true })
+    .order('id', { ascending: true })
+    .returns<OwnerInvoice[]>());
+  return rows;
 }
 
 export async function fetchOwnerHubSnapshot(): Promise<OwnerHubSnapshot> {
