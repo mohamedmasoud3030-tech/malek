@@ -26,12 +26,29 @@ export type PagedReadOptions = Readonly<{
 export const PAGED_READ_PAGE_SIZE = 1000;
 /** Safety ceiling: 20 pages × 1000 rows = 20k rows max per read. */
 export const PAGED_READ_MAX_PAGES = 20;
+/** Keep PostgREST `.in(...)` filters below practical URL and parser limits. */
+export const IN_FILTER_BATCH_SIZE = 250;
 
 export class PagedReadTruncationError extends Error {
   constructor(maxRows: number) {
     super(`تعذر تحميل كامل البيانات: تجاوزت القراءة سقف الأمان البالغ ${maxRows} صفًا. قلّل نطاق البحث أو استخدم تقريرًا خادميًا مجمّعًا.`);
     this.name = 'PagedReadTruncationError';
   }
+}
+
+export function chunkForInFilter<Value>(
+  values: readonly Value[],
+  batchSize = IN_FILTER_BATCH_SIZE,
+): Value[][] {
+  if (!Number.isInteger(batchSize) || batchSize <= 0) {
+    throw new Error('حجم دفعة معرّفات القراءة يجب أن يكون عددًا صحيحًا موجبًا');
+  }
+
+  const chunks: Value[][] = [];
+  for (let index = 0; index < values.length; index += batchSize) {
+    chunks.push(values.slice(index, index + batchSize));
+  }
+  return chunks;
 }
 
 export async function fetchAllRows<Row>(
@@ -56,4 +73,21 @@ export async function fetchAllRows<Row>(
   }
 
   return { rows, truncated: true };
+}
+
+export async function fetchAllRowsInBatches<Row, Value>(
+  values: readonly Value[],
+  createQuery: (batch: readonly Value[]) => RangeQueryable<Row>,
+  options: PagedReadOptions = {},
+): Promise<PagedReadResult<Row>> {
+  const rows: Row[] = [];
+  let truncated = false;
+
+  for (const batch of chunkForInFilter(values)) {
+    const result = await fetchAllRows(() => createQuery(batch), options);
+    rows.push(...result.rows);
+    truncated ||= result.truncated;
+  }
+
+  return { rows, truncated };
 }
