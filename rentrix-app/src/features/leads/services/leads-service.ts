@@ -3,28 +3,15 @@ import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { LeadFilters, LeadFormValues, LeadRecord } from '../types';
+import { leadPayloadSchema } from '../lead-schema';
 
 type LeadInsert = Database['public']['Tables']['leads']['Insert'];
 type LeadUpdate = Database['public']['Tables']['leads']['Update'];
 
-function toOptionalNumber(value: string) {
-  const trimmed = value.trim();
-  return trimmed ? Number(trimmed) : null;
-}
-
 export function leadPayload(values: LeadFormValues): LeadInsert {
-  return {
-    id: crypto.randomUUID(),
-    name: values.name.trim(),
-    phone: values.phone.trim() || null,
-    email: values.email.trim() || null,
-    source: values.source,
-    status: values.status,
-    desired_unit_type: values.desired_unit_type.trim() || null,
-    min_budget: toOptionalNumber(values.min_budget),
-    max_budget: toOptionalNumber(values.max_budget),
-    notes: values.notes.trim() || null,
-  };
+  // This is deliberately parsed again here, rather than trusting a form hook.
+  const value = leadPayloadSchema.parse(values);
+  return { id: crypto.randomUUID(), ...value } as LeadInsert;
 }
 
 export async function listLeads(filters: LeadFilters) {
