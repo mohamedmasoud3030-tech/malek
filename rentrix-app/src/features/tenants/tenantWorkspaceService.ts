@@ -1,6 +1,7 @@
 import { isContractStatus } from '@/lib/contractStatus';
 import { supabase } from '@/lib/supabase';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
+import { normalizeInvoiceStatus } from '@/features/financials/components/invoice-status-labels';
 import type { Contract, Invoice, Person, Property, Unit } from '@/types/domain';
 
 export type TenantWorkspaceParams = {
@@ -29,7 +30,7 @@ type TenantContract = Contract & {
   units: Pick<Unit, 'id' | 'unit_number'> | null;
 };
 
-type TenantInvoice = Pick<Invoice, 'contract_id' | 'status' | 'amount' | 'paid_amount' | 'due_date'>;
+export type TenantInvoice = Pick<Invoice, 'contract_id' | 'status' | 'amount' | 'paid_amount' | 'due_date'>;
 
 type TenantPerson = TenantWorkspaceRow['person'];
 
@@ -40,7 +41,6 @@ type TenantInvoiceSummary = {
 
 const tenantContractSelect = '*, properties:property_id(id,title), units:unit_id(id,unit_number)';
 const tenantInvoiceSelect = 'contract_id,status,amount,paid_amount,due_date';
-const receivableInvoiceStatuses = new Set<string>(['UNPAID', 'PARTIALLY_PAID', 'OVERDUE']);
 
 function escapeSearchTerm(value: string) {
   return value.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
@@ -67,13 +67,14 @@ function getPrimaryContract(contracts: TenantContract[]) {
   return contracts.find((contract) => isContractStatus(contract.status, 'active')) ?? contracts[0] ?? null;
 }
 
-function isInvoiceInArrears(invoice: TenantInvoice, today: string) {
+export function isInvoiceInArrears(invoice: TenantInvoice, today: string) {
   const remainingAmount = invoice.amount - invoice.paid_amount;
-  if (remainingAmount > 0 && receivableInvoiceStatuses.has(invoice.status ?? '')) {
-    return invoice.status === 'overdue' || invoice.due_date < today;
-  }
+  if (remainingAmount <= 0) return false;
 
-  return false;
+  const status = normalizeInvoiceStatus(invoice.status);
+  if (status !== 'unpaid' && status !== 'partial' && status !== 'overdue') return false;
+
+  return status === 'overdue' || invoice.due_date < today;
 }
 
 function summarizeTenantInvoices(invoices: TenantInvoice[], today: string): TenantInvoiceSummary {
@@ -106,6 +107,7 @@ async function listTenantContracts(tenantIds: string[]) {
     .in('tenant_id', tenantIds)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .returns<TenantContract[]>();
   if (error) {
     throw error;
@@ -147,6 +149,7 @@ export async function listTenantWorkspace(params: TenantWorkspaceParams): Promis
     .eq('type', 'tenant')
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .range(from, to);
 
   query = applyTenantSearch(query, params.search);
