@@ -38,9 +38,18 @@ describe('LoginPage — structural contract', () => {
   it('renders brand and form heading together', () => {
     const html = renderToStaticMarkup(<LoginPage />);
     expect(html).toContain('data-login-surface');
+    expect(html).toContain('data-login-main');
+    expect(html).toContain('data-login-brand');
     expect(html).toContain('MALIK');
     expect(html).toContain('تسجيل الدخول');
     expect(html).not.toContain('مرحباً بعودتك');
+  });
+
+  it('renders the approved stacked mark and wordmark treatment', () => {
+    const html = renderToStaticMarkup(<LoginPage />);
+    expect(html).toContain('/malik-mark.svg');
+    expect(html).toContain('flex-col items-center');
+    expect(html).toContain('text-3xl');
   });
 
   it('does NOT contain security badges or secondary descriptions', () => {
@@ -141,11 +150,14 @@ describe('LoginPage — interaction behaviour', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /تسجيل الدخول/i })).not.toBeDisabled());
   });
 
-  it('renders contact information for responsive mobile and desktop surfaces', () => {
-    setup();
-    expect(screen.getByText('تحتاج مساعدة؟ تواصل معنا')).toBeInTheDocument();
-    expect(screen.getAllByText('+968 9192 8186').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Ahmedmasoud@outlook.com').length).toBeGreaterThan(0);
+  it('renders contact information as small plain footer text without links', () => {
+    const { container } = setup();
+    const footer = container.querySelector('[data-contact-footer]');
+    expect(footer).toBeInTheDocument();
+    expect(footer).toHaveTextContent('+968 9192 8186');
+    expect(footer).toHaveTextContent('Ahmedmasoud@outlook.com');
+    expect(footer?.querySelector('a')).toBeNull();
+    expect(screen.queryByText('تحتاج مساعدة؟ تواصل معنا')).not.toBeInTheDocument();
   });
 
   it('shows a safe generic error message when login fails', async () => {
