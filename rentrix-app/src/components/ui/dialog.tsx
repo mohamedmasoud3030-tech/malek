@@ -1,6 +1,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
-import type { ComponentPropsWithoutRef, ElementRef } from 'react';
+import type { ComponentPropsWithoutRef, CSSProperties, ElementRef } from 'react';
 import { forwardRef, useCallback, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,48 @@ type DialogContentElement = ElementRef<typeof DialogPrimitive.Content>;
 type DialogContentProps = ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
 };
+
+function getDialogPlacementStyle(className?: string): CSSProperties {
+  const classes = className ?? '';
+  const isRightDrawer = classes.includes('right-0') && classes.includes('left-auto');
+  const isLeftDrawer = classes.includes('left-0') && classes.includes('right-auto');
+  const isBottomDrawer = classes.includes('bottom-0') && classes.includes('top-auto');
+
+  if (isRightDrawer) {
+    return {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 'auto',
+      transform: 'none',
+      padding: 0,
+    };
+  }
+
+  if (isLeftDrawer) {
+    return {
+      top: 0,
+      right: 'auto',
+      bottom: 0,
+      left: 0,
+      transform: 'none',
+      padding: 0,
+    };
+  }
+
+  if (isBottomDrawer) {
+    return {
+      top: 'auto',
+      right: 0,
+      bottom: 0,
+      left: 0,
+      transform: 'none',
+      padding: 0,
+    };
+  }
+
+  return { transform: 'translate3d(-50%, -50%, 0)' };
+}
 
 export const DialogContent = forwardRef<DialogContentElement, DialogContentProps>(
   function DialogContent({ className, children, showCloseButton = true, style, ...props }, forwardedRef) {
@@ -71,7 +113,7 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
             'fixed left-1/2 top-[var(--visual-viewport-center-y,50%)] z-[101] grid max-h-[calc(var(--visual-viewport-height,100dvh)-1rem)] min-h-0 w-[calc(100vw-1rem)] max-w-[42rem] gap-4 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] text-card-foreground shadow-elevated [scrollbar-gutter:stable] sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-3rem),54rem)] sm:w-[min(92vw,42rem)] sm:p-6 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(1.5rem+env(safe-area-inset-top,0px))]',
             className,
           )}
-          style={{ transform: 'translate3d(-50%, -50%, 0)', ...style }}
+          style={{ ...getDialogPlacementStyle(className), ...style }}
           {...props}
         >
           {children}
