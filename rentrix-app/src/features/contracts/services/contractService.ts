@@ -60,7 +60,9 @@ export async function listContracts(params: ContractListParams): Promise<Paginat
  * single listContracts call is silently capped at the server max-rows
  * (default 1000), which quietly truncated the reports workspace (rent roll,
  * renewals forecast, deferred-revenue audit, contract filter dropdown) for
- * portfolios beyond 1000 contracts.
+ * portfolios beyond 1000 contracts. The reports workspace exposes the
+ * `truncated` flag and visibly blocks complete-result assumptions, so this is
+ * an intentional opt-in to the partial-read contract.
  */
 export async function listAllContracts(status: ContractStatusFilter = 'all'): Promise<AllContractsRead> {
   const buildQuery = () => {
@@ -77,7 +79,10 @@ export async function listAllContracts(status: ContractStatusFilter = 'all'): Pr
     return query;
   };
 
-  return fetchAllRows<ContractListItem>(() => buildQuery().returns<ContractListItem[]>());
+  return fetchAllRows<ContractListItem>(
+    () => buildQuery().returns<ContractListItem[]>(),
+    { allowTruncated: true },
+  );
 }
 
 export async function getContract(contractId: string): Promise<ContractDetail> {
