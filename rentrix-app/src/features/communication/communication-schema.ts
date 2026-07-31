@@ -12,9 +12,9 @@
 
 import { z } from 'zod';
 
-export const COMMUNICATION_CHANNEL_VALUES = ['phone', 'email', 'whatsapp', 'sms', 'meeting', 'other'] as const;
-export const COMMUNICATION_DIRECTION_VALUES = ['inbound', 'outbound'] as const;
-export const COMMUNICATION_STATUS_VALUES = ['open', 'pending', 'closed', 'follow_up'] as const;
+export const COMMUNICATION_CHANNEL_VALUES = ['phone', 'whatsapp', 'email', 'meeting', 'note'] as const;
+export const COMMUNICATION_DIRECTION_VALUES = ['inbound', 'outbound', 'internal'] as const;
+export const COMMUNICATION_STATUS_VALUES = ['logged', 'follow_up', 'resolved', 'archived'] as const;
 
 export type CommunicationChannel = (typeof COMMUNICATION_CHANNEL_VALUES)[number];
 export type CommunicationDirection = (typeof COMMUNICATION_DIRECTION_VALUES)[number];
@@ -22,23 +22,23 @@ export type CommunicationStatus = (typeof COMMUNICATION_STATUS_VALUES)[number];
 
 export const COMMUNICATION_CHANNEL_LABELS: Record<CommunicationChannel, string> = {
   phone: 'هاتف',
-  email: 'بريد إلكتروني',
   whatsapp: 'واتساب',
-  sms: 'رسالة قصيرة',
+  email: 'بريد إلكتروني',
   meeting: 'اجتماع',
-  other: 'أخرى',
+  note: 'ملاحظة تشغيلية',
 };
 
 export const COMMUNICATION_DIRECTION_LABELS: Record<CommunicationDirection, string> = {
   inbound: 'وارد',
   outbound: 'صادر',
+  internal: 'تشغيلي',
 };
 
 export const COMMUNICATION_STATUS_LABELS: Record<CommunicationStatus, string> = {
-  open: 'مفتوح',
-  pending: 'قيد المتابعة',
-  closed: 'مغلق',
+  logged: 'مسجل',
   follow_up: 'يحتاج متابعة',
+  resolved: 'مغلق',
+  archived: 'مؤرشف',
 };
 
 const trimmedShort = (max: number) =>

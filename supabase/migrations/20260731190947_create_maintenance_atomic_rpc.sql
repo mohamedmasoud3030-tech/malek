@@ -80,7 +80,7 @@ SECURITY DEFINER
 SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_company_id text;
+  v_company_id uuid;
   v_property public.properties%ROWTYPE;
   v_unit public.units%ROWTYPE;
   v_priority text;
