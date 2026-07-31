@@ -724,6 +724,21 @@ export type Database = {
         Args: { p_request_id: string; p_cost: number; p_notes?: string | null };
         Returns: { maintenance: Json; expense_id: string | null };
       };
+      create_maintenance_atomic: {
+        Args: {
+          p_property_id: string;
+          p_unit_id?: string | null;
+          p_title?: string | null;
+          p_description?: string | null;
+          p_priority?: string;
+          p_assigned_to?: string | null;
+          p_technician_name?: string | null;
+          p_scheduled_date?: string | null;
+          p_attachment_url?: string | null;
+          p_request_id?: string | null;
+        };
+        Returns: { maintenance: Json; idempotent: boolean };
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -40,10 +40,63 @@ export async function listMaintenance(status: MaintenanceStatus, propertyId: str
     throw error;
   }
 }
-export async function createMaintenance(payload: MaintenancePayload) {
-  const { data, error } = await supabase.from('maintenance_records').insert(payload).select('*').single().returns<Maintenance>();
+export type CreateMaintenanceInput = {
+  property_id: string;
+  unit_id?: string | null;
+  title: string;
+  description?: string | null;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  assigned_to?: string | null;
+  technician_name?: string | null;
+  scheduled_date?: string | null;
+  attachment_url?: string | null;
+};
+
+export type CreateMaintenanceAtomicResult = {
+  maintenance: Maintenance;
+  idempotent: boolean;
+};
+
+/**
+ * Creates a maintenance request through the server-controlled
+ * `public.create_maintenance_atomic` RPC. The RPC enforces:
+ *   - active-company and property scoping,
+ *   - unit belongs to the same property,
+ *   - non-empty title after trim,
+ *   - priority enum validation,
+ *   - idempotency on `request_id` (a fresh UUID is generated per call,
+ *     so retries are safe),
+ *   - audit trail entry.
+ *
+ * The raw `.from('maintenance_records').insert(...)` path that was here
+ * before this change is removed intentionally: a frontend raw insert
+ * cannot satisfy any of the above, and the matching RLS tightening
+ * (in the migration) blocks it.
+ */
+export async function createMaintenance(
+  input: CreateMaintenanceInput,
+): Promise<Maintenance> {
+  const requestId = crypto.randomUUID();
+  const { data, error } = await supabase
+    .rpc('create_maintenance_atomic', {
+      p_property_id: input.property_id,
+      p_unit_id: input.unit_id ?? null,
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_priority: input.priority,
+      p_assigned_to: input.assigned_to ?? null,
+      p_technician_name: input.technician_name ?? null,
+      p_scheduled_date: input.scheduled_date ?? null,
+      p_attachment_url: input.attachment_url ?? null,
+      p_request_id: requestId,
+    })
+    .single();
   if (error) handleSupabaseError(error, 'تعذر إنشاء طلب الصيانة');
-  return data;
+  const payload = (data ?? {}) as { maintenance?: Maintenance } & Partial<CreateMaintenanceAtomicResult>;
+  if (!payload.maintenance) {
+    throw new Error('استجابة الخادم لا تحتوي على سجل الصيانة المنشأ');
+  }
+  return payload.maintenance;
 }
 
 export async function updateMaintenance(requestId: string, payload: MaintenanceUpdate) {
