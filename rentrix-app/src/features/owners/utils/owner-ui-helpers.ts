@@ -1,17 +1,9 @@
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import type { Owner, PropertyOwner, PropertyOwnerUpdatePayload, PropertyWithOwners } from '../services/owner-service';
+import { ownerFormSchema, type OwnerFormInput, type OwnerFormValues } from '../owner-schema';
 
-export type OwnerFormValues = {
-  full_name: string;
-  display_name: string;
-  phone: string;
-  email: string;
-  national_id: string;
-  tax_number: string;
-  address: string;
-  notes: string;
-  is_active: boolean;
-};
+// Re-export so existing imports keep working.
+export type { OwnerFormValues };
 
 export type PropertyOwnershipLinkFormValues = {
   property_id: string;
@@ -69,7 +61,7 @@ export type OwnerSummary = {
   propertiesWithoutLinkedOwner: number;
 };
 
-export const emptyOwnerFormValues: OwnerFormValues = {
+export const emptyOwnerFormValues: OwnerFormInput = {
   full_name: '',
   display_name: '',
   phone: '',
@@ -81,7 +73,7 @@ export const emptyOwnerFormValues: OwnerFormValues = {
   is_active: true,
 };
 
-export function ownerToFormValues(owner: Owner | null): OwnerFormValues {
+export function ownerToFormValues(owner: Owner | null): OwnerFormInput {
   if (!owner) {
     return emptyOwnerFormValues;
   }
@@ -99,30 +91,21 @@ export function ownerToFormValues(owner: Owner | null): OwnerFormValues {
   };
 }
 
-export function validateOwnerForm(values: OwnerFormValues): string | null {
+export function validateOwnerForm(values: OwnerFormInput): string | null {
   return Object.values(validateOwnerFormFields(values)).find(Boolean) ?? null;
 }
 
-export function validateOwnerFormFields(values: OwnerFormValues): Partial<Record<keyof OwnerFormValues, string>> {
-  const errors: Partial<Record<keyof OwnerFormValues, string>> = {};
-
-  if (!values.full_name.trim()) {
-    errors.full_name = 'اسم المالك مطلوب';
+export function validateOwnerFormFields(values: OwnerFormInput): Partial<Record<keyof OwnerFormInput, string>> {
+  const result = ownerFormSchema.safeParse(values);
+  if (result.success) return {};
+  const fieldErrors: Partial<Record<keyof OwnerFormInput, string>> = {};
+  for (const issue of result.error.issues) {
+    const path = issue.path[0];
+    if (typeof path === 'string' && !fieldErrors[path as keyof OwnerFormInput]) {
+      fieldErrors[path as keyof OwnerFormInput] = issue.message;
+    }
   }
-
-  if (values.email.trim() && !values.email.includes('@')) {
-    errors.email = 'البريد الإلكتروني غير صالح';
-  }
-
-  if (values.phone.trim() && !/^[+\d][\d\s-]{6,19}$/.test(values.phone.trim())) {
-    errors.phone = 'رقم الهاتف غير صحيح';
-  }
-
-  if (values.national_id.trim() && !/^[A-Za-z0-9\-/]{4,32}$/.test(values.national_id.trim())) {
-    errors.national_id = 'رقم الهوية غير صحيح';
-  }
-
-  return errors;
+  return fieldErrors;
 }
 
 export function getOwnerDisplayLabel(owner: Pick<Owner, 'full_name' | 'display_name'>): string {
