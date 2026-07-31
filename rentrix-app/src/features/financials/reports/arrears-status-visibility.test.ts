@@ -22,7 +22,19 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
       log.push({ table, method: 'in', args });
       return builder;
     }),
-    returns: vi.fn(async () => ({ data: responses[table as keyof TableResponses] ?? [], error: null })),
+    order: vi.fn(() => builder),
+    returns: vi.fn(() => {
+      const rows = responses[table as keyof TableResponses] ?? [];
+      const payload = { data: rows, error: null };
+      return {
+        range: vi.fn(async (from: number, to: number) => ({
+          data: rows.slice(from, to + 1),
+          error: null,
+        })),
+        then: (onFulfilled?: (value: typeof payload) => unknown, onRejected?: (reason: unknown) => unknown) =>
+          Promise.resolve(payload).then(onFulfilled, onRejected),
+      };
+    }),
   };
   return builder;
 }
@@ -60,7 +72,7 @@ describe('arrears reports — invoice status casing visibility', () => {
       invoiceFixture({ id: 'inv_legacy', status: 'issued', due_date: '2026-04-05' }),
       invoiceFixture({ id: 'inv_paid', status: 'PAID', paid_amount: 100 }),
     ];
-    const log = mockSupabaseTables({ invoices, people: [], properties: [], units: [] });
+    mockSupabaseTables({ invoices, people: [], properties: [], units: [] });
     const { getOverdueInvoicesReport } = await import('./arrears-reports-service');
 
     const report = await getOverdueInvoicesReport({ asOf: '2026-05-14' });
