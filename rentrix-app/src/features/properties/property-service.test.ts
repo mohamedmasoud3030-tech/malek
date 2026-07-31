@@ -60,7 +60,7 @@ describe('property service write workflow', () => {
       purchase_value: null,
       current_value: null,
       status: 'active',
-      notes: null,
+      notes: '',
     })).rejects.toThrow('لا تملك صلاحية الكتابة على العقارات');
     expect(chain.update).toHaveBeenCalledWith(expect.objectContaining({ name: 'عمارة الندى', title: 'عمارة الندى' }));
     expect(chain.eq).toHaveBeenCalledWith('id', 'property-1');

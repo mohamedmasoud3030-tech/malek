@@ -2,7 +2,7 @@ import { getCrudWriteErrorMessage } from '@/lib/data/crud-write-error';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import type { Contract, Property } from '@/types/domain';
-import type { PropertyPayload } from './property-schema';
+import { propertySchema, type PropertyFormValues, type PropertyPayload } from './property-schema';
 
 export type PropertyStatusFilter = Property['status'] | 'all';
 
@@ -209,11 +209,16 @@ export async function listPropertyTitles(): Promise<PropertyTitleRow[]> {
     .filter((row) => row.title.length > 0);
 }
 
-export async function updateProperty(propertyId: string, payload: PropertyPayload): Promise<Property> {
-  if (payload.status === 'inactive' || payload.status === 'sold') {
+export async function updateProperty(propertyId: string, payload: PropertyFormValues | PropertyPayload): Promise<Property> {
+  // Re-validate at the service boundary — the form does it too, but a
+  // hand-crafted call (future import script, test) cannot bypass the
+  // schema. Both FormValues (the form's string shape) and the typed
+  // payload are accepted.
+  const validated = propertySchema.parse(payload);
+  if (validated.status === 'inactive' || validated.status === 'sold') {
     await assertPropertyHasNoActiveContracts(propertyId, `تغيير حالة`);
   }
-  const updatePayload: PropertyUpdate = normalizePropertyPayload(payload);
+  const updatePayload: PropertyUpdate = normalizePropertyPayload(validated);
   const { data, error } = await supabase
     .from('properties')
     .update(updatePayload)
