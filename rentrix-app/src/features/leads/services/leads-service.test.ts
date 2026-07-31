@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { LeadFormValues } from '../types';
 import { createLead, leadPayload, updateLead } from './leads-service';
@@ -73,5 +75,12 @@ describe('leads service validation', () => {
 
   it('rejects update when name is blank', async () => {
     await expect(updateLead('lead-1', { ...baseValues, name: '' })).rejects.toThrow('اسم العميل المحتمل مطلوب.');
+  });
+
+  it('reads the authoritative status and applies the transition guard before an update write', () => {
+    const source = readFileSync(resolve(import.meta.dirname, './leads-service.ts'), 'utf8');
+    expect(source).toContain(".select('status')");
+    expect(source).toContain('assertLeadStatusTransition(');
+    expect(source).toContain('leadStatusSchema.parse');
   });
 });

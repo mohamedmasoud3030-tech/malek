@@ -3,7 +3,7 @@ import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import type { Database } from '@/types/database';
 import type { LeadFilters, LeadFormValues, LeadRecord } from '../types';
-import { leadPayloadSchema } from '../lead-schema';
+import { assertLeadStatusTransition, leadPayloadSchema, leadStatusSchema } from '../lead-schema';
 
 type LeadInsert = Database['public']['Tables']['leads']['Insert'];
 type LeadUpdate = Database['public']['Tables']['leads']['Update'];
@@ -42,6 +42,21 @@ export async function createLead(values: LeadFormValues) {
 export async function updateLead(id: string, values: LeadFormValues) {
   if (!values.name.trim()) throw new Error('اسم العميل المحتمل مطلوب.');
   const { id: _newId, ...basePayload } = leadPayload(values);
+
+  // Status is a state machine, not an arbitrary editable string. Read the
+  // authoritative current state immediately before the write; the database/RLS
+  // policy remains the final company-isolation boundary.
+  const { data: current, error: currentError } = await supabase
+    .from('leads')
+    .select('status')
+    .eq('id', id)
+    .single();
+  if (currentError) handleSupabaseError(currentError, 'تعذر التحقق من حالة العميل المحتمل');
+  assertLeadStatusTransition(
+    leadStatusSchema.parse((current as Pick<LeadRecord, 'status'> | null)?.status),
+    leadStatusSchema.parse(basePayload.status),
+  );
+
   const payload: LeadUpdate = { ...basePayload, updated_at: new Date().toISOString() };
   const { data, error } = await supabase.from('leads').update(payload).eq('id', id).select('*').single().returns<LeadRecord>();
   if (error) handleSupabaseError(error, 'تعذر تحديث العميل المحتمل');
