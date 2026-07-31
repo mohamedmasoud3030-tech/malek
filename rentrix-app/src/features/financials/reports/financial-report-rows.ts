@@ -1,5 +1,6 @@
 import type { Contract, Expense, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { getSafeRemainingAmount, toFinancialNumber } from '../financialMath';
+import { chunkReportIds } from './report-paginated-read';
 
 // Shared row/context shapes for the operational collection and arrears report
 // modules. These stay intentionally narrow (Pick/Partial) so loaders only
@@ -80,51 +81,60 @@ export async function loadPropertiesById(
   supabase: SupabaseClient,
   propertyIds: string[],
 ): Promise<Map<string, PropertyContext>> {
-  if (propertyIds.length === 0) return new Map();
+  const rows: PropertyContext[] = [];
 
-  const { data, error } = await supabase
-    .from('properties')
-    .select('id, title')
-    .in('id', propertyIds)
-    .is('deleted_at', null)
-    .returns<PropertyContext[]>();
-  if (error) throw error;
+  for (const batch of chunkReportIds(propertyIds)) {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('id, title')
+      .in('id', batch)
+      .is('deleted_at', null)
+      .returns<PropertyContext[]>();
+    if (error) throw error;
+    rows.push(...(data ?? []));
+  }
 
-  return new Map((data ?? []).map((property) => [property.id, property]));
+  return new Map(rows.map((property) => [property.id, property]));
 }
 
 export async function loadPeopleById(
   supabase: SupabaseClient,
   tenantIds: string[],
 ): Promise<Map<string, PersonContext>> {
-  if (tenantIds.length === 0) return new Map();
+  const rows: PersonContext[] = [];
 
-  const { data, error } = await supabase
-    .from('people')
-    .select('id, full_name')
-    .in('id', tenantIds)
-    .is('deleted_at', null)
-    .returns<PersonContext[]>();
-  if (error) throw error;
+  for (const batch of chunkReportIds(tenantIds)) {
+    const { data, error } = await supabase
+      .from('people')
+      .select('id, full_name')
+      .in('id', batch)
+      .is('deleted_at', null)
+      .returns<PersonContext[]>();
+    if (error) throw error;
+    rows.push(...(data ?? []));
+  }
 
-  return new Map((data ?? []).map((person) => [person.id, person]));
+  return new Map(rows.map((person) => [person.id, person]));
 }
 
 export async function loadUnitsById(
   supabase: SupabaseClient,
   unitIds: string[],
 ): Promise<Map<string, UnitContext>> {
-  if (unitIds.length === 0) return new Map();
+  const rows: UnitContext[] = [];
 
-  const { data, error } = await supabase
-    .from('units')
-    .select('id, unit_number')
-    .in('id', unitIds)
-    .is('deleted_at', null)
-    .returns<UnitContext[]>();
-  if (error) throw error;
+  for (const batch of chunkReportIds(unitIds)) {
+    const { data, error } = await supabase
+      .from('units')
+      .select('id, unit_number')
+      .in('id', batch)
+      .is('deleted_at', null)
+      .returns<UnitContext[]>();
+    if (error) throw error;
+    rows.push(...(data ?? []));
+  }
 
-  return new Map((data ?? []).map((unit) => [unit.id, unit]));
+  return new Map(rows.map((unit) => [unit.id, unit]));
 }
 
 export function mapFromSettledContext<T>(result: PromiseSettledResult<Map<string, T>>): Map<string, T> {
