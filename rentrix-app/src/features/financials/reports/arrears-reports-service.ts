@@ -17,6 +17,7 @@ import {
   matchesInvoiceContext,
   uniqueStrings,
 } from './financial-report-rows';
+import { fetchCompleteReportRows } from './report-paginated-read';
 
 export type ArrearsReportFilters = {
   asOf: string;
@@ -296,17 +297,23 @@ export function summarizeArrearsSummaryReport(invoices: ArrearsInvoiceRow[], fil
 }
 
 async function loadArrearsInvoices(filters: ArrearsReportFilters): Promise<InvoiceReportRow[]> {
-  let query = supabase
-    .from('invoices')
-    .select(invoiceReportSelect)
-    .is('deleted_at', null)
-    .in('status', receivableInvoiceStatuses);
+  const buildQuery = () => {
+    let query = supabase
+      .from('invoices')
+      .select(invoiceReportSelect)
+      .is('deleted_at', null)
+      .in('status', receivableInvoiceStatuses)
+      .order('id', { ascending: true });
 
-  if (filters.contractId) query = query.eq('contract_id', filters.contractId);
+    if (filters.contractId) query = query.eq('contract_id', filters.contractId);
+    return query;
+  };
 
-  const { data, error } = await query.returns<InvoiceReportRow[]>();
-  if (error) throw error;
-  return filterInvoicesForArrearsReport(data ?? [], filters);
+  const rows = await fetchCompleteReportRows<InvoiceReportRow>(
+    () => buildQuery().returns<InvoiceReportRow[]>(),
+    'المتأخرات',
+  );
+  return filterInvoicesForArrearsReport(rows, filters);
 }
 
 async function loadArrearsContextMaps(invoices: ArrearsInvoiceRow[]): Promise<ArrearsContextMaps> {

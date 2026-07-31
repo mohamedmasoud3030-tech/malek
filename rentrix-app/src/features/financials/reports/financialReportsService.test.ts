@@ -38,6 +38,10 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
       log.push({ table, method: 'in', args });
       return builder;
     }),
+    order: vi.fn((...args: unknown[]) => {
+      log.push({ table, method: 'order', args });
+      return builder;
+    }),
     // Thenable AND chainable: awaited directly by single-shot loaders, and
     // still exposes .range() for loaders that page past the 1000-row cap.
     returns: vi.fn(() => {
