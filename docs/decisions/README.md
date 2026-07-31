@@ -92,5 +92,6 @@ evidence pointers is not useful to a future agent — it's just an opinion.
 | 0006 | [Owner settlement account resolution and request binding](./0006-owner-settlement-account-resolution-and-request-binding.md) | 2026-07-24 | Accepted |
 | 0008 | [UX separation of /financials and /reports](./0008-financial-routes-ux-clarity.md)                         | 2026-07-31 | Accepted |
 
-Oldest first. Numbering must stay monotonic — the next record takes
-`0009-` even if a prior slot in the table is empty.
+The index is oldest first. The duplicate historical `0003` records and the
+unused `0007` slot are preserved as-is; do not renumber existing files. The
+next record takes `0009-`.
