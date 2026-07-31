@@ -31,6 +31,16 @@ Active execution priorities are maintained in [`NEXT.md`](./NEXT.md); verified i
 
 TanStack Router routes are declared programmatically in `routeTree.ts`. Each route has `beforeLoad` guards that check `supabase.auth.getSession()` and, where relevant, call `assertSessionPermission` (`features/auth/route-guards.ts`) against permissions defined in `features/auth/permissions.ts`. Route `staticData.title` values are in Arabic and drive page titles/breadcrumbs.
 
+## Finance routes and the `finance-hub` folder
+
+The finance area of the product is intentionally split across **two top-level routes** with different jobs, plus an **internal workspace shell** that is not a route:
+
+- `/financials` — the operational index. A directory of workspace cards (invoices, receipts, expenses, arrears, deposits, owner settlements, bank reconciliation) plus a small `FinancialReportsPreviewSection` for a current-month collection summary. Title: **Quick summary** (`financialsSectionSummary`).
+- `/reports` — the executive analytics center. Tabs for collection, cashflow, arrears, accounting, statements, VAT, deferred revenue, etc. with filtering and CSV export. Guarded by `financial.reports.export`. Title: **Detailed reports** (`financialsSectionReports`).
+- `rentrix-app/src/features/finance-hub/` — **not a route**. This folder contains the reusable `FinanceHubWorkspace` component (and `finance-hub-sections.ts`, `finance-hub-model.ts`) consumed by the per-workflow pages (`/invoices`, `/receipts`, `/expenses`, `/arrears`, `/deposits`, `/owner-settlements`, `/bank-reconciliation`, `/commissions`). Do **not** mount it as a route, and do **not** look for a `_protected.finance-hub.tsx` file — it does not exist on purpose.
+
+The two page-header titles (`financialsSectionSummary` / `financialsSectionReports`) are a deliberate contrast pair inside the pages and their cross-route actions. Existing sidebar labels remain unchanged. The decision is recorded in [ADR-0008](./decisions/0008-financial-routes-ux-clarity.md).
+
 ## Data layer
 
 - `lib/supabase.ts` creates a typed Supabase client (`createClient<Database>`) using `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from `lib/env.ts`. `env.ts` treats known placeholder URLs/keys (used in CI) as "not configured" and surfaces that state to the UI via runtime diagnostics rather than crashing.

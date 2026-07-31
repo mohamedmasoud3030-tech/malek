@@ -86,3 +86,75 @@ describe('lightweight i18n and direction foundation', () => {
     expect(documentElement.dir).toBe(LTR_DIRECTION);
   });
 });
+
+// Contract test introduced with ADR-0008. Locks the bilingual descriptions and
+// titles added for the /financials and /reports UX clarity work. If a future
+// change drops or renames any of these keys, the page header on one of the two
+// routes will silently fall back to the raw key string — this test fails first
+// so the regression is caught at CI time, not in production.
+describe('ADR-0008 — /financials and /reports UX-clarity i18n keys', () => {
+  const uxClarityKeys = [
+    'financialsSectionSummary',
+    'financialsSectionReports',
+    'financialsPageDescription',
+    'reportsPageDescription',
+    'financialsPageHint',
+    'reportsPageHint',
+  ] as const;
+
+  it.each(uxClarityKeys)('"%s" has a non-empty Arabic translation', (key) => {
+    const value = i18nResources.ar.common[key];
+    expect(value).toBeDefined();
+    expect(value?.trim().length ?? 0).toBeGreaterThan(0);
+  });
+
+  it.each(uxClarityKeys)('"%s" has a non-empty English translation', (key) => {
+    const value = i18nResources.en.common[key];
+    expect(value).toBeDefined();
+    expect(value?.trim().length ?? 0).toBeGreaterThan(0);
+  });
+
+  it('"financialsSectionSummary" and "financialsSectionReports" are intentionally different', () => {
+    // These two keys are the contrast pair. If they ever collapse to the same
+    // string, the sidebar will read "X ... X" instead of "Quick ... Detailed".
+    expect(translateSharedLabel('financialsSectionSummary')).not.toBe(
+      translateSharedLabel('financialsSectionReports'),
+    );
+  });
+
+  it('"financialsPageDescription" and "reportsPageDescription" describe different jobs', () => {
+    const financialsDescription = translateSharedLabel('financialsPageDescription');
+    const reportsDescription = translateSharedLabel('reportsPageDescription');
+    expect(financialsDescription).not.toBe(reportsDescription);
+    expect(financialsDescription.length).toBeGreaterThan(20);
+    expect(reportsDescription.length).toBeGreaterThan(20);
+  });
+});
+
+// Consumer contract introduced with ADR-0008. Each key is tied to the route
+// source file that must call translateSharedLabel for it. Matching the actual
+// call prevents comments, fixtures, or unrelated string literals from making a
+// dead key look consumed.
+describe('ADR-0008 — UX-clarity keys have real route consumers', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+  const { readFileSync } = require('node:fs') as typeof import('node:fs');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+  const { resolve } = require('node:path') as typeof import('node:path');
+
+  const sourceRoot = resolve(__dirname, '..');
+  const uxClarityConsumerCases = [
+    ['financialsSectionSummary', 'features/financials/financials-page.tsx'],
+    ['financialsSectionReports', 'features/reports/reports-page.tsx'],
+    ['financialsPageDescription', 'features/financials/financials-page.tsx'],
+    ['reportsPageDescription', 'features/reports/reports-page.tsx'],
+    ['financialsPageHint', 'features/financials/financials-page.tsx'],
+    ['reportsPageHint', 'features/reports/reports-page.tsx'],
+  ] as const;
+
+  it.each(uxClarityConsumerCases)('"%s" is translated in %s', (key, relativePath) => {
+    const source = readFileSync(resolve(sourceRoot, relativePath), 'utf8');
+    const translationCall = new RegExp(`translateSharedLabel\\(\\s*['"]${key}['"]`);
+
+    expect(translationCall.test(source)).toBe(true);
+  });
+});

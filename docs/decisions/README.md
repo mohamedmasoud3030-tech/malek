@@ -78,3 +78,20 @@ evidence pointers is not useful to a future agent — it's just an opinion.
 - **Superseding a decision**: don't delete the old file. Add a one-line note
   at the top ("Superseded by 000N — see that file") and leave the rest
   intact as a historical record.
+
+## Index
+
+| #    | Title                                                                                                       | Date       | Status   |
+| ---- | ----------------------------------------------------------------------------------------------------------- | ---------- | -------- |
+| 0001 | [Product accounting policies for owner fees and rental revenue](./0001-product-accounting-policies.md)      | 2026-07-11 | Accepted |
+| 0002 | [Staging live verification and release evidence](./0002-staging-live-verification-and-release-evidence.md)  | 2026-07-14 | Accepted |
+| 0003 | [Company-scoped account resolution](./0003-company-scoped-account-resolution.md)                            | 2026-07-15 | Accepted |
+| 0003 | [Financial security, UX, reporting, and reconciliation scope](./0003-financial-security-ux-reporting-and-reconciliation-scope.md) | 2026-07-15 | Accepted |
+| 0004 | [Proration and billing basis](./0004-proration-and-billing-basis.md)                                       | 2026-07-17 | Accepted |
+| 0005 | [Account resolution: payment-receipt-void](./0005-account-resolution-payment-receipt-void.md)               | 2026-07-21 | Accepted |
+| 0006 | [Owner settlement account resolution and request binding](./0006-owner-settlement-account-resolution-and-request-binding.md) | 2026-07-24 | Accepted |
+| 0008 | [UX separation of /financials and /reports](./0008-financial-routes-ux-clarity.md)                         | 2026-07-31 | Accepted |
+
+The index is oldest first. The duplicate historical `0003` records and the
+unused `0007` slot are preserved as-is; do not renumber existing files. The
+next record takes `0009-`.

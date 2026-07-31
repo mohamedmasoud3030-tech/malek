@@ -1,10 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronLeft, ClipboardList, FileCheck, FileText, HandCoins, Landmark, ReceiptText, WalletCards } from 'lucide-react';
 import { useMemo } from 'react';
+import { CrossRouteHint } from '@/components/layout/cross-route-hint';
 import { PageHeader } from '@/components/layout/page-header';
 import { useAuth } from '@/hooks/use-auth';
-import { canShowNavigationItem, type AppPermission } from '@/features/auth/permissions';
+import { canAccess, canShowNavigationItem, financialOperationPermissions, type AppPermission } from '@/features/auth/permissions';
 import { PageLayout } from '@/components/layout/page-layout';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
@@ -35,18 +37,20 @@ const financialWorkspaces = [
 
 export function FinancialsPage() {
   const { authorization } = useAuth();
+  const { language, direction } = getAppLanguageState();
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
   const collectionReport = useCollectionSummaryReport(reportFilters);
+  const canViewReports = canAccess(authorization, financialOperationPermissions.exportReports);
   // Mirror the sidebar: only surface workspace cards the user can actually open.
   const visibleWorkspaces = financialWorkspaces.filter(([, , , , permission]) =>
     canShowNavigationItem(authorization, permission),
   );
 
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir={direction} size="wide">
       <PageHeader
-        title="الملخص المالي"
-        description="نظرة شاملة على التحصيلات والذمم خلال الشهر الحالي، مع انتقال مباشر إلى مساحات العمل المتخصصة لكل عملية مالية."
+        title={translateSharedLabel('financialsSectionSummary', language)}
+        description={translateSharedLabel('financialsPageDescription', language)}
       />
 
       <FinancialReportsPreviewSection
@@ -55,6 +59,18 @@ export function FinancialsPage() {
         isLoading={collectionReport.isLoading}
         isError={collectionReport.isError}
         error={collectionReport.error}
+      />
+
+      <CrossRouteHint
+        message={translateSharedLabel('financialsPageHint', language)}
+        action={
+          canViewReports
+            ? {
+                to: '/reports',
+                label: translateSharedLabel('financialsSectionReports', language),
+              }
+            : undefined
+        }
       />
 
       <section aria-label="مساحات العمل المالية" className="space-y-3">
