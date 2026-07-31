@@ -131,58 +131,30 @@ describe('ADR-0008 — /financials and /reports UX-clarity i18n keys', () => {
   });
 });
 
-// Dead-key detector introduced with ADR-0008. Lists every shared translation
-// key, then for each one looks across src/ for at least one consumer (a
-// `translateSharedLabel('<key>'` call, or a `'<key>'` literal in a known
-// consumer file). A key with no consumer is either dead code or a typo, and
-// this test reports it. Keep this allow-list minimal: every entry is a
-// deliberate decision, not a workaround.
-//
-// Scope: this detector targets the six UX-clarity keys added by ADR-0008.
-// Broader key-by-key auditing is intentionally out of scope here; the
-// pre-existing labels in i18n.ts (some of which are still referenced via
-// indirect lookups or constants) are not flagged. A wider audit would
-// belong in its own PR.
-describe('ADR-0008 — UX-clarity keys have at least one code consumer', () => {
+// Consumer contract introduced with ADR-0008. Each key is tied to the route
+// source file that must call translateSharedLabel for it. Matching the actual
+// call prevents comments, fixtures, or unrelated string literals from making a
+// dead key look consumed.
+describe('ADR-0008 — UX-clarity keys have real route consumers', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-  const { readFileSync, readdirSync } = require('node:fs') as typeof import('node:fs');
+  const { readFileSync } = require('node:fs') as typeof import('node:fs');
   // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-  const { join, relative, resolve } = require('node:path') as typeof import('node:path');
+  const { resolve } = require('node:path') as typeof import('node:path');
 
   const sourceRoot = resolve(__dirname, '..');
-  const knownConsumerFiles: string[] = [];
-  const collect = (directory: string) => {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      const fullPath = join(directory, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name === 'node_modules') continue;
-        collect(fullPath);
-        continue;
-      }
-      if (/\.(ts|tsx)$/.test(entry.name)) knownConsumerFiles.push(fullPath);
-    }
-  };
-  collect(sourceRoot);
-
-  const uxClarityKeys = [
-    'financialsSectionSummary',
-    'financialsSectionReports',
-    'financialsPageDescription',
-    'reportsPageDescription',
-    'financialsPageHint',
-    'reportsPageHint',
+  const uxClarityConsumerCases = [
+    ['financialsSectionSummary', 'features/financials/financials-page.tsx'],
+    ['financialsSectionReports', 'features/reports/reports-page.tsx'],
+    ['financialsPageDescription', 'features/financials/financials-page.tsx'],
+    ['reportsPageDescription', 'features/reports/reports-page.tsx'],
+    ['financialsPageHint', 'features/financials/financials-page.tsx'],
+    ['reportsPageHint', 'features/reports/reports-page.tsx'],
   ] as const;
 
-  it.each(uxClarityKeys)('"%s" is referenced from at least one non-i18n source file', (key) => {
-    const consumers: string[] = [];
-    for (const file of knownConsumerFiles) {
-      const displayPath = relative(sourceRoot, file);
-      if (displayPath.endsWith('i18n.ts') || displayPath.endsWith('i18n.test.ts')) continue;
-      const content = readFileSync(file, 'utf8');
-      if (content.includes(`'${key}'`) || content.includes(`"${key}"`)) {
-        consumers.push(displayPath);
-      }
-    }
-    expect(consumers).not.toEqual([]);
+  it.each(uxClarityConsumerCases)('"%s" is translated in %s', (key, relativePath) => {
+    const source = readFileSync(resolve(sourceRoot, relativePath), 'utf8');
+    const translationCall = new RegExp(`translateSharedLabel\\(\\s*['"]${key}['"]`);
+
+    expect(translationCall.test(source)).toBe(true);
   });
 });
