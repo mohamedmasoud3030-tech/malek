@@ -1,20 +1,10 @@
 import type { Database } from '@/types/database';
+import type { LandFormInput, LandFormValues } from './land-schema';
 
 export type LandRecord = Database['public']['Tables']['lands']['Row'];
 
-export type LandFormValues = Readonly<{
-  plot_no: string;
-  name: string;
-  location: string;
-  area: string;
-  owner_id: string;
-  purchase_price: string;
-  owner_price: string;
-  commission: string;
-  category: string;
-  status: string;
-  notes: string;
-}>;
+// Re-export the schema types so existing consumers keep working.
+export type { LandFormInput, LandFormValues };
 
 export type LandFilters = Readonly<{
   query: string;
