@@ -77,7 +77,7 @@ export const utilityMeterFormSchema = z.object({
   property_id: uuid,
   unit_id: z.string().nullable().optional(),
   utility_type: z.enum(UTILITY_TYPE_VALUES, { required_error: 'نوع المرفق مطلوب' }),
-  meter_number: z.string().trim().min(1, 'رقم العداد مطلوب').max(64),
+  meter_number: z.string().trim().min(1, 'رقم العداد مطلوب').max(64).transform((value) => value.replace(/\s+/g, '').toUpperCase()),
   account_number: z.string().trim().min(1, 'رقم الحساب مطلوب').max(64),
   provider_name: z.string().trim().max(200).optional().or(z.literal('')),
   responsible_party: z.enum(RESPONSIBLE_PARTY_VALUES, { required_error: 'الجهة المسؤولة مطلوبة' }),

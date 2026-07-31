@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { utilityBillPayloadSchema } from './utility-schema';
+import { utilityBillPayloadSchema, utilityMeterFormSchema } from './utility-schema';
 
 describe('utility bill financial guards', () => {
   const bill = {
@@ -11,5 +11,16 @@ describe('utility bill financial guards', () => {
   };
   it('rejects paid amount above the bill amount', () => {
     expect(() => utilityBillPayloadSchema.parse({ ...bill, paid_amount: 101 })).toThrow(/يتجاوز/);
+  });
+});
+
+describe('utility meter normalization', () => {
+  it('removes formatting whitespace and canonicalizes meter numbers', () => {
+    const value = utilityMeterFormSchema.parse({
+      property_id: '00000000-0000-4000-8000-000000000001', unit_id: null,
+      utility_type: 'electricity', meter_number: ' ab  12- c ', account_number: 'account-1',
+      provider_name: '', responsible_party: 'tenant', is_active: true, notes: '',
+    });
+    expect(value.meter_number).toBe('AB12-C');
   });
 });
