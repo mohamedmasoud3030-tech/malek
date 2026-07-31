@@ -6,6 +6,7 @@ type MalikBrandProps = Readonly<{
   /** Collapsed rail / narrow surface: render the mark where text would be illegible. */
   compact?: boolean;
   className?: string;
+  markClassName?: string;
   wordmarkClassName?: string;
   showTagline?: boolean;
   /** Render on a dark surface (sidebar, mobile drawer). */
@@ -21,6 +22,7 @@ type MalikBrandProps = Readonly<{
 export function MalikBrand({
   compact = false,
   className,
+  markClassName,
   wordmarkClassName,
   showTagline = false,
   inverse = false,
@@ -28,14 +30,14 @@ export function MalikBrand({
   if (compact) {
     return (
       <div role="img" className={cn('grid place-items-center', className)} aria-label={APP_BRAND_NAME}>
-        <MalikMark className="size-9" />
+        <MalikMark className={cn('size-9', markClassName)} />
       </div>
     );
   }
 
   return (
     <div className={cn('flex min-w-0 items-center gap-2.5', className)}>
-      <MalikMark className="size-9" />
+      <MalikMark className={cn('size-9', markClassName)} />
       <div className="min-w-0">
         <p
           dir="ltr"
