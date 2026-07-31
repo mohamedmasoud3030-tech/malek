@@ -289,7 +289,7 @@ export function CommunicationHubView(props: Props) {
           </EntityForm.Field>
           <EntityForm.Field label="الهاتف">
             <Input
-              value={draft.contact_phone}
+              value={draft.contact_phone ?? ""}
               onChange={(event) =>
                 onDraftChange({ ...draft, contact_phone: event.target.value })
               }
@@ -298,7 +298,7 @@ export function CommunicationHubView(props: Props) {
           <EntityForm.Field label="البريد الإلكتروني">
             <Input
               type="email"
-              value={draft.contact_email}
+              value={draft.contact_email ?? ""}
               onChange={(event) =>
                 onDraftChange({ ...draft, contact_email: event.target.value })
               }
@@ -306,7 +306,7 @@ export function CommunicationHubView(props: Props) {
           </EntityForm.Field>
           <EntityForm.Field label="الموضوع">
             <Input
-              value={draft.subject}
+              value={draft.subject ?? ""}
               onChange={(event) =>
                 onDraftChange({ ...draft, subject: event.target.value })
               }
@@ -316,7 +316,7 @@ export function CommunicationHubView(props: Props) {
             <Select
               value={draft.channel}
               onChange={(event) =>
-                onDraftChange({ ...draft, channel: event.target.value })
+                onDraftChange({ ...draft, channel: event.target.value as CommunicationFormValues['channel'] })
               }
             >
               {Object.entries(channelLabels).map(([value, label]) => (
@@ -330,7 +330,7 @@ export function CommunicationHubView(props: Props) {
             <Select
               value={draft.direction}
               onChange={(event) =>
-                onDraftChange({ ...draft, direction: event.target.value })
+                onDraftChange({ ...draft, direction: event.target.value as CommunicationFormValues['direction'] })
               }
             >
               {Object.entries(directionLabels).map(([value, label]) => (
@@ -344,7 +344,7 @@ export function CommunicationHubView(props: Props) {
             <Select
               value={draft.status}
               onChange={(event) =>
-                onDraftChange({ ...draft, status: event.target.value })
+                onDraftChange({ ...draft, status: event.target.value as CommunicationFormValues['status'] })
               }
             >
               {Object.entries(statusLabels).map(([value, label]) => (
@@ -356,7 +356,7 @@ export function CommunicationHubView(props: Props) {
           </EntityForm.Field>
           <EntityForm.Field label="نوع الربط">
             <Input
-              value={draft.related_entity_type}
+              value={draft.related_entity_type ?? ""}
               onChange={(event) =>
                 onDraftChange({
                   ...draft,
@@ -368,7 +368,7 @@ export function CommunicationHubView(props: Props) {
           </EntityForm.Field>
           <EntityForm.Field label="معرف الربط">
             <Input
-              value={draft.related_entity_id}
+              value={draft.related_entity_id ?? ""}
               onChange={(event) =>
                 onDraftChange({
                   ...draft,
