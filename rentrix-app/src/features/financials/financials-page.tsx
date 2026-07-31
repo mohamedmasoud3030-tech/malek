@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronLeft, ClipboardList, FileCheck, FileText, HandCoins, Landmark, ReceiptText, WalletCards } from 'lucide-react';
 import { useMemo } from 'react';
+import { CrossRouteHint } from '@/components/layout/cross-route-hint';
 import { PageHeader } from '@/components/layout/page-header';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess, canShowNavigationItem, financialOperationPermissions, type AppPermission } from '@/features/auth/permissions';
@@ -60,20 +61,17 @@ export function FinancialsPage() {
         error={collectionReport.error}
       />
 
-      <aside
-        role="note"
-        className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-xs leading-relaxed text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
-      >
-        <p className="min-w-0">{translateSharedLabel('financialsPageHint', language)}</p>
-        {canViewReports ? (
-          <Link
-            to="/reports"
-            className="inline-flex min-h-8 shrink-0 items-center self-start rounded-lg border border-primary/20 bg-background px-3 py-1.5 font-semibold text-primary transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
-          >
-            {translateSharedLabel('financialsSectionReports', language)}
-          </Link>
-        ) : null}
-      </aside>
+      <CrossRouteHint
+        message={translateSharedLabel('financialsPageHint', language)}
+        action={
+          canViewReports
+            ? {
+                to: '/reports',
+                label: translateSharedLabel('financialsSectionReports', language),
+              }
+            : undefined
+        }
+      />
 
       <section aria-label="مساحات العمل المالية" className="space-y-3">
         <div>
