@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
-import { APP_BRAND_NAME } from '@/lib/brand';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import { useReportsWorkspace } from './use-reports-workspace';
@@ -15,6 +15,7 @@ export { buildReportCsvFilename, getTodayLocalDateString, toDateInputValue } fro
 export function ReportsPage() {
   const [filters, setFilters] = useState(() => getCurrentMonthFilters());
   const { authorization } = useAuth();
+  const { language } = getAppLanguageState();
   const workspace = useReportsWorkspace(filters);
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
   const canViewReports = canAccess(authorization, financialOperationPermissions.exportReports);
@@ -26,8 +27,8 @@ export function ReportsPage() {
   return (
     <PageLayout dir="rtl" size="wide" className="space-y-5 pb-8">
       <PageHeader
-        title="مركز التقارير والكشوف"
-        description={`قراءة موحّدة للتحصيل والمتأخرات والإشغال والكشوف من نفس مصادر ${APP_BRAND_NAME} المعتمدة.`}
+        title={translateSharedLabel('financialsSectionReports', language)}
+        description={translateSharedLabel('reportsPageDescription', language)}
       />
 
       <ReportsWorkspace
