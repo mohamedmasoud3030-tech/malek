@@ -21,8 +21,13 @@ export async function listExpenses(filters: ExpenseFilters): Promise<PagedExpens
     // PostgREST silently caps a single response at the server max-rows
     // (default 1000) — page forward so large portfolios don't lose expenses
     // (and their KPI totals) to the cap. The secondary id order keeps paging
-    // deterministic when many expenses share the same date.
-    return await fetchAllRows<Expense>(() => buildQuery().returns<Expense[]>());
+    // deterministic when many expenses share the same date. This page exposes
+    // the `truncated` flag and renders a visible warning, so it explicitly opts
+    // into the only supported partial-read contract.
+    return await fetchAllRows<Expense>(
+      () => buildQuery().returns<Expense[]>(),
+      { allowTruncated: true },
+    );
   } catch (error) {
     handleSupabaseError(error, 'تعذر تحميل المصاريف');
     return { rows: [], truncated: false };
