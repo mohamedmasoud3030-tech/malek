@@ -181,8 +181,12 @@ function toBillPayload(values: UtilityBillFormValues) {
   const form = utilityBillFormSchema.parse(values);
   const previousReading = form.previous_reading ?? null;
   const currentReading = form.current_reading ?? null;
-  const consumptionUnits = form.consumption_units
-    ?? (previousReading != null && currentReading != null ? currentReading - previousReading : null);
+  // Readings are the source of truth when present: a browser cannot submit a
+  // contradictory consumption value. Manual consumption is only accepted when
+  // the provider does not expose readings.
+  const consumptionUnits = previousReading != null && currentReading != null
+    ? currentReading - previousReading
+    : form.consumption_units ?? null;
   return utilityBillPayloadSchema.parse({
     meter_id: form.meter_id || null,
     property_id: form.property_id,

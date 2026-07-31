@@ -147,6 +147,13 @@ export const utilityBillFormSchema = z
         message: 'القراءة الحالية لا تقل عن القراءة السابقة',
       });
     }
+    if (data.paid_amount != null && data.paid_amount > data.amount) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['paid_amount'],
+        message: 'المبلغ المدفوع لا يمكن أن يتجاوز قيمة الفاتورة',
+      });
+    }
   });
 
 export type UtilityBillFormInput = z.input<typeof utilityBillFormSchema>;
@@ -186,6 +193,13 @@ export const utilityBillPayloadSchema = z
         code: 'custom',
         path: ['current_reading'],
         message: 'القراءة الحالية لا تقل عن القراءة السابقة',
+      });
+    }
+    if (data.paid_amount != null && data.paid_amount > data.amount) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['paid_amount'],
+        message: 'المبلغ المدفوع لا يمكن أن يتجاوز قيمة الفاتورة',
       });
     }
   });
