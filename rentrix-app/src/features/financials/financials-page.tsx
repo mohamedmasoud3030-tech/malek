@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { useAuth } from '@/hooks/use-auth';
 import { canShowNavigationItem, type AppPermission } from '@/features/auth/permissions';
 import { PageLayout } from '@/components/layout/page-layout';
+import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
@@ -35,6 +36,7 @@ const financialWorkspaces = [
 
 export function FinancialsPage() {
   const { authorization } = useAuth();
+  const { language } = getAppLanguageState();
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
   const collectionReport = useCollectionSummaryReport(reportFilters);
   // Mirror the sidebar: only surface workspace cards the user can actually open.
@@ -45,8 +47,8 @@ export function FinancialsPage() {
   return (
     <PageLayout dir="rtl" size="wide">
       <PageHeader
-        title="الملخص المالي"
-        description="نظرة شاملة على التحصيلات والذمم خلال الشهر الحالي، مع انتقال مباشر إلى مساحات العمل المتخصصة لكل عملية مالية."
+        title={translateSharedLabel('financialsSectionSummary', language)}
+        description={translateSharedLabel('financialsPageDescription', language)}
       />
 
       <FinancialReportsPreviewSection
