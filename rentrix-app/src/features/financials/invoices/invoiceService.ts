@@ -10,6 +10,7 @@ export type InvoiceListParams = { status: InvoiceStatusFilter; search?: string }
 export type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid: number; totalRemaining: number; count: number };
 
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
+const invoiceSelectWithContractFilter = '*, contracts:contract_id!inner(id,property_id,tenant_id)';
 
 function applyStatusFilter(query: ReturnType<typeof supabase.from>, status: InvoiceStatusFilter) {
   // Cover every casing present in live rows (legacy lowercase + modern UPPERCASE).
@@ -87,47 +88,31 @@ export type InvoicePage = {
 };
 
 /**
- * Resolve contracts matching tenant/property filters so invoices can be
- * server-filtered by tenant or property (invoices reference contracts, not
- * tenants/properties directly). Returns null when no tenant/property filter is
- * active, and a non-matching sentinel when filters match no contract so the
- * caller's `.in('contract_id', ...)` returns an empty page rather than all rows.
- */
-async function resolveContractIds(filters: { tenantId?: string; propertyId?: string }): Promise<string[] | null> {
-  if (!filters.tenantId && !filters.propertyId) return null;
-
-  let query = supabase.from('contracts').select('id').is('deleted_at', null);
-  if (filters.tenantId) query = query.eq('tenant_id', filters.tenantId);
-  if (filters.propertyId) query = query.eq('property_id', filters.propertyId);
-
-  const { data, error } = await query.returns<{ id: string }[]>();
-  if (error) throw error;
-  const ids = (data ?? []).map((row) => row.id);
-  return ids.length > 0 ? ids : ['__no_matching_contract__'];
-}
-
-/**
  * Server-paginated invoice loader with optional date, status, tenant, and
- * property filters. Range queries run against the filtered set so the returned
- * `total` reflects the full filtered result, enabling correct pagination.
+ * property filters. Tenant/property filtering is performed by an inner
+ * PostgREST relationship join, so the browser never has to prefetch an
+ * unbounded contract-id list or send thousands of IDs through `.in(...)`.
+ * The exact count and range therefore operate on the same filtered row set.
  */
 export async function listInvoicesPaginated(params: InvoicePaginationParams): Promise<InvoicePage> {
   const { status, search, dateFrom, dateTo, tenantId, propertyId, page, pageSize } = params;
   const from = Math.max(0, (page - 1) * pageSize);
   const to = from + pageSize - 1;
-
-  const contractIds = await resolveContractIds({ tenantId, propertyId });
+  const hasContractFilter = Boolean(tenantId || propertyId);
 
   let query = supabase
     .from('invoices')
-    .select(invoiceSelect, { count: 'exact' })
+    .select(hasContractFilter ? invoiceSelectWithContractFilter : invoiceSelect, { count: 'exact' })
     .is('deleted_at', null)
-    .order('due_date', { ascending: false });
+    .order('due_date', { ascending: false })
+    .order('id', { ascending: false });
 
   query = applyStatusFilter(query, status);
   if (dateFrom) query = query.gte('issue_date', dateFrom);
   if (dateTo) query = query.lte('issue_date', dateTo);
-  if (contractIds) query = query.in('contract_id', contractIds);
+  if (hasContractFilter) query = query.is('contracts.deleted_at', null);
+  if (tenantId) query = query.eq('contracts.tenant_id', tenantId);
+  if (propertyId) query = query.eq('contracts.property_id', propertyId);
 
   if (search) {
     const escaped = search.replaceAll('%', '\\%').replaceAll('_', '\\_');
