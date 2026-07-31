@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { chunkReportIds } from './report-paginated-read';
+import { describe, expect, it, vi } from 'vitest';
+import { chunkReportIds, fetchCompleteReportRows } from './report-paginated-read';
 
 const reportsRoot = __dirname;
 const reportLoadersSource = readFileSync(
@@ -13,7 +13,45 @@ const arrearsSource = readFileSync(
   'utf8',
 );
 
+type TestRow = { id: string };
+
 describe('financial report pagination contract', () => {
+  it('reads successive pages until the first short page', async () => {
+    const rows = Array.from({ length: 1_001 }, (_, index) => ({ id: `id-${index}` }));
+    const range = vi.fn(async (from: number, to: number) => ({
+      data: rows.slice(from, to + 1),
+      error: null,
+    }));
+
+    await expect(
+      fetchCompleteReportRows<TestRow>(() => ({ range }), 'الاختبار'),
+    ).resolves.toEqual(rows);
+
+    expect(range).toHaveBeenCalledTimes(2);
+    expect(range).toHaveBeenNthCalledWith(1, 0, 999);
+    expect(range).toHaveBeenNthCalledWith(2, 1_000, 1_999);
+  });
+
+  it('propagates database read failures instead of returning partial totals', async () => {
+    const databaseError = new Error('database unavailable');
+    const range = vi.fn(async () => ({ data: null, error: databaseError }));
+
+    await expect(
+      fetchCompleteReportRows<TestRow>(() => ({ range }), 'الاختبار'),
+    ).rejects.toThrow('database unavailable');
+  });
+
+  it('fails closed when the paginated safety ceiling is reached', async () => {
+    const fullPage = Array.from({ length: 1_000 }, (_, index) => ({ id: `id-${index}` }));
+    const range = vi.fn(async () => ({ data: fullPage, error: null }));
+
+    await expect(
+      fetchCompleteReportRows<TestRow>(() => ({ range }), 'الفواتير'),
+    ).rejects.toThrow(/تعذر تحميل كامل بيانات الفواتير/);
+
+    expect(range).toHaveBeenCalledTimes(20);
+  });
+
   it('pages every operational row source instead of trusting one PostgREST response', () => {
     expect(reportLoadersSource).toContain('fetchCompleteReportRows<InvoiceReportRow>');
     expect(reportLoadersSource).toContain('fetchCompleteReportRows<PaymentReportRow>');
