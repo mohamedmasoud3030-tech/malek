@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fetchAllRows } from './paginatedRead';
+import { fetchAllRows, PagedReadTruncationError } from './paginatedRead';
 
 function fakeQuery(pages: readonly (readonly number[] | { error: true })[]) {
   const range = vi.fn(async (from: number, to: number) => {
@@ -31,9 +31,22 @@ describe('fetchAllRows', () => {
     expect(query.range).toHaveBeenCalledTimes(1);
   });
 
-  it('flags truncation when the safety ceiling is reached on full pages', async () => {
+  it('fails closed by default when the safety ceiling is reached', async () => {
     const query = fakeQuery([[1, 2], [3, 4], [5, 6], [7]]);
-    const result = await fetchAllRows(() => query, { pageSize: 2, maxPages: 2 });
+
+    await expect(fetchAllRows(() => query, { pageSize: 2, maxPages: 2 }))
+      .rejects.toBeInstanceOf(PagedReadTruncationError);
+    await expect(fetchAllRows(() => query, { pageSize: 2, maxPages: 2 }))
+      .rejects.toThrow(/4 صفًا/);
+  });
+
+  it('returns an explicit truncated result only for callers that opt in', async () => {
+    const query = fakeQuery([[1, 2], [3, 4], [5, 6], [7]]);
+    const result = await fetchAllRows(() => query, {
+      pageSize: 2,
+      maxPages: 2,
+      allowTruncated: true,
+    });
 
     expect(result).toEqual({ rows: [1, 2, 3, 4], truncated: true });
     expect(query.range).toHaveBeenCalledTimes(2);
