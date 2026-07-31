@@ -30,7 +30,7 @@ export function MalikBrand({
   if (compact) {
     return (
       <div role="img" className={cn('grid place-items-center', className)} aria-label={APP_BRAND_NAME}>
-        <MalikMark className={cn('size-9', markClassName)} />
+        <MalikMark className="size-9" />
       </div>
     );
   }
