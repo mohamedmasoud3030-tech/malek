@@ -31,6 +31,13 @@ export function ReportsPage() {
         description={translateSharedLabel('reportsPageDescription', language)}
       />
 
+      <aside
+        aria-label={translateSharedLabel('reportsPageHint', language)}
+        className="rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-xs leading-relaxed text-muted-foreground"
+      >
+        {translateSharedLabel('reportsPageHint', language)}
+      </aside>
+
       <ReportsWorkspace
         model={workspace}
         filters={filters}

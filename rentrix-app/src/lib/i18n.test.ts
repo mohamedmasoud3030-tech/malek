@@ -169,13 +169,9 @@ describe('ADR-0008 — UX-clarity keys have at least one code consumer', () => {
     'financialsSectionReports',
     'financialsPageDescription',
     'reportsPageDescription',
+    'financialsPageHint',
+    'reportsPageHint',
   ] as const;
-
-  // The two hint keys are introduced before the banner that consumes them
-  // (the banner lands in the next commit on this branch). They are
-  // excluded from the consumer check until the banner lands, then
-  // re-included.
-  const parkedHintKeys = ['financialsPageHint', 'reportsPageHint'] as const;
 
   it.each(uxClarityKeys)('"%s" is referenced from at least one non-i18n source file', (key) => {
     const consumers: string[] = [];

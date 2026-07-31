@@ -59,6 +59,13 @@ export function FinancialsPage() {
         error={collectionReport.error}
       />
 
+      <aside
+        aria-label={translateSharedLabel('financialsPageHint', language)}
+        className="rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-xs leading-relaxed text-muted-foreground"
+      >
+        {translateSharedLabel('financialsPageHint', language)}
+      </aside>
+
       <section aria-label="مساحات العمل المالية" className="space-y-3">
         <div>
           <h2 className="text-base font-bold">مساحات العمل المالية</h2>
