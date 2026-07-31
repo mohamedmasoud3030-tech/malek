@@ -72,7 +72,8 @@ export async function listUnits(): Promise<Unit[]> {
     .select('*')
     .is('deleted_at', null)
     .order('property_id', { ascending: true })
-    .order('unit_number', { ascending: true }) as any);
+    .order('unit_number', { ascending: true })
+    .order('id', { ascending: true }) as any);
   return rows.map(normalizeUnitRecord);
 }
 
@@ -82,7 +83,8 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
     .select('*')
     .eq('property_id', propertyId)
     .is('deleted_at', null)
-    .order('unit_number', { ascending: true }) as any);
+    .order('unit_number', { ascending: true })
+    .order('id', { ascending: true }) as any);
   return rows.map(normalizeUnitRecord);
 }
 
