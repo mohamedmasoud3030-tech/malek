@@ -95,6 +95,40 @@ const sharedTranslationEntries = [
   ['closeMenu', 'إغلاق القائمة', 'Close menu'],
   ['confirm', 'تأكيد', 'Confirm'],
   ['cancel', 'إلغاء', 'Cancel'],
+  // ===== Financial routes UX clarity (ADR-0008) =====
+  // Descriptions shown in the PageHeader of /financials and /reports to make
+  // the purpose of each page unambiguous and to remove the previous UX overlap
+  // between "financials", "financialOverview", and "reports" labels.
+  [
+    'financialsPageDescription',
+    'فهرس شامل للعمليات المالية اليومية. اختر القسم الذي تريد إدارته — الفواتير، التحصيل، المصروفات، تسويات الملاك، وغيرها.',
+    'A complete index of day-to-day financial operations. Choose a workspace to manage invoices, collections, expenses, owner settlements, and more.',
+  ],
+  [
+    'financialsPageHint',
+    'كل عملية لها صفحتها المستقلة بصلاحياتها الخاصة.',
+    'Each workflow has its own page with its own permissions.',
+  ],
+  [
+    'reportsPageDescription',
+    'مركز تنفيذي لتحليل البيانات المالية. فلترة متقدمة، تصدير CSV، وعرض تفصيلي لكل تقرير محاسبي وتشغيلي.',
+    'An executive analytics center for financial data. Advanced filtering, CSV export, and detailed views for every accounting and operational report.',
+  ],
+  [
+    'reportsPageHint',
+    'هنا تحصل على التحليل العميق — للملخص السريع استخدم صفحة المالية.',
+    'For deep analysis. For a quick overview, use the Financials page.',
+  ],
+  [
+    'financialsSectionSummary',
+    'الملخص السريع',
+    'Quick summary',
+  ],
+  [
+    'financialsSectionReports',
+    'التقارير التفصيلية',
+    'Detailed reports',
+  ],
 ] as const satisfies ReadonlyArray<SharedTranslationEntry>;
 
 function getEntryLabel(entry: SharedTranslationEntry, language: SupportedLanguage): string {
