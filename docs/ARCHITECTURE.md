@@ -39,7 +39,7 @@ The finance area of the product is intentionally split across **two top-level ro
 - `/reports` — the executive analytics center. Tabs for collection, cashflow, arrears, accounting, statements, VAT, deferred revenue, etc. with filtering and CSV export. Guarded by `financial.reports.export`. Title: **Detailed reports** (`financialsSectionReports`).
 - `rentrix-app/src/features/finance-hub/` — **not a route**. This folder contains the reusable `FinanceHubWorkspace` component (and `finance-hub-sections.ts`, `finance-hub-model.ts`) consumed by the per-workflow pages (`/invoices`, `/receipts`, `/expenses`, `/arrears`, `/deposits`, `/owner-settlements`, `/bank-reconciliation`, `/commissions`). Do **not** mount it as a route, and do **not** look for a `_protected.finance-hub.tsx` file — it does not exist on purpose.
 
-The two titles (`financialsSectionSummary` / `financialsSectionReports`) are a deliberate contrast pair so the sidebar reads "Quick summary … Detailed reports" at a glance. The decision is recorded in [ADR-0008](./decisions/0008-financial-routes-ux-clarity.md).
+The two page-header titles (`financialsSectionSummary` / `financialsSectionReports`) are a deliberate contrast pair inside the pages and their cross-route actions. Existing sidebar labels remain unchanged. The decision is recorded in [ADR-0008](./decisions/0008-financial-routes-ux-clarity.md).
 
 ## Data layer
 
