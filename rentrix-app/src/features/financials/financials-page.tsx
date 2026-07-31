@@ -36,7 +36,7 @@ const financialWorkspaces = [
 
 export function FinancialsPage() {
   const { authorization } = useAuth();
-  const { language } = getAppLanguageState();
+  const { language, direction } = getAppLanguageState();
   const reportFilters = useMemo(() => getCurrentMonthReportRange(), []);
   const collectionReport = useCollectionSummaryReport(reportFilters);
   // Mirror the sidebar: only surface workspace cards the user can actually open.
@@ -45,7 +45,7 @@ export function FinancialsPage() {
   );
 
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir={direction} size="wide">
       <PageHeader
         title={translateSharedLabel('financialsSectionSummary', language)}
         description={translateSharedLabel('financialsPageDescription', language)}
@@ -60,10 +60,16 @@ export function FinancialsPage() {
       />
 
       <aside
-        aria-label={translateSharedLabel('financialsPageHint', language)}
-        className="rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-xs leading-relaxed text-muted-foreground"
+        role="note"
+        className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-xs leading-relaxed text-muted-foreground sm:flex-row sm:items-center sm:justify-between"
       >
-        {translateSharedLabel('financialsPageHint', language)}
+        <p className="min-w-0">{translateSharedLabel('financialsPageHint', language)}</p>
+        <Link
+          to="/reports"
+          className="inline-flex min-h-8 shrink-0 items-center self-start rounded-lg border border-primary/20 bg-background px-3 py-1.5 font-semibold text-primary transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:self-auto"
+        >
+          {translateSharedLabel('financialsSectionReports', language)}
+        </Link>
       </aside>
 
       <section aria-label="مساحات العمل المالية" className="space-y-3">
