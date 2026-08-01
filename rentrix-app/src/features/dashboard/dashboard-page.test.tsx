@@ -39,6 +39,18 @@ vi.mock('./dashboard-snapshot', () => ({
   getDashboardSnapshot: vi.fn(),
 }));
 
+vi.mock('@/features/financials/reconciliation/bankReconciliationService', () => ({
+  listBankStatementLines: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('@/features/owners/services/owner-settlements-service', () => ({
+  listOwnerSettlements: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('@/features/system/services/data-integrity-service', () => ({
+  runDataIntegrityAudit: vi.fn().mockResolvedValue({ checks: [] }),
+}));
+
 const mockSnapshot = {
   period: {
     dateFrom: '2026-06-01',
