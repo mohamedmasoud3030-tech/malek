@@ -3,7 +3,7 @@ import { useCrudFormState } from '@/hooks/use-crud-form-state';
 import { useState } from 'react';
 import { CommissionsView } from './components/commissions-view';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from './types';
-import { useArchiveCommission, useCommissions, useSaveCommission } from './use-commissions';
+import { useArchiveCommission, useCommissionApproval, useCommissions, usePayCommissionAtomic, useReverseCommissionAtomic, useSaveCommission } from './use-commissions';
 
 const emptyForm: CommissionFormValues = { staff_name: '', type: 'contract', status: 'pending', source_id: '', deal_value: '', percentage: '2.5', amount: '' };
 
@@ -43,6 +43,9 @@ export function CommissionsWorkspace({ embedded = false }: CommissionsWorkspaceP
   const commissionsQuery = useCommissions(filters);
   const saveCommission = useSaveCommission();
   const archiveCommission = useArchiveCommission();
+  const approveCommission = useCommissionApproval();
+  const payCommission = usePayCommissionAtomic();
+  const reverseCommission = useReverseCommissionAtomic();
 
   const workspaceContent = (
     <CommissionsView
@@ -64,6 +67,9 @@ export function CommissionsWorkspace({ embedded = false }: CommissionsWorkspaceP
       onSubmit={(values) => saveCommission.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
       onArchive={(id) => archiveCommission.mutate(id)}
       onRetry={() => void commissionsQuery.refetch()}
+      onApprove={(row) => approveCommission.mutate({ id: row.id, values: formFromCommission(row) })}
+      onPayAtomic={(id, paymentDate, accountId) => payCommission.mutateAsync({ id, paymentDate, accountId })}
+      onReverseAtomic={(id, reason) => reverseCommission.mutateAsync({ id, reason })}
     />
   );
 
