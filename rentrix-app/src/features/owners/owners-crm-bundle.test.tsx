@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { canAccess, canShowNavigationItem, getAuthorizationContextFromUser } from '@/features/auth/permissions';
-import { navGroups, type NavItem } from '@/app/navigation/app-nav-items';
+import { getAllNavItems, navGroups, type NavItem } from '@/app/navigation/app-nav-items';
 import { CommissionsView } from '@/features/commissions/components/commissions-view';
 import { CommunicationHubView } from '@/features/communication/components/communication-hub-view';
 import { LandsView } from '@/features/lands/components/lands-view';
@@ -57,10 +57,7 @@ describe('Owners and CRM navigation visibility', () => {
   it('exposes approved CRM and operations modules to managers while hiding them from regular users', () => {
     const manager = getAuthorizationContextFromUser(userWithRole('MANAGER'));
     const user = getAuthorizationContextFromUser(userWithRole('USER'));
-    const allNavItems: NavItem[] = [];
-    for (const [, items] of navGroups) {
-      allNavItems.push(...items);
-    }
+    const allNavItems: NavItem[] = Array.from(getAllNavItems());
     const crmNavItems = allNavItems.filter(([, labelKey]) => ['owners', 'ownersHub', 'lands', 'leads', 'commissions', 'communication'].includes(labelKey));
     const crmNavKeys = crmNavItems.map(([, labelKey]) => labelKey);
 

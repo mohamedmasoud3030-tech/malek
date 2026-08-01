@@ -9,7 +9,7 @@ import { canShowNavigationItem } from '@/features/auth/permissions';
 import { assertSessionPermission } from '@/features/auth/route-guards';
 import { DataIntegrityView } from './components/data-integrity-view';
 import { DATA_INTEGRITY_MAX_PAGES, DATA_INTEGRITY_PAGE_SIZE, buildDataIntegritySnapshot, fetchPaginatedRows } from './services/data-integrity-service';
-import { navGroups, type NavItem } from '@/app/navigation/app-nav-items';
+import { getAllNavItems, navGroups, type NavItem } from '@/app/navigation/app-nav-items';
 
 vi.mock('@/features/settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('@/test/companySettingsContractMock');
@@ -77,8 +77,9 @@ describe('system and governance route authorization', () => {
   });
 
   it('exposes governance surfaces in navigation from v0.3 onwards', () => {
-    const settingsAndGovernanceItems: readonly NavItem[] = navGroups
-      .find(([sectionTitle]) => sectionTitle === 'الإدارة والحوكمة')?.[1] ?? [];
+    const settingsAndGovernanceItems: readonly NavItem[] = getAllNavItems().filter(([to]) =>
+      ['/settings', '/change-password', '/audit-log', '/data-integrity', '/system'].includes(to),
+    );
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = settingsAndGovernanceItems.map(([to]) => to);
 
