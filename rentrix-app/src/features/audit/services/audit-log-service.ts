@@ -55,6 +55,7 @@ export async function fetchAuditLog(): Promise<AuditLogResult> {
     .from('audit_log')
     .select(AUDIT_LOG_COLUMNS)
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(AUDIT_LOG_LIMIT);
 
   if (error) throw error;

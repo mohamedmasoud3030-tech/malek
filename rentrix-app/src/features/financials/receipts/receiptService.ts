@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { chunkForInFilter } from '@/lib/paginatedRead';
 import type { Contract, Invoice, Payment, Person, Property, Unit } from '@/types/domain';
 import { formatReceiptNumber } from '../components/receipt-formatters';
 
@@ -102,52 +103,44 @@ async function loadReceiptRecords(payments: Payment[]): Promise<ReceiptRecord[]>
     ...payments.map((payment) => payment.invoice_id),
     ...invoiceIdByReceiptId.values(),
   ]);
-  const { data: invoices, error: invoicesError } = await supabase
-    .from('invoices')
-    .select('id, contract_id, status')
-    .in('id', invoiceIds)
-    .is('deleted_at', null)
-    .returns<ReceiptInvoiceContext[]>();
-  if (invoicesError) throw invoicesError;
 
-  const invoiceRows = invoices ?? [];
+  const fetchInChunks = async <T,>(ids: string[], table: string, columns: string): Promise<T[]> => {
+    if (ids.length === 0) return [];
+    const results: T[] = [];
+    for (const chunk of chunkForInFilter(ids)) {
+      let query: any = (supabase.from(table as any) as any)
+        .select(columns)
+        .in('id', chunk)
+        .is('deleted_at', null);
+      if (typeof query.returns === 'function') {
+        query = query.returns();
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      results.push(...((data as T[]) ?? []));
+    }
+    return results;
+  };
+
+  const invoiceRows = await fetchInChunks<ReceiptInvoiceContext>(invoiceIds, 'invoices', 'id, contract_id, status');
   const contractIds = uniqueStrings(invoiceRows.map((invoice) => invoice.contract_id));
-  const { data: contracts, error: contractsError } = contractIds.length > 0
-    ? await supabase
-      .from('contracts')
-      .select('id, property_id, unit_id, tenant_id')
-      .in('id', contractIds)
-      .is('deleted_at', null)
-      .returns<ReceiptContractContext[]>()
-    : { data: [], error: null };
-  if (contractsError) throw contractsError;
+  const contractRows = await fetchInChunks<ReceiptContractContext>(contractIds, 'contracts', 'id, property_id, unit_id, tenant_id');
 
-  const contractRows = contracts ?? [];
   const unitIds = uniqueStrings(contractRows.map((contract) => contract.unit_id));
   const propertyIds = uniqueStrings(contractRows.map((contract) => contract.property_id));
   const tenantIds = uniqueStrings(contractRows.map((contract) => contract.tenant_id));
 
-  const [unitsResult, propertiesResult, tenantsResult] = await Promise.all([
-    unitIds.length > 0
-      ? supabase.from('units').select('id, unit_number').in('id', unitIds).is('deleted_at', null).returns<ReceiptUnitContext[]>()
-      : Promise.resolve({ data: [], error: null }),
-    propertyIds.length > 0
-      ? supabase.from('properties').select('id, title').in('id', propertyIds).is('deleted_at', null).returns<ReceiptPropertyContext[]>()
-      : Promise.resolve({ data: [], error: null }),
-    tenantIds.length > 0
-      ? supabase.from('people').select('id, full_name').in('id', tenantIds).is('deleted_at', null).returns<ReceiptTenantContext[]>()
-      : Promise.resolve({ data: [], error: null }),
+  const [unitsData, propertiesData, tenantsData] = await Promise.all([
+    fetchInChunks<ReceiptUnitContext>(unitIds, 'units', 'id, unit_number'),
+    fetchInChunks<ReceiptPropertyContext>(propertyIds, 'properties', 'id, title'),
+    fetchInChunks<ReceiptTenantContext>(tenantIds, 'people', 'id, full_name'),
   ]);
-
-  if (unitsResult.error) throw unitsResult.error;
-  if (propertiesResult.error) throw propertiesResult.error;
-  if (tenantsResult.error) throw tenantsResult.error;
 
   const invoiceById = new Map(invoiceRows.map((invoice) => [invoice.id, invoice]));
   const contractById = new Map(contractRows.map((contract) => [contract.id, contract]));
-  const unitById = new Map((unitsResult.data ?? []).map((unit) => [unit.id, unit]));
-  const propertyById = new Map((propertiesResult.data ?? []).map((property) => [property.id, property]));
-  const tenantById = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant]));
+  const unitById = new Map(unitsData.map((unit) => [unit.id, unit]));
+  const propertyById = new Map(propertiesData.map((property) => [property.id, property]));
+  const tenantById = new Map(tenantsData.map((tenant) => [tenant.id, tenant]));
 
   return payments.map((payment) => toReceiptRecord(
     payment,
@@ -167,6 +160,7 @@ export async function listReceipts(params: ReceiptListParams = {}): Promise<Rece
     .is('deleted_at', null)
     .order('payment_date', { ascending: false })
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(params.limit ?? DEFAULT_RECEIPT_LIMIT)
     .returns<Payment[]>();
   if (error) throw error;

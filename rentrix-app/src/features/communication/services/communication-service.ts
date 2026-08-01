@@ -23,7 +23,7 @@ function communicationPayload(values: CommunicationFormValues): CommunicationIns
 }
 
 export async function listCommunicationRecords(filters: CommunicationFilters) {
-  let query = supabase.from('communication_records').select('*').is('deleted_at', null).order('created_at', { ascending: false });
+  let query = supabase.from('communication_records').select('*').is('deleted_at', null).order('created_at', { ascending: false }).order('id', { ascending: false });
   if (filters.channel !== 'all') query = query.eq('channel', filters.channel);
   if (filters.status !== 'all') query = query.eq('status', filters.status);
   if (filters.query.trim()) {

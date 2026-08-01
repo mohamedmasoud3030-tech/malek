@@ -23,7 +23,7 @@ export async function listMaintenance(status: MaintenanceStatus, propertyId: str
     // Maintenance queues and report KPIs must not silently stop at PostgREST's
     // default 1,000-row response cap.
     const { rows } = await fetchAllRows<Maintenance>(() => {
-      let query: any = supabase.from('maintenance_records').select('*').is('deleted_at', null).order('created_at', { ascending: false });
+      let query: any = supabase.from('maintenance_records').select('*').is('deleted_at', null).order('created_at', { ascending: false }).order('id', { ascending: false });
       if (status !== 'all' && status != null) {
         query = query.in('status', getMaintenanceStatusVariants(normalizeMaintenanceStatus(status)));
       }
