@@ -4,10 +4,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
 import { WorkspaceSubNav } from './workspace-sub-nav';
 
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
-  useLocation: () => ({ pathname: '/properties' }),
-}));
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+    useLocation: () => ({ pathname: '/properties' }),
+  };
+});
 
 let mockRole = 'MANAGER';
 

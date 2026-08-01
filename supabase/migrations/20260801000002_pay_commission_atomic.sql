@@ -27,7 +27,6 @@ begin;
 create or replace function public.guard_commission_financial_fields()
 returns trigger
 language plpgsql
-security definer
 set search_path to 'public', 'pg_temp'
 as $function$
 begin

@@ -114,9 +114,13 @@ export function CommissionsView(props: Props) {
   const [reverseCandidate, setReverseCandidate] =
     useState<CommissionRecord | null>(null);
   const [payAccount, setPayAccount] = useState("1111");
-  const [payDate, setPayDate] = useState(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+  const [payDate, setPayDate] = useState(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
   const [reverseReason, setReverseReason] = useState("");
   const [isPayPending, setIsPayPending] = useState(false);
   const [isReversePending, setIsReversePending] = useState(false);

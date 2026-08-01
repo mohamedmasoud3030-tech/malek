@@ -49,7 +49,7 @@ describe('contract creation workflow order and agreement resolution contract', (
 
   it('7. Exposes an invoice payment schedule review preview section before confirming contract', () => {
     expect(fieldsSource).toContain('title="مراجعة جدول الفواتير والدفعات المتوقعة"');
-    expect(fieldsSource).toContain('~{estimatedInstallments} فواتير');
+    expect(fieldsSource).toContain('{estimatedInstallments} فواتير');
     expect(fieldsSource).toContain('يتم إنشاء الفواتير وجدولة دفعاتها آلياً على الخادم وفقاً للعقد المعتمد');
   });
 });

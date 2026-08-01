@@ -4,9 +4,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import React from 'react';
 import { NextStepActions, type NextStepActionItem } from './next-step-actions';
 
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
-}));
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+  };
+});
 
 let mockRole: string = 'MANAGER';
 

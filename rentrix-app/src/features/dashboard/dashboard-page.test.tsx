@@ -7,10 +7,14 @@ import { DashboardPage } from './dashboard-page';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 
 // Mock TanStack Router
-vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children }: any) => children,
-  useNavigate: () => vi.fn(),
-}));
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    Link: ({ children }: any) => children,
+    useNavigate: () => vi.fn(),
+  };
+});
 
 // Keep dashboard tests focused on the snapshot boundary. The onboarding
 // component has its own ADMIN/MANAGER/USER permission matrix tests.
