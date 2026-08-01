@@ -48,7 +48,7 @@ export function commissionPayload(values: CommissionFormValues): CommissionInser
 }
 
 export async function listCommissions(filters: CommissionFilters) {
-  let query = supabase.from('commissions').select('*').order('created_at', { ascending: false });
+  let query = supabase.from('commissions').select('*').order('created_at', { ascending: false }).order('id', { ascending: false });
   if (filters.status !== 'all') query = query.eq('status', filters.status);
   if (filters.type !== 'all') query = query.eq('type', filters.type);
   if (filters.query.trim()) {
@@ -94,3 +94,40 @@ export async function archiveCommission(id: string) {
   if (error) handleSupabaseError(error, 'تعذر إلغاء العمولة');
   return data;
 }
+
+export async function payCommissionAtomic(
+  commissionId: string,
+  options?: {
+    paymentDate?: string;
+    accountId?: string;
+    expenseAccountId?: string;
+    requestId?: string;
+  },
+) {
+  const payload = {
+    commission_id: commissionId,
+    payment_date: options?.paymentDate,
+    account_id: options?.accountId,
+    expense_account_id: options?.expenseAccountId,
+    request_id: options?.requestId ?? crypto.randomUUID(),
+  };
+  const { data, error } = await (supabase.rpc as any)('pay_commission_atomic', { p_payload: payload });
+  if (error) handleSupabaseError(error, 'تعذر صرف العمولة مالياً');
+  return data;
+}
+
+export async function reverseCommissionAtomic(
+  commissionId: string,
+  reason: string,
+  requestId?: string,
+) {
+  const payload = {
+    commission_id: commissionId,
+    reason,
+    request_id: requestId ?? crypto.randomUUID(),
+  };
+  const { data, error } = await (supabase.rpc as any)('reverse_commission_atomic', { p_payload: payload });
+  if (error) handleSupabaseError(error, 'تعذر عكس العمولة مالياً');
+  return data;
+}
+

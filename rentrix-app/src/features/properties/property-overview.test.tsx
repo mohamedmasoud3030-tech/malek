@@ -4,11 +4,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PropertyOverview } from './property-detail-page';
 
 // Mock TanStack Router
-vi.mock('@tanstack/react-router', () => ({
-  useParams: () => ({ propertyId: 'property-123' }),
-  Link: ({ children }: any) => children,
-  useLocation: () => ({ pathname: '/properties/property-123' }),
-}));
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+  return {
+    ...actual,
+    useParams: () => ({ propertyId: 'property-123' }),
+    Link: ({ children }: any) => children,
+    useLocation: () => ({ pathname: '/properties/property-123' }),
+  };
+});
 
 // Mock useProperty and useUnits query hooks
 vi.mock('./use-properties', () => ({

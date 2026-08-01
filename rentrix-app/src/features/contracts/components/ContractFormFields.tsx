@@ -1,10 +1,11 @@
-import type { FormEventHandler } from 'react';
+import { useMemo, type FormEventHandler } from 'react';
 import { Controller } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { calculateContractSchedulePreview } from '../contract-schedule-preview';
 import { getContractUnitDefaultRent } from '../contract-unit-options';
 import {
   buildContractUnitOptionLabel,
@@ -51,6 +52,17 @@ export function ContractFormFields({
     currentLinkedUnitId,
   } = controller;
   const propertyId = form.watch('property_id');
+  const startDate = form.watch('start_date');
+  const endDate = form.watch('end_date');
+  const rentAmount = Number(form.watch('rent_amount') || 0);
+  const paymentCycle = form.watch('payment_cycle');
+
+  const schedulePreview = useMemo(
+    () => calculateContractSchedulePreview(startDate, endDate, paymentCycle, rentAmount),
+    [startDate, endDate, paymentCycle, rentAmount],
+  );
+  const estimatedInstallments = schedulePreview.installmentCount;
+
   const prerequisitesLoading =
     propertiesQuery.isLoading ||
     peopleQuery.isLoading ||
@@ -199,6 +211,65 @@ export function ContractFormFields({
                 ))}
             </Select>
           </EntityForm.Field>
+        </div>
+      </EntityForm.Section>
+
+      <EntityForm.Section
+        title="اتفاقية تشغيل المالك المغطية"
+        description="التحقق الآلي من وجود اتفاقية إدارة فعالة للمالك تغطي فترة العقد قبل اعتماده."
+        className="md:col-span-2"
+      >
+        <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm">
+          {agreementCoverageQuery.isLoading ? (
+            <p className="text-muted-foreground">جارٍ التحقق من اتفاقية تشغيل المالك...</p>
+          ) : agreementCoverageQuery.data ? (
+            <div className="flex items-center justify-between gap-3 text-primary font-semibold">
+              <span>تم تحديد اتفاقية تشغيل المالك تلقائياً ({agreementCoverageQuery.data.agreement_type === 'property_management' ? 'إدارة عقارية' : 'إيجار رئيسي'}). العقد مغطى طوال فترة السريان.</span>
+            </div>
+          ) : startDate && endDate && propertyId ? (
+            <div className="flex items-center justify-between gap-3 text-destructive font-semibold">
+              <span>لا توجد اتفاقية إدارة تغطي كامل فترة العقد. انتقل إلى صفحة العقار لإنشاء أو تحديث اتفاقية الإدارة أولاً.</span>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">اختر العقار وتواريخ العقد للتحقق الآلي من اتفاقية المالك.</p>
+          )}
+        </div>
+      </EntityForm.Section>
+
+      <EntityForm.Section
+        title="مراجعة جدول الفواتير والدفعات المتوقعة"
+        description="خطوة المراجعة قبل تأكيد العقد: جدولة الفواتير والدفعات المالية المعتمدة."
+        className="md:col-span-2"
+      >
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <span className="text-muted-foreground text-xs">دورة السداد المحددة:</span>
+              <p className="font-semibold">{paymentCycleLabels[paymentCycle]}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground text-xs">قيمة الدفعة المقدرة:</span>
+              <p className="font-semibold">{schedulePreview.amountPerInstallment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} OMR</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground text-xs">عدد الدفعات المتوقع:</span>
+              <p className="font-semibold">{estimatedInstallments} فواتير</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground text-xs">تاريخ سريان العقد:</span>
+              <p className="font-semibold">{startDate || '—'} إلى {endDate || '—'}</p>
+            </div>
+          </div>
+          {schedulePreview.sampleDates.length > 0 && (
+            <div className="text-xs text-muted-foreground pt-1">
+              <span className="font-bold text-foreground">تواريخ استحقاق الدفعات المقدرة: </span>
+              {schedulePreview.sampleDates.slice(0, 6).join(' • ')}
+              {schedulePreview.sampleDates.length > 6 ? ` • وأخرى (${schedulePreview.sampleDates.length})` : ''}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground pt-1 border-t border-primary/10">
+            يتم إنشاء الفواتير وجدولة دفعاتها آلياً على الخادم وفقاً للعقد المعتمد لحماية سلامة الأرصدة المحاسبية.
+          </p>
         </div>
       </EntityForm.Section>
 

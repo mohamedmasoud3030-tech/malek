@@ -91,3 +91,32 @@ They are kept so git history and existing bundle-budget expectations stay
 intact. They are safe to delete once a MALIK icon set is approved; nothing
 imports them today, and `rentrix-app/src/lib/brand-contract.test.ts` fails if
 anything starts referencing them again.
+
+## 2026-08 Product Workflow Consolidation & Authoritative Financial Contracts
+
+In August 2026, MALIK underwent a production-grade consolidation of its product workflows, domain ownership models, navigation workspaces, financial safety invariants, and server-side pagination stability:
+
+### 1. Authoritative Property-Ownership Model
+- **`property_owners`**: Authoritative source of legal/economic ownership, ownership percentages, and temporal validity (`starts_on` / `ends_on`). Enforces non-overlapping active percentages summing to $\le 100\%$ and at most one primary owner per property.
+- **`owner_agreements`**: Authoritative source of management agreements between the real-estate office and property owners (`agreement_type`, `commission_type`, `commission_value`, effective dates).
+- **`properties.owner_id` & `owner_name`**: Backward-compatibility projections synchronized automatically via database trigger (`trg_sync_property_owner_projection`) and never treated as independent sources of truth.
+- **`public.current_property_ownership` view**: Canonical view combining active `property_owners` and `owner_agreements` per property as of `CURRENT_DATE`.
+
+### 2. Client-Money Separation & Commission Accounting
+- **Tenant Security Deposits**: Held as liabilities (`account 2200 Tenant Deposits Payable`) in `public.tenant_deposits` until refunded, applied, or forfeited.
+- **Owner Settlement Accounting**: Net payable balances are derived server-side via `public.calculate_owner_net_payout()` and disbursed atomically via `pay_owner_settlement_atomic()` with balanced journal entries.
+- **Commission Financial Payouts**: Handled atomically on the server via `public.pay_commission_atomic(p_payload jsonb)` and `public.reverse_commission_atomic(p_payload jsonb)`. A commission payout creates a POSTED operating expense (`account 6100 Operating Expenses`) and balanced journal entries (`DEBIT 6100`, `CREDIT 1111 Cash`), with duplicate payment and cancellation protection.
+
+### 3. Consolidated Navigation & 360-Degree Workspaces
+- **7 Top-Level Workspaces**: `لوحة التحكم` (Dashboard), `المحفظة العقارية` (Owners, Properties, Units, Lands), `العلاقات والعقود` (People, Tenants, Contracts, Leads, Communication), `التشغيل والصيانة` (Maintenance, Utilities, Automation, Documents), `المالية` (Financials, Invoices, Receipts, Expenses, Arrears, Deposits, Owner settlements, Bank reconciliation, Commissions), `التقارير` (Reports, AI Assistant), and `الإدارة` (Settings, Change password, Audit log, Data integrity, System).
+- **Property 360-Degree Workspace**: `PropertyDetailPage` exposes 8 URL-addressable tabs (`نظرة عامة`, `الوحدات العقارية`, `العقود والمستأجرون`, `المالية والتحصيلات`, `الصيانة والمرافق`, `الملكية واتفاقيات التشغيل`, `المستندات`, `سجل النشاط`) without overloading client memory.
+- **Guided Creation Workspaces**: `PropertyFormModal` implements a 3-step wizard (Step 1: Property details, Step 2: Ownership & management, Step 3: Units & review). Contract creation automatically resolves covering owner agreements and displays an estimated invoice schedule preview.
+
+### 4. Server-Side Pagination & Deterministic Tie-Breaking
+- Large datasets (`owners`, `receipts`, `expenses`, `maintenance_records`, `audit_log`, `communication_records`) enforce deterministic tie-breaking (`.order('id')` as secondary sort key) and safe server-side `.range(from, to)` pagination (`fetchAllRows`).
+- Identifier filtering via `.in(...)` uses `chunkForInFilter(ids, 250)` to prevent PostgREST URL and parser overflows.
+
+### 5. Migration Order & Rollback Scripts
+- `20260801000001_authoritative_property_ownership_view.sql` (Rollback: `supabase/rollback/20260801_rollback_authoritative_property_ownership_view.sql`)
+- `20260801000002_pay_commission_atomic.sql` (Rollback: `supabase/rollback/20260801_rollback_pay_commission_atomic.sql`)
+- **Remaining Limitations**: Historical reporting views still expose compatibility fields (`owner_id`/`owner_name`) for older report consumers; post-Phase-3A-2 composite uniqueness (`company_id, no`) will further tighten multi-company chart-of-accounts uniqueness.

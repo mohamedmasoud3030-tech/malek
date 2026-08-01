@@ -78,6 +78,9 @@ type Props = Readonly<{
   onSubmit: (values: CommissionFormValues) => void;
   onArchive: (id: string) => void;
   onRetry: () => void;
+  onApprove?: (commission: CommissionRecord) => void;
+  onPayAtomic?: (id: string, paymentDate?: string, accountId?: string) => Promise<unknown>;
+  onReverseAtomic?: (id: string, reason: string) => Promise<unknown>;
 }>;
 
 export function CommissionsView(props: Props) {
@@ -100,9 +103,27 @@ export function CommissionsView(props: Props) {
     onSubmit,
     onArchive,
     onRetry,
+    onApprove,
+    onPayAtomic,
+    onReverseAtomic,
   } = props;
   const [archiveCandidate, setArchiveCandidate] =
     useState<CommissionRecord | null>(null);
+  const [payCandidate, setPayCandidate] =
+    useState<CommissionRecord | null>(null);
+  const [reverseCandidate, setReverseCandidate] =
+    useState<CommissionRecord | null>(null);
+  const [payAccount, setPayAccount] = useState("1111");
+  const [payDate, setPayDate] = useState(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  });
+  const [reverseReason, setReverseReason] = useState("");
+  const [isPayPending, setIsPayPending] = useState(false);
+  const [isReversePending, setIsReversePending] = useState(false);
   const pendingTotal = rows
     .filter((row) => row.status !== "paid" && row.status !== "cancelled")
     .reduce((sum, row) => sum + (row.amount ?? 0), 0);
@@ -311,7 +332,9 @@ export function CommissionsView(props: Props) {
                 onDraftChange({ ...draft, status: event.target.value })
               }
             >
-              {Object.entries(statusLabels).map(([value, label]) => (
+              {Object.entries(statusLabels)
+                .filter(([val]) => val !== "paid")
+                .map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
@@ -385,6 +408,79 @@ export function CommissionsView(props: Props) {
           }
         }}
       />
+
+      <ConfirmDialog
+        open={payCandidate != null}
+        onOpenChange={(open) => {
+          if (!open) setPayCandidate(null);
+        }}
+        title={`صرف العمولة مالياً لـ ${payCandidate?.staff_name ?? ""}`}
+        description={`سيتم إنشاء مصروف مالي (حساب 6100) وخصم المبلغ من الحساب النقدي/البنكي المحدد وعمل القيود المحاسبية المتزنة. المبلغ: ${money(payCandidate?.amount ?? 0)}`}
+        confirmLabel="تأكيد الصرف المالي"
+        isLoading={isPayPending}
+        onConfirm={async () => {
+          if (payCandidate && onPayAtomic) {
+            setIsPayPending(true);
+            try {
+              await onPayAtomic(payCandidate.id, payDate, payAccount);
+              setPayCandidate(null);
+            } finally {
+              setIsPayPending(false);
+            }
+          }
+        }}
+      >
+        <div className="space-y-4 py-2">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">الحساب المالي للدفع</label>
+            <Select value={payAccount} onChange={(e) => setPayAccount(e.target.value)}>
+              <option value="1111">الخزينة النقدية (1111)</option>
+              <option value="1201">الحساب البنكي الرئيسي (1201)</option>
+            </Select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">تاريخ الصرف</label>
+            <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+          </div>
+        </div>
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={reverseCandidate != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReverseCandidate(null);
+            setReverseReason("");
+          }
+        }}
+        title={`عكس صرف العمولة لـ ${reverseCandidate?.staff_name ?? ""}`}
+        description="سيتم عكس القيود المحاسبية (دائن مصروفات عمولات، مدين نقدية/بنك) وتغيير حالة المصروف إلى VOID وإلغاء العمولة. اذكر سبب العكس الإلزامي."
+        confirmLabel="تأكيد العكس المحاسبي"
+        variant="danger"
+        isLoading={isReversePending}
+        confirmDisabled={!reverseReason.trim()}
+        onConfirm={async () => {
+          if (reverseCandidate && onReverseAtomic && reverseReason.trim()) {
+            setIsReversePending(true);
+            try {
+              await onReverseAtomic(reverseCandidate.id, reverseReason.trim());
+              setReverseCandidate(null);
+              setReverseReason("");
+            } finally {
+              setIsReversePending(false);
+            }
+          }
+        }}
+      >
+        <div className="py-2">
+          <label className="block text-xs font-semibold text-muted-foreground mb-1">سبب العكس المحاسبي (إلزامي)</label>
+          <Input
+            placeholder="اذكر سبب عكس صرف العمولة..."
+            value={reverseReason}
+            onChange={(e) => setReverseReason(e.target.value)}
+          />
+        </div>
+      </ConfirmDialog>
     </section>
   );
 }

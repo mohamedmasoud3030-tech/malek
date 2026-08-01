@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, CheckCircle2, CreditCard, Wrench } from 'lucide-react';
+import { Bell, Building2, CalendarClock, CheckCircle2, CreditCard, HandCoins, Landmark, ShieldAlert, Wrench } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -23,6 +23,10 @@ export interface AlertCenterProps {
     property_title?: string;
     unit_number?: string;
   }>;
+  vacantUnitsCount?: number;
+  unmatchedBankTxCount?: number;
+  pendingSettlementsCount?: number;
+  integrityWarningsCount?: number;
   className?: string;
 }
 
@@ -37,6 +41,10 @@ export function AlertCenter({
   expiringContracts,
   overdueInvoices,
   urgentMaintenance,
+  vacantUnitsCount = 0,
+  unmatchedBankTxCount = 0,
+  pendingSettlementsCount = 0,
+  integrityWarningsCount = 0,
   className = '',
 }: AlertCenterProps) {
   const contractCount = expiringContracts.filter((c) => {
@@ -47,7 +55,7 @@ export function AlertCenter({
   const maintenanceCount = urgentMaintenance.filter(
     (r) => r.priority === 'urgent' || r.priority === 'high',
   ).length;
-  const total = contractCount + overdueCount + maintenanceCount;
+  const total = contractCount + overdueCount + maintenanceCount + vacantUnitsCount + unmatchedBankTxCount + pendingSettlementsCount + integrityWarningsCount;
 
   if (total === 0) {
     return (
@@ -89,6 +97,38 @@ export function AlertCenter({
       to: '/maintenance',
       icon: Wrench,
       tone: 'warning' as const,
+    },
+    {
+      label: 'وحدات شاغرة',
+      description: 'فرص إعادة التأجير',
+      count: vacantUnitsCount,
+      to: '/units',
+      icon: Building2,
+      tone: 'warning' as const,
+    },
+    {
+      label: 'حركات بنكية معلقة',
+      description: 'مطابقة الكشف والتحصيلات',
+      count: unmatchedBankTxCount,
+      to: '/finance/banking',
+      icon: Landmark,
+      tone: 'warning' as const,
+    },
+    {
+      label: 'تسويات ملاك جاهزة',
+      description: 'إعداد واعتماد وصرف التسويات',
+      count: pendingSettlementsCount,
+      to: '/owner-settlements',
+      icon: HandCoins,
+      tone: 'warning' as const,
+    },
+    {
+      label: 'تنبيهات سلامة البيانات',
+      description: 'فحص التطابق وتصحيح السجلات',
+      count: integrityWarningsCount,
+      to: '/data-integrity',
+      icon: ShieldAlert,
+      tone: 'danger' as const,
     },
   ];
 

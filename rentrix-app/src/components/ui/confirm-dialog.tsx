@@ -16,6 +16,8 @@ interface ConfirmDialogProps {
   cancelLabel?: string;
   variant?: 'danger' | 'warning';
   isLoading?: boolean;
+  confirmDisabled?: boolean;
+  children?: React.ReactNode;
   onConfirm: () => void;
 }
 
@@ -36,11 +38,13 @@ export function ConfirmDialog({
   open,
   onOpenChange,
   title = 'هل أنت متأكد؟',
-  description = 'لا يمكن التراجع عن هذا الإجراء.',
+  description = 'تأكيد الإجراء المطلوب. يتم الاحتفاظ بالسجلات المحاسبية والتاريخية في الأرشيف لحماية سلامة البيانات.',
   confirmLabel = 'تأكيد',
   cancelLabel = 'إلغاء',
   variant = 'danger',
   isLoading = false,
+  confirmDisabled = false,
+  children,
   onConfirm,
 }: ConfirmDialogProps) {
   function handleOpenChange(nextOpen: boolean) {
@@ -78,6 +82,8 @@ export function ConfirmDialog({
           </div>
         </div>
 
+        {children && <div className="mb-4">{children}</div>}
+
         <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-4 sm:flex-row sm:justify-end">
           <Button
             variant="secondary"
@@ -91,7 +97,7 @@ export function ConfirmDialog({
             variant={variant === 'danger' ? 'danger' : 'primary'}
             className="sm:min-w-32"
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled}
           >
             {isLoading ? 'جارٍ التنفيذ...' : confirmLabel}
           </Button>

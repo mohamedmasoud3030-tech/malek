@@ -7,6 +7,8 @@ import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { useAuth } from '@/hooks/use-auth';
 import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist';
 import type { OnboardingProgress } from '@/features/onboarding/useOnboarding';
+import { listBankStatementLines } from '@/features/financials/reconciliation/bankReconciliationService';
+import { fetchIntegrityWarningsCount, fetchPendingSettlementsCount } from '@/services/action-center-counts';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { HeroBanner } from './components/hero-banner';
 import { KpiGrid } from './components/kpi-grid';
@@ -54,6 +56,26 @@ export function DashboardPage() {
     [snapshot?.arrears.overdueInvoices],
   );
 
+  const { data: unmatchedLines } = useQuery({
+    queryKey: ['bank-reconciliation', 'unmatched-count'],
+    queryFn: () => listBankStatementLines({ bankAccountId: 'all', status: 'unmatched', from: '', to: '' }),
+    retry: false,
+  });
+
+  const { data: pendingSettlementsCount = 0 } = useQuery({
+    queryKey: ['owner-settlements', 'ready-count'],
+    queryFn: () => fetchPendingSettlementsCount(),
+    retry: false,
+  });
+
+  const { data: integrityWarningsCount = 0 } = useQuery({
+    queryKey: ['data-integrity', 'audit-count'],
+    queryFn: () => fetchIntegrityWarningsCount(),
+    retry: false,
+  });
+
+  const unmatchedBankTxCount = unmatchedLines?.length ?? 0;
+
   return (
     <PageLayout className="space-y-6 pb-8" data-dashboard-v2>
       <HeroBanner snapshot={snapshot} isLoading={isLoading} settings={settings} today={today} />
@@ -85,6 +107,10 @@ export function DashboardPage() {
             tenant_name: invoice.tenantName,
           }))}
           urgentMaintenance={snapshot?.maintenance?.urgentRequests ?? []}
+          vacantUnitsCount={snapshot?.operational.vacantUnits ?? 0}
+          unmatchedBankTxCount={unmatchedBankTxCount}
+          pendingSettlementsCount={pendingSettlementsCount}
+          integrityWarningsCount={integrityWarningsCount}
         />
         <QuickActions />
       </div>

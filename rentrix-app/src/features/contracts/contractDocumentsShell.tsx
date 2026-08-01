@@ -181,8 +181,9 @@ export function ContractDocumentsShell({ contractId }: ContractDocumentsShellPro
       <ConfirmDialog
         open={pendingDeleteId !== null}
         onOpenChange={(open) => !open && setPendingDeleteId(null)}
-        title="حذف المستند؟"
-        description="لا يمكن التراجع عن هذا الإجراء بعد الحذف."
+        title="أرشفة المستند (حذف المستند؟)"
+        description="سيتم أرشفة المستند وإخفاؤه من القائمة مع الاحتفاظ بسجله وتاريخه في الأرشيف، ولا يتم حذفه نهائياً."
+        confirmLabel="أرشفة المستند"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
       />

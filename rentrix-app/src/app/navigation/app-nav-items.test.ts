@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { mobileNavItems, navGroups, quickCreateItems, type NavItem } from './app-nav-items';
+import { getAllNavItems, mobileNavItems, navGroups, quickCreateItems, workspaceChildNavItems, type NavItem } from './app-nav-items';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const routePaths = new Set(Array.from(routeTreeSource.matchAll(/path: '([^']+)'/g), (match) => match[1]));
@@ -62,10 +62,7 @@ const approvedExpansionRoutes = [
 ] as const;
 
 const routePathList = Array.from(routePaths);
-const navItems: NavItem[] = [];
-for (const group of navGroups) {
-  navItems.push(...group[1]);
-}
+const navItems: NavItem[] = Array.from(getAllNavItems());
 
 function getRouteDefinition(path: string) {
   const pathToken = `path: '${path}'`;
@@ -129,13 +126,12 @@ describe('app route and navigation parity', () => {
     ]);
   });
 
-  it('exposes every standalone financial workspace in the sidebar financials group without duplicating children in mobile navigation', () => {
+  it('exposes every standalone financial workspace in the financial hub without duplicating children in mobile navigation', () => {
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
-    const financialsGroup = navGroups.find(([sectionTitle]) => sectionTitle === 'المالية');
-    const financialsPaths = financialsGroup?.[1].map(([to]) => to) ?? [];
+    const financialsChildren = workspaceChildNavItems['/financials'].map(([to]) => to);
 
-    expect(financialsPaths).toEqual(
-      expect.arrayContaining(['/financials', '/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions']),
+    expect(financialsChildren).toEqual(
+      expect.arrayContaining(['/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions']),
     );
     expect(mobileNavPaths).toContain('/financials');
     expect(mobileNavPaths).not.toContain('/invoices');
@@ -147,20 +143,35 @@ describe('app route and navigation parity', () => {
   });
 
   it('groups every feature by the office workflow and keeps account security discoverable', () => {
-    const groupPaths = new Map(
-      navGroups.map(([sectionTitle, items]) => [sectionTitle, items.map(([to]) => to)]),
-    );
+    expect(navGroups.length).toBe(7);
+    expect(navGroups.map(([title]) => title)).toEqual([
+      'لوحة التحكم',
+      'المحفظة العقارية',
+      'العلاقات والعقود',
+      'التشغيل والصيانة',
+      'المالية',
+      'التقارير',
+      'الإدارة',
+    ]);
 
-    expect(groupPaths.get('العلاقات والعملاء')).toEqual(
-      expect.arrayContaining(['/owners', '/tenants', '/people', '/leads', '/communication']),
+    const getGroupChildPaths = (topTo: string) => [
+      topTo,
+      ...((workspaceChildNavItems[topTo] ?? []).map(([to]) => to)),
+    ];
+
+    expect(getGroupChildPaths('/properties')).toEqual(
+      expect.arrayContaining(['/properties', '/owners', '/units', '/lands']),
     );
-    expect(groupPaths.get('العقود والتشغيل')).toEqual(
-      expect.arrayContaining(['/contracts', '/maintenance', '/utilities', '/automation', '/documents-vault']),
+    expect(getGroupChildPaths('/contracts')).toEqual(
+      expect.arrayContaining(['/contracts', '/people', '/tenants', '/leads', '/communication']),
     );
-    expect(groupPaths.get('التقارير والقرار')).toEqual(
+    expect(getGroupChildPaths('/maintenance')).toEqual(
+      expect.arrayContaining(['/maintenance', '/utilities', '/automation', '/documents-vault']),
+    );
+    expect(getGroupChildPaths('/reports')).toEqual(
       expect.arrayContaining(['/reports', '/ai-assistant']),
     );
-    expect(groupPaths.get('الإدارة والحوكمة')).toEqual(
+    expect(getGroupChildPaths('/settings')).toEqual(
       expect.arrayContaining(['/settings', '/change-password', '/audit-log', '/data-integrity', '/system']),
     );
   });
