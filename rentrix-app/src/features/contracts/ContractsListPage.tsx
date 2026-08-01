@@ -143,9 +143,9 @@ export function ContractsListPage() {
       <ConfirmDialog
         open={Boolean(deleteId)}
         onOpenChange={(open) => { if (!open) setDeleteId(null); }}
-        title="حذف العقد؟"
-        description="سيتم حذف العقد بشكل نهائي ولا يمكن التراجع عن هذا الإجراء."
-        confirmLabel="حذف"
+        title="أرشفة العقد (حذف العقد؟)"
+        description="سيتم أرشفة العقد وإخفاؤه من القائمة النشطة مع الاحتفاظ بسجله المحاسبي وتاريخه بالكامل، ولا يتم حذفه بشكل نهائي."
+        confirmLabel="أرشفة / حذف"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
       />

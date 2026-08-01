@@ -18,7 +18,7 @@ export function ContractTerminationDialog({ contractId, open, onOpenChange }: Re
       open={open}
       onOpenChange={onOpenChange}
       title="إنهاء العقد"
-      description={'سيتم تعيين حالة العقد إلى "منتهٍ" وإلغاء أي فواتير مستقبلية غير مدفوعة مرتبطة به. هذا الإجراء لا يمكن التراجع عنه من هنا.'}
+      description={'سيتم إنهاء العقد الإيجاري قبل موعده المخطط وتغيير حالته إلى "منتهٍ"، مع إيقاف الفواتير المستقبلية والحفاظ الكامل على السجلات والقيود المحاسبية السابقة.'}
       className="max-w-xl"
     >
       <EntityForm.Root
