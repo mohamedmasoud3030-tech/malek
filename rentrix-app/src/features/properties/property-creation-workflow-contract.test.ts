@@ -40,4 +40,27 @@ describe('canonical property creation workflow', () => {
     expect(migration).toContain('p_owner_name input');
     expect(migration).toContain("set search_path to 'public', 'pg_temp'");
   });
+
+  it('implements a guided 3-step property creation workflow (Step 1 details, Step 2 ownership & agreement, Step 3 units & review)', () => {
+    const modalSource = readSource('./property-form-modal.tsx');
+
+    expect(modalSource).toContain('const [step, setStep] = useState<1 | 2 | 3>(1)');
+    expect(modalSource).toContain('الخطوة 1: بيانات العقار');
+    expect(modalSource).toContain('الخطوة 2: المالك، نوع الاتفاقية، قيمة العمولة');
+    expect(modalSource).toContain('الخطوة 3: المراجعة والانتقال للوحدات');
+    expect(modalSource).toContain('إضافة وحدات العقار:');
+  });
+
+  it('provides the full 360-degree property workspace with 8 addressable tabs', () => {
+    const detailSource = readSource('./property-detail-page.tsx');
+
+    expect(detailSource).toContain('نظرة عامة');
+    expect(detailSource).toContain('الوحدات العقارية');
+    expect(detailSource).toContain("tab: 'contracts'");
+    expect(detailSource).toContain("tab: 'financials'");
+    expect(detailSource).toContain("tab: 'maintenance'");
+    expect(detailSource).toContain("tab: 'ownership'");
+    expect(detailSource).toContain("tab: 'documents'");
+    expect(detailSource).toContain("tab: 'activity'");
+  });
 });
