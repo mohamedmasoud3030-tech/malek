@@ -330,7 +330,7 @@ BEGIN
 
   v_invoice_id := v_invoice_id_raw::uuid;
   v_amount := coalesce((payload->>'amount')::numeric, 0);
-  v_method := nullif(payload->>'method', '');
+  v_method := coalesce(nullif(payload->>'method', ''), nullif(payload->>'channel', ''), nullif(payload->>'payment_method', ''), 'cash');
   v_date := coalesce(nullif(payload->>'date', '')::date, current_date);
   v_reference := nullif(payload->>'reference', '');
 
