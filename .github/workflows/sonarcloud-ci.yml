@@ -37,7 +37,74 @@ jobs:
       - name: Generate LCOV coverage
         run: pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts --coverage --coverage.reporter=lcov
       - name: Run SonarCloud analysis with repository scope
+        id: sonar_scan
+        continue-on-error: true
         uses: SonarSource/sonarqube-scan-action@v5.3.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+      - name: Report and enforce SonarCloud quality gate
+        if: always()
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+        run: |
+          set -euo pipefail
+          report=".scannerwork/report-task.txt"
+          if [[ ! -f "$report" ]]; then
+            echo "::error::SonarCloud report-task.txt was not generated."
+            exit 1
+          fi
+
+          ce_task_url="$(awk -F= '$1=="ceTaskUrl"{print substr($0,index($0,"=")+1)}' "$report")"
+          dashboard_url="$(awk -F= '$1=="dashboardUrl"{print substr($0,index($0,"=")+1)}' "$report")"
+          echo "SonarCloud dashboard: $dashboard_url"
+
+          for _ in {1..120}; do
+            ce_json="$(curl --fail --silent --show-error -u "${SONAR_TOKEN}:" "$ce_task_url")"
+            ce_status="$(jq -r '.task.status' <<<"$ce_json")"
+            case "$ce_status" in
+              SUCCESS) break ;;
+              FAILED|CANCELED)
+                jq . <<<"$ce_json"
+                echo "::error::SonarCloud Compute Engine task ended with $ce_status."
+                exit 1
+                ;;
+            esac
+            sleep 5
+          done
+
+          if [[ "$ce_status" != "SUCCESS" ]]; then
+            echo "::error::Timed out waiting for SonarCloud Compute Engine task."
+            exit 1
+          fi
+
+          analysis_id="$(jq -r '.task.analysisId' <<<"$ce_json")"
+          gate_json="$(curl --fail --silent --show-error -u "${SONAR_TOKEN}:" \
+            "https://sonarcloud.io/api/qualitygates/project_status?analysisId=${analysis_id}")"
+          gate_status="$(jq -r '.projectStatus.status' <<<"$gate_json")"
+          echo "SonarCloud quality gate: $gate_status"
+          jq -r '
+            .projectStatus.conditions[]
+            | select(.status != "OK")
+            | "::error title=SonarCloud \(.metricKey)::status=\(.status), actual=\(.actualValue // "n/a"), threshold=\(.errorThreshold // "n/a"), comparator=\(.comparator // "n/a")"
+          ' <<<"$gate_json"
+
+          if [[ -n "$PR_NUMBER" ]]; then
+            issues_json="$(curl --fail --silent --show-error -u "${SONAR_TOKEN}:" \
+              "https://sonarcloud.io/api/issues/search?componentKeys=mohamedmasoud3030-tech_rentrixxx&pullRequest=${PR_NUMBER}&resolved=false&ps=100")"
+            jq -r '
+              .issues[]
+              | "::warning title=SonarCloud \(.rule)::\(.severity) \(.component):\(.line // 0) — \(.message)"
+            ' <<<"$issues_json"
+          fi
+
+          if [[ "$gate_status" != "OK" ]]; then
+            exit 1
+          fi
+
+          if [[ "${{ steps.sonar_scan.outcome }}" != "success" ]]; then
+            echo "::error::SonarCloud scan action failed even though the quality gate response was OK."
+            exit 1
+          fi
