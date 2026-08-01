@@ -75,7 +75,7 @@ describe('client-money separation accounting invariants contract', () => {
 
   it('8. Duplicate financial requests are idempotent where applicable', () => {
     expect(payCommissionAtomic).toContain('public.financial_operation_idempotency');
-    expect(payCommissionAtomic).toContain('operation_name = \'pay_commission_atomic\' and request_id = v_request_id');
+    expect(payCommissionAtomic).toContain("operation_name = 'pay_commission_atomic:' || v_company_id::text");
   });
 
   it('9. Financial totals shown in the UI come from server-authoritative calculations', () => {
