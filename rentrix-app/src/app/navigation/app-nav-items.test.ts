@@ -108,6 +108,14 @@ describe('app route and navigation parity', () => {
     expect(navPaths).toEqual(expect.arrayContaining([...governanceRoutes]));
   });
 
+  it('keeps the operations hub discoverable without widening its permission-gated child tabs', () => {
+    const operationsHub = navItems.find(([to]) => to === '/maintenance');
+    const automation = workspaceChildNavItems['/maintenance'].find(([to]) => to === '/automation');
+
+    expect(operationsHub?.[4]).toBeUndefined();
+    expect(automation?.[4]).toBe('automation.view');
+  });
+
   it('exposes approved product-expansion modules through the primary navigation rendered by desktop and mobile drawer', () => {
     const navPaths = navItems.map(([to]) => to);
 
