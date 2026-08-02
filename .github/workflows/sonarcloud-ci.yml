@@ -57,8 +57,7 @@ jobs:
           if (!fs.existsSync(lcovPath)) {
             write('LCOV report was not generated.');
             fs.writeFileSync(reportPath, `${output.join('\n')}\n`);
-            process.exitCode = 1;
-            return;
+            process.exit(1);
           }
 
           const baseRef = process.env.BASE_REF || 'main';
