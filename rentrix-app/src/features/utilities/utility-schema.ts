@@ -5,7 +5,7 @@
 // any Supabase write. The two layers share constants and labels
 // so the UI and the backend agree on the same enums.
 
-import { z } from 'zod';
+import { z, type RefinementCtx } from 'zod';
 
 export const UTILITY_TYPE_VALUES = ['electricity', 'water', 'sanitation', 'internet', 'gas', 'other'] as const;
 export const RESPONSIBLE_PARTY_VALUES = ['tenant', 'landlord', 'company'] as const;
@@ -108,6 +108,42 @@ export type UtilityMeterPayload = z.output<typeof utilityMeterPayloadSchema>;
 
 // ── Bill schemas ────────────────────────────────────────────────────────────
 
+type UtilityBillRelationshipValues = {
+  billing_period_start?: string | null;
+  billing_period_end?: string | null;
+  previous_reading?: number | null;
+  current_reading?: number | null;
+  amount: number;
+  paid_amount?: number | null;
+};
+
+/** Shared form/service invariants so both boundaries enforce identical rules. */
+function validateUtilityBillRelationships(data: UtilityBillRelationshipValues, ctx: RefinementCtx): void {
+  if (data.billing_period_start && data.billing_period_end
+    && data.billing_period_start > data.billing_period_end) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['billing_period_end'],
+      message: 'نهاية فترة الاستهلاك يجب أن تكون بعد بدايتها',
+    });
+  }
+  if (data.previous_reading != null && data.current_reading != null
+    && data.current_reading < data.previous_reading) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['current_reading'],
+      message: 'القراءة الحالية لا تقل عن القراءة السابقة',
+    });
+  }
+  if (data.paid_amount != null && data.paid_amount > data.amount) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['paid_amount'],
+      message: 'المبلغ المدفوع لا يمكن أن يتجاوز قيمة الفاتورة',
+    });
+  }
+}
+
 /** Form-level bill schema. */
 export const utilityBillFormSchema = z
   .object({
@@ -130,31 +166,7 @@ export const utilityBillFormSchema = z
     attachment_url: z.string().max(500).nullable().optional(),
     notes: z.string().trim().max(2000).nullable().optional(),
   })
-  .superRefine((data, ctx) => {
-    if (data.billing_period_start && data.billing_period_end
-      && data.billing_period_start > data.billing_period_end) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['billing_period_end'],
-        message: 'نهاية فترة الاستهلاك يجب أن تكون بعد بدايتها',
-      });
-    }
-    if (data.previous_reading != null && data.current_reading != null
-      && data.current_reading < data.previous_reading) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['current_reading'],
-        message: 'القراءة الحالية لا تقل عن القراءة السابقة',
-      });
-    }
-    if (data.paid_amount != null && data.paid_amount > data.amount) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['paid_amount'],
-        message: 'المبلغ المدفوع لا يمكن أن يتجاوز قيمة الفاتورة',
-      });
-    }
-  });
+  .superRefine(validateUtilityBillRelationships);
 
 export type UtilityBillFormInput = z.input<typeof utilityBillFormSchema>;
 export type UtilityBillFormValues = z.output<typeof utilityBillFormSchema>;
@@ -178,30 +190,6 @@ export const utilityBillPayloadSchema = z
     attachment_url: z.string().max(500).nullable(),
     notes: z.string().max(2000).nullable(),
   })
-  .superRefine((data, ctx) => {
-    if (data.billing_period_start && data.billing_period_end
-      && data.billing_period_start > data.billing_period_end) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['billing_period_end'],
-        message: 'نهاية فترة الاستهلاك يجب أن تكون بعد بدايتها',
-      });
-    }
-    if (data.previous_reading != null && data.current_reading != null
-      && data.current_reading < data.previous_reading) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['current_reading'],
-        message: 'القراءة الحالية لا تقل عن القراءة السابقة',
-      });
-    }
-    if (data.paid_amount != null && data.paid_amount > data.amount) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['paid_amount'],
-        message: 'المبلغ المدفوع لا يمكن أن يتجاوز قيمة الفاتورة',
-      });
-    }
-  });
+  .superRefine(validateUtilityBillRelationships);
 
 export type UtilityBillPayload = z.output<typeof utilityBillPayloadSchema>;
