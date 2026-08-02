@@ -20,7 +20,7 @@ export const navGroups: readonly NavGroup[] = [
     ['/contracts', 'contracts', 'العقود والتجديدات', FileText],
   ]],
   ['التشغيل والصيانة', [
-    ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, 'maintenance.view'],
+    ['/maintenance', 'maintenance', 'الصيانة والمرافق والأتمتة والمستندات', Wrench],
   ]],
   ['المالية', [
     ['/financials', 'financialOverview', 'نظرة شاملة على التحصيلات والمصروفات والذمم', PieChart],

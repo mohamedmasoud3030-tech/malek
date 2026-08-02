@@ -45,12 +45,14 @@ type RenderOptions = Readonly<{
   initialUrl?: string;
   role?: AuthorizationRole | null;
   defaultSection?: 'maintenance' | 'utilities' | 'automation' | 'documents_vault';
+  mode?: 'standalone' | 'embedded';
 }>;
 
 function renderHub({
   initialUrl = '/maintenance',
   role = 'ADMIN',
   defaultSection = 'maintenance',
+  mode = 'standalone',
 }: RenderOptions = {}) {
   currentRole = role;
 
@@ -63,6 +65,7 @@ function renderHub({
         defaultSection={defaultSection}
         title="مركز التشغيل"
         description="وصف تجريبي"
+        mode={mode}
       />
     ),
     validateSearch: (search: Record<string, unknown>) => search,
@@ -124,6 +127,14 @@ describe('operations hub — standalone rendering', () => {
   it('embeds child workspaces in embedded mode', async () => {
     renderHub();
     expect((await screen.findByTestId('maintenance-mode')).textContent).toBe('embedded');
+  });
+
+  it('omits its own page shell when embedded in another workspace', async () => {
+    const { container } = renderHub({ mode: 'embedded' });
+    await screen.findByTestId('maintenance-body');
+
+    expect(pageLayoutCount(container)).toBe(0);
+    expect(pageHeaderCount(container)).toBe(0);
   });
 });
 

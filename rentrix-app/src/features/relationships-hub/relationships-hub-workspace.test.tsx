@@ -45,13 +45,14 @@ const { RelationshipsHubWorkspace } = await import('./relationships-hub-workspac
 function renderHub({
   initialUrl = '/contracts',
   role = 'ADMIN' as AuthorizationRole | null,
+  mode = 'standalone' as 'standalone' | 'embedded',
 } = {}) {
   currentRole = role;
   const rootRoute = createRootRoute();
   const hubRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/contracts',
-    component: () => <RelationshipsHubWorkspace />,
+    component: () => <RelationshipsHubWorkspace mode={mode} />,
     validateSearch: (search: Record<string, unknown>) => search,
   });
   const router = createRouter({
@@ -82,6 +83,13 @@ describe('relationships hub', () => {
   it('embeds child workspaces', async () => {
     renderHub();
     expect((await screen.findByTestId('contracts-embedded')).textContent).toBe('yes');
+  });
+
+  it('omits its own page shell in embedded mode', async () => {
+    const { container } = renderHub({ mode: 'embedded' });
+    await screen.findByTestId('contracts-body');
+    expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-page-header]')).toHaveLength(0);
   });
 
   it('syncs tab clicks to the URL', async () => {

@@ -58,6 +58,7 @@ export type RelationshipsHubWorkspaceProps = Readonly<{
   defaultSection?: RelationshipsHubSectionId;
   title?: string;
   description?: string;
+  mode?: 'standalone' | 'embedded';
 }>;
 
 /**
@@ -68,6 +69,7 @@ export function RelationshipsHubWorkspace({
   defaultSection = 'contracts',
   title = 'العلاقات والعقود',
   description = 'العقود والأشخاص والمستأجرون والعملاء المحتملون والتواصل في مساحة عمل واحدة.',
+  mode = 'standalone',
 }: RelationshipsHubWorkspaceProps) {
   const { authorization } = useAuth();
   const navigate = useNavigate();
@@ -96,13 +98,19 @@ export function RelationshipsHubWorkspace({
     [navigate],
   );
 
-  const shell = (children: React.ReactNode) => (
-    <PageLayout dir="rtl" lang="ar" size="wide">
-      <PageHeader title={title} description={description} />
-      <WorkspaceSubNav rootPath="/contracts" />
-      {children}
-    </PageLayout>
-  );
+  const shell = (children: React.ReactNode) => {
+    if (mode === 'embedded') {
+      return <div className="min-w-0 space-y-5">{children}</div>;
+    }
+
+    return (
+      <PageLayout dir="rtl" lang="ar" size="wide">
+        <PageHeader title={title} description={description} />
+        <WorkspaceSubNav rootPath="/contracts" />
+        {children}
+      </PageLayout>
+    );
+  };
 
   if (hasNoVisibleSections) {
     return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام العلاقات والعقود." />);
@@ -152,7 +160,7 @@ export function RelationshipsHubWorkspace({
 
 /** Thin page entry used by the /contracts route. */
 export function RelationshipsHubPage() {
-  return <RelationshipsHubWorkspace defaultSection="contracts" />;
+  return <RelationshipsHubWorkspace defaultSection="contracts" mode="standalone" />;
 }
 
 /** Alias matching the stage brief's ContractsWorkspace name. */

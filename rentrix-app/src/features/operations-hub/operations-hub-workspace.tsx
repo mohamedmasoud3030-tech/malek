@@ -64,12 +64,14 @@ export type OperationsHubWorkspaceProps = Readonly<{
   defaultSection: OperationsHubSectionId;
   title?: string;
   description?: string;
+  mode?: 'standalone' | 'embedded';
 }>;
 
 export function OperationsHubWorkspace({
   defaultSection,
   title = 'مركز التشغيل',
   description = 'الصيانة، المرافق والعدادات، الأتمتة والتنبيهات، وخزينة المستندات في مكان واحد.',
+  mode = 'standalone',
 }: OperationsHubWorkspaceProps) {
   const { authorization } = useAuth();
   const navigate = useNavigate();
@@ -100,13 +102,19 @@ export function OperationsHubWorkspace({
     [navigate],
   );
 
-  const shell = (children: React.ReactNode) => (
-    <PageLayout dir="rtl" lang="ar" size="wide">
-      <PageHeader title={title} description={description} />
-      <WorkspaceSubNav rootPath="/maintenance" />
-      {children}
-    </PageLayout>
-  );
+  const shell = (children: React.ReactNode) => {
+    if (mode === 'embedded') {
+      return <div className="min-w-0 space-y-5">{children}</div>;
+    }
+
+    return (
+      <PageLayout dir="rtl" lang="ar" size="wide">
+        <PageHeader title={title} description={description} />
+        <WorkspaceSubNav rootPath="/maintenance" />
+        {children}
+      </PageLayout>
+    );
+  };
 
   if (hasNoVisibleSections) {
     return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام مركز التشغيل." />);

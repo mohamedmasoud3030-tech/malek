@@ -53,6 +53,7 @@ export type PortfolioHubWorkspaceProps = Readonly<{
   defaultSection?: PortfolioHubSectionId;
   title?: string;
   description?: string;
+  mode?: 'standalone' | 'embedded';
 }>;
 
 /**
@@ -63,6 +64,7 @@ export function PortfolioHubWorkspace({
   defaultSection = 'properties',
   title = 'المحفظة العقارية',
   description = 'العقارات والملاك والوحدات والأراضي في مساحة عمل واحدة.',
+  mode = 'standalone',
 }: PortfolioHubWorkspaceProps) {
   const { authorization } = useAuth();
   const navigate = useNavigate();
@@ -91,13 +93,19 @@ export function PortfolioHubWorkspace({
     [navigate],
   );
 
-  const shell = (children: React.ReactNode) => (
-    <PageLayout dir="rtl" lang="ar" size="wide">
-      <PageHeader title={title} description={description} />
-      <WorkspaceSubNav rootPath="/properties" />
-      {children}
-    </PageLayout>
-  );
+  const shell = (children: React.ReactNode) => {
+    if (mode === 'embedded') {
+      return <div className="min-w-0 space-y-5">{children}</div>;
+    }
+
+    return (
+      <PageLayout dir="rtl" lang="ar" size="wide">
+        <PageHeader title={title} description={description} />
+        <WorkspaceSubNav rootPath="/properties" />
+        {children}
+      </PageLayout>
+    );
+  };
 
   if (hasNoVisibleSections) {
     return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المحفظة العقارية." />);
@@ -147,5 +155,5 @@ export function PortfolioHubWorkspace({
 
 /** Thin page entry used by the /properties route. */
 export function PortfolioHubPage() {
-  return <PortfolioHubWorkspace defaultSection="properties" />;
+  return <PortfolioHubWorkspace defaultSection="properties" mode="standalone" />;
 }
