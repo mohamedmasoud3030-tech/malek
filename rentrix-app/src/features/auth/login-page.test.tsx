@@ -35,21 +35,24 @@ vi.mock('sonner', () => ({
 }));
 
 describe('LoginPage — structural contract', () => {
-  it('renders brand and form heading together', () => {
+  it('renders the PWA brand and login form together', () => {
     const html = renderToStaticMarkup(<LoginPage />);
     expect(html).toContain('data-login-surface');
     expect(html).toContain('data-login-main');
     expect(html).toContain('data-login-brand');
     expect(html).toContain('MALIK');
-    expect(html).toContain('تسجيل الدخول');
+    expect(html).toContain('كل أملاكك في مكان واحد');
+    expect(html).toContain('>تسجيل الدخول<');
+    expect(html).not.toContain('>تسجيل الدخول</h1>');
     expect(html).not.toContain('مرحباً بعودتك');
   });
 
-  it('renders the approved stacked mark and wordmark treatment', () => {
+  it('uses the exact PWA icon and promotes the enlarged tagline to the page heading', () => {
     const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('/malik-mark.svg');
-    expect(html).toContain('flex-col items-center');
-    expect(html).toContain('text-3xl');
+    expect(html).toContain('src="/icon-malik-192.png"');
+    expect(html).toContain('data-login-tagline');
+    expect(html).toContain('text-lg');
+    expect(html).toContain('sm:text-xl');
   });
 
   it('does NOT contain security badges or secondary descriptions', () => {
