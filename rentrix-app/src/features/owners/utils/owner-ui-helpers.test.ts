@@ -64,7 +64,7 @@ function property(id: string, ownerIds: string[]): PropertyWithOwners {
 describe('owner UI helpers', () => {
   it('validates required owner names and light email format', () => {
     expect(validateOwnerForm(emptyOwnerFormValues)).toBe('اسم المالك مطلوب');
-    expect(validateOwnerForm({ ...emptyOwnerFormValues, full_name: 'مالك', email: 'bad-email' })).toBe('البريد الإلكتروني غير صالح');
+    expect(validateOwnerForm({ ...emptyOwnerFormValues, full_name: 'مالك', email: 'bad-email' })).toBe('البريد الإلكتروني غير صحيح');
     expect(validateOwnerForm({ ...emptyOwnerFormValues, full_name: 'مالك', email: 'owner@example.com' })).toBeNull();
   });
 

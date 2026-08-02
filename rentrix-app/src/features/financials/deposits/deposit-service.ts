@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
+import { depositDeductionBalanceSchema, depositPayloadSchema, depositDeductionPayloadSchema } from './deposit-schema';
 
 export type DepositStatus = 'held' | 'partially_refunded' | 'refunded' | 'forfeited_damage' | 'forfeited_arrears' | 'partially_deducted';
 
@@ -139,10 +140,9 @@ export async function listTenantDeposits(): Promise<DepositRecord[]> {
 }
 
 export async function createTenantDeposit(payload: DepositCreatePayload): Promise<DepositRecord> {
-  if (!payload.contract_id) throw new Error('العقد مطلوب لتسجيل الوديعة');
-  if (!Number.isFinite(payload.amount) || payload.amount <= 0) throw new Error('مبلغ الوديعة يجب أن يكون أكبر من صفر');
-
-  const requestId = payload.request_id || crypto.randomUUID();
+  // Re-parse at the service boundary. UI validation is not a trust boundary.
+  const validated = depositPayloadSchema.parse(payload);
+  const requestId = validated.request_id || crypto.randomUUID();
 
   function getLocalDateString(date = new Date()): string {
     const y = date.getFullYear();
@@ -152,13 +152,13 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
   }
 
   const rpcPayload = {
-    contract_id: payload.contract_id,
-    tenant_id: payload.tenant_id || null,
-    property_id: payload.property_id || null,
-    unit_id: payload.unit_id || null,
-    amount: payload.amount,
-    received_date: payload.received_date || getLocalDateString(),
-    notes: payload.notes || null,
+    contract_id: validated.contract_id,
+    tenant_id: validated.tenant_id || null,
+    property_id: validated.property_id || null,
+    unit_id: validated.unit_id || null,
+    amount: validated.amount,
+    received_date: validated.received_date || getLocalDateString(),
+    notes: validated.notes || null,
     request_id: requestId,
   };
 
@@ -183,19 +183,32 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
 }
 
 export async function recordDepositDeduction(payload: DepositDeductionPayload): Promise<DepositRecord> {
-  if (!payload.deposit_id) throw new Error('معرف الوديعة مطلوب');
-  if (!Number.isFinite(payload.deduction_amount) || payload.deduction_amount <= 0) throw new Error('مبلغ الخصم يجب أن يكون أكبر من صفر');
-  if (!payload.description?.trim()) throw new Error('وصف الخصم مطلوب');
-  if (!payload.charged_date) throw new Error('تاريخ الخصم مطلوب');
+  const validated = depositDeductionPayloadSchema.parse(payload);
 
-  const requestId = payload.request_id || crypto.randomUUID();
+  // The RPC remains authoritative (and locks the row), but validating the
+  // current state here gives callers a deterministic domain error before a
+  // write is attempted. `deleted_at` is intentionally selected so archived
+  // deposits cannot be charged from an old form.
+  const { data: current, error: currentError } = await supabase
+    .from('tenant_deposits')
+    .select('remaining_amount, deleted_at')
+    .eq('id', validated.deposit_id)
+    .single();
+  if (currentError) handleSupabaseError(currentError, 'تعذر التحقق من رصيد الوديعة');
+  const checked = depositDeductionBalanceSchema.parse({
+    ...validated,
+    remaining_amount: Number((current as any)?.remaining_amount),
+    archived: Boolean((current as any)?.deleted_at),
+  });
+
+  const requestId = checked.request_id || crypto.randomUUID();
   const rpcPayload = {
-    deposit_id: payload.deposit_id,
-    amount: payload.deduction_amount,
-    reason: payload.reason,
-    description: payload.description.trim(),
-    charged_date: payload.charged_date,
-    property_id: payload.property_id || null,
+    deposit_id: checked.deposit_id,
+    amount: checked.deduction_amount,
+    reason: checked.reason,
+    description: checked.description,
+    charged_date: checked.charged_date,
+    property_id: checked.property_id || null,
     request_id: requestId,
   };
 
@@ -209,7 +222,7 @@ export async function recordDepositDeduction(payload: DepositDeductionPayload): 
       properties:property_id(id,title),
       units:unit_id(id,unit_number)
     `)
-    .eq('id', payload.deposit_id)
+    .eq('id', checked.deposit_id)
     .single();
 
   if (fetchError) handleSupabaseError(fetchError, 'تم الخصم لكن تعذر تحديث السجل');

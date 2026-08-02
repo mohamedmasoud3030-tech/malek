@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tenantWorkspaceKeys } from '@/features/tenants/useTenantWorkspace';
-import type { PersonPayload } from './person-schema';
+import type { PersonFormValues, PersonPayload } from './person-schema';
 import { createPerson, getPerson, listPeople, softDeletePerson, updatePerson, type PeopleListParams } from './people-service';
 
 export const peopleKeys = {
@@ -37,7 +37,7 @@ async function invalidatePeopleWorkflows(queryClient: ReturnType<typeof useQuery
 export function useCreatePerson() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: PersonPayload) => createPerson(payload),
+    mutationFn: (payload: PersonFormValues | PersonPayload) => createPerson(payload),
     onSuccess: async (person) => {
       await invalidatePeopleWorkflows(queryClient, person.id);
       toast.success('تم إنشاء الشخص بنجاح');
@@ -49,7 +49,7 @@ export function useCreatePerson() {
 export function useUpdatePerson(personId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: PersonPayload) => updatePerson(personId, payload),
+    mutationFn: (payload: PersonFormValues | PersonPayload) => updatePerson(personId, payload),
     onSuccess: async () => {
       await invalidatePeopleWorkflows(queryClient, personId);
       toast.success('تم تحديث الشخص بنجاح');

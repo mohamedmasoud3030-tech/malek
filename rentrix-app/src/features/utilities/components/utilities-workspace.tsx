@@ -84,15 +84,21 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   });
 
   const [billForm, setBillForm] = useState<UtilityBillFormValues>({
-    property_id: '',
     meter_id: null,
-    amount: 0,
+    property_id: '',
+    unit_id: null,
+    amount: 1,
+    paid_amount: 0,
+    previous_reading: null,
+    current_reading: null,
+    consumption_units: null,
     due_date: getTodayLocalDateString(),
     responsible_party: 'tenant',
     billing_period_start: null,
     billing_period_end: null,
-    bill_number: '',
-    notes: '',
+    bill_number: null,
+    notes: null,
+    attachment_url: null,
   });
 
   const propertiesQuery = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
@@ -163,7 +169,23 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     try {
       await createBillMut.mutateAsync(billForm);
       setShowBillDialog(false);
-      setBillForm({ property_id: '', meter_id: null, amount: 0, due_date: getTodayLocalDateString(), responsible_party: 'tenant', billing_period_start: null, billing_period_end: null, bill_number: '', notes: '' });
+      setBillForm({
+        meter_id: null,
+        property_id: '',
+        unit_id: null,
+        amount: 1,
+        paid_amount: 0,
+        previous_reading: null,
+        current_reading: null,
+        consumption_units: null,
+        due_date: getTodayLocalDateString(),
+        responsible_party: 'tenant',
+        billing_period_start: null,
+        billing_period_end: null,
+        bill_number: null,
+        notes: null,
+        attachment_url: null,
+      });
     } catch (e) {
       console.error(e);
     }

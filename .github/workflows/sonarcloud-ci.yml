@@ -36,8 +36,191 @@ jobs:
         run: pnpm rebuild esbuild
       - name: Generate LCOV coverage
         run: pnpm --filter ./rentrix-app exec vitest run --config vite.config.ts --coverage --coverage.reporter=lcov
+      - name: Report changed executable-line coverage
+        if: always()
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+        run: |
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          const reportPath = 'changed-coverage.txt';
+          const lcovPath = 'rentrix-app/coverage/lcov.info';
+          const output = [];
+          const write = (line = '') => {
+            output.push(line);
+            console.log(line);
+          };
+
+          if (!fs.existsSync(lcovPath)) {
+            write('LCOV report was not generated.');
+            fs.writeFileSync(reportPath, `${output.join('\n')}\n`);
+            process.exit(1);
+          }
+
+          const baseRef = process.env.BASE_REF || 'main';
+          const base = `origin/${baseRef}`;
+          const diff = execFileSync(
+            'git',
+            ['diff', '--unified=0', '--no-color', `${base}...HEAD`, '--', 'rentrix-app/src'],
+            { encoding: 'utf8' },
+          );
+
+          const changedLines = new Map();
+          let currentFile = null;
+          for (const line of diff.split('\n')) {
+            if (line.startsWith('+++ b/')) {
+              currentFile = line.slice(6).replaceAll('\\', '/');
+              if (!changedLines.has(currentFile)) changedLines.set(currentFile, new Set());
+              continue;
+            }
+            if (!currentFile || !line.startsWith('@@')) continue;
+            const match = line.match(/\+(\d+)(?:,(\d+))?/);
+            if (!match) continue;
+            const start = Number(match[1]);
+            const count = match[2] === undefined ? 1 : Number(match[2]);
+            for (let number = start; number < start + count; number += 1) {
+              changedLines.get(currentFile).add(number);
+            }
+          }
+
+          const normalizeSource = (source) => {
+            let normalized = source.replaceAll('\\', '/');
+            if (path.isAbsolute(normalized)) {
+              normalized = path.relative(process.cwd(), normalized).replaceAll('\\', '/');
+            }
+            const marker = 'rentrix-app/';
+            const markerIndex = normalized.indexOf(marker);
+            if (markerIndex >= 0) normalized = normalized.slice(markerIndex);
+            else if (normalized.startsWith('src/')) normalized = `rentrix-app/${normalized}`;
+            return normalized.replace(/^\.\//, '');
+          };
+
+          const coverage = new Map();
+          let sourceFile = null;
+          for (const line of fs.readFileSync(lcovPath, 'utf8').split('\n')) {
+            if (line.startsWith('SF:')) {
+              sourceFile = normalizeSource(line.slice(3));
+              if (!coverage.has(sourceFile)) coverage.set(sourceFile, new Map());
+              continue;
+            }
+            if (!sourceFile || !line.startsWith('DA:')) continue;
+            const [lineNumber, hits] = line.slice(3).split(',').map(Number);
+            coverage.get(sourceFile).set(lineNumber, hits);
+          }
+
+          write(`# Changed executable-line coverage against ${base}`);
+          write('');
+          let total = 0;
+          let covered = 0;
+          const rows = [];
+
+          for (const [file, additions] of [...changedLines.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+            if (file.endsWith('.test.ts') || file.endsWith('.test.tsx') || file.includes('/__tests__/')) continue;
+            const fileCoverage = coverage.get(file);
+            const executable = fileCoverage
+              ? [...additions].filter((lineNumber) => fileCoverage.has(lineNumber)).sort((a, b) => a - b)
+              : [];
+            const hit = executable.filter((lineNumber) => (fileCoverage.get(lineNumber) || 0) > 0);
+            const missed = executable.filter((lineNumber) => (fileCoverage.get(lineNumber) || 0) === 0);
+            total += executable.length;
+            covered += hit.length;
+            rows.push({ file, executable, hit, missed, hasLcov: Boolean(fileCoverage) });
+          }
+
+          for (const row of rows) {
+            const percentage = row.executable.length
+              ? ((row.hit.length / row.executable.length) * 100).toFixed(2)
+              : 'n/a';
+            write(`${row.file}: ${row.hit.length}/${row.executable.length} (${percentage}%)`);
+            if (!row.hasLcov) write('  LCOV record: missing');
+            if (row.missed.length) write(`  Uncovered changed executable lines: ${row.missed.join(', ')}`);
+          }
+
+          const aggregate = total ? ((covered / total) * 100).toFixed(2) : 'n/a';
+          write('');
+          write(`Aggregate changed executable-line coverage: ${covered}/${total} (${aggregate}%)`);
+          fs.writeFileSync(reportPath, `${output.join('\n')}\n`);
+          NODE
+      - name: Upload changed coverage diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-coverage-${{ github.sha }}
+          path: changed-coverage.txt
+          if-no-files-found: error
+          retention-days: 7
       - name: Run SonarCloud analysis with repository scope
+        id: sonar_scan
+        continue-on-error: true
         uses: SonarSource/sonarqube-scan-action@v5.3.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+      - name: Report and enforce SonarCloud quality gate
+        if: always()
+        shell: bash
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+        run: |
+          set -euo pipefail
+          report=".scannerwork/report-task.txt"
+          if [[ ! -f "$report" ]]; then
+            echo "::error::SonarCloud report-task.txt was not generated."
+            exit 1
+          fi
+
+          ce_task_url="$(awk -F= '$1=="ceTaskUrl"{print substr($0,index($0,"=")+1)}' "$report")"
+          dashboard_url="$(awk -F= '$1=="dashboardUrl"{print substr($0,index($0,"=")+1)}' "$report")"
+          echo "SonarCloud dashboard: $dashboard_url"
+
+          for _ in {1..120}; do
+            ce_json="$(curl --fail --silent --show-error -u "${SONAR_TOKEN}:" "$ce_task_url")"
+            ce_status="$(jq -r '.task.status' <<<"$ce_json")"
+            case "$ce_status" in
+              SUCCESS) break ;;
+              FAILED|CANCELED)
+                jq . <<<"$ce_json"
+                echo "::error::SonarCloud Compute Engine task ended with $ce_status."
+                exit 1
+                ;;
+            esac
+            sleep 5
+          done
+
+          if [[ "$ce_status" != "SUCCESS" ]]; then
+            echo "::error::Timed out waiting for SonarCloud Compute Engine task."
+            exit 1
+          fi
+
+          analysis_id="$(jq -r '.task.analysisId' <<<"$ce_json")"
+          gate_json="$(curl --fail --silent --show-error -u "${SONAR_TOKEN}:" \
+            "https://sonarcloud.io/api/qualitygates/project_status?analysisId=${analysis_id}")"
+          gate_status="$(jq -r '.projectStatus.status' <<<"$gate_json")"
+          echo "SonarCloud quality gate: $gate_status"
+          jq -r '
+            .projectStatus.conditions[]
+            | select(.status != "OK")
+            | "::error title=SonarCloud \(.metricKey)::status=\(.status), actual=\(.actualValue // "n/a"), threshold=\(.errorThreshold // "n/a"), comparator=\(.comparator // "n/a")"
+          ' <<<"$gate_json"
+
+          if [[ -n "$PR_NUMBER" ]]; then
+            issues_json="$(curl --fail --silent --show-error -u "${SONAR_TOKEN}:" \
+              "https://sonarcloud.io/api/issues/search?componentKeys=mohamedmasoud3030-tech_rentrixxx&pullRequest=${PR_NUMBER}&resolved=false&ps=100")"
+            jq -r '
+              .issues[]
+              | "::warning title=SonarCloud \(.rule)::\(.severity) \(.component):\(.line // 0) — \(.message)"
+            ' <<<"$issues_json"
+          fi
+
+          if [[ "$gate_status" != "OK" ]]; then
+            exit 1
+          fi
+
+          if [[ "${{ steps.sonar_scan.outcome }}" != "success" ]]; then
+            echo "::error::SonarCloud scan action failed even though the quality gate response was OK."
+            exit 1
+          fi

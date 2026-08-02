@@ -8,16 +8,27 @@ import { CommunicationOutboundPanel } from './components/communication-outbound-
 import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from './types';
 import { useArchiveCommunicationRecord, useCommunicationRecords, useSaveCommunicationRecord } from './use-communication';
 
-const emptyForm: CommunicationFormValues = { contact_name: '', contact_phone: '', contact_email: '', channel: 'phone', direction: 'outbound', status: 'logged', subject: '', body: '', related_entity_type: '', related_entity_id: '' };
+const emptyForm: CommunicationFormValues = {
+  contact_name: '',
+  contact_phone: '',
+  contact_email: '',
+  channel: 'phone',
+  direction: 'outbound',
+  status: 'logged',
+  subject: '',
+  body: '',
+  related_entity_type: '',
+  related_entity_id: '',
+};
 
 function formFromRecord(record: CommunicationRecord): CommunicationFormValues {
   return {
     contact_name: record.contact_name,
     contact_phone: record.contact_phone ?? '',
     contact_email: record.contact_email ?? '',
-    channel: record.channel,
-    direction: record.direction,
-    status: record.status,
+    channel: (record.channel as CommunicationFormValues['channel']) ?? 'phone',
+    direction: (record.direction as CommunicationFormValues['direction']) ?? 'outbound',
+    status: (record.status as CommunicationFormValues['status']) ?? 'logged',
     subject: record.subject ?? '',
     body: record.body,
     related_entity_type: record.related_entity_type ?? '',

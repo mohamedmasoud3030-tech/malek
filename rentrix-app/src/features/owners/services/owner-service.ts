@@ -4,6 +4,15 @@ import { supabase } from '@/lib/supabase';
 import { getSafeRemainingAmount, sumFinancialValues } from '@/features/financials/financialMath';
 import { getTodayLocalDateString } from '@/features/financials/financials-date-utils';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import {
+  ownerFormSchema,
+  ownerPayloadSchema,
+  ownerUpdateSchema,
+  coerceOwnerFormToPayload,
+  coerceOwnerUpdateToPayload,
+  type OwnerFormInput,
+  type OwnerUpdateInput,
+} from '../owner-schema';
 import type { Database } from '@/types/database';
 import type { Contract, Invoice, Property, Unit } from '@/types/domain';
 
@@ -30,8 +39,10 @@ export type OwnerPayload = Pick<OwnerInsert, 'full_name'> & Partial<Pick<OwnerIn
   | 'notes'
   | 'is_active'
 >>;
-
 export type OwnerUpdatePayload = Partial<OwnerPayload>;
+
+/** Schema-driven form input type for create / update. */
+export type { OwnerFormInput, OwnerUpdateInput } from '../owner-schema';
 
 export type PropertyOwnerPayload = Pick<PropertyOwnerInsert, 'property_id' | 'owner_id'> & Partial<Pick<PropertyOwnerInsert,
   | 'ownership_percentage'
@@ -271,9 +282,16 @@ export async function getOwner(ownerId: string): Promise<Owner> {
 }
 
 export async function createOwner(payload: OwnerPayload): Promise<Owner> {
+  // Re-validate at the service boundary: the form does it too, but a
+  // hand-crafted call (future import script, test) cannot bypass the
+  // schema. The form-level schema and the service-level payload schema
+  // are the same source of truth.
+  const form = ownerFormSchema.parse(payload);
+  const coerced = coerceOwnerFormToPayload(form);
+  const insertPayload = ownerPayloadSchema.parse(coerced);
   const { data, error } = await supabase
     .from('owners')
-    .insert(normalizeOwnerPayload(payload))
+    .insert(normalizeOwnerPayload(insertPayload as unknown as OwnerPayload))
     .select('*')
     .single()
     .returns<Owner>();
@@ -283,9 +301,17 @@ export async function createOwner(payload: OwnerPayload): Promise<Owner> {
 }
 
 export async function updateOwner(ownerId: string, payload: OwnerUpdatePayload): Promise<Owner> {
+  // Same double-pass pattern as create: validate the form shape and
+  // the typed payload, then route the typed payload to the existing
+  // normalizer so the rest of the file keeps the legacy behavior.
+  const form = ownerUpdateSchema.parse(payload);
+  const coerced = coerceOwnerUpdateToPayload(form);
+  const updatePayload = normalizeOwnerUpdatePayload({
+    ...(coerced as unknown as OwnerUpdatePayload),
+  });
   const { data, error } = await supabase
     .from('owners')
-    .update(normalizeOwnerUpdatePayload(payload))
+    .update(updatePayload)
     .eq('id', ownerId)
     .select('*')
     .single()

@@ -1,6 +1,18 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
+import {
+  utilityMeterFormSchema,
+  utilityMeterPayloadSchema,
+  utilityBillFormSchema,
+  utilityBillPayloadSchema,
+  type UtilityMeterFormValues,
+  type UtilityBillFormValues,
+} from './utility-schema';
+
+// Re-export so existing call sites can keep importing form values
+// from utilities-service without learning the new module.
+export type { UtilityMeterFormValues, UtilityBillFormValues } from './utility-schema';
 
 export type UtilityType = 'electricity' | 'water' | 'sanitation' | 'internet' | 'gas' | 'other';
 export type ResponsibleParty = 'tenant' | 'landlord' | 'company';
@@ -39,36 +51,6 @@ export type UtilityBill = {
   attachment_url?: string | null;
   notes?: string | null;
   created_at: string;
-};
-
-export type UtilityMeterFormValues = {
-  property_id: string;
-  unit_id?: string | null;
-  utility_type: UtilityType;
-  meter_number: string;
-  account_number: string;
-  provider_name?: string | null;
-  responsible_party: ResponsibleParty;
-  is_active?: boolean;
-  notes?: string | null;
-};
-
-export type UtilityBillFormValues = {
-  meter_id?: string | null;
-  property_id: string;
-  unit_id?: string | null;
-  bill_number?: string | null;
-  billing_period_start?: string | null;
-  billing_period_end?: string | null;
-  previous_reading?: number | null;
-  current_reading?: number | null;
-  consumption_units?: number | null;
-  amount: number;
-  paid_amount?: number | null;
-  due_date: string;
-  responsible_party: ResponsibleParty;
-  attachment_url?: string | null;
-  notes?: string | null;
 };
 
 export const utilityTypeLabels: Record<UtilityType, string> = {
@@ -173,6 +155,57 @@ function calculateConsumption(values: Partial<UtilityBillFormValues>): number | 
   return Number(values.current_reading) - Number(values.previous_reading);
 }
 
+/**
+ * Parse the raw form input through the form schema (rejects
+ * missing required fields) and then through the payload schema
+ * (locks the typed shape and cross-field rules). The service is
+ * the only path that touches Supabase, so the schema is run here
+ * even if the form skipped it.
+ */
+function toMeterPayload(values: UtilityMeterFormValues) {
+  const form = utilityMeterFormSchema.parse(values);
+  return utilityMeterPayloadSchema.parse({
+    property_id: form.property_id,
+    unit_id: form.unit_id || null,
+    utility_type: form.utility_type,
+    meter_number: form.meter_number.trim(),
+    account_number: form.account_number.trim(),
+    provider_name: form.provider_name?.trim() || null,
+    responsible_party: form.responsible_party,
+    is_active: form.is_active ?? true,
+    notes: form.notes?.trim() || null,
+  });
+}
+
+function toBillPayload(values: UtilityBillFormValues) {
+  const form = utilityBillFormSchema.parse(values);
+  const previousReading = form.previous_reading ?? null;
+  const currentReading = form.current_reading ?? null;
+  // Readings are the source of truth when present: a browser cannot submit a
+  // contradictory consumption value. Manual consumption is only accepted when
+  // the provider does not expose readings.
+  const consumptionUnits = previousReading != null && currentReading != null
+    ? currentReading - previousReading
+    : form.consumption_units ?? null;
+  return utilityBillPayloadSchema.parse({
+    meter_id: form.meter_id || null,
+    property_id: form.property_id,
+    unit_id: form.unit_id || null,
+    bill_number: form.bill_number?.trim() || null,
+    billing_period_start: form.billing_period_start || null,
+    billing_period_end: form.billing_period_end || null,
+    previous_reading: previousReading,
+    current_reading: currentReading,
+    consumption_units: consumptionUnits,
+    amount: form.amount,
+    paid_amount: form.paid_amount ?? 0,
+    due_date: form.due_date,
+    responsible_party: form.responsible_party,
+    attachment_url: form.attachment_url || null,
+    notes: form.notes?.trim() || null,
+  });
+}
+
 export async function listUtilityMeters(propertyId?: string): Promise<UtilityMeter[]> {
   let query: any = supabase.from('utility_meters' as any).select('*').is('deleted_at', null).order('created_at', { ascending: false });
   if (propertyId) query = query.eq('property_id', propertyId);
@@ -187,22 +220,19 @@ export async function listUtilityMeters(propertyId?: string): Promise<UtilityMet
 }
 
 export async function createUtilityMeter(values: UtilityMeterFormValues): Promise<UtilityMeter> {
-  if (!values.property_id) throw new Error('العقار مطلوب');
-  if (!values.meter_number.trim()) throw new Error('رقم العداد مطلوب');
-  if (!values.account_number.trim()) throw new Error('رقم الحساب مطلوب');
-
+  const payload = toMeterPayload(values);
   const { data, error } = await ((supabase as any)
     .from('utility_meters')
     .insert({
-      property_id: values.property_id,
-      unit_id: values.unit_id || null,
-      utility_type: values.utility_type,
-      meter_number: values.meter_number.trim(),
-      account_number: values.account_number.trim(),
-      provider_name: values.provider_name?.trim() || null,
-      responsible_party: values.responsible_party,
-      is_active: values.is_active ?? true,
-      notes: values.notes?.trim() || null,
+      property_id: payload.property_id,
+      unit_id: payload.unit_id,
+      utility_type: payload.utility_type,
+      meter_number: payload.meter_number,
+      account_number: payload.account_number,
+      provider_name: payload.provider_name,
+      responsible_party: payload.responsible_party,
+      is_active: payload.is_active,
+      notes: payload.notes,
     })
     .select('*')
     .single() as any);
@@ -215,20 +245,23 @@ export async function createUtilityMeter(values: UtilityMeterFormValues): Promis
 export async function updateUtilityMeter(id: string, values: Partial<UtilityMeterFormValues>): Promise<UtilityMeter> {
   if (!id) throw new Error('معرف العداد مطلوب');
 
-  const payload: Record<string, unknown> = {};
-  if (values.property_id !== undefined) payload.property_id = values.property_id;
-  if (values.unit_id !== undefined) payload.unit_id = values.unit_id || null;
-  if (values.utility_type !== undefined) payload.utility_type = values.utility_type;
-  if (values.meter_number !== undefined) payload.meter_number = values.meter_number.trim();
-  if (values.account_number !== undefined) payload.account_number = values.account_number.trim();
-  if (values.provider_name !== undefined) payload.provider_name = values.provider_name?.trim() || null;
-  if (values.responsible_party !== undefined) payload.responsible_party = values.responsible_party;
-  if (values.is_active !== undefined) payload.is_active = values.is_active;
-  if (values.notes !== undefined) payload.notes = values.notes?.trim() || null;
+  // For partial updates we re-validate only the provided fields.
+  // The payload schema enforces the same length caps and the
+  // responsible_party / utility_type enums.
+  const trimmed: Record<string, unknown> = {};
+  if (values.property_id !== undefined) trimmed.property_id = values.property_id;
+  if (values.unit_id !== undefined) trimmed.unit_id = values.unit_id;
+  if (values.utility_type !== undefined) trimmed.utility_type = values.utility_type;
+  if (values.meter_number !== undefined) trimmed.meter_number = values.meter_number;
+  if (values.account_number !== undefined) trimmed.account_number = values.account_number;
+  if (values.provider_name !== undefined) trimmed.provider_name = values.provider_name;
+  if (values.responsible_party !== undefined) trimmed.responsible_party = values.responsible_party;
+  if (values.is_active !== undefined) trimmed.is_active = values.is_active;
+  if (values.notes !== undefined) trimmed.notes = values.notes;
 
   const { data, error } = await ((supabase as any)
     .from('utility_meters')
-    .update(payload)
+    .update(trimmed)
     .eq('id', id)
     .is('deleted_at', null)
     .select('*')
@@ -265,33 +298,29 @@ export async function listUtilityBills(filter?: { propertyId?: string; status?: 
 }
 
 export async function createUtilityBill(values: UtilityBillFormValues): Promise<UtilityBill> {
-  if (!values.property_id) throw new Error('العقار مطلوب');
-  if (!values.due_date) throw new Error('تاريخ الاستحقاق مطلوب');
-  if (!Number.isFinite(values.amount) || values.amount <= 0) throw new Error('المبلغ يجب أن يكون أكبر من صفر');
-
-  const paidAmount = values.paid_amount ?? 0;
-  const status = deriveBillStatus(paidAmount, values.amount);
+  const payload = toBillPayload(values);
+  const status = deriveBillStatus(payload.paid_amount ?? 0, payload.amount);
   const { data, error } = await ((supabase as any)
     .from('utility_bills')
     .insert({
-      property_id: values.property_id,
+      property_id: payload.property_id,
       contract_id: null,
-      type: values.meter_id ? 'meter_bill' : 'general_utility',
-      amount: values.amount,
-      billing_period_start: values.billing_period_start || null,
-      billing_period_end: values.billing_period_end || null,
-      due_date: values.due_date,
-      charged_to: mapResponsibleToChargedTo(values.responsible_party),
+      type: payload.meter_id ? 'meter_bill' : 'general_utility',
+      amount: payload.amount,
+      billing_period_start: payload.billing_period_start,
+      billing_period_end: payload.billing_period_end,
+      due_date: payload.due_date,
+      charged_to: mapResponsibleToChargedTo(payload.responsible_party),
       status: mapBillStatusToDb(status),
-      reference_no: values.bill_number?.trim() || null,
-      notes: values.notes?.trim() || null,
-      meter_id: values.meter_id || null,
-      unit_id: values.unit_id || null,
-      previous_reading: values.previous_reading ?? null,
-      current_reading: values.current_reading ?? null,
-      consumption_units: calculateConsumption(values),
-      paid_amount: paidAmount,
-      attachment_url: values.attachment_url || null,
+      reference_no: payload.bill_number,
+      notes: payload.notes,
+      meter_id: payload.meter_id,
+      unit_id: payload.unit_id,
+      previous_reading: payload.previous_reading,
+      current_reading: payload.current_reading,
+      consumption_units: payload.consumption_units,
+      paid_amount: payload.paid_amount ?? 0,
+      attachment_url: payload.attachment_url,
     })
     .select('*')
     .single() as any);

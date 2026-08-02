@@ -180,7 +180,6 @@ export function useMaintenancePageController() {
     }
 
     const payload = {
-      company_id: activeCompanyId,
       property_id: values.property_id,
       unit_id: values.unit_id,
       title: values.title,
@@ -192,10 +191,23 @@ export function useMaintenancePageController() {
       attachment_url: values.attachment_url ?? null,
     };
     if (editingRequest) {
-      updateRequestMutation.mutate({ requestId: editingRequest.id, payload }, { onSuccess: () => { setEditingRequest(null); setShowForm(false); } });
+      // Update path keeps the legacy columns (cost, status, resolved_at) on the
+      // existing row; the create path goes through the new atomic RPC.
+      const updatePayload = {
+        property_id: values.property_id,
+        unit_id: values.unit_id,
+        title: values.title,
+        description: values.description ?? null,
+        priority: values.priority,
+        assigned_to: values.assigned_to?.trim() ? values.assigned_to.trim() : null,
+        technician_name: values.assigned_to?.trim() ? values.assigned_to.trim() : null,
+        scheduled_date: values.scheduled_date || null,
+        attachment_url: values.attachment_url ?? null,
+      };
+      updateRequestMutation.mutate({ requestId: editingRequest.id, payload: updatePayload }, { onSuccess: () => { setEditingRequest(null); setShowForm(false); } });
       return;
     }
-    createMutation.mutate({ ...payload, status: 'open', cost: 0, resolved_at: null }, { onSuccess: () => { form.reset(emptyFormValues); setShowForm(false); } });
+    createMutation.mutate(payload, { onSuccess: () => { form.reset(emptyFormValues); setShowForm(false); } });
   };
 
   return {

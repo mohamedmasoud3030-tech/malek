@@ -28,7 +28,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
-import type { LandFilters, LandFormValues, LandRecord } from "../types";
+import type { LandFilters, LandRecord } from "../types";
+import type { LandFormInput, LandFormValues } from "../land-schema";
 
 const statusLabels: Record<string, string> = {
   available: "متاحة",
@@ -424,22 +425,22 @@ export function LandsView(props: Props) {
   );
 }
 
-function ChoiceField({
+function ChoiceField<T extends string>({
   label,
   value,
   options,
   onChange,
 }: Readonly<{
   label: string;
-  value: string;
-  options: Record<string, string>;
-  onChange: (value: string) => void;
+  value: T;
+  options: Record<T, string>;
+  onChange: (value: T) => void;
 }>) {
   return (
     <fieldset className="grid gap-2">
       <legend className="text-sm font-bold">{label}</legend>
       <div className="grid grid-cols-2 gap-2">
-        {Object.entries(options).map(([optionValue, optionLabel]) => (
+        {(Object.keys(options) as T[]).map((optionValue) => (
           <Button
             key={optionValue}
             type="button"
@@ -448,7 +449,7 @@ function ChoiceField({
             aria-pressed={value === optionValue}
             onClick={() => onChange(optionValue)}
           >
-            {optionLabel}
+            {options[optionValue]}
           </Button>
         ))}
       </div>

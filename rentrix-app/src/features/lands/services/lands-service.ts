@@ -1,37 +1,39 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
-import type { Database } from '@/types/database';
-import type { LandFilters, LandFormValues, LandRecord } from '../types';
+import {
+  coerceFormToPayload,
+  landFormSchema,
+  landPayloadSchema,
+  type LandFormInput,
+  type LandPayload,
+  LAND_STATUS_VALUES,
+} from '../land-schema';
+import type { LandFilters, LandRecord } from '../types';
 
-type LandInsert = Database['public']['Tables']['lands']['Insert'];
-type LandUpdate = Database['public']['Tables']['lands']['Update'];
+type LandInsert = LandPayload;
+type LandUpdate = Partial<LandPayload>;
 
-function toOptionalNumber(value: string) {
-  const trimmed = value.trim();
-  return trimmed ? Number(trimmed) : null;
-}
-
-export function toPayload(values: LandFormValues): LandInsert {
-  return {
-    id: crypto.randomUUID(),
-    plot_no: values.plot_no.trim() || null,
-    name: values.name.trim() || null,
-    location: values.location.trim() || null,
-    area: toOptionalNumber(values.area),
-    owner_id: values.owner_id.trim() || null,
-    purchase_price: toOptionalNumber(values.purchase_price),
-    owner_price: toOptionalNumber(values.owner_price),
-    commission: toOptionalNumber(values.commission),
-    category: values.category,
-    status: values.status,
-    notes: values.notes.trim() || null,
-  };
+/**
+ * Coerces the raw form values to a clean service-layer payload.
+ * The form schema enforces all business rules; the payload schema
+ * re-validates after coercion so a hand-crafted call (future import
+ * scripts, tests, etc.) cannot bypass the same checks.
+ */
+export function toPayload(values: LandFormInput): LandPayload {
+  // 1. Form-level validation (rejects invalid combos before coercion).
+  const parsed = landFormSchema.parse(values);
+  // 2. Coerce numeric fields and run cross-field checks.
+  const coerced = coerceFormToPayload(parsed);
+  // 3. Payload-level validation (locks the typed shape and cross-field rules).
+  return landPayloadSchema.parse(coerced);
 }
 
 export async function listLands(filters: LandFilters) {
   let query = supabase.from('lands').select('*').order('created_at', { ascending: false });
-  if (filters.status !== 'all') query = query.eq('status', filters.status);
+  if (filters.status !== 'all' && LAND_STATUS_VALUES.includes(filters.status as typeof LAND_STATUS_VALUES[number])) {
+    query = query.eq('status', filters.status);
+  }
   if (filters.query.trim()) {
     const term = `%${filters.query.trim()}%`;
     query = query.or(`plot_no.ilike.${term},name.ilike.${term},location.ilike.${term},category.ilike.${term}`);
@@ -46,24 +48,25 @@ export async function listLands(filters: LandFilters) {
   }
 }
 
-export async function createLand(values: LandFormValues) {
-  if (!values.name.trim() && !values.plot_no.trim()) throw new Error('أدخل اسم الأرض أو رقم القطعة على الأقل.');
-  const { data, error } = await supabase.from('lands').insert(toPayload(values)).select('*').single().returns<LandRecord>();
+export async function createLand(values: LandFormInput) {
+  const payload = toPayload(values);
+  const insertPayload: LandInsert & { id: string } = { id: crypto.randomUUID(), ...payload };
+  const { data, error } = await supabase.from('lands').insert(insertPayload).select('*').single().returns<LandRecord>();
   if (error) handleSupabaseError(error, 'تعذر حفظ الأرض');
   return data;
 }
 
-export async function updateLand(id: string, values: LandFormValues) {
-  if (!values.name.trim() && !values.plot_no.trim()) throw new Error('أدخل اسم الأرض أو رقم القطعة على الأقل.');
-  const { id: _newId, ...basePayload } = toPayload(values);
-  const payload: LandUpdate = { ...basePayload, updated_at: new Date().toISOString() };
-  const { data, error } = await supabase.from('lands').update(payload).eq('id', id).select('*').single().returns<LandRecord>();
+export async function updateLand(id: string, values: LandFormInput) {
+  const payload = toPayload(values);
+  const updatePayload: LandUpdate = { ...payload };
+  const { data, error } = await supabase.from('lands').update(updatePayload).eq('id', id).select('*').single().returns<LandRecord>();
   if (error) handleSupabaseError(error, 'تعذر تحديث الأرض');
   return data;
 }
 
 export async function archiveLand(id: string) {
-  const { data, error } = await supabase.from('lands').update({ status: 'archived', updated_at: new Date().toISOString() }).eq('id', id).select('*').single().returns<LandRecord>();
+  if (!id) throw new Error('معرف الأرض مطلوب');
+  const { data, error } = await supabase.from('lands').update({ status: 'archived' }).eq('id', id).select('*').single().returns<LandRecord>();
   if (error) handleSupabaseError(error, 'تعذر أرشفة الأرض');
   return data;
 }

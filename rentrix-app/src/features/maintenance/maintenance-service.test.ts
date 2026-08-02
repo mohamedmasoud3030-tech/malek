@@ -40,12 +40,36 @@ describe('maintenance service failure and mutation boundaries', () => {
     expect(supabaseMock.from).toHaveBeenCalledWith('maintenance_records');
   });
 
-  it('throws create failures so the mutation does not report success', async () => {
-    const chain = createQueryMock({ data: null, error: new Error('insert rejected') });
-    supabaseMock.from.mockReturnValue(chain);
+  it('routes create through the atomic RPC and never touches the raw insert path', async () => {
+    const rpcChain = { single: vi.fn(() => Promise.resolve({ data: null, error: new Error('insert rejected') })) };
+    supabaseMock.rpc.mockReturnValue(rpcChain);
     const { createMaintenance } = await import('./maintenance-service');
 
-    await expect(createMaintenance({ property_id: 'property-1', title: 'Test', priority: 'medium', status: 'open', cost: 0 })).rejects.toThrow('insert rejected');
+    await expect(createMaintenance({ property_id: 'property-1', title: 'Test', priority: 'medium' })).rejects.toThrow('insert rejected');
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('create_maintenance_atomic', expect.objectContaining({
+      p_property_id: 'property-1',
+      p_title: 'Test',
+      p_priority: 'medium',
+      p_request_id: expect.any(String),
+    }));
+    // Raw insert path must never be reached.
+    expect(supabaseMock.from).not.toHaveBeenCalledWith('maintenance_records');
+  });
+
+  it('returns the typed maintenance row from the atomic RPC', async () => {
+    const maintenanceRow = { id: 'maintenance-1', title: 'إصلاح', status: 'open' };
+    supabaseMock.rpc.mockReturnValue({ single: vi.fn(() => Promise.resolve({ data: { maintenance: maintenanceRow, idempotent: false }, error: null })) });
+    const { createMaintenance } = await import('./maintenance-service');
+
+    const result = await createMaintenance({ property_id: 'property-1', title: 'إصلاح', priority: 'low' });
+    expect(result).toEqual(maintenanceRow);
+  });
+
+  it('throws when the atomic RPC returns no maintenance payload', async () => {
+    supabaseMock.rpc.mockReturnValue({ single: vi.fn(() => Promise.resolve({ data: { maintenance: null, idempotent: false }, error: null })) });
+    const { createMaintenance } = await import('./maintenance-service');
+
+    await expect(createMaintenance({ property_id: 'property-1', title: 'إصلاح', priority: 'low' })).rejects.toThrow(/استجابة الخادم/);
   });
 
   it('updates only non-financial request fields', async () => {

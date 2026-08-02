@@ -13,14 +13,15 @@ import {
   validateOwnerFormFields,
   type OwnerFormValues,
 } from '../utils/owner-ui-helpers';
+import type { OwnerFormInput } from '../owner-schema';
 import { OwnerCheckbox } from './owner-checkbox';
 
 export type OwnerFormDialogProps = Readonly<{ owner: Owner | null; open: boolean; onOpenChange: (open: boolean) => void }>;
 
 export function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogProps) {
-  const [values, setValues] = useState<OwnerFormValues>(emptyOwnerFormValues);
+  const [values, setValues] = useState<OwnerFormInput>(emptyOwnerFormValues);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof OwnerFormValues, string>>>({});
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof OwnerFormInput, string>>>({});
   const createOwner = useCreateOwner();
   const updateOwner = useUpdateOwner(owner?.id ?? '');
   const isEditing = Boolean(owner);
@@ -34,7 +35,7 @@ export function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogPr
     }
   }, [open, owner]);
 
-  const setField = <K extends keyof OwnerFormValues>(field: K, value: OwnerFormValues[K]) => {
+  const setField = <K extends keyof OwnerFormInput>(field: K, value: OwnerFormInput[K]) => {
     setValues((current) => ({ ...current, [field]: value }));
     setError(null);
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
@@ -91,28 +92,28 @@ export function OwnerFormDialog({ owner, open, onOpenChange }: OwnerFormDialogPr
             <Input value={values.full_name} onChange={(event) => setField('full_name', event.target.value)} />
           </EntityForm.Field>
           <EntityForm.Field label="الاسم المختصر">
-            <Input value={values.display_name} onChange={(event) => setField('display_name', event.target.value)} />
+            <Input value={values.display_name ?? ''} onChange={(event) => setField('display_name', event.target.value)} />
           </EntityForm.Field>
           <EntityForm.Field label="الهاتف" error={fieldErrors.phone}>
-            <Input value={values.phone} onChange={(event) => setField('phone', event.target.value)} />
+            <Input value={values.phone ?? ''} onChange={(event) => setField('phone', event.target.value)} />
           </EntityForm.Field>
           <EntityForm.Field label="البريد الإلكتروني" error={fieldErrors.email}>
-            <Input dir="ltr" value={values.email} onChange={(event) => setField('email', event.target.value)} />
+            <Input dir="ltr" value={values.email ?? ''} onChange={(event) => setField('email', event.target.value)} />
           </EntityForm.Field>
           <EntityForm.Field label="الرقم المدني" error={fieldErrors.national_id}>
-            <Input value={values.national_id} onChange={(event) => setField('national_id', event.target.value)} />
+            <Input value={values.national_id ?? ''} onChange={(event) => setField('national_id', event.target.value)} />
           </EntityForm.Field>
           <EntityForm.Field label="الرقم الضريبي">
-            <Input value={values.tax_number} onChange={(event) => setField('tax_number', event.target.value)} />
+            <Input value={values.tax_number ?? ''} onChange={(event) => setField('tax_number', event.target.value)} />
           </EntityForm.Field>
         </div>
         <EntityForm.Field label="العنوان">
-          <Textarea value={values.address} onChange={(event) => setField('address', event.target.value)} />
+          <Textarea value={values.address ?? ''} onChange={(event) => setField('address', event.target.value)} />
         </EntityForm.Field>
         <EntityForm.Field label="ملاحظات">
-          <Textarea value={values.notes} onChange={(event) => setField('notes', event.target.value)} />
+          <Textarea value={values.notes ?? ''} onChange={(event) => setField('notes', event.target.value)} />
         </EntityForm.Field>
-        <OwnerCheckbox checked={values.is_active} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
+        <OwnerCheckbox checked={values.is_active ?? false} label="مالك نشط" onCheckedChange={(checked) => setField('is_active', checked)} />
         <EntityForm.Actions onCancel={() => onOpenChange(false)} isSubmitting={isPending} submitLabel={isEditing ? 'حفظ التعديلات' : 'إنشاء المالك'} />
       </EntityForm.Root>
     </EntityForm.Overlay>

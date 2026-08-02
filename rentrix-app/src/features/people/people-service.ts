@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Database } from '@/types/database';
 import type { Person } from '@/types/domain';
-import type { PersonPayload } from './person-schema';
+import { personSchema, type PersonFormValues, type PersonPayload } from './person-schema';
 
 export type PersonTypeFilter = Person['type'] | 'all';
 
@@ -21,29 +21,36 @@ export type PaginatedPeople = {
 type PersonInsert = Database['public']['Tables']['people']['Insert'];
 type PersonUpdate = Database['public']['Tables']['people']['Update'];
 
+// Re-export so existing imports keep working.
+export type { PersonFormValues, PersonPayload };
+
 const nullablePersonStringFields = ['phone', 'email', 'national_id', 'address', 'notes'] as const;
 
-function normalizeNullableString(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  return value.trim() || null;
-}
-
-function normalizeRequiredString(value: unknown): string {
-  if (typeof value !== 'string') return '';
-  return value.trim();
-}
-
-export function normalizePersonPayload(payload: PersonPayload): PersonInsert {
-  const fullName = normalizeRequiredString(payload.full_name);
+/**
+ * Validate a person payload at the service boundary. The form does
+ * the same via zodResolver, but a hand-crafted call (future import
+ * script, test) cannot bypass the schema.
+ */
+export function normalizePersonPayload(values: PersonFormValues | PersonPayload): PersonInsert {
+  // Re-parse through the schema so the service boundary is enforced
+  // even if the caller did not.
+  const parsed = personSchema.parse(values);
+  const fullName = parsed.full_name.trim();
   if (!fullName) throw new Error('الاسم الكامل مطلوب');
 
   const normalized: PersonInsert = {
     full_name: fullName,
-    type: payload.type,
+    type: parsed.type,
   };
 
   for (const field of nullablePersonStringFields) {
-    normalized[field] = normalizeNullableString(payload[field]);
+    const raw = (parsed as unknown as Record<string, unknown>)[field];
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      normalized[field as keyof PersonInsert] = (trimmed === '' ? null : trimmed) as never;
+    } else {
+      normalized[field as keyof PersonInsert] = null as never;
+    }
   }
 
   return normalized;
@@ -92,13 +99,21 @@ export async function getPerson(personId: string): Promise<Person> {
   return requirePersonData(data, 'تعذر تحميل بيانات الشخص');
 }
 
-export async function createPerson(payload: PersonPayload): Promise<Person> {
-  const { data, error } = await supabase.from('people').insert(normalizePersonPayload(payload)).select('*').single().returns<Person>();
+export async function createPerson(payload: PersonFormValues | PersonPayload): Promise<Person> {
+  // Validate at the service boundary — a hand-crafted call cannot
+  // skip the schema. Both FormValues (string) and Payload (typed)
+  // are accepted, but the schema is the same source of truth.
+  const { data, error } = await supabase
+    .from('people')
+    .insert(normalizePersonPayload(payload))
+    .select('*')
+    .single()
+    .returns<Person>();
   if (error) handleSupabaseError(error, 'تعذر إنشاء الشخص');
   return requirePersonData(data, 'تعذر إنشاء الشخص');
 }
 
-export async function updatePerson(personId: string, payload: PersonPayload): Promise<Person> {
+export async function updatePerson(personId: string, payload: PersonFormValues | PersonPayload): Promise<Person> {
   const updatePayload: PersonUpdate = normalizePersonPayload(payload);
   const { data, error } = await supabase
     .from('people')
