@@ -378,4 +378,21 @@ describe('finance hub — direct workspace usage', () => {
     expect(await screen.findByTestId('arrears-body')).toBeTruthy();
     expect(screen.getByText('عنوان تجريبي')).toBeTruthy();
   });
+
+  it('omits its own page shell in embedded mode', async () => {
+    const { container } = renderHub({
+      component: () => (
+        <FinanceHubWorkspace
+          defaultSection="invoices"
+          title="عنوان تجريبي"
+          description="وصف تجريبي"
+          mode="embedded"
+        />
+      ),
+    });
+
+    await screen.findByTestId('invoices-body');
+    expect(pageLayoutCount(container)).toBe(0);
+    expect(pageHeaderCount(container)).toBe(0);
+  });
 });

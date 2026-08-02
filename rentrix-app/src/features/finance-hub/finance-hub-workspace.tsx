@@ -70,9 +70,15 @@ export type FinanceHubWorkspaceProps = Readonly<{
   defaultSection: FinanceHubSectionId;
   title: string;
   description: string;
+  mode?: 'standalone' | 'embedded';
 }>;
 
-export function FinanceHubWorkspace({ defaultSection, title, description }: FinanceHubWorkspaceProps) {
+export function FinanceHubWorkspace({
+  defaultSection,
+  title,
+  description,
+  mode = 'standalone',
+}: FinanceHubWorkspaceProps) {
   const { authorization } = useAuth();
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
@@ -101,13 +107,19 @@ export function FinanceHubWorkspace({ defaultSection, title, description }: Fina
     [navigate],
   );
 
-  const shell = (children: React.ReactNode) => (
-    <PageLayout dir="rtl" lang="ar" size="wide">
-      <PageHeader title={title} description={description} />
-      <WorkspaceSubNav rootPath="/financials" />
-      {children}
-    </PageLayout>
-  );
+  const shell = (children: React.ReactNode) => {
+    if (mode === 'embedded') {
+      return <div className="min-w-0 space-y-5">{children}</div>;
+    }
+
+    return (
+      <PageLayout dir="rtl" lang="ar" size="wide">
+        <PageHeader title={title} description={description} />
+        <WorkspaceSubNav rootPath="/financials" />
+        {children}
+      </PageLayout>
+    );
+  };
 
   if (hasNoVisibleSections) {
     return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المالية." />);
