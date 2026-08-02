@@ -3,6 +3,7 @@ import { ChevronLeft, ClipboardList, FileCheck, FileText, HandCoins, Landmark, R
 import { useMemo } from 'react';
 import { CrossRouteHint } from '@/components/layout/cross-route-hint';
 import { PageHeader } from '@/components/layout/page-header';
+import { WorkspaceSubNav } from '@/components/layout/workspace-sub-nav';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess, canShowNavigationItem, financialOperationPermissions, type AppPermission } from '@/features/auth/permissions';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -52,6 +53,7 @@ export function FinancialsPage() {
         title={translateSharedLabel('financialsSectionSummary', language)}
         description={translateSharedLabel('financialsPageDescription', language)}
       />
+      <WorkspaceSubNav rootPath="/financials" />
 
       <FinancialReportsPreviewSection
         reportFilters={reportFilters}
