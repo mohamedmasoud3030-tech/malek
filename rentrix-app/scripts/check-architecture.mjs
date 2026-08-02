@@ -19,11 +19,19 @@ const featureDependencyAllowList = new Map([
   // lazily renders the section bodies that still live in their own features.
   ['finance-hub', new Set(['auth', 'commissions', 'financials', 'owners'])],
   ['financials', new Set(['auth', 'contracts', 'properties', 'reports', 'settings'])],
+  // governance-hub composes settings/system/audit/auth workspaces under /settings.
+  ['governance-hub', new Set(['auth', 'audit', 'settings', 'system'])],
   ['maintenance', new Set(['financials', 'properties', 'reports', 'units'])],
   ['onboarding', new Set(['owners'])],
+  // operations-hub composes maintenance/utilities/automation/documents-vault.
+  ['operations-hub', new Set(['auth', 'automation', 'documents-vault', 'maintenance', 'utilities'])],
   ['owners', new Set(['auth', 'financials', 'properties', 'reports', 'settings'])],
   ['people', new Set(['tenants'])],
+  // portfolio-hub composes properties/owners/units/lands under /properties.
+  ['portfolio-hub', new Set(['auth', 'lands', 'owners', 'properties', 'units'])],
   ['properties', new Set(['financials', 'owners', 'units'])],
+  // relationships-hub composes contracts/people/tenants/leads/communication.
+  ['relationships-hub', new Set(['auth', 'communication', 'contracts', 'leads', 'people', 'tenants'])],
   ['reports', new Set(['auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
   ['settings', new Set(['properties'])],
   ['system', new Set(['auth', 'settings'])],
