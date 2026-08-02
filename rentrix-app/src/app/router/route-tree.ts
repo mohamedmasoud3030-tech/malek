@@ -176,9 +176,8 @@ const settingsRoute = createRoute({
 const maintenanceRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/maintenance',
-  beforeLoad: requirePermission('maintenance.view'),
   component: lazyRouteComponent(() => import('@/routes/_protected.maintenance'), 'MaintenanceRouteComponent'),
-  staticData: { title: 'الصيانة' },
+  staticData: { title: 'مركز التشغيل' },
 });
 
 // Public marketing landing is served on the domain root; the authenticated

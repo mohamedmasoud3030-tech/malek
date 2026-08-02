@@ -55,6 +55,24 @@ describe('operations hub contract', () => {
     expect(component).not.toContain('key={activeSection}');
     expect(sections).not.toContain('@/features/auth/');
   });
+
+  it('keeps the hub route authenticated-only while legacy child routes preserve their own guards', () => {
+    const routeTree = readFileSync(
+      resolve(import.meta.dirname, '../../app/router/route-tree.ts'),
+      'utf8',
+    );
+    const routeDefinition = (path: string) => {
+      const pathIndex = routeTree.indexOf(`path: '${path}'`);
+      const routeStart = routeTree.lastIndexOf('createRoute({', pathIndex);
+      const routeEnd = routeTree.indexOf('});', pathIndex);
+      return routeTree.slice(routeStart, routeEnd + 3);
+    };
+
+    expect(routeDefinition('/maintenance')).not.toContain("requirePermission('maintenance.view')");
+    expect(routeDefinition('/utilities')).toContain("section: 'utilities'");
+    expect(routeDefinition('/documents-vault')).toContain("section: 'documents_vault'");
+    expect(routeDefinition('/automation')).toContain("requirePermission('automation.view')");
+  });
 });
 
 describe('operations hub model', () => {
