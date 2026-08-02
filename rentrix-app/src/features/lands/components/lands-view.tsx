@@ -14,8 +14,7 @@ import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-f
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { DataErrorScreen } from "@/components/data-error-screen";
-import { PageHeader } from "@/components/layout/page-header";
-import { PageLayout } from "@/components/layout/page-layout";
+import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
 import { WriteErrorCard } from "@/components/page-state-card";
@@ -80,6 +79,7 @@ type Props = Readonly<{
   onSubmit: (values: LandFormValues) => void;
   onArchive: (id: string) => void;
   onRetry: () => void;
+  embedded?: boolean;
 }>;
 
 export function LandsView(props: Props) {
@@ -102,6 +102,7 @@ export function LandsView(props: Props) {
     onSubmit,
     onArchive,
     onRetry,
+    embedded = false,
   } = props;
   const [archiveCandidate, setArchiveCandidate] = useState<LandRecord | null>(
     null,
@@ -130,28 +131,31 @@ export function LandsView(props: Props) {
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" className="space-y-4">
-      <PageHeader
-        title="قطع الأراضي التشغيلية"
-        description="إدارة الأراضي ومتابعة حالتها ومساحاتها وقيمها التشغيلية."
-        count={isLoading ? "..." : rows.length}
-        secondaryActions={
-          <div className="hidden min-w-max items-center gap-2 rounded-2xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
-            <Layers className="size-4" />
-            <span>
-              {isLoading
-                ? "جارٍ حساب المساحة..."
-                : `إجمالي المساحة ${area(totalArea)}`}
-            </span>
-          </div>
-        }
-        primaryAction={
-          <Button onClick={onCreate} className="min-h-11 rounded-2xl">
-            <Plus className="me-2 size-4" />
-            إضافة أرض
-          </Button>
-        }
-      />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      dir="rtl"
+      lang="ar"
+      className="space-y-4"
+      title="قطع الأراضي التشغيلية"
+      description="إدارة الأراضي ومتابعة حالتها ومساحاتها وقيمها التشغيلية."
+      count={isLoading ? "..." : rows.length}
+      secondaryActions={
+        <div className="hidden min-w-max items-center gap-2 rounded-xl border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground sm:flex">
+          <Layers className="size-4" />
+          <span>
+            {isLoading
+              ? "جارٍ حساب المساحة..."
+              : `إجمالي المساحة ${area(totalArea)}`}
+          </span>
+        </div>
+      }
+      primaryAction={
+        <Button onClick={onCreate} className="min-h-11">
+          <Plus className="me-2 size-4" />
+          إضافة أرض
+        </Button>
+      }
+    >
 
       <ResponsiveCardGrid>
         {isLoading ? (
@@ -421,7 +425,7 @@ export function LandsView(props: Props) {
           }
         }}
       />
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
 }
 

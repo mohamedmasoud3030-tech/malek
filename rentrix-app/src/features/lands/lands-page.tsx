@@ -35,7 +35,11 @@ function formFromLand(land: LandRecord): LandFormValues {
   };
 }
 
-export function LandsPage() {
+export type LandsWorkspaceProps = Readonly<{
+  embedded?: boolean;
+}>;
+
+export function LandsWorkspace({ embedded = false }: LandsWorkspaceProps) {
   const [filters, setFilters] = useState<LandFilters>({ query: '', status: 'all' });
   const [formError, setFormError] = useState<string | null>(null);
   const formState = useCrudFormState<LandRecord, LandFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLand });
@@ -62,6 +66,7 @@ export function LandsPage() {
 
   return (
     <LandsView
+      embedded={embedded}
       rows={landsQuery.data ?? []}
       filters={filters}
       draft={formState.draft}
@@ -82,4 +87,9 @@ export function LandsPage() {
       onRetry={() => void landsQuery.refetch()}
     />
   );
+}
+
+
+export function LandsPage() {
+  return <LandsWorkspace />;
 }

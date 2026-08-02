@@ -51,7 +51,12 @@ function PropertyWorkflowStatus({ property }: Readonly<{ property: PropertyListI
   );
 }
 
-export function PropertiesListPage() {
+export type PropertiesListPageProps = Readonly<{
+  /** When true, omit page shell — used inside the portfolio hub. */
+  embedded?: boolean;
+}>;
+
+export function PropertiesListPage({ embedded = false }: PropertiesListPageProps) {
   const ctrl = usePropertyListController();
   const [viewMode, setViewMode] = useViewModePreference(
     "rentrix:view-mode:properties",
@@ -83,6 +88,7 @@ export function PropertiesListPage() {
   return (
     <>
       <ListPage
+        embedded={embedded}
         dir="rtl"
         title="العقارات"
         description="إدارة المحفظة العقارية والتشغيلية"
@@ -424,4 +430,10 @@ export function PropertiesListPage() {
       />
     </>
   );
+}
+
+
+/** Alias used by the portfolio hub composition layer. */
+export function PropertiesWorkspace({ embedded = true }: PropertiesListPageProps) {
+  return <PropertiesListPage embedded={embedded} />;
 }

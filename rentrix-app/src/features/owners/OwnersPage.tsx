@@ -1,8 +1,7 @@
 import { Building2, LinkIcon, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -13,7 +12,11 @@ import { OwnerWorkspaceTable } from './components/owner-workspace-table';
 import { getOwnerDisplayLabel } from './utils/owner-ui-helpers';
 import { getOwnerPageErrorMessage, useOwnersPageController } from './useOwnersPageController';
 
-export function OwnersPage() {
+export type OwnersWorkspaceProps = Readonly<{
+  embedded?: boolean;
+}>;
+
+export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
   const c = useOwnersPageController();
 
   if (c.isLoading || c.hasLoadError) {
@@ -31,12 +34,14 @@ export function OwnersPage() {
   }
 
   return (
-    <PageLayout dir="rtl" size="wide">
-      <PageHeader
-        title="إدارة الملاك"
-        description="إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية."
-        action={<Button className="min-h-11" onClick={c.openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>}
-      />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      dir="rtl"
+      size="wide"
+      title="إدارة الملاك"
+      description="إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية."
+      primaryAction={<Button className="min-h-11" onClick={c.openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>}
+    >
 
       {/* KPI grid */}
       <ResponsiveCardGrid desktopColumns={4}>
@@ -95,6 +100,11 @@ export function OwnersPage() {
       >
         <OwnershipLinkForm values={c.linkFormValues} availableProperties={c.availableProperties} editingLink={c.editingLink} error={c.linkFormError} isSaving={c.isSavingLink} onCancelEdit={c.resetLinkForm} onSubmit={c.handleLinkProperty} onValueChange={c.setLinkField} />
       </EntityForm.Overlay>
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
+}
+
+
+export function OwnersPage() {
+  return <OwnersWorkspace />;
 }

@@ -27,7 +27,11 @@ import { usePeople, useSoftDeletePerson } from "./use-people";
 
 const pageSize = 10;
 
-export function PeopleListPage() {
+export type PeopleListPageProps = Readonly<{
+  embedded?: boolean;
+}>;
+
+export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<PersonTypeFilter>("all");
   const [page, setPage] = useState(1);
@@ -194,6 +198,7 @@ export function PeopleListPage() {
   return (
     <>
       <ListPage
+        embedded={embedded}
         dir="rtl"
         title="الأشخاص"
         description="جدول موحد للمستأجرين والملاك وجهات الاتصال."
@@ -334,4 +339,9 @@ export function PeopleListPage() {
       />
     </>
   );
+}
+
+
+export function PeopleWorkspace({ embedded = true }: PeopleListPageProps) {
+  return <PeopleListPage embedded={embedded} />;
 }

@@ -20,7 +20,11 @@ function formFromLead(lead: LeadRecord): LeadFormValues {
   };
 }
 
-export function LeadsPage() {
+export type LeadsWorkspaceProps = Readonly<{
+  embedded?: boolean;
+}>;
+
+export function LeadsWorkspace({ embedded = false }: LeadsWorkspaceProps) {
   const [filters, setFilters] = useState<LeadFilters>({ query: '', status: 'all', source: 'all' });
   const formState = useCrudFormState<LeadRecord, LeadFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLead });
   const leadsQuery = useLeads(filters);
@@ -29,6 +33,7 @@ export function LeadsPage() {
 
   return (
     <LeadsView
+      embedded={embedded}
       rows={leadsQuery.data ?? []}
       filters={filters}
       draft={formState.draft}
@@ -49,4 +54,9 @@ export function LeadsPage() {
       onRetry={() => void leadsQuery.refetch()}
     />
   );
+}
+
+
+export function LeadsPage() {
+  return <LeadsWorkspace />;
 }

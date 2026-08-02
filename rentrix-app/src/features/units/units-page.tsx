@@ -4,8 +4,7 @@ import {
   useUnitsListController,
   getUnitPageStatus,
 } from "./use-units-list-controller";
-import { PageHeader } from "@/components/layout/page-header";
-import { PageLayout } from "@/components/layout/page-layout";
+import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
 import { RouteLoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +34,11 @@ const unitStatusTone = {
   reserved: "neutral",
 } as const;
 
-export function UnitsPage() {
+export type UnitsWorkspaceProps = Readonly<{
+  embedded?: boolean;
+}>;
+
+export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const ctrl = useUnitsListController();
   const [viewMode, setViewMode] = useViewModePreference(
     "rentrix:view-mode:units",
@@ -43,27 +46,33 @@ export function UnitsPage() {
 
   if (ctrl.isLoading) return <RouteLoadingState />;
 
+  const primaryAction = (
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <ViewModeToggle value={viewMode} onChange={setViewMode} />
+      <Button onClick={ctrl.openCreate}>
+        <Plus className="me-2 size-4" />
+        إضافة وحدة
+      </Button>
+      {!embedded ? (
+        <Button asChild variant="secondary">
+          <Link to="/properties">
+            <Building2 className="me-2 size-4" />
+            العقارات
+          </Link>
+        </Button>
+      ) : null}
+    </div>
+  );
+
   return (
-    <PageLayout dir="rtl" size="wide">
-      <PageHeader
-        title="الوحدات"
-        description="عرض تشغيلي لكل الوحدات المسجلة مع تعديل مباشر وروابط تفصيل العقارات."
-        action={
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <ViewModeToggle value={viewMode} onChange={setViewMode} />
-            <Button onClick={ctrl.openCreate}>
-              <Plus className="me-2 size-4" />
-              إضافة وحدة
-            </Button>
-            <Button asChild variant="secondary">
-              <Link to="/properties">
-                <Building2 className="me-2 size-4" />
-                العقارات
-              </Link>
-            </Button>
-          </div>
-        }
-      />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      dir="rtl"
+      size="wide"
+      title="الوحدات"
+      description="عرض تشغيلي لكل الوحدات المسجلة مع تعديل مباشر وروابط تفصيل العقارات."
+      primaryAction={primaryAction}
+    >
 
       <ResponsiveCardGrid desktopColumns={4} gap="lg">
         <KpiCard
@@ -405,6 +414,11 @@ export function UnitsPage() {
           if (!open) ctrl.closeEdit();
         }}
       />
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
+}
+
+
+export function UnitsPage() {
+  return <UnitsWorkspace />;
 }

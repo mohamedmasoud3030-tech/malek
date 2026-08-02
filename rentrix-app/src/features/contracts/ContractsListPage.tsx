@@ -5,8 +5,7 @@ import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
 import { ContractFormModal } from './contract-form-modal';
 import { ListControlSurface } from '@/components/layout/list-controls';
-import { PageHeader } from '@/components/layout/page-header';
-import { PageLayout } from '@/components/layout/page-layout';
+import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { buildContractsCsvBlob, buildContractsCsvFilename } from './contractListExport';
@@ -30,7 +29,11 @@ function exportContractsCsv(contracts: ContractListItem[]) {
   }
 }
 
-export function ContractsListPage() {
+export type ContractsListPageProps = Readonly<{
+  embedded?: boolean;
+}>;
+
+export function ContractsListPage({ embedded = false }: ContractsListPageProps) {
   const [status, setStatus] = useState<ContractStatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
@@ -83,22 +86,24 @@ export function ContractsListPage() {
 
   return (
     <>
-      <PageLayout dir="rtl" size="wide">
-        <PageHeader
-          title="العقود"
-          description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."
-          count={hasClientFilter ? filteredContracts.length : (contractsQuery.data?.count ?? filteredContracts.length)}
-          primaryAction={
-            <Button onClick={openCreate}>
-              <Plus className="me-2 size-4" />إنشاء عقد
-            </Button>
-          }
-          secondaryActions={
-            <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length} aria-label="تصدير العقود كملف CSV">
-              <Download className="me-2 size-4" />تصدير CSV
-            </Button>
-          }
-        />
+      <EmbeddableWorkspace
+        embedded={embedded}
+        dir="rtl"
+        size="wide"
+        title="العقود"
+        description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."
+        count={hasClientFilter ? filteredContracts.length : (contractsQuery.data?.count ?? filteredContracts.length)}
+        primaryAction={
+          <Button onClick={openCreate}>
+            <Plus className="me-2 size-4" />إنشاء عقد
+          </Button>
+        }
+        secondaryActions={
+          <Button variant="secondary" onClick={() => exportContractsCsv(filteredContracts)} disabled={!filteredContracts.length} aria-label="تصدير العقود كملف CSV">
+            <Download className="me-2 size-4" />تصدير CSV
+          </Button>
+        }
+      >
 
         <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
 
@@ -136,7 +141,7 @@ export function ContractsListPage() {
           } : undefined}
           setExpandedId={setExpandedId}
         />
-      </PageLayout>
+      </EmbeddableWorkspace>
 
       <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />
 
@@ -151,4 +156,9 @@ export function ContractsListPage() {
       />
     </>
   );
+}
+
+
+export function ContractsWorkspace({ embedded = true }: ContractsListPageProps) {
+  return <ContractsListPage embedded={embedded} />;
 }
