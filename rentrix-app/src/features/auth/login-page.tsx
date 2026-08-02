@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
-import { MalikBrand } from '@/components/brand/malik-brand';
+import { APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
 import { SUPPORT_CONTACTS } from '@/lib/contact';
 import { CommandCenterPanel } from './command-center-panel';
@@ -84,20 +84,19 @@ export function LoginPage() {
       <div className="flex min-h-dvh flex-1 flex-col overflow-y-auto px-4 sm:px-6 lg:px-10">
         <div className="safe-top-app safe-bottom-overlay mx-auto flex min-h-dvh w-full max-w-sm flex-1 flex-col py-5 sm:py-7 md:min-h-0 md:py-8">
           <section className="flex flex-1 flex-col justify-center py-6 sm:py-8" data-login-main>
-            <header className="mb-7 text-center" data-login-brand>
-              <MalikBrand
-                showTagline
-                className="inline-flex flex-col items-center gap-3 text-center"
-                markClassName="size-20 sm:size-24"
-                wordmarkClassName="text-3xl tracking-[0.18em] sm:text-4xl"
+            <header className="mb-6 flex flex-col items-center gap-3 text-center" data-login-brand>
+              <img
+                src="/icon-malik-192.png"
+                alt="MALIK"
+                className="size-28 rounded-[28%] object-cover shadow-sm ring-1 ring-border/60 sm:size-32"
               />
-            </header>
-
-            <div className="mb-6 text-center">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-                تسجيل الدخول
+              <h1
+                className="text-lg font-bold leading-relaxed tracking-tight text-foreground sm:text-xl"
+                data-login-tagline
+              >
+                {APP_BRAND_TAGLINE_AR}
               </h1>
-            </div>
+            </header>
 
             <form
               className="space-y-5"

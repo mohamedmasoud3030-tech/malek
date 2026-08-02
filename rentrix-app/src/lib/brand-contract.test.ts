@@ -283,13 +283,14 @@ describe('MALIK brand contract — no legacy name reaches a user', () => {
     expect(routeTree).not.toContain('Rentrix');
   });
 
-  it('keeps the sidebar, drawer, and login surfaces on the MALIK lockup', () => {
+  it('keeps the sidebar and drawer on the MALIK lockup and login on the PWA identity', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
     // Both the expanded sidebar and the mobile drawer render the same <Brand/>.
     expect(appShell.match(/<Brand\s/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
-    expect(loginPage).toContain('MalikBrand');
+    expect(loginPage).toContain('/icon-malik-192.png');
+    expect(loginPage).toContain('APP_BRAND_TAGLINE_AR');
     expect(loginPage).not.toContain('Rentrix');
   });
 
@@ -374,13 +375,16 @@ describe('MALIK brand contract — mark, wordmark, and tagline', () => {
 
   it('places the complete lockup only on the high-visibility brand surfaces', () => {
     for (const file of [
-      'src/features/auth/login-page.tsx',
       'src/features/auth/command-center-panel.tsx',
       'src/features/landing/components/Footer.tsx',
       'src/features/landing/components/Hero.tsx',
     ]) {
       expect(readApp(file), `${file} must show the MALIK tagline`).toContain('showTagline');
     }
+
+    const loginPage = readApp('src/features/auth/login-page.tsx');
+    expect(loginPage).toContain('/icon-malik-192.png');
+    expect(loginPage).toContain('APP_BRAND_TAGLINE_AR');
 
     expect(readApp('src/features/landing/components/NavBar.tsx')).toContain('<MalikBrand />');
     expect(readApp('src/components/layout/pwa-install-prompt.tsx')).toContain('MalikMark');
