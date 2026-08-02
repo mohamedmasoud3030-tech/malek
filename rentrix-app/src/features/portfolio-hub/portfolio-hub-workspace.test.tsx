@@ -44,13 +44,14 @@ const { PortfolioHubWorkspace } = await import('./portfolio-hub-workspace');
 function renderHub({
   initialUrl = '/properties',
   role = 'ADMIN' as AuthorizationRole | null,
+  mode = 'standalone' as 'standalone' | 'embedded',
 } = {}) {
   currentRole = role;
   const rootRoute = createRootRoute();
   const hubRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/properties',
-    component: () => <PortfolioHubWorkspace />,
+    component: () => <PortfolioHubWorkspace mode={mode} />,
     validateSearch: (search: Record<string, unknown>) => search,
   });
   const router = createRouter({
@@ -81,6 +82,13 @@ describe('portfolio hub', () => {
   it('embeds child workspaces', async () => {
     renderHub();
     expect((await screen.findByTestId('properties-embedded')).textContent).toBe('yes');
+  });
+
+  it('omits its own page shell in embedded mode', async () => {
+    const { container } = renderHub({ mode: 'embedded' });
+    await screen.findByTestId('properties-body');
+    expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-page-header]')).toHaveLength(0);
   });
 
   it('syncs tab clicks to the URL', async () => {
