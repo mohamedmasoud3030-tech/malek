@@ -12,8 +12,7 @@ import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-f
 import { Button } from "@/components/ui/button";
 import { AsyncContentState } from "@/components/async-content-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { PageHeader } from "@/components/layout/page-header";
-import { PageLayout } from "@/components/layout/page-layout";
+import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
 import { WriteErrorCard } from "@/components/page-state-card";
 import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
@@ -69,6 +68,7 @@ type Props = Readonly<{
   onSubmit: (values: LeadFormValues) => void;
   onArchive: (id: string) => void;
   onRetry: () => void;
+  embedded?: boolean;
 }>;
 
 export function LeadsView(props: Props) {
@@ -91,6 +91,7 @@ export function LeadsView(props: Props) {
     onSubmit,
     onArchive,
     onRetry,
+    embedded = false,
   } = props;
   const [archiveCandidate, setArchiveCandidate] = useState<LeadRecord | null>(
     null,
@@ -142,18 +143,20 @@ export function LeadsView(props: Props) {
         : "ready";
 
   return (
-    <PageLayout dir="rtl" lang="ar">
-      <PageHeader
-        title="العملاء المحتملون"
-        description="تسجيل مصادر العملاء وحالة المتابعة وربط التحويل لاحقاً بجهات التعامل المناسبة."
-        count={isLoading ? "..." : rows.length}
-        primaryAction={
-          <Button onClick={onCreate}>
-            <Plus className="me-2 size-4" />
-            إضافة عميل محتمل
-          </Button>
-        }
-      />
+    <EmbeddableWorkspace
+      embedded={embedded}
+      dir="rtl"
+      lang="ar"
+      title="العملاء المحتملون"
+      description="تسجيل مصادر العملاء وحالة المتابعة وربط التحويل لاحقاً بجهات التعامل المناسبة."
+      count={isLoading ? "..." : rows.length}
+      primaryAction={
+        <Button onClick={onCreate}>
+          <Plus className="me-2 size-4" />
+          إضافة عميل محتمل
+        </Button>
+      }
+    >
 
       <ResponsiveCardGrid>
         <KpiCard
@@ -413,7 +416,7 @@ export function LeadsView(props: Props) {
           }
         }}
       />
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
 }
 

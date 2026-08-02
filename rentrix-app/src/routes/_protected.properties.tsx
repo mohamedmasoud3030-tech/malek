@@ -1,1 +1,1 @@
-export { PropertiesListPage as PropertiesRouteComponent } from '@/features/properties/properties-list-page';
+export { PortfolioHubPage as PropertiesRouteComponent } from '@/features/portfolio-hub/portfolio-hub-workspace';

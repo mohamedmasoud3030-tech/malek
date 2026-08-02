@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
 import { SearchInput } from '@/components/ui/search-input';
 import { cn } from '@/lib/utils';
+import { EmbeddableWorkspace } from './embeddable-workspace';
 import { ListControlSurface } from './list-controls';
-import { PageHeader } from './page-header';
-import { PageLayout } from './page-layout';
 
 interface ListPageProps {
   title: string;
@@ -23,6 +22,12 @@ interface ListPageProps {
   children: ReactNode;
   className?: string;
   dir?: 'rtl' | 'ltr';
+  /**
+   * When true, skip the page shell (layout + header) so this list can be
+   * embedded inside a hub that already supplies them. Actions still render
+   * via EmbeddableWorkspace's action rail.
+   */
+  embedded?: boolean;
 }
 
 /**
@@ -55,22 +60,24 @@ export function ListPage({
   children,
   className,
   dir,
+  embedded = false,
 }: ListPageProps) {
   const hasSearchAndFilters = Boolean(search && filters);
+  const resolvedPrimary = primaryAction ?? action;
 
   return (
-    <PageLayout className={className} dir={dir}>
-      <PageHeader
-        title={title}
-        description={description}
-        count={count}
-        action={action}
-        primaryAction={primaryAction}
-        secondaryActions={secondaryActions}
-        backTo={backTo}
-        backLabel={backLabel}
-      />
-
+    <EmbeddableWorkspace
+      embedded={embedded}
+      title={title}
+      description={description}
+      count={count}
+      primaryAction={resolvedPrimary}
+      secondaryActions={secondaryActions}
+      backTo={backTo}
+      backLabel={backLabel}
+      className={className}
+      dir={dir}
+    >
       {search || filters ? (
         <ListControlSurface>
           <div
@@ -97,6 +104,6 @@ export function ListPage({
       <div data-list-results className="space-y-2.5 sm:space-y-3">
         {children}
       </div>
-    </PageLayout>
+    </EmbeddableWorkspace>
   );
 }
