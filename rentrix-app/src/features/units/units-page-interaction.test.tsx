@@ -29,8 +29,15 @@ vi.mock('@tanstack/react-router', () => ({
   },
 }));
 
+// Mirror real PageHeader: primaryAction is the current API; `action` is the
+// deprecated alias. EmbeddableWorkspace (and the units page) pass primaryAction.
 vi.mock('@/components/layout/page-header', () => ({
-  PageHeader: ({ action }: any) => <header>{action}</header>,
+  PageHeader: ({ action, primaryAction, secondaryActions }: any) => (
+    <header data-page-header>
+      {secondaryActions}
+      {primaryAction ?? action}
+    </header>
+  ),
 }));
 
 vi.mock('./use-units', () => ({
