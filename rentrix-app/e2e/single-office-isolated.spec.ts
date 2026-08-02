@@ -88,13 +88,13 @@ test.describe('single-office isolated launch acceptance', () => {
     await login(page);
 
     const routes = [
-      { path: '/properties', heading: 'العقارات', evidence: 'عقار اختبار المكتب الواحد' },
-      { path: '/units', heading: 'الوحدات', evidence: 'SO-E2E-1' },
-      { path: '/contracts', heading: 'العقود', evidence: 'مستأجر اختبار المكتب الواحد' },
+      { path: '/properties', heading: 'المحفظة العقارية', tab: 'العقارات', evidence: 'عقار اختبار المكتب الواحد' },
+      { path: '/units', heading: 'المحفظة العقارية', tab: 'الوحدات', evidence: 'SO-E2E-1' },
+      { path: '/contracts', heading: 'العلاقات والعقود', tab: 'العقود', evidence: 'مستأجر اختبار المكتب الواحد' },
       { path: '/invoices', heading: 'التحصيل اليومي', tab: 'الفواتير', evidence: '#00000000' },
       { path: '/receipts', heading: 'التحصيل اليومي', tab: 'التحصيل والإيصالات', evidence: 'مستأجر اختبار المكتب الواحد' },
       { path: '/reports', heading: 'التقارير', evidence: 'التقارير' },
-      { path: '/maintenance', heading: 'مركز التشغيل', evidence: 'الصيانة' },
+      { path: '/maintenance', heading: 'مركز التشغيل', tab: 'الصيانة', evidence: 'الصيانة' },
       { path: '/settings', heading: null, evidence: 'الإعدادات محفوظة' },
     ];
 
