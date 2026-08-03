@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useReceipt } from './useReceipts';
 import { formatDate, formatMoney, getErrorMessage } from '../components/financials-formatters';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
@@ -26,7 +27,7 @@ export function ReceiptDetailPage() {
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>;
   const receiptId = typeof searchParams.receiptId === 'string' ? searchParams.receiptId : '';
   const receiptQuery = useReceipt(receiptId);
-  const companySettings = useCompanySettingsContract();
+  const documentSettings = useDocumentSettings();
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
@@ -47,31 +48,26 @@ export function ReceiptDetailPage() {
         reference: receipt.reference_number ?? undefined,
         notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,
       },
-      settings: {
-        company: {
-          name: companySettings.companyName || 'رينتريكس لإدارة العقارات',
-          phone: '+968 24000000',
-          address: 'سلطنة عمان - مسقط',
-        },
-        currency: 'OMR',
-        currencySymbol: 'ر.ع',
-      },
+      // Real company identity only — no hardcoded fallbacks. The readiness
+      // guard (`documentSettings.isReady`) blocks printing until a real
+      // company name and currency exist in company settings.
+      settings: documentSettings.settings,
     };
-  }, [receipt, companySettings]);
+  }, [receipt, documentSettings]);
 
   const handlePrint = useCallback(() => {
     const document = buildReceiptDocument();
-    if (!document) return;
+    if (!document || !documentSettings.isReady) return;
     setIsPrinting(true);
     void DocumentTemplates.printReceiptDocument(document.data, document.settings)
       .finally(() => window.setTimeout(() => setIsPrinting(false), 300));
-  }, [buildReceiptDocument]);
+  }, [buildReceiptDocument, documentSettings.isReady]);
 
   const handleDownloadPdf = useCallback(() => {
     const document = buildReceiptDocument();
-    if (!document) return;
+    if (!document || !documentSettings.isReady) return;
     void DocumentTemplates.downloadReceiptPdf(document.data, document.settings);
-  }, [buildReceiptDocument]);
+  }, [buildReceiptDocument, documentSettings.isReady]);
 
   const handleWhatsApp = useCallback(() => {
     if (!receipt) return;
@@ -149,14 +145,14 @@ export function ReceiptDetailPage() {
         backTo="/receipts"
         backLabel="الإيصالات"
         primaryAction={(
-          <Button variant="primary" onClick={handlePrint} disabled={isPrinting} className="min-h-11">
+          <Button variant="primary" onClick={handlePrint} disabled={isPrinting || !documentSettings.isReady} className="min-h-11">
             <Printer className="me-2 size-4" />
             {isPrinting ? 'جارٍ الطباعة...' : 'طباعة A4'}
           </Button>
         )}
         secondaryActions={(
           <>
-            <Button variant="secondary" onClick={handleDownloadPdf} className="min-h-11">
+            <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady} className="min-h-11">
           <Download className="me-2 size-4" />
           تنزيل PDF
         </Button>
@@ -175,6 +171,12 @@ export function ReceiptDetailPage() {
           </>
         )}
       />
+
+      {!documentSettings.isReady && !documentSettings.isLoading ? (
+        <div className="print:hidden">
+          <DocumentReadinessNotice />
+        </div>
+      ) : null}
 
       {/* Receipt Card */}
       <Card className="border-primary/20">
@@ -272,6 +274,7 @@ export function ReceiptDetailPage() {
         <Button
           className="min-h-14 w-full"
           onClick={handlePrint}
+          disabled={!documentSettings.isReady}
         >
           <Printer className="me-2 size-5" />
           طباعة الإيصال المعتمد A4
