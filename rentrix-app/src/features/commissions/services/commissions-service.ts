@@ -1,14 +1,10 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
-import type { Database } from '@/types/database';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from '../types';
 
-type CommissionInsert = Database['public']['Tables']['commissions']['Insert'];
-type CommissionUpdate = Database['public']['Tables']['commissions']['Update'];
-
 const commissionTypeValues = new Set(['contract', 'payment', 'owner', 'lead', 'land']);
-const commissionStatusValues = new Set(['pending', 'approved', 'paid', 'cancelled']);
+const commissionEditableStatusValues = new Set(['pending', 'approved']);
 
 function numberOrNull(value: string, label: string) {
   const trimmed = value.trim();
@@ -33,17 +29,14 @@ function deriveAmount(values: CommissionFormValues) {
   return null;
 }
 
-export function commissionPayload(values: CommissionFormValues): CommissionInsert {
+export function commissionPayload(values: CommissionFormValues) {
   return {
-    id: crypto.randomUUID(),
     staff_name: values.staff_name.trim(),
     type: values.type,
-    status: values.status,
     source_id: values.source_id.trim() || null,
     deal_value: numberOrNull(values.deal_value, 'قيمة الصفقة'),
     percentage: percentageOrNull(values.percentage),
     amount: deriveAmount(values),
-    paid_at: values.status === 'paid' ? Date.now() : null,
   };
 }
 
@@ -65,34 +58,51 @@ export async function listCommissions(filters: CommissionFilters) {
   }
 }
 
-function validateCommission(values: CommissionFormValues) {
+function validateCommission(values: CommissionFormValues, mode: 'create' | 'update') {
   if (!values.staff_name.trim()) throw new Error('اسم الموظف أو الوسيط مطلوب.');
   if (!commissionTypeValues.has(values.type)) throw new Error('نوع مصدر العمولة غير صحيح.');
-  if (!commissionStatusValues.has(values.status)) throw new Error('حالة العمولة غير صحيحة.');
+  if (mode === 'create' && values.status !== 'pending') {
+    throw new Error('تُنشأ العمولة بحالة قيد المراجعة، ثم يمكن اعتمادها من الإجراء المخصص.');
+  }
+  if (mode === 'update' && !commissionEditableStatusValues.has(values.status)) {
+    throw new Error('استخدم إجراء الإلغاء أو الصرف لتغيير العمولة إلى حالة نهائية.');
+  }
   const amount = deriveAmount(values);
   if (amount === null || amount <= 0) throw new Error('أدخل قيمة عمولة أكبر من صفر أو قيمة الصفقة والنسبة.');
 }
 
+function commissionFromRpc(data: unknown): CommissionRecord {
+  const commission = (data as { commission?: CommissionRecord } | null)?.commission;
+  if (!commission) throw new Error('تعذر قراءة سجل العمولة بعد تنفيذ العملية.');
+  return commission;
+}
+
 export async function createCommission(values: CommissionFormValues) {
-  validateCommission(values);
-  const { data, error } = await supabase.from('commissions').insert(commissionPayload(values)).select('*').single().returns<CommissionRecord>();
+  validateCommission(values, 'create');
+  const payload = { ...commissionPayload(values), request_id: crypto.randomUUID() };
+  const { data, error } = await (supabase.rpc as any)('create_commission_atomic', { p_payload: payload });
   if (error) handleSupabaseError(error, 'تعذر حفظ العمولة');
-  return data;
+  return commissionFromRpc(data);
 }
 
 export async function updateCommission(id: string, values: CommissionFormValues) {
-  validateCommission(values);
-  const { id: _newId, ...basePayload } = commissionPayload(values);
-  const payload: CommissionUpdate = { ...basePayload, updated_at: new Date().toISOString() };
-  const { data, error } = await supabase.from('commissions').update(payload).eq('id', id).select('*').single().returns<CommissionRecord>();
+  validateCommission(values, 'update');
+  const payload = {
+    ...commissionPayload(values),
+    commission_id: id,
+    requested_status: values.status,
+    request_id: crypto.randomUUID(),
+  };
+  const { data, error } = await (supabase.rpc as any)('update_commission_atomic', { p_payload: payload });
   if (error) handleSupabaseError(error, 'تعذر تحديث العمولة');
-  return data;
+  return commissionFromRpc(data);
 }
 
 export async function archiveCommission(id: string) {
-  const { data, error } = await supabase.from('commissions').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', id).select('*').single().returns<CommissionRecord>();
+  const payload = { commission_id: id, request_id: crypto.randomUUID() };
+  const { data, error } = await (supabase.rpc as any)('cancel_commission_atomic', { p_payload: payload });
   if (error) handleSupabaseError(error, 'تعذر إلغاء العمولة');
-  return data;
+  return commissionFromRpc(data);
 }
 
 export async function payCommissionAtomic(
@@ -130,4 +140,3 @@ export async function reverseCommissionAtomic(
   if (error) handleSupabaseError(error, 'تعذر عكس العمولة مالياً');
   return data;
 }
-
