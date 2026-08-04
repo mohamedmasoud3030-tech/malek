@@ -1,12 +1,12 @@
 /**
- * MALIK brand identity — the single source of truth for every user-facing
+ * MALEK brand identity — the single source of truth for every user-facing
  * product name and the fixed Arabic marketing line.
  *
- * The identity pairs an angular geometric mark with the MALIK wordmark. The
- * brand name is set in Sora while Arabic body copy stays on Cairo. Never render
- * the Arabic transliteration «مالك» as the product name.
+ * The visible English identity is MALEK. Historical repository paths,
+ * persisted keys, database objects, and deployment compatibility identifiers
+ * may retain their legacy spelling until they can be migrated safely.
  */
-export const APP_BRAND_NAME = 'MALIK';
+export const APP_BRAND_NAME = 'MALEK';
 
 /** Fixed Arabic marketing line. Must stay byte-identical wherever it appears. */
 export const APP_BRAND_TAGLINE_AR = 'كل أملاكك في مكان واحد';
@@ -15,24 +15,30 @@ export const APP_BRAND_DESCRIPTION_AR =
   'منصة عربية متكاملة لإدارة العقارات والوحدات والعقود والتحصيلات والصيانة والتقارير.';
 
 /** Lowercase slug for user-visible artifacts such as exported file names. */
-export const APP_BRAND_FILE_SLUG = 'malik';
+export const APP_BRAND_FILE_SLUG = 'malek';
+
+/** Canonical runtime assets. Every visible brand surface must use these. */
+export const APP_BRAND_MARK_ASSET = '/malek-mark.svg';
+export const APP_BRAND_LOCKUP_ASSET = '/malek-lockup.svg';
+export const APP_BRAND_MASKABLE_ASSET = '/malek-maskable.svg';
 
 /**
  * Technical identifiers intentionally keep the legacy `rentrix` prefix during
- * the display rebrand. Persisted storage keys, the auth session key, package
- * names, repository paths, Supabase objects, and the deployed hostname are
- * stable contracts — renaming them in the same release would sign users out,
- * drop cached view preferences, or break existing integrations. They are
- * invisible to users and are tracked as a separate follow-up.
+ * the display rebrand. Persisted storage keys, auth/session keys, package
+ * names, repository paths, and Supabase objects are stable contracts.
  */
 export const LEGACY_TECHNICAL_BRAND_PREFIX = 'rentrix';
 
 /**
- * Legacy visual assets kept on disk for git history and bundle-budget tests,
- * but no longer referenced by the manifest, the HTML head, or any component.
- * Safe to delete after the MALIK icon migration has remained stable.
+ * Historical assets retained only as compatibility inputs and for migration
+ * evidence. They must never be referenced by a visible runtime surface.
  */
 export const LEGACY_UNUSED_BRAND_ASSETS = [
   'public/icon-rentrix-192.png',
   'public/icon-rentrix-512.png',
+  'public/icon-malik-192.png',
+  'public/icon-malik-512.png',
+  'public/icon-maskable-192.png',
+  'public/icon-maskable-512.png',
+  'public/malik-mark.svg',
 ] as const;
