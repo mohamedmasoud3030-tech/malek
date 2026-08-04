@@ -89,4 +89,15 @@ describe('embedded workspace architecture contract', () => {
     expect(source).toContain('mountedTabs.has(tab)');
     expect(source).not.toContain('key={resolvedActiveTab}');
   });
+
+  it('renders a single navigation controller — SectionTabs, no duplicate WorkspaceSubNav', () => {
+    const source = readSource('./components/GovernanceHubWorkspace.tsx');
+
+    // SectionTabs is the one section navigation surface for this workspace.
+    expect(source).toContain('<SectionTabs');
+    // The duplicated WorkspaceSubNav row must not re-render the same section
+    // set, which previously stacked two horizontal navigation menus on mobile.
+    expect(source).not.toContain('WorkspaceSubNav');
+    expect(source).not.toContain('التنقل الداخلي لمساحة العمل');
+  });
 });

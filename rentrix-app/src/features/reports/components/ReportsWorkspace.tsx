@@ -1,14 +1,18 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { lazy, Suspense, useCallback, useMemo } from 'react';
 import { AlertTriangle, Building2, Receipt, TrendingUp } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
-import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { FilterState } from '../reports-page.helpers';
 import { reportSections, type ReportSectionId } from '../reports-page.sections';
+import {
+  REPORTS_SECTION_SEARCH_KEY,
+  resolveReportSection,
+} from '../reports-section-model';
 import { ReportsFilterSurface } from './ReportsFilterSurface';
 
 // Only the first-viewed tab (overview) is loaded eagerly; the other nine are
@@ -51,10 +55,29 @@ export function ReportsWorkspace({
   onFiltersChange,
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
-  const [activeSection, setActiveSection] = useState<ReportSectionId>('overview');
-  const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
-  const ActiveSectionIcon = activeSectionMeta.icon;
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  // The active report section lives in the URL (?section=) so reloads, browser
+  // back/forward, and direct links all restore the same section. Unknown or
+  // missing values fail safely to the default.
+  const activeSection = resolveReportSection(search[REPORTS_SECTION_SEARCH_KEY]);
   const summary = model.hero.summary;
+
+  const handleSectionChange = useCallback(
+    (nextSection: ReportSectionId) => {
+      // `replace` keeps tab switching out of the back-stack while preserving
+      // every unrelated search parameter the page already carries.
+      void navigate({
+        to: '.',
+        search: (previous: Record<string, unknown>) => ({
+          ...previous,
+          [REPORTS_SECTION_SEARCH_KEY]: nextSection,
+        }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 
   const occupancy = useMemo(() => {
     const totals = model.sections.occupancy.occupancyRows.reduce(
@@ -144,29 +167,16 @@ export function ReportsWorkspace({
       ) : null}
 
       <section className="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card" aria-label="أقسام التقارير">
-        <div className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <ActiveSectionIcon className="size-5" aria-hidden="true" />
-            </span>
-            <div className="min-w-0" aria-live="polite">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-extrabold sm:text-lg">{activeSectionMeta.label}</h2>
-                <StatusBadge tone="info">{activeSectionMeta.group}</StatusBadge>
-              </div>
-              <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm">
-                {activeSectionMeta.description}
-              </p>
-            </div>
-          </div>
-        </div>
-
+        {/* The active section is labelled once by SectionTabs below. A previous
+            H2 here repeated the active tab label; removing it avoids a
+            duplicate heading that competes with the tab's own aria-selected
+            state. */}
         <div className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur sm:px-4">
           <div className="min-w-max">
             <SectionTabs
               items={reportSections}
               activeId={activeSection}
-              onChange={setActiveSection}
+              onChange={handleSectionChange}
               ariaLabel="أقسام التقارير"
             />
           </div>
