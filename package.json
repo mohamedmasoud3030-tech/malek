@@ -14,6 +14,8 @@
     "typecheck": "tsc -b && pnpm --filter @workspace/rentrix run typecheck",
     "lint": "pnpm --filter @workspace/rentrix run lint",
     "check:docs": "node scripts/check-doc-links.mjs",
+    "check:migration-hygiene": "node scripts/check-migration-rollback-hygiene.mjs",
+    "test:migration-hygiene": "node scripts/check-migration-rollback-hygiene.test.mjs",
     "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh",
     "e2e": "pnpm --filter @workspace/rentrix run e2e",
     "e2e:install": "pnpm --filter @workspace/rentrix exec playwright install --with-deps chromium",
