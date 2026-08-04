@@ -2,6 +2,16 @@
 
 للحالة الفعلية الحالية للتطبيق (الميزات، الجودة، الجاهزية): **[`APP_STATUS.md`](APP_STATUS.md)** — دايماً المصدر الوحيد المعتمد، آخر تحقق مباشر بتاريخه المذكور فيه.
 
+## Stage 3 — General Ledger Core (2026-08-04)
+
+- ✅ **دليل حسابات لكل شركة**: `UNIQUE(company_id, no)` بدلًا من التفرد العالمي (مع فحص تكرارات fail-closed)، أعمدة تصنيف/رصيد/عملة/دقة (OMR = 3 خانات، C7)، منع حذف حساب مرجع بأي قيد، وتجهيز idempotent للحسابات الثمانية عشر المطلوبة دون المساس بالأسماء المخصصة.
+- ✅ **نموذج دفتر موحّد**: `journal_batches` (DRAFT/POSTED/REVERSED + مفاتيح idempotency قاعدة-بيانات `(company_id, source_type, source_id, event_id)`) و`journal_lines` (numeric(18,3) debit/credit، FKs مركّبة للاتساق بين الشركة والحساب)؛ `journal_entries` أصبح VIEW توافقية للقراءة (security_invoker) مع توجيه كتابات RPCs القديمة عبر INSTEAD OF trigger للمسارات الموثوقة فقط، والجدول التاريخي `journal_entries_archive` متجمّد مع backfill حتمي لكل الصفوف (المتوازن POSTED وغير المتوازن DRAFT — لا يُخترع توازن ولا يُحذف تاريخ).
+- ✅ **فترات محاسبية** OPEN/SOFT_CLOSED/HARD_CLOSED بمنع التداخل لكل شركة، HARD_CLOSED غير قابل لإعادة الفتح، إعادة فتح SOFT_CLOSED بسبب صريح، كل تغيير مُدقَّق، والحل الخادمي: الحدث المتأخر يُرحَّل لأول فترة OPEN مؤهلة مع حفظ `effective_date` الأصلي و`period_resolution_reason` و`posted_at` الحقيقي، ورفض واضح عند غياب فترة مؤهلة.
+- ✅ **محرك ترحيل خادمي واحد**: `gl_create_journal_batch` / `gl_post_journal_batch` / `post_journal_event` / `reverse_journal_batch` — SECURITY DEFINER بـ search_path مثبّت، ACL لـ service_role فقط (المتصفح بلا EXECUTE)، توازن بعد التقريب 0.001، رفض الأسطر الفارغة/الصفرية/السلبية/ثنائية الطرف، idempotent (نفس الحدث ⇒ نفس الدفعة، اختلاف المبالغ ⇒ GL_EVENT_CONFLICT)، انعكاس متساوٍ ومتقابل بـ `reversal_of_batch_id`، وتوازن مفروض أيضًا على مستوى القاعدة عبر constraint triggers مؤجلة (الدفعة غير المتوازنة تُسقط المعاملة كلها عند الالتزام).
+- ✅ **الإصلاح المسبق الضيق**: منحة `is_admin()` للمصادقين — كانت قراءة `accounts` تفشل أصلًا على main بـ"permission denied for function is_admin" (policy `admin_write_accounts` FOR ALL تُقيَّم عند SELECT).
+- ✅ **التغطية**: حزم `src/s3` (41 اختبار PGlite تغطي سيناريوهات 1–38) + `supabase/tests/stage3_gl_core.sql` (52 تأكيد pgTAP لباب release-blocker-database) + خدمة تطبيقية `features/accounting` (قراءة/تجهيز/فترات + عقد OMR) + أنواع `types/database.ts` محدّثة + حارس `financial-writes-bypass` يشمل `journal_batches`/`journal_lines`/`accounting_periods`.
+- 🔶 خارج النطاق عمدًا (مراحل 4–10): لا دورة ترحيل تشغيلية للعقارات، لا مصروفات/ودائع/عمولات، لا جداول IFRS 16، لا ترحيل تاريخي للفترات، لا تقارير مالية نهائية جديدة.
+
 ## P0 — التحقق متعدد الشركات (مكتمل تقنيًا — 2026-07-24، فرع `agent/p0-multi-tenant-verification` → PR #1276)
 
 - ✅ جرد آلي قابل لإعادة التشغيل (`scripts/p0/inventory.mjs`), مصفوفة أمان (`rpc-security-matrix.mjs`), إعادة معزولة كاملة **152/152**.

@@ -604,13 +604,13 @@ describe('P1 — create_owner_settlement_draft_atomic ignores ALL client-sent am
 
 describe('P1 — settlement integrity guards (accounts, immutability, invalid attempts)', () => {
   it('accounts are company-scoped: pay never falls through to another company’s chart', async () => {
-    // accounts shape: no is_active/deleted_at filter exists in the schema —
-    // the guard's lookup criteria are ONLY no + company_id.
+    // Stage 3 chart shape: the guard's lookup criteria remain ONLY no +
+    // company_id; is_active exists but the pay guard does not filter on it.
     const cols = (await db.query(
       `select string_agg(column_name, ',' order by ordinal_position) as cols
          from information_schema.columns where table_schema = 'public' and table_name = 'accounts'`,
     )).rows[0] as any;
-    expect(cols.cols).not.toContain('is_active');
+    expect(cols.cols).toContain('is_active');
     expect(cols.cols).not.toContain('deleted_at');
 
     const census = (await db.query(
@@ -619,14 +619,18 @@ describe('P1 — settlement integrity guards (accounts, immutability, invalid at
     expect(census.map((r) => r.company_id)).toEqual([COMPANY_1, COMPANY_1]);
     evidence.accountsCensus = { columns: cols.cols, rows: census };
 
-    // accounts.no is GLOBALLY unique (core_schema; no migration relaxes it), so
-    // "two companies each with 1111/2000" is schema-impossible — prove the
-    // constraint is real, then prove the security property it implies: a
-    // company with no provisioned chart is REJECTED by the guard instead of
-    // falling through to another company's account rows.
+    // Stage 3 replaced the global UNIQUE(no) with UNIQUE(company_id, no):
+    // account numbers may repeat across companies but never within one.
+    // Prove the new constraint both ways, then prove the security property
+    // that matters: a company with no provisioned chart is REJECTED by the
+    // guard instead of falling through to another company's account rows.
     await db.exec('BEGIN; SAVEPOINT sp_dupno;');
     await expect(
       db.query(`insert into public.accounts (id, no, name, company_id) values ('x-1111', '1111', 'dup', '${COMPANY_2}')`),
+    ).resolves.toBeDefined();
+    await db.exec('ROLLBACK TO SAVEPOINT sp_dupno;');
+    await expect(
+      db.query(`insert into public.accounts (id, no, name, company_id) values ('y-1111', '1111', 'dup', '${COMPANY_1}')`),
     ).rejects.toThrow(/duplicate key/);
     await db.exec('ROLLBACK TO SAVEPOINT sp_dupno;');
 

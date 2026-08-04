@@ -41,7 +41,10 @@ select ok(
     select 1
     from (values
       ('contracts'), ('invoices'), ('payments'), ('receipts'),
-      ('receipt_allocations'), ('financial_operation_idempotency'), ('journal_entries')
+      ('receipt_allocations'), ('financial_operation_idempotency'),
+      -- Stage 3: journal_entries is now a compatibility VIEW over the canonical
+      -- ledger tables; RLS is asserted on the canonical tables instead.
+      ('journal_batches'), ('journal_lines'), ('accounting_periods')
     ) as required(table_name)
     left join pg_class c on c.relname = required.table_name
     left join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'

@@ -245,8 +245,10 @@ describe('Phase 3A-1C owner-settlement execution', () => {
   }, 90_000);
 
   it('uses each company canonical 2000/1111 rows even when account numbers repeat', async () => {
+    // Stage 3 replaced the global UNIQUE(no) with UNIQUE(company_id, no); the
+    // constraint is already relaxed by the migration chain, so the fixture only
+    // inserts company B's own rows (composite uniqueness allows the repeat).
     await db.exec(`
-      alter table public.accounts drop constraint accounts_no_key;
       insert into public.accounts (id, no, name, company_id) values
         ('p3a1c-b-2000', '2000', 'Owner Payables B', '${COMPANY_B}'),
         ('p3a1c-b-1111', '1111', 'Cash B', '${COMPANY_B}');
@@ -290,7 +292,11 @@ describe('Phase 3A-1C owner-settlement execution', () => {
       /IDEMPOTENCY_CACHED_RESPONSE_UNVERIFIED/,
     );
 
-    const rowCountDraft = await createSettlement('A', '2026-04', request(21));
+    // May 2026 carries a positive company-A payment (PAYMENT_A_MAY) so the pay
+    // RPC inserts real journal lines before the suppressed UPDATE trips the
+    // row-count guard — the rollback proof stays meaningful under the Stage 3
+    // ledger (zero-value journal lines are invalid there).
+    const rowCountDraft = await createSettlement('A', '2026-05', request(21));
     const rowCountSid = String(rowCountDraft.settlement_id);
     await rpcJsonb(db, 'approve_owner_settlement_atomic', {
       settlement_id: rowCountSid, request_id: request(22),

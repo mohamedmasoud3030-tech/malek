@@ -15,7 +15,10 @@ function walk(directory: string, files: string[] = []): string[] {
 const SOURCE_ROOT = resolve(__dirname, '../../');
 // These are accounting system-of-record tables. Their invariants cannot be
 // reproduced safely in the browser, so all changes must use an atomic RPC.
-const FINANCIAL_TABLES = ['journal_entries', 'invoices', 'invoice_items', 'payments', 'payment_allocations', 'tenant_deposits'];
+const FINANCIAL_TABLES = [
+  'journal_entries', 'journal_batches', 'journal_lines', 'accounting_periods',
+  'invoices', 'invoice_items', 'payments', 'payment_allocations', 'tenant_deposits',
+];
 const WRITE_METHODS = ['insert', 'update', 'upsert', 'delete'];
 
 describe('core financial writes are routed through atomic RPCs', () => {
