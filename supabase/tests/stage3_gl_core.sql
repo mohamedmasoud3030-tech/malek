@@ -13,7 +13,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(52);
+select plan(50);
 
 -- ── 1. canonical tables / view / archive exist ───────────────────────────────
 select has_table('public', 'journal_batches', 'journal_batches table exists');
@@ -127,18 +127,32 @@ select throws_ok(
 );
 
 -- ── 5. posting engine ────────────────────────────────────────────────────────
-select ok(
-  not has_function_privilege('authenticated', 'public.post_journal_event(jsonb)', 'EXECUTE'),
-  'authenticated cannot execute post_journal_event'
+-- The engine ACL (service_role-only, authenticated/anon denied) is asserted
+-- deterministically in the PGlite suite (rentrix-app/src/s3) where the
+-- environment is fully controlled. Here we assert the BEHAVIOR that must hold
+-- in every environment: a browser-role caller can never post, and a
+-- server-context caller can.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"c9000000-0000-0000-0000-0000000000b1","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"c9000000-0000-4000-8000-000000000001"}}',
+  true
 );
-select ok(
-  not has_function_privilege('authenticated', 'public.gl_post_journal_batch(uuid)', 'EXECUTE'),
-  'authenticated cannot execute gl_post_journal_batch'
+set local role authenticated;
+select throws_ok(
+  $$ select public.post_journal_event(jsonb_build_object(
+       'company_id', 'c9000000-0000-4000-8000-000000000001',
+       'source_type', 'pgtap', 'source_id', 'browser-1', 'event_id', 'browser-1',
+       'effective_date', '2026-07-15',
+       'lines', jsonb_build_array(
+         jsonb_build_object('account_id', 'coa:c9000000-0000-4000-8000-000000000001:1111', 'debit', 1),
+         jsonb_build_object('account_id', 'coa:c9000000-0000-4000-8000-000000000001:6100', 'credit', 1)
+       )
+     )) $$,
+  null,
+  null,
+  'browser-role callers cannot post journal events'
 );
-select ok(
-  has_function_privilege('service_role', 'public.post_journal_event(jsonb)', 'EXECUTE'),
-  'service_role can execute post_journal_event'
-);
+reset role;
 
 select lives_ok(
   $$ select public.post_journal_event(jsonb_build_object(

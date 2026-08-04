@@ -1,99 +1,167 @@
 /**
  * Runs supabase/tests/stage3_gl_core.sql (the release-blocker database gate
- * file) against a full PGlite replay using minimal pgTAP stubs, so the gate
+ * file) against a full PGlite replay using a faithful pgTAP shim, so the gate
  * file's SQL is syntax- and behavior-validated in the regular CI suite.
+ *
+ * The shim records assertion results in a TABLE (persistent across the
+ * statement-by-statement autocommit runner), enforces plan counting, and
+ * transforms `set local role` to session `set role` exactly like the repo's
+ * release-gate harness (zz-rehearsal-verify), mirroring the single-transaction
+ * semantics of the real `supabase test db` runner.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createFullReplayedDatabase, repoRoot } from '../p1/replay-bootstrap';
 
-const PGTAP_STUBS = `
-create schema if not exists extensions;
-create or replace function extensions.plan(n int) returns void language plpgsql as $$
+const SHIM = `
+create schema if not exists pgtap;
+create table if not exists pgtap.results (num serial primary key, ok boolean, name text);
+grant usage on schema pgtap to public;
+grant insert on pgtap.results to public;
+grant usage on sequence pgtap.results_num_seq to public;
+create or replace function pgtap._rec(p_ok boolean, p_name text) returns text
+language plpgsql security definer set search_path = public, pg_temp as $$
 begin
-  perform set_config('pgtap.stub.plan', n::text, true);
+  insert into pgtap.results(ok, name) values (coalesce(p_ok,false), coalesce(p_name,''));
+  return (case when p_ok then 'ok' else 'not ok' end) || ' - ' || coalesce(p_name,'');
 end $$;
-create or replace function extensions.finish() returns void language plpgsql as $$
+create or replace function pgtap.plan(n integer) returns text language sql as $f$ select '1..'||n $f$;
+create or replace function pgtap.ok(cond boolean, name text default null) returns text
+language plpgsql as $f$ begin return pgtap._rec(coalesce(cond,false), name); end $f$;
+create or replace function pgtap.is(a anyelement, b anyelement, name text default null) returns text
+language plpgsql as $f$
+declare pass boolean;
 begin
-  if current_setting('pgtap.stub.failures', true) <> '' then
-    raise exception 'PGTAP-STUB-FAILURES: %', current_setting('pgtap.stub.failures', true);
+  if a is null or b is null then
+    pass := (a is null and b is null);
+  elsif a::text ~ '^-?\\d+(\\.\\d+)?$' and b::text ~ '^-?\\d+(\\.\\d+)?$' then
+    pass := (a::text::numeric = b::text::numeric);
+  else
+    pass := (a::text = b::text);
   end if;
-end $$;
-create or replace function extensions.ok(b boolean, msg text default '') returns void language plpgsql as $$
+  return pgtap._rec( pass,
+                     name || case when pass then '' else ' [got '||coalesce(a::text,'NULL')||' want '||coalesce(b::text,'NULL')||']' end );
+end $f$;
+create or replace function pgtap.has_table(s text, t text, name text default null) returns text
+language plpgsql as $f$ begin return pgtap._rec( to_regclass(quote_ident(s)||'.'||quote_ident(t)) is not null, name ); end $f$;
+create or replace function pgtap.has_view(s text, t text, name text default null) returns text
+language plpgsql as $f$ begin return pgtap._rec( exists (select 1 from pg_views where schemaname = s and viewname = t), name ); end $f$;
+create or replace function pgtap.lives_ok(q text, name text default null) returns text
+language plpgsql as $f$
 begin
-  if not coalesce(b, false) then
-    perform set_config('pgtap.stub.failures', coalesce(current_setting('pgtap.stub.failures', true), '') || ' [ok] ' || msg, true);
-  end if;
-end $$;
-create or replace function extensions.is(a anyelement, b anyelement, msg text default '') returns void language plpgsql as $$
+  begin execute q; return pgtap._rec(true, name);
+  exception when others then return pgtap._rec(false, name || ' [ERR:' || SQLSTATE || ' ' || left(SQLERRM,300) || ']'); end;
+end $f$;
+create or replace function pgtap.throws_ok(q text, errcode text default null, errmsg text default null, name text default null) returns text
+language plpgsql as $f$
+declare st text; msg text;
 begin
-  if a is distinct from b then
-    perform set_config('pgtap.stub.failures', coalesce(current_setting('pgtap.stub.failures', true), '') || format(' [is] %s (got %s want %s)', msg, a, b), true);
-  end if;
-end $$;
-create or replace function extensions.lives_ok(sql text, msg text default '') returns void language plpgsql as $$
-begin
-  begin
-    execute sql;
+  begin execute q; return pgtap._rec(false, name || ' [expected an error, but none was raised]');
   exception when others then
-    perform set_config('pgtap.stub.failures', coalesce(current_setting('pgtap.stub.failures', true), '') || format(' [lives_ok] %s -> %s', msg, sqlerrm), true);
+    get stacked diagnostics st = returned_sqlstate, msg = message_text;
+    return pgtap._rec( ( (errcode is null or st = errcode) and (errmsg is null or msg ilike '%'||errmsg||'%') ), name || ' [threw '||st||']' );
   end;
-end $$;
-create or replace function extensions.throws_ok(sql text, errcode text default null, errmsg text default null, msg text default '') returns void language plpgsql as $$
-declare
-  v_sqlstate text;
-  v_message text;
-begin
-  begin
-    execute sql;
-    perform set_config('pgtap.stub.failures', coalesce(current_setting('pgtap.stub.failures', true), '') || format(' [throws_ok] %s -> did not throw', msg), true);
-  exception when others then
-    v_sqlstate := sqlstate;
-    v_message := sqlerrm;
-    if errcode is not null and errcode <> '' and v_sqlstate <> errcode then
-      perform set_config('pgtap.stub.failures', coalesce(current_setting('pgtap.stub.failures', true), '') || format(' [throws_ok] %s -> sqlstate %s want %s', msg, v_sqlstate, errcode), true);
-    end if;
-    if errmsg is not null and errmsg <> '' and position(errmsg in v_message) = 0 then
-      perform set_config('pgtap.stub.failures', coalesce(current_setting('pgtap.stub.failures', true), '') || format(' [throws_ok] %s -> msg %s want %s', msg, v_message, errmsg), true);
-    end if;
-  end;
-end $$;
-create or replace function extensions.has_table(schema text, tbl text, msg text default '') returns void language plpgsql as $$
-begin
-  perform extensions.ok(to_regclass(format('%I.%I', schema, tbl)) is not null, msg);
-end $$;
-create or replace function extensions.has_view(schema text, tbl text, msg text default '') returns void language plpgsql as $$
-begin
-  perform extensions.ok(
-    exists (select 1 from pg_views where schemaname = schema and viewname = tbl),
-    msg
-  );
-end $$;
+end $f$;
+create or replace function pgtap.finish() returns setof text language plpgsql as $f$ begin return; end $f$;
 `;
 
-describe('stage3 pgTAP file stub-run', () => {
-  it('runs supabase/tests/stage3_gl_core.sql against the replay', async () => {
-    const replay = await createFullReplayedDatabase({ writeEvidence: false });
-    const { db } = replay;
-    await db.exec(PGTAP_STUBS);
-    // Real Supabase ships USAGE on the extensions schema for app roles, which
-    // lets the existing pgTAP files call pgTAP functions inside role blocks.
-    await db.exec(`grant usage on schema extensions to anon, authenticated;`);
-    const sql = readFileSync(join(repoRoot, 'supabase', 'tests', 'stage3_gl_core.sql'), 'utf8');
-    // The real file runs under the pgtap extension (schema `extensions` on real
-    // Supabase); on PGlite the stubs live in `extensions` — rewrite unqualified
-    // pgtap calls to extensions.*
-    const rewritten = sql
-      .replace(/create extension if not exists pgtap with schema extensions;/g, '')
-      .replace(/\b(plan|finish|ok|is|lives_ok|throws_ok|has_table|has_view)\(/g, 'extensions.$1(');
-    try {
-      await db.exec(rewritten);
-      console.log('PGTAP-STUB: file executed without failures');
-    } catch (e) {
-      console.log('PGTAP-STUB FAILED:', String(e).slice(0, 800));
-      throw e;
+function splitStatements(sql: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  let i = 0;
+  const n = sql.length;
+  let mode: 'code' | 'squig' | 'line' | 'block' | 'dollar' = 'code';
+  let dollarTag = '';
+  while (i < n) {
+    const ch = sql[i];
+    const two = sql.slice(i, i + 2);
+    if (mode === 'code') {
+      if (ch === "'") { mode = 'squig'; cur += ch; i++; continue; }
+      if (two === '--') { mode = 'line'; cur += two; i += 2; continue; }
+      if (two === '/*') { mode = 'block'; cur += two; i += 2; continue; }
+      if (ch === '$') {
+        const m = /^\$[A-Za-z_]*\$/.exec(sql.slice(i));
+        if (m) { dollarTag = m[0]; mode = 'dollar'; cur += dollarTag; i += dollarTag.length; continue; }
+        cur += ch; i++; continue;
+      }
+      if (ch === ';') { out.push(cur); cur = ''; i++; continue; }
+      cur += ch; i++; continue;
     }
-    await db.close();
-  }, 300_000);
+    if (mode === 'squig') {
+      if (ch === "'" && sql[i + 1] === "'") { cur += "''"; i += 2; continue; }
+      if (ch === "'") { mode = 'code'; cur += ch; i++; continue; }
+      cur += ch; i++; continue;
+    }
+    if (mode === 'line') {
+      if (ch === '\n') { mode = 'code'; }
+      cur += ch; i++; continue;
+    }
+    if (mode === 'block') {
+      if (two === '*/') { mode = 'code'; cur += two; i += 2; continue; }
+      cur += ch; i++; continue;
+    }
+    if (mode === 'dollar') {
+      if (sql.startsWith(dollarTag, i)) { cur += dollarTag; i += dollarTag.length; mode = 'code'; continue; }
+      cur += ch; i++; continue;
+    }
+  }
+  if (cur.trim()) out.push(cur);
+  return out.map((s) => s.trim()).filter(Boolean);
+}
+
+function transformSuite(sql: string): string {
+  let s = sql.replace(/create\s+extension\s+if\s+not\s+exists\s+pgtap[^;]*;/gi, '');
+  s = s.replace(/set\s+local\s+role/gi, 'set role');
+  s = s.replace(/set_config\(\s*'request\.jwt\.claims',([\s\S]*?),\s*true\s*\)/gi, "set_config('request.jwt.claims',$1, false)");
+  return s;
+}
+
+describe('stage3 pgTAP gate file (faithful shim)', () => {
+  it('runs supabase/tests/stage3_gl_core.sql with zero failures and a full plan', async () => {
+    const replay = await createFullReplayedDatabase({ writeEvidence: false });
+    expect(replay.failed).toEqual([]);
+    const { db } = replay;
+    await db.exec(SHIM);
+    // Supabase local-dev default privilege parity: the Docker gate's image
+    // grants broad TABLE/SEQUENCE privileges to anon/authenticated (RLS stays
+    // the enforcement layer). Function EXECUTE is deliberately not re-granted.
+    await db.exec(`
+      grant select, insert, update, delete on all tables in schema public to anon, authenticated;
+      grant usage, select on all sequences in schema public to anon, authenticated;
+      grant usage on schema extensions to anon, authenticated;
+    `);
+    await db.exec('set search_path = public, pgtap, extensions;');
+    await db.exec('truncate pgtap.results;');
+
+    const stmts = splitStatements(transformSuite(readFileSync(join(repoRoot, 'supabase', 'tests', 'stage3_gl_core.sql'), 'utf8')));
+    const topErrors: { idx: number; snippet: string; error: string }[] = [];
+    for (let idx = 0; idx < stmts.length; idx++) {
+      const st = stmts[idx];
+      if (/^(begin|commit|rollback)\s*$/i.test(st)) continue;
+      try {
+        await db.exec(st);
+      } catch (e) {
+        topErrors.push({ idx, snippet: st.replace(/\s+/g, ' ').slice(0, 170), error: String(e).slice(0, 260) });
+        try { await db.exec('rollback;'); } catch { /* noop */ }
+        try { await db.exec('reset role;'); await db.exec("select set_config('request.jwt.claims','',false);"); } catch { /* noop */ }
+      }
+    }
+
+    const { rows } = await db.query<{ num: number; ok: boolean; name: string }>('select num, ok, name from pgtap.results order by num');
+    const failed = rows.filter((r) => !r.ok).map((r) => `#${r.num} ${r.name}`);
+    console.error(
+      [
+        `=== stage3_gl_core.sql on full-chain replay ===`,
+        `assertions: ${rows.length} | failed: ${failed.length} | top-level errors: ${topErrors.length}`,
+        ...failed.slice(0, 20),
+        ...topErrors.slice(0, 10).map((t) => `stmt#${t.idx} ${t.snippet} → ${t.error}`),
+      ].join('\n'),
+    );
+    await replay.db.close();
+
+    expect(topErrors, JSON.stringify(topErrors.slice(0, 5), null, 2)).toEqual([]);
+    expect(failed, JSON.stringify(failed.slice(0, 10), null, 2)).toEqual([]);
+    expect(rows.length).toBe(50);
+  }, 420_000);
 });
