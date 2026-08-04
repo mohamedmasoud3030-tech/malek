@@ -77,10 +77,18 @@
 قفل الصف، فحص عدد الصفوف، helper الشركة، رسالة الخطأ الموحدة، immutable relationships،
 تحقق العمولة، `search_path`، ACL، وسجل Audit.
 
-اختبارات التكامل المطلوبة لشركتي A وB (إنشاء مستخدم ومالك وعقار واتفاقية في كل شركة)
-موثقة كحالات قبول: A يعدل A، وA/B المتبادلان يُرفضان بنفس الخطأ، UUID عشوائي يعطي نفس
-الخطأ، وتحديثان متوازيان ينتظر أحدهما قفل الصف ثم يطبقان بالتسلسل. لم تتوفر قاعدة
-Supabase/Docker عاملة في بيئة التنفيذ لتشغيل fixture حي؛ لذلك لم تُسجّل نتيجة نجاح زائفة.
+أصبح اختبار التكامل الحقيقي في `supabase/tests/owner_agreement_company_isolation.sql`، ويُشغّل ضمن
+Isolated Supabase Replay بعد تطبيق سلسلة Migrations من قاعدة فارغة. ويغطي شركة A وشركة B،
+التعديل داخل الشركة، رفض UUID من الشركة الأخرى، UUID غير موجود بنفس SQLSTATE والرسالة،
+ثبات اتفاقية B، ومحاولات تغيير `owner_id` و`property_id`، إضافة إلى `commission_value` null/empty.
+كما يضيف `scripts/ci/run-owner-agreement-concurrency-test.sh` معاملتين PostgreSQL حقيقيتين
+على نفس الصف، ويُستدعى من `scripts/ci/run-supabase-database-gate.sh` بعد `supabase test db`.
+
+**نتيجة التنفيذ الفعلية حتى 2026-08-04:** تم تشغيل الـ Replay مرتين على CI، لكن بوابة
+`Fresh Docker-backed replay, pgTAP lifecycle, RLS and cleanup` انتهت بالفشل قبل نشر نتيجة
+نجاح لاختبار FA-004؛ لذلك لا أسجل نجاحًا زائفًا ولا أعتبر الاختبار مغلقًا. لا تتوفر سجلات
+Azure Actions التفصيلية في بيئة التنفيذ الحالية، وتبقى إعادة التشغيل/تشخيص سبب فشل قاعدة
+البيانات مطلوبة قبل الإغلاق.
 
 ## خارج النطاق والمؤجل
 
