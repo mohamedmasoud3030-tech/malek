@@ -30,7 +30,7 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
           href={anchoredToHome ? '/' : '#top'}
           {...(anchoredToHome ? { 'data-internal': true } : {})}
           className="flex items-center gap-2.5"
-          aria-label="MALIK"
+          aria-label="MALEK"
         >
           <MalikBrand />
         </a>

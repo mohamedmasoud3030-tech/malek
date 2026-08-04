@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="malek-lockup-title">
+  <title id="malek-lockup-title">MALEK</title>
+  <rect x="4" y="4" width="504" height="504" rx="112" fill="#FFFFFF"/>
+  <rect x="4" y="4" width="504" height="504" rx="112" stroke="#E7EAF0" stroke-width="8"/>
+  <g transform="translate(102 92) scale(1.2)">
+    <path fill="#071B3C" d="M28 160 78 32l50 76-24 26-24-38-25 64H28Z"/>
+    <path fill="#102A54" d="m78 32 50 76-24 26-43-65 17-37Z"/>
+    <path fill="#18B9E6" d="m128 108 50-76 50 128h-27l-25-64-24 38-24-26Z"/>
+    <path fill="#087BAE" d="m128 108 24 26 43-65-17-37-50 76Z"/>
+    <path fill="#FFFFFF" d="m104 134 24-26 24 26-24 38-24-38Z" opacity=".96"/>
+  </g>
+  <text x="256" y="390" fill="#071B3C" font-family="Sora, Arial, sans-serif" font-size="56" font-weight="600" letter-spacing="18" text-anchor="middle">MALEK</text>
+</svg>

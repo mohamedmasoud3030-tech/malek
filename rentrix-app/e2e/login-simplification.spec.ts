@@ -50,7 +50,7 @@ for (const viewport of viewportMatrix) {
       await openLogin(page, theme);
 
       await expect(page.getByRole('heading', { name: 'كل أملاكك في مكان واحد', exact: true })).toBeVisible();
-      await expect(page.locator('[data-login-brand] img')).toHaveAttribute('src', '/icon-malik-192.png');
+      await expect(page.locator('[data-login-brand] img')).toHaveAttribute('src', '/malek-lockup.svg');
       await expect(page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true })).toBeVisible();
       await expect(page.getByPlaceholder('••••••••')).toBeVisible();
       await expect(page.getByRole('button', { name: /تسجيل الدخول/ })).toBeVisible();

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
-import { APP_BRAND_TAGLINE_AR } from '@/lib/brand';
+import { APP_BRAND_LOCKUP_ASSET, APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
 import { SUPPORT_CONTACTS } from '@/lib/contact';
 import { CommandCenterPanel } from './command-center-panel';
@@ -86,9 +86,10 @@ export function LoginPage() {
           <section className="flex flex-1 flex-col justify-center py-6 sm:py-8" data-login-main>
             <header className="mb-6 flex flex-col items-center gap-3 text-center" data-login-brand>
               <img
-                src="/icon-malik-192.png"
-                alt="MALIK"
+                src={APP_BRAND_LOCKUP_ASSET}
+                alt={APP_BRAND_NAME}
                 className="size-28 rounded-[28%] object-cover shadow-sm ring-1 ring-border/60 sm:size-32"
+                data-malek-canonical-lockup
               />
               <h1
                 className="text-lg font-bold leading-relaxed tracking-tight text-foreground sm:text-xl"
@@ -122,7 +123,7 @@ export function LoginPage() {
                     required
                     autoComplete="email"
                     dir="ltr"
-                    placeholder="name@malik.com"
+                    placeholder="name@malek.com"
                     disabled={isSubmitting || Boolean(runtimeError)}
                     aria-invalid={hasFieldError || undefined}
                   />

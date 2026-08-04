@@ -112,14 +112,14 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: false,
-      // Keep MALIK's launch and offline identity available with the app shell.
-      // Legacy Rentrix PNGs stay on disk as unreferenced assets pending deletion.
-      includeAssets: ["offline.html", "icon-malik-192.png", "malik-mark.svg"],
+      // Keep MALEK's launch and offline identity available with the app shell.
+      // Legacy Rentrix/MALIK PNGs stay on disk as unreferenced assets pending deletion.
+      includeAssets: ["offline.html", "malek-mark.svg", "malek-lockup.svg", "malek-maskable.svg"],
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
-        // Legacy Rentrix icons still sit in public/ for git history; keep them
-        // out of the precache so the MALIK build ships no legacy brand asset.
-        globIgnores: ["**/icon-rentrix-*.png"],
+        // Legacy Rentrix/MALIK icons still sit in public/ for git history; keep
+        // them out of the precache so the MALEK build ships no legacy brand asset.
+        globIgnores: ["**/icon-rentrix-*.png", "**/icon-malik-*.png", "**/icon-maskable-*.png", "**/malik-mark.svg"],
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api\//],

@@ -13,7 +13,7 @@ const privacyAr: LegalContent = {
   title: 'سياسة الخصوصية',
   effective: 'تاريخ السريان: 16 يوليو 2026',
   intro:
-    'نحن في MALIK نأخذ خصوصيتك على محمل الجد. توضح هذه السياسة ما هي البيانات التي نجمعها عند استخدامك لموقعنا أو تطبيقنا، ولماذا نجمعها، وكيف نحميها، وما هي حقوقك تجاهها.',
+    'نحن في MALEK نأخذ خصوصيتك على محمل الجد. توضح هذه السياسة ما هي البيانات التي نجمعها عند استخدامك لموقعنا أو تطبيقنا، ولماذا نجمعها، وكيف نحميها، وما هي حقوقك تجاهها.',
   sections: [
     {
       heading: '1. البيانات التي نجمعها',
@@ -86,12 +86,12 @@ const termsAr: LegalContent = {
   title: 'شروط الاستخدام',
   effective: 'تاريخ السريان: 16 يوليو 2026',
   intro:
-    'مرحباً بك في MALIK. باستخدامك لموقعنا أو تطبيقنا فأنت توافق على هذه الشروط. إذا كنت لا توافق على أي بند منها، يرجى التوقف عن استخدام الخدمة.',
+    'مرحباً بك في MALEK. باستخدامك لموقعنا أو تطبيقنا فأنت توافق على هذه الشروط. إذا كنت لا توافق على أي بند منها، يرجى التوقف عن استخدام الخدمة.',
   sections: [
     {
       heading: '1. وصف الخدمة',
       body: [
-        'MALIK منصة ويب لإدارة العقارات الإيجارية: تسجيل العقارات والوحدات والعقود والفواتير والمدفوعات والصيانة والتقارير، موجهة لمكاتب العقارات.',
+        'MALEK منصة ويب لإدارة العقارات الإيجارية: تسجيل العقارات والوحدات والعقود والفواتير والمدفوعات والصيانة والتقارير، موجهة لمكاتب العقارات.',
         'الخدمة حالياً في مرحلة الإطلاق التجريبي؛ قد تتغير بعض المزايا أو تتحسن مع الوقت.',
       ],
     },
@@ -113,7 +113,7 @@ const termsAr: LegalContent = {
       heading: '4. البيانات والملكية',
       body: [
         'بياناتك التشغيلية تظل ملكك. أنت تمنحنا فقط الترخيص اللازم لمعالجتها وتخزينها بهدف تقديم الخدمة.',
-        'البرمجيات والتصاميم والعلامة التجارية MALIK ملك لنا، ولا يجوز نسخها أو إعادة استخدامها دون إذن كتابي.',
+        'البرمجيات والتصاميم والعلامة التجارية MALEK ملك لنا، ولا يجوز نسخها أو إعادة استخدامها دون إذن كتابي.',
       ],
     },
     {
@@ -154,7 +154,7 @@ const privacyEn: LegalContent = {
   title: 'Privacy Policy',
   effective: 'Effective date: July 16, 2026',
   intro:
-    'At MALIK we take your privacy seriously. This policy explains what data we collect when you use our website or application, why we collect it, how we protect it, and what your rights are.',
+    'At MALEK we take your privacy seriously. This policy explains what data we collect when you use our website or application, why we collect it, how we protect it, and what your rights are.',
   sections: [
     {
       heading: '1. Data we collect',
@@ -227,12 +227,12 @@ const termsEn: LegalContent = {
   title: 'Terms of Use',
   effective: 'Effective date: July 16, 2026',
   intro:
-    'Welcome to MALIK. By using our website or application you agree to these terms. If you do not agree with any part of them, please stop using the service.',
+    'Welcome to MALEK. By using our website or application you agree to these terms. If you do not agree with any part of them, please stop using the service.',
   sections: [
     {
       heading: '1. The service',
       body: [
-        'MALIK is a web platform for rental property management: recording properties, units, contracts, invoices, payments, maintenance and reports, designed for real-estate offices.',
+        'MALEK is a web platform for rental property management: recording properties, units, contracts, invoices, payments, maintenance and reports, designed for real-estate offices.',
         'The service is currently in early access; some features may evolve or improve over time.',
       ],
     },
@@ -254,7 +254,7 @@ const termsEn: LegalContent = {
       heading: '4. Data & ownership',
       body: [
         'Your operational data remains yours. You grant us only the licence necessary to process and store it in order to provide the service.',
-        'The MALIK software, designs and brand are our property and may not be copied or reused without written permission.',
+        'The MALEK software, designs and brand are our property and may not be copied or reused without written permission.',
       ],
     },
     {

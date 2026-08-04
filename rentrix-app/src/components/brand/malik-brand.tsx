@@ -14,10 +14,8 @@ type MalikBrandProps = Readonly<{
 }>;
 
 /**
- * MALIK identity lockup. The full lockup uses an angular mark, the Latin
- * wordmark, and the fixed Arabic tagline; the compact variant keeps only the
- * mark so it stays legible in the collapsed navigation rail and app icon-like
- * surfaces.
+ * MALEK identity lockup. The internal component name is retained as a safe
+ * compatibility boundary, while all visible text and assets use MALEK.
  */
 export function MalikBrand({
   compact = false,
@@ -30,20 +28,20 @@ export function MalikBrand({
   if (compact) {
     return (
       <div role="img" className={cn('grid place-items-center', className)} aria-label={APP_BRAND_NAME}>
-        <MalikMark className="size-9" />
+        <MalikMark className={cn('size-9', markClassName)} />
       </div>
     );
   }
 
   return (
-    <div className={cn('flex min-w-0 items-center gap-2.5', className)}>
+    <div className={cn('flex min-w-0 items-center gap-2.5', className)} data-malek-brand-lockup>
       <MalikMark className={cn('size-9', markClassName)} />
       <div className="min-w-0">
         <p
           dir="ltr"
           aria-label={APP_BRAND_NAME}
           className={cn(
-            'malik-wordmark truncate text-lg font-extrabold uppercase leading-none tracking-[0.16em]',
+            'malik-wordmark malek-wordmark truncate text-lg font-extrabold uppercase leading-none tracking-[0.16em]',
             inverse ? 'text-white' : 'text-foreground',
             wordmarkClassName,
           )}
