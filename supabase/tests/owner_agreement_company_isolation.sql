@@ -63,7 +63,11 @@ select throws_ok(
   '42501', 'AGREEMENT_NOT_FOUND_OR_FORBIDDEN',
   'Company A cannot update Company B agreement'
 );
+-- Inspect B as the database test owner, not as A (RLS correctly hides B from A).
+reset role;
 select is((select commission_value from public.owner_agreements where id = '00000000-0000-0000-0000-00000000b301'), 7::numeric, 'Company B agreement is unchanged');
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a001","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-0000000000a1"}}', true);
 select throws_ok(
   $$select public.update_owner_agreement_atomic('00000000-0000-0000-0000-00000000dead', '{"commission_value": 99}'::jsonb)$$,
   '42501', 'AGREEMENT_NOT_FOUND_OR_FORBIDDEN',
