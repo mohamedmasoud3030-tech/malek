@@ -98,6 +98,12 @@ begin
     end if;
   end if;
 
+  if payload ? 'commission_value'
+     and nullif(btrim(payload->>'commission_value'), '') is null then
+    raise exception 'قيمة العمولة مطلوبة عند إرسال commission_value'
+      using errcode = '22023';
+  end if;
+
   v_commission_value := case
     when payload ? 'commission_value' then (payload->>'commission_value')::numeric
     else v_old.commission_value

@@ -93,6 +93,9 @@ fi
 # settlements, idempotency, RLS, journals, balances, and security invariants.
 pnpm exec supabase test db 2>&1 | tee "$LOG_DIR/supabase-test.log"
 
+# FA-004 real two-transaction row-lock check on the same fresh replay.
+bash scripts/ci/run-owner-agreement-concurrency-test.sh 2>&1 | tee "$LOG_DIR/owner-agreement-concurrency.log"
+
 # The Storage API smoke runs on the same isolated local stack. This tests the
 # real Auth + Storage HTTP path without using production or any paid Staging.
 STATUS_ENV_FILE="$(mktemp)"
