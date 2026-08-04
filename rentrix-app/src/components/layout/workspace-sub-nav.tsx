@@ -2,6 +2,8 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/use-auth';
 import { canShowNavigationItem } from '@/features/auth/permissions';
 import { workspaceChildNavItems } from '@/app/navigation/app-nav-items';
+import { getNavRoot } from '@/app/navigation/route-nav-map';
+import { workspaceLabels } from '@/app/navigation/terminology-registry';
 
 export interface WorkspaceSubNavProps {
   rootPath: string;
@@ -92,7 +94,10 @@ export function WorkspaceSubNav({ rootPath, className = '' }: WorkspaceSubNavPro
         const activeByPath = location.pathname === to || location.pathname.startsWith(`${to}/`);
         const activeBySection = Boolean(sectionId && isOnHubRoot && sectionParam === sectionId);
         const active = activeByPath || activeBySection;
-        const shortLabel = description.split(' ')[0] || description;
+        // UX-015: Use canonical workspace labels instead of description.split(' ')[0]
+        const shortLabel = sectionId && workspaceLabels[sectionId]
+          ? workspaceLabels[sectionId]
+          : description;
 
         return (
           <Link
