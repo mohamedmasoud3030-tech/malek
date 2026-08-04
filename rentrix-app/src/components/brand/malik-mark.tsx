@@ -1,3 +1,4 @@
+import { APP_BRAND_MARK_ASSET } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 
 type MalikMarkProps = Readonly<{
@@ -5,13 +6,17 @@ type MalikMarkProps = Readonly<{
 }>;
 
 /**
- * The compact MALIK mark used where the full wordmark would be illegible:
- * app icons, the collapsed navigation rail, and compact brand lockups.
- *
- * The public SVG is deliberately the single source used by runtime UI. Keeping
- * it isolated means an approved final master logo can replace it without
- * changing any user-facing layout; the PWA export sources live alongside it.
+ * Compatibility component name; the visible identity and canonical asset are
+ * MALEK. Every compact brand surface consumes the same angular mark source.
  */
 export function MalikMark({ className }: MalikMarkProps) {
-  return <img src="/malik-mark.svg" alt="" aria-hidden="true" className={cn('block shrink-0', className)} />;
+  return (
+    <img
+      src={APP_BRAND_MARK_ASSET}
+      alt=""
+      aria-hidden="true"
+      className={cn('block shrink-0 object-contain', className)}
+      data-malek-canonical-mark
+    />
+  );
 }
