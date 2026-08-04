@@ -42,6 +42,14 @@ values
   ('00000000-0000-0000-0000-00000000a201', 'FA4 Property A', 'residential', 'FA4 A', 'active', '00000000-0000-4000-8000-0000000000a1'),
   ('00000000-0000-0000-0000-00000000b201', 'FA4 Property B', 'residential', 'FA4 B', 'active', '00000000-0000-4000-8000-0000000000b1');
 
+-- Owner agreements are valid only when temporal ownership covers their full
+-- period. These rows are part of the behavioral fixture, not production data.
+insert into public.property_owners
+  (id, property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on, company_id)
+values
+  ('00000000-0000-0000-0000-00000000a250', '00000000-0000-0000-0000-00000000a201', '00000000-0000-0000-0000-00000000a101', 100, true, date '2025-01-01', null, '00000000-0000-4000-8000-0000000000a1'),
+  ('00000000-0000-0000-0000-00000000b250', '00000000-0000-0000-0000-00000000b201', '00000000-0000-0000-0000-00000000b101', 100, true, date '2025-01-01', null, '00000000-0000-4000-8000-0000000000b1');
+
 insert into public.owner_agreements
   (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on, company_id)
 values
