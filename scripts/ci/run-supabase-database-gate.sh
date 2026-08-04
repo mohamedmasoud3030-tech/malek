@@ -25,8 +25,8 @@ trap cleanup EXIT
 # run even when raw log archives are hard to fetch. Safe under `set -e`:
 # the ERR trap only reads and prints.
 emit_failure_diagnostics() {
-  trap - ERR
   local status=$?
+  trap - ERR
   if [[ "$status" -eq 0 ]]; then return 0; fi
   for f in supabase-start.log supabase-test.log owner-agreement-concurrency.log \
            storage-isolated-smoke.log single-office-seed.log single-office-browser.log \
