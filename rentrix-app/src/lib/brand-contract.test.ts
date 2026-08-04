@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -10,9 +9,9 @@ import {
 } from './brand';
 
 /**
- * MALIK brand contract.
+ * MALEK brand contract.
  *
- * This is the regression net for the Rentrix -> MALIK rebrand. It scans the
+ * This is the regression net for the Rentrix -> MALEK rebrand. It scans the
  * shipped UI, document/print, and marketing surfaces and fails when the legacy
  * product name reaches a user again, or when the approved mark/wordmark system
  * is replaced with an unreviewed brand asset.
@@ -162,7 +161,7 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
   ],
   [
     'src/features/landing/constants.ts',
-    'Fallback canonical host rentrixapp.vercel.app — frozen until a MALIK domain is approved.',
+    'Fallback canonical host rentrixapp.vercel.app — frozen until a MALEK domain is approved.',
   ],
   [
     'src/features/landing/components/Showcase.tsx',
@@ -209,17 +208,10 @@ const SELF_PATH = 'src/lib/brand-contract.test.ts';
 const relativePath = (file: string) => relative(appRoot, file).split('\\').join('/');
 const read = (file: string) => readFileSync(file, 'utf8');
 const readApp = (relativeToApp: string) => readFileSync(join(appRoot, relativeToApp), 'utf8');
-const readPngDimensions = (relativeToApp: string) => {
-  const png = readFileSync(join(appRoot, relativeToApp));
-  expect(png.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-  return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
-};
-const readSha256 = (relativeToApp: string) =>
-  createHash('sha256').update(readFileSync(join(appRoot, relativeToApp))).digest('hex');
 
-describe('MALIK brand contract — identity constants', () => {
-  it('exposes MALIK as the single user-facing product name', () => {
-    expect(APP_BRAND_NAME).toBe('MALIK');
+describe('MALEK brand contract — identity constants', () => {
+  it('exposes MALEK as the single user-facing product name', () => {
+    expect(APP_BRAND_NAME).toBe('MALEK');
   });
 
   it('pins the Arabic marketing line to the approved wording', () => {
@@ -228,7 +220,7 @@ describe('MALIK brand contract — identity constants', () => {
 
   it('keeps the legacy technical prefix available and unchanged', () => {
     expect(LEGACY_TECHNICAL_BRAND_PREFIX).toBe('rentrix');
-    expect(APP_BRAND_FILE_SLUG).toBe('malik');
+    expect(APP_BRAND_FILE_SLUG).toBe('malek');
   });
 
   it('never presents the Arabic transliteration as the product name', () => {
@@ -240,7 +232,7 @@ describe('MALIK brand contract — identity constants', () => {
   });
 });
 
-describe('MALIK brand contract — no legacy name reaches a user', () => {
+describe('MALEK brand contract — no legacy name reaches a user', () => {
   it('has no unreviewed Rentrix occurrence in shipped source', () => {
     const offenders = sourceFiles
       .filter((file) => read(file).includes('Rentrix'))
@@ -283,18 +275,18 @@ describe('MALIK brand contract — no legacy name reaches a user', () => {
     expect(routeTree).not.toContain('Rentrix');
   });
 
-  it('keeps the sidebar and drawer on the MALIK lockup and login on the PWA identity', () => {
+  it('keeps the sidebar and drawer on the MALEK lockup and login on the PWA identity', () => {
     const appShell = readApp('src/app/layout/app-shell.tsx');
     // Both the expanded sidebar and the mobile drawer render the same <Brand/>.
     expect(appShell.match(/<Brand\s/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
-    expect(loginPage).toContain('/icon-malik-192.png');
+    expect(loginPage).toContain('APP_BRAND_LOCKUP_ASSET');
     expect(loginPage).toContain('APP_BRAND_TAGLINE_AR');
     expect(loginPage).not.toContain('Rentrix');
   });
 
-  it('keeps landing and legal pages on the MALIK identity', () => {
+  it('keeps landing and legal pages on the MALEK identity', () => {
     const landingAndLegal = [
       'src/features/landing/components/NavBar.tsx',
       'src/features/landing/components/Footer.tsx',
@@ -308,11 +300,11 @@ describe('MALIK brand contract — no legacy name reaches a user', () => {
     for (const file of landingAndLegal) {
       const source = readApp(file);
       expect(source, `${file} still shows the legacy name`).not.toContain('Rentrix');
-      expect(source, `${file} lost the MALIK identity`).toMatch(/MALIK|APP_BRAND_NAME/);
+      expect(source, `${file} lost the MALEK identity`).toMatch(/MALEK|APP_BRAND_NAME/);
     }
   });
 
-  it('serves MALIK copy from the landing i18n source without a translation shim', () => {
+  it('serves MALEK copy from the landing i18n source without a translation shim', () => {
     // The rebrand is applied at the source, so no runtime string replacement
     // layer should exist to paper over legacy copy.
     expect(existsSync(join(appRoot, 'src/features/landing/i18n/brand-messages.ts'))).toBe(false);
@@ -341,20 +333,21 @@ describe('MALIK brand contract — no legacy name reaches a user', () => {
     }
   });
 
-  it('names user-visible CSV exports after the MALIK slug', () => {
+  it('names user-visible CSV exports after the MALEK slug', () => {
     expect(readApp('src/features/contracts/contractListExport.ts')).toContain('APP_BRAND_FILE_SLUG');
     expect(readApp('src/features/properties/property-list-export.ts')).toContain('APP_BRAND_FILE_SLUG');
     expect(readApp('src/features/financials/components/expenses-section.tsx')).toContain('APP_BRAND_FILE_SLUG');
   });
 });
 
-describe('MALIK brand contract — mark, wordmark, and tagline', () => {
+describe('MALEK brand contract — mark, wordmark, and tagline', () => {
   it('ships one approved angular mark and keeps the runtime component on it', () => {
-    expect(existsSync(join(appRoot, 'public/malik-mark.svg'))).toBe(true);
+    expect(existsSync(join(appRoot, 'public/malek-mark.svg'))).toBe(true);
     expect(existsSync(join(appRoot, 'src/components/brand/malik-mark.tsx'))).toBe(true);
 
-    const mark = readApp('public/malik-mark.svg');
-    expect(mark).toMatch(/viewBox="0 0 64 64"/);
+    const mark = readApp('public/malek-mark.svg');
+    expect(mark).toMatch(/<title id="malek-mark-title">MALEK<\/title>/);
+    expect(mark).toMatch(/viewBox="0 0 256 192"/);
     expect(mark).not.toMatch(/REAL ESTATE|PLATFORM|building/i);
 
     const brandComponent = readApp('src/components/brand/malik-brand.tsx');
@@ -370,7 +363,7 @@ describe('MALIK brand contract — mark, wordmark, and tagline', () => {
     expect(appShell).toMatch(/isSidebarExpanded \? 'px-5' : 'px-1\.5'/);
     expect(appShell).toContain('compact={!expanded}');
     expect(brandComponent).toMatch(/if \(compact\)/);
-    expect(brandComponent).toContain('<MalikMark className="size-9" />');
+    expect(brandComponent).toContain(`<MalikMark className={cn('size-9', markClassName)} />`);
   });
 
   it('places the complete lockup only on the high-visibility brand surfaces', () => {
@@ -379,11 +372,11 @@ describe('MALIK brand contract — mark, wordmark, and tagline', () => {
       'src/features/landing/components/Footer.tsx',
       'src/features/landing/components/Hero.tsx',
     ]) {
-      expect(readApp(file), `${file} must show the MALIK tagline`).toContain('showTagline');
+      expect(readApp(file), `${file} must show the MALEK tagline`).toContain('showTagline');
     }
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
-    expect(loginPage).toContain('/icon-malik-192.png');
+    expect(loginPage).toContain('APP_BRAND_LOCKUP_ASSET');
     expect(loginPage).toContain('APP_BRAND_TAGLINE_AR');
 
     expect(readApp('src/features/landing/components/NavBar.tsx')).toContain('<MalikBrand />');
@@ -420,8 +413,8 @@ describe('MALIK brand contract — mark, wordmark, and tagline', () => {
   });
 });
 
-describe('MALIK brand contract — PWA and document metadata', () => {
-  it('brands the PWA manifest with the approved full MALIK logo icon', () => {
+describe('MALEK brand contract — PWA and document metadata', () => {
+  it('brands the PWA manifest with the approved full MALEK logo icon', () => {
     const manifest = JSON.parse(readApp('public/manifest.json')) as {
       name: string;
       short_name: string;
@@ -433,38 +426,23 @@ describe('MALIK brand contract — PWA and document metadata', () => {
     expect(manifest.name).toContain(APP_BRAND_NAME);
     expect(manifest.name).toContain(APP_BRAND_TAGLINE_AR);
     expect(manifest.name).not.toContain('Rentrix');
+    expect(manifest.name).not.toContain('MALIK');
     expect(manifest.description).not.toContain('Rentrix');
     expect(manifest.icons).toEqual([
-      { src: '/icon-malik-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icon-malik-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-      { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/malek-lockup.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+      { src: '/malek-maskable.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
     ]);
 
+    // Every shipped manifest icon must embed the canonical MALEK lockup mark.
     for (const icon of manifest.icons ?? []) {
-      const declaredSize = Number(icon.sizes.split('x')[0]);
-      expect(readPngDimensions(`public${icon.src}`)).toEqual({
-        width: declaredSize,
-        height: declaredSize,
-      });
-      expect(statSync(join(appRoot, `public${icon.src}`)).size).toBeLessThan(100 * 1024);
+      const svg = readApp(`public${icon.src}`);
+      expect(svg, `${icon.src} must render the canonical MALEK identity`).toMatch(
+        /<title[^>]*>[^<]*MALEK<\/title>/,
+      );
     }
-
-    expect(readSha256('public/icon-malik-192.png')).toBe(
-      '630c7848b9e2d7a30f89100215379d430d084fdc99596078f762072ebdb91223',
-    );
-    expect(readSha256('public/icon-malik-512.png')).toBe(
-      '5b4acae6abec762f386b8c28e7a0dfb939db9586bca627562b27390786862688',
-    );
-    expect(readFileSync(join(appRoot, 'public/icon-maskable-192.png'))).toEqual(
-      readFileSync(join(appRoot, 'public/icon-malik-192.png')),
-    );
-    expect(readFileSync(join(appRoot, 'public/icon-maskable-512.png'))).toEqual(
-      readFileSync(join(appRoot, 'public/icon-malik-512.png')),
-    );
   });
 
-  it('brands the HTML head, Open Graph, Twitter, and structured data as MALIK', () => {
+  it('brands the HTML head, Open Graph, Twitter, and structured data as MALEK', () => {
     const indexHtml = readApp('index.html');
 
     expect(indexHtml).toContain(`<title>${APP_BRAND_NAME} — ${APP_BRAND_TAGLINE_AR}</title>`);
@@ -472,22 +450,23 @@ describe('MALIK brand contract — PWA and document metadata', () => {
     expect(indexHtml).toContain(`og:title" content="${APP_BRAND_NAME} | ${APP_BRAND_TAGLINE_AR}"`);
     expect(indexHtml).toContain(`twitter:title" content="${APP_BRAND_NAME} | ${APP_BRAND_TAGLINE_AR}"`);
     expect(indexHtml).toContain(`"name": "${APP_BRAND_NAME}"`);
-    expect(indexHtml).toContain('apple-mobile-web-app-title" content="MALIK"');
-    expect(indexHtml).toContain('rel="icon" href="/icon-malik-192.png" type="image/png" sizes="192x192"');
-    expect(indexHtml).toContain('rel="apple-touch-icon" href="/icon-malik-192.png"');
+    expect(indexHtml).toContain('apple-mobile-web-app-title" content="MALEK"');
+    expect(indexHtml).toContain('rel="icon" href="/malek-mark.svg"');
+    expect(indexHtml).toContain('rel="apple-touch-icon" href="/malek-lockup.svg"');
+    expect(indexHtml).not.toContain('MALIK');
     expect(indexHtml).not.toContain('Rentrix');
   });
 
-  it('brands the offline shell with the complete MALIK lockup', () => {
+  it('brands the offline shell with the complete MALEK lockup', () => {
     const offline = readApp('public/offline.html');
 
     expect(offline).toContain(APP_BRAND_NAME);
     expect(offline).not.toContain('Rentrix');
-    expect(offline).toContain('/malik-mark.svg');
+    expect(offline).toContain('/malek-mark.svg');
     expect(offline).toContain(APP_BRAND_TAGLINE_AR);
   });
 
-  it('brands the install prompt as MALIK', () => {
+  it('brands the install prompt as MALEK', () => {
     const installPrompt = readApp('src/components/layout/pwa-install-prompt.tsx');
 
     expect(installPrompt).toContain('APP_BRAND_NAME');

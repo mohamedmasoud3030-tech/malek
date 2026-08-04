@@ -40,7 +40,7 @@ describe('LoginPage — structural contract', () => {
     expect(html).toContain('data-login-surface');
     expect(html).toContain('data-login-main');
     expect(html).toContain('data-login-brand');
-    expect(html).toContain('MALIK');
+    expect(html).toContain('MALEK');
     expect(html).toContain('كل أملاكك في مكان واحد');
     expect(html).toContain('>تسجيل الدخول<');
     expect(html).not.toContain('>تسجيل الدخول</h1>');
@@ -49,7 +49,8 @@ describe('LoginPage — structural contract', () => {
 
   it('uses the exact PWA icon and promotes the enlarged tagline to the page heading', () => {
     const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('src="/icon-malik-192.png"');
+    expect(html).toContain('src="/malek-lockup.svg"');
+    expect(html).toContain('data-malek-canonical-lockup');
     expect(html).toContain('data-login-tagline');
     expect(html).toContain('text-lg');
     expect(html).toContain('sm:text-xl');
@@ -241,7 +242,7 @@ describe('CommandCenterPanel — presentation only', () => {
     const { CommandCenterPanel } = await import('./command-center-panel');
     const html = renderToStaticMarkup(<CommandCenterPanel />);
     expect(html).not.toContain('<aside');
-    expect(html).toContain('MALIK');
+    expect(html).toContain('MALEK');
     expect(html).toContain('كل أملاكك في مكان واحد');
   });
 
