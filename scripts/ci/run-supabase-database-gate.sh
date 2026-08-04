@@ -20,6 +20,26 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# On any gate failure, surface the tail of each phase log as workflow
+# annotations (::error:: lines) so the failing phase is visible on the check
+# run even when raw log archives are hard to fetch. Safe under `set -e`:
+# the ERR trap only reads and prints.
+emit_failure_diagnostics() {
+  trap - ERR
+  local status=$?
+  if [[ "$status" -eq 0 ]]; then return 0; fi
+  for f in supabase-start.log supabase-test.log owner-agreement-concurrency.log \
+           storage-isolated-smoke.log single-office-seed.log single-office-browser.log \
+           supabase-api-ready.log; do
+    if [[ -s "$LOG_DIR/$f" ]]; then
+      echo "::error::===== $f (tail) ====="
+      tail -n 30 "$LOG_DIR/$f" | sed 's/^/::error::  /'
+    fi
+  done
+  return 0
+}
+trap 'emit_failure_diagnostics' ERR
+
 read_status_value() {
   local primary_name="$1"
   local fallback_name="${2:-}"
