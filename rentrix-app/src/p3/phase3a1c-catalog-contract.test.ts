@@ -31,7 +31,10 @@ let catalog: Record<string, unknown>[] = [];
 
 describe('Phase 3A-1C catalog contract', () => {
   beforeAll(async () => {
-    const replay = await createFullReplayedDatabase({ writeEvidence: false });
+    // FA-003 (20260804) redefines the same four settlement RPCs; exclude it so
+    // this suite asserts the phase3a1c catalog posture in isolation (same
+    // convention used for the follow-up compatibility migration).
+    const replay = await createFullReplayedDatabase({ writeEvidence: false, excludeMigrations: ['20260804'] });
     expect(replay.failed).toEqual([]);
     db = replay.db;
   }, 420_000);

@@ -45,6 +45,7 @@ export async function createReplayedDatabase(options?: {
     'property_owner_workflow',
     'unit_archive_history',
     'contract_workflow',
+    '20260804', // FA-003 owner-settlement input reservation (redefines settlement RPCs)
   ];
   files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
 

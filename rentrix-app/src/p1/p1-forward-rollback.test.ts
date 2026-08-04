@@ -92,6 +92,7 @@ beforeAll(async () => {
       && !/p1_owner_settlement/.test(f)
       && !f.includes('phase2_financial_integrity')
       && !f.includes('phase3a1c_owner_settlement')
+      && !f.includes('20260804') // FA-003 owner-settlement input reservation
     )
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];
