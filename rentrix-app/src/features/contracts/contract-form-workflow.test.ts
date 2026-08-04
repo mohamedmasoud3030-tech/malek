@@ -18,6 +18,16 @@ describe('contract creation workflow order and agreement resolution contract', (
     'utf8',
   );
 
+  const alertSource = readFileSync(
+    resolve(import.meta.dirname, './components/ContractAgreementMissingAlert.tsx'),
+    'utf8',
+  );
+
+  const pageSource = readFileSync(
+    resolve(import.meta.dirname, './ContractFormPage.tsx'),
+    'utf8',
+  );
+
   const invariantsMigration = readFileSync(
     resolve(import.meta.dirname, '../../../../supabase/migrations/20260730091200_contract_workflow_invariants.sql'),
     'utf8',
@@ -33,12 +43,14 @@ describe('contract creation workflow order and agreement resolution contract', (
   it('4. Automatically resolves active owner-management agreement when unambiguous', () => {
     expect(hookSource).toContain('useAgreementCoverage');
     expect(hookSource).toContain('const agreementId = agreementCoverageQuery.data?.id ?? null');
-    expect(fieldsSource).toContain('تم تحديد اتفاقية تشغيل المالك تلقائياً');
+    expect(alertSource).toContain('تم تحديد اتفاقية تشغيل المالك تلقائياً');
   });
 
-  it('5. Shows a clear blocking message when no valid management agreement exists covering the lease dates', () => {
-    expect(modalSource).toContain('لا توجد اتفاقية إدارة تغطي كامل فترة العقد. انتقل إلى صفحة العقار لإنشاء أو تحديث اتفاقية الإدارة أولاً.');
-    expect(fieldsSource).toContain('لا توجد اتفاقية إدارة تغطي كامل فترة العقد');
+  it('5. Shows an actionable recovery surface when no valid management agreement exists covering the lease dates', () => {
+    expect(fieldsSource).toContain('ContractAgreementMissingAlert');
+    expect(pageSource).toContain('ContractAgreementMissingAlert');
+    expect(alertSource).toContain('لا توجد اتفاقية إدارة تغطي كامل فترة العقد');
+    expect(alertSource).toContain('فتح اتفاقيات العقار');
   });
 
   it('6. Validates overlapping contracts server-side via database trigger', () => {

@@ -4,6 +4,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Card, CardContent } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
+import { ContractAgreementMissingAlert } from './components/ContractAgreementMissingAlert';
 import { ContractFormFields } from './components/ContractFormFields';
 import { useContractForm } from './useContractForm';
 
@@ -21,6 +22,7 @@ export function ContractFormPage() {
     propertiesQuery,
     peopleQuery,
     agreementCoverageQuery,
+    selectedProperty,
     handleSubmit,
   } = controller;
 
@@ -34,11 +36,9 @@ export function ContractFormPage() {
     propertiesQuery.isError || peopleQuery.isError
       ? 'تعذر تحميل بيانات العقارات أو المستأجرين. أعد تحميل الصفحة ثم حاول مرة أخرى.'
       : null;
-  const coverageError = agreementCoverageQuery.isError
-    ? 'تعذر التحقق من اتفاقية المالك. أعد المحاولة قبل حفظ العقد.'
-    : hasSelectedPeriod && !agreementCoverageQuery.isLoading && !agreementCoverageQuery.data
-      ? 'لا توجد اتفاقية إدارة تغطي كامل فترة العقد. انتقل إلى صفحة العقار لإنشاء أو تحديث اتفاقية الإدارة أولاً.'
-      : null;
+  const coverageMissing =
+    agreementCoverageQuery.isError ||
+    (hasSelectedPeriod && !agreementCoverageQuery.isLoading && !agreementCoverageQuery.data);
 
   return (
     <PageLayout dir="rtl" size="wide">
@@ -48,6 +48,18 @@ export function ContractFormPage() {
           subtitle="العقد رقم، المستأجر، الوحدة، التواريخ، قيمة الإيجار، الحالة، والملاحظات."
           backTo="/contracts"
         />
+        {coverageMissing && (
+          <ContractAgreementMissingAlert
+            property={selectedProperty}
+            startDate={startDate || ''}
+            endDate={endDate || ''}
+            isLoading={agreementCoverageQuery.isLoading}
+            hasError={agreementCoverageQuery.isError}
+            hasSelectedPeriod={hasSelectedPeriod}
+            hasAgreement={Boolean(agreementCoverageQuery.data)}
+            onRetry={() => agreementCoverageQuery.refetch()}
+          />
+        )}
         <Card>
           <CardContent className="pt-4 sm:pt-6">
             <EntityForm.Section>
@@ -56,7 +68,7 @@ export function ContractFormPage() {
                 onSubmit={form.handleSubmit(handleSubmit)}
                 onCancel={() => navigate({ to: '/contracts' })}
                 dependencyError={dependencyError}
-                coverageError={coverageError}
+                coverageError={coverageMissing ? 'لا توجد اتفاقية إدارة تغطي كامل فترة العقد. راجع الإشعار أعلاه.' : null}
               />
             </EntityForm.Section>
           </CardContent>

@@ -28,6 +28,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/hooks/useCompanyFormatters";
+import { CommissionSourceSelector } from "./CommissionSourceSelector";
 import type {
   CommissionFilters,
   CommissionFormValues,
@@ -57,6 +58,16 @@ const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "ne
 function money(value: number | null) {
   if (value == null) return "—";
   return formatMoney(value);
+}
+
+/**
+ * Formats the commission source reference as a readable label.
+ * Never exposes raw UUIDs as primary labels.
+ */
+function formatSourceLabel(type: string | null, sourceId: string | null): string {
+  if (!sourceId) return "بدون مصدر";
+  const prefix = typeLabels[type ?? ""] ?? type ?? "مصدر";
+  return `${prefix} #${sourceId.slice(0, 8)}`;
 }
 
 type Props = Readonly<{
@@ -341,11 +352,12 @@ export function CommissionsView(props: Props) {
               ))}
             </Select>
           </EntityForm.Field>
-          <EntityForm.Field label="معرف المصدر">
-            <Input
+          <EntityForm.Field label="المصدر">
+            <CommissionSourceSelector
+              type={draft.type}
               value={draft.source_id}
-              onChange={(event) =>
-                onDraftChange({ ...draft, source_id: event.target.value })
+              onChange={(sourceId) =>
+                onDraftChange({ ...draft, source_id: sourceId })
               }
             />
           </EntityForm.Field>
@@ -529,7 +541,7 @@ function CommissionRows({
             <span className="max-w-56 whitespace-normal break-words">
               <span className="font-bold">{row.staff_name ?? "—"}</span>
               <p className="text-xs text-muted-foreground">
-                {row.source_id ?? "بدون مصدر"}
+                {formatSourceLabel(row.type, row.source_id)}
               </p>
             </span>
           ),

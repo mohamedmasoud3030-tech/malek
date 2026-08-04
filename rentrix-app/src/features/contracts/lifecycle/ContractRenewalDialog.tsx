@@ -1,5 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { Link } from '@tanstack/react-router';
+import { AlertTriangle, FileCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -16,9 +20,7 @@ export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed 
   const renewalEnd = form.watch('new_end');
   const renewalAgreementQuery = useAgreementCoverage(contract.property_id, renewalStart, renewalEnd);
   const renewalAgreement = renewalAgreementQuery.data ?? null;
-  const renewalCoverageError = open && renewalStart && renewalEnd && !renewalAgreementQuery.isLoading && !renewalAgreement
-    ? 'لا توجد اتفاقية إدارة تغطي كامل فترة التجديد. أنشئ اتفاقية لاحقة من صفحة العقار قبل التجديد.'
-    : null;
+  const renewalCoverageMissing = Boolean(open && renewalStart && renewalEnd && !renewalAgreementQuery.isLoading && !renewalAgreement);
 
   const submitRenewal = async (values: RenewalPayload) => {
     if (!renewalAgreement) {
@@ -46,7 +48,31 @@ export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed 
       className="max-w-xl"
     >
       <EntityForm.Root onSubmit={form.handleSubmit(submitRenewal)} aria-busy={renewMutation.isPending}>
-        <EntityForm.ErrorSummary message={renewalCoverageError} />
+        {renewalCoverageMissing && (
+          <Card className="col-span-full border-destructive/30 bg-destructive/5" role="alert">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base text-destructive">
+                <AlertTriangle className="size-5 shrink-0" />
+                لا توجد اتفاقية إدارة تغطي كامل فترة التجديد
+              </CardTitle>
+              <CardDescription className="text-destructive/80">
+                أنشئ اتفاقية لاحقة من صفحة العقار قبل التجديد.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link
+                  to="/properties/$propertyId"
+                  params={{ propertyId: contract.property_id }}
+                  search={{ tab: 'ownership' as const }}
+                >
+                  <FileCheck className="me-2 size-4" />
+                  فتح اتفاقيات العقار
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         <EntityForm.Field label="تاريخ البداية" error={form.formState.errors.new_start?.message}>
           <Input type="date" {...form.register('new_start')} />
         </EntityForm.Field>
@@ -64,7 +90,7 @@ export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed 
         <EntityForm.Actions
           onCancel={() => onOpenChange(false)}
           isSubmitting={renewMutation.isPending}
-          submitDisabled={renewMutation.isPending || renewalAgreementQuery.isLoading || Boolean(renewalCoverageError)}
+          submitDisabled={renewMutation.isPending || renewalAgreementQuery.isLoading || renewalCoverageMissing}
           submitLabel="تجديد العقد"
         />
       </EntityForm.Root>

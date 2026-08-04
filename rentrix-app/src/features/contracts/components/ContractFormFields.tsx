@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { calculateContractSchedulePreview } from '../contract-schedule-preview';
 import { getContractUnitDefaultRent } from '../contract-unit-options';
+import { ContractAgreementMissingAlert } from './ContractAgreementMissingAlert';
 import {
   buildContractUnitOptionLabel,
   contractStatusLabels,
@@ -219,21 +220,16 @@ export function ContractFormFields({
         description="التحقق الآلي من وجود اتفاقية إدارة فعالة للمالك تغطي فترة العقد قبل اعتماده."
         className="md:col-span-2"
       >
-        <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm">
-          {agreementCoverageQuery.isLoading ? (
-            <p className="text-muted-foreground">جارٍ التحقق من اتفاقية تشغيل المالك...</p>
-          ) : agreementCoverageQuery.data ? (
-            <div className="flex items-center justify-between gap-3 text-primary font-semibold">
-              <span>تم تحديد اتفاقية تشغيل المالك تلقائياً ({agreementCoverageQuery.data.agreement_type === 'property_management' ? 'إدارة عقارية' : 'إيجار رئيسي'}). العقد مغطى طوال فترة السريان.</span>
-            </div>
-          ) : startDate && endDate && propertyId ? (
-            <div className="flex items-center justify-between gap-3 text-destructive font-semibold">
-              <span>لا توجد اتفاقية إدارة تغطي كامل فترة العقد. انتقل إلى صفحة العقار لإنشاء أو تحديث اتفاقية الإدارة أولاً.</span>
-            </div>
-          ) : (
-            <p className="text-muted-foreground">اختر العقار وتواريخ العقد للتحقق الآلي من اتفاقية المالك.</p>
-          )}
-        </div>
+        <ContractAgreementMissingAlert
+          property={selectedProperty}
+          startDate={startDate || ''}
+          endDate={endDate || ''}
+          isLoading={agreementCoverageQuery.isLoading}
+          hasError={agreementCoverageQuery.isError}
+          hasSelectedPeriod={Boolean(propertyId && startDate && endDate)}
+          hasAgreement={Boolean(agreementCoverageQuery.data)}
+          onRetry={() => agreementCoverageQuery.refetch()}
+        />
       </EntityForm.Section>
 
       <EntityForm.Section
