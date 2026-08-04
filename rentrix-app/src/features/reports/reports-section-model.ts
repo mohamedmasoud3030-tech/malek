@@ -21,3 +21,19 @@ export function resolveReportSection(requested: unknown): ReportSectionId {
   }
   return DEFAULT_REPORT_SECTION;
 }
+
+/**
+ * Return a new search object with the report section set, preserving every
+ * unrelated search parameter the current URL already carries. This is what the
+ * router search updater applies when the user switches report sections, so
+ * unrelated params (e.g. filters) survive tab switches and direct links.
+ */
+export function mergeReportSectionIntoSearch(
+  previous: Record<string, unknown>,
+  nextSection: ReportSectionId,
+): Record<string, unknown> {
+  return {
+    ...previous,
+    [REPORTS_SECTION_SEARCH_KEY]: nextSection,
+  };
+}

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { reportSections } from './reports-page.sections';
 import {
   DEFAULT_REPORT_SECTION,
+  mergeReportSectionIntoSearch,
   REPORTS_SECTION_SEARCH_KEY,
   resolveReportSection,
 } from './reports-section-model';
@@ -41,5 +42,29 @@ describe('reports section URL model', () => {
     for (const id of ['overview', 'accounting', 'collections', 'statements']) {
       expect(resolveReportSection(resolveReportSection(id))).toBe(resolveReportSection(id));
     }
+  });
+});
+
+describe('reports section URL sync', () => {
+  it('merges the section into the search while preserving unrelated params', () => {
+    const previous = { e2e: '1', costCenterId: 'cc-1' };
+    expect(mergeReportSectionIntoSearch(previous, 'accounting')).toEqual({
+      e2e: '1',
+      costCenterId: 'cc-1',
+      section: 'accounting',
+    });
+  });
+
+  it('overwrites an existing section param when switching tabs', () => {
+    expect(mergeReportSectionIntoSearch({ section: 'overview' }, 'collections')).toEqual({
+      section: 'collections',
+    });
+  });
+
+  it('resolves a direct link with a valid section and defaults on invalid', () => {
+    // Direct link: /reports?section=statements
+    expect(resolveReportSection('statements')).toBe('statements');
+    // Direct link with an unknown section fails safe to the default.
+    expect(resolveReportSection('bogus')).toBe(DEFAULT_REPORT_SECTION);
   });
 });
