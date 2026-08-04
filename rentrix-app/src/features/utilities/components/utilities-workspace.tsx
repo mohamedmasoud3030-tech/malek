@@ -17,17 +17,15 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { useProperties } from '@/features/properties/use-properties';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
+import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { toast } from 'sonner';
 import { useUtilityBills, useUtilityMeters, useCreateUtilityMeter, useCreateUtilityBill, useDeleteUtilityMeter, useDeleteUtilityBill } from '../use-utilities';
-import { responsiblePartyLabels, utilityBillStatusLabels, utilityTypeLabels, type UtilityBillStatus, type UtilityMeterFormValues, type UtilityBillFormValues, type UtilityType, type ResponsibleParty } from '../utilities-service';
+import { responsiblePartyLabels, utilityBillStatusLabels, utilityTypeLabels, type UtilityBill, type UtilityBillStatus, type UtilityMeterFormValues, type UtilityBillFormValues, type UtilityType, type ResponsibleParty } from '../utilities-service';
 import { formatLatinNumber } from '@/lib/formatters';
-
-const defaultSettings: DocumentSettings = {
-  company: { name: 'رينتريكس لإدارة العقارات', address: 'سلطنة عمان - مسقط', phone: '+968 24000000' },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 const utilityIcons: Record<UtilityType, typeof Zap> = {
   electricity: Zap,
@@ -113,9 +111,47 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   const createBillMut = useCreateUtilityBill();
   const deleteMeterMut = useDeleteUtilityMeter();
   const deleteBillMut = useDeleteUtilityBill();
+  const documentSettings = useDocumentSettings();
+
+  // The bill the user asked to remove. The first click only stages it here and
+  // opens the confirmation dialog — the mutation runs only after an explicit
+  // confirm, so a stray tap can never delete a bill.
+  const [billToArchive, setBillToArchive] = useState<UtilityBill | null>(null);
 
   const meters = metersQuery.data ?? [];
   const bills = billsQuery.data ?? [];
+
+  const archiveBillMutationPending = deleteBillMut.isPending;
+
+  const handleConfirmArchiveBill = () => {
+    if (!billToArchive || archiveBillMutationPending) return;
+    deleteBillMut.mutate(billToArchive.id, {
+      onSuccess: () => {
+        toast.success('تمت أرشفة فاتورة المرافق وإزالتها من القائمة');
+        setBillToArchive(null);
+      },
+      onError: (error) => {
+        toast.error(error instanceof Error && error.message ? error.message : 'تعذر أرشفة فاتورة المرافق');
+      },
+    });
+  };
+
+  // Human-readable context shown inside the archive confirmation so the user
+  // can verify exactly which bill is about to be removed.
+  const archiveUtilityLabel = (bill: UtilityBill) => {
+    const meter = meters.find((m) => m.id === bill.meter_id);
+    return meter ? utilityTypeLabels[meter.utility_type] : 'مرفق غير محدد';
+  };
+  const archivePropertyLabel = (bill: UtilityBill) => {
+    const prop = propertiesQuery.data?.rows?.find((p: any) => p.id === bill.property_id);
+    return prop?.title ?? 'عقار غير محدد';
+  };
+  const archivePeriodLabel = (bill: UtilityBill) => {
+    if (bill.billing_period_start && bill.billing_period_end) {
+      return `${bill.billing_period_start} → ${bill.billing_period_end}`;
+    }
+    return bill.due_date;
+  };
 
   const filteredBills = useMemo(() => {
     let list = bills;
@@ -191,6 +227,10 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     }
   };
 
+  // Real currency label for the printed amounts — sourced from company
+  // settings, never a hardcoded symbol. Only used once settings are ready.
+  const currencyLabel = documentSettings.settings.currencySymbol || documentSettings.settings.currency;
+
   const buildUtilitiesReport = () => {
     const today = getTodayLocalDateString();
     return {
@@ -203,21 +243,24 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
           title: 'جدول فواتير المرافق',
           rows: filteredBills.map((b) => ({
             label: `فاتورة ${b.bill_number || b.id.slice(0, 8)}`,
-            value: `المبلغ: ${b.amount} ر.ع | المسدد: ${b.paid_amount} | المسؤول: ${responsiblePartyLabels[b.responsible_party]} | الاستحقاق: ${b.due_date}`,
+            value: `المبلغ: ${b.amount} ${currencyLabel} | المسدد: ${b.paid_amount} | المسؤول: ${responsiblePartyLabels[b.responsible_party]} | الاستحقاق: ${b.due_date}`,
           })),
-          totals: ['إجمالي المطالبات', `${totalBilled} ر.ع`],
+          totals: ['إجمالي المطالبات', `${totalBilled} ${currencyLabel}`],
         },
       ],
-      totalSummary: `الإجمالي: ${totalBilled} ر.ع | المسدد: ${totalPaid} ر.ع | المتبقي: ${totalUnpaid} ر.ع`,
+      totalSummary: `الإجمالي: ${totalBilled} ${currencyLabel} | المسدد: ${totalPaid} ${currencyLabel} | المتبقي: ${totalUnpaid} ${currencyLabel}`,
     };
   };
 
   const handlePrint = () => {
-    void DocumentTemplates.printReportDocument(buildUtilitiesReport(), defaultSettings);
+    // Real company identity only — block output when settings are incomplete.
+    if (!documentSettings.isReady) return;
+    void DocumentTemplates.printReportDocument(buildUtilitiesReport(), documentSettings.settings);
   };
 
   const handleDownloadPdf = () => {
-    void DocumentTemplates.downloadReportPdf(buildUtilitiesReport(), defaultSettings);
+    if (!documentSettings.isReady) return;
+    void DocumentTemplates.downloadReportPdf(buildUtilitiesReport(), documentSettings.settings);
   };
 
   const isLoading = metersQuery.isLoading || billsQuery.isLoading;
@@ -226,11 +269,11 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
 
   const headerActions = (
     <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" onClick={handlePrint} className="min-h-11 gap-2 font-bold">
+      <Button type="button" variant="outline" onClick={handlePrint} disabled={!documentSettings.isReady} className="min-h-11 gap-2 font-bold">
         <Printer className="size-4 text-primary" aria-hidden="true" />
         طباعة كشف المرافق A4
       </Button>
-      <Button type="button" variant="secondary" onClick={handleDownloadPdf} className="min-h-11 gap-2 font-bold">
+      <Button type="button" variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady} className="min-h-11 gap-2 font-bold">
         <Download className="size-4" aria-hidden="true" />
         تنزيل PDF
       </Button>
@@ -241,6 +284,10 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     <>
       {mode === 'embedded' ? (
         <div className="flex flex-wrap justify-end gap-2">{headerActions}</div>
+      ) : null}
+
+      {!documentSettings.isReady && !documentSettings.isLoading ? (
+        <DocumentReadinessNotice />
       ) : null}
 
       <ResponsiveCardGrid desktopColumns={4}>
@@ -519,7 +566,15 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
                     {bill.consumption_units != null && <div className="col-span-2">الاستهلاك: <strong className="text-foreground">{bill.consumption_units} وحدة</strong> {bill.previous_reading != null && `(${bill.previous_reading} → ${bill.current_reading})`}</div>}
                   </div>
                   <div className="flex justify-end">
-                    <Button variant="ghost" size="sm" aria-label="حذف فاتورة المرافق" onClick={() => deleteBillMut.mutate(bill.id)} disabled={deleteBillMut.isPending}><Trash2 className="size-4" /></Button>
+                    {/* First click only opens the confirmation dialog — nothing is removed yet. */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? ''}`.trim()}
+                      onClick={() => setBillToArchive(bill)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -528,6 +583,45 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
           </Card>
         </div>
       </AsyncContentState>
+
+      {/* Archive confirmation — the backend performs a logical delete
+          (deleted_at), so the wording is "archive", not permanent deletion. */}
+      <ConfirmDialog
+        open={Boolean(billToArchive)}
+        onOpenChange={(open) => { if (!open) setBillToArchive(null); }}
+        title="أرشفة فاتورة المرافق؟"
+        description="ستُخفى الفاتورة من القائمة وتبقى محفوظة كسجل أرشيفي. لا يمكن تكرار الإجراء أثناء التنفيذ."
+        confirmLabel="تأكيد الأرشفة"
+        cancelLabel="إلغاء"
+        variant="danger"
+        isLoading={archiveBillMutationPending}
+        onConfirm={handleConfirmArchiveBill}
+      >
+        {billToArchive ? (
+          <div className="grid gap-1.5 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs leading-5">
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">رقم الفاتورة</span>
+              <strong>{billToArchive.bill_number ?? '—'}</strong>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">نوع المرفق</span>
+              <strong>{archiveUtilityLabel(billToArchive)}</strong>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">العقار</span>
+              <strong>{archivePropertyLabel(billToArchive)}</strong>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">المبلغ</span>
+              <strong>{formatMoney(billToArchive.amount)}</strong>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">الفترة / الاستحقاق</span>
+              <strong>{archivePeriodLabel(billToArchive)}</strong>
+            </div>
+          </div>
+        ) : null}
+      </ConfirmDialog>
     </>
   );
 

@@ -13,8 +13,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { AsyncContentState } from '@/components/async-content-state';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { numberToArabicWords, OMR_CURRENCY_CONFIG } from '@/lib/numberToArabicWords';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
+import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -29,28 +31,30 @@ import {
   type DepositRefundPayload,
   type DepositStatus,
 } from './deposit-service';
+import {
+  describeSelectedContract,
+  formatContractOptionLabel,
+  formatDepositContractReference,
+  type DepositContractOption,
+} from './deposit-contract-options';
 import type { Contract } from '@/types/domain';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { formatLatinNumber } from '@/lib/formatters';
 
-const defaultSettings: DocumentSettings = {
-  company: { name: 'رينتريكس لإدارة العقارات', address: 'سلطنة عمان - مسقط', phone: '+968 24000000' },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
-
 function useContracts() {
   return useQuery({
     queryKey: ['contracts-for-deposits'],
     queryFn: async () => {
+      // The UUID stays the option VALUE; these joined display fields keep raw
+      // identifiers out of the option labels.
       const { data, error } = await supabase
         .from('contracts')
-        .select('id, tenant_id, property_id, unit_id')
+        .select('id, tenant_id, property_id, unit_id, people:tenant_id(id,full_name), properties:property_id(id,title), units:unit_id(id,unit_number)')
         .is('deleted_at', null)
         .in('status', getContractStatusVariants('active') as Contract['status'][]) // legacy rows may be stored as 'ACTIVE'
         .limit(100)
-        .returns<Contract[]>();
+        .returns<DepositContractOption[]>();
       if (error) handleSupabaseError(error, 'تعذر تحميل العقود');
       return data ?? [];
     },
@@ -85,7 +89,9 @@ export function DepositsWorkspace() {
     queryFn: listTenantDeposits,
   });
   const contractsQuery = useContracts();
+  const documentSettings = useDocumentSettings();
   const deposits = depositsQuery.data ?? [];
+  const selectedContract = contractsQuery.data?.find((contract) => contract.id === createForm.contract_id) ?? null;
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -156,9 +162,15 @@ export function DepositsWorkspace() {
   const totalRefunded = useMemo(() => deposits.reduce((sum, deposit) => sum + deposit.refunded_amount, 0), [deposits]);
   const contentStatus = getContentStatus(depositsQuery.isLoading, depositsQuery.isError, deposits.length === 0);
 
+  // Real currency label for the printed amounts — sourced from company
+  // settings, never a hardcoded symbol. Only used once settings are ready.
+  const currencyLabel = documentSettings.settings.currencySymbol || documentSettings.settings.currency;
+
   const buildDepositClearanceDocument = (deposit: DepositRecord) => {
     const printableAmount = deposit.remaining_amount > 0 ? deposit.remaining_amount : deposit.deposit_amount;
     const tafqeet = numberToArabicWords(printableAmount, OMR_CURRENCY_CONFIG);
+    // Readable contract reference instead of the raw contract UUID.
+    const contractReference = formatDepositContractReference(deposit);
     return {
       reportTitle: 'سند تسوية ومخالصة مبلغ التأمين',
       reportType: 'Tenant_Security_Deposit_Clearance',
@@ -168,14 +180,14 @@ export function DepositsWorkspace() {
         {
           title: 'بيانات الوديعة',
           rows: [
-            { label: 'معرف العقد', value: deposit.contract_id },
-            { label: 'مبلغ التأمين الأصلي', value: `${deposit.deposit_amount} ر.ع` },
-            { label: 'الخصومات', value: `${deposit.deducted_amount} ر.ع` },
-            { label: 'المسترد', value: `${deposit.refunded_amount} ر.ع` },
-            { label: 'المتبقي', value: `${deposit.remaining_amount} ر.ع` },
+            { label: 'العقد', value: contractReference },
+            { label: 'مبلغ التأمين الأصلي', value: `${deposit.deposit_amount} ${currencyLabel}` },
+            { label: 'الخصومات', value: `${deposit.deducted_amount} ${currencyLabel}` },
+            { label: 'المسترد', value: `${deposit.refunded_amount} ${currencyLabel}` },
+            { label: 'المتبقي', value: `${deposit.remaining_amount} ${currencyLabel}` },
             { label: 'تفقيط المتبقي', value: tafqeet },
           ],
-          totals: ['الصافي', `${deposit.remaining_amount} ر.ع`],
+          totals: ['الصافي', `${deposit.remaining_amount} ${currencyLabel}`],
         },
       ],
       totalSummary: `تاريخ المخالصة: ${getTodayLocalDateString()}`,
@@ -183,11 +195,15 @@ export function DepositsWorkspace() {
   };
 
   const handlePrint = (deposit: DepositRecord) => {
-    void DocumentTemplates.printReportDocument(buildDepositClearanceDocument(deposit), defaultSettings);
+    // Real company identity only — block the output when settings are
+    // incomplete instead of printing placeholder branding.
+    if (!documentSettings.isReady) return;
+    void DocumentTemplates.printReportDocument(buildDepositClearanceDocument(deposit), documentSettings.settings);
   };
 
   const handleDownloadPdf = (deposit: DepositRecord) => {
-    void DocumentTemplates.downloadReportPdf(buildDepositClearanceDocument(deposit), defaultSettings);
+    if (!documentSettings.isReady) return;
+    void DocumentTemplates.downloadReportPdf(buildDepositClearanceDocument(deposit), documentSettings.settings);
   };
 
   const executeSelectedAction = () => {
@@ -213,6 +229,10 @@ export function DepositsWorkspace() {
         </Button>
       </section>
 
+      {!documentSettings.isReady && !documentSettings.isLoading ? (
+        <DocumentReadinessNotice />
+      ) : null}
+
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" />
         <KpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} accent="rose" sub="أضرار وصيانة" />
@@ -235,18 +255,19 @@ export function DepositsWorkspace() {
               <CardContent className="space-y-3 p-4">
                 <div className="flex flex-wrap justify-between gap-2 border-b pb-2">
                   <div>
-                    <p className="text-sm font-bold">وديعة عقد {deposit.contract_id.slice(0, 8)} · {deposit.tenant_name || deposit.tenant_id || 'مستأجر'}</p>
+                    {/* Readable contract reference — never the raw UUID or tenant_id */}
+                    <p className="text-sm font-bold">وديعة تأمين · {formatDepositContractReference(deposit)}</p>
                     <p className="text-xs text-muted-foreground">
-                      {deposit.property_title || deposit.property_id || 'عقار'} · وحدة {deposit.unit_number || deposit.unit_id || '—'} · استلام: {deposit.received_date}
+                      استلام: {deposit.received_date}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge tone={getDepositTone(deposit.status)}>{depositStatusLabels[deposit.status]}</StatusBadge>
-                    <Button variant="outline" size="sm" onClick={() => handlePrint(deposit)} className="gap-1">
+                    <Button variant="outline" size="sm" onClick={() => handlePrint(deposit)} disabled={!documentSettings.isReady} className="gap-1">
                       <Printer className="size-3.5" />
                       طباعة
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDownloadPdf(deposit)} className="gap-1">
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadPdf(deposit)} disabled={!documentSettings.isReady} className="gap-1">
                       <Download className="size-3.5" />
                       PDF
                     </Button>
@@ -295,10 +316,17 @@ export function DepositsWorkspace() {
               <Select required value={createForm.contract_id} onChange={(event) => setCreateForm((form) => ({ ...form, contract_id: event.target.value }))}>
                 <option value="">اختر العقد</option>
                 {contractsQuery.data?.map((contract) => (
-                  <option key={contract.id} value={contract.id}>{contract.id.slice(0, 8)} - عقار {contract.property_id?.slice(0, 6)}</option>
+                  <option key={contract.id} value={contract.id}>{formatContractOptionLabel(contract)}</option>
                 ))}
               </Select>
             </EntityForm.Field>
+            {/* Visual confirmation of the selected contract before saving — the
+                UUID stays the internal value and is never the label. */}
+            {selectedContract ? (
+              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
+                العقد المحدد: {describeSelectedContract(selectedContract)}
+              </p>
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <EntityForm.Field label="المبلغ *">
                 <Input required type="number" dir="ltr" value={createForm.amount} onChange={(event) => setCreateForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} />
