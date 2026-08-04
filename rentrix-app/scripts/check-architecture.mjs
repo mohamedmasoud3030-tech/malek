@@ -12,6 +12,10 @@ const violations = [];
 const featureDependencyAllowList = new Map([
   ['ai-assistant', new Set(['financials'])],
   ['audit', new Set(['auth', 'settings'])],
+  // UX-049: commissions source selector queries contracts, leads, lands, people, and
+  // properties to build a typed, permission-aware source selector that replaces
+  // the free-text UUID entry.
+  ['commissions', new Set(['contracts', 'financials', 'lands', 'leads', 'people', 'properties'])],
   ['contracts', new Set(['financials', 'owners', 'people', 'properties', 'settings', 'units'])],
   ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding'])],
   // finance-hub is the composition layer for the finance workspaces: it owns

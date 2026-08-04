@@ -3,6 +3,7 @@ import { RouteLoadingState } from '@/components/loading-state';
 import { EntityForm } from '@/components/ui/entity-form';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
+import { ContractAgreementMissingAlert } from './components/ContractAgreementMissingAlert';
 import { ContractFormFields } from './components/ContractFormFields';
 import { useContractForm } from './useContractForm';
 
@@ -28,6 +29,7 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
     unitsQuery,
     unitConflictsQuery,
     agreementCoverageQuery,
+    selectedProperty,
     handleSubmit,
   } = controller;
 
@@ -60,11 +62,9 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
   const startDate = form.watch('start_date');
   const endDate = form.watch('end_date');
   const hasSelectedPeriod = Boolean(propertyId && startDate && endDate);
-  const coverageError = agreementCoverageQuery.isError
-    ? 'تعذر التحقق من اتفاقية المالك. أعد المحاولة قبل حفظ العقد.'
-    : hasSelectedPeriod && !agreementCoverageQuery.isLoading && !agreementCoverageQuery.data
-      ? 'لا توجد اتفاقية إدارة تغطي كامل فترة العقد. انتقل إلى صفحة العقار لإنشاء أو تحديث اتفاقية الإدارة أولاً.'
-      : null;
+  const coverageMissing =
+    agreementCoverageQuery.isError ||
+    (hasSelectedPeriod && !agreementCoverageQuery.isLoading && !agreementCoverageQuery.data);
   let dependencyError: string | null = null;
   if (propertiesQuery.isError || peopleQuery.isError) {
     dependencyError = 'تعذر تحميل بيانات العقارات أو المستأجرين. أعد تحميل الصفحة ثم حاول مرة أخرى.';
@@ -93,15 +93,31 @@ export function ContractFormModal({ open, onClose, contractId }: ContractFormMod
       {isEdit && contractQuery.isLoading ? (
         <RouteLoadingState />
       ) : (
-        <ContractFormFields
-          controller={controller}
-          onSubmit={form.handleSubmit(handleSubmit)}
-          onCancel={onClose}
-          dependencyError={dependencyError}
-          coverageError={coverageError}
-          showAttachment
-          autoFocusProperty
-        />
+        <>
+          {coverageMissing && (
+            <div className="mb-4">
+              <ContractAgreementMissingAlert
+                property={selectedProperty}
+                startDate={startDate || ''}
+                endDate={endDate || ''}
+                isLoading={agreementCoverageQuery.isLoading}
+                hasError={agreementCoverageQuery.isError}
+                hasSelectedPeriod={hasSelectedPeriod}
+                hasAgreement={Boolean(agreementCoverageQuery.data)}
+                onRetry={() => agreementCoverageQuery.refetch()}
+              />
+            </div>
+          )}
+          <ContractFormFields
+            controller={controller}
+            onSubmit={form.handleSubmit(handleSubmit)}
+            onCancel={onClose}
+            dependencyError={dependencyError}
+            coverageError={coverageMissing ? 'لا توجد اتفاقية إدارة تغطي كامل فترة العقد. راجع الإشعار أعلاه.' : null}
+            showAttachment
+            autoFocusProperty
+          />
+        </>
       )}
     </EntityForm.Overlay>
   );
