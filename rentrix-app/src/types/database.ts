@@ -3,6 +3,133 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          id: string;
+          no: string;
+          name: string;
+          company_id: string;
+          account_type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | 'other';
+          normal_balance: 'debit' | 'credit';
+          currency_code: string;
+          precision: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['accounts']['Row']> & Pick<Database['public']['Tables']['accounts']['Row'], 'id' | 'no' | 'name'>;
+        Update: Partial<Database['public']['Tables']['accounts']['Row']>;
+        Relationships: [];
+      };
+      accounting_periods: {
+        Row: {
+          id: string;
+          company_id: string;
+          name: string;
+          start_date: string;
+          end_date: string;
+          status: 'OPEN' | 'SOFT_CLOSED' | 'HARD_CLOSED';
+          closed_at: string | null;
+          closed_by: string | null;
+          reopen_reason: string | null;
+          created_at: string;
+          created_by: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['accounting_periods']['Row']> & Pick<Database['public']['Tables']['accounting_periods']['Row'], 'company_id' | 'name' | 'start_date' | 'end_date'>;
+        Update: Partial<Database['public']['Tables']['accounting_periods']['Row']>;
+        Relationships: [];
+      };
+      journal_batches: {
+        Row: {
+          id: string;
+          company_id: string;
+          status: 'DRAFT' | 'POSTED' | 'REVERSED';
+          source_type: string;
+          source_id: string;
+          event_id: string;
+          reversal_of_batch_id: string | null;
+          is_legacy_compat: boolean;
+          effective_date: string;
+          accounting_period_id: string | null;
+          period_resolution_reason: string | null;
+          posted_at: string | null;
+          posted_by: string | null;
+          description: string | null;
+          created_at: string;
+          created_by: string | null;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['journal_batches']['Row']> & Pick<Database['public']['Tables']['journal_batches']['Row'], 'company_id' | 'source_type' | 'event_id' | 'effective_date'>;
+        Update: Partial<Database['public']['Tables']['journal_batches']['Row']>;
+        Relationships: [];
+      };
+      journal_lines: {
+        Row: {
+          id: string;
+          no: string | null;
+          date: string | null;
+          batch_id: string;
+          company_id: string;
+          account_id: string;
+          debit: number;
+          credit: number;
+          line_description: string | null;
+          ref_source_id: string | null;
+          ref_entity_type: string | null;
+          ref_entity_id: string | null;
+          request_id: string | null;
+          deleted_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['journal_lines']['Row']> & Pick<Database['public']['Tables']['journal_lines']['Row'], 'id' | 'batch_id' | 'company_id' | 'account_id'>;
+        Update: Partial<Database['public']['Tables']['journal_lines']['Row']>;
+        Relationships: [];
+      };
+      journal_entries: {
+        Row: {
+          id: string;
+          no: string | null;
+          date: string | null;
+          account_id: string;
+          amount: number;
+          type: 'DEBIT' | 'CREDIT';
+          source_id: string | null;
+          entity_type: string | null;
+          entity_id: string | null;
+          created_at: string;
+          company_id: string;
+          batch_id: string | null;
+          request_id: string | null;
+          status: 'draft' | 'posted';
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['journal_entries']['Row']> & Pick<Database['public']['Tables']['journal_entries']['Row'], 'account_id' | 'amount' | 'type'>;
+        Update: Partial<Database['public']['Tables']['journal_entries']['Row']>;
+        Relationships: [];
+      };
+      journal_entries_archive: {
+        Row: {
+          id: string;
+          no: string | null;
+          date: string | null;
+          account_id: string | null;
+          amount: number;
+          type: string;
+          source_id: string | null;
+          entity_type: string | null;
+          entity_id: string | null;
+          created_at: string;
+          company_id: string;
+          batch_id: string | null;
+          request_id: string | null;
+          status: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['journal_entries_archive']['Row']> & Pick<Database['public']['Tables']['journal_entries_archive']['Row'], 'amount'>;
+        Update: Partial<Database['public']['Tables']['journal_entries_archive']['Row']>;
+        Relationships: [];
+      };
       bank_accounts: {
         Row: {
           id: string;
@@ -738,6 +865,54 @@ export type Database = {
           p_request_id?: string | null;
         };
         Returns: { maintenance: Json; idempotent: boolean };
+      };
+      provision_company_chart_of_accounts: {
+        Args: { p_company_id: string };
+        Returns: Json;
+      };
+      ensure_company_chart_of_accounts: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      gl_create_journal_batch: {
+        Args: { p_payload: Json };
+        Returns: Json;
+      };
+      gl_post_journal_batch: {
+        Args: { p_batch_id: string };
+        Returns: Json;
+      };
+      post_journal_event: {
+        Args: { p_payload: Json };
+        Returns: Json;
+      };
+      reverse_journal_batch: {
+        Args: { p_batch_id: string };
+        Returns: Json;
+      };
+      create_accounting_period: {
+        Args: { p_payload: Json };
+        Returns: Json;
+      };
+      update_accounting_period_status: {
+        Args: { p_payload: Json };
+        Returns: Json;
+      };
+      list_chart_of_accounts: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      list_accounting_periods: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
+      list_journal_batches: {
+        Args: { p_payload?: Json | null };
+        Returns: Json;
+      };
+      list_journal_lines: {
+        Args: { p_batch_id: string };
+        Returns: Json;
       };
     };
     Enums: Record<string, never>;
