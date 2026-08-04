@@ -37,7 +37,7 @@ emit_failure_diagnostics() {
     if [[ -s "$LOG_DIR/$f" ]]; then
       lines+=$'\n'$'  -- '"$f"
       local hit
-      hit="$(grep -iE 'error|failed|exception|violat|fatal|abort|failing' "$LOG_DIR/$f" | tail -n 6 || true)"
+      hit="$(grep -iE 'not ok|Failed tests|Looks like|error|failed|exception|violat|fatal|abort|threw|got .* want' "$LOG_DIR/$f" | tail -n 14 || true)"
       if [[ -n "$hit" ]]; then
         lines+=$'\n'"$(printf '%s\n' "$hit" | sed 's/^/    /')"
       else
