@@ -176,17 +176,41 @@ describe('Phase 3A-1A execution hardening', () => {
   });
 
   it('does not leak a company A idempotency response into company B', async () => {
+    // Stage 3 relaxes the global account-number uniqueness to UNIQUE(company_id, no),
+    // so company B now provisions its OWN 1111/6100 accounts and the expense is
+    // created fresh — the shared raw request_id must never replay company A's
+    // cached response into company B.
     await assumeIdentity(db, ADMIN_B, COMPANY_B);
-    await expect(
-      rpc('create_expense_with_journal_atomic', {
-        request_id: 'phase3a-expense-shared',
-        property_id: PROPERTY_B,
-        category: 'maintenance',
-        amount: 9.5,
-        expense_date: '2026-07-24',
-      }),
-    ).rejects.toThrow(/ACCOUNT_NUMBER_GLOBAL_UNIQUENESS_BLOCKED/);
-    evidence.crossCompanyIdempotency = { isolated: true, requestId: 'phase3a-expense-shared' };
+    const created = await rpc('create_expense_with_journal_atomic', {
+      request_id: 'phase3a-expense-shared',
+      property_id: PROPERTY_B,
+      category: 'maintenance',
+      amount: 9.5,
+      expense_date: '2026-07-24',
+    });
+    expect(created.success).toBe(true);
+    expect(created.idempotent).toBe(false);
+    const companyAExpense = (evidence.expense as { created?: { expense_id?: unknown } } | undefined)?.created?.expense_id;
+    expect(created.expense_id).not.toBe(companyAExpense);
+
+    const { rows: bAccounts } = await db.query(
+      `select count(*)::int as n from public.accounts where company_id = $1::uuid and no in ('1111','6100')`,
+      [COMPANY_B],
+    );
+    expect((bAccounts[0] as { n: number }).n).toBe(2);
+
+    const { rows: bExpenses } = await db.query(
+      `select count(*)::int as n from public.expenses where company_id = $1::uuid and id::text = $2`,
+      [COMPANY_B, String(created.expense_id)],
+    );
+    expect((bExpenses[0] as { n: number }).n).toBe(1);
+
+    evidence.crossCompanyIdempotency = {
+      isolated: true,
+      requestId: 'phase3a-expense-shared',
+      companyBExpenseId: created.expense_id,
+      companyBProvisionedAccounts: (bAccounts[0] as { n: number }).n,
+    };
   });
 
   it('executes canonical deposit receive/deduct/refund and rejects property mismatch', async () => {

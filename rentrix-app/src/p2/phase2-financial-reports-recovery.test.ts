@@ -97,14 +97,15 @@ INSERT INTO public.contracts (id, property_id, unit_id, tenant_id, start_date, e
   ('${C_F}',  '${P_F}',  '${U_F}',  '${T_F}',  '2026-01-01', '2026-08-31', 9000,  'active', '${AGR_F}',  '${COMPANY_1}'),
   ('${C_M}',  '${P_M}',  '${U_M}',  '${T_M}',  '2026-01-01', '2026-12-31', 15000, 'active', '${AGR_M}',  '${COMPANY_1}');
 
--- Update baseline accounts company_id
-UPDATE public.accounts SET company_id = '${COMPANY_1}' WHERE no IN ('1111', '1201', '2000', '2200', '6100');
+-- Update baseline accounts company_id. Stage 3 ledger lines carry a composite
+-- FK (account_id, company_id) -> accounts(id, company_id), so every account a
+-- journal line references must belong to the SAME company as the line — the
+-- pre-seeded 2100/4000 rows are moved to COMPANY_1 like the others.
+UPDATE public.accounts SET company_id = '${COMPANY_1}' WHERE no IN ('1111', '1201', '2000', '2100', '2200', '4000', '6100');
 
 -- Insert other custom accounts for COMPANY_1 using unique ids matching the nos
 INSERT INTO public.accounts (id, no, name, company_id) VALUES
-  ('2100', '2100', 'VAT Payable', '${COMPANY_1}'),
-  ('3000', '3000', 'Retained Earnings', '${COMPANY_1}'),
-  ('4000', '4000', 'Rental Revenue', '${COMPANY_1}')
+  ('3000', '3000', 'Retained Earnings', '${COMPANY_1}')
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed balanced journal entries for COMPANY_1 using real accounts

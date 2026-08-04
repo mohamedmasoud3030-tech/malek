@@ -149,10 +149,12 @@ INSERT INTO public.accounts (id, name, company_id) VALUES
   ('B1111', 'الصندوق باء', '${COMPANY_B}'), ('B4000', 'إيرادات باء', '${COMPANY_B}');
 
 INSERT INTO public.journal_entries (no, date, account_id, amount, type, entity_type, company_id, batch_id) VALUES
-  ('JE-A1', '2026-07-15', 'A1111', ${A_PAY}, 'DEBIT',  'manual', '${COMPANY_A}', gen_random_uuid()),
-  ('JE-A2', '2026-07-15', 'A4000', ${A_PAY}, 'CREDIT', 'manual', '${COMPANY_A}', gen_random_uuid()),
-  ('JE-B1', '2026-07-15', 'B1111', ${B_JE},  'DEBIT',  'manual', '${COMPANY_B}', gen_random_uuid()),
-  ('JE-B2', '2026-07-15', 'B4000', ${B_JE},  'CREDIT', 'manual', '${COMPANY_B}', gen_random_uuid());
+  -- Stage 3: a DEBIT/CREDIT pair must share ONE batch (each posted batch
+  -- balances exactly), so the two lines of each company use one batch id.
+  ('JE-A1', '2026-07-15', 'A1111', ${A_PAY}, 'DEBIT',  'manual', '${COMPANY_A}', 'c0000000-0000-4000-8000-0000000000a1'),
+  ('JE-A2', '2026-07-15', 'A4000', ${A_PAY}, 'CREDIT', 'manual', '${COMPANY_A}', 'c0000000-0000-4000-8000-0000000000a1'),
+  ('JE-B1', '2026-07-15', 'B1111', ${B_JE},  'DEBIT',  'manual', '${COMPANY_B}', 'c0000000-0000-4000-8000-0000000000b1'),
+  ('JE-B2', '2026-07-15', 'B4000', ${B_JE},  'CREDIT', 'manual', '${COMPANY_B}', 'c0000000-0000-4000-8000-0000000000b1');
   `);
 }
 
@@ -496,7 +498,28 @@ beforeAll(async () => {
     if (file === '20260713000005_fix_void_receipt_anon_grant.sql') {
       sql = sql.replace(/RAISE EXCEPTION 'Post-flight check/gi, "RAISE WARNING 'Post-flight check");
     }
-    if (FIX_FILE && file === FIX_FILE) continue; // applied in the `after` phase.
+    if (FIX_FILE && file === FIX_FILE) {
+      // Stage 3 turned journal_entries into a compatibility VIEW, so the P0
+      // file's table-level RLS statements for it can no longer re-apply on top
+      // of a replayed main. The archive table keeps the moved policies and the
+      // canonical tables carry their own — guard the statements instead of
+      // skipping them so the re-apply proves the rest of the P0 file verbatim.
+      sql = sql.replace(
+        /alter table public\."journal_entries" enable row level security;[\s\S]*?drop policy if exists p0_tenant_isolation on public\."journal_entries";[\s\S]*?create policy p0_tenant_isolation on public\."journal_entries" as restrictive[\s\S]*?using \(company_id = public\.current_company_id\(\)\)[\s\S]*?with check \(company_id = public\.current_company_id\(\)\);/,
+        // NOTE: function replacement (not a string) — String.replace would
+        // turn every $$ of the SQL dollar-quote into a single $.
+        () => `do $$
+        begin
+          if to_regclass('public.journal_entries') is not null
+             and (select relkind from pg_class where oid = 'public.journal_entries'::regclass) = 'r' then
+            execute 'alter table public."journal_entries" enable row level security';
+            execute 'drop policy if exists p0_tenant_isolation on public."journal_entries"';
+            execute 'create policy p0_tenant_isolation on public."journal_entries" as restrictive using (company_id = public.current_company_id()) with check (company_id = public.current_company_id())';
+          end if;
+        end $$;`,
+      );
+      continue; // applied in the `after` phase.
+    }
     try {
       await db.exec(sql);
     } catch (e) {
@@ -537,7 +560,23 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
   it.skipIf(!FIX_FILE)('applies the P0 fix migration cleanly on top of replayed main', async () => {
     let applyError: unknown = null;
     try {
-      await db.exec(readFileSync(join(migDir, FIX_FILE as string), 'utf8'));
+      let fixSql = readFileSync(join(migDir, FIX_FILE as string), 'utf8');
+      // Same Stage 3 view-guard as the replay loop (see beforeAll).
+      fixSql = fixSql.replace(
+        /alter table public\."journal_entries" enable row level security;[\s\S]*?drop policy if exists p0_tenant_isolation on public\."journal_entries";[\s\S]*?create policy p0_tenant_isolation on public\."journal_entries" as restrictive[\s\S]*?using \(company_id = public\.current_company_id\(\)\)[\s\S]*?with check \(company_id = public\.current_company_id\(\)\);/,
+        // NOTE: function replacement (not a string) — String.replace would
+        // turn every $$ of the SQL dollar-quote into a single $.
+        () => `do $$
+        begin
+          if to_regclass('public.journal_entries') is not null
+             and (select relkind from pg_class where oid = 'public.journal_entries'::regclass) = 'r' then
+            execute 'alter table public."journal_entries" enable row level security';
+            execute 'drop policy if exists p0_tenant_isolation on public."journal_entries"';
+            execute 'create policy p0_tenant_isolation on public."journal_entries" as restrictive using (company_id = public.current_company_id()) with check (company_id = public.current_company_id())';
+          end if;
+        end $$;`,
+      );
+      await db.exec(fixSql);
     } catch (e) {
       applyError = e;
     }
