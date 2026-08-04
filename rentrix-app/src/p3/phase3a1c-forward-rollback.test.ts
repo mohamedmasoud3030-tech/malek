@@ -122,7 +122,7 @@ async function lifecycle(tag: 'forward' | 'reapply', month: string, n: number) {
 describe('Phase 3A-1C forward / rollback / reapply', () => {
   beforeAll(async () => {
     const replay = await createFullReplayedDatabase({
-      excludeMigrations: [MIGRATION_KEY, FOLLOW_UP_COMPATIBILITY_KEY],
+      excludeMigrations: [MIGRATION_KEY, FOLLOW_UP_COMPATIBILITY_KEY, '20260804'],
       writeEvidence: false,
     });
     expect(replay.failed).toEqual([]);
