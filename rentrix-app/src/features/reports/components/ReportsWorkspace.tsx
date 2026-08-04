@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { AlertTriangle, Building2, Receipt, TrendingUp } from 'lucide-react';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -40,6 +40,9 @@ type ReportsWorkspaceProps = Readonly<{
   model: ReportsWorkspaceModel;
   filters: FilterState;
   canExportReports: boolean;
+  /** The currently displayed report section (URL-backed on the real route). */
+  activeSection: ReportSectionId;
+  onSectionChange: (section: ReportSectionId) => void;
   onFiltersChange: (filters: FilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
@@ -48,10 +51,11 @@ export function ReportsWorkspace({
   model,
   filters,
   canExportReports,
+  activeSection,
+  onSectionChange,
   onFiltersChange,
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
-  const [activeSection, setActiveSection] = useState<ReportSectionId>('overview');
   const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
   const ActiveSectionIcon = activeSectionMeta.icon;
   const summary = model.hero.summary;
@@ -144,6 +148,10 @@ export function ReportsWorkspace({
       ) : null}
 
       <section className="min-w-0 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card" aria-label="أقسام التقارير">
+        {/* A single H2 announces the active section. The report page keeps its
+            own stable H1 identity; this H2 describes the currently displayed
+            report and pairs with the tab's aria-selected state instead of
+            duplicating another heading. */}
         <div className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           <div className="flex min-w-0 items-start gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
@@ -166,7 +174,7 @@ export function ReportsWorkspace({
             <SectionTabs
               items={reportSections}
               activeId={activeSection}
-              onChange={setActiveSection}
+              onChange={onSectionChange}
               ariaLabel="أقسام التقارير"
             />
           </div>

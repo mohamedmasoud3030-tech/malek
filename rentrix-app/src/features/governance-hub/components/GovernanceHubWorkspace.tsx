@@ -1,7 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { WorkspaceSubNav } from '@/components/layout/workspace-sub-nav';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
@@ -89,8 +88,10 @@ export function GovernanceHubWorkspace() {
         title="الإدارة والحوكمة"
         description="مركز موحّد لإعدادات المكتب، المستخدمين والأدوار، سجل التدقيق، سلامة البيانات، وكلمة المرور والأمان."
       />
-      <WorkspaceSubNav rootPath="/settings" />
 
+      {/* SectionTabs is the single navigation controller for this workspace.
+          A duplicated secondary-nav row previously showed the same section set
+          twice on desktop and stacked two horizontal menus on mobile. */}
       <div className="no-scrollbar sticky top-0 z-20 -mx-1 overflow-x-auto rounded-xl border border-border/60 bg-card/95 px-1 pt-2 backdrop-blur">
         <div className="min-w-max">
           <SectionTabs

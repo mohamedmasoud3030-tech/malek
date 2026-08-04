@@ -3,7 +3,6 @@ import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { WorkspaceSubNav } from '@/components/layout/workspace-sub-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
@@ -110,7 +109,6 @@ export function OperationsHubWorkspace({
     return (
       <PageLayout dir="rtl" lang="ar" size="wide">
         <PageHeader title={title} description={description} />
-        <WorkspaceSubNav rootPath="/maintenance" />
         {children}
       </PageLayout>
     );
