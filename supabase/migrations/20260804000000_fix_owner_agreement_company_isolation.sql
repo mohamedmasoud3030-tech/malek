@@ -65,7 +65,7 @@ begin
       using errcode = '42501';
   end if;
   if payload ? 'property_id'
-     and nullif(payload->>'property_id', '')::uuid is distinct from v_old.property_id::uuid then
+     and nullif(payload->>'property_id', '') is distinct from v_old.property_id::text then
     raise exception 'AGREEMENT_RELATIONSHIP_IMMUTABLE'
       using errcode = '42501';
   end if;
