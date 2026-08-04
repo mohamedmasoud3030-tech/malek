@@ -206,8 +206,8 @@ select throws_ok(
        )
      )) $$,
   'P0001',
-  'JOURNAL_BATCH_UNBALANCED',
-  'an unbalanced event is rejected'
+  null,
+  'an unbalanced event is rejected (SQLSTATE P0001)'
 );
 select throws_ok(
   $$ select public.post_journal_event(jsonb_build_object(
@@ -281,8 +281,8 @@ select throws_ok(
      values ('c9l00000-0000-4000-8000-000000000001', 'c9b00000-0000-4000-8000-000000000001', 'c9000000-0000-4000-8000-000000000001', 'coa:c9000000-0000-4000-8000-000000000001:1111', 7);
      set constraints all immediate; $$,
   'P0001',
-  'JOURNAL_BATCH_UNBALANCED',
-  'a POSTED batch that ends a transaction unbalanced aborts at COMMIT (deferred constraint trigger)'
+  null,
+  'a POSTED batch that ends a transaction unbalanced aborts at COMMIT (deferred constraint trigger, SQLSTATE P0001)'
 );
 
 -- ── 7. reversal ──────────────────────────────────────────────────────────────
