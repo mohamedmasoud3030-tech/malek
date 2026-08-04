@@ -37,7 +37,7 @@ create or replace function public.next_document_reference(
   p_year       integer
 ) returns text
 language plpgsql
-security invoker
+security definer
 set search_path = public
 as $$
 declare
@@ -63,7 +63,7 @@ $$;
 create or replace function public.assign_document_reference()
 returns trigger
 language plpgsql
-security invoker
+security definer
 set search_path = public
 as $$
 declare
@@ -375,7 +375,13 @@ $$;
 
 select public.backfill_business_document_references();
 
--- 8. Helpers used by the application layer ------------------------------------
+-- 8. Grants -------------------------------------------------------------------
+-- next_document_reference is SECURITY DEFINER (allocates the per-company
+-- sequence); grant EXECUTE so authenticated callers and the trigger can use it.
+grant execute on function public.next_document_reference(uuid, text, text, integer) to authenticated;
+grant execute on function public.backfill_business_document_references() to authenticated;
+
+-- 9. Helpers used by the application layer ------------------------------------
 -- Return a company-scoped reference for a document class without assigning it.
 create or replace function public.format_document_reference(
   p_company_id uuid,
@@ -389,5 +395,7 @@ immutable
 as $$
   select format('%s-%s-%s', p_prefix, p_year, lpad(p_sequence::text, 6, '0'))
 $$;
+
+grant execute on function public.format_document_reference(uuid, text, text, integer, bigint) to authenticated;
 
 commit;
