@@ -14,6 +14,7 @@ cleanup() {
   set +e
   [[ -n "${DB_URL:-}" ]] && psql "$DB_URL" -v ON_ERROR_STOP=1 -q <<'SQL'
     delete from public.owner_agreements where id = '00000000-0000-0000-0000-00000000c301';
+    delete from public.property_owners where id = '00000000-0000-0000-0000-00000000c250';
     delete from public.properties where id = '00000000-0000-0000-0000-00000000c201';
     delete from public.owners where id = '00000000-0000-0000-0000-00000000c101';
     delete from public.company_members where company_id = '00000000-0000-4000-8000-0000000000c1';
@@ -50,6 +51,9 @@ insert into public.owners (id,full_name,company_id) values
  ('00000000-0000-0000-0000-00000000c101','FA4 C Owner','00000000-0000-4000-8000-0000000000c1');
 insert into public.properties (id,title,type,address,status,company_id) values
  ('00000000-0000-0000-0000-00000000c201','FA4 C Property','residential','FA4 C','active','00000000-0000-4000-8000-0000000000c1');
+insert into public.property_owners
+ (id,property_id,owner_id,ownership_percentage,is_primary,starts_on,ends_on,company_id) values
+ ('00000000-0000-0000-0000-00000000c250','00000000-0000-0000-0000-00000000c201','00000000-0000-0000-0000-00000000c101',100,true,'2025-01-01',null,'00000000-0000-4000-8000-0000000000c1');
 insert into public.owner_agreements (id,owner_id,property_id,agreement_type,commission_type,commission_value,starts_on,ends_on,company_id) values
  ('00000000-0000-0000-0000-00000000c301','00000000-0000-0000-0000-00000000c101','00000000-0000-0000-0000-00000000c201','property_management','RATE',5,'2026-01-01','2027-12-31','00000000-0000-4000-8000-0000000000c1');
 SQL
