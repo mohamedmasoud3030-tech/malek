@@ -26,6 +26,12 @@ create table if not exists public.document_reference_sequences (
   primary key (company_id, doc_type, year)
 );
 
+-- RLS is enabled on every table in the public schema (security drift gate).
+-- The table is written only by the SECURITY DEFINER next_document_reference
+-- function (runs as the owner, which bypasses RLS), so no client role can
+-- manipulate the counters directly.
+alter table public.document_reference_sequences enable row level security;
+
 -- 2. Atomic next-reference function -----------------------------------------
 -- Concurrency-safe: the INSERT..ON CONFLICT DO UPDATE holds the row lock on
 -- (company_id, doc_type, year) and increments last_value atomically, so two
@@ -376,10 +382,18 @@ $$;
 select public.backfill_business_document_references();
 
 -- 8. Grants -------------------------------------------------------------------
--- next_document_reference is SECURITY DEFINER (allocates the per-company
--- sequence); grant EXECUTE so authenticated callers and the trigger can use it.
-grant execute on function public.next_document_reference(uuid, text, text, integer) to authenticated;
-grant execute on function public.backfill_business_document_references() to authenticated;
+-- next_document_reference / assign_document_reference are SECURITY DEFINER
+-- (allocate the per-company sequence). Revoke EXECUTE from public/anon and
+-- grant only to authenticated + service_role, matching the security drift gate
+-- that forbids anon executing any SECURITY DEFINER function in public.
+revoke all on function public.next_document_reference(uuid, text, text, integer) from public, anon;
+grant execute on function public.next_document_reference(uuid, text, text, integer) to authenticated, service_role;
+
+revoke all on function public.assign_document_reference() from public, anon;
+grant execute on function public.assign_document_reference() to authenticated, service_role;
+
+revoke all on function public.backfill_business_document_references() from public, anon;
+grant execute on function public.backfill_business_document_references() to authenticated, service_role;
 
 -- 9. Helpers used by the application layer ------------------------------------
 -- Return a company-scoped reference for a document class without assigning it.
@@ -396,6 +410,7 @@ as $$
   select format('%s-%s-%s', p_prefix, p_year, lpad(p_sequence::text, 6, '0'))
 $$;
 
-grant execute on function public.format_document_reference(uuid, text, text, integer, bigint) to authenticated;
+revoke all on function public.format_document_reference(uuid, text, text, integer, bigint) from public, anon;
+grant execute on function public.format_document_reference(uuid, text, text, integer, bigint) to authenticated, service_role;
 
 commit;
