@@ -35,6 +35,16 @@ vi.mock('./use-maintenance', () => ({
   useResolveMaintenanceWithExpense: () => maintenanceMocks.resolveMutation,
 }));
 
+// The A4 print gate reads company settings through React Query; supply the
+// shared readiness shape directly so the page test stays provider-free.
+vi.mock('@/features/settings/useDocumentSettings', () => ({
+  useDocumentSettings: () => ({
+    isReady: true,
+    isLoading: false,
+    settings: { company: { name: 'شركة الاختبار' }, currency: 'OMR', currencySymbol: 'ر.ع' },
+  }),
+}));
+
 const maintenanceRow = {
   id: 'maintenance-1',
   property_id: 'property-1',

@@ -9,24 +9,16 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
-import { DocumentTemplates, type DocumentSettings } from '@/services/documents/DocumentTemplates';
+import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
+import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { MaintenanceDetailsOverlay, MaintenanceResolveOverlay } from './maintenance-detail-resolve-overlays';
 import { MaintenanceList } from './maintenance-list';
 import { maintenancePriorityLabels, maintenanceStatusLabels } from './maintenance-list';
 import { MaintenanceRequestForm } from './maintenance-request-form';
 import type { MaintenancePriorityFilter, MaintenanceStatusFilter } from '../maintenance-helpers';
 import { useMaintenancePageController } from '../useMaintenancePageController';
-
-const defaultSettings: DocumentSettings = {
-  company: {
-    name: 'رينتريكس لإدارة العقارات',
-    address: 'سلطنة عمان - مسقط',
-    phone: '+968 24000000',
-  },
-  currency: 'OMR',
-  currencySymbol: 'ر.ع',
-};
 
 const summaryCards = [
   { key: 'total', label: 'إجمالي الطلبات', sub: 'ضمن الفلاتر الحالية', icon: Wrench, accent: 'primary' },
@@ -55,6 +47,7 @@ export type MaintenanceWorkspaceProps = Readonly<{
  */
 export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspaceProps) {
   const c = useMaintenancePageController();
+  const documentSettings = useDocumentSettings();
 
   const activeFilters = useMemo<readonly ActiveFilterItem[]>(() => {
     const items: ActiveFilterItem[] = [];
@@ -92,7 +85,15 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     c.setPropertyFilterId('');
   };
 
+  // Real currency label for the printed cost column — never a hardcoded
+  // symbol; falls back to the configured currency code, and only renders at
+  // all once document settings are ready.
+  const currencyLabel = documentSettings.settings.currencySymbol || documentSettings.settings.currency;
+
   const handlePrintMaintenanceList = () => {
+    // Only real company identity reaches the document engine. With incomplete
+    // settings the print action is blocked entirely — no placeholder branding.
+    if (!documentSettings.isReady) return;
     const todayStr = getTodayLocalDateString();
     DocumentTemplates.printReportDocument(
       {
@@ -105,19 +106,19 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
             title: 'جدول طلبات الصيانة والتكلفة والأولوية',
             rows: c.filteredMaintenanceRows.map((r) => ({
               label: `${r.title} - (${maintenancePriorityLabels[r.priority as keyof typeof maintenancePriorityLabels] ?? r.priority})`,
-              value: `الحالة: ${maintenanceStatusLabels[r.status as keyof typeof maintenanceStatusLabels] ?? r.status} | المسؤول: ${r.assigned_to || r.technician_name || 'غير محدد'} | التكلفة: ${r.cost ? `${r.cost} ر.ع` : '—'}`,
+              value: `الحالة: ${maintenanceStatusLabels[r.status as keyof typeof maintenanceStatusLabels] ?? r.status} | المسؤول: ${r.assigned_to || r.technician_name || 'غير محدد'} | التكلفة: ${r.cost ? `${r.cost} ${currencyLabel}` : '—'}`,
             })),
           },
         ],
         totalSummary: `عدد الطلبات المدرجة: ${c.filteredMaintenanceRows.length} طلب صيانة`,
       },
-      defaultSettings,
+      documentSettings.settings,
     );
   };
 
   const actions = (
     <div className="flex gap-2">
-      <Button type="button" variant="outline" onClick={handlePrintMaintenanceList} className="min-h-11 gap-2 font-bold">
+      <Button type="button" variant="outline" onClick={handlePrintMaintenanceList} disabled={!documentSettings.isReady} className="min-h-11 gap-2 font-bold">
         <Printer className="size-4 text-primary" aria-hidden="true" />
         طباعة كشف الصيانة A4
       </Button>
@@ -134,6 +135,10 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         <div className="flex flex-wrap justify-end gap-2">
           {actions}
         </div>
+      ) : null}
+
+      {!documentSettings.isReady && !documentSettings.isLoading ? (
+        <DocumentReadinessNotice />
       ) : null}
 
       <ResponsiveCardGrid desktopColumns={4}>

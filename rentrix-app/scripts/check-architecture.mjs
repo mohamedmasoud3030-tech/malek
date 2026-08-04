@@ -21,7 +21,10 @@ const featureDependencyAllowList = new Map([
   ['financials', new Set(['auth', 'contracts', 'properties', 'reports', 'settings'])],
   // governance-hub composes settings/system/audit/auth workspaces under /settings.
   ['governance-hub', new Set(['auth', 'audit', 'settings', 'system'])],
-  ['maintenance', new Set(['financials', 'properties', 'reports', 'units'])],
+  // maintenance reads the shared document-print readiness seam
+  // (useDocumentSettings) so the A4 statement only prints with real company
+  // identity — same reviewed seam already granted to financials/owners/reports.
+  ['maintenance', new Set(['financials', 'properties', 'reports', 'settings', 'units'])],
   ['onboarding', new Set(['owners'])],
   // operations-hub composes maintenance/utilities/automation/documents-vault.
   ['operations-hub', new Set(['auth', 'automation', 'documents-vault', 'maintenance', 'utilities'])],
@@ -37,7 +40,10 @@ const featureDependencyAllowList = new Map([
   ['system', new Set(['auth', 'settings'])],
   ['tenants', new Set(['financials', 'people'])],
   ['units', new Set(['properties'])],
-  ['utilities', new Set(['financials', 'properties', 'reports'])],
+  // utilities reads the shared document-print readiness seam
+  // (useDocumentSettings) so the utilities statement only prints with real
+  // company identity — same reviewed seam already granted to financials.
+  ['utilities', new Set(['financials', 'properties', 'reports', 'settings'])],
 ]);
 
 // These are known presentation-to-service debts, frozen so the guard blocks

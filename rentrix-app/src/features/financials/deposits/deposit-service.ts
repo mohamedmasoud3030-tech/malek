@@ -78,6 +78,14 @@ type DepositRow = {
   tenant_id?: string | null;
   property_id?: string | null;
   unit_id?: string | null;
+  // Read-only display joins (never written back):
+  // - properties/units hang off real FKs on tenant_deposits.
+  // - tenant_deposits.tenant_id is a plain text column with no FK, so the
+  //   tenant name is resolved through the contract -> people relationship.
+  properties?: { id: string; title: string | null } | null;
+  units?: { id: string; unit_number: string | null } | null;
+  contracts?: { people?: { id: string; full_name: string | null } | null } | null;
+  people?: { id: string; full_name: string | null } | null;
   deposit_amount: number;
   deducted_amount: number;
   refunded_amount: number;
@@ -95,11 +103,14 @@ function mapRow(row: any): DepositRecord {
     id: row.id,
     contract_id: row.contract_id,
     tenant_id: row.tenant_id ?? null,
-    tenant_name: row.people?.full_name ?? row.tenant_id ?? null,
+    // Display fields only ever carry human-readable values. Raw UUIDs
+    // (tenant_id/property_id/unit_id) must never surface as names in the UI
+    // or in printed documents — missing relations become Arabic fallbacks.
+    tenant_name: row.contracts?.people?.full_name ?? row.people?.full_name ?? null,
     property_id: row.property_id ?? null,
-    property_title: row.properties?.title ?? row.property_id ?? null,
+    property_title: row.properties?.title ?? null,
     unit_id: row.unit_id ?? null,
-    unit_number: row.units?.unit_number ?? row.unit_id ?? null,
+    unit_number: row.units?.unit_number ?? null,
     deposit_amount: Number(row.deposit_amount ?? 0),
     deducted_amount: Number(row.deducted_amount ?? 0),
     refunded_amount: Number(row.refunded_amount ?? 0),
@@ -122,10 +133,14 @@ export async function listTenantDeposits(): Promise<DepositRecord[]> {
     // at a page boundary. `id` breaks every tie.
     const { rows } = await fetchAllRows<DepositRow>(() => supabase
       .from('tenant_deposits')
+      // Display joins only. tenant_deposits.tenant_id carries no FK, so the
+      // tenant name is read through the contract -> people relationship to
+      // keep raw UUIDs out of the deposits list and printed documents.
       .select(`
         *,
         properties:property_id(id,title),
-        units:unit_id(id,unit_number)
+        units:unit_id(id,unit_number),
+        contracts:contract_id(people:tenant_id(id,full_name))
       `)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
