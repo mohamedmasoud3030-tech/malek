@@ -80,13 +80,21 @@ describe('pay_commission_atomic and reverse_commission_atomic live runtime finan
     `);
   });
 
-  it('1. Rejects direct client update setting status = "paid" via database protection trigger', async () => {
+  it('1. Rejects direct client update through ACL/RLS or the financial protection trigger', async () => {
     await assume(db, ADMIN_A, COMPANY_A);
     await db.query('SET ROLE authenticated;');
-    await expect(
-      db.query(`update public.commissions set status = 'paid' where id = '${commId}' and company_id = '${COMPANY_A}'`),
-    ).rejects.toThrow(/غير مصرح|42501/);
-    await db.query('RESET ROLE;');
+    try {
+      await expect(
+        db.query(`update public.commissions set status = 'paid' where id = '${commId}' and company_id = '${COMPANY_A}'`),
+      ).rejects.toThrow(/permission denied for table commissions|COMMISSION_FINANCIAL_FIELDS_REQUIRE_ATOMIC_RPC|غير مصرح|42501/);
+    } finally {
+      await db.query('RESET ROLE;');
+    }
+
+    const unchanged = await db.query<{ status: string }>(
+      `select status from public.commissions where id = '${commId}' and company_id = '${COMPANY_A}'`,
+    );
+    expect(unchanged.rows[0].status).toBe('approved');
   });
 
   it('2. Rejects unauthorized USER role from calling pay_commission_atomic', async () => {
