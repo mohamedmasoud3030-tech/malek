@@ -46,6 +46,9 @@ export async function createReplayedDatabase(options?: {
     'unit_archive_history',
     'contract_workflow',
     '20260804', // FA-003 owner-settlement input reservation (redefines settlement RPCs)
+    // Stage 3 business document references: independent of the P0 isolation fix
+    // and measured at its own checkpoint (see src/p3/stage3-business-references.test.ts).
+    'business_document_references',
   ];
   files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
 

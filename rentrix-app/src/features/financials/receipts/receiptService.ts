@@ -47,6 +47,7 @@ function toReceiptRecord(
   unitById: Map<string, ReceiptUnitContext>,
   propertyById: Map<string, ReceiptPropertyContext>,
   tenantById: Map<string, ReceiptTenantContext>,
+  referenceByReceiptId: Map<string, string> = new Map(),
 ): ReceiptRecord {
   const receiptId = payment.receipt_id ?? payment.id;
   const invoiceId = payment.invoice_id ?? invoiceIdByReceiptId.get(receiptId) ?? null;
@@ -58,7 +59,10 @@ function toReceiptRecord(
 
   return {
     id: payment.id,
-    receipt_number: formatReceiptNumber(payment.id),
+    // Prefer the server-generated company-scoped reference. The truncated
+    // UUID-slice formatter is only a fallback for rows that predate the
+    // reference column — never the primary business identifier.
+    receipt_number: referenceByReceiptId.get(receiptId) ?? formatReceiptNumber(payment.id),
     payment_id: payment.id,
     invoice_id: invoice?.id ?? invoiceId,
     invoice_status: invoice?.status ?? null,
@@ -99,6 +103,21 @@ async function loadReceiptRecords(payments: Payment[]): Promise<ReceiptRecord[]>
       .filter(([, ids]) => ids.size === 1)
       .map(([receiptId, ids]) => [receiptId, [...ids][0]]),
   );
+
+  // Surface the server-generated company-scoped reference from the receipts
+  // table so the UI shows a business identifier instead of a raw UUID slice.
+  const referenceByReceiptId = new Map<string, string>();
+  if (receiptIds.length > 0) {
+    const { data: receiptRows, error: receiptsError } = await supabase
+      .from('receipts')
+      .select('id, reference')
+      .in('id', receiptIds)
+      .returns<Array<{ id: string; reference: string | null }>>();
+    if (receiptsError) throw receiptsError;
+    for (const row of (receiptRows ?? []) as Array<{ id: string; reference: string | null }>) {
+      if (row.reference) referenceByReceiptId.set(row.id, row.reference);
+    }
+  }
   const invoiceIds = uniqueStrings([
     ...payments.map((payment) => payment.invoice_id),
     ...invoiceIdByReceiptId.values(),
@@ -150,6 +169,7 @@ async function loadReceiptRecords(payments: Payment[]): Promise<ReceiptRecord[]>
     unitById,
     propertyById,
     tenantById,
+    referenceByReceiptId,
   ));
 }
 
