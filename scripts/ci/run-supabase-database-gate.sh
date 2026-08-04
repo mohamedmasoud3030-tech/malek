@@ -20,22 +20,33 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# On any gate failure, surface the tail of each phase log as workflow
-# annotations (::error:: lines) so the failing phase is visible on the check
-# run even when raw log archives are hard to fetch. Safe under `set -e`:
-# the ERR trap only reads and prints.
+# On any gate failure, surface the error-relevant lines of each phase log as
+# ONE compact workflow annotation (check-run annotations are capped, so a
+# single message keeps every phase visible). Safe under `set -e`: the ERR
+# trap only reads and prints.
 emit_failure_diagnostics() {
   local status=$?
   trap - ERR
   if [[ "$status" -eq 0 ]]; then return 0; fi
-  for f in supabase-start.log supabase-test.log owner-agreement-concurrency.log \
-           storage-isolated-smoke.log single-office-seed.log single-office-browser.log \
-           supabase-api-ready.log; do
+  local lines=""
+  lines+="DB-GATE-FAILURE status=$status"
+  local f
+  for f in supabase-start.log supabase-start-attempt-1.log supabase-start-attempt-2.log \
+           supabase-start-attempt-3.log supabase-test.log owner-agreement-concurrency.log \
+           storage-isolated-smoke.log single-office-seed.log single-office-browser.log; do
     if [[ -s "$LOG_DIR/$f" ]]; then
-      echo "::error::===== $f (tail) ====="
-      tail -n 30 "$LOG_DIR/$f" | sed 's/^/::error::  /'
+      lines+=$'\n'$'  -- '"$f"
+      local hit
+      hit="$(grep -iE 'error|failed|exception|violat|fatal|abort|failing' "$LOG_DIR/$f" | tail -n 6 || true)"
+      if [[ -n "$hit" ]]; then
+        lines+=$'\n'"$(printf '%s\n' "$hit" | sed 's/^/    /')"
+      else
+        lines+=$'\n'"    (no error-pattern lines; last raw line: $(tail -n 1 "$LOG_DIR/$f"))"
+      fi
     fi
   done
+  # %0A is the workflow-command escape for newlines; keep the message compact.
+  printf '::error::%s' "${lines//$'\n'/%0A}"
   return 0
 }
 trap 'emit_failure_diagnostics' ERR
