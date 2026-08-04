@@ -33,7 +33,7 @@ describe('public landing performance contract', () => {
     const navBarSource = readSource('./components/NavBar.tsx');
     const footerSource = readSource('./components/Footer.tsx');
     const publicRoot = new URL('../../../public/', import.meta.url);
-    const markBytes = statSync(new URL('malik-mark.svg', publicRoot)).size;
+    const markBytes = statSync(new URL('malek-mark.svg', publicRoot)).size;
 
     expect(markBytes).toBeLessThan(2_000);
     expect(navBarSource).toContain('MalikBrand');
