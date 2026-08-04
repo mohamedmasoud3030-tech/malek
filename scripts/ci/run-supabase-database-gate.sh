@@ -37,7 +37,11 @@ emit_failure_diagnostics() {
     if [[ -s "$LOG_DIR/$f" ]]; then
       lines+=$'\n'$'  -- '"$f"
       local hit
-      hit="$(grep -iE 'not ok|Failed tests|Looks like|error|failed|exception|violat|fatal|abort|threw|got .* want' "$LOG_DIR/$f" | tail -n 14 || true)"
+      if [[ "$f" == "supabase-test.log" ]]; then
+        hit="$(grep -E 'not ok|died:|Failed test|Looks like|Failed tests|^# ' "$LOG_DIR/$f" | tail -n 30 || true)"
+      else
+        hit="$(grep -iE 'not ok|Failed tests|Looks like|error|failed|exception|violat|fatal|abort|threw|got .* want' "$LOG_DIR/$f" | tail -n 10 || true)"
+      fi
       if [[ -n "$hit" ]]; then
         lines+=$'\n'"$(printf '%s\n' "$hit" | sed 's/^/    /')"
       else
