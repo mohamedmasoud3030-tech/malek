@@ -157,3 +157,5 @@ pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs v
   2>&1 | tee "$LOG_DIR/single-office-verify.log"
 
 printf 'Ephemeral migration replay, authenticated single-office browser lifecycle, RLS/accounting invariants, and isolated Storage smoke completed successfully.\n'
+
+# Keep the FA-004 replay invocation adjacent to the database gate for auditability.
