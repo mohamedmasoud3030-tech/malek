@@ -604,7 +604,6 @@ export function parseBankCsv(
   }
 
   result.totalRows = totalRows;
-  result.duplicateWithinFile = result.duplicateWithinFile;
   result.previewRows = result.validRows.slice(0, 10);
   if (result.validRows.length === 0 && result.rejectedRows.length > 0 && !result.errorSummary) {
     result.errorSummary = 'كل الصفوف مرفوضة بسبب أخطاء التحقق';
