@@ -1,6 +1,6 @@
-# Rentrix documentation index
+# MALEK documentation index
 
-This directory contains the maintained sources of truth for the Rentrix repository. Documentation is point-in-time guidance: when it conflicts with executable code or a verified live database contract, code and the live contract win and the documentation must be corrected in the same change.
+This directory contains the maintained sources of truth for the MALEK repository and the `rentrix-app` implementation. Documentation is point-in-time guidance: when it conflicts with executable code or a verified live database contract, code and the live contract win and the documentation must be corrected in the same change.
 
 ## Start here
 
@@ -15,6 +15,16 @@ This directory contains the maintained sources of truth for the Rentrix reposito
 - [`DOMAIN.md`](DOMAIN.md) — canonical entities, terminology, and accounting concepts.
 - [`FEATURE_GAP_REGISTER.md`](FEATURE_GAP_REGISTER.md) — evidence-backed capability gaps that remain visible to tests and release work.
 - [`decisions/`](decisions/) — accepted product and accounting decisions.
+
+## Brand, design system, and UI/UX
+
+- [`brand/MALEK_ASSET_CONTRACT.md`](brand/MALEK_ASSET_CONTRACT.md) — locked brand asset usage.
+- [`decisions/0011-malek-visible-brand-identity.md`](decisions/0011-malek-visible-brand-identity.md) — accepted visible brand identity.
+- [`decisions/0012-malek-design-system-refresh-roadmap.md`](decisions/0012-malek-design-system-refresh-roadmap.md) — accepted design-system refresh roadmap and phased rollout boundary.
+- [`ui-ux/MALEK_VISUAL_CONTRACT_V2.md`](ui-ux/MALEK_VISUAL_CONTRACT_V2.md) — enforceable V2 visual contract for later implementation phases.
+- [`ui-ux/MALEK_VISUAL_CONTRACT_V2_TOKEN_PROPOSAL.md`](ui-ux/MALEK_VISUAL_CONTRACT_V2_TOKEN_PROPOSAL.md) — scoped V2 token proposal for the Dashboard proof.
+
+Historical Rentrix-branded UI/UX evidence and audit documents remain in [`ui-ux/`](ui-ux/) for context, but the MALEK V2 contract and ADR 0012 govern future implementation work.
 
 ## Architecture and data contracts
 
