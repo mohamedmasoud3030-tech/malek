@@ -34,10 +34,10 @@ const productionFiles = collectSourceFiles(documentsDir, (name) => /\.(ts|tsx)$/
 
 const rendererInternals = new Set([
   'DocumentRenderer.ts',
-  'documentHtml.ts',
-  'pagination.ts',
-  'offscreen.ts',
-  'latinPdf.ts',
+  'renderer/documentHtml.ts',
+  'renderer/pagination.ts',
+  'renderer/offscreen.ts',
+  'renderer/latinPdf.ts',
 ]);
 
 describe('single canonical builder boundary', () => {
