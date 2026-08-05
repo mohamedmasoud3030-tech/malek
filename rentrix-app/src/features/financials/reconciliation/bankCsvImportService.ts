@@ -87,6 +87,13 @@ export async function importBankStatementBatch(request: BankImportRequest): Prom
 }
 
 export function toImportPayloadRows(parsed: BankCsvParseResult): BankImportPayloadRow[] {
+  if (parsed.mappingAmbiguous || parsed.missingMandatory.length > 0 || parsed.rejectedRows.length > 0) {
+    throw new Error('لا يمكن استيراد ملف يحتوي على تعيين غامض أو صفوف مرفوضة؛ الاستيراد fail-closed');
+  }
+  if (parsed.validRows.length === 0) {
+    throw new Error('لا توجد صفوف صالحة للاستيراد');
+  }
+
   return parsed.validRows.map((row) => ({
     transaction_date: row.transaction_date!,
     amount: row.amount!,
