@@ -47,11 +47,26 @@ export type InvoiceDocumentPayload = {
   status?: string | null;
   description?: string | null;
   amount: number;
-  /** Present only when the data source tracks partial payments. */
+  /**
+   * Authoritative paid amount from the data source; shown only when the
+   * source actually tracks partial payments. Never derived.
+   */
   paidAmount?: number | null;
+  /** Authoritative VAT amount from the data source (shown verbatim). */
   vatAmount?: number | null;
-  /** Explicit caller-computed total; when absent amount + vat is shown. */
+  /**
+   * Authoritative billed total supplied by the caller/domain contract.
+   * The engine NEVER computes it: when absent and no VAT line exists, the
+   * stored `amount` itself is the billed total (legacy invoices-table
+   * contract); when a VAT amount exists without an explicit total, the
+   * grand-total row is omitted rather than invented.
+   */
   totalAmount?: number | null;
+  /**
+   * Authoritative remaining balance from the domain/query layer; rendered
+   * only when explicitly supplied. The engine never derives balances.
+   */
+  remainingAmount?: number | null;
   tenantName?: string | null;
   propertyTitle?: string | null;
   unitNumber?: string | null;

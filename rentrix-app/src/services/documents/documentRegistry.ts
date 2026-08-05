@@ -42,8 +42,13 @@ export type PagePolicy = Readonly<{
 export type CurrencyPolicy = Readonly<{
   /** Currency always comes from the real company settings, never a default. */
   source: 'company-settings';
-  /** Fixed fractional precision used when rendering amounts (OMR: 3). */
-  decimals: 3;
+  /**
+   * Fraction digits are DERIVED from the real currency code at render time
+   * (`currencyFractionDigits` — OMR/KWD/BHD ⇒ 3, common currencies ⇒ 2,
+   * zero-decimal currencies ⇒ 0). The registry never fixes a global
+   * precision; hard-coding 3 decimals would misformat USD/EGP/… amounts.
+   */
+  precision: 'currency-derived';
 }>;
 
 export type EmptyStatePolicy = Readonly<{
@@ -92,7 +97,7 @@ const A4_PORTRAIT: PagePolicy = {
   marginsMm: { top: 12, right: 10, bottom: 15, left: 10 },
 };
 
-const CURRENCY_POLICY: CurrencyPolicy = { source: 'company-settings', decimals: 3 };
+const CURRENCY_POLICY: CurrencyPolicy = { source: 'company-settings', precision: 'currency-derived' };
 
 const OUTPUTS: readonly DocumentOutputKind[] = ['print', 'pdf'];
 
@@ -328,7 +333,7 @@ const UNSAFE_FILENAME_CHARS = /[\\/:*?"<>|\u0000-\u001f]/g;
  * non-empty fallback. Arabic letters are preserved (valid filenames on all
  * supported platforms).
  */
-export function sanitizeDocumentFileName(value: string, fallback = 'document'): string {
+export function sanitizeDocumentFileName(value: string, fallback = 'document', maxLength = 96): string {
   const cleaned = value
     .replace(UNSAFE_FILENAME_CHARS, '-')
     .replace(/\.{2,}/g, '') // path traversal
@@ -337,7 +342,7 @@ export function sanitizeDocumentFileName(value: string, fallback = 'document'): 
     .trim()
     .replace(/^[-.]+|[-.]+$/g, '');
 
-  const capped = cleaned.length > 96 ? cleaned.slice(0, 96).replace(/[-.]+$/, '') : cleaned;
+  const capped = cleaned.length > maxLength ? cleaned.slice(0, maxLength).replace(/[-.]+$/, '') : cleaned;
   return capped || fallback;
 }
 
@@ -356,5 +361,5 @@ export function buildDocumentFileName(
   const dateValue = entry.fileName.dateField ? isoDate(values[entry.fileName.dateField]) : null;
   const core = reference ?? dateValue ?? null;
   const raw = core ? `${entry.fileName.prefix}-${core}` : entry.fileName.prefix;
-  return sanitizeDocumentFileName(raw, entry.fileName.prefix);
+  return sanitizeDocumentFileName(raw, entry.fileName.prefix, entry.fileName.maxLength);
 }

@@ -95,7 +95,7 @@ describe('document template registry completeness', () => {
         orientation: 'portrait',
         marginsMm: { top: 12, right: 10, bottom: 15, left: 10 },
       });
-      expect(entry.currency, `${entry.type} currency policy`).toEqual({ source: 'company-settings', decimals: 3 });
+      expect(entry.currency, `${entry.type} currency policy`).toEqual({ source: 'company-settings', precision: 'currency-derived' });
       expect(['render', 'block']).toContain(entry.emptyState.behavior);
       expect(entry.fileName.strategy).toBe('reference-then-date');
       expect(entry.fileName.prefix.trim().length).toBeGreaterThan(0);
@@ -181,6 +181,16 @@ describe('safe deterministic filenames', () => {
     const longName = sanitizeDocumentFileName(`x-${'ق'.repeat(300)}`);
     expect(longName.length).toBeLessThanOrEqual(96);
     expect(sanitizeDocumentFileName('invoice-INV-100')).toBe('invoice-INV-100');
+  });
+
+  it('honors an explicit maximum length and never exceeds the registry-owned cap', () => {
+    expect(sanitizeDocumentFileName(`contract-${'A'.repeat(200)}`, 'contract', 80).length).toBeLessThanOrEqual(80);
+    // The registry builds names through the strategy cap (maxLength: 80).
+    const invoiceEntry = requireDocumentTemplateEntry('invoice');
+    const capped = buildDocumentFileName(invoiceEntry, { reference: `INV-${'7'.repeat(200)}`, dueDate: null });
+    expect(capped.length).toBeLessThanOrEqual(invoiceEntry.fileName.maxLength);
+    expect(capped).toMatch(/^invoice-INV-7+$/); // prefix + reference kept, tail trimmed cleanly
+    expect(capped).not.toMatch(/[-.]$/);
   });
 
   it('is deterministic for identical input', () => {

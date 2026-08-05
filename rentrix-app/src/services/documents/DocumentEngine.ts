@@ -32,6 +32,7 @@ import {
   MissingDocumentSettingsError,
   type DocumentCompanySettings,
 } from './companyIdentity';
+import { currencyFractionDigits } from './currencyPrecision';
 import {
   buildDocumentFileName,
   getDocumentTemplateEntry,
@@ -152,8 +153,17 @@ const formatContextOf = (settings: DocumentCompanySettings): FormatContext => ({
   currencyCode: settings.currency,
 });
 
-const money = (value: number, ctx: FormatContext): string =>
-  `${Number.isFinite(value) ? formatLatinNumber(value, 'ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '0.000'} ${ctx.symbol}`;
+/**
+ * Formats an amount with the precision of the REAL company currency
+ * (ISO 4217 minor units, see `currencyFractionDigits`) — never a global
+ * hard-coded 3 decimals.
+ */
+const money = (value: number, ctx: FormatContext): string => {
+  const digits = currencyFractionDigits(ctx.currencyCode);
+  const options = { minimumFractionDigits: digits, maximumFractionDigits: digits } as const;
+  const formatted = formatLatinNumber(Number.isFinite(value) ? value : 0, 'ar-OM', options);
+  return `${formatted} ${ctx.symbol}`;
+};
 
 const words = (value: number, ctx: FormatContext): string =>
   numberToArabicWords(value, getCurrencyWordConfig(ctx.currencyCode));
@@ -210,6 +220,8 @@ function buildHeader(
   },
 ): DocumentHeader {
   const reference = options.reference?.trim() || null;
+  // A real business reference is rendered exactly ONCE, in the designated
+  // `documentNo` header field — never duplicated inside the title.
   return {
     companyName: settings.legalName?.trim() || settings.companyName,
     companyAddress: settings.address ?? null,
@@ -218,7 +230,7 @@ function buildHeader(
     companyLogoUrl: settings.logoUrl ?? null,
     companyTaxNumber: settings.taxNumber ?? null,
     companyRegistrationNumber: settings.registrationNumber ?? null,
-    title: reference ? `${options.title} رقم ${reference}` : options.title,
+    title: options.title,
     documentNo: entry.businessReference.displayAsDocumentNo ? reference : null,
     dateLabel: options.dateLabel ?? null,
     dateValue: options.dateValue ?? null,
@@ -284,18 +296,21 @@ function buildContractModel(entry: DocumentTemplateEntry, settings: DocumentComp
 
 function buildInvoiceModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: InvoiceDocumentPayload): UnifiedDocumentModel {
   const ctx = formatContextOf(settings);
-  const vat = payload.vatAmount ?? 0;
-  const total = payload.totalAmount ?? payload.amount + vat;
-  const hasPayments = payload.paidAmount != null;
-  const remaining = Math.max(0, total - (payload.paidAmount ?? 0));
   const statusLabel = truthfulStatusLabel(entry, payload.status);
 
+  // Presentation layer: every displayed figure is caller-supplied and
+  // authoritative. The engine never recomputes VAT, totals, payments or
+  // balances. The only preserved legacy contract is that an invoice with
+  // no VAT line bills exactly its stored `amount` (the historical
+  // invoices-table contract); when a VAT amount exists without an explicit
+  // authoritative total, the totals row is OMITTED rather than invented.
+  const suppliedVat = payload.vatAmount != null && payload.vatAmount !== 0 ? payload.vatAmount : null;
+  const authoritativeTotal = payload.totalAmount ?? (suppliedVat == null ? payload.amount : null);
+
   const rows: string[][] = [[payload.description?.trim() || 'مطالبة مستحقة', money(payload.amount, ctx)]];
-  if (vat) rows.push(['ضريبة القيمة المضافة', money(vat, ctx)]);
-  if (hasPayments) {
-    rows.push(['إجمالي المدفوع حتى تاريخه', money(payload.paidAmount ?? 0, ctx)]);
-    rows.push(['المبلغ المتبقي واجب السداد', money(remaining, ctx)]);
-  }
+  if (suppliedVat != null) rows.push(['ضريبة القيمة المضافة', money(suppliedVat, ctx)]);
+  if (payload.paidAmount != null) rows.push(['إجمالي المدفوع حتى تاريخه', money(payload.paidAmount, ctx)]);
+  if (payload.remainingAmount != null) rows.push(['المبلغ المتبقي واجب السداد', money(payload.remainingAmount, ctx)]);
 
   return {
     type: entry.type,
@@ -312,9 +327,15 @@ function buildInvoiceModel(entry: DocumentTemplateEntry, settings: DocumentCompa
       kpi('تاريخ الاستحقاق', payload.dueDate ? formatDate(payload.dueDate) : null),
       kpi('وصف المطالبة', payload.description),
       kpi('حالة السداد', statusLabel),
-      kpi('المبلغ تفقيطاً', words(total, ctx)),
+      ...(authoritativeTotal != null ? [kpi('المبلغ تفقيطاً', words(authoritativeTotal, ctx))] : []),
     ].filter((item) => item.value !== '—' || ['المستأجر', 'العقار / الوحدة'].includes(item.label)),
-    tables: [TableGenerator.build(['البيان / تفاصيل الخدمات', 'المبلغ'], rows, ['إجمالي المستحق السداد', money(total, ctx)])],
+    tables: [
+      TableGenerator.build(
+        ['البيان / تفاصيل الخدمات', 'المبلغ'],
+        rows,
+        ...(authoritativeTotal != null ? [['إجمالي المستحق السداد', money(authoritativeTotal, ctx)] as string[]] : []),
+      ),
+    ],
     footer: buildFooter(entry, payload.reference ? `فاتورة رقم: ${payload.reference}` : 'فاتورة مطالبة مالية'),
     fileName: buildDocumentFileName(entry, { reference: payload.reference, dueDate: payload.dueDate }),
   };

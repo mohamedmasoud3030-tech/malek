@@ -43,13 +43,20 @@ const db = {
 };
 
 describe('canonical buildDocument — reference truthfulness', () => {
-  it('shows a real business reference when one exists', () => {
+  it('renders a real business reference exactly once, in the designated header field', () => {
     const model = documentEngine.buildDocument('invoice', {
       settings,
       payload: { reference: 'INV-2026-0100', amount: 100, description: 'إيجار يوليو', dueDate: '2026-07-31' },
     });
+    // The designated header field is `documentNo`; the title must NOT carry
+    // the reference too (no duplicated document numbers).
     expect(model.header.documentNo).toBe('INV-2026-0100');
-    expect(model.header.title).toContain('INV-2026-0100');
+    expect(model.header.title).not.toContain('INV-2026-0100');
+    const headerOccurrences = [model.header.title, model.header.documentNo]
+      .filter((chunk): chunk is string => Boolean(chunk))
+      .join(' ')
+      .split('INV-2026-0100').length - 1;
+    expect(headerOccurrences).toBe(1);
     expect(model.fileName).toBe('invoice-INV-2026-0100');
   });
 
@@ -99,21 +106,74 @@ describe('canonical buildDocument — reference truthfulness', () => {
 });
 
 describe('canonical buildDocument — financial pass-through', () => {
-  it('keeps invoice amount/paid/remaining arithmetic untouched and honors explicit totals', () => {
+  it('renders every caller-supplied authoritative invoice figure verbatim', () => {
     const model = documentEngine.buildDocument('invoice', {
       settings,
-      payload: { amount: 500, paidAmount: 125.5, vatAmount: 25, totalAmount: 525, description: 'إيجار', status: 'PARTIALLY_PAID' },
+      payload: {
+        amount: 500,
+        paidAmount: 125.5,
+        vatAmount: 25,
+        totalAmount: 525,
+        remainingAmount: 399.5,
+        description: 'إيجار',
+        status: 'PARTIALLY_PAID',
+      },
     });
     const flat = model.tables[0].rows.flat().join(' | ');
     expect(flat).toContain('500.000 ر.ع');
     expect(flat).toContain('25.000 ر.ع');
     expect(flat).toContain('125.500 ر.ع');
-    expect(flat).toContain('399.500 ر.ع'); // remaining = total - paid
+    expect(flat).toContain('399.500 ر.ع'); // supplied remaining, not derived
     expect(model.tables[0].totals).toEqual(['إجمالي المستحق السداد', '525.000 ر.ع']);
     expect(model.kpis.find((k) => k.label === 'حالة السداد')?.value).toBe('مدفوعة جزئياً');
   });
 
-  it('legacy invoice path keeps its original totals (no VAT invention)', () => {
+  it('passes authoritative totals through unchanged even when display arithmetic would disagree', () => {
+    // If the engine recomputed anything, total would become 105 (100 + 5)
+    // and remaining 88 (105 - 17). It must render the authoritative figures
+    // the caller supplied, untouched.
+    const model = documentEngine.buildDocument('invoice', {
+      settings,
+      payload: { amount: 100, vatAmount: 5, paidAmount: 17, totalAmount: 88, remainingAmount: 71, description: 'قسط' },
+    });
+    const flat = model.tables[0].rows.flat().join(' | ');
+    expect(model.tables[0].totals).toEqual(['إجمالي المستحق السداد', '88.000 ر.ع']);
+    expect(flat).toContain('71.000 ر.ع');
+    expect(flat).not.toContain('105.000 ر.ع');
+  });
+
+  it('omits totals/balances the caller did not supply instead of inventing them', () => {
+    // VAT exists but no authoritative total: no grand-total row is derived.
+    const withVatOnly = documentEngine.buildDocument('invoice', {
+      settings,
+      payload: { amount: 500, vatAmount: 25, description: 'إيجار' },
+    });
+    expect(withVatOnly.tables[0].totals == null || withVatOnly.tables[0].totals.length === 0).toBe(true);
+    const flatVat = withVatOnly.tables[0].rows.flat().join(' | ');
+    expect(flatVat).toContain('500.000 ر.ع');
+    expect(flatVat).toContain('25.000 ر.ع');
+    expect(collectDocumentTextChunks(withVatOnly).join(' ')).not.toContain('525.000');
+
+    // Payments exist but no authoritative remaining: no balance is derived.
+    const paidOnly = documentEngine.buildDocument('invoice', {
+      settings,
+      payload: { amount: 500, paidAmount: 100, description: 'إيجار' },
+    });
+    const flatPaid = collectDocumentTextChunks(paidOnly).join(' ');
+    expect(flatPaid).toContain('100.000 ر.ع');
+    expect(flatPaid).not.toContain('400.000');
+    expect(flatPaid).not.toContain('المبلغ المتبقي');
+  });
+
+  it('preserves the legacy invoices contract: no VAT line ⇒ stored amount is the billed total', () => {
+    const model = documentEngine.buildDocument('invoice', {
+      settings,
+      payload: { amount: 100, description: 'إيجار' },
+    });
+    expect(model.tables[0].totals).toEqual(['إجمالي المستحق السداد', '100.000 ر.ع']);
+  });
+
+  it('legacy invoice path passes amount/paid through and omits unsupported VAT/remaining rows', () => {
     const model = documentEngine.build({
       type: 'invoice',
       payload: {
@@ -131,10 +191,13 @@ describe('canonical buildDocument — financial pass-through', () => {
         db,
       },
     });
-    // Legacy DB payloads never displayed VAT; the canonical model preserves
-    // that totals contract exactly (total = amount, remaining = total-paid).
+    // Legacy DB payloads have no authoritative VAT line nor remaining
+    // balance field; the missing values are omitted, never invented.
     expect(model.tables[0].totals).toEqual(['إجمالي المستحق السداد', '100.000 ر.ع']);
-    expect(model.tables[0].rows.flat().join(' | ')).toContain('60.000 ر.ع');
+    const flat = model.tables[0].rows.flat().join(' | ');
+    expect(flat).toContain('40.000 ر.ع');
+    expect(flat).not.toContain('60.000');
+    expect(collectDocumentTextChunks(model).join(' ')).not.toContain('المبلغ المتبقي');
   });
 
   it('throws a DocumentDataError (Arabic) for missing required data', () => {
