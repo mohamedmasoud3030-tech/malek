@@ -2,11 +2,20 @@
  * Latin-only fallback path: models with no Arabic text anywhere render as
  * native jsPDF text (no image capture needed). Arabic text must NEVER go
  * through this path — jsPDF core fonts cannot shape Arabic — which is why
- * `modelHasArabicText` gates every call site.
+ * `modelHasArabicText` gates every call site. Signature labels are chrome:
+ * this path renders LATIN labels so no Arabic glyph ever reaches a core
+ * jsPDF font.
  */
 import { jsPDF } from 'jspdf';
-import type { UnifiedDocumentModel } from '../types';
-import { signatureLabel } from './documentHtml';
+import type { SignatureRole, UnifiedDocumentModel } from '../types';
+
+/** Latin chrome for the core-font path (Arabic labels are glyph-unsafe here). */
+const LATIN_SIGNATURE_LABEL: Record<SignatureRole, string> = {
+  owner: 'Owner',
+  tenant: 'Tenant',
+  accountant: 'Accountant',
+  general_manager: 'General Manager',
+};
 
 const PAGE_MARGIN_X = 14;
 const PAGE_MARGIN_Y = 16;
@@ -96,7 +105,7 @@ const renderLatinPdfFooter = (doc: jsPDF, model: UnifiedDocumentModel, y: number
   model.footer.signatures.forEach((role) => {
     y = ensurePage(doc, y, LINE_HEIGHT);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${signatureLabel[role]}: ____________________`, PAGE_MARGIN_X, y);
+    doc.text(`${LATIN_SIGNATURE_LABEL[role]}: ____________________`, PAGE_MARGIN_X, y);
     y += LINE_HEIGHT;
   });
   [model.footer.companyStampLabel, model.footer.metadata].forEach((line) => {
