@@ -1,6 +1,6 @@
 # MALEK — الحالة التنفيذية الرسمية للمراحل العشر
 
-> **Snapshot base:** `main@0b4756df6b36223c40e511c5c7914bcfd7a20553`  
+> **Snapshot base:** `main@ae645d15e3cdcdf0310e694941f72b7fcd1b5eb7`  
 > **Decision state:** `0 BLOCKED / 0 PROVISIONAL`  
 > **الخطة:** `governance/10-stage-master-plan.json`  
 > **تنفيذ الوكيل:** `docs/execution/10_STAGE_AGENT_CHECKLIST_AR.md`  
@@ -19,7 +19,7 @@
 
 | المرحلة | الحالة | Agent | Reviewer | ما تم فعليًا | المتبقي الحاسم |
 |---|---|---:|---:|---|---|
-| S01 — الأساس والحوكمة وتنظيف مساحة العمل | IN_PROGRESS | 6/8 | 3/8 | #1342 و#1343 مغلقان، #1344 مدمج، القرارات النهائية والخطة والدفتران أُنشئت على فرع نظيف | نجاح الحراس، الدمج، والتحقق من الملفات على main |
+| S01 — الأساس والحوكمة وتنظيف مساحة العمل | COMPLETE | 8/8 | 8/8 | #1342 و#1343 أُغلقا، #1344 و#1345 دُمجا، القرارات D01–D18 نهائية، الخطة والدفتران والحارسان موجودة على main وكل بوابات #1345 خضراء | لا شيء؛ المرحلة مغلقة |
 | S02 — العزل وسلامة التسويات والاستيراد | PARTIAL | 0/10 | 0/10 | توجد طبقات RLS/RPC وعملية استيراد قديمة | فحص كل SECURITY DEFINER، إصلاح اتفاقيات الملاك، حجز عناصر التسوية، RPC-only، وإصلاح CSV fail-closed |
 | S03 — GL ودليل الحسابات والفترات | PARTIAL | 0/10 | 0/10 | توجد نواة GL وقرارات/بعض اختبارات سابقة | Gap matrix، company-scoped accounts، immutable posting، 0.001، periods، late posting وidempotency |
 | S04 — إدارة أملاك الغير | NOT_STARTED | 0/10 | 0/10 | توجد عقود وفواتير وتسويات Legacy | اتفاقيات versioned، lifecycle، signatures، schedule frozen، OWNER/OFFICE creditor postings والأتعاب الصحيحة |
@@ -66,7 +66,7 @@
 
 ## المرحلة التالية
 
-بعد دمج حوكمة S01 والتحقق من main، تبدأ **S02 فقط**. لا يبدأ S03 بالتوازي، ولا تُنقل Migration من الفرع التجريبي.
+تبدأ **S02 فقط** من أحدث `main`. لا يبدأ S03 بالتوازي، ولا تُنقل Migration من الفرع التجريبي.
 
 ## ممنوعات الوكيل
 
