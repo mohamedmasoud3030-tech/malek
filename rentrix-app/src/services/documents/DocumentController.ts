@@ -1,5 +1,5 @@
 import { documentEngine } from './DocumentEngine';
-import type { CanonicalDocumentPayloadMap, DocumentBuildInput, DocumentTypeId } from './documentPayloads';
+import type { DocumentBuildInput, DocumentTypeId } from './documentPayloads';
 import type { DocumentRequest } from './types';
 
 /**
@@ -41,4 +41,4 @@ export const DocumentController = {
   },
 };
 
-export type { CanonicalDocumentPayloadMap };
+export type { CanonicalDocumentPayloadMap } from './documentPayloads';

@@ -128,8 +128,8 @@ export function deriveHonestReference(value: string | null | undefined, entityId
   }
 
   if (entityId) {
-    const idCompact = entityId.trim().toLowerCase().replace(/-/g, '');
-    const candidateCompact = candidate.toLowerCase().replace(/-/g, '');
+    const idCompact = entityId.trim().toLowerCase().replaceAll('-', '');
+    const candidateCompact = candidate.toLowerCase().replaceAll('-', '');
     // Reject values that are a raw prefix of the entity id — the shortened-
     // UUID anti-pattern (e.g. `id.slice(0, 8)`), including its hyphenless form.
     if (idCompact && candidateCompact && idCompact.startsWith(candidateCompact)) {

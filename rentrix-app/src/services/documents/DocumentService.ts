@@ -75,8 +75,11 @@ export const documentService = {
     await DocumentController.downloadPdf(request);
   },
 
-  /** @deprecated use `downloadPdf` — kept temporarily for callers mid-migration. */
+  /** @deprecated use the canonical `downloadDocumentPdf` — kept temporarily for callers mid-migration. */
   async renderPdf(request: DocumentRequest): Promise<void> {
-    await this.downloadPdf(request);
+    // Delegates straight to the controller so the compat path never routes
+    // through another deprecated member.
+    assertSupported(request.type);
+    await DocumentController.downloadPdf(request);
   },
 };

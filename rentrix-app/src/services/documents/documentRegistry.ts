@@ -327,6 +327,40 @@ export const MAX_DOCUMENT_PDF_PAGES = 50;
 const UNSAFE_FILENAME_CHARS = /[\\/:*?"<>|\u0000-\u001f]/g;
 
 /**
+ * Linear-time edge trim for `-`/`.` separators. Implemented without a
+ * regex so hostile filename input can never trigger regex backtracking.
+ */
+const trimEdgeSeparators = (text: string): string => {
+  const isSeparator = (char: string | undefined): boolean => char === '-' || char === '.';
+  let start = 0;
+  let end = text.length;
+  while (start < end && isSeparator(text[start])) start += 1;
+  while (end > start && isSeparator(text[end - 1])) end -= 1;
+  return text.slice(start, end);
+};
+
+/**
+ * Linear-time removal of `..` dot runs (path traversal) without a quantified
+ * regex, for the same backtracking-resistance reason.
+ */
+const stripDotRuns = (text: string): string => {
+  let result = '';
+  let index = 0;
+  while (index < text.length) {
+    if (text[index] === '.') {
+      let runEnd = index;
+      while (runEnd < text.length && text[runEnd] === '.') runEnd += 1;
+      if (runEnd - index === 1) result += '.';
+      index = runEnd;
+      continue;
+    }
+    result += text[index];
+    index += 1;
+  }
+  return result;
+};
+
+/**
  * Produces a safe, readable, deterministic download filename:
  * strips path-unsafe characters and path traversal, converts whitespace to
  * single dashes, collapses separators, caps length, and guarantees a
@@ -334,15 +368,15 @@ const UNSAFE_FILENAME_CHARS = /[\\/:*?"<>|\u0000-\u001f]/g;
  * supported platforms).
  */
 export function sanitizeDocumentFileName(value: string, fallback = 'document', maxLength = 96): string {
-  const cleaned = value
-    .replace(UNSAFE_FILENAME_CHARS, '-')
-    .replace(/\.{2,}/g, '') // path traversal
-    .replace(/\s+/g, '-')
-    .replace(/-{2,}/g, '-')
-    .trim()
-    .replace(/^[-.]+|[-.]+$/g, '');
+  const cleaned = trimEdgeSeparators(
+    stripDotRuns(value)
+      .replace(UNSAFE_FILENAME_CHARS, '-')
+      .replace(/\s+/g, '-')
+      .replace(/-{2,}/g, '-')
+      .trim(),
+  );
 
-  const capped = cleaned.length > maxLength ? cleaned.slice(0, maxLength).replace(/[-.]+$/, '') : cleaned;
+  const capped = cleaned.length > maxLength ? trimEdgeSeparators(cleaned.slice(0, maxLength)) : cleaned;
   return capped || fallback;
 }
 

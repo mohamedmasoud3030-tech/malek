@@ -115,30 +115,34 @@ const REQUIRED_NUMBER_FIELDS = new Set([
   'totalRevenue', 'totalExpense', 'netIncome', 'totalAssets', 'totalLiabilities', 'totalEquity',
 ]);
 
+const validateRequiredField = (field: string, value: unknown): void => {
+  if (REQUIRED_ARRAY_FIELDS.has(field)) {
+    if (!Array.isArray(value)) throw new DocumentDataError('بيانات المستند ناقصة أو غير صالحة.');
+    return;
+  }
+  if (REQUIRED_NUMBER_FIELDS.has(field)) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new DocumentDataError('قيم مالية غير صالحة في بيانات المستند.');
+    }
+    return;
+  }
+  if (value == null || (typeof value === 'string' && !value.trim())) {
+    throw new DocumentDataError('بيانات المستند ناقصة أو غير صالحة.');
+  }
+};
+
+const isEmptyRequiredArray = (field: string, payload: Readonly<Record<string, unknown>>): boolean =>
+  REQUIRED_ARRAY_FIELDS.has(field) && Array.isArray(payload[field]) && (payload[field] as unknown[]).length === 0;
+
 function validatePayload(entry: DocumentTemplateEntry, payload: Readonly<Record<string, unknown>>): void {
   for (const field of entry.requiredData) {
-    const value = payload[field];
-    if (REQUIRED_ARRAY_FIELDS.has(field)) {
-      if (!Array.isArray(value)) throw new DocumentDataError('بيانات المستند ناقصة أو غير صالحة.');
-      continue;
-    }
-    if (REQUIRED_NUMBER_FIELDS.has(field)) {
-      if (typeof value !== 'number' || !Number.isFinite(value)) {
-        throw new DocumentDataError('قيم مالية غير صالحة في بيانات المستند.');
-      }
-      continue;
-    }
-    if (value == null || (typeof value === 'string' && !value.trim())) {
-      throw new DocumentDataError('بيانات المستند ناقصة أو غير صالحة.');
-    }
+    validateRequiredField(field, payload[field]);
   }
 
-  if (entry.emptyState.behavior === 'block') {
-    for (const field of entry.requiredData) {
-      if (REQUIRED_ARRAY_FIELDS.has(field) && Array.isArray(payload[field]) && (payload[field] as unknown[]).length === 0) {
-        throw new DocumentDataError(entry.emptyState.message ?? 'لا توجد بيانات لإصدار هذا المستند.');
-      }
-    }
+  if (entry.emptyState.behavior !== 'block') return;
+  const emptyField = entry.requiredData.find((field) => isEmptyRequiredArray(field, payload));
+  if (emptyField) {
+    throw new DocumentDataError(entry.emptyState.message ?? 'لا توجد بيانات لإصدار هذا المستند.');
   }
 }
 
@@ -487,6 +491,13 @@ function buildTenantStatementModel(entry: DocumentTemplateEntry, settings: Docum
 
 const BALANCE_EPSILON = 0.0005;
 
+/** Balance-nature label for one trial-balance line (no nesting). */
+const balanceNatureLabel = (debit: number, credit: number): string => {
+  if (debit > 0) return 'مدين';
+  if (credit > 0) return 'دائن';
+  return '—';
+};
+
 function buildTrialBalanceModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: TrialBalanceReportPayload): UnifiedDocumentModel {
   const ctx = formatContextOf(settings);
   const balanced = Math.abs(payload.totalDebit - payload.totalCredit) < BALANCE_EPSILON;
@@ -510,7 +521,7 @@ function buildTrialBalanceModel(entry: DocumentTemplateEntry, settings: Document
         payload.lines.map((line) => [
           line.no,
           line.name,
-          line.debit > 0 ? 'مدين' : line.credit > 0 ? 'دائن' : '—',
+          balanceNatureLabel(line.debit, line.credit),
           line.debit > 0 ? money(line.debit, ctx) : '—',
           line.credit > 0 ? money(line.credit, ctx) : '—',
         ]),
