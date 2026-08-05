@@ -1,0 +1,97 @@
+name: Execution Plan Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  integrity:
+    name: Verify decisions, 10 stages and checklist parity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify final decision register and execution plan
+        run: node scripts/check-10-stage-execution-plan.mjs
+
+      - name: Verify canonical business rules
+        run: node scripts/check-canonical-business-rules.mjs
+
+  protected-review-ledger:
+    name: Require owner approval for protected plan/review changes
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_review' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check protected paths and current-head approval
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = 'mohamedmasoud3030-tech';
+            const pull = context.payload.pull_request;
+            if (!pull) {
+              core.setFailed('Pull request payload is required.');
+              return;
+            }
+
+            const protectedPaths = new Set([
+              'docs/decisions/0011-final-business-accounting-and-operating-policies.md',
+              'docs/accounting/ACCOUNTING_DECISION_GATES_AR.md',
+              'governance/final-decision-register.json',
+              'governance/final-decision-register.sha256',
+              'governance/10-stage-master-plan.json',
+              'governance/10-stage-master-plan.sha256',
+              'docs/execution/10_STAGE_STATUS_AR.md',
+              'docs/execution/10_STAGE_REVIEW_LEDGER_AR.md',
+              'scripts/check-10-stage-execution-plan.mjs',
+              '.github/workflows/execution-plan-guard.yml',
+              '.github/CODEOWNERS',
+            ]);
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pull.number,
+              per_page: 100,
+            });
+            const touched = files.map((file) => file.filename).filter((path) => protectedPaths.has(path));
+            if (touched.length === 0) {
+              core.info('No protected plan/reviewer paths changed.');
+              return;
+            }
+
+            if (context.actor === owner) {
+              core.info(`Protected files changed directly by product owner @${owner}.`);
+              return;
+            }
+
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pull.number,
+              per_page: 100,
+            });
+            const approved = reviews.some((review) =>
+              review.user?.login === owner &&
+              review.state === 'APPROVED' &&
+              review.commit_id === pull.head.sha
+            );
+
+            if (!approved) {
+              core.setFailed(
+                `Protected decision/plan/review files changed (${touched.join(', ')}). ` +
+                `Approval by @${owner} on current head ${pull.head.sha} is required.`
+              );
+              return;
+            }
+
+            core.info(`Current head approved by product owner @${owner}.`);

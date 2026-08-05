@@ -1,0 +1,89 @@
+{
+  "created_from_main_sha": "0b4756df6b36223c40e511c5c7914bcfd7a20553",
+  "decision_register_sha256": "61f8fbf5273a702cccc455951624ef4d9331724e5b5a5d5f350bb01a14607908",
+  "document": "MALEK_10_STAGE_MASTER_EXECUTION_PLAN",
+  "rules": {
+    "agent_may_edit_reviewer_ledger": false,
+    "branch_from_latest_main": true,
+    "evidence_required_for_every_task": true,
+    "no_cherry_pick_from_superseded_business_branch": true,
+    "no_hidden_scope_expansion": true,
+    "one_stage_per_pr": true,
+    "stage_complete_requires_agent_and_reviewer": true,
+    "stage_count": 10
+  },
+  "stages": [
+    {
+      "depends_on": [],
+      "id": "S01",
+      "name": "Baseline, governance and workspace cleanup",
+      "status": "IN_PROGRESS",
+      "task_ids": ["S01-T01","S01-T02","S01-T03","S01-T04","S01-T05","S01-T06","S01-T07","S01-T08"]
+    },
+    {
+      "depends_on": ["S01"],
+      "id": "S02",
+      "name": "Tenant isolation, settlement integrity and safe operational imports",
+      "status": "PARTIAL",
+      "task_ids": ["S02-T01","S02-T02","S02-T03","S02-T04","S02-T05","S02-T06","S02-T07","S02-T08","S02-T09","S02-T10"]
+    },
+    {
+      "depends_on": ["S02"],
+      "id": "S03",
+      "name": "Canonical GL, chart of accounts and accounting periods",
+      "status": "PARTIAL",
+      "task_ids": ["S03-T01","S03-T02","S03-T03","S03-T04","S03-T05","S03-T06","S03-T07","S03-T08","S03-T09","S03-T10"]
+    },
+    {
+      "depends_on": ["S03"],
+      "id": "S04",
+      "name": "Owner-agency contracts, billing, collections and settlements",
+      "status": "NOT_STARTED",
+      "task_ids": ["S04-T01","S04-T02","S04-T03","S04-T04","S04-T05","S04-T06","S04-T07","S04-T08","S04-T09","S04-T10"]
+    },
+    {
+      "depends_on": ["S04"],
+      "id": "S05",
+      "name": "Expenses, deposits, fees, tax, termination and refunds",
+      "status": "PARTIAL",
+      "task_ids": ["S05-T01","S05-T02","S05-T03","S05-T04","S05-T05","S05-T06","S05-T07","S05-T08","S05-T09","S05-T10"]
+    },
+    {
+      "depends_on": ["S03","S05"],
+      "id": "S06",
+      "name": "Independent master-lease accounting module",
+      "status": "NOT_STARTED",
+      "task_ids": ["S06-T01","S06-T02","S06-T03","S06-T04","S06-T05","S06-T06","S06-T07","S06-T08","S06-T09","S06-T10"]
+    },
+    {
+      "depends_on": ["S04","S05","S06"],
+      "id": "S07",
+      "name": "Financial reports, subledger reconciliation and close controls",
+      "status": "PARTIAL",
+      "task_ids": ["S07-T01","S07-T02","S07-T03","S07-T04","S07-T05","S07-T06","S07-T07","S07-T08","S07-T09","S07-T10"]
+    },
+    {
+      "depends_on": ["S07"],
+      "id": "S08",
+      "name": "Read-only historical analysis",
+      "status": "NOT_STARTED",
+      "task_ids": ["S08-T01","S08-T02","S08-T03","S08-T04","S08-T05","S08-T06","S08-T07","S08-T08","S08-T09","S08-T10"]
+    },
+    {
+      "depends_on": ["S08"],
+      "id": "S09",
+      "name": "Append-only historical correction",
+      "status": "NOT_STARTED",
+      "task_ids": ["S09-T01","S09-T02","S09-T03","S09-T04","S09-T05","S09-T06","S09-T07","S09-T08","S09-T09","S09-T10"]
+    },
+    {
+      "depends_on": ["S09"],
+      "id": "S10",
+      "name": "Test, pilot, deployment and controlled release",
+      "status": "NOT_STARTED",
+      "task_ids": ["S10-T01","S10-T02","S10-T03","S10-T04","S10-T05","S10-T06","S10-T07","S10-T08","S10-T09","S10-T10"]
+    }
+  ],
+  "status": "LOCKED_PLAN",
+  "version": "1.0.0"
+}

@@ -8,7 +8,16 @@
 
 # Canonical business and contract constitution — product-owner approval required.
 /docs/business/ @mohamedmasoud3030-tech
+/docs/decisions/0011-final-business-accounting-and-operating-policies.md @mohamedmasoud3030-tech
+/docs/accounting/ACCOUNTING_DECISION_GATES_AR.md @mohamedmasoud3030-tech
 /governance/canonical-business-rules.json @mohamedmasoud3030-tech
 /governance/canonical-business-rules.sha256 @mohamedmasoud3030-tech
 /governance/BUSINESS_RULES_CHANGELOG.md @mohamedmasoud3030-tech
+/governance/final-decision-register.json @mohamedmasoud3030-tech
+/governance/final-decision-register.sha256 @mohamedmasoud3030-tech
+/governance/10-stage-master-plan.json @mohamedmasoud3030-tech
+/governance/10-stage-master-plan.sha256 @mohamedmasoud3030-tech
+/docs/execution/10_STAGE_STATUS_AR.md @mohamedmasoud3030-tech
+/docs/execution/10_STAGE_REVIEW_LEDGER_AR.md @mohamedmasoud3030-tech
 /scripts/check-canonical-business-rules.mjs @mohamedmasoud3030-tech
+/scripts/check-10-stage-execution-plan.mjs @mohamedmasoud3030-tech

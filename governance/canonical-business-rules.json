@@ -12,11 +12,23 @@
       "GREEN_CANONICAL_BUSINESS_RULES_GUARD"
     ]
   },
+  "companion_locked_sources": {
+    "agent_checklist": "docs/execution/10_STAGE_AGENT_CHECKLIST_AR.md",
+    "execution_master_plan": "governance/10-stage-master-plan.json",
+    "final_decision_register": "governance/final-decision-register.json",
+    "final_policy_adr": "docs/decisions/0011-final-business-accounting-and-operating-policies.md",
+    "reviewer_ledger": "docs/execution/10_STAGE_REVIEW_LEDGER_AR.md"
+  },
   "currency_policy": {
     "base_currency": "OMR",
     "rounding_unit": "0.001",
     "server_is_money_source_of_truth": true,
     "storage_precision": 3
+  },
+  "decision_state": {
+    "all_product_decisions_locked": true,
+    "blocked": 0,
+    "provisional": 0
   },
   "financial_invariants": {
     "browser_cannot_post_free_form_journals": true,
@@ -39,7 +51,6 @@
     },
     "MASTER_LEASE": {
       "default_collection_role": "OFFICE_IS_CREDITOR",
-      "full_ifrs16_accounting_requires_separate_module": true,
       "office_role": "PRINCIPAL",
       "presentation": "GROSS",
       "separate_from_owner_settlements": true,
@@ -73,14 +84,11 @@
     "default_rate_fee_trigger": "ON_COLLECTION",
     "fee_bases": [
       "PERCENTAGE_COLLECTED",
-      "PERCENTAGE_BILLED",
       "FIXED_MONTHLY"
     ],
     "fee_triggers": [
       "ON_COLLECTION",
-      "ON_INVOICE",
-      "DAILY_ACCRUAL",
-      "PERIOD_END"
+      "DAILY_ACCRUAL"
     ],
     "independent_record_per_property_or_scoped_portfolio": true,
     "never_store_management_terms_only_on_owner_master_record": true,
@@ -88,30 +96,14 @@
       "operating_model",
       "collection_role"
     ],
-    "required_terms": [
-      "scope",
-      "start_date",
-      "end_date",
-      "fee_basis",
-      "fee_trigger",
-      "settlement_frequency",
-      "settlement_day",
-      "reserve_amount",
-      "expense_approval_limit",
-      "maintenance_responsibility",
-      "utilities_responsibility",
-      "taxes_responsibility",
-      "security_deposit_beneficiary",
-      "offset_right",
-      "termination_terms"
-    ],
     "silent_retroactive_mutation_forbidden": true
   },
   "product": "MALEK",
   "property_onboarding": {
     "bulk_unit_creation_supported": true,
-    "handover_record_and_signatures_required": true,
+    "critical_identity_and_safety_steps_non_waivable": true,
     "property_cannot_activate_before_required_steps": true,
+    "property_type_templates_required": true,
     "steps": [
       "PROPERTY_INFO",
       "OWNER_AND_AGREEMENT",
@@ -120,11 +112,12 @@
       "INSPECTION",
       "RISK_ASSESSMENT",
       "HANDOVER"
-    ]
+    ],
+    "waiver_requires_admin_reason_evidence_and_audit": true
   },
   "repository": "mohamedmasoud3030-tech/malik",
   "rules_owner": "mohamedmasoud3030-tech",
-  "schema_version": "1.0.0",
+  "schema_version": "2.0.0",
   "status": "LOCKED_CANONICAL",
   "tenant_contract": {
     "activation_gates": [
@@ -162,24 +155,13 @@
       "ANNUAL"
     ],
     "rent_amount_semantics": "CONTRACTUAL_INSTALLMENT_AMOUNT_PER_PAYMENT_CYCLE",
-    "required_commercial_terms": [
-      "security_deposit",
-      "brokerage_fee",
-      "included_utilities",
-      "auto_renewal",
-      "renewal_increase",
-      "grace_period",
-      "late_fee",
-      "early_termination",
-      "signatures",
-      "previous_contract_or_amendment_reference"
-    ],
     "schedule_flow": [
       "PREVIEW_IN_DRAFT",
       "FREEZE_ON_ACTIVATION",
       "INVOICE_FROM_SCHEDULE",
       "ALLOCATE_COLLECTION_TO_INVOICE"
     ],
-    "schedule_is_contractual_obligation_not_invoice": true
+    "schedule_is_contractual_obligation_not_invoice": true,
+    "unsigned_activation_forbidden": true
   }
 }
