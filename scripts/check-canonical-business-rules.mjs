@@ -46,12 +46,22 @@ try {
 }
 
 assertEqual(rules.status, 'LOCKED_CANONICAL', 'status');
+assertEqual(rules.schema_version, '2.0.0', 'schema_version');
 assertEqual(rules.product, 'MALEK', 'product');
 assertEqual(rules.repository, 'mohamedmasoud3030-tech/malik', 'repository');
 assertEqual(rules.rules_owner, 'mohamedmasoud3030-tech', 'rules_owner');
 assertEqual(rules.change_control?.classification, 'FOUNDATIONAL_PRODUCT_CONSTITUTION', 'change_control.classification');
 assertEqual(rules.change_control?.normal_feature_pr_may_not_change_rules, true, 'change_control.normal_feature_pr_may_not_change_rules');
 assertEqual(rules.change_control?.product_owner_github_login, 'mohamedmasoud3030-tech', 'change_control.product_owner_github_login');
+assertEqual(rules.decision_state?.all_product_decisions_locked, true, 'decision_state.all_product_decisions_locked');
+assertEqual(rules.decision_state?.blocked, 0, 'decision_state.blocked');
+assertEqual(rules.decision_state?.provisional, 0, 'decision_state.provisional');
+
+assertEqual(rules.companion_locked_sources?.final_decision_register, 'governance/final-decision-register.json', 'companion_locked_sources.final_decision_register');
+assertEqual(rules.companion_locked_sources?.final_policy_adr, 'docs/decisions/0011-final-business-accounting-and-operating-policies.md', 'companion_locked_sources.final_policy_adr');
+assertEqual(rules.companion_locked_sources?.execution_master_plan, 'governance/10-stage-master-plan.json', 'companion_locked_sources.execution_master_plan');
+assertEqual(rules.companion_locked_sources?.agent_checklist, 'docs/execution/10_STAGE_AGENT_CHECKLIST_AR.md', 'companion_locked_sources.agent_checklist');
+assertEqual(rules.companion_locked_sources?.reviewer_ledger, 'docs/execution/10_STAGE_REVIEW_LEDGER_AR.md', 'companion_locked_sources.reviewer_ledger');
 
 assertEqual(rules.currency_policy?.base_currency, 'OMR', 'currency_policy.base_currency');
 assertEqual(rules.currency_policy?.storage_precision, 3, 'currency_policy.storage_precision');
@@ -62,7 +72,6 @@ assertEqual(rules.operating_models?.OWNER_AGENCY?.office_role, 'AGENT', 'OWNER_A
 assertEqual(rules.operating_models?.OWNER_AGENCY?.presentation, 'NET', 'OWNER_AGENCY.presentation');
 assertEqual(rules.operating_models?.OWNER_AGENCY?.default_collection_role, 'OWNER_IS_CREDITOR', 'OWNER_AGENCY.default_collection_role');
 assertEqual(rules.operating_models?.OWNER_AGENCY?.tenant_rent_is_office_revenue, false, 'OWNER_AGENCY.tenant_rent_is_office_revenue');
-
 assertEqual(rules.operating_models?.MASTER_LEASE?.office_role, 'PRINCIPAL', 'MASTER_LEASE.office_role');
 assertEqual(rules.operating_models?.MASTER_LEASE?.presentation, 'GROSS', 'MASTER_LEASE.presentation');
 assertEqual(rules.operating_models?.MASTER_LEASE?.default_collection_role, 'OFFICE_IS_CREDITOR', 'MASTER_LEASE.default_collection_role');
@@ -72,16 +81,22 @@ assertEqual(rules.owner_agreement?.active_terms_are_versioned, true, 'owner_agre
 assertEqual(rules.owner_agreement?.silent_retroactive_mutation_forbidden, true, 'owner_agreement.silent_retroactive_mutation_forbidden');
 assertEqual(rules.owner_agreement?.default_rate_fee_trigger, 'ON_COLLECTION', 'owner_agreement.default_rate_fee_trigger');
 assertEqual(rules.owner_agreement?.default_fixed_monthly_trigger, 'DAILY_ACCRUAL', 'owner_agreement.default_fixed_monthly_trigger');
+assertIncludes(rules.owner_agreement?.fee_bases, 'PERCENTAGE_COLLECTED', 'owner_agreement.fee_bases');
+assertIncludes(rules.owner_agreement?.fee_bases, 'FIXED_MONTHLY', 'owner_agreement.fee_bases');
 assertIncludes(rules.owner_agreement?.collection_roles, 'OWNER_IS_CREDITOR', 'owner_agreement.collection_roles');
 assertIncludes(rules.owner_agreement?.collection_roles, 'OFFICE_IS_CREDITOR', 'owner_agreement.collection_roles');
 
 assertEqual(rules.tenant_contract?.rent_amount_semantics, 'CONTRACTUAL_INSTALLMENT_AMOUNT_PER_PAYMENT_CYCLE', 'tenant_contract.rent_amount_semantics');
 assertEqual(rules.tenant_contract?.schedule_is_contractual_obligation_not_invoice, true, 'tenant_contract.schedule_is_contractual_obligation_not_invoice');
 assertEqual(rules.tenant_contract?.active_contract_changes_require_amendment_or_new_version, true, 'tenant_contract.active_contract_changes_require_amendment_or_new_version');
+assertEqual(rules.tenant_contract?.unsigned_activation_forbidden, true, 'tenant_contract.unsigned_activation_forbidden');
 assertIncludes(rules.tenant_contract?.activation_gates, 'NO_OVERLAPPING_OCCUPANCY', 'tenant_contract.activation_gates');
+assertIncludes(rules.tenant_contract?.activation_gates, 'REQUIRED_SIGNATURES_COMPLETE', 'tenant_contract.activation_gates');
 assertIncludes(rules.tenant_contract?.activation_gates, 'BILLING_SCHEDULE_MATERIALIZED', 'tenant_contract.activation_gates');
 
 assertEqual(rules.property_onboarding?.property_cannot_activate_before_required_steps, true, 'property_onboarding.property_cannot_activate_before_required_steps');
+assertEqual(rules.property_onboarding?.property_type_templates_required, true, 'property_onboarding.property_type_templates_required');
+assertEqual(rules.property_onboarding?.critical_identity_and_safety_steps_non_waivable, true, 'property_onboarding.critical_identity_and_safety_steps_non_waivable');
 assertEqual(rules.financial_invariants?.posted_financial_records_are_append_only, true, 'financial_invariants.posted_financial_records_are_append_only');
 assertEqual(rules.financial_invariants?.corrections_use_reversal_not_delete, true, 'financial_invariants.corrections_use_reversal_not_delete');
 assertEqual(rules.financial_invariants?.owner_expense_treatment, 'DUE_FROM_OWNER_NOT_OFFICE_EXPENSE', 'financial_invariants.owner_expense_treatment');
@@ -89,7 +104,6 @@ assertEqual(rules.financial_invariants?.tenant_deposit_treatment, 'LIABILITY_UNT
 
 const constitution = readFileSync(constitutionPath, 'utf8');
 const changelog = readFileSync(changelogPath, 'utf8');
-
 if (!constitution.includes(`**Schema version:** \`${rules.schema_version}\``)) {
   fail('constitution does not declare the current schema version');
 }
