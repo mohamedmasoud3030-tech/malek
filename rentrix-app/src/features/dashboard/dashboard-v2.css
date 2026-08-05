@@ -141,6 +141,33 @@
   box-shadow: var(--shadow-card-hover);
 }
 
+/* Safe-area: keep the Dashboard clear of notches/home indicators.
+ * PageLayout already owns the bottom inset; the scope covers both inline
+ * edges with logical properties so RTL keeps the correct physical side. */
+[data-visual-contract='v2'] {
+  padding-inline-start: env(safe-area-inset-left, 0px);
+  padding-inline-end: env(safe-area-inset-right, 0px);
+}
+
+/* Minimum 44x44 interaction targets for every Dashboard navigation surface.
+ * KPI destinations, quick actions, priority links and section-level "view
+ * all" links are the tappable decision paths of the page. */
+[data-visual-contract='v2'] a[data-dashboard-kpi-link],
+[data-visual-contract='v2'] [data-dashboard-action-grid] > a,
+[data-visual-contract='v2'] a[data-dashboard-priority-link] {
+  display: block;
+  min-block-size: 44px;
+  touch-action: manipulation;
+}
+
+[data-visual-contract='v2'] [data-dashboard-section] a[data-dashboard-section-action] {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  touch-action: manipulation;
+}
+
 @media (max-width: 414px) {
   [data-visual-contract='v2'] {
     --dashboard-section-gap: 1.25rem;
