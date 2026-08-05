@@ -31,6 +31,18 @@ describe('bankCsvImportService', () => {
     });
   });
 
+  it('refuses to build import payload when preview has any rejected row', () => {
+    const parsed = parser.parseBankCsv(
+      'date,description,reference,amount\n2026-01-01,Good,REF1,100.000\n2026-01-02,Bad,REF2,invalid',
+      'test.csv',
+      100,
+    );
+
+    expect(parsed.validRows.length).toBe(1);
+    expect(parsed.rejectedRows.length).toBe(1);
+    expect(() => toImportPayloadRows(parsed)).toThrow(/fail-closed/);
+  });
+
   it('does not trust client-supplied company ID and uses fingerprint', async () => {
     const { supabase } = await import('@/lib/supabase');
     const mockRpc = supabase.rpc as unknown as ReturnType<typeof vi.fn>;
