@@ -50,6 +50,7 @@ jobs:
               'governance/final-decision-register.sha256',
               'governance/10-stage-master-plan.json',
               'governance/10-stage-master-plan.sha256',
+              'docs/execution/10_STAGE_STATUS_AR.md',
               'docs/execution/10_STAGE_REVIEW_LEDGER_AR.md',
               'scripts/check-10-stage-execution-plan.mjs',
               '.github/workflows/execution-plan-guard.yml',
