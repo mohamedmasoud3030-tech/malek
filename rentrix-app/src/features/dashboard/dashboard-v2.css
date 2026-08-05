@@ -1,0 +1,160 @@
+/* Dashboard-scoped implementation of MALEK Visual Contract V2.
+ * This file intentionally does not touch :root. Every override is contained
+ * by [data-visual-contract='v2'] so non-Dashboard routes keep their current
+ * visual contract until a later approved rollout phase.
+ */
+
+[data-visual-contract='v2'] {
+  --color-bg: 210 24% 98%;
+  --color-card: 0 0% 100%;
+  --color-card-muted: 210 24% 96%;
+  --color-primary: 200 85% 38%;
+  --color-primary-fg: 0 0% 100%;
+  --color-text-primary: 215 32% 16%;
+  --color-text-secondary: 215 18% 33%;
+  --color-text-muted: 215 12% 48%;
+  --color-border: 214 18% 84%;
+  --color-border-light: 214 18% 89%;
+  --color-success-text: 154 68% 27%;
+  --color-success-bg: 152 52% 93%;
+  --color-warning-text: 36 86% 31%;
+  --color-warning-bg: 43 100% 91%;
+  --color-danger-text: 2 70% 41%;
+  --color-danger-bg: 0 80% 96%;
+  --color-info-text: 201 78% 34%;
+  --color-info-bg: 200 88% 95%;
+  --color-neutral-text: 215 14% 36%;
+  --color-neutral-bg: 215 16% 94%;
+  --focus-ring: 200 85% 38%;
+
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+  --shadow-card-hover: 0 6px 18px -12px rgb(15 23 42 / 0.18);
+  --shadow-elevated: 0 20px 40px -24px rgb(15 23 42 / 0.28);
+
+  --radius: 0.75rem;
+  --radius-card: 0.875rem;
+  --radius-elevated: 1rem;
+  --radius-input: 0.75rem;
+  --radius-button: 0.75rem;
+
+  --app-page-gutter-inline: clamp(1rem, 4vw, 1.25rem);
+  --app-page-gutter-block: clamp(1rem, 3vw, 1.5rem);
+  --dashboard-section-gap: 1.5rem;
+  --dashboard-cluster-gap: 0.75rem;
+
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-card);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-fg);
+  --muted: var(--color-card-muted);
+  --muted-foreground: var(--color-text-muted);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --accent: var(--color-primary);
+
+  display: grid;
+  min-width: 0;
+  gap: var(--dashboard-section-gap);
+  color: hsl(var(--foreground));
+  isolation: isolate;
+}
+
+[data-theme='dark'] [data-visual-contract='v2'] {
+  --color-bg: 215 30% 10%;
+  --color-card: 215 24% 14%;
+  --color-card-muted: 215 18% 12%;
+  --color-primary: 200 85% 48%;
+  --color-primary-fg: 0 0% 100%;
+  --color-text-primary: 210 24% 94%;
+  --color-text-secondary: 210 16% 74%;
+  --color-text-muted: 210 12% 60%;
+  --color-border: 215 18% 26%;
+  --color-border-light: 215 16% 21%;
+  --color-success-text: 154 64% 67%;
+  --color-success-bg: 154 34% 18%;
+  --color-warning-text: 42 92% 68%;
+  --color-warning-bg: 39 62% 18%;
+  --color-danger-text: 2 82% 74%;
+  --color-danger-bg: 2 44% 20%;
+  --color-info-text: 201 86% 72%;
+  --color-info-bg: 201 44% 18%;
+  --color-neutral-text: 215 12% 68%;
+  --color-neutral-bg: 215 14% 20%;
+  --focus-ring: 200 85% 48%;
+
+  --shadow-card: 0 1px 2px 0 rgb(2 6 23 / 0.28);
+  --shadow-card-hover: 0 8px 22px -14px rgb(0 0 0 / 0.42);
+  --shadow-elevated: 0 24px 48px -24px rgb(0 0 0 / 0.56);
+
+  --background: var(--color-bg);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-card);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-fg);
+  --muted: var(--color-card-muted);
+  --muted-foreground: var(--color-text-muted);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --accent: var(--color-primary);
+}
+
+[data-visual-contract='v2'] [data-dashboard-section] {
+  min-width: 0;
+}
+
+[data-visual-contract='v2'] [data-dashboard-hero],
+[data-visual-contract='v2'] [data-kpi-card],
+[data-visual-contract='v2'] [data-dashboard-action-grid] > a > div {
+  border-radius: var(--radius-card);
+}
+
+[data-visual-contract='v2'] [data-dashboard-section='priorities'] {
+  gap: var(--dashboard-section-gap);
+}
+
+[data-visual-contract='v2'] [data-dashboard-kpi-grid] > div,
+[data-visual-contract='v2'] [data-dashboard-action-grid] {
+  gap: var(--dashboard-cluster-gap);
+}
+
+[data-visual-contract='v2'] [data-dashboard-data-state] {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-contract='v2'] :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--focus-ring));
+  outline-offset: 3px;
+}
+
+[data-visual-contract='v2'] a[data-dashboard-kpi-link] {
+  min-width: 0;
+  border-radius: var(--radius-card);
+  text-decoration: none;
+}
+
+[data-visual-contract='v2'] a[data-dashboard-kpi-link]:hover [data-kpi-card] {
+  border-color: hsl(var(--primary) / 0.28);
+  box-shadow: var(--shadow-card-hover);
+}
+
+@media (max-width: 414px) {
+  [data-visual-contract='v2'] {
+    --dashboard-section-gap: 1.25rem;
+    --dashboard-cluster-gap: 0.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-visual-contract='v2'] *,
+  [data-visual-contract='v2'] *::before,
+  [data-visual-contract='v2'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
