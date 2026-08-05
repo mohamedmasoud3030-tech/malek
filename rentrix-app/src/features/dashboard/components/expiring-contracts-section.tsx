@@ -20,7 +20,7 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
     <div>
       <SectionHeader
         title="العقود المنتهية قريباً"
-        action={<Link to="/contracts" className="text-[0.8125rem] font-medium text-primary hover:underline">عرض الكل</Link>}
+        action={<Link to="/contracts" data-dashboard-section-action className="text-[0.8125rem] font-medium text-primary hover:underline">عرض الكل</Link>}
       />
 
       {isLoading && <Skeleton className="h-36 rounded-xl" />}
