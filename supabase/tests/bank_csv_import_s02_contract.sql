@@ -16,9 +16,8 @@ select has_function(
 );
 
 select ok(
-  pg_get_functiondef('public.import_bank_statement_batch_atomic(jsonb)'::regprocedure) like '%security definer%'
-  and pg_get_functiondef('public.import_bank_statement_batch_atomic(jsonb)'::regprocedure) like '%SET search_path TO ''public'', ''pg_temp''%'
-  or pg_get_functiondef('public.import_bank_statement_batch_atomic(jsonb)'::regprocedure) like '%SET search_path TO public, pg_temp%',
+  lower(pg_get_functiondef('public.import_bank_statement_batch_atomic(jsonb)'::regprocedure)) like '%security definer%'
+  and lower(pg_get_functiondef('public.import_bank_statement_batch_atomic(jsonb)'::regprocedure)) like '%set search_path to%public%pg_temp%',
   'RPC is SECURITY DEFINER with pinned search_path'
 );
 
