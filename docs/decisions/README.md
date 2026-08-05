@@ -81,17 +81,22 @@ evidence pointers is not useful to a future agent — it's just an opinion.
 
 ## Index
 
-| #    | Title                                                                                                       | Date       | Status   |
-| ---- | ----------------------------------------------------------------------------------------------------------- | ---------- | -------- |
-| 0001 | [Product accounting policies for owner fees and rental revenue](./0001-product-accounting-policies.md)      | 2026-07-11 | Accepted |
-| 0002 | [Staging live verification and release evidence](./0002-staging-live-verification-and-release-evidence.md)  | 2026-07-14 | Accepted |
-| 0003 | [Company-scoped account resolution](./0003-company-scoped-account-resolution.md)                            | 2026-07-15 | Accepted |
+| # | Title | Date | Status |
+| --- | --- | --- | --- |
+| 0001 | [Product accounting policies for owner fees and rental revenue](./0001-product-accounting-policies.md) | 2026-07-11 | Accepted |
+| 0002 | [Staging live verification and release evidence](./0002-staging-live-verification-and-release-evidence.md) | 2026-07-14 | Accepted |
+| 0003 | [Company-scoped account resolution](./0003-company-scoped-account-resolution.md) | 2026-07-15 | Accepted |
 | 0003 | [Financial security, UX, reporting, and reconciliation scope](./0003-financial-security-ux-reporting-and-reconciliation-scope.md) | 2026-07-15 | Accepted |
-| 0004 | [Proration and billing basis](./0004-proration-and-billing-basis.md)                                       | 2026-07-17 | Accepted |
-| 0005 | [Account resolution: payment-receipt-void](./0005-account-resolution-payment-receipt-void.md)               | 2026-07-21 | Accepted |
+| 0004 | [Proration and billing basis](./0004-proration-and-billing-basis.md) | 2026-07-17 | Accepted |
+| 0005 | [Account resolution: payment-receipt-void](./0005-account-resolution-payment-receipt-void.md) | 2026-07-21 | Accepted |
 | 0006 | [Owner settlement account resolution and request binding](./0006-owner-settlement-account-resolution-and-request-binding.md) | 2026-07-24 | Accepted |
-| 0008 | [UX separation of /financials and /reports](./0008-financial-routes-ux-clarity.md)                         | 2026-07-31 | Accepted |
+| 0008 | [UX separation of /financials and /reports](./0008-financial-routes-ux-clarity.md) | 2026-07-31 | Accepted |
+| 0009 | [MALEK canonical accounting model](./0009-malek-canonical-accounting-model.md) | 2026-08-01 | Accepted |
+| 0010 | [Stage 3 general ledger core](./0010-stage3-general-ledger-core.md) | 2026-08-01 | Accepted |
+| 0011 | [Final business, accounting, and operating policies](./0011-final-business-accounting-and-operating-policies.md) | 2026-08-04 | Accepted |
+| 0011 | [MALEK visible brand identity](./0011-malek-visible-brand-identity.md) | 2026-08-04 | Accepted |
+| 0012 | [MALEK design system refresh roadmap](./0012-malek-design-system-refresh-roadmap.md) | 2026-08-05 | Accepted |
 
-The index is oldest first. The duplicate historical `0003` records and the
-unused `0007` slot are preserved as-is; do not renumber existing files. The
-next record takes `0009-`.
+The index is oldest first. The duplicate historical `0003` and `0011`
+records and the unused `0007` slot are preserved as-is; do not renumber
+existing files. The next record takes `0013-`.
