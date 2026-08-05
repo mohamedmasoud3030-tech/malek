@@ -1,8 +1,13 @@
 /**
- * Bank CSV Parser — Stage 4
- * Supports UTF-8, UTF-8 BOM, Arabic/English headers, comma/semicolon delimiters,
- * quoted values, OMR 3-decimal amounts, debit/credit normalization, duplicate
- * headers, blank rows, invalid dates/amounts, etc.
+ * Bank CSV parser.
+ *
+ * Financial import defaults are deliberately strict:
+ * - a real header row is required;
+ * - ambiguous mappings are rejected;
+ * - a row containing both debit and credit is rejected;
+ * - invalid optional balance/currency values reject the row;
+ * - quoted multiline fields are parsed as one CSV record;
+ * - every accepted amount is normalized to OMR 0.001 precision.
  */
 
 export type BankCsvDelimiter = ',' | ';';
@@ -25,20 +30,20 @@ export interface BankCsvColumnMapping {
 }
 
 export interface ParsedBankRow {
-  rawIndex: number; // 0-based in original file excluding blanks? For error reporting, 1-based row number
-  raw: string[]; // original parsed cells
-  transaction_date?: string; // normalized YYYY-MM-DD
+  rawIndex: number;
+  raw: string[];
+  transaction_date?: string;
   amount?: number;
   description?: string;
   reference?: string;
   balance?: number;
   currency?: string;
-  fingerprint?: string; // for intra-file duplicate detection
+  fingerprint?: string;
 }
 
 export interface RejectedBankRow {
   rawIndex: number;
-  rowNumber: number; // 1-based line number for UI
+  rowNumber: number;
   raw: string[];
   reason: string;
   field?: CanonicalBankField;
@@ -52,7 +57,7 @@ export interface BankCsvParseResult {
   encoding: BankCsvEncoding;
   delimiter: BankCsvDelimiter;
   detectedDelimiterConfidence: 'high' | 'low' | 'fallback';
-  totalRows: number; // total non-empty rows processed (excluding header)
+  totalRows: number;
   headers: string[];
   rawHeaderRow?: string[];
   hasHeader: boolean;
@@ -63,7 +68,7 @@ export interface BankCsvParseResult {
   rejectedRows: RejectedBankRow[];
   duplicateWithinFile: number;
   possibleDuplicateWithinFile?: number;
-  previewRows: ParsedBankRow[]; // first N valid rows
+  previewRows: ParsedBankRow[];
   errorSummary?: string;
 }
 
@@ -73,16 +78,9 @@ const HEADER_SYNONYMS: Record<CanonicalBankField, string[]> = {
     'التاريخ', 'تاريخ العملية', 'تاريخ الحركة', 'تاريخ', 'تاريخ القيد', 'تاريخ المعاملة',
     'booking date', 'posting date', 'trans date',
   ],
-  amount: [
-    'amount', 'المبلغ', 'مبلغ', 'قيمة', 'القيمة',
-    'amount omr', 'amount (omr)', 'total', 'المجموع',
-  ],
-  debit: [
-    'debit', 'debit amount', 'debit_amount', 'مدين', 'سحب', 'مبلغ مدين', 'withdrawal', 'dr',
-  ],
-  credit: [
-    'credit', 'credit amount', 'credit_amount', 'دائن', 'إيداع', 'ايداع', 'مبلغ دائن', 'deposit', 'cr',
-  ],
+  amount: ['amount', 'المبلغ', 'مبلغ', 'قيمة', 'القيمة', 'amount omr', 'amount (omr)', 'total', 'المجموع'],
+  debit: ['debit', 'debit amount', 'debit_amount', 'مدين', 'سحب', 'مبلغ مدين', 'withdrawal', 'dr'],
+  credit: ['credit', 'credit amount', 'credit_amount', 'دائن', 'إيداع', 'ايداع', 'مبلغ دائن', 'deposit', 'cr'],
   description: [
     'description', 'details', 'narration', 'transaction description', 'particulars',
     'الوصف', 'البيان', 'التفاصيل', 'وصف العملية', 'بيان الحركة', 'memo', 'remarks', 'note',
@@ -91,183 +89,192 @@ const HEADER_SYNONYMS: Record<CanonicalBankField, string[]> = {
     'reference', 'bank reference', 'external reference', 'reference number', 'ref', 'transaction reference',
     'المرجع', 'رقم المرجع', 'رقم العملية', 'رقم القيد', 'مرجع البنك',
   ],
-  balance: [
-    'balance', 'running balance', 'balance amount',
-    'الرصيد', 'الرصيد الحالي', 'رصيد', 'current balance',
-  ],
-  currency: [
-    'currency', 'curr', 'العملة', 'عملة', 'ccy',
-  ],
+  balance: ['balance', 'running balance', 'balance amount', 'الرصيد', 'الرصيد الحالي', 'رصيد', 'current balance'],
+  currency: ['currency', 'curr', 'العملة', 'عملة', 'ccy'],
 };
+
+interface CsvRecord {
+  lineNumber: number;
+  cells: string[];
+}
 
 function normalizeHeader(header: string): string {
   return header.trim().toLowerCase().replace(/[\u200e\u200f]/g, '').replace(/\s+/g, ' ');
 }
 
 function matchHeaderToField(header: string): CanonicalBankField | null {
-  const norm = normalizeHeader(header);
-  if (!norm) return null;
+  const normalized = normalizeHeader(header);
+  if (!normalized) return null;
+
   for (const [field, synonyms] of Object.entries(HEADER_SYNONYMS) as [CanonicalBankField, string[]][]) {
-    for (const syn of synonyms) {
-      const synNorm = normalizeHeader(syn);
-      if (norm === synNorm) return field;
-      // partial contains for Arabic
-      if (norm.includes(synNorm) || synNorm.includes(norm)) {
-        // require at least 3 chars to avoid false positives
-        if (synNorm.length >= 3 && norm.length >= 3) return field;
+    for (const synonym of synonyms) {
+      const candidate = normalizeHeader(synonym);
+      if (normalized === candidate) return field;
+      if (normalized.length >= 3 && candidate.length >= 3 && (normalized.includes(candidate) || candidate.includes(normalized))) {
+        return field;
       }
     }
   }
   return null;
-}
-
-function parseCsvLine(line: string, delimiter: BankCsvDelimiter): string[] {
-  const cells: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    const next = line[i + 1];
-    if (char === '"' && inQuotes && next === '"') {
-      current += '"';
-      i++;
-    } else if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === delimiter && !inQuotes) {
-      cells.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  cells.push(current.trim());
-  return cells;
 }
 
 function stripBom(text: string): { text: string; encoding: BankCsvEncoding } {
-  if (text.charCodeAt(0) === 0xfeff) {
-    return { text: text.slice(1), encoding: 'UTF-8 BOM' };
-  }
-  return { text, encoding: 'UTF-8' };
+  return text.charCodeAt(0) === 0xfeff
+    ? { text: text.slice(1), encoding: 'UTF-8 BOM' }
+    : { text, encoding: 'UTF-8' };
 }
 
-function detectDelimiter(sampleLines: string[]): { delimiter: BankCsvDelimiter; confidence: 'high' | 'low' | 'fallback' } {
-  let commaCount = 0;
-  let semicolonCount = 0;
-  const checkLines = sampleLines.slice(0, 5);
-  for (const line of checkLines) {
-    // naive count outside quotes for quick detection
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (c === '"') {
-        // handle escaped
-        if (line[i + 1] === '"') { i++; continue; }
-        inQuotes = !inQuotes;
-      } else if (!inQuotes) {
-        if (c === ',') commaCount++;
-        else if (c === ';') semicolonCount++;
+function countDelimiterOutsideQuotes(text: string, delimiter: BankCsvDelimiter): number {
+  let count = 0;
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === '"') {
+      if (quoted && text[index + 1] === '"') {
+        index += 1;
+      } else {
+        quoted = !quoted;
       }
+    } else if (!quoted && char === delimiter) {
+      count += 1;
     }
   }
-  if (semicolonCount > 0 && commaCount === 0) return { delimiter: ';', confidence: 'high' };
-  if (commaCount > 0 && semicolonCount === 0) return { delimiter: ',', confidence: 'high' };
-  if (semicolonCount > commaCount && semicolonCount > 0) return { delimiter: ';', confidence: semicolonCount >= commaCount * 2 ? 'high' : 'low' };
-  if (commaCount > semicolonCount) return { delimiter: ',', confidence: commaCount >= semicolonCount * 2 ? 'high' : 'low' };
-  return { delimiter: ',', confidence: 'fallback' };
+  return count;
+}
+
+function detectDelimiter(text: string): { delimiter: BankCsvDelimiter; confidence: 'high' | 'low' | 'fallback' } {
+  const sample = text.split(/\r?\n/).filter((line) => line.trim()).slice(0, 8).join('\n');
+  const commaCount = countDelimiterOutsideQuotes(sample, ',');
+  const semicolonCount = countDelimiterOutsideQuotes(sample, ';');
+
+  if (commaCount === 0 && semicolonCount === 0) return { delimiter: ',', confidence: 'fallback' };
+  if (commaCount === 0) return { delimiter: ';', confidence: 'high' };
+  if (semicolonCount === 0) return { delimiter: ',', confidence: 'high' };
+  if (semicolonCount > commaCount) {
+    return { delimiter: ';', confidence: semicolonCount >= commaCount * 2 ? 'high' : 'low' };
+  }
+  return { delimiter: ',', confidence: commaCount >= semicolonCount * 2 ? 'high' : 'low' };
+}
+
+function parseCsvRecords(text: string, delimiter: BankCsvDelimiter): { records: CsvRecord[]; error?: string } {
+  const records: CsvRecord[] = [];
+  let cells: string[] = [];
+  let cell = '';
+  let quoted = false;
+  let currentLine = 1;
+  let recordStartLine = 1;
+
+  const finishRecord = () => {
+    cells.push(cell.trim());
+    if (cells.some((value) => value.trim() !== '')) {
+      records.push({ lineNumber: recordStartLine, cells });
+    }
+    cells = [];
+    cell = '';
+    recordStartLine = currentLine + 1;
+  };
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (char === '"') {
+      if (quoted && next === '"') {
+        cell += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+      continue;
+    }
+
+    if (char === delimiter && !quoted) {
+      cells.push(cell.trim());
+      cell = '';
+      continue;
+    }
+
+    if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && next === '\n') index += 1;
+      finishRecord();
+      currentLine += 1;
+      continue;
+    }
+
+    if (char === '\n') currentLine += 1;
+    cell += char;
+  }
+
+  if (quoted) {
+    return { records, error: `علامة اقتباس غير مغلقة ابتداءً من السطر ${recordStartLine}` };
+  }
+
+  if (cell.length > 0 || cells.length > 0) finishRecord();
+  return { records };
+}
+
+function normalizeDigits(value: string): string {
+  const map: Record<string, string> = {
+    '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4',
+    '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+  };
+  return value.replace(/[٠-٩]/g, (digit) => map[digit] ?? digit);
 }
 
 function normalizeAmountString(value: string): number | null {
-  if (!value) return null;
-  let v = value.trim();
-  if (!v) return null;
-  // Remove currency symbols and OMR text
-  v = v.replace(/OMR|ر\.?ع\.?|﷼/gi, '').trim();
-  // Handle parentheses as negative
-  const isParenNegative = v.startsWith('(') && v.endsWith(')');
-  if (isParenNegative) {
-    v = '-' + v.slice(1, -1);
-  }
-  // Remove thousand separators: commas, spaces
-  // But keep decimal point
-  // Handle Arabic decimal separators? Replace Arabic comma
-  v = v.replace(/[\s,']/g, '');
-  // Handle Arabic-Indic digits
-  const arabicIndicMap: Record<string, string> = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
-  v = v.replace(/[٠-٩]/g, (d) => arabicIndicMap[d] ?? d);
-  // Now v should be like -1234.567 or 1234.5
-  // Support 3 decimals OMR
-  const num = Number(v);
-  if (!Number.isFinite(num) || num === 0) {
-    // 0 is invalid per spec (non-zero)
-    if (num === 0) return null;
-    return Number.isFinite(num) ? num : null;
-  }
-  // Round to 3 decimals? Keep as is but ensure up to 3 decimals
-  return Math.round(num * 1000) / 1000;
+  if (!value?.trim()) return null;
+  let normalized = normalizeDigits(value.trim())
+    .replace(/OMR|ر\.?ع\.?|﷼/gi, '')
+    .replace(/٫/g, '.')
+    .replace(/٬/g, ',')
+    .trim();
+
+  const negativeParentheses = normalized.startsWith('(') && normalized.endsWith(')');
+  if (negativeParentheses) normalized = `-${normalized.slice(1, -1)}`;
+  normalized = normalized.replace(/[\s,']/g, '');
+
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount) || amount === 0) return null;
+  return roundOmr(amount);
 }
 
 function parseDateFlexible(value: string): string | null {
-  if (!value) return null;
-  const v = value.trim();
-  if (!v) return null;
+  const normalized = normalizeDigits(value ?? '').trim();
+  if (!normalized) return null;
 
-  // Try YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-    const [y, m, d] = v.split('-').map(Number);
-    const dt = new Date(y, m - 1, d);
-    if (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) {
-      return `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-    }
-    return null;
+  const isoPart = normalized.split('T')[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(isoPart)) {
+    const [year, month, day] = isoPart.split('-').map(Number);
+    return isValidDate(year, month, day) ? formatDate(year, month, day) : null;
   }
 
-  // Try DD/MM/YYYY or MM/DD/YYYY or DD-MM-YYYY with / or - or .
-  const sepMatch = v.match(/^(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})$/);
-  if (sepMatch) {
-    let a = Number(sepMatch[1]);
-    let b = Number(sepMatch[2]);
-    let c = Number(sepMatch[3]);
-    let year: number, month: number, day: number;
+  const match = normalized.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/);
+  if (!match) return null;
 
-    // Determine which part is year
-    if (a > 31) {
-      // YYYY/MM/DD or YYYY-MM-DD already handled but just in case YYYY/MM/DD with single digit month
-      year = a; month = b; day = c;
-    } else if (c > 31) {
-      // DD/MM/YYYY
-      day = a; month = b; year = c;
-    } else {
-      // ambiguous DD/MM/YYYY vs MM/DD/YYYY
-      // Assume DD/MM/YYYY for Omani context
-      day = a; month = b; year = c;
-      // If month >12, swap
-      if (month > 12 && day <= 12) {
-        const tmp = day; day = month; month = tmp;
-      }
-    }
-
-    // 2-digit year handling
-    if (year < 100) year += 2000;
-
-    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-    const dt = new Date(year, month - 1, day);
-    if (dt.getFullYear() === year && dt.getMonth() === month - 1 && dt.getDate() === day) {
-      return `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-    }
-    return null;
-  }
-
-  // Try ISO datetime YYYY-MM-DDTHH:MM:SS
-  const isoDate = v.split('T')[0];
-  if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
-    return isoDate;
-  }
-
-  return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  let year = Number(match[3]);
+  if (year < 100) year += 2000;
+  return isValidDate(year, month, day) ? formatDate(year, month, day) : null;
 }
 
-function computeFingerprint(row: { transaction_date: string; amount: number; currency: string; reference: string; description: string }): string {
+function isValidDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+function formatDate(year: number, month: number, day: number): string {
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function computeRowFingerprint(row: {
+  transaction_date: string;
+  amount: number;
+  currency: string;
+  reference: string;
+  description: string;
+}): string {
   const normalized = [
     row.transaction_date,
     row.amount.toFixed(3),
@@ -275,27 +282,18 @@ function computeFingerprint(row: { transaction_date: string; amount: number; cur
     row.reference.toLowerCase().trim(),
     row.description.toLowerCase().trim(),
   ].join('|');
-  // simple hash for intra-file detection (not cryptographic, just for dedup)
+
   let hash = 0;
-  for (let i = 0; i < normalized.length; i++) {
-    const chr = normalized.charCodeAt(i);
-    hash = (hash << 5) - hash + chr;
-    hash |= 0;
+  for (let index = 0; index < normalized.length; index += 1) {
+    hash = ((hash << 5) - hash + normalized.charCodeAt(index)) | 0;
   }
-  return `${row.transaction_date}|${row.amount}|${normalized.length}|${hash}`;
+  return `${row.transaction_date}|${row.amount.toFixed(3)}|${normalized.length}|${hash}`;
 }
 
-export function parseBankCsv(
-  fileContent: string,
-  fileName: string,
-  fileSize: number,
-): BankCsvParseResult {
-  const { text: withoutBom, encoding } = stripBom(fileContent);
-  const rawLines = withoutBom.split(/\r?\n/);
-
-  // Filter lines for delimiter detection (non-empty)
-  const nonEmptyForDelim = rawLines.filter((l) => l.trim().length > 0).slice(0, 10);
-  const { delimiter, confidence } = detectDelimiter(nonEmptyForDelim);
+export function parseBankCsv(fileContent: string, fileName: string, fileSize: number): BankCsvParseResult {
+  const { text, encoding } = stripBom(fileContent);
+  const { delimiter, confidence } = detectDelimiter(text);
+  const parsed = parseCsvRecords(text, delimiter);
 
   const result: BankCsvParseResult = {
     fileName,
@@ -315,324 +313,201 @@ export function parseBankCsv(
     previewRows: [],
   };
 
-  if (rawLines.length === 0 || nonEmptyForDelim.length === 0) {
+  if (parsed.error) {
+    result.errorSummary = parsed.error;
+    result.missingMandatory = ['transaction_date', 'amount'];
+    return result;
+  }
+  if (parsed.records.length === 0) {
     result.errorSummary = 'الملف فارغ';
     result.missingMandatory = ['transaction_date', 'amount'];
     return result;
   }
 
-  // Parse all lines with delimiter
-  const parsedLines: { lineNumber: number; cells: string[]; raw: string }[] = [];
-  rawLines.forEach((raw, idx) => {
-    if (raw.trim() === '') return; // skip blank rows per spec (blank rows handled)
-    const cells = parseCsvLine(raw, delimiter);
-    // Keep even if all empty? Already filtered blank
-    parsedLines.push({ lineNumber: idx + 1, cells, raw });
-  });
+  const headerRecord = parsed.records[0];
+  const headerMatches = headerRecord.cells.map(matchHeaderToField);
+  result.hasHeader = headerMatches.some(Boolean);
+  result.headers = result.hasHeader ? headerRecord.cells : [];
+  result.rawHeaderRow = result.hasHeader ? headerRecord.cells : undefined;
 
-  if (parsedLines.length === 0) {
-    result.errorSummary = 'لا توجد صفوف بعد إزالة الفارغة';
+  if (!result.hasHeader) {
+    result.errorSummary = 'يجب أن يحتوي الملف على صف رؤوس واضح؛ لا يُسمح بالتخمين الصامت.';
     result.missingMandatory = ['transaction_date', 'amount'];
-    return result;
-  }
-
-  // Header detection: first row if any cell matches known header synonym
-  const firstRowCells = parsedLines[0].cells;
-  const headerMatches = firstRowCells.map((cell) => matchHeaderToField(cell));
-  const hasHeader = headerMatches.some((m) => m !== null);
-
-  let dataStartIndex = 0;
-  let headers: string[] = [];
-  let rawHeaderRow: string[] | undefined;
-
-  if (hasHeader) {
-    headers = firstRowCells;
-    rawHeaderRow = firstRowCells;
-    dataStartIndex = 1;
-    result.hasHeader = true;
-    result.headers = headers;
-    result.rawHeaderRow = rawHeaderRow;
-
-    // Check duplicate headers (case-insensitive normalized)
-    const normalizedHeaders = headers.map((h) => normalizeHeader(h)).filter(Boolean);
-    const seen = new Set<string>();
-    const duplicates: string[] = [];
-    for (const nh of normalizedHeaders) {
-      if (seen.has(nh)) duplicates.push(nh);
-      else seen.add(nh);
-    }
-    if (duplicates.length > 0) {
-      result.errorSummary = `رؤوس مكررة: ${duplicates.join(', ')}`;
-      // Treat as rejected header case
-      result.missingMandatory = ['transaction_date', 'amount'];
+    result.totalRows = parsed.records.length;
+    parsed.records.forEach((record, index) => {
       result.rejectedRows.push({
-        rawIndex: 0,
-        rowNumber: parsedLines[0].lineNumber,
-        raw: firstRowCells,
-        reason: `رؤوس مكررة: ${duplicates.join(', ')}`,
+        rawIndex: index,
+        rowNumber: record.lineNumber,
+        raw: record.cells,
+        reason: result.errorSummary!,
       });
-      return result;
-    }
-
-    // Build column mapping
-    const mappingMap = new Map<CanonicalBankField, BankCsvColumnMapping>();
-    let ambiguous = false;
-    firstRowCells.forEach((header, idx) => {
-      const field = matchHeaderToField(header);
-      if (field) {
-        if (mappingMap.has(field)) {
-          ambiguous = true;
-        } else {
-          mappingMap.set(field, { field, header, index: idx });
-        }
-      }
     });
-
-    result.columnMapping = Array.from(mappingMap.values());
-    result.mappingAmbiguous = ambiguous;
-
-    if (ambiguous) {
-      result.errorSummary = 'تعيين أعمدة غامض: نفس الحقل مرتبط بأكثر من عمود';
-    }
-
-    // Determine missing mandatory
-    const hasAmount = mappingMap.has('amount') || (mappingMap.has('debit') && mappingMap.has('credit')) || mappingMap.has('debit') || mappingMap.has('credit');
-    const hasDate = mappingMap.has('transaction_date');
-    const missing: CanonicalBankField[] = [];
-    if (!hasDate) missing.push('transaction_date');
-    if (!hasAmount) missing.push('amount');
-    result.missingMandatory = missing;
-
-    if (missing.length > 0) {
-      // Don't fail entirely yet, but mark as missing mandatory
-      // Still attempt to parse? For preview, we should reject batch requiring correction per spec default
-      // So we will still parse but validRows will be empty and errorSummary set
-      if (!result.errorSummary) result.errorSummary = `أعمدة إلزامية مفقودة: ${missing.join(', ')}`;
-    }
-  } else {
-    // No header: assume positional? But spec says don't silently guess ambiguous mapping
-    // For backward compatibility with old format date,description,reference,amount
-    // We'll treat as headerless with assumed order if 4 columns: date,description,reference,amount
-    // Otherwise, mark missing mandatory and require mapping
-    result.hasHeader = false;
-    result.headers = [];
-    // Try to infer if first row looks like data (date + amount pattern)
-    // If not, we still need mapping
-    result.missingMandatory = ['transaction_date', 'amount'];
-    result.errorSummary = 'لم يتم العثور على صف رؤوس؛ يُرجى تأكيد تعيين الأعمدة';
-    // For now, we will attempt fallback mapping for legacy format if row has 4 columns and first cell is date-like
-    const sampleCells = firstRowCells;
-    if (sampleCells.length >= 4) {
-      const dateParsed = parseDateFlexible(sampleCells[0]);
-      const amountParsed = normalizeAmountString(sampleCells[3]);
-      if (dateParsed && amountParsed !== null) {
-        // Legacy mapping: 0: date, 1: description, 2: reference, 3: amount
-        result.columnMapping = [
-          { field: 'transaction_date', header: 'date (inferred)', index: 0 },
-          { field: 'description', header: 'description (inferred)', index: 1 },
-          { field: 'reference', header: 'reference (inferred)', index: 2 },
-          { field: 'amount', header: 'amount (inferred)', index: 3 },
-        ];
-        result.missingMandatory = [];
-        result.errorSummary = undefined;
-        result.hasHeader = false;
-        result.headers = ['date', 'description', 'reference', 'amount'];
-      }
-    }
-  }
-
-  // If mapping still missing mandatory, we cannot produce valid rows except maybe fallback, so return early with rejected rows?
-  const mappingByField = new Map<CanonicalBankField, number>();
-  for (const m of result.columnMapping) {
-    mappingByField.set(m.field, m.index);
-  }
-
-  const hasDateMapping = mappingByField.has('transaction_date');
-  const hasAmountMapping = mappingByField.has('amount') || mappingByField.has('debit') || mappingByField.has('credit');
-
-  if (!hasDateMapping || !hasAmountMapping) {
-    // All data rows become rejected with reason missing mandatory columns
-    for (let i = dataStartIndex; i < parsedLines.length; i++) {
-      const pl = parsedLines[i];
-      result.rejectedRows.push({
-        rawIndex: i,
-        rowNumber: pl.lineNumber,
-        raw: pl.cells,
-        reason: `أعمدة إلزامية مفقودة: ${result.missingMandatory.join(', ') || 'transaction_date, amount'}`,
-      });
-    }
-    result.totalRows = parsedLines.length - dataStartIndex;
     return result;
   }
 
-  // Parse data rows
-  const fingerprintSeen = new Map<string, number>(); // fingerprint -> first occurrence index
-  let totalRows = 0;
+  const normalizedHeaders = headerRecord.cells.map(normalizeHeader).filter(Boolean);
+  const duplicates = normalizedHeaders.filter((header, index) => normalizedHeaders.indexOf(header) !== index);
+  if (duplicates.length > 0) {
+    result.errorSummary = `رؤوس مكررة: ${[...new Set(duplicates)].join(', ')}`;
+    result.missingMandatory = ['transaction_date', 'amount'];
+    result.rejectedRows.push({
+      rawIndex: 0,
+      rowNumber: headerRecord.lineNumber,
+      raw: headerRecord.cells,
+      reason: result.errorSummary,
+    });
+    return result;
+  }
 
-  for (let i = dataStartIndex; i < parsedLines.length; i++) {
-    const pl = parsedLines[i];
-    totalRows++;
-    const cells = pl.cells;
+  const mapping = new Map<CanonicalBankField, BankCsvColumnMapping>();
+  headerRecord.cells.forEach((header, index) => {
+    const field = matchHeaderToField(header);
+    if (!field) return;
+    if (mapping.has(field)) result.mappingAmbiguous = true;
+    else mapping.set(field, { field, header, index });
+  });
+  result.columnMapping = [...mapping.values()];
 
-    // Helper to get cell by mapping
-    const getCell = (field: CanonicalBankField): string | undefined => {
-      const idx = mappingByField.get(field);
-      if (idx === undefined) return undefined;
-      return cells[idx];
+  const hasDate = mapping.has('transaction_date');
+  const hasDirectAmount = mapping.has('amount');
+  const hasDebitOrCredit = mapping.has('debit') || mapping.has('credit');
+  if (hasDirectAmount && hasDebitOrCredit) result.mappingAmbiguous = true;
+  if (!hasDate) result.missingMandatory.push('transaction_date');
+  if (!hasDirectAmount && !hasDebitOrCredit) result.missingMandatory.push('amount');
+
+  if (result.mappingAmbiguous || result.missingMandatory.length > 0) {
+    result.errorSummary = result.mappingAmbiguous
+      ? 'تعيين أعمدة غامض؛ لا تجمع بين amount وdebit/credit ولا تكرر نفس الحقل.'
+      : `أعمدة إلزامية مفقودة: ${result.missingMandatory.join(', ')}`;
+    result.totalRows = Math.max(parsed.records.length - 1, 0);
+    parsed.records.slice(1).forEach((record, index) => {
+      result.rejectedRows.push({
+        rawIndex: index + 1,
+        rowNumber: record.lineNumber,
+        raw: record.cells,
+        reason: result.errorSummary!,
+      });
+    });
+    return result;
+  }
+
+  const fieldIndex = new Map<CanonicalBankField, number>();
+  result.columnMapping.forEach((item) => fieldIndex.set(item.field, item.index));
+  const fingerprints = new Set<string>();
+  const dataRecords = parsed.records.slice(1);
+  result.totalRows = dataRecords.length;
+
+  dataRecords.forEach((record, dataIndex) => {
+    const getCell = (field: CanonicalBankField): string => {
+      const index = fieldIndex.get(field);
+      return index === undefined ? '' : (record.cells[index] ?? '');
+    };
+    const reject = (reason: string, field?: CanonicalBankField) => {
+      result.rejectedRows.push({
+        rawIndex: dataIndex + 1,
+        rowNumber: record.lineNumber,
+        raw: record.cells,
+        reason,
+        field,
+      });
     };
 
-    // Date
-    const dateRaw = getCell('transaction_date') ?? '';
-    const parsedDate = parseDateFlexible(dateRaw);
-    if (!parsedDate) {
-      result.rejectedRows.push({
-        rawIndex: i,
-        rowNumber: pl.lineNumber,
-        raw: cells,
-        reason: `تاريخ غير صالح: "${dateRaw}"`,
-        field: 'transaction_date',
-      });
-      continue;
+    const transactionDate = parseDateFlexible(getCell('transaction_date'));
+    if (!transactionDate) {
+      reject(`تاريخ غير صالح: "${getCell('transaction_date')}"`, 'transaction_date');
+      return;
     }
 
-    // Amount logic: handle amount column OR debit/credit
     let amount: number | null = null;
-    const amountRaw = getCell('amount');
-    const debitRaw = getCell('debit');
-    const creditRaw = getCell('credit');
-
-    if (amountRaw !== undefined) {
-      amount = normalizeAmountString(amountRaw);
-    } else if (debitRaw !== undefined || creditRaw !== undefined) {
-      const debitVal = debitRaw ? normalizeAmountString(debitRaw) : null;
-      const creditVal = creditRaw ? normalizeAmountString(creditRaw) : null;
-      // OMR: debit is outflow (negative), credit inflow (positive)
-      // If both present, amount = credit - debit? But debit already negative? Let's treat:
-      // If debit column present alone -> amount = -abs(debit)
-      // If credit alone -> +credit
-      // If both -> credit - debit (if debit positive value means outflow, subtract)
-      const debitAbs = debitVal !== null ? Math.abs(debitVal) : 0;
-      const creditAbs = creditVal !== null ? Math.abs(creditVal) : 0;
-      if (debitAbs !== 0 && creditAbs !== 0) {
-        // If both present in same row, ambiguous but we compute credit - debit
-        amount = creditAbs - debitAbs;
-        if (amount === 0) amount = null; // will be rejected as zero
-      } else if (debitAbs !== 0) {
-        amount = -debitAbs;
-      } else if (creditAbs !== 0) {
-        amount = creditAbs;
+    if (fieldIndex.has('amount')) {
+      amount = normalizeAmountString(getCell('amount'));
+    } else {
+      const debit = normalizeAmountString(getCell('debit'));
+      const credit = normalizeAmountString(getCell('credit'));
+      const debitValue = debit === null ? 0 : Math.abs(debit);
+      const creditValue = credit === null ? 0 : Math.abs(credit);
+      if (debitValue > 0 && creditValue > 0) {
+        reject('لا يمكن أن يحتوي الصف نفسه على مبلغ مدين ودائن معًا.', 'amount');
+        return;
       }
+      amount = debitValue > 0 ? -debitValue : creditValue > 0 ? creditValue : null;
     }
 
     if (amount === null || !Number.isFinite(amount) || amount === 0) {
-      result.rejectedRows.push({
-        rawIndex: i,
-        rowNumber: pl.lineNumber,
-        raw: cells,
-        reason: `مبلغ غير صالح: "${amountRaw ?? debitRaw ?? creditRaw ?? ''}"`,
-        field: 'amount',
-      });
-      continue;
+      reject(`مبلغ غير صالح: "${getCell('amount') || getCell('debit') || getCell('credit')}"`, 'amount');
+      return;
     }
 
-    // Description
-    const descRaw = getCell('description') ?? '';
-    const description = descRaw.trim() || 'حركة مستوردة';
+    const description = getCell('description').trim() || 'حركة مستوردة';
+    const reference = getCell('reference').trim();
 
-    // Reference
-    const refRaw = getCell('reference') ?? '';
-    const reference = refRaw.trim();
-
-    // Balance
-    const balRaw = getCell('balance');
     let balance: number | undefined;
-    if (balRaw !== undefined && balRaw.trim() !== '') {
-      const b = normalizeAmountString(balRaw);
-      if (b === null) {
-        // Balance invalid is not fatal? Spec says handle invalid amounts/dates, but balance is optional
-        // We'll treat invalid balance as rejected? Since optional, we can ignore and keep row but note?
-        // For fail-closed, optional invalid should not reject batch, just ignore. We'll set undefined.
-        balance = undefined;
-      } else {
-        balance = b;
+    const rawBalance = getCell('balance').trim();
+    if (rawBalance) {
+      const parsedBalance = normalizeAmountString(rawBalance);
+      if (parsedBalance === null) {
+        reject(`رصيد غير صالح: "${rawBalance}"`, 'balance');
+        return;
       }
+      balance = parsedBalance;
     }
 
-    // Currency
-    const currRaw = getCell('currency');
-    let currency = 'OMR';
-    if (currRaw && currRaw.trim()) {
-      const cur = currRaw.trim().toUpperCase();
-      if (/^[A-Z]{3}$/.test(cur)) currency = cur;
+    const rawCurrency = getCell('currency').trim();
+    const currency = rawCurrency ? rawCurrency.toUpperCase() : 'OMR';
+    if (!/^[A-Z]{3}$/.test(currency)) {
+      reject(`عملة غير صالحة: "${rawCurrency}"`, 'currency');
+      return;
     }
 
-    // Compute fingerprint for intra-file duplicate detection
-    const fp = computeFingerprint({
-      transaction_date: parsedDate,
+    const fingerprint = computeRowFingerprint({
+      transaction_date: transactionDate,
       amount,
       currency,
       reference,
       description,
     });
-
-    // Check exact duplicate within file
-    if (fingerprintSeen.has(fp)) {
-      result.duplicateWithinFile++;
-      result.rejectedRows.push({
-        rawIndex: i,
-        rowNumber: pl.lineNumber,
-        raw: cells,
-        reason: `مكرر داخل الملف (نفس التاريخ والمبلغ والوصف)`,
-      });
-      continue;
+    if (fingerprints.has(fingerprint)) {
+      result.duplicateWithinFile += 1;
+      reject('مكرر داخل الملف (نفس التاريخ والمبلغ والعملة والمرجع والوصف).');
+      return;
     }
-    fingerprintSeen.set(fp, i);
+    fingerprints.add(fingerprint);
 
-    const parsedRow: ParsedBankRow = {
-      rawIndex: i,
-      raw: cells,
-      transaction_date: parsedDate,
+    result.validRows.push({
+      rawIndex: dataIndex + 1,
+      raw: record.cells,
+      transaction_date: transactionDate,
       amount,
       description,
       reference,
       balance,
       currency,
-      fingerprint: fp,
-    };
+      fingerprint,
+    });
+  });
 
-    result.validRows.push(parsedRow);
-  }
-
-  result.totalRows = totalRows;
   result.previewRows = result.validRows.slice(0, 10);
-  if (result.validRows.length === 0 && result.rejectedRows.length > 0 && !result.errorSummary) {
-    result.errorSummary = 'كل الصفوف مرفوضة بسبب أخطاء التحقق';
+  if (result.validRows.length === 0 && result.rejectedRows.length > 0) {
+    result.errorSummary = 'كل الصفوف مرفوضة بسبب أخطاء التحقق.';
   }
-
   return result;
 }
 
 export async function computeFileFingerprint(content: string): Promise<string> {
-  // Use SubtleCrypto if available, fallback to simple hash
-  try {
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(content);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-    }
-  } catch {
-    // fallback
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    throw new Error('SHA-256 غير متاح في هذا المتصفح؛ لا يمكن استيراد ملف مالي بأمان.');
   }
-  // Fallback: simple djb2-like hash (not cryptographically secure but deterministic)
-  let hash = 5381;
-  for (let i = 0; i < content.length; i++) {
-    hash = (hash * 33) ^ content.charCodeAt(i);
-  }
-  return `fallback-${(hash >>> 0).toString(16)}-${content.length}`;
+  const data = new TextEncoder().encode(content);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 export function formatBankAmount(amount: number): string {
-  return amount.toFixed(3);
+  return roundOmr(amount).toFixed(3);
+}
+
+function roundOmr(value: number): number {
+  return Math.round((value + Number.EPSILON) * 1_000) / 1_000;
 }
