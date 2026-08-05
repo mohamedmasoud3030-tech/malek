@@ -5,3 +5,10 @@
 /rentrix-app/src/features/contracts/ @mohamedmasoud3030-tech
 /rentrix-app/src/features/financials/ @mohamedmasoud3030-tech
 /rentrix-app/src/routes/ @mohamedmasoud3030-tech
+
+# Canonical business and contract constitution — product-owner approval required.
+/docs/business/ @mohamedmasoud3030-tech
+/governance/canonical-business-rules.json @mohamedmasoud3030-tech
+/governance/canonical-business-rules.sha256 @mohamedmasoud3030-tech
+/governance/BUSINESS_RULES_CHANGELOG.md @mohamedmasoud3030-tech
+/scripts/check-canonical-business-rules.mjs @mohamedmasoud3030-tech

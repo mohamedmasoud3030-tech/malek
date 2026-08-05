@@ -1,0 +1,185 @@
+{
+  "change_control": {
+    "classification": "FOUNDATIONAL_PRODUCT_CONSTITUTION",
+    "normal_feature_pr_may_not_change_rules": true,
+    "product_owner_github_login": "mohamedmasoud3030-tech",
+    "required_for_any_change": [
+      "EXPLICIT_PRODUCT_OWNER_APPROVAL",
+      "NEW_OR_SUPERSEDING_ADR",
+      "SCHEMA_VERSION_BUMP",
+      "CHANGELOG_ENTRY",
+      "ACCOUNTING_AND_CONTRACT_IMPACT_REVIEW",
+      "GREEN_CANONICAL_BUSINESS_RULES_GUARD"
+    ]
+  },
+  "currency_policy": {
+    "base_currency": "OMR",
+    "rounding_unit": "0.001",
+    "server_is_money_source_of_truth": true,
+    "storage_precision": 3
+  },
+  "financial_invariants": {
+    "browser_cannot_post_free_form_journals": true,
+    "corrections_use_reversal_not_delete": true,
+    "financial_mutations_are_server_side_atomic_and_idempotent": true,
+    "gl_is_financial_statement_source_of_truth": true,
+    "owner_expense_treatment": "DUE_FROM_OWNER_NOT_OFFICE_EXPENSE",
+    "owner_settlement_role": "AGGREGATE_AND_SETTLE_EXISTING_OBLIGATIONS_NOT_CREATE_RENT_OBLIGATION",
+    "posted_financial_records_are_append_only": true,
+    "subledgers_are_operational_source_of_truth": true,
+    "subledgers_must_reconcile_to_control_accounts": true,
+    "tenant_deposit_treatment": "LIABILITY_UNTIL_CONTRACTUALLY_APPLIED_OR_REFUNDED"
+  },
+  "operating_models": {
+    "BROKERAGE_OR_COLLECTION_ONLY": {
+      "collection_role": "EXPLICIT_PER_AGREEMENT",
+      "office_role": "AGENT",
+      "presentation": "NET",
+      "tenant_rent_is_office_revenue": false
+    },
+    "MASTER_LEASE": {
+      "default_collection_role": "OFFICE_IS_CREDITOR",
+      "full_ifrs16_accounting_requires_separate_module": true,
+      "office_role": "PRINCIPAL",
+      "presentation": "GROSS",
+      "separate_from_owner_settlements": true,
+      "tenant_rent_is_office_revenue": true
+    },
+    "OFFICE_OWNED": {
+      "default_collection_role": "OFFICE_IS_CREDITOR",
+      "office_role": "PRINCIPAL",
+      "presentation": "GROSS",
+      "tenant_rent_is_office_revenue": true
+    },
+    "OWNER_AGENCY": {
+      "default_collection_role": "OWNER_IS_CREDITOR",
+      "office_revenue": [
+        "MANAGEMENT_FEE",
+        "BROKERAGE_FEE",
+        "CONTRACTUALLY_GRANTED_CHARGES"
+      ],
+      "office_role": "AGENT",
+      "presentation": "NET",
+      "tenant_rent_is_office_revenue": false
+    }
+  },
+  "owner_agreement": {
+    "active_terms_are_versioned": true,
+    "collection_roles": [
+      "OWNER_IS_CREDITOR",
+      "OFFICE_IS_CREDITOR"
+    ],
+    "default_fixed_monthly_trigger": "DAILY_ACCRUAL",
+    "default_rate_fee_trigger": "ON_COLLECTION",
+    "fee_bases": [
+      "PERCENTAGE_COLLECTED",
+      "PERCENTAGE_BILLED",
+      "FIXED_MONTHLY"
+    ],
+    "fee_triggers": [
+      "ON_COLLECTION",
+      "ON_INVOICE",
+      "DAILY_ACCRUAL",
+      "PERIOD_END"
+    ],
+    "independent_record_per_property_or_scoped_portfolio": true,
+    "never_store_management_terms_only_on_owner_master_record": true,
+    "required_legal_classification": [
+      "operating_model",
+      "collection_role"
+    ],
+    "required_terms": [
+      "scope",
+      "start_date",
+      "end_date",
+      "fee_basis",
+      "fee_trigger",
+      "settlement_frequency",
+      "settlement_day",
+      "reserve_amount",
+      "expense_approval_limit",
+      "maintenance_responsibility",
+      "utilities_responsibility",
+      "taxes_responsibility",
+      "security_deposit_beneficiary",
+      "offset_right",
+      "termination_terms"
+    ],
+    "silent_retroactive_mutation_forbidden": true
+  },
+  "product": "MALEK",
+  "property_onboarding": {
+    "bulk_unit_creation_supported": true,
+    "handover_record_and_signatures_required": true,
+    "property_cannot_activate_before_required_steps": true,
+    "steps": [
+      "PROPERTY_INFO",
+      "OWNER_AND_AGREEMENT",
+      "DOCUMENTS",
+      "UNITS",
+      "INSPECTION",
+      "RISK_ASSESSMENT",
+      "HANDOVER"
+    ]
+  },
+  "repository": "mohamedmasoud3030-tech/malik",
+  "rules_owner": "mohamedmasoud3030-tech",
+  "schema_version": "1.0.0",
+  "status": "LOCKED_CANONICAL",
+  "tenant_contract": {
+    "activation_gates": [
+      "UNIT_EXISTS_AND_BELONGS_TO_COMPANY",
+      "NO_OVERLAPPING_OCCUPANCY",
+      "OWNER_AGREEMENT_COVERS_CONTRACT_TERM_WHEN_REQUIRED",
+      "OPERATING_MODEL_AND_COLLECTION_ROLE_RESOLVED",
+      "REQUIRED_APPROVALS_COMPLETE",
+      "REQUIRED_SIGNATURES_COMPLETE",
+      "BILLING_SCHEDULE_MATERIALIZED"
+    ],
+    "active_contract_changes_require_amendment_or_new_version": true,
+    "kinds": [
+      "NEW",
+      "RENEWAL",
+      "AMENDMENT",
+      "SUBLEASE"
+    ],
+    "lifecycle": [
+      "DRAFT",
+      "PENDING_INTERNAL_APPROVAL",
+      "APPROVED",
+      "PENDING_SIGNATURE",
+      "SIGNED",
+      "ACTIVE",
+      "EXPIRING",
+      "EXPIRED",
+      "TERMINATED",
+      "CANCELLED"
+    ],
+    "payment_cycles": [
+      "MONTHLY",
+      "QUARTERLY",
+      "SEMI_ANNUAL",
+      "ANNUAL"
+    ],
+    "rent_amount_semantics": "CONTRACTUAL_INSTALLMENT_AMOUNT_PER_PAYMENT_CYCLE",
+    "required_commercial_terms": [
+      "security_deposit",
+      "brokerage_fee",
+      "included_utilities",
+      "auto_renewal",
+      "renewal_increase",
+      "grace_period",
+      "late_fee",
+      "early_termination",
+      "signatures",
+      "previous_contract_or_amendment_reference"
+    ],
+    "schedule_flow": [
+      "PREVIEW_IN_DRAFT",
+      "FREEZE_ON_ACTIVATION",
+      "INVOICE_FROM_SCHEDULE",
+      "ALLOCATE_COLLECTION_TO_INVOICE"
+    ],
+    "schedule_is_contractual_obligation_not_invoice": true
+  }
+}
