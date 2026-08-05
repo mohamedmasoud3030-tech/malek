@@ -24,13 +24,13 @@
 ## S01 — Baseline, governance and workspace cleanup
 
 - [x] **S01-T01** — Reviewed: branch base verified at main `0b4756df6b36223c40e511c5c7914bcfd7a20553`.
-- [x] **S01-T02** — Reviewed: PR #1342 and #1343 closed; no implementation PR left open before new work.
-- [x] **S01-T03** — Reviewed: PR #1344 merged; checksum/CODEOWNERS/guard present on main.
-- [ ] **S01-T04** — Evidence/notes: ______________________________
-- [ ] **S01-T05** — Evidence/notes: ______________________________
-- [ ] **S01-T06** — Evidence/notes: ______________________________
-- [ ] **S01-T07** — Evidence/notes: ______________________________
-- [ ] **S01-T08** — Evidence/notes: ______________________________
+- [x] **S01-T02** — Reviewed: PR #1342 and #1343 closed; zero open PRs verified after #1345 merge.
+- [x] **S01-T03** — Reviewed: PR #1344 merged; checksum/CODEOWNERS/canonical guard present on main.
+- [x] **S01-T04** — Reviewed: ADR 0011 and `final-decision-register.json` close D01–D18 with `blocked_decisions=0` and `provisional_decisions=0`.
+- [x] **S01-T05** — Reviewed: 10-stage plan contains exactly 10 stages and 98 unique task IDs; Agent and Reviewer ledgers have exact parity; Execution Plan Guard succeeded.
+- [x] **S01-T06** — Reviewed: stale `business/domain-contract-foundation` is explicitly superseded and forbidden in plan, checklist, status and PR #1345.
+- [x] **S01-T07** — Reviewed: Canonical Business Rules Guard, Execution Plan Guard, CI / Typecheck-Lint-Build, SonarCloud, Browser Readiness and Release Blocker Gate all succeeded for head `b741328385569ff7927e1ee5f26a0f5fbf057689`.
+- [x] **S01-T08** — Reviewed: PR #1345 merged as `ae645d15e3cdcdf0310e694941f72b7fcd1b5eb7`; post-merge reads verified protected files on `main`; zero open PRs confirmed.
 
 ---
 
