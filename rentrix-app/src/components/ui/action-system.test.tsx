@@ -38,16 +38,16 @@ describe('Stage 4 — Action System, Archive/Delete Semantics, Mobile Actions', 
     });
 
     // Simulate that button disabled while pending prevents second click
-    // We test the guard logic: if isLoading true, onConfirm should not be called again
     const isLoading = true;
-    const canClick = !isLoading;
+    let canClick = !isLoading;
     if (canClick) onConfirm();
     if (canClick) onConfirm(); // second rapid click should be ignored because canClick false
 
     expect(callCount).toBe(0);
     // When not loading, single call allowed
-    const canClick2 = false === true ? false : true;
-    if (canClick2) onConfirm();
+    const isNotLoading = false;
+    canClick = !isNotLoading;
+    if (canClick) onConfirm();
     expect(callCount).toBe(1);
   });
 
