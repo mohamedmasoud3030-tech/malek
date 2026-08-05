@@ -59,13 +59,21 @@ insert into public.properties (id, title, name, type, address, company_id)
 values ('1c000000-0000-4000-8000-00000000000a', 'عقار دوك', 'عقار دوك', 'سكني', 'مسقط', '00000000-0000-4000-8000-0000000000c1')
 on conflict (id) do nothing;
 
+-- Keep the data-modifying statement top-level. PostgreSQL rejects a
+-- data-modifying CTE nested inside a pgTAP function argument.
+insert into public.expenses (id, company_id, property_id, category, amount, expense_date)
+values (
+  'ec000000-0000-4000-8000-00000000000a',
+  '00000000-0000-4000-8000-0000000000c1',
+  '1c000000-0000-4000-8000-00000000000a',
+  'صيانة',
+  10,
+  '2026-01-05'
+);
+
 select matches(
-  (with inserted as (
-     insert into public.expenses (company_id, property_id, category, amount, expense_date)
-     values ('00000000-0000-4000-8000-0000000000c1', '1c000000-0000-4000-8000-00000000000a', 'صيانة', 10, '2026-01-05')
-     returning reference
-   )
-   select reference from inserted),
+  (select reference from public.expenses
+    where id = 'ec000000-0000-4000-8000-00000000000a'),
   '^EXP-\d{4}-\d{6}$',
   'expenses still receive EXP references from created_at'
 );
