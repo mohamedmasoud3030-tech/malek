@@ -17,7 +17,7 @@
       "depends_on": [],
       "id": "S01",
       "name": "Baseline, governance and workspace cleanup",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "task_ids": ["S01-T01","S01-T02","S01-T03","S01-T04","S01-T05","S01-T06","S01-T07","S01-T08"]
     },
     {
