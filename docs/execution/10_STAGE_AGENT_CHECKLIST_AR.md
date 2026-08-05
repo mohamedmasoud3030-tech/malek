@@ -25,7 +25,7 @@ Evidence ليس جملة «تم». يجب أن يكون واحدًا أو أكث
 
 ## S01 — Baseline, governance and workspace cleanup
 
-**الحالة عند إنشاء الخطة:** جارٍ التأسيس
+**الحالة:** مكتملة ومراجعة على `main@ae645d15e3cdcdf0310e694941f72b7fcd1b5eb7`
 
 - [x] **S01-T01** — Verify latest main SHA and record it as the only implementation base.
   - Evidence المطلوب: GitHub main commit URL and compare showing branch starts exactly from it.
@@ -39,10 +39,10 @@ Evidence ليس جملة «تم». يجب أن يكون واحدًا أو أكث
   - Evidence المطلوب: Plan JSON, checksum, both ledgers and validation script on main.
 - [x] **S01-T06** — Mark stale experimental business branch as superseded and forbid reuse in agent instructions.
   - Evidence المطلوب: Plan and PR text explicitly prohibit cherry-picking or merging the stale branch.
-- [ ] **S01-T07** — Run documentation, integrity and secret checks for governance-only changes.
-  - Evidence المطلوب: Green CI links for canonical rules guard, execution-plan guard and docs checks.
-- [ ] **S01-T08** — Merge governance PR and verify main contains the exact protected files.
-  - Evidence المطلوب: Merged PR URL, merge SHA, post-merge fetch from main.
+- [x] **S01-T07** — Run documentation, integrity and secret checks for governance-only changes.
+  - Evidence: PR #1345 — Canonical Business Rules Guard, Execution Plan Guard, CI, SonarCloud, Browser Readiness and Release Blocker Gate all succeeded on `b741328385569ff7927e1ee5f26a0f5fbf057689`.
+- [x] **S01-T08** — Merge governance PR and verify main contains the exact protected files.
+  - Evidence: PR #1345 merged as `ae645d15e3cdcdf0310e694941f72b7fcd1b5eb7`; post-merge fetch from `main` verified the decision register and zero open PRs.
 
 ---
 
