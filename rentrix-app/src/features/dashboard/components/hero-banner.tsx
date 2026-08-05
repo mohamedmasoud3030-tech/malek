@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { Building2, CalendarDays, LayoutDashboard, RefreshCw, ShieldCheck } from 'lucide-react';
 import { formatCompanyDate } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
@@ -8,6 +8,10 @@ interface HeroBannerProps {
   isLoading: boolean;
   settings: CompanySettingsContract;
   today: string;
+  /** True while any background refetch is in flight. */
+  isRefreshing?: boolean;
+  /** Epoch ms of the last successful snapshot load. */
+  lastUpdatedAt?: number;
 }
 
 function getGreeting() {
@@ -17,8 +21,23 @@ function getGreeting() {
   return 'مساء النور';
 }
 
-export function HeroBanner({ snapshot, isLoading, settings, today }: HeroBannerProps) {
+function formatUpdatedTime(epochMs: number): string {
+  return new Date(epochMs).toLocaleTimeString('ar-OM', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
+export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing = false, lastUpdatedAt }: HeroBannerProps) {
   const periodEnd = snapshot?.period.dateTo ?? today;
+  const freshnessLabel = isLoading
+    ? 'جارٍ تحميل البيانات'
+    : isRefreshing
+      ? 'جارٍ تحديث البيانات'
+      : lastUpdatedAt
+        ? `آخر تحديث ${formatUpdatedTime(lastUpdatedAt)}`
+        : `حتى ${formatCompanyDate(settings, `${periodEnd}T00:00:00`)}`;
 
   return (
     <header className="rounded-2xl border border-border/70 bg-card p-4 shadow-card sm:p-5" data-dashboard-hero>
@@ -38,8 +57,12 @@ export function HeroBanner({ snapshot, isLoading, settings, today }: HeroBannerP
 
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:justify-end">
           <div className="flex min-h-11 items-center gap-2 rounded-xl border border-border/70 bg-muted/30 px-3 text-xs font-semibold text-muted-foreground" aria-label="تاريخ تحديث لوحة التحكم">
-            <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden="true" />
-            <span>{isLoading ? 'جارٍ تحديث البيانات' : `حتى ${formatCompanyDate(settings, `${periodEnd}T00:00:00`)}`}</span>
+            {isRefreshing ? (
+              <RefreshCw className="size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
+            ) : (
+              <CalendarDays className="size-4 shrink-0 text-primary" aria-hidden="true" />
+            )}
+            <span>{freshnessLabel}</span>
           </div>
           <div className="flex min-h-11 items-center gap-2 rounded-xl border border-border/70 bg-muted/30 px-3 text-xs font-semibold">
             <Building2 className="size-4 shrink-0 text-primary" aria-hidden="true" />
