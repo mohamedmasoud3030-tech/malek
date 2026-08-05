@@ -28,7 +28,7 @@ payments, expenses, commissions).
 | `diagnose_owner_settlement_duplication` | 20260804010000_fa003_owner_settlement_input_reservation_foundation.sql | DEFINER | public, pg_temp | current_company_id() + company_id scoped write | revoked | yes |
 | `enforce_owner_settlement_link_company_consistency` | 20260804010000_fa003_owner_settlement_input_reservation_foundation.sql | invoker | public, pg_temp | NOT DETECTED (RLS reliance risk for DEFINER) | revoked | yes |
 | `guard_commission_financial_fields` | 20260801000002_pay_commission_atomic.sql | invoker | 'public', 'pg_temp' | NOT DETECTED (RLS reliance risk for DEFINER) | revoked | yes |
-| `import_bank_statement_batch_atomic` | 20260805000001_bank_csv_import_hardening.sql | DEFINER | public, pg_temp | current_company_id() + company_id scoped write | revoked | yes |
+| `import_bank_statement_batch_atomic` | 20260805120000_s02_bank_csv_import_atomic_contract.sql | DEFINER | public, pg_temp | current_company_id() + company_id scoped write | revoked | yes |
 | `owner_settlement_reservable_expenses` | 20260804010000_fa003_owner_settlement_input_reservation_foundation.sql | DEFINER | public, pg_temp | company_id scoped write (derivation source unknown) | revoked | yes |
 | `owner_settlement_reservable_payments` | 20260804010000_fa003_owner_settlement_input_reservation_foundation.sql | DEFINER | public, pg_temp | company_id scoped write (derivation source unknown) | revoked | yes |
 | `pay_commission_atomic` | 20260801000002_pay_commission_atomic.sql | DEFINER | 'public', 'pg_temp' | current_company_id() + company_id scoped write | revoked | yes |
