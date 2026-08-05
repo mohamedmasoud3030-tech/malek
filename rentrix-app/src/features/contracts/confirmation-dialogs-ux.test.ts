@@ -25,7 +25,8 @@ describe('destructive action terminology and confirmation dialogs UX contract', 
 
   it('removes misleading permanent delete language from contract archive dialogs', () => {
     expect(contractsListSource).not.toContain('سيتم حذف العقد بشكل نهائي ولا يمكن التراجع عن هذا الإجراء.');
-    expect(contractsListSource).toContain('أرشفة العقد (حذف العقد؟)');
+    expect(contractsListSource).not.toContain('أرشفة العقد (حذف العقد؟)');
+    expect(contractsListSource).toContain('أرشفة العقد؟');
     expect(contractsListSource).toContain('سيتم أرشفة العقد وإخفاؤه من القائمة النشطة مع الاحتفاظ بسجله المحاسبي');
   });
 

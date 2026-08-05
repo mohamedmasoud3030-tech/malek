@@ -29,11 +29,15 @@ vi.mock('./unit-form-modal', () => ({
   },
 }));
 
-// Mock useSoftDeleteUnit query hook
+// Mock useSoftDeleteUnit query hook - supports both mutate and mutateAsync for compatibility
 vi.mock('./use-units', () => ({
   useSoftDeleteUnit: () => ({
     isPending: false,
     mutate: mockSoftDeleteMutate,
+    mutateAsync: async (id: string) => {
+      mockSoftDeleteMutate(id, {});
+      return Promise.resolve();
+    },
   }),
 }));
 

@@ -88,7 +88,9 @@ export function CommunicationWorkspace({ embedded = false }: CommunicationWorksp
         onEdit={openEdit}
         onFormOpenChange={setFormOpen}
         onSubmit={(values) => saveRecord.mutate({ id: editingRecord?.id, values }, { onSuccess: () => setFormOpen(false) })}
-        onArchive={(id) => archiveRecord.mutate(id)}
+        onArchive={async (id) => {
+          await archiveRecord.mutateAsync(id);
+        }}
         onRetry={() => void recordsQuery.refetch()}
       />
     </>

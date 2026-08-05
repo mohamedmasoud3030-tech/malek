@@ -22,9 +22,9 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Textarea } from '@/components/ui/textarea';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import { BankCsvImportWorkflow } from './bank-csv-import-workflow';
 import type {
   BankMatchCandidate,
   BankReconciliationFilters,
@@ -237,45 +237,18 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         </EntityForm.Root>
       </EntityForm.Overlay>
 
-      <EntityForm.Overlay
+      <BankCsvImportWorkflow
         open={ctrl.importFormOpen}
-        onOpenChange={(open) => { if (!ctrl.importCsv.isPending) ctrl.setImportFormOpen(open); }}
-        title="استيراد كشف البنك"
-        description="ألصق بيانات CSV بالحقل أدناه. لن يتم تغيير قواعد المطابقة أو الحسابات."
-      >
-        <EntityForm.Root
-          aria-busy={ctrl.importCsv.isPending}
-          onSubmit={ctrl.handleImportCsvSubmit}
-        >
-          <EntityForm.Section title="بيانات الكشف" description="اختر الحساب وأدخل اسماً واضحاً للفترة ثم ألصق CSV.">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="الحساب البنكي">
-                <Select required value={ctrl.importDraft.bank_account_id} onChange={(event) => ctrl.setImportDraft({ ...ctrl.importDraft, bank_account_id: event.target.value })}>
-                  <option value="">اختر الحساب</option>
-                  {ctrl.accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
-                </Select>
-              </EntityForm.Field>
-              <EntityForm.Field label="اسم الكشف / الفترة">
-                <Input value={ctrl.importDraft.statement_name} onChange={(event) => ctrl.setImportDraft({ ...ctrl.importDraft, statement_name: event.target.value })} placeholder="مثال: يوليو 2026" />
-              </EntityForm.Field>
-            </div>
-            <EntityForm.Field label="بيانات CSV">
-              <Textarea
-                value={ctrl.importDraft.csv}
-                onChange={(event) => ctrl.setImportDraft({ ...ctrl.importDraft, csv: event.target.value })}
-                placeholder={'date,description,reference,amount\n2026-07-01,تحصيل إيجار,REC-100,250.00'}
-                className="min-h-40 font-mono text-xs"
-              />
-            </EntityForm.Field>
-          </EntityForm.Section>
-          <EntityForm.Actions
-            submitLabel={ctrl.importCsv.isPending ? 'جارٍ الاستيراد...' : 'استيراد CSV'}
-            onCancel={() => ctrl.setImportFormOpen(false)}
-            isSubmitting={ctrl.importCsv.isPending}
-            submitDisabled={!ctrl.canManageReconciliation || !ctrl.importDraft.bank_account_id || !ctrl.importDraft.csv.trim()}
-          />
-        </EntityForm.Root>
-      </EntityForm.Overlay>
+        onOpenChange={ctrl.setImportFormOpen}
+        defaultBankAccountId={ctrl.filters.bankAccountId || (ctrl.accounts[0]?.id ?? '')}
+        canManage={ctrl.canManageReconciliation}
+        onCompleted={(result) => {
+          // Refresh lines and show summary; navigation to reconciliation is already here,
+          // but we ensure filters keep account context
+          ctrl.setFilters({ ...ctrl.filters, bankAccountId: result.bank_account_id });
+          ctrl.linesQuery.refetch();
+        }}
+      />
 
       <EntityForm.Overlay
         open={ctrl.matchFormOpen}

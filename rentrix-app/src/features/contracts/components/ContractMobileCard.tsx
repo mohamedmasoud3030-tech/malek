@@ -71,10 +71,10 @@ export function ContractMobileCard({
         <Button
           variant="danger"
           className="min-h-11"
-          aria-label={`حذف العقد ${getContractNumber(contract)}`}
+          aria-label={`أرشفة العقد ${getContractNumber(contract)}`}
           onClick={() => onDelete(contract.id)}
         >
-          <Trash2 className="me-1 size-3.5" aria-hidden="true" />حذف
+          <Trash2 className="me-1 size-3.5" aria-hidden="true" />أرشفة
         </Button>
       </div>
     </div>

@@ -136,12 +136,12 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
   const deleteMutation = useMutation({
     mutationFn: (id: string) => softDeleteVaultDocument(id),
     onSuccess: () => {
-      toast.success('تم حذف المستند');
+      toast.success('تمت أرشفة المستند');
       setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: ['vault-documents'] });
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'فشل حذف المستند');
+      toast.error(error instanceof Error ? error.message : 'فشل أرشفة المستند');
     },
   });
 
@@ -410,9 +410,9 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
-        title={`حذف المستند "${deleteTarget?.title ?? ''}"؟`}
-        description="سيتم أرشفة المستند وإخفاؤه من القوائم. الملف يبقى في التخزين الخاص للتدقيق."
-        confirmLabel="حذف"
+        title={`أرشفة المستند "${deleteTarget?.title ?? ''}"؟`}
+        description={`سيتم أرشفة المستند "${deleteTarget?.title ?? ''}" وإخفاؤه من القوائم النشطة. المرجع: ${deleteTarget?.id ? deleteTarget.id.slice(0, 8) : ''} — الملف يبقى في التخزين الخاص للتدقيق ويمكن استرجاعه من الأرشيف.`}
+        confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={() => {
           if (deleteTarget) deleteMutation.mutate(deleteTarget.id);

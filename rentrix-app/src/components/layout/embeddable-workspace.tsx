@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { PageHeader } from './page-header';
+import { PageHeaderActions } from './page-header-actions';
 import { PageLayout } from './page-layout';
 
 /**
@@ -57,13 +58,8 @@ export function EmbeddableWorkspace({
     return (
       <div data-embedded-workspace className="min-w-0 space-y-5 sm:space-y-6">
         {hasActions ? (
-          <div
-            data-workspace-actions
-            className="no-scrollbar flex flex-wrap items-center justify-end gap-1.5 sm:gap-2"
-            aria-label={`إجراءات ${title}`}
-          >
-            {secondaryActions}
-            {primaryAction}
+          <div data-workspace-actions className="flex justify-end" aria-label={`إجراءات ${title}`}>
+            <PageHeaderActions title={title} primaryAction={primaryAction} secondaryActions={secondaryActions} />
           </div>
         ) : null}
         {children}

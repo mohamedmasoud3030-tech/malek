@@ -85,9 +85,14 @@ export function ContractDocumentsShell({ contractId }: ContractDocumentsShellPro
     e.target.value = '';
   };
 
-  const confirmDelete = () => {
-    if (!pendingDeleteId) return;
-    deleteMutation.mutate(pendingDeleteId, { onSettled: () => setPendingDeleteId(null) });
+  const confirmDelete = async () => {
+    if (!pendingDeleteId || deleteMutation.isPending) return;
+    try {
+      await deleteMutation.mutateAsync(pendingDeleteId);
+      setPendingDeleteId(null);
+    } catch {
+      // keep dialog open on failure
+    }
   };
 
   return (
@@ -180,10 +185,10 @@ export function ContractDocumentsShell({ contractId }: ContractDocumentsShellPro
 
       <ConfirmDialog
         open={pendingDeleteId !== null}
-        onOpenChange={(open) => !open && setPendingDeleteId(null)}
-        title="أرشفة المستند (حذف المستند؟)"
-        description="سيتم أرشفة المستند وإخفاؤه من القائمة مع الاحتفاظ بسجله وتاريخه في الأرشيف، ولا يتم حذفه نهائياً."
-        confirmLabel="أرشفة المستند"
+        onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setPendingDeleteId(null); }}
+        title="أرشفة مستند العقد؟"
+        description={`سيتم أرشفة المستند "${documents.find((d) => d.id === pendingDeleteId)?.file_name ?? ''}" وإخفاؤه من القائمة مع الاحتفاظ بسجله وتاريخه في الأرشيف، ولا يتم حذفه نهائياً. المرجع: ${pendingDeleteId ? pendingDeleteId.slice(0, 8) : ''}`}
+        confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
       />

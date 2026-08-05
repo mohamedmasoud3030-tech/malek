@@ -45,11 +45,14 @@ export function UnitsList({
     setEditingUnit(unit);
     setModalOpen(true);
   };
-  const confirmArchive = () => {
-    if (!archiveCandidate) return;
-    deleteMutation.mutate(archiveCandidate.id, {
-      onSettled: () => setArchiveCandidate(null),
-    });
+  const confirmArchive = async () => {
+    if (!archiveCandidate || deleteMutation.isPending) return;
+    try {
+      await deleteMutation.mutateAsync(archiveCandidate.id);
+      setArchiveCandidate(null);
+    } catch {
+      // keep dialog open on failure
+    }
   };
 
   return (
@@ -220,10 +223,10 @@ export function UnitsList({
       <ConfirmDialog
         open={Boolean(archiveCandidate)}
         onOpenChange={(open) => {
-          if (!open) setArchiveCandidate(null);
+          if (!open && !deleteMutation.isPending) setArchiveCandidate(null);
         }}
         title={`أرشفة الوحدة ${archiveCandidate?.unit_number ?? ""}؟`}
-        description="ستبقى بيانات الوحدة محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة."
+        description={`سيتم أرشفة الوحدة "${archiveCandidate?.unit_number ?? ''}" — العقار: ${archiveCandidate?.property_id ? archiveCandidate.property_id.slice(0, 8) : ''} — ستبقى البيانات محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة.`}
         confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmArchive}

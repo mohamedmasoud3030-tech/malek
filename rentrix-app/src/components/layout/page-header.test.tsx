@@ -36,21 +36,30 @@ describe('PageHeader — العنوان الموحد للصفحات', () => {
     expect(html).toContain('إجراءات ثانوية');
   });
 
-  it('keeps the actions rail constrained and scrollable on mobile, wrapping from sm up', () => {
+  it('keeps the actions rail mobile-aware: primary compact visible, secondary in overflow on mobile', () => {
     const html = renderToStaticMarkup(
-      <PageHeader title="العقود" primaryAction={<button type="button">إنشاء عقد</button>} />,
+      <PageHeader
+        title="العقود"
+        primaryAction={<button type="button">إنشاء عقد</button>}
+        secondaryActions={<button type="button">تصدير CSV</button>}
+      />,
     );
-    expect(html).toContain('max-w-[58vw]');
-    expect(html).toContain('overflow-x-auto');
-    expect(html).toContain('sm:flex-wrap');
-    expect(html).toContain('sm:max-w-none');
+    // Primary remains visible
+    expect(html).toContain('إنشاء عقد');
+    // Secondary moves to overflow on mobile — trigger accessible
+    expect(html).toContain('إجراءات إضافية');
+    expect(html).toContain('data-secondary-overflow-trigger');
+    // Ensure no horizontal overflow rail that breaks 320px
+    expect(html).not.toContain('max-w-[58vw]');
+    expect(html).not.toContain('overflow-x-auto');
   });
 
-  it('groups secondary actions in a real wrapper — never a labelled display:contents box', () => {
+  it('groups secondary actions without broken menus and preserves accessible names', () => {
     const html = renderToStaticMarkup(
       <PageHeader title="العقود" secondaryActions={<button type="button">تصدير CSV</button>} />,
     );
-    expect(html).toContain('aria-label="إجراءات ثانوية"');
+    expect(html).toContain('تصدير CSV');
+    expect(html).toContain('aria-label="إجراءات إضافية"');
     expect(html).not.toContain('class="contents"');
   });
 

@@ -403,16 +403,19 @@ export function LeadsView(props: Props) {
       <ConfirmDialog
         open={archiveCandidate != null}
         onOpenChange={(open) => {
-          if (!open) setArchiveCandidate(null);
+          if (!open && !isArchiving) setArchiveCandidate(null);
         }}
         title={`أرشفة العميل ${archiveCandidate?.name ?? ""}؟`}
-        description="سيتم نقل العميل المحتمل إلى الأرشيف ولن يظهر في القوائم النشطة."
+        description={`سيتم أرشفة العميل "${archiveCandidate?.name ?? ""}" وإخفاؤه من القوائم النشطة. المرجع: ${archiveCandidate?.id ? archiveCandidate.id.slice(0, 8) : ''} — يمكن استرجاعه من الأرشيف.`}
         confirmLabel="تأكيد الأرشفة"
         isLoading={isArchiving}
-        onConfirm={() => {
-          if (archiveCandidate) {
-            onArchive(archiveCandidate.id);
+        onConfirm={async () => {
+          if (!archiveCandidate || isArchiving) return;
+          try {
+            await (onArchive as any)(archiveCandidate.id);
             setArchiveCandidate(null);
+          } catch {
+            // keep dialog open on failure
           }
         }}
       />

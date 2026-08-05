@@ -155,7 +155,7 @@ export function ContractTable({
           <Button
             variant="danger"
             className="min-h-10 px-3"
-            aria-label={`حذف العقد ${getContractNumber(contract)}`}
+            aria-label={`أرشفة العقد ${getContractNumber(contract)}`}
             onClick={() => onDelete(contract.id)}
           >
             <Trash2 className="size-4" />

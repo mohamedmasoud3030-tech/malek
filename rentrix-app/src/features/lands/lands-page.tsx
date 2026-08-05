@@ -83,7 +83,9 @@ export function LandsWorkspace({ embedded = false }: LandsWorkspaceProps) {
       onEdit={formState.openEdit}
       onFormOpenChange={(open) => { setFormError(null); formState.setFormOpen(open); }}
       onSubmit={handleSubmit}
-      onArchive={(id) => archiveLand.mutate(id)}
+      onArchive={async (id) => {
+        await archiveLand.mutateAsync(id);
+      }}
       onRetry={() => void landsQuery.refetch()}
     />
   );
