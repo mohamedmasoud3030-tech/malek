@@ -19,7 +19,7 @@ export function OverdueSection({ rows, isLoading, settings }: OverdueSectionProp
     <div>
       <SectionHeader
         title="أعلى المتأخرات"
-        action={<Link to="/arrears" className="text-[0.8125rem] font-medium text-primary hover:underline">عرض الكل</Link>}
+        action={<Link to="/arrears" data-dashboard-section-action className="text-[0.8125rem] font-medium text-primary hover:underline">عرض الكل</Link>}
       />
 
       {isLoading && <Skeleton className="h-36 rounded-xl" />}

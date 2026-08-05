@@ -6,26 +6,41 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DashboardPage } from './dashboard-page';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 
-// Mock TanStack Router
+// Mock TanStack Router — keep the Link contract as a real anchor so
+// destination assertions (KPI links, priority links) stay meaningful.
 vi.mock('@tanstack/react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@tanstack/react-router')>();
   return {
     ...actual,
-    Link: ({ children }: any) => children,
+    Link: ({ children, to, ...rest }: any) => (
+      <a href={typeof to === 'string' ? to : '#'} {...rest}>
+        {children}
+      </a>
+    ),
     useNavigate: () => vi.fn(),
   };
 });
 
 // Keep dashboard tests focused on the snapshot boundary. The onboarding
 // component has its own ADMIN/MANAGER/USER permission matrix tests.
+let mockRole: 'ADMIN' | 'MANAGER' | 'USER' = 'USER';
 vi.mock('@/hooks/use-auth', () => ({
-  useAuth: () => ({
-    authorization: {
-      userId: 'user-1',
-      email: 'user@example.com',
-      role: 'USER',
-    },
-  }),
+  useAuth: () => {
+    const role = mockRole;
+    const permissions: Record<string, string[]> = {
+      ADMIN: ['properties.write', 'contracts.write', 'financial.payments.create', 'maintenance.view'],
+      MANAGER: ['properties.write', 'contracts.write', 'financial.payments.create', 'maintenance.view'],
+      USER: [],
+    };
+    return {
+      authorization: {
+        userId: 'user-1',
+        email: 'user@example.com',
+        role,
+      },
+      canAccess: (permission: string) => permissions[role].includes(permission),
+    };
+  },
 }));
 
 // Mock useCompanySettingsContract
@@ -119,6 +134,7 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRole = 'USER';
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -141,10 +157,7 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     }
   });
 
-  it('renders the core dashboard and calls getDashboardSnapshot at the service boundary', async () => {
-    // Configure getDashboardSnapshot mock resolved value
-    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
-
+  async function renderPage() {
     await act(async () => {
       root.render(
         <QueryClientProvider client={queryClient}>
@@ -152,15 +165,19 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
         </QueryClientProvider>
       );
     });
-
-    // Verify getDashboardSnapshot was invoked at least once
-    expect(getDashboardSnapshot).toHaveBeenCalled();
-
-    // Verify the rendered DOM is updated with mock snapshot data
-    // (Wait for React Query's state update to render, which is automatic on promise resolve)
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
+  }
+
+  it('renders the core dashboard and calls getDashboardSnapshot at the service boundary', async () => {
+    // Configure getDashboardSnapshot mock resolved value
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+
+    await renderPage();
+
+    // Verify getDashboardSnapshot was invoked at least once
+    expect(getDashboardSnapshot).toHaveBeenCalled();
 
     const text = container?.textContent ?? '';
 
@@ -169,29 +186,77 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     expect(text).toContain('صورة الأداء');
     expect(text).toContain('نسبة الإشغال');
 
-    // 2. Quick Actions
-    expect(text).toContain('إجراءات سريعة');
-    expect(text).toContain('إنشاء عقد');
-
-    // 3. Expiring contracts section
+    // 2. Expiring contracts section
     expect(text).toContain('العقود المنتهية قريباً');
     expect(text).toContain('سالم الكعبي');
 
-    // 4. Overdue items section
+    // 3. Overdue items section
     expect(text).toContain('أعلى المتأخرات');
     expect(text).toContain('أحمد الفارسي');
 
-    // 5. Decision hierarchy and reduced duplication
+    // 4. Decision hierarchy and reduced duplication
     expect(text).toContain('الأولوية الآن');
     expect(text).toContain('قوائم العمل');
     expect(text).toContain('المحفظة والتحصيل');
     expect(text).toContain('حالة التحصيل');
+  });
+
+  it('scopes Visual Contract V2 on a real Dashboard-owned wrapper', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+
+    await renderPage();
+
+    const scope = container?.querySelector('[data-visual-contract="v2"]');
+    expect(scope).not.toBeNull();
+    // The scope is the Dashboard subtree root: hero + every section live inside it.
+    expect(scope?.querySelector('[data-dashboard-hero]')).not.toBeNull();
+    expect(scope?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(4);
+    // It must not be confused with the shared PageLayout node.
+    expect(container?.querySelector('[data-page-layout][data-visual-contract]')).toBeNull();
+  });
+
+  it('orders the deliberate decision hierarchy: priorities, kpis, trends, work queues, analytics', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+
+    await renderPage();
 
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['kpis', 'priorities', 'trends', 'work-queues']);
+    expect(sectionOrder).toEqual(['priorities', 'kpis', 'trends', 'work-queues', 'analytics']);
+  });
+
+  it('renders KPI surfaces as real destination links', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+
+    await renderPage();
+
+    const kpiLinks = Array.from(container?.querySelectorAll('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]') ?? []);
+    expect(kpiLinks).toHaveLength(4);
+    const hrefs = kpiLinks.map((link) => link.getAttribute('href'));
+    expect(hrefs).toEqual(['/financials', '/expenses', '/reports', '/arrears']);
+  });
+
+  it('hides Quick Actions for roles with no actionable permission', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+    mockRole = 'USER';
+
+    await renderPage();
+
+    // USER holds none of the quick-action permissions: no dead-end actions.
+    expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(0);
+    expect(container?.textContent ?? '').not.toContain('إجراءات سريعة');
+  });
+
+  it('shows every permitted Quick Action for a manager', async () => {
+    (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
+    mockRole = 'MANAGER';
+
+    await renderPage();
+    const text = container?.textContent ?? '';
+
+    expect(text).toContain('إجراءات سريعة');
+    expect(text).toContain('إنشاء عقد');
     expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(4);
-    expect(container?.querySelectorAll('[data-dashboard-kpi-grid] [class*="grid-cols-2"] > *')).toHaveLength(4);
   });
 
   it('handles query loading state correctly by rendering skeletons', async () => {
@@ -209,5 +274,17 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     // Check if skeletons are rendered in the DOM
     const skeletons = container?.querySelectorAll('.skeleton-shimmer');
     expect(skeletons?.length).toBeGreaterThan(0);
+  });
+
+  it('stays honest on failure: no fake zero KPIs replace the failed snapshot', async () => {
+    (getDashboardSnapshot as any).mockRejectedValue(new Error('network down'));
+
+    await renderPage();
+    const text = container?.textContent ?? '';
+
+    expect(text).toContain('تعذر تحميل لوحة التحكم');
+    // Data sections are suppressed rather than filled with fabricated zeros.
+    expect(container?.querySelector('[data-dashboard-kpi-grid]')).toBeNull();
+    expect(container?.querySelector('[data-dashboard-section="kpis"]')).toBeNull();
   });
 });

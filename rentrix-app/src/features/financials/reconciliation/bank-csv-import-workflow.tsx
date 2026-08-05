@@ -87,7 +87,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
 
   const canProceedToReview = useMemo(() => {
     if (!preview) return false;
-    return preview.missingMandatory.length === 0 && preview.validRows.length > 0;
+    return preview.missingMandatory.length === 0 && !preview.mappingAmbiguous && preview.rejectedRows.length === 0 && preview.validRows.length > 0;
   }, [preview]);
 
   const handleConfirmImport = async () => {
@@ -100,8 +100,8 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
       toast.error(`أعمدة إلزامية مفقودة: ${preview.missingMandatory.join(', ')}`);
       return;
     }
-    if (preview.validRows.length === 0) {
-      toast.error('لا توجد صفوف صالحة للاستيراد');
+    if (preview.mappingAmbiguous || preview.rejectedRows.length > 0 || preview.validRows.length === 0) {
+      toast.error('الاستيراد fail-closed: صحح كل الصفوف المرفوضة أو التعيين الغامض قبل الحفظ');
       return;
     }
 
