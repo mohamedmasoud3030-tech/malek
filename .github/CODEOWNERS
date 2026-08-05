@@ -17,6 +17,7 @@
 /governance/final-decision-register.sha256 @mohamedmasoud3030-tech
 /governance/10-stage-master-plan.json @mohamedmasoud3030-tech
 /governance/10-stage-master-plan.sha256 @mohamedmasoud3030-tech
+/docs/execution/10_STAGE_STATUS_AR.md @mohamedmasoud3030-tech
 /docs/execution/10_STAGE_REVIEW_LEDGER_AR.md @mohamedmasoud3030-tech
 /scripts/check-canonical-business-rules.mjs @mohamedmasoud3030-tech
 /scripts/check-10-stage-execution-plan.mjs @mohamedmasoud3030-tech
