@@ -93,28 +93,58 @@ test('contracts: unified PageHeader renders h1 with record count badge', async (
 });
 
 test('theme dark follows the app toggle (data-theme), not prefers-color-scheme', async ({ page }) => {
-  // 1) Load in light theme and record the body background.
   await page.goto('/login?e2e-dashboard-workspace=1');
   await expect(page.locator('main[data-e2e-dashboard-workspace]')).toBeVisible({ timeout: 15_000 });
-  const lightBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-  // 2) Flip the app theme attribute exactly like ui-store does, then poll:
-  //    custom-property inheritance may apply a frame after the DOM write.
+  const lightState = await page.evaluate(() => ({
+    backgroundToken: getComputedStyle(document.documentElement)
+      .getPropertyValue('--background')
+      .trim(),
+    bodyBackground: getComputedStyle(document.body).backgroundColor,
+  }));
+
   await page.evaluate(() => {
     document.documentElement.dataset.theme = 'dark';
   });
-  let darkBg = lightBg;
+
+  await expect
+    .poll(
+      async () => page.evaluate(() => document.documentElement.dataset.theme),
+      { timeout: 5_000 },
+    )
+    .toBe('dark');
+
+  let darkToken = lightState.backgroundToken;
   await expect
     .poll(async () => {
-      darkBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-      return darkBg;
+      darkToken = await page.evaluate(() =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--background')
+          .trim(),
+      );
+      return darkToken;
     }, { timeout: 5_000 })
-    .not.toBe(lightBg);
-  const channels = darkBg.match(/\d+/g)?.map(Number) ?? [255, 255, 255];
-  expect(
-    Math.max(...channels),
-    `dark background must be dark, got ${darkBg}`,
-  ).toBeLessThan(80);
+    .not.toBe(lightState.backgroundToken);
+
+  const expectedDarkBackground = await page.evaluate(() => {
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = 'hsl(var(--background))';
+    document.body.appendChild(probe);
+    const background = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return background;
+  });
+
+  let darkBackground = lightState.bodyBackground;
+  await expect
+    .poll(async () => {
+      darkBackground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      return darkBackground;
+    }, { timeout: 5_000 })
+    .toBe(expectedDarkBackground);
+
+  expect(darkBackground).not.toBe(lightState.bodyBackground);
+  expect(darkToken).not.toBe(lightState.backgroundToken);
 
   const outPath = path.join(targetDir, 'dashboard-dark.png');
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
