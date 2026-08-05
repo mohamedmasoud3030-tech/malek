@@ -1,6 +1,13 @@
--- Rollback for 20260805000001_bank_csv_import_hardening
--- Drops the new RPC and columns added for Stage 4 bank import hardening.
--- This is forward rollback script (manual) — not part of forward migrations.
+-- =============================================================================
+-- Manual rollback for: supabase/migrations/20260805000001_bank_csv_import_hardening.sql
+--
+-- ⚠️ MANUAL / EMERGENCY ONLY — NOT auto-applied. Run by hand after explicit
+-- approval, with a verified backup, only when the forward migration must be
+-- reversed. Forward-only discipline: prefer a new corrective migration.
+--
+-- Drops the new RPC and indexes added for Stage 4 bank import hardening.
+-- Columns are kept for safety (additive); full rollback would be destructive.
+-- =============================================================================
 begin;
 
 drop function if exists public.import_bank_statement_batch_atomic(jsonb);
