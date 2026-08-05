@@ -294,7 +294,15 @@ describe('document service boundary — capability and path contracts', () => {
       expect(capability.templateAvailable).toBe(true);
       expect(capability.externalProviderRequired).toBe(false);
     }
-    expect(getDocumentCapability('generic_report')).toBeUndefined();
+    // The generic report is a first-class capability: real callers (reports
+    // sections, deposits clearance, maintenance and utilities workspaces)
+    // already print/export it through the compatibility adapters.
+    expect(getDocumentCapability('generic_report')).toEqual({
+      type: 'generic_report',
+      templateAvailable: true,
+      externalProviderRequired: false,
+    });
+    expect(getDocumentCapability('not_a_document')).toBeUndefined();
   });
 
   it('keeps print and downloadPdf as two distinct operations', async () => {

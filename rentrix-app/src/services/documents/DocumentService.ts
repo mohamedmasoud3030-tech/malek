@@ -1,21 +1,13 @@
 import { DocumentController } from './DocumentController';
+import { getDocumentTemplateEntry, listDocumentTemplateEntries } from './documentRegistry';
+import type { DocumentBuildInput, DocumentTypeId } from './documentPayloads';
 import type { DocumentRequest } from './types';
 
 /**
  * Supported document outputs for the current local template engine.
  * Provider/storage integration is intentionally not part of this boundary.
  */
-export type DocumentType =
-  | 'contract'
-  | 'invoice'
-  | 'receipt'
-  | 'expense_voucher'
-  | 'payment'
-  | 'owner_statement'
-  | 'tenant_statement'
-  | 'trial_balance'
-  | 'income_statement'
-  | 'balance_sheet';
+export type DocumentType = DocumentTypeId;
 
 export type DocumentCapability = Readonly<{
   type: DocumentType;
@@ -23,18 +15,15 @@ export type DocumentCapability = Readonly<{
   externalProviderRequired: boolean;
 }>;
 
-const templateCapabilities: readonly DocumentCapability[] = [
-  { type: 'contract', templateAvailable: true, externalProviderRequired: false },
-  { type: 'invoice', templateAvailable: true, externalProviderRequired: false },
-  { type: 'receipt', templateAvailable: true, externalProviderRequired: false },
-  { type: 'expense_voucher', templateAvailable: true, externalProviderRequired: false },
-  { type: 'payment', templateAvailable: true, externalProviderRequired: false },
-  { type: 'owner_statement', templateAvailable: true, externalProviderRequired: false },
-  { type: 'tenant_statement', templateAvailable: true, externalProviderRequired: false },
-  { type: 'trial_balance', templateAvailable: true, externalProviderRequired: false },
-  { type: 'income_statement', templateAvailable: true, externalProviderRequired: false },
-  { type: 'balance_sheet', templateAvailable: true, externalProviderRequired: false },
-];
+/**
+ * The capability list is derived from the template registry — a document
+ * type is printable/exportable exactly when it has a registered template.
+ */
+const templateCapabilities: readonly DocumentCapability[] = listDocumentTemplateEntries().map((entry) => ({
+  type: entry.type,
+  templateAvailable: true,
+  externalProviderRequired: false,
+}));
 
 export function listDocumentCapabilities(): readonly DocumentCapability[] {
   return templateCapabilities;
@@ -44,32 +33,45 @@ export function getDocumentCapability(type: string): DocumentCapability | undefi
   return templateCapabilities.find((capability) => capability.type === type);
 }
 
+function assertSupported(type: string): void {
+  if (!getDocumentTemplateEntry(type)) throw new Error(`Unsupported document type: ${type}`);
+}
+
 /**
- * Document service boundary used by UI actions. It deliberately returns a
- * promise so a future provider/storage adapter can be introduced without
- * changing page contracts. The current implementation renders local PDFs.
+ * Document service — the ONLY public boundary UI actions should use.
  *
- * `print` and `downloadPdf` are two distinct operations — `print` opens a
- * scoped A4 preview of just this document and triggers the browser print
- * dialog; `downloadPdf` produces a real `application/pdf` file and saves it.
- * Neither one is implemented in terms of the other.
+ * It deliberately returns promises so a future provider/storage adapter can
+ * be introduced without changing page contracts. `print*` and
+ * `download*Pdf` are two distinct operations: print opens a scoped A4
+ * preview and triggers the browser print dialog; download produces a real
+ * `application/pdf` file. Neither is implemented in terms of the other.
+ *
+ * Prefer the canonical typed methods (`printDocument`/`downloadDocumentPdf`)
+ * with payloads from `documentPayloads.ts`; the legacy `print`/
+ * `downloadPdf` request shape stays only for compatibility-era callers.
  */
 export const documentService = {
+  /** Canonical typed print. */
+  async printDocument<T extends DocumentTypeId>(type: T, input: DocumentBuildInput<T>): Promise<void> {
+    assertSupported(type);
+    await DocumentController.printDocument(type, input);
+  },
+
+  /** Canonical typed PDF download. */
+  async downloadDocumentPdf<T extends DocumentTypeId>(type: T, input: DocumentBuildInput<T>): Promise<void> {
+    assertSupported(type);
+    await DocumentController.downloadDocumentPdf(type, input);
+  },
+
+  /** @deprecated compatibility request shape — migrate to `printDocument`. */
   async print(request: DocumentRequest): Promise<void> {
-    const capability = getDocumentCapability(request.type);
-    if (!capability) throw new Error(`Unsupported document type: ${request.type}`);
-    if (!capability.templateAvailable) {
-      throw new Error(`لا يوجد قالب محلي جاهز للمستند: ${request.type}`);
-    }
+    assertSupported(request.type);
     await DocumentController.print(request);
   },
 
+  /** @deprecated compatibility request shape — migrate to `downloadDocumentPdf`. */
   async downloadPdf(request: DocumentRequest): Promise<void> {
-    const capability = getDocumentCapability(request.type);
-    if (!capability) throw new Error(`Unsupported document type: ${request.type}`);
-    if (!capability.templateAvailable) {
-      throw new Error(`لا يوجد قالب محلي جاهز للمستند: ${request.type}`);
-    }
+    assertSupported(request.type);
     await DocumentController.downloadPdf(request);
   },
 
