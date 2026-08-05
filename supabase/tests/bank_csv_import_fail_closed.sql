@@ -124,8 +124,12 @@ select lives_ok(
   'company B can import into its own account'
 );
 select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000b1'), 1::bigint, 'company B wrote exactly one line');
-select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 2::bigint, 'company A lines are untouched');
 
+-- Restore the test-runner role before checking Company A. Under Company B's
+-- authenticated RLS context the correct visible count for Company A is zero,
+-- which cannot prove that B's import left A's three persisted lines unchanged.
 reset role;
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 3::bigint, 'company A lines are untouched');
+
 select * from finish();
 rollback;
