@@ -71,9 +71,14 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
     setModalOpen(false);
     setEditPersonId(undefined);
   };
-  const confirmDelete = () => {
-    if (deleteId)
-      deleteMutation.mutate(deleteId, { onSettled: () => setDeleteId(null) });
+  const confirmDelete = async () => {
+    if (!deleteId || deleteMutation.isPending) return;
+    try {
+      await deleteMutation.mutateAsync(deleteId);
+      setDeleteId(null);
+    } catch {
+      // keep open on failure
+    }
   };
 
   const hasFilterValues = search.trim().length > 0 || type !== "all";
@@ -329,11 +334,11 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       <ConfirmDialog
         open={Boolean(deleteId)}
         onOpenChange={(open) => {
-          if (!open) setDeleteId(null);
+          if (!open && !deleteMutation.isPending) setDeleteId(null);
         }}
         title="أرشفة الشخص؟"
-        description="سيتم أرشفة هذا الشخص ولن يظهر في القوائم الرئيسية."
-        confirmLabel="أرشفة"
+        description={`سيتم أرشفة الشخص "${peopleQuery.data?.rows.find((p) => p.id === deleteId)?.full_name ?? ''}" ولن يظهر في القوائم الرئيسية. المرجع: ${deleteId ? deleteId.slice(0, 8) : ''} — ستبقى السجلات المرتبطة محفوظة.`}
+        confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
       />

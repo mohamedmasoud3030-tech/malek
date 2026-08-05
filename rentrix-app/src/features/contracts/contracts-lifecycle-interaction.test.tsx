@@ -123,10 +123,10 @@ describe('Contracts lifecycle mobile interactions', () => {
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('تعديل عقد contract-1');
 
-    const deleteButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('حذف'));
+    const deleteButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('أرشفة'));
     expect(deleteButton).toBeTruthy();
     await act(async () => deleteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
-    expect(document.body.textContent).toContain('حذف العقد؟');
+    expect(document.body.textContent).toContain('أرشفة العقد؟');
   });
 
   it('opens renew and terminate lifecycle dialogs from mobile-safe detail actions and invokes services', async () => {

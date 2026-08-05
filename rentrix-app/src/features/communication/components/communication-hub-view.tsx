@@ -398,16 +398,19 @@ export function CommunicationHubView(props: Props) {
       <ConfirmDialog
         open={archiveCandidate != null}
         onOpenChange={(open) => {
-          if (!open) setArchiveCandidate(null);
+          if (!open && !isArchiving) setArchiveCandidate(null);
         }}
         title={`أرشفة سجل التواصل مع ${archiveCandidate?.contact_name ?? ""}؟`}
-        description="سيتم نقل سجل التواصل إلى الأرشيف ولن يظهر في القوائم النشطة."
+        description={`سيتم أرشفة سجل التواصل مع "${archiveCandidate?.contact_name ?? ""}" وإخفاؤه من القوائم النشطة. المرجع: ${archiveCandidate?.id ? archiveCandidate.id.slice(0, 8) : ''} — يمكن استرجاعه من الأرشيف.`}
         confirmLabel="تأكيد الأرشفة"
         isLoading={isArchiving}
-        onConfirm={() => {
-          if (archiveCandidate) {
-            onArchive(archiveCandidate.id);
+        onConfirm={async () => {
+          if (!archiveCandidate || isArchiving) return;
+          try {
+            await (onArchive as any)(archiveCandidate.id);
             setArchiveCandidate(null);
+          } catch {
+            // keep open on failure
           }
         }}
       />

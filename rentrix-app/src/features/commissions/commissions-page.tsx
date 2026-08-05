@@ -65,7 +65,9 @@ export function CommissionsWorkspace({ embedded = false }: CommissionsWorkspaceP
       onEdit={formState.openEdit}
       onFormOpenChange={formState.setFormOpen}
       onSubmit={(values) => saveCommission.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
-      onArchive={(id) => archiveCommission.mutate(id)}
+      onArchive={async (id) => {
+        await archiveCommission.mutateAsync(id);
+      }}
       onRetry={() => void commissionsQuery.refetch()}
       onApprove={(row) => approveCommission.mutate({ id: row.id, values: formFromCommission(row) })}
       onPayAtomic={(id, paymentDate, accountId) => payCommission.mutateAsync({ id, paymentDate, accountId })}

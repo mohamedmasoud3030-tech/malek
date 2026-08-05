@@ -407,16 +407,19 @@ export function CommissionsView(props: Props) {
       <ConfirmDialog
         open={archiveCandidate != null}
         onOpenChange={(open) => {
-          if (!open) setArchiveCandidate(null);
+          if (!open && !isArchiving) setArchiveCandidate(null);
         }}
         title={`إلغاء العمولة لـ ${archiveCandidate?.staff_name ?? ""}؟`}
-        description="سيتم إلغاء العمولة ولن تُحتسب ضمن المبالغ النشطة."
+        description={`سيتم إلغاء العمولة للموظف "${archiveCandidate?.staff_name ?? ""}" — المرجع: ${archiveCandidate?.id ? archiveCandidate.id.slice(0, 8) : ''} — المبلغ: ${money(archiveCandidate?.amount ?? 0)} — الحالة الحالية: ${archiveCandidate?.status ? statusLabels[archiveCandidate.status] ?? archiveCandidate.status : ''}. لن تُحتسب ضمن المبالغ النشطة ويمكن مراجعتها في الأرشيف.`}
         confirmLabel="تأكيد الإلغاء"
         isLoading={isArchiving}
-        onConfirm={() => {
-          if (archiveCandidate) {
-            onArchive(archiveCandidate.id);
+        onConfirm={async () => {
+          if (!archiveCandidate || isArchiving) return;
+          try {
+            await (onArchive as any)(archiveCandidate.id);
             setArchiveCandidate(null);
+          } catch {
+            // preserve dialog on failure
           }
         }}
       />

@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { PageHeaderActions } from './page-header-actions';
 
 interface PageHeaderProps {
   title: string;
@@ -19,10 +20,8 @@ interface PageHeaderProps {
 
 /**
  * Page title + actions — flat design (not a card).
- *
- * The page header is a clean typographic surface, not a decorative card.
- * It sits at the top of the page content area, providing hierarchy through
- * typography and spacing alone.
+ * Mobile: primary always visible compact, secondary collapsed into overflow menu.
+ * Destructive actions separated, touch targets 44px, safe-area preserved.
  */
 export function PageHeader({
   title,
@@ -41,10 +40,7 @@ export function PageHeader({
   return (
     <header
       data-page-header
-      className={cn(
-        'border-b border-border/60 pb-3 sm:pb-4',
-        className,
-      )}
+      className={cn('border-b border-border/60 pb-3 sm:pb-4', className)}
     >
       <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-4">
         {/* Title + description */}
@@ -61,15 +57,17 @@ export function PageHeader({
             ) : null}
           </div>
           {description ? (
-            <p className="mt-0.5 max-w-3xl text-[0.8125rem] leading-5 text-muted-foreground sm:mt-1 sm:text-sm sm:leading-6">{description}</p>
+            <p className="mt-0.5 max-w-3xl text-[0.8125rem] leading-5 text-muted-foreground sm:mt-1 sm:text-sm sm:leading-6">
+              {description}
+            </p>
           ) : null}
         </div>
 
-        {/* Actions — one inline rail on mobile (scrolls if needed); wraps from sm up */}
+        {/* Actions — mobile aware */}
         {hasActions ? (
-          <div className="no-scrollbar flex max-w-[58vw] shrink-0 items-center justify-end gap-1.5 overflow-x-auto pb-0.5 sm:max-w-none sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             {backTo ? (
-              <Button variant="secondary" size="sm" asChild>
+              <Button variant="secondary" size="sm" asChild className="min-h-11">
                 <Link to={backTo}>
                   <ArrowLeft className="me-1 size-3.5 rtl:rotate-180 sm:me-1.5 sm:size-4" />
                   <span className="hidden sm:inline">{backLabel}</span>
@@ -77,15 +75,7 @@ export function PageHeader({
                 </Link>
               </Button>
             ) : null}
-            {secondaryActions ? (
-              <div
-                className="no-scrollbar flex items-center gap-1.5 overflow-x-auto sm:gap-2"
-                aria-label="إجراءات ثانوية"
-              >
-                {secondaryActions}
-              </div>
-            ) : null}
-            {resolvedPrimaryAction ? resolvedPrimaryAction : null}
+            <PageHeaderActions title={title} primaryAction={resolvedPrimaryAction} secondaryActions={secondaryActions} />
           </div>
         ) : null}
       </div>

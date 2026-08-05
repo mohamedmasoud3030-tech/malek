@@ -141,6 +141,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          company_id: string | null;
         };
         Insert: Partial<Database['public']['Tables']['bank_accounts']['Row']> & Pick<Database['public']['Tables']['bank_accounts']['Row'], 'account_name'>;
         Update: Partial<Database['public']['Tables']['bank_accounts']['Row']>;
@@ -156,6 +157,19 @@ export type Database = {
           imported_at: string;
           created_by: string | null;
           deleted_at: string | null;
+          company_id: string | null;
+          reference: string | null;
+          file_name: string | null;
+          file_fingerprint: string | null;
+          file_size: number | null;
+          total_rows: number;
+          accepted_rows: number;
+          rejected_rows: number;
+          duplicate_rows: number;
+          possible_duplicate_rows: number;
+          status: string;
+          error_summary: Json;
+          processed_at: string | null;
         };
         Insert: Partial<Database['public']['Tables']['bank_statement_imports']['Row']> & Pick<Database['public']['Tables']['bank_statement_imports']['Row'], 'bank_account_id' | 'statement_name'>;
         Update: Partial<Database['public']['Tables']['bank_statement_imports']['Row']>;
@@ -174,6 +188,11 @@ export type Database = {
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
+          company_id: string | null;
+          fingerprint: string | null;
+          balance: number | null;
+          currency: string;
+          external_reference: string | null;
         };
         Insert: Partial<Database['public']['Tables']['bank_statement_lines']['Row']> & Pick<Database['public']['Tables']['bank_statement_lines']['Row'], 'bank_account_id' | 'transaction_date' | 'amount'>;
         Update: Partial<Database['public']['Tables']['bank_statement_lines']['Row']>;
@@ -837,6 +856,10 @@ export type Database = {
       process_bank_reconciliation_match_atomic: {
         Args: { payload: Json };
         Returns: Database['public']['Tables']['bank_reconciliation_matches']['Row'];
+      };
+      import_bank_statement_batch_atomic: {
+        Args: { payload: Json };
+        Returns: Json;
       };
       generate_invoices_from_active_contracts: { Args: Record<string, never>; Returns: number };
       rpt_financial_summary: { Args: { p_from: string; p_to: string }; Returns: { collected: number; expenses: number; net: number; revenue: number; net_income: number; overdue_amount: number; overdue_count: number; active_contracts: number; total_units: number; occupied_units: number; occupancy_rate: number; pending_invoices: number; period_from: string; period_to: string } };

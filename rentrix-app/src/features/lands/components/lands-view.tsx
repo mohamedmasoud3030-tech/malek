@@ -412,16 +412,19 @@ export function LandsView(props: Props) {
       <ConfirmDialog
         open={archiveCandidate != null}
         onOpenChange={(open) => {
-          if (!open) setArchiveCandidate(null);
+          if (!open && !isArchiving) setArchiveCandidate(null);
         }}
         title={`أرشفة الأرض ${archiveCandidate?.name ?? archiveCandidate?.plot_no ?? ""}؟`}
-        description="سيتم نقل سجل الأرض إلى الأرشيف ولن يظهر في القوائم النشطة."
+        description={`سيتم أرشفة الأرض "${archiveCandidate?.name ?? archiveCandidate?.plot_no ?? ""}" وإخفاؤها من القوائم النشطة. المرجع: ${archiveCandidate?.id ? archiveCandidate.id.slice(0, 8) : ''} — يمكن استرجاعها من الأرشيف.`}
         confirmLabel="تأكيد الأرشفة"
         isLoading={isArchiving}
-        onConfirm={() => {
-          if (archiveCandidate) {
-            onArchive(archiveCandidate.id);
+        onConfirm={async () => {
+          if (!archiveCandidate || isArchiving) return;
+          try {
+            await (onArchive as any)(archiveCandidate.id);
             setArchiveCandidate(null);
+          } catch {
+            // keep dialog open on failure, preserve context
           }
         }}
       />

@@ -80,8 +80,14 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const openEdit = (id: string) => { setEditContractId(id); setModalOpen(true); };
   const closeModal = () => { setModalOpen(false); setEditContractId(undefined); };
   const resetFilters = () => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
-  const confirmDelete = () => {
-    if (deleteId) deleteMutation.mutate(deleteId, { onSettled: () => setDeleteId(null) });
+  const confirmDelete = async () => {
+    if (!deleteId || deleteMutation.isPending) return;
+    try {
+      await deleteMutation.mutateAsync(deleteId);
+      setDeleteId(null);
+    } catch {
+      // keep dialog open on failure, preserve context
+    }
   };
 
   return (
@@ -148,9 +154,9 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
       <ConfirmDialog
         open={Boolean(deleteId)}
         onOpenChange={(open) => { if (!open) setDeleteId(null); }}
-        title="أرشفة العقد (حذف العقد؟)"
-        description="سيتم أرشفة العقد وإخفاؤه من القائمة النشطة مع الاحتفاظ بسجله المحاسبي وتاريخه بالكامل، ولا يتم حذفه بشكل نهائي."
-        confirmLabel="أرشفة / حذف"
+        title="أرشفة العقد؟"
+        description="سيتم أرشفة العقد وإخفاؤه من القائمة النشطة مع الاحتفاظ بسجله المحاسبي وتاريخه بالكامل، ولا يتم حذفه بشكل نهائي. المرجع التجاري سيبقى محفوظاً للتدقيق."
+        confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
       />

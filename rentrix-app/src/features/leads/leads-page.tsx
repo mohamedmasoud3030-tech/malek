@@ -50,7 +50,9 @@ export function LeadsWorkspace({ embedded = false }: LeadsWorkspaceProps) {
       onEdit={formState.openEdit}
       onFormOpenChange={formState.setFormOpen}
       onSubmit={(values) => saveLead.mutate({ id: formState.editingRecord?.id, values }, { onSuccess: formState.closeForm })}
-      onArchive={(id) => archiveLead.mutate(id)}
+      onArchive={async (id) => {
+        await archiveLead.mutateAsync(id);
+      }}
       onRetry={() => void leadsQuery.refetch()}
     />
   );
