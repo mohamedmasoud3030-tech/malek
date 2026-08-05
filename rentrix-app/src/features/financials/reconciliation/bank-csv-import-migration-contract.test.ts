@@ -64,6 +64,7 @@ describe('bank csv import hardening migration contract', () => {
     expect(sql).toContain('v_bank_account_id::text');
     expect(sql).toContain('pg_advisory_xact_lock');
     expect(sql).toContain('is_duplicate_file');
+    expect(sql.indexOf('select * into v_existing_import')).toBeLessThan(sql.indexOf('exact_duplicate_existing_line'));
     expect(sql).not.toContain('random()');
     expect(sql).not.toContain('gen_random_uuid()');
     expect(sql).not.toMatch(/now\(\).*file_fingerprint/i);
@@ -81,5 +82,16 @@ describe('bank csv import hardening migration contract', () => {
     expect(sql).toContain("v_currency <> 'OMR'");
     expect(sql).toContain('exact_duplicate_in_file');
     expect(sql).toContain('exact_duplicate_existing_line');
+  });
+
+  it('treats same-date/same-amount as possible duplicate, not deletion criteria', async () => {
+    const sql = await readFile(s02MigrationPath, 'utf8');
+
+    expect(sql).toContain('v_possible := v_possible + 1');
+    expect(sql).toContain('and transaction_date = v_transaction_date');
+    expect(sql).toContain('and amount = v_amount');
+    expect(sql).toContain('and fingerprint <> v_row_fingerprint');
+    expect(sql).toContain('possible_duplicate_rows');
+    expect(sql).not.toContain('delete from public.bank_statement_lines');
   });
 });

@@ -166,7 +166,7 @@ begin
     v_balance_text := nullif(v_row->>'balance','');
     v_currency := upper(trim(both ' ' from coalesce(v_row->>'currency','OMR')));
 
-    if v_row ? 'debit' and nullif(v_row->>'debit','') is not null and v_row ? 'credit' and nullif(v_row->>'credit','') is not null then
+    if (v_row ? 'debit') and nullif(v_row->>'debit','') is not null and (v_row ? 'credit') and nullif(v_row->>'credit','') is not null then
       v_errors := v_errors || jsonb_build_object('row', v_idx + 1, 'field', 'amount', 'code', 'debit_credit_conflict');
       continue;
     end if;
@@ -239,17 +239,6 @@ begin
       select 1 from public.bank_statement_lines
       where company_id = v_company_id
         and bank_account_id = v_bank_account_id
-        and fingerprint = v_row_fingerprint
-        and deleted_at is null
-    ) then
-      v_errors := v_errors || jsonb_build_object('row', v_idx + 1, 'field', 'fingerprint', 'code', 'exact_duplicate_existing_line');
-      continue;
-    end if;
-
-    if exists (
-      select 1 from public.bank_statement_lines
-      where company_id = v_company_id
-        and bank_account_id = v_bank_account_id
         and transaction_date = v_transaction_date
         and amount = v_amount
         and fingerprint <> v_row_fingerprint
@@ -299,6 +288,18 @@ begin
       'status', v_existing_import.status,
       'is_duplicate_file', true
     );
+  end if;
+
+  -- Only after idempotent retry has returned may exact existing lines reject a new batch.
+  if exists (
+    select 1
+    from public.bank_statement_lines
+    where company_id = v_company_id
+      and bank_account_id = v_bank_account_id
+      and fingerprint = any(v_seen_fps)
+      and deleted_at is null
+  ) then
+    raise exception 'Bank CSV import rejected fail-closed: exact_duplicate_existing_line' using errcode='22023';
   end if;
 
   insert into public.bank_statement_imports (
