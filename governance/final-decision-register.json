@@ -1,0 +1,100 @@
+{
+  "blocked_decisions": 0,
+  "decisions": [
+    {
+      "final": "OWNER_IS_CREDITOR keeps tenant AR in operational subledger; OFFICE_IS_CREDITOR posts Tenant Receivable to GL.",
+      "id": "D01",
+      "topic": "invoice_and_receivable"
+    },
+    {
+      "final": "RATE recognizes on collection; FIXED_MONTHLY accrues daily over service period.",
+      "id": "D02",
+      "topic": "management_fee"
+    },
+    {
+      "final": "Brokerage on signed contract activation; renewal on renewal activation; setup on accepted handover; advance cash is deferred revenue.",
+      "id": "D03",
+      "topic": "brokerage_renewal_setup_fees"
+    },
+    {
+      "final": "Owner expense is Due from Owner. Offset only when agreement grants it; order is owner expenses, fees/tax, reserve, payout.",
+      "id": "D04",
+      "topic": "owner_expense_and_offset"
+    },
+    {
+      "final": "Deposit remains liability. Application requires approved claim/invoice, evidence, allocation and atomic transaction; reversal is compensating transaction.",
+      "id": "D05",
+      "topic": "deposit"
+    },
+    {
+      "final": "Monthly OPEN/SOFT_CLOSED/HARD_CLOSED; hard close irreversible; late events post to first open period preserving effective date.",
+      "id": "D06",
+      "topic": "accounting_periods"
+    },
+    {
+      "final": "Separate principal module with ROU asset and lease liability; implicit rate else IBR snapshot; standard modification and short-term election rules.",
+      "id": "D07",
+      "topic": "master_lease"
+    },
+    {
+      "final": "No hard-coded statutory rate. Versioned company tax codes; each line snapshots code/rate/amount; taxable posting blocked if profile incomplete.",
+      "id": "D08",
+      "topic": "tax"
+    },
+    {
+      "final": "Disabled by default; explicit contract term, grace period and cap; no compounding; server calculated; waiver requires permission and reason.",
+      "id": "D09",
+      "topic": "late_fees"
+    },
+    {
+      "final": "Approved termination record; future schedule cancelled not deleted; accrued amounts retained; charge defaults to none unless explicit formula.",
+      "id": "D10",
+      "topic": "early_termination"
+    },
+    {
+      "final": "Maker-checker by default; creator cannot final approve material contract; required signatures/evidence before activation; audited sole-admin exception.",
+      "id": "D11",
+      "topic": "approval_and_signatures"
+    },
+    {
+      "final": "Core seven-step workflow with property-type templates; only admin evidence-backed waivers; identity and safety gates non-waivable.",
+      "id": "D12",
+      "topic": "property_onboarding"
+    },
+    {
+      "final": "No silent retroactive mutation. Material changes create amendment/version; historical correction uses catch-up/reversal.",
+      "id": "D13",
+      "topic": "agreement_and_contract_versioning"
+    },
+    {
+      "final": "Inputs reserved atomically; no item in two active settlements; rederive before approval/payment; post-payment refund creates Due from Owner.",
+      "id": "D14",
+      "topic": "owner_settlements"
+    },
+    {
+      "final": "Posted invoices and financial records are never deleted; use credit note, void and reversal; cash refund includes payment-out event.",
+      "id": "D15",
+      "topic": "invoice_refund_void"
+    },
+    {
+      "final": "Preview and fail-closed import; any invalid or ambiguous row blocks batch; no silent partial success; server limits/counts and OMR 3dp.",
+      "id": "D16",
+      "topic": "bank_csv_import"
+    },
+    {
+      "final": "Read-only analysis first, then company/period/source-scoped append-only correction batches with before/after evidence and approval.",
+      "id": "D17",
+      "topic": "historical_correction"
+    },
+    {
+      "final": "One stage per PR from latest main; agent may mark only agent checklist; reviewer ledger is owner-protected; no stage complete without both.",
+      "id": "D18",
+      "topic": "implementation_governance"
+    }
+  ],
+  "document": "MALEK_FINAL_DECISION_REGISTER",
+  "owner": "mohamedmasoud3030-tech",
+  "provisional_decisions": 0,
+  "status": "LOCKED_FINAL",
+  "version": "1.0.0"
+}
