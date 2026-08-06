@@ -3,6 +3,7 @@ import { RefreshCcw } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityFormVisualProvider } from '@/components/ui/entity-form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DirtyRouteNavigationGuard } from '@/hooks/use-unsaved-changes-guard';
 import { CompanyProfileSections } from './components/company-profile-sections';
@@ -28,20 +29,9 @@ export { settingsSections };
 export type SettingsWorkspaceVariant = 'standalone' | 'embedded';
 
 type SettingsWorkspaceProps = Readonly<{
-  /**
-   * 'standalone' (default) keeps the historical /settings route behavior:
-   * the content renders inside its own <PageLayout>. 'embedded' drops the
-   * PageLayout wrapper so the content can be hosted inside another surface
-   * (e.g. the governance hub) without doubling page chrome.
-   */
   variant?: SettingsWorkspaceVariant;
 }>;
 
-/**
- * Wraps content in <PageLayout> for the standalone route, or renders it
- * unwrapped for embedded contexts (e.g. inside the governance hub tabs)
- * to avoid double page chrome (no nested PageLayout/PageHeader).
- */
 function SettingsVariantShell({
   variant,
   dir,
@@ -56,7 +46,13 @@ function SettingsVariantShell({
   children: ReactNode;
 }>) {
   if (variant === 'embedded') {
-    return <div data-visual-wave="malek-pro" className={contentClassName}>{children}</div>;
+    return (
+      <EntityFormVisualProvider variant="operational">
+        <div data-visual-wave="malek-pro" className={contentClassName} dir={dir} lang={lang}>
+          {children}
+        </div>
+      </EntityFormVisualProvider>
+    );
   }
   return (
     <PageLayout
@@ -225,7 +221,6 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
   );
 }
 
-/** Standalone /settings route entry point — preserves historical behavior exactly. */
 export function SettingsPage() {
   return <SettingsWorkspace variant="standalone" />;
 }
