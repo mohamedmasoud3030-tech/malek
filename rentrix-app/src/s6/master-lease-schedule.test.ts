@@ -28,6 +28,25 @@ describe('buildMasterLeaseSchedule', () => {
     }
   });
 
+  it.each([1, 12, 24])('settles a %i-period lease through the final payment', (periods) => {
+    const schedule = buildMasterLeaseSchedule({
+      payments: Array.from({ length: periods }, (_, index) => ({
+        period: index + 1,
+        amountMinor: 10_000,
+      })),
+      annualDiscountRateBps: 600,
+      periodsPerYear: 12,
+    });
+    const last = schedule.rows.at(-1)!;
+
+    expect(last.paymentMinor).toBe(last.openingLiabilityMinor + last.interestMinor);
+    expect(last.openingLiabilityMinor + last.interestMinor - last.paymentMinor).toBe(
+      last.closingLiabilityMinor,
+    );
+    expect(last.principalMinor).toBe(last.paymentMinor - last.interestMinor);
+    expect(last.closingLiabilityMinor).toBe(0);
+  });
+
   it('includes direct costs and prepayments and deducts incentives from the ROU asset only', () => {
     const schedule = buildMasterLeaseSchedule({
       payments: [
