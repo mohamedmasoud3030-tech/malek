@@ -87,6 +87,13 @@
   padding-block-end: 0.875rem;
 }
 
+/* Keep 44px primary/control targets inside this approved scope without
+   changing the isolated Dashboard V2 sizing contract. */
+[data-visual-wave='malek-pro'] [data-ui-button] {
+  min-inline-size: 44px;
+  min-block-size: 44px;
+}
+
 [data-visual-wave='malek-pro'] [data-list-controls],
 [data-visual-wave='malek-pro'] [data-filter-bar] {
   border-color: hsl(var(--border) / 0.9);

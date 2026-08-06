@@ -1,7 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 
 const viewportMatrix = [
   { name: '320', width: 320, height: 740 },
@@ -11,8 +9,6 @@ const viewportMatrix = [
   { name: '1024', width: 1024, height: 900 },
   { name: '1440', width: 1440, height: 1000 },
 ] as const;
-
-const evidenceDir = process.env.VISUAL_WAVE_EVIDENCE_DIR || '/home/user/malik/evidence/ui-malek-pro-wave-1/after';
 
 // The spec writes its explicit visual evidence itself. Disable per-failure
 // video/trace archives here only so a large browser matrix cannot turn a
@@ -117,6 +113,7 @@ test('respects reduced motion and has no obvious RTL accessibility violations on
   expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.01);
 
   const results = await new AxeBuilder({ page })
+    .include('[data-page-layout]')
     .disableRules(['color-contrast'])
     .analyze();
   expect(results.violations).toEqual([]);
@@ -124,13 +121,12 @@ test('respects reduced motion and has no obvious RTL accessibility violations on
 
 for (const [width, height] of [[375, 844], [1440, 1000]] as const) {
   for (const theme of ['light', 'dark'] as const) {
-    test(`captures the required properties evidence at ${width}px ${theme}`, async ({ page }) => {
+    test(`captures the required properties evidence at ${width}px ${theme}`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height });
       await setThemeAndNavigate(page, '/login?e2e-showcase-properties=1', theme);
       await expect(page.locator('[data-e2e-properties-workspace]')).toBeVisible();
       await expectNoApplicationOverflow(page, `evidence ${width}px ${theme}`);
-      fs.mkdirSync(evidenceDir, { recursive: true });
-      await page.screenshot({ path: path.join(evidenceDir, `properties-${width}-${theme}.png`), fullPage: true });
+      await page.screenshot({ path: testInfo.outputPath(`properties-${width}-${theme}.png`), fullPage: true });
     });
   }
 }

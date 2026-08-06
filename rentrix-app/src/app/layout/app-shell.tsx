@@ -243,7 +243,7 @@ export function AppShell() {
     >
       <a
         href="#main-content"
-        className="sr-only z-[100] rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:end-4 focus:top-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300"
+        className="sr-only z-[100] rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:end-4 focus:top-4 focus-visible:outline-2 focus-visible:outline-emerald-300 focus-visible:outline-offset-2"
       >
         {sharedLabel('skipToContent')}
       </a>
@@ -297,7 +297,7 @@ export function AppShell() {
           data-app-shell-header
           className="sticky top-0 z-20 border-b border-slate-200/80 bg-slate-50/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/92"
         >
-          <div className="mx-auto flex min-h-[3.5rem] w-full max-w-[110rem] items-center gap-1 px-2 py-1.5 sm:gap-2 sm:px-4">
+          <div className="mx-auto flex min-h-[3.25rem] w-full max-w-[110rem] items-center gap-1 px-2 py-1 sm:min-h-[3.5rem] sm:gap-2 sm:px-4 sm:py-1.5">
             <Button
               variant="ghost"
               className="size-10 shrink-0 px-0 text-muted-foreground hover:text-foreground lg:hidden"

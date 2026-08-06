@@ -112,13 +112,7 @@ const statusLabels: Record<Property['status'], string> = {
 
 export function PropertiesListE2EFixture() {
   return (
-    <div
-      className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground"
-      dir="rtl"
-      role="region"
-      aria-label="معاينة مساحة العقارات"
-      data-e2e-properties-workspace
-    >
+    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-properties-workspace>
       <ListPage
         visualVariant="malek-pro"
         title="العقارات"
@@ -201,6 +195,6 @@ export function PropertiesListE2EFixture() {
           ]}
         />
       </ListPage>
-    </div>
+    </main>
   );
 }
