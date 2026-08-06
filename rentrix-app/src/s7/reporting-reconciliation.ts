@@ -1,4 +1,4 @@
-import type { MasterLeaseDisclosureSummary } from '../s6/master-lease-disclosures';
+import type { MasterLeaseDisclosure } from '../s6/master-lease-disclosures';
 
 export type ReconciliationStatus = 'balanced' | 'warning' | 'error';
 
@@ -7,7 +7,7 @@ export type ReconciliationIssue = Readonly<{
     | 'LIABILITY_ROLLFORWARD_MISMATCH'
     | 'ROU_ROLLFORWARD_MISMATCH'
     | 'NEGATIVE_BALANCE'
-    | 'CURRENT_SPLIT_EXCEEDS_TOTAL';
+    | 'CURRENT_SPLIT_MISMATCH';
   message: string;
   differenceMinor: number;
 }>;
@@ -97,8 +97,8 @@ export function reconcileMasterLeaseBalances(
   }
   if (splitDifferenceMinor !== 0) {
     issues.push({
-      code: 'CURRENT_SPLIT_EXCEEDS_TOTAL',
-      message: 'Current and non-current lease liabilities do not equal the total liability.',
+      code: 'CURRENT_SPLIT_MISMATCH',
+      message: 'Current and non-current lease liabilities do not equal the closing liability.',
       differenceMinor: splitDifferenceMinor,
     });
   }
@@ -124,46 +124,53 @@ export function reconcileMasterLeaseBalances(
 
 export type PortfolioLeaseReport = Readonly<{
   leaseCount: number;
-  totalInitialLiabilityMinor: number;
+  totalOpeningLiabilityMinor: number;
   totalClosingLiabilityMinor: number;
   totalCurrentLiabilityMinor: number;
   totalNonCurrentLiabilityMinor: number;
-  totalInterestMinor: number;
-  totalCashPaidMinor: number;
-  totalPrincipalMinor: number;
+  totalInterestExpenseMinor: number;
+  totalCashPaymentsMinor: number;
+  totalPrincipalReductionMinor: number;
   totalRouDepreciationMinor: number;
+  totalClosingRouAssetMinor: number;
 }>;
 
 export function buildPortfolioLeaseReport(
-  disclosures: readonly MasterLeaseDisclosureSummary[],
+  disclosures: readonly MasterLeaseDisclosure[],
 ): PortfolioLeaseReport {
   return disclosures.reduce<PortfolioLeaseReport>(
     (total, disclosure) => ({
       leaseCount: total.leaseCount + 1,
-      totalInitialLiabilityMinor:
-        total.totalInitialLiabilityMinor + disclosure.initialLiabilityMinor,
+      totalOpeningLiabilityMinor:
+        total.totalOpeningLiabilityMinor + disclosure.openingLiabilityMinor,
       totalClosingLiabilityMinor:
         total.totalClosingLiabilityMinor + disclosure.closingLiabilityMinor,
       totalCurrentLiabilityMinor:
         total.totalCurrentLiabilityMinor + disclosure.currentLiabilityMinor,
       totalNonCurrentLiabilityMinor:
         total.totalNonCurrentLiabilityMinor + disclosure.nonCurrentLiabilityMinor,
-      totalInterestMinor: total.totalInterestMinor + disclosure.totalInterestMinor,
-      totalCashPaidMinor: total.totalCashPaidMinor + disclosure.totalCashPaidMinor,
-      totalPrincipalMinor: total.totalPrincipalMinor + disclosure.totalPrincipalMinor,
+      totalInterestExpenseMinor:
+        total.totalInterestExpenseMinor + disclosure.interestExpenseMinor,
+      totalCashPaymentsMinor:
+        total.totalCashPaymentsMinor + disclosure.cashPaymentsMinor,
+      totalPrincipalReductionMinor:
+        total.totalPrincipalReductionMinor + disclosure.principalReductionMinor,
       totalRouDepreciationMinor:
-        total.totalRouDepreciationMinor + disclosure.totalRouDepreciationMinor,
+        total.totalRouDepreciationMinor + disclosure.rouDepreciationMinor,
+      totalClosingRouAssetMinor:
+        total.totalClosingRouAssetMinor + disclosure.closingRouAssetMinor,
     }),
     {
       leaseCount: 0,
-      totalInitialLiabilityMinor: 0,
+      totalOpeningLiabilityMinor: 0,
       totalClosingLiabilityMinor: 0,
       totalCurrentLiabilityMinor: 0,
       totalNonCurrentLiabilityMinor: 0,
-      totalInterestMinor: 0,
-      totalCashPaidMinor: 0,
-      totalPrincipalMinor: 0,
+      totalInterestExpenseMinor: 0,
+      totalCashPaymentsMinor: 0,
+      totalPrincipalReductionMinor: 0,
       totalRouDepreciationMinor: 0,
+      totalClosingRouAssetMinor: 0,
     },
   );
 }
