@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -241,12 +240,12 @@ export function DepositsWorkspace() {
         <DocumentReadinessNotice />
       ) : null}
 
-      <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" />
-        <KpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} accent="rose" sub="أضرار وصيانة" />
-        <KpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} accent="emerald" sub="تم رده" />
-        <KpiCard label="عدد الودائع" value={formatLatinNumber(deposits.length, 'ar')} icon={FileCheck} accent="sky" sub="سجلات" />
-      </ResponsiveCardGrid>
+      <FinanceKpiGrid desktopColumns={4} className="mb-2">
+        <FinanceKpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" unit="OMR" />
+        <FinanceKpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} accent="primary" sub="أضرار وصيانة" unit="OMR" />
+        <FinanceKpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} accent="primary" sub="تم رده" unit="OMR" />
+        <FinanceKpiCard label="عدد الودائع" value={formatLatinNumber(deposits.length, 'ar')} icon={FileCheck} accent="primary" sub="سجلات" />
+      </FinanceKpiGrid>
 
       <AsyncContentState
         status={contentStatus}
