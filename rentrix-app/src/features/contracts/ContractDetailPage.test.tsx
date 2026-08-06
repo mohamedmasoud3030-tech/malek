@@ -6,7 +6,10 @@ import { ContractDetailPage } from './ContractDetailPage';
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
 
-  return { useCompanySettingsContract: () => testCompanySettingsContract };
+  return {
+    useCompanySettingsContract: () => testCompanySettingsContract,
+    useCompanySettings: () => ({ data: { company_name: 'شركة الاختبار', currency: 'OMR' }, isLoading: false }),
+  };
 });
 
 vi.mock('@tanstack/react-router', () => ({

@@ -15,7 +15,10 @@ let contractDetail: any = null;
 
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
-  return { useCompanySettingsContract: () => testCompanySettingsContract };
+  return {
+    useCompanySettingsContract: () => testCompanySettingsContract,
+    useCompanySettings: () => ({ data: { company_name: 'شركة الاختبار', currency: 'OMR' }, isLoading: false }),
+  };
 });
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, params, to }: any) => <a href={params?.contractId ? `/contracts/${params.contractId}` : to}>{children}</a>,

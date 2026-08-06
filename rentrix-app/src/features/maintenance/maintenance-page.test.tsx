@@ -41,7 +41,7 @@ vi.mock('@/features/settings/useDocumentSettings', () => ({
   useDocumentSettings: () => ({
     isReady: true,
     isLoading: false,
-    settings: { company: { name: 'شركة الاختبار' }, currency: 'OMR', currencySymbol: 'ر.ع' },
+    companySettings: { companyName: 'شركة الاختبار', currency: 'OMR', currencySymbol: 'ر.ع', documentPrefixes: {} },
   }),
 }));
 

@@ -9,7 +9,7 @@ import type {
   ReceiptDocumentData,
   TenantStatementData,
   TrialBalanceDocumentData,
-} from './DocumentTemplates';
+} from './documentCompatibilityTypes';
 
 export type {
   BalanceSheetDocumentData,
@@ -21,7 +21,7 @@ export type {
   ReceiptDocumentData,
   TenantStatementData,
   TrialBalanceDocumentData,
-} from './DocumentTemplates';
+} from './documentCompatibilityTypes';
 import type {
   BalanceSheetReportPayload,
   ContractDocumentPayload,

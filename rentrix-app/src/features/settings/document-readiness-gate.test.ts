@@ -42,14 +42,14 @@ describe('document readiness gate replaces fake company identity', () => {
     // Handlers remain guarded even if a disabled button is bypassed.
     expect(source).toContain('if (!document || !documentSettings.isReady) return;');
     // Real identity only — no inline fallback company object.
-    expect(source).toContain('settings: documentSettings.settings');
+    expect(source).toContain('settings: documentSettings.companySettings');
   });
 
   it('maintenance A4 statement is guarded and uses the real currency', () => {
     const source = read('maintenance/components/maintenance-workspace.tsx');
     expect(source).toContain('if (!documentSettings.isReady) return;');
     expect(source).toContain('onClick={handlePrintMaintenanceList} disabled={!documentSettings.isReady}');
-    expect(source).toContain('documentSettings.settings,');
+    expect(source).toContain('settings: documentSettings.companySettings');
     expect(source).not.toContain("`${r.cost} ر.ع`");
   });
 
