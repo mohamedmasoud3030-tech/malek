@@ -16,6 +16,7 @@ import { ListPage } from "@/components/layout/list-page";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EntityCell } from "@/components/ui/entity-cell";
+import { OperationalCommandPanel, OperationalMetricCard } from "@/components/ui/operational-summary";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
@@ -37,37 +38,6 @@ import type { PropertyListItem } from "./property-service";
 
 function formatCount(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
-}
-
-function PropertyMetric({
-  label,
-  value,
-  hint,
-  icon: Icon,
-}: Readonly<{
-  label: string;
-  value: number;
-  hint: string;
-  icon: typeof Building2;
-}>) {
-  return (
-    <article className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-      <div
-        className="absolute inset-inline-end-0 inset-block-start-0 size-24 rounded-full bg-primary/7 blur-2xl transition-colors group-hover:bg-primary/12"
-        aria-hidden="true"
-      />
-      <div className="relative flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-black tabular-nums">{formatCount(value)}</p>
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p>
-        </div>
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/8 text-primary">
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-      </div>
-    </article>
-  );
 }
 
 function PropertyWorkflowStatus({ property }: Readonly<{ property: PropertyListItem }>) {
@@ -210,51 +180,35 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             aria-label="ملخص جاهزية العقارات"
             className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
           >
-            <article className="relative overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-elevated">
-              <div
-                className="absolute -inset-inline-end-12 -inset-block-start-16 size-48 rounded-full bg-primary/20 blur-3xl"
-                aria-hidden="true"
-              />
-              <div className="relative">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold text-sidebar-foreground/65">جاهزية التشغيل</p>
-                    <p className="mt-2 text-4xl font-black tabular-nums">{formatCount(readinessRate)}%</p>
-                  </div>
-                  <span className="grid size-12 place-items-center rounded-2xl border border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground">
-                    <CircleCheck className="size-6" aria-hidden="true" />
-                  </span>
-                </div>
-                <div className="mt-5 h-2 overflow-hidden rounded-full bg-sidebar-accent">
-                  <div
-                    className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
-                    style={{ width: `${Math.min(100, Math.max(0, readinessRate))}%` }}
-                    aria-hidden="true"
-                  />
-                </div>
-                <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-sidebar-foreground/72">
+            <OperationalCommandPanel
+              label="جاهزية التشغيل"
+              value={`${formatCount(readinessRate)}%`}
+              icon={CircleCheck}
+              progress={readinessRate}
+              footer={(
+                <>
                   <span>{formatCount(readyCount)} جاهزة</span>
                   <span>{formatCount(attentionCount)} تحتاج متابعة</span>
-                </div>
-              </div>
-            </article>
+                </>
+              )}
+            />
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <PropertyMetric
+              <OperationalMetricCard
                 label="إجمالي العقارات"
-                value={controller.totalCount}
+                value={formatCount(controller.totalCount)}
                 hint="كل النتائج المطابقة"
                 icon={Building2}
               />
-              <PropertyMetric
+              <OperationalMetricCard
                 label="مرتبطة بمالك"
-                value={linkedOwnerCount}
+                value={formatCount(linkedOwnerCount)}
                 hint="ضمن الصفحة الحالية"
                 icon={Handshake}
               />
-              <PropertyMetric
+              <OperationalMetricCard
                 label="تحتاج متابعة"
-                value={attentionCount}
+                value={formatCount(attentionCount)}
                 hint="مالك أو اتفاقية تشغيل"
                 icon={TriangleAlert}
               />
