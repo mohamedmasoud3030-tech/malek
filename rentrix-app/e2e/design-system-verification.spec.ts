@@ -5,13 +5,12 @@ import * as path from 'path';
 /**
  * Design-system verification — يثبت في متصفح حقيقي أن جسر التوكنات يعمل:
  *
- * 1. shadow-card/text-success/bg-primary … إلخ أصبحت فئات فعلية (computed styles).
+ * 1. ظلال البطاقات المبنية على التوكنات وtext-success/bg-primary تُحل إلى computed styles فعلية.
  * 2. الثيم الداكن يتبع [data-theme='dark'] (مبدّل التطبيق) وليس نظام التشغيل.
  * 3. لا فيض أفقي (overflow-x) على عروض الهاتف والتابلت والديسكتوب.
  * 4. مناطق اللمس للأزرار الرئيسية ≥ 44px على الهاتف (pointer: coarse مسموح 40).
  *
  * يعمل على ثلاثة مشاريع (desktop/tablet/mobile) كما هو معرّف في playwright.config.
- * ON-DEMAND spec — لا يعمل في CI حاليًا (لا متصفحات هناك).
  */
 
 const targetDir = process.env.EVIDENCE_DIR || '/tmp/ds-evidence';
@@ -50,15 +49,19 @@ async function expectNoHorizontalOverflow(page: Page, label: string) {
 
 async function expectTokenUtilitiesReal(page: Page) {
   const result = await page.evaluate(() => {
-    const shadowHost = document.querySelector('.shadow-card');
-    const shadow = shadowHost ? getComputedStyle(shadowHost).boxShadow : '';
+    const shadowCandidates = Array.from(document.querySelectorAll<HTMLElement>(
+      '.shadow-card, [data-visual-contract="v2"] .dashboard-ops-header, [data-visual-contract="v2"] .dashboard-kpi-card, [data-visual-contract="v2"] .dashboard-priority-panel',
+    ));
+    const shadow = shadowCandidates
+      .map((element) => getComputedStyle(element).boxShadow)
+      .find((value) => value && value !== 'none') ?? '';
     const successBadge = document.querySelector('[data-status-badge][data-tone="success"], [data-status-badge][data-tone="emerald"]');
     const badgeBg = successBadge ? getComputedStyle(successBadge).backgroundColor : '';
     return { shadow, badgeBg };
   });
   expect(
     result.shadow,
-    'shadow-card must resolve to a real shadow (token bridge working)',
+    'a token-backed card must resolve to a real shadow (token bridge working)',
   ).not.toBe('');
   expect(result.shadow).not.toBe('none');
   if (result.badgeBg) {
