@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { EntityFormVisualProvider } from '@/components/ui/entity-form';
 import { PageHeader } from './page-header';
 import { PageHeaderActions } from './page-header-actions';
 import { PageLayout } from './page-layout';
@@ -42,27 +41,24 @@ export function EmbeddableWorkspace({
 }: EmbeddableWorkspaceProps) {
   if (embedded) {
     const hasActions = Boolean(primaryAction || secondaryActions);
-    const formVisualVariant = visualVariant === 'malek-pro' ? 'operational' : undefined;
 
     return (
-      <EntityFormVisualProvider variant={formVisualVariant}>
-        <div
-          data-embedded-workspace
-          data-visual-wave={visualVariant}
-          className="min-w-0 space-y-4 sm:space-y-5"
-        >
-          {hasActions ? (
-            <div data-workspace-actions className="flex justify-end" aria-label={`إجراءات ${title}`}>
-              <PageHeaderActions
-                title={title}
-                primaryAction={primaryAction}
-                secondaryActions={secondaryActions}
-              />
-            </div>
-          ) : null}
-          {children}
-        </div>
-      </EntityFormVisualProvider>
+      <div
+        data-embedded-workspace
+        data-visual-wave={visualVariant}
+        className="min-w-0 space-y-4 sm:space-y-5"
+      >
+        {hasActions ? (
+          <div data-workspace-actions className="flex justify-end" aria-label={`إجراءات ${title}`}>
+            <PageHeaderActions
+              title={title}
+              primaryAction={primaryAction}
+              secondaryActions={secondaryActions}
+            />
+          </div>
+        ) : null}
+        {children}
+      </div>
     );
   }
 
