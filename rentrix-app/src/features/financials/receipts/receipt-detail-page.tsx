@@ -14,7 +14,9 @@ import { formatDate, formatMoney, getErrorMessage } from '../components/financia
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import { toast } from 'sonner';
 import { openWhatsApp, shareOrCopy } from '@/services/action-service';
-import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReceiptDocumentPayload } from '@/services/documents/documentPayloadAdapters';
+import { runDocumentAction } from '@/services/documents/runDocumentAction';
 
 
 function receiptDetailStatusTone(status: string): 'success' | 'danger' | 'warning' {
@@ -51,22 +53,31 @@ export function ReceiptDetailPage() {
       // Real company identity only — no hardcoded fallbacks. The readiness
       // guard (`documentSettings.isReady`) blocks printing until a real
       // company name and currency exist in company settings.
-      settings: documentSettings.settings,
+      settings: documentSettings.companySettings,
     };
   }, [receipt, documentSettings]);
 
-  const handlePrint = useCallback(() => {
+  const handlePrint = useCallback(async () => {
     const document = buildReceiptDocument();
     if (!document || !documentSettings.isReady) return;
     setIsPrinting(true);
-    void DocumentTemplates.printReceiptDocument(document.data, document.settings)
-      .finally(() => window.setTimeout(() => setIsPrinting(false), 300));
+    try {
+      await runDocumentAction(
+        () => documentService.printDocument('receipt', { settings: document.settings, payload: toReceiptDocumentPayload(document.data) }),
+        'تعذرت طباعة الإيصال.',
+      );
+    } finally {
+      window.setTimeout(() => setIsPrinting(false), 300);
+    }
   }, [buildReceiptDocument, documentSettings.isReady]);
 
-  const handleDownloadPdf = useCallback(() => {
+  const handleDownloadPdf = useCallback(async () => {
     const document = buildReceiptDocument();
     if (!document || !documentSettings.isReady) return;
-    void DocumentTemplates.downloadReceiptPdf(document.data, document.settings);
+    await runDocumentAction(
+      () => documentService.downloadDocumentPdf('receipt', { settings: document.settings, payload: toReceiptDocumentPayload(document.data) }),
+      'تعذر تنزيل الإيصال كملف PDF.',
+    );
   }, [buildReceiptDocument, documentSettings.isReady]);
 
   const handleWhatsApp = useCallback(() => {

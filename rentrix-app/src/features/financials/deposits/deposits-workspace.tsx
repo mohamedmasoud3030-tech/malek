@@ -13,7 +13,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { AsyncContentState } from '@/components/async-content-state';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { numberToArabicWords, OMR_CURRENCY_CONFIG } from '@/lib/numberToArabicWords';
-import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
+import { runDocumentAction } from '@/services/documents/runDocumentAction';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -164,7 +166,7 @@ export function DepositsWorkspace() {
 
   // Real currency label for the printed amounts — sourced from company
   // settings, never a hardcoded symbol. Only used once settings are ready.
-  const currencyLabel = documentSettings.settings.currencySymbol || documentSettings.settings.currency;
+  const currencyLabel = documentSettings.companySettings.currencySymbol || documentSettings.companySettings.currency;
 
   const buildDepositClearanceDocument = (deposit: DepositRecord) => {
     const printableAmount = deposit.remaining_amount > 0 ? deposit.remaining_amount : deposit.deposit_amount;
@@ -195,15 +197,21 @@ export function DepositsWorkspace() {
   };
 
   const handlePrint = (deposit: DepositRecord) => {
-    // Real company identity only — block the output when settings are
-    // incomplete instead of printing placeholder branding.
     if (!documentSettings.isReady) return;
-    void DocumentTemplates.printReportDocument(buildDepositClearanceDocument(deposit), documentSettings.settings);
+    const report = buildDepositClearanceDocument(deposit) satisfies ReportDocumentData;
+    void runDocumentAction(
+      () => documentService.printDocument('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
+      'تعذرت طباعة سند تسوية الوديعة.',
+    );
   };
 
   const handleDownloadPdf = (deposit: DepositRecord) => {
     if (!documentSettings.isReady) return;
-    void DocumentTemplates.downloadReportPdf(buildDepositClearanceDocument(deposit), documentSettings.settings);
+    const report = buildDepositClearanceDocument(deposit) satisfies ReportDocumentData;
+    void runDocumentAction(
+      () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
+      'تعذر تنزيل سند تسوية الوديعة كملف PDF.',
+    );
   };
 
   const executeSelectedAction = () => {

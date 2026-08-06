@@ -32,7 +32,9 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toOwnerStatementDocumentPayload, type OwnerStatementData } from '@/services/documents/documentPayloadAdapters';
+import { runDocumentAction } from '@/services/documents/runDocumentAction';
 import {
   approveOwnerSettlement,
   createOwnerSettlementDraft,
@@ -233,12 +235,20 @@ export function OwnerSettlementWorkspace() {
 
   const handlePrint = (settlement: OwnerSettlementRecord) => {
     if (!documentSettings.isReady) return;
-    void DocumentTemplates.printOwnerStatementDocument(buildOwnerStatementData(settlement), documentSettings.settings);
+    const data = buildOwnerStatementData(settlement) satisfies OwnerStatementData;
+    void runDocumentAction(
+      () => documentService.printDocument('owner_statement', { settings: documentSettings.companySettings, payload: toOwnerStatementDocumentPayload(data) }),
+      'تعذرت طباعة كشف التسوية.',
+    );
   };
 
   const handleDownloadPdf = (settlement: OwnerSettlementRecord) => {
     if (!documentSettings.isReady) return;
-    void DocumentTemplates.downloadOwnerStatementPdf(buildOwnerStatementData(settlement), documentSettings.settings);
+    const data = buildOwnerStatementData(settlement) satisfies OwnerStatementData;
+    void runDocumentAction(
+      () => documentService.downloadDocumentPdf('owner_statement', { settings: documentSettings.companySettings, payload: toOwnerStatementDocumentPayload(data) }),
+      'تعذر تنزيل كشف التسوية كملف PDF.',
+    );
   };
 
   const handleTargetChange = (value: string) => {

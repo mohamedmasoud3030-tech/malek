@@ -7,7 +7,8 @@ import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyNumber } from '@/lib/companyFormatters';
 import { formatDate, formatShortId } from '@/features/financials/components/financials-formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { toast } from 'sonner';
 import { buildExpiringContractsRows, buildOccupancyRows, expiringContractWindowDays, getTodayLocalDateString } from '../reports-page.helpers';
 import { SafeAnchor } from './common';
@@ -38,7 +39,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
     ? (highestVacancyProperty.vacant / totalVacant) * 100
     : 0;
 
-  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
   const buildOccupancyReportData = (): ReportDocumentData => {
     const todayStr = getTodayLocalDateString();
@@ -81,7 +82,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
 
   const handlePrintOccupancyReport = async () => {
     try {
-      await DocumentTemplates.printReportDocument(buildOccupancyReportData(), documentSettings);
+      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOccupancyReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
     }
@@ -89,7 +90,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
 
   const handleDownloadOccupancyReport = async () => {
     try {
-      await DocumentTemplates.downloadReportPdf(buildOccupancyReportData(), documentSettings);
+      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOccupancyReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }

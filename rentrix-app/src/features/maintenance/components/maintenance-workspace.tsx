@@ -9,7 +9,9 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
-import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
+import { runDocumentAction } from '@/services/documents/runDocumentAction';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -88,31 +90,30 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
   // Real currency label for the printed cost column — never a hardcoded
   // symbol; falls back to the configured currency code, and only renders at
   // all once document settings are ready.
-  const currencyLabel = documentSettings.settings.currencySymbol || documentSettings.settings.currency;
+  const currencyLabel = documentSettings.companySettings.currencySymbol || documentSettings.companySettings.currency;
 
   const handlePrintMaintenanceList = () => {
-    // Only real company identity reaches the document engine. With incomplete
-    // settings the print action is blocked entirely — no placeholder branding.
     if (!documentSettings.isReady) return;
     const todayStr = getTodayLocalDateString();
-    DocumentTemplates.printReportDocument(
-      {
-        reportTitle: 'كشف بلاغات وطلبات الصيانة الميدانية',
-        reportType: 'Maintenance_Requests_Report',
-        periodFrom: todayStr,
-        periodTo: todayStr,
-        sections: [
-          {
-            title: 'جدول طلبات الصيانة والتكلفة والأولوية',
-            rows: c.filteredMaintenanceRows.map((r) => ({
-              label: `${r.title} - (${maintenancePriorityLabels[r.priority as keyof typeof maintenancePriorityLabels] ?? r.priority})`,
-              value: `الحالة: ${maintenanceStatusLabels[r.status as keyof typeof maintenanceStatusLabels] ?? r.status} | المسؤول: ${r.assigned_to || r.technician_name || 'غير محدد'} | التكلفة: ${r.cost ? `${r.cost} ${currencyLabel}` : '—'}`,
-            })),
-          },
-        ],
-        totalSummary: `عدد الطلبات المدرجة: ${c.filteredMaintenanceRows.length} طلب صيانة`,
-      },
-      documentSettings.settings,
+    const report = {
+      reportTitle: 'كشف بلاغات وطلبات الصيانة الميدانية',
+      reportType: 'Maintenance_Requests_Report',
+      periodFrom: todayStr,
+      periodTo: todayStr,
+      sections: [
+        {
+          title: 'جدول طلبات الصيانة والتكلفة والأولوية',
+          rows: c.filteredMaintenanceRows.map((r) => ({
+            label: `${r.title} - (${maintenancePriorityLabels[r.priority as keyof typeof maintenancePriorityLabels] ?? r.priority})`,
+            value: `الحالة: ${maintenanceStatusLabels[r.status as keyof typeof maintenanceStatusLabels] ?? r.status} | المسؤول: ${r.assigned_to || r.technician_name || 'غير محدد'} | التكلفة: ${r.cost ? `${r.cost} ${currencyLabel}` : '—'}`,
+          })),
+        },
+      ],
+      totalSummary: `عدد الطلبات المدرجة: ${c.filteredMaintenanceRows.length} طلب صيانة`,
+    } satisfies ReportDocumentData;
+    void runDocumentAction(
+      () => documentService.printDocument('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
+      'تعذرت طباعة كشف الصيانة.',
     );
   };
 

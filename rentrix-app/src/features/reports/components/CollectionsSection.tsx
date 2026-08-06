@@ -7,7 +7,8 @@ import { formatMoney } from '@/features/financials/components/financials-formatt
 import type { DailyCollectionReportRow } from '@/features/financials/reports/financialReportsService';
 import { useCollectionSummaryReport } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString, toDailyCollectionCsv, type RentRollReportRow } from '../reports-page.helpers';
 import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
 import { DailyCollectionsPanel } from './collections/daily-collections-panel';
@@ -52,7 +53,7 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   const dominantMethodShare = dominantMethod && totalCollected > 0 ? (dominantMethod[1] / totalCollected) * 100 : 0;
   const averagePayment = paymentsCount > 0 ? totalCollected / paymentsCount : 0;
 
-  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
   const buildCollectionsReportData = (): ReportDocumentData => {
@@ -82,7 +83,7 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
 
   const handlePrintCollectionsReport = async () => {
     try {
-      await DocumentTemplates.printReportDocument(buildCollectionsReportData(), documentSettings);
+      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildCollectionsReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
     }
@@ -90,7 +91,7 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
 
   const handleDownloadCollectionsReport = async () => {
     try {
-      await DocumentTemplates.downloadReportPdf(buildCollectionsReportData(), documentSettings);
+      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildCollectionsReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }

@@ -1,15 +1,9 @@
 import { toast } from 'sonner';
 import { openWhatsApp, shareOrCopy } from '@/services/action-service';
-import { DocumentTemplates, type ContractDocumentData, type DocumentSettings } from '@/services/documents/DocumentTemplates';
-import type { CompanySettingsContract } from '@/lib/companySettings';
+import { documentService } from '@/services/documents/DocumentService';
+import { toContractDocumentPayload, type ContractDocumentData } from '@/services/documents/documentPayloadAdapters';
+import type { DocumentCompanySettings } from '@/services/documents/companyIdentity';
 import type { ContractDetail } from '../services/contractService';
-
-function toDocumentSettings(companySettings: CompanySettingsContract): DocumentSettings {
-  return {
-    company: { name: companySettings.companyName },
-    currency: companySettings.defaultCurrency,
-  };
-}
 
 function toContractStatus(status: ContractDetail['status']): ContractDocumentData['contractStatus'] {
   if (status === 'draft' || status === 'active' || status === 'expired' || status === 'terminated') return status;
@@ -19,7 +13,9 @@ function toContractStatus(status: ContractDetail['status']): ContractDocumentDat
 function toContractDocumentData(contract: ContractDetail): ContractDocumentData {
   return {
     contractId: contract.id,
-    contractNumber: contract.id.slice(0, 8),
+    // The contracts table has no business contract number. Never present a
+    // shortened UUID as a document reference.
+    contractNumber: '',
     contractStatus: toContractStatus(contract.status),
     tenantName: contract.people?.full_name ?? '—',
     tenantPhone: contract.people?.phone ?? '—',
@@ -37,26 +33,32 @@ function toContractDocumentData(contract: ContractDetail): ContractDocumentData 
   };
 }
 
-async function runDocumentAction(action: () => Promise<void>, fallback: string) {
+export function exportContractPdf(contract: ContractDetail, companySettings: DocumentCompanySettings): void {
+  void runDocumentAction(
+    () => documentService.downloadDocumentPdf('contract', {
+      settings: companySettings,
+      payload: toContractDocumentPayload(toContractDocumentData(contract)),
+    }),
+    'تعذر تصدير العقد كملف PDF.',
+  );
+}
+
+export function printContractView(contract: ContractDetail, companySettings: DocumentCompanySettings): void {
+  void runDocumentAction(
+    () => documentService.printDocument('contract', {
+      settings: companySettings,
+      payload: toContractDocumentPayload(toContractDocumentData(contract)),
+    }),
+    'تعذرت طباعة العقد.',
+  );
+}
+
+async function runDocumentAction(action: () => Promise<void>, fallback: string): Promise<void> {
   try {
     await action();
   } catch (error) {
     toast.error(error instanceof Error ? error.message : fallback);
   }
-}
-
-export function exportContractPdf(contract: ContractDetail, companySettings: CompanySettingsContract) {
-  void runDocumentAction(
-    () => DocumentTemplates.downloadContractPdf(toContractDocumentData(contract), toDocumentSettings(companySettings)),
-    'تعذر تصدير العقد كملف PDF.',
-  );
-}
-
-export function printContractView(contract: ContractDetail, companySettings: CompanySettingsContract) {
-  void runDocumentAction(
-    () => DocumentTemplates.printContractDocument(toContractDocumentData(contract), toDocumentSettings(companySettings)),
-    'تعذرت طباعة العقد.',
-  );
 }
 
 export async function shareContractLink(contract: ContractDetail) {

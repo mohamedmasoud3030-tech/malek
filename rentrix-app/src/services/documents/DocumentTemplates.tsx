@@ -19,12 +19,34 @@
  */
 import {
   assertDocumentCompanySettings,
-  deriveHonestReference,
   MissingDocumentSettingsError,
   type DocumentCompanySettings,
 } from './companyIdentity';
 import { documentService } from './DocumentService';
 import { DocumentRenderError } from './DocumentRenderer';
+import {
+  toBalanceSheetDocumentPayload,
+  toContractDocumentPayload,
+  toIncomeStatementDocumentPayload,
+  toInvoiceDocumentPayload,
+  toOwnerStatementDocumentPayload,
+  toReceiptDocumentPayload,
+  toReportDocumentPayload,
+  toTenantStatementDocumentPayload,
+  toTrialBalanceDocumentPayload,
+} from './documentPayloadAdapters';
+
+export {
+  toBalanceSheetDocumentPayload,
+  toContractDocumentPayload,
+  toIncomeStatementDocumentPayload,
+  toInvoiceDocumentPayload,
+  toOwnerStatementDocumentPayload,
+  toReceiptDocumentPayload,
+  toReportDocumentPayload,
+  toTenantStatementDocumentPayload,
+  toTrialBalanceDocumentPayload,
+} from './documentPayloadAdapters';
 
 export { MissingDocumentSettingsError };
 
@@ -56,7 +78,8 @@ export interface InvoiceDocumentData {
   description: string;
   amount: number;
   vatAmount?: number;
-  totalAmount: number;
+  paidAmount?: number;
+  totalAmount?: number;
   dueDate: string;
   issueDate: string;
 }
@@ -215,186 +238,67 @@ async function runOrThrow(operation: () => Promise<void>): Promise<void> {
   }
 }
 
-const toContractPayload = (data: ContractDocumentData) => ({
-  reference: deriveHonestReference(data.contractNumber, data.contractId),
-  status: data.contractStatus ?? 'draft',
-  startDate: data.startDate ?? null,
-  endDate: data.endDate ?? null,
-  rentAmount: data.rentAmount,
-  paymentCycle: data.paymentCycle ?? null,
-  notes: data.notes ?? null,
-  tenantName: data.tenantName ?? null,
-  tenantNationalId: data.tenantNationalId ?? null,
-  tenantPhone: data.tenantPhone ?? null,
-  propertyTitle: data.propertyName ?? null,
-  unitNumber: data.unitNumber ?? null,
-});
-
-const toInvoicePayload = (data: InvoiceDocumentData) => ({
-  reference: deriveHonestReference(data.invoiceNumber),
-  issueDate: data.issueDate ?? null,
-  dueDate: data.dueDate ?? null,
-  status: null,
-  description: data.description ?? null,
-  amount: data.amount,
-  vatAmount: data.vatAmount ?? null,
-  totalAmount: data.totalAmount,
-  tenantName: data.tenantName ?? null,
-  propertyTitle: data.propertyName ?? null,
-  unitNumber: data.unitNumber ?? null,
-});
-
-const toReceiptPayload = (data: ReceiptDocumentData) => ({
-  reference: deriveHonestReference(data.receiptNumber),
-  paymentDate: data.paymentDate ?? null,
-  amount: data.amount,
-  paymentMethod: data.paymentMethod ?? null,
-  payerName: data.tenantName ?? null,
-  propertyTitle: data.propertyName ?? null,
-  unitNumber: data.unitNumber ?? null,
-  invoiceReference: data.invoiceNumber ?? null,
-  collectorName: data.collectedBy ?? null,
-  paymentReference: data.reference ?? null,
-  notes: data.notes ?? null,
-});
-
-const toOwnerStatementPayload = (data: OwnerStatementData) => ({
-  ownerName: data.ownerName,
-  periodFrom: data.periodFrom ?? null,
-  periodTo: data.periodTo ?? null,
-  propertyTitle: data.propertyTitle ?? null,
-  totalRent: data.totalRent,
-  totalExpenses: data.totalExpenses,
-  totalCommission: data.totalCommission,
-  netAmount: data.netAmount,
-  transactions: data.transactions,
-});
-
-const toTenantStatementPayload = (data: TenantStatementData) => ({
-  tenantName: data.tenantName,
-  periodFrom: data.periodFrom ?? null,
-  periodTo: data.periodTo ?? null,
-  propertyTitle: data.propertyTitle ?? null,
-  unitNumber: data.unitNumber ?? null,
-  openingBalance: data.openingBalance,
-  totalInvoiced: data.totalInvoiced,
-  totalPaid: data.totalPaid,
-  closingBalance: data.closingBalance,
-  lines: data.lines,
-});
-
-const toTrialBalancePayload = (data: TrialBalanceDocumentData) => ({
-  asOf: data.asOf ?? null,
-  lines: data.accounts.map((account) => ({
-    no: account.code,
-    name: account.name,
-    debit: account.balanceType === 'debit' ? account.balance : 0,
-    credit: account.balanceType === 'credit' ? account.balance : 0,
-  })),
-  totalDebit: data.totalDebits,
-  totalCredit: data.totalCredits,
-});
-
-const toIncomeStatementPayload = (data: IncomeStatementDocumentData) => ({
-  periodFrom: data.periodFrom ?? null,
-  periodTo: data.periodTo ?? null,
-  revenues: data.revenue,
-  expenses: data.expenses,
-  totalRevenue: data.totalRevenue,
-  totalExpense: data.totalExpenses,
-  netIncome: data.netIncome,
-});
-
-const toBalanceSheetPayload = (data: BalanceSheetDocumentData) => ({
-  asOf: data.asOf ?? null,
-  assets: data.assets.map((item) => ({ label: item.name, amount: item.amount })),
-  liabilities: data.liabilities.map((item) => ({ label: item.name, amount: item.amount })),
-  equity: data.equity.map((item) => ({ label: item.name, amount: item.amount })),
-  totalAssets: data.totalAssets,
-  totalLiabilities: data.totalLiabilities,
-  totalEquity: data.totalEquity,
-});
-
-const toReportPayload = (data: ReportDocumentData) => ({
-  reportTitle: data.reportTitle,
-  reportType: data.reportType ?? null,
-  periodFrom: data.periodFrom ?? null,
-  periodTo: data.periodTo ?? null,
-  sections: data.sections.map((section) => {
-    const isArrayRows = section.rows.length > 0 && Array.isArray(section.rows[0]);
-    return {
-      title: section.title,
-      columns: section.columns,
-      rows: isArrayRows
-        ? (section.rows as Array<Array<string | number>>).map((row) => row.map(String))
-        : (section.rows as Array<{ label: string; value: string | number }>).map((row) => [row.label, String(row.value)]),
-      totals: section.totals,
-    };
-  }),
-  totalSummary: data.totalSummary ?? null,
-});
-
 export function printContractDocument(data: ContractDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('contract', { settings: toCanonicalDocumentSettings(settings), payload: toContractPayload(data) }));
+  return runOrThrow(() => documentService.printDocument('contract', { settings: toCanonicalDocumentSettings(settings), payload: toContractDocumentPayload(data) }));
 }
 export function downloadContractPdf(data: ContractDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('contract', { settings: toCanonicalDocumentSettings(settings), payload: toContractPayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('contract', { settings: toCanonicalDocumentSettings(settings), payload: toContractDocumentPayload(data) }));
 }
 
 export function printInvoiceDocument(data: InvoiceDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('invoice', { settings: toCanonicalDocumentSettings(settings), payload: toInvoicePayload(data) }));
+  return runOrThrow(() => documentService.printDocument('invoice', { settings: toCanonicalDocumentSettings(settings), payload: toInvoiceDocumentPayload(data) }));
 }
 export function downloadInvoicePdf(data: InvoiceDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('invoice', { settings: toCanonicalDocumentSettings(settings), payload: toInvoicePayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('invoice', { settings: toCanonicalDocumentSettings(settings), payload: toInvoiceDocumentPayload(data) }));
 }
 
 export function printReceiptDocument(data: ReceiptDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('receipt', { settings: toCanonicalDocumentSettings(settings), payload: toReceiptPayload(data) }));
+  return runOrThrow(() => documentService.printDocument('receipt', { settings: toCanonicalDocumentSettings(settings), payload: toReceiptDocumentPayload(data) }));
 }
 export function downloadReceiptPdf(data: ReceiptDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('receipt', { settings: toCanonicalDocumentSettings(settings), payload: toReceiptPayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('receipt', { settings: toCanonicalDocumentSettings(settings), payload: toReceiptDocumentPayload(data) }));
 }
 
 export function printOwnerStatementDocument(data: OwnerStatementData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('owner_statement', { settings: toCanonicalDocumentSettings(settings), payload: toOwnerStatementPayload(data) }));
+  return runOrThrow(() => documentService.printDocument('owner_statement', { settings: toCanonicalDocumentSettings(settings), payload: toOwnerStatementDocumentPayload(data) }));
 }
 export function downloadOwnerStatementPdf(data: OwnerStatementData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('owner_statement', { settings: toCanonicalDocumentSettings(settings), payload: toOwnerStatementPayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('owner_statement', { settings: toCanonicalDocumentSettings(settings), payload: toOwnerStatementDocumentPayload(data) }));
 }
 
 export function printTenantStatementDocument(data: TenantStatementData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('tenant_statement', { settings: toCanonicalDocumentSettings(settings), payload: toTenantStatementPayload(data) }));
+  return runOrThrow(() => documentService.printDocument('tenant_statement', { settings: toCanonicalDocumentSettings(settings), payload: toTenantStatementDocumentPayload(data) }));
 }
 export function downloadTenantStatementPdf(data: TenantStatementData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('tenant_statement', { settings: toCanonicalDocumentSettings(settings), payload: toTenantStatementPayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('tenant_statement', { settings: toCanonicalDocumentSettings(settings), payload: toTenantStatementDocumentPayload(data) }));
 }
 
 export function printTrialBalanceDocument(data: TrialBalanceDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('trial_balance', { settings: toCanonicalDocumentSettings(settings), payload: toTrialBalancePayload(data) }));
+  return runOrThrow(() => documentService.printDocument('trial_balance', { settings: toCanonicalDocumentSettings(settings), payload: toTrialBalanceDocumentPayload(data) }));
 }
 export function downloadTrialBalancePdf(data: TrialBalanceDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('trial_balance', { settings: toCanonicalDocumentSettings(settings), payload: toTrialBalancePayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('trial_balance', { settings: toCanonicalDocumentSettings(settings), payload: toTrialBalanceDocumentPayload(data) }));
 }
 
 export function printIncomeStatementDocument(data: IncomeStatementDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('income_statement', { settings: toCanonicalDocumentSettings(settings), payload: toIncomeStatementPayload(data) }));
+  return runOrThrow(() => documentService.printDocument('income_statement', { settings: toCanonicalDocumentSettings(settings), payload: toIncomeStatementDocumentPayload(data) }));
 }
 export function downloadIncomeStatementPdf(data: IncomeStatementDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('income_statement', { settings: toCanonicalDocumentSettings(settings), payload: toIncomeStatementPayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('income_statement', { settings: toCanonicalDocumentSettings(settings), payload: toIncomeStatementDocumentPayload(data) }));
 }
 
 export function printBalanceSheetDocument(data: BalanceSheetDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('balance_sheet', { settings: toCanonicalDocumentSettings(settings), payload: toBalanceSheetPayload(data) }));
+  return runOrThrow(() => documentService.printDocument('balance_sheet', { settings: toCanonicalDocumentSettings(settings), payload: toBalanceSheetDocumentPayload(data) }));
 }
 export function downloadBalanceSheetPdf(data: BalanceSheetDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('balance_sheet', { settings: toCanonicalDocumentSettings(settings), payload: toBalanceSheetPayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('balance_sheet', { settings: toCanonicalDocumentSettings(settings), payload: toBalanceSheetDocumentPayload(data) }));
 }
 
 export function printReportDocument(data: ReportDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.printDocument('generic_report', { settings: toCanonicalDocumentSettings(settings), payload: toReportPayload(data) }));
+  return runOrThrow(() => documentService.printDocument('generic_report', { settings: toCanonicalDocumentSettings(settings), payload: toReportDocumentPayload(data) }));
 }
 export function downloadReportPdf(data: ReportDocumentData, settings: DocumentSettings): Promise<void> {
-  return runOrThrow(() => documentService.downloadDocumentPdf('generic_report', { settings: toCanonicalDocumentSettings(settings), payload: toReportPayload(data) }));
+  return runOrThrow(() => documentService.downloadDocumentPdf('generic_report', { settings: toCanonicalDocumentSettings(settings), payload: toReportDocumentPayload(data) }));
 }
 
 export const DocumentTemplates = {

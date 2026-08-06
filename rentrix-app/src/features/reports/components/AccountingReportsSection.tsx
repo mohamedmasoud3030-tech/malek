@@ -2,12 +2,16 @@ import { Download, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BalanceSheetReport, IncomeStatementReport, TrialBalanceReport } from '@/features/financials/reports/financialReportsService';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { documentService } from '@/services/documents/DocumentService';
 import {
-  DocumentTemplates,
+  toBalanceSheetDocumentPayload,
+  toIncomeStatementDocumentPayload,
+  toTrialBalanceDocumentPayload,
   type BalanceSheetDocumentData,
   type IncomeStatementDocumentData,
   type TrialBalanceDocumentData,
-} from '@/services/documents/DocumentTemplates';
+} from '@/services/documents/documentPayloadAdapters';
+import { runDocumentAction } from '@/services/documents/runDocumentAction';
 import { BalanceSheetPanel } from './accounting/balance-sheet-panel';
 import { IncomeStatementPanel } from './accounting/income-statement-panel';
 import { TrialBalancePanel } from './accounting/trial-balance-panel';
@@ -52,7 +56,7 @@ export function AccountingReportsSection({
   balanceSheetError,
   isLoading,
 }: AccountingReportsSectionProps) {
-  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
   const buildTrialBalanceDocument = (): TrialBalanceDocumentData | null => {
     if (!trialBalance) return null;
@@ -95,12 +99,12 @@ export function AccountingReportsSection({
     const runPrint = () => {
       const data = builder();
       if (!data || !isDocumentSettingsReady) return;
-      void print(data);
+      void runDocumentAction(() => print(data), 'تعذرت طباعة التقرير.');
     };
     const runPdf = () => {
       const data = builder();
       if (!data || !isDocumentSettingsReady) return;
-      void pdf(data);
+      void runDocumentAction(() => pdf(data), 'تعذر تنزيل التقرير كملف PDF.');
     };
 
     return (
@@ -127,8 +131,8 @@ export function AccountingReportsSection({
         action={documentActions({
           label: 'طباعة الميزان',
           builder: buildTrialBalanceDocument,
-          print: (data) => DocumentTemplates.printTrialBalanceDocument(data, documentSettings),
-          pdf: (data) => DocumentTemplates.downloadTrialBalancePdf(data, documentSettings),
+          print: (data) => documentService.printDocument('trial_balance', { settings: documentSettings, payload: toTrialBalanceDocumentPayload(data) }),
+          pdf: (data) => documentService.downloadDocumentPdf('trial_balance', { settings: documentSettings, payload: toTrialBalanceDocumentPayload(data) }),
           disabled: !trialBalance,
         })}
       />
@@ -142,8 +146,8 @@ export function AccountingReportsSection({
         action={documentActions({
           label: 'طباعة الدخل',
           builder: buildIncomeStatementDocument,
-          print: (data) => DocumentTemplates.printIncomeStatementDocument(data, documentSettings),
-          pdf: (data) => DocumentTemplates.downloadIncomeStatementPdf(data, documentSettings),
+          print: (data) => documentService.printDocument('income_statement', { settings: documentSettings, payload: toIncomeStatementDocumentPayload(data) }),
+          pdf: (data) => documentService.downloadDocumentPdf('income_statement', { settings: documentSettings, payload: toIncomeStatementDocumentPayload(data) }),
           disabled: !incomeStatement,
         })}
       />
@@ -156,8 +160,8 @@ export function AccountingReportsSection({
         action={documentActions({
           label: 'طباعة المركز المالي',
           builder: buildBalanceSheetDocument,
-          print: (data) => DocumentTemplates.printBalanceSheetDocument(data, documentSettings),
-          pdf: (data) => DocumentTemplates.downloadBalanceSheetPdf(data, documentSettings),
+          print: (data) => documentService.printDocument('balance_sheet', { settings: documentSettings, payload: toBalanceSheetDocumentPayload(data) }),
+          pdf: (data) => documentService.downloadDocumentPdf('balance_sheet', { settings: documentSettings, payload: toBalanceSheetDocumentPayload(data) }),
           disabled: !balanceSheet,
         })}
       />

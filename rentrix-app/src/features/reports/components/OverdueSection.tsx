@@ -7,7 +7,8 @@ import { formatMoney } from '@/features/financials/components/financials-formatt
 import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
 import { useAgedReceivablesReport, useArrearsSummaryReport } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { agingBucketKeys, buildAgingBucketChartRows, buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
 import { ReportColumns, ReportInsightNote, ReportProgress } from './report-section-primitives';
 import { AgingBucketsPanel } from './overdue/aging-buckets-panel';
@@ -43,7 +44,7 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
     .sort((a, b) => b[1].total - a[1].total)[0];
   const topExposureShare = topExposure && totalOverdue > 0 ? (topExposure[1].total / totalOverdue) * 100 : 0;
 
-  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
   const buildOverdueReportData = (): ReportDocumentData => {
@@ -73,7 +74,7 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
 
   const handlePrintOverdueReport = async () => {
     try {
-      await DocumentTemplates.printReportDocument(buildOverdueReportData(), documentSettings);
+      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOverdueReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
     }
@@ -81,7 +82,7 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
 
   const handleDownloadOverdueReport = async () => {
     try {
-      await DocumentTemplates.downloadReportPdf(buildOverdueReportData(), documentSettings);
+      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOverdueReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }

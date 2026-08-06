@@ -14,7 +14,8 @@ import { getOrCreatePaymentRequestId, resetPaymentRequestId } from '../payments/
 import { usePostPayment } from '../payments/usePayments';
 import { openReceiptPrintTab } from '../receipts/receipt-print';
 import { useReceipt, useReceipts } from '../receipts/useReceipts';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { runDocumentAction } from '@/services/documents/runDocumentAction';
 import type { InvoiceFilterOption } from '../components/invoice-filters';
 import { exportInvoiceDocument as exportInvoiceDocumentPdf, printInvoiceDocument as printInvoiceDocumentAction } from '../invoices/invoice-actions';
 
@@ -77,7 +78,7 @@ export function useInvoiceWorkspaceController() {
   const receiptsQuery = useReceipts({ limit: 10 });
   const receiptQuery = useReceipt(selectedReceiptId);
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
-  const companySettings = useCompanySettingsContract();
+  const documentSettings = useDocumentSettings();
   const { authorization } = useAuth();
 
   const contractRows = contractsQuery.data?.rows ?? [];
@@ -131,12 +132,8 @@ export function useInvoiceWorkspaceController() {
   const canExportInvoices = canAccess(authorization, financialOperationPermissions.exportInvoices);
   const isPaymentDisabled = !canCreatePayment || quickPaySubmitRef.current || postPayment.isPending || remaining <= 0 || Boolean(amountValidationMessage);
 
-  const pdfSettings = {
-    general: { company: { name: companySettings.companyName } },
-    operational: { currency: companySettings.defaultCurrency },
-  };
-
-  const canExportInvoiceDocument = canExportInvoices && Boolean(
+  const canExportInvoiceDocuments = canExportInvoices && documentSettings.isReady;
+  const canExportInvoiceDocument = canExportInvoiceDocuments && Boolean(
     invoiceDetail && contractsQuery.data?.rows.some((contract) => contract.id === invoiceDetail.contract_id),
   );
 
@@ -249,21 +246,27 @@ export function useInvoiceWorkspaceController() {
 
   const invoiceDocumentContext = (invoice: any) => {
     const contract = contractsQuery.data?.rows.find((candidate) => candidate.id === invoice.contract_id);
-    return contract ? { settings: pdfSettings, ...contractContextForDocument(contract) } : null;
+    return contract ? { settings: documentSettings.companySettings, ...contractContextForDocument(contract) } : null;
   };
 
   const exportInvoiceDocument = (invoice: any) => {
-    if (!canExportInvoices) return;
+    if (!canExportInvoiceDocuments) return;
     const context = invoiceDocumentContext(invoice);
     if (!context) return;
-    void exportInvoiceDocumentPdf(invoice, context);
+    void runDocumentAction(
+      () => exportInvoiceDocumentPdf(invoice, context),
+      'تعذر تنزيل الفاتورة كملف PDF.',
+    );
   };
 
   const printInvoiceDocument = (invoice: any) => {
-    if (!canExportInvoices) return;
+    if (!canExportInvoiceDocuments) return;
     const context = invoiceDocumentContext(invoice);
     if (!context) return;
-    void printInvoiceDocumentAction(invoice, context);
+    void runDocumentAction(
+      () => printInvoiceDocumentAction(invoice, context),
+      'تعذرت طباعة الفاتورة.',
+    );
   };
 
   const onExportInvoicePdf = () => {
@@ -316,6 +319,8 @@ export function useInvoiceWorkspaceController() {
     canGenerateInvoices,
     canCreatePayment,
     canExportInvoices,
+    canExportInvoiceDocuments,
+    isDocumentSettingsReady: documentSettings.isReady,
     isPaymentDisabled,
     canExportInvoiceDocument,
     collectionSuccess,

@@ -8,7 +8,14 @@ import {
   useVatReturnReport,
 } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates, type OwnerStatementData, type TenantStatementData } from '@/services/documents/DocumentTemplates';
+import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
+import { documentService } from '@/services/documents/DocumentService';
+import {
+  toOwnerStatementDocumentPayload,
+  toTenantStatementDocumentPayload,
+  type OwnerStatementData,
+  type TenantStatementData,
+} from '@/services/documents/documentPayloadAdapters';
 import { ReportColumns } from './report-section-primitives';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
 import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
@@ -62,7 +69,7 @@ export function StatementsSection({
   const ownerMovementRows = (expenseBreakdown?.byProperty ?? []).slice(0, 6);
   const totalCollections = dailyRows.reduce((total, row) => total + row.totalPaid, 0);
 
-  const { settings: documentSettings } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
   const buildTenantStatementData = (): TenantStatementData | null => {
     if (!tenantStatement) return null;
@@ -90,8 +97,9 @@ export function StatementsSection({
   const handlePrintTenantStatement = async () => {
     const data = buildTenantStatementData();
     if (!data) return;
+    if (!isDocumentSettingsReady) return;
     try {
-      await DocumentTemplates.printTenantStatementDocument(data, documentSettings);
+      await documentService.printDocument('tenant_statement', { settings: documentSettings, payload: toTenantStatementDocumentPayload(data) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة الكشف.');
     }
@@ -100,8 +108,9 @@ export function StatementsSection({
   const handleDownloadTenantStatement = async () => {
     const data = buildTenantStatementData();
     if (!data) return;
+    if (!isDocumentSettingsReady) return;
     try {
-      await DocumentTemplates.downloadTenantStatementPdf(data, documentSettings);
+      await documentService.downloadDocumentPdf('tenant_statement', { settings: documentSettings, payload: toTenantStatementDocumentPayload(data) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }
@@ -134,8 +143,9 @@ export function StatementsSection({
   const handlePrintOwnerStatement = async () => {
     const data = buildOwnerStatementData();
     if (!data) return;
+    if (!isDocumentSettingsReady) return;
     try {
-      await DocumentTemplates.printOwnerStatementDocument(data, documentSettings);
+      await documentService.printDocument('owner_statement', { settings: documentSettings, payload: toOwnerStatementDocumentPayload(data) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة الكشف.');
     }
@@ -144,8 +154,9 @@ export function StatementsSection({
   const handleDownloadOwnerStatement = async () => {
     const data = buildOwnerStatementData();
     if (!data) return;
+    if (!isDocumentSettingsReady) return;
     try {
-      await DocumentTemplates.downloadOwnerStatementPdf(data, documentSettings);
+      await documentService.downloadDocumentPdf('owner_statement', { settings: documentSettings, payload: toOwnerStatementDocumentPayload(data) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }
@@ -153,6 +164,7 @@ export function StatementsSection({
 
   return (
     <div className="space-y-4">
+      {!isDocumentSettingsReady && <DocumentReadinessNotice />}
       <StatementSelectionStrip
         selectedContractId={selectedContractId}
         selectedOwnerId={selectedOwnerId}
@@ -170,6 +182,7 @@ export function StatementsSection({
           receipts={receiptRows}
           onPrint={handlePrintTenantStatement}
           onDownloadPdf={handleDownloadTenantStatement}
+          actionsDisabled={!isDocumentSettingsReady}
         />
         <OwnerStatementPanel
           selectedOwnerId={selectedOwnerId}
@@ -179,6 +192,7 @@ export function StatementsSection({
           fallbackRows={ownerMovementRows}
           onPrint={handlePrintOwnerStatement}
           onDownloadPdf={handleDownloadOwnerStatement}
+          actionsDisabled={!isDocumentSettingsReady}
         />
       </ReportColumns>
 

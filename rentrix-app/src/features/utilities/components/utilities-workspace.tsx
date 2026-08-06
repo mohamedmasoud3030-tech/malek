@@ -17,7 +17,9 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { useProperties } from '@/features/properties/use-properties';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
-import { DocumentTemplates } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
+import { runDocumentAction } from '@/services/documents/runDocumentAction';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -229,7 +231,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
 
   // Real currency label for the printed amounts — sourced from company
   // settings, never a hardcoded symbol. Only used once settings are ready.
-  const currencyLabel = documentSettings.settings.currencySymbol || documentSettings.settings.currency;
+  const currencyLabel = documentSettings.companySettings.currencySymbol || documentSettings.companySettings.currency;
 
   const buildUtilitiesReport = () => {
     const today = getTodayLocalDateString();
@@ -253,14 +255,21 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   };
 
   const handlePrint = () => {
-    // Real company identity only — block output when settings are incomplete.
     if (!documentSettings.isReady) return;
-    void DocumentTemplates.printReportDocument(buildUtilitiesReport(), documentSettings.settings);
+    const report = buildUtilitiesReport() satisfies ReportDocumentData;
+    void runDocumentAction(
+      () => documentService.printDocument('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
+      'تعذرت طباعة كشف المرافق.',
+    );
   };
 
   const handleDownloadPdf = () => {
     if (!documentSettings.isReady) return;
-    void DocumentTemplates.downloadReportPdf(buildUtilitiesReport(), documentSettings.settings);
+    const report = buildUtilitiesReport() satisfies ReportDocumentData;
+    void runDocumentAction(
+      () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
+      'تعذر تنزيل كشف المرافق كملف PDF.',
+    );
   };
 
   const isLoading = metersQuery.isLoading || billsQuery.isLoading;
