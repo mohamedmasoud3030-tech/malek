@@ -1,4 +1,4 @@
-import { Edit, IdCard, Plus, Trash2 } from "lucide-react";
+import { Edit, IdCard, Plus, Trash2, UserCheck, UserRound, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PersonFormModal } from "./person-form-modal";
@@ -27,6 +27,41 @@ import { usePeople, useSoftDeletePerson } from "./use-people";
 
 const pageSize = 10;
 
+function formatCount(value: number) {
+  return new Intl.NumberFormat("en-US").format(value);
+}
+
+function PeopleMetric({
+  label,
+  value,
+  hint,
+  icon: Icon,
+}: Readonly<{
+  label: string;
+  value: number;
+  hint: string;
+  icon: typeof Users;
+}>) {
+  return (
+    <article className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
+      <div
+        className="absolute inset-inline-end-0 inset-block-start-0 size-24 rounded-full bg-primary/7 blur-2xl transition-colors group-hover:bg-primary/12"
+        aria-hidden="true"
+      />
+      <div className="relative flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold text-muted-foreground">{label}</p>
+          <p className="mt-2 text-2xl font-black tabular-nums">{formatCount(value)}</p>
+          <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p>
+        </div>
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/8 text-primary">
+          <Icon className="size-5" aria-hidden="true" />
+        </span>
+      </div>
+    </article>
+  );
+}
+
 export type PeopleListPageProps = Readonly<{
   embedded?: boolean;
 }>;
@@ -46,8 +81,14 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
   );
   const peopleQuery = usePeople(params);
   const deleteMutation = useSoftDeletePerson();
+  const rows = peopleQuery.data?.rows ?? [];
+  const totalCount = peopleQuery.data?.count ?? 0;
+  const ownersOnPage = rows.filter((person) => person.type === "owner").length;
+  const tenantsOnPage = rows.filter((person) => person.type === "tenant").length;
+  const completeContactsOnPage = rows.filter(
+    (person) => Boolean(person.phone || person.email),
+  ).length;
 
-  // Show error toast once per error occurrence, not on every retry
   const errorToastShownRef = useRef(false);
   useEffect(() => {
     if (peopleQuery.isError && !errorToastShownRef.current) {
@@ -77,7 +118,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       await deleteMutation.mutateAsync(deleteId);
       setDeleteId(null);
     } catch {
-      // keep open on failure
+      // Keep the confirmation open on failure.
     }
   };
 
@@ -124,7 +165,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         <EntityCell
           icon={
             entityCardTypeMap[person.type]?.icon ??
-            entityCardTypeMap["contact"]!.icon
+            entityCardTypeMap.contact!.icon
           }
           tone={
             person.type === "owner"
@@ -145,30 +186,28 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         <span
           className={cn(
             "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold",
-            (entityCardTypeMap[person.type] ?? entityCardTypeMap["contact"]!)
-              .bg,
-            (entityCardTypeMap[person.type] ?? entityCardTypeMap["contact"]!)
-              .text,
+            (entityCardTypeMap[person.type] ?? entityCardTypeMap.contact!).bg,
+            (entityCardTypeMap[person.type] ?? entityCardTypeMap.contact!).text,
           )}
         >
           {personTypeLabels[person.type]}
         </span>
       ),
     },
-    { key: "phone", header: "الهاتف", render: (p) => p.phone ?? "—" },
+    { key: "phone", header: "الهاتف", render: (person) => person.phone ?? "—" },
     {
       key: "email",
       header: "البريد",
-      render: (p) => (
+      render: (person) => (
         <span dir="ltr" className="block text-right">
-          {p.email ?? "—"}
+          {person.email ?? "—"}
         </span>
       ),
     },
     {
       key: "national_id",
       header: "رقم الهوية",
-      render: (p) => p.national_id ?? "—",
+      render: (person) => person.national_id ?? "—",
     },
     {
       key: "actions",
@@ -177,8 +216,8 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       render: (person) => (
         <div
           className="flex gap-2"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
         >
           <Button
             variant="secondary"
@@ -207,8 +246,8 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         dir="rtl"
         visualVariant="malek-pro"
         title="الأشخاص"
-        description="جدول موحد للمستأجرين والملاك وجهات الاتصال."
-        count={peopleQuery.data?.count ?? undefined}
+        description="سجل موحد للمستأجرين والملاك وجهات الاتصال مع بيانات التواصل والهوية."
+        count={totalCount || undefined}
         primaryAction={
           <Button onClick={openCreate}>
             <Plus className="me-2 size-4" />
@@ -247,83 +286,137 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           </div>
         }
       >
-        <EntityTable
-          aria-label="جدول الأشخاص"
-          rows={peopleQuery.data?.rows ?? []}
-          columns={columns}
-          keyOf={(p) => p.id}
-          isLoading={peopleQuery.isLoading}
-          error={peopleQuery.isError ? peopleQuery.error : null}
-          errorTitle="تعذر تحميل الأشخاص"
-          onRetry={() => peopleQuery.refetch()}
-          emptyTitle={
-            hasFilterValues
-              ? "لا توجد نتائج مطابقة للفلاتر"
-              : "لا توجد سجلات أشخاص"
-          }
-          emptyDescription={
-            hasFilterValues
-              ? "غيّر البحث أو النوع أو امسح الفلاتر لعرض سجلات أخرى."
-              : "أضف مستأجراً أو مالكاً أو جهة اتصال."
-          }
-          emptyAction={
-            hasFilterValues ? (
-              <Button variant="secondary" onClick={clearFilters}>
-                مسح الفلاتر
-              </Button>
-            ) : (
-              <Button onClick={openCreate}>إضافة شخص</Button>
-            )
-          }
-          pagination={{
-            page,
-            pageSize,
-            total: peopleQuery.data?.count ?? 0,
-            onPageChange: setPage,
-          }}
-          enableViewModeToggle
-          viewModeStorageKey="rentrix:view-mode:people"
-          renderMobileCard={(person) => (
-            <EntityCard
-              id={person.id}
-              name={person.full_name}
-              subtitle={person.address}
-              type={person.type}
-              meta={[
-                ...(person.phone
-                  ? [entityCardContactMeta.phone(person.phone)]
-                  : []),
-                ...(person.email
-                  ? [entityCardContactMeta.email(person.email)]
-                  : []),
-                ...(person.national_id
-                  ? [
-                      {
-                        icon: IdCard,
-                        value: person.national_id,
-                        dir: "ltr" as const,
-                      },
-                    ]
-                  : []),
-              ]}
-              actions={[
-                {
-                  label: "تعديل",
-                  icon: Edit,
-                  onClick: () => openEdit(person.id),
-                },
-                {
-                  label: "أرشفة",
-                  icon: Trash2,
-                  variant: "danger",
-                  ariaLabel: `أرشفة ${person.full_name}`,
-                  onClick: () => setDeleteId(person.id),
-                },
-              ]}
-              onClick={() => openEdit(person.id)}
+        {!peopleQuery.isLoading && !peopleQuery.isError ? (
+          <section
+            data-people-summary
+            aria-label="ملخص الأشخاص"
+            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          >
+            <PeopleMetric
+              label="إجمالي السجلات"
+              value={totalCount}
+              hint="كل النتائج المطابقة"
+              icon={Users}
             />
-          )}
-        />
+            <PeopleMetric
+              label="ملاك في الصفحة"
+              value={ownersOnPage}
+              hint="من السجلات المعروضة"
+              icon={UserRound}
+            />
+            <PeopleMetric
+              label="مستأجرون في الصفحة"
+              value={tenantsOnPage}
+              hint="من السجلات المعروضة"
+              icon={UserCheck}
+            />
+            <PeopleMetric
+              label="بيانات تواصل متاحة"
+              value={completeContactsOnPage}
+              hint="هاتف أو بريد مسجل"
+              icon={IdCard}
+            />
+          </section>
+        ) : null}
+
+        <section
+          data-people-register
+          className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
+        >
+          <header className="flex items-start justify-between gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="grid size-9 place-items-center rounded-xl bg-primary/9 text-primary">
+                  <Users className="size-4.5" aria-hidden="true" />
+                </span>
+                <h2 className="text-base font-black">سجل الأشخاص</h2>
+              </div>
+              <p className="mt-1.5 text-xs font-medium text-muted-foreground">
+                {formatCount(rows.length)} سجل في الصفحة الحالية.
+              </p>
+            </div>
+          </header>
+
+          <div className="p-3 sm:p-4">
+            <EntityTable
+              aria-label="جدول الأشخاص"
+              rows={rows}
+              columns={columns}
+              keyOf={(person) => person.id}
+              isLoading={peopleQuery.isLoading}
+              error={peopleQuery.isError ? peopleQuery.error : null}
+              errorTitle="تعذر تحميل الأشخاص"
+              onRetry={() => peopleQuery.refetch()}
+              emptyTitle={
+                hasFilterValues
+                  ? "لا توجد نتائج مطابقة للفلاتر"
+                  : "لا توجد سجلات أشخاص"
+              }
+              emptyDescription={
+                hasFilterValues
+                  ? "غيّر البحث أو النوع أو امسح الفلاتر لعرض سجلات أخرى."
+                  : "أضف مستأجراً أو مالكاً أو جهة اتصال."
+              }
+              emptyAction={
+                hasFilterValues ? (
+                  <Button variant="secondary" onClick={clearFilters}>
+                    مسح الفلاتر
+                  </Button>
+                ) : (
+                  <Button onClick={openCreate}>إضافة شخص</Button>
+                )
+              }
+              pagination={{
+                page,
+                pageSize,
+                total: totalCount,
+                onPageChange: setPage,
+              }}
+              enableViewModeToggle
+              viewModeStorageKey="rentrix:view-mode:people"
+              renderMobileCard={(person) => (
+                <EntityCard
+                  id={person.id}
+                  name={person.full_name}
+                  subtitle={person.address}
+                  type={person.type}
+                  meta={[
+                    ...(person.phone
+                      ? [entityCardContactMeta.phone(person.phone)]
+                      : []),
+                    ...(person.email
+                      ? [entityCardContactMeta.email(person.email)]
+                      : []),
+                    ...(person.national_id
+                      ? [
+                          {
+                            icon: IdCard,
+                            value: person.national_id,
+                            dir: "ltr" as const,
+                          },
+                        ]
+                      : []),
+                  ]}
+                  actions={[
+                    {
+                      label: "تعديل",
+                      icon: Edit,
+                      onClick: () => openEdit(person.id),
+                    },
+                    {
+                      label: "أرشفة",
+                      icon: Trash2,
+                      variant: "danger",
+                      ariaLabel: `أرشفة ${person.full_name}`,
+                      onClick: () => setDeleteId(person.id),
+                    },
+                  ]}
+                  onClick={() => openEdit(person.id)}
+                />
+              )}
+            />
+          </div>
+        </section>
       </ListPage>
 
       <PersonFormModal
@@ -338,7 +431,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           if (!open && !deleteMutation.isPending) setDeleteId(null);
         }}
         title="أرشفة الشخص؟"
-        description={`سيتم أرشفة الشخص "${peopleQuery.data?.rows.find((p) => p.id === deleteId)?.full_name ?? ''}" ولن يظهر في القوائم الرئيسية. المرجع: ${deleteId ? deleteId.slice(0, 8) : ''} — ستبقى السجلات المرتبطة محفوظة.`}
+        description={`سيتم أرشفة الشخص "${rows.find((person) => person.id === deleteId)?.full_name ?? ""}" ولن يظهر في القوائم الرئيسية. المرجع: ${deleteId ? deleteId.slice(0, 8) : ""} — ستبقى السجلات المرتبطة محفوظة.`}
         confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}
@@ -346,7 +439,6 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
     </>
   );
 }
-
 
 export function PeopleWorkspace({ embedded = true }: PeopleListPageProps) {
   return <PeopleListPage embedded={embedded} />;
