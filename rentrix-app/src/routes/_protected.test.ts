@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isOperationalFormRoute } from './_protected';
+import { isOperationalFormRoute } from './operational-form-routes';
 
 describe('protected operational form scope', () => {
   it.each([
