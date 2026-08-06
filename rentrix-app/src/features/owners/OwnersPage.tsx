@@ -2,6 +2,7 @@ import { Building2, LinkIcon, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { EntityForm } from '@/components/ui/entity-form';
+import { OperationalCommandPanel, OperationalMetricCard } from '@/components/ui/operational-summary';
 import { AsyncContentState } from '@/components/async-content-state';
 import { OwnerFormDialog } from './components/owner-form-dialog';
 import { OwnerRelationshipsList, OwnershipLinkForm } from './components/owner-relationships';
@@ -11,37 +12,6 @@ import { getOwnerPageErrorMessage, useOwnersPageController } from './useOwnersPa
 
 function formatCount(value: number) {
   return new Intl.NumberFormat('en-US').format(value);
-}
-
-function OwnerMetric({
-  label,
-  value,
-  hint,
-  icon: Icon,
-}: Readonly<{
-  label: string;
-  value: number;
-  hint: string;
-  icon: typeof Users;
-}>) {
-  return (
-    <article className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-      <div
-        className="absolute inset-inline-end-0 inset-block-start-0 size-24 rounded-full bg-primary/7 blur-2xl transition-colors group-hover:bg-primary/12"
-        aria-hidden="true"
-      />
-      <div className="relative flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-black tabular-nums">{formatCount(value)}</p>
-          <p className="mt-1 text-[11px] font-medium text-muted-foreground">{hint}</p>
-        </div>
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/8 text-primary">
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-      </div>
-    </article>
-  );
 }
 
 export type OwnersWorkspaceProps = Readonly<{
@@ -100,51 +70,35 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
         aria-label="ملخص الملاك والملكية"
         className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
       >
-        <article className="relative overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-elevated">
-          <div
-            className="absolute -inset-inline-end-12 -inset-block-start-16 size-48 rounded-full bg-primary/20 blur-3xl"
-            aria-hidden="true"
-          />
-          <div className="relative">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold text-sidebar-foreground/65">تغطية ربط العقارات</p>
-                <p className="mt-2 text-4xl font-black tabular-nums">{formatCount(linkedCoverage)}%</p>
-              </div>
-              <span className="grid size-12 place-items-center rounded-2xl border border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground">
-                <LinkIcon className="size-6" aria-hidden="true" />
-              </span>
-            </div>
-            <div className="mt-5 h-2 overflow-hidden rounded-full bg-sidebar-accent">
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
-                style={{ width: `${Math.min(100, Math.max(0, linkedCoverage))}%` }}
-                aria-hidden="true"
-              />
-            </div>
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-sidebar-foreground/72">
+        <OperationalCommandPanel
+          label="تغطية ربط العقارات"
+          value={`${formatCount(linkedCoverage)}%`}
+          icon={LinkIcon}
+          progress={linkedCoverage}
+          footer={(
+            <>
               <span>{formatCount(controller.summary.linkedPropertiesCount)} مرتبطة</span>
               <span>{formatCount(controller.summary.propertiesWithoutLinkedOwner)} بلا مالك</span>
-            </div>
-          </div>
-        </article>
+            </>
+          )}
+        />
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <OwnerMetric
+          <OperationalMetricCard
             label="إجمالي الملاك"
-            value={controller.summary.totalOwners}
+            value={formatCount(controller.summary.totalOwners)}
             hint="كل ملفات الملاك"
             icon={Users}
           />
-          <OwnerMetric
+          <OperationalMetricCard
             label="الملاك النشطون"
-            value={controller.summary.activeOwners}
+            value={formatCount(controller.summary.activeOwners)}
             hint="متاحون للتشغيل والربط"
             icon={Users}
           />
-          <OwnerMetric
+          <OperationalMetricCard
             label="عقارات مرتبطة"
-            value={controller.summary.linkedPropertiesCount}
+            value={formatCount(controller.summary.linkedPropertiesCount)}
             hint="علاقات ملكية سارية"
             icon={Building2}
           />
