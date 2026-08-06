@@ -24,13 +24,17 @@ vi.mock('@tanstack/react-router', () => ({
   useSearch: () => ({ receiptId: 'receipt-1' }),
 }));
 
+// Mutable receipt payload: PostgREST returns `numeric` columns as strings in
+// production, so tests must be able to exercise that exact shape.
+const receiptState: { amount: unknown } = { amount: 250 };
+
 vi.mock('./useReceipts', () => ({
   useReceipt: () => ({
     data: {
       id: 'receipt-1',
       receipt_number: 'REC-2026-0001',
       payment_date: '2026-07-20',
-      amount: 250,
+      amount: receiptState.amount,
       payment_method: 'cash',
       status: 'posted',
       tenant_name: 'سالم الحبسي',
@@ -78,6 +82,7 @@ describe('receipt detail print readiness (P0: no fake company identity)', () => 
   beforeEach(() => {
     docSettingsState.isReady = true;
     docSettingsState.isLoading = false;
+    receiptState.amount = 250;
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -161,5 +166,29 @@ describe('receipt detail print readiness (P0: no fake company identity)', () => 
 
     expect(documentService.printDocument).not.toHaveBeenCalled();
     expect(documentService.downloadDocumentPdf).not.toHaveBeenCalled();
+  });
+
+  it('coerces the PostgREST string amount into a finite number before reaching the document engine', async () => {
+    const { documentService } = await import('@/services/documents/DocumentService');
+    // PostgREST delivers numeric columns as strings in production.
+    receiptState.amount = '250.000';
+
+    await act(async () => {
+      root!.render(<ReceiptDetailPage />);
+    });
+
+    const printButton = printButtons(container!)[0];
+    expect(printButton.disabled).toBe(false);
+    await act(async () => {
+      printButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const printSpy = vi.mocked(documentService.printDocument);
+    expect(printSpy).toHaveBeenCalledTimes(1);
+    const [type, input] = printSpy.mock.calls[0];
+    expect(type).toBe('receipt');
+    const payloadAmount = (input as { payload: { amount?: unknown } }).payload.amount;
+    expect(payloadAmount).toBe(250);
+    expect(Number.isFinite(payloadAmount)).toBe(true);
   });
 });

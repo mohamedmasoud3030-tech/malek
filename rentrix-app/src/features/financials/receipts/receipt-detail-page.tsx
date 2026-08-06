@@ -11,6 +11,7 @@ import { DocumentReadinessNotice } from '@/features/settings/components/document
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { useReceipt } from './useReceipts';
 import { formatDate, formatMoney, getErrorMessage } from '../components/financials-formatters';
+import { toFinancialNumber } from '../financialMath';
 import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '../components/receipt-formatters';
 import { toast } from 'sonner';
 import { openWhatsApp, shareOrCopy } from '@/services/action-service';
@@ -45,7 +46,10 @@ export function ReceiptDetailPage() {
         propertyName: receipt.property_title ?? '—',
         unitNumber: receipt.unit_number ?? '—',
         invoiceNumber: receipt.invoice_id?.slice(0, 8) ?? '—',
-        amount: receipt.amount,
+        // PostgREST delivers `numeric` columns as strings; the document
+        // engine only accepts finite numbers, so coerce at the boundary —
+        // exactly like the invoice and contract callers do.
+        amount: toFinancialNumber(receipt.amount),
         paymentMethod: paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method,
         reference: receipt.reference_number ?? undefined,
         notes: receipt.reference_number ? `مرجع السداد: ${receipt.reference_number}` : undefined,

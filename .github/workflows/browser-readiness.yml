@@ -42,6 +42,15 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install Chromium system dependencies
         run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+      # The document/print/PDF acceptance suite renders Arabic A4 output via
+      # html2canvas; captured pixels need a real Arabic-script font. Install
+      # one only when the runner lacks coverage (idempotent no-op otherwise).
+      - name: Ensure Arabic script fonts for document rendering
+        run: |
+          if ! fc-list :lang=ar 2>/dev/null | grep -q .; then
+            sudo apt-get update -y
+            sudo apt-get install -y --no-install-recommends fonts-noto-core
+          fi
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter ./rentrix-app exec playwright install chromium
@@ -102,6 +111,15 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Install Chromium system dependencies
         run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+      # The document/print/PDF acceptance suite renders Arabic A4 output via
+      # html2canvas; captured pixels need a real Arabic-script font. Install
+      # one only when the runner lacks coverage (idempotent no-op otherwise).
+      - name: Ensure Arabic script fonts for document rendering
+        run: |
+          if ! fc-list :lang=ar 2>/dev/null | grep -q .; then
+            sudo apt-get update -y
+            sudo apt-get install -y --no-install-recommends fonts-noto-core
+          fi
       - name: Install Chromium binary on cache miss
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm --filter ./rentrix-app exec playwright install chromium
