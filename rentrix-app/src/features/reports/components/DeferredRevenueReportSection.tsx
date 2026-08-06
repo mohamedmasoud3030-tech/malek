@@ -8,7 +8,8 @@ import { formatMoney, formatShortId } from '@/features/financials/components/fin
 import type { DeferredRevenueAudit } from '../reports-insights';
 import { buildReportCsvFilename, downloadCsv } from '../reports-page.helpers';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import {
   ReportColumns,
   ReportInsightNote,
@@ -36,7 +37,7 @@ export function DeferredRevenueReportSection({
     ? (audit.linkedReceiptsCount / audit.postedReceiptsCount) * 100
     : 0;
 
-  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
   const buildDeferredRevenueReportData = (): ReportDocumentData => ({
@@ -72,7 +73,7 @@ export function DeferredRevenueReportSection({
 
   const handlePrint = async () => {
     try {
-      await DocumentTemplates.printReportDocument(buildDeferredRevenueReportData(), documentSettings);
+      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildDeferredRevenueReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
     }
@@ -80,7 +81,7 @@ export function DeferredRevenueReportSection({
 
   const handleDownload = async () => {
     try {
-      await DocumentTemplates.downloadReportPdf(buildDeferredRevenueReportData(), documentSettings);
+      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildDeferredRevenueReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }

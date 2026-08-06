@@ -16,7 +16,8 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
+import { runDocumentAction } from '@/services/documents/runDocumentAction';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import { escapeCsvValue } from '@/lib/csvExport';
 import type { Expense, Property } from '@/types/domain';
@@ -100,16 +101,24 @@ export function ExpensesSection({
   const summary = summarizeOperationalExpenses(expenses);
   const categoryOptions = buildExpenseCategoryOptions(expenses);
   const hasFilters = Boolean(filters.propertyId || filters.category || filters.costCenterId || filters.from || filters.to);
-  const companySettings = useCompanySettingsContract();
+  const documentSettings = useDocumentSettings();
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
   const exportVisibleExpenses = () => downloadExpenseCsv(`${APP_BRAND_FILE_SLUG}-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
   const exportExpenseVoucher = (expense: Expense) => {
+    if (!documentSettings.isReady) return;
     const property = propertyById.get(expense.property_id);
-    void exportExpenseVoucherPdf(expense, property, companySettings.companyName, companySettings.defaultCurrency);
+    void runDocumentAction(
+      () => exportExpenseVoucherPdf(expense, property, documentSettings.companySettings),
+      'تعذر تنزيل سند المصروف كملف PDF.',
+    );
   };
   const printExpenseVoucher = (expense: Expense) => {
+    if (!documentSettings.isReady) return;
     const property = propertyById.get(expense.property_id);
-    void printExpenseVoucherDocument(expense, property, companySettings.companyName, companySettings.defaultCurrency);
+    void runDocumentAction(
+      () => printExpenseVoucherDocument(expense, property, documentSettings.companySettings),
+      'تعذرت طباعة سند المصروف.',
+    );
   };
 
   useEffect(() => {
@@ -240,8 +249,8 @@ export function ExpensesSection({
                 items={[
                   { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => setDetailsExpense(expense) },
                   { id: 'edit', label: 'تعديل', icon: Edit, onClick: () => openEditForm(expense), disabled: !onUpdateExpense },
-                  { id: 'pdf', label: 'تصدير PDF', icon: Download, onClick: () => exportExpenseVoucher(expense) },
-                  { id: 'print', label: 'طباعة', icon: Printer, onClick: () => printExpenseVoucher(expense) },
+                  { id: 'pdf', label: 'تصدير PDF', icon: Download, onClick: () => exportExpenseVoucher(expense), disabled: !documentSettings.isReady },
+                  { id: 'print', label: 'طباعة', icon: Printer, onClick: () => printExpenseVoucher(expense), disabled: !documentSettings.isReady },
                 ]}
               />
             ) },

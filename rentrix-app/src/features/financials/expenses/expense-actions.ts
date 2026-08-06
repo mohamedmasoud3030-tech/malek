@@ -1,32 +1,35 @@
 import type { Expense, Property } from '@/types/domain';
 import { downloadTextFile } from '@/services/action-service';
 import { documentService } from '@/services/documents/DocumentService';
+import type { DocumentCompanySettings } from '@/services/documents/companyIdentity';
 import { withUtf8Bom } from '@/lib/csvExport';
 
 export function downloadExpenseCsv(filename: string, csv: string) {
   downloadTextFile(filename, withUtf8Bom(csv), 'text/csv;charset=utf-8');
 }
 
-function expenseDocumentRequest(expense: Expense, property: Property | undefined, companyName: string, currency: string) {
+function expenseDocumentPayload(expense: Expense, property: Property | undefined) {
   return {
-    type: 'expense_voucher' as const,
-    payload: {
-      expense,
-      db: {
-        settings: { company: { companyName, defaultCurrency: currency } },
-        contracts: [],
-        tenants: [],
-        units: [],
-        properties: property ? [property] : [],
-      },
-    },
+    reference: null,
+    date: expense.expense_date,
+    category: expense.category,
+    amount: Number(expense.amount ?? 0),
+    description: expense.description,
+    propertyTitle: property?.title ?? null,
+    kind: 'expense' as const,
   };
 }
 
-export function printExpenseVoucher(expense: Expense, property: Property | undefined, companyName: string, currency: string) {
-  return documentService.print(expenseDocumentRequest(expense, property, companyName, currency));
+export function printExpenseVoucher(expense: Expense, property: Property | undefined, settings: DocumentCompanySettings): Promise<void> {
+  return documentService.printDocument('expense_voucher', {
+    settings,
+    payload: expenseDocumentPayload(expense, property),
+  });
 }
 
-export function exportExpenseVoucher(expense: Expense, property: Property | undefined, companyName: string, currency: string) {
-  return documentService.downloadPdf(expenseDocumentRequest(expense, property, companyName, currency));
+export function exportExpenseVoucher(expense: Expense, property: Property | undefined, settings: DocumentCompanySettings): Promise<void> {
+  return documentService.downloadDocumentPdf('expense_voucher', {
+    settings,
+    payload: expenseDocumentPayload(expense, property),
+  });
 }

@@ -38,6 +38,7 @@ export function TenantStatementPanel({
   receipts,
   onPrint,
   onDownloadPdf,
+  actionsDisabled = false,
 }: Readonly<{
   selectedContractId: string;
   statement: TenantStatementReport | undefined;
@@ -47,6 +48,7 @@ export function TenantStatementPanel({
   receipts: ReceiptRow[];
   onPrint: () => void;
   onDownloadPdf: () => void;
+  actionsDisabled?: boolean;
 }>) {
   return (
     <ReportPanel
@@ -55,11 +57,11 @@ export function TenantStatementPanel({
       icon={UserRound}
       action={statement ? (
         <div className="flex items-center gap-1.5">
-          <Button type="button" size="sm" variant="outline" onClick={onPrint} className="min-h-10 gap-1.5 text-xs">
+          <Button type="button" size="sm" variant="outline" onClick={onPrint} disabled={actionsDisabled} className="min-h-10 gap-1.5 text-xs">
             <Printer className="size-3.5" aria-hidden="true" />
             طباعة الكشف
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} className="min-h-10 gap-1.5 text-xs">
+          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-10 gap-1.5 text-xs">
             <Download className="size-3.5" aria-hidden="true" />
             تنزيل PDF
           </Button>
@@ -131,6 +133,7 @@ export function OwnerStatementPanel({
   fallbackRows,
   onPrint,
   onDownloadPdf,
+  actionsDisabled = false,
 }: Readonly<{
   selectedOwnerId: string;
   statement: OwnerStatementReport | undefined;
@@ -139,6 +142,7 @@ export function OwnerStatementPanel({
   fallbackRows: OwnerFallbackRow[];
   onPrint: () => void;
   onDownloadPdf: () => void;
+  actionsDisabled?: boolean;
 }>) {
   return (
     <ReportPanel
@@ -147,11 +151,11 @@ export function OwnerStatementPanel({
       icon={UsersRound}
       action={statement ? (
         <div className="flex items-center gap-1.5">
-          <Button type="button" size="sm" variant="outline" onClick={onPrint} className="min-h-10 gap-1.5 text-xs">
+          <Button type="button" size="sm" variant="outline" onClick={onPrint} disabled={actionsDisabled} className="min-h-10 gap-1.5 text-xs">
             <Printer className="size-3.5" aria-hidden="true" />
             طباعة الكشف
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} className="min-h-10 gap-1.5 text-xs">
+          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-10 gap-1.5 text-xs">
             <Download className="size-3.5" aria-hidden="true" />
             تنزيل PDF
           </Button>

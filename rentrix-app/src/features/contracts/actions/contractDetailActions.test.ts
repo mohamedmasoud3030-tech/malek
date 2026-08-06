@@ -1,23 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { exportContractPdf, printContractView } from './contractDetailActions';
-import type { CompanySettingsContract } from '@/lib/companySettings';
+import type { DocumentCompanySettings } from '@/services/documents/companyIdentity';
 import type { ContractDetail } from '../services/contractService';
 
-vi.mock('@/services/documents/DocumentTemplates', () => ({
-  DocumentTemplates: {
-    printContractDocument: vi.fn(async () => undefined),
-    downloadContractPdf: vi.fn(async () => undefined),
+vi.mock('@/services/documents/DocumentService', () => ({
+  documentService: {
+    printDocument: vi.fn(async () => undefined),
+    downloadDocumentPdf: vi.fn(async () => undefined),
   },
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('@/services/action-service', () => ({ openWhatsApp: vi.fn(), shareOrCopy: vi.fn(async () => 'copied') }));
 
-const { DocumentTemplates } = await import('@/services/documents/DocumentTemplates');
+const { documentService } = await import('@/services/documents/DocumentService');
 
 const settings = {
   companyName: 'Rentrix LLC',
-  defaultCurrency: 'OMR',
-} as CompanySettingsContract;
+  currency: 'OMR',
+  documentPrefixes: {},
+} as DocumentCompanySettings;
 
 const contract = {
   id: 'contract-12345678',
@@ -38,36 +39,35 @@ const contract = {
 
 describe('contract detail document actions', () => {
   beforeEach(() => {
-    vi.mocked(DocumentTemplates.printContractDocument).mockClear();
-    vi.mocked(DocumentTemplates.downloadContractPdf).mockClear();
+    vi.mocked(documentService.printDocument).mockClear();
+    vi.mocked(documentService.downloadDocumentPdf).mockClear();
   });
 
-  it('prints the current contract through the document engine', async () => {
+  it('prints the current contract through the canonical typed service without a UUID reference', async () => {
     printContractView(contract, settings);
-    await vi.waitFor(() => expect(DocumentTemplates.printContractDocument).toHaveBeenCalled());
+    await vi.waitFor(() => expect(documentService.printDocument).toHaveBeenCalled());
 
-    expect(DocumentTemplates.printContractDocument).toHaveBeenCalledWith(
-      expect.objectContaining({
-        contractId: 'contract-12345678',
-        contractNumber: 'contract',
-        contractStatus: 'active',
+    expect(documentService.printDocument).toHaveBeenCalledWith('contract', {
+      settings,
+      payload: expect.objectContaining({
+        reference: null,
+        status: 'active',
         tenantName: 'أحمد علي',
-        propertyName: 'برج صحار',
+        propertyTitle: 'برج صحار',
         unitNumber: 'A-1',
         rentAmount: 1000,
       }),
-      expect.objectContaining({ company: { name: 'Rentrix LLC' }, currency: 'OMR' }),
-    );
-    expect(DocumentTemplates.downloadContractPdf).not.toHaveBeenCalled();
+    });
+    expect(documentService.downloadDocumentPdf).not.toHaveBeenCalled();
   });
 
-  it('downloads contract PDF through the document engine', async () => {
+  it('downloads contract PDF through the canonical typed service', async () => {
     exportContractPdf(contract, settings);
-    await vi.waitFor(() => expect(DocumentTemplates.downloadContractPdf).toHaveBeenCalled());
+    await vi.waitFor(() => expect(documentService.downloadDocumentPdf).toHaveBeenCalled());
 
-    expect(DocumentTemplates.downloadContractPdf).toHaveBeenCalledWith(
-      expect.objectContaining({ tenantNationalId: 'ID-1', paymentCycle: 'monthly' }),
-      expect.objectContaining({ currency: 'OMR' }),
-    );
+    expect(documentService.downloadDocumentPdf).toHaveBeenCalledWith('contract', {
+      settings,
+      payload: expect.objectContaining({ tenantNationalId: 'ID-1', paymentCycle: 'monthly' }),
+    });
   });
 });

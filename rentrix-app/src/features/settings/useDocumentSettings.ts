@@ -3,7 +3,7 @@ import {
   documentSettingsFromCompanyRecord,
   type DocumentCompanySettings,
 } from '@/services/documents/companyIdentity';
-import type { DocumentSettings } from '@/services/documents/DocumentTemplates';
+import type { DocumentSettings } from '@/services/documents/documentCompatibilityTypes';
 import { useCompanySettings } from './useCompanySettings';
 
 /**

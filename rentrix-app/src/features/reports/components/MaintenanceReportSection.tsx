@@ -12,7 +12,8 @@ import {
 import type { MaintenanceSummary } from '@/features/maintenance/maintenance-helpers';
 import type { Maintenance } from '@/features/maintenance/maintenance-service';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { getTodayLocalDateString } from '../reports-page.helpers';
 import {
   ReportColumns,
@@ -57,7 +58,7 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
   const schedulingCoverage = activeRows.length > 0 ? (scheduledCount / activeRows.length) * 100 : 100;
   const urgentActiveCount = activeRows.filter((row) => row.priority === 'urgent').length;
 
-  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
 
   const buildMaintenanceReportData = (): ReportDocumentData => {
     const todayStr = getTodayLocalDateString();
@@ -98,7 +99,7 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
 
   const handlePrintMaintenanceReport = async () => {
     try {
-      await DocumentTemplates.printReportDocument(buildMaintenanceReportData(), documentSettings);
+      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildMaintenanceReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
     }
@@ -106,7 +107,7 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
 
   const handleDownloadMaintenanceReport = async () => {
     try {
-      await DocumentTemplates.downloadReportPdf(buildMaintenanceReportData(), documentSettings);
+      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildMaintenanceReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }

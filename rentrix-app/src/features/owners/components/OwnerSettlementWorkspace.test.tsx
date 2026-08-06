@@ -87,7 +87,8 @@ vi.mock('@/hooks/use-auth', () => ({
 vi.mock('@/features/settings/useDocumentSettings', () => ({
   useDocumentSettings: () => ({
     isReady: true,
-    settings: { companyName: 'Rentrix' },
+    isLoading: false,
+    companySettings: { companyName: 'Rentrix', currency: 'OMR', documentPrefixes: {} },
   }),
 }));
 

@@ -5,7 +5,8 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import type { OccupancyChartRow } from '../reports-page.helpers';
 import { getTodayLocalDateString } from '../reports-page.helpers';
 import {
@@ -44,7 +45,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
     ? (lowestOccupancyProperty.occupied / (lowestOccupancyProperty.occupied + lowestOccupancyProperty.vacant)) * 100
     : 0;
 
-  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
   const buildPropertyAnalyticsData = (): ReportDocumentData => {
@@ -102,7 +103,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
 
   const handlePrintPropertyAnalytics = async () => {
     try {
-      await DocumentTemplates.printReportDocument(buildPropertyAnalyticsData(), documentSettings);
+      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildPropertyAnalyticsData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
     }
@@ -110,7 +111,7 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
 
   const handleDownloadPropertyAnalytics = async () => {
     try {
-      await DocumentTemplates.downloadReportPdf(buildPropertyAnalyticsData(), documentSettings);
+      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildPropertyAnalyticsData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }

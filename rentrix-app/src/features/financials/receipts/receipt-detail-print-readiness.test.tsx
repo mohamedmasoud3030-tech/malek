@@ -9,10 +9,13 @@ import { act } from 'react';
 const docSettingsState = {
   isReady: true,
   isLoading: false,
-  settings: {
-    company: { name: 'شركة الأفق العقارية', phone: '+968 91112222', address: 'مسقط - الغبرة' },
+  companySettings: {
+    companyName: 'شركة الأفق العقارية',
+    phone: '+968 91112222',
+    address: 'مسقط - الغبرة',
     currency: 'OMR',
     currencySymbol: 'ر.ع',
+    documentPrefixes: {},
   },
 };
 
@@ -46,10 +49,10 @@ vi.mock('@/features/settings/useDocumentSettings', () => ({
   useDocumentSettings: () => docSettingsState,
 }));
 
-vi.mock('@/services/documents/DocumentTemplates', () => ({
-  DocumentTemplates: {
-    printReceiptDocument: vi.fn(),
-    downloadReceiptPdf: vi.fn(),
+vi.mock('@/services/documents/DocumentService', () => ({
+  documentService: {
+    printDocument: vi.fn(),
+    downloadDocumentPdf: vi.fn(),
   },
 }));
 
@@ -141,7 +144,7 @@ describe('receipt detail print readiness (P0: no fake company identity)', () => 
 
   it('keeps print handlers inert even if invoked while settings are incomplete', async () => {
     docSettingsState.isReady = false;
-    const { DocumentTemplates } = await import('@/services/documents/DocumentTemplates');
+    const { documentService } = await import('@/services/documents/DocumentService');
 
     await act(async () => {
       root!.render(<ReceiptDetailPage />);
@@ -156,7 +159,7 @@ describe('receipt detail print readiness (P0: no fake company identity)', () => 
       printButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
-    expect(DocumentTemplates.printReceiptDocument).not.toHaveBeenCalled();
-    expect(DocumentTemplates.downloadReceiptPdf).not.toHaveBeenCalled();
+    expect(documentService.printDocument).not.toHaveBeenCalled();
+    expect(documentService.downloadDocumentPdf).not.toHaveBeenCalled();
   });
 });

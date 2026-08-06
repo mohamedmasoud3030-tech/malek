@@ -1,6 +1,7 @@
 import { AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useInvoiceWorkspaceController } from '../invoices/useInvoiceWorkspaceController';
 import { InvoiceDetailSection } from './invoice-detail-section';
 import { InvoiceListSection } from './invoice-list-section';
@@ -77,6 +78,7 @@ export function InvoiceWorkspaceSection() {
 
   return (
     <>
+      {!ctrl.isDocumentSettingsReady && <DocumentReadinessNotice />}
       <InvoiceListSection
         summary={ctrl.summary}
         status={ctrl.status}
@@ -106,8 +108,8 @@ export function InvoiceWorkspaceSection() {
         onSelectInvoice={ctrl.onSelectInvoiceRow}
         canCollectPayments={ctrl.canCreatePayment}
         onCollectInvoice={ctrl.onCollectInvoice}
-        onPrintInvoice={ctrl.canExportInvoices ? ctrl.onPrintInvoice : undefined}
-        onExportInvoice={ctrl.canExportInvoices ? ctrl.onExportInvoiceList : undefined}
+        onPrintInvoice={ctrl.canExportInvoiceDocuments ? ctrl.onPrintInvoice : undefined}
+        onExportInvoice={ctrl.canExportInvoiceDocuments ? ctrl.onExportInvoiceList : undefined}
         onDateFromChange={ctrl.changeDateFrom}
         onDateToChange={ctrl.changeDateTo}
         onTenantChange={ctrl.changeTenant}

@@ -6,7 +6,8 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney, formatShortId } from '@/features/financials/components/financials-formatters';
 import { useExpenseBreakdownReport } from '@/features/financials/reports/useFinancialReports';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { DocumentTemplates, type ReportDocumentData } from '@/services/documents/DocumentTemplates';
+import { documentService } from '@/services/documents/DocumentService';
+import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { buildReportCsvFilename, downloadCsv, getTodayLocalDateString } from '../reports-page.helpers';
 import {
   ReportColumns,
@@ -34,7 +35,7 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
   const topCategoryShare = topCategory && totalExpenses > 0 ? (topCategory.total / totalExpenses) * 100 : 0;
   const topPropertyShare = topProperty && totalExpenses > 0 ? (topProperty.total / totalExpenses) * 100 : 0;
 
-  const { settings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
+  const { companySettings: documentSettings, isReady: isDocumentSettingsReady } = useDocumentSettings();
   const currencySymbol = documentSettings.currencySymbol || documentSettings.currency;
 
   const buildExpensesReportData = (): ReportDocumentData => {
@@ -71,7 +72,7 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
 
   const handlePrintExpensesReport = async () => {
     try {
-      await DocumentTemplates.printReportDocument(buildExpensesReportData(), documentSettings);
+      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildExpensesReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
     }
@@ -79,7 +80,7 @@ export function ExpensesSection({ report, canExportReports, isLoading }: Readonl
 
   const handleDownloadExpensesReport = async () => {
     try {
-      await DocumentTemplates.downloadReportPdf(buildExpensesReportData(), documentSettings);
+      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildExpensesReportData()) });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
     }
