@@ -12,11 +12,6 @@ interface PageLayoutProps {
   visualVariant?: 'malek-pro';
 }
 
-/**
- * Consistent top-level page wrapper.
- * Every feature page MUST wrap content in <PageLayout>.
- * No page should set its own max-width or page-level padding.
- */
 const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
   default: 'mx-auto w-full max-w-7xl',
   wide: 'mx-auto w-full max-w-[96rem]',
