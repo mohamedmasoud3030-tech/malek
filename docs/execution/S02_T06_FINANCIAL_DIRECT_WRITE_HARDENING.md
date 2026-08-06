@@ -31,3 +31,11 @@ the four RPC definitions. It also executes negative calls under the real
 
 The test deliberately avoids fixture-heavy warning-only checks that can pass on
 schema errors. It must be run after migrations with `ON_ERROR_STOP=1`.
+
+## Execution status
+
+The files are committed to PR #1361. Local repository gates were not rerun in
+this session because the execution container could not clone GitHub. GitHub CI
+is the source of truth for typecheck, lint, build, architecture, and database
+execution. The SQL contract must be reported as executed only after its CI job
+actually runs it successfully.
