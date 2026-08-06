@@ -141,13 +141,13 @@ export function NotificationsMenu({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
-        className="pressable relative inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 text-slate-600 outline-none transition-colors hover:bg-slate-200/70 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-emerald-500/25 dark:border-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white motion-reduce:transition-none"
+        className="pressable relative inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/80 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25 motion-reduce:transition-none"
       >
         <Bell className="size-[1rem]" aria-hidden="true" />
         {totalCount > 0 ? (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -end-0.5 grid min-w-4 place-items-center rounded-full bg-rose-600 px-1 py-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-slate-50 dark:ring-slate-950"
+            className="absolute -top-0.5 -end-0.5 grid min-w-4 place-items-center rounded-full bg-rose-600 px-1 py-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-background"
           >
             {totalCount > 99 ? '99+' : totalCount}
           </span>

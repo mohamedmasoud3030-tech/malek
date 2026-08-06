@@ -99,7 +99,7 @@ export function QuickAddMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
-        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-900/20 outline-none transition-colors hover:bg-emerald-700 focus-visible:ring-4 focus-visible:ring-emerald-400/35 motion-reduce:transition-none"
+        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/35 motion-reduce:transition-none"
       >
         <Plus className="size-[1.1rem]" aria-hidden="true" />
       </button>
@@ -155,7 +155,7 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-slate-800 bg-slate-950 text-slate-100 shadow-2xl sm:max-h-none sm:w-[min(20rem,88vw)] sm:p-0 lg:hidden"
+        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-2xl sm:max-h-none sm:w-[min(20rem,88vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/8 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
@@ -238,12 +238,12 @@ export function AppShell() {
   return (
     <div
       data-app-shell
-      className="min-h-screen min-h-dvh overflow-x-hidden bg-slate-50 text-foreground dark:bg-slate-950"
+      className="min-h-screen min-h-dvh overflow-x-hidden bg-background text-foreground"
       dir={appLanguage.direction}
     >
       <a
         href="#main-content"
-        className="sr-only z-[100] rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:end-4 focus:top-4 focus-visible:outline-2 focus-visible:outline-emerald-300 focus-visible:outline-offset-2"
+        className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:end-4 focus:top-4 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
       >
         {sharedLabel('skipToContent')}
       </a>
@@ -260,7 +260,7 @@ export function AppShell() {
       <aside
         data-sidebar
         className={cn(
-          'fixed inset-y-0 right-0 z-30 hidden border-l border-slate-800 bg-slate-950 text-slate-100 shadow-sidebar transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col',
+          'fixed inset-y-0 right-0 z-30 hidden border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-sidebar transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col',
           sidebarCollapsed ? 'w-[4.5rem] overflow-visible' : 'w-64 overflow-hidden',
         )}
       >
@@ -295,7 +295,7 @@ export function AppShell() {
       <div className={cn('w-full transition-[padding] duration-200 motion-reduce:transition-none lg:pr-64', sidebarCollapsed && 'lg:pr-[4.5rem]')}>
         <header
           data-app-shell-header
-          className="sticky top-0 z-20 border-b border-slate-200/80 bg-slate-50/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/92"
+          className="sticky top-0 z-20 border-b border-border/80 bg-background/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md"
         >
           <div className="mx-auto flex min-h-[3.25rem] w-full max-w-[110rem] items-center gap-1 px-2 py-1 sm:min-h-[3.5rem] sm:gap-2 sm:px-4 sm:py-1.5">
             <Button
@@ -341,7 +341,7 @@ export function AppShell() {
 
               <Button
                 variant="ghost"
-                className="size-11 px-0 text-slate-500 hover:bg-slate-200/70 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                className="size-11 px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label={sharedLabel('toggleTheme')}
               >
@@ -363,7 +363,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main id="main-content" tabIndex={-1} className="safe-bottom-app min-w-0 overflow-x-hidden bg-slate-50/70 p-3 outline-none dark:bg-slate-950 sm:p-4 lg:p-5 lg:pb-6">
+        <main id="main-content" tabIndex={-1} className="safe-bottom-app min-w-0 overflow-x-hidden bg-background/70 p-3 outline-none sm:p-4 lg:p-5 lg:pb-6">
           {writeAccessNotice ? (
             <div
               role="status"

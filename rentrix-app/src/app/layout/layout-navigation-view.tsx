@@ -78,8 +78,8 @@ export function NavigationLinks({
                   data-active={isActive ? 'true' : undefined}
                   className={cn(
                     'group relative flex min-h-11 items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
-                    'hover:bg-white/[0.075] hover:text-white focus-visible:ring-4 focus-visible:ring-emerald-300/35 motion-reduce:transition-none',
-                    isActive && 'border-emerald-300/20 bg-emerald-400/[0.16] text-white shadow-[inset_3px_0_0_0_rgb(52_211_153),0_12px_28px_-20px_rgb(0_0_0_/_0.9)]',
+                    'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
+                    isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)]',
                   )}
                 >
                   <Icon className={cn('size-5 shrink-0 transition-transform duration-150 motion-reduce:transition-none', !isActive && 'group-hover:scale-110')} aria-hidden="true" />
@@ -88,7 +88,7 @@ export function NavigationLinks({
                       <span className="block truncate text-[13px] font-semibold">{sharedLabel(labelKey)}</span>
                     </span>
                   ) : null}
-                  {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-emerald-300" aria-hidden="true" /> : null}
+                  {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground" aria-hidden="true" /> : null}
                 </Link>
               );
             })}
@@ -127,7 +127,7 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-slate-50/95 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-1px_0_0_rgb(148_163_184_/_0.24),0_-16px_40px_-24px_rgb(15_23_42_/_0.28)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-background/95 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-1px_0_0_rgb(148_163_184_/_0.24),0_-16px_40px_-24px_rgb(15_23_42_/_0.28)] backdrop-blur-xl lg:hidden"
       aria-label="التنقل الرئيسي"
       data-mobile-bottom-nav
     >
@@ -144,22 +144,22 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
               data-nav-item
               data-active={isActive ? 'true' : undefined}
               className={cn(
-                'group relative flex min-h-11 min-w-11 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1 py-2 text-slate-500 outline-none transition-colors duration-150 focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-emerald-500/35 dark:text-slate-400 motion-reduce:transition-none',
-                isActive && 'text-emerald-700 dark:text-emerald-300',
+                'group relative flex min-h-11 min-w-11 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1 py-2 text-muted-foreground outline-none transition-colors duration-150 focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary/35 motion-reduce:transition-none',
+                isActive && 'text-primary',
               )}
             >
               <span
                 aria-hidden="true"
                 className={cn(
                   'absolute inset-x-1.5 inset-y-1 rounded-2xl transition-colors duration-150 motion-reduce:transition-none',
-                  isActive ? 'bg-emerald-500/12 dark:bg-emerald-400/16' : 'bg-transparent',
+                  isActive ? 'bg-primary/12' : 'bg-transparent',
                 )}
               />
               <span
                 aria-hidden="true"
                 className={cn(
                   'absolute inset-x-4 top-0 h-0.5 rounded-full transition-opacity duration-150 motion-reduce:transition-none',
-                  isActive ? 'bg-emerald-500 opacity-100 dark:bg-emerald-300' : 'bg-transparent opacity-0',
+                  isActive ? 'bg-primary opacity-100' : 'bg-transparent opacity-0',
                 )}
               />
               <Icon className="relative z-10 size-[1.2rem] shrink-0 transition-transform duration-150 group-active:scale-90 motion-reduce:transition-none" aria-hidden="true" />
