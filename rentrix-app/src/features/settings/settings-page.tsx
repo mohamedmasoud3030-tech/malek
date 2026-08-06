@@ -56,10 +56,15 @@ function SettingsVariantShell({
   children: ReactNode;
 }>) {
   if (variant === 'embedded') {
-    return <div className={contentClassName}>{children}</div>;
+    return <div data-visual-wave="malek-pro" className={contentClassName}>{children}</div>;
   }
   return (
-    <PageLayout dir={dir} lang={lang} contentClassName={contentClassName}>
+    <PageLayout
+      dir={dir}
+      lang={lang}
+      contentClassName={contentClassName}
+      visualVariant="malek-pro"
+    >
       {children}
     </PageLayout>
   );

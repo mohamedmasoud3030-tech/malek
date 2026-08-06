@@ -29,12 +29,14 @@ const sizes: Record<ButtonSize, string> = {
   icon: 'size-10 rounded-lg p-0',
 };
 
+/** Shared operational button with a consistent 44px minimum hit area. */
 export function Button({ asChild = false, className, variant = 'primary', size = 'md', type = 'button', ...props }: ButtonProps) {
   const Component = asChild ? Slot : 'button';
   return (
     <Component
+      data-ui-button
       className={cn(
-        'pressable inline-flex cursor-pointer items-center justify-center font-bold shadow-sm outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+        'pressable inline-flex cursor-pointer items-center justify-center font-bold shadow-sm outline-none transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 focus-visible:ring-4 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none',
         sizes[size],
         variants[variant],
         className,

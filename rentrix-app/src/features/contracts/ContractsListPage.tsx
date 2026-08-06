@@ -96,6 +96,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
         embedded={embedded}
         dir="rtl"
         size="wide"
+        visualVariant="malek-pro"
         title="العقود"
         description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."
         count={hasClientFilter ? filteredContracts.length : (contractsQuery.data?.count ?? filteredContracts.length)}

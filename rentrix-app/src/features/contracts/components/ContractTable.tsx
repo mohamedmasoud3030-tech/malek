@@ -136,7 +136,7 @@ export function ContractTable({
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          <Button variant="secondary" className="min-h-10 px-3" asChild>
+          <Button variant="secondary" className="min-h-11 px-3" asChild>
             <Link
               to="/contracts/$contractId"
               params={{ contractId: contract.id }}
@@ -147,14 +147,14 @@ export function ContractTable({
           </Button>
           <Button
             variant="secondary"
-            className="min-h-10 px-3"
+            className="min-h-11 px-3"
             onClick={() => onEdit(contract.id)}
           >
             <Edit className="size-4" />
           </Button>
           <Button
             variant="danger"
-            className="min-h-10 px-3"
+            className="min-h-11 px-3"
             aria-label={`أرشفة العقد ${getContractNumber(contract)}`}
             onClick={() => onDelete(contract.id)}
           >

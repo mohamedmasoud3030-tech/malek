@@ -99,11 +99,11 @@ export function RelationshipsHubWorkspace({
 
   const shell = (children: React.ReactNode) => {
     if (mode === 'embedded') {
-      return <div className="min-w-0 space-y-5">{children}</div>;
+      return <div data-visual-wave="malek-pro" className="min-w-0 space-y-4 sm:space-y-5">{children}</div>;
     }
 
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide">
+      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
         <PageHeader title={title} description={description} />
         {children}
       </PageLayout>

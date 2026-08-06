@@ -30,7 +30,7 @@ export function ViewModeToggle({
         aria-pressed={value === "list"}
         onClick={() => onChange("list")}
         className={cn(
-          "inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-lg px-2 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 sm:px-3",
+          "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none sm:px-3",
           value === "list"
             ? "bg-background text-primary shadow-sm"
             : "text-muted-foreground hover:text-foreground",
@@ -46,7 +46,7 @@ export function ViewModeToggle({
         aria-pressed={value === "grid"}
         onClick={() => onChange("grid")}
         className={cn(
-          "inline-flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-lg px-2 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 sm:px-3",
+          "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none sm:px-3",
           value === "grid"
             ? "bg-background text-primary shadow-sm"
             : "text-muted-foreground hover:text-foreground",

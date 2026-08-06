@@ -18,6 +18,7 @@ const stylesDir = resolve(dirname(fileURLToPath(import.meta.url)));
 const tokens = readFileSync(resolve(stylesDir, 'tokens.css'), 'utf8');
 const globals = readFileSync(resolve(stylesDir, 'globals.css'), 'utf8');
 const productPalette = readFileSync(resolve(stylesDir, 'product-palette.css'), 'utf8');
+const visualWave = readFileSync(resolve(stylesDir, 'malek-pro-visual-wave.css'), 'utf8');
 
 function block(source: string, opener: string): string {
   const start = source.indexOf(opener);
@@ -54,6 +55,15 @@ describe('design tokens — single source of truth', () => {
     for (const leaked of ['--color-primary:', '--color-success-text:', '--shadow-card:', '--radius-card:']) {
       expect(globals, `globals.css must not redefine ${leaked}`).not.toContain(leaked);
     }
+  });
+
+  it('contains the Malek-pro-inspired emerald/slate operational theme in a scoped layer, not :root', () => {
+    expect(globals).toContain("@import './malek-pro-visual-wave.css';");
+    expect(visualWave).toContain("[data-visual-wave='malek-pro']");
+    expect(visualWave).toContain('--primary: 160');
+    expect(visualWave).toContain('--background: 210');
+    expect(visualWave).toContain("[data-theme='dark'] [data-visual-wave='malek-pro']");
+    expect(visualWave).not.toMatch(/(^|\n)\s*:root\s*\{/);
   });
 
   it('product-palette.css consumes tokens instead of redefining them', () => {

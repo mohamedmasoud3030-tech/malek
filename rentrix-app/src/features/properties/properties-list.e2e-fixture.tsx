@@ -3,7 +3,6 @@ import { ListPage } from '@/components/layout/list-page';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { EntityCell } from '@/components/ui/entity-cell';
-import { FilterBar } from '@/components/ui/filter-bar';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -115,6 +114,7 @@ export function PropertiesListE2EFixture() {
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-properties-workspace>
       <ListPage
+        visualVariant="malek-pro"
         title="العقارات"
         description="إدارة ملفات العقارات والأصول العقارية"
         count={fixtureProperties.length}
@@ -128,20 +128,18 @@ export function PropertiesListE2EFixture() {
             <Download className="me-2 size-4" aria-hidden="true" />تصدير CSV
           </Button>
         }
+        search={{
+          value: '',
+          onChange: () => undefined,
+          placeholder: 'ابحث باسم العقار أو العنوان…',
+        }}
         filters={
-          <FilterBar
-            searchValue=""
-            onSearchChange={() => undefined}
-            searchPlaceholder="ابحث باسم العقار أو العنوان…"
-            filters={
-              <Select aria-label="تصفية حسب الحالة" value="all" onChange={() => undefined}>
-                <option value="all">كل الحالات</option>
-                <option value="active">نشط</option>
-                <option value="maintenance">صيانة</option>
-                <option value="inactive">غير نشط</option>
-              </Select>
-            }
-          />
+          <Select aria-label="تصفية حسب الحالة" value="all" onChange={() => undefined}>
+            <option value="all">كل الحالات</option>
+            <option value="active">نشط</option>
+            <option value="maintenance">صيانة</option>
+            <option value="inactive">غير نشط</option>
+          </Select>
         }
       >
         <DataTable

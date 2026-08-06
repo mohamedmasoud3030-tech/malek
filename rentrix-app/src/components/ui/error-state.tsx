@@ -31,7 +31,7 @@ export function ErrorState({
   const detail = resolveErrorMessage(error);
 
   return (
-    <Card role="alert" className={compact ? 'border-danger/20' : 'border-danger/25'}>
+    <Card data-error-state role="alert" className={compact ? 'border-danger/20' : 'border-danger/25'}>
       <CardHeader className={compact ? 'p-4 pb-2' : undefined}>
         <CardTitle className="flex items-center gap-2 text-base">
           <AlertTriangle className="size-5 text-danger" />

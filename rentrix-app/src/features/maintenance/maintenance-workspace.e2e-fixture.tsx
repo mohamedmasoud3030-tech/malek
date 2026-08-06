@@ -11,7 +11,7 @@ export function MaintenanceWorkspaceE2EFixture() {
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-maintenance-workspace>
       <div className="px-3 py-4 sm:px-6 lg:px-8">
-        <PageLayout className="space-y-6">
+        <PageLayout className="space-y-6" visualVariant="malek-pro">
           <SectionHeader title="طلبات الصيانة" description="تتبع طلبات الصيانة حسب الحالة والأولوية والعقار" />
 
           <ResponsiveCardGrid desktopColumns={4}>

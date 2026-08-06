@@ -18,9 +18,9 @@ export function EmptyState({
   ariaLive = 'polite',
 }: EmptyStateProps) {
   return (
-    <Card className="border-dashed" role={role} aria-live={ariaLive}>
+    <Card data-empty-state className="border-dashed" role={role} aria-live={ariaLive}>
       <CardContent className="flex min-h-56 flex-col items-center justify-center gap-4 text-center">
-        <div className="grid size-14 place-items-center rounded-xl bg-muted text-muted-foreground/40">
+        <div data-empty-state-icon className="grid size-14 place-items-center rounded-xl bg-muted text-muted-foreground/40">
           <Inbox className="size-7" />
         </div>
         <div>

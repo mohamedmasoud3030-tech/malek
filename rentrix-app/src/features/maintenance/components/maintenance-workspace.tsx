@@ -256,7 +256,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
   }
 
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="طلبات الصيانة"
         description="تتبع طلبات الصيانة حسب الحالة والأولوية والعقار، مع إجراءات واضحة للموبايل والديسكتوب وطباعة التقرير الشامل."

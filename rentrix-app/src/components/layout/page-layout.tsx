@@ -8,6 +8,8 @@ interface PageLayoutProps {
   dir?: 'rtl' | 'ltr';
   size?: 'default' | 'wide' | 'full';
   lang?: string;
+  /** Scoped visual system for approved operational workspaces only. */
+  visualVariant?: 'malek-pro';
 }
 
 /**
@@ -28,9 +30,16 @@ export function PageLayout({
   dir,
   lang,
   size = 'default',
+  visualVariant,
 }: PageLayoutProps) {
   return (
-    <div data-page-layout className={cn('min-w-0 overflow-x-clip', className)} dir={dir} lang={lang}>
+    <div
+      data-page-layout
+      data-visual-wave={visualVariant}
+      className={cn('min-w-0 overflow-x-clip', className)}
+      dir={dir}
+      lang={lang}
+    >
       <div
         className={cn(
           pageSizes[size],

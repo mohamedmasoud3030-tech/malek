@@ -47,7 +47,7 @@ const fixtureRows: Maintenance[] = [
 export function MaintenanceE2EFixture() {
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-maintenance-workspace>
-      <PageLayout dir="rtl" size="wide">
+      <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
         <PageHeader
           title="طلبات الصيانة"
           description="تتبع طلبات الصيانة حسب الحالة والأولوية والعقار، مع إجراءات واضحة للموبايل والديسكتوب وطباعة التقرير الشامل."

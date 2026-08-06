@@ -69,6 +69,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
       embedded={embedded}
       dir="rtl"
       size="wide"
+      visualVariant="malek-pro"
       title="الوحدات"
       description="عرض تشغيلي لكل الوحدات المسجلة مع تعديل مباشر وروابط تفصيل العقارات."
       primaryAction={primaryAction}

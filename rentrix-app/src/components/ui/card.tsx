@@ -23,7 +23,8 @@ export function Card({
 }: HTMLAttributes<HTMLDivElement> & { variant?: CardVariant }) {
   return (
     <div
-      className={cn('rounded-xl transition-shadow duration-200', cardVariants[variant], className)}
+      data-component-card
+      className={cn('rounded-xl transition-shadow duration-200 motion-reduce:transition-none', cardVariants[variant], className)}
       {...props}
     />
   );

@@ -12,7 +12,6 @@ import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
 import { DataTable } from "@/components/ui/data-table";
 import { MobileCard } from "@/components/ui/mobile-card";
 import { ActionMenu } from "@/components/ui/action-menu";
-import { FilterBar } from "@/components/ui/filter-bar";
 import { EntityCard } from "@/components/ui/entity-card";
 import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
 import { ViewModeToggle } from "@/components/ui/view-mode-toggle";
@@ -90,6 +89,7 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
       <ListPage
         embedded={embedded}
         dir="rtl"
+        visualVariant="malek-pro"
         title="العقارات"
         description="إدارة المحفظة العقارية والتشغيلية"
         count={ctrl.totalCount}
@@ -114,35 +114,32 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
             </Button>
           </div>
         }
+        search={{
+          value: ctrl.search,
+          onChange: (value) => {
+            ctrl.setSearch(value);
+            ctrl.setPage(1);
+          },
+          placeholder: "بحث بالاسم أو العنوان...",
+        }}
         filters={
           <div className="space-y-2">
-            <FilterBar
-              searchValue={ctrl.search}
-              onSearchChange={(value) => {
-                ctrl.setSearch(value);
+            <Select
+              aria-label="الحالة"
+              value={ctrl.status}
+              onChange={(e) => {
+                ctrl.setStatus(e.target.value as typeof ctrl.status);
                 ctrl.setPage(1);
               }}
-              searchPlaceholder="بحث بالاسم أو العنوان..."
-              searchAriaLabel="بحث في العقارات"
-              filters={
-                <Select
-                  aria-label="الحالة"
-                  value={ctrl.status}
-                  onChange={(e) => {
-                    ctrl.setStatus(e.target.value as typeof ctrl.status);
-                    ctrl.setPage(1);
-                  }}
-                  className="w-full sm:w-36 rounded-xl"
-                >
-                  <option value="all">كل الحالات</option>
-                  {ctrl.statusValues.map((s) => (
-                    <option key={s} value={s}>
-                      {ctrl.statusLabels[s]}
-                    </option>
-                  ))}
-                </Select>
-              }
-            />
+              className="w-full rounded-xl sm:w-36"
+            >
+              <option value="all">كل الحالات</option>
+              {ctrl.statusValues.map((s) => (
+                <option key={s} value={s}>
+                  {ctrl.statusLabels[s]}
+                </option>
+              ))}
+            </Select>
             <ActiveFilterBar
               filters={ctrl.activeFilters}
               onClearAll={ctrl.clearFilters}

@@ -119,7 +119,7 @@ export function QuickActionBar({ actions, className }: QuickActionBarProps) {
             size="sm"
             onClick={action.onClick}
             disabled={action.disabled || action.loading}
-            className={cn('min-h-10 gap-2', action.className)}
+            className={cn('min-h-11 gap-2', action.className)}
           >
             {action.loading ? (
               <span className="size-4 rounded-full border-2 border-current border-t-transparent" />
