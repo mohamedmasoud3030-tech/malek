@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import {
   getFinanceStatusTone,
@@ -47,22 +47,26 @@ describe('Wave 2 finance reporting visual foundations', () => {
     expect(result.tenantId).toBe('tenant-456');
     expect(result.status).toBe('overdue');
     expect(result.section).toBe('invoices');
-    expect((result as any).extra).toBeUndefined();
+    expect((result as Record<string, unknown>).extra).toBeUndefined();
   });
 
-  it('FinanceStatusBadge renders text label, semantic color, not color-only, with accessible name', () => {
-    const { container } = render(FinanceStatusBadge({ kind: 'paid', label: 'مدفوعة' }) as any);
-    // For function component, we need to render via JSX
-  });
-
-  it('FinanceStatusBadge renders with data attributes for semantic mapping', () => {
+  it('renders one semantic status indicator with a visible text label', () => {
     const { container } = render(<FinanceStatusBadge kind="paid" label="مدفوعة" />);
     const wrapper = container.querySelector('[data-finance-status]');
+    const badge = container.querySelector('[data-status-badge]');
+    const indicators = container.querySelectorAll('[data-status-dot], [data-finance-status-icon]');
+
     expect(wrapper).not.toBeNull();
     expect(wrapper?.getAttribute('data-kind')).toBe('paid');
-    const dot = container.querySelector('[data-finance-status-icon]');
-    expect(dot).not.toBeNull();
+    expect(badge?.getAttribute('data-tone')).toBe('success');
+    expect(indicators).toHaveLength(1);
     expect(container.textContent).toContain('مدفوعة');
+  });
+
+  it('can disable the status indicator without removing the text label', () => {
+    const { container } = render(<FinanceStatusBadge kind="draft" label="مسودة" withDot={false} />);
+    expect(container.querySelectorAll('[data-status-dot], [data-finance-status-icon]')).toHaveLength(0);
+    expect(container.textContent).toContain('مسودة');
   });
 
   it('FinanceAmount renders as LTR island with tabular-nums inside RTL', () => {
@@ -85,12 +89,10 @@ describe('Wave 2 finance reporting visual foundations', () => {
     expect(el?.getAttribute('dir')).toBe('ltr');
   });
 
-  it('status mapping ensures color is not sole indicator (label + icon shape)', () => {
+  it('status mapping is not color-only because label and indicator are both present', () => {
     const { container } = render(<FinanceStatusBadge kind="overdue" label="متأخرة" />);
     expect(container.textContent).toContain('متأخرة');
-    const badge = container.querySelector('[data-status-badge]');
-    expect(badge).not.toBeNull();
-    const icon = container.querySelector('[data-finance-status-icon]');
-    expect(icon).not.toBeNull();
+    expect(container.querySelector('[data-status-badge]')?.getAttribute('data-tone')).toBe('danger');
+    expect(container.querySelectorAll('[data-status-dot], [data-finance-status-icon]')).toHaveLength(1);
   });
 });
