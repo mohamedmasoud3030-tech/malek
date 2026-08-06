@@ -39,7 +39,12 @@ This branch does not modify:
 
 The overlap check was repeated after PR #1358 expanded. The two PRs still have no changed-file overlap.
 
-A second compatibility review found that PR #1358 uses `visualVariant="malek-pro"` on finance pages. Therefore page visual scope and form-surface behavior are intentionally separated: `PageLayout` and `EmbeddableWorkspace` do not infer form behavior from `visualVariant`.
+A compatibility review found that PR #1358 also uses `visualVariant="malek-pro"` on Finance pages. Two isolation layers were therefore added:
+
+1. `PageLayout` and `EmbeddableWorkspace` keep `visualVariant` visual-only and never infer form behavior from it.
+2. The stronger page hierarchy in `malek-pro-visual-wave.css` requires an ancestor marked `data-operational-route="true"`. `_protected.tsx` applies that marker only to the explicitly allowed operational route families.
+
+Finance and Reporting retain the safe Wave 1 baseline plus the dedicated PR #1358 treatment; they do not inherit this PR's page headers, card/table treatment, or form surfaces.
 
 ## Implemented page treatment
 
@@ -103,21 +108,26 @@ A second compatibility review found that PR #1358 uses `visualVariant="malek-pro
 
 ## Visual system
 
-`rentrix-app/src/styles/malek-pro-visual-wave.css` now includes:
+`rentrix-app/src/styles/malek-pro-visual-wave.css` now has three separate layers:
+
+- Wave 1 baseline under `[data-visual-wave="malek-pro"]`
+- strong operational page treatment under `[data-operational-route="true"] [data-visual-wave="malek-pro"]`
+- operational overlay treatment under `[data-entity-form-variant="operational"]`
+
+The operational layer includes:
 
 - contextual dark operational headers
 - stronger list controls and filters
 - elevated cards with logical RTL accents
 - structured table headers, zebra rows and row focus/hover treatment
 - clearer tab treatment
-- operational form styling scoped by `data-entity-form-variant="operational"`
 - responsive and reduced-motion behavior
 
 ## Safety
 
 No business rule, query, mutation, schema, migration, permission, calculation, print, PDF or document-generation behavior was changed.
 
-The only route-level change is presentation context selection; it neither changes destinations nor navigation behavior.
+The route-level additions select presentation context only; they do not change destinations or navigation behavior.
 
 ## Verification
 
