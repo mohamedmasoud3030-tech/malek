@@ -102,6 +102,11 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
   };
 
   const title = isEdit ? 'تعديل شخص' : (defaultType === 'owner' ? 'إضافة مالك' : 'إضافة شخص');
+  const description = defaultType === 'owner'
+    ? 'سجّل بيانات المالك الأساسية والتواصل والهوية في نموذج واحد.'
+    : defaultType === 'tenant'
+      ? 'سجّل بيانات المستأجر الأساسية والتواصل والهوية في نموذج واحد.'
+      : 'سجّل بيانات الشخص والتواصل والهوية في نموذج واحد.';
 
   return (
     <>
@@ -109,24 +114,39 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         open={open}
         onOpenChange={handleOpenChange}
         title={title}
+        description={description}
         className="max-w-2xl"
-        mobileSurface="full-page"
-        headerExtra={form.formState.isDirty && !isSubmitting ? <StatusBadge tone="warning">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
+        headerExtra={form.formState.isDirty && !isSubmitting ? (
+          <StatusBadge tone="warning">
+            {translateSharedLabel('unsavedChanges', getAppLanguageState().language)}
+          </StatusBadge>
+        ) : undefined}
       >
         {isEdit && personQuery.isLoading ? (
           <RouteLoadingState />
         ) : (
-          <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={isSubmitting}>
+          <EntityForm.Root
+            className="md:grid-cols-2"
+            onSubmit={handleSubmit}
+            aria-busy={isSubmitting}
+          >
             <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />
             <PersonFormFields form={form} autoFocusName />
-            <EntityForm.Actions className="md:col-span-2" onCancel={() => handleOpenChange(false)} isSubmitting={isSubmitting} submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'} />
+            <EntityForm.Actions
+              className="md:col-span-2"
+              onCancel={() => handleOpenChange(false)}
+              isSubmitting={isSubmitting}
+              submitLabel={isSubmitting ? 'جار الحفظ...' : 'حفظ'}
+            />
           </EntityForm.Root>
         )}
       </EntityForm.Overlay>
 
       <ConfirmDialog
         open={showDiscardDialog}
-        onOpenChange={(nextOpen) => { if (!nextOpen) handleCancelDiscard(); }}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) handleCancelDiscard();
+        }}
         title="تغييرات غير محفوظة"
         description="هناك تغييرات لم تحفظ. إذا غادرت الآن سوف تفقد هذه التغييرات."
         confirmLabel="تجاهل التغييرات"
