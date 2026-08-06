@@ -54,29 +54,37 @@ export function ReportsPage() {
   }
 
   return (
-    <PageLayout dir={direction} size="wide" className="space-y-5 pb-8">
-      <PageHeader
-        title={translateSharedLabel('financialsSectionReports', language)}
-        description={translateSharedLabel('reportsPageDescription', language)}
-      />
+    <PageLayout dir={direction} size="wide" visualVariant="malek-pro" className="space-y-5 pb-8">
+      <div data-finance-root className="space-y-5">
+        <div data-finance-header>
+          <PageHeader
+            title={translateSharedLabel('financialsSectionReports', language)}
+            description={translateSharedLabel('reportsPageDescription', language)}
+          />
+        </div>
 
-      <CrossRouteHint
-        message={translateSharedLabel('reportsPageHint', language)}
-        action={{
-          to: '/financials',
-          label: translateSharedLabel('financialsSectionSummary', language),
-        }}
-      />
+        <div data-finance-cluster>
+          <CrossRouteHint
+            message={translateSharedLabel('reportsPageHint', language)}
+            action={{
+              to: '/financials',
+              label: translateSharedLabel('financialsSectionSummary', language),
+            }}
+          />
+        </div>
 
-      <ReportsWorkspace
-        model={workspace}
-        filters={filters}
-        canExportReports={canExportReports}
-        activeSection={activeSection}
-        onSectionChange={handleSectionChange}
-        onFiltersChange={setFilters}
-        onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())}
-      />
+        <section data-finance-section aria-label="مساحة التقارير المالية">
+          <ReportsWorkspace
+            model={workspace}
+            filters={filters}
+            canExportReports={canExportReports}
+            activeSection={activeSection}
+            onSectionChange={handleSectionChange}
+            onFiltersChange={setFilters}
+            onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())}
+          />
+        </section>
+      </div>
     </PageLayout>
   );
 }

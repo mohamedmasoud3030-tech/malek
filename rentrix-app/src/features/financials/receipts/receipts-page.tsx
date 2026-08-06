@@ -224,6 +224,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
   return (
     <EmbeddableWorkspace
       embedded={embedded}
+      visualVariant="malek-pro"
       title="الإيصالات"
       description="مراجعة إيصالات الدفعات المنشورة، فتح التفاصيل والطباعة، وإدارة الإلغاء وفق الصلاحيات."
       secondaryActions={<Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}

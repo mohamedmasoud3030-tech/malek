@@ -18,6 +18,7 @@ export type InvoicesWorkspaceProps = Readonly<{
 export function InvoicesWorkspace({ embedded = false }: InvoicesWorkspaceProps) {
   return (
     <EmbeddableWorkspace
+      visualVariant="malek-pro"
       embedded={embedded}
       title="الفواتير"
       description="إدارة الفواتير المستحقة وتسجيل الدفعات من نفس نظام العرض المالي الموحد."

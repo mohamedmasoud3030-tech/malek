@@ -108,13 +108,19 @@ export function FinanceHubWorkspace({
 
   const shell = (children: React.ReactNode) => {
     if (mode === 'embedded') {
-      return <div className="min-w-0 space-y-5">{children}</div>;
+      return (
+        <div data-finance-root data-visual-wave="malek-pro" className="min-w-0 space-y-5">
+          {children}
+        </div>
+      );
     }
 
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide">
-        <PageHeader title={title} description={description} />
-        {children}
+      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+        <div data-finance-root data-finance-header className="space-y-5">
+          <PageHeader title={title} description={description} />
+          {children}
+        </div>
       </PageLayout>
     );
   };

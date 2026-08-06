@@ -76,12 +76,18 @@ export function CommissionsWorkspace({ embedded = false }: CommissionsWorkspaceP
   );
 
   if (embedded) {
-    return <div data-embedded-workspace className="min-w-0 space-y-5 sm:space-y-6">{workspaceContent}</div>;
+    return (
+      <div data-embedded-workspace data-finance-root data-visual-wave="malek-pro" className="min-w-0 space-y-5 sm:space-y-6">
+        {workspaceContent}
+      </div>
+    );
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar">
-      {workspaceContent}
+    <PageLayout dir="rtl" lang="ar" visualVariant="malek-pro">
+      <div data-finance-root className="space-y-5">
+        {workspaceContent}
+      </div>
     </PageLayout>
   );
 }

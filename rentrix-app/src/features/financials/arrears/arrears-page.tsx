@@ -22,8 +22,9 @@ export function ArrearsWorkspace({ embedded = false }: ArrearsWorkspaceProps) {
   return (
     <EmbeddableWorkspace
       embedded={embedded}
+      visualVariant="malek-pro"
       title="المتأخرات"
-      description="متابعة المبالغ المتأخرة وفلاتر التحصيل ضمن نفس نظام الحاويات والبطاقات."
+      description="متابعة المبالغ المتأخرة وفلاتر التحصيل ضمن نفس نظام الحاويات والبطاقات — الفلاتر محفوظة أثناء التنقل. "
       secondaryActions={(
         <>
           <Button variant="secondary" asChild><Link to="/invoices"><FileText className="me-2 size-4" aria-hidden="true" />الفواتير</Link></Button>

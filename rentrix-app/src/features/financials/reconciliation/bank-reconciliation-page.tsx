@@ -18,8 +18,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { defaultCompanyLocalSettings } from '@/lib/companySettings';
@@ -101,6 +100,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
 
   return (
     <EmbeddableWorkspace
+      visualVariant="malek-pro"
       embedded={embedded}
       title="مطابقة البنك"
       description="مراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات، بدون تكديس نماذج الإدخال داخل مساحة النتائج."
@@ -128,12 +128,12 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
       )}
     >
 
-      <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
-        <KpiCard label="غير مطابقة" value={ctrl.summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="amber" />
-        <KpiCard label="مطابقة" value={ctrl.summary.matchedCount} sub="تم ربطها بسجلات النظام" icon={CheckCircle2} accent="emerald" />
-        <KpiCard label="صافي غير مطابق" value={formatCompanyMoney(defaultCompanyLocalSettings, ctrl.summary.unmatchedAmount)} sub="إجمالي المبالغ غير المحسومة" icon={Banknote} accent="rose" />
-      </ResponsiveCardGrid>
+      <FinanceKpiGrid desktopColumns={4}>
+        <FinanceKpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
+        <FinanceKpiCard label="غير مطابقة" value={ctrl.summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="primary" trend="down" trendValue="مراجعة" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'unmatched' })} />
+        <FinanceKpiCard label="مطابقة" value={ctrl.summary.matchedCount} sub="تم ربطها بسجلات النظام" icon={CheckCircle2} accent="primary" trend="up" trendValue="مطابق" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'matched' })} />
+        <FinanceKpiCard label="صافي غير مطابق" value={formatCompanyMoney(defaultCompanyLocalSettings, ctrl.summary.unmatchedAmount)} sub="إجمالي المبالغ غير المحسومة" icon={Banknote} accent="primary" unit="OMR" />
+      </FinanceKpiGrid>
 
       <FilterBar
         filters={(
