@@ -107,16 +107,18 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('>342<');
   });
 
-  it('renders the unified PageHeader (h1 + record count) and shared filter surface', () => {
+  it('renders one unified PageHeader plus semantic summary and register sections', () => {
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
 
     const html = renderToStaticMarkup(<ContractsListPage />);
 
     expect(html).toContain('data-page-header');
-    expect(html).toContain('<h1');
+    expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).toContain('عدد السجلات 1');
     expect(html).toContain('data-list-controls');
-    expect(html).not.toContain('<h2');
+    expect(html).toContain('data-contract-summary');
+    expect(html).toContain('data-contract-register');
+    expect(html).toContain('<h2');
   });
 });
 
