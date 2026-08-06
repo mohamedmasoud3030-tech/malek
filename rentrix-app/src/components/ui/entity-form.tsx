@@ -21,7 +21,7 @@ export type EntityFormSurfacePreference = 'auto' | ResponsiveFormSurface;
 export function getResponsiveFormSurface(
   matchesMobile: boolean,
   preference: EntityFormSurfacePreference = 'auto',
-  mobilePreference: Exclude<ResponsiveFormSurface, 'dialog'> = 'full-page',
+  mobilePreference: Exclude<ResponsiveFormSurface, 'dialog'> = 'bottom-sheet',
 ): ResponsiveFormSurface {
   if (preference !== 'auto') return preference;
   return matchesMobile ? mobilePreference : 'dialog';
@@ -258,7 +258,7 @@ function FullPageOverlay({ open, onOpenChange, title, description, headerExtra, 
   );
 }
 
-function Overlay({ open, onOpenChange, title, description, headerExtra, children, className, surface = 'auto', mobileSurface = 'full-page' }: EntityFormOverlayProps) {
+function Overlay({ open, onOpenChange, title, description, headerExtra, children, className, surface = 'auto', mobileSurface = 'bottom-sheet' }: EntityFormOverlayProps) {
   const resolvedSurface = getResponsiveFormSurface(useMediaQuery(mobileFormQuery), surface, mobileSurface);
 
   if (resolvedSurface === 'full-page') {
