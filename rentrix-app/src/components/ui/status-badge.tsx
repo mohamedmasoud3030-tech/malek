@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /** Semantic tones — canonical for new code. */
@@ -48,6 +48,13 @@ function resolveTone(tone: StatusTone): ResolvedTone {
   return tone as ResolvedTone;
 }
 
+function containsCustomStatusIndicator(children: ReactNode): boolean {
+  return Children.toArray(children).some((child) => {
+    if (!isValidElement<Record<string, unknown>>(child)) return false;
+    return Boolean(child.props['data-status-dot'] || child.props['data-finance-status-icon']);
+  });
+}
+
 /**
  * StatusBadge — the single status indicator for the application.
  *
@@ -68,6 +75,7 @@ export function StatusBadge({
 }) {
   const resolved = resolveTone(tone);
   const isProductTone = productTones.has(resolved as ProductTone);
+  const shouldRenderDefaultDot = dot && !containsCustomStatusIndicator(children);
 
   return (
     <span
@@ -79,9 +87,10 @@ export function StatusBadge({
         className,
       )}
     >
-      {dot ? (
+      {shouldRenderDefaultDot ? (
         <span
           data-status-dot
+          aria-hidden="true"
           className={cn(
             'size-1.5 rounded-full',
             isProductTone ? undefined : semanticDotTones[resolved as SemanticTone],
