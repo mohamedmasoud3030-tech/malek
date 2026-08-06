@@ -1,0 +1,222 @@
+/*
+ * Visual Migration Wave 2 — Finance & Reporting Treatment
+ *
+ * This file extends the existing Wave 1 scope [data-visual-wave='malek-pro']
+ * with finance-specific hierarchy refinements. It does NOT introduce a third
+ * token system. All colors use semantic tokens from tokens.css.
+ *
+ * The finance root uses the same visual wave attribute plus an additional
+ * data-finance-root marker to allow targeted refinements without affecting
+ * Wave 1 operational surfaces that also use malek-pro.
+ *
+ * Requirements enforced here:
+ * - No hero/wide gaps: compact section gaps (12-16px cluster, 20-24px sections)
+ * - Finance tables stay tables on desktop, preserve tabular-nums, LTR islands
+ * - Component-level scroll is keyboard-focusable with visible focus ring
+ * - Mobile cards: compact, primary action 44x44, safe-area aware
+ * - Focus rings use semantic primary token
+ * - No raw palette classes, only semantic tokens via hsl(var(--token))
+ * - Reduced motion support
+ */
+
+[data-visual-wave='malek-pro'][data-finance-root] {
+  /* Finance-specific rhythm — tighter than Wave 1 default to avoid hero gaps */
+  --finance-section-gap: 1.25rem; /* ~20px major */
+  --finance-cluster-gap: 0.75rem; /* ~12px related */
+  --finance-kpi-gap: 0.75rem;
+  --finance-filter-gap: 0.75rem;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-header] {
+  border-color: hsl(var(--border) / 0.8);
+  padding-block-end: 0.75rem;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-section] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--finance-section-gap, 1.25rem);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-cluster] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--finance-cluster-gap, 0.75rem);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-kpi-grid] {
+  gap: var(--finance-kpi-gap, 0.75rem);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-kpi-grid] [data-kpi-card] {
+  border-color: hsl(var(--border) / 0.9);
+  box-shadow: var(--shadow-card);
+  min-height: 0;
+  padding: 0.875rem;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-kpi-grid] [data-kpi-card]:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-kpi-grid] [data-kpi-card][data-drillable='true'] {
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-kpi-grid] [data-kpi-card][data-drillable='true']:hover {
+  border-color: hsl(var(--primary) / 0.22);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-kpi-grid] [data-kpi-card][data-drillable='true']:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-card-hover), 0 0 0 4px hsl(var(--primary) / 0.18);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-filter-bar] {
+  border: 1px solid hsl(var(--border) / 0.9);
+  background: hsl(var(--card) / 0.96);
+  border-radius: 1rem;
+  padding: 0.75rem;
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-filter-bar] input,
+[data-visual-wave='malek-pro'] [data-finance-filter-bar] select {
+  min-height: 44px;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-table-wrapper] {
+  border-color: hsl(var(--border) / 0.9);
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-card);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-table-wrapper] [data-entity-table-scroll] {
+  outline: none;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-table-wrapper] [data-entity-table-scroll]:focus-visible {
+  box-shadow: inset 0 0 0 2px hsl(var(--primary) / 0.35);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-table-wrapper] thead {
+  background: hsl(var(--muted) / 0.68);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-table-wrapper] thead th {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-table-wrapper] tbody tr:hover {
+  background: hsl(var(--primary) / 0.04);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-table-wrapper] tbody td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numeric LTR islands inside RTL for financial amounts */
+[data-visual-wave='malek-pro'] [data-finance-amount] {
+  direction: ltr;
+  display: inline-block;
+  text-align: start;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* Status semantics — ensure text label + color, not color alone */
+[data-visual-wave='malek-pro'] [data-finance-status] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-status-icon] {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: currentColor;
+}
+
+/* Mobile finance record cards — compact, safe-area, 44px actions */
+[data-visual-wave='malek-pro'] [data-finance-mobile-card] {
+  border-color: hsl(var(--border) / 0.9);
+  box-shadow: var(--shadow-card);
+  border-radius: 1rem;
+  background: hsl(var(--card));
+}
+
+[data-visual-wave='malek-pro'] [data-finance-mobile-card]:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-mobile-card] [data-mobile-primary-action] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+[data-visual-wave='malek-pro'] [data-finance-mobile-card] [data-mobile-secondary-actions] {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Loading / Empty / Error distinction */
+[data-visual-wave='malek-pro'] [data-finance-loading] {
+  border: 1px dashed hsl(var(--border) / 0.9);
+  background: hsl(var(--muted) / 0.3);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-error] {
+  border-color: hsl(var(--danger-text) / 0.28);
+  background: hsl(var(--danger-bg) / 0.5);
+}
+
+[data-visual-wave='malek-pro'] [data-finance-empty] {
+  border-color: hsl(var(--border) / 0.9);
+  background: hsl(var(--card));
+}
+
+/* Reports filter surface refinement */
+[data-visual-wave='malek-pro'] [data-reports-filter-surface] {
+  border-color: hsl(var(--border) / 0.9);
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-card);
+}
+
+/* Ensure no application horizontal overflow from finance roots */
+[data-visual-wave='malek-pro'][data-finance-root] {
+  overflow-x: clip;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  [data-visual-wave='malek-pro'][data-finance-root] {
+    --finance-section-gap: 1rem;
+  }
+  [data-visual-wave='malek-pro'] [data-finance-kpi-grid] {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  [data-visual-wave='malek-pro'] [data-finance-kpi-grid] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-visual-wave='malek-pro'][data-finance-root] *,
+  [data-visual-wave='malek-pro'] [data-finance-kpi-grid] [data-kpi-card],
+  [data-visual-wave='malek-pro'] [data-finance-mobile-card] {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
