@@ -37,7 +37,9 @@ This branch does not modify:
 - finance calculations, accounting, database, RLS, RPCs, grants, print/PDF
 - `docs/decisions/0014-malek-visual-contract-v2-wave-2-finance-reporting.md`
 
-The overlap check was repeated after PR #1358 expanded. The two PRs still have no feature-file overlap.
+The overlap check was repeated after PR #1358 expanded. The two PRs still have no changed-file overlap.
+
+A second compatibility review found that PR #1358 uses `visualVariant="malek-pro"` on finance pages. Therefore page visual scope and form-surface behavior are intentionally separated: `PageLayout` and `EmbeddableWorkspace` do not infer form behavior from `visualVariant`.
 
 ## Implemented page treatment
 
@@ -87,14 +89,17 @@ The overlap check was repeated after PR #1358 expanded. The two PRs still have n
 
 ## Create/edit form contract
 
-- Operational pages carrying `visualVariant="malek-pro"` now provide an `operational` form context.
+- `rentrix-app/src/routes/_protected.tsx` applies the `operational` form context only when `isOperationalFormRoute(pathname)` returns true.
+- The classifier lives outside the generated TanStack Router tree in `rentrix-app/src/lib/operational-form-routes.ts`.
+- Included route families are Properties, Units, People, Tenants, Owners, Contracts, Maintenance, Settings, Portfolio and Relationships.
+- Finance, Reports, commissions, owner settlements and Dashboard explicitly remain outside the operational form context.
 - Operational create/edit overlays resolve to:
   - mobile: Bottom Sheet
   - desktop: Dialog
 - Unrelated workflows preserve their previous default surface.
-- Finance and Reporting do not inherit the operational context.
 - Person/tenant/owner and unit forms also declare the operational contract explicitly.
 - Sticky actions, safe-area handling, focus trapping, focus restoration, invalid-field focus and unsaved-change guards remain intact.
+- The isolated browser fixture carries `data-entity-form-variant="operational"` and verifies both responsive surfaces without connecting to data, authentication or finance.
 
 ## Visual system
 
@@ -110,7 +115,9 @@ The overlap check was repeated after PR #1358 expanded. The two PRs still have n
 
 ## Safety
 
-No business rule, query, mutation, route, schema, migration, permission, calculation, print, PDF or document-generation behavior was changed.
+No business rule, query, mutation, schema, migration, permission, calculation, print, PDF or document-generation behavior was changed.
+
+The only route-level change is presentation context selection; it neither changes destinations nor navigation behavior.
 
 ## Verification
 
@@ -118,7 +125,7 @@ Required before review:
 
 - TypeScript typecheck
 - lint / architecture checks
-- focused form tests
+- focused form and route-scope tests
 - full application tests
 - production build
 - browser smoke
