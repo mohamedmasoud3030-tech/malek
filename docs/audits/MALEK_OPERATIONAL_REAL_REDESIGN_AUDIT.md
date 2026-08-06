@@ -2,11 +2,12 @@
 
 Date: 2026-08-06
 Branch: `fix/ui-malek-pro-visual-wave-2-real-redesign`
+PR: #1359
 Base at creation: `f84dc96d6d5698af227f226e03ca2cfb00a06f7b`
 
 ## Goal
 
-Deliver the visibly different operational redesign that Wave 1 did not achieve, including the create/edit form contract agreed with the product owner.
+Deliver the visibly different operational redesign that Wave 1 did not achieve, including the agreed create/edit form contract.
 
 ## Included
 
@@ -14,41 +15,112 @@ Deliver the visibly different operational redesign that Wave 1 did not achieve, 
 - Units
 - People
 - Tenants
-- Owners
+- Owners and non-financial ownership relationships
 - Contracts
 - Maintenance
 - Settings operational surfaces
-- Shared entity form presentation used by those operational modules
-- Mobile create/edit flows as bottom sheets by default
-- Desktop create/edit flows as dialogs
+- Shared layout and entity-form primitives required by those modules
 
-## Explicit overlap exclusion
+## Parallel task exclusion
 
 PR #1358 / branch `fix/ui-malek-pro-visual-wave-2-finance-reporting` owns Finance and Reporting treatment.
 
-This branch must not modify:
+This branch does not modify:
 
 - `rentrix-app/src/features/financials/**`
 - `rentrix-app/src/features/reports/**`
 - finance hub routes or report routes
+- owner settlement pages
+- commissions pages
+- `rentrix-app/src/styles/finance-reporting-visual-wave.css`
+- `rentrix-app/src/styles/globals.css`
 - finance calculations, accounting, database, RLS, RPCs, grants, print/PDF
 - `docs/decisions/0014-malek-visual-contract-v2-wave-2-finance-reporting.md`
 
-## Implemented so far
+The overlap check was repeated after PR #1358 expanded. The two PRs still have no feature-file overlap.
 
-- A materially stronger operational hierarchy in `malek-pro-visual-wave.css`: dark contextual page headers, stronger filter/control surfaces, elevated entity cards, high-fidelity desktop tables, clearer tabs, and responsive operational spacing.
-- Entity form architecture now defaults to `bottom-sheet` on mobile and remains `dialog` on desktop.
-- Full-page mobile forms remain available only as an explicit exception.
-- Sticky form actions, safe-area handling, field focus, validation and business behavior remain unchanged.
-- Unit test updated to lock the mobile bottom-sheet default.
+## Implemented page treatment
+
+### Properties
+
+- Added an operational readiness overview calculated from the current real rows.
+- Added ready / needs-attention and owner-link visibility.
+- Reframed the list/cards as a dedicated property register.
+- Preserved search, filters, CSV export, archive, edit and detail navigation.
+
+### Units
+
+- Added an occupancy command panel and live occupancy percentage.
+- Added available, occupied, maintenance and expected-rent context from current data.
+- Rebuilt the units register header and desktop/mobile result framing.
+- Preserved all filters, status rules, navigation and mutations.
+
+### People and tenants
+
+- Added live operational summaries and clearer record hierarchy.
+- Tenant cards now expose contract/location/contact context and safe actions.
+- People records are framed as a dedicated register with page-honest metrics.
+- Preserved current queries, pagination, archive and edit behavior.
+
+### Owners
+
+- Added ownership-link coverage and a split owner-register / relationship workspace.
+- Kept owner identity and property ownership separate from settlements and finance.
+- Did not modify `owner-settlements-page.tsx` or any settlement logic.
+
+### Contracts
+
+- Replaced generic KPI cards with a contract-lifecycle overview.
+- Added active-rate, expiring-soon and visible-rent context from existing rows.
+- Reframed contract results as a dedicated operational register.
+
+### Maintenance
+
+- Added urgent/open/in-progress command-center treatment.
+- Reframed maintenance results as a request register.
+- Preserved print readiness, status actions, create/edit, details and resolve behavior.
+
+### Settings
+
+- Preserved the existing long-form workspace model.
+- Added operational visual context to both standalone and embedded settings shells.
+
+## Create/edit form contract
+
+- Operational pages carrying `visualVariant="malek-pro"` now provide an `operational` form context.
+- Operational create/edit overlays resolve to:
+  - mobile: Bottom Sheet
+  - desktop: Dialog
+- Unrelated workflows preserve their previous default surface.
+- Finance and Reporting do not inherit the operational context.
+- Person/tenant/owner and unit forms also declare the operational contract explicitly.
+- Sticky actions, safe-area handling, focus trapping, focus restoration, invalid-field focus and unsaved-change guards remain intact.
+
+## Visual system
+
+`rentrix-app/src/styles/malek-pro-visual-wave.css` now includes:
+
+- contextual dark operational headers
+- stronger list controls and filters
+- elevated cards with logical RTL accents
+- structured table headers, zebra rows and row focus/hover treatment
+- clearer tab treatment
+- operational form styling scoped by `data-entity-form-variant="operational"`
+- responsive and reduced-motion behavior
 
 ## Safety
 
-No finance/report feature file has been changed.
-No business rule, query, mutation, route, schema, migration, permission, calculation, print, PDF or document behavior has been changed.
+No business rule, query, mutation, route, schema, migration, permission, calculation, print, PDF or document-generation behavior was changed.
 
-## Remaining execution
+## Verification
 
-- Continue visible operational page treatment and create/edit forms.
-- Add route-backed visual evidence at 375px and 1440px.
-- Run typecheck, unit tests, architecture checks, build and browser smoke through CI.
+Required before review:
+
+- TypeScript typecheck
+- lint / architecture checks
+- focused form tests
+- full application tests
+- production build
+- browser smoke
+- route-backed mobile and desktop visual evidence
+- final changed-file overlap check against PR #1358
