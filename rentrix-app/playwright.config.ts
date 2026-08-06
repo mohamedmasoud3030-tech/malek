@@ -4,6 +4,9 @@ const port = Number(process.env.E2E_PORT ?? 5173);
 const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${port}`;
 const isExternalTarget = Boolean(process.env.E2E_BASE_URL);
 const isCredentialedStaging = process.env.E2E_ENVIRONMENT_KIND === 'staging';
+const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?.trim() || undefined;
+const chromiumLaunchOptions = chromiumExecutablePath ? { executablePath: chromiumExecutablePath } : undefined;
+const videoMode = process.env.PLAYWRIGHT_DISABLE_VIDEO === 'true' || isCredentialedStaging ? 'off' : 'retain-on-failure';
 
 export default defineConfig({
   testDir: './e2e',
@@ -20,7 +23,7 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: isCredentialedStaging ? 'off' : 'retain-on-failure',
+    video: videoMode,
     locale: 'ar-EG',
     timezoneId: 'Africa/Cairo',
   },
@@ -40,15 +43,15 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
-      use: { ...devices['Desktop Chrome'], browserName: 'chromium', viewport: { width: 1440, height: 1000 } },
+      use: { ...devices['Desktop Chrome'], browserName: 'chromium', launchOptions: chromiumLaunchOptions, viewport: { width: 1440, height: 1000 } },
     },
     {
       name: 'chromium-tablet',
-      use: { ...devices['iPad Mini'], browserName: 'chromium', viewport: { width: 768, height: 1024 } },
+      use: { ...devices['iPad Mini'], browserName: 'chromium', launchOptions: chromiumLaunchOptions, viewport: { width: 768, height: 1024 } },
     },
     {
       name: 'chromium-mobile',
-      use: { ...devices['Pixel 5'], browserName: 'chromium', viewport: { width: 375, height: 812 } },
+      use: { ...devices['Pixel 5'], browserName: 'chromium', launchOptions: chromiumLaunchOptions, viewport: { width: 375, height: 812 } },
     },
   ],
 });

@@ -1,14 +1,18 @@
 import { PageLayout } from '@/components/layout/page-layout';
 import { SectionHeader } from '@/components/ui/section-header';
+import { formatCompanyDate, formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { defaultCompanySettingsContract } from '@/lib/companySettings';
 import { AlertCenter } from './components/alert-center';
 import { ArrearsBreakdown } from './components/arrears-breakdown';
 import { DashboardCharts } from './components/dashboard-charts';
+import { ExpiringContractsSection } from './components/expiring-contracts-section';
 import { HeroBanner } from './components/hero-banner';
 import { KpiGrid } from './components/kpi-grid';
+import { OverdueSection } from './components/overdue-section';
 import { QuickActions } from './components/quick-actions';
 import { DashboardVisualScope } from './dashboard-visual-scope';
 import type { DashboardSnapshot } from './dashboard-snapshot';
+import { addDays, toDateInputValue, type ExpiringContractRow, type OverdueTenantRow } from './dashboard-utils';
 
 const bucket = (key: 'current' | 'days_1_30' | 'days_31_60' | 'days_61_90' | 'days_90_plus', label: string, total: number, invoiceCount: number) => ({
   key,
@@ -16,6 +20,15 @@ const bucket = (key: 'current' | 'days_1_30' | 'days_31_60' | 'days_61_90' | 'da
   total,
   invoiceCount,
 });
+
+const soonDate = toDateInputValue(addDays(new Date(), 9));
+const laterDate = toDateInputValue(addDays(new Date(), 18));
+const fixtureSettings = {
+  ...defaultCompanySettingsContract,
+  money: (value: number | null | undefined) => formatCompanyMoney(defaultCompanySettingsContract, value),
+  date: (value: string) => formatCompanyDate(defaultCompanySettingsContract, `${value}T00:00:00`),
+  number: (value: number | null | undefined) => formatCompanyNumber(defaultCompanySettingsContract, value),
+};
 
 const fixtureSnapshot: DashboardSnapshot = {
   period: { dateFrom: '2026-07-01', dateTo: '2026-07-15', asOf: '2026-07-15', month: 7, year: 2026 },
@@ -48,7 +61,42 @@ const fixtureSnapshot: DashboardSnapshot = {
     averageDaysOverdue: 28,
     over90Amount: 0,
     over90InvoiceCount: 0,
-    overdueInvoices: [],
+    overdueInvoices: [
+      {
+        invoiceId: 'invoice-1',
+        shortInvoiceId: 'invoice-',
+        contractId: 'contract-1',
+        tenantId: 'tenant-1',
+        tenantName: 'أحمد الفارسي',
+        propertyId: 'property-1',
+        propertyTitle: 'برج الخليج',
+        unitId: 'unit-5',
+        unitNumber: '5',
+        dueDate: '2026-06-10',
+        daysOverdue: 35,
+        amount: 1_500,
+        paidAmount: 0,
+        remainingAmount: 1_500,
+        status: 'overdue',
+      },
+      {
+        invoiceId: 'invoice-2',
+        shortInvoiceId: 'invoice-',
+        contractId: 'contract-2',
+        tenantId: 'tenant-2',
+        tenantName: 'سالم الكعبي',
+        propertyId: 'property-2',
+        propertyTitle: 'واحة مسقط',
+        unitId: 'unit-12',
+        unitNumber: '12',
+        dueDate: '2026-06-12',
+        daysOverdue: 33,
+        amount: 1_500,
+        paidAmount: 0,
+        remainingAmount: 1_500,
+        status: 'overdue',
+      },
+    ],
     agedReceivables: {
       asOf: '2026-07-15',
       buckets: {
@@ -63,65 +111,120 @@ const fixtureSnapshot: DashboardSnapshot = {
       rows: [],
     },
   },
-  activeContracts: [],
-  maintenance: { urgentRequests: [], totalOpen: 2, totalInProgress: 1 },
+  activeContracts: [
+    {
+      id: 'contract-1',
+      property_id: 'property-1',
+      unit_id: 'unit-5',
+      tenant_id: 'tenant-1',
+      start_date: '2025-08-01',
+      end_date: soonDate,
+      rent_amount: 750,
+      payment_cycle: 'monthly',
+      status: 'active',
+      created_at: '2026-07-01T00:00:00Z',
+      updated_at: '2026-07-01T00:00:00Z',
+      deleted_at: null,
+      notes: null,
+      agreement_id: null,
+      payment_terms_id: null,
+      cancellation_reason: null,
+      attachment_url: null,
+      renewed_from_id: null,
+      properties: { id: 'property-1', title: 'برج الخليج', address: 'مسقط' },
+      units: { id: 'unit-5', unit_number: '5', floor: '1', status: 'occupied', rent_amount: 750 },
+      people: { id: 'tenant-1', full_name: 'أحمد الفارسي', phone: null, email: null, national_id: null },
+    } as DashboardSnapshot['activeContracts'][number],
+    {
+      id: 'contract-2',
+      property_id: 'property-2',
+      unit_id: 'unit-12',
+      tenant_id: 'tenant-2',
+      start_date: '2025-08-01',
+      end_date: laterDate,
+      rent_amount: 900,
+      payment_cycle: 'monthly',
+      status: 'active',
+      created_at: '2026-07-01T00:00:00Z',
+      updated_at: '2026-07-01T00:00:00Z',
+      deleted_at: null,
+      notes: null,
+      agreement_id: null,
+      payment_terms_id: null,
+      cancellation_reason: null,
+      attachment_url: null,
+      renewed_from_id: null,
+      properties: { id: 'property-2', title: 'واحة مسقط', address: 'مسقط' },
+      units: { id: 'unit-12', unit_number: '12', floor: '2', status: 'occupied', rent_amount: 900 },
+      people: { id: 'tenant-2', full_name: 'سالم الكعبي', phone: null, email: null, national_id: null },
+    } as DashboardSnapshot['activeContracts'][number],
+  ],
+  maintenance: { urgentRequests: [{ id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent', status: 'open' } as DashboardSnapshot['maintenance']['urgentRequests'][number]], totalOpen: 2, totalInProgress: 1 },
   deferred: [],
 };
 
+const expiringRows: ExpiringContractRow[] = [
+  { id: 'contract-1', contractNumber: 'contract', tenantName: 'أحمد الفارسي', location: 'برج الخليج / وحدة 5', endDate: soonDate, daysRemaining: 9 },
+  { id: 'contract-2', contractNumber: 'contract', tenantName: 'سالم الكعبي', location: 'واحة مسقط / وحدة 12', endDate: laterDate, daysRemaining: 18 },
+];
+
+const overdueRows: OverdueTenantRow[] = [
+  { invoiceId: 'invoice-1', tenantName: 'أحمد الفارسي', location: 'برج الخليج / وحدة 5', dueDate: '2026-06-10', daysOverdue: 35, remainingAmount: 1_500 },
+  { invoiceId: 'invoice-2', tenantName: 'سالم الكعبي', location: 'واحة مسقط / وحدة 12', dueDate: '2026-06-12', daysOverdue: 33, remainingAmount: 1_500 },
+];
+
 /**
  * Static Dashboard proof fixture (Visual Contract V2, ADR 0012 phase 2).
- * Mirrors DashboardPage structure exactly: the [data-visual-contract='v2']
- * Dashboard-owned scope, priorities-first decision hierarchy, KPI destination
- * links, permission-aware Quick Actions (fixture grants every permission so
- * the layout contract stays visible outside an authenticated session), work
- * queues and secondary analytics.
+ * Kept only as a low-cost layout showcase; the Dashboard Playwright contract
+ * now targets the real /dashboard route with controlled authenticated data.
  */
 export function DashboardWorkspaceE2EFixture() {
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-dashboard-workspace>
       <div className="px-3 py-4 sm:px-6 lg:px-8">
-        <PageLayout className="space-y-6">
+        <PageLayout className="dashboard-page-shell">
           <DashboardVisualScope>
             <HeroBanner snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} today="2026-07-15" />
 
-            <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]" data-dashboard-section="priorities">
+            <section data-dashboard-section="priorities" aria-label="الأولوية الآن">
               <AlertCenter
-                expiringContracts={[]}
+                expiringContracts={fixtureSnapshot.activeContracts}
                 overdueInvoices={[
                   { id: 'invoice-1', amount: 1_500, due_date: '2026-06-10', tenant_name: 'أحمد الفارسي' },
                   { id: 'invoice-2', amount: 1_500, due_date: '2026-06-12', tenant_name: 'سالم الكعبي' },
                 ]}
                 urgentMaintenance={[{ id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent' }]}
+                vacantUnitsCount={3}
+                unmatchedBankTxCount={2}
+                pendingSettlementsCount={1}
+                integrityWarningsCount={0}
               />
-              <QuickActions canAccessOverride={() => true} />
-            </div>
+            </section>
 
-            <section className="space-y-3" aria-label="صورة الأداء" data-dashboard-section="kpis">
-              <SectionHeader title="صورة الأداء" description="أربع مؤشرات قرار مرتبة في شبكة 2×2 ثابتة" />
+            <section className="dashboard-section" aria-label="صورة الأداء" data-dashboard-section="kpis">
+              <SectionHeader title="صورة الأداء" description="أربع مؤشرات قرار مرتبطة بمصادرها التفصيلية" />
               <KpiGrid snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
             </section>
 
-            <section className="space-y-4" aria-label="الاتجاهات والتفاصيل" data-dashboard-section="trends">
-              <SectionHeader title="الاتجاهات والتفاصيل" description="تفاصيل مساندة بعد إنهاء الأعمال ذات الأولوية" />
-              <DashboardCharts snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
-            </section>
+            <div data-dashboard-section="actions">
+              <QuickActions canAccessOverride={() => true} />
+            </div>
 
-            <section className="space-y-3" aria-label="قوائم العمل" data-dashboard-section="work-queues">
-              <SectionHeader title="قوائم العمل" description="الحالات الأعلى أولوية للتنفيذ اليومي" />
-              <div className="grid gap-3 lg:grid-cols-2">
-                <div className="min-h-32 rounded-3xl border border-border/60 bg-card p-4">
-                  <h3 className="font-black">العقود المنتهية قريباً</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">حالتان تحتاجان مراجعة التجديد.</p>
-                </div>
-                <div className="min-h-32 rounded-3xl border border-border/60 bg-card p-4">
-                  <h3 className="font-black">أعلى المتأخرات</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">فاتورتان تحتاجان متابعة التحصيل.</p>
-                </div>
+            <section className="dashboard-section" aria-label="قوائم العمل" data-dashboard-section="work-queues">
+              <SectionHeader title="قوائم العمل" description="متابعة مركزة للحالات الأعلى أولوية بعد قراءة المؤشرات" />
+              <div className="dashboard-queues-grid">
+                <ExpiringContractsSection rows={expiringRows} isLoading={false} settings={fixtureSettings} />
+                <OverdueSection rows={overdueRows} isLoading={false} settings={fixtureSettings} />
               </div>
             </section>
 
-            <section className="space-y-3" aria-label="تحليلات مساندة" data-dashboard-section="analytics">
-              <SectionHeader title="تحليلات مساندة" description="تفاصيل ثانوية للتعمق بعد أولويات التشغيل" />
+            <section className="dashboard-section" aria-label="المحفظة والتحصيل" data-dashboard-section="trends">
+              <SectionHeader title="المحفظة والتحصيل" description="ملخصات ثانوية للانتقال إلى التفاصيل، وليست جدولاً محاسبياً كثيفاً" />
+              <DashboardCharts snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} />
+            </section>
+
+            <section className="dashboard-section" aria-label="تحليلات مساندة" data-dashboard-section="analytics">
+              <SectionHeader title="تحليلات مساندة" description="تفاصيل أعمار الذمم بعد ترتيب الأعمال العاجلة" />
               <ArrearsBreakdown snapshot={fixtureSnapshot} settings={defaultCompanySettingsContract} />
             </section>
           </DashboardVisualScope>

@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from '@tanstack/react-router';
+import { Layers3 } from 'lucide-react';
 import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import type { DashboardSnapshot } from '../dashboard-snapshot';
@@ -7,25 +8,25 @@ const BUCKET_CONFIG = [
   {
     key: 'days_1_30',
     label: '1–30 يوم',
-    borderClass: 'border-s-warning',
+    borderClass: 'dashboard-aging-bucket--warning',
     textClass: 'text-warning',
   },
   {
     key: 'days_31_60',
     label: '31–60 يوم',
-    borderClass: 'border-s-danger/60',
+    borderClass: 'dashboard-aging-bucket--danger-soft',
     textClass: 'text-danger/80',
   },
   {
     key: 'days_61_90',
     label: '61–90 يوم',
-    borderClass: 'border-s-danger',
+    borderClass: 'dashboard-aging-bucket--danger',
     textClass: 'text-danger',
   },
   {
     key: 'days_90_plus',
     label: '+90 يوم',
-    borderClass: 'border-s-danger',
+    borderClass: 'dashboard-aging-bucket--danger',
     textClass: 'text-danger font-bold',
   },
 ] as const;
@@ -40,31 +41,33 @@ export function ArrearsBreakdown({ snapshot, settings }: ArrearsBreakdownProps) 
   if (totalOverdue === 0) return null;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle>أعمار الذمم</CardTitle>
-        <p className="text-[0.8125rem] text-muted-foreground">أربع فئات ثابتة لسهولة المقارنة والمتابعة</p>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+    <Link to="/arrears" className="dashboard-aging-card" data-dashboard-analytics-link>
+      <article>
+        <div className="dashboard-aging-card__header">
+          <span className="dashboard-aging-card__icon" aria-hidden="true">
+            <Layers3 className="size-4" />
+          </span>
+          <div>
+            <h3 className="dashboard-aging-card__title">أعمار الذمم</h3>
+            <p className="dashboard-aging-card__description">فئات ثابتة للمقارنة والمتابعة</p>
+          </div>
+        </div>
+        <div className="dashboard-aging-grid">
           {BUCKET_CONFIG.map(({ key, label, borderClass, textClass }) => {
             const total = snapshot?.arrears.agedReceivables.buckets[key]?.total ?? 0;
             const count = snapshot?.arrears.agedReceivables.buckets[key]?.invoiceCount ?? 0;
             return (
-              <div
-                key={key}
-                className={`rounded-lg border border-border/50 border-s-2 ${borderClass} bg-muted/30 p-3`}
-              >
-                <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                <p className={`mt-2 truncate text-sm font-bold tabular-nums ${textClass}`} dir="ltr">
+              <div key={key} className={`dashboard-aging-bucket ${borderClass}`}>
+                <p className="dashboard-aging-bucket__label">{label}</p>
+                <p className={`dashboard-aging-bucket__value ${textClass}`} dir="ltr">
                   {formatCompanyMoney(settings, total)}
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{count} فاتورة</p>
+                <p className="dashboard-aging-bucket__count">{count} فاتورة</p>
               </div>
             );
           })}
         </div>
-      </CardContent>
-    </Card>
+      </article>
+    </Link>
   );
 }
