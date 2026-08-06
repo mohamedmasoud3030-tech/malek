@@ -63,33 +63,44 @@ export function FinancialsPage() {
   );
 
   return (
-    <PageLayout dir={direction} size="wide">
-      <PageHeader
-        title={translateSharedLabel('financialsSectionSummary', language)}
-        description={translateSharedLabel('financialsPageDescription', language)}
-      />
+    <PageLayout dir={direction} size="wide" visualVariant="malek-pro">
+      <div data-finance-root className="space-y-5">
+        {/* 1. Page context */}
+        <div data-finance-header>
+          <PageHeader
+            title={translateSharedLabel('financialsSectionSummary', language)}
+            description={translateSharedLabel('financialsPageDescription', language)}
+          />
+        </div>
 
-      <FinancialReportsPreviewSection
-        reportFilters={reportFilters}
-        collectionSummary={collectionReport.data}
-        isLoading={collectionReport.isLoading}
-        isError={collectionReport.isError}
-        error={collectionReport.error}
-      />
+        {/* 2. Critical alerts - none for this hub, but hint acts as secondary guidance */}
+        {/* 3. Summary KPIs — compact preview */}
+        <section data-finance-section aria-label="ملخص التحصيل الشهري" className="space-y-3">
+          <FinancialReportsPreviewSection
+            reportFilters={reportFilters}
+            collectionSummary={collectionReport.data}
+            isLoading={collectionReport.isLoading}
+            isError={collectionReport.isError}
+            error={collectionReport.error}
+          />
+        </section>
 
-      <CrossRouteHint
-        message={translateSharedLabel('financialsPageHint', language)}
-        action={
-          canViewReports
-            ? {
-                to: '/reports',
-                label: translateSharedLabel('financialsSectionReports', language),
-              }
-            : undefined
-        }
-      />
+        <div data-finance-cluster>
+          <CrossRouteHint
+            message={translateSharedLabel('financialsPageHint', language)}
+            action={
+              canViewReports
+                ? {
+                    to: '/reports',
+                    label: translateSharedLabel('financialsSectionReports', language),
+                  }
+                : undefined
+            }
+          />
+        </div>
 
-      <section aria-label="مسارات العمل المالية" className="space-y-3">
+        {/* 5. Main workflow list — acts as hub navigation */}
+        <section data-finance-section aria-label="مسارات العمل المالية" className="space-y-3">
         <div>
           <h2 className="text-base font-bold">مسارات العمل المالية</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -133,6 +144,7 @@ export function FinancialsPage() {
           ))}
         </div>
       </section>
+      </div>
     </PageLayout>
   );
 }
