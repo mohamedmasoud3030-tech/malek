@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState } from '@/components/ui/error-state';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -35,6 +35,7 @@ export function DashboardPage() {
     error,
     refetch,
     isFetching,
+    isRefetchError,
     dataUpdatedAt,
   } = useQuery({
     queryKey: ['dashboard-snapshot', now.getMonth() + 1, now.getFullYear(), today],
@@ -44,6 +45,15 @@ export function DashboardPage() {
 
   const retryDashboard = useCallback(() => {
     refetch().catch(() => undefined);
+  }, [refetch]);
+
+  useEffect(() => {
+    if (!import.meta.env.VITE_E2E || typeof window === 'undefined') return;
+    const handleE2ERefetch = () => {
+      refetch().catch(() => undefined);
+    };
+    window.addEventListener('malek-dashboard-e2e-refetch', handleE2ERefetch);
+    return () => window.removeEventListener('malek-dashboard-e2e-refetch', handleE2ERefetch);
   }, [refetch]);
 
   const progress = useMemo<OnboardingProgress>(
@@ -91,10 +101,11 @@ export function DashboardPage() {
 
   const hasQuickActions = filterQuickActionsByPermission(canAccess).length > 0;
   const showAnalytics = (snapshot?.arrears.totalOverdue ?? 0) > 0;
-  const snapshotUnavailable = isError && !snapshot;
+  const hasDashboardError = isError || isRefetchError;
+  const snapshotUnavailable = hasDashboardError && !snapshot;
 
   return (
-    <PageLayout className="space-y-6 pb-8">
+    <PageLayout className="dashboard-page-shell pb-8">
       <DashboardVisualScope>
         <HeroBanner
           snapshot={snapshot}
@@ -105,9 +116,7 @@ export function DashboardPage() {
           today={today}
         />
 
-        <OnboardingChecklist progress={progress} canManageSetup={canManageSetup} />
-
-        {isError ? (
+        {hasDashboardError ? (
           <ErrorState
             title={snapshotUnavailable ? 'تعذر تحميل لوحة التحكم' : 'تعذر تحديث لوحة التحكم'}
             description={
@@ -122,14 +131,7 @@ export function DashboardPage() {
 
         {snapshotUnavailable ? null : (
           <>
-            <div
-              className={
-                hasQuickActions
-                  ? 'grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]'
-                  : 'grid min-w-0 gap-5'
-              }
-              data-dashboard-section="priorities"
-            >
+            <section data-dashboard-section="priorities" aria-label="الأولوية الآن">
               <AlertCenter
                 expiringContracts={snapshot?.activeContracts ?? []}
                 overdueInvoices={(snapshot?.arrears.overdueInvoices ?? []).map((invoice) => ({
@@ -145,33 +147,40 @@ export function DashboardPage() {
                 pendingSettlementsCount={pendingSettlementsCount}
                 integrityWarningsCount={integrityWarningsCount}
               />
-              <QuickActions />
-            </div>
+            </section>
 
-            <section className="space-y-3" aria-label="صورة الأداء" data-dashboard-section="kpis">
-              <SectionHeader title="صورة الأداء" description="التحصيل والسيولة والمتأخرات للفترة الحالية" />
+            <section className="dashboard-section" aria-label="صورة الأداء" data-dashboard-section="kpis">
+              <SectionHeader title="صورة الأداء" description="أربع مؤشرات قرار مرتبطة بمصادرها التفصيلية" />
               <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
             </section>
 
-            <section className="space-y-4" aria-label="المحفظة والتحصيل" data-dashboard-section="trends">
-              <SectionHeader title="المحفظة والتحصيل" description="قراءة سريعة تساعدك قبل فتح التقارير التفصيلية" />
-              <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
-            </section>
+            {hasQuickActions ? (
+              <div data-dashboard-section="actions">
+                <QuickActions />
+              </div>
+            ) : null}
 
-            <section className="space-y-3" aria-label="قوائم العمل" data-dashboard-section="work-queues">
-              <SectionHeader title="قوائم العمل" description="التفاصيل التي تحتاج متابعة بعد ترتيب الأولويات" />
-              <div className="grid gap-5 lg:grid-cols-2">
+            <section className="dashboard-section" aria-label="قوائم العمل" data-dashboard-section="work-queues">
+              <SectionHeader title="قوائم العمل" description="متابعة مركزة للحالات الأعلى أولوية بعد قراءة المؤشرات" />
+              <div className="dashboard-queues-grid">
                 <ExpiringContractsSection rows={expiringContracts} isLoading={isLoading} settings={settings} />
                 <OverdueSection rows={overdueRows} isLoading={isLoading} settings={settings} />
               </div>
             </section>
 
+            <section className="dashboard-section" aria-label="المحفظة والتحصيل" data-dashboard-section="trends">
+              <SectionHeader title="المحفظة والتحصيل" description="ملخصات ثانوية للانتقال إلى التفاصيل، وليست جدولاً محاسبياً كثيفاً" />
+              <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
+            </section>
+
             {showAnalytics ? (
-              <section className="space-y-3" aria-label="تحليلات مساندة" data-dashboard-section="analytics">
-                <SectionHeader title="تحليلات مساندة" description="تفاصيل ثانوية للتعمق بعد أولويات التشغيل" />
+              <section className="dashboard-section" aria-label="تحليلات مساندة" data-dashboard-section="analytics">
+                <SectionHeader title="تحليلات مساندة" description="تفاصيل أعمار الذمم بعد ترتيب الأعمال العاجلة" />
                 <ArrearsBreakdown snapshot={snapshot} settings={settings} />
               </section>
             ) : null}
+
+            <OnboardingChecklist progress={progress} canManageSetup={canManageSetup} />
           </>
         )}
       </DashboardVisualScope>

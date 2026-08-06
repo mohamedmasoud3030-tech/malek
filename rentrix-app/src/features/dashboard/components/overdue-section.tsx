@@ -1,10 +1,8 @@
 import { Link } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/empty-state';
-import { SectionHeader } from '@/components/ui/section-header';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { CreditCard } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDate, formatMoney } from '@/hooks/useCompanyFormatters';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { cn } from '@/lib/utils';
 import type { OverdueTenantRow } from '../dashboard-utils';
 
 interface OverdueSectionProps {
@@ -16,50 +14,65 @@ interface OverdueSectionProps {
 export function OverdueSection({ rows, isLoading, settings }: OverdueSectionProps) {
   const { date, money } = settings;
   return (
-    <div>
-      <SectionHeader
-        title="أعلى المتأخرات"
-        action={<Link to="/arrears" data-dashboard-section-action className="text-[0.8125rem] font-medium text-primary hover:underline">عرض الكل</Link>}
-      />
+    <section className="dashboard-queue-card" aria-labelledby="overdue-title">
+      <div className="dashboard-queue-card__header">
+        <div className="dashboard-queue-card__title-group">
+          <span className="dashboard-queue-card__icon dashboard-queue-card__icon--danger" aria-hidden="true">
+            <CreditCard className="size-4" />
+          </span>
+          <div>
+            <h3 id="overdue-title" className="dashboard-queue-card__title">أعلى المتأخرات</h3>
+            <p className="dashboard-queue-card__meta">مرتبة حسب أيام التأخير</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {!isLoading ? <StatusBadge tone={rows.length > 0 ? 'danger' : 'success'}>{rows.length}</StatusBadge> : null}
+          <Link to="/arrears" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
+        </div>
+      </div>
 
-      {isLoading && <Skeleton className="h-36 rounded-xl" />}
+      {isLoading && (
+        <div className="dashboard-queue-list" aria-label="جارٍ تحميل المتأخرات">
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+        </div>
+      )}
 
       {!isLoading && rows.length === 0 && (
-        <EmptyState title="لا توجد فواتير متأخرة" description="ستظهر أعلى المتأخرات هنا عند وجود فواتير غير مسددة." />
+        <div className="dashboard-queue-empty" role="status">
+          <p className="font-semibold">لا توجد فواتير متأخرة</p>
+          <p>ستظهر أعلى المتأخرات هنا عند وجود فواتير غير مسددة.</p>
+        </div>
       )}
 
       {!isLoading && rows.length > 0 && (
-        <div className="space-y-2">
+        <div className="dashboard-queue-list" role="list">
           {rows.map((row) => {
             const isHighRisk = row.daysOverdue > 90;
             return (
-              <div
+              <Link
                 key={row.invoiceId}
-                className={`rounded-xl border border-border/70 bg-card p-4 border-s-2 ${isHighRisk ? 'border-s-danger' : 'border-s-warning'}`}
+                to="/arrears"
+                className={cn('dashboard-queue-row', isHighRisk ? 'dashboard-queue-row--danger' : 'dashboard-queue-row--warning')}
+                data-dashboard-queue-link
+                role="listitem"
+                aria-label={`${row.tenantName} — ${row.daysOverdue} يوم تأخير — ${money(row.remainingAmount)}`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{row.tenantName}</p>
-                    <p className="mt-0.5 truncate text-[0.8125rem] text-muted-foreground">{row.location}</p>
-                  </div>
+                <span className="dashboard-queue-row__main">
+                  <span className="dashboard-queue-row__title">{row.tenantName}</span>
+                  <span className="dashboard-queue-row__meta">{row.location}</span>
+                </span>
+                <span className="dashboard-queue-row__side">
                   <StatusBadge tone={isHighRisk ? 'danger' : 'warning'}>{row.daysOverdue} يوم</StatusBadge>
-                </div>
-                <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2">
-                  <span className="text-[0.8125rem] text-muted-foreground">
-                    استحقاق: {date(row.dueDate)}
-                  </span>
-                  <span className="font-bold text-sm text-danger tabular-nums" dir="ltr">
-                    {money(row.remainingAmount)}
-                  </span>
-                </div>
-              </div>
+                  <span className="dashboard-queue-row__amount" dir="ltr">{money(row.remainingAmount)}</span>
+                  <span className="dashboard-queue-row__date">استحقاق: {date(row.dueDate)}</span>
+                </span>
+              </Link>
             );
           })}
-          <Button asChild variant="secondary" className="w-full">
-            <Link to="/arrears">فتح المتأخرات</Link>
-          </Button>
         </div>
       )}
-    </div>
+    </section>
   );
 }

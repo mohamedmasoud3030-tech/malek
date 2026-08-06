@@ -18,6 +18,19 @@ async function collectUnexpectedConsoleErrors(page: Page): Promise<string[]> {
 }
 
 test.describe('release readiness browser smoke', () => {
+  test.beforeEach(async ({ page }) => {
+    // The readiness smoke validates MALEK runtime behavior, not Google Fonts
+    // availability. CI/sandbox networks may block the font CDN and emit noisy
+    // console errors before the app can render; serve an empty stylesheet so
+    // the application surface remains the thing under test.
+    await page.route('https://fonts.googleapis.com/**', async (route) => {
+      await route.fulfill({ status: 200, contentType: 'text/css; charset=utf-8', body: '' });
+    });
+    await page.route('https://fonts.gstatic.com/**', async (route) => {
+      await route.fulfill({ status: 204, body: '' });
+    });
+  });
+
   test('redirects the root to login without loading landing or protected bundles', async ({ page }) => {
     const requestedUrls: string[] = [];
     page.on('request', (request) => requestedUrls.push(request.url()));

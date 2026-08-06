@@ -1,7 +1,8 @@
 import { Bell, Building2, CalendarClock, CheckCircle2, CreditCard, HandCoins, Landmark, ShieldAlert, Wrench } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
-import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { cn } from '@/lib/utils';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
 
 export interface AlertCenterProps {
@@ -35,11 +36,56 @@ export interface AlertCenterProps {
   className?: string;
 }
 
+type PriorityTone = 'danger' | 'warning' | 'success' | 'info' | 'neutral';
+
+type PriorityItem = Readonly<{
+  label: string;
+  description: string;
+  actionHint: string;
+  count: number;
+  to: string;
+  unavailable: boolean;
+  icon: LucideIcon;
+  tone: PriorityTone;
+  critical: boolean;
+  rank: number;
+}>;
+
 function getDaysUntil(date: string): number {
   const target = new Date(`${date}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function priorityStatusLabel(priority: Pick<PriorityItem, 'unavailable' | 'count'>) {
+  return priority.unavailable ? 'غير متاح' : priority.count;
+}
+
+function PriorityRow({ priority, secondary = false }: { priority: PriorityItem; secondary?: boolean }) {
+  const Icon = priority.icon;
+  return (
+    <Link
+      key={priority.to}
+      to={priority.to}
+      className={cn('dashboard-priority-row', secondary && 'dashboard-priority-row--secondary')}
+      data-dashboard-priority-link={secondary ? undefined : true}
+      data-dashboard-priority-secondary-link={secondary ? true : undefined}
+      data-tone={priority.tone}
+      aria-label={`${priority.label} — ${priority.unavailable ? 'غير متاح' : `${priority.count} حالة`} — ${priority.actionHint}`}
+    >
+      <span className="dashboard-priority-row__icon" aria-hidden="true">
+        <Icon className="size-4" />
+      </span>
+      <span className="dashboard-priority-row__content">
+        <span className="dashboard-priority-row__title">{priority.label}</span>
+        <span className="dashboard-priority-row__hint">
+          {priority.unavailable ? 'تعذر تحميل العدد الآن — افتح الصفحة للتحقق' : priority.actionHint}
+        </span>
+      </span>
+      <StatusBadge tone={priority.unavailable ? 'neutral' : priority.tone}>{priorityStatusLabel(priority)}</StatusBadge>
+    </Link>
+  );
 }
 
 export function AlertCenter({
@@ -78,133 +124,158 @@ export function AlertCenter({
 
   if (knownTotal === 0 && !hasUnavailable) {
     return (
-      <Card className={`border-success/20 bg-success/5 dark:bg-success/8 ${className}`}>
-        <CardContent className="flex items-center gap-3 p-4">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success">
-            <CheckCircle2 className="size-5" aria-hidden="true" />
+      <section className={cn('dashboard-priority-panel dashboard-priority-panel--clear', className)} aria-label="الأولوية الآن">
+        <div className="dashboard-priority-clear">
+          <span className="dashboard-priority-clear__icon" aria-hidden="true">
+            <CheckCircle2 className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-success">لا توجد أعمال عاجلة</h2>
+            <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">انتقل إلى المؤشرات لمراجعة الأداء الحالي.</p>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-success">لا توجد أعمال عاجلة</p>
-            <p className="text-[0.8125rem] text-muted-foreground">انتقل إلى المؤشرات لمراجعة الأداء الحالي.</p>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     );
   }
 
-  const priorities = [
-    {
-      label: 'عقود تنتهي قريباً',
-      description: 'راجع التجديد أو الإخلاء',
-      count: contractCount,
-      to: '/contracts',
-      unavailable: false,
-      icon: CalendarClock,
-      tone: 'warning' as const,
-    },
+  const priorities: PriorityItem[] = [
     {
       label: 'فواتير متأخرة',
-      description: 'ابدأ متابعة التحصيل',
+      description: 'متأخرات تحصيل مفتوحة',
+      actionHint: 'ابدأ متابعة التحصيل',
       count: overdueCount,
       to: '/arrears',
       unavailable: false,
       icon: CreditCard,
-      tone: 'danger' as const,
-    },
-    {
-      label: 'صيانة عاجلة',
-      description: 'راجع الطلبات ذات الأولوية',
-      count: maintenanceCount,
-      to: '/maintenance',
-      unavailable: false,
-      icon: Wrench,
-      tone: 'warning' as const,
-    },
-    {
-      label: 'وحدات شاغرة',
-      description: 'فرص إعادة التأجير',
-      count: vacantUnitsCount,
-      to: '/units',
-      unavailable: false,
-      icon: Building2,
-      tone: 'warning' as const,
-    },
-    {
-      label: 'حركات بنكية معلقة',
-      description: 'مطابقة الكشف والتحصيلات',
-      count: unmatchedBankTxCount ?? 0,
-      unavailable: unmatchedBankTxCount === undefined,
-      to: '/bank-reconciliation',
-      icon: Landmark,
-      tone: 'warning' as const,
-    },
-    {
-      label: 'تسويات ملاك جاهزة',
-      description: 'إعداد واعتماد وصرف التسويات',
-      count: pendingSettlementsCount ?? 0,
-      unavailable: pendingSettlementsCount === undefined,
-      to: '/owner-settlements',
-      icon: HandCoins,
-      tone: 'warning' as const,
+      tone: 'danger',
+      critical: true,
+      rank: 1,
     },
     {
       label: 'تنبيهات سلامة البيانات',
-      description: 'فحص التطابق وتصحيح السجلات',
+      description: 'فحوص تطابق تحتاج مراجعة',
+      actionHint: 'صحح السجلات المتأثرة',
       count: integrityWarningsCount ?? 0,
       unavailable: integrityWarningsCount === undefined,
       to: '/data-integrity',
       icon: ShieldAlert,
-      tone: 'danger' as const,
+      tone: 'danger',
+      critical: true,
+      rank: 2,
+    },
+    {
+      label: 'عقود تنتهي قريباً',
+      description: 'نافذة الثلاثين يوماً',
+      actionHint: 'راجع التجديد أو الإخلاء',
+      count: contractCount,
+      to: '/contracts',
+      unavailable: false,
+      icon: CalendarClock,
+      tone: 'warning',
+      critical: true,
+      rank: 3,
+    },
+    {
+      label: 'صيانة عاجلة',
+      description: 'طلبات عالية أو عاجلة',
+      actionHint: 'راجع الطلبات ذات الأولوية',
+      count: maintenanceCount,
+      to: '/maintenance',
+      unavailable: false,
+      icon: Wrench,
+      tone: 'warning',
+      critical: true,
+      rank: 4,
+    },
+    {
+      label: 'تسويات ملاك جاهزة',
+      description: 'اعتماد أو صرف منتظر',
+      actionHint: 'أكمل الاعتماد أو الصرف',
+      count: pendingSettlementsCount ?? 0,
+      unavailable: pendingSettlementsCount === undefined,
+      to: '/owner-settlements',
+      icon: HandCoins,
+      tone: 'warning',
+      critical: false,
+      rank: 5,
+    },
+    {
+      label: 'حركات بنكية معلقة',
+      description: 'بنود كشف غير مطابقة',
+      actionHint: 'طابق الحركات البنكية',
+      count: unmatchedBankTxCount ?? 0,
+      unavailable: unmatchedBankTxCount === undefined,
+      to: '/bank-reconciliation',
+      icon: Landmark,
+      tone: 'warning',
+      critical: false,
+      rank: 6,
+    },
+    {
+      label: 'وحدات شاغرة',
+      description: 'فرص إعادة التأجير',
+      actionHint: 'راجع جاهزية التأجير',
+      count: vacantUnitsCount,
+      to: '/units',
+      unavailable: false,
+      icon: Building2,
+      tone: 'info',
+      critical: false,
+      rank: 7,
     },
   ];
 
+  const activePriorities = priorities
+    .filter((priority) => priority.count > 0 || priority.unavailable)
+    .sort((a, b) => {
+      if (a.critical !== b.critical) return a.critical ? -1 : 1;
+      if (a.unavailable !== b.unavailable) return a.unavailable ? -1 : 1;
+      return a.rank - b.rank;
+    });
+  const immediatePriorities = activePriorities.filter((priority) => priority.critical);
+  const extraPriorities = activePriorities.filter((priority) => !priority.critical);
+  const visibleExtraPriorities = immediatePriorities.length < 4 ? extraPriorities.slice(0, 4 - immediatePriorities.length) : [];
+  const visiblePriorities = [...immediatePriorities, ...visibleExtraPriorities];
+  const deferredPriorities = extraPriorities.slice(visibleExtraPriorities.length);
+
   return (
-    <section className={`space-y-3 ${className}`} aria-label="الأولوية الآن">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <Bell className="size-4 text-primary" aria-hidden="true" />
-            <h2 className="text-[0.9375rem] font-semibold">الأولوية الآن</h2>
+    <section className={cn('dashboard-priority-panel', className)} aria-label="الأولوية الآن" data-dashboard-priority-panel>
+      <div className="dashboard-priority-summary">
+        <div className="dashboard-priority-summary__icon" aria-hidden="true">
+          <Bell className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="dashboard-priority-summary__title">الأولوية الآن</h2>
+            {knownTotal > 0 ? <StatusBadge tone="danger">{knownTotal} متابعة</StatusBadge> : null}
           </div>
-          <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">
+          <p className="dashboard-priority-summary__copy">
             {knownTotal > 0 ? `${knownTotal} حالة تحتاج قراراً أو متابعة` : 'لا توجد حالات عاجلة معروفة حالياً'}
             {hasUnavailable ? ' — بعض المؤشرات غير متاحة الآن' : ''}
           </p>
         </div>
-        {knownTotal > 0 ? <StatusBadge tone="danger">{knownTotal} متابعة</StatusBadge> : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {priorities
-          .filter((p) => p.count > 0 || p.unavailable)
-          .map((priority) => {
-            const Icon = priority.icon;
-            return (
-              <Link key={priority.to} to={priority.to} className="min-w-0" data-dashboard-priority-link>
-                <Card className="h-full transition-shadow hover:shadow-card-hover">
-                  <CardContent className="flex min-h-24 items-center gap-3 p-4">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                      <Icon className="size-5" aria-hidden="true" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-semibold">{priority.label}</p>
-                        {priority.unavailable ? (
-                          <StatusBadge tone="neutral">غير متاح</StatusBadge>
-                        ) : (
-                          <StatusBadge tone={priority.tone}>{priority.count}</StatusBadge>
-                        )}
-                      </div>
-                      <p className="mt-0.5 text-[0.8125rem] text-muted-foreground">
-                        {priority.unavailable ? 'تعذر تحميل العدد الآن — افتح الصفحة للتحقق' : priority.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+      <div className="dashboard-priority-list" role="list">
+        {visiblePriorities.map((priority) => (
+          <div key={priority.to} role="listitem">
+            <PriorityRow priority={priority} />
+          </div>
+        ))}
       </div>
+
+      {deferredPriorities.length > 0 ? (
+        <details className="dashboard-priority-disclosure">
+          <summary>عرض الكل ({deferredPriorities.length})</summary>
+          <div className="dashboard-priority-list dashboard-priority-list--deferred" role="list">
+            {deferredPriorities.map((priority) => (
+              <div key={priority.to} role="listitem">
+                <PriorityRow priority={priority} secondary />
+              </div>
+            ))}
+          </div>
+        </details>
+      ) : null}
     </section>
   );
 }

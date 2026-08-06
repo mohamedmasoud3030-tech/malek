@@ -215,14 +215,14 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     expect(container?.querySelector('[data-page-layout][data-visual-contract]')).toBeNull();
   });
 
-  it('orders the deliberate decision hierarchy: priorities, kpis, trends, work queues, analytics', async () => {
+  it('orders the deliberate decision hierarchy: priorities, kpis, work queues, trends, analytics', async () => {
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
 
     await renderPage();
 
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
-    expect(sectionOrder).toEqual(['priorities', 'kpis', 'trends', 'work-queues', 'analytics']);
+    expect(sectionOrder).toEqual(['priorities', 'kpis', 'work-queues', 'trends', 'analytics']);
   });
 
   it('renders KPI surfaces as real destination links', async () => {
@@ -233,7 +233,7 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     const kpiLinks = Array.from(container?.querySelectorAll('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]') ?? []);
     expect(kpiLinks).toHaveLength(4);
     const hrefs = kpiLinks.map((link) => link.getAttribute('href'));
-    expect(hrefs).toEqual(['/financials', '/expenses', '/reports', '/arrears']);
+    expect(hrefs).toEqual(['/financials', '/arrears', '/reports', '/expenses']);
   });
 
   it('hides Quick Actions for roles with no actionable permission', async () => {
