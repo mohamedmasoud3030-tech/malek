@@ -21,7 +21,7 @@ payments, expenses, commissions).
 | `cancel_commission_atomic` | 20260804020000_financial_direct_write_hardening_commissions.sql | DEFINER | public, pg_temp | require_company_id() + company_id scoped write | revoked | yes |
 | `cancel_owner_settlement_atomic` | 20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql | DEFINER | public, pg_temp | company_id scoped write (derivation source unknown) | n/a | no |
 | `create_commission_atomic` | 20260804020000_financial_direct_write_hardening_commissions.sql | DEFINER | public, pg_temp | require_company_id() | revoked | yes |
-| `create_expense_with_journal_atomic` | 20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql | DEFINER | 'public', 'pg_temp' | company_id scoped write (derivation source unknown) | n/a | no |
+| `create_expense_with_journal_atomic` | 20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql | DEFINER | 'public', 'pg_temp' | company_id scoped write (derivation source unknown) | revoked | yes |
 | `create_owner_agreement_atomic` | 20260729091000_p1_owner_settlement_property_text_compatibility.sql | DEFINER | public, pg_temp | company_id scoped write (derivation source unknown) | revoked | yes |
 | `create_owner_settlement_draft_atomic` | 20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql | DEFINER | public, pg_temp | company_id scoped write (derivation source unknown) | n/a | no |
 | `create_property_with_agreement` | 20260730091300_property_owner_workflow_invariants.sql | DEFINER | 'public', 'pg_temp' | current_company_id() + company_id scoped write | revoked | yes |
@@ -34,12 +34,12 @@ payments, expenses, commissions).
 | `pay_commission_atomic` | 20260801000002_pay_commission_atomic.sql | DEFINER | 'public', 'pg_temp' | current_company_id() + company_id scoped write | revoked | yes |
 | `pay_owner_settlement_atomic` | 20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql | DEFINER | public, pg_temp | company_id scoped write (derivation source unknown) | n/a | no |
 | `post_receipt_atomic` | 20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql | DEFINER | 'public', 'pg_temp' | current_company_id() + company_id scoped write | n/a | no |
-| `record_invoice_payment_atomic` | 20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql | DEFINER | 'public', 'pg_temp' | NOT DETECTED (RLS reliance risk for DEFINER) | n/a | no |
+| `record_invoice_payment_atomic` | 20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql | DEFINER | 'public', 'pg_temp' | auth.uid() + is_admin_or_manager() + company_id scoped write | revoked | yes |
 | `reverse_commission_atomic` | 20260801000002_pay_commission_atomic.sql | DEFINER | 'public', 'pg_temp' | current_company_id() + company_id scoped write | revoked | yes |
 | `update_commission_atomic` | 20260804020000_financial_direct_write_hardening_commissions.sql | DEFINER | public, pg_temp | require_company_id() + company_id scoped write | revoked | yes |
 | `update_expense_with_journal_atomic` | 20260727094000_phase3a1a_update_expense_type_safety.sql | DEFINER | public, pg_temp | company_id scoped write (derivation source unknown) | revoked | yes |
 | `update_owner_agreement_atomic` | 20260804000000_fix_owner_agreement_company_isolation.sql | DEFINER | 'public', 'pg_temp' | require_company_id() + company_id scoped write | revoked | yes |
-| `void_receipt_atomic` | 20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql | DEFINER | 'public', 'pg_temp' | current_company_id() + company_id scoped write | n/a | no |
+| `void_receipt_atomic` | 20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql | DEFINER | 'public', 'pg_temp' | current_company_id() + company_id scoped write | revoked | yes |
 
 ## Classification notes
 
@@ -57,3 +57,18 @@ payments, expenses, commissions).
 - `enforce_owner_settlement_link_company_consistency` and
   `guard_commission_financial_fields` are `SECURITY INVOKER` helper guards;
   they are listed for completeness.
+
+## S02-T06 verification
+
+The exact approved overload identities are all `jsonb`:
+`record_invoice_payment_atomic(jsonb)`, `void_receipt_atomic(jsonb)`,
+`create_expense_with_journal_atomic(jsonb)`, and
+`update_expense_with_journal_atomic(jsonb)`.
+
+Migration `20260806000000_s02_financial_direct_write_hardening_payments_expenses.sql`
+removes browser-role mutation grants and write-capable RLS policies from
+`payments` and `expenses`, keeps company-scoped SELECT, revokes RPC execution
+from PUBLIC/anon, and grants only authenticated/service_role. The SQL contract
+test fails closed on ACL, policy, overload, SECURITY DEFINER, and guard
+regressions and executes negative calls under the real authenticated database
+role.
