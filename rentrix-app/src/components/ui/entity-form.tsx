@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import type { ComponentPropsWithoutRef, FormEventHandler, ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -18,6 +18,22 @@ const invalidFieldSelector = [
 export type ResponsiveFormSurface = 'bottom-sheet' | 'dialog' | 'full-page';
 export type EntityFormSurfacePreference = 'auto' | ResponsiveFormSurface;
 export type EntityFormVisualVariant = 'operational';
+
+const EntityFormVisualContext = createContext<EntityFormVisualVariant | undefined>(undefined);
+
+export function EntityFormVisualProvider({
+  variant,
+  children,
+}: Readonly<{
+  variant?: EntityFormVisualVariant;
+  children: ReactNode;
+}>) {
+  return (
+    <EntityFormVisualContext.Provider value={variant}>
+      {children}
+    </EntityFormVisualContext.Provider>
+  );
+}
 
 export function getResponsiveFormSurface(
   matchesMobile: boolean,
@@ -279,10 +295,19 @@ function Overlay({
   children,
   className,
   surface = 'auto',
-  mobileSurface = 'full-page',
+  mobileSurface,
   visualVariant,
 }: EntityFormOverlayProps) {
-  const resolvedSurface = getResponsiveFormSurface(useMediaQuery(mobileFormQuery), surface, mobileSurface);
+  const inheritedVisualVariant = useContext(EntityFormVisualContext);
+  const resolvedVisualVariant = visualVariant ?? inheritedVisualVariant;
+  const resolvedMobileSurface = mobileSurface ?? (
+    resolvedVisualVariant === 'operational' ? 'bottom-sheet' : 'full-page'
+  );
+  const resolvedSurface = getResponsiveFormSurface(
+    useMediaQuery(mobileFormQuery),
+    surface,
+    resolvedMobileSurface,
+  );
 
   if (resolvedSurface === 'full-page') {
     return (
@@ -293,7 +318,7 @@ function Overlay({
         description={description}
         headerExtra={headerExtra}
         className={className}
-        visualVariant={visualVariant}
+        visualVariant={resolvedVisualVariant}
       >
         {children}
       </FullPageOverlay>
@@ -305,7 +330,7 @@ function Overlay({
       <BottomSheet open={open} onClose={() => onOpenChange(false)} title={title} className={className}>
         <div
           data-entity-form-surface="bottom-sheet"
-          data-entity-form-variant={visualVariant}
+          data-entity-form-variant={resolvedVisualVariant}
           className="min-w-0 max-w-full overflow-x-hidden"
         >
           {description || headerExtra ? (
@@ -324,7 +349,7 @@ function Overlay({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         data-entity-form-surface="dialog"
-        data-entity-form-variant={visualVariant}
+        data-entity-form-variant={resolvedVisualVariant}
         className={cn('flex max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),54rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0', className)}
       >
         <DialogHeader className="shrink-0 border-b border-border/60 bg-background/96 px-6 py-5 pe-14 backdrop-blur">
