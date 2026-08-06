@@ -17,11 +17,12 @@ const invalidFieldSelector = [
 
 export type ResponsiveFormSurface = 'bottom-sheet' | 'dialog' | 'full-page';
 export type EntityFormSurfacePreference = 'auto' | ResponsiveFormSurface;
+export type EntityFormVisualVariant = 'operational';
 
 export function getResponsiveFormSurface(
   matchesMobile: boolean,
   preference: EntityFormSurfacePreference = 'auto',
-  mobilePreference: Exclude<ResponsiveFormSurface, 'dialog'> = 'bottom-sheet',
+  mobilePreference: Exclude<ResponsiveFormSurface, 'dialog'> = 'full-page',
 ): ResponsiveFormSurface {
   if (preference !== 'auto') return preference;
   return matchesMobile ? mobilePreference : 'dialog';
@@ -209,6 +210,7 @@ type EntityFormOverlayProps = Readonly<{
   className?: string;
   surface?: EntityFormSurfacePreference;
   mobileSurface?: Exclude<ResponsiveFormSurface, 'dialog'>;
+  visualVariant?: EntityFormVisualVariant;
 }>;
 
 function OverlayHeader({ title, description, headerExtra }: Pick<EntityFormOverlayProps, 'title' | 'description' | 'headerExtra'>) {
@@ -223,12 +225,22 @@ function OverlayHeader({ title, description, headerExtra }: Pick<EntityFormOverl
   );
 }
 
-function FullPageOverlay({ open, onOpenChange, title, description, headerExtra, children, className }: EntityFormOverlayProps) {
+function FullPageOverlay({
+  open,
+  onOpenChange,
+  title,
+  description,
+  headerExtra,
+  children,
+  className,
+  visualVariant,
+}: EntityFormOverlayProps) {
   if (!open) return null;
 
   return (
     <div
       data-entity-form-surface="full-page"
+      data-entity-form-variant={visualVariant}
       className="fixed z-[110] min-w-0 overflow-hidden bg-background text-foreground"
       style={{
         top: 'var(--visual-viewport-offset-top, 0px)',
@@ -258,17 +270,44 @@ function FullPageOverlay({ open, onOpenChange, title, description, headerExtra, 
   );
 }
 
-function Overlay({ open, onOpenChange, title, description, headerExtra, children, className, surface = 'auto', mobileSurface = 'bottom-sheet' }: EntityFormOverlayProps) {
+function Overlay({
+  open,
+  onOpenChange,
+  title,
+  description,
+  headerExtra,
+  children,
+  className,
+  surface = 'auto',
+  mobileSurface = 'full-page',
+  visualVariant,
+}: EntityFormOverlayProps) {
   const resolvedSurface = getResponsiveFormSurface(useMediaQuery(mobileFormQuery), surface, mobileSurface);
 
   if (resolvedSurface === 'full-page') {
-    return <FullPageOverlay open={open} onOpenChange={onOpenChange} title={title} description={description} headerExtra={headerExtra} className={className}>{children}</FullPageOverlay>;
+    return (
+      <FullPageOverlay
+        open={open}
+        onOpenChange={onOpenChange}
+        title={title}
+        description={description}
+        headerExtra={headerExtra}
+        className={className}
+        visualVariant={visualVariant}
+      >
+        {children}
+      </FullPageOverlay>
+    );
   }
 
   if (resolvedSurface === 'bottom-sheet') {
     return (
       <BottomSheet open={open} onClose={() => onOpenChange(false)} title={title} className={className}>
-        <div data-entity-form-surface="bottom-sheet" className="min-w-0 max-w-full overflow-x-hidden">
+        <div
+          data-entity-form-surface="bottom-sheet"
+          data-entity-form-variant={visualVariant}
+          className="min-w-0 max-w-full overflow-x-hidden"
+        >
           {description || headerExtra ? (
             <div className="mb-4 flex min-w-0 flex-wrap items-center gap-2 rounded-2xl bg-muted/35 p-3">
               {description ? <p className="min-w-0 flex-1 text-sm font-medium leading-6 text-muted-foreground">{description}</p> : null}
@@ -283,7 +322,11 @@ function Overlay({ open, onOpenChange, title, description, headerExtra, children
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-entity-form-surface="dialog" className={cn('flex max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),54rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0', className)}>
+      <DialogContent
+        data-entity-form-surface="dialog"
+        data-entity-form-variant={visualVariant}
+        className={cn('flex max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),54rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0', className)}
+      >
         <DialogHeader className="shrink-0 border-b border-border/60 bg-background/96 px-6 py-5 pe-14 backdrop-blur">
           <div className="flex flex-wrap items-center gap-2">
             <DialogTitle>{title}</DialogTitle>
