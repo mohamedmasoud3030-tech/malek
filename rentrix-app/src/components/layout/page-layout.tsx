@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { EntityFormVisualProvider } from '@/components/ui/entity-form';
 import { cn } from '@/lib/utils';
 
 interface PageLayoutProps {
@@ -12,11 +13,6 @@ interface PageLayoutProps {
   visualVariant?: 'malek-pro';
 }
 
-/**
- * Consistent top-level page wrapper.
- * Every feature page MUST wrap content in <PageLayout>.
- * No page should set its own max-width or page-level padding.
- */
 const pageSizes: Record<NonNullable<PageLayoutProps['size']>, string> = {
   default: 'mx-auto w-full max-w-7xl',
   wide: 'mx-auto w-full max-w-[96rem]',
@@ -32,23 +28,27 @@ export function PageLayout({
   size = 'default',
   visualVariant,
 }: PageLayoutProps) {
+  const formVisualVariant = visualVariant === 'malek-pro' ? 'operational' : undefined;
+
   return (
-    <div
-      data-page-layout
-      data-visual-wave={visualVariant}
-      className={cn('min-w-0 overflow-x-clip', className)}
-      dir={dir}
-      lang={lang}
-    >
+    <EntityFormVisualProvider variant={formVisualVariant}>
       <div
-        className={cn(
-          pageSizes[size],
-          'min-w-0 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:space-y-6 sm:pb-8',
-          contentClassName,
-        )}
+        data-page-layout
+        data-visual-wave={visualVariant}
+        className={cn('min-w-0 overflow-x-clip', className)}
+        dir={dir}
+        lang={lang}
       >
-        {children}
+        <div
+          className={cn(
+            pageSizes[size],
+            'min-w-0 space-y-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:space-y-6 sm:pb-8',
+            contentClassName,
+          )}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </EntityFormVisualProvider>
   );
 }
