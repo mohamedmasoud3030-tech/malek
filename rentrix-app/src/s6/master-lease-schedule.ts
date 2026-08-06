@@ -95,13 +95,18 @@ export function buildMasterLeaseSchedule(input: LeaseScheduleInput): LeaseSchedu
   for (let period = 1; period <= maxPeriod; period += 1) {
     const openingLiabilityMinor = liability;
     const interestMinor = roundMinor(openingLiabilityMinor * periodicRate);
-    const paymentMinor = paymentByPeriod.get(period) ?? 0;
-    const principalMinor = paymentMinor - interestMinor;
-    let closingLiabilityMinor = openingLiabilityMinor + interestMinor - paymentMinor;
+    let paymentMinor = paymentByPeriod.get(period) ?? 0;
 
-    if (period === maxPeriod && Math.abs(closingLiabilityMinor) <= 1) {
-      closingLiabilityMinor = 0;
+    // The final payment is a settlement payment. Derive it from the remaining
+    // liability plus final-period interest so the roll-forward remains exact
+    // in integer minor units without force-zeroing the closing balance.
+    if (period === maxPeriod) {
+      paymentMinor = openingLiabilityMinor + interestMinor;
     }
+
+    const principalMinor = paymentMinor - interestMinor;
+    const closingLiabilityMinor = openingLiabilityMinor + interestMinor - paymentMinor;
+
     if (closingLiabilityMinor < 0) {
       throw new Error(`payment in period ${period} over-settles the lease liability`);
     }
