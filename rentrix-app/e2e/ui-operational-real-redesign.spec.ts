@@ -83,16 +83,18 @@ test('operational create form is a Bottom Sheet on mobile with visible actions',
 
   await page.getByRole('button', { name: 'إضافة عقار' }).first().click();
 
-  const sheet = page.locator(
+  const bottomSheet = page.locator('[data-bottom-sheet]');
+  const formSurface = page.locator(
     '[data-entity-form-surface="bottom-sheet"][data-entity-form-variant="operational"]',
   );
-  await expect(sheet).toBeVisible();
+  await expect(bottomSheet).toBeVisible();
+  await expect(formSurface).toBeVisible();
   await expect(page.locator('[data-entity-form-surface="full-page"]')).toHaveCount(0);
-  await expect(sheet.getByRole('heading', { name: 'إضافة عقار جديد' })).toBeVisible();
-  await expect(sheet.locator('[data-entity-form-actions]')).toBeVisible();
+  await expect(bottomSheet.getByRole('heading', { name: 'إضافة عقار جديد' })).toBeVisible();
+  await expect(formSurface.locator('[data-entity-form-actions]')).toBeVisible();
   await expectNoHorizontalOverflow(page, 'property create bottom sheet');
 
-  const sheetBox = await page.locator('[data-bottom-sheet]').boundingBox();
+  const sheetBox = await bottomSheet.boundingBox();
   expect(sheetBox).not.toBeNull();
   expect(sheetBox!.width).toBeLessThanOrEqual(375);
   expect(sheetBox!.height).toBeLessThanOrEqual(844);
