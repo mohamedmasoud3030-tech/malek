@@ -38,6 +38,7 @@ export function OwnersWorkspace({ embedded = false }: OwnersWorkspaceProps) {
       embedded={embedded}
       dir="rtl"
       size="wide"
+      visualVariant="malek-pro"
       title="إدارة الملاك"
       description="إدارة علاقات ملكية العقارات بشكل منفصل عن الحسابات والتسويات المالية."
       primaryAction={<Button className="min-h-11" onClick={c.openCreateForm}><Plus className="me-2 size-4" />إضافة مالك</Button>}

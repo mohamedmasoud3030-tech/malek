@@ -23,18 +23,20 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: 'min-h-10 min-w-10 rounded-lg px-3 py-1.5 text-xs',
-  md: 'min-h-10 min-w-10 rounded-lg px-4 py-2 text-sm',
+  sm: 'min-h-11 min-w-11 rounded-lg px-3 py-1.5 text-xs',
+  md: 'min-h-11 min-w-11 rounded-lg px-4 py-2 text-sm',
   lg: 'min-h-11 min-w-11 rounded-xl px-5 py-2.5 text-base',
-  icon: 'size-10 rounded-lg p-0',
+  icon: 'size-11 rounded-lg p-0',
 };
 
+/** Shared operational button with a consistent 44px minimum hit area. */
 export function Button({ asChild = false, className, variant = 'primary', size = 'md', type = 'button', ...props }: ButtonProps) {
   const Component = asChild ? Slot : 'button';
   return (
     <Component
+      data-ui-button
       className={cn(
-        'pressable inline-flex cursor-pointer items-center justify-center font-bold shadow-sm outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+        'pressable inline-flex cursor-pointer items-center justify-center font-bold shadow-sm outline-none transition-[background-color,border-color,color,box-shadow,opacity,transform] duration-150 focus-visible:ring-4 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none',
         sizes[size],
         variants[variant],
         className,

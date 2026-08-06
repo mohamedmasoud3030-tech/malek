@@ -135,7 +135,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
             <button
               type="button"
               onClick={onClose}
-              className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+              className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none"
               aria-label="إغلاق"
             >
               <X className="size-[0.9rem]" aria-hidden="true" />

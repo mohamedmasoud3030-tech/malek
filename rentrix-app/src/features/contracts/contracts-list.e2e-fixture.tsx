@@ -111,7 +111,7 @@ export function ContractsListE2EFixture() {
 
   return (
     <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-contracts-workspace>
-      <PageLayout dir="rtl" size="wide">
+      <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
         <PageHeader
           title="العقود"
           description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."

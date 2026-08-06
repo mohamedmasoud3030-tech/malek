@@ -80,6 +80,7 @@ export function SettingsWorkspaceE2EFixture() {
       className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground"
       dir="rtl"
       data-e2e-settings-workspace
+      data-visual-wave="malek-pro"
       data-submit-count={submitCount}
     >
       <div className="mx-auto min-w-0 max-w-[1500px] space-y-4 px-3 py-4 sm:px-6 lg:px-8">

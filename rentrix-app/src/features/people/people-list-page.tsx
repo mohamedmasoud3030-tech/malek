@@ -205,6 +205,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       <ListPage
         embedded={embedded}
         dir="rtl"
+        visualVariant="malek-pro"
         title="الأشخاص"
         description="جدول موحد للمستأجرين والملاك وجهات الاتصال."
         count={peopleQuery.data?.count ?? undefined}

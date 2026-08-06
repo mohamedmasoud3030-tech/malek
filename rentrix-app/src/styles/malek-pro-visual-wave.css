@@ -1,0 +1,164 @@
+/*
+ * Visual Migration Wave 1 — operational surface theme
+ *
+ * The values intentionally live below [data-visual-wave='malek-pro'] rather
+ * than :root. This lets the approved App Shell + operational workspaces adopt
+ * the slate/emerald language from the Malek-pro visual reference without
+ * recoloring the Dashboard V2 proof or changing its data/rendering contract.
+ * No data, permission, routing, storage, or service behavior lives here.
+ */
+
+[data-visual-wave='malek-pro'] {
+  --background: 210 33% 98%;
+  --foreground: 222 38% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 38% 13%;
+  --primary: 160 84% 31%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 28% 95%;
+  --secondary-foreground: 222 28% 21%;
+  --muted: 210 25% 95%;
+  --muted-foreground: 215 13% 43%;
+  --accent: 174 72% 33%;
+  --accent-foreground: 0 0% 100%;
+  --border: 214 25% 89%;
+  --input: 214 25% 84%;
+  --destructive: 350 77% 46%;
+  --destructive-foreground: 0 0% 100%;
+
+  --color-success-text: 157 72% 25%;
+  --color-success-bg: 152 58% 94%;
+  --color-warning-text: 34 82% 31%;
+  --color-warning-bg: 43 94% 91%;
+  --color-danger-text: 350 76% 42%;
+  --color-danger-bg: 350 86% 96%;
+  --color-info-text: 211 72% 36%;
+  --color-info-bg: 207 88% 95%;
+  --color-neutral-text: 215 16% 40%;
+  --color-neutral-bg: 215 20% 93%;
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.045), 0 8px 20px -16px rgb(15 23 42 / 0.2);
+  --shadow-card-hover: 0 2px 4px rgb(15 23 42 / 0.055), 0 16px 30px -20px rgb(15 23 42 / 0.26);
+  --shadow-elevated: 0 24px 55px -28px rgb(15 23 42 / 0.42), 0 8px 22px -16px rgb(15 23 42 / 0.28);
+  --focus-ring: 160 84% 31%;
+}
+
+[data-theme='dark'] [data-visual-wave='malek-pro'] {
+  --background: 222 37% 8%;
+  --foreground: 210 30% 94%;
+  --card: 222 30% 12%;
+  --card-foreground: 210 30% 94%;
+  --primary: 160 70% 43%;
+  --primary-foreground: 222 37% 8%;
+  --secondary: 218 25% 17%;
+  --secondary-foreground: 210 28% 90%;
+  --muted: 218 24% 16%;
+  --muted-foreground: 215 15% 66%;
+  --accent: 174 62% 43%;
+  --accent-foreground: 222 37% 8%;
+  --border: 218 22% 21%;
+  --input: 218 22% 28%;
+  --destructive: 350 77% 59%;
+
+  --color-success-text: 154 68% 63%;
+  --color-success-bg: 154 43% 15%;
+  --color-warning-text: 43 91% 66%;
+  --color-warning-bg: 38 58% 16%;
+  --color-danger-text: 350 83% 70%;
+  --color-danger-bg: 350 46% 18%;
+  --color-info-text: 207 86% 70%;
+  --color-info-bg: 208 48% 16%;
+  --color-neutral-text: 215 14% 66%;
+  --color-neutral-bg: 218 20% 19%;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.22), 0 12px 28px -22px rgb(0 0 0 / 0.7);
+  --shadow-card-hover: 0 2px 5px rgb(0 0 0 / 0.26), 0 18px 34px -22px rgb(0 0 0 / 0.75);
+  --shadow-elevated: 0 28px 64px -26px rgb(0 0 0 / 0.78);
+  --focus-ring: 160 70% 48%;
+}
+
+/* Quiet, compact operational surfaces — no marketing hero treatment. */
+[data-visual-wave='malek-pro'] > div {
+  max-width: min(100%, 90rem);
+}
+
+[data-visual-wave='malek-pro'] [data-page-header] {
+  border-color: hsl(var(--border) / 0.8);
+  padding-block-end: 0.875rem;
+}
+
+[data-visual-wave='malek-pro'] [data-list-controls],
+[data-visual-wave='malek-pro'] [data-filter-bar] {
+  border-color: hsl(var(--border) / 0.9);
+  background: hsl(var(--card) / 0.94);
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-component-card],
+[data-visual-wave='malek-pro'] [data-entity-card],
+[data-visual-wave='malek-pro'] [data-mobile-card] {
+  border-color: hsl(var(--border) / 0.9);
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-component-card]:hover,
+[data-visual-wave='malek-pro'] [data-entity-card]:hover,
+[data-visual-wave='malek-pro'] [data-mobile-card]:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-visual-wave='malek-pro'] [data-kpi-card] {
+  border-color: hsl(var(--border) / 0.9);
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
+  border-color: hsl(var(--border) / 0.9);
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-entity-table] thead {
+  background: hsl(var(--muted) / 0.72);
+}
+
+[data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
+  background: hsl(var(--primary) / 0.045);
+}
+
+[data-visual-wave='malek-pro'] [data-empty-state-icon] {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.09);
+}
+
+[data-visual-wave='malek-pro'] [data-error-state] {
+  border-color: hsl(var(--danger-text) / 0.28);
+}
+
+/* App chrome stays independent from the Dashboard data-proof surface. */
+[data-app-shell] {
+  background: hsl(210 33% 98%);
+}
+
+[data-theme='dark'] [data-app-shell] {
+  background: hsl(222 37% 8%);
+}
+
+[data-app-shell] [data-app-shell-header] {
+  box-shadow: 0 1px 0 hsl(214 25% 87% / 0.8), 0 8px 24px -24px rgb(15 23 42 / 0.32);
+}
+
+[data-theme='dark'] [data-app-shell] [data-app-shell-header] {
+  box-shadow: 0 1px 0 hsl(218 22% 21% / 0.9), 0 8px 24px -24px rgb(0 0 0 / 0.75);
+}
+
+[data-app-shell] [data-sidebar] {
+  background: linear-gradient(180deg, hsl(222 40% 11%) 0%, hsl(222 42% 8%) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-visual-wave='malek-pro'] *,
+  [data-app-shell] * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

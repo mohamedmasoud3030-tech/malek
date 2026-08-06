@@ -53,7 +53,7 @@ function readSectionParam(search: unknown): string | null {
  * Preserves all routes, deep links, and permissions without cluttering the main sidebar.
  *
  * Mobile behaviour matches SectionTabs: horizontal scroll with hidden scrollbars
- * and min-h-10 touch targets — no overflow menu pattern.
+ * and 44px touch targets — no overflow menu pattern.
  */
 export function WorkspaceSubNav({ rootPath, className = '' }: WorkspaceSubNavProps) {
   const { authorization } = useAuth();
@@ -81,7 +81,7 @@ export function WorkspaceSubNav({ rootPath, className = '' }: WorkspaceSubNavPro
       <Link
         to={rootPath}
         aria-current={hubHomeActive ? 'page' : undefined}
-        className={`min-h-10 shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+        className={`min-h-11 shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none ${
           hubHomeActive
             ? 'border border-primary/20 bg-primary/10 text-primary'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -104,7 +104,7 @@ export function WorkspaceSubNav({ rootPath, className = '' }: WorkspaceSubNavPro
             key={to}
             to={to}
             aria-current={active ? 'page' : undefined}
-            className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+            className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none ${
               active
                 ? 'border border-primary/20 bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'

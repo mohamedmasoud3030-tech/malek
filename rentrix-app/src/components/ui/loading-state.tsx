@@ -20,6 +20,7 @@ export function LoadingState({
   if (variant === 'inline') {
     return (
       <div
+        data-loading-state
         role="status"
         aria-live="polite"
         aria-label={label}
@@ -34,6 +35,7 @@ export function LoadingState({
   if (variant === 'cards') {
     return (
       <div
+        data-loading-state
         role="status"
         aria-live="polite"
         aria-label={label}
@@ -49,6 +51,7 @@ export function LoadingState({
   if (variant === 'table') {
     return (
       <div
+        data-loading-state
         role="status"
         aria-live="polite"
         aria-label={label}
@@ -65,6 +68,7 @@ export function LoadingState({
   if (variant === 'page') {
     return (
       <div
+        data-loading-state
         role="status"
         aria-live="polite"
         aria-label={label}
@@ -84,6 +88,7 @@ export function LoadingState({
 
   return (
     <div
+      data-loading-state
       role="status"
       aria-live="polite"
       aria-label={label}

@@ -344,6 +344,7 @@ export function EntityTable<T>({
       )}
 
       <Card
+        data-entity-table-wrapper
         className={cn(
           "overflow-hidden",
           renderMobileCard !== undefined ? "hidden md:block" : "",
@@ -351,13 +352,18 @@ export function EntityTable<T>({
         )}
       >
         <div
-          className={
+          data-entity-table-scroll
+          tabIndex={0}
+          role="region"
+          aria-label={`${ariaLabel} — منطقة جدول قابلة للتمرير أفقياً عند الحاجة`}
+          className={cn(
             renderMobileCard !== undefined
               ? "overflow-x-auto"
-              : "mobile-scroll-x"
-          }
+              : "mobile-scroll-x",
+            "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20",
+          )}
         >
-          <Table aria-label={ariaLabel}>
+          <Table data-entity-table aria-label={ariaLabel}>
             <TableHeader>
               <TableRow>
                 {hasExpansion && <TableHead className="w-12" />}
@@ -404,7 +410,7 @@ export function EntityTable<T>({
                           : undefined
                       }
                       className={cn(
-                        onRowClick !== undefined && "cursor-pointer",
+                        onRowClick !== undefined && "cursor-pointer focus-visible:bg-primary/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35",
                       )}
                       tabIndex={onRowClick !== undefined ? 0 : undefined}
                       onKeyDown={

@@ -1,5 +1,5 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChevronLeft, LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
@@ -31,30 +31,52 @@ function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
 /**
  * Header quick-create menu (#1240). Only offered to roles with write access;
  * each entry additionally respects its destination route guard so MANAGER
- * never sees actions they cannot complete.
+ * never sees actions they cannot complete. Exported for interaction regression
+ * coverage; it remains owned and rendered exclusively by <AppShell> in production.
  */
-function QuickAddMenu({
+export function QuickAddMenu({
   authorization,
   sharedLabel,
 }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
   const [isOpen, setIsOpen] = useState(false);
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const visibleItems = quickCreateItems.filter(([, , , permission]) => canShowNavigationItem(authorization, permission));
+
+  const closeAndRestoreFocus = () => {
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  const handleMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const currentIndex = itemRefs.current.findIndex((item) => item === document.activeElement);
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowDown') nextIndex = (currentIndex + 1 + visibleItems.length) % visibleItems.length;
+    if (event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + visibleItems.length) % visibleItems.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = visibleItems.length - 1;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeAndRestoreFocus();
+      return;
+    }
+    if (nextIndex === null) return;
+    event.preventDefault();
+    itemRefs.current[nextIndex]?.focus();
+  };
 
   useEffect(() => {
     if (!isOpen) return;
+    itemRefs.current[0]?.focus();
 
     function handlePointerDown(event: PointerEvent) {
-      if (menuRef.current?.contains(event.target as Node)) return;
+      if (rootRef.current?.contains(event.target as Node)) return;
       setIsOpen(false);
     }
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsOpen(false);
-        triggerRef.current?.focus();
-      }
+      if (event.key === 'Escape') closeAndRestoreFocus();
     }
 
     document.addEventListener('pointerdown', handlePointerDown);
@@ -68,7 +90,7 @@ function QuickAddMenu({
   if (visibleItems.length === 0) return null;
 
   return (
-    <div ref={menuRef} className="relative">
+    <div ref={rootRef} className="relative">
       <button
         ref={triggerRef}
         type="button"
@@ -77,28 +99,29 @@ function QuickAddMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
-        className="pressable inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary/40 sm:size-10 sm:rounded-lg"
+        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-900/20 outline-none transition-colors hover:bg-emerald-700 focus-visible:ring-4 focus-visible:ring-emerald-400/35 motion-reduce:transition-none"
       >
         <Plus className="size-[1.1rem]" aria-hidden="true" />
       </button>
       {isOpen ? (
         <div
-          ref={menuRef}
           id={menuId}
           role="menu"
           aria-label={sharedLabel('quickAdd')}
-          className="absolute end-0 top-11 z-50 w-52 max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-card p-1.5 text-start text-card-foreground shadow-elevated sm:top-12"
+          onKeyDown={handleMenuKeyDown}
+          className="absolute end-0 top-12 z-50 w-56 max-w-[calc(100vw-1rem)] rounded-2xl border border-border/90 bg-card p-1.5 text-start text-card-foreground shadow-elevated"
         >
-          <p className="border-b border-border/60 px-2.5 pb-1.5 text-[11px] font-semibold text-muted-foreground">
+          <p className="border-b border-border/60 px-3 pb-2 pt-0.5 text-[11px] font-semibold text-muted-foreground">
             {sharedLabel('quickAdd')}
           </p>
-          {visibleItems.map(([to, labelKey, Icon]) => (
+          {visibleItems.map(([to, labelKey, Icon], index) => (
             <Link
               key={to}
+              ref={(node) => { itemRefs.current[index] = node; }}
               to={to}
               role="menuitem"
               onClick={() => setIsOpen(false)}
-              className="mt-0.5 flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 text-[12px] font-semibold text-foreground/90 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+              className="mt-0.5 flex min-h-11 items-center gap-2.5 rounded-xl px-3 text-[12px] font-semibold text-foreground/90 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none"
             >
               <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">{sharedLabel(labelKey)}</span>
@@ -132,7 +155,7 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-white/10 bg-sidebar text-sidebar-foreground shadow-2xl sm:max-h-none sm:w-[min(20rem,88vw)] sm:p-0 lg:hidden"
+        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-slate-800 bg-slate-950 text-slate-100 shadow-2xl sm:max-h-none sm:w-[min(20rem,88vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/8 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
@@ -214,12 +237,13 @@ export function AppShell() {
 
   return (
     <div
-      className="min-h-screen min-h-dvh overflow-x-hidden bg-background text-foreground"
+      data-app-shell
+      className="min-h-screen min-h-dvh overflow-x-hidden bg-slate-50 text-foreground dark:bg-slate-950"
       dir={appLanguage.direction}
     >
       <a
         href="#main-content"
-        className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus:not-sr-only focus:fixed focus:right-4 focus:top-4"
+        className="sr-only z-[100] rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:end-4 focus:top-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300"
       >
         {sharedLabel('skipToContent')}
       </a>
@@ -236,7 +260,7 @@ export function AppShell() {
       <aside
         data-sidebar
         className={cn(
-          'fixed inset-y-0 right-0 z-30 hidden border-l border-white/8 bg-sidebar text-sidebar-foreground shadow-sidebar transition-all duration-250 lg:flex lg:flex-col',
+          'fixed inset-y-0 right-0 z-30 hidden border-l border-slate-800 bg-slate-950 text-slate-100 shadow-sidebar transition-[width] duration-200 motion-reduce:transition-none lg:flex lg:flex-col',
           sidebarCollapsed ? 'w-[4.5rem] overflow-visible' : 'w-64 overflow-hidden',
         )}
       >
@@ -268,9 +292,12 @@ export function AppShell() {
         </div>
       </aside>
 
-      <div className={cn('w-full transition-all duration-250 lg:pr-64', sidebarCollapsed && 'lg:pr-[4.5rem]')}>
-        <header className="sticky top-0 z-20 border-b border-border/70 bg-background/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md">
-          <div className="flex min-h-[3.25rem] items-center gap-1 px-2 py-1.5 sm:min-h-[3.5rem] sm:gap-2 sm:px-4">
+      <div className={cn('w-full transition-[padding] duration-200 motion-reduce:transition-none lg:pr-64', sidebarCollapsed && 'lg:pr-[4.5rem]')}>
+        <header
+          data-app-shell-header
+          className="sticky top-0 z-20 border-b border-slate-200/80 bg-slate-50/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/92"
+        >
+          <div className="mx-auto flex min-h-[3.5rem] w-full max-w-[110rem] items-center gap-1 px-2 py-1.5 sm:gap-2 sm:px-4">
             <Button
               variant="ghost"
               className="size-10 shrink-0 px-0 text-muted-foreground hover:text-foreground lg:hidden"
@@ -314,7 +341,7 @@ export function AppShell() {
 
               <Button
                 variant="ghost"
-                className="size-9 px-0 text-muted-foreground hover:text-foreground sm:size-10"
+                className="size-11 px-0 text-slate-500 hover:bg-slate-200/70 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label={sharedLabel('toggleTheme')}
               >
@@ -336,7 +363,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main id="main-content" tabIndex={-1} className="safe-bottom-app overflow-x-hidden p-3 outline-none sm:p-4 lg:p-6 lg:pb-6">
+        <main id="main-content" tabIndex={-1} className="safe-bottom-app min-w-0 overflow-x-hidden bg-slate-50/70 p-3 outline-none dark:bg-slate-950 sm:p-4 lg:p-5 lg:pb-6">
           {writeAccessNotice ? (
             <div
               role="status"

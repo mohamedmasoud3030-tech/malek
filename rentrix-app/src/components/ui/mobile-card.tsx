@@ -1,4 +1,4 @@
-import type { KeyboardEvent, MouseEvent, ReactNode, CSSProperties } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface MobileCardProps {
@@ -22,7 +22,7 @@ export interface MobileCardProps {
   className?: string;
   /** Card style variant */
   variant?: 'default' | 'outlined' | 'filled' | 'elevated';
-  /** Card accent color (border-left indicator) */
+  /** Card accent color (logical inline-start border indicator) */
   accent?: 'primary' | 'success' | 'warning' | 'danger' | 'none';
   /** Whether to show skeleton loading state */
   loading?: boolean;
@@ -31,10 +31,10 @@ export interface MobileCardProps {
 }
 
 const accentColors: Record<NonNullable<MobileCardProps['accent']>, string> = {
-  primary: 'border-l-primary bg-primary/5',
-  success: 'border-l-success bg-success-bg',
-  warning: 'border-l-warning bg-warning-bg',
-  danger: 'border-l-danger bg-danger-bg',
+  primary: 'border-s-primary bg-primary/5',
+  success: 'border-s-success bg-success-bg',
+  warning: 'border-s-warning bg-warning-bg',
+  danger: 'border-s-danger bg-danger-bg',
   none: '',
 };
 
@@ -66,45 +66,14 @@ export function MobileCard({
 }: MobileCardProps) {
   const interactive = typeof onClick === 'function';
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!interactive) return;
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onClick?.();
-    }
+  const handlePrimaryKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onClick?.();
   };
 
-  const stopActions = (event: MouseEvent | KeyboardEvent) => {
-    event.stopPropagation();
-  };
-
-  if (loading) {
-    return (
-      <div className={cn('rounded-3xl border bg-card p-4 shadow-sm', className)}>
-        <div className="space-y-3">
-          <div className="h-5 w-2/3 rounded bg-muted" />
-          <div className="h-3 w-1/3 rounded bg-muted" />
-          <div className="h-12 rounded-2xl bg-muted" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={handleKeyDown}
-      className={cn(
-        'relative overflow-hidden rounded-3xl p-4 transition-all duration-150',
-        variantStyles[variant],
-        accent !== 'none' && 'border-l-4',
-        accentColors[accent],
-        interactive && 'cursor-pointer hover:border-primary/20 hover:shadow-[0_14px_32px_hsl(var(--foreground)/0.08)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 active:scale-[0.99]',
-        className,
-      )}
-    >
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="line-clamp-2 text-[15px] font-bold leading-6 text-foreground">{title}</div>
@@ -120,20 +89,57 @@ export function MobileCard({
       {meta && <div className="mt-3 rounded-2xl bg-muted/45 p-3 text-xs leading-5 text-muted-foreground">{meta}</div>}
       {stats && <div className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-3">{stats}</div>}
       {children}
+      {footer && (
+        <div className="mt-3 text-[11px] font-bold leading-5 text-muted-foreground">{footer}</div>
+      )}
+    </>
+  );
+
+  if (loading) {
+    return (
+      <div data-mobile-card className={cn('rounded-3xl border bg-card p-4 shadow-sm', className)}>
+        <div className="space-y-3">
+          <div className="h-5 w-2/3 rounded bg-muted" />
+          <div className="h-3 w-1/3 rounded bg-muted" />
+          <div className="h-12 rounded-2xl bg-muted" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-mobile-card
+      className={cn(
+        'relative overflow-hidden rounded-3xl p-4 transition-all duration-150 motion-reduce:transition-none',
+        variantStyles[variant],
+        accent !== 'none' && 'border-s-4',
+        accentColors[accent],
+        className,
+      )}
+    >
+      {interactive ? (
+        <button
+          data-mobile-card-primary
+          type="button"
+          role="button"
+          onClick={onClick}
+          onKeyDown={handlePrimaryKeyDown}
+          className="block w-full cursor-pointer text-start outline-none focus-visible:rounded-2xl focus-visible:ring-4 focus-visible:ring-primary/20"
+        >
+          {content}
+        </button>
+      ) : (
+        <div>{content}</div>
+      )}
 
       {actions && (
         <div
           className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-3"
-          onClick={stopActions}
-          onKeyDown={stopActions}
           role="presentation"
         >
           {actions}
         </div>
-      )}
-
-      {footer && (
-        <div className="mt-3 text-[11px] font-bold leading-5 text-muted-foreground">{footer}</div>
       )}
     </div>
   );
@@ -221,39 +227,42 @@ export function ListItemCard({
   className,
 }: ListItemCardProps) {
   const interactive = typeof onClick === 'function';
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!interactive) return;
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onClick?.();
-    }
-  };
+  const content = (
+    <>
+      {leftIcon && (
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          {leftIcon}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm font-bold">{title}</p>
+        {subtitle && (
+          <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{subtitle}</p>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <div
-      role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={handleKeyDown}
+      data-list-item-card
       className={cn(
-        'flex items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-sm transition-colors',
-        interactive && 'cursor-pointer hover:bg-muted/50 active:bg-muted',
+        'flex items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-sm transition-colors motion-reduce:transition-none',
         className,
       )}
     >
-      <div className="flex min-w-0 items-center gap-3">
-        {leftIcon && (
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            {leftIcon}
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 text-sm font-bold">{title}</p>
-          {subtitle && (
-            <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{subtitle}</p>
-          )}
-        </div>
-      </div>
+      {interactive ? (
+        <button
+          type="button"
+          role="button"
+          onClick={onClick}
+          className="flex min-w-0 flex-1 items-center gap-3 text-start outline-none focus-visible:rounded-xl focus-visible:ring-4 focus-visible:ring-primary/20"
+        >
+          {content}
+        </button>
+      ) : (
+        <div className="flex min-w-0 flex-1 items-center gap-3">{content}</div>
+      )}
       <div className="flex shrink-0 items-center gap-2">
         {badge}
         {rightElement}

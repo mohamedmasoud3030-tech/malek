@@ -172,8 +172,9 @@ export function MaintenanceList(props: MaintenanceListProps) {
   } = props;
 
   return (
-    <DataTable
-      aria-label="جدول طلبات الصيانة"
+    <div data-visual-wave="malek-pro">
+      <DataTable
+        aria-label="جدول طلبات الصيانة"
       enableViewModeToggle
       viewModeStorageKey="rentrix:view-mode:maintenance"
       rows={rows}
@@ -276,7 +277,8 @@ export function MaintenanceList(props: MaintenanceListProps) {
       keyOf={(row) => row.id}
       emptyTitle="لا توجد طلبات صيانة"
       emptyDescription="لا توجد طلبات تطابق الفلاتر الحالية."
-      renderMobileCard={(row) => <MaintenanceCard {...props} row={row} />}
-    />
+        renderMobileCard={(row) => <MaintenanceCard {...props} row={row} />}
+      />
+    </div>
   );
 }

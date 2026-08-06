@@ -170,12 +170,12 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   );
 
   const workspace = embedded ? (
-    <section data-workspace="tenants" dir="rtl" className="space-y-5">
+    <section data-workspace="tenants" data-visual-wave="malek-pro" dir="rtl" className="space-y-4 sm:space-y-5">
       <div className="flex justify-end">{createAction}</div>
       {workspaceContent}
     </section>
   ) : (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="المستأجرين"
         description="عرض مستقل للمستأجرين مبني بأمان على بيانات الأشخاص والعقود والفواتير الحالية."

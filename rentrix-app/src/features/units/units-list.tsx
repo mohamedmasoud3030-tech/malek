@@ -120,7 +120,7 @@ export function UnitsList({
                 >
                   <Button
                     variant="secondary"
-                    className="min-h-9 px-3"
+                    className="min-h-11 px-3"
                     aria-label={`تعديل وحدة ${unit.unit_number}`}
                     onClick={() => openForEdit(unit)}
                   >
@@ -128,7 +128,7 @@ export function UnitsList({
                   </Button>
                   <Button
                     variant="danger"
-                    className="min-h-9 px-3"
+                    className="min-h-11 px-3"
                     aria-label={`أرشفة وحدة ${unit.unit_number}`}
                     onClick={() => setArchiveCandidate(unit)}
                     disabled={deleteMutation.isPending}
