@@ -6,14 +6,18 @@ import { isOperationalFormRoute } from '@/lib/operational-form-routes';
 
 export function ProtectedRouteComponent() {
   const pathname = useLocation({ select: (location) => location.pathname });
-  const formVisualVariant = isOperationalFormRoute(pathname)
-    ? 'operational'
-    : undefined;
+  const isOperationalRoute = isOperationalFormRoute(pathname);
+  const formVisualVariant = isOperationalRoute ? 'operational' : undefined;
 
   return (
     <AppProviders>
       <EntityFormVisualProvider variant={formVisualVariant}>
-        <AppShell />
+        <div
+          className="contents"
+          data-operational-route={isOperationalRoute ? 'true' : undefined}
+        >
+          <AppShell />
+        </div>
       </EntityFormVisualProvider>
     </AppProviders>
   );
