@@ -4,7 +4,7 @@ Date: 2026-08-06
 Branch: `fix/ui-malek-pro-visual-wave-2-finance-reporting`
 PR: #1358 (Draft)
 Base SHA: `f84dc96d6d5698af227f226e03ca2cfb00a06f7b` (latest main at branch creation, verified via `git fetch origin main && git log origin/main -1`)
-Head SHA (at audit time): `401db81` (local) / `9aea9fd` (remote before this audit commit) — will be updated after final push
+Head SHA: `ab9ee1fdcf5d27a3be0b474396fc18efd1889012` (final at push time) — Base `f84dc96d6d5698af227f226e03ca2cfb00a06f7b`
 Merge commit verified: `f84dc96d6d5698af227f226e03ca2cfb00a06f7b` exists in main history, title `fix(ui): adopt Malek Pro visual system for core operational surfaces (#1357)`
 
 ## 1. Finance / Report Route Inventory (verified from `route-tree.ts` and filesystem)
@@ -308,4 +308,4 @@ None. All quality gates green or deferred with justification. No secret leak, no
 
 **Evidence Screenshots:** Deferred — to be added as `rentrix-app/src/styles/...` and `docs/audits/evidence/wave2-*` if needed, but not required for acceptance (screenshots are regression evidence only, not acceptance source per ADR 0012).
 
-**Next Steps:** Push audit doc, update PR description with Base SHA, Head SHA, scope, exclusions, changed surfaces, tests, CI status, deferred items, confirmation no accounting behavior changed.
+**Next Steps:** Push audit doc, update PR description with Base SHA, Head SHA: `ab9ee1fdcf5d27a3be0b474396fc18efd1889012` (final at push time) — Base `f84dc96d6d5698af227f226e03ca2cfb00a06f7b`
