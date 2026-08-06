@@ -31,11 +31,17 @@ test.beforeEach(async ({}, testInfo) => {
   );
 });
 
-async function applyTheme(page: Page, theme: 'light' | 'dark') {
-  await page.addInitScript((selectedTheme) => {
-    document.documentElement.dataset.theme = selectedTheme;
-    document.documentElement.dir = 'rtl';
-  }, theme);
+async function applyTheme(page: Page, theme: 'light' | 'dark', operationalRoute = false) {
+  await page.addInitScript(
+    ({ selectedTheme, markOperational }) => {
+      document.documentElement.dataset.theme = selectedTheme;
+      document.documentElement.dir = 'rtl';
+      if (markOperational) {
+        document.documentElement.dataset.operationalRoute = 'true';
+      }
+    },
+    { selectedTheme: theme, markOperational: operationalRoute },
+  );
 }
 
 async function openFixture(
@@ -43,10 +49,11 @@ async function openFixture(
   fixture: (typeof fixtures)[keyof typeof fixtures],
   theme: 'light' | 'dark',
 ) {
-  await applyTheme(page, theme);
+  await applyTheme(page, theme, true);
   await page.goto(fixture.url, { waitUntil: 'domcontentloaded' });
   await page.evaluate((selectedTheme) => {
     document.documentElement.dataset.theme = selectedTheme;
+    document.documentElement.dataset.operationalRoute = 'true';
     document.documentElement.dir = 'rtl';
   }, theme);
   await expect(page.locator(fixture.ready)).toBeVisible();
@@ -85,6 +92,7 @@ for (const [name, fixture] of Object.entries(fixtures)) {
     test(`${name} exposes the real command panel and register at ${viewport.width}px`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await openFixture(page, fixture, viewport.theme);
+      await expect(page.locator('[data-operational-route="true"], html[data-operational-route="true"]')).toBeAttached();
       await expectNoHorizontalOverflow(page, `${name}@${viewport.width}`);
       await page.screenshot({
         path: testInfo.outputPath(`${name}-${viewport.width}-${viewport.theme}.png`),
