@@ -21,9 +21,11 @@ vi.mock('jspdf', async (importOriginal) => {
       // jsPDF v4 installs `text` as an own instance property — capture it
       // before wrapping.
       const originalText = this.text.bind(this);
-      this.text = ((text: string | string[], x: number, y: number, ...rest: unknown[]) => {
+      type OriginalTextArguments = Parameters<typeof originalText>;
+      this.text = ((...args: OriginalTextArguments) => {
+        const [text] = args;
         textRecorder.lines.push(...(Array.isArray(text) ? text : [text]).map(String));
-        return originalText(text, x, y, ...rest);
+        return originalText(...args);
       }) as typeof this.text;
     }
   }
@@ -97,6 +99,14 @@ describe('latin PDF fallback (non-Arabic models only)', () => {
     expect(blob).toContain('Property 80 |');
     expect(blob).toContain('Total | 850 | 140');
     expect(blob).toContain('Company stamp area');
+  });
+
+  it('records text while preserving jsPDF chaining identity', () => {
+    const doc = buildLatinPdf(shortLatinModel);
+    const returned = doc.text('identity check', 14, 20);
+
+    expect(returned).toBe(doc);
+    expect(textRecorder.lines).toContain('identity check');
   });
 
   it('renders LATIN signature labels — Arabic glyphs never reach the core-font path', () => {
