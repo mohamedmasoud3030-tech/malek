@@ -1,10 +1,12 @@
 /*
- * MALEK operational visual system.
+ * MALEK visual system.
  *
- * The page treatment is scoped by [data-visual-wave='malek-pro'].
- * Form treatment is separately scoped by
- * [data-entity-form-variant='operational'] so Finance & Reporting can own its
- * presentation without inheriting this branch's form decisions.
+ * Wave 1 baseline remains available to every approved `malek-pro` surface.
+ * The materially stronger operational redesign is additionally scoped by
+ * `[data-operational-route='true']`, so Finance & Reporting can use their own
+ * Wave 2 treatment without inheriting this branch's page hierarchy.
+ * Operational forms are independently scoped by
+ * `[data-entity-form-variant='operational']` because overlays may use portals.
  */
 
 [data-visual-wave='malek-pro'] {
@@ -40,14 +42,6 @@
   --shadow-card-hover: 0 2px 4px rgb(15 23 42 / 0.055), 0 16px 30px -20px rgb(15 23 42 / 0.26);
   --shadow-elevated: 0 24px 55px -28px rgb(15 23 42 / 0.42), 0 8px 22px -16px rgb(15 23 42 / 0.28);
   --focus-ring: 160 84% 31%;
-
-  position: relative;
-  isolation: isolate;
-  padding: clamp(0.25rem, 0.7vw, 0.75rem);
-  border-radius: 1.5rem;
-  background:
-    radial-gradient(circle at 92% 0%, hsl(var(--primary) / 0.08), transparent 28rem),
-    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.28) 100%);
 }
 
 [data-theme='dark'] [data-visual-wave='malek-pro'] {
@@ -84,8 +78,14 @@
   --focus-ring: 160 70% 48%;
 }
 
+/* Wave 1 baseline: intentionally quiet and safe for all approved surfaces. */
 [data-visual-wave='malek-pro'] > div {
-  max-width: min(100%, 96rem);
+  max-width: min(100%, 90rem);
+}
+
+[data-visual-wave='malek-pro'] [data-page-header] {
+  border-color: hsl(var(--border) / 0.8);
+  padding-block-end: 0.875rem;
 }
 
 [data-visual-wave='malek-pro'] [data-ui-button] {
@@ -93,7 +93,84 @@
   min-block-size: 44px;
 }
 
-[data-visual-wave='malek-pro'] [data-page-header] {
+[data-visual-wave='malek-pro'] [data-list-controls],
+[data-visual-wave='malek-pro'] [data-filter-bar] {
+  border-color: hsl(var(--border) / 0.9);
+  background: hsl(var(--card) / 0.94);
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-component-card],
+[data-visual-wave='malek-pro'] [data-entity-card],
+[data-visual-wave='malek-pro'] [data-mobile-card],
+[data-visual-wave='malek-pro'] [data-kpi-card],
+[data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
+  border-color: hsl(var(--border) / 0.9);
+  box-shadow: var(--shadow-card);
+}
+
+[data-visual-wave='malek-pro'] [data-entity-card]:hover,
+[data-visual-wave='malek-pro'] [data-mobile-card]:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+[data-visual-wave='malek-pro'] [data-entity-table] thead {
+  background: hsl(var(--muted) / 0.72);
+}
+
+[data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
+  background: hsl(var(--primary) / 0.045);
+}
+
+[data-visual-wave='malek-pro'] [data-empty-state-icon] {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.09);
+}
+
+[data-visual-wave='malek-pro'] [data-error-state] {
+  border-color: hsl(var(--danger-text) / 0.28);
+}
+
+/* App chrome remains independent from dashboard and feature-wave ownership. */
+[data-app-shell] {
+  background: hsl(210 33% 98%);
+}
+
+[data-theme='dark'] [data-app-shell] {
+  background: hsl(222 37% 8%);
+}
+
+[data-app-shell] [data-app-shell-header] {
+  box-shadow: 0 1px 0 hsl(214 25% 87% / 0.8), 0 8px 24px -24px rgb(15 23 42 / 0.32);
+}
+
+[data-theme='dark'] [data-app-shell] [data-app-shell-header] {
+  box-shadow: 0 1px 0 hsl(218 22% 21% / 0.9), 0 8px 24px -24px rgb(0 0 0 / 0.75);
+}
+
+[data-app-shell] [data-sidebar] {
+  background: linear-gradient(180deg, hsl(222 40% 11%) 0%, hsl(222 42% 8%) 100%);
+}
+
+/* --------------------------------------------------------------------------
+   Real operational redesign — protected-route scoped, never Finance/Reports.
+   -------------------------------------------------------------------------- */
+
+[data-operational-route='true'] [data-visual-wave='malek-pro'] {
+  position: relative;
+  isolation: isolate;
+  padding: clamp(0.25rem, 0.7vw, 0.75rem);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(circle at 92% 0%, hsl(var(--primary) / 0.08), transparent 28rem),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.28) 100%);
+}
+
+[data-operational-route='true'] [data-visual-wave='malek-pro'] > div {
+  max-width: min(100%, 96rem);
+}
+
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
   position: relative;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -107,7 +184,7 @@
   box-shadow: 0 20px 50px -32px rgb(15 23 42 / 0.75);
 }
 
-[data-visual-wave='malek-pro'] [data-page-header]::after {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header]::after {
   content: '';
   position: absolute;
   inset-inline-end: -3rem;
@@ -116,30 +193,25 @@
   height: 12rem;
   border: 1px solid rgb(255 255 255 / 0.12);
   border-radius: 999px;
-  box-shadow:
-    0 0 0 2.25rem rgb(255 255 255 / 0.035),
-    0 0 0 4.5rem rgb(255 255 255 / 0.02);
+  box-shadow: 0 0 0 2.25rem rgb(255 255 255 / 0.035), 0 0 0 4.5rem rgb(255 255 255 / 0.02);
   pointer-events: none;
 }
 
-[data-visual-wave='malek-pro'] [data-page-header] h1,
-[data-visual-wave='malek-pro'] [data-page-header] h2,
-[data-visual-wave='malek-pro'] [data-page-header] h3 {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] :is(h1, h2, h3) {
   color: white;
   letter-spacing: -0.02em;
 }
 
-[data-visual-wave='malek-pro'] [data-page-header] p {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] p {
   color: rgb(226 232 240 / 0.82);
 }
 
-[data-visual-wave='malek-pro'] [data-page-header] [data-ui-button]:not([data-variant='ghost']) {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] [data-ui-button]:not([data-variant='ghost']) {
   border-color: rgb(255 255 255 / 0.18);
   box-shadow: 0 10px 24px -16px rgb(0 0 0 / 0.7);
 }
 
-[data-visual-wave='malek-pro'] [data-list-controls],
-[data-visual-wave='malek-pro'] [data-filter-bar] {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
   position: relative;
   z-index: 2;
   padding: 0.75rem;
@@ -150,35 +222,21 @@
   backdrop-filter: blur(18px);
 }
 
-[data-visual-wave='malek-pro'] [data-list-controls] input,
-[data-visual-wave='malek-pro'] [data-list-controls] select,
-[data-visual-wave='malek-pro'] [data-filter-bar] input,
-[data-visual-wave='malek-pro'] [data-filter-bar] select {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) :is(input, select) {
   min-height: 46px;
   border-radius: 0.9rem;
   background: hsl(var(--background));
 }
 
-[data-visual-wave='malek-pro'] [data-component-card],
-[data-visual-wave='malek-pro'] [data-kpi-card],
-[data-visual-wave='malek-pro'] [data-entity-card],
-[data-visual-wave='malek-pro'] [data-mobile-card] {
-  border-color: hsl(var(--border) / 0.9);
-  box-shadow: var(--shadow-card);
-}
-
-[data-visual-wave='malek-pro'] [data-entity-card],
-[data-visual-wave='malek-pro'] [data-mobile-card] {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]) {
   position: relative;
   overflow: hidden;
   border-radius: 1.25rem;
-  background:
-    linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 72%, hsl(var(--muted) / 0.22) 100%);
+  background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 72%, hsl(var(--muted) / 0.22) 100%);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
-[data-visual-wave='malek-pro'] [data-entity-card]::before,
-[data-visual-wave='malek-pro'] [data-mobile-card]::before {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card])::before {
   content: '';
   position: absolute;
   inset-inline-start: 0;
@@ -187,25 +245,22 @@
   background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--accent)));
 }
 
-[data-visual-wave='malek-pro'] [data-entity-card]:hover,
-[data-visual-wave='malek-pro'] [data-mobile-card]:hover {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-entity-card], [data-mobile-card]):hover {
   border-color: hsl(var(--primary) / 0.28);
   box-shadow: var(--shadow-card-hover);
 }
 
-[data-visual-wave='malek-pro'] [data-entity-card]:hover {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-card]:hover {
   transform: translateY(-3px);
 }
 
-[data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
   overflow: hidden;
-  border-color: hsl(var(--border) / 0.9);
   border-radius: 1.25rem;
   background: hsl(var(--card));
-  box-shadow: var(--shadow-card);
 }
 
-[data-visual-wave='malek-pro'] [data-entity-table] thead {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -213,7 +268,7 @@
   color: rgb(248 250 252 / 0.92);
 }
 
-[data-visual-wave='malek-pro'] [data-entity-table] thead th {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
   height: 3.25rem;
   border-color: rgb(255 255 255 / 0.08);
   font-size: 0.72rem;
@@ -221,20 +276,20 @@
   letter-spacing: 0.025em;
 }
 
-[data-visual-wave='malek-pro'] [data-entity-table] tbody tr {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr {
   transition: background-color 140ms ease, box-shadow 140ms ease;
 }
 
-[data-visual-wave='malek-pro'] [data-entity-table] tbody tr:nth-child(even) {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:nth-child(even) {
   background: hsl(var(--muted) / 0.2);
 }
 
-[data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
   background: hsl(var(--primary) / 0.075);
   box-shadow: inset 4px 0 0 hsl(var(--primary));
 }
 
-[data-visual-wave='malek-pro'] [role='tablist'] {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tablist'] {
   gap: 0.4rem;
   padding: 0.35rem;
   border: 1px solid hsl(var(--border));
@@ -242,57 +297,20 @@
   background: hsl(var(--muted) / 0.52);
 }
 
-[data-visual-wave='malek-pro'] [role='tab'] {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'] {
   min-height: 42px;
   border-radius: 0.75rem;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease,
-    box-shadow 140ms ease;
+  transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
-[data-visual-wave='malek-pro'] [role='tab'][aria-selected='true'] {
+[data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tab'][aria-selected='true'] {
   background: hsl(var(--card));
   color: hsl(var(--foreground));
   box-shadow: 0 8px 18px -14px rgb(15 23 42 / 0.65);
 }
 
-[data-visual-wave='malek-pro'] [data-empty-state-icon] {
-  color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.09);
-}
-
-[data-visual-wave='malek-pro'] [data-error-state] {
-  border-color: hsl(var(--danger-text) / 0.28);
-}
-
-/* App chrome remains independent from Finance & Reporting surfaces. */
-[data-app-shell] {
-  background: hsl(210 33% 98%);
-}
-
-[data-theme='dark'] [data-app-shell] {
-  background: hsl(222 37% 8%);
-}
-
-[data-app-shell] [data-app-shell-header] {
-  box-shadow:
-    0 1px 0 hsl(214 25% 87% / 0.8),
-    0 8px 24px -24px rgb(15 23 42 / 0.32);
-}
-
-[data-theme='dark'] [data-app-shell] [data-app-shell-header] {
-  box-shadow:
-    0 1px 0 hsl(218 22% 21% / 0.9),
-    0 8px 24px -24px rgb(0 0 0 / 0.75);
-}
-
-[data-app-shell] [data-sidebar] {
-  background: linear-gradient(180deg, hsl(222 40% 11%) 0%, hsl(222 42% 8%) 100%);
-}
-
 /* --------------------------------------------------------------------------
-   Operational forms only. Finance/Reporting does not receive these rules.
+   Operational forms only. Finance/Reporting never receives this variant.
    -------------------------------------------------------------------------- */
 
 [data-entity-form-surface][data-entity-form-variant='operational'] {
@@ -306,9 +324,7 @@
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-scroll] {
-  background:
-    radial-gradient(circle at 100% 0%, hsl(var(--primary) / 0.06), transparent 24rem),
-    hsl(var(--background));
+  background: radial-gradient(circle at 100% 0%, hsl(var(--primary) / 0.06), transparent 24rem), hsl(var(--background));
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-field] > span:first-child {
@@ -317,25 +333,18 @@
   color: hsl(var(--foreground));
 }
 
-[data-entity-form-surface][data-entity-form-variant='operational'] input,
-[data-entity-form-surface][data-entity-form-variant='operational'] select,
-[data-entity-form-surface][data-entity-form-variant='operational'] textarea {
+[data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea) {
   min-height: 46px;
   border-radius: 0.85rem;
   background: hsl(var(--card));
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease,
-    background-color 140ms ease;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
 }
 
 [data-entity-form-surface][data-entity-form-variant='operational'] textarea {
   min-height: 7rem;
 }
 
-[data-entity-form-surface][data-entity-form-variant='operational'] input:focus,
-[data-entity-form-surface][data-entity-form-variant='operational'] select:focus,
-[data-entity-form-surface][data-entity-form-variant='operational'] textarea:focus {
+[data-entity-form-surface][data-entity-form-variant='operational'] :is(input, select, textarea):focus {
   border-color: hsl(var(--primary) / 0.72);
   box-shadow: 0 0 0 4px hsl(var(--primary) / 0.11);
 }
@@ -343,8 +352,7 @@
 [data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
   border-color: hsl(var(--border) / 0.92);
   border-radius: 1.15rem;
-  background:
-    linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.2) 100%);
+  background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.2) 100%);
   box-shadow: 0 10px 28px -24px rgb(15 23 42 / 0.5);
 }
 
@@ -353,26 +361,21 @@
 }
 
 @media (max-width: 767px) {
-  [data-visual-wave='malek-pro'] {
+  [data-operational-route='true'] [data-visual-wave='malek-pro'] {
     padding: 0;
     border-radius: 0;
     background: hsl(var(--background));
   }
 
-  [data-visual-wave='malek-pro'] [data-page-header] {
+  [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
     margin-inline: -0.25rem;
     border-radius: 0 0 1.35rem 1.35rem;
     padding: 1rem;
   }
 
-  [data-visual-wave='malek-pro'] [data-list-controls],
-  [data-visual-wave='malek-pro'] [data-filter-bar] {
+  [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
     padding: 0.65rem;
     border-radius: 1rem;
-  }
-
-  [data-entity-form-surface='bottom-sheet'][data-entity-form-variant='operational'] {
-    --entity-form-action-offset: 0px;
   }
 
   [data-entity-form-surface='bottom-sheet'][data-entity-form-variant='operational'] [data-entity-form] section {
@@ -382,57 +385,6 @@
 
   [data-entity-form-surface='bottom-sheet'][data-entity-form-variant='operational'] [data-entity-form-actions] {
     bottom: 0;
-  }
-
-  [data-entity-form-surface='full-page'][data-entity-form-variant='operational'] {
-    display: flex !important;
-    align-items: flex-end;
-    background: transparent !important;
-  }
-
-  [data-entity-form-surface='full-page'][data-entity-form-variant='operational']::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgb(2 6 23 / 0.62);
-    backdrop-filter: blur(4px);
-  }
-
-  [data-entity-form-surface='full-page'][data-entity-form-variant='operational'] > div {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    height: min(92dvh, 52rem);
-    max-width: none;
-    border: 1px solid hsl(var(--border));
-    border-bottom: 0;
-    border-radius: 1.5rem 1.5rem 0 0;
-    background: hsl(var(--background));
-    box-shadow: 0 -24px 70px -24px rgb(2 6 23 / 0.75);
-    animation: operational-sheet-in 220ms cubic-bezier(.22, .8, .24, 1);
-  }
-
-  [data-entity-form-surface='full-page'][data-entity-form-variant='operational'] > div::before {
-    content: '';
-    position: absolute;
-    top: 0.45rem;
-    left: 50%;
-    width: 3rem;
-    height: 0.28rem;
-    border-radius: 999px;
-    background: hsl(var(--muted-foreground) / 0.35);
-    transform: translateX(-50%);
-  }
-}
-
-@keyframes operational-sheet-in {
-  from {
-    transform: translateY(100%);
-    opacity: 0.6;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
   }
 }
 
