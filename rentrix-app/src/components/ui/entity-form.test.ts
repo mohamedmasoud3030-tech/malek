@@ -10,15 +10,20 @@ afterEach(() => {
 });
 
 describe('responsive form overlay surface selection', () => {
-  it('uses the bottom-sheet contract for mobile entity workflows by default', () => {
-    expect(getResponsiveFormSurface(true)).toBe('bottom-sheet');
+  it('preserves the existing full-page mobile default for unrelated workflows', () => {
+    expect(getResponsiveFormSurface(true)).toBe('full-page');
   });
 
   it('keeps the desktop dialog surface above the mobile breakpoint', () => {
     expect(getResponsiveFormSurface(false)).toBe('dialog');
   });
 
-  it('still allows long exceptional workflows to opt into full-page mode explicitly', () => {
+  it('lets operational entity forms opt into the mobile bottom-sheet contract', () => {
+    expect(getResponsiveFormSurface(true, 'auto', 'bottom-sheet')).toBe('bottom-sheet');
+    expect(getResponsiveFormSurface(false, 'auto', 'bottom-sheet')).toBe('dialog');
+  });
+
+  it('still allows exceptional workflows to request full-page mode explicitly', () => {
     expect(getResponsiveFormSurface(true, 'auto', 'full-page')).toBe('full-page');
     expect(getResponsiveFormSurface(false, 'full-page')).toBe('full-page');
   });
