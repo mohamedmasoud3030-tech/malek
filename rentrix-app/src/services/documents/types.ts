@@ -40,6 +40,8 @@ export type DocumentTable = {
   columns: string[];
   rows: string[][];
   totals?: string[];
+  /** Explicit Arabic note rendered as a full-width row when `rows` is empty. */
+  emptyNote?: string;
 };
 
 export type UnifiedDocumentModel = {

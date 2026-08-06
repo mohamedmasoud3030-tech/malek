@@ -1,145 +1,188 @@
-import type { Contract, Expense, Invoice, Person, Property, Receipt, Unit } from '@/types/domain';
+/**
+ * Canonical typed DocumentEngine — the ONLY source of `UnifiedDocumentModel`.
+ *
+ * Public surface:
+ *
+ *  - `documentEngine.buildDocument(type, { settings, payload })`
+ *      The canonical, typed API. Payloads follow `documentPayloads.ts` and
+ *      are validated against the template registry (`documentRegistry.ts`).
+ *
+ *  - `documentEngine.build(request)`  (compatibility)
+ *      Normalizes the historical `{ invoice, db }`-style requests through
+ *      `legacyPayloadAdapters.ts` and then takes the exact same canonical
+ *      path. No builder logic lives outside this engine.
+ *
+ * Truthfulness rules enforced here:
+ *  - company identity is asserted real and complete (never a brand name,
+ *    never a fallback address/currency);
+ *  - document numbers come only from real business references — UUID
+ *    fragments are dropped by the adapters, never displayed;
+ *  - status wording is taken from the registry's registered labels only;
+ *  - amounts pass through unchanged (this engine never recalculates money).
+ */
+import type { Contract, Expense, Invoice, Receipt } from '@/types/domain';
 import '@/lib/formatters';
 import { getCurrencySymbol, getCurrencyWordConfig, numberToArabicWords } from '@/lib/numberToArabicWords';
 import { TableGenerator } from './TableGenerator';
-import type { DocumentCompanyIdentity, DocumentRequest, SignatureRole, UnifiedDocumentModel } from './types';
+import type { DocumentHeader, DocumentRequest, DocumentTable, UnifiedDocumentModel } from './types';
 import { formatLatinDate, formatLatinNumber } from '@/lib/formatters';
+import {
+  assertDocumentCompanySettings,
+  deriveHonestReference,
+  MissingDocumentSettingsError,
+  type DocumentCompanySettings,
+} from './companyIdentity';
+import { currencyFractionDigits } from './currencyPrecision';
+import {
+  buildDocumentFileName,
+  getDocumentTemplateEntry,
+  requireDocumentTemplateEntry,
+  truthfulStatusLabel,
+  type DocumentTemplateEntry,
+} from './documentRegistry';
+import type {
+  BalanceSheetReportPayload,
+  CanonicalDocumentPayloadMap,
+  ContractDocumentPayload,
+  DocumentBuildInput,
+  DocumentTypeId,
+  ExpenseVoucherPayload,
+  GenericReportPayload,
+  IncomeStatementReportPayload,
+  InvoiceDocumentPayload,
+  MoneyRow,
+  OwnerStatementPayload,
+  ReceiptDocumentPayload,
+  TenantStatementPayload,
+  TrialBalanceReportPayload,
+} from './documentPayloads';
+import {
+  legacyBalanceSheetToCanonical,
+  legacyContractToCanonical,
+  legacyExpenseToCanonical,
+  legacyIncomeStatementToCanonical,
+  legacyInvoiceToCanonical,
+  legacyOwnerStatementToCanonical,
+  legacyReceiptToCanonical,
+  legacySettingsToCanonical,
+  legacyTenantStatementToCanonical,
+  legacyTrialBalanceToCanonical,
+  type LegacyAppLikeDb,
+  type LegacyBalanceSheetPayload,
+  type LegacyIncomeStatementPayload,
+  type LegacyOwnerStatementPayload,
+  type LegacyTenantStatementPayload,
+  type LegacyTrialBalancePayload,
+} from './legacyPayloadAdapters';
+
+/* ------------------------------------------------------------------ */
+/* Backward-compatible public types                                     */
+/* ------------------------------------------------------------------ */
 
 /**
- * Company identity is a required input, never a fallback. Every document
- * builder reads real values from this object (sourced from `company_settings`
- * via `useCompanySettingsContract()`); there is no built-in company name,
- * address, phone, or currency anywhere in this file. If the caller has not
- * loaded settings yet, `DocumentEngine.build` throws instead of rendering
- * placeholder branding.
+ * Historical engine settings shape. Kept as an alias so existing callers
+ * keep compiling; new code should use `DocumentCompanySettings`.
  */
-export type DocumentSettings = { company: DocumentCompanyIdentity };
+export type DocumentSettings = { company: import('./legacyPayloadAdapters').LegacyDocumentSettingsIdentity };
 
-type AppLikeDb = {
-  settings: DocumentSettings;
-  contracts: Contract[];
-  tenants: Person[];
-  units: Unit[];
-  properties: Property[];
-  receipts?: Receipt[];
-};
+/** @deprecated use `MissingDocumentSettingsError` (canonical, same class). */
+export const MissingCompanyIdentityError = MissingDocumentSettingsError;
+export type MissingCompanyIdentityError = MissingDocumentSettingsError;
 
-export type OwnerStatementDataPayload = {
-  ownerName: string;
-  ownerPhone?: string;
-  periodFrom: string;
-  periodTo: string;
-  propertyTitle: string;
-  totalRent: number;
-  totalExpenses: number;
-  totalCommission: number;
-  netAmount: number;
-  transactions: Array<{
-    date: string;
-    type: string;
-    description: string;
-    amount: number;
-  }>;
-};
+/** Legacy payload type names kept for `pdfService` and migrating callers. */
+export type OwnerStatementDataPayload = LegacyOwnerStatementPayload;
+export type TenantStatementDataPayload = LegacyTenantStatementPayload;
+export type TrialBalancePayload = LegacyTrialBalancePayload;
+export type IncomeStatementPayload = LegacyIncomeStatementPayload;
+export type BalanceSheetPayload = LegacyBalanceSheetPayload;
 
-export type TenantStatementDataPayload = {
-  tenantName: string;
-  tenantPhone?: string;
-  periodFrom: string;
-  periodTo: string;
-  propertyTitle: string;
-  unitNumber: string;
-  openingBalance: number;
-  totalInvoiced: number;
-  totalPaid: number;
-  closingBalance: number;
-  lines: Array<{
-    date: string;
-    type: string;
-    description: string;
-    debit: number;
-    credit: number;
-    balance: number;
-  }>;
-};
+/* ------------------------------------------------------------------ */
+/* Validation                                                           */
+/* ------------------------------------------------------------------ */
 
-export type TrialBalancePayload = {
-  trial: {
-    lines: Array<{ no: string; name: string; debit: number; credit: number }>;
-    totalDebit: number;
-    totalCredit: number;
-  };
-  endDate: string;
-};
-
-export type IncomeStatementPayload = {
-  pnlData: {
-    totalRevenue: number;
-    totalExpense: number;
-    netIncome: number;
-    revenues: Array<{ label: string; amount: number }>;
-    expenses: Array<{ label: string; amount: number }>;
-  };
-  dateRange: string;
-};
-
-export type BalanceSheetPayload = {
-  data: {
-    assets: Array<{ label: string; amount: number }>;
-    liabilities: Array<{ label: string; amount: number }>;
-    equity: Array<{ label: string; amount: number }>;
-    totalAssets: number;
-    totalLiabilities: number;
-    totalEquity: number;
-  };
-  date: string;
-};
-
-/**
- * Thrown when a document is requested without a usable company identity.
- * Callers (page components) should catch this and show a clear Arabic
- * message instead of letting a document render with placeholder branding.
- */
-export class MissingCompanyIdentityError extends Error {
-  constructor() {
-    super('لا يمكن إنشاء المستند: بيانات هوية الشركة غير مكتملة. يرجى إكمال بيانات الشركة في الإعدادات أولاً.');
-    this.name = 'MissingCompanyIdentityError';
+/** Thrown on invalid/non-finite required document data (Arabic, user-facing). */
+export class DocumentDataError extends Error {
+  constructor(detail: string) {
+    super(`لا يمكن إنشاء المستند: ${detail}`);
+    this.name = 'DocumentDataError';
   }
 }
 
-const fmtDate = (v?: string | null) => (v ? formatLatinDate(new Date(v), 'ar-OM') : '-');
+const REQUIRED_ARRAY_FIELDS = new Set(['transactions', 'lines', 'sections', 'revenues', 'expenses', 'assets', 'liabilities', 'equity']);
+const REQUIRED_NUMBER_FIELDS = new Set([
+  'amount', 'rentAmount', 'paidAmount', 'totalRent', 'totalExpenses', 'totalCommission', 'netAmount',
+  'openingBalance', 'totalInvoiced', 'totalPaid', 'closingBalance', 'totalDebit', 'totalCredit',
+  'totalRevenue', 'totalExpense', 'netIncome', 'totalAssets', 'totalLiabilities', 'totalEquity',
+]);
 
-function assertCompanyIdentity(settings: DocumentSettings): DocumentCompanyIdentity {
-  const company = settings?.company;
-  if (!company || !company.companyName?.trim() || !company.defaultCurrency?.trim()) {
-    throw new MissingCompanyIdentityError();
+const validateRequiredField = (field: string, value: unknown): void => {
+  if (REQUIRED_ARRAY_FIELDS.has(field)) {
+    if (!Array.isArray(value)) throw new DocumentDataError('بيانات المستند ناقصة أو غير صالحة.');
+    return;
   }
-  return company;
+  if (REQUIRED_NUMBER_FIELDS.has(field)) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new DocumentDataError('قيم مالية غير صالحة في بيانات المستند.');
+    }
+    return;
+  }
+  if (value == null || (typeof value === 'string' && !value.trim())) {
+    throw new DocumentDataError('بيانات المستند ناقصة أو غير صالحة.');
+  }
+};
+
+const isEmptyRequiredArray = (field: string, payload: Readonly<Record<string, unknown>>): boolean =>
+  REQUIRED_ARRAY_FIELDS.has(field) && Array.isArray(payload[field]) && (payload[field] as unknown[]).length === 0;
+
+function validatePayload(entry: DocumentTemplateEntry, payload: Readonly<Record<string, unknown>>): void {
+  for (const field of entry.requiredData) {
+    validateRequiredField(field, payload[field]);
+  }
+
+  if (entry.emptyState.behavior !== 'block') return;
+  const emptyField = entry.requiredData.find((field) => isEmptyRequiredArray(field, payload));
+  if (emptyField) {
+    throw new DocumentDataError(entry.emptyState.message ?? 'لا توجد بيانات لإصدار هذا المستند.');
+  }
 }
 
-const currencyOf = (s: DocumentSettings) => getCurrencySymbol(assertCompanyIdentity(s).defaultCurrency);
-const wordsOf = (amount: number, s: DocumentSettings) =>
-  numberToArabicWords(amount, getCurrencyWordConfig(assertCompanyIdentity(s).defaultCurrency));
+/* ------------------------------------------------------------------ */
+/* Formatting helpers (strict pass-through of caller-supplied numbers)  */
+/* ------------------------------------------------------------------ */
 
-const toMoney = (value: number, s: DocumentSettings) =>
-  `${Number.isFinite(value) ? formatLatinNumber(value, 'ar-OM', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '0.000'} ${currencyOf(s)}`;
+type FormatContext = Readonly<{ symbol: string; currencyCode: string }>;
 
-const baseHeader = (s: DocumentSettings, title: string, dateValue?: string, documentNo?: string) => {
-  const company = assertCompanyIdentity(s);
-  return {
-    companyName: company.companyName,
-    companyAddress: company.address ?? null,
-    companyPhone: company.phone ?? null,
-    companyEmail: company.email ?? null,
-    companyLogoUrl: company.logoUrl ?? null,
-    companyTaxNumber: company.taxNumber ?? null,
-    companyRegistrationNumber: company.registrationNumber ?? null,
-    title,
-    documentNo,
-    dateLabel: 'التاريخ',
-    dateValue,
-    currency: currencyOf(s),
-  };
+const formatContextOf = (settings: DocumentCompanySettings): FormatContext => ({
+  symbol: settings.currencySymbol?.trim() || getCurrencySymbol(settings.currency),
+  currencyCode: settings.currency,
+});
+
+/**
+ * Formats an amount with the precision of the REAL company currency
+ * (ISO 4217 minor units, see `currencyFractionDigits`) — never a global
+ * hard-coded 3 decimals.
+ */
+const money = (value: number, ctx: FormatContext): string => {
+  const digits = currencyFractionDigits(ctx.currencyCode);
+  const options = { minimumFractionDigits: digits, maximumFractionDigits: digits } as const;
+  const formatted = formatLatinNumber(Number.isFinite(value) ? value : 0, 'ar-OM', options);
+  return `${formatted} ${ctx.symbol}`;
+};
+
+const words = (value: number, ctx: FormatContext): string =>
+  numberToArabicWords(value, getCurrencyWordConfig(ctx.currencyCode));
+
+/** Long, print-friendly Arabic date; passes through non-ISO labels untouched. */
+const formatDate = (value: string | null | undefined): string => {
+  if (!value) return '—';
+  const datePart = value.split('T')[0];
+  const parts = datePart.split('-');
+  if (parts.length < 3) return value;
+  const [year, month, day] = parts.map(Number);
+  if (!year || !month || !day) return value;
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return value;
+  return formatLatinDate(date, 'ar-OM', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
 const formatDocumentValue = (value: unknown): string => {
@@ -159,333 +202,523 @@ const formatDocumentValue = (value: unknown): string => {
 
 const kpi = (label: string, value: unknown) => ({ label, value: formatDocumentValue(value) });
 
-/**
- * The stamp/footer label must not claim the document carries a real
- * approval unless real signature/approval data exists on the model. The
- * caller is responsible for only requesting a stamp label when a real
- * company stamp identity is available; this helper never invents wording
- * like "معتمد آلياً" that implies an automated approval took place.
- */
-const footer = (signatures: SignatureRole[], metadata?: string | null) => ({
-  signatures,
-  companyStampLabel: null,
-  metadata: metadata ?? null,
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: 'نقداً',
+  bank_transfer: 'تحويل بنكي',
+  check: 'شيك',
+};
+
+/* ------------------------------------------------------------------ */
+/* Model assembly                                                       */
+/* ------------------------------------------------------------------ */
+
+function buildHeader(
+  settings: DocumentCompanySettings,
+  entry: DocumentTemplateEntry,
+  options: {
+    title: string;
+    reference?: string | null;
+    dateLabel?: string | null;
+    dateValue?: string | null;
+    ctx: FormatContext;
+  },
+): DocumentHeader {
+  const reference = options.reference?.trim() || null;
+  // A real business reference is rendered exactly ONCE, in the designated
+  // `documentNo` header field — never duplicated inside the title.
+  return {
+    companyName: settings.legalName?.trim() || settings.companyName,
+    companyAddress: settings.address ?? null,
+    companyPhone: settings.phone ?? null,
+    companyEmail: settings.email ?? null,
+    companyLogoUrl: settings.logoUrl ?? null,
+    companyTaxNumber: settings.taxNumber ?? null,
+    companyRegistrationNumber: settings.registrationNumber ?? null,
+    title: options.title,
+    documentNo: entry.businessReference.displayAsDocumentNo ? reference : null,
+    dateLabel: options.dateLabel ?? null,
+    dateValue: options.dateValue ?? null,
+    currency: options.ctx.symbol,
+  };
+}
+
+function buildFooter(entry: DocumentTemplateEntry, metadata: string | null) {
+  return {
+    signatures: [...entry.signatureRoles],
+    // A company stamp never implies approval took place; only a caller with
+    // real stamp data may set a label, and this engine invents none.
+    companyStampLabel: null,
+    metadata,
+  };
+}
+
+const joinPropertyUnit = (propertyTitle?: string | null, unitNumber?: string | null): string | null => {
+  if (!propertyTitle && !unitNumber) return null;
+  return `${propertyTitle || '—'} / ${unitNumber || '—'}`;
+};
+
+/* ------------------------------------------------------------------ */
+/* Canonical per-type builders (one per registry entry, nowhere else)   */
+/* ------------------------------------------------------------------ */
+
+function buildContractModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: ContractDocumentPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = truthfulStatusLabel(entry, payload.status) ?? 'عقد إيجار';
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ بداية العقد',
+      dateValue: formatDate(payload.startDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('المستأجر', payload.tenantName),
+      kpi('رقم الهوية / السجل', payload.tenantNationalId),
+      kpi('رقم الهاتف', payload.tenantPhone),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('فترة العقد', payload.startDate || payload.endDate ? `${formatDate(payload.startDate)} إلى ${formatDate(payload.endDate)}` : null),
+      kpi('قيمة الإيجار', money(payload.rentAmount, ctx)),
+      kpi('دورة السداد', payload.paymentCycle),
+    ],
+    tables: [
+      TableGenerator.build(
+        ['بند العقد', 'التفاصيل المالية والقانونية'],
+        [
+          ['قيمة الإيجار بالإرقام', money(payload.rentAmount, ctx)],
+          ['قيمة الإيجار بالحروف (تفقيط)', words(payload.rentAmount, ctx)],
+          ['دورة الدفع المسجلة', payload.paymentCycle || '—'],
+          ['ملاحظات العقد', payload.notes?.trim() || 'لا توجد شروط إضافية'],
+        ],
+      ),
+    ],
+    footer: buildFooter(entry, payload.reference ? `رقم العقد: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, startDate: payload.startDate }),
+  };
+}
+
+function buildInvoiceModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: InvoiceDocumentPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const statusLabel = truthfulStatusLabel(entry, payload.status);
+
+  // Presentation layer: every displayed figure is caller-supplied and
+  // authoritative. The engine never recomputes VAT, totals, payments or
+  // balances. The only preserved legacy contract is that an invoice with
+  // no VAT line bills exactly its stored `amount` (the historical
+  // invoices-table contract); when a VAT amount exists without an explicit
+  // authoritative total, the totals row is OMITTED rather than invented.
+  const suppliedVat = payload.vatAmount != null && payload.vatAmount !== 0 ? payload.vatAmount : null;
+  const authoritativeTotal = payload.totalAmount ?? (suppliedVat == null ? payload.amount : null);
+
+  const rows: string[][] = [[payload.description?.trim() || 'مطالبة مستحقة', money(payload.amount, ctx)]];
+  if (suppliedVat != null) rows.push(['ضريبة القيمة المضافة', money(suppliedVat, ctx)]);
+  if (payload.paidAmount != null) rows.push(['إجمالي المدفوع حتى تاريخه', money(payload.paidAmount, ctx)]);
+  if (payload.remainingAmount != null) rows.push(['المبلغ المتبقي واجب السداد', money(payload.remainingAmount, ctx)]);
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: 'فاتورة مطالبة مالية',
+      reference: payload.reference,
+      dateLabel: payload.issueDate ? 'تاريخ الإصدار' : 'تاريخ الاستحقاق',
+      dateValue: formatDate(payload.issueDate ?? payload.dueDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('المستأجر', payload.tenantName),
+      kpi('العقار / الوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('تاريخ الاستحقاق', payload.dueDate ? formatDate(payload.dueDate) : null),
+      kpi('وصف المطالبة', payload.description),
+      kpi('حالة السداد', statusLabel),
+      ...(authoritativeTotal != null ? [kpi('المبلغ تفقيطاً', words(authoritativeTotal, ctx))] : []),
+    ].filter((item) => item.value !== '—' || ['المستأجر', 'العقار / الوحدة'].includes(item.label)),
+    tables: [
+      TableGenerator.build(
+        ['البيان / تفاصيل الخدمات', 'المبلغ'],
+        rows,
+        ...(authoritativeTotal != null ? [['إجمالي المستحق السداد', money(authoritativeTotal, ctx)] as string[]] : []),
+      ),
+    ],
+    footer: buildFooter(entry, payload.reference ? `فاتورة رقم: ${payload.reference}` : 'فاتورة مطالبة مالية'),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, dueDate: payload.dueDate }),
+  };
+}
+
+function buildReceiptModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: ReceiptDocumentPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const methodLabel = payload.paymentMethod ? PAYMENT_METHOD_LABELS[payload.paymentMethod] ?? payload.paymentMethod : null;
+  const purpose = payload.notes?.trim() || (payload.invoiceReference ? `سداد الفاتورة رقم ${payload.invoiceReference}` : 'سداد دفعة مستحقة');
+
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: 'إيصال استلام نقدية / سداد',
+      reference: payload.reference,
+      dateLabel: 'تاريخ الاستلام',
+      dateValue: formatDate(payload.paymentDate),
+      ctx,
+    }),
+    kpis: [
+      kpi('استلمنا من الفاضل / الفاضلة', payload.payerName || 'غير محدد'),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('طريقة السداد', methodLabel),
+      kpi('رقم المرجع / الشيك', payload.paymentReference),
+      ...(payload.collectorName ? [kpi('مستلم المبلغ', payload.collectorName)] : []),
+    ],
+    tables: [
+      TableGenerator.build(
+        ['البند والبيان', 'المبلغ بالتفصيل'],
+        [
+          ['المبلغ المستلم رقماً', money(payload.amount, ctx)],
+          ['المبلغ المستلم بالحروف (تفقيط)', words(payload.amount, ctx)],
+          ['ذلك عن / مقابل', purpose],
+        ],
+        ['المبلغ الإجمالي المقبوض', money(payload.amount, ctx)],
+      ),
+    ],
+    footer: buildFooter(entry, payload.reference ? `إيصال استلام رقم: ${payload.reference}` : 'إيصال استلام'),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, paymentDate: payload.paymentDate }),
+  };
+}
+
+function buildExpenseVoucherModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: ExpenseVoucherPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const title = payload.kind === 'payment' ? 'سند حركة مالية' : 'سند صرف مصروفات';
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title,
+      reference: payload.reference,
+      dateLabel: 'تاريخ الصرف',
+      dateValue: formatDate(payload.date),
+      ctx,
+    }),
+    kpis: [
+      kpi('تصنيف المصروف', payload.category),
+      kpi('العقار المرتبط', payload.propertyTitle || 'مصروفات تشغيلية عامة'),
+      kpi('تاريخ الصرف', payload.date ? formatDate(payload.date) : null),
+    ],
+    tables: [
+      TableGenerator.build(
+        ['بيان المصروف', 'القيمة المالية'],
+        [
+          ['المبلغ المصروف', money(payload.amount, ctx)],
+          ['المبلغ بالحروف', words(payload.amount, ctx)],
+          ['شرح وتفاصيل المصروف', payload.description?.trim() || '—'],
+        ],
+      ),
+    ],
+    footer: buildFooter(entry, payload.reference ? `${title} رقم: ${payload.reference}` : title),
+    fileName: buildDocumentFileName(entry, { reference: payload.reference, date: payload.date }),
+  };
+}
+
+function buildOwnerStatementModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: OwnerStatementPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: `كشف حساب مالك - ${payload.ownerName}`,
+      reference: null,
+      dateLabel: 'فترة الكشف',
+      dateValue: `${formatDate(payload.periodFrom)} - ${formatDate(payload.periodTo)}`,
+      ctx,
+    }),
+    kpis: [
+      kpi('اسم المالك', payload.ownerName),
+      kpi('العقار', payload.propertyTitle),
+      kpi('إجمالي الإيجارات', money(payload.totalRent, ctx)),
+      kpi('إجمالي المصروفات', money(payload.totalExpenses, ctx)),
+      kpi('عمولة إدارة الأملاك', money(payload.totalCommission, ctx)),
+      kpi('صافي المستحق للمالك', money(payload.netAmount, ctx)),
+      kpi('صافي المستحق تفقيطاً', words(payload.netAmount, ctx)),
+    ],
+    tables: [
+      {
+        title: 'سجل الحركة المالية للفترة المحددة',
+        columns: ['التاريخ', 'نوع الحركة', 'البيان / التفاصيل', 'المبلغ'],
+        rows: payload.transactions.map((tx) => [tx.date, tx.type, tx.description, money(tx.amount, ctx)]),
+        totals: ['صافي الرصيد المستحق', '', '', money(payload.netAmount, ctx)],
+        ...(payload.transactions.length === 0 && entry.emptyState.message ? { emptyNote: entry.emptyState.message } : {}),
+      } satisfies DocumentTable,
+    ],
+    footer: buildFooter(entry, `كشف حساب مالك: ${payload.ownerName}`),
+    fileName: buildDocumentFileName(entry, { ownerName: payload.ownerName, periodTo: payload.periodTo }),
+  };
+}
+
+function buildTenantStatementModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: TenantStatementPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: `كشف حساب مستأجر - ${payload.tenantName}`,
+      reference: null,
+      dateLabel: 'فترة الكشف',
+      dateValue: `${formatDate(payload.periodFrom)} - ${formatDate(payload.periodTo)}`,
+      ctx,
+    }),
+    kpis: [
+      kpi('اسم المستأجر', payload.tenantName),
+      kpi('العقار والوحدة', joinPropertyUnit(payload.propertyTitle, payload.unitNumber)),
+      kpi('الرصيد الافتتاحي', money(payload.openingBalance, ctx)),
+      kpi('إجمالي الفواتير والمطالبات', money(payload.totalInvoiced, ctx)),
+      kpi('إجمالي السدادات والمقبوضات', money(payload.totalPaid, ctx)),
+      kpi('الرصيد المتبقي النهائي', money(payload.closingBalance, ctx)),
+      kpi('الرصيد تفقيطاً', words(Math.abs(payload.closingBalance), ctx)),
+    ],
+    tables: [
+      {
+        title: 'دفتر حركة حساب المستأجر والذمم الجارية',
+        columns: ['التاريخ', 'النوع', 'البيان', 'مدين (مطالبة)', 'دائن (سداد)', 'الرصيد الجاري'],
+        rows: payload.lines.map((line) => [
+          line.date,
+          line.type,
+          line.description,
+          money(line.debit, ctx),
+          money(line.credit, ctx),
+          money(line.balance, ctx),
+        ]),
+        totals: ['إجمالي الرصيد المستحق الواجب السداد', '', '', '', '', money(payload.closingBalance, ctx)],
+        ...(payload.lines.length === 0 && entry.emptyState.message ? { emptyNote: entry.emptyState.message } : {}),
+      } satisfies DocumentTable,
+    ],
+    footer: buildFooter(entry, `كشف حساب مستأجر: ${payload.tenantName}`),
+    fileName: buildDocumentFileName(entry, { tenantName: payload.tenantName, periodTo: payload.periodTo }),
+  };
+}
+
+const BALANCE_EPSILON = 0.0005;
+
+/** Balance-nature label for one trial-balance line (no nesting). */
+const balanceNatureLabel = (debit: number, credit: number): string => {
+  if (debit > 0) return 'مدين';
+  if (credit > 0) return 'دائن';
+  return '—';
+};
+
+function buildTrialBalanceModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: TrialBalanceReportPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const balanced = Math.abs(payload.totalDebit - payload.totalCredit) < BALANCE_EPSILON;
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: 'ميزان المراجعة',
+      reference: null,
+      dateLabel: 'كما في',
+      dateValue: formatDate(payload.asOf),
+      ctx,
+    }),
+    kpis: [
+      kpi('إجمالي المدين', money(payload.totalDebit, ctx)),
+      kpi('إجمالي الدائن', money(payload.totalCredit, ctx)),
+      kpi('حالة التوازن المحاسبي', balanced ? 'متوازن' : 'غير متوازن'),
+    ],
+    tables: [
+      TableGenerator.build(
+        ['رقم الحساب', 'اسم الحساب', 'طبيعة الرصيد', 'مدين', 'دائن'],
+        payload.lines.map((line) => [
+          line.no,
+          line.name,
+          balanceNatureLabel(line.debit, line.credit),
+          line.debit > 0 ? money(line.debit, ctx) : '—',
+          line.credit > 0 ? money(line.credit, ctx) : '—',
+        ]),
+        ['الإجمالي', '', '', money(payload.totalDebit, ctx), money(payload.totalCredit, ctx)],
+      ),
+    ],
+    footer: buildFooter(entry, payload.asOf ? `ميزان المراجعة كما في ${payload.asOf}` : 'ميزان المراجعة'),
+    fileName: buildDocumentFileName(entry, { asOf: payload.asOf }),
+  };
+}
+
+const moneyRowTable = (title: string, rows: MoneyRow[], totalLabel: string, total: number, ctx: FormatContext): DocumentTable => ({
+  title,
+  columns: ['البند', `المبلغ (${ctx.symbol})`],
+  rows: rows.map((row) => [row.label, money(row.amount, ctx)]),
+  totals: [totalLabel, money(total, ctx)],
 });
 
-const fileName = (prefix: string, id: string | null, fallback: string) => `${prefix}_${id || fallback}`;
+function buildIncomeStatementModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: IncomeStatementReportPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  const periodLabel = payload.dateRangeLabel ?? `${formatDate(payload.periodFrom)} - ${formatDate(payload.periodTo)}`;
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: 'قائمة الدخل',
+      reference: null,
+      dateLabel: 'فترة التقرير',
+      dateValue: periodLabel,
+      ctx,
+    }),
+    kpis: [
+      kpi('إجمالي الإيرادات', money(payload.totalRevenue, ctx)),
+      kpi('إجمالي المصروفات', money(payload.totalExpense, ctx)),
+      kpi('صافي الدخل', money(payload.netIncome, ctx)),
+    ],
+    tables: [
+      moneyRowTable('الإيرادات', payload.revenues, 'إجمالي الإيرادات', payload.totalRevenue, ctx),
+      moneyRowTable('المصروفات', payload.expenses, 'إجمالي المصروفات', payload.totalExpense, ctx),
+      {
+        title: 'صافي النتيجة',
+        columns: ['البيان', `المبلغ (${ctx.symbol})`],
+        rows: [['صافي الدخل / الخسارة', money(payload.netIncome, ctx)]],
+      },
+    ],
+    footer: buildFooter(
+      entry,
+      payload.periodFrom || payload.periodTo ? `قائمة الدخل للفترة ${payload.periodFrom ?? '—'} إلى ${payload.periodTo ?? '—'}` : 'تقرير قائمة الدخل والربحية',
+    ),
+    fileName: buildDocumentFileName(entry, { dateRangeLabel: payload.dateRangeLabel, periodTo: payload.periodTo }),
+  };
+}
 
-const resolveContractContext = (db: AppLikeDb, contractId: string | null) => {
-  const contract = db.contracts.find((c) => c.id === contractId);
-  const tenant = contract ? db.tenants.find((t) => t.id === contract.tenant_id) : null;
-  const unit = contract ? db.units.find((u) => u.id === contract.unit_id) : null;
-  const property = unit ? db.properties.find((p) => p.id === unit.property_id) : null;
-  return { contract, tenant, unit, property };
+function buildBalanceSheetModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: BalanceSheetReportPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: 'قائمة المركز المالي',
+      reference: null,
+      dateLabel: 'كما في',
+      dateValue: formatDate(payload.asOf),
+      ctx,
+    }),
+    kpis: [
+      kpi('إجمالي الأصول', money(payload.totalAssets, ctx)),
+      kpi('إجمالي الالتزامات', money(payload.totalLiabilities, ctx)),
+      kpi('حقوق الملكية', money(payload.totalEquity, ctx)),
+    ],
+    tables: [
+      moneyRowTable('الأصول', payload.assets, 'إجمالي الأصول', payload.totalAssets, ctx),
+      moneyRowTable('الالتزامات', payload.liabilities, 'إجمالي الالتزامات', payload.totalLiabilities, ctx),
+      moneyRowTable('حقوق الملكية', payload.equity, 'إجمالي حقوق الملكية', payload.totalEquity, ctx),
+    ],
+    footer: buildFooter(entry, payload.asOf ? `قائمة المركز المالي كما في ${payload.asOf}` : 'قائمة المركز المالي والميزانية العمومية'),
+    fileName: buildDocumentFileName(entry, { asOf: payload.asOf }),
+  };
+}
+
+function buildGenericReportModel(entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: GenericReportPayload): UnifiedDocumentModel {
+  const ctx = formatContextOf(settings);
+  return {
+    type: entry.type,
+    header: buildHeader(settings, entry, {
+      title: payload.reportTitle,
+      reference: null,
+      dateLabel: 'فترة التقرير',
+      dateValue: `${formatDate(payload.periodFrom)} - ${formatDate(payload.periodTo)}`,
+      ctx,
+    }),
+    kpis: payload.totalSummary ? [kpi('الملخص المالي والتشغيلي', payload.totalSummary)] : [],
+    tables: payload.sections.map((section) => ({
+      title: section.title,
+      columns: section.columns ?? ['البيان', 'النتيجة / القيمة'],
+      rows: section.rows,
+      totals: section.totals,
+      ...(section.rows.length === 0 && entry.emptyState.message ? { emptyNote: entry.emptyState.message } : {}),
+    })),
+    footer: buildFooter(entry, payload.reportTitle),
+    fileName: buildDocumentFileName(entry, { reportType: payload.reportType, periodTo: payload.periodTo }),
+  };
+}
+
+const builders: { [T in DocumentTypeId]: (entry: DocumentTemplateEntry, settings: DocumentCompanySettings, payload: CanonicalDocumentPayloadMap[T]) => UnifiedDocumentModel } = {
+  contract: buildContractModel,
+  invoice: buildInvoiceModel,
+  receipt: buildReceiptModel,
+  expense_voucher: buildExpenseVoucherModel,
+  payment: buildExpenseVoucherModel,
+  owner_statement: buildOwnerStatementModel,
+  tenant_statement: buildTenantStatementModel,
+  trial_balance: buildTrialBalanceModel,
+  income_statement: buildIncomeStatementModel,
+  balance_sheet: buildBalanceSheetModel,
+  generic_report: buildGenericReportModel,
 };
 
-/**
- * A contract is only "تنفيذي" (executed/in-force) once real activation
- * data marks it as such. We label strictly from `contract.status` instead
- * of assuming every printed contract is executed.
- */
-const contractStatusTitle = (status: Contract['status']): string => {
-  switch (status) {
-    case 'active':
-      return 'عقد إيجار ساري المفعول';
-    case 'draft':
-      return 'مسودة عقد إيجار (غير موقّع)';
-    case 'expired':
-      return 'عقد إيجار منتهي';
-    case 'terminated':
-      return 'عقد إيجار مفسوخ';
-    default:
-      return 'عقد إيجار';
-  }
-};
+/* ------------------------------------------------------------------ */
+/* Engine                                                               */
+/* ------------------------------------------------------------------ */
 
 class DocumentEngine {
+  /**
+   * Canonical typed build. Validates the payload against the registry,
+   * asserts a real company identity, drops any non-truthful business
+   * reference (defense in depth — adapters already drop UUID fragments),
+   * then produces the document model.
+   */
+  buildDocument<T extends DocumentTypeId>(type: T, input: DocumentBuildInput<T>): UnifiedDocumentModel {
+    const entry = requireDocumentTemplateEntry(type);
+    const settings = assertDocumentCompanySettings(input.settings);
+    validatePayload(entry, input.payload as unknown as Readonly<Record<string, unknown>>);
+
+    let payload = input.payload as CanonicalDocumentPayloadMap[T];
+    const referenceField = entry.businessReference.field;
+    const rawReference = (payload as Readonly<Record<string, unknown>>)[referenceField];
+    if (typeof rawReference === 'string' && rawReference.trim()) {
+      const honest = deriveHonestReference(rawReference);
+      if (honest !== rawReference.trim()) {
+        const patched: Record<string, unknown> = { ...(payload as Readonly<Record<string, unknown>>) };
+        patched[referenceField] = honest;
+        payload = patched as CanonicalDocumentPayloadMap[T];
+      }
+    }
+    if (
+      entry.businessReference.absentBehavior === 'block'
+      && !((payload as Readonly<Record<string, unknown>>)[referenceField] as string | null)?.trim()
+    ) {
+      throw new DocumentDataError('لا يمكن إصدار هذا المستند بدون رقم مرجعي مسجل.');
+    }
+
+    return builders[type](entry, settings, payload);
+  }
+
+  /**
+   * Compatibility build for the historical `{ type, payload }` contract
+   * (payloads bundling raw rows + `db`). Normalizes via the legacy
+   * adapters, then runs the exact same canonical path.
+   */
   build(request: DocumentRequest): UnifiedDocumentModel {
+    const payload = request.payload as Record<string, unknown> & { db?: LegacyAppLikeDb };
+    const db = payload?.db;
+    if (!db?.settings) {
+      throw new DocumentDataError('بنية بيانات المستند غير مدعومة.');
+    }
+    const settings = assertDocumentCompanySettings(legacySettingsToCanonical(db.settings));
+
     switch (request.type) {
       case 'invoice':
-        return this.buildInvoice(request.payload as { invoice: Invoice; db: AppLikeDb });
+        return this.buildDocument('invoice', { settings, payload: legacyInvoiceToCanonical({ invoice: payload.invoice as Invoice, db }) });
       case 'contract':
-        return this.buildContract(request.payload as { contract: Contract; db: AppLikeDb });
+        return this.buildDocument('contract', { settings, payload: legacyContractToCanonical({ contract: payload.contract as Contract, db }) });
       case 'receipt':
-        return this.buildReceipt(request.payload as { receipt: Receipt; db: AppLikeDb });
+        return this.buildDocument('receipt', { settings, payload: legacyReceiptToCanonical({ receipt: payload.receipt as Receipt, db }) });
       case 'expense_voucher':
+        return this.buildDocument('expense_voucher', { settings, payload: legacyExpenseToCanonical({ expense: payload.expense as Expense, db, kind: 'expense' }) });
       case 'payment':
-        return this.buildExpense(request.payload as { expense: Expense; db: AppLikeDb });
+        return this.buildDocument('payment', { settings, payload: legacyExpenseToCanonical({ expense: payload.expense as Expense, db, kind: 'payment' }) });
       case 'owner_statement':
-        return this.buildOwnerStatement(request.payload as { data: OwnerStatementDataPayload; db: AppLikeDb });
+        return this.buildDocument('owner_statement', { settings, payload: legacyOwnerStatementToCanonical(payload as unknown as { data: LegacyOwnerStatementPayload }) });
       case 'tenant_statement':
-        return this.buildTenantStatement(request.payload as { data: TenantStatementDataPayload; db: AppLikeDb });
+        return this.buildDocument('tenant_statement', { settings, payload: legacyTenantStatementToCanonical(payload as unknown as { data: LegacyTenantStatementPayload }) });
       case 'trial_balance':
-        return this.buildTrialBalance(request.payload as TrialBalancePayload & { db: AppLikeDb });
+        return this.buildDocument('trial_balance', { settings, payload: legacyTrialBalanceToCanonical(payload as unknown as LegacyTrialBalancePayload) });
       case 'income_statement':
-        return this.buildIncomeStatement(request.payload as IncomeStatementPayload & { db: AppLikeDb });
+        return this.buildDocument('income_statement', { settings, payload: legacyIncomeStatementToCanonical(payload as unknown as LegacyIncomeStatementPayload) });
       case 'balance_sheet':
-        return this.buildBalanceSheet(request.payload as BalanceSheetPayload & { db: AppLikeDb });
+        return this.buildDocument('balance_sheet', { settings, payload: legacyBalanceSheetToCanonical(payload as unknown as LegacyBalanceSheetPayload) });
+      case 'generic_report':
+        return this.buildDocument('generic_report', { settings, payload: payload as unknown as GenericReportPayload });
       default:
         throw new Error(`Unsupported document type: ${request.type}`);
     }
   }
 
-  private buildInvoice({ invoice, db }: { invoice: Invoice; db: AppLikeDb }): UnifiedDocumentModel {
-    const { tenant, unit, property } = resolveContractContext(db, invoice.contract_id);
-    const total = invoice.amount || 0;
-    const paid = invoice.paid_amount || 0;
-    const remaining = Math.max(0, total - paid);
-
-    return {
-      type: 'invoice',
-      header: baseHeader(db.settings, 'فاتورة مطالبة مالية', fmtDate(invoice.due_date), invoice.id.slice(0, 8)),
-      kpis: [
-        kpi('المستأجر', tenant?.full_name),
-        kpi('العقار / الوحدة', `${property?.title || '—'} / ${unit?.unit_number || '—'}`),
-        kpi('تاريخ الاستحقاق', fmtDate(invoice.due_date)),
-        kpi('حالة السداد', invoice.status === 'PAID' ? 'مدفوعة بالكامل' : invoice.status === 'PARTIALLY_PAID' ? 'مدفوعة جزئياً' : 'مستحقة السداد'),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['البيان / تفاصيل المطالبة', 'المبلغ'],
-          [
-            ['قيمة الإيجار المستحق', toMoney(invoice.amount || 0, db.settings)],
-            ['إجمالي المدفوع حتى تاريخه', toMoney(paid, db.settings)],
-            ['المبلغ المتبقي واجب السداد', toMoney(remaining, db.settings)],
-          ],
-          ['المبلغ الإجمالي المطلوب', toMoney(total, db.settings)],
-        ),
-      ],
-      footer: footer(['tenant', 'accountant', 'general_manager'], `فاتورة رقم: ${invoice.id.slice(0, 8)}`),
-      fileName: fileName('invoice', invoice.id.slice(0, 8), invoice.id),
-    };
-  }
-
-  private buildContract({ contract, db }: { contract: Contract; db: AppLikeDb }): UnifiedDocumentModel {
-    const tenant = db.tenants.find((t) => t.id === contract.tenant_id);
-    const unit = db.units.find((u) => u.id === contract.unit_id);
-    const property = unit ? db.properties.find((p) => p.id === unit.property_id) : null;
-
-    return {
-      type: 'contract',
-      header: baseHeader(db.settings, contractStatusTitle(contract.status), fmtDate(contract.start_date), contract.id.slice(0, 8)),
-      kpis: [
-        kpi('اسم المستأجر', tenant?.full_name),
-        kpi('رقم الهوية / السجل', tenant?.national_id || '—'),
-        kpi('العقار والوحدة', `${property?.title || '—'} / ${unit?.unit_number || '—'}`),
-        kpi('تاريخ بداية العقد', fmtDate(contract.start_date)),
-        kpi('تاريخ نهاية العقد', fmtDate(contract.end_date)),
-        kpi('حالة العقد', contract.status === 'active' ? 'ساري المفعول' : contract.status),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['بند العقد', 'التفاصيل المالية والقانونية'],
-          [
-            ['قيمة الإيجار المتفق عليها', toMoney(contract.rent_amount || 0, db.settings)],
-            ['دورة ودفعات السداد', String(contract.payment_cycle || '—')],
-            ['المبلغ بالحروف', wordsOf(contract.rent_amount || 0, db.settings)],
-            ['ملاحظات وأحكام خاصة', contract.notes || 'لا يوجد'],
-          ],
-        ),
-      ],
-      footer: footer(['owner', 'tenant', 'accountant', 'general_manager'], `رقم العقد: ${contract.id.slice(0, 8)}`),
-      fileName: fileName('contract', contract.id.slice(0, 8), contract.id),
-    };
-  }
-
-  private buildReceipt({ receipt, db }: { receipt: Receipt; db: AppLikeDb }): UnifiedDocumentModel {
-    const invoice = receipt.invoices?.[0];
-    const { tenant, unit, property } = invoice
-      ? resolveContractContext(db, invoice.contract_id)
-      : { tenant: undefined, unit: undefined, property: undefined };
-
-    const amountInWords = wordsOf(receipt.amount || 0, db.settings);
-    const receiptNo = receipt.id.slice(0, 8);
-
-    return {
-      type: 'receipt',
-      header: baseHeader(db.settings, 'إيصال استلام نقدية / سداد', fmtDate(receipt.payment_date), receiptNo),
-      kpis: [
-        kpi('استلمنا من الفاضل / الفاضلة', tenant?.full_name || 'غير محدد'),
-        kpi('العقار والوحدة', property ? `${property.title} / ${unit?.unit_number || '—'}` : '—'),
-        kpi('طريقة السداد', receipt.payment_method === 'cash' ? 'نقداً' : receipt.payment_method === 'bank_transfer' ? 'تحويل بنكي' : receipt.payment_method === 'check' ? 'شيك' : receipt.payment_method),
-        kpi('رقم المرجع / الشيك', receipt.reference_number || '—'),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['البند', 'المبلغ والمعلومات التفصيلية'],
-          [
-            ['المبلغ المستلم رقماً', toMoney(receipt.amount || 0, db.settings)],
-            ['المبلغ المستلم بالحروف', amountInWords],
-            ['ذلك عن / مقابل', receipt.notes || `سداد دفعة إيجارية مرتبطة بالإيصال ${receiptNo}`],
-          ],
-          ['إجمالي المقبوضات', toMoney(receipt.amount || 0, db.settings)],
-        ),
-      ],
-      footer: footer(['tenant', 'accountant', 'general_manager'], `إيصال استلام رقم: ${receiptNo}`),
-      fileName: fileName('receipt', receiptNo, receipt.id),
-    };
-  }
-
-  private buildExpense({ expense, db }: { expense: Expense; db: AppLikeDb }): UnifiedDocumentModel {
-    const property = db.properties.find((p) => p.id === expense.property_id);
-
-    return {
-      type: 'expense_voucher',
-      header: baseHeader(db.settings, 'سند صرف مصروفات', fmtDate(expense.expense_date), expense.id.slice(0, 8)),
-      kpis: [
-        kpi('تصنيف المصروف', expense.category),
-        kpi('العقار المرتبط', property?.title || 'مصروفات تشغيلية عامة'),
-        kpi('تاريخ الصرف', fmtDate(expense.expense_date)),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['بيان المصروف', 'القيمة المالية'],
-          [
-            ['المبلغ المصروف', toMoney(expense.amount || 0, db.settings)],
-            ['المبلغ بالحروف', wordsOf(expense.amount || 0, db.settings)],
-            ['شرح وتفاصيل المصروف', expense.description || '—'],
-          ],
-        ),
-      ],
-      footer: footer(['accountant', 'general_manager'], `سند صرف رقم: ${expense.id.slice(0, 8)}`),
-      fileName: fileName('expense', expense.id.slice(0, 8), expense.id),
-    };
-  }
-
-  private buildOwnerStatement({ data, db }: { data: OwnerStatementDataPayload; db: AppLikeDb }): UnifiedDocumentModel {
-    return {
-      type: 'owner_statement',
-      header: baseHeader(db.settings, `كشف حساب مالك - ${data.ownerName}`, `${fmtDate(data.periodFrom)} - ${fmtDate(data.periodTo)}`, data.ownerName),
-      kpis: [
-        kpi('اسم المالك', data.ownerName),
-        kpi('العقار', data.propertyTitle),
-        kpi('إجمالي الإيجارات المقبوضة', toMoney(data.totalRent, db.settings)),
-        kpi('إجمالي المصروفات والاستقطاعات', toMoney(data.totalExpenses, db.settings)),
-        kpi('عمولة إدارة الأملاك', toMoney(data.totalCommission, db.settings)),
-        kpi('صافي المستحق للمالك', toMoney(data.netAmount, db.settings)),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['التاريخ', 'نوع الحركة', 'البيان / التفاصيل', 'المبلغ'],
-          data.transactions.map((t) => [
-            t.date,
-            t.type,
-            t.description,
-            toMoney(t.amount, db.settings),
-          ]),
-          ['صافي المبلغ النهائي المستحق للمالك', '', '', toMoney(data.netAmount, db.settings)],
-        ),
-      ],
-      footer: footer(['accountant', 'general_manager'], `كشف حساب مالك: ${data.ownerName}`),
-      fileName: fileName('owner_statement', data.ownerName, 'statement'),
-    };
-  }
-
-  private buildTenantStatement({ data, db }: { data: TenantStatementDataPayload; db: AppLikeDb }): UnifiedDocumentModel {
-    return {
-      type: 'tenant_statement',
-      header: baseHeader(db.settings, `كشف حساب مستأجر - ${data.tenantName}`, `${fmtDate(data.periodFrom)} - ${fmtDate(data.periodTo)}`, data.tenantName),
-      kpis: [
-        kpi('اسم المستأجر', data.tenantName),
-        kpi('العقار والوحدة', `${data.propertyTitle} / ${data.unitNumber}`),
-        kpi('الرصيد الافتتاحي', toMoney(data.openingBalance, db.settings)),
-        kpi('إجمالي المطالبات / الفواتير', toMoney(data.totalInvoiced, db.settings)),
-        kpi('إجمالي المسدد / المقبوضات', toMoney(data.totalPaid, db.settings)),
-        kpi('الرصيد النهائي المستحق', toMoney(data.closingBalance, db.settings)),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['التاريخ', 'النوع', 'البيان', 'مدين (مطالبة)', 'دائن (سداد)', 'الرصيد المتبقي'],
-          data.lines.map((l) => [
-            l.date,
-            l.type,
-            l.description,
-            toMoney(l.debit, db.settings),
-            toMoney(l.credit, db.settings),
-            toMoney(l.balance, db.settings),
-          ]),
-          ['إجمالي الذمم والمال المتبقي', '', '', '', '', toMoney(data.closingBalance, db.settings)],
-        ),
-      ],
-      footer: footer(['tenant', 'accountant', 'general_manager'], `كشف حساب مستأجر: ${data.tenantName}`),
-      fileName: fileName('tenant_statement', data.tenantName, 'statement'),
-    };
-  }
-
-  private buildTrialBalance({ trial, endDate, db }: TrialBalancePayload & { db: AppLikeDb }): UnifiedDocumentModel {
-    return {
-      type: 'trial_balance',
-      header: baseHeader(db.settings, 'قائمة ميزان المراجعة المحاسبي', fmtDate(endDate)),
-      kpis: [
-        kpi('إجمالي الحركة المدينة', toMoney(trial.totalDebit, db.settings)),
-        kpi('إجمالي الحركة الدائنة', toMoney(trial.totalCredit, db.settings)),
-        kpi('حالة التوازن المحاسبي', trial.totalDebit === trial.totalCredit ? 'متوازن' : 'غير متوازن'),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['رقم الحساب', 'اسم الحساب المحاسبي', `مدين (${currencyOf(db.settings)})`, `دائن (${currencyOf(db.settings)})`],
-          trial.lines.map((l) => [l.no, l.name, toMoney(l.debit, db.settings), toMoney(l.credit, db.settings)]),
-          ['الإجمالي العام', '', toMoney(trial.totalDebit, db.settings), toMoney(trial.totalCredit, db.settings)],
-        ),
-      ],
-      footer: footer(['accountant', 'general_manager'], 'قائمة ميزان المراجعة المحاسبي'),
-      fileName: fileName('trial_balance', endDate, 'report'),
-    };
-  }
-
-  private buildIncomeStatement({ pnlData, dateRange, db }: IncomeStatementPayload & { db: AppLikeDb }): UnifiedDocumentModel {
-    return {
-      type: 'income_statement',
-      header: baseHeader(db.settings, 'تقرير قائمة الدخل والربحية', dateRange),
-      kpis: [
-        kpi('إجمالي الإيرادات التشغيلية', toMoney(pnlData.totalRevenue, db.settings)),
-        kpi('إجمالي المصروفات والنفقات', toMoney(pnlData.totalExpense, db.settings)),
-        kpi('صافي أرباح / خسائر الفترة', toMoney(pnlData.netIncome, db.settings)),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['بند الإيرادات', `المبلغ (${currencyOf(db.settings)})`],
-          pnlData.revenues.map((r) => [r.label, toMoney(r.amount, db.settings)]),
-          ['إجمالي الإيرادات', toMoney(pnlData.totalRevenue, db.settings)],
-        ),
-        TableGenerator.build(
-          ['بند المصروفات', `المبلغ (${currencyOf(db.settings)})`],
-          pnlData.expenses.map((e) => [e.label, toMoney(e.amount, db.settings)]),
-          ['إجمالي المصروفات', toMoney(pnlData.totalExpense, db.settings)],
-        ),
-      ],
-      footer: footer(['accountant', 'general_manager'], 'تقرير قائمة الدخل والربحية'),
-      fileName: fileName('income_statement', dateRange, 'report'),
-    };
-  }
-
-  private buildBalanceSheet({ data, date, db }: BalanceSheetPayload & { db: AppLikeDb }): UnifiedDocumentModel {
-    return {
-      type: 'balance_sheet',
-      header: baseHeader(db.settings, 'قائمة المركز المالي والميزانية العمومية', fmtDate(date)),
-      kpis: [
-        kpi('إجمالي الأصول', toMoney(data.totalAssets, db.settings)),
-        kpi('إجمالي الالتزامات', toMoney(data.totalLiabilities, db.settings)),
-        kpi('إجمالي حقوق الملكية', toMoney(data.totalEquity, db.settings)),
-      ],
-      tables: [
-        TableGenerator.build(
-          ['الأصول (الموجودات)', `القيمة (${currencyOf(db.settings)})`],
-          data.assets.map((a) => [a.label, toMoney(a.amount, db.settings)]),
-          ['إجمالي الأصول', toMoney(data.totalAssets, db.settings)],
-        ),
-        TableGenerator.build(
-          ['الالتزامات وحقوق الملكية', `القيمة (${currencyOf(db.settings)})`],
-          [
-            ...data.liabilities.map((l) => [l.label, toMoney(l.amount, db.settings)]),
-            ...data.equity.map((eq) => [eq.label, toMoney(eq.amount, db.settings)]),
-          ],
-          ['إجمالي الالتزامات وحقوق الملكية', toMoney(data.totalLiabilities + data.totalEquity, db.settings)],
-        ),
-      ],
-      footer: footer(['accountant', 'general_manager'], 'قائمة المركز المالي والميزانية العمومية'),
-      fileName: fileName('balance_sheet', date, 'report'),
-    };
+  /** Registry-driven support check used by the service boundary. */
+  supports(type: string): boolean {
+    return getDocumentTemplateEntry(type) != null;
   }
 }
 
