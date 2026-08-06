@@ -31,15 +31,19 @@ test.beforeEach(async ({}, testInfo) => {
   );
 });
 
+async function applyTheme(page: Page, theme: 'light' | 'dark') {
+  await page.addInitScript((selectedTheme) => {
+    document.documentElement.dataset.theme = selectedTheme;
+    document.documentElement.dir = 'rtl';
+  }, theme);
+}
+
 async function openFixture(
   page: Page,
   fixture: (typeof fixtures)[keyof typeof fixtures],
   theme: 'light' | 'dark',
 ) {
-  await page.addInitScript((selectedTheme) => {
-    document.documentElement.dataset.theme = selectedTheme;
-    document.documentElement.dir = 'rtl';
-  }, theme);
+  await applyTheme(page, theme);
   await page.goto(fixture.url, { waitUntil: 'domcontentloaded' });
   await page.evaluate((selectedTheme) => {
     document.documentElement.dataset.theme = selectedTheme;
@@ -48,6 +52,19 @@ async function openFixture(
   await expect(page.locator(fixture.ready)).toBeVisible();
   await expect(page.locator(fixture.summary)).toBeVisible();
   await expect(page.locator(fixture.register)).toBeVisible();
+}
+
+async function openOperationalFormFixture(page: Page, theme: 'light' | 'dark') {
+  await applyTheme(page, theme);
+  await page.goto('/login?e2e-form-contract=1&surface=bottom-sheet', {
+    waitUntil: 'domcontentloaded',
+  });
+  await page.evaluate((selectedTheme) => {
+    document.documentElement.dataset.theme = selectedTheme;
+    document.documentElement.dir = 'rtl';
+  }, theme);
+  await expect(page.locator('main[data-e2e-form-contract]')).toBeAttached();
+  await expect(page.getByRole('dialog')).toBeVisible();
 }
 
 async function expectNoHorizontalOverflow(page: Page, label: string) {
@@ -79,9 +96,7 @@ for (const [name, fixture] of Object.entries(fixtures)) {
 
 test('operational create form is a Bottom Sheet on mobile with visible actions', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 375, height: 844 });
-  await openFixture(page, fixtures.properties, 'light');
-
-  await page.getByRole('button', { name: 'إضافة عقار' }).first().click();
+  await openOperationalFormFixture(page, 'light');
 
   const bottomSheet = page.locator('[data-bottom-sheet]');
   const formSurface = page.locator(
@@ -90,9 +105,9 @@ test('operational create form is a Bottom Sheet on mobile with visible actions',
   await expect(bottomSheet).toBeVisible();
   await expect(formSurface).toBeVisible();
   await expect(page.locator('[data-entity-form-surface="full-page"]')).toHaveCount(0);
-  await expect(bottomSheet.getByRole('heading', { name: 'إضافة عقار جديد' })).toBeVisible();
+  await expect(bottomSheet.getByRole('heading', { name: 'إضافة جهة اتصال' })).toBeVisible();
   await expect(formSurface.locator('[data-entity-form-actions]')).toBeVisible();
-  await expectNoHorizontalOverflow(page, 'property create bottom sheet');
+  await expectNoHorizontalOverflow(page, 'operational create bottom sheet');
 
   const sheetBox = await bottomSheet.boundingBox();
   expect(sheetBox).not.toBeNull();
@@ -100,28 +115,26 @@ test('operational create form is a Bottom Sheet on mobile with visible actions',
   expect(sheetBox!.height).toBeLessThanOrEqual(844);
 
   await page.screenshot({
-    path: testInfo.outputPath('property-create-375-bottom-sheet.png'),
+    path: testInfo.outputPath('operational-create-375-bottom-sheet.png'),
     fullPage: true,
   });
 });
 
 test('operational create form remains a Dialog on desktop', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await openFixture(page, fixtures.properties, 'dark');
-
-  await page.getByRole('button', { name: 'إضافة عقار' }).first().click();
+  await openOperationalFormFixture(page, 'dark');
 
   const dialog = page.locator(
     '[data-entity-form-surface="dialog"][data-entity-form-variant="operational"]',
   );
   await expect(dialog).toBeVisible();
   await expect(page.locator('[data-bottom-sheet]')).toHaveCount(0);
-  await expect(dialog.getByRole('heading', { name: 'إضافة عقار جديد' })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'إضافة جهة اتصال' })).toBeVisible();
   await expect(dialog.locator('[data-entity-form-actions]')).toBeVisible();
-  await expectNoHorizontalOverflow(page, 'property create desktop dialog');
+  await expectNoHorizontalOverflow(page, 'operational create desktop dialog');
 
   await page.screenshot({
-    path: testInfo.outputPath('property-create-1440-dialog.png'),
+    path: testInfo.outputPath('operational-create-1440-dialog.png'),
     fullPage: true,
   });
 });
