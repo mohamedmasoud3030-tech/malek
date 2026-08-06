@@ -1,10 +1,10 @@
 /*
- * Visual Migration Wave 1 + Operational Redesign
+ * MALEK operational visual system.
  *
- * The values intentionally live below [data-visual-wave='malek-pro'] rather
- * than :root. The operational redesign keeps data, permissions, routing,
- * storage, services and business behavior untouched while making the visual
- * change immediately visible across the real application surfaces.
+ * The page treatment is scoped by [data-visual-wave='malek-pro'].
+ * Form treatment is separately scoped by
+ * [data-entity-form-variant='operational'] so Finance & Reporting can own its
+ * presentation without inheriting this branch's form decisions.
  */
 
 [data-visual-wave='malek-pro'] {
@@ -40,6 +40,14 @@
   --shadow-card-hover: 0 2px 4px rgb(15 23 42 / 0.055), 0 16px 30px -20px rgb(15 23 42 / 0.26);
   --shadow-elevated: 0 24px 55px -28px rgb(15 23 42 / 0.42), 0 8px 22px -16px rgb(15 23 42 / 0.28);
   --focus-ring: 160 84% 31%;
+
+  position: relative;
+  isolation: isolate;
+  padding: clamp(0.25rem, 0.7vw, 0.75rem);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(circle at 92% 0%, hsl(var(--primary) / 0.08), transparent 28rem),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.28) 100%);
 }
 
 [data-theme='dark'] [data-visual-wave='malek-pro'] {
@@ -85,87 +93,6 @@
   min-block-size: 44px;
 }
 
-[data-visual-wave='malek-pro'] [data-list-controls],
-[data-visual-wave='malek-pro'] [data-filter-bar] {
-  border-color: hsl(var(--border) / 0.9);
-  background: hsl(var(--card) / 0.96);
-  box-shadow: var(--shadow-card);
-}
-
-[data-visual-wave='malek-pro'] [data-component-card],
-[data-visual-wave='malek-pro'] [data-entity-card],
-[data-visual-wave='malek-pro'] [data-mobile-card] {
-  border-color: hsl(var(--border) / 0.9);
-  box-shadow: var(--shadow-card);
-}
-
-[data-visual-wave='malek-pro'] [data-component-card]:hover,
-[data-visual-wave='malek-pro'] [data-entity-card]:hover,
-[data-visual-wave='malek-pro'] [data-mobile-card]:hover {
-  box-shadow: var(--shadow-card-hover);
-}
-
-[data-visual-wave='malek-pro'] [data-kpi-card] {
-  border-color: hsl(var(--border) / 0.9);
-  box-shadow: var(--shadow-card);
-}
-
-[data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
-  border-color: hsl(var(--border) / 0.9);
-  box-shadow: var(--shadow-card);
-}
-
-[data-visual-wave='malek-pro'] [data-entity-table] thead {
-  background: hsl(var(--muted) / 0.72);
-}
-
-[data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
-  background: hsl(var(--primary) / 0.045);
-}
-
-[data-visual-wave='malek-pro'] [data-empty-state-icon] {
-  color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.09);
-}
-
-[data-visual-wave='malek-pro'] [data-error-state] {
-  border-color: hsl(var(--danger-text) / 0.28);
-}
-
-[data-app-shell] {
-  background: hsl(210 33% 98%);
-}
-
-[data-theme='dark'] [data-app-shell] {
-  background: hsl(222 37% 8%);
-}
-
-[data-app-shell] [data-app-shell-header] {
-  box-shadow: 0 1px 0 hsl(214 25% 87% / 0.8), 0 8px 24px -24px rgb(15 23 42 / 0.32);
-}
-
-[data-theme='dark'] [data-app-shell] [data-app-shell-header] {
-  box-shadow: 0 1px 0 hsl(218 22% 21% / 0.9), 0 8px 24px -24px rgb(0 0 0 / 0.75);
-}
-
-[data-app-shell] [data-sidebar] {
-  background: linear-gradient(180deg, hsl(222 40% 11%) 0%, hsl(222 42% 8%) 100%);
-}
-
-/* --------------------------------------------------------------------------
-   Operational redesign — materially different hierarchy, not token repainting
-   -------------------------------------------------------------------------- */
-
-[data-visual-wave='malek-pro'] {
-  position: relative;
-  isolation: isolate;
-  padding: clamp(0.25rem, 0.7vw, 0.75rem);
-  border-radius: 1.5rem;
-  background:
-    radial-gradient(circle at 92% 0%, hsl(var(--primary) / 0.08), transparent 28rem),
-    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.28) 100%);
-}
-
 [data-visual-wave='malek-pro'] [data-page-header] {
   position: relative;
   overflow: hidden;
@@ -189,7 +116,9 @@
   height: 12rem;
   border: 1px solid rgb(255 255 255 / 0.12);
   border-radius: 999px;
-  box-shadow: 0 0 0 2.25rem rgb(255 255 255 / 0.035), 0 0 0 4.5rem rgb(255 255 255 / 0.02);
+  box-shadow:
+    0 0 0 2.25rem rgb(255 255 255 / 0.035),
+    0 0 0 4.5rem rgb(255 255 255 / 0.02);
   pointer-events: none;
 }
 
@@ -214,8 +143,10 @@
   position: relative;
   z-index: 2;
   padding: 0.75rem;
+  border: 1px solid hsl(var(--border) / 0.9);
   border-radius: 1.2rem;
   background: hsl(var(--card) / 0.92);
+  box-shadow: var(--shadow-card);
   backdrop-filter: blur(18px);
 }
 
@@ -226,6 +157,14 @@
   min-height: 46px;
   border-radius: 0.9rem;
   background: hsl(var(--background));
+}
+
+[data-visual-wave='malek-pro'] [data-component-card],
+[data-visual-wave='malek-pro'] [data-kpi-card],
+[data-visual-wave='malek-pro'] [data-entity-card],
+[data-visual-wave='malek-pro'] [data-mobile-card] {
+  border-color: hsl(var(--border) / 0.9);
+  box-shadow: var(--shadow-card);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-card],
@@ -248,15 +187,22 @@
   background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--accent)));
 }
 
+[data-visual-wave='malek-pro'] [data-entity-card]:hover,
+[data-visual-wave='malek-pro'] [data-mobile-card]:hover {
+  border-color: hsl(var(--primary) / 0.28);
+  box-shadow: var(--shadow-card-hover);
+}
+
 [data-visual-wave='malek-pro'] [data-entity-card]:hover {
   transform: translateY(-3px);
-  border-color: hsl(var(--primary) / 0.28);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table-wrapper] {
   overflow: hidden;
+  border-color: hsl(var(--border) / 0.9);
   border-radius: 1.25rem;
   background: hsl(var(--card));
+  box-shadow: var(--shadow-card);
 }
 
 [data-visual-wave='malek-pro'] [data-entity-table] thead {
@@ -299,7 +245,10 @@
 [data-visual-wave='malek-pro'] [role='tab'] {
   min-height: 42px;
   border-radius: 0.75rem;
-  transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 [data-visual-wave='malek-pro'] [role='tab'][aria-selected='true'] {
@@ -308,51 +257,90 @@
   box-shadow: 0 8px 18px -14px rgb(15 23 42 / 0.65);
 }
 
-/* Form architecture: desktop dialog, mobile bottom sheet visual contract. */
-[data-entity-form-surface='dialog'] {
+[data-visual-wave='malek-pro'] [data-empty-state-icon] {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.09);
+}
+
+[data-visual-wave='malek-pro'] [data-error-state] {
+  border-color: hsl(var(--danger-text) / 0.28);
+}
+
+/* App chrome remains independent from Finance & Reporting surfaces. */
+[data-app-shell] {
+  background: hsl(210 33% 98%);
+}
+
+[data-theme='dark'] [data-app-shell] {
+  background: hsl(222 37% 8%);
+}
+
+[data-app-shell] [data-app-shell-header] {
+  box-shadow:
+    0 1px 0 hsl(214 25% 87% / 0.8),
+    0 8px 24px -24px rgb(15 23 42 / 0.32);
+}
+
+[data-theme='dark'] [data-app-shell] [data-app-shell-header] {
+  box-shadow:
+    0 1px 0 hsl(218 22% 21% / 0.9),
+    0 8px 24px -24px rgb(0 0 0 / 0.75);
+}
+
+[data-app-shell] [data-sidebar] {
+  background: linear-gradient(180deg, hsl(222 40% 11%) 0%, hsl(222 42% 8%) 100%);
+}
+
+/* --------------------------------------------------------------------------
+   Operational forms only. Finance/Reporting does not receive these rules.
+   -------------------------------------------------------------------------- */
+
+[data-entity-form-surface][data-entity-form-variant='operational'] {
+  --entity-form-action-offset: 0px;
+}
+
+[data-entity-form-surface='dialog'][data-entity-form-variant='operational'] {
   border: 1px solid hsl(var(--border));
   border-radius: 1.45rem;
   box-shadow: 0 34px 90px -36px rgb(15 23 42 / 0.75);
 }
 
-[data-entity-form-surface='dialog'] [data-entity-form-scroll],
-[data-entity-form-surface='bottom-sheet'] [data-entity-form-scroll] {
+[data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-scroll] {
   background:
     radial-gradient(circle at 100% 0%, hsl(var(--primary) / 0.06), transparent 24rem),
     hsl(var(--background));
 }
 
-[data-entity-form] {
-  --entity-form-action-offset: 0px;
-}
-
-[data-entity-form] [data-entity-form-field] > span:first-child {
+[data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-field] > span:first-child {
   font-size: 0.78rem;
   font-weight: 800;
   color: hsl(var(--foreground));
 }
 
-[data-entity-form] input,
-[data-entity-form] select,
-[data-entity-form] textarea {
+[data-entity-form-surface][data-entity-form-variant='operational'] input,
+[data-entity-form-surface][data-entity-form-variant='operational'] select,
+[data-entity-form-surface][data-entity-form-variant='operational'] textarea {
   min-height: 46px;
   border-radius: 0.85rem;
   background: hsl(var(--card));
-  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
 }
 
-[data-entity-form] textarea {
+[data-entity-form-surface][data-entity-form-variant='operational'] textarea {
   min-height: 7rem;
 }
 
-[data-entity-form] input:focus,
-[data-entity-form] select:focus,
-[data-entity-form] textarea:focus {
+[data-entity-form-surface][data-entity-form-variant='operational'] input:focus,
+[data-entity-form-surface][data-entity-form-variant='operational'] select:focus,
+[data-entity-form-surface][data-entity-form-variant='operational'] textarea:focus {
   border-color: hsl(var(--primary) / 0.72);
   box-shadow: 0 0 0 4px hsl(var(--primary) / 0.11);
 }
 
-[data-entity-form] section {
+[data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form] section {
   border-color: hsl(var(--border) / 0.92);
   border-radius: 1.15rem;
   background:
@@ -360,7 +348,7 @@
   box-shadow: 0 10px 28px -24px rgb(15 23 42 / 0.5);
 }
 
-[data-entity-form-actions] {
+[data-entity-form-surface][data-entity-form-variant='operational'] [data-entity-form-actions] {
   border-radius: 1rem 1rem 0 0;
 }
 
@@ -383,13 +371,26 @@
     border-radius: 1rem;
   }
 
-  [data-entity-form-surface='full-page'] {
+  [data-entity-form-surface='bottom-sheet'][data-entity-form-variant='operational'] {
+    --entity-form-action-offset: 0px;
+  }
+
+  [data-entity-form-surface='bottom-sheet'][data-entity-form-variant='operational'] [data-entity-form] section {
+    padding: 0.9rem;
+    border-radius: 1rem;
+  }
+
+  [data-entity-form-surface='bottom-sheet'][data-entity-form-variant='operational'] [data-entity-form-actions] {
+    bottom: 0;
+  }
+
+  [data-entity-form-surface='full-page'][data-entity-form-variant='operational'] {
     display: flex !important;
     align-items: flex-end;
     background: transparent !important;
   }
 
-  [data-entity-form-surface='full-page']::before {
+  [data-entity-form-surface='full-page'][data-entity-form-variant='operational']::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -397,7 +398,7 @@
     backdrop-filter: blur(4px);
   }
 
-  [data-entity-form-surface='full-page'] > div {
+  [data-entity-form-surface='full-page'][data-entity-form-variant='operational'] > div {
     position: relative;
     z-index: 1;
     width: 100%;
@@ -408,10 +409,10 @@
     border-radius: 1.5rem 1.5rem 0 0;
     background: hsl(var(--background));
     box-shadow: 0 -24px 70px -24px rgb(2 6 23 / 0.75);
-    animation: operational-sheet-in 220ms cubic-bezier(.22,.8,.24,1);
+    animation: operational-sheet-in 220ms cubic-bezier(.22, .8, .24, 1);
   }
 
-  [data-entity-form-surface='full-page'] > div::before {
+  [data-entity-form-surface='full-page'][data-entity-form-variant='operational'] > div::before {
     content: '';
     position: absolute;
     top: 0.45rem;
@@ -422,35 +423,23 @@
     background: hsl(var(--muted-foreground) / 0.35);
     transform: translateX(-50%);
   }
-
-  [data-entity-form-surface='full-page'] header {
-    padding-top: 1.25rem;
-    border-radius: 1.5rem 1.5rem 0 0;
-  }
-
-  [data-entity-form-surface='full-page'] [data-entity-form-scroll] {
-    padding-inline: 0.85rem;
-  }
-
-  [data-entity-form] section {
-    padding: 0.9rem;
-    border-radius: 1rem;
-  }
-
-  [data-entity-form-actions] {
-    bottom: calc(var(--app-bottom-nav-height, 0px) + env(safe-area-inset-bottom, 0px));
-  }
 }
 
 @keyframes operational-sheet-in {
-  from { transform: translateY(100%); opacity: 0.6; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   [data-visual-wave='malek-pro'] *,
   [data-app-shell] *,
-  [data-entity-form-surface='full-page'] > div {
+  [data-entity-form-surface][data-entity-form-variant='operational'] * {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
