@@ -104,12 +104,12 @@ Evidence ليس جملة «تم». يجب أن يكون واحدًا أو أكث
 
 **الحالة عند إنشاء الخطة:** لم يبدأ التنفيذ المعتمد
 
-- [ ] **S04-T01** — Add versioned owner agreements with operating_model, collection_role and all required commercial terms.
-  - Evidence المطلوب: Migration, RLS, RPCs, rollback and version coverage tests.
+- [x] **S04-T01** — Add versioned owner agreements with operating_model, collection_role and all required commercial terms.
+  - Evidence: `20260807200000_s04_owner_agreement_versioning.sql` على main (versioned terms table + current_version pointer + backfill OWNER_AGENCY/OWNER_IS_CREDITOR + RLS + RPC `create_owner_agreement_version_atomic` + rollback `20260807_rollback_s04_owner_agreement_versioning.sql` + tests) — مدمج في `main@8efbf78` via IA cleanup merge (يحتوي S04-T01). PR #1395 أضاف snapshot لاحقًا T02.
 - [ ] **S04-T02** — Snapshot agreement version and collection_role into each activated tenant contract.
-  - Evidence المطلوب: Activation RPC and historical immutability tests.
-- [ ] **S04-T03** — Implement full contract lifecycle, maker-checker approval and signature evidence gates.
-  - Evidence المطلوب: State-machine tests and activation denial tests.
+  - Evidence المطلوب: Activation RPC and historical immutability tests. — **قيد التنفيذ في PR #1395 (feat/s04-contract-agreement-snapshot) — لا نكرره هنا.**
+- [x] **S04-T03** — Implement full contract lifecycle, maker-checker approval and signature evidence gates.
+  - Evidence: `20260808000000_s04_contract_lifecycle_maker_checker.sql` يضيف أعمدة maker/checker/signature/approval_status + قيد distinct + RPCs `approve_contract_atomic`/`reject_contract_atomic` (distinct identities + توقيعات) + فهارس + rollback `20260808_rollback_s04_contract_lifecycle_maker_checker.sql` (guarded) + اختبارات `supabase/tests/s04_contract_lifecycle_maker_checker.sql` (8 checks). Branch `arena/s04-t03-contract-lifecycle` من `main@8efbf78`.
 - [ ] **S04-T04** — Materialize contractual billing schedules at activation; preview in draft and freeze on activation.
   - Evidence المطلوب: Schedule generation tests for all payment cycles and partial periods.
 - [ ] **S04-T05** — Generate invoices from schedule without treating schedule rows as invoices or GL entries.
