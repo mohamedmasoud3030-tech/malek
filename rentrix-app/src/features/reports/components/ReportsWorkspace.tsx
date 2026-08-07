@@ -7,7 +7,13 @@ import { formatMoney, getErrorMessage } from '@/features/financials/components/f
 import { FinanceKpiGrid, FinanceKpiCard, FinanceSection } from '@/features/financials/components/finance-reporting-visual-foundations';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { FilterState } from '../reports-page.helpers';
-import { reportSections, type ReportSectionId } from '../reports-page.sections';
+import {
+  getReportCategoryLabel,
+  getReportSectionsByCategory,
+  reportCategories,
+  reportSections,
+  type ReportSectionId,
+} from '../reports-page.sections';
 import { ReportsFilterSurface } from './ReportsFilterSurface';
 
 const OverviewSection = lazy(() => import('./OverviewSection').then((m) => ({ default: m.OverviewSection })));
@@ -165,7 +171,7 @@ export function ReportsWorkspace({
             <div className="min-w-0" aria-live="polite">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-extrabold sm:text-lg">{activeSectionMeta.label}</h2>
-                <StatusBadge tone="info">{activeSectionMeta.group}</StatusBadge>
+                <StatusBadge tone="info">{getReportCategoryLabel(activeSectionMeta)}</StatusBadge>
               </div>
               <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground sm:text-sm">{activeSectionMeta.description}</p>
             </div>
@@ -173,8 +179,28 @@ export function ReportsWorkspace({
         </div>
 
         <div className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur sm:px-4">
-          <div className="min-w-max">
-            <SectionTabs items={reportSections} activeId={activeSection} onChange={onSectionChange} ariaLabel="أقسام التقارير" />
+          <div className="min-w-max space-y-2">
+            {reportCategories.map((category) => {
+              const categorySections = getReportSectionsByCategory(category.id);
+              if (categorySections.length === 0) return null;
+              return (
+                <div key={category.id} className="group flex items-center gap-3">
+                  <span
+                    className="flex shrink-0 items-center gap-1.5 pe-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground/70"
+                    title={category.description}
+                  >
+                    <category.icon className="size-3.5" aria-hidden="true" />
+                    <span className="whitespace-nowrap">{category.label}</span>
+                  </span>
+                  <SectionTabs
+                    items={categorySections}
+                    activeId={activeSection}
+                    onChange={onSectionChange}
+                    ariaLabel={`${category.label} — أقسام التقارير`}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
