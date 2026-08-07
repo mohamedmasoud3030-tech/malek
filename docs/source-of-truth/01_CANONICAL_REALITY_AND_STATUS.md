@@ -137,6 +137,7 @@ Fixes are presentation-only; findings and fixes: `docs/audits/MALEK_VISUAL_WAVE5
 | Form inputs at 48px touch / 44px desktop via shared `input.tsx` (previously 40px) | `VERIFIED_COMPLETE` | `input.tsx` (mirrors `select.tsx` pattern) |
 | 44px hit boxes: login password toggle, bottom-sheet drag handle, 25 as-child link-button call sites | `VERIFIED_COMPLETE` | per-site `min-h-11` bumps; audit doc §4c table |
 | Touch-target audit: 0 findings across 15 surfaces × 2 viewports; axe matrix stays 16/16 clean | `VERIFIED_COMPLETE` | `evidence/ui-wave5-touch-targets/audits-touch-targets-final.json` |
+| Keyboard focus visibility: Tab-walk across 8 surfaces — bottom-sheet handle given a visible focus ring; 0 invisible-focus stops final | `VERIFIED_COMPLETE` | `bottom-sheet.tsx`; `evidence/ui-wave5-touch-targets/audits-keyboard-focus.json` |
 
 ## 3. Open Owner Decisions (blockers, unchanged)
 

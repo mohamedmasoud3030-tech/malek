@@ -102,6 +102,13 @@ stays 16/16 clean. Machine report:
 `evidence/ui-wave5-touch-targets/audits-touch-targets-final.json`; screenshots
 in `evidence/ui-wave5-touch-targets/after/`.
 
+A scripted keyboard Tab-walk (8 surfaces, first 60 stops each, 148 stops
+total) additionally verified every focused element shows a visible indicator
+(outline or ring). One defect found and fixed: the bottom-sheet drag handle
+had `focus-visible:outline-none` with no replacement indicator → added an
+inset primary ring. Final run: **0 invisible-focus stops**; report:
+`evidence/ui-wave5-touch-targets/audits-keyboard-focus.json`.
+
 ## 4. Remaining roadmap items intentionally untouched
 
 - Split auth layouts / promotional hero panels: rejected by the owner-approved consolidation pass — must not return.
