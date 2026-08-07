@@ -114,13 +114,13 @@ if ! grep -Eq '"idempotent"[[:space:]]*:[[:space:]]*true' "$T2_LOG"; then
   exit 1
 fi
 
-read -r BATCH_COUNT LINE_COUNT STATUS LEGACY_FLAG <<<"$(
+read -r BATCH_COUNT LINE_COUNT STATUS_OK LEGACY_FLAG <<<"$(
   psql "$DB_URL" -AtF' ' -v ON_ERROR_STOP=1 -c "
     select
       count(distinct b.id)::int,
       count(l.id)::int,
-      min(b.status),
-      bool_or(b.is_legacy_compat)::text
+      bool_and(b.status = 'POSTED'),
+      bool_or(b.is_legacy_compat)
     from public.journal_batches b
     left join public.journal_lines l on l.batch_id = b.id and l.deleted_at is null
     where b.company_id = '$COMPANY_ID'::uuid
@@ -130,8 +130,8 @@ read -r BATCH_COUNT LINE_COUNT STATUS LEGACY_FLAG <<<"$(
   "
 )"
 
-if [[ "$BATCH_COUNT" != "1" || "$LINE_COUNT" != "2" || "$STATUS" != "POSTED" || "$LEGACY_FLAG" != "f" ]]; then
-  echo "S03 posting concurrency failure: batch_count=$BATCH_COUNT line_count=$LINE_COUNT status=$STATUS legacy=$LEGACY_FLAG" >&2
+if [[ "$BATCH_COUNT" != "1" || "$LINE_COUNT" != "2" || "$STATUS_OK" != "t" || "$LEGACY_FLAG" != "f" ]]; then
+  echo "S03 posting concurrency failure: batch_count=$BATCH_COUNT line_count=$LINE_COUNT status_ok=$STATUS_OK legacy=$LEGACY_FLAG" >&2
   cat "$T1_LOG" "$T2_LOG" >&2
   exit 1
 fi
