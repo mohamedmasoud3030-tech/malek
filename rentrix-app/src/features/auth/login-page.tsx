@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
-import { APP_BRAND_MARK_ASSET, APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
+import { APP_BRAND_LOCKUP_ASSET, APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
 import { SUPPORT_CONTACTS } from '@/lib/contact';
 import { getLoginErrorMessage } from './login-error-message';
@@ -73,27 +73,27 @@ export function LoginPage() {
 
   return (
     <main
-      className="grid min-h-screen min-h-dvh w-full place-items-center bg-background px-5 py-8 sm:px-6 sm:py-10 lg:px-8"
+      className="grid min-h-screen min-h-dvh w-full place-items-center bg-background px-4 py-7 sm:px-6 sm:py-10 lg:px-8"
       data-login-surface
       dir="rtl"
     >
       <section
-        className="safe-top-app safe-bottom-overlay flex w-full max-w-[25rem] flex-col items-stretch"
+        className="safe-top-app safe-bottom-overlay flex w-full max-w-sm flex-col items-stretch"
         data-login-main
+        data-login-card
       >
         <header className="mb-7 flex flex-col items-center text-center sm:mb-8" data-login-brand>
           <img
-            src={APP_BRAND_MARK_ASSET}
-            alt=""
-            aria-hidden="true"
-            className="size-16 object-contain sm:size-[4.5rem] lg:size-20"
-            data-malek-canonical-mark
+            src={APP_BRAND_LOCKUP_ASSET}
+            alt={APP_BRAND_NAME}
+            className="size-16 object-contain sm:size-20"
+            data-malek-canonical-lockup
           />
           <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-[1.75rem]">
             {APP_BRAND_NAME}
           </h1>
           <p
-            className="mt-1.5 text-sm font-medium leading-6 text-muted-foreground sm:text-[0.95rem]"
+            className="mt-1.5 text-lg font-medium leading-7 text-muted-foreground sm:text-xl"
             data-login-tagline
           >
             {APP_BRAND_TAGLINE_AR}
@@ -212,32 +212,27 @@ export function LoginPage() {
           data-contact-footer
           aria-label="بيانات الدعم والتواصل"
         >
-          <p className="mb-3 text-xs font-semibold text-muted-foreground">تحتاج مساعدة؟ تواصل معنا</p>
+          <p className="mb-3 text-xs font-semibold text-muted-foreground">الدعم والتواصل</p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {[SUPPORT_CONTACTS.oman, SUPPORT_CONTACTS.egypt, SUPPORT_CONTACTS.saudi].map((contact) => (
-              <a
+              <span
                 key={contact.number}
-                href={contact.whatsappUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                aria-label={`${contact.label} ${contact.number}`}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground"
               >
-                <MessageCircle className="size-3.5" aria-hidden="true" />
+                <MessageCircle className="size-3.5 text-muted-foreground" aria-hidden="true" />
                 <span dir="ltr">{contact.number}</span>
-              </a>
+              </span>
             ))}
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
             {SUPPORT_CONTACTS.emails.map((contact) => (
-              <a
+              <span
                 key={contact.address}
-                href={`mailto:${contact.address}`}
-                className="inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-muted-foreground"
               >
                 <Mail className="size-3.5" aria-hidden="true" />
                 <span dir="ltr">{contact.address}</span>
-              </a>
+              </span>
             ))}
           </div>
         </footer>
