@@ -87,7 +87,7 @@ export function Typography({
   const Component: ElementType = asChild ? Slot : variantElement[variant];
   return (
     <Component
-      data-typography={variant}
+      {...(asChild ? null : { 'data-typography': variant })}
       className={cn(variantClasses[variant], className)}
       {...props}
     >

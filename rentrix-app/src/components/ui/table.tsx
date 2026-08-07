@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react';
+import type { HTMLAttributes, ReactNode, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './skeleton';
 
@@ -117,7 +117,7 @@ export function TableEmpty({
   colSpan: number;
   title?: string;
   description?: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <TableStateRow colSpan={colSpan}>

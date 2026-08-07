@@ -1,5 +1,5 @@
 import { Check, Mail, Plus, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Alert,
   Badge,
@@ -10,7 +10,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Input,
   Skeleton,
   Spinner,
   StatusBadge,
@@ -31,7 +30,7 @@ import {
 } from '@/components/ui';
 import { useUiStore } from '@/store/ui-store';
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
     <section className="space-y-4">
       <div>
@@ -57,9 +56,9 @@ function Swatch({ name, value }: { name: string; value: string }) {
   );
 }
 
-function useSwatches() {
+function useSwatches(theme: 'light' | 'dark') {
   const [swatches, setSwatches] = useState<Array<{ name: string; value: string }>>([]);
-  if (swatches.length === 0 && typeof window !== 'undefined') {
+  useEffect(() => {
     const styles = getComputedStyle(document.documentElement);
     const read = (v: string) => {
       const raw = styles.getPropertyValue(v).trim();
@@ -77,14 +76,14 @@ function useSwatches() {
       { name: 'financial-negative', value: read('--color-financial-negative') },
       { name: 'financial-neutral', value: read('--color-financial-neutral') },
     ]);
-  }
+  }, [theme]);
   return swatches;
 }
 
 export function DesignSystemShowcase() {
   const theme = useUiStore((state) => state.theme);
   const setTheme = useUiStore((state) => state.setTheme);
-  const swatches = useSwatches();
+  const swatches = useSwatches(theme);
   const [dir, setDir] = useState<'rtl' | 'ltr'>(document.documentElement.dir === 'ltr' ? 'ltr' : 'rtl');
 
   const toggleDir = () => {
@@ -192,6 +191,10 @@ export function DesignSystemShowcase() {
           <Typography variant="caption">إجمالي التحصيل</Typography>
           <Typography variant="h2" className="mt-1 text-financial-positive">12,450 ر.ع</Typography>
         </Card>
+        <Card variant="financial" className="w-64">
+          <Typography variant="caption">رصيد المالك</Typography>
+          <Typography variant="h2" className="mt-1">4,820 ر.ع</Typography>
+        </Card>
       </Section>
 
       <Section title="Badges" description="Variants + business status presets">
@@ -272,7 +275,7 @@ export function DesignSystemShowcase() {
             </Table>
           </CardContent>
         </Card>
-        <Alert variant="info" title="EmptyState / ErrorState" description="تُستخدم عبر EmptyState و ErrorState الموجودين في النظام." />
+        <Alert variant="info" title="EmptyState / ErrorState / OfflineState / NoPermissionState" description="هذه الأسطح مبنية على Card/Alert الموجودة وتُستخدم في صفحات Wave 4." />
       </Section>
 
       <footer className="pb-10">

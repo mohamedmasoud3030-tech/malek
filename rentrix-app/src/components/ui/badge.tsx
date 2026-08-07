@@ -73,7 +73,8 @@ type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
 
 /**
  * Compact label pill for counts, tags, and lightweight status markers.
- * For domain status mapping prefer <Badge status="paid" /> or StatusBadge.
+ * For common lifecycle/payment states prefer <StatusBadgePill status="paid" />;
+ * for domain tone mapping use StatusBadge.
  */
 export function Badge({ variant = 'default', className, children, dot = false, ...props }: BadgeProps) {
   return (

@@ -38,7 +38,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       type={type}
       data-state={state}
       lang={lang ?? (type === 'date' ? 'en-GB' : undefined)}
-      className={cn(inputVariants({ state }), 'px-3 py-2', className)}
+      className={cn(inputVariants({ state }), className)}
       {...props}
     />
   ),

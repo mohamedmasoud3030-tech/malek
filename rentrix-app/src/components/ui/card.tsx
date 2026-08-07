@@ -17,7 +17,7 @@ export const cardVariants = cva(
         statistic:
           'border border-border/70 bg-card p-5 shadow-card',
         financial:
-          'border border-border/70 bg-card shadow-card',
+          'relative overflow-hidden border border-border/70 bg-card p-5 shadow-card before:absolute before:inset-inline-start-0 before:inset-block-0 before:w-1 before:bg-primary/60 before:content-[""]',
       },
     },
     defaultVariants: { variant: 'default' },

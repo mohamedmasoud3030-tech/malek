@@ -100,13 +100,23 @@ export function Button({
     </>
   );
 
+  // Data/state attributes belong to the rendered <button> only. When asChild is
+  // used, Radix Slot forwards props to the child element; attaching data-* to
+  // the Slot can land on a React.Fragment and emit invalid-prop warnings, so we
+  // keep them off the asChild path (child elements own their own attributes).
+  const stateProps = asChild
+    ? null
+    : {
+        'data-ui-button': true,
+        'data-variant': variant,
+        'data-size': size,
+        'data-loading': loading ? 'true' : undefined,
+        'aria-busy': loading || undefined,
+      };
+
   return (
     <Component
-      data-ui-button
-      data-variant={variant}
-      data-size={size}
-      data-loading={loading ? 'true' : undefined}
-      aria-busy={loading || undefined}
+      {...stateProps}
       className={cn(buttonVariants({ variant, size, fullWidth }), className)}
       disabled={asChild ? disabled : disabled || loading}
       type={asChild ? undefined : type}
