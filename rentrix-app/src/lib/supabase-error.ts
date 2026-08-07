@@ -5,6 +5,14 @@ type SupabaseLikeError = Readonly<{
   hint?: string;
 }>;
 
+const GENERIC_ARABIC_ERRORS = new Set([
+  'خطأ',
+  'حدث خطأ',
+  'حدث خطأ غير متوقع',
+  'فشل',
+  'تعذر إكمال العملية',
+]);
+
 function isSupabaseLikeError(error: unknown): error is SupabaseLikeError {
   return typeof error === 'object' && error !== null;
 }
@@ -84,9 +92,10 @@ export function getActionableSupabaseErrorMessage(error: unknown, fallbackMessag
     return withContext(fallbackMessage, 'انتهت الجلسة أو تعذر التحقق منها. سجّل الدخول من جديد ثم أعد المحاولة.');
   }
 
-  // Preserve precise Arabic validation/business messages from the server before
-  // applying broad SQLSTATE mappings. They are already the best user guidance.
-  if (message && containsArabic(message)) return message;
+  // Preserve precise Arabic validation/business messages from the server, but
+  // never preserve placeholders such as «خطأ» or «حدث خطأ» — the caller's
+  // operation-specific fallback is more useful in those cases.
+  if (message && containsArabic(message) && !GENERIC_ARABIC_ERRORS.has(message)) return message;
 
   if (
     normalized.includes('permission denied')
@@ -131,7 +140,8 @@ export function getActionableSupabaseErrorMessage(error: unknown, fallbackMessag
     return withContext(fallbackMessage, 'إحدى القيم المدخلة غير صالحة. راجع البيانات ثم أعد المحاولة.');
   }
 
-  // Do not leak opaque English SQL/PostgREST internals into the Arabic UI.
+  // Do not leak opaque SQL/PostgREST internals or generic placeholders into the
+  // Arabic UI. The operation-specific fallback is always preferable.
   return fallbackMessage;
 }
 
