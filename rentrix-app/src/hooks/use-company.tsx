@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/use-auth';
 
 export const ACTIVE_COMPANY_ERROR = 'تعذر تحديد الشركة النشطة';
 
@@ -49,6 +50,8 @@ function readCompanyIdFromAppMetadata(appMetadata: unknown): string | null {
 /* ── Provider ───────────────────────────────────────── */
 
 export function CompanyProvider({ children }: PropsWithChildren) {
+  const { session, isLoading: isAuthLoading } = useAuth();
+  const authenticatedUserId = session?.user.id ?? null;
   const [companies, setCompanies] = useState<Company[]>([]);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,30 +63,34 @@ export function CompanyProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     let mounted = true;
 
+    if (isAuthLoading) {
+      return () => { mounted = false; };
+    }
+
+    if (!session?.user) {
+      setHasAuthenticatedSession(false);
+      setCompanies([]);
+      setActiveCompany(null);
+      setCurrentRole(null);
+      setLoadError(null);
+      setIsLoading(false);
+      return () => { mounted = false; };
+    }
+
+    const sessionUser = session.user;
+
     async function loadCompanies() {
       setIsLoading(true);
       setLoadError(null);
+      setHasAuthenticatedSession(true);
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-          if (mounted) {
-            setHasAuthenticatedSession(false);
-            setCompanies([]);
-            setActiveCompany(null);
-            setCurrentRole(null);
-          }
-          return;
-        }
-
-        if (mounted) setHasAuthenticatedSession(true);
-
         // Production currently exposes only these stable columns. Do not request
         // optional columns that are absent from the live schema.
         const { data, error } = await supabase
           .from('company_members')
           .select('company_id, role, companies!inner(id, name, slug, currency, locale)')
-          .eq('user_id', session.user.id);
+          .eq('user_id', sessionUser.id);
 
         if (error) throw error;
         if (!mounted) return;
@@ -97,7 +104,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
           throw new Error(ACTIVE_COMPANY_ERROR);
         }
 
-        let jwtCompanyId = readCompanyIdFromAppMetadata(session.user.app_metadata);
+        let jwtCompanyId = readCompanyIdFromAppMetadata(sessionUser.app_metadata);
         let selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
 
         // Financial RPCs and RLS read app_metadata.company_id. Refresh an older
@@ -145,7 +152,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
 
     void loadCompanies();
     return () => { mounted = false; };
-  }, [reloadVersion]);
+  }, [authenticatedUserId, isAuthLoading, reloadVersion]);
 
   const switchCompany = useCallback(async (companyId: string) => {
     const company = companies.find((candidate) => candidate.id === companyId);
