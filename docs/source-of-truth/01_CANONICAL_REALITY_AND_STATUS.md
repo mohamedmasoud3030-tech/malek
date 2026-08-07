@@ -74,7 +74,20 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 
 ---
 
-## 2. Open Owner Decisions (blockers, unchanged)
+## 2. Visual UX Consolidation Pass (2026-08-07, same program/PR lineage)
+
+Presentation-only normalization; no business behavior, routes, permissions, RPCs, or DB changes.
+
+| Item | Status | Evidence |
+|---|---|---|
+| Login: single centered compact auth card (no split layout, no promotional command-center panel, restrained lockup) | `VERIFIED_COMPLETE` | `login-page.tsx` + additive tests; real Chromium smoke at 390px/1440px (0px horizontal overflow, card fits viewport) |
+| Compact operational page headers: jargon/promotional descriptions trimmed to one concise line (finance workspaces + 4 finance hub entries) | `VERIFIED_COMPLETE` | workspace page components; `page-header.test.tsx` intact |
+| One heading hierarchy: EntityDetailHeader normalized to the standard PageHeader scale (text-xl sm:text-2xl) | `VERIFIED_COMPLETE` | `entity-detail-header.tsx` |
+| Reports tab clusters use compact inline category labels (mobile) while keeping the 3-category architecture | `VERIFIED_COMPLETE` | `ReportsWorkspace.tsx` |
+| Shared primitives audit (buttons/inputs/cards/tables/modals/forms/filter pills/status pills/empty states) — found already normalized on one token system; no second design system created | `VERIFIED_COMPLETE` | `tokens.css`, `malek-pro-visual-wave.css`, `page-polish.css`, component audit |
+| Dashboard/reports restraint (hero + KPI cards already compact; calculations preserved) | `VERIFIED_COMPLETE` | `hero-banner.tsx`, `FinanceKpiCard` |
+
+## 3. Open Owner Decisions (blockers, unchanged)
 
 - **OD-08** — Due-from-Owner collection mechanism (offset vs payment invoice): blocks negative-balance settlement accounting.
 - **OD-03** — Missing legal templates: blocks production contract printing automation.
@@ -82,6 +95,6 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 - **OD-02** — Void signature payload: awaits refactor decision.
 - **S08 crediting (OD-11)** — blocks Stage S09 historical correction.
 
-## 3. Intentionally Untouched
+## 4. Intentionally Untouched
 
 - GL business-posting rewiring (Stage S03 wiring), VOID accounting model changes, historical financial backfill, multi-currency, new master-lease accounting policies, Maker-Checker lifecycle, legal contract wording, VAT policy changes, new settlement accounting rules, migration drift reconciliation (OD-15). All require upstream decisions per the roadmap.
