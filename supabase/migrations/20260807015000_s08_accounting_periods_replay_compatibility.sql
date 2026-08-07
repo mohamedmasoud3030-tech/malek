@@ -2,11 +2,12 @@
 -- S08 replay compatibility preflight
 --
 -- Some isolated legacy replay fixtures intentionally omit the Stage 3
--- accounting-periods table while still replaying later read-only migrations.
--- Production/staging environments that already have the canonical table are
--- untouched. In dependency-incomplete replay environments only, expose an
--- empty, read-only compatibility view so S08 analysis objects can be created
--- and correctly return zero observable periods instead of aborting the chain.
+-- accounting-period and journal tables while still replaying later read-only
+-- migrations. Production/staging environments that already have the canonical
+-- tables are untouched. In dependency-incomplete replay environments only,
+-- expose empty, read-only compatibility views so S08 analysis objects can be
+-- created and correctly return zero observable GL periods/movements instead of
+-- aborting the migration chain.
 --
 -- No financial rows are inserted, updated, deleted, or truncated.
 -- Reversal companion:
@@ -39,6 +40,51 @@ begin
 
     comment on view public.accounting_periods is
       'Replay-only empty compatibility surface. Canonical environments use the Stage 3 accounting_periods table.';
+  end if;
+
+  if to_regclass('public.journal_batches') is null then
+    execute $view$
+      create view public.journal_batches
+      with (security_invoker = true) as
+      select
+        null::uuid as id,
+        null::uuid as company_id,
+        null::uuid as accounting_period_id,
+        null::text as status,
+        null::date as effective_date,
+        null::text as source_type,
+        null::uuid as source_id,
+        null::uuid as event_id,
+        null::uuid as reversal_of_batch_id,
+        null::timestamptz as posted_at,
+        null::timestamptz as created_at,
+        null::uuid as created_by,
+        null::timestamptz as updated_at
+      where false
+    $view$;
+
+    comment on view public.journal_batches is
+      'Replay-only empty compatibility surface. Canonical environments use the Stage 3 journal_batches table.';
+  end if;
+
+  if to_regclass('public.journal_lines') is null then
+    execute $view$
+      create view public.journal_lines
+      with (security_invoker = true) as
+      select
+        null::uuid as id,
+        null::uuid as company_id,
+        null::uuid as batch_id,
+        null::uuid as account_id,
+        null::numeric as debit,
+        null::numeric as credit,
+        null::text as description,
+        null::timestamptz as created_at
+      where false
+    $view$;
+
+    comment on view public.journal_lines is
+      'Replay-only empty compatibility surface. Canonical environments use the Stage 3 journal_lines table.';
   end if;
 end
 $compatibility$;
