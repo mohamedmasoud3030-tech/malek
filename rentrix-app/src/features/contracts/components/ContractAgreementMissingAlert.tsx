@@ -115,7 +115,7 @@ export function ContractAgreementMissingAlert({
         )}
         <div className="flex flex-wrap gap-3">
           {property ? (
-            <Button asChild>
+            <Button asChild className="min-h-11">
               <Link
                 to={propertyTabPath}
                 params={propertyTabParams}
@@ -126,14 +126,14 @@ export function ContractAgreementMissingAlert({
               </Link>
             </Button>
           ) : (
-            <Button asChild variant="secondary">
+            <Button asChild variant="secondary" className="min-h-11">
               <Link to="/properties">
                 <FileCheck className="me-2 size-4" />
                 الذهاب للعقارات
               </Link>
             </Button>
           )}
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="min-h-11" asChild>
             <Link to={property ? propertyTabPath : '/properties'} params={propertyTabParams} search={{}}>
               <ArrowRightLeft className="me-2 size-4" />
               تغيير العقار أو التواريخ

@@ -25,7 +25,7 @@ export function DocumentReadinessNotice({ className }: { className?: string }) {
       <p className="text-sm font-bold leading-6">
         أكمل بيانات الشركة الأساسية في الإعدادات قبل طباعة هذا المستند.
       </p>
-      <Button asChild variant="secondary" size="sm" className="shrink-0">
+      <Button asChild variant="secondary" size="sm" className="min-h-11 shrink-0">
         <Link to="/settings">
           <Settings2 className="me-2 size-4" aria-hidden="true" />
           فتح إعدادات الشركة

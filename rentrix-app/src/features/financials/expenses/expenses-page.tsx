@@ -133,13 +133,13 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
       visualVariant="malek-pro"
       secondaryActions={
         <>
-          <Button variant="secondary" asChild>
+          <Button variant="secondary" className="min-h-11" asChild>
             <Link to="/financials">
               <ArrowLeft className="me-2 size-4" />
               المالية
             </Link>
           </Button>
-          <Button variant="secondary" asChild>
+          <Button variant="secondary" className="min-h-11" asChild>
             <Link to="/reports">
               <ReceiptText className="me-2 size-4" />
               التقارير

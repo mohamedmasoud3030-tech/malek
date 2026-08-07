@@ -1,0 +1,42 @@
+{
+  "login": {
+    "stops": 4,
+    "invisibleFocus": 0,
+    "samples": []
+  },
+  "dashboard": {
+    "stops": 22,
+    "invisibleFocus": 0,
+    "samples": []
+  },
+  "properties": {
+    "stops": 22,
+    "invisibleFocus": 0,
+    "samples": []
+  },
+  "contracts": {
+    "stops": 32,
+    "invisibleFocus": 0,
+    "samples": []
+  },
+  "maintenance": {
+    "stops": 22,
+    "invisibleFocus": 0,
+    "samples": []
+  },
+  "financials": {
+    "stops": 1,
+    "invisibleFocus": 0,
+    "samples": []
+  },
+  "reports": {
+    "stops": 11,
+    "invisibleFocus": 0,
+    "samples": []
+  },
+  "form-bottom-sheet": {
+    "stops": 60,
+    "invisibleFocus": 0,
+    "samples": []
+  }
+}

@@ -42,11 +42,17 @@ describe('public landing performance contract', () => {
     expect(footerSource).not.toContain('icon-rentrix');
   });
 
-  it('loads the remote brand fonts after the initial document load', () => {
+  it('loads the self-hosted brand fonts after the initial document load', () => {
     const globalStyles = readSource('../../styles/globals.css');
     const indexHtml = readSource('../../../index.html');
+    const entry = readSource('../../index.tsx');
+    const productFonts = readSource('../../lib/product-fonts.ts');
 
     expect(globalStyles).not.toContain('fonts.googleapis.com');
-    expect(indexHtml).toContain("window.addEventListener('load'");
+    expect(indexHtml).not.toContain('fonts.googleapis.com');
+    expect(indexHtml).not.toContain('fonts.gstatic.com');
+    // Deferred on window load, injected by the typed app entry (OD-12).
+    expect(entry).toContain('loadProductFonts();');
+    expect(productFonts).toContain("win.addEventListener('load', install, { once: true })");
   });
 });

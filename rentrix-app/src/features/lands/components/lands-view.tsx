@@ -578,7 +578,7 @@ function LandCard({
             {row.location ?? "بدون موقع"}
           </p>
           {row.category ? (
-            <p className="mt-1 text-xs text-muted-foreground/70">
+            <p className="mt-1 text-xs text-muted-foreground">
               {categoryLabels[row.category] ?? row.category}
             </p>
           ) : null}

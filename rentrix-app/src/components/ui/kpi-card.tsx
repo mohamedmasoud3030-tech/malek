@@ -64,8 +64,9 @@ export function KpiCard({
           {value}
         </p>
         <p className="mt-1 text-xs font-medium text-muted-foreground">{label}</p>
+        {/* Full muted token: the /70 opacity blend measured 2.27:1 (axe). */}
         {sub ? (
-          <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted-foreground/70">{sub}</p>
+          <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted-foreground">{sub}</p>
         ) : null}
       </div>
     </article>

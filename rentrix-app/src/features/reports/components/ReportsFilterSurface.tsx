@@ -67,7 +67,7 @@ export function ReportsFilterSurface({
                 <span className={cn(
                   'rounded-full px-2.5 py-1 text-[11px] font-bold',
                   summary.activeCount > 0
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-primary/10 text-info'
                     : 'bg-muted text-muted-foreground',
                 )}>
                   {summary.activeCount > 0 ? `${summary.activeCount} فلاتر مخصصة` : 'الشهر الحالي'}
@@ -97,7 +97,13 @@ export function ReportsFilterSurface({
           </div>
         </div>
 
-        <div className="no-scrollbar flex gap-2 overflow-x-auto p-3 sm:flex-wrap sm:overflow-visible sm:p-4" aria-live="polite">
+        <div
+          className="no-scrollbar flex gap-2 overflow-x-auto p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 sm:flex-wrap sm:overflow-visible sm:p-4"
+          aria-live="polite"
+          tabIndex={0}
+          role="region"
+          aria-label="ملخص نطاق التقرير الحالي — قابل للتمرير أفقياً على الشاشات الصغيرة"
+        >
           {summary.chips.map((chip) => {
             const Icon = filterChipIcons[chip.key];
             return (

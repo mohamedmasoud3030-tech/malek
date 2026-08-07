@@ -20,7 +20,7 @@ export function AccessDenied({ message }: AccessDeniedProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button asChild>
+          <Button asChild className="min-h-11">
             <Link to="/dashboard">العودة إلى لوحة التحكم</Link>
           </Button>
         </CardContent>

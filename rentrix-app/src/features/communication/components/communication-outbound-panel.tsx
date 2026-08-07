@@ -139,7 +139,7 @@ export function CommunicationOutboundPanel() {
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           {previewUrl ? (
-            <Button variant="secondary" asChild>
+            <Button variant="secondary" className="min-h-11" asChild>
               <a href={previewUrl} target="_blank" rel="noreferrer">
                 <ExternalLink className="me-2 size-4" />
                 فتح المعاينة

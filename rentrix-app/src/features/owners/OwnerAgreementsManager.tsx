@@ -163,7 +163,7 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
               <p className="text-sm font-bold text-warning">العقار غير جاهز للتشغيل: لا توجد ملكية سارية.</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">اربط مالكاً بالعقار وحدد فترة الملكية، ثم عُد لإنشاء اتفاقية المكتب.</p>
             </div>
-            <Button type="button" variant="secondary" asChild>
+            <Button type="button" variant="secondary" className="min-h-11" asChild>
               <Link to="/owners">إدارة علاقات الملكية</Link>
             </Button>
           </div>
@@ -174,7 +174,7 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
               <p className="text-sm font-bold text-warning">المالك المرتبط غير نشط.</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">لا يمكن إنشاء اتفاقية تشغيل جديدة قبل تفعيل المالك أو ربط مالك نشط بالعقار.</p>
             </div>
-            <Button type="button" variant="secondary" asChild>
+            <Button type="button" variant="secondary" className="min-h-11" asChild>
               <Link to="/owners">مراجعة المالك والملكية</Link>
             </Button>
           </div>

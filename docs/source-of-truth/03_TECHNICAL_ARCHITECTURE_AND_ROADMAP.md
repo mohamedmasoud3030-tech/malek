@@ -140,6 +140,7 @@ The platform's features are rolled out according to a 10-stage plan managed via 
 
 ### OD-12 — Cairo Font Self-Hosting
 - **Action:** Self-host Cairo font inside the public folder to ensure offline PWA capabilities.
+- **Status (2026-08-07):** `RESOLVED` — Cairo (arabic+latin 400–900) and Sora (latin 600–800) are self-hosted under `rentrix-app/public/fonts/` with OFL licenses, loaded deferred via `src/lib/product-fonts.ts`, and precached by the PWA (`woff2` glob). Guard: `src/lib/product-fonts-contract.test.ts`. Google Fonts runtime dependency removed from `index.html`.
 
 ### OD-13 — Stale Branch Cleanup
 - **Action:** Execute bulk deletion of 250+ stale remote branches from the repository.

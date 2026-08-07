@@ -24,7 +24,7 @@ export function LegalPage({ slug }: { slug: LegalSlug }) {
             title={content.title}
             description={content.intro}
             secondaryActions={(
-              <Button variant="secondary" asChild>
+              <Button variant="secondary" className="min-h-11" asChild>
                 <Link to="/">
                   <BackIcon className="me-2 size-4" />
                   {isArabic ? 'العودة للرئيسية' : 'Back to home'}

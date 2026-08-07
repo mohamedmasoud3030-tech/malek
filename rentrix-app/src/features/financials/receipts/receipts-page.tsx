@@ -227,7 +227,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       visualVariant="malek-pro"
       title="الإيصالات"
       description="مراجعة إيصالات الدفعات المنشورة، فتح التفاصيل والطباعة، وإدارة الإلغاء وفق الصلاحيات."
-      secondaryActions={<Button variant="secondary" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
+      secondaryActions={<Button variant="secondary" className="min-h-11" asChild><Link to="/financials"><ArrowRight className="me-2 size-4" />المالية</Link></Button>}
       primaryAction={selectedReceiptId ? (
         <Button onClick={() => openReceiptPrintView(selectedReceiptId)}><Printer className="me-2 size-4" />طباعة المحدد</Button>
       ) : undefined}

@@ -122,7 +122,10 @@ export function Button({
       type={asChild ? undefined : type}
       {...props}
     >
-      {content}
+      {/* asChild must hand Radix Slot a single element child; the `content`
+          fragment would swallow className/props (React.Fragment strips them),
+          rendering an unstyled link. */}
+      {asChild ? children : content}
     </Component>
   );
 }

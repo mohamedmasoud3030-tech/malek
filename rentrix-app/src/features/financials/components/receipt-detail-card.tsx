@@ -50,7 +50,7 @@ export function ReceiptDetailCard({ selectedReceiptId, receiptDetail, isLoading,
           </summary>
           <div className="space-y-3 border-t border-border/70 p-4">
           <div className="flex justify-end print:hidden">
-            <Button variant="secondary" asChild>
+            <Button variant="secondary" className="min-h-11" asChild>
               <a href={getReceiptPrintHref(receiptDetail.id)}><Printer className="me-2 size-4" />عرض/طباعة الإيصال</a>
             </Button>
           </div>

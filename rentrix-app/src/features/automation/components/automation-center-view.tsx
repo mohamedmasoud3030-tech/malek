@@ -307,7 +307,7 @@ export function AutomationCenterView() {
                 <CardContent className="space-y-3">
                   <pre className="whitespace-pre-wrap rounded-2xl bg-muted/50 p-3 text-xs font-bold leading-6 text-muted-foreground">{template.body}</pre>
                   {whatsappPreviewUrl ? (
-                    <Button type="button" variant="secondary" size="sm" asChild>
+                    <Button type="button" variant="secondary" size="sm" className="min-h-11" asChild>
                       <a href={whatsappPreviewUrl} target="_blank" rel="noreferrer">
                         <ExternalLink className="me-2 size-3.5" aria-hidden="true" />
                         معاينة واتساب

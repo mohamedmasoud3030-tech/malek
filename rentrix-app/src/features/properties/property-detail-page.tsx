@@ -53,7 +53,7 @@ export function PropertyDetailPage() {
             backLabel="العقارات"
             status={<StatusBadge tone={propertyStatusTone[property.status]}>{propertyStatusLabels[property.status]}</StatusBadge>}
             actions={
-              <Button asChild>
+              <Button asChild className="min-h-11">
                 <Link to="/properties/$propertyId/edit" params={{ propertyId }}>
                   <Edit className="me-2 size-4" />تعديل
                 </Link>

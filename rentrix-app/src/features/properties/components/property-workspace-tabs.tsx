@@ -50,7 +50,7 @@ export function PropertyContractsTab({ propertyId }: PropertyTabProps) {
             <p className="mt-1 text-xs text-muted-foreground">قم بإنشاء عقد إيجار لربط المستأجر بالوحدة العقارية وبدء التحصيل.</p>
           </div>
           {canWriteContract ? (
-            <Button size="sm" asChild>
+            <Button size="sm" className="min-h-11" asChild>
               <Link to="/contracts/new">
                 <Plus className="me-1.5 size-4" />
                 إضافة عقد إيجار
@@ -67,7 +67,7 @@ export function PropertyContractsTab({ propertyId }: PropertyTabProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-foreground">عقود العقار والمستأجرون ({propertyContracts.length})</h3>
         {canWriteContract ? (
-          <Button size="sm" asChild>
+          <Button size="sm" className="min-h-11" asChild>
             <Link to="/contracts/new">
               <Plus className="me-1.5 size-4" />
               إضافة عقد إيجار
@@ -125,7 +125,7 @@ export function PropertyFinancialsTab({ propertyId }: PropertyTabProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-foreground">الفواتير والتحصيلات الخاصة بالعقار</h3>
-        <Button size="sm" variant="outline" asChild>
+        <Button size="sm" variant="outline" className="min-h-11" asChild>
           <Link to="/invoices">مراجعة الفواتير الشاملة</Link>
         </Button>
       </div>
@@ -190,7 +190,7 @@ export function PropertyMaintenanceTab({ propertyId }: PropertyTabProps) {
             <p className="mt-1 text-xs text-muted-foreground">جميع وحدات ومرافق العقار بحالة تشغيلية جيدة حالياً.</p>
           </div>
           {canWriteMaintenance ? (
-            <Button size="sm" variant="outline" asChild>
+            <Button size="sm" variant="outline" className="min-h-11" asChild>
               <Link to="/maintenance">إدارة الصيانة</Link>
             </Button>
           ) : null}
@@ -204,7 +204,7 @@ export function PropertyMaintenanceTab({ propertyId }: PropertyTabProps) {
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-foreground">سجل الصيانة والمرافق ({items.length})</h3>
         {canWriteMaintenance ? (
-          <Button size="sm" variant="outline" asChild>
+          <Button size="sm" variant="outline" className="min-h-11" asChild>
             <Link to="/maintenance">إدارة الصيانة</Link>
           </Button>
         ) : null}
@@ -237,7 +237,7 @@ export function PropertyDocumentsTab({ propertyId }: PropertyTabProps) {
           <h3 className="font-bold text-foreground">أرشيف المستندات والمرفقات الخاصة بالعقار</h3>
           <p className="mt-1 text-xs text-muted-foreground">يمكنك استعراض وإرفاق العقود والمستندات القانونية من خزينة المستندات الموحدة.</p>
         </div>
-        <Button size="sm" variant="outline" asChild>
+        <Button size="sm" variant="outline" className="min-h-11" asChild>
           <Link to="/documents-vault">فتح خزينة المستندات</Link>
         </Button>
       </CardContent>

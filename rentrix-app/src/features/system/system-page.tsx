@@ -80,7 +80,7 @@ export function SystemWorkspace({ variant = 'standalone' }: SystemWorkspaceProps
                   <CardDescription>{item.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button asChild variant="secondary">
+                  <Button asChild variant="secondary" className="min-h-11">
                     <Link to={item.to}>فتح</Link>
                   </Button>
                 </CardContent>

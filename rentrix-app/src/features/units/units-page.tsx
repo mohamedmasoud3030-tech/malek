@@ -93,7 +93,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
         إضافة وحدة
       </Button>
       {!embedded ? (
-        <Button asChild variant="secondary">
+        <Button asChild variant="secondary" className="min-h-11">
           <Link to="/properties">
             <Building2 className="me-2 size-4" />
             العقارات
