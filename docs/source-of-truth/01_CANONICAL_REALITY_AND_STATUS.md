@@ -1,1 +1,87 @@
-# placeholder
+# MALEK — Canonical Reality & Status (Document 1)
+
+> **Execution-Ready Source of Truth.** Created on 2026-08-07. This document is the authoritative feature-reality catalog: what exists, what is verified complete, what is partial, and what is intentionally untouched. Status changes require evidence (implementation + tests + reachable UI), recorded in the evidence column.
+
+---
+
+## 1. Feature Status Catalog
+
+Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, user-visible, actions + permissions + loading/error/empty states work, mobile acceptable, no demo/mock. `PARTIAL` = safe core exists, boundary item blocked. `NOT_STARTED` = deferred by owner decision.
+
+### A — User Experience Foundation (Wave 4A + continuous program)
+
+| Feature | Status | Evidence |
+|---|---|---|
+| Enterprise UX foundation (page/drawer/modal/form/table/state surfaces) | `VERIFIED_COMPLETE` | `src/components/enterprise/*`, Wave 4A (#1369) |
+| Hub consolidation (finance/portfolio/operations/relationships) — one SectionTabs per hub, URL `?section=` deep links | `VERIFIED_COMPLETE` | `hub-navigation-contract.test.ts`, `finance-hub-architecture.test.ts` |
+| Create/Edit/View journeys stay inside the workspace: properties (create+edit modal), units (modal), owners (dialog), tenants (modal), people (modal), invoices (in-workspace detail + collect), receipts (inline detail + print tab), expenses (overlay), maintenance (overlays), commissions (overlay), owner settlements (overlays) | `VERIFIED_COMPLETE` | routes `_protected.people.*`, `_protected.properties.*`, `_protected.contracts.*`; per-module interaction tests |
+| People create/edit routes → centered modal over directory (no full-page journey) | `VERIFIED_COMPLETE` | 2026-08-07, `feat/continuous-product-completion` commit `7a02d4d6` |
+| Property edit route → centered modal over detail workspace | `VERIFIED_COMPLETE` | commit `8aaffc9e` |
+| Contract create/edit routes → centered modal over workspace context | `VERIFIED_COMPLETE` | commit `5f585a06`; `contract-form-workflow.test.ts`, `ux041-agreement-recovery.test.tsx` |
+| Compact enterprise forms (sensible width, grouped fields, responsive grids, progressive disclosure, dirty protection, single-pass validation) | `VERIFIED_COMPLETE` | `form-single-pass-validation.test.ts`, `mobile-accessibility-ux.test.ts` |
+| Quick collect deep link stays in invoice workspace (`?invoiceId=&collect=1`) | `VERIFIED_COMPLETE` | `quick-collect.ts`, `useInvoiceWorkspaceController.ts` |
+| Mobile surfaces: tables degrade to cards in all primary workspaces | `VERIFIED_COMPLETE` | `MobileCard`/`renderMobileCard` in properties/owners/units/people/tenants/contracts/invoices/receipts/expenses/arrears/deposits/commissions/reconciliation/maintenance/utilities |
+
+### A3 — Reports experience (consolidation)
+
+| Feature | Status | Evidence |
+|---|---|---|
+| Reports grouped into 3 macro categories: LIVE OPERATIONAL INSIGHTS / ANALYTICAL VIEWS / FORMAL REPORTS, with grouped tab clusters and category headings | `VERIFIED_COMPLETE` | `reports-page.sections.ts` (`category`), `ReportsWorkspace.tsx`, `reports-groups.test.ts`; commit `21d5ebe2` |
+| All 10 report sections, calculations, RPCs, and `?section=` deep-link contract preserved | `VERIFIED_COMPLETE` | `reports-section-model.test.ts`, `reports-groups.test.ts` |
+| Operational insights embedded in operational screens (collections KPIs in receipts, arrears summary + aging in arrears workspace, settlements KPIs, property financials/contracts tabs) | `VERIFIED_COMPLETE` | `receipts-page.tsx`, `arrears-workflow-section.tsx`, `OwnerSettlementWorkspace.tsx`, `property-detail-page.tsx` |
+| GL/accounting logic untouched by the reports consolidation | `VERIFIED_COMPLETE` | no GL files modified in this program |
+
+### C — Bank Reconciliation UX
+
+| Feature | Status | Evidence |
+|---|---|---|
+| Structured import flow (select → preview → mapping → review → importing → completed), fail-closed batch validation | `VERIFIED_COMPLETE` | `bank-csv-import-workflow.tsx`, `bankCsvImportService.ts` |
+| Duplicate detection (file hash, row-level, possible duplicates) surfaced in UI | `VERIFIED_COMPLETE` | import result panels |
+| Unmatched list with filters, suggested deterministic matching (date+amount), ignore flow, match confirmation, reconciliation status KPIs | `VERIFIED_COMPLETE` | `bank-reconciliation-page.tsx`, `useBankReconciliationController.ts` |
+| Final accounting approval authority beyond match/ignore | `PARTIAL` — blocked | pending owner decision on approval role (see OD-04/approval-role); all work up to the boundary is shipped |
+
+### D — Owner Settlements UX
+
+| Feature | Status | Evidence |
+|---|---|---|
+| Draft creation from server-derived preview only (no client amounts), idempotent writes | `VERIFIED_COMPLETE` | `OwnerSettlementWorkspace.tsx`, `owner-settlements-service.ts` |
+| Source collections/expenses visibility in preview (payments count, source, VAT policy) | `VERIFIED_COMPLETE` | preview breakdown panel |
+| Stale-input warning when scope changes and server recalculates | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
+| Atomic reservation visibility (D14 note) | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
+| Payout preview with explicit payable amount, recipient, period, method | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
+| Approval (ADMIN) → payout (ADMIN) with print/PDF owner statement | `VERIFIED_COMPLETE` | workspace + `documentService` |
+| Negative-balance collection accounting (Due-from-Owner recovery) | `NOT_STARTED` — blocked | OD-08 owner decision required |
+
+### E — Contract Experience
+
+| Feature | Status | Evidence |
+|---|---|---|
+| 4-state lifecycle UX: draft/active/expired/terminated, renew dialog, termination dialog with reason, state badges | `VERIFIED_COMPLETE` | `lifecycle/*`, `ContractDetailSections.tsx` |
+| Documents shell, payments tab (invoices + payments), financial timeline, agreement-coverage recovery | `VERIFIED_COMPLETE` | `contractDocumentsShell.tsx`, `contractPaymentsTab.tsx`, `ContractAgreementMissingAlert.tsx` |
+| Payment schedule preview inside the form | `VERIFIED_COMPLETE` | `contract-schedule-preview.ts` + `ContractFormFields.tsx` |
+| Compact create/edit modal over workspace context | `VERIFIED_COMPLETE` | commit `5f585a06` |
+| Maker-Checker lifecycle, signature verification, future 8+2 legal states | `NOT_STARTED` — blocked | Stage S04; needs owner/legal decision (OD-03 templates, OD-04 roles) |
+
+### B / F — Safe completeness
+
+| Feature | Status | Evidence |
+|---|---|---|
+| Loading/error/retry/empty states with actions in all primary workspaces | `VERIFIED_COMPLETE` | `AsyncContentState`, `PageStateCard`, `EmptyState` across modules |
+| Document vault upload validation (mime + 5MB contract, accept attribute) | `VERIFIED_COMPLETE` | `attachments-contract.ts`, `documents-vault-service.ts` |
+| CSV export with UTF-8 BOM, dated filenames | `VERIFIED_COMPLETE` | `csvExport.ts`, `reports-page.helpers.ts` |
+| Navigation exposure: all safe features reachable from hub child nav + mobile drawer; 5 primary mobile destinations | `VERIFIED_COMPLETE` | `app-nav-items.ts` |
+| Permission-consistent UI (void/approve/pay/export gates) | `VERIFIED_COMPLETE` | `permissions.ts` + per-workspace gates |
+
+---
+
+## 2. Open Owner Decisions (blockers, unchanged)
+
+- **OD-08** — Due-from-Owner collection mechanism (offset vs payment invoice): blocks negative-balance settlement accounting.
+- **OD-03** — Missing legal templates: blocks production contract printing automation.
+- **OD-04** — Role model scope (3 vs 6 roles): blocks Maker-Checker and Accountant/Viewer role rollout.
+- **OD-02** — Void signature payload: awaits refactor decision.
+- **S08 crediting (OD-11)** — blocks Stage S09 historical correction.
+
+## 3. Intentionally Untouched
+
+- GL business-posting rewiring (Stage S03 wiring), VOID accounting model changes, historical financial backfill, multi-currency, new master-lease accounting policies, Maker-Checker lifecycle, legal contract wording, VAT policy changes, new settlement accounting rules, migration drift reconciliation (OD-15). All require upstream decisions per the roadmap.
