@@ -1,5 +1,7 @@
 -- S04-T03: maker-checker contract lifecycle and signature evidence gates.
 -- Builds on S04-T02 contract agreement snapshots already merged on main.
+-- Approval is a sub-state on draft contracts; the canonical contract status
+-- machine remains draft -> active/expired/terminated/ended.
 -- No GL, settlement, billing schedule, invoice, tax or historical financial correction changes.
 
 begin;
@@ -100,7 +102,6 @@ begin
         'maker_signature', btrim(p_maker_signature),
         'submitted_at', now()
       ),
-      status = 'pending_approval',
       updated_at = now()
   where c.id::text = p_contract_id
     and c.company_id = v_company
@@ -143,7 +144,7 @@ begin
   if not found then
     raise exception 'CONTRACT_NOT_FOUND_OR_FORBIDDEN' using errcode='42501';
   end if;
-  if lower(coalesce(v_contract.status,'')) <> 'pending_approval'
+  if lower(coalesce(v_contract.status,'')) <> 'draft'
      or v_contract.approval_status <> 'PENDING' then
     raise exception 'CONTRACT_NOT_PENDING_APPROVAL' using errcode='22023';
   end if;
@@ -213,7 +214,7 @@ begin
   if not found then
     raise exception 'CONTRACT_NOT_FOUND_OR_FORBIDDEN' using errcode='42501';
   end if;
-  if lower(coalesce(v_contract.status,'')) <> 'pending_approval'
+  if lower(coalesce(v_contract.status,'')) <> 'draft'
      or v_contract.approval_status <> 'PENDING' then
     raise exception 'CONTRACT_NOT_PENDING_APPROVAL' using errcode='22023';
   end if;
@@ -234,7 +235,6 @@ begin
         'rejected_at', v_now,
         'reason', btrim(p_reason)
       ),
-      status = 'draft',
       updated_at = v_now
   where c.id::text = p_contract_id
     and c.company_id = v_company
@@ -268,7 +268,7 @@ begin
   for update;
 
   if not found then raise exception 'CONTRACT_NOT_FOUND_OR_FORBIDDEN' using errcode='42501'; end if;
-  if lower(coalesce(v_contract.status,'')) <> 'pending_approval'
+  if lower(coalesce(v_contract.status,'')) <> 'draft'
      or v_contract.approval_status <> 'APPROVED' then
     raise exception 'CONTRACT_APPROVAL_REQUIRED' using errcode='23514';
   end if;
@@ -335,12 +335,12 @@ grant execute on function public.reject_contract_atomic(text,text,text) to authe
 grant execute on function public.activate_contract_with_agreement_snapshot_atomic(text) to authenticated,service_role;
 
 comment on function public.submit_contract_for_approval_atomic(text,text)
-  is 'S04-T03: submit a draft contract with maker identity/signature evidence for independent approval.';
+  is 'S04-T03: record maker identity/signature and mark approval sub-state PENDING while canonical contract status stays draft.';
 comment on function public.approve_contract_atomic(text,text)
-  is 'S04-T03: distinct checker approves a pending contract and records checker signature evidence.';
+  is 'S04-T03: distinct checker approves a draft contract pending approval and records checker signature evidence.';
 comment on function public.reject_contract_atomic(text,text,text)
-  is 'S04-T03: distinct checker rejects a pending contract with signature and reason; contract returns to draft.';
+  is 'S04-T03: distinct checker rejects a draft contract pending approval with signature and reason.';
 comment on function public.activate_contract_with_agreement_snapshot_atomic(text)
-  is 'S04-T03 over S04-T02: activates only an independently approved contract with complete signature evidence and frozen owner-agreement snapshot.';
+  is 'S04-T03 over S04-T02: activates only an independently approved draft contract with complete signature evidence and frozen owner-agreement snapshot.';
 
 commit;
