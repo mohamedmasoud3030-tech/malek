@@ -39,6 +39,14 @@ describe('active company write guard', () => {
     expect(companyHook.indexOf('queryClient.clear()')).toBeLessThan(companyHook.indexOf('setActiveCompany(company)'));
   });
 
+  it('fails closed and clears tenant cache across logout/login user changes', () => {
+    expect(companyHook).toContain('const [resolvedUserId, setResolvedUserId]');
+    expect(companyHook).toContain('const isCompanyContextTransition = authenticatedUserId !== resolvedUserId');
+    expect(companyHook).toContain('if (isLoading || isCompanyContextTransition)');
+    expect(companyHook).toContain('setResolvedUserId(sessionUser.id)');
+    expect(companyHook).toContain('setResolvedUserId(null)');
+  });
+
   it('derives the maintenance company on the server, not from a browser payload', () => {
     expect(maintenanceController).toContain('const activeCompanyId = useActiveCompanyId()');
     expect(maintenanceController).not.toContain('company_id: activeCompanyId');
