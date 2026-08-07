@@ -124,6 +124,10 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'Persisted localStorage keys rentrix_onboarding_* — renaming would reset onboarding for existing users.',
   ],
   [
+    'src/features/tenants/phase4-tenant-hub.test.tsx',
+    'Asserts the route tree for the tenants redirect to /contracts.',
+  ],
+  [
     'src/hooks/use-auth.tsx',
     'Auth session storage key rentrix-auth-session — renaming would sign every user out.',
   ],
@@ -180,6 +184,7 @@ const VIEW_MODE_KEY_FILES = [
   'src/features/owners/components/owner-workspace-table.tsx',
   'src/features/people/people-list-page.tsx',
   'src/features/properties/properties-list-page.tsx',
+  'src/features/tenants/TenantsPage.tsx',
   'src/features/units/units-list.tsx',
   'src/features/units/units-page.tsx',
 ];

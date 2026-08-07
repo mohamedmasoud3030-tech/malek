@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router';
-import { Building2, DoorOpen, FileText, HandCoins, UserRoundCog, WalletCards } from 'lucide-react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Building2, DoorOpen, FileText, HandCoins, ReceiptText, UserRoundCog, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,7 @@ export function OwnerDetailView({
   canOpenOwnerSettlements?: boolean;
 }>) {
   const companySettings = useCompanySettingsContract();
+  const navigate = useNavigate();
 
   if (state.status === 'loading') {
     return <AsyncContentState status="loading">{null}</AsyncContentState>;
@@ -68,6 +69,10 @@ export function OwnerDetailView({
 
   const { owner, properties, units, contracts, financialSummary } = state.snapshot;
   const activeContractsCount = contracts.filter((contract) => contract.status === 'active').length;
+  const openProperty = (propertyId: string) => navigate({
+    to: '/properties/$propertyId',
+    params: { propertyId },
+  });
 
   return (
     <PageLayout dir="rtl" size="wide">
@@ -155,7 +160,7 @@ export function OwnerDetailView({
             aria-label="جدول عقارات المالك"
             rows={properties}
             columns={[
-              { key: 'title', header: 'العقار', render: (property) => <span className="font-semibold">{property.title}</span> },
+              { key: 'title', header: 'العقار', render: (property) => <Link to="/properties/$propertyId" params={{ propertyId: property.id }} className="font-semibold text-primary hover:underline">{property.title}</Link> },
               { key: 'address', header: 'العنوان', render: (property) => property.address },
               { key: 'ownership', header: 'نسبة الملكية', render: (property) => {
                 const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
@@ -168,6 +173,7 @@ export function OwnerDetailView({
             keyOf={(property) => property.id}
             emptyTitle="لا توجد عقارات مرتبطة"
             emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك."
+            onRowClick={(property) => openProperty(property.id)}
             renderMobileCard={(property) => {
               const ownershipPercentage = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
               const activeContracts = contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length;
@@ -177,6 +183,21 @@ export function OwnerDetailView({
                   subtitle={property.address}
                   badge={<StatusBadge tone={property.status === 'active' ? 'success' : 'neutral'} dot>{property.status === 'active' ? 'نشط' : property.status}</StatusBadge>}
                   stats={<div className="grid grid-cols-3 gap-2 text-center text-xs"><span><strong>{formatCompanyNumber(companySettings, ownershipPercentage)}%</strong><br />الملكية</span><span><strong>{formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length)}</strong><br />الوحدات</span><span><strong>{formatCompanyNumber(companySettings, activeContracts)}</strong><br />عقود نشطة</span></div>}
+                  actions={
+                    <div className="grid w-full grid-cols-2 gap-2">
+                      <Button variant="secondary" className="min-h-11 text-xs" asChild>
+                        <Link to="/properties/$propertyId" params={{ propertyId: property.id }}>
+                          <Building2 className="me-1 size-4" />التفاصيل
+                        </Link>
+                      </Button>
+                      <Button variant="secondary" className="min-h-11 text-xs" asChild>
+                        <Link to="/reports">
+                          <ReceiptText className="me-1 size-4" />كشف الحساب
+                        </Link>
+                      </Button>
+                    </div>
+                  }
+                  onClick={() => openProperty(property.id)}
                 />
               );
             }}
