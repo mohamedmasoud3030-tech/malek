@@ -1,14 +1,30 @@
+import { cva, type VariantProps } from 'class-variance-authority';
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-type CardVariant = 'default' | 'muted' | 'outlined' | 'elevated';
+export const cardVariants = cva(
+  'rounded-xl text-card-foreground transition-shadow duration-200 motion-reduce:transition-none',
+  {
+    variants: {
+      variant: {
+        default: 'border border-border/70 bg-card shadow-card',
+        muted: 'border border-border/50 bg-muted/30 shadow-none',
+        outlined: 'border-2 border-border bg-transparent shadow-none',
+        elevated: 'border border-border bg-card shadow-elevated',
+        interactive:
+          'border border-border/70 bg-card shadow-card transition-colors hover:border-primary/40 hover:shadow-card-hover focus-within:border-primary/40 focus-within:shadow-card-hover cursor-pointer',
+        compact: 'border border-border/70 bg-card p-0 shadow-card [&_[data-card-header]]:p-3 [&_[data-card-content]]:px-3 [&_[data-card-footer]]:px-3',
+        statistic:
+          'border border-border/70 bg-card p-5 shadow-card',
+        financial:
+          'border border-border/70 bg-card shadow-card',
+      },
+    },
+    defaultVariants: { variant: 'default' },
+  },
+);
 
-const cardVariants: Record<CardVariant, string> = {
-  default: 'border border-border/70 bg-card text-card-foreground shadow-card',
-  muted: 'border border-border/50 bg-muted/30 text-card-foreground shadow-none',
-  outlined: 'border-2 border-border bg-transparent text-card-foreground shadow-none',
-  elevated: 'border border-border bg-card text-card-foreground shadow-elevated',
-};
+type CardVariant = NonNullable<VariantProps<typeof cardVariants>['variant']>;
 
 /**
  * AppCard — the single card surface for the entire application.
@@ -24,14 +40,14 @@ export function Card({
   return (
     <div
       data-component-card
-      className={cn('rounded-xl transition-shadow duration-200 motion-reduce:transition-none', cardVariants[variant], className)}
+      className={cn(cardVariants({ variant }), className)}
       {...props}
     />
   );
 }
 
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('space-y-1 p-4 sm:p-5', className)} {...props} />;
+  return <div data-card-header className={cn('space-y-1 p-4 sm:p-5', className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
@@ -43,11 +59,15 @@ export function CardDescription({ className, ...props }: HTMLAttributes<HTMLPara
 }
 
 export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('px-4 pb-4 sm:px-5 sm:pb-5', className)} {...props} />;
+  return <div data-card-content className={cn('px-4 pb-4 sm:px-5 sm:pb-5', className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('flex items-center gap-2 px-4 pb-4 sm:px-5 sm:pb-5', className)} {...props} />
+    <div
+      data-card-footer
+      className={cn('flex items-center gap-2 px-4 pb-4 sm:px-5 sm:pb-5', className)}
+      {...props}
+    />
   );
 }
