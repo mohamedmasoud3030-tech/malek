@@ -187,10 +187,10 @@ export function ReportsWorkspace({
                 <div key={category.id} className="group flex items-center gap-3">
                   <span
                     className="flex shrink-0 items-center gap-1.5 pe-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground/70"
-                    title={category.description}
+                    title={`${category.label} — ${category.description}`}
                   >
                     <category.icon className="size-3.5" aria-hidden="true" />
-                    <span className="whitespace-nowrap">{category.label}</span>
+                    <span className="whitespace-nowrap">{category.shortLabel}</span>
                   </span>
                   <SectionTabs
                     items={categorySections}
