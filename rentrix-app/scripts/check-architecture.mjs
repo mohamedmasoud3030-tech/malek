@@ -39,7 +39,7 @@ const featureDependencyAllowList = new Map([
   ['properties', new Set(['financials', 'owners', 'units'])],
   // relationships-hub composes contracts/people/tenants/leads/communication.
   ['relationships-hub', new Set(['auth', 'communication', 'contracts', 'leads', 'people', 'tenants'])],
-  ['reports', new Set(['auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
+  ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],
   ['settings', new Set(['properties'])],
   ['system', new Set(['auth', 'settings'])],
   ['tenants', new Set(['financials', 'people'])],

@@ -96,6 +96,10 @@ Presentation-only normalization; no business behavior, routes, permissions, RPCs
 | Safe cascade warnings: property + unit archive dialogs list the exact backend guard preconditions | `VERIFIED_COMPLETE` | `properties-list-page.tsx`, `units-list.tsx`; commits `9c66cc50`, `246bb18d` |
 | Repo hygiene: repaired two `evidence/preflight` links broken by #1373's `docs/APP_STATUS.md` removal (pre-existing on main; was failing the CI docs gate on every PR) | `VERIFIED_COMPLETE` | commit `a3343775`; `check-doc-links` passes |
 | Repo hygiene: `product-accounting-decision-gates.test.ts` re-sourced from ADR 0001 (it read two docs deleted by #1373 as superseded; ADR 0001 explicitly records the same gates + FGR-008..013 as decided-but-implementation-pending). Same gate topics and FGR visibility pinned; CI build/release-blocker gates unblocked | `VERIFIED_COMPLETE` | commit (next); targeted test passes |
+| Dead legacy route-wrapper cleanup: removed 9 unreferenced wrapper files (`_protected.arrears.tsx`, etc.) where `route-tree.ts` provides canonical redirect and no runtime import depends on wrapper | `VERIFIED_COMPLETE` | `src/routes/_protected.*.tsx` |
+| Settings / Governance flattening: removed duplicate inner Settings sections (`security`, `governance`, `integrity`, `role-simulator`) from `SettingsWorkspace` while keeping canonical top-level Governance destinations | `VERIFIED_COMPLETE` | `settingsSections.ts`, `settings-operations-sections.tsx` |
+| General Ledger read-only UI: surfaced `chartOfAccountsService`, `accountingPeriodsService`, and `journalService` in read-only General Ledger Core section (`general_ledger`) under formal Reports category | `VERIFIED_COMPLETE` | `GeneralLedgerCoreSection.tsx`, `use-general-ledger-core.ts` |
+| `/accounting` route canonical redirect: points directly to `/reports?section=general_ledger` | `VERIFIED_COMPLETE` | `route-tree.ts` |
 
 ## 3. Open Owner Decisions (blockers, unchanged)
 

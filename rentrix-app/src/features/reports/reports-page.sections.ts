@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart3, Building2, ClipboardList, FileSpreadsheet, Gauge, Layers, Scale, TrendingUp, WalletCards, Wrench } from 'lucide-react';
+import { AlertTriangle, BarChart3, BookOpenCheck, Building2, ClipboardList, FileSpreadsheet, Gauge, Layers, Scale, TrendingUp, WalletCards, Wrench } from 'lucide-react';
 
 /**
  * Wave A (reports consolidation): every reachable report is grouped into one
@@ -94,6 +94,14 @@ export const reportSections = [
     group: 'الأداء التشغيلي',
     category: 'analytical',
     description: 'حجم البلاغات وحالات التنفيذ والأولوية والتغطية التشغيلية للفريق.',
+  },
+  {
+    id: 'general_ledger',
+    label: 'دفتر الأستاذ',
+    icon: BookOpenCheck,
+    group: 'الضرائب ومحاسبة الفترات',
+    category: 'formal',
+    description: 'شجرة الحسابات (COA)، قيود اليومية، وحالة الفترات المحاسبية المعتمدة.',
   },
   {
     id: 'deferred_revenue',
