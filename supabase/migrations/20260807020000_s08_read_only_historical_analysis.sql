@@ -60,7 +60,11 @@ select
   a.id as gl_account_id,
   a.no::text as gl_account_no,
   a.name::text as gl_account_name,
-  a.account_type::text as account_type,
+  case
+    when a.no like '1%' then 'asset'
+    when a.no like '2%' then 'liability'
+    else 'other'
+  end::text as account_type,
   -- subledger balance derived per control account (deterministic)
   case
     when a.no = '2000' then public.s08_round_egp(coalesce(ob.net_balance,0))
@@ -80,7 +84,11 @@ select
   null::uuid as owner_id,
   null::uuid as property_id,
   null::uuid as agreement_id,
-  a.account_type::text as source_class
+  case
+    when a.no like '1%' then 'asset'
+    when a.no like '2%' then 'liability'
+    else 'other'
+  end::text as source_class
 from public.companies c
 join public.accounting_periods ap on ap.company_id = c.id
 join public.accounts a on a.company_id = c.id
@@ -110,7 +118,6 @@ left join lateral (
   from public.commissions comm where comm.company_id = c.id and comm.status in ('payable','pending')
 ) comm_agg on a.no = '2300'
 where c.is_active is not null
-  and a.account_type in ('liability','asset')
   and a.no in ('2000','1300','2200','2300','2100','1201','1101');
 
 -- T07: retroactive version differences — compare agreement vs contract snapshot
@@ -410,8 +417,14 @@ begin
     'Expense misclassification or linkage mismatch; 6100 only flagged if account 6100 exists and is office expense.'::text as explanation
   from public.expenses exp
   join public.accounting_periods ap on ap.id = p_period_id and ap.company_id = p_company_id
-  left join public.accounts acc on acc.company_id = p_company_id and acc.id = exp.id::text
-  left join public.journal_lines jl on jl.company_id = p_company_id and jl.account_id = acc.id
+  -- Expense IDs are UUIDs, whereas Stage 3 journal source IDs are text.
+  -- The explicit UUID-to-text conversion is at the source-reference boundary;
+  -- account IDs remain in their canonical text domain.
+  left join public.journal_batches jb on jb.company_id = p_company_id
+    and lower(jb.source_type) in ('expense', 'expenses')
+    and jb.source_id = exp.id::text
+  left join public.journal_lines jl on jl.company_id = p_company_id and jl.batch_id = jb.id
+  left join public.accounts acc on acc.company_id = p_company_id and acc.id = jl.account_id
   where exp.company_id = p_company_id
     and exp.deleted_at is null
     and (

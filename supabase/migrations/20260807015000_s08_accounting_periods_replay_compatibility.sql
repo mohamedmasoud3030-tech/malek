@@ -49,14 +49,18 @@ begin
       select
         null::uuid as id,
         null::uuid as company_id,
-        null::uuid as accounting_period_id,
         null::text as status,
-        null::date as effective_date,
         null::text as source_type,
-        null::uuid as source_id,
-        null::uuid as event_id,
+        null::text as source_id,
+        null::text as event_id,
         null::uuid as reversal_of_batch_id,
+        null::boolean as is_legacy_compat,
+        null::date as effective_date,
+        null::uuid as accounting_period_id,
+        null::text as period_resolution_reason,
         null::timestamptz as posted_at,
+        null::uuid as posted_by,
+        null::text as description,
         null::timestamptz as created_at,
         null::uuid as created_by,
         null::timestamptz as updated_at
@@ -72,13 +76,20 @@ begin
       create view public.journal_lines
       with (security_invoker = true) as
       select
-        null::uuid as id,
-        null::uuid as company_id,
+        null::text as id,
+        null::text as no,
+        null::text as date,
         null::uuid as batch_id,
-        null::uuid as account_id,
+        null::uuid as company_id,
+        null::text as account_id,
         null::numeric as debit,
         null::numeric as credit,
-        null::text as description,
+        null::text as line_description,
+        null::text as ref_source_id,
+        null::text as ref_entity_type,
+        null::text as ref_entity_id,
+        null::text as request_id,
+        null::timestamptz as deleted_at,
         null::timestamptz as created_at
       where false
     $view$;
