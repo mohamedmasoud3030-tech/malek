@@ -5,6 +5,9 @@
 
 begin;
 
+create extension if not exists pgtap;
+select plan(1);
+
 do $$
 declare
   v_count integer;
@@ -152,4 +155,8 @@ begin
 end $$;
 
 reset role;
+
+select pass('S02 financial direct-write hardening contract holds');
+select * from finish();
+
 rollback;
