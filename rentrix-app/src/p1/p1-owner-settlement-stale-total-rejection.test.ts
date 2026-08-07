@@ -119,12 +119,19 @@ afterAll(async () => {
 });
 
 describe('S02-T05 — stale owner-settlement totals fail closed', () => {
-  it('rejects approval after a one-baisa payment tamper and leaves the settlement DRAFT', async () => {
+  it('rejects approval after the smallest currently representable payment tamper and leaves the settlement DRAFT', async () => {
     await db.exec('begin;');
     try {
-      // The settlement stored 1000.000 gross / 100.000 fee / 900.000 net.
-      // A one-baisa live-source change is economically material at OMR 3dp.
-      await db.exec(`update public.payments set amount = 1000.001 where id = '${PAYMENT}';`);
+      // payments.amount is currently numeric(14,2), so 0.010 is the smallest
+      // positive persisted delta. The guard itself remains 0.001-sensitive so
+      // it is already compatible with a future 3dp monetary-column migration.
+      await db.exec(`update public.payments set amount = 1000.01 where id = '${PAYMENT}';`);
+
+      const persisted = await db.query<{ amount: string }>(
+        `select amount::text as amount from public.payments where id = $1`,
+        [PAYMENT],
+      );
+      expect(Number(persisted.rows[0]?.amount)).toBe(1000.01);
 
       await db.exec('savepoint stale_approve;');
       await expect(
