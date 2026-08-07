@@ -17,9 +17,9 @@ export const APP_BRAND_DESCRIPTION_AR =
 /** Lowercase slug for user-visible artifacts such as exported file names. */
 export const APP_BRAND_FILE_SLUG = 'malek';
 
-/** Canonical runtime assets. Every visible brand surface must use these. */
+/** Canonical visible brand asset. Use the same approved MALEK mark everywhere. */
 export const APP_BRAND_MARK_ASSET = '/malek-mark.svg';
-export const APP_BRAND_LOCKUP_ASSET = '/malek-lockup.svg';
+export const APP_BRAND_LOCKUP_ASSET = APP_BRAND_MARK_ASSET;
 export const APP_BRAND_MASKABLE_ASSET = '/malek-maskable.svg';
 
 /**
@@ -41,4 +41,5 @@ export const LEGACY_UNUSED_BRAND_ASSETS = [
   'public/icon-maskable-192.png',
   'public/icon-maskable-512.png',
   'public/malik-mark.svg',
+  'public/malek-lockup.svg',
 ] as const;
