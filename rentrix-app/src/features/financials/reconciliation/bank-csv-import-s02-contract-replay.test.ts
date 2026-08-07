@@ -39,6 +39,7 @@ const BANK_B = '00000000-0000-0000-0000-00000000b401';
 
 const DOC_REF_MIGRATION = '20260805110000_s02_document_reference_trigger_resilience.sql';
 const IMPORT_MIGRATION = '20260805120000_s02_bank_csv_import_atomic_contract.sql';
+const SERVER_GUARDS_MIGRATION = '20260807160000_s02_bank_csv_import_server_guards.sql';
 
 const stripComments = (t: string) =>
   t.split('\n').filter((l) => !l.trimStart().startsWith('--')).join('\n');
@@ -48,6 +49,9 @@ const docRefSql = stripComments(
 );
 const importSql = stripComments(
   readFileSync(join(repoRoot, 'supabase', 'migrations', IMPORT_MIGRATION), 'utf8').toLowerCase(),
+);
+const serverGuardsSql = stripComments(
+  readFileSync(join(repoRoot, 'supabase', 'migrations', SERVER_GUARDS_MIGRATION), 'utf8').toLowerCase(),
 );
 
 let db: PGlite;
@@ -93,7 +97,9 @@ beforeAll(async () => {
   const replayed = await createFullReplayedDatabase({});
   db = replayed.db;
   const relevantFailures = replayed.failed.filter((f) =>
-    f.file.includes('20260805110000') || f.file.includes('20260805120000'),
+    f.file.includes('20260805110000') ||
+    f.file.includes('20260805120000') ||
+    f.file.includes('20260807160000'),
   );
   expect(relevantFailures, `replay errors: ${JSON.stringify(relevantFailures)}`).toEqual([]);
 
@@ -164,10 +170,26 @@ describe('migration source contracts', () => {
     expect(importSql).not.toContain('journal_batches');
   });
 
+  it('server guard migration enforces limits, OMR-only rows, and ambiguous debit/credit rejection', () => {
+    expect(serverGuardsSql).toContain('create or replace function public.import_bank_statement_batch_atomic(payload jsonb)');
+    expect(serverGuardsSql).toContain('v_max_file_size integer := 5 * 1024 * 1024');
+    expect(serverGuardsSql).toContain('v_max_rows integer := 5000');
+    expect(serverGuardsSql).toContain('file_size is required.');
+    expect(serverGuardsSql).toContain('row count exceeds % row limit.');
+    expect(serverGuardsSql).toContain('rows must not contain both debit and credit at row %');
+    expect(serverGuardsSql).toContain('unsupported currency at row %: %');
+    expect(serverGuardsSql).toContain('amount must have at most 3 decimals at row %');
+    expect(serverGuardsSql).toContain('balance must have at most 3 decimals at row %');
+    expect(serverGuardsSql).toContain('set search_path = public, pg_temp');
+    expect(serverGuardsSql).not.toContain('journal_entries');
+    expect(serverGuardsSql).not.toContain('journal_batches');
+  });
+
   it('both migrations have manual-rollback files referencing their forward migration', () => {
     const pairs: Array<[string, string]> = [
       ['20260805_rollback_s02_document_reference_trigger_resilience.sql', DOC_REF_MIGRATION],
       ['20260805_rollback_s02_bank_csv_import_atomic_contract.sql', IMPORT_MIGRATION],
+      ['20260807_rollback_s02_bank_csv_import_server_guards.sql', SERVER_GUARDS_MIGRATION],
     ];
     for (const [rollback, forward] of pairs) {
       const sql = readFileSync(join(repoRoot, 'supabase', 'rollback', rollback), 'utf8');
@@ -212,6 +234,7 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
     const error = await callImportExpectError({
       bank_account_id: BANK_A,
       file_fingerprint: 'fp-zero-replay',
+      file_size: 1,
       rows: [{ transaction_date: '2026-07-01', amount: '0' }],
     });
     expect(error.message).toContain('Amount must be non-zero at row 1');
@@ -243,6 +266,7 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
         await callImportExpectError({
           bank_account_id: BANK_A,
           file_fingerprint: 'fp-empty-replay',
+          file_size: 1,
           rows: [],
         })
       ).message,
@@ -253,6 +277,7 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
         await callImportExpectError({
           bank_account_id: BANK_A,
           file_fingerprint: 'fp-date-replay',
+          file_size: 1,
           rows: [{ transaction_date: 'not-a-date', amount: '10.000' }],
         })
       ).message,
@@ -261,12 +286,93 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
     const cross = await callImportExpectError({
       bank_account_id: BANK_B,
       file_fingerprint: 'fp-x-replay',
+      file_size: 1,
       rows: [{ transaction_date: '2026-07-01', amount: '10.000' }],
     });
     expect(cross.message).toContain('Bank account not found or not in your company.');
     if (cross.code) expect(cross.code).toBe('42501');
 
     await resetRole();
+  });
+
+  it('server-side guards reject unsafe import payloads before writing anything', async () => {
+    await assumeUser(USER_A, COMPANY_A);
+
+    expect(
+      (
+        await callImportExpectError({
+          bank_account_id: BANK_A,
+          file_fingerprint: 'fp-no-size-replay',
+          rows: [{ transaction_date: '2026-07-01', amount: '10.000' }],
+        })
+      ).message,
+    ).toContain('file_size is required.');
+
+    expect(
+      (
+        await callImportExpectError({
+          bank_account_id: BANK_A,
+          file_fingerprint: 'fp-too-large-replay',
+          file_size: 5 * 1024 * 1024 + 1,
+          rows: [{ transaction_date: '2026-07-01', amount: '10.000' }],
+        })
+      ).message,
+    ).toContain('file_size exceeds 5242880 byte limit.');
+
+    expect(
+      (
+        await callImportExpectError({
+          bank_account_id: BANK_A,
+          file_fingerprint: 'fp-too-many-replay',
+          file_size: 5000,
+          rows: Array.from({ length: 5001 }, () => ({ transaction_date: '2026-07-01', amount: '10.000' })),
+        })
+      ).message,
+    ).toContain('Row count exceeds 5000 row limit.');
+
+    expect(
+      (
+        await callImportExpectError({
+          bank_account_id: BANK_A,
+          file_fingerprint: 'fp-debit-credit-replay',
+          file_size: 1,
+          rows: [{ transaction_date: '2026-07-01', amount: '10.000', debit: '10.000', credit: '10.000' }],
+        })
+      ).message,
+    ).toContain('Rows must not contain both debit and credit at row 1');
+
+    expect(
+      (
+        await callImportExpectError({
+          bank_account_id: BANK_A,
+          file_fingerprint: 'fp-usd-replay',
+          file_size: 1,
+          rows: [{ transaction_date: '2026-07-01', amount: '10.000', currency: 'USD' }],
+        })
+      ).message,
+    ).toContain('Unsupported currency at row 1: USD');
+
+    expect(
+      (
+        await callImportExpectError({
+          bank_account_id: BANK_A,
+          file_fingerprint: 'fp-scale-replay',
+          file_size: 1,
+          rows: [{ transaction_date: '2026-07-01', amount: '10.0001' }],
+        })
+      ).message,
+    ).toContain('Amount must have at most 3 decimals at row 1');
+
+    await resetRole();
+
+    const { rows } = await db.query(
+      `select count(*)::int as n
+       from public.bank_statement_imports
+       where company_id = $1
+         and file_fingerprint like any(array['fp-no-size-replay','fp-too-large-replay','fp-too-many-replay','fp-debit-credit-replay','fp-usd-replay','fp-scale-replay'])`,
+      [COMPANY_A],
+    );
+    expect((rows[0] as { n: number }).n).toBe(0);
   });
 
   it('imports a valid batch atomically with a document reference, then idempotent retry returns it', async () => {

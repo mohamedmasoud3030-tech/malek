@@ -9,14 +9,18 @@
 -- Coverage (ADR D16):
 --   * missing file_fingerprint           -> 22023, batch blocked
 --   * empty / missing rows               -> 22023, batch blocked
+--   * file_size missing/too large        -> 22023, batch blocked
+--   * row count above server limit        -> 22023, batch blocked
 --   * zero amount row                    -> 22023, batch blocked
 --   * invalid transaction_date           -> 22023, batch blocked
+--   * debit+credit ambiguity             -> 22023, batch blocked
+--   * non-OMR / >3dp values              -> 22023, batch blocked
 --   * OMR 3dp canonicalization           -> 100.5 and 100.500 are the same line
 --   * cross-company bank account         -> 42501, batch blocked
 --   * idempotent retry by fingerprint    -> same batch, no silent partial success
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(25);
 
 -- Two independent tenants and one admin user per tenant.
 insert into public.companies (id, name, slug)
@@ -61,25 +65,55 @@ select throws_ok(
 
 -- 2. Empty rows block the batch (fail-closed).
 select throws_ok(
-  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-empty","rows":[]}'::jsonb)$$,
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-empty","file_size":1,"rows":[]}'::jsonb)$$,
   '22023', 'No rows to import.', 'empty rows block batch'
 );
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-no-size","rows":[{"transaction_date":"2026-07-01","amount":"10.000"}]}'::jsonb)$$,
+  '22023', 'file_size is required.', 'missing file_size blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-too-large","file_size":5242881,"rows":[{"transaction_date":"2026-07-01","amount":"10.000"}]}'::jsonb)$$,
+  '22023', 'file_size exceeds 5242880 byte limit.', 'file_size above server limit blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic(jsonb_build_object('bank_account_id','00000000-0000-0000-0000-00000000a401','file_fingerprint','fp-too-many','file_size',5000,'rows',(select jsonb_agg(jsonb_build_object('transaction_date','2026-07-01','amount','10.000')) from generate_series(1,5001))))$$,
+  '22023', 'Row count exceeds 5000 row limit.', 'row count above server limit blocks batch'
+);
+
 
 -- 3. Zero amount row blocks the batch (fail-closed).
 select throws_ok(
-  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-zero","rows":[{"transaction_date":"2026-07-01","amount":"0"}]}'::jsonb)$$,
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-zero","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"0"}]}'::jsonb)$$,
   '22023', 'Amount must be non-zero at row 1', 'zero amount blocks batch'
 );
 
 -- 4. Invalid transaction_date blocks the batch (fail-closed).
 select throws_ok(
-  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-date","rows":[{"transaction_date":"not-a-date","amount":"10.000"}]}'::jsonb)$$,
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-date","file_size":1,"rows":[{"transaction_date":"not-a-date","amount":"10.000"}]}'::jsonb)$$,
   '22023', 'Invalid transaction_date at row 1: not-a-date', 'invalid date blocks batch'
 );
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-debit-credit","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"10.000","debit":"10.000","credit":"10.000"}]}'::jsonb)$$,
+  '22023', 'Rows must not contain both debit and credit at row 1', 'debit+credit ambiguity blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-usd","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"10.000","currency":"USD"}]}'::jsonb)$$,
+  '22023', 'Unsupported currency at row 1: USD', 'non-OMR currency blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-scale","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"10.0001"}]}'::jsonb)$$,
+  '22023', 'Amount must have at most 3 decimals at row 1', 'amount scale above OMR 3dp blocks batch'
+);
+
 
 -- 5. Cross-company bank account is rejected (tenant isolation).
 select throws_ok(
-  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000b401","file_fingerprint":"fp-x-company","rows":[{"transaction_date":"2026-07-01","amount":"10.000"}]}'::jsonb)$$,
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000b401","file_fingerprint":"fp-x-company","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"10.000"}]}'::jsonb)$$,
   '42501', 'Bank account not found or not in your company.', 'cross-company bank account rejected'
 );
 
