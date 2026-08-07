@@ -21,7 +21,7 @@ export function InvoicesWorkspace({ embedded = false }: InvoicesWorkspaceProps) 
       visualVariant="malek-pro"
       embedded={embedded}
       title="الفواتير"
-      description="إدارة الفواتير المستحقة وتسجيل الدفعات من نفس نظام العرض المالي الموحد."
+      description="إدارة الفواتير المستحقة وتسجيل الدفعات."
     >
       <InvoiceWorkspaceSection />
     </EmbeddableWorkspace>

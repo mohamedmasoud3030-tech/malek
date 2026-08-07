@@ -14,7 +14,7 @@ export function DepositsSettlementsHubPage() {
     <FinanceHubWorkspace
       defaultSection="deposits"
       title="تسويات وضمانات"
-      description="تأمينات المستأجرين المحتجزة، وتسويات الملاك المُعدّة والمعتمدة للصرف — في مكان واحد."
+      description="تأمينات المستأجرين المحتجزة، وتسويات الملاك المُعدّة والمعتمدة للصرف."
     />
   );
 }

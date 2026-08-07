@@ -14,7 +14,7 @@ export function BankingCommissionsHubPage() {
     <FinanceHubWorkspace
       defaultSection="bank_reconciliation"
       title="البنوك والعمولات"
-      description="مطابقة السجلات مع الحسابات البنكية، ومتابعة عمولات المكتب وحالات استحقاقها — في مكان واحد."
+      description="مطابقة السجلات مع الحسابات البنكية، ومتابعة عمولات المكتب وحالات استحقاقها."
     />
   );
 }

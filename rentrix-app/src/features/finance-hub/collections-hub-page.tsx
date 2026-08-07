@@ -13,7 +13,7 @@ export function CollectionsHubPage() {
     <FinanceHubWorkspace
       defaultSection="invoices"
       title="التحصيل اليومي"
-      description="الفواتير المستحقة وتسجيل دفعاتها، وسجل الإيصالات وطباعة سندات القبض — في مكان واحد."
+      description="الفواتير المستحقة وتسجيل دفعاتها، وسجل الإيصالات وطباعة سندات القبض."
     />
   );
 }

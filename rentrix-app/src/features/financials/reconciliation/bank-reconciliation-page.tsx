@@ -103,7 +103,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
       visualVariant="malek-pro"
       embedded={embedded}
       title="مطابقة البنك"
-      description="مراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات، بدون تكديس نماذج الإدخال داخل مساحة النتائج."
+      description="مراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات."
       secondaryActions={(
         <>
           <Button variant="secondary" disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0} onClick={ctrl.openImportForm}>
