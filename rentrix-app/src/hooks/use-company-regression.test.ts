@@ -6,21 +6,47 @@ const root = resolve(import.meta.dirname, '..');
 
 describe('active company write guard', () => {
   const companyHook = readFileSync(resolve(import.meta.dirname, 'use-company.tsx'), 'utf8');
+  const authHook = readFileSync(resolve(import.meta.dirname, 'use-auth.tsx'), 'utf8');
   const maintenanceController = readFileSync(resolve(root, 'features/maintenance/useMaintenancePageController.ts'), 'utf8');
   const maintenanceService = readFileSync(resolve(root, 'features/maintenance/maintenance-service.ts'), 'utf8');
   const maintenanceRpc = readFileSync(resolve(root, '../../supabase/migrations/20260731190947_create_maintenance_atomic_rpc.sql'), 'utf8');
 
-  it('queries only company columns that exist in production', () => {
+  it('queries only stable production columns and active tenant memberships', () => {
     expect(companyHook).toContain(".select('company_id, role, companies!inner(id, name, slug, currency, locale)')");
+    expect(companyHook).toContain(".eq('is_active', true)");
+    expect(companyHook).toContain(".eq('companies.is_active', true)");
     expect(companyHook).not.toContain('role, is_active, companies!inner');
     expect(companyHook).not.toContain('locale, timezone, is_active)');
   });
 
-  it('refreshes the JWT claim and blocks the app when no active company can be resolved', () => {
+  it('requires the refreshed JWT claim and never invents a local single-company fallback', () => {
     expect(companyHook).toContain('supabase.auth.refreshSession()');
-    expect(companyHook).toContain('companyList.length === 1');
+    expect(companyHook).not.toContain('companyList.length === 1');
+    expect(companyHook).toContain('selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null');
     expect(companyHook).toContain('hasAuthenticatedSession && (loadError || !activeCompany)');
     expect(companyHook).toContain('لم يتم فتح التطبيق لحماية البيانات ومنع إنشاء سجلات بدون شركة');
+  });
+
+  it('keeps TOKEN_REFRESHED session state authoritative for company switching', () => {
+    expect(authHook).toContain("case 'TOKEN_REFRESHED':");
+    expect(authHook).toContain('setSession(nextSession)');
+    expect(companyHook).toContain("data: { company_id: companyId }");
+    expect(companyHook).toContain('readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata) !== companyId');
+  });
+
+  it('clears tenant query data before exposing the newly selected company', () => {
+    expect(companyHook).toContain('const queryClient = useQueryClient()');
+    expect(companyHook).toContain('await queryClient.cancelQueries()');
+    expect(companyHook).toContain('queryClient.clear()');
+    expect(companyHook.indexOf('queryClient.clear()')).toBeLessThan(companyHook.indexOf('setActiveCompany(company)'));
+  });
+
+  it('fails closed and clears tenant cache across logout/login user changes', () => {
+    expect(companyHook).toContain('const [resolvedUserId, setResolvedUserId]');
+    expect(companyHook).toContain('const isCompanyContextTransition = authenticatedUserId !== resolvedUserId');
+    expect(companyHook).toContain('if (isLoading || isCompanyContextTransition)');
+    expect(companyHook).toContain('setResolvedUserId(sessionUser.id)');
+    expect(companyHook).toContain('setResolvedUserId(null)');
   });
 
   it('derives the maintenance company on the server, not from a browser payload', () => {

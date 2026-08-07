@@ -1,10 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 
 export const ACTIVE_COMPANY_ERROR = 'تعذر تحديد الشركة النشطة';
-
-/* ── Types ──────────────────────────────────────────── */
 
 export type Company = {
   id: string;
@@ -27,8 +26,6 @@ export type CompanyContextValue = {
 
 const CompanyContext = createContext<CompanyContextValue | null>(null);
 
-/* ── Types for membership query result ──────────────── */
-
 type MembershipRow = {
   company_id: string;
   role: string;
@@ -47,11 +44,11 @@ function readCompanyIdFromAppMetadata(appMetadata: unknown): string | null {
   return typeof companyId === 'string' && companyId.length > 0 ? companyId : null;
 }
 
-/* ── Provider ───────────────────────────────────────── */
-
 export function CompanyProvider({ children }: PropsWithChildren) {
+  const queryClient = useQueryClient();
   const { session, isLoading: isAuthLoading } = useAuth();
   const authenticatedUserId = session?.user.id ?? null;
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +65,9 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     }
 
     if (!session?.user) {
+      void queryClient.cancelQueries();
+      queryClient.clear();
+      setResolvedUserId(null);
       setHasAuthenticatedSession(false);
       setCompanies([]);
       setActiveCompany(null);
@@ -81,16 +81,20 @@ export function CompanyProvider({ children }: PropsWithChildren) {
 
     async function loadCompanies() {
       setIsLoading(true);
+      setResolvedUserId(null);
       setLoadError(null);
       setHasAuthenticatedSession(true);
 
+      await queryClient.cancelQueries();
+      queryClient.clear();
+
       try {
-        // Production currently exposes only these stable columns. Do not request
-        // optional columns that are absent from the live schema.
         const { data, error } = await supabase
           .from('company_members')
           .select('company_id, role, companies!inner(id, name, slug, currency, locale)')
-          .eq('user_id', sessionUser.id);
+          .eq('user_id', sessionUser.id)
+          .eq('is_active', true)
+          .eq('companies.is_active', true);
 
         if (error) throw error;
         if (!mounted) return;
@@ -107,23 +111,11 @@ export function CompanyProvider({ children }: PropsWithChildren) {
         let jwtCompanyId = readCompanyIdFromAppMetadata(sessionUser.app_metadata);
         let selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
 
-        // Financial RPCs and RLS read app_metadata.company_id. Refresh an older
-        // session once so the access-token hook can inject the current company.
         if (!selectedCompany) {
           const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError) throw refreshError;
           jwtCompanyId = readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata);
           selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
-        }
-
-        // A single membership is already an explicit authorization decision.
-        // Use it as the safe local selection when an older/stale access token
-        // has not yet received app_metadata.company_id from the auth hook.
-        // This avoids locking out valid single-company users while preserving
-        // the membership/RLS boundary; a multi-company session still requires
-        // an explicit JWT company claim.
-        if (!selectedCompany && companyList.length === 1) {
-          selectedCompany = companyList[0];
         }
 
         if (!selectedCompany) {
@@ -137,12 +129,14 @@ export function CompanyProvider({ children }: PropsWithChildren) {
           (membership) => membership.company_id === selectedCompany.id,
         );
         setCurrentRole((activeMembership?.role as CompanyMemberRole) ?? null);
+        setResolvedUserId(sessionUser.id);
       } catch (error) {
         console.error('CompanyProvider error:', error);
         if (mounted) {
           setCompanies([]);
           setActiveCompany(null);
           setCurrentRole(null);
+          setResolvedUserId(null);
           setLoadError(ACTIVE_COMPANY_ERROR);
         }
       } finally {
@@ -152,40 +146,60 @@ export function CompanyProvider({ children }: PropsWithChildren) {
 
     void loadCompanies();
     return () => { mounted = false; };
-  }, [authenticatedUserId, isAuthLoading, reloadVersion]);
+  }, [authenticatedUserId, isAuthLoading, reloadVersion, queryClient]);
 
   const switchCompany = useCallback(async (companyId: string) => {
     const company = companies.find((candidate) => candidate.id === companyId);
     if (!company) throw new Error(ACTIVE_COMPANY_ERROR);
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error(ACTIVE_COMPANY_ERROR);
+    setIsLoading(true);
+    setLoadError(null);
 
-    if (readCompanyIdFromAppMetadata(session.user.app_metadata) !== companyId) {
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { company_id: companyId },
-      });
-      if (updateError) throw updateError;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error(ACTIVE_COMPANY_ERROR);
 
-      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) throw refreshError;
-      if (readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata) !== companyId) {
-        throw new Error(ACTIVE_COMPANY_ERROR);
+      if (readCompanyIdFromAppMetadata(session.user.app_metadata) !== companyId) {
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: { company_id: companyId },
+        });
+        if (updateError) throw updateError;
+
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) throw refreshError;
+        if (readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata) !== companyId) {
+          throw new Error(ACTIVE_COMPANY_ERROR);
+        }
       }
+
+      const { data: membership, error: membershipError } = await supabase
+        .from('company_members')
+        .select('role')
+        .eq('company_id', companyId)
+        .eq('user_id', session.user.id)
+        .eq('is_active', true)
+        .single();
+
+      if (membershipError) throw membershipError;
+
+      await queryClient.cancelQueries();
+      queryClient.clear();
+
+      setActiveCompany(company);
+      setCurrentRole((membership?.role as CompanyMemberRole) ?? null);
+      setResolvedUserId(session.user.id);
+    } catch (error) {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      setActiveCompany(null);
+      setCurrentRole(null);
+      setResolvedUserId(null);
+      setLoadError(ACTIVE_COMPANY_ERROR);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-
-    const { data: membership, error: membershipError } = await supabase
-      .from('company_members')
-      .select('role')
-      .eq('company_id', companyId)
-      .eq('user_id', session.user.id)
-      .single();
-
-    if (membershipError) throw membershipError;
-
-    setActiveCompany(company);
-    setCurrentRole((membership?.role as CompanyMemberRole) ?? null);
-  }, [companies]);
+  }, [companies, queryClient]);
 
   const value = useMemo<CompanyContextValue>(() => ({
     companies,
@@ -196,7 +210,8 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     currentRole,
   }), [companies, activeCompany, isLoading, switchCompany, currentRole]);
 
-  if (isLoading) {
+  const isCompanyContextTransition = authenticatedUserId !== resolvedUserId;
+  if (isLoading || isCompanyContextTransition) {
     return (
       <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl" aria-busy="true">
         <p className="text-sm font-semibold text-muted-foreground">جاري تحديد الشركة النشطة…</p>
@@ -233,7 +248,6 @@ export function useCompany(): CompanyContextValue {
   return ctx;
 }
 
-/** Active company ID or null — use for INSERT payloads. */
 export function useActiveCompanyId(): string | null {
   return useCompany().activeCompany?.id ?? null;
 }
