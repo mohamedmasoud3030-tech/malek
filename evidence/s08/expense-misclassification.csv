@@ -1,0 +1,4 @@
+company_id,company_name,expense_id,source_link,account_no,account_name,amount,period,charged_to,beneficiary,finding_code,severity,explanation
+00000000-0000-4000-a000-000000000001,Demo Malek Co A,60000000-0000-4000-a000-000000000061,expenses/60000000,6100,Office Expenses,320.000,2026-01,OWNER,,OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT,MEDIUM,OWNER expense mapped to office expense account 6100.
+00000000-0000-4000-a000-000000000001,Demo Malek Co A,60000000-0000-4000-a000-000000000062,expenses/60000000-62,6100,Office Expenses,150.000,2026-02,TENANT,Tenant X,OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT,MEDIUM,TENANT expense mapped to office expense account 6100.
+00000000-0000-4000-a000-000000000002,Demo Malek Co B,60000000-0000-4000-a000-000000000063,expenses/60000000-63,5200,Repairs,80.000,2026-02,OFFICE,,MISSING_BENEFICIARY,MEDIUM,Expense missing beneficiary.

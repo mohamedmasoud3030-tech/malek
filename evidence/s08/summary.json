@@ -1,0 +1,115 @@
+{
+  "analysis_version": "s08-1.0.0",
+  "company_scope": [
+    {
+      "id": "00000000-0000-4000-a000-000000000001",
+      "name": "Demo Malek Co A"
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000002",
+      "name": "Demo Malek Co B"
+    }
+  ],
+  "currency_precision": 3,
+  "finding_counts_by_code": {
+    "DEDUCTION_WITHOUT_BENEFICIARY": 1,
+    "DUPLICATE_EXPENSE_ACROSS_SETTLEMENTS": 1,
+    "DUPLICATE_PAYMENT_ACROSS_SETTLEMENTS": 1,
+    "MASTER_LEASE_MISSING_DISCOUNT_RATE": 1,
+    "OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT": 1,
+    "PAID_SETTLEMENT_WITHOUT_PAYMENT_EVIDENCE": 1,
+    "POSTING_WITHOUT_SOURCE": 1,
+    "RETROACTIVE_COMMISSION_CHANGE": 1,
+    "SOURCE_WITHOUT_POSTING": 1,
+    "SUBLEDGER_GL_MISMATCH": 1
+  },
+  "finding_counts_by_severity": {
+    "HIGH": 6,
+    "MEDIUM": 4
+  },
+  "generated_at": "2026-08-07T02:35:51.721Z",
+  "input_schema_fingerprint": "8aa134caef3a3104",
+  "notes": "Read-only historical analysis. No financial mutation. Findings only.",
+  "period_scope": [
+    {
+      "end": "2026-01-31",
+      "id": "p-2026-01",
+      "name": "2026-01",
+      "start": "2026-01-01"
+    },
+    {
+      "end": "2026-02-28",
+      "id": "p-2026-02",
+      "name": "2026-02",
+      "start": "2026-02-01"
+    }
+  ],
+  "read_only_proof": {
+    "runtime": {
+      "after": {
+        "generated_at": "2026-08-07T02:35:51.719Z",
+        "method": "SELECT checksum_agg(hash) per table; no writes performed",
+        "tables": {
+          "expenses": "db0290015edccb1a",
+          "invoices": "e7cb9cd9f9cbc921",
+          "journal_batches": "3af342a951102728",
+          "journal_entries_archive": "04739815a0ddd4ce",
+          "journal_lines": "301d4462db52897c",
+          "owner_settlement_expense_links": "77f7509ae211aef2",
+          "owner_settlement_payment_links": "8e5d68d2ce031bbc",
+          "owner_settlements": "b055b29c7c7c4a6d",
+          "payments": "77049f1a8f120e6c",
+          "tenant_deposits": "413f6cd2a909e71b"
+        }
+      },
+      "before": {
+        "generated_at": "2026-08-07T02:35:51.719Z",
+        "method": "SELECT checksum_agg(hash) per table; no writes performed",
+        "tables": {
+          "expenses": "db0290015edccb1a",
+          "invoices": "e7cb9cd9f9cbc921",
+          "journal_batches": "3af342a951102728",
+          "journal_entries_archive": "04739815a0ddd4ce",
+          "journal_lines": "301d4462db52897c",
+          "owner_settlement_expense_links": "77f7509ae211aef2",
+          "owner_settlement_payment_links": "8e5d68d2ce031bbc",
+          "owner_settlements": "b055b29c7c7c4a6d",
+          "payments": "77049f1a8f120e6c",
+          "tenant_deposits": "413f6cd2a909e71b"
+        }
+      },
+      "equal": true
+    },
+    "static": {
+      "checked_file": "supabase/migrations/20260807020000_s08_read_only_historical_analysis.sql",
+      "forbidden_patterns": [
+        "INSERT INTO financial tables",
+        "UPDATE financial tables",
+        "DELETE FROM financial tables",
+        "TRUNCATE"
+      ],
+      "found": [],
+      "passed": true
+    }
+  },
+  "row_counts": {
+    "deposit_exceptions": 3,
+    "expense_misclassification": 3,
+    "findings": 10,
+    "liability_balances_by_period": 20,
+    "master_lease_readiness": 3,
+    "orphan_postings": 3,
+    "retroactive_version_differences": 3,
+    "settlement_source_duplicates": 3,
+    "subledger_gl_reconciliation": 40
+  },
+  "source_main_sha": "6bc8eb4ff6449383f8a367d422337611b451a3d4",
+  "statuses_distinguished": [
+    "POSTED",
+    "PAID",
+    "VOID",
+    "CANCELLED",
+    "REVERSED",
+    "DRAFT"
+  ]
+}
