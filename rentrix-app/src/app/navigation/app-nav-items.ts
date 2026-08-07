@@ -31,6 +31,7 @@ export const navGroups: readonly NavGroup[] = [
   ]],
   ['التقارير', [
     ['/reports', 'reportsAndStatements', 'مركز التقارير والكشوفات التنفيذية الشاملة', BarChart3],
+    ['/ai-assistant', 'aiAssistant', 'مساعد ذكي قراءة فقط للتلخيص والمتابعة', Bot],
   ]],
   ['الإدارة', [
     ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، وسجلات الحوكمة', Settings, 'settings.manage'],
@@ -59,9 +60,7 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
   ],
   '/financials': [],
-  '/reports': [
-    ['/ai-assistant', 'aiAssistant', 'مساعد قراءة فقط لتلخيص المتأخرات والتجديدات واللقطات المالية', Bot],
-  ],
+  '/reports': [],
   '/settings': [
     ['/change-password', 'changePassword', 'تغيير كلمة مرور حسابك وإنهاء استخدام الكلمات الضعيفة', KeyRound, 'auth.password.change'],
     ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة والعمليات', ListChecks, 'audit.view'],

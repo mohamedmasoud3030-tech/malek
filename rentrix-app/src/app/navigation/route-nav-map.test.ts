@@ -12,8 +12,8 @@ import { workspaceLabels } from './terminology-registry';
  *  4. Workspace labels have correct Arabic grammar
  */
 describe('Route-to-nav-root map (UX-013)', () => {
-  it('covers all hub-level routes', () => {
-    const hubs = ['/dashboard', '/properties', '/contracts', '/maintenance', '/financials', '/reports', '/settings'];
+  it('covers all hub-level routes (IA 2026-08: finance 4 + reports + ai-assistant distinct)', () => {
+    const hubs = ['/dashboard', '/properties', '/contracts', '/maintenance', '/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking', '/reports', '/ai-assistant', '/settings'];
     for (const hub of hubs) {
       expect(getNavRoot(hub)).toBe(hub);
       expect(navRootTitle).toHaveProperty(hub);
@@ -57,8 +57,8 @@ describe('Route-to-nav-root map (UX-013)', () => {
     expect(getNavRoot('/system')).toBe('/settings');
   });
 
-  it('maps /ai-assistant to /reports', () => {
-    expect(getNavRoot('/ai-assistant')).toBe('/reports');
+  it('maps /ai-assistant to itself (distinct interactive tool, not report tab — IA 2026-08)', () => {
+    expect(getNavRoot('/ai-assistant')).toBe('/ai-assistant');
   });
 
   it('maps detail routes correctly', () => {
@@ -146,7 +146,7 @@ describe('Workspace labels (UX-015 / UX-018 / UX-019)', () => {
   });
 
   it('has nav root titles in Arabic for all hubs', () => {
-    const hubs = ['/dashboard', '/properties', '/contracts', '/maintenance', '/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking', '/reports', '/settings'];
+    const hubs = ['/dashboard', '/properties', '/contracts', '/maintenance', '/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking', '/reports', '/ai-assistant', '/settings'];
     for (const hub of hubs) {
       expect(typeof navRootTitle[hub]).toBe('string');
       expect(navRootTitle[hub].length).toBeGreaterThan(2);

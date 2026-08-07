@@ -66,9 +66,12 @@ export const routeNavRoot = new Map<string, string>([
   ['/bank-reconciliation', '/finance/banking'],
   ['/commissions', '/finance/banking'],
 
-  // Reports hub
+  // Reports + AI Assistant are distinct primary destinations under "التقارير" group
+  // (IA 2026-08: AI assistant is not a report section tab, it's a separate
+  // interactive chat tool — keeping it as separate primary prevents the
+  // 12-tab maze and ambiguous duplication)
   ['/reports', '/reports'],
-  ['/ai-assistant', '/reports'],
+  ['/ai-assistant', '/ai-assistant'],
 
   // Governance / Settings hub & children
   ['/settings', '/settings'],
@@ -90,6 +93,7 @@ export const navRootTitle: Record<string, string> = {
   '/finance/deposits': 'التأمينات والتسويات',
   '/finance/banking': 'البنوك والعمولات',
   '/reports': 'التقارير',
+  '/ai-assistant': 'المساعد الذكي',
   '/settings': 'الإدارة والحوكمة',
 };
 

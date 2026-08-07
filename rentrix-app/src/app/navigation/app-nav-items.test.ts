@@ -206,9 +206,11 @@ describe('app route and navigation parity', () => {
     expect(financeGroupPaths).toEqual(
       expect.arrayContaining(['/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']),
     );
-    expect(getGroupChildPaths('/reports')).toEqual(
-      expect.arrayContaining(['/reports', '/ai-assistant']),
-    );
+    // Reports + AI Assistant are distinct primary entries under "التقارير" group (IA 2026-08: separate destinations, not duplicate)
+    const reportsGroupPaths = navGroups.find(([title]) => title === 'التقارير')?.[1].map(([to]) => to) ?? [];
+    expect(reportsGroupPaths).toEqual(expect.arrayContaining(['/reports', '/ai-assistant']));
+    // No secondary children for reports (ai-assistant is primary, not workspaceChildNavItems)
+    expect(workspaceChildNavItems['/reports']).toHaveLength(0);
     expect(getGroupChildPaths('/settings')).toEqual(
       expect.arrayContaining(['/settings', '/change-password', '/audit-log', '/data-integrity', '/system']),
     );
