@@ -12,6 +12,18 @@ describe('getActionableSupabaseErrorMessage', () => {
     )).toBe('مبلغ الاسترداد يجب أن يكون أكبر من صفر');
   });
 
+  it('replaces generic Arabic placeholders with the operation-specific fallback', () => {
+    expect(getActionableSupabaseErrorMessage(
+      new Error('خطأ'),
+      'تعذر تسجيل الدفعة',
+    )).toBe('تعذر تسجيل الدفعة');
+
+    expect(getActionableSupabaseErrorMessage(
+      { message: 'حدث خطأ غير متوقع' },
+      'تعذر حفظ العمولة',
+    )).toBe('تعذر حفظ العمولة');
+  });
+
   it('turns missing company context into operator guidance', () => {
     expect(getActionableSupabaseErrorMessage(
       { message: 'Company context is required (no company_id claim in JWT).', code: '42501' },
