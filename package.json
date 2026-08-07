@@ -18,6 +18,8 @@
     "check:execution-plan": "node scripts/check-10-stage-execution-plan.mjs",
     "check:migration-hygiene": "node scripts/check-migration-rollback-hygiene.mjs",
     "test:migration-hygiene": "node scripts/check-migration-rollback-hygiene.test.mjs",
+    "check:gl-write-boundary": "node scripts/check-no-new-legacy-journal-writes.mjs",
+    "test:gl-write-boundary": "node scripts/check-no-new-legacy-journal-writes.test.mjs",
     "supabase:migration-evidence": "bash scripts/collect-supabase-migration-evidence.sh",
     "e2e": "pnpm --filter @workspace/rentrix run e2e",
     "e2e:install": "pnpm --filter @workspace/rentrix exec playwright install --with-deps chromium",
