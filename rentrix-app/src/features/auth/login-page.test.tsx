@@ -94,6 +94,24 @@ describe('LoginPage — structural contract', () => {
     expect(html).not.toContain('نسيت');
     expect(html).not.toContain('reset-password');
   });
+
+  it('is a single centered auth card — no split layout, no promotional side panel', () => {
+    const html = renderToStaticMarkup(<LoginPage />);
+    // The compact centered card is the login surface.
+    expect(html).toContain('data-login-card');
+    // No split-screen halves (the promotional command-center panel was removed
+    // from the login journey; it remains a standalone component only).
+    expect(html).not.toContain('data-command-center-panel');
+    expect(html).not.toContain('md:w-[60%]');
+    expect(html).not.toContain('md:flex-row');
+  });
+
+  it('keeps the brand lockup restrained instead of a giant artwork', () => {
+    const html = renderToStaticMarkup(<LoginPage />);
+    expect(html).toContain('data-malek-canonical-lockup');
+    expect(html).not.toContain('size-28');
+    expect(html).not.toContain('size-32');
+  });
 });
 
 describe('LoginPage — interaction behaviour', () => {
