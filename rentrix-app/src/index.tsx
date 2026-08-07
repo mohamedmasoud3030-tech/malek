@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { applyDocumentLanguageDirection } from '@/lib/i18n';
 import '@/lib/formatters'; // Ensure global number/date prototype patches are applied immediately
+import { loadProductFonts } from '@/lib/product-fonts';
 import '@/lib/pwa-install';
 import '@/styles/globals.css';
 import '@/styles/product-palette.css';
@@ -10,6 +11,7 @@ import '@/styles/page-polish.css';
 import '@/styles/ux-foundation.css';
 
 applyDocumentLanguageDirection();
+loadProductFonts();
 
 const rootElement = document.getElementById('root');
 

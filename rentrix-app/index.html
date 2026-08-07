@@ -48,9 +48,9 @@
       }
     </script>
 
-    <!-- Establish the font connection early, but never block first paint on a third-party stylesheet. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Product fonts (Cairo + Sora) are self-hosted in /public/fonts (OD-12);
+         the app entry injects the local stylesheet deferred, so no external
+         font host is needed and offline PWA keeps full typography. -->
 
     <style nonce="rentrix-static">
       :root {
@@ -108,14 +108,6 @@
         const theme = localStorage.getItem('rentrix-theme') || 'light';
         document.documentElement.dataset.theme = theme;
       })();
-    </script>
-    <script nonce="rentrix-static">
-      window.addEventListener('load', function loadProductFonts() {
-        const stylesheet = document.createElement('link');
-        stylesheet.rel = 'stylesheet';
-        stylesheet.href = 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Sora:wght@600;700;800&display=swap';
-        document.head.appendChild(stylesheet);
-      }, { once: true });
     </script>
   </head>
   <body>

@@ -405,11 +405,14 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
 
   it('uses the geometric wordmark face without breaking Cairo for Arabic', () => {
     const indexHtml = readApp('index.html');
+    const fontsCss = readApp('public/fonts/fonts.css');
 
     expect(indexHtml).toMatch(/\.malik-wordmark\s*\{[^}]*Sora/);
     expect(indexHtml).toMatch(/body\s*\{[^}]*'Cairo'/);
-    expect(indexHtml).toContain('family=Sora');
-    expect(indexHtml).toContain('family=Cairo');
+    // Self-hosted faces (OD-12) replace the old Google Fonts css2?family= URL.
+    expect(indexHtml).not.toContain('family=Sora');
+    expect(fontsCss).toMatch(/@font-face\s*\{[^}]*font-family:\s*'Sora'/);
+    expect(fontsCss).toMatch(/@font-face\s*\{[^}]*font-family:\s*'Cairo'/);
   });
 });
 

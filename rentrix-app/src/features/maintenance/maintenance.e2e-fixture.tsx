@@ -91,16 +91,16 @@ export function MaintenanceE2EFixture() {
           title="طلبات الصيانة"
           description="غرفة متابعة للطلبات العاجلة والمفتوحة وقيد التنفيذ مع الإجراءات والطباعة من مكان واحد."
           primaryAction={(
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" className="min-h-11 gap-2 font-bold">
-                <Printer className="size-4 text-primary" aria-hidden="true" />
-                طباعة كشف الصيانة A4
-              </Button>
-              <Button type="button" className="min-h-11">
-                <PlusCircle className="me-2 size-4" aria-hidden="true" />
-                طلب صيانة جديد
-              </Button>
-            </div>
+            <Button type="button" className="min-h-11">
+              <PlusCircle className="me-2 size-4" aria-hidden="true" />
+              طلب صيانة جديد
+            </Button>
+          )}
+          secondaryActions={(
+            <Button type="button" variant="outline" className="min-h-11 gap-2 font-bold">
+              <Printer className="size-4 text-primary" aria-hidden="true" />
+              طباعة كشف الصيانة A4
+            </Button>
           )}
         />
 

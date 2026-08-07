@@ -135,26 +135,37 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     );
   };
 
+  const printAction = (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={handlePrintMaintenanceList}
+      disabled={!documentSettings.isReady}
+      className="min-h-11 gap-2 font-bold"
+    >
+      <Printer className="size-4 text-primary" aria-hidden="true" />
+      طباعة كشف الصيانة A4
+    </Button>
+  );
+
+  const createAction = (
+    <Button
+      type="button"
+      onClick={controller.openCreateForm}
+      className="min-h-11"
+    >
+      <PlusCircle className="me-2 size-4" aria-hidden="true" />
+      طلب صيانة جديد
+    </Button>
+  );
+
+  // Embedded mode (operations hub tab) keeps the historic inline rail;
+  // standalone mode uses the PageHeader primary/secondary contract so the
+  // secondary print action collapses into the mobile overflow sheet.
   const actions = (
     <div className="flex flex-col gap-2 sm:flex-row">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handlePrintMaintenanceList}
-        disabled={!documentSettings.isReady}
-        className="min-h-11 gap-2 font-bold"
-      >
-        <Printer className="size-4 text-primary" aria-hidden="true" />
-        طباعة كشف الصيانة A4
-      </Button>
-      <Button
-        type="button"
-        onClick={controller.openCreateForm}
-        className="min-h-11"
-      >
-        <PlusCircle className="me-2 size-4" aria-hidden="true" />
-        طلب صيانة جديد
-      </Button>
+      {printAction}
+      {createAction}
     </div>
   );
 
@@ -383,7 +394,8 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         title="طلبات الصيانة"
         description="غرفة متابعة للطلبات العاجلة والمفتوحة وقيد التنفيذ مع الإجراءات والطباعة من مكان واحد."
         count={controller.filteredMaintenanceRows.length}
-        primaryAction={actions}
+        primaryAction={createAction}
+        secondaryActions={printAction}
       />
       {body}
     </PageLayout>

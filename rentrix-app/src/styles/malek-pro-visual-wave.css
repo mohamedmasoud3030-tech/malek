@@ -236,7 +236,13 @@
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
   height: 3.25rem;
+  /* Win over the generic page-polish `thead th` surface so the dark command
+     header keeps its intended contrast in every theme (was: muted grey text
+     on a washed muted/0.4 overlay — a real contrast defect). */
+  background: transparent;
+  color: rgb(248 250 252 / 0.92);
   border-color: rgb(255 255 255 / 0.08);
+  border-bottom-color: rgb(255 255 255 / 0.08);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.025em;

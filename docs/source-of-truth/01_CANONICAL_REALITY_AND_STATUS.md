@@ -101,6 +101,17 @@ Presentation-only normalization; no business behavior, routes, permissions, RPCs
 | General Ledger read-only UI: surfaced `chartOfAccountsService`, `accountingPeriodsService`, and `journalService` in read-only General Ledger Core section (`general_ledger`) under formal Reports category | `VERIFIED_COMPLETE` | `GeneralLedgerCoreSection.tsx`, `use-general-ledger-core.ts` |
 | `/accounting` route canonical redirect: points directly to `/reports?section=general_ledger` | `VERIFIED_COMPLETE` | `route-tree.ts` |
 
+### Wave 5 — Malek Pro parity hardening (2026-08-07, arena branch 019fdc09)
+
+Presentation-only parity pass against the owner-supplied Malek Pro reference set (20 prototype screenshots). Mapping of every reference screen to its plan stage + findings: `docs/audits/MALEK_VISUAL_WAVE5_MALEKPRO_PARITY_AUDIT.md`.
+
+| Item | Status | Evidence |
+|---|---|---|
+| Operational register tables: dark command-header contrast pinned (page-polish muted-header leak removed, both themes) | `VERIFIED_COMPLETE` | `malek-pro-visual-wave.css`; guard `malek-pro-visual-wave.test.ts`; `evidence/ui-wave5-malekpro-parity/` |
+| Maintenance standalone header follows the PageHeader actions contract (create = primary, A4 print = secondary → mobile overflow sheet) | `VERIFIED_COMPLETE` | `maintenance-workspace.tsx`, `maintenance.e2e-fixture.tsx` |
+| OD-12 Cairo + Sora self-hosted fonts (offline PWA + no external font CDN), deferred load, `font-display: swap`, OFL licenses shipped | `VERIFIED_COMPLETE` | `public/fonts/*`, `src/lib/product-fonts.ts`; guard `product-fonts-contract.test.ts` |
+| Reference screens not to replicate (split login, dark-navy promotional modal heroes) | confirmed intentionally excluded | doc 3 consolidation pass, commit `2a2df3a7` |
+
 ## 3. Open Owner Decisions (blockers, unchanged)
 
 - **OD-08** — Due-from-Owner collection mechanism (offset vs payment invoice): blocks negative-balance settlement accounting.
