@@ -2,23 +2,25 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-describe('relationships hub visible UX contract', () => {
+describe('communication route — IA simplification 2026-08', () => {
   const routeSource = readFileSync(
     resolve(import.meta.dirname, '_protected.communication.tsx'),
     'utf8',
   );
 
-  it('turns the communication destination into a visible relationships hub', () => {
+  it('renders a single Communication workspace without duplicating tenants', () => {
     expect(routeSource).toContain('export function CommunicationRouteComponent()');
-    expect(routeSource).toContain('title="مركز العلاقات"');
-    expect(routeSource).toContain('ariaLabel="أقسام مركز العلاقات"');
+    expect(routeSource).toContain('title="التواصل والمتابعات"');
+    expect(routeSource).toContain('<CommunicationWorkspace embedded />');
+    // Removed duplicate tenants tab that previously duplicated the Relationships hub
+    expect(routeSource).not.toContain("label: 'المستأجرون'");
+    expect(routeSource).not.toContain('<TenantsWorkspace embedded />');
+    expect(routeSource).not.toContain('ariaLabel="أقسام مركز العلاقات"');
   });
 
-  it('shows communication and tenants as real tabs with embedded workspaces', () => {
-    expect(routeSource).toContain("label: 'التواصل والمتابعات'");
-    expect(routeSource).toContain("label: 'المستأجرون'");
-    expect(routeSource).toContain('<CommunicationWorkspace embedded />');
-    expect(routeSource).toContain('<TenantsWorkspace embedded />');
+  it('documents why tenants lives canonically in the Relationships hub', () => {
+    expect(routeSource).toContain('canonical tenants surface remains at /contracts?section=tenants');
+    expect(routeSource).toContain('IA simplification 2026-08');
   });
 
   it('stays isolated from the financial workspace owned by the parallel agent', () => {
