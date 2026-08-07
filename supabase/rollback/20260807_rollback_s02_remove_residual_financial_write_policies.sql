@@ -1,8 +1,9 @@
--- Fail-closed rollback for 20260807010000_s02_remove_residual_financial_write_policies.sql.
+-- Manual rollback for 20260807010000_s02_remove_residual_financial_write_policies.sql — not auto-applied; run by hand only.
 --
--- This rollback intentionally does not restore FOR ALL policies or browser
--- DML grants. It restores the historical policy name as SELECT-only and keeps
--- direct financial mutations restricted to approved SECURITY DEFINER RPCs.
+-- This fail-closed rollback intentionally does not restore FOR ALL policies or
+-- browser DML grants. It restores the historical policy name as SELECT-only
+-- and keeps direct financial mutations restricted to approved SECURITY
+-- DEFINER RPCs.
 begin;
 
 alter table public.payments enable row level security;
