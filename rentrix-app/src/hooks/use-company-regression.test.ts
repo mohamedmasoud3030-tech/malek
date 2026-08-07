@@ -32,6 +32,13 @@ describe('active company write guard', () => {
     expect(companyHook).toContain('readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata) !== companyId');
   });
 
+  it('clears tenant query data before exposing the newly selected company', () => {
+    expect(companyHook).toContain('const queryClient = useQueryClient()');
+    expect(companyHook).toContain('await queryClient.cancelQueries()');
+    expect(companyHook).toContain('queryClient.clear()');
+    expect(companyHook.indexOf('queryClient.clear()')).toBeLessThan(companyHook.indexOf('setActiveCompany(company)'));
+  });
+
   it('derives the maintenance company on the server, not from a browser payload', () => {
     expect(maintenanceController).toContain('const activeCompanyId = useActiveCompanyId()');
     expect(maintenanceController).not.toContain('company_id: activeCompanyId');
