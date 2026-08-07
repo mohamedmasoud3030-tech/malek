@@ -89,6 +89,7 @@ Presentation-only normalization; no business behavior, routes, permissions, RPCs
 | One heading hierarchy: EntityDetailHeader normalized to the standard PageHeader scale (text-xl sm:text-2xl) | `VERIFIED_COMPLETE` | `entity-detail-header.tsx` |
 | Reports tab clusters use compact inline category labels (mobile) while keeping the 3-category architecture | `VERIFIED_COMPLETE` | `ReportsWorkspace.tsx` |
 | Shared primitives audit (buttons/inputs/cards/tables/modals/forms/filter pills/status pills/empty states) — found already normalized on one token system; no second design system created | `VERIFIED_COMPLETE` | `tokens.css`, `malek-pro-visual-wave.css`, `page-polish.css`, component audit |
+| Full-surface consistency sweep (dashboard, properties, units, owners, people, contracts, finance hubs, invoices/collections, expenses, deposits, reconciliation, settlements, reports, maintenance, utilities, automation, vault, settings/system, change-password, audit log) — all on the standard PageHeader/PageLayout/EntityForm/EntityTable family; mobile cards present everywhere; no fixed-width breakage | `VERIFIED_COMPLETE` | component audit + targeted suites (346 tests) |
 | Dashboard/reports restraint (hero + KPI cards already compact; calculations preserved) | `VERIFIED_COMPLETE` | `hero-banner.tsx`, `FinanceKpiCard` |
 | Operational-route page headers: removed the Wave-2 dark-gradient hero cards + decorative rings (promotional feel); operational pages now use the standard compact PageHeader | `VERIFIED_COMPLETE` | `malek-pro-visual-wave.css` (hero block removed); commit `2a2df3a7` |
 | Finance/reports hub descriptions trimmed to operational one-liners (i18n) | `VERIFIED_COMPLETE` | `lib/i18n.ts`; i18n contract tests pass |
@@ -103,6 +104,9 @@ Presentation-only normalization; no business behavior, routes, permissions, RPCs
 - **OD-04** — Role model scope (3 vs 6 roles): blocks Maker-Checker and Accountant/Viewer role rollout.
 - **OD-02** — Void signature payload: awaits refactor decision.
 - **S08 crediting (OD-11)** — blocks Stage S09 historical correction.
+
+### Deferred verification (not blocking)
+- Full browser smoke pass on changed surfaces is deferred (per program instruction): the login responsive smoke script (`rentrix-app/scripts/responsive-smoke-login.cjs`) passed earlier at 390px/1440px with 0px horizontal overflow; re-running it requires re-downloading the headless Chromium binary in the sandbox. CI `browser-smoke` runs on GitHub for the branch.
 
 ## 4. Intentionally Untouched
 
