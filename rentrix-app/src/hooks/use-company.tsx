@@ -54,6 +54,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
   const { session, isLoading: isAuthLoading } = useAuth();
   const authenticatedUserId = session?.user.id ?? null;
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [activeCompany, setActiveCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +71,11 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     }
 
     if (!session?.user) {
+      // QueryClient lives above AuthProvider. Clear tenant data on sign-out so a
+      // later login (possibly for another company) cannot inherit old cache.
+      void queryClient.cancelQueries();
+      queryClient.clear();
+      setResolvedUserId(null);
       setHasAuthenticatedSession(false);
       setCompanies([]);
       setActiveCompany(null);
@@ -83,8 +89,15 @@ export function CompanyProvider({ children }: PropsWithChildren) {
 
     async function loadCompanies() {
       setIsLoading(true);
+      setResolvedUserId(null);
       setLoadError(null);
       setHasAuthenticatedSession(true);
+
+      // A changed authenticated user must start from an empty query cache.
+      // The render gate below keeps children hidden until this user + company
+      // pair is fully resolved.
+      await queryClient.cancelQueries();
+      queryClient.clear();
 
       try {
         // Production currently exposes only these stable columns. Do not request
@@ -131,12 +144,14 @@ export function CompanyProvider({ children }: PropsWithChildren) {
           (membership) => membership.company_id === selectedCompany.id,
         );
         setCurrentRole((activeMembership?.role as CompanyMemberRole) ?? null);
+        setResolvedUserId(sessionUser.id);
       } catch (error) {
         console.error('CompanyProvider error:', error);
         if (mounted) {
           setCompanies([]);
           setActiveCompany(null);
           setCurrentRole(null);
+          setResolvedUserId(null);
           setLoadError(ACTIVE_COMPANY_ERROR);
         }
       } finally {
@@ -146,7 +161,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
 
     void loadCompanies();
     return () => { mounted = false; };
-  }, [authenticatedUserId, isAuthLoading, reloadVersion]);
+  }, [authenticatedUserId, isAuthLoading, reloadVersion, queryClient]);
 
   const switchCompany = useCallback(async (companyId: string) => {
     const company = companies.find((candidate) => candidate.id === companyId);
@@ -193,6 +208,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
 
       setActiveCompany(company);
       setCurrentRole((membership?.role as CompanyMemberRole) ?? null);
+      setResolvedUserId(session.user.id);
     } catch (error) {
       // A partially completed token switch must never leave the old company UI
       // visible against a new JWT. Fail closed and require a clean reload/retry.
@@ -200,6 +216,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       queryClient.clear();
       setActiveCompany(null);
       setCurrentRole(null);
+      setResolvedUserId(null);
       setLoadError(ACTIVE_COMPANY_ERROR);
       throw error;
     } finally {
@@ -216,7 +233,8 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     currentRole,
   }), [companies, activeCompany, isLoading, switchCompany, currentRole]);
 
-  if (isLoading) {
+  const isCompanyContextTransition = authenticatedUserId !== resolvedUserId;
+  if (isLoading || isCompanyContextTransition) {
     return (
       <main className="grid min-h-dvh place-items-center bg-background p-6" dir="rtl" aria-busy="true">
         <p className="text-sm font-semibold text-muted-foreground">جاري تحديد الشركة النشطة…</p>
