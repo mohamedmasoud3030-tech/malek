@@ -429,11 +429,11 @@ describe('MALEK brand contract — PWA and document metadata', () => {
     expect(manifest.name).not.toContain('MALIK');
     expect(manifest.description).not.toContain('Rentrix');
     expect(manifest.icons).toEqual([
-      { src: '/malek-lockup.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+      { src: '/malek-mark.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
       { src: '/malek-maskable.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
     ]);
 
-    // Every shipped manifest icon must embed the canonical MALEK lockup mark.
+    // Every shipped manifest icon must embed the canonical MALEK identity mark.
     for (const icon of manifest.icons ?? []) {
       const svg = readApp(`public${icon.src}`);
       expect(svg, `${icon.src} must render the canonical MALEK identity`).toMatch(
@@ -452,7 +452,7 @@ describe('MALEK brand contract — PWA and document metadata', () => {
     expect(indexHtml).toContain(`"name": "${APP_BRAND_NAME}"`);
     expect(indexHtml).toContain('apple-mobile-web-app-title" content="MALEK"');
     expect(indexHtml).toContain('rel="icon" href="/malek-mark.svg"');
-    expect(indexHtml).toContain('rel="apple-touch-icon" href="/malek-lockup.svg"');
+    expect(indexHtml).toContain('rel="apple-touch-icon" href="/malek-mark.svg"');
     expect(indexHtml).not.toContain('MALIK');
     expect(indexHtml).not.toContain('Rentrix');
   });

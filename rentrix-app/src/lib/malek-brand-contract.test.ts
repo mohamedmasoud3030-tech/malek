@@ -31,8 +31,8 @@ describe('MALEK canonical brand contract', () => {
 
   it('stores MALEK inside the actual lockup image', () => {
     const lockup = read('public/malek-lockup.svg');
-    expect(lockup).toContain('>MALEK</text>');
-    expect(lockup).toContain('id="malek-lockup-title">MALEK</title>');
+    // #1384 standardized the lockup asset onto the approved angular MALEK mark.
+    expect(lockup).toContain('<title id="malek-mark-title">MALEK</title>');
     expect(lockup).not.toContain('>MALIK</text>');
   });
 
@@ -45,7 +45,7 @@ describe('MALEK canonical brand contract', () => {
     expect(manifest.name).toContain('MALEK');
     expect(manifest.short_name).toBe('MALEK');
     expect(manifest.icons.map((icon) => icon.src)).toEqual([
-      '/malek-lockup.svg',
+      '/malek-mark.svg',
       '/malek-maskable.svg',
     ]);
   });
