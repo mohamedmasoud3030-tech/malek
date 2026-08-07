@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,7 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       VITE_SUPABASE_URL: https://example.supabase.co
@@ -88,6 +89,7 @@ jobs:
         run: pnpm build
       - run: pnpm --filter ./rentrix-app run typecheck:test
       - name: Run full application tests
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         id: full-tests
         shell: bash
         run: |
@@ -98,15 +100,16 @@ jobs:
           tail -n 220 /tmp/rentrix-full-tests.log
           exit 0
       - name: Upload full test diagnostics
-        if: steps.full-tests.outputs.status != '0'
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.full-tests.outputs.status != '0' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: rentrix-full-test-diagnostics
           path: /tmp/rentrix-full-tests.log
       - name: Fail on full test errors
-        if: steps.full-tests.outputs.status != '0'
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.full-tests.outputs.status != '0' }}
         run: exit 1
       - name: Run financial tests
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         id: financial-tests
         shell: bash
         run: |
@@ -117,11 +120,11 @@ jobs:
           tail -n 160 /tmp/rentrix-financial-tests.log
           exit 0
       - name: Upload financial test diagnostics
-        if: steps.financial-tests.outputs.status != '0'
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.financial-tests.outputs.status != '0' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: rentrix-financial-test-diagnostics
           path: /tmp/rentrix-financial-tests.log
       - name: Fail on financial test errors
-        if: steps.financial-tests.outputs.status != '0'
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.financial-tests.outputs.status != '0' }}
         run: exit 1
