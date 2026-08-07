@@ -22,7 +22,7 @@ end $$;
 create index if not exists contracts_agreement_version_idx on public.contracts(agreement_version_id);
 
 -- Existing ACTIVE owner-agency contracts receive the version whose effective
--- range covers their contractual start date. This is a structural snapshot;
+-- range covers their full contractual term. This is a structural snapshot;
 -- no financial posting is created or changed.
 with candidate as (
   select distinct on (c.id)
@@ -37,8 +37,9 @@ with candidate as (
     and c.deleted_at is null
     and oa.agreement_type = 'property_management'
     and btrim(coalesce(c.start_date::text,'')) ~ '^\d{4}-\d{2}-\d{2}$'
+    and btrim(coalesce(c.end_date::text,'')) ~ '^\d{4}-\d{2}-\d{2}$'
     and v.effective_from <= btrim(c.start_date::text)::date
-    and (v.effective_to is null or v.effective_to >= btrim(c.start_date::text)::date)
+    and (v.effective_to is null or v.effective_to >= btrim(c.end_date::text)::date)
   order by c.id, v.version_no desc
 )
 update public.contracts c
@@ -57,7 +58,21 @@ set search_path to 'public','pg_temp'
 as $function$
 declare
   v_agreement_type text;
+  v_version public.owner_agreement_versions%rowtype;
+  v_start date;
+  v_end date;
 begin
+  -- Once a contract has a frozen agreement snapshot, fail before any other
+  -- validation if a caller tries to rewrite it. Historical snapshots are not
+  -- silently re-pointed even when a newer agreement version exists.
+  if tg_op='UPDATE' and old.agreement_version_id is not null and (
+    new.agreement_version_id is distinct from old.agreement_version_id
+    or new.collection_role_snapshot is distinct from old.collection_role_snapshot
+    or new.operating_model_snapshot is distinct from old.operating_model_snapshot
+  ) then
+    raise exception 'CONTRACT_AGREEMENT_SNAPSHOT_IMMUTABLE' using errcode='55000';
+  end if;
+
   if new.agreement_id is null then return new; end if;
 
   select agreement_type into v_agreement_type
@@ -66,9 +81,36 @@ begin
     and company_id = new.company_id;
 
   if v_agreement_type = 'property_management' and lower(coalesce(new.status,'')) = 'active' then
+    -- Compatibility bridge: legacy create_contract_atomic can still create an
+    -- ACTIVE contract directly. Snapshot the covering agreement version inside
+    -- this BEFORE trigger so the old RPC keeps working while every new active
+    -- owner-agency contract still receives the S04-T02 frozen terms atomically.
     if new.agreement_version_id is null or new.collection_role_snapshot is null or new.operating_model_snapshot is null then
-      raise exception 'CONTRACT_AGREEMENT_SNAPSHOT_REQUIRED' using errcode='23514';
+      if btrim(coalesce(new.start_date::text,'')) !~ '^\d{4}-\d{2}-\d{2}$'
+         or btrim(coalesce(new.end_date::text,'')) !~ '^\d{4}-\d{2}-\d{2}$' then
+        raise exception 'CONTRACT_DATES_INVALID' using errcode='22007';
+      end if;
+      v_start := btrim(new.start_date::text)::date;
+      v_end := btrim(new.end_date::text)::date;
+
+      select v.* into v_version
+      from public.owner_agreement_versions v
+      where v.owner_agreement_id = new.agreement_id
+        and v.company_id = new.company_id
+        and v.effective_from <= v_start
+        and (v.effective_to is null or v.effective_to >= v_end)
+      order by v.version_no desc
+      limit 1;
+
+      if not found then
+        raise exception 'CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED' using errcode='23514';
+      end if;
+
+      new.agreement_version_id := v_version.id;
+      new.collection_role_snapshot := v_version.collection_role;
+      new.operating_model_snapshot := v_version.operating_model;
     end if;
+
     if not exists (
       select 1 from public.owner_agreement_versions v
       where v.id = new.agreement_version_id
@@ -81,13 +123,6 @@ begin
     end if;
   end if;
 
-  if tg_op='UPDATE' and old.agreement_version_id is not null and (
-    new.agreement_version_id is distinct from old.agreement_version_id
-    or new.collection_role_snapshot is distinct from old.collection_role_snapshot
-    or new.operating_model_snapshot is distinct from old.operating_model_snapshot
-  ) then
-    raise exception 'CONTRACT_AGREEMENT_SNAPSHOT_IMMUTABLE' using errcode='55000';
-  end if;
   return new;
 end;
 $function$;
