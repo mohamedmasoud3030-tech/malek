@@ -20,7 +20,7 @@
 --   * idempotent retry by fingerprint    -> same batch, no silent partial success
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(33);
 
 -- Two independent tenants and one admin user per tenant.
 insert into public.companies (id, name, slug)
@@ -144,7 +144,32 @@ select lives_ok(
 select is((select duplicate_rows from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-3dp'), 1, '3dp-equivalent rows are counted as duplicates');
 select is((select accepted_rows from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-3dp'), 1, '3dp-equivalent rows accepted only once');
 
--- 9. Tenant isolation of written lines: Company A cannot read Company B's
+-- 9. Blank descriptions are canonicalized identically in counting and insert passes.
+select lives_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_name":"blank-a.csv","file_fingerprint":"fp-blank-a","file_size":11,"rows":[{"transaction_date":"2026-09-01","amount":"11.000","description":"","reference":" REF-BLANK "},{"transaction_date":"2026-09-02","amount":"12.000","description":"   ","reference":" REF-SPACE "}]}'::jsonb)$$,
+  'blank-description batch accepted'
+);
+select is((select accepted_rows from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-blank-a'), 2, 'blank-description first file accepts both rows');
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1' and transaction_date in ('2026-09-01','2026-09-02') and description = 'حركة مستوردة'), 2::bigint, 'blank and whitespace descriptions store canonical fallback');
+select is((
+  select count(*)
+  from public.bank_statement_lines
+  where company_id = '00000000-0000-4000-8000-0000000000a1'
+    and transaction_date in ('2026-09-01','2026-09-02')
+    and fingerprint <> md5(
+      company_id::text || '|' || bank_account_id::text || '|' || transaction_date::text || '|' ||
+      to_char(amount, 'FM9999999999990.000') || '|' || currency || '|' || coalesce(reference,'') || '|' || lower(description)
+    )
+), 0::bigint, 'stored fingerprint matches canonical inserted values');
+select lives_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_name":"blank-b.csv","file_fingerprint":"fp-blank-b","file_size":11,"rows":[{"transaction_date":"2026-09-01","amount":"11.000","description":"","reference":" REF-BLANK "},{"transaction_date":"2026-09-02","amount":"12.000","description":"   ","reference":" REF-SPACE "}]}'::jsonb)$$,
+  'same logical blank-description rows in another file are accepted as a duplicate batch result'
+);
+select is((select accepted_rows from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-blank-b'), 0, 'same logical rows from different file are not counted accepted');
+select is((select duplicate_rows from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-blank-b'), 2, 'same logical rows from different file are counted duplicate');
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1' and transaction_date in ('2026-09-01','2026-09-02')), 2::bigint, 'duplicate blank-description import creates no extra lines');
+
+-- 10. Tenant isolation of written lines: Company A cannot read Company B's
 --    lines through the RLS boundary (B has no lines yet).
 select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000b1'), 0::bigint, 'company B has no imported lines (unaffected by A)');
 
@@ -161,9 +186,9 @@ select is((select count(*) from public.bank_statement_lines where company_id = '
 
 -- Restore the test-runner role before checking Company A. Under Company B's
 -- authenticated RLS context the correct visible count for Company A is zero,
--- which cannot prove that B's import left A's three persisted lines unchanged.
+-- which cannot prove that B's import left A's five persisted lines unchanged.
 reset role;
-select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 3::bigint, 'company A lines are untouched');
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 5::bigint, 'company A lines are untouched');
 
 select * from finish();
 rollback;

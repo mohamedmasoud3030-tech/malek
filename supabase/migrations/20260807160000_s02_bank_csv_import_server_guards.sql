@@ -264,8 +264,12 @@ begin
       v_row := v_rows->v_idx;
       v_transaction_date := (v_row->>'transaction_date')::date;
       v_amount := (v_row->>'amount')::numeric;
-      v_description := trim(both ' ' from coalesce(v_row->>'description','حركة مستوردة'));
-      v_reference := nullif(trim(both ' ' from coalesce(v_row->>'reference','')), '');
+      -- Keep this canonicalization exactly aligned with the validation/counting
+      -- pass above. Diverging here makes accepted_rows/duplicate_rows disagree
+      -- with actual inserted fingerprints for blank descriptions/references.
+      v_description := trim(both ' ' from coalesce(v_row->>'description',''));
+      if v_description = '' then v_description := 'حركة مستوردة'; end if;
+      v_reference := lower(trim(both ' ' from coalesce(v_row->>'reference','')));
       v_balance := nullif(v_row->>'balance','')::numeric;
       v_currency := upper(trim(both ' ' from coalesce(v_row->>'currency','OMR')));
 

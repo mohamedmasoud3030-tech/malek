@@ -180,6 +180,8 @@ describe('migration source contracts', () => {
     expect(serverGuardsSql).toContain('unsupported currency at row %: %');
     expect(serverGuardsSql).toContain('amount must have at most 3 decimals at row %');
     expect(serverGuardsSql).toContain('balance must have at most 3 decimals at row %');
+    expect(serverGuardsSql).not.toContain("coalesce(v_row->>'description','حركة مستوردة')");
+    expect((serverGuardsSql.match(/if v_description = '' then v_description := 'حركة مستوردة'; end if;/g) ?? []).length).toBe(2);
     expect(serverGuardsSql).toContain('set search_path = public, pg_temp');
     expect(serverGuardsSql).not.toContain('journal_entries');
     expect(serverGuardsSql).not.toContain('journal_batches');
@@ -462,11 +464,80 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
     expect((rows[0] as { amount: string }).amount).toBe('50.555');
   });
 
+  it('canonicalizes blank descriptions identically for duplicate classification and insertion', async () => {
+    await assumeUser(USER_A, COMPANY_A);
+
+    const first = await callImport({
+      bank_account_id: BANK_A,
+      file_name: 'blank-description-a.csv',
+      file_fingerprint: 'fp-blank-description-a',
+      file_size: 11,
+      rows: [
+        { transaction_date: '2026-09-01', amount: '11.000', description: '', reference: ' REF-BLANK ' },
+        { transaction_date: '2026-09-02', amount: '12.000', description: '   ', reference: ' REF-SPACE ' },
+      ],
+    });
+    expect(first.accepted_rows).toBe(2);
+    expect(first.duplicate_rows).toBe(0);
+
+    await resetRole();
+
+    const { rows: storedRows } = await db.query<{
+      transaction_date: string;
+      amount: string;
+      description: string;
+      reference: string;
+      currency: string;
+      fingerprint: string;
+    }>(
+      `select transaction_date::text, amount::text, description, reference, currency, fingerprint
+       from public.bank_statement_lines
+       where company_id = $1
+         and transaction_date in ('2026-09-01', '2026-09-02')
+       order by transaction_date`,
+      [COMPANY_A],
+    );
+
+    expect(storedRows).toHaveLength(2);
+    for (const row of storedRows) {
+      expect(row.description).toBe('حركة مستوردة');
+      const expected = await db.query<{ fingerprint: string }>(
+        `select md5($1 || '|' || $2 || '|' || $3 || '|' || to_char($4::numeric, 'FM9999999999990.000') || '|' || $5 || '|' || $6 || '|' || lower($7)) as fingerprint`,
+        [COMPANY_A, BANK_A, row.transaction_date, row.amount, row.currency, row.reference, row.description],
+      );
+      expect(row.fingerprint).toBe(expected.rows[0]?.fingerprint);
+    }
+    expect(storedRows.map((row) => row.reference)).toEqual(['ref-blank', 'ref-space']);
+
+    await assumeUser(USER_A, COMPANY_A);
+    const second = await callImport({
+      bank_account_id: BANK_A,
+      file_name: 'blank-description-b.csv',
+      file_fingerprint: 'fp-blank-description-b',
+      file_size: 11,
+      rows: [
+        { transaction_date: '2026-09-01', amount: '11.000', description: '', reference: ' REF-BLANK ' },
+        { transaction_date: '2026-09-02', amount: '12.000', description: '   ', reference: ' REF-SPACE ' },
+      ],
+    });
+    expect(second.accepted_rows).toBe(0);
+    expect(second.duplicate_rows).toBe(2);
+    await resetRole();
+
+    const { rows: counts } = await db.query<{ lines: number; accepted_b: number; duplicate_b: number }>(
+      `select
+         (select count(*)::int from public.bank_statement_lines where company_id = $1 and transaction_date in ('2026-09-01', '2026-09-02')) as lines,
+         (select accepted_rows from public.bank_statement_imports where company_id = $1 and file_fingerprint = 'fp-blank-description-b') as accepted_b,
+         (select duplicate_rows from public.bank_statement_imports where company_id = $1 and file_fingerprint = 'fp-blank-description-b') as duplicate_b`,
+      [COMPANY_A],
+    );
+    expect(counts[0]).toEqual({ lines: 2, accepted_b: 0, duplicate_b: 2 });
+  });
+
   it('aborts the whole batch when a line write fails (no silent partial success)', async () => {
     await assumeUser(USER_A, COMPANY_A);
 
-    // Invalid balance string passes the first-pass row checks but fails the
-    // line-insert cast; the batch must not survive.
+    // Invalid balance string is rejected by the server-side guards; the batch must not survive.
     const error = await callImportExpectError({
       bank_account_id: BANK_A,
       file_name: 'bad-balance.csv',
