@@ -18,7 +18,7 @@ insert into public.users (id,email,name,role,status,is_active) values
 on conflict (id) do update set role=excluded.role,status='ACTIVE',is_active=true;
 insert into public.company_members (company_id,user_id,role) values
  ('00000000-0000-4000-8000-0000000004c1','00000000-0000-0000-0000-000000004c01','ADMIN'),
- ('00000000-0000-4000-8000-0000000004c1','00000000-0000-0000-0000-000000004c02','MANAGER')
+ ('00000000-0000-4000-8000-0000000004c1','00000000-0000-0000-0000-000000004c02','ADMIN')
 on conflict (company_id,user_id) do update set role=excluded.role;
 
 insert into public.owners (id,full_name,company_id) values
