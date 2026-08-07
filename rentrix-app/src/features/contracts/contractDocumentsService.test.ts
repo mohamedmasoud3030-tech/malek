@@ -50,7 +50,7 @@ describe('contractDocumentsService', () => {
     supabaseMock.from.mockReturnValue(chain);
     const { listContractDocuments } = await import('./contractDocumentsService');
 
-    await expect(listContractDocuments('contract-1')).rejects.toThrow('contract_documents table unavailable');
+    await expect(listContractDocuments('contract-1')).rejects.toThrow('تعذر تحميل مستندات العقد');
     expect(supabaseMock.from).toHaveBeenCalledWith('contract_documents');
   });
 
@@ -114,7 +114,7 @@ describe('contractDocumentsService', () => {
     const { uploadContractDocument } = await import('./contractDocumentsService');
     const file = makeFile('lease.pdf', 'application/pdf', 1024);
 
-    await expect(uploadContractDocument('contract-1', file)).rejects.toThrow('insert rejected');
+    await expect(uploadContractDocument('contract-1', file)).rejects.toThrow('تعذر حفظ مستند العقد');
     expect(storageMock.remove).toHaveBeenCalledWith([expect.stringContaining('contracts/contract-1/')]);
   });
 

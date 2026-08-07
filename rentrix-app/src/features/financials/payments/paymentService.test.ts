@@ -48,7 +48,7 @@ describe('recordInvoicePaymentAtomic', () => {
       date: '2026-05-14',
       reference: null,
       request_id: 'request-1',
-    })).rejects.toThrow('overpayment rejected');
+    })).rejects.toThrow('تعذر تسجيل الدفعة');
   });
 
   it('rejects malformed successful RPC responses', async () => {
@@ -62,7 +62,7 @@ describe('recordInvoicePaymentAtomic', () => {
       date: '2026-05-14',
       reference: null,
       request_id: 'request-1',
-    })).rejects.toThrow('missing required receipt fields');
+    })).rejects.toThrow('تم استلام استجابة غير مكتملة بعد تسجيل الدفعة. حدّث السجل قبل إعادة المحاولة.');
   });
 });
 

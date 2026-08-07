@@ -59,7 +59,7 @@ describe('useVoidReceipt', () => {
     const mutationOptions = useVoidReceipt() as unknown as { onError: (error: Error) => void };
     mutationOptions.onError(new Error('receipt already voided'));
 
-    expect(mutationMock.toastError).toHaveBeenCalledWith('receipt already voided');
+    expect(mutationMock.toastError).toHaveBeenCalledWith('تعذّر إلغاء الإيصال');
   });
 
   it('falls back to a generic Arabic error message when the RPC error has no message', async () => {

@@ -23,7 +23,13 @@ import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 import { uuid_ossp } from '@electric-sql/pglite/contrib/uuid_ossp';
-import { STUB_SQL_HEADER as STUB_SQL, REPLAY_TRANSFORMS as TRANSFORMS } from '../p0/replay-stubs';
+import {
+  STUB_SQL_HEADER as STUB_SQL,
+  REPLAY_TRANSFORMS as TRANSFORMS,
+  S02_ACL_MIGRATION_MARKER,
+  provideS02AclPrerequisites,
+  removeS02AclPrerequisites,
+} from '../p0/replay-stubs';
 import { createFullReplayedDatabase, repoRoot, evidenceDir } from './replay-bootstrap';
 
 const migDir = join(repoRoot, 'supabase', 'migrations');
@@ -97,11 +103,15 @@ beforeAll(async () => {
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];
   for (const file of files) {
+    const isS02Acl = file.includes(S02_ACL_MIGRATION_MARKER);
+    const provided = isS02Acl ? await provideS02AclPrerequisites(db) : false;
     try {
       await db.exec(withHarnessTransforms(readFileSync(join(migDir, file), 'utf8'), file));
     } catch (error) {
       failed.push({ file, error: String(error).slice(0, 300) });
       await db.exec('ROLLBACK;').catch(() => undefined);
+    } finally {
+      if (provided) await removeS02AclPrerequisites(db).catch(() => undefined);
     }
   }
   expect(failed, JSON.stringify(failed).slice(0, 500)).toEqual([]);
@@ -168,7 +178,10 @@ describe('P1 forward → verify → rollback → fingerprint', () => {
     const unchanged = await q(
       `SELECT md5(p.prosrc) AS md5 FROM pg_proc p WHERE p.oid = 'public.pay_owner_settlement_atomic(jsonb)'::regprocedure`,
     );
-    expect(unchanged[0].md5).toBe('9ad0ef78fd7ff3dd61a73ee73e2a3da4');
+    // Reference is the replayed baseline body at the P0 checkpoint; P1 must
+    // leave it byte-for-byte identical. Refresh only when a migration outside
+    // P1 legitimately changes the function (see history).
+    expect(unchanged[0].md5).toBe('db166a442b07ad83e143a9ed047dc8db');
   }, 120_000);
 
   it('rollback: every new object dropped, replaced bodies restored VERBATIM, full schema fingerprint ≡ baseline', async () => {

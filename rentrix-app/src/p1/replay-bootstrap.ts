@@ -8,7 +8,13 @@ import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 import { uuid_ossp } from '@electric-sql/pglite/contrib/uuid_ossp';
-import { STUB_SQL_HEADER as STUB_SQL, REPLAY_TRANSFORMS as TRANSFORMS } from '../p0/replay-stubs';
+import {
+  STUB_SQL_HEADER as STUB_SQL,
+  REPLAY_TRANSFORMS as TRANSFORMS,
+  S02_ACL_MIGRATION_MARKER,
+  provideS02AclPrerequisites,
+  removeS02AclPrerequisites,
+} from '../p0/replay-stubs';
 
 export const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 export const evidenceDir = join(repoRoot, 'evidence', 'p1');
@@ -54,6 +60,8 @@ export async function createFullReplayedDatabase(options?: {
     for (const t of TRANSFORMS) {
       if (t.file === file) sql = sql.replace(t.pattern, t.replacement);
     }
+    const isS02Acl = file.includes(S02_ACL_MIGRATION_MARKER);
+    const provided = isS02Acl ? await provideS02AclPrerequisites(db) : false;
     try {
       await db.exec(sql);
       applied.push(file);
@@ -61,6 +69,8 @@ export async function createFullReplayedDatabase(options?: {
       failed.push({ file, error: String(error).slice(0, 400) });
       await db.exec('ROLLBACK;').catch(() => undefined);
       await db.exec("SELECT set_config('request.jwt.claims','{}', false);").catch(() => undefined);
+    } finally {
+      if (provided) await removeS02AclPrerequisites(db).catch(() => undefined);
     }
   }
 
