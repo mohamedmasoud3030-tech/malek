@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { handleSupabaseError } from '@/lib/supabase-error';
 import type { Payment } from '@/types/domain';
 
 export type PaymentPayload = { invoice_id: string; amount: number; method: Payment['payment_method']; date: string; reference: string | null; request_id: string };
@@ -27,12 +28,12 @@ export function resetPaymentRequestId(state: PaymentRequestIdState) {
 
 function parsePaymentResult(data: unknown): PaymentResult {
   if (!data || typeof data !== 'object') {
-    throw new Error('Payment RPC returned an invalid response');
+    throw new Error('تعذر تأكيد نتيجة تسجيل الدفعة من الخادم. حدّث السجل قبل إعادة المحاولة.');
   }
 
   const result = data as Partial<PaymentResult>;
   if (!result.receipt_id || !result.payment_id || !result.invoice_id || !result.request_id) {
-    throw new Error('Payment RPC response is missing required receipt fields');
+    throw new Error('تم استلام استجابة غير مكتملة بعد تسجيل الدفعة. حدّث السجل قبل إعادة المحاولة.');
   }
 
   return { ...result, status: result.status ?? 'recorded' } as PaymentResult;
@@ -40,6 +41,6 @@ function parsePaymentResult(data: unknown): PaymentResult {
 
 export async function recordInvoicePaymentAtomic(payload: PaymentPayload): Promise<PaymentResult> {
   const { data, error } = await supabase.rpc('record_invoice_payment_atomic', { payload });
-  if (error) throw error;
+  if (error) handleSupabaseError(error, 'تعذر تسجيل الدفعة');
   return parsePaymentResult(data);
 }

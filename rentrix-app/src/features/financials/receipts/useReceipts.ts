@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { getReceiptDetail, listReceipts, type ReceiptListParams } from './receiptService';
 import { voidReceipt } from './receiptService';
 
@@ -34,8 +35,8 @@ export function useVoidReceipt() {
       void queryClient.invalidateQueries({ queryKey: receiptKeys.all });
       toast.success('تم إلغاء الإيصال بنجاح');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'تعذّر إلغاء الإيصال');
+    onError: (error: unknown) => {
+      toast.error(getActionableSupabaseErrorMessage(error, 'تعذّر إلغاء الإيصال'));
     },
   });
 }
