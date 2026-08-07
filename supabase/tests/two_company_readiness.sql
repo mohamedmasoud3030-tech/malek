@@ -5,7 +5,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(21);
 
 insert into public.companies (id, name, slug, currency, locale)
 values
@@ -111,6 +111,44 @@ select is(
   '10000000-0000-4000-8000-00000000000b',
   'access-token hook switches the same user to Company B'
 );
+
+-- Disabled membership must never be promoted into app_metadata.company_id.
+update public.company_members
+set is_active = false
+where company_id = '10000000-0000-4000-8000-00000000000b'
+  and user_id = '10000000-0000-4000-8000-000000000001';
+
+select is(
+  public.custom_access_token_hook(jsonb_build_object(
+    'user_id', '10000000-0000-4000-8000-000000000001',
+    'claims', jsonb_build_object('role', 'authenticated', 'app_metadata', '{}'::jsonb)
+  ))->'claims'->'app_metadata'->>'company_id',
+  '10000000-0000-4000-8000-00000000000a',
+  'inactive Company B membership cannot issue a Company B claim'
+);
+
+update public.company_members
+set is_active = true
+where company_id = '10000000-0000-4000-8000-00000000000b'
+  and user_id = '10000000-0000-4000-8000-000000000001';
+
+-- Disabled company must also be excluded even when membership remains active.
+update public.companies
+set is_active = false
+where id = '10000000-0000-4000-8000-00000000000b';
+
+select is(
+  public.custom_access_token_hook(jsonb_build_object(
+    'user_id', '10000000-0000-4000-8000-000000000001',
+    'claims', jsonb_build_object('role', 'authenticated', 'app_metadata', '{}'::jsonb)
+  ))->'claims'->'app_metadata'->>'company_id',
+  '10000000-0000-4000-8000-00000000000a',
+  'inactive Company B cannot issue a Company B claim'
+);
+
+update public.companies
+set is_active = true
+where id = '10000000-0000-4000-8000-00000000000b';
 
 -- An arbitrary user_metadata company is never trusted. Because A is the first
 -- deterministic valid membership, the hook falls back to A rather than C.
