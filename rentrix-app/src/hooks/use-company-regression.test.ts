@@ -19,10 +19,28 @@ describe('active company write guard', () => {
     expect(companyHook).not.toContain('locale, timezone, is_active)');
   });
 
-  it('requires the refreshed JWT claim and never invents a local single-company fallback', () => {
-    expect(companyHook).toContain('supabase.auth.refreshSession()');
+  it('resolves from authorized memberships with the hook-aligned deterministic order', () => {
+    // Client fallback order must match the access-token hook fallback
+    // (ORDER BY cm.created_at, cm.id) so both sides pick the same default.
+    expect(companyHook).toContain(".order('created_at', { ascending: true })");
+    expect(companyHook).toContain(".order('id', { ascending: true })");
+    // Selection among memberships happens only through the server-issued claim.
+    expect(companyHook).toContain('pickClaimMatchedCompany(companyList, jwtCompanyId)');
+    // No client-only single-company inventions: one membership still goes
+    // through the same claim-verified resolution path as many memberships.
     expect(companyHook).not.toContain('companyList.length === 1');
-    expect(companyHook).toContain('selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null');
+  });
+
+  it('syncs the JWT server-side and verifies the issued claim before unlocking', () => {
+    expect(companyHook).toContain('supabase.auth.refreshSession()');
+    // The browser only stores an untrusted preference; the auth hook validates
+    // it against active membership and issues app_metadata.company_id.
+    expect(companyHook).toContain('requestServerClaimSync');
+    expect(companyHook).toContain('data: { company_id: companyId }');
+    // Mismatch between the server-issued claim and the resolved membership
+    // fails closed; the UI never opens scoped to a company the JWT rejects.
+    expect(companyHook).toContain('verifiedClaim !== membershipDefault.id');
+    expect(companyHook).toContain('verifiedClaim !== companyId');
     expect(companyHook).toContain('hasAuthenticatedSession && (loadError || !activeCompany)');
     expect(companyHook).toContain('لم يتم فتح التطبيق لحماية البيانات ومنع إنشاء سجلات بدون شركة');
   });
@@ -30,8 +48,6 @@ describe('active company write guard', () => {
   it('keeps TOKEN_REFRESHED session state authoritative for company switching', () => {
     expect(authHook).toContain("case 'TOKEN_REFRESHED':");
     expect(authHook).toContain('setSession(nextSession)');
-    expect(companyHook).toContain("data: { company_id: companyId }");
-    expect(companyHook).toContain('readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata) !== companyId');
   });
 
   it('clears tenant query data before exposing the newly selected company', () => {
