@@ -2,7 +2,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(13);
 
 -- 1. S08 read-only views must execute as the caller so underlying RLS applies.
 select is(
@@ -113,7 +113,11 @@ select ok(
     from pg_policies p
     where p.schemaname = 'public'
       and p.tablename = 'company_members'
-      and p.policyname <> 'p0_tenant_isolation'
+      and p.policyname not in (
+        'company_members_tenant_write_scope_ins',
+        'company_members_tenant_write_scope_upd',
+        'company_members_tenant_write_scope_del'
+      )
       and concat_ws(' ', p.qual, p.with_check) ilike '%auth.jwt()%'
   )
   and exists (
@@ -156,6 +160,43 @@ select ok(
       and p.qual ilike '%is_company_member%'
   ),
   'company membership authority requires live active OWNER/ADMIN state'
+);
+
+-- 13. Reading authorized memberships must remain cross-company so the switcher
+-- can discover A + B, while membership mutations stay JWT-company scoped.
+select ok(
+  not exists (
+    select 1 from pg_policies p
+    where p.schemaname='public'
+      and p.tablename in ('companies','company_members')
+      and p.policyname='p0_tenant_isolation'
+  )
+  and exists (
+    select 1 from pg_policies p
+    where p.schemaname='public' and p.tablename='company_members'
+      and p.policyname='company_members_tenant_write_scope_ins'
+      and p.permissive='RESTRICTIVE'
+      and p.cmd='INSERT'
+      and p.with_check ilike '%current_company_id()%'
+  )
+  and exists (
+    select 1 from pg_policies p
+    where p.schemaname='public' and p.tablename='company_members'
+      and p.policyname='company_members_tenant_write_scope_upd'
+      and p.permissive='RESTRICTIVE'
+      and p.cmd='UPDATE'
+      and p.qual ilike '%current_company_id()%'
+      and p.with_check ilike '%current_company_id()%'
+  )
+  and exists (
+    select 1 from pg_policies p
+    where p.schemaname='public' and p.tablename='company_members'
+      and p.policyname='company_members_tenant_write_scope_del'
+      and p.permissive='RESTRICTIVE'
+      and p.cmd='DELETE'
+      and p.qual ilike '%current_company_id()%'
+  ),
+  'membership reads allow authorized A+B discovery while writes stay current-company scoped'
 );
 
 select * from finish();
