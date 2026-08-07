@@ -452,6 +452,24 @@ export function OwnerSettlementWorkspace() {
       >
         <EntityForm.Root onSubmit={handlePayout} aria-busy={payoutMutation.isPending}>
           <EntityForm.ErrorSummary message={payoutMutation.error ? errorMessage(payoutMutation.error) : undefined} />
+          {selectedSettlement ? (
+            <EntityForm.Section
+              title="معاينة الصرف"
+              description="المبلغ مستمد من الخادم ويعاد اشتقاقه عند الاعتماد والدفع — لا يمكن تعديله من هنا."
+            >
+              <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                <Metric label="صافي المستحق" value={selectedSettlement.net_payable_amount} tone="success" />
+                <Metric label="المحصل" value={selectedSettlement.gross_rent_collected} />
+                <Metric label="أتعاب المكتب" value={selectedSettlement.management_fee_amount} tone="primary" />
+                <Metric label="المصروفات والضريبة" value={selectedSettlement.maintenance_deductions + selectedSettlement.utility_deductions} tone="danger" />
+              </div>
+              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
+                سيُصرف مبلغ <strong className="tabular-nums" dir="ltr">{formatMoney(selectedSettlement.net_payable_amount)}</strong> إلى {selectedSettlement.owner_name} عن {selectedSettlement.property_title}
+                {' '}({selectedSettlement.period_start} إلى {selectedSettlement.period_end})
+                {' '}عبر {payoutMethod === 'bank_transfer' ? 'تحويل بنكي' : payoutMethod === 'check' ? 'شيك مصرفي' : 'نقدًا'}.
+              </p>
+            </EntityForm.Section>
+          ) : null}
           <EntityForm.Section title="بيانات الصرف" description="عند التأكيد تُنشئ قاعدة البيانات قيد مالك مستحق/نقدية متوازنًا.">
             <EntityForm.Field label="وسيلة الصرف">
               <Select value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value as ProcessPayoutPayload['payout_method'])}>
@@ -586,6 +604,15 @@ function DraftOverlay({
                   ? ` · ضريبة ${preview.breakdown.vat.rate ?? 0}% على أتعاب المكتب`
                   : ' · الضريبة غير مفعّلة لهذه الشركة'}
               </p>
+              {previewLoading ? (
+                <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs font-medium leading-5 text-warning" role="status">
+                  تغيّرت معايير الاتفاقية أو الفترة — جارٍ إعادة حساب المبالغ من الخادم. لن يُفعّل الإنشاء إلا بعد اكتمال المعاينة الجديدة.
+                </p>
+              ) : (
+                <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
+                  عند إنشاء المسودة تُحجز التحصيلات والمصروفات المدرجة ذرّيًا، ولا يمكن سحبها إلى تسوية أخرى لنفس الفترة (قاعدة الحجز D14).
+                </p>
+              )}
             </>
           ) : (
             <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
