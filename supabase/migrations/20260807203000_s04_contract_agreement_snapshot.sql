@@ -50,6 +50,115 @@ from candidate
 where c.id = candidate.contract_id
   and c.agreement_version_id is null;
 
+-- Internal compatibility resolver. Once an agreement has entered the versioned
+-- model, gaps are never silently filled. But legacy agreement creation paths
+-- that create a property_management row after S04-T01 may still have zero
+-- versions. The first contract activation atomically bootstraps version 1 from
+-- those already-stored commercial terms, then freezes that version on the
+-- contract. This keeps old create_contract_atomic callers working without
+-- weakening the S04 versioning contract.
+create or replace function public.owner_agreement_version_for_contract_internal(
+  p_owner_agreement_id uuid,
+  p_company_id uuid,
+  p_start date,
+  p_end date
+)
+returns public.owner_agreement_versions
+language plpgsql
+security definer
+set search_path to 'public','pg_temp'
+as $function$
+declare
+  v_parent public.owner_agreements%rowtype;
+  v_version public.owner_agreement_versions%rowtype;
+begin
+  select v.* into v_version
+  from public.owner_agreement_versions v
+  where v.owner_agreement_id = p_owner_agreement_id
+    and v.company_id = p_company_id
+    and v.effective_from <= p_start
+    and (v.effective_to is null or v.effective_to >= p_end)
+  order by v.version_no desc
+  limit 1;
+  if found then return v_version; end if;
+
+  select * into v_parent
+  from public.owner_agreements
+  where id = p_owner_agreement_id
+    and company_id = p_company_id
+  for update;
+
+  if not found or v_parent.agreement_type <> 'property_management' then
+    raise exception 'CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED' using errcode='23514';
+  end if;
+
+  -- Do not manufacture a bridge version across an intentional version gap.
+  if exists (
+    select 1 from public.owner_agreement_versions
+    where owner_agreement_id = p_owner_agreement_id
+      and company_id = p_company_id
+  ) then
+    raise exception 'CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED' using errcode='23514';
+  end if;
+
+  if v_parent.starts_on > p_start
+     or (v_parent.ends_on is not null and v_parent.ends_on < p_end) then
+    raise exception 'CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED' using errcode='23514';
+  end if;
+
+  insert into public.owner_agreement_versions (
+    owner_agreement_id,
+    company_id,
+    version_no,
+    operating_model,
+    collection_role,
+    commission_type,
+    commission_value,
+    commission_recognition_basis,
+    offset_allowed,
+    reserve_amount,
+    effective_from,
+    effective_to,
+    notes,
+    created_at
+  ) values (
+    v_parent.id,
+    v_parent.company_id,
+    1,
+    'OWNER_AGENCY',
+    'OWNER_IS_CREDITOR',
+    v_parent.commission_type,
+    v_parent.commission_value,
+    case when v_parent.commission_type='RATE' then 'ON_COLLECTION' else 'DAILY_ACCRUAL' end,
+    false,
+    0,
+    v_parent.starts_on,
+    v_parent.ends_on,
+    v_parent.notes,
+    coalesce(v_parent.created_at,now())
+  )
+  returning * into v_version;
+
+  update public.owner_agreements
+  set current_version_id = v_version.id,
+      updated_at = now()
+  where id = v_parent.id
+    and company_id = v_parent.company_id
+    and current_version_id is null;
+
+  if v_version.effective_from > p_start
+     or (v_version.effective_to is not null and v_version.effective_to < p_end) then
+    raise exception 'CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED' using errcode='23514';
+  end if;
+
+  return v_version;
+end;
+$function$;
+
+alter function public.owner_agreement_version_for_contract_internal(uuid,uuid,date,date) owner to postgres;
+revoke all on function public.owner_agreement_version_for_contract_internal(uuid,uuid,date,date) from public,anon,authenticated;
+grant execute on function public.owner_agreement_version_for_contract_internal(uuid,uuid,date,date) to service_role;
+
 create or replace function public.guard_contract_agreement_snapshot()
 returns trigger
 language plpgsql
@@ -82,9 +191,9 @@ begin
 
   if v_agreement_type = 'property_management' and lower(coalesce(new.status,'')) = 'active' then
     -- Compatibility bridge: legacy create_contract_atomic can still create an
-    -- ACTIVE contract directly. Snapshot the covering agreement version inside
-    -- this BEFORE trigger so the old RPC keeps working while every new active
-    -- owner-agency contract still receives the S04-T02 frozen terms atomically.
+    -- ACTIVE contract directly. Snapshot or bootstrap the covering agreement
+    -- version inside this BEFORE trigger so the legacy RPC remains valid while
+    -- every new active owner-agency contract receives frozen S04 terms.
     if new.agreement_version_id is null or new.collection_role_snapshot is null or new.operating_model_snapshot is null then
       if btrim(coalesce(new.start_date::text,'')) !~ '^\d{4}-\d{2}-\d{2}$'
          or btrim(coalesce(new.end_date::text,'')) !~ '^\d{4}-\d{2}-\d{2}$' then
@@ -93,18 +202,12 @@ begin
       v_start := btrim(new.start_date::text)::date;
       v_end := btrim(new.end_date::text)::date;
 
-      select v.* into v_version
-      from public.owner_agreement_versions v
-      where v.owner_agreement_id = new.agreement_id
-        and v.company_id = new.company_id
-        and v.effective_from <= v_start
-        and (v.effective_to is null or v.effective_to >= v_end)
-      order by v.version_no desc
-      limit 1;
-
-      if not found then
-        raise exception 'CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED' using errcode='23514';
-      end if;
+      v_version := public.owner_agreement_version_for_contract_internal(
+        new.agreement_id,
+        new.company_id,
+        v_start,
+        v_end
+      );
 
       new.agreement_version_id := v_version.id;
       new.collection_role_snapshot := v_version.collection_role;
@@ -169,21 +272,12 @@ begin
   v_start := btrim(v_contract.start_date::text)::date;
   v_end := btrim(v_contract.end_date::text)::date;
 
-  select v.* into v_version
-  from public.owner_agreement_versions v
-  join public.owner_agreements oa on oa.id=v.owner_agreement_id
-  where v.owner_agreement_id=v_contract.agreement_id
-    and v.company_id=v_company
-    and oa.company_id=v_company
-    and oa.agreement_type='property_management'
-    and v.effective_from <= v_start
-    and (v.effective_to is null or v.effective_to >= v_end)
-  order by v.version_no desc
-  limit 1;
-
-  if not found then
-    raise exception 'CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED' using errcode='23514';
-  end if;
+  v_version := public.owner_agreement_version_for_contract_internal(
+    v_contract.agreement_id,
+    v_company,
+    v_start,
+    v_end
+  );
 
   update public.contracts c
   set agreement_version_id=v_version.id,
