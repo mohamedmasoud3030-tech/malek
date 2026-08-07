@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Building2, DoorOpen, FileText, HandCoins, ReceiptText, UserRoundCog, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -37,6 +37,7 @@ export function OwnerDetailView({
   canOpenOwnerSettlements?: boolean;
 }>) {
   const companySettings = useCompanySettingsContract();
+  const navigate = useNavigate();
 
   if (state.status === 'loading') {
     return <AsyncContentState status="loading">{null}</AsyncContentState>;
@@ -68,6 +69,10 @@ export function OwnerDetailView({
 
   const { owner, properties, units, contracts, financialSummary } = state.snapshot;
   const activeContractsCount = contracts.filter((contract) => contract.status === 'active').length;
+  const openProperty = (propertyId: string) => navigate({
+    to: '/properties/$propertyId',
+    params: { propertyId },
+  });
 
   return (
     <PageLayout dir="rtl" size="wide">
@@ -168,9 +173,7 @@ export function OwnerDetailView({
             keyOf={(property) => property.id}
             emptyTitle="لا توجد عقارات مرتبطة"
             emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك."
-            onRowClick={(property) => {
-              window.location.href = `/properties/${property.id}`;
-            }}
+            onRowClick={(property) => openProperty(property.id)}
             renderMobileCard={(property) => {
               const ownershipPercentage = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
               const activeContracts = contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length;
@@ -194,9 +197,7 @@ export function OwnerDetailView({
                       </Button>
                     </div>
                   }
-                  onClick={() => {
-                    window.location.href = `/properties/${property.id}`;
-                  }}
+                  onClick={() => openProperty(property.id)}
                 />
               );
             }}
