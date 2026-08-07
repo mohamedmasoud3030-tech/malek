@@ -1,36 +1,34 @@
 # AI Agent Commands
 
-This folder contains slash-style commands for coding agents working on Rentrix
-(Cursor/Windsurf/Claude Code/Codex CLI). To use a command, ask the agent to run
-it — e.g. `/new-feature Owner Settlements` — and it will follow the prompt
-inside the corresponding `.md` file.
+This folder contains slash-style workflows for coding agents working on MALEK.
+
+## Canonical documentation
+
+Every command must treat these three documents as the active product/source of truth:
+
+1. `docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md`
+2. `docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md`
+3. `docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md`
+
+Historical ADR/governance files remain authoritative only where the canonical documents explicitly identify them as locked or immutable.
 
 ## Command index
 
-| Command | Agent role | Purpose |
-|---|---|---|
-| `/new-feature <title>` | Product Agent | Reads ADRs/FGR/CODE and writes a rigorous `tickets/<slug>.md` |
-| `/implement-db [slug]` | Database Agent | Builds migrations, atomic RPCs, RLS, and DB contract tests |
-| `/implement-api [slug]` | API/Service Agent | Builds TypeScript services and TanStack Query hooks |
-| `/implement-ui [slug]` | Frontend Agent | Builds routes, pages, components, Arabic RTL UI, permissions |
-| `/verify-feature [slug]` | QA Agent | Runs typecheck/tests/build/e2e and writes a verification report |
-| `/close-feature <slug>` | Docs/Release Agent | Updates CURRENT_STATE / FGR / NEXT / GOVERNANCE_LOG + PR |
-| `/run-all-checks` | QA Agent | Runs the full verification gate, reports PASS/FAIL, no fixes |
+| Command | Purpose |
+|---|---|
+| `/new-feature <title>` | Convert a request into a buildable ticket without inventing rules |
+| `/implement-db [slug]` | Implement schema/RPC/RLS/database contracts |
+| `/implement-api [slug]` | Implement services and TanStack Query hooks |
+| `/implement-ui [slug]` | Implement routes, pages, components and UX |
+| `/verify-feature [slug]` | Run relevant verification gates |
+| `/close-feature <slug>` | Update canonical reality/status and prepare the PR |
+| `/run-all-checks` | Run the broad verification gate |
 
-## How agents should work
+## Working rules
 
-1. ALWAYS read `.agents/guardrails/LESSONS_LEARNED.md` before writing code.
-2. Follow `AGENTS.md` and `docs/agent-context/CONTEXT_MAP.md` for task routing.
-3. Keep diffs scoped per ticket. No "while I'm here" refactors.
-4. Financial changes MUST go through atomic SECURITY DEFINER RPCs — never
-   multi-step client writes.
-5. Never apply migrations to production without explicit sign-off per
-   `docs/GOVERNANCE.md`.
-6. Update docs in the same PR where facts change.
-7. If a business rule is unclear, STOP and list it under "Open Questions" —
-   do NOT invent rules.
-
-## Tickets
-
-Active tickets live in `/tickets/`. Each ticket follows the template at
-`prompts/ticket-template.md`.
+1. Read `AGENTS.md`, matching repo skills, and the three canonical documents before implementation.
+2. Inspect current code before assuming a feature is absent or complete.
+3. Keep diffs scoped and use atomic server/RPC writes for financial operations.
+4. Never invent business/accounting/legal rules; record owner blockers and continue independent safe work.
+5. Update only the relevant canonical status when implementation changes reality.
+6. Git history is the archive; old TODO/status/handover documents are not active inputs.
