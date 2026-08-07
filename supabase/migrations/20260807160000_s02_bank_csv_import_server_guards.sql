@@ -50,6 +50,13 @@ declare
   v_max_rows integer := 5000;
   v_debit_text text;
   v_credit_text text;
+  v_amount_supplied boolean;
+  v_debit_supplied boolean;
+  v_credit_supplied boolean;
+  v_supplied_amount_count integer;
+  v_debit numeric;
+  v_credit numeric;
+  v_canonical_rows jsonb := '[]'::jsonb;
 begin
   if auth.uid() is null or not coalesce(public.is_app_user(), false) then
     raise exception 'Authenticated app user is required.' using errcode = '42501';
@@ -138,12 +145,19 @@ begin
   for v_idx in 0..v_total-1 loop
     v_row := v_rows->v_idx;
     v_date_str := v_row->>'transaction_date';
-    v_amount_text := v_row->>'amount';
+    v_amount_text := nullif(trim(both ' ' from coalesce(v_row->>'amount','')), '');
     v_debit_text := nullif(trim(both ' ' from coalesce(v_row->>'debit','')), '');
     v_credit_text := nullif(trim(both ' ' from coalesce(v_row->>'credit','')), '');
+    v_amount_supplied := v_amount_text is not null;
+    v_debit_supplied := v_debit_text is not null;
+    v_credit_supplied := v_credit_text is not null;
+    v_supplied_amount_count :=
+      (case when v_amount_supplied then 1 else 0 end) +
+      (case when v_debit_supplied then 1 else 0 end) +
+      (case when v_credit_supplied then 1 else 0 end);
 
-    if v_debit_text is not null and v_credit_text is not null then
-      raise exception 'Rows must not contain both debit and credit at row %', v_idx+1 using errcode='22023';
+    if v_supplied_amount_count <> 1 then
+      raise exception 'Exactly one of amount, debit or credit is required at row %', v_idx+1 using errcode='22023';
     end if;
 
     begin
@@ -152,18 +166,42 @@ begin
       raise exception 'Invalid transaction_date at row %: %', v_idx+1, v_date_str using errcode='22023';
     end;
 
-    -- Cast errors keep their own message; the zero guard must never be
-    -- swallowed by the cast handler (S02 deterministic 22023 contract).
-    begin
-      v_amount := v_amount_text::numeric;
-    exception when others then
-      raise exception 'Invalid amount at row %: %', v_idx+1, v_amount_text using errcode='22023';
-    end;
+    -- Existing frontend convention: signed amount is authoritative when the
+    -- amount column is mapped; otherwise debit is cash outflow (negative) and
+    -- credit is cash inflow (positive). Use this one derived amount everywhere.
+    if v_amount_supplied then
+      begin
+        v_amount := v_amount_text::numeric;
+      exception when others then
+        raise exception 'Invalid amount at row %: %', v_idx+1, v_amount_text using errcode='22023';
+      end;
+      if round(v_amount, 3) <> v_amount then
+        raise exception 'Amount must have at most 3 decimals at row %', v_idx+1 using errcode='22023';
+      end if;
+    elsif v_debit_supplied then
+      begin
+        v_debit := v_debit_text::numeric;
+      exception when others then
+        raise exception 'Invalid debit at row %: %', v_idx+1, v_debit_text using errcode='22023';
+      end;
+      if round(v_debit, 3) <> v_debit then
+        raise exception 'Debit must have at most 3 decimals at row %', v_idx+1 using errcode='22023';
+      end if;
+      v_amount := -abs(v_debit);
+    else
+      begin
+        v_credit := v_credit_text::numeric;
+      exception when others then
+        raise exception 'Invalid credit at row %: %', v_idx+1, v_credit_text using errcode='22023';
+      end;
+      if round(v_credit, 3) <> v_credit then
+        raise exception 'Credit must have at most 3 decimals at row %', v_idx+1 using errcode='22023';
+      end if;
+      v_amount := abs(v_credit);
+    end if;
+
     if v_amount = 0 then
       raise exception 'Amount must be non-zero at row %', v_idx+1 using errcode='22023';
-    end if;
-    if round(v_amount, 3) <> v_amount then
-      raise exception 'Amount must have at most 3 decimals at row %', v_idx+1 using errcode='22023';
     end if;
 
     v_description := trim(both ' ' from coalesce(v_row->>'description',''));
@@ -177,6 +215,7 @@ begin
       raise exception 'Unsupported currency at row %: %', v_idx+1, v_currency using errcode='22023';
     end if;
 
+    v_balance := null;
     if nullif(v_row->>'balance','') is not null then
       begin
         v_balance := (v_row->>'balance')::numeric;
@@ -219,6 +258,16 @@ begin
         v_accepted := v_accepted + 1;
       end if;
     end if;
+
+    v_canonical_rows := v_canonical_rows || jsonb_build_array(jsonb_build_object(
+      'transaction_date', v_transaction_date::text,
+      'amount', to_char(v_amount, 'FM9999999999990.000'),
+      'description', v_description,
+      'reference', v_reference,
+      'balance', case when v_balance is null then null else to_char(v_balance, 'FM9999999999990.000') end,
+      'currency', v_currency,
+      'fingerprint', v_fingerprint
+    ));
   end loop;
 
   -- Insert import batch
@@ -260,28 +309,16 @@ begin
   -- invalid batch must write nothing (no silent partial success).
   v_seen_fps := '{}';
   if v_accepted > 0 then
-    for v_idx in 0..v_total-1 loop
-      v_row := v_rows->v_idx;
+    for v_idx in 0..jsonb_array_length(v_canonical_rows)-1 loop
+      v_row := v_canonical_rows->v_idx;
       v_transaction_date := (v_row->>'transaction_date')::date;
       v_amount := (v_row->>'amount')::numeric;
-      -- Keep this canonicalization exactly aligned with the validation/counting
-      -- pass above. Diverging here makes accepted_rows/duplicate_rows disagree
-      -- with actual inserted fingerprints for blank descriptions/references.
-      v_description := trim(both ' ' from coalesce(v_row->>'description',''));
-      if v_description = '' then v_description := 'حركة مستوردة'; end if;
-      v_reference := lower(trim(both ' ' from coalesce(v_row->>'reference','')));
+      -- Use only first-pass canonical values for insertion and duplicate skips.
+      v_description := v_row->>'description';
+      v_reference := v_row->>'reference';
       v_balance := nullif(v_row->>'balance','')::numeric;
-      v_currency := upper(trim(both ' ' from coalesce(v_row->>'currency','OMR')));
-
-      v_fingerprint := md5(
-        coalesce(v_company_id::text,'') || '|' ||
-        coalesce(v_bank_account_id::text,'') || '|' ||
-        coalesce(v_transaction_date::text,'') || '|' ||
-        coalesce(to_char(v_amount, 'FM9999999999990.000'),'') || '|' ||
-        coalesce(v_currency,'OMR') || '|' ||
-        lower(coalesce(v_reference,'')) || '|' ||
-        lower(coalesce(v_description,''))
-      );
+      v_currency := v_row->>'currency';
+      v_fingerprint := v_row->>'fingerprint';
 
       if v_fingerprint = any(v_seen_fps) then continue; end if;
       v_seen_fps := array_append(v_seen_fps, v_fingerprint);

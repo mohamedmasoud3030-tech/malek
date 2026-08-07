@@ -176,12 +176,17 @@ describe('migration source contracts', () => {
     expect(serverGuardsSql).toContain('v_max_rows integer := 5000');
     expect(serverGuardsSql).toContain('file_size is required.');
     expect(serverGuardsSql).toContain('row count exceeds % row limit.');
-    expect(serverGuardsSql).toContain('rows must not contain both debit and credit at row %');
+    expect(serverGuardsSql).toContain('exactly one of amount, debit or credit is required at row %');
     expect(serverGuardsSql).toContain('unsupported currency at row %: %');
     expect(serverGuardsSql).toContain('amount must have at most 3 decimals at row %');
+    expect(serverGuardsSql).toContain('debit must have at most 3 decimals at row %');
+    expect(serverGuardsSql).toContain('credit must have at most 3 decimals at row %');
     expect(serverGuardsSql).toContain('balance must have at most 3 decimals at row %');
+    expect(serverGuardsSql).toContain('v_amount := -abs(v_debit)');
+    expect(serverGuardsSql).toContain('v_amount := abs(v_credit)');
+    expect(serverGuardsSql).toContain('v_canonical_rows := v_canonical_rows || jsonb_build_array');
     expect(serverGuardsSql).not.toContain("coalesce(v_row->>'description','حركة مستوردة')");
-    expect((serverGuardsSql.match(/if v_description = '' then v_description := 'حركة مستوردة'; end if;/g) ?? []).length).toBe(2);
+    expect((serverGuardsSql.match(/if v_description = '' then v_description := 'حركة مستوردة'; end if;/g) ?? []).length).toBe(1);
     expect(serverGuardsSql).toContain('set search_path = public, pg_temp');
     expect(serverGuardsSql).not.toContain('journal_entries');
     expect(serverGuardsSql).not.toContain('journal_batches');
@@ -300,70 +305,122 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
   it('server-side guards reject unsafe import payloads before writing anything', async () => {
     await assumeUser(USER_A, COMPANY_A);
 
-    expect(
-      (
-        await callImportExpectError({
-          bank_account_id: BANK_A,
-          file_fingerprint: 'fp-no-size-replay',
-          rows: [{ transaction_date: '2026-07-01', amount: '10.000' }],
-        })
-      ).message,
-    ).toContain('file_size is required.');
+    async function expectRejected22023(payload: Record<string, unknown>, message: string) {
+      const error = await callImportExpectError(payload);
+      expect(error.message).toContain(message);
+      if (error.code) expect(error.code).toBe('22023');
+    }
 
-    expect(
-      (
-        await callImportExpectError({
-          bank_account_id: BANK_A,
-          file_fingerprint: 'fp-too-large-replay',
-          file_size: 5 * 1024 * 1024 + 1,
-          rows: [{ transaction_date: '2026-07-01', amount: '10.000' }],
-        })
-      ).message,
-    ).toContain('file_size exceeds 5242880 byte limit.');
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-no-size-replay',
+        rows: [{ transaction_date: '2026-07-01', amount: '10.000' }],
+      },
+      'file_size is required.',
+    );
 
-    expect(
-      (
-        await callImportExpectError({
-          bank_account_id: BANK_A,
-          file_fingerprint: 'fp-too-many-replay',
-          file_size: 5000,
-          rows: Array.from({ length: 5001 }, () => ({ transaction_date: '2026-07-01', amount: '10.000' })),
-        })
-      ).message,
-    ).toContain('Row count exceeds 5000 row limit.');
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-too-large-replay',
+        file_size: 5 * 1024 * 1024 + 1,
+        rows: [{ transaction_date: '2026-07-01', amount: '10.000' }],
+      },
+      'file_size exceeds 5242880 byte limit.',
+    );
 
-    expect(
-      (
-        await callImportExpectError({
-          bank_account_id: BANK_A,
-          file_fingerprint: 'fp-debit-credit-replay',
-          file_size: 1,
-          rows: [{ transaction_date: '2026-07-01', amount: '10.000', debit: '10.000', credit: '10.000' }],
-        })
-      ).message,
-    ).toContain('Rows must not contain both debit and credit at row 1');
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-too-many-replay',
+        file_size: 5000,
+        rows: Array.from({ length: 5001 }, () => ({ transaction_date: '2026-07-01', amount: '10.000' })),
+      },
+      'Row count exceeds 5000 row limit.',
+    );
 
-    expect(
-      (
-        await callImportExpectError({
-          bank_account_id: BANK_A,
-          file_fingerprint: 'fp-usd-replay',
-          file_size: 1,
-          rows: [{ transaction_date: '2026-07-01', amount: '10.000', currency: 'USD' }],
-        })
-      ).message,
-    ).toContain('Unsupported currency at row 1: USD');
+    for (const [file_fingerprint, row] of [
+      ['fp-no-amount-replay', { transaction_date: '2026-07-01', description: 'missing amount' }],
+      ['fp-amount-debit-replay', { transaction_date: '2026-07-01', amount: '10.000', debit: '10.000' }],
+      ['fp-amount-credit-replay', { transaction_date: '2026-07-01', amount: '10.000', credit: '10.000' }],
+      ['fp-debit-credit-replay', { transaction_date: '2026-07-01', debit: '10.000', credit: '10.000' }],
+    ] as const) {
+      await expectRejected22023(
+        { bank_account_id: BANK_A, file_fingerprint, file_size: 1, rows: [row] },
+        'Exactly one of amount, debit or credit is required at row 1',
+      );
+    }
 
-    expect(
-      (
-        await callImportExpectError({
-          bank_account_id: BANK_A,
-          file_fingerprint: 'fp-scale-replay',
-          file_size: 1,
-          rows: [{ transaction_date: '2026-07-01', amount: '10.0001' }],
-        })
-      ).message,
-    ).toContain('Amount must have at most 3 decimals at row 1');
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-invalid-debit-replay',
+        file_size: 1,
+        rows: [{ transaction_date: '2026-07-01', debit: 'not-a-number' }],
+      },
+      'Invalid debit at row 1: not-a-number',
+    );
+
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-invalid-credit-replay',
+        file_size: 1,
+        rows: [{ transaction_date: '2026-07-01', credit: 'not-a-number' }],
+      },
+      'Invalid credit at row 1: not-a-number',
+    );
+
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-usd-replay',
+        file_size: 1,
+        rows: [{ transaction_date: '2026-07-01', amount: '10.000', currency: 'USD' }],
+      },
+      'Unsupported currency at row 1: USD',
+    );
+
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-scale-replay',
+        file_size: 1,
+        rows: [{ transaction_date: '2026-07-01', amount: '10.0001' }],
+      },
+      'Amount must have at most 3 decimals at row 1',
+    );
+
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-debit-scale-replay',
+        file_size: 1,
+        rows: [{ transaction_date: '2026-07-01', debit: '10.0001' }],
+      },
+      'Debit must have at most 3 decimals at row 1',
+    );
+
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-credit-scale-replay',
+        file_size: 1,
+        rows: [{ transaction_date: '2026-07-01', credit: '10.0001' }],
+      },
+      'Credit must have at most 3 decimals at row 1',
+    );
+
+    await expectRejected22023(
+      {
+        bank_account_id: BANK_A,
+        file_fingerprint: 'fp-zero-debit-replay',
+        file_size: 1,
+        rows: [{ transaction_date: '2026-07-01', debit: '0' }],
+      },
+      'Amount must be non-zero at row 1',
+    );
 
     await resetRole();
 
@@ -371,7 +428,13 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
       `select count(*)::int as n
        from public.bank_statement_imports
        where company_id = $1
-         and file_fingerprint like any(array['fp-no-size-replay','fp-too-large-replay','fp-too-many-replay','fp-debit-credit-replay','fp-usd-replay','fp-scale-replay'])`,
+         and file_fingerprint like any(array[
+           'fp-no-size-replay', 'fp-too-large-replay', 'fp-too-many-replay',
+           'fp-no-amount-replay', 'fp-amount-debit-replay', 'fp-amount-credit-replay',
+           'fp-debit-credit-replay', 'fp-invalid-debit-replay', 'fp-invalid-credit-replay',
+           'fp-usd-replay', 'fp-scale-replay', 'fp-debit-scale-replay',
+           'fp-credit-scale-replay', 'fp-zero-debit-replay'
+         ])`,
       [COMPANY_A],
     );
     expect((rows[0] as { n: number }).n).toBe(0);
@@ -444,6 +507,36 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
     expect(result.accepted_rows).toBe(1);
 
     await resetRole();
+  });
+
+  it('uses the existing debit/credit sign convention in the server-derived amount', async () => {
+    await assumeUser(USER_A, COMPANY_A);
+
+    const result = await callImport({
+      bank_account_id: BANK_A,
+      file_name: 'debit-credit-sign.csv',
+      file_fingerprint: 'fp-debit-credit-sign-replay',
+      file_size: 12,
+      rows: [
+        { transaction_date: '2026-08-10', debit: '20.125', description: 'Debit out', reference: 'DR1' },
+        { transaction_date: '2026-08-11', credit: '30.250', description: 'Credit in', reference: 'CR1' },
+      ],
+    });
+    expect(result.accepted_rows).toBe(2);
+    expect(result.duplicate_rows).toBe(0);
+    await resetRole();
+
+    const { rows } = await db.query<{ reference: string; amount: string }>(
+      `select reference, amount::text
+       from public.bank_statement_lines
+       where company_id = $1 and reference in ('dr1', 'cr1')
+       order by reference`,
+      [COMPANY_A],
+    );
+    expect(rows).toEqual([
+      { reference: 'cr1', amount: '30.250' },
+      { reference: 'dr1', amount: '-20.125' },
+    ]);
   });
 
   it('stores OMR 3-decimal precision without rounding to 2dp', async () => {

@@ -13,14 +13,16 @@
 --   * row count above server limit        -> 22023, batch blocked
 --   * zero amount row                    -> 22023, batch blocked
 --   * invalid transaction_date           -> 22023, batch blocked
---   * debit+credit ambiguity             -> 22023, batch blocked
+--   * exactly one amount representation -> 22023, batch blocked
+--   * invalid debit/credit numerics      -> 22023, batch blocked
+--   * debit-only / credit-only signs     -> debit negative, credit positive
 --   * non-OMR / >3dp values              -> 22023, batch blocked
 --   * OMR 3dp canonicalization           -> 100.5 and 100.500 are the same line
 --   * cross-company bank account         -> 42501, batch blocked
 --   * idempotent retry by fingerprint    -> same batch, no silent partial success
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(45);
 
 -- Two independent tenants and one admin user per tenant.
 insert into public.companies (id, name, slug)
@@ -96,8 +98,33 @@ select throws_ok(
   '22023', 'Invalid transaction_date at row 1: not-a-date', 'invalid date blocks batch'
 );
 select throws_ok(
-  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-debit-credit","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"10.000","debit":"10.000","credit":"10.000"}]}'::jsonb)$$,
-  '22023', 'Rows must not contain both debit and credit at row 1', 'debit+credit ambiguity blocks batch'
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-none","file_size":1,"rows":[{"transaction_date":"2026-07-01","description":"missing amount"}]}'::jsonb)$$,
+  '22023', 'Exactly one of amount, debit or credit is required at row 1', 'missing amount/debit/credit blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-amount-debit","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"10.000","debit":"10.000"}]}'::jsonb)$$,
+  '22023', 'Exactly one of amount, debit or credit is required at row 1', 'amount+debit blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-amount-credit","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"10.000","credit":"10.000"}]}'::jsonb)$$,
+  '22023', 'Exactly one of amount, debit or credit is required at row 1', 'amount+credit blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-debit-credit","file_size":1,"rows":[{"transaction_date":"2026-07-01","debit":"10.000","credit":"10.000"}]}'::jsonb)$$,
+  '22023', 'Exactly one of amount, debit or credit is required at row 1', 'debit+credit blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-invalid-debit","file_size":1,"rows":[{"transaction_date":"2026-07-01","debit":"not-a-number"}]}'::jsonb)$$,
+  '22023', 'Invalid debit at row 1: not-a-number', 'invalid debit blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-invalid-credit","file_size":1,"rows":[{"transaction_date":"2026-07-01","credit":"not-a-number"}]}'::jsonb)$$,
+  '22023', 'Invalid credit at row 1: not-a-number', 'invalid credit blocks batch'
 );
 
 select throws_ok(
@@ -108,6 +135,21 @@ select throws_ok(
 select throws_ok(
   $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-scale","file_size":1,"rows":[{"transaction_date":"2026-07-01","amount":"10.0001"}]}'::jsonb)$$,
   '22023', 'Amount must have at most 3 decimals at row 1', 'amount scale above OMR 3dp blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-debit-scale","file_size":1,"rows":[{"transaction_date":"2026-07-01","debit":"10.0001"}]}'::jsonb)$$,
+  '22023', 'Debit must have at most 3 decimals at row 1', 'debit scale above OMR 3dp blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-credit-scale","file_size":1,"rows":[{"transaction_date":"2026-07-01","credit":"10.0001"}]}'::jsonb)$$,
+  '22023', 'Credit must have at most 3 decimals at row 1', 'credit scale above OMR 3dp blocks batch'
+);
+
+select throws_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_fingerprint":"fp-zero-debit","file_size":1,"rows":[{"transaction_date":"2026-07-01","debit":"0"}]}'::jsonb)$$,
+  '22023', 'Amount must be non-zero at row 1', 'zero debit-derived amount blocks batch'
 );
 
 
@@ -126,14 +168,23 @@ select is((select count(*) from public.bank_statement_lines where company_id = '
 select is((select total_rows from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-valid'), 2, 'import records server-side total_rows');
 select is((select accepted_rows from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-valid'), 2, 'import records server-side accepted_rows');
 
--- 7. Idempotent retry: the same file_fingerprint returns the same batch, no
+-- 7. Debit-only and credit-only payloads use the existing frontend sign convention.
+select lives_ok(
+  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_name":"sign.csv","file_fingerprint":"fp-sign","file_size":12,"rows":[{"transaction_date":"2026-08-10","debit":"20.125","description":"Debit out","reference":"DR1"},{"transaction_date":"2026-08-11","credit":"30.250","description":"Credit in","reference":"CR1"}]}'::jsonb)$$,
+  'debit-only and credit-only batch accepted'
+);
+select is((select accepted_rows from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-sign'), 2, 'debit/credit sign batch accepts both rows');
+select is((select amount from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1' and reference = 'dr1'), -20.125::numeric, 'debit-only is stored as negative outflow');
+select is((select amount from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1' and reference = 'cr1'), 30.250::numeric, 'credit-only is stored as positive inflow');
+
+-- 8. Idempotent retry: the same file_fingerprint returns the same batch, no
 --    silent partial success and no duplicate rows.
 select lives_ok(
   $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_name":"stmt.csv","file_fingerprint":"fp-valid","file_size":12,"rows":[{"transaction_date":"2026-07-01","amount":"100.500","description":"Rent A","reference":"REF1"},{"transaction_date":"2026-07-02","amount":"200.000","description":"Fee A","reference":"REF2"}]}'::jsonb)$$,
   'idempotent retry by fingerprint is accepted'
 );
 select is((select count(*) from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-valid' and deleted_at is null), 1::bigint, 'same fingerprint does not create a second import');
-select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 2::bigint, 'no duplicate lines after idempotent retry');
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 4::bigint, 'no duplicate lines after idempotent retry');
 
 -- 8. OMR 3dp canonicalization: 100.5 and 100.500 (same other fields) collapse
 --    to the same fingerprint, so the second row is a duplicate (accepted=1).
@@ -186,9 +237,9 @@ select is((select count(*) from public.bank_statement_lines where company_id = '
 
 -- Restore the test-runner role before checking Company A. Under Company B's
 -- authenticated RLS context the correct visible count for Company A is zero,
--- which cannot prove that B's import left A's five persisted lines unchanged.
+-- which cannot prove that B's import left A's seven persisted lines unchanged.
 reset role;
-select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 5::bigint, 'company A lines are untouched');
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 7::bigint, 'company A lines are untouched');
 
 select * from finish();
 rollback;
