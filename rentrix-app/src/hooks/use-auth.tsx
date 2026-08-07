@@ -100,6 +100,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
         case 'SIGNED_IN':
         case 'USER_UPDATED':
+        case 'TOKEN_REFRESHED':
+          // TOKEN_REFRESHED is security-significant for multi-company mode:
+          // app_metadata.company_id is issued by the access-token hook. Keep
+          // the central session synchronized so every consumer sees the same
+          // company claim that PostgreSQL RLS/RPCs see.
           setSession(nextSession);
           hadSessionRef.current = Boolean(nextSession);
           break;
