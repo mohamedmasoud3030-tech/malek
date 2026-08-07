@@ -81,6 +81,26 @@ horizontal document overflow and page-title clipping: **0 defects**.
 Machine report:
 `evidence/ui-wave5-malekpro-parity/audits/responsive-overflow-matrix.json`.
 
+## 4c. Wave 5.2 — Touch-target hardening (44px contract)
+
+Measured every interactive element on 15 fixture surfaces at 390px and 414px
+(the primary mobile portrait targets in `docs/ui-ux/RENTRIX_MOBILE_UX.md`, which
+mandates 44×44px minimum for buttons/icon buttons/inputs). 23 unique findings,
+all fixed (presentation-only):
+
+| Defect | Where | Fix |
+| --- | --- | --- |
+| Form inputs rendered 40px (`min-h-10`) | shared `input.tsx` (settings, vault, all consumers) | `min-h-12 sm:min-h-11` — 48px touch / 44px desktop, mirroring the existing `select.tsx` pattern |
+| Password visibility toggle 40px | `login-page.tsx` | `size-10` → `size-11` |
+| Bottom-sheet drag handle hit box 24px | `bottom-sheet.tsx` | `min-h-11 items-center` (44px hit box, pill visual unchanged) |
+| **`Button asChild` rendered a completely unstyled naked link** (Radix Slot received a React.Fragment child from the Button content wrapper; Fragment strips className/props) | every `Button asChild` consumer app-wide — entity-detail back links, not-found/access-denied CTAs, contract alerts & footers, automation WhatsApp preview, receipt/expense/arrears nav links, … | `button.tsx` hands Slot the single child element directly; regression guard: `button.test.tsx` (fails against the old code) |
+| As-child link-buttons that lit up after the Slot fix but measured 40px (`min-h-10` md/sm sizes) | 25 call sites incl. `entity-detail-header.tsx`, `ContractAgreementMissingAlert.tsx`, `ContractDetailSections.tsx` (with its 2 native siblings for row parity), `automation-center-view.tsx`, `property-workspace-tabs.tsx`, `receipt-detail-page.tsx`, `ai-assistant-page.tsx`, `audit-log-view.tsx`, `communication-outbound-panel.tsx`, `arrears-page.tsx`, `expenses-page.tsx`, `receipts-page.tsx`, `units-page.tsx`, `OwnerAgreementsManager.tsx`, `owner-detail-view.tsx`, `property-detail-page.tsx`, `property-form-modal.tsx`, `system-page.tsx`, `LegalPage.tsx`, `ContractRenewalDialog.tsx`, `document-readiness-notice.tsx`, fixture opener | call-site `min-h-11` bumps (repo's established PageHeader precedent); ghost/tertiary links kept dense |
+
+**Final result: 0 findings** (15 surfaces × 2 viewports) and the axe matrix
+stays 16/16 clean. Machine report:
+`evidence/ui-wave5-touch-targets/audits-touch-targets-final.json`; screenshots
+in `evidence/ui-wave5-touch-targets/after/`.
+
 ## 4. Remaining roadmap items intentionally untouched
 
 - Split auth layouts / promotional hero panels: rejected by the owner-approved consolidation pass — must not return.
@@ -93,3 +113,4 @@ Machine report:
 - Targeted tests: `product-fonts-contract.test.ts`, `malek-pro-visual-wave.test.ts`, `design-tokens.test.ts`, `page-header.test.tsx`, `maintenance-page.test.tsx`: PASS
 - Full unit suite + production build + repo checks: see section 5 results recorded at execution time (all green at delivery).
 - Wave 5.1 gates: typecheck PASS; targeted component/token tests 51/51 PASS; full suite 349 files / 2168 tests PASS; production build (PWA 309 precache entries) PASS; `check:architecture`, `check:docs` (112 md), `check:business-rules` PASS; axe matrix 16/16 zero violations.
+- Wave 5.2 gates: typecheck PASS; regression guard `button.test.tsx` (fails against pre-fix code) PASS; full suite 350 files / 2172 tests PASS; production build PASS; `check:architecture`, `check:docs`, `check:business-rules` PASS; touch-target audit 0 findings; axe matrix 16/16 zero violations.

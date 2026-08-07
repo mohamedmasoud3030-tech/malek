@@ -125,6 +125,19 @@ Full findings and fixes: `docs/audits/MALEK_VISUAL_WAVE5_MALEKPRO_PARITY_AUDIT.m
 | Responsive matrix: 96 checks (16 surfaces × 6 viewports 320→1440) — 0 horizontal-overflow/title-clip defects | `VERIFIED_COMPLETE` | `evidence/ui-wave5-malekpro-parity/audits/responsive-overflow-matrix.json` |
 | axe matrix: 16/16 surface-theme combinations with 0 WCAG 2.1 A/AA violations | `VERIFIED_COMPLETE` | `evidence/ui-wave5-malekpro-parity/audits/axe-wcag2aa-final.json` |
 
+### Wave 5.2 — Touch-target & Button-asChild hardening (2026-08-07, arena branch 019fdc09)
+
+Measured interactive elements against the 44×44px touch contract
+(`docs/ui-ux/RENTRIX_MOBILE_UX.md`) on 15 fixture surfaces at 390/414px.
+Fixes are presentation-only; findings and fixes: `docs/audits/MALEK_VISUAL_WAVE5_MALEKPRO_PARITY_AUDIT.md` §4c.
+
+| Item | Status | Evidence |
+|---|---|---|
+| `Button asChild` no longer renders a naked unstyled link (Radix Slot now receives the single child element instead of a Fragment that swallowed className/props) | `VERIFIED_COMPLETE` | `button.tsx`; regression guard `button.test.tsx` (fails on the old code); after screenshot `evidence/ui-wave5-touch-targets/after/owner-detail-back-button-390.png` |
+| Form inputs at 48px touch / 44px desktop via shared `input.tsx` (previously 40px) | `VERIFIED_COMPLETE` | `input.tsx` (mirrors `select.tsx` pattern) |
+| 44px hit boxes: login password toggle, bottom-sheet drag handle, 25 as-child link-button call sites | `VERIFIED_COMPLETE` | per-site `min-h-11` bumps; audit doc §4c table |
+| Touch-target audit: 0 findings across 15 surfaces × 2 viewports; axe matrix stays 16/16 clean | `VERIFIED_COMPLETE` | `evidence/ui-wave5-touch-targets/audits-touch-targets-final.json` |
+
 ## 3. Open Owner Decisions (blockers, unchanged)
 
 - **OD-08** — Due-from-Owner collection mechanism (offset vs payment invoice): blocks negative-balance settlement accounting.
