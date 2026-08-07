@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
+import { useRouter } from '@tanstack/react-router';
 import type { Session, User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import {
@@ -11,7 +12,6 @@ import {
 } from '@/features/auth/permissions';
 import { supabase } from '@/lib/supabase';
 import { getCurrentSession, signInWithEmail, signOut } from '@/services/auth-service';
-import { router } from '@/app/router/app-router';
 
 type AuthContextValue = {
   session: Session | null;
@@ -30,13 +30,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 const LOGIN_PATH = '/login';
 const AUTH_STORAGE_KEY = 'rentrix-auth-session';
 
-function redirectToLogin(): void {
-  const currentPath = router.state.location.pathname;
-  if (currentPath !== LOGIN_PATH) {
-    void router.navigate({ to: LOGIN_PATH, replace: true });
-  }
-}
-
 /**
  * Clears the local session storage entry so a corrupted/stale refresh token
  * (e.g. left over from another Vercel preview deployment sharing the same
@@ -52,6 +45,7 @@ function clearStaleSessionStorage(): void {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
+  const appRouter = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // Tracks whether we last observed an authenticated session, so a SIGNED_OUT
@@ -99,7 +93,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
             toast.error('انتهت جلستك، الرجاء تسجيل الدخول مجددًا للمتابعة.');
           }
           explicitLogoutRef.current = false;
-          redirectToLogin();
+          if (appRouter.state.location.pathname !== LOGIN_PATH) {
+            void appRouter.navigate({ to: LOGIN_PATH, replace: true });
+          }
           break;
         }
         case 'SIGNED_IN':
@@ -118,7 +114,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       mounted = false;
       data.subscription.unsubscribe();
     };
-  }, []);
+  }, [appRouter]);
 
   const authorization = useMemo(() => getAuthorizationContextFromSession(session), [session]);
   const authorizationDiagnostics = useMemo(() => getAuthorizationDiagnosticsFromSession(session), [session]);
@@ -145,7 +141,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAuthenticated: Boolean(session),
       login: async (email, password) => {
         await signInWithEmail(email, password);
-        await router.navigate({ to: '/dashboard', replace: true });
+        await appRouter.navigate({ to: '/dashboard', replace: true });
       },
       logout: async () => {
         explicitLogoutRef.current = true;
@@ -153,7 +149,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setSession(null);
       },
     }),
-    [authorization, authorizationDiagnostics, isLoading, session],
+    [appRouter, authorization, authorizationDiagnostics, isLoading, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
