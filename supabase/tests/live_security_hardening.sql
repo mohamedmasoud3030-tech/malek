@@ -2,7 +2,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(12);
 
 -- 1. S08 read-only views must execute as the caller so underlying RLS applies.
 select is(
@@ -30,7 +30,6 @@ select ok(
   not (select p.prosecdef from pg_proc p where p.oid = 'public.require_company_id()'::regprocedure),
   'require_company_id is SECURITY INVOKER'
 );
-
 select ok(
   not (select p.prosecdef from pg_proc p where p.oid = 'public.resolve_unit_operational_status(uuid,text)'::regprocedure),
   'resolve_unit_operational_status is SECURITY INVOKER'
@@ -105,6 +104,58 @@ select ok(
   and pg_get_functiondef('public.is_admin_or_manager()'::regprocedure) not ilike '%auth.jwt()%'
   and not has_function_privilege('anon', 'public.is_admin_or_manager()', 'EXECUTE'),
   'role helpers use active database state rather than stale JWT role claims'
+);
+
+-- 11. Company membership policies must not authorize from JWT role metadata.
+select ok(
+  not exists (
+    select 1
+    from pg_policies p
+    where p.schemaname = 'public'
+      and p.tablename = 'company_members'
+      and p.policyname <> 'p0_tenant_isolation'
+      and concat_ws(' ', p.qual, p.with_check) ilike '%auth.jwt()%'
+  )
+  and exists (
+    select 1 from pg_policies p
+    where p.schemaname='public' and p.tablename='company_members'
+      and p.policyname='company_members_admin_write_ins'
+      and p.with_check ilike '%can_manage_company_members%'
+  )
+  and exists (
+    select 1 from pg_policies p
+    where p.schemaname='public' and p.tablename='company_members'
+      and p.policyname='company_members_admin_write_upd'
+      and p.qual ilike '%can_manage_company_members%'
+      and p.with_check ilike '%can_manage_company_members%'
+  )
+  and exists (
+    select 1 from pg_policies p
+    where p.schemaname='public' and p.tablename='company_members'
+      and p.policyname='company_members_admin_write_del'
+      and p.qual ilike '%can_manage_company_members%'
+  ),
+  'company membership writes use live membership authority, not JWT role metadata'
+);
+
+-- 12. Membership management authority must require an active OWNER/ADMIN in
+-- an active company with an active database user.
+select ok(
+  pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%cm.is_active%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%c.is_active%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%u.is_active%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%u.status::text = ''ACTIVE''%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%OWNER%'
+  and pg_get_functiondef('app_private.can_manage_company_members(uuid)'::regprocedure) ilike '%ADMIN%'
+  and not has_function_privilege('anon', 'app_private.can_manage_company_members(uuid)', 'EXECUTE')
+  and exists (
+    select 1 from pg_policies p
+    where p.schemaname='public' and p.tablename='companies'
+      and p.policyname='companies_member_read'
+      and p.qual ilike '%is_app_user()%'
+      and p.qual ilike '%is_company_member%'
+  ),
+  'company membership authority requires live active OWNER/ADMIN state'
 );
 
 select * from finish();
