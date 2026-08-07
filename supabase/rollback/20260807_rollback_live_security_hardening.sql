@@ -4,8 +4,9 @@
 --   20260807232244_harden_cross_company_balance_maintenance_automation.sql
 --   20260807232413_harden_rls_membership_and_invoker_helpers.sql
 --   20260807232604_harden_bank_reconciliation_match_authorization.sql
+--   20260807233224_harden_active_user_authorization_helpers.sql
 --
--- The forward migrations fixed confirmed cross-company authorization defects.
+-- The forward migrations fixed confirmed cross-company/authorization defects.
 -- Replaying the previous definitions would deliberately restore those defects:
 --   * S08 views bypassing caller RLS via owner privileges
 --   * inactive company memberships retaining RLS access
@@ -13,6 +14,7 @@
 --   * maintenance resolution crossing company boundaries
 --   * scheduled automation manual runs crossing company boundaries
 --   * bank reconciliation matching bypassing server-side role/company checks
+--   * disabled/deleted/demoted users retaining access through stale JWT state
 --
 -- Therefore there is intentionally NO automatic destructive rollback.
 -- If a compatibility regression is discovered, ship a forward migration that
