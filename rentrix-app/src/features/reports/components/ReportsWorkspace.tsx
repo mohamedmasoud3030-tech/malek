@@ -9,7 +9,6 @@ import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { FilterState } from '../reports-page.helpers';
 import {
   getReportCategoryLabel,
-  getReportSectionsByCategory,
   reportCategories,
   reportSections,
   type ReportSectionId,
@@ -187,28 +186,26 @@ export function ReportsWorkspace({
           role="region"
           aria-label="شريط أقسام التقارير القابل للتمرير أفقياً"
         >
-          <div className="min-w-max space-y-2">
-            {reportCategories.map((category) => {
-              const categorySections = getReportSectionsByCategory(category.id);
-              if (categorySections.length === 0) return null;
-              return (
-                <div key={category.id} className="group flex items-center gap-3">
-                  <span
-                    className="flex shrink-0 items-center gap-1.5 pe-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground"
-                    title={`${category.label} — ${category.description}`}
-                  >
-                    <category.icon className="size-3.5" aria-hidden="true" />
-                    <span className="whitespace-nowrap">{category.shortLabel}</span>
-                  </span>
-                  <SectionTabs
-                    items={categorySections}
-                    activeId={activeSection}
-                    onChange={onSectionChange}
-                    ariaLabel={`${category.label} — أقسام التقارير`}
-                  />
-                </div>
-              );
-            })}
+          <div className="min-w-0 space-y-2">
+            {/* IA simplification 2026-08: single SectionTabs row (one secondary layer) instead of three stacked category rows. */}
+            <div className="flex flex-wrap gap-1.5 pb-1">
+              {reportCategories.map((category) => (
+                <span
+                  key={category.id}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground"
+                  title={`${category.label} — ${category.description}`}
+                >
+                  <category.icon className="size-3" aria-hidden="true" />
+                  {category.shortLabel}
+                </span>
+              ))}
+            </div>
+            <SectionTabs
+              items={reportSections}
+              activeId={activeSection}
+              onChange={onSectionChange}
+              ariaLabel="أقسام التقارير"
+            />
           </div>
         </div>
       </section>
