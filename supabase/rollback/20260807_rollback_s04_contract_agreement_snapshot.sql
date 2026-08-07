@@ -12,6 +12,7 @@ end $$;
 drop function if exists public.activate_contract_with_agreement_snapshot_atomic(text);
 drop trigger if exists contracts_agreement_snapshot_guard on public.contracts;
 drop function if exists public.guard_contract_agreement_snapshot();
+drop function if exists public.owner_agreement_version_for_contract_internal(uuid,uuid,date,date);
 
 alter table public.contracts drop constraint if exists contracts_collection_role_snapshot_check;
 alter table public.contracts drop constraint if exists contracts_operating_model_snapshot_check;
