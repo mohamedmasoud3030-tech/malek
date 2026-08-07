@@ -50,6 +50,8 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Stale-input warning when scope changes and server recalculates | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
 | Atomic reservation visibility (D14 note) | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
 | Payout preview with explicit payable amount, recipient, period, method | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
+| Explicit post-payment status on settlement cards (paid date / approved / cancelled) | `VERIFIED_COMPLETE` | commit `305b459c` |
+| First-run ADMIN supervision UX (banner: needs-ADMIN + first-cycle supervision reminder) | `VERIFIED_COMPLETE` | commit `c067d1b0`; focused tests |
 | Approval (ADMIN) → payout (ADMIN) with print/PDF owner statement | `VERIFIED_COMPLETE` | workspace + `documentService` |
 | Negative-balance collection accounting (Due-from-Owner recovery) | `NOT_STARTED` — blocked | OD-08 owner decision required |
 | **Owner-audit nuance (2026-08-07, arena branch 019fdb42):** the whole E7 feature is classified `PARTIALLY_IMPLEMENTED` until first-run ADMIN supervision is formalized and OD-08 collection rules resolve | `PARTIAL` (owner-audit label) | arena commit `9b6564c0` (author: repo owner); tip of that branch is superseded (`# placeholder`) — label adopted here, not overwritten |
@@ -88,6 +90,9 @@ Presentation-only normalization; no business behavior, routes, permissions, RPCs
 | Reports tab clusters use compact inline category labels (mobile) while keeping the 3-category architecture | `VERIFIED_COMPLETE` | `ReportsWorkspace.tsx` |
 | Shared primitives audit (buttons/inputs/cards/tables/modals/forms/filter pills/status pills/empty states) — found already normalized on one token system; no second design system created | `VERIFIED_COMPLETE` | `tokens.css`, `malek-pro-visual-wave.css`, `page-polish.css`, component audit |
 | Dashboard/reports restraint (hero + KPI cards already compact; calculations preserved) | `VERIFIED_COMPLETE` | `hero-banner.tsx`, `FinanceKpiCard` |
+| Operational-route page headers: removed the Wave-2 dark-gradient hero cards + decorative rings (promotional feel); operational pages now use the standard compact PageHeader | `VERIFIED_COMPLETE` | `malek-pro-visual-wave.css` (hero block removed); commit `2a2df3a7` |
+| Finance/reports hub descriptions trimmed to operational one-liners (i18n) | `VERIFIED_COMPLETE` | `lib/i18n.ts`; i18n contract tests pass |
+| Safe cascade warnings: property + unit archive dialogs list the exact backend guard preconditions | `VERIFIED_COMPLETE` | `properties-list-page.tsx`, `units-list.tsx`; commits `9c66cc50`, `246bb18d` |
 
 ## 3. Open Owner Decisions (blockers, unchanged)
 
