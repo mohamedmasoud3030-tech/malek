@@ -4,7 +4,7 @@ import { financialWorkflowGroups } from './financials-workflow-groups';
 
 const readPage = () => readFileSync(new URL('./financials-page.tsx', import.meta.url), 'utf8');
 
-describe('Stage 2 — /financials operational summary IA', () => {
+describe('Stage 2 — /financials operational summary IA (IA 2026-08: overview retained, hubs primary)', () => {
   it('keeps a stable page identity with a single H1-style PageHeader', () => {
     const source = readPage();
     expect(source).toContain('<PageHeader');
@@ -16,12 +16,14 @@ describe('Stage 2 — /financials operational summary IA', () => {
     expect(source).not.toContain('WorkspaceSubNav');
   });
 
-  it('does not embed a hardcoded seven-card destination directory', () => {
+  it('does not duplicate finance hub navigation already in primary sidebar', () => {
     const source = readPage();
-    // The old page listed every destination as its own card grid. The summary
-    // now derives its destination surface from the workflow-group registry.
-    expect(source).toContain('financialWorkflowGroups');
-    expect(source).toContain('visibleGroups');
+    // Finance 4 hubs are now directly in primary sidebar (5 finance primaries),
+    // so overview must not duplicate them as navigation cards (decorative).
+    // Overview retains KPI preview + CrossRouteHint as real operational value.
+    expect(source).not.toContain('financialWorkflowGroups');
+    expect(source).not.toContain('visibleGroups');
+    expect(source).not.toContain('مسارات العمل المالية');
     expect(source).not.toContain('مساحات العمل المالية');
   });
 
@@ -34,7 +36,7 @@ describe('Stage 2 — /financials operational summary IA', () => {
   });
 });
 
-describe('financial workflow groups', () => {
+describe('financial workflow groups registry (preserved for reference, not rendered in overview)', () => {
   it('opens the correct finance hub entry routes directly', () => {
     const routes = financialWorkflowGroups.map((group) => group.route).sort();
     expect(routes).toEqual([

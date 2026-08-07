@@ -1,20 +1,13 @@
-import { Link } from '@tanstack/react-router';
-import { ChevronLeft } from 'lucide-react';
 import { useMemo } from 'react';
 import { CrossRouteHint } from '@/components/layout/cross-route-hint';
 import { PageHeader } from '@/components/layout/page-header';
 import { useAuth } from '@/hooks/use-auth';
-import {
-  canAccess,
-  canAccessRoute,
-  financialOperationPermissions,
-} from '@/features/auth/permissions';
+import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { PageLayout } from '@/components/layout/page-layout';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
-import { financialWorkflowGroups } from './financials-workflow-groups';
 
 function getCurrentMonthReportRange() {
   const now = new Date();
@@ -28,12 +21,22 @@ function getCurrentMonthReportRange() {
 }
 
 /**
- * /financials is a stable operational finance summary, not a directory that
- * duplicates destinations already available in the finance navigation. It keeps
- * a fixed page identity and H1, a compact month summary, and a small number of
- * workflow groups that open the correct finance hub route directly. It does not
- * embed duplicate lists (receipts, invoices, ...) that belong to the dedicated
- * destination workspaces.
+ * /financials — finance overview dashboard (IA 2026-08 decision: RETAIN as real overview)
+ *
+ * Structural decision: /financials is **retained** as a primary finance
+ * overview because it provides operational value beyond navigation:
+ * - monthly collection KPI preview (compact, not a duplicate table)
+ * - cross-route hint to reports
+ * It is **not** a decorative directory that only contains links users already
+ * saw in the sidebar. Since finance 4 canonical hubs are now directly in the
+ * primary sidebar (المالية → 5 entries), the overview does not need to duplicate
+ * hub navigation. Workflow group cards that linked to the same 4 hubs were
+ * removed (they duplicated sidebar primary). The overview now functions as a
+ * real finance dashboard summary, not a required navigation hop.
+ *
+ * Navigation: Primary (finance overview or any of the 4 finance hubs) →
+ * single SectionTabs (2 tabs per hub) → working screen (one secondary layer).
+ * No duplicate lists (receipts/invoices/etc.) are embedded.
  */
 export function FinancialsPage() {
   const { authorization } = useAuth();
@@ -42,30 +45,9 @@ export function FinancialsPage() {
   const collectionReport = useCollectionSummaryReport(reportFilters);
   const canViewReports = canAccess(authorization, financialOperationPermissions.exportReports);
 
-  // Permission-filtered workflow groups. A group is shown only if the user can
-  // reach its finance hub route; within it, only accessible sub-destinations
-  // are listed as descriptive chips (never as duplicate card grids).
-  const visibleGroups = useMemo(
-    () =>
-      financialWorkflowGroups
-        .map((group) => ({
-          ...group,
-          visibleDestinations: group.destinations.filter(({ permission }) =>
-            canAccessRoute(authorization, permission),
-          ),
-        }))
-        .filter(
-          (group) =>
-            canAccessRoute(authorization, group.permission) &&
-            group.visibleDestinations.length > 0,
-        ),
-    [authorization],
-  );
-
   return (
     <PageLayout dir={direction} size="wide" visualVariant="malek-pro">
       <div data-finance-root className="space-y-5">
-        {/* 1. Page context */}
         <div data-finance-header>
           <PageHeader
             title={translateSharedLabel('financialsSectionSummary', language)}
@@ -73,8 +55,7 @@ export function FinancialsPage() {
           />
         </div>
 
-        {/* 2. Critical alerts - none for this hub, but hint acts as secondary guidance */}
-        {/* 3. Summary KPIs — compact preview */}
+        {/* Monthly collection KPI preview — operational value, not navigation */}
         <section data-finance-section aria-label="ملخص التحصيل الشهري" className="space-y-3">
           <FinancialReportsPreviewSection
             reportFilters={reportFilters}
@@ -99,51 +80,9 @@ export function FinancialsPage() {
           />
         </div>
 
-        {/* 5. Main workflow list — acts as hub navigation */}
-        <section data-finance-section aria-label="مسارات العمل المالية" className="space-y-3">
-        <div>
-          <h2 className="text-base font-bold">مسارات العمل المالية</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            مجموعات عمل مُختصرة تفتح مساحة العمل المالية المناسبة مباشرة.
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {visibleGroups.map((group) => (
-            <Link
-              key={group.id}
-              to={group.route}
-              aria-label={group.title}
-              className="group flex flex-col gap-3 rounded-2xl border border-border/70 bg-card p-4 text-right shadow-card transition hover:border-primary/25 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <div className="flex items-start gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-                  <group.icon className="size-5" aria-hidden="true" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold">{group.title}</span>
-                  <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
-                    {group.description}
-                  </span>
-                </div>
-                <ChevronLeft
-                  className="size-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary"
-                  aria-hidden="true"
-                />
-              </div>
-              <div className="flex flex-wrap gap-1.5" aria-label="أقسام هذا المسار">
-                {group.visibleDestinations.map(({ label }) => (
-                  <span
-                    key={label}
-                    className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
-                  >
-                    {label}
-                  </span>
-                ))}
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+        {/* Finance hubs are directly in primary sidebar (5 entries), so no
+            workflow-group navigation cards are rendered here — avoids
+            duplicating sidebar primary destinations. */}
       </div>
     </PageLayout>
   );
