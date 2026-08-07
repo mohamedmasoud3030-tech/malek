@@ -22,7 +22,7 @@ const PERIODS = [
 ];
 
 function hashOf(content) { return createHash('sha256').update(content, 'utf8').digest('hex'); }
-function round3(n) { return Math.round(Number(n) * 1000) / 1000; }
+function round2(n) { return Math.round(Number(n) * 100) / 100; }
 function toCsv(rows, cols) {
   const header = cols.join(',');
   const lines = rows.map(r => cols.map(c => {
@@ -52,7 +52,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
     agreement_id: '30000000-0000-4000-a000-000000000031', settlement_id: '40000000-0000-4000-a000-000000000041',
     settlement_status: 'PAID', accounting_period: '2026-01',
-    source_type: 'PAYMENT', source_id: '50000000-0000-4000-a000-000000000051', source_date: '2026-01-15', source_amount: 1250.500, currency: 'OMR',
+    source_type: 'PAYMENT', source_id: '50000000-0000-4000-a000-000000000051', source_date: '2026-01-15', source_amount: 1250.50, currency: 'EGP',
     finding_code: 'DUPLICATE_PAYMENT_ACROSS_SETTLEMENTS', severity: 'HIGH',
     explanation: 'Payment reused across multiple paid settlements (company-scoped detection).'
   },
@@ -62,7 +62,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
     agreement_id: '30000000-0000-4000-a000-000000000031', settlement_id: '40000000-0000-4000-a000-000000000042',
     settlement_status: 'PAID', accounting_period: '2026-01',
-    source_type: 'EXPENSE', source_id: '60000000-0000-4000-a000-000000000061', source_date: '2026-01-10', source_amount: 320.000, currency: 'OMR',
+    source_type: 'EXPENSE', source_id: '60000000-0000-4000-a000-000000000061', source_date: '2026-01-10', source_amount: 320.00, currency: 'EGP',
     finding_code: 'DUPLICATE_EXPENSE_ACROSS_SETTLEMENTS', severity: 'HIGH',
     explanation: 'Expense reused across multiple paid settlements.'
   },
@@ -72,7 +72,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000022', property_name: 'Property Palm Tower',
     agreement_id: '30000000-0000-4000-a000-000000000032', settlement_id: '40000000-0000-4000-a000-000000000043',
     settlement_status: 'PAID', accounting_period: '2026-02',
-    source_type: 'PAYMENT', source_id: '50000000-0000-4000-a000-000000000052', source_date: '2026-02-12', source_amount: 800.000, currency: 'OMR',
+    source_type: 'PAYMENT', source_id: '50000000-0000-4000-a000-000000000052', source_date: '2026-02-12', source_amount: 800.00, currency: 'EGP',
     finding_code: 'PAID_SETTLEMENT_WITHOUT_PAYMENT_EVIDENCE', severity: 'MEDIUM',
     explanation: 'Paid settlement without payment evidence (missing link).'
   },
@@ -82,7 +82,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
     agreement_id: '30000000-0000-4000-a000-000000000031', settlement_id: '40000000-0000-4000-a000-000000000044',
     settlement_status: 'DRAFT', accounting_period: '2026-02',
-    source_type: 'EXPENSE', source_id: '60000000-0000-4000-a000-000000000062', source_date: '2026-02-05', source_amount: 150.000, currency: 'OMR',
+    source_type: 'EXPENSE', source_id: '60000000-0000-4000-a000-000000000062', source_date: '2026-02-05', source_amount: 150.00, currency: 'EGP',
     finding_code: 'OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT', severity: 'MEDIUM',
     explanation: 'OWNER expense mapped to office expense account 6100.'
   },
@@ -92,7 +92,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
     agreement_id: '30000000-0000-4000-a000-000000000031', settlement_id: '40000000-0000-4000-a000-000000000045',
     settlement_status: 'POSTED', accounting_period: '2026-01',
-    source_type: 'DEPOSIT', source_id: '70000000-0000-4000-a000-000000000071', source_date: '2026-01-20', source_amount: 500.000, currency: 'OMR',
+    source_type: 'DEPOSIT', source_id: '70000000-0000-4000-a000-000000000071', source_date: '2026-01-20', source_amount: 500.00, currency: 'EGP',
     finding_code: 'DEDUCTION_WITHOUT_BENEFICIARY', severity: 'HIGH',
     explanation: 'Deposit deduction without beneficiary.'
   },
@@ -102,7 +102,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
     agreement_id: '30000000-0000-4000-a000-000000000031', settlement_id: '40000000-0000-4000-a000-000000000046',
     settlement_status: 'POSTED', accounting_period: '2026-01',
-    source_type: 'INVOICE', source_id: '80000000-0000-4000-a000-000000000081', source_date: '2026-01-08', source_amount: 1000.000, currency: 'OMR',
+    source_type: 'INVOICE', source_id: '80000000-0000-4000-a000-000000000081', source_date: '2026-01-08', source_amount: 1000.00, currency: 'EGP',
     finding_code: 'SOURCE_WITHOUT_POSTING', severity: 'MEDIUM',
     explanation: 'Posted invoice without journal posting (orphan).'
   },
@@ -112,7 +112,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000022', property_name: 'Property Palm Tower',
     agreement_id: '30000000-0000-4000-a000-000000000032', settlement_id: '40000000-0000-4000-a000-000000000047',
     settlement_status: 'POSTED', accounting_period: '2026-02',
-    source_type: 'JOURNAL', source_id: '90000000-0000-4000-a000-000000000091', source_date: '2026-02-14', source_amount: 250.000, currency: 'OMR',
+    source_type: 'JOURNAL', source_id: '90000000-0000-4000-a000-000000000091', source_date: '2026-02-14', source_amount: 250.00, currency: 'EGP',
     finding_code: 'POSTING_WITHOUT_SOURCE', severity: 'HIGH',
     explanation: 'Journal batch without source metadata.'
   },
@@ -122,7 +122,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
     agreement_id: '30000000-0000-4000-a000-000000000031', settlement_id: '40000000-0000-4000-a000-000000000048',
     settlement_status: 'POSTED', accounting_period: '2026-02',
-    source_type: 'AGREEMENT', source_id: '30000000-0000-4000-a000-000000000031', source_date: '2026-02-01', source_amount: 0.000, currency: 'OMR',
+    source_type: 'AGREEMENT', source_id: '30000000-0000-4000-a000-000000000031', source_date: '2026-02-01', source_amount: 0.000, currency: 'EGP',
     finding_code: 'RETROACTIVE_COMMISSION_CHANGE', severity: 'MEDIUM',
     explanation: 'Agreement commission changed retroactively vs contract snapshot.'
   },
@@ -132,7 +132,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
     agreement_id: '30000000-0000-4000-a000-000000000031', settlement_id: '40000000-0000-4000-a000-000000000049',
     settlement_status: 'POSTED', accounting_period: '2026-01',
-    source_type: 'MASTER_LEASE', source_id: 'a0000000-0000-4000-a000-0000000000a1', source_date: '2026-01-01', source_amount: 12000.000, currency: 'OMR',
+    source_type: 'MASTER_LEASE', source_id: 'a0000000-0000-4000-a000-0000000000a1', source_date: '2026-01-01', source_amount: 12000.00, currency: 'EGP',
     finding_code: 'MASTER_LEASE_MISSING_DISCOUNT_RATE', severity: 'HIGH',
     explanation: 'Master lease missing discount rate snapshot.'
   },
@@ -142,7 +142,7 @@ const findings = [
     property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
     agreement_id: '30000000-0000-4000-a000-000000000031', settlement_id: '40000000-0000-4000-a000-000000000050',
     settlement_status: 'POSTED', accounting_period: '2026-01',
-    source_type: 'RECONCILIATION', source_id: 'b0000000-0000-4000-a000-0000000000b1', source_date: '2026-01-31', source_amount: 75.250, currency: 'OMR',
+    source_type: 'RECONCILIATION', source_id: 'b0000000-0000-4000-a000-0000000000b1', source_date: '2026-01-31', source_amount: 75.25, currency: 'EGP',
     finding_code: 'SUBLEDGER_GL_MISMATCH', severity: 'HIGH',
     explanation: 'Tenant Receivables subledger vs GL difference.'
   },
@@ -162,8 +162,8 @@ for (const co of COMPANIES) for (const p of PERIODS) {
     { no: '2020', name: 'Broker/Staff Commission Payable', type: 'liability' },
   ];
   for (const a of accounts) {
-    const sub = round3((co.id.charCodeAt(0) + p.name.charCodeAt(5) + parseInt(a.no)) % 10000 / 7);
-    const gl = a.no === '2001' && co.id.endsWith('000001') && p.name === '2026-01' ? round3(sub + 75.25) : sub;
+    const sub = round2((co.id.charCodeAt(0) + p.name.charCodeAt(5) + parseInt(a.no)) % 10000 / 7);
+    const gl = a.no === '2001' && co.id.endsWith('000001') && p.name === '2026-01' ? round2(sub + 75.25) : sub;
     liabilityRows.push({
       company_id: co.id, company_name: co.name, accounting_period: p.name,
       period_start: p.start, period_end: p.end,
@@ -171,7 +171,7 @@ for (const co of COMPANIES) for (const p of PERIODS) {
       property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence',
       agreement_id: '30000000-0000-4000-a000-000000000031',
       source_class: 'SETTLEMENT', gl_account_no: a.no, gl_account_name: a.name, account_type: a.type,
-      subledger_balance: sub.toFixed(3), gl_balance: gl.toFixed(3), difference: round3(gl - sub).toFixed(3),
+      subledger_balance: sub.toFixed(2), gl_balance: gl.toFixed(2), difference: round2(gl - sub).toFixed(2),
     });
   }
 }
@@ -182,7 +182,7 @@ const settlementRows = findings.filter(f=>f.finding_code.startsWith('DUPLICATE')
   company_id: f.company_id, company_name: f.company_name, owner_id: f.owner_id, owner_name: f.owner_name,
   property_id: f.property_id, property_name: f.property_name, agreement_id: f.agreement_id,
   settlement_id: f.settlement_id, settlement_status: f.settlement_status, accounting_period: f.accounting_period,
-  source_type: f.source_type, source_id: f.source_id, source_date: f.source_date, source_amount: f.source_amount.toFixed(3),
+  source_type: f.source_type, source_id: f.source_id, source_date: f.source_date, source_amount: f.source_amount.toFixed(2),
   currency: f.currency, finding_code: f.finding_code, severity: f.severity, explanation: f.explanation,
 }));
 // Add one more deterministic duplicate to ensure cross-company isolation demo
@@ -190,16 +190,16 @@ settlementRows.sort((a,b)=>a.settlement_id.localeCompare(b.settlement_id));
 
 // --- Expense misclassification (T04)
 const expenseRows = [
-  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, expense_id: '60000000-0000-4000-a000-000000000061', source_link: 'expenses/60000000', account_no: '6100', account_name: 'Office Expenses', amount: '320.000', period: '2026-01', charged_to: 'OWNER', beneficiary: '', finding_code: 'OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT', severity: 'MEDIUM', explanation: 'OWNER expense mapped to office expense account 6100.' },
-  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, expense_id: '60000000-0000-4000-a000-000000000062', source_link: 'expenses/60000000-62', account_no: '6100', account_name: 'Office Expenses', amount: '150.000', period: '2026-02', charged_to: 'TENANT', beneficiary: 'Tenant X', finding_code: 'OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT', severity: 'MEDIUM', explanation: 'TENANT expense mapped to office expense account 6100.' },
-  { company_id: COMPANIES[1].id, company_name: COMPANIES[1].name, expense_id: '60000000-0000-4000-a000-000000000063', source_link: 'expenses/60000000-63', account_no: '5200', account_name: 'Repairs', amount: '80.000', period: '2026-02', charged_to: 'OFFICE', beneficiary: '', finding_code: 'MISSING_BENEFICIARY', severity: 'MEDIUM', explanation: 'Expense missing beneficiary.' },
+  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, expense_id: '60000000-0000-4000-a000-000000000061', source_link: 'expenses/60000000', account_no: '6100', account_name: 'Office Expenses', amount: '320.00', period: '2026-01', charged_to: 'OWNER', beneficiary: '', finding_code: 'OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT', severity: 'MEDIUM', explanation: 'OWNER expense mapped to office expense account 6100.' },
+  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, expense_id: '60000000-0000-4000-a000-000000000062', source_link: 'expenses/60000000-62', account_no: '6100', account_name: 'Office Expenses', amount: '150.00', period: '2026-02', charged_to: 'TENANT', beneficiary: 'Tenant X', finding_code: 'OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT', severity: 'MEDIUM', explanation: 'TENANT expense mapped to office expense account 6100.' },
+  { company_id: COMPANIES[1].id, company_name: COMPANIES[1].name, expense_id: '60000000-0000-4000-a000-000000000063', source_link: 'expenses/60000000-63', account_no: '5200', account_name: 'Repairs', amount: '80.00', period: '2026-02', charged_to: 'OFFICE', beneficiary: '', finding_code: 'MISSING_BENEFICIARY', severity: 'MEDIUM', explanation: 'Expense missing beneficiary.' },
 ];
 
 // --- Deposit exceptions (T05)
 const depositRows = [
-  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, tenant_id: 'c0000000-0000-4000-a000-0000000000c1', tenant_name: 'Tenant Demo A', contract_id: 'd0000000-0000-4000-a000-0000000000d1', contract_number: 'CTR-2026-001', property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence', deposit_id: '70000000-0000-4000-a000-000000000071', transaction_id: 'tx-001', beneficiary: '', claim_reference: '', period: '2026-01', amount: '250.000', available_balance: '500.000', exception_code: 'DEDUCTION_WITHOUT_BENEFICIARY', severity: 'HIGH', explanation: 'Deduction without beneficiary.' },
-  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, tenant_id: 'c0000000-0000-4000-a000-0000000000c1', tenant_name: 'Tenant Demo A', contract_id: 'd0000000-0000-4000-a000-0000000000d1', contract_number: 'CTR-2026-001', property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence', deposit_id: '70000000-0000-4000-a000-000000000071', transaction_id: 'tx-002', beneficiary: 'OWNER', claim_reference: '', period: '2026-01', amount: '100.000', available_balance: '500.000', exception_code: 'DEDUCTION_WITHOUT_APPROVED_CLAIM', severity: 'HIGH', explanation: 'Deduction without approved claim.' },
-  { company_id: COMPANIES[1].id, company_name: COMPANIES[1].name, tenant_id: 'c0000000-0000-4000-a000-0000000000c2', tenant_name: 'Tenant Demo B', contract_id: 'd0000000-0000-4000-a000-0000000000d2', contract_number: 'CTR-2026-002', property_id: '20000000-0000-4000-a000-000000000022', property_name: 'Property Palm Tower', deposit_id: '70000000-0000-4000-a000-000000000072', transaction_id: 'tx-003', beneficiary: 'TENANT', claim_reference: 'claim-001', period: '2026-02', amount: '600.000', available_balance: '400.000', exception_code: 'REFUND_EXCEEDING_AVAILABLE_BALANCE', severity: 'HIGH', explanation: 'Refund exceeding available balance.' },
+  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, tenant_id: 'c0000000-0000-4000-a000-0000000000c1', tenant_name: 'Tenant Demo A', contract_id: 'd0000000-0000-4000-a000-0000000000d1', contract_number: 'CTR-2026-001', property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence', deposit_id: '70000000-0000-4000-a000-000000000071', transaction_id: 'tx-001', beneficiary: '', claim_reference: '', period: '2026-01', amount: '250.00', available_balance: '500.00', exception_code: 'DEDUCTION_WITHOUT_BENEFICIARY', severity: 'HIGH', explanation: 'Deduction without beneficiary.' },
+  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, tenant_id: 'c0000000-0000-4000-a000-0000000000c1', tenant_name: 'Tenant Demo A', contract_id: 'd0000000-0000-4000-a000-0000000000d1', contract_number: 'CTR-2026-001', property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence', deposit_id: '70000000-0000-4000-a000-000000000071', transaction_id: 'tx-002', beneficiary: 'OWNER', claim_reference: '', period: '2026-01', amount: '100.00', available_balance: '500.00', exception_code: 'DEDUCTION_WITHOUT_APPROVED_CLAIM', severity: 'HIGH', explanation: 'Deduction without approved claim.' },
+  { company_id: COMPANIES[1].id, company_name: COMPANIES[1].name, tenant_id: 'c0000000-0000-4000-a000-0000000000c2', tenant_name: 'Tenant Demo B', contract_id: 'd0000000-0000-4000-a000-0000000000d2', contract_number: 'CTR-2026-002', property_id: '20000000-0000-4000-a000-000000000022', property_name: 'Property Palm Tower', deposit_id: '70000000-0000-4000-a000-000000000072', transaction_id: 'tx-003', beneficiary: 'TENANT', claim_reference: 'claim-001', period: '2026-02', amount: '600.00', available_balance: '400.00', exception_code: 'REFUND_EXCEEDING_AVAILABLE_BALANCE', severity: 'HIGH', explanation: 'Refund exceeding available balance.' },
 ];
 
 // --- Orphan postings (T06)
@@ -218,8 +218,8 @@ const retroRows = [
 
 // --- Master lease readiness (T08)
 const mlRows = [
-  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, master_lease_id: 'a0000000-0000-4000-a000-0000000000a1', property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence', agreement_type: 'MASTER_LEASE', commencement_date: '2026-01-01', lease_term_months: '24', renewal_options: '1', purchase_option: 'false', fixed_payments: '12000.000', variable_payments: '0.000', incentives: '0.000', initial_direct_costs: '500.000', restoration_obligations: '1000.000', discount_rate: '', rate_snapshot: '', asset_class: 'BUILDING', short_term_election: 'false', rou_asset: '', lease_liability: '', liability_schedule: 'MISSING', depreciation_schedule: 'MISSING', modifications: '0', remeasurements: '0', sublease_income: '0.000', readiness: 'MISSING_CRITICAL_DATA' },
-  { company_id: COMPANIES[1].id, company_name: COMPANIES[1].name, master_lease_id: 'a0000000-0000-4000-a000-0000000000a2', property_id: '20000000-0000-4000-a000-000000000022', property_name: 'Property Palm Tower', agreement_type: 'MASTER_LEASE', commencement_date: '2025-06-01', lease_term_months: '36', renewal_options: '2', purchase_option: 'false', fixed_payments: '15000.000', variable_payments: '200.000', incentives: '1000.000', initial_direct_costs: '800.000', restoration_obligations: '1500.000', discount_rate: '0.055', rate_snapshot: '2025-06-01:5.5%', asset_class: 'BUILDING', short_term_election: 'false', rou_asset: '480000.000', lease_liability: '475000.000', liability_schedule: 'READY', depreciation_schedule: 'READY', modifications: '1', remeasurements: '1', sublease_income: '18000.000', readiness: 'READY' },
+  { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, master_lease_id: 'a0000000-0000-4000-a000-0000000000a1', property_id: '20000000-0000-4000-a000-000000000021', property_name: 'Property Olive Residence', agreement_type: 'MASTER_LEASE', commencement_date: '2026-01-01', lease_term_months: '24', renewal_options: '1', purchase_option: 'false', fixed_payments: '12000.00', variable_payments: '0.000', incentives: '0.000', initial_direct_costs: '500.00', restoration_obligations: '1000.00', discount_rate: '', rate_snapshot: '', asset_class: 'BUILDING', short_term_election: 'false', rou_asset: '', lease_liability: '', liability_schedule: 'MISSING', depreciation_schedule: 'MISSING', modifications: '0', remeasurements: '0', sublease_income: '0.000', readiness: 'MISSING_CRITICAL_DATA' },
+  { company_id: COMPANIES[1].id, company_name: COMPANIES[1].name, master_lease_id: 'a0000000-0000-4000-a000-0000000000a2', property_id: '20000000-0000-4000-a000-000000000022', property_name: 'Property Palm Tower', agreement_type: 'MASTER_LEASE', commencement_date: '2025-06-01', lease_term_months: '36', renewal_options: '2', purchase_option: 'false', fixed_payments: '15000.000', variable_payments: '200.000', incentives: '1000.00', initial_direct_costs: '800.00', restoration_obligations: '1500.00', discount_rate: '0.055', rate_snapshot: '2025-06-01:5.5%', asset_class: 'BUILDING', short_term_election: 'false', rou_asset: '480000.00', lease_liability: '475000.00', liability_schedule: 'READY', depreciation_schedule: 'READY', modifications: '1', remeasurements: '1', sublease_income: '18000.00', readiness: 'READY' },
   { company_id: COMPANIES[0].id, company_name: COMPANIES[0].name, master_lease_id: 'a0000000-0000-4000-a000-0000000000a3', property_id: '20000000-0000-4000-a000-000000000023', property_name: 'Property Agency Managed', agreement_type: 'OWNER_AGENCY', commencement_date: '', lease_term_months: '', renewal_options: '', purchase_option: '', fixed_payments: '', variable_payments: '', incentives: '', initial_direct_costs: '', restoration_obligations: '', discount_rate: '', rate_snapshot: '', asset_class: '', short_term_election: '', rou_asset: '', lease_liability: '', liability_schedule: '', depreciation_schedule: '', modifications: '', remeasurements: '', sublease_income: '', readiness: 'NOT_A_MASTER_LEASE' },
 ];
 
@@ -228,16 +228,16 @@ const reconRows = [];
 const subledgers = ['Tenant Receivables','Owner Funds Payable','Due from Owner','Tenant Deposits','Broker/Staff Commission Payable','Expense Payable','Receipt Clearing','Master Lease Liability','ROU Asset','Tax Control'];
 for (const co of COMPANIES) for (const p of PERIODS) for (const sl of subledgers) {
   const open = 0;
-  const movements = round3((co.id.charCodeAt(5) + sl.charCodeAt(0)) % 5000);
-  const closeSub = round3(movements * 0.97);
-  const closeGL = sl === 'Tenant Receivables' && co.id.endsWith('000001') && p.name==='2026-01' ? round3(closeSub + 75.25) : closeSub;
+  const movements = round2((co.id.charCodeAt(5) + sl.charCodeAt(0)) % 5000);
+  const closeSub = round2(movements * 0.97);
+  const closeGL = sl === 'Tenant Receivables' && co.id.endsWith('000001') && p.name==='2026-01' ? round2(closeSub + 75.25) : closeSub;
   reconRows.push({
     company_id: co.id, company_name: co.name, accounting_period: p.name,
     subledger: sl, gl_account_no: sl==='Tenant Receivables'?'1100': sl==='Owner Funds Payable'?'2001': sl==='Due from Owner'?'2005': sl==='Tenant Deposits'?'2010': sl==='Broker/Staff Commission Payable'?'2020': sl==='Master Lease Liability'?'2100': sl==='ROU Asset'?'1500': sl==='Tax Control'?'2200': '1000',
-    opening_balance: open.toFixed(3), period_movements: movements.toFixed(3), closing_balance: closeSub.toFixed(3),
-    gl_balance: closeGL.toFixed(3), subledger_balance: closeSub.toFixed(3), difference: round3(closeGL-closeSub).toFixed(3),
+    opening_balance: open.toFixed(2), period_movements: movements.toFixed(2), closing_balance: closeSub.toFixed(2),
+    gl_balance: closeGL.toFixed(2), subledger_balance: closeSub.toFixed(2), difference: round2(closeGL-closeSub).toFixed(2),
     source_count: '42', earliest_source: p.start, latest_source: p.end,
-    finding_classification: round3(closeGL-closeSub)!==0 ? 'MISMATCH' : 'RECONCILED',
+    finding_classification: round2(closeGL-closeSub)!==0 ? 'MISMATCH' : 'RECONCILED',
   });
 }
 reconRows.sort((a,b)=>a.company_id.localeCompare(b.company_id)||a.accounting_period.localeCompare(b.accounting_period)||a.subledger.localeCompare(b.subledger));
@@ -255,7 +255,8 @@ function writeCsv(name, rows, cols) {
 }
 
 const findingsJson = writeJson('findings.json', findings);
-const findingsCsv = writeCsv('findings.csv', findings, ['company_id','company_name','owner_id','owner_name','property_id','property_name','agreement_id','settlement_id','settlement_status','accounting_period','source_type','source_id','source_date','source_amount','currency','finding_code','severity','explanation']);
+const findingsForCsv = findings.map(f => ({...f, source_amount: Number(f.source_amount).toFixed(2)}));
+const findingsCsv = writeCsv('findings.csv', findingsForCsv, ['company_id','company_name','owner_id','owner_name','property_id','property_name','agreement_id','settlement_id','settlement_status','accounting_period','source_type','source_id','source_date','source_amount','currency','finding_code','severity','explanation']);
 const settlementCsv = writeCsv('settlement-source-duplicates.csv', settlementRows, ['company_id','company_name','owner_id','owner_name','property_id','property_name','agreement_id','settlement_id','settlement_status','accounting_period','source_type','source_id','source_date','source_amount','currency','finding_code','severity','explanation']);
 const liabilityCsv = writeCsv('liability-balances-by-period.csv', liabilityRows, ['company_id','company_name','accounting_period','period_start','period_end','owner_id','owner_name','property_id','property_name','agreement_id','source_class','gl_account_no','gl_account_name','account_type','subledger_balance','gl_balance','difference']);
 const liabilityJson = writeJson('liability-balances-by-period.json', liabilityRows);
@@ -319,7 +320,7 @@ const summary = {
   finding_counts_by_code: findingCountsByCode,
   finding_counts_by_severity: findingCountsBySeverity,
   input_schema_fingerprint: inputSchemaFingerprint,
-  currency_precision: 3,
+  currency_precision: 2,
   statuses_distinguished: ['POSTED','PAID','VOID','CANCELLED','REVERSED','DRAFT'],
   read_only_proof: { static: staticProof, runtime: { before: beforeSnapshot, after: afterSnapshot, equal: snapshotsEqual } },
   notes: 'Read-only historical analysis. No financial mutation. Findings only.',
@@ -351,7 +352,7 @@ Generated: ${summary.generated_at}
 Source main SHA: ${SOURCE_MAIN_SHA}
 Analysis version: ${ANALYSIS_VERSION}
 
-This evidence package is READ-ONLY. No financial data was mutated during analysis.
+This evidence package is FIXTURE-BASED READ-ONLY (production path contains no Demo literals). No financial data was mutated during analysis.
 
 ## Contents
 ${files.map(f=>`- ${f}`).join('\n')}
@@ -359,7 +360,7 @@ ${files.map(f=>`- ${f}`).join('\n')}
 ## Methodology
 - Company-by-company execution
 - Accounting period scoped
-- Deterministic output (stable sort, 3-decimal OMR precision)
+- Deterministic output (stable sort, 2-decimal EGP precision)
 - Statuses distinguished: POSTED, PAID, VOID, CANCELLED, REVERSED, DRAFT
 - Cancelled/reversed balances ignored except where historical effect analyzed
 

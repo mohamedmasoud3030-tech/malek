@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-08-07T03:25:00Z",
+  "source": "real engine on empty/staging (sanitized)",
+  "note": "Live counts are 0 in repo (no prod data committed). Fixture counts are in summary.json/manifest.json.",
+  "live_row_counts": {
+    "findings": 0,
+    "settlement_duplicates": 0,
+    "liability_balances": 0,
+    "expense_misclass": 0,
+    "deposit_exceptions": 0,
+    "orphan_postings": 0,
+    "retroactive": 0,
+    "master_lease": 0,
+    "reconciliation": 0
+  },
+  "fixture_row_counts": {
+    "findings": 10,
+    "settlement_duplicates": 3,
+    "liability_balances": 20,
+    "expense_misclass": 3,
+    "deposit_exceptions": 3,
+    "orphan_postings": 3,
+    "retroactive": 3,
+    "master_lease": 3,
+    "reconciliation": 40
+  }
+}

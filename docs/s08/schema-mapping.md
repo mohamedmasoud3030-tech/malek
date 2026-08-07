@@ -24,8 +24,8 @@ This document maps S08 conceptual entities to the actual physical schema in `ori
 | Settlement Expense Link | `public.owner_settlement_expense_links` | `id uuid`, `company_id uuid`, `settlement_id text`, `expense_id uuid`, `released_at timestamptz` | FA003 |
 | Accounts (GL) | `public.accounts` | `id text`, `no text`, `name text`, + stage3: `account_type text`, `normal_balance text`, `currency_code text`, `precision smallint` | Company scoped in stage3 |
 | Journal Batches | `public.journal_batches` | `id uuid`, `company_id uuid`, `status text` (DRAFT/POSTED/REVERSED), `source_type text`, `source_id text`, `event_id text`, `effective_date date`, `accounting_period_id uuid`, `posted_at timestamptz` | Stage3 canonical GL |
-| Journal Lines | `public.journal_lines` | `id text`, `batch_id uuid`, `company_id uuid`, `account_id text`, `debit numeric(18,3)`, `credit numeric(18,3)` | OMR 3 dp |
-| Accounting Periods | `public.accounting_periods` | `id uuid`, `company_id uuid`, `name text`, `start_date date`, `end_date date`, `status text` (OPEN/SOFT_CLOSED/HARD_CLOSED) | No `currency_code`; assume OMR |
+| Journal Lines | `public.journal_lines` | `id text`, `batch_id uuid`, `company_id uuid`, `account_id text`, `debit numeric(18,3)`, `credit numeric(18,3)` | EGP 2 dp |
+| Accounting Periods | `public.accounting_periods` | `id uuid`, `company_id uuid`, `name text`, `start_date date`, `end_date date`, `status text` (OPEN/SOFT_CLOSED/HARD_CLOSED) | No `currency_code`; assume EGP |
 | Audit Log | `public.audit_log` | `id uuid`, `action text`, `entity text`, `entity_id text`, `created_at timestamptz` | Append-only |
 
 ## Master lease note
@@ -46,7 +46,7 @@ S08 reports `MISSING_CRITICAL_DATA` when these are absent and `NOT_A_MASTER_LEAS
 | `owner_name` from settlements | Join `owners.full_name` or `people.full_name` via `property_owners` | If `owner_id` text cannot be cast to uuid, emit `orphan_owner_id` finding |
 | `property_name` | `properties.title` | Use `title`; if null emit NOT_OBSERVABLE |
 | `company_id` on invoices/payments/expenses | Backfilled via 20260722 phase2; may be NULL for very old rows | Row classified `INSUFFICIENT_HISTORY` |
-| `currency` per row | `companies.currency` (single per company) | Default OMR, 3 dp |
+| `currency` per row | `companies.currency` (single per company) | Default EGP, 2 dp |
 | `charged_to / beneficiary` on expenses | Not in core DDL; stored in app layer or `maintenance_records.charged_to` | If absent → `NOT_OBSERVABLE` + finding `MISSING_BENEFICIARY` |
 | `claim/evidence` for deposits | `deposit_transactions.reason` + `request_id` | If `reason` null → `DEDUCTION_WITHOUT_BENEFICIARY` |
 

@@ -10,7 +10,7 @@
       "name": "Demo Malek Co B"
     }
   ],
-  "currency_precision": 3,
+  "currency_precision": 2,
   "finding_counts_by_code": {
     "DEDUCTION_WITHOUT_BENEFICIARY": 1,
     "DUPLICATE_EXPENSE_ACROSS_SETTLEMENTS": 1,
@@ -27,7 +27,7 @@
     "HIGH": 6,
     "MEDIUM": 4
   },
-  "generated_at": "2026-08-07T02:35:51.721Z",
+  "generated_at": "2026-08-07T03:24:00.011Z",
   "input_schema_fingerprint": "8aa134caef3a3104",
   "notes": "Read-only historical analysis. No financial mutation. Findings only.",
   "period_scope": [
@@ -47,7 +47,7 @@
   "read_only_proof": {
     "runtime": {
       "after": {
-        "generated_at": "2026-08-07T02:35:51.719Z",
+        "generated_at": "2026-08-07T03:24:00.010Z",
         "method": "SELECT checksum_agg(hash) per table; no writes performed",
         "tables": {
           "expenses": "db0290015edccb1a",
@@ -63,7 +63,7 @@
         }
       },
       "before": {
-        "generated_at": "2026-08-07T02:35:51.719Z",
+        "generated_at": "2026-08-07T03:24:00.010Z",
         "method": "SELECT checksum_agg(hash) per table; no writes performed",
         "tables": {
           "expenses": "db0290015edccb1a",

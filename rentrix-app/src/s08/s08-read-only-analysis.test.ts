@@ -72,13 +72,13 @@ describe('S08 T01 — Read-only analysis foundation', () => {
     expect(statuses.has('POSTED')).toBe(true);
   });
 
-  it('currency precision is 3 (OMR)', () => {
+  it('currency precision is 2 (EGP)', () => {
     const summary = JSON.parse(readFileSync(resolve(EVIDENCE_DIR,'summary.json'),'utf8'));
-    expect(summary.currency_precision).toBe(3);
+    expect(summary.currency_precision).toBe(2);
     const findings = JSON.parse(readFileSync(resolve(EVIDENCE_DIR,'findings.json'),'utf8')) as Array<{source_amount: number}>;
     for (const f of findings) {
       const decimals = String(f.source_amount).split('.')[1]?.length ?? 0;
-      expect(decimals).toBeLessThanOrEqual(3);
+      expect(decimals).toBeLessThanOrEqual(2);
     }
   });
 
@@ -119,6 +119,30 @@ describe('S08 T01 — Read-only analysis foundation', () => {
     const sql = readFileSync(MIGRATION,'utf8');
     expect(sql).not.toMatch(/corrective|backfill.*journal/i);
   });
+  it('uses EGP and properties.title, not OMR/name', () => {
+    const sql = readFileSync(MIGRATION,'utf8');
+    expect(sql).toContain("'EGP'");
+    expect(sql).not.toMatch(/'OMR'/);
+    expect(sql).toContain('prop.title');
+    expect(sql).not.toContain('prop.name');
+  });
+  it('enforces mandatory company_id/period_id fail-closed and caller-company', () => {
+    const sql = readFileSync(MIGRATION,'utf8');
+    expect(sql).toContain('S08_COMPANY_AND_PERIOD_REQUIRED');
+    expect(sql).toContain('S08_COMPANY_ISOLATION_VIOLATION');
+    expect(sql).toContain('current_company_id()');
+  });
+  it('duplicate detection groups by source_id first', () => {
+    const sql = readFileSync(MIGRATION,'utf8');
+    expect(sql).toMatch(/group by l\.payment_id/i);
+    expect(sql).toMatch(/having count\(distinct l\.settlement_id\) > 1/i);
+  });
+  it('prevents authenticated cross-company view reads', () => {
+    const sql = readFileSync(MIGRATION,'utf8');
+    expect(sql).toMatch(/revoke all on table public\.s08_analysis_scope from public, anon/i);
+    expect(sql).toMatch(/grant select on table public\.s08_analysis_scope to service_role/i);
+    expect(sql).not.toMatch(/grant select on table public\.s08_analysis_scope to authenticated/i);
+  });
 });
 
 describe('S08 T02 — Settlement duplicate detection', () => {
@@ -138,13 +162,13 @@ describe('S08 T02 — Settlement duplicate detection', () => {
 });
 
 describe('S08 T03 — Liability balances by period', () => {
-  it('liability CSV has gl vs subledger and difference with 3 decimals', () => {
+  it('liability CSV has gl vs subledger and difference with 2 decimals', () => {
     const csv = readFileSync(resolve(EVIDENCE_DIR,'liability-balances-by-period.csv'),'utf8');
     expect(csv).toContain('gl_account_no');
     expect(csv).toContain('subledger_balance');
     expect(csv).toContain('difference');
     const dataLine = csv.split('\n')[1];
-    expect(dataLine).toMatch(/\d+\.\d{3}/);
+    expect(dataLine).toMatch(/\d+\.\d{2}/);
   });
   it('includes account 2000 only as legacy and deterministic JSON', () => {
     const rows = JSON.parse(readFileSync(resolve(EVIDENCE_DIR,'liability-balances-by-period.json'),'utf8')) as Array<{gl_account_no: string}>;
@@ -232,8 +256,8 @@ describe('S08 T10 — Freeze & approval package', () => {
     // No SECURITY DEFINER without pinned search_path
     const hasDefiner = /security definer/i.test(sql);
     if (hasDefiner) expect(sql).toMatch(/set search_path/i);
-    // Views are plain SELECT (SECURITY INVOKER style) — comment documents intent
-    expect(sql.toLowerCase()).toContain('security invoker');
+    // Views must be WITH (security_invoker = true)
+    expect(sql).toMatch(/with \(security_invoker = true\)/i);
   });
   it('no service_role in browser bundles (frontend has no direct financial writes)', () => {
     // Financial writes bypass test covers this; here ensure s08 analysis does not introduce service_role in browser

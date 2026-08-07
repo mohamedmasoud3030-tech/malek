@@ -12,7 +12,7 @@ Before S08 may be marked ready:
 
 - Replace demo findings in the production execution path with real company- and period-scoped queries.
 - Replace `WHERE FALSE` analysis stubs with real read-only views/functions, or remove unnecessary database objects.
-- Read currency from the actual company configuration; do not assume OMR or fixed precision.
+- Read currency from the actual company configuration; do not assume EGP or fixed precision.
 - Treat empty live tables as valid observable zero-row/zero-finding results.
 - Keep fixture evidence explicitly labelled `TEST_FIXTURE` and separate from live/staging validation.
 - Prove no financial mutation with canonical before/after snapshots around execution of the real analysis engine.
