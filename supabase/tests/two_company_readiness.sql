@@ -5,7 +5,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(22);
 
 insert into public.companies (id, name, slug, currency, locale)
 values
@@ -191,13 +191,30 @@ select ok(
   'Supabase Auth admin retains hook execute privilege'
 );
 
--- Company A JWT: only A operational rows are visible.
+-- Company A JWT: the membership discovery query must still see A+B so the
+-- browser can offer an authorized switch, while business rows stay A-scoped.
 select set_config(
   'request.jwt.claims',
   '{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"10000000-0000-4000-8000-00000000000a"}}',
   true
 );
 set local role authenticated;
+select is(
+  (
+    select count(*)::int
+    from public.company_members cm
+    join public.companies c on c.id = cm.company_id
+    where cm.user_id = auth.uid()
+      and cm.is_active
+      and c.is_active
+      and cm.company_id in (
+        '10000000-0000-4000-8000-00000000000a',
+        '10000000-0000-4000-8000-00000000000b'
+      )
+  ),
+  2,
+  'Company A JWT can discover both authorized memberships for A <-> B switching'
+);
 select is((select count(*)::int from public.properties where id in (
   '10000000-0000-4000-8000-00000000001a', '10000000-0000-4000-8000-00000000001b'
 )), 1, 'Company A sees exactly one readiness property');
