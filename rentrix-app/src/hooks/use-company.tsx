@@ -107,23 +107,15 @@ export function CompanyProvider({ children }: PropsWithChildren) {
         let jwtCompanyId = readCompanyIdFromAppMetadata(sessionUser.app_metadata);
         let selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
 
-        // Financial RPCs and RLS read app_metadata.company_id. Refresh an older
-        // session once so the access-token hook can inject the current company.
+        // Financial RPCs and RLS use app_metadata.company_id. Refresh an older
+        // session once so the access-token hook can inject/validate the active
+        // membership. The UI must never invent a local company selection that
+        // the JWT does not authorize, even for a one-company user.
         if (!selectedCompany) {
           const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError) throw refreshError;
           jwtCompanyId = readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata);
           selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
-        }
-
-        // A single membership is already an explicit authorization decision.
-        // Use it as the safe local selection when an older/stale access token
-        // has not yet received app_metadata.company_id from the auth hook.
-        // This avoids locking out valid single-company users while preserving
-        // the membership/RLS boundary; a multi-company session still requires
-        // an explicit JWT company claim.
-        if (!selectedCompany && companyList.length === 1) {
-          selectedCompany = companyList[0];
         }
 
         if (!selectedCompany) {
@@ -162,6 +154,9 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     if (!session) throw new Error(ACTIVE_COMPANY_ERROR);
 
     if (readCompanyIdFromAppMetadata(session.user.app_metadata) !== companyId) {
+      // user_metadata is only a requested preference. The access-token hook
+      // validates it against company_members before app_metadata.company_id is
+      // issued, so editing browser metadata cannot cross the tenant boundary.
       const { error: updateError } = await supabase.auth.updateUser({
         data: { company_id: companyId },
       });
