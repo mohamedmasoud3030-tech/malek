@@ -5,8 +5,6 @@ import { useAuth } from '@/hooks/use-auth';
 
 export const ACTIVE_COMPANY_ERROR = 'تعذر تحديد الشركة النشطة';
 
-/* ── Types ──────────────────────────────────────────── */
-
 export type Company = {
   id: string;
   name: string;
@@ -28,8 +26,6 @@ export type CompanyContextValue = {
 
 const CompanyContext = createContext<CompanyContextValue | null>(null);
 
-/* ── Types for membership query result ──────────────── */
-
 type MembershipRow = {
   company_id: string;
   role: string;
@@ -47,8 +43,6 @@ function readCompanyIdFromAppMetadata(appMetadata: unknown): string | null {
   const companyId = (appMetadata as Record<string, unknown>).company_id;
   return typeof companyId === 'string' && companyId.length > 0 ? companyId : null;
 }
-
-/* ── Provider ───────────────────────────────────────── */
 
 export function CompanyProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
@@ -71,8 +65,6 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     }
 
     if (!session?.user) {
-      // QueryClient lives above AuthProvider. Clear tenant data on sign-out so a
-      // later login (possibly for another company) cannot inherit old cache.
       void queryClient.cancelQueries();
       queryClient.clear();
       setResolvedUserId(null);
@@ -93,19 +85,16 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       setLoadError(null);
       setHasAuthenticatedSession(true);
 
-      // A changed authenticated user must start from an empty query cache.
-      // The render gate below keeps children hidden until this user + company
-      // pair is fully resolved.
       await queryClient.cancelQueries();
       queryClient.clear();
 
       try {
-        // Production currently exposes only these stable columns. Do not request
-        // optional columns that are absent from the live schema.
         const { data, error } = await supabase
           .from('company_members')
           .select('company_id, role, companies!inner(id, name, slug, currency, locale)')
-          .eq('user_id', sessionUser.id);
+          .eq('user_id', sessionUser.id)
+          .eq('is_active', true)
+          .eq('companies.is_active', true);
 
         if (error) throw error;
         if (!mounted) return;
@@ -122,10 +111,6 @@ export function CompanyProvider({ children }: PropsWithChildren) {
         let jwtCompanyId = readCompanyIdFromAppMetadata(sessionUser.app_metadata);
         let selectedCompany = companyList.find((company) => company.id === jwtCompanyId) ?? null;
 
-        // Financial RPCs and RLS use app_metadata.company_id. Refresh an older
-        // session once so the access-token hook can inject/validate the active
-        // membership. The UI must never invent a local company selection that
-        // the JWT does not authorize, even for a one-company user.
         if (!selectedCompany) {
           const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError) throw refreshError;
@@ -175,9 +160,6 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       if (!session) throw new Error(ACTIVE_COMPANY_ERROR);
 
       if (readCompanyIdFromAppMetadata(session.user.app_metadata) !== companyId) {
-        // user_metadata is only a requested preference. The access-token hook
-        // validates it against company_members before app_metadata.company_id is
-        // issued, so editing browser metadata cannot cross the tenant boundary.
         const { error: updateError } = await supabase.auth.updateUser({
           data: { company_id: companyId },
         });
@@ -195,14 +177,11 @@ export function CompanyProvider({ children }: PropsWithChildren) {
         .select('role')
         .eq('company_id', companyId)
         .eq('user_id', session.user.id)
+        .eq('is_active', true)
         .single();
 
       if (membershipError) throw membershipError;
 
-      // Query keys are intentionally shared across many workspaces. Once the
-      // authoritative JWT company changes, cancel and remove all cached tenant
-      // data before exposing the new company. This prevents Company A rows from
-      // surviving in memory/UI when switching to Company B.
       await queryClient.cancelQueries();
       queryClient.clear();
 
@@ -210,8 +189,6 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       setCurrentRole((membership?.role as CompanyMemberRole) ?? null);
       setResolvedUserId(session.user.id);
     } catch (error) {
-      // A partially completed token switch must never leave the old company UI
-      // visible against a new JWT. Fail closed and require a clean reload/retry.
       await queryClient.cancelQueries();
       queryClient.clear();
       setActiveCompany(null);
@@ -271,7 +248,6 @@ export function useCompany(): CompanyContextValue {
   return ctx;
 }
 
-/** Active company ID or null — use for INSERT payloads. */
 export function useActiveCompanyId(): string | null {
   return useCompany().activeCompany?.id ?? null;
 }
