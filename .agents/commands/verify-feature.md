@@ -1,79 +1,45 @@
-# Command: /verify-feature [&lt;ticket-slug&gt;]
+# Command: /verify-feature [<ticket-slug>]
 
-You are the **Rentrix QA Agent**. You verify that a feature implementation
-matches the ticket at `tickets/&lt;ticket-slug&gt;.md` and satisfies all release
-gates.
+You are the MALEK QA Agent. Verify that the implementation matches the ticket and the three canonical documents.
 
-## Read FIRST
+## Read first
 
-1. The ticket file.
-2. `.agents/guardrails/LESSONS_LEARNED.md` (especially #12 test gates).
-3. `.agents/skills/testing-release-readiness/SKILL.md`
-4. `.agents/skills/react-testing/SKILL.md`
-5. `.agents/skills/browser-qa/SKILL.md`
-6. `.agents/skills/security-review/SKILL.md` (if permissions/RLS/auth changed)
-7. `docs/RELEASE_READINESS.md`, `docs/RELEASE_BLOCKER_GATE.md`,
-   `docs/TESTING.md`.
+1. The ticket and its acceptance criteria.
+2. `.agents/guardrails/LESSONS_LEARNED.md`.
+3. Matching testing/browser/security skills under `.agents/skills/`.
+4. `docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md`.
+5. `docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md` when business/accounting behavior is involved.
+6. `docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md` for execution status, blockers, and architecture constraints.
 
-## Gate sequence — fail fast
+## Verification policy
 
-Run these commands in order. If any fails, STOP and report the failure with
-root cause analysis (use `superpowers-systematic-debugging` before proposing
-fixes). Do NOT attempt to "fix and continue" without the user's permission —
-report failures first.
+Fail fast and prefer the narrowest relevant checks first. During normal iteration do not run browser/staging/full-suite work that exceeds the repository's allowed time budget without explicit owner approval.
 
-```
+Typical fast gates:
+
+```bash
 pnpm typecheck
-pnpm --filter ./rentrix-app test
-pnpm --filter ./rentrix-app run test:financials      # if financial area touched
-pnpm supabase:migration-evidence                    # if migrations touched
-pnpm build
-pnpm e2e                                            # if Playwright tests were added/affected
+pnpm --filter ./rentrix-app test -- <relevant-glob>
+pnpm --filter ./rentrix-app run test:financials   # financial scope only
+pnpm supabase:migration-evidence                  # migration scope only
+pnpm build                                        # focused final gate when needed
 ```
 
-## Code-level verification checklist
+Use broader browser/E2E/release gates only when the task or owner explicitly requires them.
 
-For each acceptance criterion in the ticket:
-- [ ] Locate the code that satisfies it (file:line).
-- [ ] If it is a DB constraint/RPC: find or write a contract test that exercises it.
-- [ ] If it is a permission gate: find or write a role-matrix test asserting
-      ADMIN/MANAGER/USER visibility matches `appPermissions` / `rolePermissions`.
-- [ ] If it is a UI state: ensure loading/error/empty states are covered by a test.
-- [ ] If it involves money: confirm non-negative checks and correct rounding
-      (via `lib/moneyNormalization.ts`).
+## Verify the feature, not just files
 
-## Security verification (if auth/RLS changed)
+For every acceptance criterion confirm:
+- the implementation exists,
+- it is connected to the real data/service path,
+- it is reachable and user-operable,
+- permissions/business rules are preserved,
+- loading/error/empty states are honest,
+- mobile behavior is acceptable for user-facing work,
+- no mock/stub is being mistaken for production completion.
 
-- [ ] New SECURITY DEFINER functions:
-  - [ ] `SET search_path` present
-  - [ ] `REVOKE FROM PUBLIC, anon` for helpers
-  - [ ] `GRANT EXECUTE TO authenticated` for UI-callable
-  - [ ] Idempotency upsert into `financial_operation_idempotency`
-  - [ ] Audit log entry written
-- [ ] RLS policies:
-  - [ ] Ownership compares `auth.uid()` to the correct user_id column (lesson #5)
-  - [ ] Helper functions have EXECUTE granted (lesson #2)
-  - [ ] Unauthenticated users cannot read/write
-  - [ ] Cross-tenant/cross-office leakage tested
-- [ ] No secrets committed (`grep -rE "(api[_-]?key|password|secret)\s*[:=]\s*['\"][a-zA-Z0-9]{20}" rentrix-app/src supabase/migrations` returns zero hits).
-
-## Manual verification prompts
-
-If a local dev server is available, ask the user (or script) to visit:
-- The new route as ADMIN → confirm full actions.
-- The new route as MANAGER → confirm intended permission limitations.
-- The new route as USER → confirm access is denied or read-only.
-- Arabic RTL rendering at 320/768/1280 widths.
-- Print/export (if document generation is involved) opens correctly.
+For security/database work also verify company isolation, SECURITY DEFINER/search-path/ACL hygiene, idempotency, auditability, and unauthorized access rejection according to the existing contracts.
 
 ## Output
 
-Produce a verification report appended to the ticket under a
-`## Verification Report (&lt;date&gt;)` section, listing:
-- Gates run + PASS/FAIL for each.
-- Code-location trace for each acceptance criterion.
-- Any residual risks or unverified items (e.g. "Live Supabase not verified in
-  this environment").
-- Recommended follow-ups, if any.
-
-Exit with status 0 if all gates pass, non-zero otherwise.
+Append a concise verification result to the ticket or PR summary: checks run, PASS/FAIL, code evidence, residual risks, and anything not live-verified. Do not create a new standalone verification/status document.
