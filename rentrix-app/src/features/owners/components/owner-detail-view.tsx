@@ -108,7 +108,7 @@ export function OwnerDetailView({
             <CardTitle className="text-base">تسويات المالك</CardTitle>
             <CardDescription>أحدث التسويات المعدة لهذا المالك عبر كل عقاراته.</CardDescription>
             {canOpenOwnerSettlements ? (
-              <Button variant="secondary" asChild>
+              <Button variant="secondary" className="min-h-11" asChild>
                 <Link to="/owner-settlements">فتح مساحة التسويات</Link>
               </Button>
             ) : null}

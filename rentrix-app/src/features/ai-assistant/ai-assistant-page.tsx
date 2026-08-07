@@ -167,7 +167,7 @@ export function AiAssistantPage() {
               اضبط دالة Supabase Edge Function باسم <span dir="ltr">ai-assistant</span> ومتغير <span dir="ltr">AI_PROVIDER_API_KEY</span>، ثم أعد تحميل الصفحة. لا يتم استخدام أي مفتاح مزود من الواجهة الأمامية.
             </CardDescription>
             <div className="pt-2">
-              <Button asChild variant="secondary">
+              <Button asChild variant="secondary" className="min-h-11">
                 <Link to="/settings">{translateSharedLabel('configureAiAssistant', getAppLanguageState().language)}</Link>
               </Button>
             </div>

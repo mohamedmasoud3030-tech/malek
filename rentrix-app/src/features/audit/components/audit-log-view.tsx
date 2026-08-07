@@ -38,7 +38,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
         title="لا توجد أحداث تدقيق"
         description="لم يرجع مصدر سجل التدقيق أي أحداث للعرض."
         action={
-          <Button asChild>
+          <Button asChild className="min-h-11">
             <Link to="/dashboard">العودة إلى لوحة التحكم</Link>
           </Button>
         }

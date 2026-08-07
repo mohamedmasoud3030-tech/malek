@@ -12,7 +12,7 @@ export function NotFoundPage() {
           <CardDescription>{`المسار المطلوب غير متاح في بنية ${APP_BRAND_NAME} الجديدة.`}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button asChild><Link to="/dashboard">العودة للوحة التحكم</Link></Button>
+          <Button asChild className="min-h-11"><Link to="/dashboard">العودة للوحة التحكم</Link></Button>
         </CardContent>
       </Card>
     </div>

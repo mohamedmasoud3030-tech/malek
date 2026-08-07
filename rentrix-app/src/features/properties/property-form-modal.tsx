@@ -300,7 +300,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                     <p className="text-sm font-bold text-warning">أضف مالكاً نشطاً أولاً</p>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">الترتيب الصحيح هو: مالك ← عقار ← وحدة ← عقد.</p>
                   </div>
-                  <Button type="button" variant="secondary" asChild>
+                  <Button type="button" variant="secondary" className="min-h-11" asChild>
                     <Link to="/owners">الانتقال لإدارة الملاك</Link>
                   </Button>
                 </div>

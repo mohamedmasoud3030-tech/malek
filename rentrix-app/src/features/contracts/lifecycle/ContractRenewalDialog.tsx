@@ -60,7 +60,7 @@ export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed 
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild>
+              <Button asChild className="min-h-11">
                 <Link
                   to="/properties/$propertyId"
                   params={{ propertyId: contract.property_id }}

@@ -138,7 +138,7 @@ export function ReceiptDetailPage() {
                 {getErrorMessage(receiptQuery.error, 'حدث خطأ أثناء تحميل بيانات الإيصال.')}
               </p>
             </div>
-            <Button asChild variant="secondary">
+            <Button asChild variant="secondary" className="min-h-11">
               <Link to="/receipts">
                 <ArrowRight className="me-2 size-4" />
                 العودة لقائمة الإيصالات
@@ -264,7 +264,7 @@ export function ReceiptDetailPage() {
               <p className="text-xs font-bold text-muted-foreground">الفاتورة المرتبطة</p>
               <div className="mt-2 flex items-center justify-between">
                 <span className="font-bold">#{receipt.invoice_id?.slice(0, 8)}...</span>
-                <Button variant="secondary" size="sm" asChild>
+                <Button variant="secondary" size="sm" className="min-h-11" asChild>
                   <Link to="/invoices">
                     عرض الفاتورة
                     <ExternalLink className="me-1 size-3" />

@@ -158,7 +158,7 @@ export function LoginPage() {
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 left-1 my-auto grid size-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className="absolute inset-y-0 left-1 my-auto grid size-11 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
                     onClick={() => setIsPasswordVisible((visible) => !visible)}
                     aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
                     disabled={isSubmitting || Boolean(runtimeError)}

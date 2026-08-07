@@ -28,7 +28,7 @@ interface EntityDetailHeaderProps {
  *   backTo="/contracts"
  *   backLabel="العودة"
  *   status={<StatusBadge tone={contractStatusTone[contract.status]}>{contractStatusLabels[contract.status]}</StatusBadge>}
- *   actions={<Button asChild><Link to="/contracts/$contractId/edit" params={{ contractId }}>تعديل</Link></Button>}
+ *   actions={<Button asChild className="min-h-11"><Link to="/contracts/$contractId/edit" params={{ contractId }}>تعديل</Link></Button>}
  * />
  */
 export function EntityDetailHeader({ title, subtitle, backTo, backLabel = 'العودة', status, actions, className }: EntityDetailHeaderProps) {
@@ -43,7 +43,7 @@ export function EntityDetailHeader({ title, subtitle, backTo, backLabel = 'ال�
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
         {backTo && (
-          <Button variant="secondary" asChild>
+          <Button variant="secondary" className="min-h-11" asChild>
             <Link to={backTo}>
               <ArrowLeft className="me-2 size-4" />
               {backLabel}
