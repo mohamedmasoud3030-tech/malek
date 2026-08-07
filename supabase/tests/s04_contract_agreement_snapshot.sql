@@ -44,16 +44,16 @@ select is((select collection_role_snapshot from public.contracts where id::text=
 select is((select operating_model_snapshot from public.contracts where id::text='00000000-0000-0000-0000-000000004c51'),'OWNER_AGENCY','operating model is snapshotted');
 
 reset role;
-update public.owner_agreement_versions set superseded_at=now(),effective_to='2026-10-31' where id='00000000-0000-0000-0000-000000004c41';
+update public.owner_agreement_versions set superseded_at=now(),effective_to='2027-09-30' where id='00000000-0000-0000-0000-000000004c41';
 insert into public.owner_agreement_versions (id,owner_agreement_id,company_id,version_no,operating_model,collection_role,commission_type,commission_value,commission_recognition_basis,effective_from,effective_to)
-values ('00000000-0000-0000-0000-000000004c42','00000000-0000-0000-0000-000000004c31','00000000-0000-4000-8000-0000000004c1',2,'OWNER_AGENCY','OFFICE_IS_CREDITOR','RATE',6,'ON_COLLECTION','2026-11-01','2027-12-31');
+values ('00000000-0000-0000-0000-000000004c42','00000000-0000-0000-0000-000000004c31','00000000-0000-4000-8000-0000000004c1',2,'OWNER_AGENCY','OFFICE_IS_CREDITOR','RATE',6,'ON_COLLECTION','2027-10-15','2027-12-31');
 update public.owner_agreements set current_version_id='00000000-0000-0000-0000-000000004c42' where id='00000000-0000-0000-0000-000000004c31';
 select is((select collection_role_snapshot from public.contracts where id::text='00000000-0000-0000-0000-000000004c51'),'OWNER_IS_CREDITOR','later agreement version does not change historical contract snapshot');
 
 select throws_ok($$update public.contracts set collection_role_snapshot='OFFICE_IS_CREDITOR' where id::text='00000000-0000-0000-0000-000000004c51'$$,'55000','CONTRACT_AGREEMENT_SNAPSHOT_IMMUTABLE','snapshot cannot be rewritten');
 
 insert into public.contracts (id,property_id,unit_id,tenant_id,start_date,end_date,rent_amount,payment_cycle,status,agreement_id,company_id)
-values ('00000000-0000-0000-0000-000000004c52','00000000-0000-0000-0000-000000004c21','00000000-0000-0000-0000-000000004c22','00000000-0000-0000-0000-000000004c23','2027-10-01','2027-11-30',1000,'monthly','draft','00000000-0000-0000-0000-000000004c31','00000000-0000-4000-8000-0000000004c1');
+values ('00000000-0000-0000-0000-000000004c52','00000000-0000-0000-0000-000000004c21','00000000-0000-0000-0000-000000004c22','00000000-0000-0000-0000-000000004c23','2027-10-01','2027-10-10',1000,'monthly','draft','00000000-0000-0000-0000-000000004c31','00000000-0000-4000-8000-0000000004c1');
 set local role authenticated;
 select throws_ok($$select public.activate_contract_with_agreement_snapshot_atomic('00000000-0000-0000-0000-000000004c52')$$,'23514','CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED','activation requires one version covering the full contract term');
 select is((select lower(status) from public.contracts where id::text='00000000-0000-0000-0000-000000004c52'),'draft','failed activation leaves contract in draft');
