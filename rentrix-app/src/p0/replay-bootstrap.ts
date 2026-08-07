@@ -20,6 +20,27 @@ export type ReplayResult = {
 
 import { STUB_SQL_HEADER as STUB_SQL, REPLAY_TRANSFORMS as TRANSFORMS } from './replay-stubs';
 
+export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
+  'p0_company_isolation',
+  'p1_owner_settlement',
+  'phase2_financial_integrity',
+  'phase3a1b_canonical_accounts',
+  'phase3a1c_owner_settlement',
+  'property_owner_workflow',
+  'unit_archive_history',
+  'contract_workflow',
+  '20260804', // FA-003 owner-settlement input reservation (redefines settlement RPCs)
+  // S02 is a later security stage. Replaying it inside the P0 checkpoint would
+  // mask the exact pre-P0 row visibility and alter RPC fingerprints that P0
+  // forward/rollback tests intentionally compare.
+  's02_financial_direct_write_hardening_payments_expenses',
+  's02_remove_residual_financial_write_policies',
+  's02_financial_rpc_auth_sqlstate',
+  // Stage 3 business document references: independent of the P0 isolation fix
+  // and measured at its own checkpoint (see src/p3/stage3-business-references.test.ts).
+  'business_document_references',
+] as const;
+
 export async function createReplayedDatabase(options?: {
   throughMigration?: string;
   excludeMigrations?: string[];
@@ -32,24 +53,9 @@ export async function createReplayedDatabase(options?: {
     .filter((f) => f.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b));
 
-  // Determine exclusions: default includes later phases that REDEFINE functions
-  // this suite fingerprints (p0 fix, p1 settlements, phase2 reports, 3a-1b
-  // invoice/payment/receipt/void and 3A-1C owner-settlement canonical accounts)
-  // — rollback equivalence is measured at the P0 checkpoint.
-  const excludes = options?.excludeMigrations ?? [
-    'p0_company_isolation',
-    'p1_owner_settlement',
-    'phase2_financial_integrity',
-    'phase3a1b_canonical_accounts',
-    'phase3a1c_owner_settlement',
-    'property_owner_workflow',
-    'unit_archive_history',
-    'contract_workflow',
-    '20260804', // FA-003 owner-settlement input reservation (redefines settlement RPCs)
-    // Stage 3 business document references: independent of the P0 isolation fix
-    // and measured at its own checkpoint (see src/p3/stage3-business-references.test.ts).
-    'business_document_references',
-  ];
+  // P0 causality and rollback equivalence are measured at the P0 checkpoint,
+  // before later stages redefine the same policies and functions.
+  const excludes = options?.excludeMigrations ?? P0_CHECKPOINT_EXCLUDED_MIGRATIONS;
   files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
 
   if (options?.throughMigration) {
