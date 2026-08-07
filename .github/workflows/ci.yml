@@ -27,8 +27,10 @@ jobs:
           bash scripts/check-production-mutation-guard.sh
           node scripts/check-manual-migration-workflow.mjs
           node scripts/check-migration-rollback-hygiene.test.mjs
+          node scripts/check-no-new-legacy-journal-writes.test.mjs
           git fetch --no-tags origin main
           node scripts/check-migration-rollback-hygiene.mjs --base origin/main
+          node scripts/check-no-new-legacy-journal-writes.mjs --base origin/main
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
