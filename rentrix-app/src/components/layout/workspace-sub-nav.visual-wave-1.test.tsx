@@ -22,12 +22,13 @@ vi.mock('@/hooks/use-auth', () => ({
 
 import { WorkspaceSubNav } from './workspace-sub-nav';
 
-describe('Visual Wave 1 — workspace sub-navigation', () => {
-  it('keeps horizontally scrollable destinations touch-safe with an explicit focus ring', () => {
+describe('Visual Wave 1 — workspace sub-navigation (deprecated 2026-08)', () => {
+  it('is removed as duplicate navigation — renders nothing and has no scroll/ring classes', () => {
     const html = renderToStaticMarkup(<WorkspaceSubNav rootPath="/properties" />);
 
-    expect(html).toContain('min-h-11');
-    expect(html).toContain('focus-visible:ring-4');
-    expect(html).toContain('focus-visible:ring-primary/20');
+    // IA simplification removed WorkspaceSubNav duplication (kept SectionTabs as single secondary nav)
+    expect(html).toBe('');
+    expect(html).not.toContain('min-h-11');
+    expect(html).not.toContain('focus-visible:ring-4');
   });
 });

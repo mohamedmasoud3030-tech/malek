@@ -44,6 +44,11 @@ const requiredOperationalRoutes = [
   '/change-password',
   '/settings',
   '/accounting',
+  // canonical finance hubs (2026-08 IA simplification: single secondary layer)
+  '/finance/collections',
+  '/finance/expenses',
+  '/finance/deposits',
+  '/finance/banking',
 ] as const;
 
 const governanceRoutes = [
@@ -56,9 +61,13 @@ const governanceRoutes = [
 const approvedExpansionRoutes = [
   '/lands',
   '/leads',
-  '/commissions',
   '/communication',
   '/automation',
+] as const;
+
+const approvedExpansionRouteDefinitions = [
+  ...approvedExpansionRoutes,
+  '/commissions',
 ] as const;
 
 const routePathList = Array.from(routePaths);
@@ -119,8 +128,13 @@ describe('app route and navigation parity', () => {
   it('exposes approved product-expansion modules through the primary navigation rendered by desktop and mobile drawer', () => {
     const navPaths = navItems.map(([to]) => to);
 
-    expect(routePathList).toEqual(expect.arrayContaining([...approvedExpansionRoutes]));
+    // Route definitions must still exist for bookmark/redirect compatibility
+    expect(routePathList).toEqual(expect.arrayContaining([...approvedExpansionRouteDefinitions]));
+    // IA simplification 2026-08: commissions is now accessed via /finance/banking?section=commissions
+    // (single secondary layer inside finance hub) rather than as a duplicate direct nav entry.
     expect(navPaths).toEqual(expect.arrayContaining([...approvedExpansionRoutes]));
+    // Canonical finance hub must be reachable instead of the legacy direct entry
+    expect(navPaths).toContain('/finance/banking');
   });
 
   it('keeps mobile bottom navigation focused on five daily hubs while the drawer carries the full route inventory', () => {
@@ -134,20 +148,24 @@ describe('app route and navigation parity', () => {
     ]);
   });
 
-  it('exposes every standalone financial workspace in the financial hub without duplicating children in mobile navigation', () => {
+  it('exposes canonical finance hubs without duplicating legacy children in mobile navigation', () => {
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
     const financialsChildren = workspaceChildNavItems['/financials'].map(([to]) => to);
 
+    // IA simplification 2026-08: finance secondary nav now points to 4 canonical
+    // hub routes (each hub owns 2 tabs via SectionTabs). Legacy 8 routes
+    // (/invoices etc.) remain as REDIRECT-ONLY for bookmark compatibility but
+    // are not duplicated in the navigation inventory.
     expect(financialsChildren).toEqual(
+      expect.arrayContaining(['/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']),
+    );
+    expect(financialsChildren).toHaveLength(4);
+    expect(financialsChildren).not.toEqual(
       expect.arrayContaining(['/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions']),
     );
     expect(mobileNavPaths).toContain('/financials');
-    expect(mobileNavPaths).not.toContain('/invoices');
-    expect(mobileNavPaths).not.toContain('/receipts');
-    expect(mobileNavPaths).not.toContain('/arrears');
-    expect(mobileNavPaths).not.toContain('/owner-settlements');
-    expect(mobileNavPaths).not.toContain('/expenses');
-    expect(mobileNavPaths).not.toContain('/bank-reconciliation');
+    expect(mobileNavPaths).not.toContain('/finance/collections');
+    expect(mobileNavPaths).not.toContain('/finance/expenses');
   });
 
   it('groups every feature by the office workflow and keeps account security discoverable', () => {
@@ -175,6 +193,9 @@ describe('app route and navigation parity', () => {
     );
     expect(getGroupChildPaths('/maintenance')).toEqual(
       expect.arrayContaining(['/maintenance', '/utilities', '/automation', '/documents-vault']),
+    );
+    expect(getGroupChildPaths('/financials')).toEqual(
+      expect.arrayContaining(['/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']),
     );
     expect(getGroupChildPaths('/reports')).toEqual(
       expect.arrayContaining(['/reports', '/ai-assistant']),

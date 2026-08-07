@@ -25,24 +25,25 @@ vi.mock('@/hooks/use-auth', () => ({
   }),
 }));
 
-describe('WorkspaceSubNav component contract', () => {
+describe('WorkspaceSubNav component contract — deprecated (IA simplification 2026-08)', () => {
   beforeEach(() => {
     mockRole = 'MANAGER';
   });
 
-  it('renders secondary workspace navigation items for authorized users without cluttering top-level sidebar', () => {
+  it('is deprecated and renders no duplicate secondary navigation (returns null)', () => {
     const html = renderToStaticMarkup(<WorkspaceSubNav rootPath="/properties" />);
 
-    expect(html).toContain('الرئيسية للمساحة');
-    expect(html).toContain('href="/owners"');
-    expect(html).toContain('href="/units"');
-    expect(html).toContain('href="/lands"');
+    // Removed: Sidebar → Workspace → SubNav → SectionTabs → Page (excessive drilling).
+    // Hubs now use the single SectionTabs secondary nav; this stub must render nothing.
+    expect(html).toBe('');
+    expect(html).not.toContain('الرئيسية للمساحة');
   });
 
-  it('hides permissioned sub-workspaces when authorization lacks access', () => {
+  it('remains a no-op for every hub root (no permissioned links rendered)', () => {
     mockRole = 'USER';
     const html = renderToStaticMarkup(<WorkspaceSubNav rootPath="/settings" />);
 
+    expect(html).toBe('');
     expect(html).not.toContain('href="/system"');
     expect(html).not.toContain('href="/audit-log"');
   });

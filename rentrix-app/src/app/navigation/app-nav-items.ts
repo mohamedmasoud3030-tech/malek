@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileCheck, FileSpreadsheet, FileText, FolderKanban, HandCoins, KeyRound, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserPlus, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
+import { BarChart3, Bot, Building2, ContactRound, DoorOpen, FileCheck, FileText, FolderKanban, KeyRound, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserPlus, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -55,14 +55,10 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
   ],
   '/financials': [
-    ['/invoices', 'invoices', 'مراجعة الفواتير وتسجيل دفعاتها', FileSpreadsheet],
-    ['/receipts', 'receipts', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText],
-    ['/expenses', 'expenses', 'تسجيل ومراجعة نفقات العقارات', WalletCards, 'expenses.view'],
-    ['/arrears', 'arrears', 'متابعة الذمم وأعمار الديون', ClipboardList, 'arrears.view'],
-    ['/deposits', 'deposits', 'تتبع مبالغ أمانات وتأمينات المستأجرين', FileCheck, 'financial.deposits.view'],
-    ['/owner-settlements', 'ownerSettlements', 'إعداد تسويات الملاك واعتمادها وصرفها', HandCoins, 'financial.owner_settlements.view'],
-    ['/bank-reconciliation', 'bankReconciliation', 'مطابقة السجلات مع الحسابات البنكية', Landmark, 'financial.bank_reconciliation.view'],
-    ['/commissions', 'commissions', 'تتبع عمولات المكتب وحالات الاستحقاق', BadgeDollarSign, 'commissions.view'],
+    ['/finance/collections', 'collectionsHub', 'الفواتير والإيصالات والتحصيل اليومي', ReceiptText],
+    ['/finance/expenses', 'expensesHub', 'المصروفات والذمم المتأخرة', WalletCards, 'expenses.view'],
+    ['/finance/deposits', 'depositsHub', 'التأمينات وتسويات الملاك', FileCheck, 'financial.deposits.view'],
+    ['/finance/banking', 'bankingHub', 'المطابقة البنكية وعمولات المكتب', Landmark, 'financial.bank_reconciliation.view'],
   ],
   '/reports': [
     ['/ai-assistant', 'aiAssistant', 'مساعد قراءة فقط لتلخيص المتأخرات والتجديدات واللقطات المالية', Bot],
