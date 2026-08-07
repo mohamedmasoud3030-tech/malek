@@ -230,7 +230,12 @@ export function UnitsList({
         confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmArchive}
-      />
+      >
+        <ul className="mt-3 space-y-1.5 border-t border-border/50 pt-3 text-xs leading-5 text-muted-foreground">
+          <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة وحدة مرتبطة بعقد محفوظ؛ يجب الحفاظ على الوحدة للسجل والتقارير.</li>
+          <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن الأرشفة مع طلب صيانة مفتوح أو قيد التنفيذ.</li>
+        </ul>
+      </ConfirmDialog>
     </Card>
   );
 }

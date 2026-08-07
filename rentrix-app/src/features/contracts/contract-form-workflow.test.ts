@@ -23,11 +23,6 @@ describe('contract creation workflow order and agreement resolution contract', (
     'utf8',
   );
 
-  const pageSource = readFileSync(
-    resolve(import.meta.dirname, './ContractFormPage.tsx'),
-    'utf8',
-  );
-
   const invariantsMigration = readFileSync(
     resolve(import.meta.dirname, '../../../../supabase/migrations/20260730091200_contract_workflow_invariants.sql'),
     'utf8',
@@ -48,7 +43,9 @@ describe('contract creation workflow order and agreement resolution contract', (
 
   it('5. Shows an actionable recovery surface when no valid management agreement exists covering the lease dates', () => {
     expect(fieldsSource).toContain('ContractAgreementMissingAlert');
-    expect(pageSource).toContain('ContractAgreementMissingAlert');
+    // The alert is rendered by the modal (the live create/edit surface); the
+    // retired full-page shell was removed in Wave A.
+    expect(modalSource).toContain('ContractAgreementMissingAlert');
     expect(alertSource).toContain('لا توجد اتفاقية إدارة تغطي كامل فترة العقد');
     expect(alertSource).toContain('فتح اتفاقيات العقار');
   });

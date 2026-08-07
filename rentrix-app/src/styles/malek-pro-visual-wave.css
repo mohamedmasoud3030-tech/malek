@@ -170,46 +170,12 @@
   max-width: min(100%, 96rem);
 }
 
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] {
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 1rem;
-  padding: clamp(1rem, 2vw, 1.6rem);
-  border: 1px solid hsl(222 28% 18% / 0.18);
-  border-radius: 1.35rem;
-  color: white;
-  background:
-    radial-gradient(circle at 8% 20%, hsl(var(--primary) / 0.42), transparent 16rem),
-    linear-gradient(135deg, hsl(222 39% 13%) 0%, hsl(222 34% 18%) 58%, hsl(174 52% 22%) 100%);
-  box-shadow: 0 20px 50px -32px rgb(15 23 42 / 0.75);
-}
-
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header]::after {
-  content: '';
-  position: absolute;
-  inset-inline-end: -3rem;
-  inset-block-start: -4.5rem;
-  width: 12rem;
-  height: 12rem;
-  border: 1px solid rgb(255 255 255 / 0.12);
-  border-radius: 999px;
-  box-shadow: 0 0 0 2.25rem rgb(255 255 255 / 0.035), 0 0 0 4.5rem rgb(255 255 255 / 0.02);
-  pointer-events: none;
-}
-
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] :is(h1, h2, h3) {
-  color: white;
-  letter-spacing: -0.02em;
-}
-
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] p {
-  color: rgb(226 232 240 / 0.82);
-}
-
-[data-operational-route='true'] [data-visual-wave='malek-pro'] [data-page-header] [data-ui-button]:not([data-variant='ghost']) {
-  border-color: rgb(255 255 255 / 0.18);
-  box-shadow: 0 10px 24px -16px rgb(0 0 0 / 0.7);
-}
+/* --------------------------------------------------------------------------
+   Operational page headers — compact standard header (visual UX pass).
+   The previous dark-gradient hero card + decorative rings were removed:
+   page headers now use the standard compact PageHeader treatment
+   (title + one concise line + actions). Presentation only.
+   -------------------------------------------------------------------------- */
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] :is([data-list-controls], [data-filter-bar]) {
   position: relative;

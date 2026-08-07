@@ -14,7 +14,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { APP_BRAND_LOCKUP_ASSET, APP_BRAND_NAME, APP_BRAND_TAGLINE_AR } from '@/lib/brand';
 import { getEnvDiagnostics } from '@/lib/runtime-diagnostics';
 import { SUPPORT_CONTACTS } from '@/lib/contact';
-import { CommandCenterPanel } from './command-center-panel';
 import { getLoginErrorMessage } from './login-error-message';
 
 export function LoginPage() {
@@ -73,22 +72,22 @@ export function LoginPage() {
 
   return (
     <div
-      className="flex min-h-screen min-h-dvh w-full flex-col md:min-h-0 md:flex-row"
+      className="flex min-h-screen min-h-dvh w-full flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-10"
       data-login-surface
       dir="rtl"
     >
-      <div className="hidden md:flex md:w-[60%] md:shrink-0 lg:w-[62%]">
-        <CommandCenterPanel />
-      </div>
-
-      <div className="flex min-h-dvh flex-1 flex-col overflow-y-auto px-4 sm:px-6 lg:px-10">
-        <div className="safe-top-app safe-bottom-overlay mx-auto flex min-h-dvh w-full max-w-sm flex-1 flex-col py-5 sm:py-7 md:min-h-0 md:py-8">
-          <section className="flex flex-1 flex-col justify-center py-6 sm:py-8" data-login-main>
+      <div className="safe-top-app safe-bottom-overlay w-full max-w-sm">
+        <section className="flex flex-col justify-center" data-login-main>
+          {/* Compact centered auth card — one calm surface, no split layout. */}
+          <div
+            className="rounded-2xl border border-border/70 bg-card p-5 shadow-card sm:p-7"
+            data-login-card
+          >
             <header className="mb-6 flex flex-col items-center gap-3 text-center" data-login-brand>
               <img
                 src={APP_BRAND_LOCKUP_ASSET}
                 alt={APP_BRAND_NAME}
-                className="size-28 rounded-[28%] object-cover shadow-sm ring-1 ring-border/60 sm:size-32"
+                className="size-16 rounded-2xl object-cover shadow-sm ring-1 ring-border/60 sm:size-20"
                 data-malek-canonical-lockup
               />
               <h1
@@ -208,31 +207,31 @@ export function LoginPage() {
                 )}
               </Button>
             </form>
-          </section>
+          </div>
+        </section>
 
-          <footer
-            className="shrink-0 border-t border-border/40 pt-3 text-center text-[9.5px] leading-4 text-muted-foreground/70"
-            data-contact-footer
-            aria-label="بيانات الدعم والتواصل"
-          >
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
-              <span>الدعم:</span>
-              <span dir="ltr">{SUPPORT_CONTACTS.oman.number}</span>
-              <span aria-hidden="true">·</span>
-              <span dir="ltr">{SUPPORT_CONTACTS.egypt.number}</span>
-              <span aria-hidden="true">·</span>
-              <span dir="ltr">{SUPPORT_CONTACTS.saudi.number}</span>
-            </div>
-            <div className="mt-0.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5" dir="ltr">
-              {SUPPORT_CONTACTS.emails.map((contact, index) => (
-                <span key={contact.address}>
-                  {index > 0 ? <span className="me-2" aria-hidden="true">·</span> : null}
-                  {contact.address}
-                </span>
-              ))}
-            </div>
-          </footer>
-        </div>
+        <footer
+          className="mt-6 shrink-0 border-t border-border/40 pt-3 text-center text-[9.5px] leading-4 text-muted-foreground/70"
+          data-contact-footer
+          aria-label="بيانات الدعم والتواصل"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
+            <span>الدعم:</span>
+            <span dir="ltr">{SUPPORT_CONTACTS.oman.number}</span>
+            <span aria-hidden="true">·</span>
+            <span dir="ltr">{SUPPORT_CONTACTS.egypt.number}</span>
+            <span aria-hidden="true">·</span>
+            <span dir="ltr">{SUPPORT_CONTACTS.saudi.number}</span>
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5" dir="ltr">
+            {SUPPORT_CONTACTS.emails.map((contact, index) => (
+              <span key={contact.address}>
+                {index > 0 ? <span className="me-2" aria-hidden="true">·</span> : null}
+                {contact.address}
+              </span>
+            ))}
+          </div>
+        </footer>
       </div>
     </div>
   );

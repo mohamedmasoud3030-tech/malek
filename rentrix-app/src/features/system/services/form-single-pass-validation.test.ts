@@ -3,12 +3,17 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { unitSchema } from '@/features/units/unit-schema';
 
+// The standalone full-page person/property forms were retired in Wave A (UX
+// simplification): their create/edit journeys now render the same compact
+// centered modals used inside the workspaces (PersonFormModal /
+// PropertyFormModal), which stay covered here. Contracts keep their rich form
+// page driven by useContractForm. Every live submission surface must keep the
+// single-pass resolver contract (raw:true + one .parse(values) in the submit
+// handler) — the list below is the authoritative inventory of those surfaces.
 const resolverBackedSubmissionFiles = [
   '../../units/unit-form-modal.tsx',
   '../../people/person-form-modal.tsx',
-  '../../people/person-form-page.tsx',
   '../../properties/property-form-modal.tsx',
-  '../../properties/property-form-page.tsx',
   '../../contracts/useContractForm.ts',
 ] as const;
 

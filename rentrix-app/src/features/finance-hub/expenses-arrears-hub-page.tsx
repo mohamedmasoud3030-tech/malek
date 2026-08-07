@@ -13,7 +13,7 @@ export function ExpensesArrearsHubPage() {
     <FinanceHubWorkspace
       defaultSection="expenses"
       title="المصروفات والذمم"
-      description="تسجيل ومراجعة مصروفات العقارات، ومتابعة الذمم المتأخرة وأعمار الديون — في مكان واحد."
+      description="تسجيل ومراجعة مصروفات العقارات، ومتابعة الذمم المتأخرة وأعمار الديون."
     />
   );
 }

@@ -16,6 +16,8 @@ import {
   Printer,
   RefreshCw,
   Send,
+  ShieldAlert,
+  ShieldCheck,
   Wallet,
 } from 'lucide-react';
 import { AsyncContentState } from '@/components/async-content-state';
@@ -29,7 +31,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
+import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
@@ -344,6 +346,12 @@ export function OwnerSettlementWorkspace() {
         <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totals.net)} icon={BadgeCheck} accent="sky" sub="صافي جميع حالات التسوية" />
       </ResponsiveCardGrid>
 
+      <SettlementSupervisionBanner
+        settlements={settlements}
+        canApproveSettlement={canApproveSettlement}
+        canPaySettlement={canPaySettlement}
+      />
+
       {activeMutationError ? <EntityForm.ErrorSummary message={errorMessage(activeMutationError)} /> : null}
       {backgroundRefreshError ? (
         <EntityForm.ErrorSummary message={`تعذر تحديث التسويات؛ ما زالت آخر بيانات ناجحة ظاهرة. ${errorMessage(backgroundRefreshError)}`} />
@@ -397,7 +405,13 @@ export function OwnerSettlementWorkspace() {
 
                   <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2 text-xs">
                     <span className="text-muted-foreground">
-                      {settlement.approved_at ? 'تم الاعتماد ماليًا' : 'في انتظار الاعتماد المالي'}
+                      {settlement.status === 'paid'
+                        ? `تم الصرف${settlement.paid_at ? ` بتاريخ ${formatDate(settlement.paid_at)}` : ''}`
+                        : settlement.status === 'approved'
+                          ? 'معتمدة للصرف'
+                          : settlement.status === 'cancelled'
+                            ? 'ملغاة'
+                            : 'في انتظار الاعتماد المالي'}
                       {settlement.payout_reference ? ` · مرجع الصرف: ${settlement.payout_reference}` : ''}
                     </span>
                     <div className="flex flex-wrap gap-2">
@@ -452,6 +466,24 @@ export function OwnerSettlementWorkspace() {
       >
         <EntityForm.Root onSubmit={handlePayout} aria-busy={payoutMutation.isPending}>
           <EntityForm.ErrorSummary message={payoutMutation.error ? errorMessage(payoutMutation.error) : undefined} />
+          {selectedSettlement ? (
+            <EntityForm.Section
+              title="معاينة الصرف"
+              description="المبلغ مستمد من الخادم ويعاد اشتقاقه عند الاعتماد والدفع — لا يمكن تعديله من هنا."
+            >
+              <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                <Metric label="صافي المستحق" value={selectedSettlement.net_payable_amount} tone="success" />
+                <Metric label="المحصل" value={selectedSettlement.gross_rent_collected} />
+                <Metric label="أتعاب المكتب" value={selectedSettlement.management_fee_amount} tone="primary" />
+                <Metric label="المصروفات والضريبة" value={selectedSettlement.maintenance_deductions + selectedSettlement.utility_deductions} tone="danger" />
+              </div>
+              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
+                سيُصرف مبلغ <strong className="tabular-nums" dir="ltr">{formatMoney(selectedSettlement.net_payable_amount)}</strong> إلى {selectedSettlement.owner_name} عن {selectedSettlement.property_title}
+                {' '}({selectedSettlement.period_start} إلى {selectedSettlement.period_end})
+                {' '}عبر {payoutMethod === 'bank_transfer' ? 'تحويل بنكي' : payoutMethod === 'check' ? 'شيك مصرفي' : 'نقدًا'}.
+              </p>
+            </EntityForm.Section>
+          ) : null}
           <EntityForm.Section title="بيانات الصرف" description="عند التأكيد تُنشئ قاعدة البيانات قيد مالك مستحق/نقدية متوازنًا.">
             <EntityForm.Field label="وسيلة الصرف">
               <Select value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value as ProcessPayoutPayload['payout_method'])}>
@@ -586,6 +618,15 @@ function DraftOverlay({
                   ? ` · ضريبة ${preview.breakdown.vat.rate ?? 0}% على أتعاب المكتب`
                   : ' · الضريبة غير مفعّلة لهذه الشركة'}
               </p>
+              {previewLoading ? (
+                <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs font-medium leading-5 text-warning" role="status">
+                  تغيّرت معايير الاتفاقية أو الفترة — جارٍ إعادة حساب المبالغ من الخادم. لن يُفعّل الإنشاء إلا بعد اكتمال المعاينة الجديدة.
+                </p>
+              ) : (
+                <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
+                  عند إنشاء المسودة تُحجز التحصيلات والمصروفات المدرجة ذرّيًا، ولا يمكن سحبها إلى تسوية أخرى لنفس الفترة (قاعدة الحجز D14).
+                </p>
+              )}
             </>
           ) : (
             <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
@@ -634,4 +675,65 @@ function DraftField({
       />
     </EntityForm.Field>
   );
+}
+
+
+/**
+ * Wave D — first-run ADMIN supervision UX.
+ *
+ * Surfaces the supervision gap the owner audit flags for E7: approval and
+ * payout are ADMIN-gated (financial.owner_settlements.approve/.pay), and the
+ * first payout should run under ADMIN eyes. This banner only informs — it
+ * never changes permissions or accounting.
+ */
+export function SettlementSupervisionBanner({
+  settlements,
+  canApproveSettlement,
+  canPaySettlement,
+}: Readonly<{
+  settlements: readonly OwnerSettlementRecord[];
+  canApproveSettlement: boolean;
+  canPaySettlement: boolean;
+}>) {
+  const hasPending = settlements.some((settlement) => settlement.status === 'pending');
+  const hasPaid = settlements.some((settlement) => settlement.status === 'paid');
+  const hasApproved = settlements.some((settlement) => settlement.status === 'approved');
+
+  if (settlements.length === 0) return null;
+
+  // The cashier/operator view: settlements need a role they do not hold.
+  if (hasPending && !canApproveSettlement) {
+    return (
+      <div
+        role="status"
+        className="flex items-start gap-3 rounded-2xl border border-info/25 bg-info/10 p-3.5 text-info"
+        data-settlement-supervision="needs-admin"
+      >
+        <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+        <p className="text-xs font-medium leading-5">
+          توجد تسويات بانتظار الاعتماد المالي. الاعتماد والصرف يتطلبان صلاحية المدير/المسؤول —
+          راجع مسؤول النظام لتفعيلها لحسابك.
+        </p>
+      </div>
+    );
+  }
+
+  // First-run supervision: the very first payout cycle runs under ADMIN eyes.
+  if (!hasPaid && (hasPending || hasApproved) && (canApproveSettlement || canPaySettlement)) {
+    return (
+      <div
+        role="status"
+        className="flex items-start gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-3.5 text-warning"
+        data-settlement-supervision="first-run"
+      >
+        <ShieldCheck className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+        <p className="text-xs font-medium leading-5">
+          أول دورة تسويات للمكتب — يُنصح بإشراف المدير/المسؤول على أول اعتماد وصرف والتحقق من
+          بيانات المالك والحساب قبل التنفيذ. هذه ملاحظة تشغيلية فقط ولا تغيّر الصلاحيات.
+        </p>
+      </div>
+    );
+  }
+
+  return null;
 }

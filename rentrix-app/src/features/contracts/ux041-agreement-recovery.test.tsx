@@ -44,7 +44,8 @@ describe('ContractAgreementMissingAlert (UX-041)', () => {
 
   it('uses ContractAgreementMissingAlert in all contract form variants', () => {
     expect(fieldsSource).toContain('ContractAgreementMissingAlert');
-    expect(pageSource).toContain('ContractAgreementMissingAlert');
+    // The modal is the live create/edit surface (the full-page shell was
+    // retired in Wave A), so the alert contract is asserted there.
     expect(modalSource).toContain('ContractAgreementMissingAlert');
   });
 
@@ -88,7 +89,7 @@ describe('ContractAgreementMissingAlert (UX-041)', () => {
   it('preserves validation block (does not allow creating invalid contracts)', () => {
     // The submitDisabled still blocks submission when coverage is missing
     expect(fieldsSource).toContain('Boolean(coverageError)');
-    expect(pageSource).toContain('coverageMissing');
+    expect(modalSource).toContain('coverageMissing');
   });
 
   it('handles error state with retry action', () => {
