@@ -2,7 +2,8 @@
 -- Reverses: supabase/migrations/20260807015000_s08_accounting_periods_replay_compatibility.sql
 --
 -- Safety: drop only the replay compatibility VIEW. Never drop the canonical
--- Stage 3 accounting_periods TABLE.
+-- Stage 3 accounting_periods TABLE. This rollback is intentionally relation-
+-- kind aware and is a no-op when the canonical table exists.
 
 begin;
 
