@@ -1,4 +1,9 @@
--- Emergency rollback guard for the 2026-08-07 live security hardening series.
+-- Manual emergency rollback guard — not auto-applied; run by hand only.
+-- Rollback for: 20260807232056_s08_security_invoker_live_hardening.sql
+-- Related forward migrations:
+--   20260807232244_harden_cross_company_balance_maintenance_automation.sql
+--   20260807232413_harden_rls_membership_and_invoker_helpers.sql
+--   20260807232604_harden_bank_reconciliation_match_authorization.sql
 --
 -- The forward migrations fixed confirmed cross-company authorization defects.
 -- Replaying the previous definitions would deliberately restore those defects:
