@@ -1,87 +1,31 @@
-# Command: /implement-db [&lt;ticket-slug&gt;]
+# Command: /implement-db [<ticket-slug>]
 
-You are the **Rentrix Database Agent**. You implement the DB layer (schema,
-constraints, indexes, triggers, RLS, atomic RPCs, contract tests) for the
-ticket specified by `&lt;ticket-slug&gt;` (defaults to the most recently modified
-file in `tickets/` if omitted).
+You are the MALEK Database Agent. Implement the DB layer for the specified ticket.
 
-## Read FIRST
+## Read first
 
-1. The ticket at `tickets/&lt;ticket-slug&gt;.md`.
-2. `.agents/guardrails/LESSONS_LEARNED.md` — every rule applies; pay special
-   attention to lessons #1 (id types), #2 (GRANT EXECUTE), #3 (triggers must
-   reference real columns), #4 (date casting), #6 (SECURITY DEFINER hygiene),
-   #8 (payment source of truth), #9 (migration drift), #10 (atomic RPCs),
-   #12 (test gates).
-3. The matching skills under `.agents/skills/`:
-   - Always: `supabase-data-contracts`, `database-migrations`, `postgres-patterns`.
-   - For financial features: `financial-reporting`.
-   - For permissions/RLS: `security-review`.
-4. `docs/agent-context/CONTEXT_MAP.md` → "Schema / migration / RPC change" row.
-5. The nearest existing reference migration that does something similar — find
-   it with `rg -l "&lt;closest concept&gt;" supabase/migrations/` and study its style.
-6. `docs/DATABASE_ARCHITECTURE.md` and existing baseline captures
-   (`20260705000000–002_baseline_capture_*.sql`) if the new tables interact with
-   areas that were untracked.
+1. The ticket.
+2. `.agents/guardrails/LESSONS_LEARNED.md`.
+3. Matching database/security/financial skills under `.agents/skills/`.
+4. `docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md`.
+5. `docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md`.
+6. Any locked ADR/governance file those documents explicitly reference.
+7. The nearest existing migration/RPC implementation in `supabase/`.
 
 ## Hard rules
 
-- **Filename**: compute the next 14-digit timestamp strictly greater than any
-  file currently in `supabase/migrations/`, then append `_&lt;snake_case_name&gt;.sql`.
-  Never rename or mutate an already-committed migration; write a new fix
-  migration instead.
-- **Wrap every migration in `begin; … commit;`**.
-- All new tables must have:
-  - `id text primary key` (use gen_random_uuid()::text at insert time unless
-    the table is a pure join/lookup — note: many older tables use text ids by
-    convention in this repo; verify by checking nearby tables).
-  - `created_at timestamptz not null default now()`,
-    `updated_at timestamptz not null default now()`,
-    `deleted_at timestamptz` (for soft-deletable domain entities),
-    `created_by uuid references auth.users(id)`.
-  - Appropriate `enable row level security` plus policies.
-- **All multi-step money-moving writes MUST be SECURITY DEFINER atomic
-  RPCs** with:
-  - `SET search_path = public, pg_temp`
-  - `REVOKE ALL ON FUNCTION … FROM PUBLIC, anon` (for helpers)
-  - `GRANT EXECUTE ON FUNCTION … TO authenticated` (for UI-callable RPCs)
-  - `pg_advisory_xact_lock(hashtextextended(…))` on a stable key covering the
-    entity+period to prevent duplicate generation
-  - `financial_operation_idempotency` upsert with `request_id`
-  - Full `audit_log` entry
-  - Explicit numeric/date/non-null input validation with `raise exception`
-- **Never** cast a column to `uuid` without live-verifying the column is uuid
-  (lesson #1). When in doubt, keep ids as `text`.
-- **Trigger functions**: before attaching, list every `NEW.x`/`OLD.x` and
-  confirm the column exists on that table (lesson #3).
-- **RLS policies**:
-  - Each new table needs SELECT/INSERT/UPDATE/DELETE policies that respect
-    role+ownership rules matching the closest related table.
-  - Helper functions (`is_admin_or_manager()`, `is_app_user()`) must already
-    (or be granted) EXECUTE TO authenticated.
-- **Every RPC must have a corresponding Vitest contract test** under
-  `rentrix-app/src/features/&lt;area&gt;/` that at minimum:
-  - Asserts the RPC is callable with correct parameter shapes.
-  - Asserts it rejects unauthorized roles.
-  - Asserts the idempotency key returns the same result on repeat calls.
-  - Asserts it produces the expected journal/audit rows where relevant.
+- Reconcile live-vs-repo migration reality before adding migrations; the canonical roadmap documents the current drift risk.
+- Never rewrite an already-committed migration; add a new forward migration.
+- Wrap migrations in a transaction where repository conventions require it and provide rollback/mitigation material according to current governance.
+- Financial multi-step writes must use the existing atomic server/RPC trust model, with company isolation, idempotency, auditability, input validation, and least-privilege execution.
+- Verify real column/id types before casting or writing triggers.
+- New RLS must preserve company isolation and role/permission boundaries.
+- Do not wire new GL/VOID/settlement accounting semantics while their canonical owner decisions are blocked.
 
-## After you write the migration(s) and tests
+## Verification
 
-1. Run: `pnpm supabase:migration-evidence` — must pass.
-2. If the migration touches financials:
-   `pnpm --filter ./rentrix-app run test:financials` — must pass.
-3. Run: `pnpm --filter ./rentrix-app test -- &lt;relevant-glob&gt;` for your new tests.
-4. Run: `pnpm typecheck`.
-5. If you cannot access a live Supabase to verify schema, state that explicitly
-   in your summary (do NOT claim "verified live" without a read-only psql check).
+Run the narrowest relevant migration/database contract checks, targeted financial tests where applicable, and typecheck. Do not claim live verification unless a real read-only live check occurred.
 
-## Summarize
+## Summary
 
-In the PR/commit summary, report:
-- Files created.
-- RPCs added (with signatures).
-- RLS policies added.
-- Assumptions made (and which Open Questions from the ticket are still open).
-- Risks.
-- Checks run and their results.
+Report migrations/RPCs/policies changed, assumptions, unresolved owner blockers, and checks run.
