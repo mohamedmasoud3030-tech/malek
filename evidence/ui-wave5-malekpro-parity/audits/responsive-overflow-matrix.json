@@ -7,7 +7,7 @@
     "htmlW": 320,
     "vw": 320,
     "titleRight": 261,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "login",
@@ -17,7 +17,7 @@
     "htmlW": 375,
     "vw": 375,
     "titleRight": 288,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "login",
@@ -27,7 +27,7 @@
     "htmlW": 414,
     "vw": 414,
     "titleRight": 308,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "login",
@@ -37,7 +37,7 @@
     "htmlW": 753,
     "vw": 768,
     "titleRight": 488,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "login",
@@ -47,7 +47,7 @@
     "htmlW": 1009,
     "vw": 1024,
     "titleRight": 616,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "login",
@@ -57,7 +57,7 @@
     "htmlW": 1425,
     "vw": 1440,
     "titleRight": 824,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "dashboard",
@@ -217,7 +217,7 @@
     "htmlW": 753,
     "vw": 768,
     "titleRight": 648,
-    "smallControls": 7
+    "smallControls": 0
   },
   {
     "surface": "settings",
@@ -227,7 +227,7 @@
     "htmlW": 1009,
     "vw": 1024,
     "titleRight": 896,
-    "smallControls": 7
+    "smallControls": 0
   },
   {
     "surface": "settings",
@@ -237,7 +237,7 @@
     "htmlW": 1425,
     "vw": 1440,
     "titleRight": 1312,
-    "smallControls": 7
+    "smallControls": 0
   },
   {
     "surface": "owner-detail",
@@ -247,7 +247,7 @@
     "htmlW": 320,
     "vw": 320,
     "titleRight": 320,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "owner-detail",
@@ -257,7 +257,7 @@
     "htmlW": 375,
     "vw": 375,
     "titleRight": 375,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "owner-detail",
@@ -267,7 +267,7 @@
     "htmlW": 414,
     "vw": 414,
     "titleRight": 414,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "owner-detail",
@@ -277,7 +277,7 @@
     "htmlW": 753,
     "vw": 768,
     "titleRight": 753,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "owner-detail",
@@ -287,7 +287,7 @@
     "htmlW": 1009,
     "vw": 1024,
     "titleRight": 1009,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "owner-detail",
@@ -297,7 +297,7 @@
     "htmlW": 1425,
     "vw": 1440,
     "titleRight": 1425,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "maintenance-workspace",
@@ -427,7 +427,7 @@
     "htmlW": 320,
     "vw": 320,
     "titleRight": 320,
-    "smallControls": 2
+    "smallControls": 0
   },
   {
     "surface": "vault",
@@ -437,7 +437,7 @@
     "htmlW": 375,
     "vw": 375,
     "titleRight": 375,
-    "smallControls": 2
+    "smallControls": 0
   },
   {
     "surface": "vault",
@@ -447,7 +447,7 @@
     "htmlW": 414,
     "vw": 414,
     "titleRight": 414,
-    "smallControls": 2
+    "smallControls": 0
   },
   {
     "surface": "vault",
@@ -457,7 +457,7 @@
     "htmlW": 753,
     "vw": 768,
     "titleRight": 753,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "vault",
@@ -467,7 +467,7 @@
     "htmlW": 1009,
     "vw": 1024,
     "titleRight": 1009,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "vault",
@@ -477,7 +477,7 @@
     "htmlW": 1425,
     "vw": 1440,
     "titleRight": 1425,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "deposits",
@@ -907,7 +907,7 @@
     "htmlW": 320,
     "vw": 320,
     "titleRight": 291,
-    "smallControls": 2
+    "smallControls": 0
   },
   {
     "surface": "form-bottom-sheet",
@@ -917,7 +917,7 @@
     "htmlW": 375,
     "vw": 375,
     "titleRight": 346,
-    "smallControls": 2
+    "smallControls": 0
   },
   {
     "surface": "form-bottom-sheet",
@@ -927,7 +927,7 @@
     "htmlW": 414,
     "vw": 414,
     "titleRight": 385,
-    "smallControls": 2
+    "smallControls": 0
   },
   {
     "surface": "form-bottom-sheet",
@@ -937,7 +937,7 @@
     "htmlW": 753,
     "vw": 768,
     "titleRight": 712,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "form-bottom-sheet",
@@ -947,7 +947,7 @@
     "htmlW": 1009,
     "vw": 1024,
     "titleRight": 872,
-    "smallControls": 1
+    "smallControls": 0
   },
   {
     "surface": "form-bottom-sheet",
@@ -957,6 +957,6 @@
     "htmlW": 1425,
     "vw": 1440,
     "titleRight": 1080,
-    "smallControls": 1
+    "smallControls": 0
   }
 ]

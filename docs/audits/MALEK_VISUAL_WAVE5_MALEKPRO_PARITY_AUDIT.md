@@ -77,7 +77,8 @@ Machine report: `evidence/ui-wave5-malekpro-parity/audits/axe-wcag2aa-final.json
 ## 4b. Responsive overflow matrix (Phase 3 check)
 
 96 checks (16 fixture surfaces × 320/375/414/768/1024/1440 px) measured for
-horizontal document overflow and page-title clipping: **0 defects**.
+horizontal document overflow and page-title clipping: **0 defects** (re-verified
+after the Wave 5.1/5.2 token/input/touch changes — no overflow regression).
 Machine report:
 `evidence/ui-wave5-malekpro-parity/audits/responsive-overflow-matrix.json`.
 
