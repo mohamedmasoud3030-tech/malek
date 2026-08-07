@@ -2,16 +2,16 @@
 begin;
 select plan(17);
 
-select has_column('public','contracts','maker_user_id');
-select has_column('public','contracts','checker_user_id');
-select has_column('public','contracts','maker_signature');
-select has_column('public','contracts','checker_signature');
-select has_column('public','contracts','approval_status');
-select has_column('public','contracts','submitted_at');
-select has_column('public','contracts','approved_at');
-select has_column('public','contracts','rejected_at');
-select has_column('public','contracts','rejection_reason');
-select has_column('public','contracts','approval_evidence');
+select has_column('public','contracts','maker_user_id','maker_user_id');
+select has_column('public','contracts','checker_user_id','checker_user_id');
+select has_column('public','contracts','maker_signature','maker_signature');
+select has_column('public','contracts','checker_signature','checker_signature');
+select has_column('public','contracts','approval_status','approval_status');
+select has_column('public','contracts','submitted_at','submitted_at');
+select has_column('public','contracts','approved_at','approved_at');
+select has_column('public','contracts','rejected_at','rejected_at');
+select has_column('public','contracts','rejection_reason','rejection_reason');
+select has_column('public','contracts','approval_evidence','approval_evidence');
 
 select has_function('public','submit_contract_for_approval_atomic', array['text','text']);
 select has_function('public','approve_contract_atomic', array['text','text']);
