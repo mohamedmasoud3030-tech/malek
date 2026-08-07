@@ -2,7 +2,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(10);
 
 -- 1. S08 read-only views must execute as the caller so underlying RLS applies.
 select is(
@@ -82,6 +82,29 @@ select ok(
   and pg_get_functiondef('public.process_bank_reconciliation_match_atomic(jsonb)'::regprocedure) ilike '%Matched payment was not found in the active company.%'
   and not has_function_privilege('anon', 'public.process_bank_reconciliation_match_atomic(jsonb)', 'EXECUTE'),
   'bank reconciliation match is role/company/amount hardened'
+);
+
+-- 9. A valid JWT alone must not make a disabled/deleted user an app user.
+select ok(
+  pg_get_functiondef('public.is_app_user()'::regprocedure) ilike '%u.deleted_at is null%'
+  and pg_get_functiondef('public.is_app_user()'::regprocedure) ilike '%u.is_active%'
+  and pg_get_functiondef('public.is_app_user()'::regprocedure) ilike '%u.status::text = ''ACTIVE''%'
+  and not has_function_privilege('anon', 'public.is_app_user()', 'EXECUTE'),
+  'is_app_user requires an active non-deleted database user'
+);
+
+-- 10. Database role/state must be authoritative over stale JWT role claims.
+select ok(
+  pg_get_functiondef('public.current_app_role()'::regprocedure) ilike '%u.deleted_at is null%'
+  and pg_get_functiondef('public.current_app_role()'::regprocedure) ilike '%u.is_active%'
+  and pg_get_functiondef('public.current_app_role()'::regprocedure) ilike '%u.status::text = ''ACTIVE''%'
+  and pg_get_functiondef('public.current_app_role()'::regprocedure) not ilike '%auth.jwt()%'
+  and pg_get_functiondef('public.is_admin_or_manager()'::regprocedure) ilike '%u.role::text%'
+  and pg_get_functiondef('public.is_admin_or_manager()'::regprocedure) ilike '%u.is_active%'
+  and pg_get_functiondef('public.is_admin_or_manager()'::regprocedure) ilike '%u.status::text = ''ACTIVE''%'
+  and pg_get_functiondef('public.is_admin_or_manager()'::regprocedure) not ilike '%auth.jwt()%'
+  and not has_function_privilege('anon', 'public.is_admin_or_manager()', 'EXECUTE'),
+  'role helpers use active database state rather than stale JWT role claims'
 );
 
 select * from finish();
