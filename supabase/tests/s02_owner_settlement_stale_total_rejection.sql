@@ -6,7 +6,7 @@
 
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(9);
 
 insert into public.companies (id, name, slug)
 values ('c3100000-0000-4000-8000-000000000001', 'S02 D002 Company', 's02-d002-company');
@@ -150,11 +150,20 @@ select is(
   'draft stores the canonical 1000 less 10 percent net payout'
 );
 
--- Simulate the privileged/live-source mutation that D-002 must fail closed on.
+-- payments.amount is numeric(14,2) in the current replayed schema. Use the
+-- smallest positive delta that can actually persist today (0.010). The guard's
+-- tolerance remains 0.001 so it is already compatible with a future 3dp column.
 reset role;
 update public.payments
-set amount = 1000.001
+set amount = 1000.01
 where id = 'ab310000-0000-4000-8000-000000000001';
+
+select is(
+  (select amount::numeric from public.payments where id = 'ab310000-0000-4000-8000-000000000001'),
+  1000.01::numeric,
+  'precondition: stale payment mutation persisted and was not rounded away'
+);
+
 set local role authenticated;
 
 select throws_ok(
@@ -164,7 +173,7 @@ select throws_ok(
     ))$$,
   '22023',
   'OWNER_SETTLEMENT_STALE_TOTALS: source amounts changed after draft creation; cancel and recreate the settlement.',
-  'one-baisa payment tamper blocks approval deterministically'
+  'smallest currently representable payment tamper blocks approval deterministically'
 );
 
 select is(
@@ -176,7 +185,7 @@ select is(
 -- Restore the source, approve legitimately, then tamper again before PAY.
 reset role;
 update public.payments
-set amount = 1000.000
+set amount = 1000.00
 where id = 'ab310000-0000-4000-8000-000000000001';
 set local role authenticated;
 
@@ -190,7 +199,7 @@ select lives_ok(
 
 reset role;
 update public.payments
-set amount = 1100.000
+set amount = 1100.00
 where id = 'ab310000-0000-4000-8000-000000000001';
 set local role authenticated;
 
