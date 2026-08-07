@@ -195,10 +195,11 @@ describe('useKeyboardShortcuts', () => {
 
 describe('usePersistentTableState', () => {
   beforeEach(() => {
+    window.sessionStorage.clear();
     window.localStorage.clear();
   });
 
-  it('persists page/sort/search under the storage key and hydrates back', () => {
+  it('persists page/sort/search for the current browser session and hydrates back', () => {
     const { result, unmount } = renderHook(() =>
       usePersistentTableState('enterprise:test-table', { pageSize: 10 }),
     );
@@ -208,12 +209,13 @@ describe('usePersistentTableState', () => {
     act(() => result.current.toggleSort('name'));
     unmount();
 
-    const raw = window.localStorage.getItem('enterprise:test-table');
+    const raw = window.sessionStorage.getItem('enterprise:test-table');
     expect(raw).not.toBeNull();
     const saved = JSON.parse(raw!) as { page: number; search: string; sort: { field: string } };
     expect(saved.page).toBe(2);
     expect(saved.search).toBe('بحث');
     expect(saved.sort.field).toBe('name');
+    expect(window.localStorage.getItem('enterprise:test-table')).toBeNull();
 
     const { result: hydrated } = renderHook(() =>
       usePersistentTableState('enterprise:test-table', { pageSize: 10 }),
@@ -230,7 +232,7 @@ describe('usePersistentTableState', () => {
     act(() => result.current.toggleSelected('1'));
     unmount();
 
-    const raw = window.localStorage.getItem('enterprise:test-selection');
+    const raw = window.sessionStorage.getItem('enterprise:test-selection');
     expect(raw).not.toContain('selected');
     expect(raw).not.toContain('selection');
   });
