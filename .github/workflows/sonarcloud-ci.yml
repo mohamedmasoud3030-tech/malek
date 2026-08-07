@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   sonar:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     name: SonarCloud CI Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 15

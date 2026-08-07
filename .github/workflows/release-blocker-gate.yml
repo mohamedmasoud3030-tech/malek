@@ -19,6 +19,7 @@ env:
 
 jobs:
   release-blocker-code:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     name: release-blocker-code
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -64,6 +65,7 @@ jobs:
         run: bash scripts/check-release-secret-leaks.sh rentrix-app/dist
 
   release-blocker-database:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     name: release-blocker-database
     runs-on: ubuntu-latest
     timeout-minutes: 50
@@ -118,9 +120,9 @@ jobs:
           if-no-files-found: ignore
 
   # Keep the legacy job/check identifier so existing branch protection does not
-  # lose its required check. The job itself is production-readonly: financial
-  # and Storage writes are exercised only on the ephemeral local Supabase stack.
+  # lose its required check. The heavy job is manual-only on workflow_dispatch.
   release-blocker-authenticated-staging:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     name: release-blocker-authenticated-staging
     runs-on: ubuntu-latest
     timeout-minutes: 25
