@@ -38,7 +38,8 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Structured import flow (select → preview → mapping → review → importing → completed), fail-closed batch validation | `VERIFIED_COMPLETE` | `bank-csv-import-workflow.tsx`, `bankCsvImportService.ts` |
 | Duplicate detection (file hash, row-level, possible duplicates) surfaced in UI | `VERIFIED_COMPLETE` | import result panels |
 | Unmatched list with filters, suggested deterministic matching (date+amount), ignore flow, match confirmation, reconciliation status KPIs | `VERIFIED_COMPLETE` | `bank-reconciliation-page.tsx`, `useBankReconciliationController.ts` |
-| Final accounting approval authority beyond match/ignore | `PARTIAL` — blocked | pending owner decision on approval role (see OD-04/approval-role); all work up to the boundary is shipped |
+| Final accounting approval authority beyond match/ignore (FGR-006 approval flow) | `PARTIAL` — blocked | pending owner decision on approval role (see OD-04/approval-role); all work up to the boundary is shipped |
+| **Owner-audit nuance (2026-08-07):** the whole E9 feature carries the owner-audit label `PARTIALLY_IMPLEMENTED` until approval flows (FGR-006) and the upload wizard land | `PARTIAL` (owner-audit label) | arena commit `9b6564c0` context; label adopted, not overwritten |
 
 ### D — Owner Settlements UX
 
@@ -51,6 +52,7 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Payout preview with explicit payable amount, recipient, period, method | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
 | Approval (ADMIN) → payout (ADMIN) with print/PDF owner statement | `VERIFIED_COMPLETE` | workspace + `documentService` |
 | Negative-balance collection accounting (Due-from-Owner recovery) | `NOT_STARTED` — blocked | OD-08 owner decision required |
+| **Owner-audit nuance (2026-08-07, arena branch 019fdb42):** the whole E7 feature is classified `PARTIALLY_IMPLEMENTED` until first-run ADMIN supervision is formalized and OD-08 collection rules resolve | `PARTIAL` (owner-audit label) | arena commit `9b6564c0` (author: repo owner); tip of that branch is superseded (`# placeholder`) — label adopted here, not overwritten |
 
 ### E — Contract Experience
 
