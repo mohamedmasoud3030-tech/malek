@@ -33,7 +33,8 @@ emit_failure_diagnostics() {
   local f
   for f in supabase-start.log supabase-start-attempt-1.log supabase-start-attempt-2.log \
            supabase-start-attempt-3.log supabase-test.log owner-agreement-concurrency.log \
-           storage-isolated-smoke.log single-office-seed.log single-office-browser.log; do
+           stage3-posting-concurrency.log storage-isolated-smoke.log single-office-seed.log \
+           single-office-browser.log; do
     if [[ -s "$LOG_DIR/$f" ]]; then
       lines+=$'\n'$'  -- '"$f"
       local hit
@@ -129,7 +130,15 @@ fi
 pnpm exec supabase test db 2>&1 | tee "$LOG_DIR/supabase-test.log"
 
 # FA-004 real two-transaction row-lock check on the same fresh replay.
-bash scripts/ci/run-owner-agreement-concurrency-test.sh 2>&1 | tee "$LOG_DIR/owner-agreement-concurrency.log"
+bash scripts/ci/run-owner-agreement-concurrency-test.sh \
+  2>&1 | tee "$LOG_DIR/owner-agreement-concurrency.log"
+
+# S03-T09 real two-session event-id retry proof. This deliberately uses two
+# independent psql connections against the same PostgreSQL instance so the
+# transaction-scoped event advisory lock and unique batch identity are proven
+# under actual overlap, not only sequential function calls.
+bash scripts/ci/run-stage3-posting-concurrency-test.sh \
+  2>&1 | tee "$LOG_DIR/stage3-posting-concurrency.log"
 
 # The Storage API smoke runs on the same isolated local stack. This tests the
 # real Auth + Storage HTTP path without using production or any paid Staging.
@@ -191,6 +200,4 @@ SINGLE_OFFICE_EVIDENCE_PATH="$LOG_DIR/single-office-lifecycle.json" \
 pnpm --filter ./rentrix-app exec node scripts/single-office-isolated-smoke.mjs verify \
   2>&1 | tee "$LOG_DIR/single-office-verify.log"
 
-printf 'Ephemeral migration replay, authenticated single-office browser lifecycle, RLS/accounting invariants, and isolated Storage smoke completed successfully.\n'
-
-# Keep the FA-004 replay invocation adjacent to the database gate for auditability.
+printf 'Ephemeral migration replay, real concurrency checks, authenticated single-office browser lifecycle, RLS/accounting invariants, and isolated Storage smoke completed successfully.\n'
