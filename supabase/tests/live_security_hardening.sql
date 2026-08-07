@@ -4,7 +4,9 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(13);
 
--- 1. S08 read-only views must execute as the caller so underlying RLS applies.
+-- 1. Every S08 security-sensitive view that exists in this database must
+-- execute as the caller so underlying RLS applies. Historical Live may contain
+-- s08_legacy_gl_context even though a fresh repository replay does not.
 select is(
   (
     select count(*)::int
@@ -19,10 +21,13 @@ select is(
         's08_subledger_gl_reconciliation',
         's08_legacy_gl_context'
       )
-      and coalesce(c.reloptions, array[]::text[]) @> array['security_invoker=true']::text[]
+      and not (
+        coalesce(c.reloptions, array[]::text[])
+        @> array['security_invoker=true']::text[]
+      )
   ),
-  5,
-  'all five S08 security-sensitive views use security_invoker=true'
+  0,
+  'all existing S08 security-sensitive views use security_invoker=true'
 );
 
 -- 2-3. Read-only helpers must not elevate privileges.
