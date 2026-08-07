@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { OwnerSettlementWorkspace } from './OwnerSettlementWorkspace';
+import { OwnerSettlementWorkspace, SettlementSupervisionBanner } from './OwnerSettlementWorkspace';
 import * as settlementsService from '../services/owner-settlements-service';
 
 vi.mock('@tanstack/react-query', () => ({
@@ -127,5 +127,69 @@ describe('OwnerSettlementWorkspace full coverage tests', () => {
     expect(totals.fees).toBe(200);
     expect(totals.deductions).toBe(100);
     expect(totals.net).toBe(1700);
+  });
+});
+
+describe('SettlementSupervisionBanner — first-run ADMIN supervision UX (Wave D)', () => {
+  const pendingSettlement = {
+    id: 's-1',
+    owner_id: 'o-1',
+    owner_name: 'مالك',
+    property_id: 'p-1',
+    property_title: 'عقار',
+    period_start: '2026-07-01',
+    period_end: '2026-07-31',
+    gross_rent_collected: 2000,
+    management_fee_rate: 10,
+    management_fee_type: 'percentage' as const,
+    management_fee_amount: 200,
+    maintenance_deductions: 100,
+    utility_deductions: 0,
+    net_payable_amount: 1700,
+    status: 'pending' as const,
+    created_at: '2026-07-01T00:00:00Z',
+  };
+
+  it('tells operators without the approve permission that ADMIN approval is required', () => {
+    const html = renderToStaticMarkup(
+      <SettlementSupervisionBanner
+        settlements={[pendingSettlement]}
+        canApproveSettlement={false}
+        canPaySettlement={false}
+      />,
+    );
+    expect(html).toContain('data-settlement-supervision="needs-admin"');
+    expect(html).toContain('يتطلبان صلاحية المدير/المسؤول');
+  });
+
+  it('shows the first-run supervision hint for the first payout cycle under ADMIN', () => {
+    const html = renderToStaticMarkup(
+      <SettlementSupervisionBanner
+        settlements={[pendingSettlement]}
+        canApproveSettlement
+        canPaySettlement
+      />,
+    );
+    expect(html).toContain('data-settlement-supervision="first-run"');
+    expect(html).toContain('أول دورة تسويات');
+  });
+
+  it('renders nothing once a payout cycle has completed (approver view)', () => {
+    const paidSettlement = { ...pendingSettlement, status: 'paid' as const, paid_at: '2026-08-01T00:00:00Z' };
+    const html = renderToStaticMarkup(
+      <SettlementSupervisionBanner
+        settlements={[paidSettlement, pendingSettlement]}
+        canApproveSettlement
+        canPaySettlement
+      />,
+    );
+    expect(html).toBe('');
+  });
+
+  it('renders nothing when there are no settlements', () => {
+    const html = renderToStaticMarkup(
+      <SettlementSupervisionBanner settlements={[]} canApproveSettlement canPaySettlement />,
+    );
+    expect(html).toBe('');
   });
 });
