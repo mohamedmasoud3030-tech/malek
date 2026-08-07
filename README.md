@@ -1,16 +1,14 @@
-# MALIK
+# MALEK
 
 **كل أملاكك في مكان واحد**
 
-MALIK is a rental-property management web application for properties, units, people, contracts, financial workflows, maintenance, reports, and settings.
+MALEK is an Arabic-first rental-property management web application for properties, units, people, contracts, financial workflows, maintenance, reports, and settings.
 
-> **Brand note:** MALIK هو الاسم التجاري الحالي للمنتج المعروف تقنيًا داخل بعض المسارات القديمة باسم Rentrix.
-> MALIK is the product's current commercial name. Some technical paths and identifiers — the `rentrix-app/` package directory, the `@workspace/rentrix` package name, persisted storage keys, and the current Vercel host — intentionally still read `rentrix`. They are invisible to users and are frozen in this release.
-
+> **Compatibility note:** the repository name, `rentrix-app/` package path, historical database identifiers, persisted keys, and some infrastructure names intentionally remain unchanged. User-visible product naming is MALEK.
 
 ## Application location
 
-The active app lives in `rentrix-app/` as the deployable package in this pnpm workspace. Repository-level governance, CI, documentation, scripts, and Supabase assets remain at the root.
+The active application lives in `rentrix-app/`. Repository-level governance, CI, scripts, Supabase assets, immutable decisions, and the canonical documentation remain at the root.
 
 ## Basic commands
 
@@ -25,14 +23,18 @@ pnpm --filter ./rentrix-app test
 pnpm --filter ./rentrix-app run test:financials
 ```
 
-## Documentation
+## Documentation — start here
 
-Start with [`AGENTS.md`](AGENTS.md) for contributor/agent rules, [`docs/README.md`](docs/README.md) for the maintained documentation index, and [`docs/APP_STATUS.md`](docs/APP_STATUS.md) for the current application status, feature coverage, and readiness. Historical audits, completed plans, and superseded reports are kept in `docs/archive/` or Git history rather than the active repository tree.
+There are only three active product/source-of-truth documents:
+
+1. [`docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md`](docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md) — verified feature and UX reality.
+2. [`docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md`](docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md) — business, accounting, legal, brand, and document rules.
+3. [`docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md`](docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md) — architecture, execution order, blockers, and owner decisions.
+
+For immutable historical decisions and CI-protected governance, use the ADR/decision and governance files referenced by those three documents. Old status reports, plans, TODOs, handovers, and duplicate summaries are intentionally removed from the active tree; Git history is the archive.
+
+Read [`AGENTS.md`](AGENTS.md) before making changes.
 
 ## Contributing
 
-Keep changes focused, run the relevant checks, and avoid committing generated build output or secrets.
-
-## Financial reporting source of truth
-
-Receipts in the current application are payment-backed: the Receipts UI reads `public.payments`, and reporting totals should use posted, non-deleted payments as the collection source. VOID payments may be displayed as receipt history, but they must not be included in collection, cash-flow, or payment-total reports.
+Keep changes focused, run the relevant checks, and avoid committing generated build output or secrets. When documentation and code disagree, verify current code/database reality and update the appropriate canonical document in the same change.

@@ -1,61 +1,29 @@
-# Command: /new-feature &lt;feature-title&gt;
+# Command: /new-feature <feature-title>
 
-You are the **Rentrix Product Agent**. Your job is to turn a feature request
-into a rigorous, buildable ticket that downstream implementation agents can
-execute WITHOUT inventing business rules.
+You are the MALEK Product Agent. Turn the request into a rigorous, buildable ticket without inventing business rules.
 
-## Read FIRST (in this order)
+## Read first
 
-1. `.agents/skills/README.md` — identify every skill that matches the feature.
-2. `.agents/guardrails/LESSONS_LEARNED.md` — so you do NOT reintroduce past bugs.
-3. `docs/agent-context/CONTEXT_MAP.md` — find the task row for the area the feature
-   touches (financial / contracts / reports / schema / UI / permissions …);
-   read the files that row points to.
-4. `docs/FEATURE_GAP_REGISTER.md` — find the FGR row (if any); it describes
-   current status and remaining work.
-5. `docs/decisions/` — every ADR that constrains the feature (especially
-   `0001-product-accounting-policies.md` for financial features).
-6. `docs/DOMAIN.md` sections for the relevant entities.
-7. The existing code in `rentrix-app/src/features/&lt;area&gt;/` and existing
-   migrations under `supabase/migrations/` — use `rg` to find what already
-   exists before proposing additions.
+1. `.agents/skills/README.md` and every matching skill.
+2. `.agents/guardrails/LESSONS_LEARNED.md`.
+3. `docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md` — verify whether the feature already exists and its real status.
+4. `docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md` — binding business/accounting/legal constraints.
+5. `docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md` — architecture, execution order, blockers, owner decisions.
+6. Any ADR/governance file explicitly referenced by those canonical documents for the feature.
+7. Existing code in `rentrix-app/src/` and migrations/RPCs under `supabase/`.
 
-## Produce a ticket file
+## Ticket output
 
-Write a file at `tickets/&lt;slug&gt;.md` where `&lt;slug&gt;` is a kebab-case version of
-the feature title (e.g. `owner-settlements-fgr-005`). Use the template at
-`.agents/commands/prompts/ticket-template.md`.
+Write `tickets/<slug>.md` using `.agents/commands/prompts/ticket-template.md` and include:
+- current verified reality,
+- intended outcome,
+- business rules with source references,
+- explicit out-of-scope items,
+- DB/service/UI changes,
+- permissions,
+- tests/acceptance criteria,
+- owner decisions that genuinely block implementation.
 
-The ticket MUST include:
-
-- **Context** — links to ADRs, FGR rows, skills, existing related migrations/services.
-- **Business Rules** — extracted verbatim from ADRs (do NOT paraphrase or add
-  rules). If a rule is needed but missing from ADRs, list it under **Open
-  Questions** instead of inventing it.
-- **Out of Scope** — an explicit list so downstream agents don't gold-plate.
-- **DB Changes** — new tables/columns/indexes/constraints/RLS/RPCs/triggers.
-  Name the file pattern of migrations to add:
-  `YYYYMMDDHHMMSS_&lt;snake_case&gt;.sql`.
-- **Backend / Service Changes** — new `*Service.ts` files, hooks
-  (`use*.ts`), and which existing services to extend.
-- **Frontend Changes** — route path, nav group, permission keys to add,
-  existing shared components/forms to reuse (EntityCard, EntityForm, DataTable,
-  shadcn primitives, etc.).
-- **Contract Tests to write BEFORE implementation** — a list of
-  id-type-matching, RLS-execution, atomicity, and business-rule contract
-  tests modeled after existing patterns
-  (e.g. `payment-account-resolution-migration-contract.test.ts`,
-  `financial-readiness-gates.test.ts`, `permissions.test.ts`).
-- **Acceptance Checklist** — gates that /verify-feature will check.
-
-## Open Questions
-
-After writing the ticket, list any unresolved business/design decisions the
-product owner must answer before implementation can start. DO NOT proceed to
-implementation unless the user explicitly says so.
-
-## Response language
-
-Respond in the same language the user wrote the feature title in. If the
-title is in Arabic, answer in Arabic; English otherwise. Code, file paths,
-and identifiers stay in English.
+Do not create a ticket for work already complete unless the task is a verified correction/refactor.
+Do not invent missing business/accounting/legal rules.
+If a blocker exists, mark it clearly and separate independent safe work that can proceed.
