@@ -517,6 +517,14 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         title={`أرشفة العقار "${controller.archiveTarget?.title ?? ""}"؟`}
         description="سيتم إخفاء العقار من القوائم النشطة. يمكن التراجع عن هذا لاحقاً من سجل الأرشيف."
         confirmLabel="أرشفة"
+        children={(
+          <ul className="mt-1 space-y-1.5 text-xs leading-5 text-muted-foreground">
+            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة عقار يحتوي وحدات غير مؤرشفة — أرشِف الوحدات أولاً.</li>
+            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />العقار المرتبط باتفاقية مالك محفوظة لا يُؤرشف؛ استخدم حالة «غير نشط» أو «مباع» للحفاظ على السجل.</li>
+            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن الأرشفة مع طلب صيانة مفتوح أو قيد التنفيذ.</li>
+            <li className="flex gap-1.5"><span className="mt-1.5 size-1 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />لا يمكن أرشفة عقار عليه عقود نشطة.</li>
+          </ul>
+        )}
         isLoading={controller.isArchiving}
         onConfirm={controller.confirmArchive}
       />
