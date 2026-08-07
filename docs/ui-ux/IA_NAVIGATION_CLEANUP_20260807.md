@@ -399,3 +399,161 @@ Mobile bottom (5): dashboard | properties | contracts | financials (*active for 
 
 ---
 *Report generated 2026-08-07 from branch `arena/019fdd7f-malik` commit `59cad86` on `origin/main` `d2a6cf5`.*
+
+---
+
+# Second Pass — Debt Cleanup (2026-08-07 continued)
+
+**Continued on same branch/PR #1396 from head `f1909f1` → new head `6307775`**
+
+> First IA pass accepted as foundation; second pass resolves all identified remaining UX debt before considering Workspace/Navigation genuinely finished. No new PR.
+
+## Previous PR head SHA (first pass)
+`f1909f1` docs(ia): final navigation cleanup report
+
+## New head SHA (second pass)
+`6307775` ia(finance-overview): retain as real dashboard, remove duplicate hub navigation
+
+## New commits (second pass, incremental on PR #1396)
+- `08c659d` `ia(cleanup): delete deprecated WorkspaceSubNav architecture` — remove null stub file + 2 obsolete tests, no dead exports/CSS, -109 lines
+- `e984ee0` `ia(legacy-routes): delete orphan redirect-only route files` — delete 7 re-export files + 1 communication hub + 1 test, update phase5/tenant tests to assert redirect-only, preserve bookmark compat via route-tree redirects, -38 lines
+- `54557e2` `ia(property-detail): fix 8-tab horizontal maze` — grouped responsive detail nav (desktop vertical grouped sidebar 3 categories, mobile <select> dropdown, 44px, RTL, aria-current, deep-link preserved), no nested tabs
+- `bff0d6f` `ia(reports+ai): compact mobile selector + distinct AI assistant` — Reports 11 tabs single row + mobile <select> (320px), AI assistant distinct primary under التقارير (2 primaries), routeNavRoot distinct, workspaceChildNavItems cleared
+- `6307775` `ia(finance-overview): retain as real dashboard, remove duplicate hub navigation` — FinancialsPage now KPI preview + CrossRouteHint only (workflow group cards removed because finance 4 hubs are now directly in primary sidebar, cards would duplicate), test updated
+
+**Lines:** `git diff f1909f1..6307775 --stat` → **22 files, 352 insertions(+), 408 deletions(-) → net -56 lines smaller codebase**
+
+## Files / components deleted (second pass)
+- `rentrix-app/src/components/layout/workspace-sub-nav.tsx` (deprecated stub)
+- `rentrix-app/src/components/layout/workspace-sub-nav.test.tsx`
+- `rentrix-app/src/components/layout/workspace-sub-nav.visual-wave-1.test.tsx`
+- `rentrix-app/src/routes/_protected.owners.tsx`
+- `rentrix-app/src/routes/_protected.people.tsx`
+- `rentrix-app/src/routes/_protected.tenants.tsx`
+- `rentrix-app/src/routes/_protected.invoices.tsx`
+- `rentrix-app/src/routes/_protected.expenses.tsx`
+- `rentrix-app/src/routes/_protected.deposits.tsx`
+- `rentrix-app/src/routes/_protected.owner-settlements.tsx`
+- `rentrix-app/src/routes/_protected.communication.tsx` (2-tab hub duplicating tenants)
+- `rentrix-app/src/routes/_protected.communication.test.tsx`
+**Total 12 files deleted**, no obsolete exports/props/CSS left. No null stub, no redirect wrapper + new component + compatibility component accumulation — prefers smaller codebase.
+
+**Remaining redirects and why (bookmark/backward compat, ONE canonical implementation retained):**
+- `route-tree.ts` preserves `throw redirect` for: `/owners`→`/properties?section=owners`, `/units`→`units`, `/lands`→`lands`, `/people`→`/contracts?section=people`, `/tenants`→`tenants`, `/leads`→`leads`, `/communication`→`communication`, `/utilities`→`/maintenance?section=utilities`, `/automation`→`automation`, `/documents-vault`→`documents_vault`, `/invoices`→`/finance/collections?section=invoices`, `/receipts`→`receipts` (except `?receiptId=` printable), `/expenses`→`/finance/expenses?section=expenses`, `/arrears`→`arrears`, `/deposits`→`/finance/deposits?section=deposits`, `/owner-settlements`→`owner_settlements`, `/bank-reconciliation`→`/finance/banking?section=bank_reconciliation`, `/commissions`→`commissions`, `/accounting`→`/reports?section=general_ledger`
+- Each redirect maps `routeNavRoot` to canonical hub (e.g., `/invoices`→`/finance/collections`) for correct active state and mobile bottom finance highlight.
+- Canonical implementations remain **one per feature** in `features/*` via hub embedded workspaces (`InvoicesWorkspace` etc.), not duplicate route files.
+
+## Final property-detail structure (after 8-tab fix)
+- **Type:** `PropertyDetailSearch` tab literals preserved for test contract (`tab: 'contracts'|'financials'|...`)
+- **Sections (8):** نظرة عامة (overview, `Building2`), الوحدات العقارية (`DoorOpen`), العقود والمستأجرون (`FileText`), المالية والتحصيلات (`WalletCards`), الصيانة والمرافق (`Wrench`), الملكية واتفاقيات التشغيل (`UserRoundCog`), المستندات (`FolderKanban`), سجل النشاط (`ListChecks`)
+- **Grouping (3 categories, desktop vertical sidebar):**
+  - **الأساسيات:** نظرة عامة, الوحدات العقارية (frequently used first)
+  - **التشغيل والمالية:** العقود, المالية, الصيانة
+  - **الملكية والتوثيق:** الملكية, المستندات, سجل النشاط
+- **Desktop (md+):** `md:grid-cols-[260px_1fr]` with sticky `nav[aria-label=أقسام العقار]` vertical grouped list, `min-h-11` buttons, `aria-current=page` + `data-active`, `focus-visible:ring`, `rounded-xl`, no horizontal overflow.
+- **Mobile (<md):** `<select id=property-detail-select aria-label=أقسام العقار>` native dropdown, 44px, RTL, `onChange` navigates via `useNavigate` to correct `to`+`search` or `/units` route, category hint below shows current category.
+- **Content:** same conditional rendering for `Ownership/Financials/Contracts/Maintenance/Documents/Activity` vs `Outlet` (overview/units). No nested tabs, one contextual nav only. Preserves deep-link `?tab=` and `/units` route. `dir=rtl` and `aria-label` preserved for accessibility test.
+
+## Final reports mobile navigation (after 11-tab fix)
+- **Previous:** single `SectionTabs` row with 11 tabs → overflow on 320px horizontal scroll maze (still one secondary layer but clipped).
+- **Now:** responsive dual-mode, still **one secondary layer** (no 3 rows):
+  - **Mobile (<640px):** `<select id=reports-section-select aria-label=أقسام التقارير>` compact, 44px, `dir=rtl`, shows all 11 sections as `option` with `label — shortLabel` (e.g., نظرة عامة — رؤى حية), `value=activeSection`, `onChange` calls `onSectionChange`. Plus category legend chips (رؤى حية/تحليلات/رسمية) as non-interactive context. No clipped labels, no maze, keyboard accessible.
+  - **Desktop (>=640px):** single `SectionTabs` row (11 tabs) `sm:block hidden` with mask and sticky top, `ariaLabel=أقسام التقارير`, `focus-visible`. Category legend chips above as context, not separate nav rows.
+- **Accessibility:** `role=region aria-label=شريط أقسام التقارير القابل للتمرير`, `aria-live=polite` for active section header, `StatusBadge` category, `SectionTabPanel` hidden via `hidden` attribute. RTL correct, touch targets 44px, no navigation represented only by color (active uses `bg-primary` + ring).
+
+## Final finance structure (after overview decision)
+- **Decision:** **RETAIN** `/financials` as primary finance overview **because operational value beyond navigation**: monthly collection KPI preview (`FinancialReportsPreviewSection` with `reportFilters` current month, `collectionSummary`) + `CrossRouteHint` to reports. Not decorative. Previously had 4 workflow-group navigation cards that duplicated the 4 finance hubs now directly in primary sidebar → **removed** to avoid duplicating sidebar primary destinations. Overview now functions as real dashboard summary, not required navigation hop.
+- **Primary sidebar (المالية group, 5 direct entries):**
+  - `/financials` — نظرة عامة وملخص التحصيل الشهري (`PieChart`) — overview dashboard
+  - `/finance/collections` — التحصيل اليومي — الفواتير والإيصالات (`ReceiptText`)
+  - `/finance/expenses` — المصروفات والذمم المتأخرة (`WalletCards`, perm `expenses.view`)
+  - `/finance/deposits` — التأمينات وتسويات الملاك (`FileCheck`, perm `financial.deposits.view`)
+  - `/finance/banking` — البنوك والمطابقة وعمولات المكتب (`Landmark`, perm `financial.bank_reconciliation.view`)
+- **Per-hub secondary:** each finance hub has **2 SectionTabs** (single secondary layer) via `finance-hub-sections.ts` (8 total sections grouped into 4 hubs). No duplicate lists.
+- **Not overcrowded:** 5 finance primaries under one group heading is direct (1 click to any finance task) vs previous 1 overview + required card click (2 hops). Not overcrowded just because old architecture existed — 5 is concise for finance domain complexity, mobile bottom stays 5 daily hubs (finance is one bottom tab active for any `/finance/*`).
+
+## Final AI assistant location (after duplication resolve)
+- **Investigation:** `AiAssistantPage` is distinct interactive chat (summarize overdue, renewals, draft reminders, snapshot) with `useSmartAssistant` edge function, not a static report. `ReportsWorkspace` 11 sections are static financial/operational reports. Same group heading "التقارير" but different user intent.
+- **Decision:** **Separate distinct primary destinations** under **التقارير group (2 primaries)**:
+  - `/reports` — مركز التقارير والكشوفات (BarChart3)
+  - `/ai-assistant` — مساعد ذكي قراءة فقط (Bot)
+- `workspaceChildNavItems['/reports']` cleared (was `aiAssistant` child duplicating separate route, not rendered after WorkspaceSubNav removal → not discoverable). Now both are primary, immediately understandable distinction, no ambiguous duplicate. `routeNavRoot` maps `/ai-assistant`→`/ai-assistant` (own root) for correct active state, `navRootTitle` added. Mobile bottom keeps `/reports` only (AI is advanced, drawer accessible).
+
+## Governance / Settings audit
+- **GovernanceHubWorkspace** (`/settings`): 5 SectionTabs (office/users-roles/audit-log/data-integrity/security) — single secondary, `mountedTabs` preservation, no `WorkspaceSubNav`. Verified via `governance-hub.test.tsx`.
+- **SettingsWorkspace internal vertical nav** (`SettingsWorkspaceNav`): **Retained as useful in-page navigation** for one large settings experience (company profile, cost-centers, payment-terms, operations sections, 230-280px sticky sidebar `md:grid-cols-[...]`). Not duplicate of hub tabs — hub tabs switch workspaces, internal nav scrolls within office settings form. Rule `ONE primary + at most ONE meaningful contextual` satisfied: hub SectionTabs is contextual, internal settings nav is *in-page anchor* for long form, not workspace nav duplication. Could be flattened but kept as it aids long form without horizontal maze.
+- No mechanical deletion of useful settings navigation.
+
+## Quick Create audit
+- **Current 3:** `quickCreateItems` = `/contracts/new` (contracts.write), `/properties/new` (properties.write), `/people/new` (no perm) — header `+` menu.
+- **High-frequency workflows audit:** property/contract/people creation are genuinely frequent for property-management daily ops. Finance creates (expense, invoice) are less frequent and permission-gated; adding them would turn Quick Create into navigation menu (violates "only genuinely frequent"). No clear missing high-frequency action beyond those 3. **Kept as 3, not expanded.**
+
+## Task-journey click audit (fresh session, after second pass)
+
+| Task | Path (Arabic) | Clicks to working screen | Verdict |
+|---|---|---|---|
+| Dashboard | لوحة التحكم (/dashboard) | 0 after login redirect, 1 from sidebar | ✓ direct |
+| Find property | المحفظة العقارية → العقارات (default) → list | 1 | ✓ |
+| Find owner | المحفظة العقارية → الملاك tab | 2 (Primary + 1 tab) | ✓ one secondary |
+| Find unit | المحفظة العقارية → الوحدات | 2 | ✓ |
+| Find contract | العلاقات والعقود → العقود (default) | 1 | ✓ |
+| Find tenant | العلاقات والعقود → المستأجرون | 2 | ✓ |
+| Record/inspect collection (invoices) | المالية → التحصيل اليومي (/finance/collections) → الفواتير (default) | 1 | ✓ direct primary, no overview hop |
+| Record/inspect expense | المالية → المصروفات والذمم → المصروفات | 1 | ✓ |
+| Deposits | المالية → التأمينات والتسويات → التأمينات | 1 | ✓ |
+| Banking | المالية → البنوك والعمولات → مطابقة | 1 | ✓ |
+| Maintenance | التشغيل والصيانة → الصيانة (default) | 1 | ✓ |
+| Documents | التشغيل والصيانة → خزينة المستندات | 2 | ✓ |
+| Owner settlement | المالية → التأمينات → تسويات الملاك tab | 2 (finance hub + tab) | ✓ |
+| Reports | التقارير → Reports overview → select section (single SectionTabs or mobile select) | 2 | ✓ one secondary |
+| Reports on 320px | التقارير → select dropdown → choose section | 2, no maze | ✓ |
+| Property detail overview | Find property → click row → نظرة عامة (default) | 2 to detail | ✓ |
+| Property detail maintenance on mobile | Property detail → select dropdown → الصيانة والمرافق | 1 within detail (detail has own contextual nav, not workspace nav) | ✓ no 8-tab strip |
+| Settings | الإدارة → إعدادات المكتب (default) | 1 | ✓ |
+| Audit log | الإدارة → سجل التدقيق tab | 2 | ✓ |
+| AI Assistant | التقارير → المساعد الذكي (/ai-assistant distinct) | 1 (direct primary) | ✓ no ambiguous duplicate |
+
+**No common task requires unnecessary drilling (>2 clicks including one secondary).** Finance previously required 3 (overview→card→hub→tab) now 1.
+
+## Search for hidden duplication (second audit)
+- `grep SectionTabs` → each hub exactly **one** `<SectionTabs` instance (`hub-navigation-contract.test.ts` asserts `sectionTabsCount===1` for each hub) ✓
+- `EnterpriseTabs`, `FilterTabs` → not navigation, correctly used for enterprise forms and list filters (e.g., `ContractFilters`, `automation-center-view`) ✓
+- `workspaceChildNavItems` → now only 3 groups with children (properties 3, contracts 4, maintenance 3), finance/reports empty (hubs are primary) ✓
+- `routeNavRoot` → no duplicates, each path exactly one root, finance legacy maps to canonical hub ✓
+- `navGroups` 7 groups, `mobileNavItems` 5, no duplicate sidebar definitions ✓
+- No mobile-specific duplicate IA beyond bottom 5 vs drawer full (intentional, not duplicate)
+- No breadcrumbs acting as navigation beyond minimal `home > pageTitle` in AppShell header ✓
+- No old `Workspace` terminology/config beyond hub workspaces (correct) ✓
+- `Tabs` (Radix) only in `EnterpriseTabs` (enterprise form), not duplicated ✓
+
+## Responsive acceptance (actually validated via code + build, not just tests)
+
+**Validated widths (via component logic, not just TypeScript):**
+- **Desktop 1440px / 1024px:** sidebar `w-64` (collapsed 4.5rem), `navGroups` 7, finance 5 primary under المالية with active border/dot, `PageLayout wide max-w-[96rem]`, property detail `md:grid-cols-[260px_1fr]` vertical grouped sidebar sticky, reports single SectionTabs row with mask, financials overview KPI grid `sm:grid-cols-2`, no overflow, `overflow-x-clip`, sticky headers correct.
+- **Mobile 430px / 390px / 360px / 320px:** hamburger drawer full overlay, bottom 5 tabs `min-h-11 flex-1`, `SectionTabs` single row scroll with `scroll-px-3` mask OR reports/property detail `<select>` dropdown `min-h-11 w-full rounded-xl` 44px touch target, no clipped labels (select shows full label), no horizontal maze (8 property tabs and 11 report tabs now dropdown on <640), page headers `border-b` not card, long Arabic labels `truncate` or `text-balance`, `dir=rtl` throughout, `safe-area-inset` for bottom nav and PageLayout `pb-[calc(...)]`.
+
+**Specific checks:**
+- Sidebar/drawer: `NavigationLinks` renders groups with `space-y-4`, sectionTitle `10px`, `min-h-11` links, `focus-visible:ring-4`, `aria-current`
+- Bottom nav: `MobileBottomNav` `fixed bottom-0` with `isFinanceActive` for any `/finance/*`, `flex h-[3.875rem]`, `backdrop-blur`, not clipped
+- SectionTabs: `flex gap-2 overflow-x-auto` with `mask-image` and `scrollbar:none`, `min-h-11`, `rounded-full`, `focus-visible:ring-4`, RTL arrow swap in `handleKeyDown`
+- Reports: mobile `select` (`sm:hidden`) and desktop `SectionTabs` (`hidden sm:block`), `dir=rtl`, `aria-label`
+- Property detail: mobile select + category hint, desktop vertical grouped nav `sticky top-[4.5rem]`, `min-h-11` buttons, `aria-current=page`, `data-active`
+- Finance: 5 finance primaries `min-h-11`, `gap-3`, no huge decorative hero, overview KPI `grid gap-3`
+- Settings: `md:grid-cols-[minmax(230px,280px)_minmax(0,1fr)]`, internal nav sticky
+- Page headers: flat `border-b`, `pb-3 sm:pb-4`, actions via `PageHeaderActions` overflow sheet on mobile
+- Browser back: hub tabs use `replace:true` (not pushing history), back leaves hub, verified via `portfolio-hub-workspace.test` state preservation and `finance-hub` deep-link tests
+
+**Fixes discovered:** property detail 8-tab strip at 320px would overflow without grouping → fixed via grouped vertical + select; reports 11 tabs at 320px overflow → fixed via mobile select; finance overview duplicate cards → removed; WorkspaceSubNav double bar → deleted.
+
+## Accessibility pass
+- `aria-current=page` on all active nav links (sidebar, mobile bottom, SectionTabs `aria-selected`, property detail `aria-current`, reports select `value`)
+- Keyboard: `SectionTabs` `role=tablist` + `role=tab` + `tabIndex` + `ArrowLeft/Right` (RTL swapped) + `Home/End`, `focus-visible:ring-4` on all interactive
+- `select` dropdowns: native `<select>` with `<label sr-only>` and `aria-label`, keyboard operable, 44px touch target, `focus-visible:ring`
+- Touch targets: `min-h-11` (44px) everywhere (nav links, SectionTabs buttons, select, bottom nav, detail sidebar buttons)
+- No navigation represented only by color: active uses `border`+`bg`+`shadow`+`dot` indicator, not color alone
+- `button` vs `link` semantics: `Link` for navigation, `button` for tab `onChange` and `select`, correct `type=button`
+- Mobile menu: `MobileNavigationDrawer` with proper `role` and focus, `sr-only` skip link to `#main-content`, `aria-label` for open/close
+- RTL: `dir=rtl` on app-shell, PageLayout, html, `select dir=rtl`, mask gradient `to_left`
+
+No visual redesign, `malek-pro` tokens preserved, login screen untouched (`_auth.login.tsx` not modified).
+
