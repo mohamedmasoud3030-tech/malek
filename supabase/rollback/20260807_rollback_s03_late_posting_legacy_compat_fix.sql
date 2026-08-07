@@ -1,9 +1,9 @@
 -- Manual/emergency rollback only — not auto-applied; run by hand only.
 -- Rollback for: supabase/migrations/20260807174500_s03_late_posting_legacy_compat_fix.sql
 --
--- Safety: do not restore the previous trigger behavior while POSTED batches
--- without accounting periods exist, because it can reintroduce the 23502
--- late_posting=NULL failure before deferred balance validation.
+-- Safety: do not restore the previous trigger behavior while any POSTED batch
+-- could receive NULL late_posting under that definition: either it has no
+-- accounting period, or it has a period but no period_resolution_reason.
 
 begin;
 
@@ -13,9 +13,12 @@ begin
     select 1
       from public.journal_batches b
      where b.status = 'POSTED'
-       and b.accounting_period_id is null
+       and (
+         b.accounting_period_id is null
+         or b.period_resolution_reason is null
+       )
   ) then
-    raise exception 'S03_LATE_POSTING_ROLLBACK_BLOCKED: POSTED/no-period batches exist; use a forward corrective migration instead.'
+    raise exception 'S03_LATE_POSTING_ROLLBACK_BLOCKED: POSTED batches exist that are unsafe under the previous trigger definition; use a forward corrective migration instead.'
       using errcode = '55000';
   end if;
 end
