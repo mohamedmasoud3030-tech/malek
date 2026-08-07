@@ -6,6 +6,7 @@ import {
   EyeOff,
   LockKeyhole,
   Mail,
+  MessageCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -71,168 +72,171 @@ export function LoginPage() {
   );
 
   return (
-    <div
-      className="flex min-h-screen min-h-dvh w-full flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-10"
+    <main
+      className="grid min-h-screen min-h-dvh w-full place-items-center bg-background px-4 py-7 sm:px-6 sm:py-10 lg:px-8"
       data-login-surface
       dir="rtl"
     >
-      <div className="safe-top-app safe-bottom-overlay w-full max-w-sm">
-        <section className="flex flex-col justify-center" data-login-main>
-          {/* Compact centered auth card — one calm surface, no split layout. */}
-          <div
-            className="rounded-2xl border border-border/70 bg-card p-5 shadow-card sm:p-7"
-            data-login-card
+      <section
+        className="safe-top-app safe-bottom-overlay flex w-full max-w-sm flex-col items-stretch"
+        data-login-main
+        data-login-card
+      >
+        <header className="mb-7 flex flex-col items-center text-center sm:mb-8" data-login-brand>
+          <img
+            src={APP_BRAND_LOCKUP_ASSET}
+            alt={APP_BRAND_NAME}
+            className="size-16 object-contain sm:size-20"
+            data-malek-canonical-lockup
+          />
+          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-[1.75rem]">
+            {APP_BRAND_NAME}
+          </h1>
+          <p
+            className="mt-1.5 text-lg font-medium leading-7 text-muted-foreground sm:text-xl"
+            data-login-tagline
           >
-            <header className="mb-6 flex flex-col items-center gap-3 text-center" data-login-brand>
-              <img
-                src={APP_BRAND_LOCKUP_ASSET}
-                alt={APP_BRAND_NAME}
-                className="size-16 rounded-2xl object-cover shadow-sm ring-1 ring-border/60 sm:size-20"
-                data-malek-canonical-lockup
-              />
-              <h1
-                className="text-lg font-bold leading-relaxed tracking-tight text-foreground sm:text-xl"
-                data-login-tagline
-              >
-                {APP_BRAND_TAGLINE_AR}
-              </h1>
-            </header>
+            {APP_BRAND_TAGLINE_AR}
+          </p>
+        </header>
 
-            <form
-              className="space-y-5"
-              onSubmit={handleSubmit}
-              noValidate={false}
-              aria-describedby={hasFieldError ? 'login-error' : undefined}
-            >
-              <div className="grid gap-2">
-                <label htmlFor="login-email" className="text-sm font-semibold text-foreground">
-                  البريد الإلكتروني
-                </label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
-                  <Input
-                    id="login-email"
-                    className="h-12 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm"
-                    type="email"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      setFormError(null);
-                    }}
-                    required
-                    autoComplete="email"
-                    dir="ltr"
-                    placeholder="name@malek.com"
-                    disabled={isSubmitting || Boolean(runtimeError)}
-                    aria-invalid={hasFieldError || undefined}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="login-password" className="text-sm font-semibold text-foreground">
-                    كلمة المرور
-                  </label>
-                </div>
-                <div className="relative">
-                  <LockKeyhole className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
-                  <Input
-                    id="login-password"
-                    className="h-12 ps-10 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm"
-                    type={isPasswordVisible ? 'text' : 'password'}
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value);
-                      setFormError(null);
-                    }}
-                    onKeyDown={handlePasswordKeyDown}
-                    onKeyUp={handleCapsLockDetect}
-                    required
-                    autoComplete="current-password"
-                    dir="ltr"
-                    placeholder="••••••••"
-                    disabled={isSubmitting || Boolean(runtimeError)}
-                    aria-invalid={hasFieldError || undefined}
-                    aria-describedby={isCapsLock ? 'caps-lock-warning' : undefined}
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 left-1 my-auto grid size-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                    onClick={() => setIsPasswordVisible((visible) => !visible)}
-                    aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-                    disabled={isSubmitting || Boolean(runtimeError)}
-                  >
-                    {isPasswordVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
-                </div>
-
-                {isCapsLock ? (
-                  <p id="caps-lock-warning" className="flex items-center gap-1.5 text-xs text-warning" role="status">
-                    <AlertTriangle className="size-3.5" />
-                    مفتاح Caps Lock مفعّل
-                  </p>
-                ) : null}
-              </div>
-
-              {hasFieldError ? (
-                <div
-                  id="login-error"
-                  className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/5 p-3 text-danger"
-                  role="alert"
-                >
-                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                  <div className="text-xs leading-relaxed">
-                    {runtimeError ?? formError}
-                  </div>
-                </div>
-              ) : null}
-
-              <Button
-                className="h-12 w-full gap-2 text-base font-bold shadow-sm transition-all active:scale-[0.98] md:text-sm"
-                type="submit"
+        <form
+          className="space-y-5"
+          onSubmit={handleSubmit}
+          noValidate={false}
+          aria-describedby={hasFieldError ? 'login-error' : undefined}
+        >
+          <div className="grid gap-2">
+            <label htmlFor="login-email" className="text-sm font-semibold text-foreground">
+              البريد الإلكتروني
+            </label>
+            <div className="relative">
+              <Mail className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
+              <Input
+                id="login-email"
+                className="h-12 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm"
+                type="email"
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  setFormError(null);
+                }}
+                required
+                autoComplete="email"
+                inputMode="email"
+                dir="ltr"
+                placeholder="name@malek.com"
                 disabled={isSubmitting || Boolean(runtimeError)}
-                aria-busy={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    جارٍ التحقق...
-                  </>
-                ) : (
-                  <>
-                    تسجيل الدخول
-                    <ArrowLeft className="size-4 rtl:rotate-180" />
-                  </>
-                )}
-              </Button>
-            </form>
+                aria-invalid={hasFieldError || undefined}
+              />
+            </div>
           </div>
-        </section>
+
+          <div className="grid gap-2">
+            <label htmlFor="login-password" className="text-sm font-semibold text-foreground">
+              كلمة المرور
+            </label>
+            <div className="relative">
+              <LockKeyhole className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
+              <Input
+                id="login-password"
+                className="h-12 ps-10 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm"
+                type={isPasswordVisible ? 'text' : 'password'}
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setFormError(null);
+                }}
+                onKeyDown={handlePasswordKeyDown}
+                onKeyUp={handleCapsLockDetect}
+                required
+                autoComplete="current-password"
+                dir="ltr"
+                placeholder="••••••••"
+                disabled={isSubmitting || Boolean(runtimeError)}
+                aria-invalid={hasFieldError || undefined}
+                aria-describedby={isCapsLock ? 'caps-lock-warning' : undefined}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 left-1 my-auto grid size-11 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                onClick={() => setIsPasswordVisible((visible) => !visible)}
+                aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                disabled={isSubmitting || Boolean(runtimeError)}
+              >
+                {isPasswordVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+
+            {isCapsLock ? (
+              <p id="caps-lock-warning" className="flex items-center gap-1.5 text-xs text-warning" role="status">
+                <AlertTriangle className="size-3.5" />
+                مفتاح Caps Lock مفعّل
+              </p>
+            ) : null}
+          </div>
+
+          {hasFieldError ? (
+            <div
+              id="login-error"
+              className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/5 p-3 text-danger"
+              role="alert"
+            >
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              <div className="text-xs leading-relaxed">{runtimeError ?? formError}</div>
+            </div>
+          ) : null}
+
+          <Button
+            className="h-12 w-full gap-2 text-base font-bold shadow-sm transition-all active:scale-[0.98] md:text-sm"
+            type="submit"
+            disabled={isSubmitting || Boolean(runtimeError)}
+            aria-busy={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                جارٍ التحقق...
+              </>
+            ) : (
+              <>
+                تسجيل الدخول
+                <ArrowLeft className="size-4 rtl:rotate-180" />
+              </>
+            )}
+          </Button>
+        </form>
 
         <footer
-          className="mt-6 shrink-0 border-t border-border/40 pt-3 text-center text-[9.5px] leading-4 text-muted-foreground/70"
+          className="mt-7 border-t border-border/60 pt-5 text-center"
           data-contact-footer
           aria-label="بيانات الدعم والتواصل"
         >
-          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5">
-            <span>الدعم:</span>
-            <span dir="ltr">{SUPPORT_CONTACTS.oman.number}</span>
-            <span aria-hidden="true">·</span>
-            <span dir="ltr">{SUPPORT_CONTACTS.egypt.number}</span>
-            <span aria-hidden="true">·</span>
-            <span dir="ltr">{SUPPORT_CONTACTS.saudi.number}</span>
+          <p className="mb-3 text-xs font-semibold text-muted-foreground">الدعم والتواصل</p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {[SUPPORT_CONTACTS.oman, SUPPORT_CONTACTS.egypt, SUPPORT_CONTACTS.saudi].map((contact) => (
+              <span
+                key={contact.number}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground"
+              >
+                <MessageCircle className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                <span dir="ltr">{contact.number}</span>
+              </span>
+            ))}
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5" dir="ltr">
-            {SUPPORT_CONTACTS.emails.map((contact, index) => (
-              <span key={contact.address}>
-                {index > 0 ? <span className="me-2" aria-hidden="true">·</span> : null}
-                {contact.address}
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            {SUPPORT_CONTACTS.emails.map((contact) => (
+              <span
+                key={contact.address}
+                className="inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-muted-foreground"
+              >
+                <Mail className="size-3.5" aria-hidden="true" />
+                <span dir="ltr">{contact.address}</span>
               </span>
             ))}
           </div>
         </footer>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
