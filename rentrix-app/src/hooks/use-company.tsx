@@ -136,7 +136,10 @@ export function CompanyProvider({ children }: PropsWithChildren) {
           setCompanies([]);
           setActiveCompany(null);
           setCurrentRole(null);
-          setResolvedUserId(null);
+          // Mark this authenticated user's company bootstrap as completed even
+          // when it failed. Keeping this null made the transition guard below
+          // permanently mask the fail-closed error UI with an infinite loader.
+          setResolvedUserId(sessionUser.id);
           setLoadError(ACTIVE_COMPANY_ERROR);
         }
       } finally {
@@ -193,13 +196,15 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       queryClient.clear();
       setActiveCompany(null);
       setCurrentRole(null);
-      setResolvedUserId(null);
+      // A failed switch is also a terminal attempt for the current user; surface
+      // the fail-closed recovery UI instead of re-entering the transition loader.
+      setResolvedUserId(authenticatedUserId);
       setLoadError(ACTIVE_COMPANY_ERROR);
       throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [companies, queryClient]);
+  }, [authenticatedUserId, companies, queryClient]);
 
   const value = useMemo<CompanyContextValue>(() => ({
     companies,
