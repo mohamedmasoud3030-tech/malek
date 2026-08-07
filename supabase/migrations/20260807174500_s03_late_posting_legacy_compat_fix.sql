@@ -1,13 +1,13 @@
 -- Stage S03 corrective migration — normalize late-posting metadata for POSTED
--- compatibility batches that intentionally have no accounting_period_id.
+-- batches when the period-resolution reason is absent and for compatibility
+-- batches that intentionally have no accounting_period_id.
 --
--- #1387 introduced late_posting NOT NULL and canonical posting metadata, while
--- intentionally leaving legacy compatibility batches outside period resolution.
--- A POSTED/no-period row could therefore preserve an explicitly supplied NULL
--- late_posting value and fail with SQLSTATE 23502 before deferred GL balance
--- validation. Normalize that transitional state to late_posting=false while
--- keeping posting_date NULL so legacy batches remain outside the canonical
--- period contract.
+-- #1387 introduced late_posting NOT NULL and canonical posting metadata. A
+-- manually-created POSTED batch can legitimately carry an accounting_period_id
+-- while period_resolution_reason is NULL (for example the deferred-balance
+-- enforcement test), and legacy compatibility batches intentionally have no
+-- accounting period. In either case the trigger must never assign NULL to the
+-- NOT NULL late_posting column.
 
 begin;
 
@@ -32,7 +32,10 @@ begin
         using errcode = '22023';
     end if;
 
-    new.late_posting := (new.period_resolution_reason = 'redirected_earliest_open_period');
+    new.late_posting := coalesce(
+      new.period_resolution_reason = 'redirected_earliest_open_period',
+      false
+    );
     new.posting_date := case
       when new.late_posting then v_period_start
       else new.effective_date
@@ -57,6 +60,6 @@ revoke all on function public.gl_derive_posting_metadata() from public, anon, au
 grant execute on function public.gl_derive_posting_metadata() to service_role;
 
 comment on function public.gl_derive_posting_metadata() is
-  'Derives canonical posting_date/late_posting for period-resolved POSTED batches and normalizes legacy POSTED/no-period batches to late_posting=false with no posting_date.';
+  'Derives canonical posting_date/late_posting for period-resolved POSTED batches, treating an absent resolution reason as not-late, and normalizes legacy POSTED/no-period batches to late_posting=false with no posting_date.';
 
 commit;
