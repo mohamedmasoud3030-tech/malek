@@ -1,4 +1,4 @@
--- Rollback for 20260807011000_s02_financial_rpc_auth_sqlstate.sql.
+-- Manual rollback for 20260807011000_s02_financial_rpc_auth_sqlstate.sql — not auto-applied; run by hand only.
 --
 -- Restores the previous generic exception code while preserving the rejecting
 -- authentication guard, SECURITY DEFINER posture, pinned search_path and ACL.
