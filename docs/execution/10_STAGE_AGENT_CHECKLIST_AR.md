@@ -75,28 +75,28 @@ Evidence ليس جملة «تم». يجب أن يكون واحدًا أو أكث
 
 ## S03 — Canonical GL, chart of accounts and accounting periods
 
-**الحالة عند إنشاء الخطة:** تنفيذ قديم/جزئي يحتاج استكمالًا وتحققًا
+**الحالة:** Agent `10/10` — `READY_FOR_INDEPENDENT_REVIEW` على `main@1da93df9576ac044f39f96f347785b76b86d9792`. Reviewer لم يُمس ويظل مستقلًا.
 
-- [ ] **S03-T01** — Audit existing GL schema against ADR 0010 and ADR 0011; produce gap matrix before SQL.
-  - Evidence المطلوب: Object-by-object matrix with keep/change/add and no unsupported claims.
-- [ ] **S03-T02** — Make account identity company-scoped with account_type, normal_balance, currency and precision.
-  - Evidence المطلوب: Forward migration, rollback and uniqueness tests for (company_id, account_no).
-- [ ] **S03-T03** — Seed required control/revenue/expense/master-lease accounts idempotently per company.
-  - Evidence المطلوب: Seed migration and repeated-run idempotency tests.
-- [ ] **S03-T04** — Enforce batch states DRAFT/POSTED/REVERSED and immutable posted entries.
-  - Evidence المطلوب: Constraints/triggers/RPCs and update/delete denial tests.
-- [ ] **S03-T05** — Require company_id, source_type, source_id, event_id, effective_date, posting_date and reversal linkage.
-  - Evidence المطلوب: Schema contract and posting tests.
-- [ ] **S03-T06** — Enforce debit=credit at OMR 0.001 before posting and prohibit free-form browser journals.
-  - Evidence المطلوب: Balanced/unbalanced rounding tests and frontend boundary tests.
-- [ ] **S03-T07** — Implement monthly OPEN/SOFT_CLOSED/HARD_CLOSED periods with irreversible hard close.
-  - Evidence المطلوب: Period lifecycle tests and permission tests.
-- [ ] **S03-T08** — Post late events to first open period while preserving original effective date and late flag.
-  - Evidence المطلوب: Closed-period acceptance scenarios.
-- [ ] **S03-T09** — Make every posting RPC idempotent by event_id and safe under concurrent retries.
-  - Evidence المطلوب: Concurrency tests showing one batch only.
-- [ ] **S03-T10** — Publish GL posting API contract and account-resolution runbook.
-  - Evidence المطلوب: Docs linked to tested RPC signatures and error codes.
+- [x] **S03-T01** — Audit existing GL schema against ADR 0010 and ADR 0011; produce gap matrix before SQL.
+  - Evidence: `docs/accounting/S03_T01_GL_GAP_AUDIT.md` يحصر objects والـposting paths ويصنف KEEP/CHANGE/ADD/DEPRECATE قبل SQL الجديد.
+- [x] **S03-T02** — Make account identity company-scoped with account_type, normal_balance, currency and precision.
+  - Evidence: `20260804030000_stage3_gl_core_chart_of_accounts_and_periods.sql`; اختبارات `stage3-chart-of-accounts.test.ts` و`supabase/tests/stage3_gl_core.sql`; PR #1390 أغلق direct browser mutation على `accounts`.
+- [x] **S03-T03** — Seed required control/revenue/expense/master-lease accounts idempotently per company.
+  - Evidence: `provision_company_chart_of_accounts` في `20260804030000_stage3_gl_core_chart_of_accounts_and_periods.sql` يجهز 18 حسابًا؛ `stage3-account-write-boundary.test.ts` يثبت أول provisioning ثم repeated-run idempotency.
+- [x] **S03-T04** — Enforce batch states DRAFT/POSTED/REVERSED and immutable posted entries.
+  - Evidence: `20260804030100_stage3_gl_core_journal_batches_and_lines.sql` + `20260804030200_stage3_gl_core_posting_engine_and_rpcs.sql`; `stage3-periods-reversal-security.test.ts` و`supabase/tests/stage3_gl_core.sql` يثبتان lifecycle ورفض mutation للتاريخ المرحّل.
+- [x] **S03-T05** — Require company_id, source_type, source_id, event_id, effective_date, posting_date and reversal linkage.
+  - Evidence: metadata/idempotency constraints في Stage-3 core؛ PR #1387 أضاف `posting_date`/`late_posting`; PR #1389 أثبت linked `reversal_of_batch_id` لمسار receipt VOID canonical.
+- [x] **S03-T06** — Enforce debit=credit at OMR 0.001 before posting and prohibit free-form browser journals.
+  - Evidence: balance/precision constraints و`gl_assert_batch_balance`; `stage3-posting-engine.test.ts` و`supabase/tests/stage3_gl_core.sql`; PR #1390 أغلق direct account writes وPR #1391 يمنع أي production write جديد إلى `journal_entries` compatibility path.
+- [x] **S03-T07** — Implement monthly OPEN/SOFT_CLOSED/HARD_CLOSED periods with irreversible hard close.
+  - Evidence: `accounting_periods` وRPCs في Stage-3 core؛ `stage3-periods-reversal-security.test.ts` و`supabase/tests/stage3_gl_core.sql` يثبتان lifecycle، عدم overlap وHard Close rules.
+- [x] **S03-T08** — Post late events to first open period while preserving original effective date and late flag.
+  - Evidence: `gl_resolve_accounting_period`; PR #1387 أضاف server-derived metadata وPR #1389 أغلق NULL edge cases؛ اختبارات period/reversal تثبت effective-date preservation وlate routing.
+- [x] **S03-T09** — Make every posting RPC idempotent by event_id and safe under concurrent retries.
+  - Evidence: `post_journal_event` يثبت الهوية `(company_id, source_type, source_id, event_id)`؛ PR #1392 أضاف `scripts/ci/run-stage3-posting-concurrency-test.sh` بجلستين PostgreSQL متداخلتين. Isolated Supabase run `31206119050` = SUCCESS ويثبت batch canonical واحدًا وlineين فقط مع retry `idempotent=true`.
+- [x] **S03-T10** — Publish GL posting API contract and account-resolution runbook.
+  - Evidence: PR #1390 — `docs/accounting/S03_GL_POSTING_API_RUNBOOK.md` يوثق signatures، SQLSTATEs، account resolution، period semantics، reversal contract، وحدود ترحيل writers اللاحقة.
 
 ---
 
