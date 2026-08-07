@@ -1,4 +1,4 @@
--- Rollback for 20260807163000_s02_owner_settlement_stale_total_rejection.sql
+-- Manual rollback for 20260807163000_s02_owner_settlement_stale_total_rejection.sql — not auto-applied, run by hand only in an approved emergency/reversal procedure.
 -- Restores the FA-003 public lifecycle function names and grants.
 
 begin;
