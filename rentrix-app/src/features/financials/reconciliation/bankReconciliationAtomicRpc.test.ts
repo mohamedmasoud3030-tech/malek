@@ -64,6 +64,6 @@ describe('bank reconciliation atomic RPC service boundary', () => {
       matched_entity_id: 'payment-1',
       matched_amount: '250',
       notes: '',
-    })).rejects.toThrow('Bank statement line is already processed.');
+    })).rejects.toThrow('تعذر تسجيل المطابقة البنكية');
   });
 });

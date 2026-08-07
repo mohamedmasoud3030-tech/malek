@@ -31,10 +31,14 @@ let catalog: Record<string, unknown>[] = [];
 
 describe('Phase 3A-1C catalog contract', () => {
   beforeAll(async () => {
-    // FA-003 (20260804) redefines the same four settlement RPCs; exclude it so
-    // this suite asserts the phase3a1c catalog posture in isolation (same
-    // convention used for the follow-up compatibility migration).
-    const replay = await createFullReplayedDatabase({ writeEvidence: false, excludeMigrations: ['20260804'] });
+    // FA-003 (20260804) and the later S02 stale-total rejection migration
+    // (20260807163000) both redefine the same four settlement RPCs; exclude
+    // them so this suite asserts the phase3a1c catalog posture in isolation
+    // (same convention used for the follow-up compatibility migration).
+    const replay = await createFullReplayedDatabase({
+      writeEvidence: false,
+      excludeMigrations: ['20260804', '20260807163000'],
+    });
     expect(replay.failed).toEqual([]);
     db = replay.db;
   }, 420_000);

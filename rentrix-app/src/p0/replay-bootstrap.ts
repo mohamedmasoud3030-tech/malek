@@ -18,7 +18,13 @@ export type ReplayResult = {
   failed: { file: string; error: string }[];
 };
 
-import { STUB_SQL_HEADER as STUB_SQL, REPLAY_TRANSFORMS as TRANSFORMS } from './replay-stubs';
+import {
+  STUB_SQL_HEADER as STUB_SQL,
+  REPLAY_TRANSFORMS as TRANSFORMS,
+  S02_ACL_MIGRATION_MARKER,
+  provideS02AclPrerequisites,
+  removeS02AclPrerequisites,
+} from './replay-stubs';
 
 export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   'p0_company_isolation',
@@ -74,6 +80,8 @@ export async function createReplayedDatabase(options?: {
     for (const t of TRANSFORMS) {
       if (t.file === file) sql = sql.replace(t.pattern, t.replacement);
     }
+    const isS02Acl = file.includes(S02_ACL_MIGRATION_MARKER);
+    const provided = isS02Acl ? await provideS02AclPrerequisites(db) : false;
     try {
       await db.exec(sql);
       applied.push(file);
@@ -81,6 +89,8 @@ export async function createReplayedDatabase(options?: {
       failed.push({ file, error: String(error).slice(0, 400) });
       await db.exec('ROLLBACK;').catch(() => undefined);
       await db.exec("SELECT set_config('request.jwt.claims','{}', false);").catch(() => undefined);
+    } finally {
+      if (provided) await removeS02AclPrerequisites(db).catch(() => undefined);
     }
   }
 

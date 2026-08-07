@@ -1,3 +1,5 @@
+import type { PGlite } from '@electric-sql/pglite';
+
 /**
  * P0 — Shared Supabase-platform stub layer for PGlite isolated replay.
  * Mirrors only the platform shapes the migration chain depends on.
@@ -81,6 +83,59 @@ DO $$ BEGIN CREATE ROLE supabase_admin; EXCEPTION WHEN duplicate_object THEN NUL
 -- is the real Supabase default that the bare replay lacks (env-parity.md).
 GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
 `;
+
+/**
+ * Marker for the S02 internal settlement-helper ACL migration.
+ *
+ * That migration (20260807170000_s02_revoke_internal_owner_settlement_helper_execute.sql)
+ * only changes PRIVILEGES on four FA-003 system helpers (REVOKE all from
+ * public/anon/authenticated, GRANT execute to service_role). It never touches
+ * a function body. In a full chain replay FA-003 (20260804) has already
+ * created those four signatures, so the migration applies cleanly. The
+ * isolated checkpoints (P0 causality, P1/P3 forward-rollback) deliberately
+ * EXCLUDE FA-003 so they can fingerprint the pre-FA-003 surface, which leaves
+ * those signatures absent — so the REVOKE would abort the replay.
+ *
+ * `provideS02AclPrerequisites`/`removeS02AclPrerequisites` make the migration
+ * replayable in those checkpoints by creating the signatures as no-op stubs
+ * immediately before applying it and dropping them right after. The stubs
+ * change no formula, data, ACL, or RPC body, and the final replay surface
+ * (and therefore every fingerprint / object catalog) is identical to before.
+ */
+export const S02_ACL_MIGRATION_MARKER = '20260807170000_s02_revoke_internal_owner_settlement_helper_execute';
+
+const S02_ACL_PREREQ_STUBS = `
+CREATE OR REPLACE FUNCTION public.owner_settlement_reservable_payments(uuid, uuid, date, date, text)
+RETURNS SETOF uuid LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, pg_temp
+AS $$ BEGIN RETURN; END; $$;
+CREATE OR REPLACE FUNCTION public.owner_settlement_reservable_expenses(uuid, uuid, date, date, text)
+RETURNS SETOF uuid LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public, pg_temp
+AS $$ BEGIN RETURN; END; $$;
+CREATE OR REPLACE FUNCTION public.assert_owner_settlement_links_backfillable()
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp
+AS $$ BEGIN END; $$;
+CREATE OR REPLACE FUNCTION public.backfill_owner_settlement_links()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp
+AS $$ BEGIN RETURN '{}'::jsonb; END; $$;
+`;
+
+export async function provideS02AclPrerequisites(db: PGlite): Promise<boolean> {
+  const { rows } = await db.query<{ p: string | null }>(
+    `SELECT to_regprocedure('public.owner_settlement_reservable_payments(uuid,uuid,date,date,text)') AS p`,
+  );
+  if (rows[0]?.p != null) return false; // real FA-003 functions already present
+  await db.exec(S02_ACL_PREREQ_STUBS);
+  return true;
+}
+
+export async function removeS02AclPrerequisites(db: PGlite): Promise<void> {
+  await db.exec(`
+    DROP FUNCTION IF EXISTS public.owner_settlement_reservable_payments(uuid,uuid,date,date,text);
+    DROP FUNCTION IF EXISTS public.owner_settlement_reservable_expenses(uuid,uuid,date,date,text);
+    DROP FUNCTION IF EXISTS public.assert_owner_settlement_links_backfillable();
+    DROP FUNCTION IF EXISTS public.backfill_owner_settlement_links();
+  `);
+}
 
 export const REPLAY_TRANSFORMS: { file: string; pattern: RegExp; replacement: string; reason: string }[] = [
   {

@@ -122,7 +122,11 @@ async function lifecycle(tag: 'forward' | 'reapply', month: string, n: number) {
 describe('Phase 3A-1C forward / rollback / reapply', () => {
   beforeAll(async () => {
     const replay = await createFullReplayedDatabase({
-      excludeMigrations: [MIGRATION_KEY, FOLLOW_UP_COMPATIBILITY_KEY, '20260804'],
+      // FA-003 (20260804) and the later S02 stale-total rejection migration
+      // (20260807163000) both redefine the settlement RPCs this suite verifies
+      // in isolation; exclude them so forward→rollback restores the phase3a1c
+      // baseline exactly (same convention as the catalog-contract suite).
+      excludeMigrations: [MIGRATION_KEY, FOLLOW_UP_COMPATIBILITY_KEY, '20260804', '20260807163000'],
       writeEvidence: false,
     });
     expect(replay.failed).toEqual([]);

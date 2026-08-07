@@ -36,7 +36,7 @@ describe('maintenance service failure and mutation boundaries', () => {
     supabaseMock.from.mockReturnValue(chain);
     const { listMaintenance } = await import('./maintenance-service');
 
-    await expect(listMaintenance('all', '')).rejects.toThrow('maintenance table unavailable');
+    await expect(listMaintenance('all', '')).rejects.toThrow('تعذر تحميل طلبات الصيانة');
     expect(supabaseMock.from).toHaveBeenCalledWith('maintenance_records');
   });
 
@@ -45,7 +45,7 @@ describe('maintenance service failure and mutation boundaries', () => {
     supabaseMock.rpc.mockReturnValue(rpcChain);
     const { createMaintenance } = await import('./maintenance-service');
 
-    await expect(createMaintenance({ property_id: 'property-1', title: 'Test', priority: 'medium' })).rejects.toThrow('insert rejected');
+    await expect(createMaintenance({ property_id: 'property-1', title: 'Test', priority: 'medium' })).rejects.toThrow('تعذر إنشاء طلب الصيانة');
     expect(supabaseMock.rpc).toHaveBeenCalledWith('create_maintenance_atomic', expect.objectContaining({
       p_property_id: 'property-1',
       p_title: 'Test',
@@ -127,6 +127,6 @@ describe('maintenance service failure and mutation boundaries', () => {
     supabaseMock.rpc.mockReturnValue({ single: vi.fn(() => Promise.resolve({ data: null, error: new Error('duplicate resolve') })) });
     const { resolveMaintenanceWithExpense } = await import('./maintenance-service');
 
-    await expect(resolveMaintenanceWithExpense('maintenance-1', 100, null)).rejects.toThrow('duplicate resolve');
+    await expect(resolveMaintenanceWithExpense('maintenance-1', 100, null)).rejects.toThrow('تعذر إغلاق طلب الصيانة وتسجيل التكلفة');
   });
 });

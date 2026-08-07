@@ -94,7 +94,7 @@ describe('people service write workflow', () => {
     const { updatePerson } = await import('./people-service');
 
     await expect(updatePerson('person-1', { full_name: 'أحمد سالم', type: 'tenant', phone: '', email: '', national_id: '', address: '', notes: '' }))
-      .rejects.toThrow('لا تملك صلاحية الكتابة أو القراءة المطلوبة');
+      .rejects.toThrow('تعذر تحديث بيانات الشخص: حسابك لا يملك الصلاحية المطلوبة لهذه العملية. تأكد من الحساب الحالي ثم حاول مرة أخرى.');
     expect(chain.update).toHaveBeenCalledWith(expect.objectContaining({ full_name: 'أحمد سالم' }));
     expect(chain.eq).toHaveBeenCalledWith('id', 'person-1');
   });
