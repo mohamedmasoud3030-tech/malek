@@ -18,6 +18,65 @@
 /* ── Typography ────────────────────────────── */
 @theme {
   --font-sans: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ── Wave 3: layout & motion tokens ────────────
+   Theme-independent: spacing scale, radii, motion,
+   z-index, opacity, focus, disabled, icon sizes,
+   container widths. Pure CSS variables; the subset
+   that needs Tailwind utilities is bridged below. */
+:root {
+  /* Spacing scale (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Extra radii (source values; bridge maps the rounded-* scale below) */
+  --radius-2xs: 0.375rem;
+  --radius-3xs: 0.5rem;
+  --radius-4xs: 0.625rem;
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Z-index scale (kept in sync with dialog/overlay usage) */
+  --z-dropdown: 50;
+  --z-sticky: 60;
+  --z-overlay: 100;
+  --z-modal: 101;
+  --z-toast: 120;
+
+  /* States */
+  --opacity-disabled: 0.5;
+  --focus-ring-width: 4px;
+  --disabled-bg: hsl(var(--color-disabled));
+  --disabled-fg: hsl(var(--color-disabled-fg));
+
+  /* Icon sizes */
+  --icon-xs: 0.875rem;
+  --icon-sm: 1rem;
+  --icon-md: 1.125rem;
+  --icon-lg: 1.25rem;
+  --icon-xl: 1.5rem;
+
+  /* Containers (source values; bridge maps max-w-* below) */
+  --max-w-sm: 40rem;
+  --max-w-md: 48rem;
+  --max-w-lg: 64rem;
+  --max-w-xl: 80rem;
+  --max-w-2xl: 96rem;
 }
 
 /* ── Semantic Color Tokens (Light) ──────────── */
@@ -139,6 +198,25 @@
   --elev-card-hover: var(--shadow-card-hover);
   --elev-raised: var(--shadow-elevated);
   --elev-sidebar: var(--shadow-sidebar);
+
+  /* ── Wave 3: additional semantic surfaces ──── */
+  --surface: var(--color-card);
+  --surface-elevated: var(--color-card);
+
+  /* Financial semantics — sign is never communicated by color alone.
+     Positive follows the success ramp, negative the danger ramp. */
+  --financial-positive: var(--color-success-text);
+  --financial-positive-bg: var(--color-success-bg);
+  --financial-negative: var(--color-danger-text);
+  --financial-negative-bg: var(--color-danger-bg);
+  --financial-neutral: var(--color-neutral-text);
+  --financial-neutral-bg: var(--color-neutral-bg);
+
+  --color-disabled: 215 14% 86%;
+  --color-disabled-fg: 215 12% 58%;
+  --overlay: 215 30% 8%;
+  --ring: var(--color-primary);
+  --focus-ring: var(--color-primary);
 }
 
 /* ── Dark Mode Overrides ───────────────────── */
@@ -208,6 +286,22 @@
   --sidebar-accent-foreground: var(--color-sidebar-active-text);
   --sidebar-border: 215 16% 16%;
   --accent: 200 85% 48%;
+
+  /* ── Wave 3: dark semantic surfaces ───────── */
+  --surface: var(--color-card);
+  --surface-elevated: 215 24% 16%;
+  --financial-positive: var(--color-success-text);
+  --financial-positive-bg: var(--color-success-bg);
+  --financial-negative: var(--color-danger-text);
+  --financial-negative-bg: var(--color-danger-bg);
+  --financial-neutral: var(--color-neutral-text);
+  --financial-neutral-bg: var(--color-neutral-bg);
+
+  --color-disabled: 215 16% 22%;
+  --color-disabled-fg: 215 12% 50%;
+  --overlay: 215 30% 4%;
+  --ring: var(--color-primary);
+  --focus-ring: var(--color-primary);
 }
 
 /* ============================================
@@ -285,6 +379,22 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
 
+  /* Wave 3 surfaces & states */
+  --color-surface: hsl(var(--surface));
+  --color-surface-elevated: hsl(var(--surface-elevated));
+  --color-overlay: hsl(var(--overlay));
+  --color-ring: hsl(var(--ring));
+  --color-disabled: hsl(var(--color-disabled));
+  --color-disabled-foreground: hsl(var(--color-disabled-fg));
+
+  /* Financial semantics */
+  --color-financial-positive: hsl(var(--financial-positive));
+  --color-financial-positive-bg: hsl(var(--financial-positive-bg));
+  --color-financial-negative: hsl(var(--financial-negative));
+  --color-financial-negative-bg: hsl(var(--financial-negative-bg));
+  --color-financial-neutral: hsl(var(--financial-neutral));
+  --color-financial-neutral-bg: hsl(var(--financial-neutral-bg));
+
   /* Shadows */
   --shadow-card: var(--elev-card);
   --shadow-card-hover: var(--elev-card-hover);
@@ -293,11 +403,44 @@
 
   /* Radius — يستعيد خريطة tailwind.config.js الموثقة:
      rounded-lg = var(--radius), rounded-xl = var(--radius-card) */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-xs: var(--radius-2xs);
+  --radius-sm: var(--radius-3xs);
+  --radius-md: var(--radius-4xs);
   --radius-lg: var(--radius);
   --radius-xl: var(--radius-card);
   --radius-2xl: var(--radius-elevated);
+
+  /* Motion — source vars are prefixed (--motion-*) to avoid self-reference. */
+  --ease-standard: var(--motion-ease-standard);
+  --ease-emphasized: var(--motion-ease-emphasized);
+}
+
+/* Wave 3 layout token bridge (spacing/containers/z-index/icon sizes).
+   Registered outside the color block so these values stay literal. */
+@theme inline {
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --spacing-8: var(--space-8);
+  --spacing-10: var(--space-10);
+  --spacing-12: var(--space-12);
+  --spacing-16: var(--space-16);
+
+  --container-sm: var(--max-w-sm);
+  --container-md: var(--max-w-md);
+  --container-lg: var(--max-w-lg);
+  --container-xl: var(--max-w-xl);
+  --container-2xl: var(--max-w-2xl);
+
+  /* z-index — source vars use the same names, so register literals here. */
+  --z-dropdown: 50;
+  --z-sticky: 60;
+  --z-overlay: 100;
+  --z-modal: 101;
+  --z-toast: 120;
 }
 
 /* ============================================
