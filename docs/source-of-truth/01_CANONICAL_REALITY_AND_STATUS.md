@@ -6,7 +6,7 @@
 
 ## 1. Feature Status Catalog
 
-Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, user-visible, actions + permissions + loading/error/empty states work, mobile acceptable, no demo/mock. `PARTIAL` = safe core exists, boundary item blocked. `NOT_STARTED` = deferred by owner decision.
+Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, user-visible, actions + permissions + loading/error/empty states work, mobile acceptable, no demo/mock. `PARTIAL` = safe core exists, boundary item remains. `NOT_STARTED` = implementation has not started. A resolved owner decision removes policy ambiguity but does not by itself mark implementation complete.
 
 ### A — User Experience Foundation (Wave 4A + continuous program)
 
@@ -38,8 +38,8 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Structured import flow (select → preview → mapping → review → importing → completed), fail-closed batch validation | `VERIFIED_COMPLETE` | `bank-csv-import-workflow.tsx`, `bankCsvImportService.ts` |
 | Duplicate detection (file hash, row-level, possible duplicates) surfaced in UI | `VERIFIED_COMPLETE` | import result panels |
 | Unmatched list with filters, suggested deterministic matching (date+amount), ignore flow, match confirmation, reconciliation status KPIs | `VERIFIED_COMPLETE` | `bank-reconciliation-page.tsx`, `useBankReconciliationController.ts` |
-| Final accounting approval authority beyond match/ignore (FGR-006 approval flow) | `PARTIAL` — blocked | pending owner decision on approval role (see OD-04/approval-role); all work up to the boundary is shipped |
-| **Owner-audit nuance (2026-08-07):** the whole E9 feature carries the owner-audit label `PARTIALLY_IMPLEMENTED` until approval flows (FGR-006) and the upload wizard land | `PARTIAL` (owner-audit label) | arena commit `9b6564c0` context; label adopted, not overwritten |
+| Final accounting approval authority beyond match/ignore (FGR-006 approval flow) | `PARTIAL` — decision resolved, implementation pending | ADR 0015 adopts six roles + Maker-Checker; backend permission implementation still required |
+| **Owner-audit nuance (2026-08-07):** the whole E9 feature carries the owner-audit label `PARTIALLY_IMPLEMENTED` until approval flows (FGR-006) and the upload wizard land | `PARTIAL` (owner-audit label) | approval policy resolved by ADR 0015; implementation remains |
 
 ### D — Owner Settlements UX
 
@@ -51,10 +51,10 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Atomic reservation visibility (D14 note) | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
 | Payout preview with explicit payable amount, recipient, period, method | `VERIFIED_COMPLETE` | commit `ee3fdcee` |
 | Explicit post-payment status on settlement cards (paid date / approved / cancelled) | `VERIFIED_COMPLETE` | commit `305b459c` |
-| First-run ADMIN supervision UX (banner: needs-ADMIN + first-cycle supervision reminder) | `VERIFIED_COMPLETE` | commit `c067d1b0`; focused tests |
+| First-run ADMIN supervision UX (banner: needs-ADMIN + first-cycle supervision reminder) | `VERIFIED_COMPLETE` | commit `c067d1b0`; ADR 0015 fixes exit criterion after one reconciled cycle |
 | Approval (ADMIN) → payout (ADMIN) with print/PDF owner statement | `VERIFIED_COMPLETE` | workspace + `documentService` |
-| Negative-balance collection accounting (Due-from-Owner recovery) | `NOT_STARTED` — blocked | OD-08 owner decision required |
-| **Owner-audit nuance (2026-08-07, arena branch 019fdb42):** the whole E7 feature is classified `PARTIALLY_IMPLEMENTED` until first-run ADMIN supervision is formalized and OD-08 collection rules resolve | `PARTIAL` (owner-audit label) | arena commit `9b6564c0` (author: repo owner); tip of that branch is superseded (`# placeholder`) — label adopted here, not overwritten |
+| Negative-balance collection accounting (Due-from-Owner recovery) | `NOT_STARTED` — decision resolved, implementation pending | ADR 0015: separate Due from Owner; never negative Owner Funds Payable |
+| **Owner-audit nuance (2026-08-07):** the whole E7 feature remains classified `PARTIALLY_IMPLEMENTED` until Due-from-Owner recovery is implemented and first-cycle supervision evidence exists | `PARTIAL` (owner-audit label) | product decisions resolved by ADR 0015; implementation/evidence still required |
 
 ### E — Contract Experience
 
@@ -64,7 +64,7 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Documents shell, payments tab (invoices + payments), financial timeline, agreement-coverage recovery | `VERIFIED_COMPLETE` | `contractDocumentsShell.tsx`, `contractPaymentsTab.tsx`, `ContractAgreementMissingAlert.tsx` |
 | Payment schedule preview inside the form | `VERIFIED_COMPLETE` | `contract-schedule-preview.ts` + `ContractFormFields.tsx` |
 | Compact create/edit modal over workspace context | `VERIFIED_COMPLETE` | commit `5f585a06` |
-| Maker-Checker lifecycle, signature verification, future 8+2 legal states | `NOT_STARTED` — blocked | Stage S04; needs owner/legal decision (OD-03 templates, OD-04 roles) |
+| Maker-Checker lifecycle, signature verification, future legal states | `NOT_STARTED` — decisions resolved, implementation pending | ADR 0015 fixes Maker-Checker roles and `DRAFT → REVIEW → APPROVED → SIGNED → ACTIVE`; final jurisdiction-specific legal wording still requires legal review |
 
 ### B / F — Safe completeness
 
@@ -84,72 +84,38 @@ Presentation-only normalization; no business behavior, routes, permissions, RPCs
 
 | Item | Status | Evidence |
 |---|---|---|
-| Login: single centered compact auth card (no split layout, no promotional command-center panel, restrained lockup) | `VERIFIED_COMPLETE` | `login-page.tsx` + additive tests; real Chromium smoke at 390px/1440px (0px horizontal overflow, card fits viewport) |
+| Login: single centered minimal auth surface with approved MALEK mark → MALEK → current tagline → auth fields/actions; responsive support contacts below | `VERIFIED_COMPLETE` after PR #1384 merge | `login-page.tsx`, canonical brand assets; mobile/desktop CI verification required on PR head |
 | Compact operational page headers: jargon/promotional descriptions trimmed to one concise line (finance workspaces + 4 finance hub entries) | `VERIFIED_COMPLETE` | workspace page components; `page-header.test.tsx` intact |
 | One heading hierarchy: EntityDetailHeader normalized to the standard PageHeader scale (text-xl sm:text-2xl) | `VERIFIED_COMPLETE` | `entity-detail-header.tsx` |
 | Reports tab clusters use compact inline category labels (mobile) while keeping the 3-category architecture | `VERIFIED_COMPLETE` | `ReportsWorkspace.tsx` |
 | Shared primitives audit (buttons/inputs/cards/tables/modals/forms/filter pills/status pills/empty states) — found already normalized on one token system; no second design system created | `VERIFIED_COMPLETE` | `tokens.css`, `malek-pro-visual-wave.css`, `page-polish.css`, component audit |
-| Full-surface consistency sweep (dashboard, properties, units, owners, people, contracts, finance hubs, invoices/collections, expenses, deposits, reconciliation, settlements, reports, maintenance, utilities, automation, vault, settings/system, change-password, audit log) — all on the standard PageHeader/PageLayout/EntityForm/EntityTable family; mobile cards present everywhere; no fixed-width breakage | `VERIFIED_COMPLETE` | component audit + targeted suites (346 tests) |
+| Full-surface consistency sweep (dashboard, properties, units, owners, people, contracts, finance hubs, invoices/collections, expenses, deposits, reconciliation, settlements, reports, maintenance, utilities, automation, vault, settings/system, change-password, audit log) | `VERIFIED_COMPLETE` | component audit + targeted suites |
 | Dashboard/reports restraint (hero + KPI cards already compact; calculations preserved) | `VERIFIED_COMPLETE` | `hero-banner.tsx`, `FinanceKpiCard` |
-| Operational-route page headers: removed the Wave-2 dark-gradient hero cards + decorative rings (promotional feel); operational pages now use the standard compact PageHeader | `VERIFIED_COMPLETE` | `malek-pro-visual-wave.css` (hero block removed); commit `2a2df3a7` |
+| Operational-route page headers: removed the Wave-2 dark-gradient hero cards + decorative rings; operational pages use standard compact PageHeader | `VERIFIED_COMPLETE` | `malek-pro-visual-wave.css`; commit `2a2df3a7` |
 | Finance/reports hub descriptions trimmed to operational one-liners (i18n) | `VERIFIED_COMPLETE` | `lib/i18n.ts`; i18n contract tests pass |
-| Safe cascade warnings: property + unit archive dialogs list the exact backend guard preconditions | `VERIFIED_COMPLETE` | `properties-list-page.tsx`, `units-list.tsx`; commits `9c66cc50`, `246bb18d` |
-| Repo hygiene: repaired two `evidence/preflight` links broken by #1373's `docs/APP_STATUS.md` removal (pre-existing on main; was failing the CI docs gate on every PR) | `VERIFIED_COMPLETE` | commit `a3343775`; `check-doc-links` passes |
-| Repo hygiene: `product-accounting-decision-gates.test.ts` re-sourced from ADR 0001 (it read two docs deleted by #1373 as superseded; ADR 0001 explicitly records the same gates + FGR-008..013 as decided-but-implementation-pending). Same gate topics and FGR visibility pinned; CI build/release-blocker gates unblocked | `VERIFIED_COMPLETE` | commit (next); targeted test passes |
-| Dead legacy route-wrapper cleanup: removed 9 unreferenced wrapper files (`_protected.arrears.tsx`, etc.) where `route-tree.ts` provides canonical redirect and no runtime import depends on wrapper | `VERIFIED_COMPLETE` | `src/routes/_protected.*.tsx` |
-| Settings / Governance flattening: removed duplicate inner Settings sections (`security`, `governance`, `integrity`, `role-simulator`) from `SettingsWorkspace` while keeping canonical top-level Governance destinations | `VERIFIED_COMPLETE` | `settingsSections.ts`, `settings-operations-sections.tsx` |
-| General Ledger read-only UI: surfaced `chartOfAccountsService`, `accountingPeriodsService`, and `journalService` in read-only General Ledger Core section (`general_ledger`) under formal Reports category | `VERIFIED_COMPLETE` | `GeneralLedgerCoreSection.tsx`, `use-general-ledger-core.ts` |
-| `/accounting` route canonical redirect: points directly to `/reports?section=general_ledger` | `VERIFIED_COMPLETE` | `route-tree.ts` |
+| Safe cascade warnings: property + unit archive dialogs list exact backend guard preconditions | `VERIFIED_COMPLETE` | `properties-list-page.tsx`, `units-list.tsx` |
+| Dead legacy route-wrapper cleanup | `VERIFIED_COMPLETE` | canonical redirects in `route-tree.ts` |
+| Settings / Governance flattening | `VERIFIED_COMPLETE` | `settingsSections.ts`, `settings-operations-sections.tsx` |
+| General Ledger read-only UI under formal Reports category | `VERIFIED_COMPLETE` | `GeneralLedgerCoreSection.tsx`, `use-general-ledger-core.ts` |
+| `/accounting` canonical redirect to `/reports?section=general_ledger` | `VERIFIED_COMPLETE` | `route-tree.ts` |
 
-### Wave 5 — Malek Pro parity hardening (2026-08-07, arena branch 019fdc09)
+## 3. Owner Decisions
 
-Presentation-only parity pass against the owner-supplied Malek Pro reference set (20 prototype screenshots). Mapping of every reference screen to its plan stage + findings: `docs/audits/MALEK_VISUAL_WAVE5_MALEKPRO_PARITY_AUDIT.md`.
+Resolved by **ADR 0015 (2026-08-07)**:
 
-| Item | Status | Evidence |
-|---|---|---|
-| Operational register tables: dark command-header contrast pinned (page-polish muted-header leak removed, both themes) | `VERIFIED_COMPLETE` | `malek-pro-visual-wave.css`; guard `malek-pro-visual-wave.test.ts`; `evidence/ui-wave5-malekpro-parity/` |
-| Maintenance standalone header follows the PageHeader actions contract (create = primary, A4 print = secondary → mobile overflow sheet) | `VERIFIED_COMPLETE` | `maintenance-workspace.tsx`, `maintenance.e2e-fixture.tsx` |
-| OD-12 Cairo + Sora self-hosted fonts (offline PWA + no external font CDN), deferred load, `font-display: swap`, OFL licenses shipped | `VERIFIED_COMPLETE` | `public/fonts/*`, `src/lib/product-fonts.ts`; guard `product-fonts-contract.test.ts` |
-| Reference screens not to replicate (split login, dark-navy promotional modal heroes) | confirmed intentionally excluded | doc 3 consolidation pass, commit `2a2df3a7` |
+- **OD-02** — VOID: immutable/audited Maker-Checker lifecycle; mandatory reason; requester cannot self-approve; ADMIN emergency override requires extra reason.
+- **OD-03** — Contract workflow/versioning: `DRAFT → REVIEW → APPROVED → SIGNED → ACTIVE`; signed artifact immutable; final jurisdiction-specific legal wording remains subject to legal review.
+- **OD-04** — Six product roles: `ADMIN / MANAGER / ACCOUNTANT / OPERATIONS / USER / VIEWER`; Maker-Checker separation; backend permission enforcement remains authoritative.
+- **OD-08** — Negative owner balance: separate Due from Owner receivable; never negative Owner Funds Payable; collection or documented permitted offset.
+- **First-cycle settlement supervision** — one complete ADMIN-supervised and reconciled company cycle, then the first-run warning can exit.
 
-### Wave 5.1 — Accessibility & responsive hardening (2026-08-07, arena branch 019fdc09)
+Still open outside this UX decision round:
 
-axe-core (WCAG 2.1 A/AA) audit over the e2e fixture surfaces, both themes, plus a
-responsive overflow matrix. Fixes are presentation-only (tokens + class hygiene).
-Full findings and fixes: `docs/audits/MALEK_VISUAL_WAVE5_MALEKPRO_PARITY_AUDIT.md` §4a–4b.
-
-| Item | Status | Evidence |
-|---|---|---|
-| WCAG AA contrast: light/dark muted-text tokens, dashboard-v2 muted, Malek green `--primary`, `/70` opacity blends removed from small text | `VERIFIED_COMPLETE` | `tokens.css`, `dashboard-v2.css`, `malek-pro-visual-wave.css`, `kpi-card.tsx`, `stat-card.tsx`, `entity-cell.tsx`, `lands-view.tsx`, `login-page.tsx` |
-| Keyboard access to horizontal scroll regions (reports section tabs + filter chips) with Arabic `aria-label` and visible focus ring | `VERIFIED_COMPLETE` | `ReportsWorkspace.tsx`, `ReportsFilterSurface.tsx` |
-| Responsive matrix: 96 checks (16 surfaces × 6 viewports 320→1440) — 0 horizontal-overflow/title-clip defects | `VERIFIED_COMPLETE` | `evidence/ui-wave5-malekpro-parity/audits/responsive-overflow-matrix.json` |
-| axe matrix: 16/16 surface-theme combinations with 0 WCAG 2.1 A/AA violations | `VERIFIED_COMPLETE` | `evidence/ui-wave5-malekpro-parity/audits/axe-wcag2aa-final.json` |
-
-### Wave 5.2 — Touch-target & Button-asChild hardening (2026-08-07, arena branch 019fdc09)
-
-Measured interactive elements against the 44×44px touch contract
-(`docs/ui-ux/RENTRIX_MOBILE_UX.md`) on 15 fixture surfaces at 390/414px.
-Fixes are presentation-only; findings and fixes: `docs/audits/MALEK_VISUAL_WAVE5_MALEKPRO_PARITY_AUDIT.md` §4c.
-
-| Item | Status | Evidence |
-|---|---|---|
-| `Button asChild` no longer renders a naked unstyled link (Radix Slot now receives the single child element instead of a Fragment that swallowed className/props) | `VERIFIED_COMPLETE` | `button.tsx`; regression guard `button.test.tsx` (fails on the old code); after screenshot `evidence/ui-wave5-touch-targets/after/owner-detail-back-button-390.png` |
-| Form inputs at 48px touch / 44px desktop via shared `input.tsx` (previously 40px) | `VERIFIED_COMPLETE` | `input.tsx` (mirrors `select.tsx` pattern) |
-| 44px hit boxes: login password toggle, bottom-sheet drag handle, 25 as-child link-button call sites | `VERIFIED_COMPLETE` | per-site `min-h-11` bumps; audit doc §4c table |
-| Touch-target audit: 0 findings across 15 surfaces × 2 viewports; axe matrix stays 16/16 clean | `VERIFIED_COMPLETE` | `evidence/ui-wave5-touch-targets/audits-touch-targets-final.json` |
-| Keyboard focus visibility: Tab-walk across 8 surfaces — bottom-sheet handle given a visible focus ring; 0 invisible-focus stops final | `VERIFIED_COMPLETE` | `bottom-sheet.tsx`; `evidence/ui-wave5-touch-targets/audits-keyboard-focus.json` |
-
-## 3. Open Owner Decisions (blockers, unchanged)
-
-- **OD-08** — Due-from-Owner collection mechanism (offset vs payment invoice): blocks negative-balance settlement accounting.
-- **OD-03** — Missing legal templates: blocks production contract printing automation.
-- **OD-04** — Role model scope (3 vs 6 roles): blocks Maker-Checker and Accountant/Viewer role rollout.
-- **OD-02** — Void signature payload: awaits refactor decision.
 - **S08 crediting (OD-11)** — blocks Stage S09 historical correction.
 
-### Deferred verification (not blocking)
-- Login responsive smoke verification: **completed 2026-08-07** on the arena branch — `responsive-smoke-login.cjs` executed against a working headless Chromium at 390px/1440px: card present, split promotional panel absent, 0px horizontal overflow, card fits viewport, submit + password toggle visible; the single console error is the intentional "Supabase environment is incomplete" diagnostic from placeholder sandbox credentials (expected, not a page defect). Screenshots: `evidence/ui-wave5-malekpro-parity/after/login-smoke-{phone-390,desktop-1440}.png`. CI `browser-smoke` still runs on GitHub for the branch.
+### Deferred verification (not blocking policy)
+- Browser/a11y/responsive evidence must be regenerated on the final integrated PR/main head; historical evidence is not a substitute for current CI/browser execution.
 
 ## 4. Intentionally Untouched
 
-- GL business-posting rewiring (Stage S03 wiring), VOID accounting model changes, historical financial backfill, multi-currency, new master-lease accounting policies, Maker-Checker lifecycle, legal contract wording, VAT policy changes, new settlement accounting rules, migration drift reconciliation (OD-15). All require upstream decisions per the roadmap.
+- GL business-posting rewiring (Stage S03 wiring), historical financial backfill, multi-currency, new master-lease accounting policies, jurisdiction-specific legal contract wording, VAT policy changes, and migration drift reconciliation (OD-15). ADR 0015 resolves product-owner ambiguity only; it does not itself implement these backend/accounting stages.
