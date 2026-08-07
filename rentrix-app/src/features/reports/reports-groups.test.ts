@@ -27,6 +27,7 @@ describe('report sections grouping contract', () => {
     expect(getGroup('overview')).toBe('الأداء المالي');
     expect(getGroup('expenses')).toBe('الأداء المالي');
     expect(getGroup('accounting')).toBe('الأداء المالي');
+    expect(getGroup('general_ledger')).toBe('الضرائب ومحاسبة الفترات');
     expect(getGroup('deferred_revenue')).toBe('الضرائب ومحاسبة الفترات');
     expect(getGroup('statements')).toBe('الكشوفات التفصيلية');
   });
@@ -52,7 +53,7 @@ describe('report sections — Wave A 3-category consolidation contract', () => {
     // ANALYTICAL VIEWS: why it happens
     expect(analytical).toEqual(['property_analytics', 'expenses', 'maintenance_analytics']);
     // FORMAL REPORTS: auditable statements & accounting outputs
-    expect(formal).toEqual(['deferred_revenue', 'statements', 'accounting']);
+    expect(formal).toEqual(['general_ledger', 'deferred_revenue', 'statements', 'accounting']);
 
     // Every section appears in exactly one category cluster.
     const all = [...live, ...analytical, ...formal];

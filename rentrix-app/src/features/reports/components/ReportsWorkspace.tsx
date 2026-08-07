@@ -34,6 +34,9 @@ const StatementsSection = lazy(() => import('./StatementsSection').then((m) => (
 const AccountingReportsSection = lazy(() =>
   import('./AccountingReportsSection').then((m) => ({ default: m.AccountingReportsSection })),
 );
+const GeneralLedgerCoreSection = lazy(() =>
+  import('./GeneralLedgerCoreSection').then((m) => ({ default: m.GeneralLedgerCoreSection })),
+);
 
 const SectionFallback = () => <LoadingState variant="section" label="جارٍ تحميل التقرير..." />;
 
@@ -216,6 +219,11 @@ export function ReportsWorkspace({
                 canExportReports={canExportReports}
                 isLoading={model.sections.overview.isLoading || model.sections.collections.isLoading || model.sections.occupancy.isLoading}
               />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'general_ledger' && (
+            <SectionTabPanel id="general_ledger" activeId={activeSection}>
+              <GeneralLedgerCoreSection />
             </SectionTabPanel>
           )}
           {activeSection === 'property_analytics' && (

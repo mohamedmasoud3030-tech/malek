@@ -55,7 +55,7 @@ The platform's features are rolled out according to a 10-stage plan managed via 
 
 ### Stage S03: General Ledger Core
 - **Scope:** Chart of Accounts, journal batches, lines, and accounting periods.
-- **Git Status:** Engine and schema migrated, but no business RPCs are wired to post to GL.
+- **Git Status:** Engine, schema, and read-only UI (`/reports?section=general_ledger`) migrated, but no business RPCs are wired to post to GL.
 - **True Status:** `ENGINE_SHIPPED_NOT_WIRED` (Partial).
 
 ### Stage S04: Third-Party Property Management

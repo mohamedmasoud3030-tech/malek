@@ -1,4 +1,4 @@
-import { Bell, Building2, CalendarClock, Cog, FileSignature, FolderTree, ListChecks, SearchCheck, ShieldCheck } from 'lucide-react';
+import { Bell, Building2, CalendarClock, Cog, FileSignature, FolderTree } from 'lucide-react';
 
 export const settingsSections = [
   {
@@ -36,30 +36,6 @@ export const settingsSections = [
     label: 'الإشعارات والتنبيهات',
     description: 'قنوات المتابعة المسجلة للمكتب.',
     icon: Bell,
-  },
-  {
-    id: 'security',
-    label: 'الأمان والحساب',
-    description: 'الجلسة الحالية والدور وتغيير كلمة المرور.',
-    icon: ShieldCheck,
-  },
-  {
-    id: 'governance',
-    label: 'حوكمة وسجلات النظام',
-    description: 'سجل التدقيق الحوكمي والتحكم الإداري.',
-    icon: ListChecks,
-  },
-  {
-    id: 'integrity',
-    label: 'سلامة البيانات',
-    description: 'فحوصات تطابق وقواعد بيانات النظام.',
-    icon: SearchCheck,
-  },
-  {
-    id: 'role-simulator',
-    label: 'محاكي الصلاحيات',
-    description: 'اختبار سلوك الأدوار الحالية دون تغيير العقود.',
-    icon: Cog,
   },
   {
     id: 'system',
