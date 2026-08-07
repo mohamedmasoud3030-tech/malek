@@ -2,13 +2,14 @@
 --
 -- Browser intent is stored in auth.users.raw_user_meta_data.company_id via
 -- supabase.auth.updateUser({ data: { company_id } }). That value is NOT trusted
--- by itself. The access-token hook validates it against public.company_members
--- before copying it into app_metadata.company_id. Invalid/stale preferences are
--- ignored and a real membership is selected instead.
+-- by itself. The access-token hook validates it against an ACTIVE membership in
+-- an ACTIVE company before copying it into app_metadata.company_id.
+-- Invalid/stale preferences are ignored and a real active membership is selected.
 --
--- This closes two failure modes:
+-- This closes the failure modes where:
 -- 1) UI selected a company locally while financial RPC/RLS still saw no company.
 -- 2) switchCompany updated user_metadata, but the hook ignored that selection.
+-- 3) a disabled membership/company could survive as an authorization claim.
 
 begin;
 
@@ -43,23 +44,30 @@ begin
       requested_company_id := null;
   end;
 
-  -- A user-controlled preference becomes authoritative only after membership
-  -- validation. This prevents selecting another tenant by editing metadata.
+  -- A user-controlled preference becomes authoritative only after active
+  -- membership + active-company validation. This prevents selecting another
+  -- tenant by editing metadata and prevents disabled access from surviving.
   if requested_company_id is not null then
     select cm.company_id
       into user_company
       from public.company_members cm
+      join public.companies c on c.id = cm.company_id
      where cm.user_id = (event->>'user_id')::uuid
        and cm.company_id = requested_company_id
+       and cm.is_active
+       and c.is_active
      limit 1;
   end if;
 
-  -- Deterministic fallback for first sign-in / removed preference.
+  -- Deterministic fallback for first sign-in / removed or invalid preference.
   if user_company is null then
     select cm.company_id
       into user_company
       from public.company_members cm
+      join public.companies c on c.id = cm.company_id
      where cm.user_id = (event->>'user_id')::uuid
+       and cm.is_active
+       and c.is_active
      order by cm.created_at, cm.id
      limit 1;
   end if;
@@ -82,7 +90,7 @@ begin
       to_jsonb(user_company)
     );
   else
-    -- Never preserve a stale company claim when the user has no membership.
+    -- Never preserve a stale company claim when the user has no active access.
     claims := claims #- '{app_metadata,company_id}';
   end if;
 
