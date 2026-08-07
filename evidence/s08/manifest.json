@@ -1,0 +1,106 @@
+{
+  "analysis_version": "s08-1.0.0",
+  "artifact_checksums": {
+    "deposit-exceptions.csv": "bd7762d1d893a75c033b1610c3ac088d08fd5ec9892616aa124b4bbf0b3ab4db",
+    "expense-misclassification.csv": "6f722c2a6c5da335a74d77aa68edf72b8a81a8ffec5627cd19ee7702a085e234",
+    "findings.csv": "5b11403d6164abc6a56ef86e84422a0da71f8d0641cf7ae378ae62ab896f3bcb",
+    "findings.json": "39fd884f19a8a86d557fc7d833ae192dfa63fdec936893dd1057dcf45c36f311",
+    "liability-balances-by-period.csv": "bb0490f0c1645a73d6384920e7d1134f633c9151e0fe2257bd5fe573950eca2f",
+    "liability-balances-by-period.json": "942fbdddba5c4cf2ddd27298499f98389dfcee97034d7fa1f570ef78799b56a6",
+    "master-lease-readiness.csv": "f18ce60824ca19ce4f175fabfd7d8848915287e000e9edc88064215318e0c5e5",
+    "orphan-postings.csv": "4cc567ea772dc5de6ee2028bce2a72ef5500dfff152d3b5ea14ffd734b0d00e5",
+    "README.md": "45e89865f363bf24d63f82330e561cdd9d6bfa5b792e0737220568f4d134deaf",
+    "retroactive-version-differences.csv": "429678ebcb35aceb45299ec88c617246936dd9e59cd3fc6bafeb018d44d2d4d4",
+    "settlement-source-duplicates.csv": "de771b77ed53f42040594e5cf8c75fbb94cab045904b91bb5b0c963b6d320b45",
+    "subledger-gl-reconciliation.csv": "180e92f5b4d26ff706d8f7781459a4e7311a8a1f15387f0751965b5bf4f24d16",
+    "subledger-gl-reconciliation.json": "5cf5bc40e5526f8bdc5bdae963e593326bdbef5feccb23b89684e8d5031fbfc0",
+    "summary.json": "79a5aa493611f134c62830d03ec09e9b388e8e420d4832de2ccd2070d159a0c1"
+  },
+  "before_after_snapshot_equal": true,
+  "company_scope": [
+    "00000000-0000-4000-a000-000000000001",
+    "00000000-0000-4000-a000-000000000002"
+  ],
+  "finding_counts_by_code": {
+    "DEDUCTION_WITHOUT_BENEFICIARY": 1,
+    "DUPLICATE_EXPENSE_ACROSS_SETTLEMENTS": 1,
+    "DUPLICATE_PAYMENT_ACROSS_SETTLEMENTS": 1,
+    "MASTER_LEASE_MISSING_DISCOUNT_RATE": 1,
+    "OWNER_TENANT_EXPENSE_IN_OFFICE_ACCOUNT": 1,
+    "PAID_SETTLEMENT_WITHOUT_PAYMENT_EVIDENCE": 1,
+    "POSTING_WITHOUT_SOURCE": 1,
+    "RETROACTIVE_COMMISSION_CHANGE": 1,
+    "SOURCE_WITHOUT_POSTING": 1,
+    "SUBLEDGER_GL_MISMATCH": 1
+  },
+  "finding_counts_by_severity": {
+    "HIGH": 6,
+    "MEDIUM": 4
+  },
+  "generated_at": "2026-08-07T03:24:00.011Z",
+  "input_schema_fingerprint": "8aa134caef3a3104",
+  "period_scope": [
+    "2026-01",
+    "2026-02"
+  ],
+  "read_only_proof": {
+    "runtime": {
+      "after": {
+        "generated_at": "2026-08-07T03:24:00.010Z",
+        "method": "SELECT checksum_agg(hash) per table; no writes performed",
+        "tables": {
+          "expenses": "db0290015edccb1a",
+          "invoices": "e7cb9cd9f9cbc921",
+          "journal_batches": "3af342a951102728",
+          "journal_entries_archive": "04739815a0ddd4ce",
+          "journal_lines": "301d4462db52897c",
+          "owner_settlement_expense_links": "77f7509ae211aef2",
+          "owner_settlement_payment_links": "8e5d68d2ce031bbc",
+          "owner_settlements": "b055b29c7c7c4a6d",
+          "payments": "77049f1a8f120e6c",
+          "tenant_deposits": "413f6cd2a909e71b"
+        }
+      },
+      "before": {
+        "generated_at": "2026-08-07T03:24:00.010Z",
+        "method": "SELECT checksum_agg(hash) per table; no writes performed",
+        "tables": {
+          "expenses": "db0290015edccb1a",
+          "invoices": "e7cb9cd9f9cbc921",
+          "journal_batches": "3af342a951102728",
+          "journal_entries_archive": "04739815a0ddd4ce",
+          "journal_lines": "301d4462db52897c",
+          "owner_settlement_expense_links": "77f7509ae211aef2",
+          "owner_settlement_payment_links": "8e5d68d2ce031bbc",
+          "owner_settlements": "b055b29c7c7c4a6d",
+          "payments": "77049f1a8f120e6c",
+          "tenant_deposits": "413f6cd2a909e71b"
+        }
+      },
+      "equal": true
+    },
+    "static": {
+      "checked_file": "supabase/migrations/20260807020000_s08_read_only_historical_analysis.sql",
+      "forbidden_patterns": [
+        "INSERT INTO financial tables",
+        "UPDATE financial tables",
+        "DELETE FROM financial tables",
+        "TRUNCATE"
+      ],
+      "found": [],
+      "passed": true
+    }
+  },
+  "row_counts": {
+    "deposit_exceptions": 3,
+    "expense_misclassification": 3,
+    "findings": 10,
+    "liability_balances_by_period": 20,
+    "master_lease_readiness": 3,
+    "orphan_postings": 3,
+    "retroactive_version_differences": 3,
+    "settlement_source_duplicates": 3,
+    "subledger_gl_reconciliation": 40
+  },
+  "source_main_sha": "6bc8eb4ff6449383f8a367d422337611b451a3d4"
+}
