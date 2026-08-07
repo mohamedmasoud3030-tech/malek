@@ -77,7 +77,7 @@ select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000
 set local role authenticated;
 select public.approve_contract_atomic('00000000-0000-0000-0000-000000004c52','checker-signature-2');
 select throws_ok($$select public.activate_contract_with_agreement_snapshot_atomic('00000000-0000-0000-0000-000000004c52')$$,'23514','CONTRACT_AGREEMENT_VERSION_COVERAGE_REQUIRED','activation requires one version covering the full contract term');
-select is((select lower(status) from public.contracts where id::text='00000000-0000-0000-0000-000000004c52'),'pending_approval','failed activation leaves approved contract pending activation');
+select is((select lower(status) from public.contracts where id::text='00000000-0000-0000-0000-000000004c52'),'draft','failed activation preserves canonical draft status while approval remains recorded');
 reset role;
 select * from finish();
 rollback;
