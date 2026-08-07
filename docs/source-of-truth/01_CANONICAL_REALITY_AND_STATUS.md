@@ -93,6 +93,7 @@ Presentation-only normalization; no business behavior, routes, permissions, RPCs
 | Operational-route page headers: removed the Wave-2 dark-gradient hero cards + decorative rings (promotional feel); operational pages now use the standard compact PageHeader | `VERIFIED_COMPLETE` | `malek-pro-visual-wave.css` (hero block removed); commit `2a2df3a7` |
 | Finance/reports hub descriptions trimmed to operational one-liners (i18n) | `VERIFIED_COMPLETE` | `lib/i18n.ts`; i18n contract tests pass |
 | Safe cascade warnings: property + unit archive dialogs list the exact backend guard preconditions | `VERIFIED_COMPLETE` | `properties-list-page.tsx`, `units-list.tsx`; commits `9c66cc50`, `246bb18d` |
+| Repo hygiene: repaired two `evidence/preflight` links broken by #1373's `docs/APP_STATUS.md` removal (pre-existing on main; was failing the CI docs gate on every PR) | `VERIFIED_COMPLETE` | commit `a3343775`; `check-doc-links` passes |
 
 ## 3. Open Owner Decisions (blockers, unchanged)
 
