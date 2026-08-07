@@ -11,8 +11,10 @@ describe('active company write guard', () => {
   const maintenanceService = readFileSync(resolve(root, 'features/maintenance/maintenance-service.ts'), 'utf8');
   const maintenanceRpc = readFileSync(resolve(root, '../../supabase/migrations/20260731190947_create_maintenance_atomic_rpc.sql'), 'utf8');
 
-  it('queries only company columns that exist in production', () => {
+  it('queries only stable production columns and active tenant memberships', () => {
     expect(companyHook).toContain(".select('company_id, role, companies!inner(id, name, slug, currency, locale)')");
+    expect(companyHook).toContain(".eq('is_active', true)");
+    expect(companyHook).toContain(".eq('companies.is_active', true)");
     expect(companyHook).not.toContain('role, is_active, companies!inner');
     expect(companyHook).not.toContain('locale, timezone, is_active)');
   });
