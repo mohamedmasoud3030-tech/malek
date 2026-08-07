@@ -133,7 +133,10 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
     >
       <div className="flex h-[3.875rem] min-w-0 items-stretch overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {visibleItems.map(([to, labelKey, Icon]) => {
-          const isActive = activeRoot === to;
+          // Finance bottom tab stays active for any finance hub (collections/expenses/deposits/banking)
+          // because on mobile those hubs are not separate bottom items; the drawer holds their direct links.
+          const isFinanceActive = to === '/financials' && (activeRoot === '/financials' || activeRoot.startsWith('/finance/'));
+          const isActive = activeRoot === to || isFinanceActive;
           return (
             <Link
               key={to}

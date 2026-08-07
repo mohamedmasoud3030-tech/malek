@@ -50,20 +50,21 @@ export const routeNavRoot = new Map<string, string>([
   ['/automation', '/maintenance'],
   ['/documents-vault', '/maintenance'],
 
-  // Finance hub & children
+  // Finance — overview + 4 canonical hubs (IA 2026-08: direct primary access, one secondary layer per hub)
   ['/financials', '/financials'],
-  ['/finance/collections', '/financials'],
-  ['/finance/expenses', '/financials'],
-  ['/finance/deposits', '/financials'],
-  ['/finance/banking', '/financials'],
-  ['/invoices', '/financials'],
-  ['/receipts', '/financials'],
-  ['/expenses', '/financials'],
-  ['/arrears', '/financials'],
-  ['/deposits', '/financials'],
-  ['/owner-settlements', '/financials'],
-  ['/bank-reconciliation', '/financials'],
-  ['/commissions', '/financials'],
+  ['/finance/collections', '/finance/collections'],
+  ['/finance/expenses', '/finance/expenses'],
+  ['/finance/deposits', '/finance/deposits'],
+  ['/finance/banking', '/finance/banking'],
+  // Legacy finance routes remain REDIRECT-ONLY for bookmark compat, map to their canonical hub
+  ['/invoices', '/finance/collections'],
+  ['/receipts', '/finance/collections'],
+  ['/expenses', '/finance/expenses'],
+  ['/arrears', '/finance/expenses'],
+  ['/deposits', '/finance/deposits'],
+  ['/owner-settlements', '/finance/deposits'],
+  ['/bank-reconciliation', '/finance/banking'],
+  ['/commissions', '/finance/banking'],
 
   // Reports hub
   ['/reports', '/reports'],
@@ -83,7 +84,11 @@ export const navRootTitle: Record<string, string> = {
   '/properties': 'المحفظة العقارية',
   '/contracts': 'العلاقات والعقود',
   '/maintenance': 'التشغيل والصيانة',
-  '/financials': 'المالية',
+  '/financials': 'المالية — نظرة عامة',
+  '/finance/collections': 'التحصيل اليومي',
+  '/finance/expenses': 'المصروفات والذمم',
+  '/finance/deposits': 'التأمينات والتسويات',
+  '/finance/banking': 'البنوك والعمولات',
   '/reports': 'التقارير',
   '/settings': 'الإدارة والحوكمة',
 };

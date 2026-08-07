@@ -23,7 +23,11 @@ export const navGroups: readonly NavGroup[] = [
     ['/maintenance', 'maintenance', 'الصيانة والمرافق والأتمتة والمستندات', Wrench],
   ]],
   ['المالية', [
-    ['/financials', 'financialOverview', 'نظرة شاملة على التحصيلات والمصروفات والذمم', PieChart],
+    ['/financials', 'financialOverview', 'نظرة عامة وملخص التحصيل الشهري', PieChart],
+    ['/finance/collections', 'collectionsHub', 'التحصيل اليومي — الفواتير والإيصالات', ReceiptText],
+    ['/finance/expenses', 'expensesHub', 'المصروفات والذمم المتأخرة', WalletCards, 'expenses.view'],
+    ['/finance/deposits', 'depositsHub', 'التأمينات وتسويات الملاك', FileCheck, 'financial.deposits.view'],
+    ['/finance/banking', 'bankingHub', 'البنوك والمطابقة وعمولات المكتب', Landmark, 'financial.bank_reconciliation.view'],
   ]],
   ['التقارير', [
     ['/reports', 'reportsAndStatements', 'مركز التقارير والكشوفات التنفيذية الشاملة', BarChart3],
@@ -54,12 +58,7 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'automation.view'],
     ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
   ],
-  '/financials': [
-    ['/finance/collections', 'collectionsHub', 'الفواتير والإيصالات والتحصيل اليومي', ReceiptText],
-    ['/finance/expenses', 'expensesHub', 'المصروفات والذمم المتأخرة', WalletCards, 'expenses.view'],
-    ['/finance/deposits', 'depositsHub', 'التأمينات وتسويات الملاك', FileCheck, 'financial.deposits.view'],
-    ['/finance/banking', 'bankingHub', 'المطابقة البنكية وعمولات المكتب', Landmark, 'financial.bank_reconciliation.view'],
-  ],
+  '/financials': [],
   '/reports': [
     ['/ai-assistant', 'aiAssistant', 'مساعد قراءة فقط لتلخيص المتأخرات والتجديدات واللقطات المالية', Bot],
   ],
