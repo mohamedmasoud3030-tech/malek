@@ -44,6 +44,11 @@ const requiredOperationalRoutes = [
   '/change-password',
   '/settings',
   '/accounting',
+  // canonical finance hubs (2026-08 IA simplification: direct primary access)
+  '/finance/collections',
+  '/finance/expenses',
+  '/finance/deposits',
+  '/finance/banking',
 ] as const;
 
 const governanceRoutes = [
@@ -56,9 +61,13 @@ const governanceRoutes = [
 const approvedExpansionRoutes = [
   '/lands',
   '/leads',
-  '/commissions',
   '/communication',
   '/automation',
+] as const;
+
+const approvedExpansionRouteDefinitions = [
+  ...approvedExpansionRoutes,
+  '/commissions',
 ] as const;
 
 const routePathList = Array.from(routePaths);
@@ -119,8 +128,13 @@ describe('app route and navigation parity', () => {
   it('exposes approved product-expansion modules through the primary navigation rendered by desktop and mobile drawer', () => {
     const navPaths = navItems.map(([to]) => to);
 
-    expect(routePathList).toEqual(expect.arrayContaining([...approvedExpansionRoutes]));
+    // Route definitions must still exist for bookmark/redirect compatibility
+    expect(routePathList).toEqual(expect.arrayContaining([...approvedExpansionRouteDefinitions]));
+    // IA simplification 2026-08: commissions is now accessed via /finance/banking?section=commissions
+    // (single secondary layer inside finance hub) rather than as a duplicate direct nav entry.
     expect(navPaths).toEqual(expect.arrayContaining([...approvedExpansionRoutes]));
+    // Canonical finance hub must be reachable instead of the legacy direct entry
+    expect(navPaths).toContain('/finance/banking');
   });
 
   it('keeps mobile bottom navigation focused on five daily hubs while the drawer carries the full route inventory', () => {
@@ -134,20 +148,31 @@ describe('app route and navigation parity', () => {
     ]);
   });
 
-  it('exposes every standalone financial workspace in the financial hub without duplicating children in mobile navigation', () => {
+  it('exposes canonical finance hubs as primary finance destinations without duplicating legacy routes', () => {
     const mobileNavPaths = mobileNavItems.map(([to]) => to);
-    const financialsChildren = workspaceChildNavItems['/financials'].map(([to]) => to);
+    const navPaths = navItems.map(([to]) => to);
+    const financeGroup = navGroups.find(([title]) => title === 'المالية')?.[1].map(([to]) => to) ?? [];
+    const financialsChildren = workspaceChildNavItems['/financials']?.map(([to]) => to) ?? [];
 
-    expect(financialsChildren).toEqual(
+    // IA 2026-08: finance 4 canonical hubs are primary items under "المالية"
+    // (direct Primary → Hub → SectionTabs → Page with one secondary layer),
+    // legacy 8 routes (/invoices etc.) remain REDIRECT-ONLY for bookmarks
+    // but are not in navigation inventory.
+    expect(financeGroup).toEqual(
+      expect.arrayContaining(['/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']),
+    );
+    expect(financeGroup).toHaveLength(5);
+    expect(navPaths).toEqual(
+      expect.arrayContaining(['/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']),
+    );
+    // No duplication in workspaceChildNavItems — hubs are primary, not secondary
+    expect(financialsChildren).toHaveLength(0);
+    expect(financialsChildren).not.toEqual(
       expect.arrayContaining(['/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions']),
     );
     expect(mobileNavPaths).toContain('/financials');
-    expect(mobileNavPaths).not.toContain('/invoices');
-    expect(mobileNavPaths).not.toContain('/receipts');
-    expect(mobileNavPaths).not.toContain('/arrears');
-    expect(mobileNavPaths).not.toContain('/owner-settlements');
-    expect(mobileNavPaths).not.toContain('/expenses');
-    expect(mobileNavPaths).not.toContain('/bank-reconciliation');
+    expect(mobileNavPaths).not.toContain('/finance/collections');
+    expect(mobileNavPaths).not.toContain('/finance/expenses');
   });
 
   it('groups every feature by the office workflow and keeps account security discoverable', () => {
@@ -176,9 +201,16 @@ describe('app route and navigation parity', () => {
     expect(getGroupChildPaths('/maintenance')).toEqual(
       expect.arrayContaining(['/maintenance', '/utilities', '/automation', '/documents-vault']),
     );
-    expect(getGroupChildPaths('/reports')).toEqual(
-      expect.arrayContaining(['/reports', '/ai-assistant']),
+    // Finance: 4 canonical hubs are primary group items, not workspaceChildNavItems children
+    const financeGroupPaths = navGroups.find(([title]) => title === 'المالية')?.[1].map(([to]) => to) ?? [];
+    expect(financeGroupPaths).toEqual(
+      expect.arrayContaining(['/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']),
     );
+    // Reports + AI Assistant are distinct primary entries under "التقارير" group (IA 2026-08: separate destinations, not duplicate)
+    const reportsGroupPaths = navGroups.find(([title]) => title === 'التقارير')?.[1].map(([to]) => to) ?? [];
+    expect(reportsGroupPaths).toEqual(expect.arrayContaining(['/reports', '/ai-assistant']));
+    // No secondary children for reports (ai-assistant is primary, not workspaceChildNavItems)
+    expect(workspaceChildNavItems['/reports']).toHaveLength(0);
     expect(getGroupChildPaths('/settings')).toEqual(
       expect.arrayContaining(['/settings', '/change-password', '/audit-log', '/data-integrity', '/system']),
     );

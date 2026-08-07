@@ -12,23 +12,23 @@ import { workspaceLabels } from './terminology-registry';
  *  4. Workspace labels have correct Arabic grammar
  */
 describe('Route-to-nav-root map (UX-013)', () => {
-  it('covers all hub-level routes', () => {
-    const hubs = ['/dashboard', '/properties', '/contracts', '/maintenance', '/financials', '/reports', '/settings'];
+  it('covers all hub-level routes (IA 2026-08: finance 4 + reports + ai-assistant distinct)', () => {
+    const hubs = ['/dashboard', '/properties', '/contracts', '/maintenance', '/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking', '/reports', '/ai-assistant', '/settings'];
     for (const hub of hubs) {
       expect(getNavRoot(hub)).toBe(hub);
       expect(navRootTitle).toHaveProperty(hub);
     }
   });
 
-  it('maps finance child routes to /financials', () => {
-    expect(getNavRoot('/invoices')).toBe('/financials');
-    expect(getNavRoot('/receipts')).toBe('/financials');
-    expect(getNavRoot('/expenses')).toBe('/financials');
-    expect(getNavRoot('/arrears')).toBe('/financials');
-    expect(getNavRoot('/deposits')).toBe('/financials');
-    expect(getNavRoot('/owner-settlements')).toBe('/financials');
-    expect(getNavRoot('/bank-reconciliation')).toBe('/financials');
-    expect(getNavRoot('/commissions')).toBe('/financials');
+  it('maps legacy finance routes to their canonical hub (IA 2026-08: direct primary, REDIRECT-ONLY legacy)', () => {
+    expect(getNavRoot('/invoices')).toBe('/finance/collections');
+    expect(getNavRoot('/receipts')).toBe('/finance/collections');
+    expect(getNavRoot('/expenses')).toBe('/finance/expenses');
+    expect(getNavRoot('/arrears')).toBe('/finance/expenses');
+    expect(getNavRoot('/deposits')).toBe('/finance/deposits');
+    expect(getNavRoot('/owner-settlements')).toBe('/finance/deposits');
+    expect(getNavRoot('/bank-reconciliation')).toBe('/finance/banking');
+    expect(getNavRoot('/commissions')).toBe('/finance/banking');
   });
 
   it('maps portfolio child routes to /properties', () => {
@@ -57,8 +57,8 @@ describe('Route-to-nav-root map (UX-013)', () => {
     expect(getNavRoot('/system')).toBe('/settings');
   });
 
-  it('maps /ai-assistant to /reports', () => {
-    expect(getNavRoot('/ai-assistant')).toBe('/reports');
+  it('maps /ai-assistant to itself (distinct interactive tool, not report tab — IA 2026-08)', () => {
+    expect(getNavRoot('/ai-assistant')).toBe('/ai-assistant');
   });
 
   it('maps detail routes correctly', () => {
@@ -71,12 +71,13 @@ describe('Route-to-nav-root map (UX-013)', () => {
     expect(getNavRoot('/people/$personId/edit')).toBe('/contracts');
   });
 
-  it('maps legacy /finance/* redirect routes', () => {
-    // These will eventually redirect but should still map to finance
-    expect(getNavRoot('/finance/collections')).toBe('/financials');
-    expect(getNavRoot('/finance/expenses')).toBe('/financials');
-    expect(getNavRoot('/finance/deposits')).toBe('/financials');
-    expect(getNavRoot('/finance/banking')).toBe('/financials');
+  it('maps canonical finance hubs to themselves (IA 2026-08: direct primary access, one secondary layer)', () => {
+    // Canonical hubs are primary nav destinations, each with its own SectionTabs (2 tabs)
+    expect(getNavRoot('/finance/collections')).toBe('/finance/collections');
+    expect(getNavRoot('/finance/expenses')).toBe('/finance/expenses');
+    expect(getNavRoot('/finance/deposits')).toBe('/finance/deposits');
+    expect(getNavRoot('/finance/banking')).toBe('/finance/banking');
+    expect(getNavRoot('/financials')).toBe('/financials');
   });
 
   it('maps / to /dashboard', () => {
@@ -145,7 +146,7 @@ describe('Workspace labels (UX-015 / UX-018 / UX-019)', () => {
   });
 
   it('has nav root titles in Arabic for all hubs', () => {
-    const hubs = ['/dashboard', '/properties', '/contracts', '/maintenance', '/financials', '/reports', '/settings'];
+    const hubs = ['/dashboard', '/properties', '/contracts', '/maintenance', '/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking', '/reports', '/ai-assistant', '/settings'];
     for (const hub of hubs) {
       expect(typeof navRootTitle[hub]).toBe('string');
       expect(navRootTitle[hub].length).toBeGreaterThan(2);

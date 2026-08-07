@@ -9,7 +9,6 @@ import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { FilterState } from '../reports-page.helpers';
 import {
   getReportCategoryLabel,
-  getReportSectionsByCategory,
   reportCategories,
   reportSections,
   type ReportSectionId,
@@ -181,34 +180,73 @@ export function ReportsWorkspace({
           </div>
         </div>
 
+        {/* Mobile ( <640px ): compact select — solves 11-tab 320px horizontal maze while keeping one secondary layer */}
+        <div className="border-b border-border/60 bg-card/95 px-3 py-3 sm:hidden" data-reports-mobile-nav>
+          <label htmlFor="reports-section-select" className="sr-only">
+            أقسام التقارير
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+              <ActiveSectionIcon className="size-4" aria-hidden="true" />
+            </span>
+            <select
+              id="reports-section-select"
+              aria-label="أقسام التقارير"
+              value={activeSection}
+              onChange={(e) => onSectionChange(e.target.value as ReportSectionId)}
+              className="min-h-11 flex-1 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+              dir="rtl"
+            >
+              {reportSections.map((section) => {
+                const category = reportCategories.find((c) => c.id === section.category);
+                return (
+                  <option key={section.id} value={section.id}>
+                    {section.label} — {category?.shortLabel ?? section.category}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {reportCategories.map((category) => (
+              <span
+                key={category.id}
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground"
+                title={`${category.label} — ${category.description}`}
+              >
+                <category.icon className="size-3" aria-hidden="true" />
+                {category.shortLabel}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Desktop+tablet (>=640px): single SectionTabs row (one secondary layer) */}
         <div
-          className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 sm:px-4"
+          className="no-scrollbar sticky top-0 z-20 hidden overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 sm:block sm:px-4"
           tabIndex={0}
           role="region"
           aria-label="شريط أقسام التقارير القابل للتمرير أفقياً"
         >
-          <div className="min-w-max space-y-2">
-            {reportCategories.map((category) => {
-              const categorySections = getReportSectionsByCategory(category.id);
-              if (categorySections.length === 0) return null;
-              return (
-                <div key={category.id} className="group flex items-center gap-3">
-                  <span
-                    className="flex shrink-0 items-center gap-1.5 pe-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground"
-                    title={`${category.label} — ${category.description}`}
-                  >
-                    <category.icon className="size-3.5" aria-hidden="true" />
-                    <span className="whitespace-nowrap">{category.shortLabel}</span>
-                  </span>
-                  <SectionTabs
-                    items={categorySections}
-                    activeId={activeSection}
-                    onChange={onSectionChange}
-                    ariaLabel={`${category.label} — أقسام التقارير`}
-                  />
-                </div>
-              );
-            })}
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap gap-1.5 pb-1">
+              {reportCategories.map((category) => (
+                <span
+                  key={category.id}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground"
+                  title={`${category.label} — ${category.description}`}
+                >
+                  <category.icon className="size-3" aria-hidden="true" />
+                  {category.shortLabel}
+                </span>
+              ))}
+            </div>
+            <SectionTabs
+              items={reportSections}
+              activeId={activeSection}
+              onChange={onSectionChange}
+              ariaLabel="أقسام التقارير"
+            />
           </div>
         </div>
       </section>

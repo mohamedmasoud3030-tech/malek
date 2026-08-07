@@ -1,4 +1,4 @@
-import { BadgeDollarSign, BarChart3, Bot, Building2, ClipboardList, ContactRound, DoorOpen, FileCheck, FileSpreadsheet, FileText, FolderKanban, HandCoins, KeyRound, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserPlus, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
+import { BarChart3, Bot, Building2, ContactRound, DoorOpen, FileCheck, FileText, FolderKanban, KeyRound, Landmark, LayoutDashboard, ListChecks, MapPinned, MessageSquareText, PieChart, ReceiptText, SearchCheck, Settings, Settings2, ShieldCheck, UserCheck, UserPlus, UserRoundCog, Users, WalletCards, Wrench, Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
@@ -23,10 +23,15 @@ export const navGroups: readonly NavGroup[] = [
     ['/maintenance', 'maintenance', 'الصيانة والمرافق والأتمتة والمستندات', Wrench],
   ]],
   ['المالية', [
-    ['/financials', 'financialOverview', 'نظرة شاملة على التحصيلات والمصروفات والذمم', PieChart],
+    ['/financials', 'financialOverview', 'نظرة عامة وملخص التحصيل الشهري', PieChart],
+    ['/finance/collections', 'collectionsHub', 'التحصيل اليومي — الفواتير والإيصالات', ReceiptText],
+    ['/finance/expenses', 'expensesHub', 'المصروفات والذمم المتأخرة', WalletCards, 'expenses.view'],
+    ['/finance/deposits', 'depositsHub', 'التأمينات وتسويات الملاك', FileCheck, 'financial.deposits.view'],
+    ['/finance/banking', 'bankingHub', 'البنوك والمطابقة وعمولات المكتب', Landmark, 'financial.bank_reconciliation.view'],
   ]],
   ['التقارير', [
     ['/reports', 'reportsAndStatements', 'مركز التقارير والكشوفات التنفيذية الشاملة', BarChart3],
+    ['/ai-assistant', 'aiAssistant', 'مساعد ذكي قراءة فقط للتلخيص والمتابعة', Bot],
   ]],
   ['الإدارة', [
     ['/settings', 'settings', 'مركز تحكم المكتب، الهوية، الأمان، وسجلات الحوكمة', Settings, 'settings.manage'],
@@ -54,19 +59,8 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'automation.view'],
     ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
   ],
-  '/financials': [
-    ['/invoices', 'invoices', 'مراجعة الفواتير وتسجيل دفعاتها', FileSpreadsheet],
-    ['/receipts', 'receipts', 'سجل الإيصالات وطباعة سندات القبض', ReceiptText],
-    ['/expenses', 'expenses', 'تسجيل ومراجعة نفقات العقارات', WalletCards, 'expenses.view'],
-    ['/arrears', 'arrears', 'متابعة الذمم وأعمار الديون', ClipboardList, 'arrears.view'],
-    ['/deposits', 'deposits', 'تتبع مبالغ أمانات وتأمينات المستأجرين', FileCheck, 'financial.deposits.view'],
-    ['/owner-settlements', 'ownerSettlements', 'إعداد تسويات الملاك واعتمادها وصرفها', HandCoins, 'financial.owner_settlements.view'],
-    ['/bank-reconciliation', 'bankReconciliation', 'مطابقة السجلات مع الحسابات البنكية', Landmark, 'financial.bank_reconciliation.view'],
-    ['/commissions', 'commissions', 'تتبع عمولات المكتب وحالات الاستحقاق', BadgeDollarSign, 'commissions.view'],
-  ],
-  '/reports': [
-    ['/ai-assistant', 'aiAssistant', 'مساعد قراءة فقط لتلخيص المتأخرات والتجديدات واللقطات المالية', Bot],
-  ],
+  '/financials': [],
+  '/reports': [],
   '/settings': [
     ['/change-password', 'changePassword', 'تغيير كلمة مرور حسابك وإنهاء استخدام الكلمات الضعيفة', KeyRound, 'auth.password.change'],
     ['/audit-log', 'auditLog', 'سجل أحداث الحوكمة والعمليات', ListChecks, 'audit.view'],
