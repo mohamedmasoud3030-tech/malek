@@ -148,7 +148,7 @@ Fixes are presentation-only; findings and fixes: `docs/audits/MALEK_VISUAL_WAVE5
 - **S08 crediting (OD-11)** — blocks Stage S09 historical correction.
 
 ### Deferred verification (not blocking)
-- Full browser smoke pass on changed surfaces is deferred (per program instruction): the login responsive smoke script (`rentrix-app/scripts/responsive-smoke-login.cjs`) passed earlier at 390px/1440px with 0px horizontal overflow; re-running it requires re-downloading the headless Chromium binary in the sandbox. CI `browser-smoke` runs on GitHub for the branch.
+- Login responsive smoke verification: **completed 2026-08-07** on the arena branch — `responsive-smoke-login.cjs` executed against a working headless Chromium at 390px/1440px: card present, split promotional panel absent, 0px horizontal overflow, card fits viewport, submit + password toggle visible; the single console error is the intentional "Supabase environment is incomplete" diagnostic from placeholder sandbox credentials (expected, not a page defect). Screenshots: `evidence/ui-wave5-malekpro-parity/after/login-smoke-{phone-390,desktop-1440}.png`. CI `browser-smoke` still runs on GitHub for the branch.
 
 ## 4. Intentionally Untouched
 
