@@ -7,8 +7,10 @@
 --   * the currently reservable item set must equal the settlement's active links;
 --   * the linked payment/expense source rows are locked for the transaction;
 --   * gross/fee/expense/tax/net are re-derived from calculate_owner_net_payout;
---   * any >= 0.001 OMR difference (one baisa, since both sides are canonical 3dp)
---     raises deterministic SQLSTATE 22023 before a first approval/payment effect;
+--   * any >= 0.001 difference raises deterministic SQLSTATE 22023 before a first
+--     approval/payment effect. Current payment/expense source columns are 2dp,
+--     so 0.010 is their smallest persisted positive delta; the 0.001 guard is
+--     intentionally forward-compatible with a future 3dp monetary migration;
 --   * the same assertion runs again after the existing lifecycle body, so any
 --     unexpected in-transaction drift rolls the entire operation back atomically;
 --   * idempotent retries keep the existing cached-response semantics and do not
@@ -193,8 +195,9 @@ begin
       v_row.property_id::text
     ) as c;
 
-  -- Stored and derived values are canonical 3dp. A difference >= 0.001 is one
-  -- whole baisa and therefore economically material; sub-baisa noise is ignored.
+  -- Compare the stored tuple to the current server-derived tuple. The stale guard
+  -- is 0.001-sensitive even though today's payment/expense source columns persist
+  -- only 2dp; this avoids weakening the invariant when those sources move to 3dp.
   if v_row.gross_collected is null
      or v_row.office_fee is null
      or v_row.owner_expenses is null
@@ -221,7 +224,7 @@ revoke all on function public.assert_owner_settlement_totals_fresh(text)
   from public, anon, authenticated, service_role;
 
 comment on function public.assert_owner_settlement_totals_fresh(text) is
-  'S02-T05 internal fail-closed guard: exact FA-003 reserved-set parity plus live 3dp gross/fee/expense/tax/net re-derivation. Raises 22023 on one-baisa-or-greater stale totals.';
+  'S02-T05 internal fail-closed guard: exact FA-003 reserved-set parity plus live gross/fee/expense/tax/net re-derivation. Raises 22023 on stale differences at or above 0.001.';
 
 -- Guarded public approval entry point. For a first DRAFT -> APPROVED transition,
 -- assert before the existing implementation. Re-assert afterwards so any failure
