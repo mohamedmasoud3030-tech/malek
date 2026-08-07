@@ -1,4 +1,5 @@
 -- Manual guarded rollback for S04-T03 v2.
+-- Rollback for: 20260808010000_s04_contract_lifecycle_maker_checker_v2.sql
 -- Refuses downgrade once any contract has maker/checker approval evidence.
 
 begin;
