@@ -9,7 +9,7 @@
 -- and correctly return zero observable periods instead of aborting the chain.
 --
 -- No financial rows are inserted, updated, deleted, or truncated.
--- Manual rollback:
+-- Reversal companion:
 -- supabase/rollback/20260807_rollback_s08_accounting_periods_replay_compatibility.sql
 -- =============================================================================
 
