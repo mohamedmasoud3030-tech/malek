@@ -77,14 +77,14 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       return () => { mounted = false; };
     }
 
+    const sessionUser = session.user;
+
     async function loadCompanies() {
       setIsLoading(true);
       setLoadError(null);
       setHasAuthenticatedSession(true);
 
       try {
-        const sessionUser = session.user;
-
         // Production currently exposes only these stable columns. Do not request
         // optional columns that are absent from the live schema.
         const { data, error } = await supabase
