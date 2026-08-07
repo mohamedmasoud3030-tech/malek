@@ -1,13 +1,13 @@
 /**
  * usePersistentTableState — Enterprise UX Foundation (Wave 4A)
  *
- * `useTableState` with transparent localStorage persistence of page, page
+ * `useTableState` with transparent sessionStorage persistence of page, page
  * size, sort and search — per `storageKey`, so each list keeps its own
- * browsing context across visits. Selection and expansion stay session-only
+ * browsing context for the current browser session without resurrecting stale
+ * filters from a previous work session. Selection and expansion stay memory-only
  * (persisting them leaks stale ids between data refreshes).
  *
- * Storage failures (private mode, quota) degrade silently to in-memory state,
- * following the pattern already used by `use-view-mode-preference`.
+ * Storage failures (private mode, quota) degrade silently to in-memory state.
  *
  * @example
  * const table = usePersistentTableState('enterprise:contracts-table', { pageSize: 25 });
@@ -34,7 +34,7 @@ function readPersisted<TField extends string>(
 ): PersistedTableState<TField> | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = window.localStorage.getItem(storageKey);
+    const raw = window.sessionStorage.getItem(storageKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<PersistedTableState<TField>>;
     const direction: EnterpriseSortDirection | undefined =
@@ -92,9 +92,9 @@ export function usePersistentTableState<TField extends string = string>(
         search: table.search,
         sort: table.sort,
       };
-      window.localStorage.setItem(storageKey, JSON.stringify(snapshot));
+      window.sessionStorage.setItem(storageKey, JSON.stringify(snapshot));
     } catch {
-      // Storage may be unavailable (private mode, quota) — keep in-memory state.
+      // Storage may be unavailable — keep in-memory state.
     }
   }, [storageKey, table.page, table.pageSize, table.search, table.sort]);
 
