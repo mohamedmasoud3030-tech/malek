@@ -1,16 +1,32 @@
 // UI primitives — import from here for clean paths
-export { Button } from "./button";
+export { Button, buttonVariants, type ButtonProps } from "./button";
 export { IconButton } from "./icon-button";
-export { Badge } from "./badge";
-export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./card";
+export { Badge, StatusBadgePill, statusPresets, type BadgeVariant, type BadgeStatus } from "./badge";
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, cardVariants } from "./card";
 export { DetailFields, type DetailField } from "./detail-fields";
 export { EntityForm, getResponsiveFormSurface, type ResponsiveFormSurface } from "./entity-form";
-export { Input } from "./input";
+export { Input, inputVariants, type InputProps } from "./input";
+export { TextField, TextAreaField, PasswordField, FieldShell, type TextFieldProps, type TextAreaFieldProps } from "./text-field";
 export { Select } from "./select";
 export { Skeleton } from "./skeleton";
+export { Spinner, type SpinnerProps } from "./spinner";
+export { Alert, AlertTitle, AlertDescription, alertVariants } from "./alert";
+export { OfflineState, NoPermissionState } from "./state-surfaces";
 export { StatusBadge } from "./status-badge";
-export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
+export {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCaption,
+  TableLoading,
+  TableEmpty,
+  TableError,
+} from "./table";
 export { Textarea } from "./textarea";
+export { Typography, type TypographyVariant } from "./typography";
 export { Dialog, DialogClose, DialogContent, DialogDescription, DialogPortal, DialogTitle, DialogTrigger } from "./dialog";
 export {
   Modal,
@@ -49,6 +65,8 @@ export { Dropdown, type DropdownOption } from "./dropdown";
 export { LoadingState } from "./loading-state";
 export { ErrorState } from "./error-state";
 export { EmptyState } from "./empty-state";
+// Spinner, Alert, OfflineState and NoPermissionState are exported above with
+// the core primitives.
 
 // ADR-008 Phase A — unified entity table
 export {
