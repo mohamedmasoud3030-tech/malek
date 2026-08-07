@@ -145,7 +145,12 @@ async function lifecycleSmoke(tag: string) {
 
 describe('Phase 3A-1B forward / rollback / reapply chain', () => {
   beforeAll(async () => {
-    const replay = await createFullReplayedDatabase({ excludeMigrations: [MIGRATION_KEY] });
+    // Rollback equivalence is measured at the Phase 3A-1B checkpoint. The later
+    // S02 migration intentionally redefines record_invoice_payment_atomic's
+    // unauthenticated SQLSTATE and must not contaminate this historical baseline.
+    const replay = await createFullReplayedDatabase({
+      excludeMigrations: [MIGRATION_KEY, 's02_financial_rpc_auth_sqlstate'],
+    });
     expect(replay.failed).toEqual([]);
     db = replay.db;
     await seedPhase3a1bFixture(db);

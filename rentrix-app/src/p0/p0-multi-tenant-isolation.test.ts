@@ -149,8 +149,6 @@ INSERT INTO public.accounts (id, name, company_id) VALUES
   ('B1111', 'الصندوق باء', '${COMPANY_B}'), ('B4000', 'إيرادات باء', '${COMPANY_B}');
 
 INSERT INTO public.journal_entries (no, date, account_id, amount, type, entity_type, company_id, batch_id) VALUES
-  -- Stage 3: a DEBIT/CREDIT pair must share ONE batch (each posted batch
-  -- balances exactly), so the two lines of each company use one batch id.
   ('JE-A1', '2026-07-15', 'A1111', ${A_PAY}, 'DEBIT',  'manual', '${COMPANY_A}', 'c0000000-0000-4000-8000-0000000000a1'),
   ('JE-A2', '2026-07-15', 'A4000', ${A_PAY}, 'CREDIT', 'manual', '${COMPANY_A}', 'c0000000-0000-4000-8000-0000000000a1'),
   ('JE-B1', '2026-07-15', 'B1111', ${B_JE},  'DEBIT',  'manual', '${COMPANY_B}', 'c0000000-0000-4000-8000-0000000000b1'),
@@ -212,8 +210,6 @@ async function probeReport(db: PGlite, when: 'before' | 'after') {
 }
 
 async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
-  // T-EXP-1: settlement draft with fully fabricated amounts on OWN owner.
-  // P1 scope — P0 must NOT change amounts semantics; asserted to still succeed post-fix.
   await assume(db, ADMIN_A, COMPANY_A);
   const fabricated = {
     request_id: '9a000000-0000-4000-8000-0000000000e1',
@@ -234,11 +230,10 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   } catch (e) {
     exploit = { error: String(e).slice(0, 250) };
   } finally {
-    await db.exec('ROLLBACK;'); // safe-transaction protocol: nothing persists.
+    await db.exec('ROLLBACK;');
   }
   recordProbe('create_owner_settlement_draft_atomic[fabricated-amounts]', 'exploit', 'adminA@A', 'A', when, exploit);
 
-  // T-EXP-2: same call but targeting company B's owner (cross-tenant spoof, finding T7).
   await assume(db, ADMIN_A, COMPANY_A);
   let crossOwner: unknown;
   await db.exec('BEGIN;');
@@ -253,7 +248,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   }
   recordProbe('create_owner_settlement_draft_atomic[cross-company-owner]', 'guard', 'adminA@A', 'A', when, crossOwner);
 
-  // T-EXP-3: a USER (non-privileged role) of company B attempts the same exploit.
   await assume(db, USER_B, COMPANY_B);
   let lowRole: unknown;
   await db.exec('BEGIN;');
@@ -268,7 +262,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   }
   recordProbe('create_owner_settlement_draft_atomic[low-role-user]', 'guard', 'userB@B', 'B', when, lowRole);
 
-  // T-WR-1: cross-tenant write — company A records a payment against B's invoice.
   await assume(db, ADMIN_A, COMPANY_A);
   let crossWrite: unknown;
   await db.exec('BEGIN;');
@@ -290,7 +283,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   }
   recordProbe('record_invoice_payment_atomic[cross-company-invoice]', 'guard', 'adminA@A', 'A', when, crossWrite);
 
-  // T-WR-2: direct post_receipt_atomic against company B's contract+invoice.
   await assume(db, ADMIN_A, COMPANY_A);
   let directPost: unknown;
   await db.exec('BEGIN;');
@@ -318,7 +310,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   }
   recordProbe('post_receipt_atomic[cross-company-contract]', 'guard', 'adminA@A', 'A', when, directPost);
 
-  // T-AGR-1: create_owner_agreement_atomic with own refs (dead pre-P0: missing column).
   await assume(db, ADMIN_A, COMPANY_A);
   let agrOwn: unknown;
   await db.exec('BEGIN;');
@@ -336,7 +327,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   }
   recordProbe('create_owner_agreement_atomic[own-refs]', 'guard', 'adminA@A', 'A', when, agrOwn);
 
-  // T-AGR-2: create_owner_agreement_atomic binding company B refs (F-AGR must reject).
   await assume(db, ADMIN_A, COMPANY_A);
   let agrCross: unknown;
   await db.exec('BEGIN;');
@@ -354,7 +344,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   }
   recordProbe('create_owner_agreement_atomic[cross-refs]', 'guard', 'adminA@A', 'A', when, agrCross);
 
-  // T-RPT-PARAM: rpt_owner_statement(OWNER_B) executed as company A (param spoof).
   await assume(db, ADMIN_A, COMPANY_A);
   await db.exec('SET ROLE authenticated;');
   let osCross: unknown;
@@ -366,9 +355,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   await db.exec('RESET ROLE;');
   recordProbe('rpt_owner_statement[cross-owner-param]', 'report-leak', 'adminA@A', 'A', when, osCross);
 
-  // T-REST-1: direct table ops against the foreign company (RLS layer).
-  // Each op runs in its OWN transaction so one failure cannot poison the block;
-  // foreign targets are resolved at runtime (none visible post-fix by design).
   await assume(db, ADMIN_A, COMPANY_A);
   await db.exec('SET ROLE authenticated;');
   const rest: Record<string, unknown> = {};
@@ -421,7 +407,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   }
   recordProbe('REST[direct-table-ops]', 'guard', 'authenticated@A', 'A', when, rest);
 
-  // T-GRANT-1: anon must not execute report RPCs.
   await assume(db, ADMIN_A, null, 'anon');
   await db.exec('SET ROLE anon;');
   let anonCall: unknown;
@@ -433,7 +418,6 @@ async function probeExploitAndGuards(db: PGlite, when: 'before' | 'after') {
   await db.exec('RESET ROLE;');
   recordProbe('rpt_cash_flow[anon-execute]', 'guard', 'anon', null, when, anonCall);
 
-  // T-RLS-1: table-level RLS isolation (contrast with SECURITY DEFINER bypass).
   await assume(db, ADMIN_A, COMPANY_A);
   await db.exec('SET ROLE authenticated;');
   const rlsCounts: Record<string, unknown> = {};
@@ -485,12 +469,21 @@ function outOf(p: Probe, when: 'before' | 'after'): any {
 const num = (v: unknown) => Number(v ?? NaN);
 
 beforeAll(async () => {
-  // Fresh replay — migrations are applied WITHOUT any P0 fix file so `before`
-  // captures main's real behavior; the fix is applied for the `after` pass.
   db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
   await db.exec(STUB_SQL_HEADER);
   const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && !f.includes('p1_owner_settlement') && !f.includes('phase2_financial_integrity') && !f.includes('phase3a1b_canonical_accounts') && !f.includes('business_document_references'))
+    .filter((f) =>
+      f.endsWith('.sql') &&
+      !f.includes('p1_owner_settlement') &&
+      !f.includes('phase2_financial_integrity') &&
+      !f.includes('phase3a1b_canonical_accounts') &&
+      !f.includes('business_document_references') &&
+      // Later S02 hardening would mask the exact pre-P0 visibility and RPC
+      // behavior this causality suite is designed to measure.
+      !f.includes('s02_financial_direct_write_hardening_payments_expenses') &&
+      !f.includes('s02_remove_residual_financial_write_policies') &&
+      !f.includes('s02_financial_rpc_auth_sqlstate'),
+    )
     .sort();
   for (const file of files) {
     let sql = readFileSync(join(migDir, file), 'utf8');
@@ -499,15 +492,8 @@ beforeAll(async () => {
       sql = sql.replace(/RAISE EXCEPTION 'Post-flight check/gi, "RAISE WARNING 'Post-flight check");
     }
     if (FIX_FILE && file === FIX_FILE) {
-      // Stage 3 turned journal_entries into a compatibility VIEW, so the P0
-      // file's table-level RLS statements for it can no longer re-apply on top
-      // of a replayed main. The archive table keeps the moved policies and the
-      // canonical tables carry their own — guard the statements instead of
-      // skipping them so the re-apply proves the rest of the P0 file verbatim.
       sql = sql.replace(
         /alter table public\."journal_entries" enable row level security;[\s\S]*?drop policy if exists p0_tenant_isolation on public\."journal_entries";[\s\S]*?create policy p0_tenant_isolation on public\."journal_entries" as restrictive[\s\S]*?using \(company_id = public\.current_company_id\(\)\)[\s\S]*?with check \(company_id = public\.current_company_id\(\)\);/,
-        // NOTE: function replacement (not a string) — String.replace would
-        // turn every $$ of the SQL dollar-quote into a single $.
         () => `do $$
         begin
           if to_regclass('public.journal_entries') is not null
@@ -518,7 +504,7 @@ beforeAll(async () => {
           end if;
         end $$;`,
       );
-      continue; // applied in the `after` phase.
+      continue;
     }
     try {
       await db.exec(sql);
@@ -561,11 +547,8 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
     let applyError: unknown = null;
     try {
       let fixSql = readFileSync(join(migDir, FIX_FILE as string), 'utf8');
-      // Same Stage 3 view-guard as the replay loop (see beforeAll).
       fixSql = fixSql.replace(
         /alter table public\."journal_entries" enable row level security;[\s\S]*?drop policy if exists p0_tenant_isolation on public\."journal_entries";[\s\S]*?create policy p0_tenant_isolation on public\."journal_entries" as restrictive[\s\S]*?using \(company_id = public\.current_company_id\(\)\)[\s\S]*?with check \(company_id = public\.current_company_id\(\)\);/,
-        // NOTE: function replacement (not a string) — String.replace would
-        // turn every $$ of the SQL dollar-quote into a single $.
         () => `do $$
         begin
           if to_regclass('public.journal_entries') is not null
@@ -586,32 +569,27 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
   it.skipIf(!FIX_FILE)('closes every report leak with numeric parity vs ground truth (company A only)', async () => {
     await probeReport(db, 'after');
     const truth = await directAggregates(db, COMPANY_A);
-    expect(truth).toEqual({ receipts: A_PAY, expenses: A_EXP }); // fixture self-check
+    expect(truth).toEqual({ receipts: A_PAY, expenses: A_EXP });
 
-    // cash_flow — proven leak pre-fix (returned 7000/1100); must now equal ground truth.
     const cash = outOf(fnProbe('rpt_cash_flow'), 'after');
     expect(num(cash?.operating?.receipts)).toBe(A_PAY);
     expect(num(cash?.operating?.expenses)).toBe(A_EXP);
     expect(num(cash?.net_change)).toBe(A_PAY - A_EXP);
 
-    // daily_collection — proven leak pre-fix; exactly one A row of 1000.
     const daily = outOf(fnProbe('rpt_daily_collection'), 'after');
     expect(num(daily?.total)).toBe(A_PAY);
     expect(daily?.rows).toHaveLength(1);
     expect(num(daily?.rows?.[0]?.total)).toBe(A_PAY);
     expect(num(daily?.rows?.[0]?.count)).toBe(1);
 
-    // dashboard_overview — proven leak pre-fix (production dashboard).
     const dash = outOf(fnProbe('rpt_dashboard_overview'), 'after');
     expect(num(dash?.financial?.total_collected)).toBe(A_PAY);
     expect(num(dash?.financial?.total_expenses)).toBe(A_EXP);
-    expect(num(dash?.operational?.properties)).toBe(2); // PROPERTY_A + PROPERTY_A2 (fixture)
-
+    expect(num(dash?.operational?.properties)).toBe(2);
     expect(num(dash?.operational?.units)).toBe(1);
     expect(num(dash?.operational?.activeContracts)).toBe(1);
     expect(num(dash?.operational?.overdueInvoices)).toBe(0);
 
-    // financial_summary (TABLE-returning) — collected/expenses/net + counts, A only.
     const fsRows: any = fnProbe('rpt_financial_summary').after;
     const fs = fsRows?.[0];
     expect(fs, 'financial_summary after row').toBeTruthy();
@@ -620,35 +598,16 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
     expect(num(fs?.active_contracts)).toBe(1);
     expect(num(fs?.total_units)).toBe(1);
 
-    // income_statement — A revenue 1000, A expenses 200.
     const inc = outOf(fnProbe('rpt_income_statement'), 'after');
     expect(num(inc?.total_revenue)).toBe(A_PAY);
     expect(num(inc?.total_expenses)).toBe(A_EXP);
     expect(num(inc?.net_income)).toBe(A_PAY - A_EXP);
 
-    // vat_return — one A invoice, 1000 taxable, 0 vat.
     const vat = outOf(fnProbe('rpt_vat_return'), 'after');
     expect(num(vat?.total_sales_amount)).toBe(A_PAY);
     expect(num(vat?.total_tax_amount)).toBe(0);
     expect(num(vat?.invoice_count)).toBe(1);
 
-    // PRE-EXISTING defects on main (identical before/after; NOT isolation
-    // regressions — P0 keeps business logic byte-identical): trial_balance &
-    // balance_sheet fail with `text <= date`, aged/overdue/rent_roll with a
-    // missing `_safe_date(date)` overload, tenant_statement with `uuid = text`.
-    // They stay exactly as broken as main; their company predicates are already
-    // in place for their repair phase. Assert byte-identical error = NO regression.
-    // Classification protocol (per review): each defect must be bucketed as
-    //   (a) broken before P0, unaffected by P0 changes  — PROVEN by error-identity
-    //       pre/post against the same replayed database;
-    //   (b) broken by insufficient fixture             — RULED OUT: the same call
-    //       fails as the table owner (superuser) with the FULL two-company fixture;
-    //   (c) broken by permissions/RLS                  — RULED OUT: superuser
-    //       bypasses RLS and the error persists at definition (parse) level;
-    //   (d) broken by an actual SQL definition defect  — CONCLUDED from (a)-(c).
-    // None returns company data (fail-closed); deferral per protocol is allowed
-    // ONLY for non-security functional defects. origin/main presence is proven
-    // because the replay chain is byte-identical to origin/main migrations.
     const BROKEN_CALLS: Record<string, { sql: string; params?: unknown[] }> = {
       rpt_trial_balance: { sql: `SELECT public.rpt_trial_balance('2026-07-31'::date)` },
       rpt_balance_sheet: { sql: `SELECT public.rpt_balance_sheet('2026-07-31'::date)` },
@@ -670,7 +629,6 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
       const pr = fnProbe(fn);
       const beforeErr = (pr.before as any)?.error ?? JSON.stringify(pr.before);
       const afterErr = (pr.after as any)?.error ?? JSON.stringify(pr.after);
-      // (b)+(c) rule-out: identical error as superuser (RLS bypassed, full fixture).
       let superuserErr: string;
       try {
         const r = await call(db, spec.sql, spec.params ?? []);
@@ -689,8 +647,8 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
         deferralJustification: 'non-security functional defect; reproduced byte-identically on origin/main chain replay; repair queued for the reports-hardening phase (see docs/NEXT.md)',
       };
       expect(afterErr, `${fn} must remain error-identical to main (P0 changes filters, not logic)`).toBe(beforeErr);
-      expect(String(beforeErr)).not.toMatch(/^\[\{"out"/); // it really is an error on main
-      expect(superuserErr).not.toMatch(/^UNEXPECTED/); // same defect at definition level
+      expect(String(beforeErr)).not.toMatch(/^\[\{"out"/);
+      expect(superuserErr).not.toMatch(/^UNEXPECTED/);
       expect(superuserErr.replace(/^error: /, '')).toContain(String(beforeErr).replace(/^error: /, '').slice(0, 40));
     }
     mkdirSync(evidenceDir, { recursive: true });
@@ -700,8 +658,6 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
       functions: preExisting,
     }, null, 2));
 
-    // owner_statement — owner-scoped; PARITY with pre-fix (math must not change):
-    // gross 1000 − commission 10% (100) = net 900.
     const os = outOf(fnProbe('rpt_owner_statement'), 'after');
     const osBefore = outOf(fnProbe('rpt_owner_statement'), 'before');
     expect(num(os?.total_gross)).toBe(num(osBefore?.total_gross));
@@ -710,42 +666,30 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
     expect(num(os?.total_gross)).toBe(A_PAY);
     expect(num(os?.total_deductions)).toBe(A_PAY * 0.1);
     expect(num(os?.total_net)).toBe(A_PAY - A_PAY * 0.1);
-
   }, 300_000);
 
   it.skipIf(!FIX_FILE)('closes the cross-company settlement guard without changing P1-scoped amounts semantics', async () => {
     await probeExploitAndGuards(db, 'after');
 
-    // Pre-fix exploit (both companies visible): fabricated amounts succeeded — and
-    // MUST STILL succeed post-fix on own owner (P1 owns the amounts semantics).
     const fabricated = fnProbe('create_owner_settlement_draft_atomic[fabricated-amounts]');
     expect((fabricated.before as any)?.[0]?.out?.error).toBeUndefined();
     const fabAfter: any = fabricated.after;
     expect(fabAfter?.[0]?.out, 'own-owner fabricated draft still succeeds (P1 scope untouched)').toBeTruthy();
     expect((fabAfter?.[0]?.out as any)?.error, JSON.stringify(fabAfter?.[0]?.out)).toBeUndefined();
 
-    // T7 — cross-company settlement spoof: SUCCEEDED pre-fix, must now raise 42501.
     const crossOwner = fnProbe('create_owner_settlement_draft_atomic[cross-company-owner]');
-    expect((crossOwner.before as any)?.[0]?.out?.error).toBeUndefined(); // proven exploit on main
+    expect((crossOwner.before as any)?.[0]?.out?.error).toBeUndefined();
     const crossAfter: any = crossOwner.after;
     const crossErr = String((crossAfter?.error ?? (crossAfter?.[0]?.out as any)?.error) ?? '');
     expect(crossErr).toContain('not in your company');
 
-    // T-WR-1 — cross-tenant invoice payment via record_invoice_payment_atomic:
-    // pre-fix it was 'contained' ONLY by an accidental NOT NULL failure on the
-    // un-hardened allocation-balance trigger; F-WR makes the invoice invisible.
     const wr1 = fnProbe('record_invoice_payment_atomic[cross-company-invoice]');
-    expect(String((wr1.before as any)?.error ?? '')).toMatch(/contract_balances|company_id/i); // accidental containment on main
+    expect(String((wr1.before as any)?.error ?? '')).toMatch(/contract_balances|company_id/i);
     expect(String((wr1.after as any)?.error ?? JSON.stringify(wr1.after))).toMatch(/Invoice not found/i);
 
-    // T-WR-2 — direct post_receipt_atomic against B's contract/invoice (F-WR guards
-    // the sink too, so both entry paths close).
     const wr2 = fnProbe('post_receipt_atomic[cross-company-contract]');
     expect(String((wr2.after as any)?.error ?? JSON.stringify(wr2.after))).toMatch(/فاتورة غير موجودة|العقد لا ينتمي|not in your company/i);
 
-    // T-AGR — create_owner_agreement_atomic was DEAD on main (references the
-    // company_id column that phase 2 never added). F-AGMT revives it; F-AGR
-    // validates owner/property against the caller's company.
     const agrOwn = fnProbe('create_owner_agreement_atomic[own-refs]');
     expect(String((agrOwn.before as any)?.error ?? '')).toMatch(/column "company_id" of relation "owner_agreements" does not exist/i);
     const agrOwnAfter: any = agrOwn.after;
@@ -753,8 +697,6 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
     const agrCross = fnProbe('create_owner_agreement_atomic[cross-refs]');
     expect(String((agrCross.after as any)?.error ?? JSON.stringify(agrCross.after))).toContain('not in your company');
 
-    // T-RPT-PARAM — owner_statement cross-owner param: pre-fix returned B's full
-    // statement; post-fix the owner lookup is company-scoped.
     const osCross = fnProbe('rpt_owner_statement[cross-owner-param]');
     const osBefore = (osCross.before as any)?.[0]?.out;
     expect(osBefore?.owner_name, `pre-fix must leak B statement: ${JSON.stringify(osBefore).slice(0, 200)}`).toBe('مالك باء');
@@ -762,8 +704,6 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
     const osAfter = (osCross.after as any)?.[0]?.out;
     expect(osAfter?.error, JSON.stringify(osAfter).slice(0, 200)).toBe('owner not found');
 
-    // T-REST-1 — direct table ops: pre-fix (cause matrix) showed select=2,
-    // update/delete foreign=1 row, spoof insert succeeded; post-fix all closed.
     const rest = fnProbe('REST[direct-table-ops]');
     const rb = rest.before as any;
     expect(rb?.selectPayments).toBe(2);
@@ -772,22 +712,16 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
     expect(String(rb?.insertSpoofExpense)).toBe('inserted');
     const ra = rest.after as any;
     expect(ra?.selectPayments).toBe(1);
-    // post-fix the foreign row is invisible to A ⇒ no target can even be addressed.
     expect(ra?.foreignTargets?.expense ?? null).toBeNull();
     expect(String(ra?.updateForeign)).toBe('no-foreign-row-visible');
     expect(String(ra?.insertSpoofExpense)).toMatch(/row-level security|policy/i);
     expect(String(ra?.insertOwnExpense)).toBe('inserted');
 
-    // Guards that already held pre-fix must keep holding (no regression):
     const lowRole: any = fnProbe('create_owner_settlement_draft_atomic[low-role-user]').after;
     expect(String(lowRole?.error ?? '')).toMatch(/ADMIN or MANAGER|42501|required/i);
     const anon: any = fnProbe('rpt_cash_flow[anon-execute]').after;
     expect(String(anon?.error ?? '')).toMatch(/permission denied/i);
 
-    // T-RLS-1 — table reads as company A: pre-fix saw BOTH companies (2 rows);
-    // post-fix must see exactly company A's single row per table.
-    // owner_settlements has NO table grant for authenticated even pre-fix —
-    // permission denied in both phases is the correct, unchanged posture.
     const rls = fnProbe('RLS[table-read-isolation]');
     expect(rls.before).toMatchObject({ payments: 2, expenses: 2, invoices: 2, contracts: 2 });
     expect(String((rls.before as any)?.owner_settlements?.error ?? '')).toMatch(/permission denied/i);
@@ -796,7 +730,6 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
   }, 300_000);
 
   it.skipIf(!FIX_FILE)('keeps server report numbers numerically consistent with independent SQL (parity report)', async () => {
-    // Server-vs-independent-math parity: recompute everything without the report RPCs.
     const truth = await directAggregates(db, COMPANY_A);
     const cash = outOf(fnProbe('rpt_cash_flow'), 'after');
     expect(num(cash?.operating?.receipts)).toBe(truth.receipts);
@@ -804,7 +737,7 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
 
     const [openA] = (await call(db, `SELECT coalesce(sum(amount + coalesce(tax_amount,0) - coalesce(paid_amount,0)),0)::numeric AS v FROM public.invoices WHERE company_id=$1 AND deleted_at IS NULL`, [COMPANY_A])) as Array<{ v: unknown }>;
     const [grossA] = (await call(db, `SELECT coalesce(sum(amount),0)::numeric AS v FROM public.invoices WHERE company_id=$1 AND deleted_at IS NULL`, [COMPANY_A])) as Array<{ v: unknown }>;
-    expect(num(grossA?.v)).toBe(A_PAY); // independent math: A invoices gross exactly A_PAY
+    expect(num(grossA?.v)).toBe(A_PAY);
 
     mkdirSync(evidenceDir, { recursive: true });
     writeFileSync(

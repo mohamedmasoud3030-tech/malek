@@ -78,6 +78,7 @@ export function EntityFormE2EFixture({ mobileSurface = 'bottom-sheet' }: EntityF
           title="إضافة جهة اتصال"
           description="مثال منخفض المخاطر لاختبار الكيبورد والتمرير والأخطاء وsafe-area."
           mobileSurface={mobileSurface}
+          visualVariant="operational"
         >
           <EntityForm.Root onSubmit={handleSubmit}>
             <EntityForm.Field label="الاسم الكامل" error={nameError}>

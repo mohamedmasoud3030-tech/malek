@@ -1,11 +1,14 @@
 import { CalendarClock, FileText, WalletCards } from 'lucide-react';
-import { KpiCard } from '@/components/ui/kpi-card';
-import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { OperationalCommandPanel, OperationalMetricCard } from '@/components/ui/operational-summary';
 import type { CompanySettingsContract } from '@/lib/companySettings';
 import { isContractStatus } from '@/lib/contractStatus';
 import { formatContractMoney } from '../contractDisplayFormatters';
 import type { ContractListItem } from '../services/contractService';
 import { isExpiringSoon } from '../hooks/useContractFilters';
+
+function formatCount(value: number) {
+  return new Intl.NumberFormat('en-US').format(value);
+}
 
 export function summarizeContracts(contracts: ContractListItem[]) {
   return contracts.reduce(
@@ -28,18 +31,53 @@ export function ContractKpiGrid({
   companySettings: CompanySettingsContract;
   contracts: ContractListItem[];
   filteredContracts: ContractListItem[];
-  /** Server-exact row count for the current status filter — the loaded window is just one page. */
   totalCount: number;
 }) {
   const listSummary = summarizeContracts(contracts);
   const visibleSummary = summarizeContracts(filteredContracts);
+  const activeRate = listSummary.total > 0
+    ? Math.round((listSummary.active / listSummary.total) * 100)
+    : 0;
 
   return (
-    <ResponsiveCardGrid desktopColumns={4}>
-      <KpiCard label="إجمالي العقود" value={totalCount} sub="حسب فلتر الحالة الحالي" icon={FileText} accent="primary" />
-      <KpiCard label="العقود النشطة" value={listSummary.active} sub="ضمن الصفحة المحملة" icon={WalletCards} accent="emerald" />
-      <KpiCard label="تنتهي قريبًا" value={listSummary.expiringSoon} sub="خلال 30 يومًا" icon={CalendarClock} accent="amber" />
-      <KpiCard label="إيجار الظاهرة" value={formatContractMoney(companySettings, visibleSummary.rentTotal)} sub="بعد البحث والفلاتر" icon={WalletCards} accent="sky" />
-    </ResponsiveCardGrid>
+    <section
+      data-contract-summary
+      aria-label="ملخص دورة العقود"
+      className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
+    >
+      <OperationalCommandPanel
+        label="العقود النشطة في الصفحة"
+        value={`${formatCount(activeRate)}%`}
+        icon={WalletCards}
+        progress={activeRate}
+        footer={(
+          <>
+            <span>{formatCount(listSummary.active)} نشطة</span>
+            <span>{formatCount(listSummary.expiringSoon)} تنتهي قريبًا</span>
+          </>
+        )}
+      />
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <OperationalMetricCard
+          label="إجمالي العقود"
+          value={formatCount(totalCount)}
+          hint="حسب فلتر الحالة الحالي"
+          icon={FileText}
+        />
+        <OperationalMetricCard
+          label="تنتهي قريبًا"
+          value={formatCount(listSummary.expiringSoon)}
+          hint="خلال 30 يومًا"
+          icon={CalendarClock}
+        />
+        <OperationalMetricCard
+          label="إيجار العقود الظاهرة"
+          value={formatContractMoney(companySettings, visibleSummary.rentTotal)}
+          hint="بعد البحث والفلاتر"
+          icon={WalletCards}
+        />
+      </div>
+    </section>
   );
 }

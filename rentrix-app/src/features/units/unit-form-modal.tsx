@@ -73,6 +73,8 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
       title={unit ? 'تعديل وحدة' : 'إضافة وحدة'}
       description="أدخل بيانات الوحدة الأساسية. حالتا الإشغال والصيانة تُحدّثان تلقائياً من العقود وطلبات الصيانة."
       className="max-w-2xl"
+      mobileSurface="bottom-sheet"
+      visualVariant="operational"
       headerExtra={
         form.formState.isDirty && !isSubmitting ? (
           <StatusBadge tone="warning">
