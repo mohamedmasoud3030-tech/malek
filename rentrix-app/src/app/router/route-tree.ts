@@ -212,12 +212,31 @@ const landingCompatRoute = createRoute({
   },
 });
 
+// Wave 3 — developer-only design-system showcase. Isolated, lazy, never added
+// to production navigation. In production builds the route 404s (the component
+// is never imported) so it stays out of the user-facing bundle.
+const designSystemRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dev/design-system',
+  beforeLoad: () => {
+    if (!import.meta.env.DEV) throw redirect({ to: '/' });
+  },
+  component: import.meta.env.DEV
+    ? lazyRouteComponent(
+        () => import('@/features/design-system/design-system-showcase'),
+        'DesignSystemShowcase',
+      )
+    : () => null,
+  staticData: { title: 'MALEK Design System' },
+});
+
 export const routeTree = rootRoute.addChildren([
   authRoute.addChildren([loginRoute]),
   landingRoute,
   landingCompatRoute,
   privacyRoute,
   termsRoute,
+  designSystemRoute,
   protectedRoute.addChildren([
     dashboardRoute,
     propertiesRoute,
