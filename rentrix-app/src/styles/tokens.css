@@ -94,7 +94,8 @@
   /* Text */
   --color-text-primary: 215 28% 17%;
   --color-text-secondary: 215 16% 40%;
-  --color-text-muted: 215 14% 55%;
+  /* WCAG AA guard: 55% landed at 3.51:1 on white for small text; 46% ≈ 4.85:1. */
+  --color-text-muted: 215 14% 46%;
 
   /* Borders */
   --color-border: 214 20% 88%;
@@ -229,7 +230,9 @@
   --color-primary-fg: 0 0% 100%;
   --color-text-primary: 210 20% 92%;
   --color-text-secondary: 210 14% 68%;
-  --color-text-muted: 210 10% 50%;
+  /* WCAG AA guard: 50% measured 4.05:1 on dark cards (axe); 58% ≈ 4.8–5.0:1
+     even on the lightest dark surface (--surface-elevated). */
+  --color-text-muted: 210 10% 58%;
   --color-border: 215 20% 22%;
   --color-border-light: 215 16% 17%;
   --color-sidebar-bg: 215 30% 7%;

@@ -39,7 +39,7 @@ export function StatCard({ label, value, sub, tone = "default", className }: Sta
       <p className={cn("mt-1.5 text-base font-bold tabular-nums leading-none", colors.value)} dir="ltr">
         {value}
       </p>
-      {sub && <p className="mt-1 text-[10px] text-muted-foreground/70">{sub}</p>}
+      {sub && <p className="mt-1 text-[10px] text-muted-foreground">{sub}</p>}
     </div>
   );
 }

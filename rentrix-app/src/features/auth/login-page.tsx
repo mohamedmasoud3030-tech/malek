@@ -211,7 +211,7 @@ export function LoginPage() {
         </section>
 
         <footer
-          className="mt-6 shrink-0 border-t border-border/40 pt-3 text-center text-[9.5px] leading-4 text-muted-foreground/70"
+          className="mt-6 shrink-0 border-t border-border/40 pt-3 text-center text-[9.5px] leading-4 text-muted-foreground"
           data-contact-footer
           aria-label="بيانات الدعم والتواصل"
         >

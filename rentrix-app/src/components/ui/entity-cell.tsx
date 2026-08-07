@@ -33,7 +33,7 @@ export function EntityCell({ icon: Icon, title, subtitle, meta, tone = 'primary'
       <div className="min-w-0">
         <p className="font-semibold text-sm leading-snug truncate">{title}</p>
         {subtitle ? <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p> : null}
-        {meta ? <p className="text-[10px] font-bold text-muted-foreground/70 mt-0.5">{meta}</p> : null}
+        {meta ? <p className="text-[10px] font-bold text-muted-foreground mt-0.5">{meta}</p> : null}
       </div>
     </div>
   );

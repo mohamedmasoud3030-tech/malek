@@ -181,7 +181,12 @@ export function ReportsWorkspace({
           </div>
         </div>
 
-        <div className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur sm:px-4">
+        <div
+          className="no-scrollbar sticky top-0 z-20 overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 sm:px-4"
+          tabIndex={0}
+          role="region"
+          aria-label="شريط أقسام التقارير القابل للتمرير أفقياً"
+        >
           <div className="min-w-max space-y-2">
             {reportCategories.map((category) => {
               const categorySections = getReportSectionsByCategory(category.id);
@@ -189,7 +194,7 @@ export function ReportsWorkspace({
               return (
                 <div key={category.id} className="group flex items-center gap-3">
                   <span
-                    className="flex shrink-0 items-center gap-1.5 pe-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground/70"
+                    className="flex shrink-0 items-center gap-1.5 pe-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground"
                     title={`${category.label} — ${category.description}`}
                   >
                     <category.icon className="size-3.5" aria-hidden="true" />

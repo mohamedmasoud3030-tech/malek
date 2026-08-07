@@ -14,7 +14,9 @@
   --foreground: 222 38% 13%;
   --card: 0 0% 100%;
   --card-foreground: 222 38% 13%;
-  --primary: 160 84% 31%;
+  /* WCAG AA guard: white text on the Malek Pro green needs ≥4.5:1; 31%
+     lightness measured 3.99:1 (axe), 27% measures ≈5.0:1. */
+  --primary: 160 84% 27%;
   --primary-foreground: 0 0% 100%;
   --secondary: 210 28% 95%;
   --secondary-foreground: 222 28% 21%;

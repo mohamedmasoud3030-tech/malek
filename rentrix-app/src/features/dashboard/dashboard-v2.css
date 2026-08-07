@@ -12,7 +12,9 @@
   --color-primary-fg: 0 0% 100%;
   --color-text-primary: 215 32% 16%;
   --color-text-secondary: 215 18% 33%;
-  --color-text-muted: 215 12% 48%;
+  /* WCAG AA guard: 48% measured 4.24-4.48:1 on light surfaces (axe);
+     43% measures ≈5.37:1. */
+  --color-text-muted: 215 12% 43%;
   --color-border: 214 18% 84%;
   --color-border-light: 214 18% 89%;
   --color-success-text: 154 68% 27%;
