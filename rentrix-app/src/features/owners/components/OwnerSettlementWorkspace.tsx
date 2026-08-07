@@ -29,7 +29,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
+import { formatDate, formatMoney } from '@/features/financials/components/financials-formatters';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
@@ -397,7 +397,13 @@ export function OwnerSettlementWorkspace() {
 
                   <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2 text-xs">
                     <span className="text-muted-foreground">
-                      {settlement.approved_at ? 'تم الاعتماد ماليًا' : 'في انتظار الاعتماد المالي'}
+                      {settlement.status === 'paid'
+                        ? `تم الصرف${settlement.paid_at ? ` بتاريخ ${formatDate(settlement.paid_at)}` : ''}`
+                        : settlement.status === 'approved'
+                          ? 'معتمدة للصرف'
+                          : settlement.status === 'cancelled'
+                            ? 'ملغاة'
+                            : 'في انتظار الاعتماد المالي'}
                       {settlement.payout_reference ? ` · مرجع الصرف: ${settlement.payout_reference}` : ''}
                     </span>
                     <div className="flex flex-wrap gap-2">
