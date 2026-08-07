@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
@@ -50,6 +51,7 @@ function readCompanyIdFromAppMetadata(appMetadata: unknown): string | null {
 /* ── Provider ───────────────────────────────────────── */
 
 export function CompanyProvider({ children }: PropsWithChildren) {
+  const queryClient = useQueryClient();
   const { session, isLoading: isAuthLoading } = useAuth();
   const authenticatedUserId = session?.user.id ?? null;
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -150,37 +152,60 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     const company = companies.find((candidate) => candidate.id === companyId);
     if (!company) throw new Error(ACTIVE_COMPANY_ERROR);
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error(ACTIVE_COMPANY_ERROR);
+    setIsLoading(true);
+    setLoadError(null);
 
-    if (readCompanyIdFromAppMetadata(session.user.app_metadata) !== companyId) {
-      // user_metadata is only a requested preference. The access-token hook
-      // validates it against company_members before app_metadata.company_id is
-      // issued, so editing browser metadata cannot cross the tenant boundary.
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { company_id: companyId },
-      });
-      if (updateError) throw updateError;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error(ACTIVE_COMPANY_ERROR);
 
-      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) throw refreshError;
-      if (readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata) !== companyId) {
-        throw new Error(ACTIVE_COMPANY_ERROR);
+      if (readCompanyIdFromAppMetadata(session.user.app_metadata) !== companyId) {
+        // user_metadata is only a requested preference. The access-token hook
+        // validates it against company_members before app_metadata.company_id is
+        // issued, so editing browser metadata cannot cross the tenant boundary.
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: { company_id: companyId },
+        });
+        if (updateError) throw updateError;
+
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) throw refreshError;
+        if (readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata) !== companyId) {
+          throw new Error(ACTIVE_COMPANY_ERROR);
+        }
       }
+
+      const { data: membership, error: membershipError } = await supabase
+        .from('company_members')
+        .select('role')
+        .eq('company_id', companyId)
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (membershipError) throw membershipError;
+
+      // Query keys are intentionally shared across many workspaces. Once the
+      // authoritative JWT company changes, cancel and remove all cached tenant
+      // data before exposing the new company. This prevents Company A rows from
+      // surviving in memory/UI when switching to Company B.
+      await queryClient.cancelQueries();
+      queryClient.clear();
+
+      setActiveCompany(company);
+      setCurrentRole((membership?.role as CompanyMemberRole) ?? null);
+    } catch (error) {
+      // A partially completed token switch must never leave the old company UI
+      // visible against a new JWT. Fail closed and require a clean reload/retry.
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      setActiveCompany(null);
+      setCurrentRole(null);
+      setLoadError(ACTIVE_COMPANY_ERROR);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-
-    const { data: membership, error: membershipError } = await supabase
-      .from('company_members')
-      .select('role')
-      .eq('company_id', companyId)
-      .eq('user_id', session.user.id)
-      .single();
-
-    if (membershipError) throw membershipError;
-
-    setActiveCompany(company);
-    setCurrentRole((membership?.role as CompanyMemberRole) ?? null);
-  }, [companies]);
+  }, [companies, queryClient]);
 
   const value = useMemo<CompanyContextValue>(() => ({
     companies,
