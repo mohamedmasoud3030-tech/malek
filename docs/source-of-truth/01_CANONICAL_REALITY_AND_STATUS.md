@@ -112,6 +112,19 @@ Presentation-only parity pass against the owner-supplied Malek Pro reference set
 | OD-12 Cairo + Sora self-hosted fonts (offline PWA + no external font CDN), deferred load, `font-display: swap`, OFL licenses shipped | `VERIFIED_COMPLETE` | `public/fonts/*`, `src/lib/product-fonts.ts`; guard `product-fonts-contract.test.ts` |
 | Reference screens not to replicate (split login, dark-navy promotional modal heroes) | confirmed intentionally excluded | doc 3 consolidation pass, commit `2a2df3a7` |
 
+### Wave 5.1 — Accessibility & responsive hardening (2026-08-07, arena branch 019fdc09)
+
+axe-core (WCAG 2.1 A/AA) audit over the e2e fixture surfaces, both themes, plus a
+responsive overflow matrix. Fixes are presentation-only (tokens + class hygiene).
+Full findings and fixes: `docs/audits/MALEK_VISUAL_WAVE5_MALEKPRO_PARITY_AUDIT.md` §4a–4b.
+
+| Item | Status | Evidence |
+|---|---|---|
+| WCAG AA contrast: light/dark muted-text tokens, dashboard-v2 muted, Malek green `--primary`, `/70` opacity blends removed from small text | `VERIFIED_COMPLETE` | `tokens.css`, `dashboard-v2.css`, `malek-pro-visual-wave.css`, `kpi-card.tsx`, `stat-card.tsx`, `entity-cell.tsx`, `lands-view.tsx`, `login-page.tsx` |
+| Keyboard access to horizontal scroll regions (reports section tabs + filter chips) with Arabic `aria-label` and visible focus ring | `VERIFIED_COMPLETE` | `ReportsWorkspace.tsx`, `ReportsFilterSurface.tsx` |
+| Responsive matrix: 96 checks (16 surfaces × 6 viewports 320→1440) — 0 horizontal-overflow/title-clip defects | `VERIFIED_COMPLETE` | `evidence/ui-wave5-malekpro-parity/audits/responsive-overflow-matrix.json` |
+| axe matrix: 16/16 surface-theme combinations with 0 WCAG 2.1 A/AA violations | `VERIFIED_COMPLETE` | `evidence/ui-wave5-malekpro-parity/audits/axe-wcag2aa-final.json` |
+
 ## 3. Open Owner Decisions (blockers, unchanged)
 
 - **OD-08** — Due-from-Owner collection mechanism (offset vs payment invoice): blocks negative-balance settlement accounting.

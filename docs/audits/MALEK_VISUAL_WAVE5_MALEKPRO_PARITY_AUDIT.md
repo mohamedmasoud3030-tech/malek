@@ -52,6 +52,35 @@ demo/mock data (Document 1: no demo/mock allowed in product surfaces).
 - Captured from the repository e2e harness fixtures (`/login?e2e-showcase-*`)
   at 390px and 1440px, light theme, self-hosted fonts active.
 
+## 4a. Wave 5.1 — WCAG 2.1 AA remediation (axe-measured)
+
+An axe-core 4.12 audit (`wcag2a` + `wcag2aa` tags) was run on the 8 e2e
+fixture surfaces in both themes (16 combinations, mobile viewport). Baseline
+violations were all contrast-related plus two keyboard-access scroll regions.
+Fixes (presentation-only):
+
+| Defect (axe id) | Where | Fix |
+| --- | --- | --- |
+| `color-contrast` — light muted text 3.51–4.48:1 | root `--color-text-muted` | `215 14% 55%` → `215 14% 46%` (≈4.85:1) in `tokens.css` |
+| `color-contrast` — dark muted text 4.05–4.49:1 | root dark `--color-text-muted` | `210 10% 50%` → `210 10% 58%` (≈4.8–5.0:1 incl. lightest dark surface) |
+| `color-contrast` — dashboard v2 light muted 4.24–4.48:1 | `dashboard-v2.css` scoped muted | `215 12% 48%` → `215 12% 43%` (≈5.37:1) |
+| `color-contrast` — white on Malek green 3.99:1 | `malek-pro-visual-wave.css --primary` | `160 84% 31%` → `160 84% 27%` (≈5.0:1); `--focus-ring` unchanged |
+| `color-contrast` — `text-muted-foreground/70` ≈2.27:1 tiny text | `kpi-card`, `stat-card`, `entity-cell`, `lands-view`, `login-page` footer, reports category label | dropped the `/70` opacity blend (full muted token now AA) |
+| `scrollable-region-focusable` | reports section-tab scroller, reports filter-chips scroller | `tabIndex={0}` + `role="region"` + Arabic `aria-label` + visible inset focus ring |
+
+Deliberately untouched: `placeholder:text-muted-foreground/70` in
+`enterprise-search.tsx` — placeholder/hint text is exempt from WCAG 1.4.3.
+
+**Final result: 16/16 surface-theme combinations with 0 violations.**
+Machine report: `evidence/ui-wave5-malekpro-parity/audits/axe-wcag2aa-final.json`.
+
+## 4b. Responsive overflow matrix (Phase 3 check)
+
+96 checks (16 fixture surfaces × 320/375/414/768/1024/1440 px) measured for
+horizontal document overflow and page-title clipping: **0 defects**.
+Machine report:
+`evidence/ui-wave5-malekpro-parity/audits/responsive-overflow-matrix.json`.
+
 ## 4. Remaining roadmap items intentionally untouched
 
 - Split auth layouts / promotional hero panels: rejected by the owner-approved consolidation pass — must not return.
@@ -63,3 +92,4 @@ demo/mock data (Document 1: no demo/mock allowed in product surfaces).
 - `tsc -p tsconfig.json --noEmit` (typecheck): PASS
 - Targeted tests: `product-fonts-contract.test.ts`, `malek-pro-visual-wave.test.ts`, `design-tokens.test.ts`, `page-header.test.tsx`, `maintenance-page.test.tsx`: PASS
 - Full unit suite + production build + repo checks: see section 5 results recorded at execution time (all green at delivery).
+- Wave 5.1 gates: typecheck PASS; targeted component/token tests 51/51 PASS; full suite 349 files / 2168 tests PASS; production build (PWA 309 precache entries) PASS; `check:architecture`, `check:docs` (112 md), `check:business-rules` PASS; axe matrix 16/16 zero violations.
