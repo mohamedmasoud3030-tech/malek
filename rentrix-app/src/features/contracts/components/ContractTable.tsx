@@ -134,6 +134,7 @@ export function ContractTable({
           contract={contract}
           onDelete={onDelete}
           onEdit={onEdit}
+          onPreview={onPreview}
         />
       )}
       renderRowExpansion={(contract) => (
