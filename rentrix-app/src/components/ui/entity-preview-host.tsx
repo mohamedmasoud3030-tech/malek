@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PropertyPreviewDialog } from '@/features/properties/components/PropertyPreviewDialog';
+import { UnitPreviewDialog } from '@/features/units/components/UnitPreviewDialog';
 import { subscribeEntityPreview, type EntityPreviewRequest } from './entity-preview-events';
 
 export function EntityPreviewHost() {
@@ -12,6 +13,13 @@ export function EntityPreviewHost() {
       {request?.kind === 'property' ? (
         <PropertyPreviewDialog
           propertyId={request.id}
+          open
+          onOpenChange={(open) => { if (!open) setRequest(null); }}
+        />
+      ) : null}
+      {request?.kind === 'unit' ? (
+        <UnitPreviewDialog
+          unitId={request.id}
           open
           onOpenChange={(open) => { if (!open) setRequest(null); }}
         />
