@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Building2, Eye, LinkIcon, Pencil, Users } from 'lucide-react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
@@ -68,6 +68,7 @@ export function OwnerWorkspaceTable({
   onSearchChange,
   onSelectOwner,
 }: OwnerWorkspaceTableProps) {
+  const navigate = useNavigate();
   const hasSearch = Boolean(search.trim());
   const emptyState = (
     <EmptyState
@@ -110,11 +111,7 @@ export function OwnerWorkspaceTable({
             { key: 'property_count', header: 'عدد العقارات', render: (row) => formatLatinNumber(row.propertyCount, 'ar') },
             { key: 'property_links', header: 'العقارات', render: (row) => <OwnerPropertyLinks row={row} /> },
             { key: 'ownership', header: 'الملكية/الدور', render: (row) => <OwnershipSummary row={row} /> },
-            {
-              key: 'contracts',
-              header: 'العقود النشطة',
-              render: (row) => row.activeContractCount > 0 ? formatLatinNumber(row.activeContractCount, 'ar') : '—',
-            },
+            { key: 'contracts', header: 'العقود النشطة', render: (row) => row.activeContractCount > 0 ? formatLatinNumber(row.activeContractCount, 'ar') : '—' },
             {
               key: 'actions',
               header: 'إجراءات',
@@ -123,7 +120,7 @@ export function OwnerWorkspaceTable({
                   <ActionMenu
                     label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
                     items={[
-                      { id: 'details', label: 'التفاصيل', icon: Eye, to: '/owners/$ownerId', params: { ownerId: row.owner.id } },
+                      { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => void navigate({ to: '/owners/$ownerId', params: { ownerId: row.owner.id } }) },
                       { id: 'relationships', label: 'العلاقات', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
                       { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
                     ]}
