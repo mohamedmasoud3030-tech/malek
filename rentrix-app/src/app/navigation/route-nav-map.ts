@@ -1,38 +1,22 @@
-/**
- * Canonical route-to-navigation-root map.
- *
- * Every protected route must map to exactly one navigation root. This map is
- * the single source of truth for:
- *  - desktop sidebar active state
- *  - mobile drawer active state
- *  - bottom mobile navigation active state
- *  - workspace sub-nav context
- *  - breadcrumb root
- *  - aria-current resolution
- *  - page-title lookup
- *
- * UX-013 / UX-015 / UX-069: active navigation state and terminology source.
- */
-
-/** The primary navigation root each route belongs to. */
+/** Canonical route-to-primary-navigation-root map. */
 export const routeNavRoot = new Map<string, string>([
-  // Dashboard
   ['/dashboard', '/dashboard'],
   ['/', '/dashboard'],
 
-  // Portfolio hub & children
   ['/properties', '/properties'],
   ['/properties/new', '/properties'],
   ['/properties/$propertyId', '/properties'],
   ['/properties/$propertyId/edit', '/properties'],
   ['/properties/$propertyId/units', '/properties'],
   ['/properties/$propertyId/units/$unitId', '/properties'],
-  ['/owners', '/properties'],
-  ['/owners/$ownerId', '/properties'],
   ['/units', '/properties'],
   ['/lands', '/properties'],
 
-  // Relationships / Contracts hub & children
+  ['/owners', '/owners'],
+  ['/owners/$ownerId', '/owners'],
+
+  ['/tenants', '/tenants'],
+
   ['/contracts', '/contracts'],
   ['/contracts/new', '/contracts'],
   ['/contracts/$contractId', '/contracts'],
@@ -40,40 +24,36 @@ export const routeNavRoot = new Map<string, string>([
   ['/people', '/contracts'],
   ['/people/new', '/contracts'],
   ['/people/$personId/edit', '/contracts'],
-  ['/tenants', '/contracts'],
   ['/leads', '/contracts'],
   ['/communication', '/contracts'],
 
-  // Operations hub & children
   ['/maintenance', '/maintenance'],
   ['/utilities', '/maintenance'],
   ['/automation', '/maintenance'],
   ['/documents-vault', '/maintenance'],
 
-  // Finance — overview + 4 canonical hubs (IA 2026-08: direct primary access, one secondary layer per hub)
+  // Finance has one primary destination. The operational subroutes stay valid
+  // but must keep the single Finance item highlighted.
   ['/financials', '/financials'],
-  ['/finance/collections', '/finance/collections'],
-  ['/finance/expenses', '/finance/expenses'],
-  ['/finance/deposits', '/finance/deposits'],
-  ['/finance/banking', '/finance/banking'],
-  // Legacy finance routes remain REDIRECT-ONLY for bookmark compat, map to their canonical hub
-  ['/invoices', '/finance/collections'],
-  ['/receipts', '/finance/collections'],
-  ['/expenses', '/finance/expenses'],
-  ['/arrears', '/finance/expenses'],
-  ['/deposits', '/finance/deposits'],
-  ['/owner-settlements', '/finance/deposits'],
-  ['/bank-reconciliation', '/finance/banking'],
-  ['/commissions', '/finance/banking'],
+  ['/finance/collections', '/financials'],
+  ['/finance/expenses', '/financials'],
+  ['/finance/deposits', '/financials'],
+  ['/finance/banking', '/financials'],
+  ['/invoices', '/financials'],
+  ['/receipts', '/financials'],
+  ['/expenses', '/financials'],
+  ['/arrears', '/financials'],
+  ['/deposits', '/financials'],
+  ['/owner-settlements', '/financials'],
+  ['/bank-reconciliation', '/financials'],
+  ['/commissions', '/financials'],
 
-  // Reports + AI Assistant are distinct primary destinations under "التقارير" group
-  // (IA 2026-08: AI assistant is not a report section tab, it's a separate
-  // interactive chat tool — keeping it as separate primary prevents the
-  // 12-tab maze and ambiguous duplication)
+  // Accounting and reports are one primary destination. /accounting remains a
+  // compatibility deep-link into the general-ledger report section.
   ['/reports', '/reports'],
+  ['/accounting', '/reports'],
   ['/ai-assistant', '/ai-assistant'],
 
-  // Governance / Settings hub & children
   ['/settings', '/settings'],
   ['/change-password', '/settings'],
   ['/audit-log', '/settings'],
@@ -81,31 +61,22 @@ export const routeNavRoot = new Map<string, string>([
   ['/system', '/settings'],
 ]);
 
-/** Arabic display name for each navigation root. */
 export const navRootTitle: Record<string, string> = {
   '/dashboard': 'لوحة التحكم',
-  '/properties': 'المحفظة العقارية',
-  '/contracts': 'العلاقات والعقود',
+  '/properties': 'العقارات',
+  '/owners': 'الملاك',
+  '/tenants': 'المستأجرون',
+  '/contracts': 'العقود',
   '/maintenance': 'التشغيل والصيانة',
-  '/financials': 'المالية — نظرة عامة',
-  '/finance/collections': 'التحصيل اليومي',
-  '/finance/expenses': 'المصروفات والذمم',
-  '/finance/deposits': 'التأمينات والتسويات',
-  '/finance/banking': 'البنوك والعمولات',
-  '/reports': 'التقارير',
+  '/financials': 'المالية',
+  '/reports': 'المحاسبة والتقارير',
   '/ai-assistant': 'المساعد الذكي',
-  '/settings': 'الإدارة والحوكمة',
+  '/settings': 'الإعدادات',
 };
 
-/**
- * Given any route pathname, returns the canonical navigation root.
- * Falls back to '/dashboard' for unknown routes.
- */
 export function getNavRoot(pathname: string): string {
-  // Exact match first
   if (routeNavRoot.has(pathname)) return routeNavRoot.get(pathname)!;
 
-  // Try longest-prefix match (for nested routes not explicitly mapped)
   const sortedKeys = [...routeNavRoot.keys()].sort((a, b) => b.length - a.length);
   for (const key of sortedKeys) {
     if (pathname.startsWith(key + '/') || pathname === key) {
