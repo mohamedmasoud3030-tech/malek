@@ -106,7 +106,7 @@ export function CommunicationWorkspace({ embedded = false }: CommunicationWorksp
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar">
+    <PageLayout dir="rtl" lang="ar" visualVariant="malek-pro">
       <PageHeader
         title="مركز التواصل"
         description="سجل تشغيلي للتواصل مع الأطراف، مع واجهة قوالب وواتساب وبريد قابلة للتوسعة دون ربط مزود خارجي داخل الواجهة."

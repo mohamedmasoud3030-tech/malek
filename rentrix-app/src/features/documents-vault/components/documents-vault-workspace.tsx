@@ -426,7 +426,7 @@ export function DocumentsVaultWorkspace({ mode = 'standalone' }: DocumentsVaultW
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide">
+    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
       <PageHeader
         title="خزينة المستندات والمرفقات"
         description="أرشيف خاص؛ تحفظ مسارات التخزين فقط، وتتم المعاينة والتنزيل عبر روابط موقعة مؤقتة لمدة 60 دقيقة."

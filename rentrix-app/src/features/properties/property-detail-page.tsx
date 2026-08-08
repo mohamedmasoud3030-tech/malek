@@ -111,7 +111,7 @@ export function PropertyDetailPage() {
       emptyDescription="ربما تم حذف العقار أو لا تملك صلاحية الوصول إليه."
     >
       {property && (
-        <PageLayout dir="rtl" size="wide">
+        <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
           <EntityDetailHeader
             title={property.title ?? 'عقار'}
             subtitle={property.address ?? undefined}

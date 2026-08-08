@@ -40,7 +40,7 @@ export function AuditLogWorkspace({ variant = 'standalone' }: AuditLogWorkspaceP
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar">
+    <PageLayout dir="rtl" lang="ar" visualVariant="malek-pro">
       <PageHeader
         title="سجل التدقيق"
         description="عرض قراءة فقط لأحداث الحوكمة المتاحة من مصدر التدقيق الحالي دون تعديل أي سجل."
