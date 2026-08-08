@@ -2,17 +2,16 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { Lock } from 'lucide-react';
 import { canShowNavigationItem, canAccessRoute, type AuthorizationContext } from '@/features/auth/permissions';
 import { getNavRoot } from '@/app/navigation/route-nav-map';
+import { navigationLabels } from '@/app/navigation/terminology-registry';
 import { cn } from '@/lib/utils';
 import { mobileNavItems, navGroups } from '@/app/navigation/app-nav-items';
 
 export type SharedLabel = (key: string) => string;
 
-/**
- * Full desktop/sidebar and mobile-drawer IA. Active state is deliberately
- * derived from the canonical route map rather than a local tab value or
- * TanStack's fuzzy parent matching, so redirected/deep-linked workspaces keep
- * one truthful primary-navigation root.
- */
+function navLabel(labelKey: string, sharedLabel: SharedLabel) {
+  return navigationLabels[labelKey] ?? sharedLabel(labelKey);
+}
+
 export function NavigationLinks({
   authorization,
   expanded,
@@ -21,14 +20,9 @@ export function NavigationLinks({
 }: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
   const location = useLocation();
   const activeRoot = getNavRoot(location.pathname);
-  // Locked entries are no longer rendered one-by-one (a wall of 🔒 icons made
-  // restricted roles feel the app is broken). Instead they are hidden and the
-  // user gets a single upgrade hint at the bottom of the navigation.
   let hiddenLockedCount = 0;
 
   const groups = navGroups.map(([sectionTitle, items, adminOnly]) => {
-    // UX-019: hide the entire admin group when the user has no admin-style permission
-    // across any of its entries.
     if (adminOnly) {
       const hasAnyAdminPermission = items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission));
       if (!hasAnyAdminPermission) return null;
@@ -42,7 +36,6 @@ export function NavigationLinks({
       return canShowNavigationItem(authorization, permission);
     });
     if (visibleItems.length === 0) return null;
-
     return { sectionTitle, visibleItems };
   });
 
@@ -51,28 +44,26 @@ export function NavigationLinks({
       {groups.map((group) => {
         if (!group) return null;
         const { sectionTitle, visibleItems } = group;
-
         return (
           <section key={sectionTitle} className="space-y-1">
             {expanded ? (
               <div className="px-3 pb-1">
-                <p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50">
-                  {sectionTitle}
-                </p>
+                <p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50">{sectionTitle}</p>
               </div>
             ) : (
               <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />
             )}
             {visibleItems.map(([to, labelKey, description, Icon]) => {
               const isActive = activeRoot === to;
+              const label = navLabel(labelKey, sharedLabel);
               return (
                 <Link
                   key={`${to}:${labelKey}`}
                   to={to}
                   onClick={onNavigate}
                   aria-current={isActive ? 'page' : undefined}
-                  aria-label={sharedLabel(labelKey)}
-                  title={expanded ? description : sharedLabel(labelKey)}
+                  aria-label={label}
+                  title={expanded ? description : label}
                   activeOptions={{ exact: true }}
                   data-nav-item
                   data-active={isActive ? 'true' : undefined}
@@ -85,7 +76,7 @@ export function NavigationLinks({
                   <Icon className={cn('size-5 shrink-0 transition-transform duration-150 motion-reduce:transition-none', !isActive && 'group-hover:scale-110')} aria-hidden="true" />
                   {expanded ? (
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-semibold">{sharedLabel(labelKey)}</span>
+                      <span className="block truncate text-[13px] font-semibold">{label}</span>
                     </span>
                   ) : null}
                   {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground" aria-hidden="true" /> : null}
@@ -105,21 +96,16 @@ export function NavigationLinks({
             <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[hsl(var(--color-warning-bg)/0.16)] text-warning">
               <Lock className="size-3.5" aria-hidden="true" />
             </span>
-            <p className="text-[12px] font-bold text-warning">{sharedLabel('navUpgradeTitle')}</p>
-            <span className="ms-auto rounded-full bg-[hsl(var(--color-warning-bg)/0.16)] px-2 py-0.5 text-[10px] font-bold text-warning/90">
-              {hiddenLockedCount}
-            </span>
+            <p className="text-[12px] font-bold text-warning">أقسام حسب الصلاحية</p>
+            <span className="ms-auto rounded-full bg-[hsl(var(--color-warning-bg)/0.16)] px-2 py-0.5 text-[10px] font-bold text-warning/90">{hiddenLockedCount}</span>
           </div>
-          <p className="mt-2 text-[11px] leading-5 text-sidebar-foreground/65">
-            {sharedLabel('navUpgradeHint')}
-          </p>
+          <p className="mt-2 text-[11px] leading-5 text-sidebar-foreground/65">بعض الأقسام مخفية لأن دورك الحالي لا يملك صلاحية الوصول إليها.</p>
         </section>
       ) : null}
     </div>
   );
 }
 
-/** Compact, role-aware mobile destinations. The drawer retains the complete IA. */
 export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
   const location = useLocation();
   const activeRoot = getNavRoot(location.pathname);
@@ -133,17 +119,15 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
     >
       <div className="flex h-[3.875rem] min-w-0 items-stretch overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {visibleItems.map(([to, labelKey, Icon]) => {
-          // Finance bottom tab stays active for any finance hub (collections/expenses/deposits/banking)
-          // because on mobile those hubs are not separate bottom items; the drawer holds their direct links.
-          const isFinanceActive = to === '/financials' && (activeRoot === '/financials' || activeRoot.startsWith('/finance/'));
-          const isActive = activeRoot === to || isFinanceActive;
+          const isActive = activeRoot === to;
+          const label = navLabel(labelKey, sharedLabel);
           return (
             <Link
               key={to}
               to={to}
               activeOptions={{ exact: true }}
               aria-current={isActive ? 'page' : undefined}
-              aria-label={sharedLabel(labelKey)}
+              aria-label={label}
               data-nav-item
               data-active={isActive ? 'true' : undefined}
               className={cn(
@@ -151,22 +135,10 @@ export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ autho
                 isActive && 'text-primary',
               )}
             >
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'absolute inset-x-1.5 inset-y-1 rounded-2xl transition-colors duration-150 motion-reduce:transition-none',
-                  isActive ? 'bg-primary/12' : 'bg-transparent',
-                )}
-              />
-              <span
-                aria-hidden="true"
-                className={cn(
-                  'absolute inset-x-4 top-0 h-0.5 rounded-full transition-opacity duration-150 motion-reduce:transition-none',
-                  isActive ? 'bg-primary opacity-100' : 'bg-transparent opacity-0',
-                )}
-              />
+              <span aria-hidden="true" className={cn('absolute inset-x-1.5 inset-y-1 rounded-2xl transition-colors duration-150 motion-reduce:transition-none', isActive ? 'bg-primary/12' : 'bg-transparent')} />
+              <span aria-hidden="true" className={cn('absolute inset-x-4 top-0 h-0.5 rounded-full transition-opacity duration-150 motion-reduce:transition-none', isActive ? 'bg-primary opacity-100' : 'bg-transparent opacity-0')} />
               <Icon className="relative z-10 size-[1.2rem] shrink-0 transition-transform duration-150 group-active:scale-90 motion-reduce:transition-none" aria-hidden="true" />
-              <span className="relative z-10 max-w-full truncate text-[9.5px] font-bold leading-none tracking-tight">{sharedLabel(labelKey)}</span>
+              <span className="relative z-10 max-w-full truncate text-[9.5px] font-bold leading-none tracking-tight">{label}</span>
             </Link>
           );
         })}
