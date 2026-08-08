@@ -15,7 +15,7 @@ export function EntityPreviewHost() {
   const previewKind = typeof search.previewKind === 'string' && previewKinds.has(search.previewKind as EntityPreviewKind)
     ? search.previewKind as EntityPreviewKind
     : null;
-  const previewId = typeof search.previewId === 'string' && search.previewId.trim() ? search.previewId : null;
+  const previewId = typeof search.previewId === 'string' && search.previewId.trim().length > 0 ? search.previewId : null;
 
   useEffect(() => subscribeEntityPreview(setRequest), []);
   useEffect(() => {
@@ -26,8 +26,9 @@ export function EntityPreviewHost() {
     setRequest(null);
     if (!previewKind && !previewId) return;
     void navigate({
+      to: '.',
       search: (previous: Record<string, unknown>) => {
-        const next = { ...previous };
+        const next: Record<string, unknown> = { ...previous };
         delete next.previewKind;
         delete next.previewId;
         return next;
