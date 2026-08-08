@@ -22,7 +22,6 @@ type ArrearsWorkflowSectionProps = Readonly<{
   onSearchChange: (value: string) => void;
   onBucketFilterChange: (value: ArrearsBucketFilter) => void;
   onSelectInvoice: (invoiceId: string) => void;
-  /** Optional «تحصيل» deep-link action, supplied when the user may record payments. */
   onCollectInvoice?: (invoiceId: string) => void;
 }>;
 
@@ -55,9 +54,9 @@ export function ArrearsWorkflowSection({
   return (
     <Card className="border-border/70">
       <CardHeader className="space-y-2">
-        <CardTitle>Workflow تحصيل المتأخرات</CardTitle>
+        <CardTitle>متابعة تحصيل المتأخرات</CardTitle>
         <p className="text-sm text-muted-foreground">
-          سطح قراءة فقط لمتابعة المتأخرات حسب تاريخ الاستحقاق حتى {formatDate(asOf)} دون تنفيذ مدفوعات أو إرسال رسائل.
+          متابعة الفواتير المتأخرة وأعمار الذمم حتى {formatDate(asOf)}، مع الانتقال للتحصيل عندما تسمح الصلاحية.
         </p>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -70,9 +69,9 @@ export function ArrearsWorkflowSection({
           onBucketFilterChange={onBucketFilterChange}
         />
 
-        {isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground">جارٍ تحميل معاينة تحصيل المتأخرات للقراءة فقط...</div> : null}
+        {isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground" role="status">جارٍ تحميل بيانات المتأخرات...</div> : null}
         {isError ? (
-          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive">
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive" role="alert">
             {getErrorMessage(error, 'تعذر تحميل تقارير المتأخرات. إعادة المحاولة أو تحديث الصفحة آمن ولن ينفّذ أي عملية دفع.')}
           </div>
         ) : null}
