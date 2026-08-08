@@ -5,7 +5,21 @@ import { navigationLabels } from './terminology-registry';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const routePaths = new Set(Array.from(routeTreeSource.matchAll(/path: '([^']+)'/g), (match) => match[1]));
+const routePathList = Array.from(routePaths);
 const navItems: NavItem[] = Array.from(getAllNavItems());
+
+const requiredOperationalRoutes = [
+  '/login', '/', '/dashboard',
+  '/properties', '/properties/new', '/properties/$propertyId', '/properties/$propertyId/edit', '/units', '/lands',
+  '/owners', '/owners/$ownerId', '/tenants',
+  '/people', '/people/new', '/people/$personId/edit', '/leads', '/communication',
+  '/contracts', '/contracts/new', '/contracts/$contractId', '/contracts/$contractId/edit',
+  '/maintenance', '/utilities', '/automation', '/documents-vault',
+  '/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking',
+  '/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions',
+  '/reports', '/accounting', '/ai-assistant',
+  '/settings', '/change-password', '/audit-log', '/data-integrity', '/system',
+] as const;
 
 function getRouteDefinition(path: string) {
   const pathToken = `path: '${path}'`;
@@ -18,25 +32,27 @@ function getRouteDefinition(path: string) {
 }
 
 describe('app route and navigation parity', () => {
+  it('keeps the full operational route matrix registered while simplifying visible navigation', () => {
+    expect(routePathList).toEqual(expect.arrayContaining([...requiredOperationalRoutes]));
+    expect(routeTreeSource).toContain('notFoundComponent: NotFoundPage');
+  });
+
   it('promotes the four core property-management entities to direct primary destinations', () => {
     const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
     expect(primaryPaths).toEqual(expect.arrayContaining(['/properties', '/owners', '/tenants', '/contracts']));
-
     expect(workspaceChildNavItems['/properties'].map(([to]) => to)).not.toContain('/owners');
     expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).not.toContain('/tenants');
   });
 
-  it('keeps finance and accounting to two primary entries', () => {
+  it('keeps finance and accounting to exactly two visible primary entries', () => {
     const group = navGroups.find(([title]) => title === 'المالية والمحاسبة');
     expect(group?.[1].map(([to]) => to)).toEqual(['/financials', '/reports']);
 
     const allPrimary = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    expect(allPrimary).not.toEqual(expect.arrayContaining([
-      '/finance/collections',
-      '/finance/expenses',
-      '/finance/deposits',
-      '/finance/banking',
-    ]));
+    for (const internalRoute of ['/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']) {
+      expect(allPrimary).not.toContain(internalRoute);
+      expect(routePaths).toContain(internalRoute);
+    }
   });
 
   it('keeps secondary tools inside their natural workspaces', () => {
@@ -46,11 +62,16 @@ describe('app route and navigation parity', () => {
     expect(workspaceChildNavItems['/settings'].map(([to]) => to)).toEqual(['/change-password', '/audit-log', '/data-integrity', '/system']);
   });
 
-  it('maps every visible navigation and quick-create item to a registered route', () => {
+  it('maps every visible navigation, mobile and quick-create item to a registered route without duplicate keys', () => {
     const navPaths = navItems.map(([to]) => to);
+    const navKeys = navItems.map(([to, labelKey]) => `${to}:${labelKey}`);
     const mobilePaths = mobileNavItems.map(([to]) => to);
     const quickCreatePaths = quickCreateItems.map(([to]) => to);
-    expect([...routePaths]).toEqual(expect.arrayContaining([...navPaths, ...mobilePaths, ...quickCreatePaths]));
+
+    expect(new Set(navKeys).size).toBe(navKeys.length);
+    expect(new Set(mobilePaths).size).toBe(mobilePaths.length);
+    expect(new Set(quickCreatePaths).size).toBe(quickCreatePaths.length);
+    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobilePaths, ...quickCreatePaths]));
   });
 
   it('keeps permissioned navigation links aligned with route guards', () => {
@@ -60,23 +81,35 @@ describe('app route and navigation parity', () => {
     }
   });
 
-  it('keeps five daily mobile destinations without restoring horizontal clutter', () => {
+  it('keeps owners permission-gated and tenants authenticated without widening roles', () => {
+    expect(getRouteDefinition('/owners')).toContain("requirePermission('owners.hub.view')");
+    expect(getRouteDefinition('/tenants')).not.toContain('requirePermission(');
+  });
+
+  it('keeps five daily mobile destinations without horizontal clutter', () => {
+    expect(mobileNavItems).toHaveLength(5);
     expect(mobileNavItems.map(([to]) => to)).toEqual([
-      '/dashboard',
-      '/properties',
-      '/tenants',
-      '/contracts',
-      '/financials',
+      '/dashboard', '/properties', '/tenants', '/contracts', '/financials',
     ]);
   });
 
-  it('has a pinned Arabic label for every visible primary and mobile item', () => {
+  it('keeps administration as one primary destination while preserving governed subroutes', () => {
+    const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
+    expect(primaryPaths).toContain('/settings');
+    expect(primaryPaths).not.toContain('/audit-log');
+    expect(primaryPaths).not.toContain('/data-integrity');
+    expect(primaryPaths).not.toContain('/system');
+    expect(routePathList).toEqual(expect.arrayContaining(['/settings', '/audit-log', '/data-integrity', '/system', '/change-password']));
+  });
+
+  it('pins every visible navigation label to Arabic terminology', () => {
     const labelKeys = [
       ...navGroups.flatMap(([, items]) => items.map(([, labelKey]) => labelKey)),
       ...mobileNavItems.map(([, labelKey]) => labelKey),
+      ...quickCreateItems.map(([, labelKey]) => labelKey),
     ];
     for (const labelKey of labelKeys) {
-      expect(navigationLabels[labelKey]).toMatch(/[\u0600-\u06FF]/);
+      expect(navigationLabels[labelKey], `missing Arabic navigation label for ${labelKey}`).toMatch(/[\u0600-\u06FF]/);
     }
   });
 });
