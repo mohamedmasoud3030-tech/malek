@@ -3,6 +3,7 @@ import { Download, Plus } from 'lucide-react';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
+import { ContractPreviewDialog } from './components/ContractPreviewDialog';
 import { ContractFormModal } from './contract-form-modal';
 import { ListControlSurface } from '@/components/layout/list-controls';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
@@ -29,23 +30,20 @@ function exportContractsCsv(contracts: ContractListItem[]) {
   }
 }
 
-export type ContractsListPageProps = Readonly<{
-  embedded?: boolean;
-}>;
+export type ContractsListPageProps = Readonly<{ embedded?: boolean }>;
 
 export function ContractsListPage({ embedded = false }: ContractsListPageProps) {
   const [status, setStatus] = useState<ContractStatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [previewContractId, setPreviewContractId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editContractId, setEditContractId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  // When search or expiringOnly is active, fetch all rows so client-side
-  // filtering works across the full dataset — not just the current page.
   const hasClientFilter = Boolean(searchTerm.trim()) || expiringOnly;
   const params = useMemo(
     () => ({ status, page: hasClientFilter ? 1 : page, pageSize: hasClientFilter ? 5000 : pageSize }),
@@ -57,27 +55,23 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
   const contracts = contractsQuery.data?.rows ?? [];
   const totalPages = hasClientFilter ? 1 : Math.max(1, Math.ceil((contractsQuery.data?.count ?? 0) / pageSize));
 
-  const { filteredContracts, hasActiveFilters } = useContractFilters({
-    contracts,
-    expiringOnly,
-    searchTerm,
-    status,
-  });
+  const { filteredContracts, hasActiveFilters } = useContractFilters({ contracts, expiringOnly, searchTerm, status });
 
-  // Show error toast once per error occurrence, not on every retry
   const errorToastShownRef = useRef(false);
   useEffect(() => {
     if (contractsQuery.isError && !errorToastShownRef.current) {
       errorToastShownRef.current = true;
       toast.error('تعذر تحميل العقود');
     }
-    if (!contractsQuery.isError) {
-      errorToastShownRef.current = false;
-    }
+    if (!contractsQuery.isError) errorToastShownRef.current = false;
   }, [contractsQuery.isError]);
 
   const openCreate = () => { setEditContractId(undefined); setModalOpen(true); };
-  const openEdit = (id: string) => { setEditContractId(id); setModalOpen(true); };
+  const openEdit = (id: string) => {
+    setPreviewContractId(null);
+    setEditContractId(id);
+    setModalOpen(true);
+  };
   const closeModal = () => { setModalOpen(false); setEditContractId(undefined); };
   const resetFilters = () => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
   const confirmDelete = async () => {
@@ -111,7 +105,6 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           </Button>
         }
       >
-
         <ContractKpiGrid companySettings={companySettings} contracts={contracts} filteredContracts={filteredContracts} totalCount={contractsQuery.data?.count ?? contracts.length} />
 
         <ListControlSurface>
@@ -139,16 +132,19 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           onCreate={hasActiveFilters ? undefined : openCreate}
           onDelete={setDeleteId}
           onEdit={openEdit}
+          onPreview={setPreviewContractId}
           onRetry={() => contractsQuery.refetch()}
-          pagination={!hasClientFilter && totalPages > 1 ? {
-            page,
-            pageSize,
-            total: contractsQuery.data?.count ?? 0,
-            onPageChange: setPage,
-          } : undefined}
+          pagination={!hasClientFilter && totalPages > 1 ? { page, pageSize, total: contractsQuery.data?.count ?? 0, onPageChange: setPage } : undefined}
           setExpandedId={setExpandedId}
         />
       </EmbeddableWorkspace>
+
+      <ContractPreviewDialog
+        contractId={previewContractId}
+        open={Boolean(previewContractId)}
+        onOpenChange={(open) => { if (!open) setPreviewContractId(null); }}
+        onEdit={openEdit}
+      />
 
       <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />
 
@@ -164,7 +160,6 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
     </>
   );
 }
-
 
 export function ContractsWorkspace({ embedded = true }: ContractsListPageProps) {
   return <ContractsListPage embedded={embedded} />;
