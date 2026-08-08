@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { CalendarClock, Clock } from 'lucide-react';
+import { openEntityPreview } from '@/components/ui/entity-preview-events';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
@@ -51,11 +52,11 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
           {rows.map((row) => {
             const tone = row.daysRemaining <= 7 ? 'danger' : row.daysRemaining <= 14 ? 'warning' : 'success';
             return (
-              <Link
+              <button
                 key={row.id}
-                to="/contracts/$contractId"
-                params={{ contractId: row.id }}
-                className={cn('dashboard-queue-row', row.daysRemaining <= 7 && 'dashboard-queue-row--danger', row.daysRemaining > 7 && row.daysRemaining <= 14 && 'dashboard-queue-row--warning')}
+                type="button"
+                onClick={() => openEntityPreview({ kind: 'contract', id: row.id })}
+                className={cn('dashboard-queue-row w-full text-start', row.daysRemaining <= 7 && 'dashboard-queue-row--danger', row.daysRemaining > 7 && row.daysRemaining <= 14 && 'dashboard-queue-row--warning')}
                 data-dashboard-queue-link
                 role="listitem"
               >
@@ -70,7 +71,7 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
                   </StatusBadge>
                   <span className="dashboard-queue-row__date">ينتهي: {date(row.endDate)}</span>
                 </span>
-              </Link>
+              </button>
             );
           })}
         </div>
