@@ -1,4 +1,4 @@
-export type EntityPreviewKind = 'property' | 'unit';
+export type EntityPreviewKind = 'property' | 'unit' | 'contract';
 
 export type EntityPreviewRequest = Readonly<{
   kind: EntityPreviewKind;
