@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react';
-import { KeyRound } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -53,11 +52,7 @@ export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswo
   const body = (
     <div className="space-y-4">
       <EntityForm.Root onSubmit={handleSubmit} aria-busy={isSubmitting}>
-        <EntityForm.Section
-          title="بيانات كلمة المرور الجديدة"
-          description="استخدم كلمة مرور لا تقل عن 8 أحرف ثم أكدها قبل الحفظ."
-          icon={<KeyRound className="size-5" aria-hidden="true" />}
-        >
+        <EntityForm.Section title="بيانات كلمة المرور الجديدة" description="استخدم كلمة مرور لا تقل عن 8 أحرف ثم أكدها قبل الحفظ.">
           <EntityForm.ErrorSummary message={validationError ?? undefined} />
           <EntityForm.Field label="كلمة المرور الجديدة *" error={validationError && form.password.length < MIN_PASSWORD_LENGTH ? validationError : undefined}>
             <Input
