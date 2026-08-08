@@ -1,5 +1,5 @@
-import { useNavigate } from '@tanstack/react-router';
 import { useDeferredValue, useMemo, useState } from 'react';
+import { openEntityPreview } from '@/components/ui/entity-preview-events';
 import { useProperties } from '@/features/properties/use-properties';
 import type { Property, Unit } from '@/types/domain';
 import { normalizeUnitStatus, unitStatusLabels, unitStatusValues, type UnitStatus } from './unit-schema';
@@ -13,9 +13,6 @@ export function getUnitPageStatus(unit: Pick<Unit, 'status'>): UnitPageStatus {
   return normalizeUnitStatus(String(unit.status));
 }
 
-/**
- * Pure helper: compute KPI metrics from a list of units.
- */
 export function computeUnitKpis(units: Unit[]) {
   let occupiedCount = 0;
   let availableCount = 0;
@@ -29,20 +26,12 @@ export function computeUnitKpis(units: Unit[]) {
   return { occupiedCount, availableCount, expectedRent };
 }
 
-/**
- * Pure helper: build a property lookup map.
- */
 function buildPropertyMap(properties: Property[]) {
   return new Map(properties.map((p) => [p.id, p]));
 }
 
 const ALL_PROPERTIES_PARAMS = { page: 1, pageSize: 500, search: '', status: 'all' as const };
 
-/**
- * Controller hook for the Units list page.
- * Encapsulates: data fetching, filtering, KPI computation,
- * editing/creating unit modal state, and navigation.
- */
 export function useUnitsListController() {
   const unitsQuery = useAllUnits();
   const propertiesQuery = useProperties(ALL_PROPERTIES_PARAMS);
@@ -55,8 +44,6 @@ export function useUnitsListController() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
-  const navigate = useNavigate();
-
   const units = unitsQuery.data ?? [];
   const properties = propertiesQuery.data?.rows ?? [];
   const propertyById = useMemo(() => buildPropertyMap(properties), [properties]);
@@ -73,7 +60,6 @@ export function useUnitsListController() {
   }), [deferredSearch, occupancy, propertyById, propertyId, status, units]);
 
   const kpis = useMemo(() => computeUnitKpis(units), [units]);
-
   const isLoading = unitsQuery.isLoading && propertiesQuery.isLoading;
   const isError = unitsQuery.isError || propertiesQuery.isError;
 
@@ -81,15 +67,10 @@ export function useUnitsListController() {
   const closeCreate = () => setIsCreateOpen(false);
   const openEdit = (unit: Unit) => setEditingUnit(unit);
   const closeEdit = () => setEditingUnit(null);
-
-  const navigateToUnit = (unit: Unit) => {
-    navigate({ to: '/properties/$propertyId/units/$unitId', params: { propertyId: unit.property_id, unitId: unit.id } });
-  };
-
+  const navigateToUnit = (unit: Unit) => openEntityPreview({ kind: 'unit', id: unit.id });
   const refetchAll = () => { unitsQuery.refetch(); propertiesQuery.refetch(); };
 
   return {
-    // Data
     units,
     filteredUnits,
     properties,
@@ -97,8 +78,6 @@ export function useUnitsListController() {
     kpis,
     isLoading,
     isError,
-
-    // Search & filter
     search,
     setSearch,
     propertyId,
@@ -107,24 +86,16 @@ export function useUnitsListController() {
     setStatus,
     occupancy,
     setOccupancy,
-
-    // Unit modal
     editingUnit,
     isCreateOpen,
     openCreate,
     closeCreate,
     openEdit,
     closeEdit,
-
-    // Navigation
     navigateToUnit,
-
-    // Query
     unitsQuery,
     propertiesQuery,
     refetchAll,
-
-    // Constants
     statusValues: unitStatusValues,
     statusLabels: unitStatusLabels,
   };
