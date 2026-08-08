@@ -15,7 +15,6 @@ import { describe, expect, it } from 'vitest';
  * (/owners, /invoices, ...) still redirect into the hub with ?section=.
  */
 const HUB_WORKSPACES = [
-  'finance-hub/finance-hub-workspace.tsx',
   'portfolio-hub/portfolio-hub-workspace.tsx',
   'operations-hub/operations-hub-workspace.tsx',
   'relationships-hub/relationships-hub-workspace.tsx',

@@ -1,3 +1,4 @@
+import { translateSharedLabel } from '@/lib/i18n';
 import { useCallback, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { AccessDenied } from '@/components/layout/access-denied';
@@ -10,9 +11,9 @@ import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import type { ReportSectionId } from './reports-page.sections';
 import {
-  mergeReportSectionIntoSearch,
   REPORTS_SECTION_SEARCH_KEY,
-  resolveReportSection,
+  resolveReportLocation,
+  type ReportViewId,
 } from './reports-section-model';
 import { useReportsWorkspace } from './use-reports-workspace';
 
@@ -27,17 +28,46 @@ export function ReportsPage() {
   const workspace = useReportsWorkspace(filters);
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
   const canViewReports = canAccess(authorization, financialOperationPermissions.exportReports);
-  const activeSection = resolveReportSection(search[REPORTS_SECTION_SEARCH_KEY]);
 
-  const handleSectionChange = useCallback(
-    (nextSection: ReportSectionId) => {
+  const { section: activeSection, view: activeView } = resolveReportLocation(
+    search[REPORTS_SECTION_SEARCH_KEY],
+    search.view
+  );
+
+  const reportsLabel = translateSharedLabel('financialsSectionReports');
+  const pageDescription = translateSharedLabel('reportsPageDescription');
+  const pageHint = translateSharedLabel('reportsPageHint');
+
+  const handleSectionViewChange = useCallback(
+    (nextSection: ReportSectionId, nextView: ReportViewId) => {
       void navigate({
         to: '.',
-        search: (previous: Record<string, unknown>) => mergeReportSectionIntoSearch(previous, nextSection),
+        search: (previous: Record<string, unknown>) => {
+          const next: Record<string, unknown> = {
+            ...previous,
+            [REPORTS_SECTION_SEARCH_KEY]: nextSection,
+          };
+          if (nextView) {
+            next.view = nextView;
+          } else {
+            delete next.view;
+          }
+          return next;
+        },
         replace: true,
       });
     },
     [navigate],
+  );
+
+  const handleSectionChange = useCallback(
+    (nextSection: ReportSectionId) => {
+      let defaultView: ReportViewId = '';
+      if (nextSection === 'accounting') defaultView = 'accounting_reports';
+      else if (nextSection === 'analytics') defaultView = 'overview';
+      handleSectionViewChange(nextSection, defaultView);
+    },
+    [handleSectionViewChange],
   );
 
   if (!canViewReports) {
@@ -50,9 +80,15 @@ export function ReportsPage() {
         <div data-finance-header>
           <PageHeader
             title="المحاسبة والتقارير"
-            description="دفتر الأستاذ والقوائم والكشوف والتحليلات في مساحة واحدة بدل توزيعها على صفحات مستقلة."
+            description={pageDescription}
           />
         </div>
+
+        {pageHint ? (
+          <div className="text-[11px] text-muted-foreground bg-muted/30 rounded-xl px-3 py-1.5 border border-border/40 inline-block font-medium">
+            💡 {pageHint} (كشف {reportsLabel})
+          </div>
+        ) : null}
 
         <div data-finance-cluster>
           <CrossRouteHint
@@ -67,7 +103,9 @@ export function ReportsPage() {
             filters={filters}
             canExportReports={canExportReports}
             activeSection={activeSection}
+            activeView={activeView}
             onSectionChange={handleSectionChange}
+            onSectionViewChange={handleSectionViewChange}
             onFiltersChange={setFilters}
             onResetCurrentMonth={() => setFilters(getCurrentMonthFilters())}
           />
