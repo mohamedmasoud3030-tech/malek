@@ -1,11 +1,13 @@
 import {
   Archive,
   BadgeDollarSign,
+  Banknote,
   CheckCircle2,
   Clock3,
   Edit,
   Plus,
   RotateCcw,
+  Undo2,
 } from "lucide-react";
 import { useState } from "react";
 import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
@@ -22,6 +24,7 @@ import { EntityForm } from "@/components/ui/entity-form";
 import { EntityTable } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { Input } from "@/components/ui/input";
+import { MobileCard } from "@/components/ui/mobile-card";
 import { FinanceKpiGrid, FinanceKpiCard } from "@/features/financials/components/finance-reporting-visual-foundations";
 import { PageHeader } from "@/components/layout/page-header";
 import { Select } from "@/components/ui/select";
@@ -133,33 +136,20 @@ export function CommissionsView(props: Props) {
     .filter((row) => row.status === "paid")
     .reduce((sum, row) => sum + (row.amount ?? 0), 0);
   const approvedCount = rows.filter((row) => row.status === "approved").length;
-  const hasFilters =
-    filters.query.trim().length > 0 || filters.status !== "all" || filters.type !== "all";
+  const hasFilters = filters.query.trim().length > 0 || filters.status !== "all" || filters.type !== "all";
   const activeFilters: ActiveFilterItem[] = [];
   if (filters.query.trim()) {
-    activeFilters.push({
-      key: "query",
-      label: "بحث",
-      value: filters.query,
-      onRemove: () => onFiltersChange({ ...filters, query: "" }),
-    });
+    activeFilters.push({ key: "query", label: "بحث", value: filters.query, onRemove: () => onFiltersChange({ ...filters, query: "" }) });
   }
   if (filters.status !== "all") {
-    activeFilters.push({
-      key: "status",
-      label: "الحالة",
-      value: statusLabels[filters.status] ?? filters.status,
-      onRemove: () => onFiltersChange({ ...filters, status: "all" }),
-    });
+    activeFilters.push({ key: "status", label: "الحالة", value: statusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: "all" }) });
   }
   if (filters.type !== "all") {
-    activeFilters.push({
-      key: "type",
-      label: "النوع",
-      value: typeLabels[filters.type] ?? filters.type,
-      onRemove: () => onFiltersChange({ ...filters, type: "all" }),
-    });
+    activeFilters.push({ key: "type", label: "النوع", value: typeLabels[filters.type] ?? filters.type, onRemove: () => onFiltersChange({ ...filters, type: "all" }) });
   }
+
+  const hasCalculatedAmount = Boolean(draft.amount.trim()) || (Boolean(draft.deal_value.trim()) && Number(draft.percentage) > 0);
+  const formCanSubmit = Boolean(draft.staff_name.trim()) && hasCalculatedAmount;
 
   return (
     <section className="space-y-5" data-finance-root>
@@ -179,9 +169,9 @@ export function CommissionsView(props: Props) {
       <section data-finance-section aria-label="ملخص العمولات">
         <FinanceKpiGrid desktopColumns={4}>
           <FinanceKpiCard label="إجمالي السجلات" value={rows.length} icon={BadgeDollarSign} accent="primary" onDrill={() => onFiltersChange({ ...filters, status: 'all' })} />
-          <FinanceKpiCard label="قيد المراجعة/التتبع" value={money(pendingTotal)} icon={Clock3} accent="primary" trend="neutral" trendValue="مراجعة" onDrill={() => onFiltersChange({ ...filters, status: 'pending' })} unit="OMR" />
+          <FinanceKpiCard label="قيد المراجعة/التتبع" value={money(pendingTotal)} icon={Clock3} accent="primary" trend="neutral" trendValue="مراجعة" onDrill={() => onFiltersChange({ ...filters, status: 'pending' })} />
           <FinanceKpiCard label="معتمدة للتتبع" value={approvedCount} icon={CheckCircle2} accent="primary" trend="neutral" trendValue="معتمدة" onDrill={() => onFiltersChange({ ...filters, status: 'approved' })} />
-          <FinanceKpiCard label="مسجلة كمدفوعة" value={money(paidTotal)} icon={BadgeDollarSign} accent="primary" trend="up" trendValue="مدفوعة" onDrill={() => onFiltersChange({ ...filters, status: 'paid' })} unit="OMR" />
+          <FinanceKpiCard label="مسجلة كمدفوعة" value={money(paidTotal)} icon={BadgeDollarSign} accent="primary" trend="up" trendValue="مدفوعة" onDrill={() => onFiltersChange({ ...filters, status: 'paid' })} />
         </FinanceKpiGrid>
       </section>
 
@@ -193,31 +183,13 @@ export function CommissionsView(props: Props) {
           searchAriaLabel="بحث العمولات"
           filters={
             <>
-              <Select
-                value={filters.status}
-                onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })}
-                aria-label="حالة العمولة"
-                className="w-full sm:w-48 min-h-11"
-              >
+              <Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })} aria-label="حالة العمولة" className="min-h-11 w-full sm:w-48">
                 <option value="all">كل الحالات</option>
-                {Object.entries(statusLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
+                {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </Select>
-              <Select
-                value={filters.type}
-                onChange={(event) => onFiltersChange({ ...filters, type: event.target.value })}
-                aria-label="نوع العمولة"
-                className="w-full sm:w-48 min-h-11"
-              >
+              <Select value={filters.type} onChange={(event) => onFiltersChange({ ...filters, type: event.target.value })} aria-label="نوع العمولة" className="min-h-11 w-full sm:w-48">
                 <option value="all">كل الأنواع</option>
-                {Object.entries(typeLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
+                {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </Select>
             </>
           }
@@ -228,23 +200,13 @@ export function CommissionsView(props: Props) {
       <section data-finance-section aria-label="حالات التحميل والخطأ">
         {error ? <ErrorCard message="تعذر تحميل العمولات" onRetry={onRetry} /> : null}
         {writeError ? (
-          <WriteErrorCard
-            message={
-              writeError instanceof Error
-                ? writeError.message
-                : "تعذر حفظ التغيير على العمولة. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."
-            }
-          />
+          <WriteErrorCard message={writeError instanceof Error ? writeError.message : "تعذر حفظ التغيير على العمولة. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."} />
         ) : null}
         {isLoading ? <PageStateCard title="جارٍ تحميل العمولات..." /> : null}
         {!isLoading && !error && rows.length === 0 ? (
           <PageStateCard
             title={hasFilters ? "لا توجد عمولات ضمن الفلاتر الحالية" : "لا توجد عمولات بعد"}
-            description={
-              hasFilters
-                ? "غيّر البحث أو الحالة أو النوع لعرض سجلات عمولات أخرى — الفلاتر محفوظة."
-                : "أضف عمولة تشغيلية عند توفر مصدر ومبلغ حقيقيين. هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف."
-            }
+            description={hasFilters ? "غيّر البحث أو الحالة أو النوع لعرض سجلات عمولات أخرى — الفلاتر محفوظة." : "أضف عمولة تشغيلية عند توفر مصدر ومبلغ حقيقيين. هذه الصفحة للتتبع فقط ولا تنشئ أمر صرف."}
             action={hasFilters ? undefined : <Button onClick={onCreate} className="min-h-11">إضافة عمولة</Button>}
           />
         ) : null}
@@ -253,7 +215,14 @@ export function CommissionsView(props: Props) {
       {rows.length > 0 ? (
         <section data-finance-section aria-label="جدول العمولات">
           <div data-finance-table-wrapper>
-            <CommissionRows rows={rows} isArchiving={isArchiving} onEdit={onEdit} onArchiveClick={setArchiveCandidate} />
+            <CommissionRows
+              rows={rows}
+              isArchiving={isArchiving}
+              onEdit={onEdit}
+              onArchiveClick={setArchiveCandidate}
+              onPayClick={onPayAtomic ? setPayCandidate : undefined}
+              onReverseClick={onReverseAtomic ? setReverseCandidate : undefined}
+            />
           </div>
         </section>
       ) : null}
@@ -264,58 +233,54 @@ export function CommissionsView(props: Props) {
         title={editingCommission ? "تعديل عمولة" : "إضافة عمولة"}
         description="يمكن إدخال مبلغ مباشر أو تركه ليُحسب من قيمة الصفقة ونسبة العمولة للتتبع التشغيلي فقط."
         className="max-w-2xl"
+        visualVariant="operational"
       >
         <EntityForm.Root
           className="md:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
+            if (!formCanSubmit) return;
             onSubmit(draft);
           }}
         >
-          <EntityForm.Field label="اسم الموظف / الوسيط">
+          <EntityForm.Field label="اسم الموظف / الوسيط *">
             <Input required value={draft.staff_name} onChange={(event) => onDraftChange({ ...draft, staff_name: event.target.value })} />
           </EntityForm.Field>
           <EntityForm.Field label="نوع المصدر">
             <Select value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value })}>
-              {Object.entries(typeLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
+              {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </EntityForm.Field>
           <EntityForm.Field label="الحالة">
             <Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>
-              {Object.entries(statusLabels)
-                .filter(([val]) => val !== "paid")
-                .map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
+              {Object.entries(statusLabels).filter(([val]) => val !== "paid").map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </EntityForm.Field>
           <EntityForm.Field label="المصدر">
             <CommissionSourceSelector type={draft.type} value={draft.source_id} onChange={(sourceId) => onDraftChange({ ...draft, source_id: sourceId })} />
           </EntityForm.Field>
           <EntityForm.Field label="قيمة الصفقة">
-            <Input type="number" min="0" inputMode="decimal" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} />
+            <Input type="number" min="0" step="0.01" inputMode="decimal" dir="ltr" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} />
           </EntityForm.Field>
           <EntityForm.Field label="النسبة %">
-            <Input type="number" min="0" inputMode="decimal" step="0.01" value={draft.percentage} onChange={(event) => onDraftChange({ ...draft, percentage: event.target.value })} />
+            <Input type="number" min="0" inputMode="decimal" step="0.01" dir="ltr" value={draft.percentage} onChange={(event) => onDraftChange({ ...draft, percentage: event.target.value })} />
           </EntityForm.Field>
-          <EntityForm.Field label="مبلغ مباشر">
-            <Input type="number" min="0" inputMode="decimal" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} />
+          <EntityForm.Field label="مبلغ مباشر" description="مطلوب إذا لم تدخل قيمة صفقة ونسبة.">
+            <Input type="number" min="0" step="0.01" inputMode="decimal" dir="ltr" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} />
           </EntityForm.Field>
-          <EntityForm.Actions className="md:col-span-2" onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitLabel={isSaving ? "جارٍ الحفظ..." : "حفظ"} />
+          <EntityForm.Actions
+            className="md:col-span-2"
+            onCancel={() => onFormOpenChange(false)}
+            isSubmitting={isSaving}
+            submitDisabled={!formCanSubmit}
+            submitLabel={isSaving ? "جارٍ الحفظ..." : "حفظ"}
+          />
         </EntityForm.Root>
       </EntityForm.Overlay>
 
       <ConfirmDialog
         open={archiveCandidate != null}
-        onOpenChange={(open) => {
-          if (!open && !isArchiving) setArchiveCandidate(null);
-        }}
+        onOpenChange={(open) => { if (!open && !isArchiving) setArchiveCandidate(null); }}
         title={`إلغاء العمولة لـ ${archiveCandidate?.staff_name ?? ""}؟`}
         description={`سيتم إلغاء العمولة للموظف "${archiveCandidate?.staff_name ?? ""}" — المرجع: ${archiveCandidate?.id ? archiveCandidate.id.slice(0, 8) : ''} — المبلغ: ${money(archiveCandidate?.amount ?? 0)} — الحالة الحالية: ${archiveCandidate?.status ? statusLabels[archiveCandidate.status] ?? archiveCandidate.status : ''}. لن تُحتسب ضمن المبالغ النشطة ويمكن مراجعتها في الأرشيف.`}
         confirmLabel="تأكيد الإلغاء"
@@ -331,11 +296,9 @@ export function CommissionsView(props: Props) {
 
       <ConfirmDialog
         open={payCandidate != null}
-        onOpenChange={(open) => {
-          if (!open) setPayCandidate(null);
-        }}
+        onOpenChange={(open) => { if (!open && !isPayPending) setPayCandidate(null); }}
         title={`صرف العمولة مالياً لـ ${payCandidate?.staff_name ?? ""}`}
-        description={`سيتم إنشاء مصروف مالي (حساب 6100) وخصم المبلغ من الحساب النقدي/البنكي المحدد وعمل القيود المحاسبية المتزنة. المبلغ: ${money(payCandidate?.amount ?? 0)}`}
+        description={`سيتم إنشاء مصروف مالي وعمل القيود المحاسبية المتزنة من التدفق الخادمي الحالي. المبلغ: ${money(payCandidate?.amount ?? 0)}`}
         confirmLabel="تأكيد الصرف المالي"
         isLoading={isPayPending}
         onConfirm={async () => {
@@ -352,14 +315,14 @@ export function CommissionsView(props: Props) {
       >
         <div className="space-y-4 py-2">
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">الحساب المالي للدفع</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">الحساب المالي للدفع</label>
             <Select value={payAccount} onChange={(e) => setPayAccount(e.target.value)}>
               <option value="1111">الخزينة النقدية (1111)</option>
               <option value="1201">الحساب البنكي الرئيسي (1201)</option>
             </Select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-muted-foreground mb-1">تاريخ الصرف</label>
+            <label className="mb-1 block text-xs font-semibold text-muted-foreground">تاريخ الصرف</label>
             <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
           </div>
         </div>
@@ -368,13 +331,13 @@ export function CommissionsView(props: Props) {
       <ConfirmDialog
         open={reverseCandidate != null}
         onOpenChange={(open) => {
-          if (!open) {
+          if (!open && !isReversePending) {
             setReverseCandidate(null);
             setReverseReason("");
           }
         }}
         title={`عكس صرف العمولة لـ ${reverseCandidate?.staff_name ?? ""}`}
-        description="سيتم عكس القيود المحاسبية (دائن مصروفات عمولات، مدين نقدية/بنك) وتغيير حالة المصروف إلى VOID وإلغاء العمولة. اذكر سبب العكس الإلزامي."
+        description="سيتم عكس القيود المحاسبية وتغيير حالة المصروف إلى VOID وإلغاء العمولة عبر التدفق الخادمي الحالي. اذكر سبب العكس الإلزامي."
         confirmLabel="تأكيد العكس المحاسبي"
         variant="danger"
         isLoading={isReversePending}
@@ -393,8 +356,8 @@ export function CommissionsView(props: Props) {
         }}
       >
         <div className="py-2">
-          <label className="block text-xs font-semibold text-muted-foreground mb-1">سبب العكس المحاسبي (إلزامي)</label>
-          <Input placeholder="اذكر سبب عكس صرف العمولة..." value={reverseReason} onChange={(e) => setReverseReason(e.target.value)} />
+          <label className="mb-1 block text-xs font-semibold text-muted-foreground">سبب العكس المحاسبي (إلزامي)</label>
+          <Input required placeholder="اذكر سبب عكس صرف العمولة..." value={reverseReason} onChange={(e) => setReverseReason(e.target.value)} />
         </div>
       </ConfirmDialog>
     </section>
@@ -421,12 +384,27 @@ function CommissionRows({
   isArchiving,
   onEdit,
   onArchiveClick,
+  onPayClick,
+  onReverseClick,
 }: Readonly<{
   rows: CommissionRecord[];
   isArchiving: boolean;
   onEdit: (row: CommissionRecord) => void;
   onArchiveClick: (row: CommissionRecord) => void;
+  onPayClick?: (row: CommissionRecord) => void;
+  onReverseClick?: (row: CommissionRecord) => void;
 }>) {
+  const actionsFor = (row: CommissionRecord) => (
+    <RowActions
+      row={row}
+      disabled={isArchiving}
+      onEdit={() => onEdit(row)}
+      onArchiveClick={() => onArchiveClick(row)}
+      onPayClick={onPayClick && row.status === 'approved' ? () => onPayClick(row) : undefined}
+      onReverseClick={onReverseClick && row.status === 'paid' ? () => onReverseClick(row) : undefined}
+    />
+  );
+
   return (
     <EntityTable
       aria-label="جدول العمولات"
@@ -443,65 +421,70 @@ function CommissionRows({
             </span>
           ),
         },
-        {
-          key: "type",
-          header: "النوع",
-          render: (row) => typeLabels[row.type ?? ""] ?? row.type ?? "—",
-        },
+        { key: "type", header: "النوع", render: (row) => typeLabels[row.type ?? ""] ?? row.type ?? "—" },
         { key: "amount", header: "المبلغ", render: (row) => <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span> },
         {
           key: "status",
           header: "الحالة",
-          render: (row) => (
-            <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>{statusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
-          ),
+          render: (row) => <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>{statusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>,
         },
-        {
-          key: "actions",
-          header: "إجراءات",
-          render: (row) => <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />,
-        },
+        { key: "actions", header: "إجراءات", render: actionsFor },
       ]}
       enableViewModeToggle
       viewModeStorageKey="rentrix:view-mode:commissions"
       renderMobileCard={(row) => (
-        <div className="rounded-2xl border bg-card p-4" data-finance-mobile-card>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-bold">{row.staff_name ?? "—"}</p>
-              <p className="text-sm text-muted-foreground">{typeLabels[row.type ?? ""] ?? row.type ?? "—"}</p>
+        <MobileCard
+          title={row.staff_name ?? "—"}
+          subtitle={formatSourceLabel(row.type, row.source_id)}
+          badge={<StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>{statusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>}
+          stats={(
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div><span className="block text-muted-foreground">النوع</span><strong>{typeLabels[row.type ?? ""] ?? row.type ?? "—"}</strong></div>
+              <div><span className="block text-muted-foreground">المبلغ</span><strong dir="ltr">{money(row.amount)}</strong></div>
             </div>
-            <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>{statusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
-          </div>
-          <p className="mt-3 text-sm">المبلغ: <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span></p>
-          <RowActions id={row.id} disabled={isArchiving} onEdit={() => onEdit(row)} onArchiveClick={() => onArchiveClick(row)} />
-        </div>
+          )}
+          actions={actionsFor(row)}
+        />
       )}
     />
   );
 }
 
 function RowActions({
-  id,
+  row,
   disabled,
   onEdit,
   onArchiveClick,
+  onPayClick,
+  onReverseClick,
 }: Readonly<{
-  id: string;
+  row: CommissionRecord;
   disabled: boolean;
   onEdit: () => void;
   onArchiveClick: () => void;
+  onPayClick?: () => void;
+  onReverseClick?: () => void;
 }>) {
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
       <Button className="min-h-11" variant="secondary" onClick={onEdit}>
-        <Edit className="me-2 size-4" />
-        تعديل
+        <Edit className="me-1 size-4" />تعديل
       </Button>
-      <Button className="min-h-11" variant="danger" disabled={disabled} onClick={onArchiveClick}>
-        <Archive className="me-2 size-4" />
-        إلغاء
-      </Button>
+      {onPayClick ? (
+        <Button className="min-h-11" onClick={onPayClick}>
+          <Banknote className="me-1 size-4" />صرف مالي
+        </Button>
+      ) : null}
+      {onReverseClick ? (
+        <Button className="min-h-11" variant="secondary" onClick={onReverseClick}>
+          <Undo2 className="me-1 size-4" />عكس الصرف
+        </Button>
+      ) : null}
+      {row.status !== 'paid' && row.status !== 'cancelled' ? (
+        <Button className="min-h-11" variant="danger" disabled={disabled} onClick={onArchiveClick}>
+          <Archive className="me-1 size-4" />إلغاء
+        </Button>
+      ) : null}
     </div>
   );
 }
