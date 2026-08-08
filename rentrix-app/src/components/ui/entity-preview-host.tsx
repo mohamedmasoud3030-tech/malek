@@ -1,0 +1,37 @@
+import { useEffect, useState } from 'react';
+import { ContractPreviewDialog } from '@/features/contracts/components/ContractPreviewDialog';
+import { PropertyPreviewDialog } from '@/features/properties/components/PropertyPreviewDialog';
+import { UnitPreviewDialog } from '@/features/units/components/UnitPreviewDialog';
+import { subscribeEntityPreview, type EntityPreviewRequest } from './entity-preview-events';
+
+export function EntityPreviewHost() {
+  const [request, setRequest] = useState<EntityPreviewRequest | null>(null);
+
+  useEffect(() => subscribeEntityPreview(setRequest), []);
+
+  return (
+    <>
+      {request?.kind === 'property' ? (
+        <PropertyPreviewDialog
+          propertyId={request.id}
+          open
+          onOpenChange={(open) => { if (!open) setRequest(null); }}
+        />
+      ) : null}
+      {request?.kind === 'unit' ? (
+        <UnitPreviewDialog
+          unitId={request.id}
+          open
+          onOpenChange={(open) => { if (!open) setRequest(null); }}
+        />
+      ) : null}
+      {request?.kind === 'contract' ? (
+        <ContractPreviewDialog
+          contractId={request.id}
+          open
+          onOpenChange={(open) => { if (!open) setRequest(null); }}
+        />
+      ) : null}
+    </>
+  );
+}

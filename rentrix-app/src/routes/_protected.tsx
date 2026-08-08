@@ -1,6 +1,7 @@
 import { useLocation } from '@tanstack/react-router';
 import { AppShell } from '@/app/layout/app-shell';
 import { EntityFormVisualProvider } from '@/components/ui/entity-form';
+import { EntityPreviewHost } from '@/components/ui/entity-preview-host';
 import { isOperationalFormRoute } from '@/lib/operational-form-routes';
 
 export function ProtectedRouteComponent() {
@@ -15,6 +16,7 @@ export function ProtectedRouteComponent() {
         data-operational-route={isOperationalRoute ? 'true' : undefined}
       >
         <AppShell />
+        <EntityPreviewHost />
       </div>
     </EntityFormVisualProvider>
   );

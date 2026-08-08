@@ -1,5 +1,5 @@
-import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
+import { openEntityPreview } from '@/components/ui/entity-preview-events';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
 import type { PropertyStatusFilter } from './property-service';
@@ -10,8 +10,7 @@ const PAGE_SIZE = 10;
 /**
  * Controller hook for the Properties list page.
  * Encapsulates search/filter/pagination state, query orchestration,
- * modal/dialog state, and archive action — keeping the page component
- * as a pure orchestrator of UI primitives.
+ * modal/dialog state, preview state, and archive action.
  */
 export function usePropertyListController() {
   const [search, setSearch] = useState('');
@@ -24,7 +23,6 @@ export function usePropertyListController() {
   const params = useMemo(() => ({ search, status, page, pageSize: PAGE_SIZE }), [page, search, status]);
   const propertiesQuery = useProperties(params);
   const deleteMutation = useSoftDeleteProperty();
-  const navigate = useNavigate();
 
   const properties = propertiesQuery.data?.rows ?? [];
   const totalCount = propertiesQuery.data?.count ?? 0;
@@ -55,18 +53,15 @@ export function usePropertyListController() {
   };
 
   const navigateToProperty = (propertyId: string) => {
-    navigate({ to: '/properties/$propertyId', params: { propertyId } });
+    openEntityPreview({ kind: 'property', id: propertyId });
   };
 
   return {
-    // Data
     properties,
     totalCount,
     totalPages,
     propertiesQuery,
     deleteMutation,
-
-    // Search & filter state
     search,
     setSearch,
     status,
@@ -78,22 +73,16 @@ export function usePropertyListController() {
     clearFilters,
     statusValues: propertyStatusValues,
     statusLabels: propertyStatusLabels,
-
-    // Modal state
     modalOpen,
     editPropertyId,
     openCreateModal,
     openEditModal,
     closeModal,
-
-    // Archive state
     archiveTarget,
     requestArchive,
     cancelArchive,
     confirmArchive,
     isArchiving: deleteMutation.isPending,
-
-    // Navigation
     navigateToProperty,
   };
 }

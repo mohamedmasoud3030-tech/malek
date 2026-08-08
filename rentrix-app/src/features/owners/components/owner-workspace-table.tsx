@@ -1,10 +1,13 @@
-import { Link, useNavigate } from '@tanstack/react-router';
 import { Building2, Eye, LinkIcon, Pencil, Users } from 'lucide-react';
+import { useState } from 'react';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { EmptyState } from '@/components/empty-state';
 import { EntityCell } from '@/components/ui/entity-cell';
+import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
+import { openEntityPreview } from '@/components/ui/entity-preview-events';
+import { DetailFields } from '@/components/ui/detail-fields';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -30,8 +33,13 @@ function OwnerPropertyLinks({ row }: Readonly<{ row: OwnerWorkspaceRow }>) {
   return (
     <div className="flex flex-wrap gap-2">
       {row.properties.map((property) => (
-        <Button key={`${row.owner.id}-${property.id}`} variant="secondary" size="sm" asChild>
-          <Link to="/properties/$propertyId" params={{ propertyId: property.id }}>{property.title}</Link>
+        <Button
+          key={`${row.owner.id}-${property.id}`}
+          variant="secondary"
+          size="sm"
+          onClick={() => openEntityPreview({ kind: 'property', id: property.id })}
+        >
+          {property.title}
         </Button>
       ))}
     </div>
@@ -68,7 +76,8 @@ export function OwnerWorkspaceTable({
   onSearchChange,
   onSelectOwner,
 }: OwnerWorkspaceTableProps) {
-  const navigate = useNavigate();
+  const [previewOwnerId, setPreviewOwnerId] = useState<string | null>(null);
+  const previewRow = rows.find((row) => row.owner.id === previewOwnerId) ?? null;
   const hasSearch = Boolean(search.trim());
   const emptyState = (
     <EmptyState
@@ -77,6 +86,13 @@ export function OwnerWorkspaceTable({
       action={hasSearch ? undefined : <Button onClick={onCreateOwner}>إضافة مالك</Button>}
     />
   );
+
+  const openPreview = (ownerId: string) => setPreviewOwnerId(ownerId);
+  const editFromPreview = () => {
+    if (!previewRow) return;
+    setPreviewOwnerId(null);
+    onEditOwner(previewRow.owner);
+  };
 
   return (
     <div className="space-y-4">
@@ -90,7 +106,7 @@ export function OwnerWorkspaceTable({
         <DataTable
           aria-label="جدول الملاك"
           rows={rows}
-          onRowClick={(row) => onSelectOwner(row.owner.id)}
+          onRowClick={(row) => openPreview(row.owner.id)}
           columns={[
             {
               key: 'name',
@@ -99,8 +115,8 @@ export function OwnerWorkspaceTable({
                 <EntityCell
                   icon={Users}
                   title={(
-                    <Button variant="link" className="min-h-11 px-0 text-start font-bold" asChild>
-                      <Link to="/owners/$ownerId" params={{ ownerId: row.owner.id }}>{getOwnerDisplayLabel(row.owner)}</Link>
+                    <Button variant="link" className="min-h-11 px-0 text-start font-bold" onClick={() => openPreview(row.owner.id)}>
+                      {getOwnerDisplayLabel(row.owner)}
                     </Button>
                   )}
                   subtitle={row.owner.display_name ? row.owner.full_name : null}
@@ -120,7 +136,7 @@ export function OwnerWorkspaceTable({
                   <ActionMenu
                     label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
                     items={[
-                      { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => void navigate({ to: '/owners/$ownerId', params: { ownerId: row.owner.id } }) },
+                      { id: 'details', label: 'معاينة', icon: Eye, onClick: () => openPreview(row.owner.id) },
                       { id: 'relationships', label: 'العلاقات', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
                       { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
                     ]}
@@ -153,18 +169,60 @@ export function OwnerWorkspaceTable({
               )}
               actions={(
                 <div className="grid w-full grid-cols-3 gap-2">
-                  <Button variant="secondary" className="text-xs" asChild>
-                    <Link to="/owners/$ownerId" params={{ ownerId: row.owner.id }}><Eye className="size-4" />التفاصيل</Link>
-                  </Button>
+                  <Button variant="secondary" className="text-xs" onClick={() => openPreview(row.owner.id)}><Eye className="size-4" />معاينة</Button>
                   <Button variant="secondary" className="text-xs" onClick={() => onSelectOwner(row.owner.id)}><LinkIcon className="size-4" />العلاقات</Button>
                   <Button variant="secondary" className="text-xs" onClick={() => onEditOwner(row.owner)}><Pencil className="size-4" />تعديل</Button>
                 </div>
               )}
-              onClick={() => onSelectOwner(row.owner.id)}
+              onClick={() => openPreview(row.owner.id)}
             />
           )}
         />
       ) : emptyState}
+
+      <EntityPreviewDialog
+        open={Boolean(previewRow)}
+        onOpenChange={(open) => { if (!open) setPreviewOwnerId(null); }}
+        title={previewRow ? getOwnerDisplayLabel(previewRow.owner) : 'معاينة المالك'}
+        description="بيانات المالك وعلاقاته الأساسية بدون مغادرة سجل الملاك."
+        actions={previewRow ? <Button onClick={editFromPreview}><Pencil className="me-2 size-4" />تعديل</Button> : undefined}
+      >
+        {previewRow ? (
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-border/70 bg-card p-5">
+              <DetailFields
+                columns={3}
+                fields={[
+                  { label: 'الاسم', value: getOwnerDisplayLabel(previewRow.owner) },
+                  { label: 'الهاتف', value: previewRow.owner.phone ? <span dir="ltr">{previewRow.owner.phone}</span> : '—' },
+                  { label: 'البريد الإلكتروني', value: previewRow.owner.email ? <span dir="ltr">{previewRow.owner.email}</span> : '—' },
+                  { label: 'الحالة', value: <StatusBadge tone={previewRow.owner.is_active ? 'success' : 'neutral'}>{previewRow.owner.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
+                  { label: 'عدد العقارات', value: formatLatinNumber(previewRow.propertyCount, 'ar') },
+                  { label: 'العقود النشطة', value: formatLatinNumber(previewRow.activeContractCount, 'ar') },
+                ]}
+              />
+            </div>
+            <div className="rounded-2xl border border-border/70 bg-card p-5">
+              <h4 className="font-black">العقارات المرتبطة</h4>
+              {previewRow.properties.length ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {previewRow.properties.map((property) => (
+                    <button
+                      key={property.id}
+                      type="button"
+                      onClick={() => openEntityPreview({ kind: 'property', id: property.id })}
+                      className="rounded-xl border border-border/60 bg-muted/20 p-4 text-start transition hover:border-primary/30 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                    >
+                      <p className="font-bold">{property.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{getOwnerPropertyOwnershipLabel(property)}</p>
+                    </button>
+                  ))}
+                </div>
+              ) : <p className="mt-3 text-sm text-muted-foreground">لا توجد عقارات مرتبطة بهذا المالك.</p>}
+            </div>
+          </div>
+        ) : null}
+      </EntityPreviewDialog>
     </div>
   );
 }

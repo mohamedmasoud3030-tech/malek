@@ -156,6 +156,7 @@ export function ContractsListE2EFixture() {
           isLoading={false}
           onDelete={() => undefined}
           onEdit={() => undefined}
+          onPreview={() => undefined}
           onRetry={() => undefined}
           setExpandedId={setExpandedId}
         />

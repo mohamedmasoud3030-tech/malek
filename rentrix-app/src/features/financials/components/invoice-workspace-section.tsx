@@ -1,6 +1,7 @@
 import { AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useInvoiceWorkspaceController } from '../invoices/useInvoiceWorkspaceController';
 import { InvoiceDetailSection } from './invoice-detail-section';
@@ -39,18 +40,9 @@ function GenerateInvoicesDialog({ open, isGenerating, onOpenChange, onConfirm }:
           <div className="rounded-2xl border bg-muted/30 p-4">
             <p className="text-sm font-black">قبل المتابعة</p>
             <ul className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
-              <li className="flex gap-2">
-                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
-                <span>راجع العقود النشطة وتواريخ الاستحقاق قبل تشغيل التوليد.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
-                <span>لن يتم تسجيل أي دفعات أو إيصالات من هذه الخطوة.</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
-                <span>بعد التوليد سيتم تحديث الفواتير ولوحات الملخص تلقائياً.</span>
-              </li>
+              <li className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" /><span>راجع العقود النشطة وتواريخ الاستحقاق قبل تشغيل التوليد.</span></li>
+              <li className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" /><span>لن يتم تسجيل أي دفعات أو إيصالات من هذه الخطوة.</span></li>
+              <li className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" /><span>بعد التوليد سيتم تحديث الفواتير ولوحات الملخص تلقائياً.</span></li>
             </ul>
           </div>
 
@@ -60,12 +52,8 @@ function GenerateInvoicesDialog({ open, isGenerating, onOpenChange, onConfirm }:
           </div>
 
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="secondary" className="min-h-12" onClick={() => onOpenChange(false)} disabled={isGenerating}>
-              إلغاء
-            </Button>
-            <Button className="min-h-12" onClick={onConfirm} disabled={isGenerating}>
-              {isGenerating ? 'جارٍ توليد الفواتير...' : 'تأكيد توليد الفواتير'}
-            </Button>
+            <Button variant="secondary" className="min-h-12" onClick={() => onOpenChange(false)} disabled={isGenerating}>إلغاء</Button>
+            <Button className="min-h-12" onClick={onConfirm} disabled={isGenerating}>{isGenerating ? 'جارٍ توليد الفواتير...' : 'تأكيد توليد الفواتير'}</Button>
           </div>
         </div>
       </DialogContent>
@@ -102,9 +90,7 @@ export function InvoiceWorkspaceSection() {
         total={ctrl.invoicesQuery.data?.total ?? 0}
         onStatusChange={ctrl.changeStatus}
         onInvoiceSearchChange={ctrl.changeSearch}
-        onGenerateInvoices={() => {
-          if (ctrl.canGenerateInvoices) ctrl.setGenerateDialogOpen(true);
-        }}
+        onGenerateInvoices={() => { if (ctrl.canGenerateInvoices) ctrl.setGenerateDialogOpen(true); }}
         onSelectInvoice={ctrl.onSelectInvoiceRow}
         canCollectPayments={ctrl.canCreatePayment}
         onCollectInvoice={ctrl.onCollectInvoice}
@@ -124,33 +110,40 @@ export function InvoiceWorkspaceSection() {
         onConfirm={ctrl.onConfirmGenerateInvoices}
       />
 
-      <InvoiceDetailSection
-        selectedInvoiceId={ctrl.selectedInvoiceId}
-        invoiceDetail={ctrl.invoiceDetail}
-        remaining={ctrl.remaining}
-        isLoading={ctrl.invoiceQuery.isLoading}
-        isError={ctrl.invoiceQuery.isError}
-        error={ctrl.invoiceQuery.error}
-        amount={ctrl.amount}
-        method={ctrl.paymentMethod}
-        paymentDate={ctrl.paymentDate}
-        reference={ctrl.paymentReference}
-        amountValidationMessage={ctrl.canCreatePayment ? ctrl.amountValidationMessage : 'ليس لديك صلاحية تسجيل دفعة مالية.'}
-        isPaymentPending={ctrl.postPayment.isPending}
-        isPaymentDisabled={ctrl.isPaymentDisabled}
-        collectionSuccess={ctrl.collectionSuccess}
-        hasNextCollectibleInvoice={Boolean(ctrl.nextCollectibleInvoiceId)}
-        collectionFocusKey={ctrl.collectionFocusKey}
-        onCollectNextInvoice={ctrl.onCollectNextInvoice}
-        onPrintCollectionReceipt={ctrl.onPrintCollectionReceipt}
-        onDismissCollection={ctrl.dismissCollectionSuccess}
-        onAmountChange={ctrl.setAmount}
-        onMethodChange={ctrl.setPaymentMethod}
-        onPaymentDateChange={ctrl.setPaymentDate}
-        onReferenceChange={ctrl.setPaymentReference}
-        onPostPayment={ctrl.onPostPayment}
-        onExportPdf={ctrl.canExportInvoiceDocument ? ctrl.onExportInvoicePdf : undefined}
-      />
+      <EntityPreviewDialog
+        open={Boolean(ctrl.selectedInvoiceId)}
+        onOpenChange={(open) => { if (!open) ctrl.setSelectedInvoiceId(''); }}
+        title="معاينة الفاتورة"
+        description={ctrl.invoiceDetail ? `الفاتورة #${ctrl.invoiceDetail.id.slice(0, 8)} — التفاصيل والتحصيل بدون مغادرة سجل الفواتير.` : 'تحميل تفاصيل الفاتورة...'}
+      >
+        <InvoiceDetailSection
+          selectedInvoiceId={ctrl.selectedInvoiceId}
+          invoiceDetail={ctrl.invoiceDetail}
+          remaining={ctrl.remaining}
+          isLoading={ctrl.invoiceQuery.isLoading}
+          isError={ctrl.invoiceQuery.isError}
+          error={ctrl.invoiceQuery.error}
+          amount={ctrl.amount}
+          method={ctrl.paymentMethod}
+          paymentDate={ctrl.paymentDate}
+          reference={ctrl.paymentReference}
+          amountValidationMessage={ctrl.canCreatePayment ? ctrl.amountValidationMessage : 'ليس لديك صلاحية تسجيل دفعة مالية.'}
+          isPaymentPending={ctrl.postPayment.isPending}
+          isPaymentDisabled={ctrl.isPaymentDisabled}
+          collectionSuccess={ctrl.collectionSuccess}
+          hasNextCollectibleInvoice={Boolean(ctrl.nextCollectibleInvoiceId)}
+          collectionFocusKey={ctrl.collectionFocusKey}
+          onCollectNextInvoice={ctrl.onCollectNextInvoice}
+          onPrintCollectionReceipt={ctrl.onPrintCollectionReceipt}
+          onDismissCollection={ctrl.dismissCollectionSuccess}
+          onAmountChange={ctrl.setAmount}
+          onMethodChange={ctrl.setPaymentMethod}
+          onPaymentDateChange={ctrl.setPaymentDate}
+          onReferenceChange={ctrl.setPaymentReference}
+          onPostPayment={ctrl.onPostPayment}
+          onExportPdf={ctrl.canExportInvoiceDocument ? ctrl.onExportInvoicePdf : undefined}
+        />
+      </EntityPreviewDialog>
 
       <ReceiptsSection
         receipts={ctrl.receiptsQuery.data ?? []}

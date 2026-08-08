@@ -19,7 +19,6 @@ import { documentService } from '@/services/documents/DocumentService';
 import { toReceiptDocumentPayload } from '@/services/documents/documentPayloadAdapters';
 import { runDocumentAction } from '@/services/documents/runDocumentAction';
 
-
 function receiptDetailStatusTone(status: string): 'success' | 'danger' | 'warning' {
   if (status === 'posted') return 'success';
   if (status === 'void') return 'danger';
@@ -116,7 +115,7 @@ export function ReceiptDetailPage() {
 
   if (receiptQuery.isLoading) {
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide">
+      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
         <Skeleton className="h-20 w-full" />
         <Skeleton className="h-48 w-full" />
         <Skeleton className="h-24 w-full" />
@@ -126,7 +125,7 @@ export function ReceiptDetailPage() {
 
   if (receiptQuery.isError || !receipt) {
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide">
+      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
         <Card role="alert" aria-live="assertive">
           <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
             <div className="grid size-12 place-items-center rounded-2xl bg-destructive/10 text-destructive">
@@ -153,39 +152,48 @@ export function ReceiptDetailPage() {
   const statusTone = receiptDetailStatusTone(receipt.status);
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide" className="print:block" contentClassName="print:max-w-none print:space-y-0 print:p-0">
-      <PageHeader
-        title="إيصال استلام نقدية"
-        description={`رقم الإيصال: ${receipt.receipt_number}`}
-        backTo="/receipts"
-        backLabel="الإيصالات"
-        primaryAction={(
-          <Button variant="primary" onClick={handlePrint} disabled={isPrinting || !documentSettings.isReady} className="min-h-11">
-            <Printer className="me-2 size-4" />
-            {isPrinting ? 'جارٍ الطباعة...' : 'طباعة A4'}
-          </Button>
-        )}
-        secondaryActions={(
-          <>
-            <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady} className="min-h-11">
-          <Download className="me-2 size-4" />
-          تنزيل PDF
-        </Button>
-        <Button variant="secondary" onClick={handleWhatsApp} className="min-h-11">
-              <MessageCircle className="me-2 size-4" />
-              واتساب
+    <PageLayout
+      dir="rtl"
+      lang="ar"
+      size="wide"
+      visualVariant="malek-pro"
+      className="print:block"
+      contentClassName="print:max-w-none print:space-y-0 print:p-0"
+    >
+      <div className="print:hidden">
+        <PageHeader
+          title="إيصال استلام نقدية"
+          description={`رقم الإيصال: ${receipt.receipt_number}`}
+          backTo="/receipts"
+          backLabel="الإيصالات"
+          primaryAction={(
+            <Button variant="primary" onClick={handlePrint} disabled={isPrinting || !documentSettings.isReady} className="min-h-11">
+              <Printer className="me-2 size-4" />
+              {isPrinting ? 'جارٍ الطباعة...' : 'طباعة A4'}
             </Button>
-            <Button variant="secondary" onClick={handleShare} disabled={isSharing} className="min-h-11">
-              <Share2 className="me-2 size-4" />
-              {isSharing ? 'جارٍ المشاركة...' : 'مشاركة'}
-            </Button>
-            <Button variant="secondary" onClick={handleCopyReceiptNumber} className="min-h-11">
-              <Copy className="me-2 size-4" />
-              نسخ الرقم
-            </Button>
-          </>
-        )}
-      />
+          )}
+          secondaryActions={(
+            <>
+              <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady} className="min-h-11">
+                <Download className="me-2 size-4" />
+                تنزيل PDF
+              </Button>
+              <Button variant="secondary" onClick={handleWhatsApp} className="min-h-11">
+                <MessageCircle className="me-2 size-4" />
+                واتساب
+              </Button>
+              <Button variant="secondary" onClick={handleShare} disabled={isSharing} className="min-h-11">
+                <Share2 className="me-2 size-4" />
+                {isSharing ? 'جارٍ المشاركة...' : 'مشاركة'}
+              </Button>
+              <Button variant="secondary" onClick={handleCopyReceiptNumber} className="min-h-11">
+                <Copy className="me-2 size-4" />
+                نسخ الرقم
+              </Button>
+            </>
+          )}
+        />
+      </div>
 
       {!documentSettings.isReady && !documentSettings.isLoading ? (
         <div className="print:hidden">
@@ -193,16 +201,15 @@ export function ReceiptDetailPage() {
         </div>
       ) : null}
 
-      {/* Receipt Card */}
-      <Card className="border-primary/20">
-        <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <Card className="print-document mx-auto max-w-4xl overflow-hidden border-border/80 bg-card shadow-card print:max-w-none print:border-0 print:shadow-none">
+        <CardHeader className="flex flex-row items-start justify-between gap-4 border-b border-border/70 bg-muted/20 px-6 py-5 sm:px-8 sm:py-6 print:bg-transparent print:px-0">
           <div>
             <CardTitle className="text-2xl font-black">إيصال استلام نقدية</CardTitle>
             <CardDescription className="mt-1">
               رقم الإيصال:{' '}
               <button
                 onClick={handleCopyReceiptNumber}
-                className="font-bold text-primary hover:underline"
+                className="font-bold text-primary hover:underline print:text-foreground"
                 title="انقر للنسخ"
               >
                 {receipt.receipt_number}
@@ -213,15 +220,14 @@ export function ReceiptDetailPage() {
             <StatusBadge tone={statusTone}>{receiptStatusLabels[receipt.status]}</StatusBadge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Main Info Grid */}
+        <CardContent className="space-y-6 p-6 sm:p-8 print:p-0 print:pt-6">
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border bg-background p-4">
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
               <p className="text-xs font-bold text-muted-foreground">المستأجر</p>
               <p className="mt-1 text-lg font-black">{receipt.tenant_name ?? '—'}</p>
               <p className="text-xs text-muted-foreground">يمكن تجهيز مشاركة الإيصال عبر واتساب من شريط الإجراءات.</p>
             </div>
-            <div className="rounded-2xl border bg-background p-4">
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
               <p className="text-xs font-bold text-muted-foreground">العقار / الوحدة</p>
               <p className="mt-1 text-lg font-black">{receipt.property_title ?? '—'}</p>
               {receipt.unit_number && (
@@ -230,25 +236,24 @@ export function ReceiptDetailPage() {
             </div>
           </div>
 
-          {/* Financial Info */}
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
             <p className="text-xs font-bold text-muted-foreground">المبلغ المدفوع</p>
             <p className="mt-1 text-3xl font-black text-success" dir="ltr">
               {formatMoney(receipt.amount)}
             </p>
-            <div className="mt-3 grid gap-2 text-sm">
-              <div className="flex justify-between">
+            <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 sm:gap-x-6">
+              <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">طريقة الدفع:</span>
                 <span className="font-bold">
                   {paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">تاريخ الدفع:</span>
                 <span className="font-bold">{formatDate(receipt.payment_date)}</span>
               </div>
               {receipt.reference_number && (
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-4 sm:col-span-2">
                   <span className="text-muted-foreground">المرجع:</span>
                   <span className="font-bold" dir="ltr">
                     {receipt.reference_number}
@@ -258,13 +263,12 @@ export function ReceiptDetailPage() {
             </div>
           </div>
 
-          {/* Invoice Link */}
           {receipt.invoice_id && (
-            <div className="rounded-2xl border border-dashed p-4">
+            <div className="rounded-2xl border border-dashed border-border/80 bg-background p-4">
               <p className="text-xs font-bold text-muted-foreground">الفاتورة المرتبطة</p>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="font-bold">#{receipt.invoice_id?.slice(0, 8)}...</span>
-                <Button variant="secondary" size="sm" className="min-h-11" asChild>
+              <div className="mt-2 flex items-center justify-between gap-4">
+                <span className="font-bold" dir="ltr">#{receipt.invoice_id?.slice(0, 8)}...</span>
+                <Button variant="secondary" size="sm" className="min-h-11 print:hidden" asChild>
                   <Link to="/invoices">
                     عرض الفاتورة
                     <ExternalLink className="me-1 size-3" />
@@ -274,9 +278,8 @@ export function ReceiptDetailPage() {
             </div>
           )}
 
-          {/* Context */}
           {receipt.reference_number ? (
-            <div className="rounded-2xl border bg-muted/30 p-4">
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
               <p className="text-xs font-bold text-muted-foreground">السياق</p>
               <p className="mt-1">{formatReceiptContext(receipt)}</p>
             </div>
@@ -284,7 +287,6 @@ export function ReceiptDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Mobile Action */}
       <div className="fixed bottom-20 left-4 right-4 print:hidden md:hidden">
         <Button
           className="min-h-14 w-full"
