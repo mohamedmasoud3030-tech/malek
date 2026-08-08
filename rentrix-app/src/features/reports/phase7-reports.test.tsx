@@ -6,13 +6,14 @@ import { ReportsPage } from './reports-page';
 import { ReportsRouteComponent } from '@/routes/_protected.reports';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { resolveReportLocation } from './reports-section-model';
+import type { FilterState } from './reports-page.helpers';
 
 vi.mock('@/features/settings/useCompanySettings', () => ({
   useCompanySettingsContract: () => ({ defaultCurrency: 'OMR' }),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
-  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
   useNavigate: () => vi.fn(),
   useSearch: () => ({}),
 }));
@@ -65,6 +66,15 @@ const minimalModel: any = {
   },
 };
 
+const reportFilters: FilterState = {
+  from: '2026-07-01',
+  to: '2026-07-15',
+  asOf: '2026-07-15',
+  costCenterId: '',
+  ownerId: '',
+  contractId: '',
+};
+
 describe('reports route wiring', () => {
   it('ReportsRouteComponent points to ReportsPage (Supabase-backed)', () => {
     expect(ReportsRouteComponent).toBe(ReportsPage);
@@ -93,7 +103,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
     const html = renderToStaticMarkup(
       <ReportsWorkspace
         model={minimalModel}
-        filters={{ from: '2026-07-01', to: '2026-07-15', asOf: '2026-07-15' }}
+        filters={reportFilters}
         canExportReports={false}
         activeSection={location.section}
         activeView={location.view}
@@ -114,7 +124,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
     const html = renderToStaticMarkup(
       <ReportsWorkspace
         model={minimalModel}
-        filters={{ from: '2026-07-01', to: '2026-07-15', asOf: '2026-07-15' }}
+        filters={reportFilters}
         canExportReports={false}
         activeSection={location.section}
         activeView={location.view}
@@ -135,7 +145,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
     const html = renderToStaticMarkup(
       <ReportsWorkspace
         model={minimalModel}
-        filters={{ from: '2026-07-01', to: '2026-07-15', asOf: '2026-07-15' }}
+        filters={reportFilters}
         canExportReports={false}
         activeSection={location.section}
         activeView={location.view}
@@ -156,7 +166,7 @@ describe('Reports Workspace Render Regression (Point 3)', () => {
     const html = renderToStaticMarkup(
       <ReportsWorkspace
         model={minimalModel}
-        filters={{ from: '2026-07-01', to: '2026-07-15', asOf: '2026-07-15' }}
+        filters={reportFilters}
         canExportReports={false}
         activeSection={location.section}
         activeView={location.view}
