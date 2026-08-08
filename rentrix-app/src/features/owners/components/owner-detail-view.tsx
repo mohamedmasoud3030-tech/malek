@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Building2, DoorOpen, FileText, HandCoins, ReceiptText, UserRoundCog, WalletCards } from 'lucide-react';
+import { Building2, DoorOpen, FileText, HandCoins, UserRoundCog, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,9 +11,8 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
-import { formatCompanyNumber } from '@/lib/companyFormatters';
+import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { getOwnerDisplayName } from '../services/owner-service';
 import { settlementStatusLabels, type OwnerSettlementRecord, type SettlementStatus } from '../services/owner-settlements-service';
 import type { OwnerDetailState } from '../types';
@@ -31,9 +30,7 @@ export function OwnerDetailView({
   canOpenOwnerSettlements = false,
 }: Readonly<{
   state: OwnerDetailState;
-  /** Owner settlements (latest first). When omitted the whole section is hidden. */
   settlements?: readonly OwnerSettlementRecord[];
-  /** Whether the current role may open the dedicated settlements workspace. */
   canOpenOwnerSettlements?: boolean;
 }>) {
   const companySettings = useCompanySettingsContract();
@@ -78,9 +75,9 @@ export function OwnerDetailView({
     <PageLayout dir="rtl" size="wide">
       <EntityDetailHeader
         title={getOwnerDisplayName(owner)}
-        subtitle="ملف تعريف قراءة فقط للمالك يعرض بيانات التعريف والروابط المتاحة فقط."
+        subtitle="ملف المالك وبياناته والعقارات المرتبطة والتسويات المتاحة."
         backTo="/owners"
-        backLabel="إدارة الملاك"
+        backLabel="الملاك"
       />
       <Card>
         <CardHeader className="gap-3">
@@ -103,7 +100,7 @@ export function OwnerDetailView({
         <KpiCard label="العقارات" value={formatCompanyNumber(companySettings, properties.length)} icon={Building2} accent="primary" />
         <KpiCard label="الوحدات" value={formatCompanyNumber(companySettings, units.length)} icon={DoorOpen} accent="sky" />
         <KpiCard label="العقود النشطة" value={formatCompanyNumber(companySettings, activeContractsCount)} sub={`من أصل ${formatCompanyNumber(companySettings, contracts.length)} عقود`} icon={FileText} accent="emerald" />
-        <KpiCard label="الرصيد المستحق" value={formatMoney(financialSummary.outstandingBalance)} sub={`${formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
+        <KpiCard label="الرصيد المستحق" value={formatCompanyMoney(companySettings, financialSummary.outstandingBalance)} sub={`${formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
       </ResponsiveCardGrid>
 
       {settlements !== undefined ? (
@@ -137,7 +134,7 @@ export function OwnerDetailView({
                         {settlementStatusLabels[settlement.status]}
                       </StatusBadge>
                       <span className="font-bold" title="الصافي المستحق للمالك">
-                        {formatMoney(settlement.net_payable_amount)}
+                        {formatCompanyMoney(companySettings, settlement.net_payable_amount)}
                       </span>
                     </span>
                   </li>
@@ -154,7 +151,10 @@ export function OwnerDetailView({
       ) : null}
 
       <Card>
-        <CardHeader><CardTitle>العقارات المرتبطة</CardTitle><CardDescription>تظهر فقط العلاقات النشطة الموجودة في `property_owners` مع عدد الوحدات والعقود لكل عقار.</CardDescription></CardHeader>
+        <CardHeader>
+          <CardTitle>العقارات المرتبطة</CardTitle>
+          <CardDescription>العلاقات النشطة فقط، مع عدد الوحدات والعقود لكل عقار.</CardDescription>
+        </CardHeader>
         <CardContent>
           <EntityTable
             aria-label="جدول عقارات المالك"
@@ -166,8 +166,8 @@ export function OwnerDetailView({
                 const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
                 return `${formatCompanyNumber(companySettings, pct)}%`;
               }},
-              { key: 'units', header: 'الوحدات', render: (property) => formatCompanyNumber(companySettings, units.filter((u) => u.property_id === property.id).length) },
-              { key: 'active_contracts', header: 'العقود النشطة', render: (property) => formatCompanyNumber(companySettings, contracts.filter((c) => c.property_id === property.id && c.status === 'active').length) },
+              { key: 'units', header: 'الوحدات', render: (property) => formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length) },
+              { key: 'active_contracts', header: 'العقود النشطة', render: (property) => formatCompanyNumber(companySettings, contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length) },
               { key: 'status', header: 'الحالة', render: (property) => property.status },
             ]}
             keyOf={(property) => property.id}
@@ -183,20 +183,13 @@ export function OwnerDetailView({
                   subtitle={property.address}
                   badge={<StatusBadge tone={property.status === 'active' ? 'success' : 'neutral'} dot>{property.status === 'active' ? 'نشط' : property.status}</StatusBadge>}
                   stats={<div className="grid grid-cols-3 gap-2 text-center text-xs"><span><strong>{formatCompanyNumber(companySettings, ownershipPercentage)}%</strong><br />الملكية</span><span><strong>{formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length)}</strong><br />الوحدات</span><span><strong>{formatCompanyNumber(companySettings, activeContracts)}</strong><br />عقود نشطة</span></div>}
-                  actions={
-                    <div className="grid w-full grid-cols-2 gap-2">
-                      <Button variant="secondary" className="min-h-11 text-xs" asChild>
-                        <Link to="/properties/$propertyId" params={{ propertyId: property.id }}>
-                          <Building2 className="me-1 size-4" />التفاصيل
-                        </Link>
-                      </Button>
-                      <Button variant="secondary" className="min-h-11 text-xs" asChild>
-                        <Link to="/reports">
-                          <ReceiptText className="me-1 size-4" />كشف الحساب
-                        </Link>
-                      </Button>
-                    </div>
-                  }
+                  actions={(
+                    <Button variant="secondary" className="min-h-11 w-full text-xs" asChild>
+                      <Link to="/properties/$propertyId" params={{ propertyId: property.id }}>
+                        <Building2 className="me-1 size-4" />فتح العقار
+                      </Link>
+                    </Button>
+                  )}
                   onClick={() => openProperty(property.id)}
                 />
               );

@@ -1,19 +1,22 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { TenantsRouteComponent } from '@/routes/_protected.tenants';
+import { TenantsWorkspace } from './TenantsPage';
 
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 
-describe('tenants route wiring (IA 2026-08: hub-canonical)', () => {
-  it('tenants is REDIRECT-ONLY to Relationships hub (one canonical TenantsWorkspace)', () => {
+describe('tenants route wiring', () => {
+  it('keeps /tenants as a first-class standalone destination', () => {
     expect(routeTreeSource).toContain("path: '/tenants'");
-    expect(routeTreeSource).toContain("throw redirect({ to: '/contracts'");
-    expect(routeTreeSource).toContain("section: 'tenants'");
-    // Canonical implementation is TenantsWorkspace embedded in RelationshipsHub at /contracts?section=tenants
+    expect(routeTreeSource).toContain("import('@/routes/_protected.tenants')");
+    expect(TenantsRouteComponent).toBe(TenantsWorkspace);
   });
 
-  it('no duplicate standalone tenants route file remains', () => {
-    // File rentrix-app/src/routes/_protected.tenants.tsx deleted (was re-export)
-    // Only redirect in route-tree remains for bookmark compat
-    expect(routeTreeSource).not.toContain("import('@/routes/_protected.tenants'");
+  it('does not redirect tenants back into the contracts hub', () => {
+    const tenantDefinitionStart = routeTreeSource.indexOf("const tenantsRoute = createRoute");
+    const tenantDefinitionEnd = routeTreeSource.indexOf('\n\n', tenantDefinitionStart);
+    const tenantDefinition = routeTreeSource.slice(tenantDefinitionStart, tenantDefinitionEnd);
+    expect(tenantDefinition).not.toContain("redirect({ to: '/contracts'");
+    expect(tenantDefinition).not.toContain("section: 'tenants'");
   });
 });

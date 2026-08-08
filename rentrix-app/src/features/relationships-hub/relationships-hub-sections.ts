@@ -1,32 +1,21 @@
-import { ContactRound, FileText, MessageSquareText, UserCheck, Users } from 'lucide-react';
+import { ContactRound, FileText, MessageSquareText, Users } from 'lucide-react';
 import type { SectionTabItem } from '@/components/ui/section-tabs';
 import type { AppPermission } from '@/features/auth/permissions';
 
 export type RelationshipsHubSectionId =
   | 'contracts'
   | 'people'
-  | 'tenants'
   | 'leads'
   | 'communication';
 
 export type RelationshipsHubSection = SectionTabItem<RelationshipsHubSectionId> & Readonly<{
   description: string;
-  /**
-   * Permission required to see this tab. `null` means authenticated-only,
-   * matching the pre-hub standalone route guard.
-   */
   permission: AppPermission | null;
 }>;
 
 /**
- * Single source of truth for the relationships hub tabs.
- * Permissions mirror route-tree.ts guards exactly — never widen access.
- *
- *   /contracts     -> (protected only)
- *   /people        -> (protected only)
- *   /tenants       -> (protected only)
- *   /leads         -> leads.view
- *   /communication -> communication.view
+ * Contract workspace keeps supporting relationship tools only. Tenants are a
+ * first-class entity and live at /tenants instead of a contract tab.
  */
 export const relationshipsHubSections: readonly RelationshipsHubSection[] = [
   {
@@ -38,16 +27,9 @@ export const relationshipsHubSections: readonly RelationshipsHubSection[] = [
   },
   {
     id: 'people',
-    label: 'الأشخاص',
+    label: 'جهات التعامل',
     icon: Users,
-    description: 'دليل جهات التعامل الموحد.',
-    permission: null,
-  },
-  {
-    id: 'tenants',
-    label: 'المستأجرون',
-    icon: UserCheck,
-    description: 'بيانات المستأجرين وملفاتهم.',
+    description: 'دليل الأشخاص وجهات التعامل المساندة للعقود.',
     permission: null,
   },
   {

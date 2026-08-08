@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -7,21 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { resolvePortfolioHubState } from './portfolio-hub-model';
-import {
-  portfolioHubSections,
-  type PortfolioHubSectionId,
-} from './portfolio-hub-sections';
+import { portfolioHubSections, type PortfolioHubSectionId } from './portfolio-hub-sections';
 
-/** `?section=` deep-link contract for the portfolio hub. */
 export const PORTFOLIO_HUB_SECTION_SEARCH_KEY = 'section';
 
 const PropertiesBody = lazy(async () => {
   const { PropertiesWorkspace } = await import('@/features/properties/properties-list-page');
   return { default: function PropertiesEmbedded() { return <PropertiesWorkspace embedded />; } };
-});
-const OwnersBody = lazy(async () => {
-  const { OwnersWorkspace } = await import('@/features/owners/OwnersPage');
-  return { default: function OwnersEmbedded() { return <OwnersWorkspace embedded />; } };
 });
 const UnitsBody = lazy(async () => {
   const { UnitsWorkspace } = await import('@/features/units/units-page');
@@ -34,7 +26,6 @@ const LandsBody = lazy(async () => {
 
 const sectionComponents: Record<PortfolioHubSectionId, ComponentType> = {
   properties: PropertiesBody,
-  owners: OwnersBody,
   units: UnitsBody,
   lands: LandsBody,
 };
@@ -55,14 +46,10 @@ export type PortfolioHubWorkspaceProps = Readonly<{
   mode?: 'standalone' | 'embedded';
 }>;
 
-/**
- * Unified portfolio hub at /properties.
- * Tabs: Properties, Owners, Units, Lands — permission-filtered, URL-synced.
- */
 export function PortfolioHubWorkspace({
   defaultSection = 'properties',
-  title = 'المحفظة العقارية',
-  description = 'العقارات والملاك والوحدات والأراضي في مساحة عمل واحدة.',
+  title = 'العقارات',
+  description = 'العقارات والوحدات والأراضي في مساحة تشغيل واحدة.',
   mode = 'standalone',
 }: PortfolioHubWorkspaceProps) {
   const { authorization } = useAuth();
@@ -77,6 +64,11 @@ export function PortfolioHubWorkspace({
 
   const mountedSections = useRef(new Set<PortfolioHubSectionId>());
   if (activeSection) mountedSections.current.add(activeSection);
+
+  useEffect(() => {
+    if (requestedSection !== 'owners') return;
+    void navigate({ to: '/owners', replace: true });
+  }, [navigate, requestedSection]);
 
   const handleSectionChange = useCallback(
     (nextSection: PortfolioHubSectionId) => {
@@ -105,33 +97,28 @@ export function PortfolioHubWorkspace({
     );
   };
 
+  // Backward compatibility for bookmarks created before Owners became a
+  // first-class route. The destination route keeps its own permission guard.
+  if (requestedSection === 'owners') {
+    return shell(<SectionFallback />);
+  }
+
   if (hasNoVisibleSections) {
-    return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المحفظة العقارية." />);
+    return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام العقارات." />);
   }
 
   if (isRequestedSectionForbidden || !activeSection) {
-    return shell(<AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من المحفظة." />);
+    return shell(<AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من العقارات." />);
   }
 
   return shell(
     <>
-      <SectionTabs
-        items={visibleSections}
-        activeId={activeSection}
-        onChange={handleSectionChange}
-        ariaLabel="أقسام المحفظة العقارية"
-      />
-
+      <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام العقارات" />
       {portfolioHubSections
-        .filter(
-          (section) =>
-            mountedSections.current.has(section.id) &&
-            visibleSections.some((visible) => visible.id === section.id),
-        )
+        .filter((section) => mountedSections.current.has(section.id) && visibleSections.some((visible) => visible.id === section.id))
         .map((section) => {
           const SectionBody = sectionComponents[section.id];
           const isActive = section.id === activeSection;
-
           return (
             <div
               key={section.id}
@@ -141,9 +128,7 @@ export function PortfolioHubWorkspace({
               data-portfolio-section={section.id}
               hidden={!isActive}
             >
-              <Suspense fallback={<SectionFallback />}>
-                <SectionBody />
-              </Suspense>
+              <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
             </div>
           );
         })}
@@ -151,7 +136,6 @@ export function PortfolioHubWorkspace({
   );
 }
 
-/** Thin page entry used by the /properties route. */
 export function PortfolioHubPage() {
   return <PortfolioHubWorkspace defaultSection="properties" mode="standalone" />;
 }

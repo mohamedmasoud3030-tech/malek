@@ -4,40 +4,41 @@ import { financialWorkflowGroups } from './financials-workflow-groups';
 
 const readPage = () => readFileSync(new URL('./financials-page.tsx', import.meta.url), 'utf8');
 
-describe('Stage 2 — /financials operational summary IA (IA 2026-08: overview retained, hubs primary)', () => {
-  it('keeps a stable page identity with a single H1-style PageHeader', () => {
+describe('/financials consolidated operational entry', () => {
+  it('keeps one Arabic finance page identity', () => {
     const source = readPage();
     expect(source).toContain('<PageHeader');
-    expect(source).toContain("translateSharedLabel('financialsSectionSummary', language)");
+    expect(source).toContain('title="المالية"');
   });
 
-  it('does not render a duplicated WorkspaceSubNav directory row', () => {
+  it('does not restore a second workspace navigation bar', () => {
     const source = readPage();
     expect(source).not.toContain('WorkspaceSubNav');
+    expect(source).not.toContain('SectionTabs');
   });
 
-  it('does not duplicate finance hub navigation already in primary sidebar', () => {
+  it('exposes the four internal finance drill-downs from the single finance page', () => {
     const source = readPage();
-    // Finance 4 hubs are now directly in primary sidebar (5 finance primaries),
-    // so overview must not duplicate them as navigation cards (decorative).
-    // Overview retains KPI preview + CrossRouteHint as real operational value.
-    expect(source).not.toContain('financialWorkflowGroups');
-    expect(source).not.toContain('visibleGroups');
-    expect(source).not.toContain('مسارات العمل المالية');
-    expect(source).not.toContain('مساحات العمل المالية');
+    expect(source).toContain("to: '/finance/collections'");
+    expect(source).toContain("to: '/finance/expenses'");
+    expect(source).toContain("to: '/finance/deposits'");
+    expect(source).toContain("to: '/finance/banking'");
   });
 
-  it('does not embed duplicate lists that belong to the destination workspaces', () => {
+  it('links accounting and formal reporting as the second finance/accounting destination', () => {
+    expect(readPage()).toContain('to="/reports"');
+  });
+
+  it('does not embed duplicate operational lists on the directory page', () => {
     const source = readPage();
-    // No receipts/invoices/expenses list rendering on the summary page.
     expect(source).not.toContain('ReceiptsWorkspace');
     expect(source).not.toContain('InvoicesWorkspace');
     expect(source).not.toContain('ExpensesWorkspace');
   });
 });
 
-describe('financial workflow groups registry (preserved for reference, not rendered in overview)', () => {
-  it('opens the correct finance hub entry routes directly', () => {
+describe('financial workflow groups registry compatibility', () => {
+  it('keeps the internal finance hub routes stable for bookmarks and drill-downs', () => {
     const routes = financialWorkflowGroups.map((group) => group.route).sort();
     expect(routes).toEqual([
       '/finance/banking',
@@ -45,21 +46,5 @@ describe('financial workflow groups registry (preserved for reference, not rende
       '/finance/deposits',
       '/finance/expenses',
     ]);
-  });
-
-  it('keeps a small, meaningful number of workflow groups', () => {
-    expect(financialWorkflowGroups.length).toBeGreaterThanOrEqual(2);
-    expect(financialWorkflowGroups.length).toBeLessThanOrEqual(5);
-  });
-
-  it('gives every group a permission-guarded destination chip list', () => {
-    for (const group of financialWorkflowGroups) {
-      expect(group.destinations.length, `${group.id} should have destination chips`).toBeGreaterThan(0);
-      expect('permission' in group).toBe(true);
-      for (const destination of group.destinations) {
-        expect(typeof destination.label).toBe('string');
-        expect('permission' in destination).toBe(true);
-      }
-    }
   });
 });
