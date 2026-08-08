@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router';
 import { AlertTriangle, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
@@ -6,6 +5,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { EntityActions } from '@/components/ui/entity-actions';
+import { openEntityPreview } from '@/components/ui/entity-preview-events';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { MobileCard } from '@/components/ui/mobile-card';
@@ -56,10 +56,8 @@ function TenantSafeLinks({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceR
         <Edit className="me-1 size-4" />تعديل
       </Button>
       {tenant.primaryContractId !== null && (
-        <Button variant="secondary" className="min-h-11 px-3" asChild>
-          <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}>
-            <FileText className="me-1 size-4" />فتح العقد
-          </Link>
+        <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEntityPreview({ kind: 'contract', id: tenant.primaryContractId! })}>
+          <FileText className="me-1 size-4" />فتح العقد
         </Button>
       )}
     </EntityActions>
@@ -164,10 +162,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
             <Edit className="me-1 size-4" />تعديل
           </Button>
           {tenant.primaryContractId !== null && (
-            <Button variant="secondary" className="min-h-11 px-3" asChild>
-              <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}>
-                <FileText className="me-1 size-4" />العقد
-              </Link>
+            <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEntityPreview({ kind: 'contract', id: tenant.primaryContractId! })}>
+              <FileText className="me-1 size-4" />العقد
             </Button>
           )}
         </div>
