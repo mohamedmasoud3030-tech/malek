@@ -22,7 +22,6 @@ export type MaintenanceRequestFormProps = Readonly<{
   onSubmit: (values: MaintenanceFormValues) => void;
 }>;
 
-/** Create/edit overlay form for a single maintenance request (location, details, attachment). */
 export function MaintenanceRequestForm({
   open,
   isEditing,
@@ -43,14 +42,16 @@ export function MaintenanceRequestForm({
       onOpenChange={(nextOpen) => { if (!isSubmitting) onOpenChange(nextOpen); }}
       title={isEditing ? 'تعديل طلب صيانة' : 'طلب صيانة جديد'}
       description="حدد الموقع والأولوية والمسؤول والموعد المجدول إن وجد."
+      mobileSurface="bottom-sheet"
+      visualVariant="operational"
     >
       <EntityForm.Root aria-busy={isSubmitting} onSubmit={form.handleSubmit(onSubmit)}>
         <EntityForm.ErrorSummary message={firstError} />
 
         <EntityForm.Section title="الموقع" description="اختر العقار، ويمكن ربط الطلب بوحدة محددة.">
           <div className="grid gap-4 sm:grid-cols-2">
-            <EntityForm.Field label="العقار" error={form.formState.errors.property_id?.message}>
-              <Select aria-label="العقار" {...form.register('property_id')} disabled={isEditingResolvedRequest} aria-invalid={Boolean(form.formState.errors.property_id)}>
+            <EntityForm.Field label="العقار *" error={form.formState.errors.property_id?.message}>
+              <Select required aria-label="العقار" {...form.register('property_id')} disabled={isEditingResolvedRequest} aria-invalid={Boolean(form.formState.errors.property_id)}>
                 <option value="">اختر العقار</option>
                 {properties.map((property) => (
                   <option key={property.id} value={property.id}>{property.title}</option>
@@ -76,8 +77,8 @@ export function MaintenanceRequestForm({
         ) : null}
 
         <EntityForm.Section title="تفاصيل الطلب" description="اكتب عنواناً قصيراً ثم أضف الوصف والأولوية.">
-          <EntityForm.Field label="عنوان الطلب" error={form.formState.errors.title?.message}>
-            <Input aria-label="عنوان الطلب" placeholder="مثال: تسريب مياه في المطبخ" {...form.register('title')} aria-invalid={Boolean(form.formState.errors.title)} />
+          <EntityForm.Field label="عنوان الطلب *" error={form.formState.errors.title?.message}>
+            <Input required aria-label="عنوان الطلب" placeholder="مثال: تسريب مياه في المطبخ" {...form.register('title')} aria-invalid={Boolean(form.formState.errors.title)} />
           </EntityForm.Field>
 
           <EntityForm.Field label="الوصف">
@@ -85,8 +86,8 @@ export function MaintenanceRequestForm({
           </EntityForm.Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <EntityForm.Field label="الأولوية">
-              <Select aria-label="الأولوية" {...form.register('priority')}>
+            <EntityForm.Field label="الأولوية *">
+              <Select required aria-label="الأولوية" {...form.register('priority')}>
                 <option value="low">منخفضة</option>
                 <option value="medium">متوسطة</option>
                 <option value="high">عالية</option>
