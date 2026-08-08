@@ -11,7 +11,6 @@ import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters } from './reports-page.helpers';
 import type { ReportSectionId } from './reports-page.sections';
 import {
-  mergeReportSectionIntoSearch,
   REPORTS_SECTION_SEARCH_KEY,
   resolveReportLocation,
   type ReportViewId,
@@ -29,7 +28,7 @@ export function ReportsPage() {
   const workspace = useReportsWorkspace(filters);
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
   const canViewReports = canAccess(authorization, financialOperationPermissions.exportReports);
-  
+
   const { section: activeSection, view: activeView } = resolveReportLocation(
     search[REPORTS_SECTION_SEARCH_KEY],
     search.view
@@ -43,8 +42,11 @@ export function ReportsPage() {
     (nextSection: ReportSectionId, nextView: ReportViewId) => {
       void navigate({
         to: '.',
-        search: (previous: any) => {
-          const next: any = { ...previous, [REPORTS_SECTION_SEARCH_KEY]: nextSection };
+        search: (previous: Record<string, unknown>) => {
+          const next: Record<string, unknown> = {
+            ...previous,
+            [REPORTS_SECTION_SEARCH_KEY]: nextSection,
+          };
           if (nextView) {
             next.view = nextView;
           } else {
