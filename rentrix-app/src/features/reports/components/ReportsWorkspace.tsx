@@ -1,5 +1,4 @@
-import { lazy, Suspense, useMemo, useState, useEffect } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { lazy, Suspense, useMemo } from 'react';
 import {
   AlertTriangle,
   Building2,
@@ -28,6 +27,7 @@ import {
   reportSections,
   type ReportSectionId,
 } from '../reports-page.sections';
+import { type ReportViewId } from '../reports-section-model';
 import { ReportsFilterSurface } from './ReportsFilterSurface';
 
 const OverviewSection = lazy(() => import('./OverviewSection').then((m) => ({ default: m.OverviewSection })));
@@ -59,9 +59,9 @@ type ReportsWorkspaceProps = Readonly<{
   filters: FilterState;
   canExportReports: boolean;
   activeSection: ReportSectionId;
-  activeView: string;
+  activeView: ReportViewId;
   onSectionChange: (section: ReportSectionId) => void;
-  onSectionViewChange: (section: ReportSectionId, view: string) => void;
+  onSectionViewChange: (section: ReportSectionId, view: ReportViewId) => void;
   onFiltersChange: (filters: FilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
@@ -84,11 +84,11 @@ export function ReportsWorkspace({
   const ActiveSectionIcon = activeSectionMeta.icon;
   const summary = model.hero.summary;
 
-  const handleAccountingViewChange = (viewId: string) => {
+  const handleAccountingViewChange = (viewId: ReportViewId) => {
     onSectionViewChange('accounting', viewId);
   };
 
-  const handleAnalyticsViewChange = (viewId: string) => {
+  const handleAnalyticsViewChange = (viewId: ReportViewId) => {
     onSectionViewChange('analytics', viewId);
   };
 
@@ -156,7 +156,7 @@ export function ReportsWorkspace({
             trend={collectionRate >= 85 ? 'up' : collectionRate >= 65 ? 'neutral' : 'down'}
             trendValue={`${collectionRate}%`}
             accent="primary"
-            onDrill={() => onSectionChange('analytics')}
+            onDrill={() => onSectionViewChange('analytics', 'collections')}
             drillAriaLabel={`المحصّل للفترة ${money(summary?.paid ?? 0)} — عرض تقرير التحصيل`}
             unit={companySettings.defaultCurrency}
           />
@@ -168,7 +168,7 @@ export function ReportsWorkspace({
             trend={occupancy.rate >= 90 ? 'up' : occupancy.rate >= 75 ? 'neutral' : 'down'}
             trendValue={`${occupancy.vacant} شاغرة`}
             accent="primary"
-            onDrill={() => onSectionChange('analytics')}
+            onDrill={() => onSectionViewChange('analytics', 'occupancy')}
             drillAriaLabel={`نسبة الإشغال ${occupancy.rate}% — عرض تقرير الإشغال`}
           />
           <FinanceKpiCard
@@ -179,7 +179,7 @@ export function ReportsWorkspace({
             trend="neutral"
             trendValue={`${summary?.invoicesCount ?? 0} فواتير`}
             accent="primary"
-            onDrill={() => onSectionChange('analytics')}
+            onDrill={() => onSectionViewChange('analytics', 'overdue')}
             drillAriaLabel={`الرصيد المستحق ${money(summary?.outstanding ?? 0)} — عرض تقرير المتأخرات`}
             unit={companySettings.defaultCurrency}
           />
@@ -191,7 +191,7 @@ export function ReportsWorkspace({
             trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
             trendValue={(summary?.netCash ?? 0) >= 0 ? 'موجب' : 'سالب'}
             accent="primary"
-            onDrill={() => onSectionChange('analytics')}
+            onDrill={() => onSectionViewChange('analytics', 'overview')}
             unit={companySettings.defaultCurrency}
           />
         </FinanceKpiGrid>

@@ -12,11 +12,12 @@ import {
   HandCoins,
   Building2
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useMemo, useRef, lazy, Suspense, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { useAuth } from '@/hooks/use-auth';
-import { canAccess, type AppPermission } from '@/features/auth/permissions';
+import { canAccess, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
@@ -92,14 +93,14 @@ export interface FinanceViewDefinition {
   id: FinanceViewId;
   sectionId: FinanceSectionId;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   permission: AppPermission | null;
 }
 
 export interface FinanceSectionDefinition {
   id: FinanceSectionId;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   defaultViewId: FinanceViewId | null;
 }
 
@@ -124,7 +125,7 @@ export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
 ];
 
 export function isViewPermitted(
-  authorization: any,
+  authorization: AuthorizationContext | null | undefined,
   view: FinanceViewDefinition
 ): boolean {
   if (!authorization) return false;
@@ -132,13 +133,13 @@ export function isViewPermitted(
 }
 
 export function getPermittedViews(
-  authorization: any
+  authorization: AuthorizationContext | null | undefined
 ): FinanceViewDefinition[] {
   return FINANCE_VIEWS.filter((view) => isViewPermitted(authorization, view));
 }
 
 export function getPermittedSections(
-  authorization: any
+  authorization: AuthorizationContext | null | undefined
 ): FinanceSectionDefinition[] {
   const permittedViews = getPermittedViews(authorization);
   const permittedSectionIds = new Set(permittedViews.map(v => v.sectionId));
@@ -204,8 +205,24 @@ export function FinancialsPage() {
       vId = 'bank_reconciliation';
     }
 
+    // ==================================================
+    // STRUCTURAL COHERENCE HARDENING (Point 3)
+    // ==================================================
+    const viewMeta = FINANCE_VIEWS.find(v => v.id === vId);
+    if (viewMeta && viewMeta.sectionId !== sId) {
+      // Mismatch detected! Normalize safely to the requested section's first permitted valid view.
+      const permittedSectionViews = FINANCE_VIEWS.filter(v => v.sectionId === sId && isViewPermitted(authorization, v));
+      if (permittedSectionViews[0]) {
+        vId = permittedSectionViews[0].id;
+      } else {
+        // Fallback safely to overview
+        sId = 'overview';
+        vId = 'overview';
+      }
+    }
+
     return { resolvedSectionId: sId, resolvedViewId: vId };
-  }, [rawSection, rawView]);
+  }, [rawSection, rawView, authorization]);
 
   const { activeSection, activeView, isRequestedViewForbidden } = useMemo(() => {
     // If no permitted sections at all
@@ -277,6 +294,12 @@ export function FinancialsPage() {
   } else if (activeView) {
     mountedViews.current.add(activeView);
   }
+
+  const shouldRenderView = useCallback((viewId: FinanceViewId): boolean => {
+    const view = FINANCE_VIEWS.find(v => v.id === viewId);
+    if (!view) return false;
+    return mountedViews.current.has(viewId) && isViewPermitted(authorization, view);
+  }, [authorization]);
 
   // Get active section sub-views/tabs
   const subViews = useMemo(() => {
@@ -409,21 +432,21 @@ export function FinancialsPage() {
               </div>
 
               {/* Collections & Receivables */}
-              {mountedViews.current.has('invoices') && (
+              {shouldRenderView('invoices') && (
                 <div id="section-panel-invoices" role="tabpanel" hidden={activeSection !== 'collections' || activeView !== 'invoices'}>
                   <Suspense fallback={<SectionFallback />}>
                     <InvoicesWorkspace embedded={true} />
                   </Suspense>
                 </div>
               )}
-              {mountedViews.current.has('receipts') && (
+              {shouldRenderView('receipts') && (
                 <div id="section-panel-receipts" role="tabpanel" hidden={activeSection !== 'collections' || activeView !== 'receipts'}>
                   <Suspense fallback={<SectionFallback />}>
                     <ReceiptsWorkspace embedded={true} />
                   </Suspense>
                 </div>
               )}
-              {mountedViews.current.has('arrears') && (
+              {shouldRenderView('arrears') && (
                 <div id="section-panel-arrears" role="tabpanel" hidden={activeSection !== 'collections' || activeView !== 'arrears'}>
                   <Suspense fallback={<SectionFallback />}>
                     <ArrearsWorkspace embedded={true} />
@@ -432,14 +455,14 @@ export function FinancialsPage() {
               )}
 
               {/* Expenses & Payables */}
-              {mountedViews.current.has('expenses') && (
+              {shouldRenderView('expenses') && (
                 <div id="section-panel-expenses" role="tabpanel" hidden={activeSection !== 'expenses' || activeView !== 'expenses'}>
                   <Suspense fallback={<SectionFallback />}>
                     <ExpensesWorkspace embedded={true} />
                   </Suspense>
                 </div>
               )}
-              {mountedViews.current.has('commissions') && (
+              {shouldRenderView('commissions') && (
                 <div id="section-panel-commissions" role="tabpanel" hidden={activeSection !== 'expenses' || activeView !== 'commissions'}>
                   <Suspense fallback={<SectionFallback />}>
                     <CommissionsWorkspace embedded={true} />
@@ -448,14 +471,14 @@ export function FinancialsPage() {
               )}
 
               {/* Custody Funds & Owners */}
-              {mountedViews.current.has('deposits') && (
+              {shouldRenderView('deposits') && (
                 <div id="section-panel-deposits" role="tabpanel" hidden={activeSection !== 'funds' || activeView !== 'deposits'}>
                   <Suspense fallback={<SectionFallback />}>
                     <DepositsWorkspace />
                   </Suspense>
                 </div>
               )}
-              {mountedViews.current.has('owner_settlements') && (
+              {shouldRenderView('owner_settlements') && (
                 <div id="section-panel-owner_settlements" role="tabpanel" hidden={activeSection !== 'funds' || activeView !== 'owner_settlements'}>
                   <Suspense fallback={<SectionFallback />}>
                     <OwnerSettlementsWorkspace embedded={true} />
@@ -464,7 +487,7 @@ export function FinancialsPage() {
               )}
 
               {/* Banking & Reconciliation */}
-              {mountedViews.current.has('bank_reconciliation') && (
+              {shouldRenderView('bank_reconciliation') && (
                 <div id="section-panel-bank_reconciliation" role="tabpanel" hidden={activeSection !== 'banking'}>
                   <Suspense fallback={<SectionFallback />}>
                     <BankReconciliationWorkspace embedded={true} />

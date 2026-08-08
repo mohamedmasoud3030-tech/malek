@@ -15,6 +15,7 @@ import {
   REPORTS_SECTION_SEARCH_KEY,
   resolveReportSection,
   resolveReportView,
+  type ReportViewId,
 } from './reports-section-model';
 import { useReportsWorkspace } from './use-reports-workspace';
 
@@ -37,7 +38,7 @@ export function ReportsPage() {
   const pageHint = translateSharedLabel('reportsPageHint');
 
   const handleSectionViewChange = useCallback(
-    (nextSection: ReportSectionId, nextView: string) => {
+    (nextSection: ReportSectionId, nextView: ReportViewId) => {
       void navigate({
         to: '.',
         search: (previous: any) => {
@@ -57,7 +58,7 @@ export function ReportsPage() {
 
   const handleSectionChange = useCallback(
     (nextSection: ReportSectionId) => {
-      let defaultView = '';
+      let defaultView: ReportViewId = '';
       if (nextSection === 'accounting') defaultView = 'accounting_reports';
       else if (nextSection === 'analytics') defaultView = 'overview';
       handleSectionViewChange(nextSection, defaultView);

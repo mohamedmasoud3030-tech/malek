@@ -50,4 +50,20 @@ describe('financials route wiring (IA 2026-08: hub-canonical, legacy redirects)'
     expect(routeTreeSource).toContain("receiptId");
     expect(routeTreeSource).toContain("/financials");
   });
+
+  it('preserves the meaningful old hub section parameter deep links based on the preservation contract (Point 7)', () => {
+    // /finance/collections?section=receipts
+    expect(routeTreeSource).toContain("const view = section === 'receipts' ? 'receipts' : 'invoices';");
+
+    // /finance/expenses?section=arrears
+    expect(routeTreeSource).toContain("if (section === 'arrears') {");
+    expect(routeTreeSource).toContain("section: 'collections', view: 'arrears'");
+
+    // /finance/deposits?section=owner_settlements
+    expect(routeTreeSource).toContain("const view = section === 'owner_settlements' ? 'owner_settlements' : 'deposits';");
+
+    // /finance/banking?section=commissions
+    expect(routeTreeSource).toContain("if (section === 'commissions') {");
+    expect(routeTreeSource).toContain("section: 'expenses', view: 'commissions'");
+  });
 });

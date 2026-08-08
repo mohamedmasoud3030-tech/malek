@@ -5,6 +5,19 @@ export const REPORTS_SECTION_SEARCH_KEY = 'section';
 
 export const DEFAULT_REPORT_SECTION: ReportSectionId = 'accounting';
 
+export type AccountingReportViewId = 'accounting_reports' | 'general_ledger' | 'deferred_revenue';
+
+export type AnalyticsReportViewId =
+  | 'overview'
+  | 'collections'
+  | 'overdue'
+  | 'expenses'
+  | 'property_analytics'
+  | 'occupancy'
+  | 'maintenance_analytics';
+
+export type ReportViewId = AccountingReportViewId | AnalyticsReportViewId | '';
+
 /**
  * Resolve the active report section from an unknown URL value.
  * Maps legacy section IDs to the three new macro categories.
@@ -41,31 +54,36 @@ export function resolveReportSection(requested: unknown): ReportSectionId {
  * Resolve the active report view from the URL section and view parameters,
  * mapping legacy sections to their new nested view equivalents.
  */
-export function resolveReportView(requestedSection: unknown, requestedView: unknown): string {
+export function resolveReportView(requestedSection: unknown, requestedView: unknown): ReportViewId {
   const sec = typeof requestedSection === 'string' ? requestedSection.toLowerCase().trim() : '';
   const vi = typeof requestedView === 'string' ? requestedView.toLowerCase().trim() : '';
 
-  // 1. Direct legacy mapping: if section contains a legacy report name, that is the view
-  if (['overview', 'collections', 'overdue', 'expenses', 'property_analytics', 'occupancy', 'maintenance_analytics'].includes(sec)) {
-    return sec;
-  }
-  if (sec === 'general_ledger' || sec === 'deferred_revenue') {
-    return sec;
-  }
+  // 1. Resolve macro section accounting
   if (sec === 'accounting') {
-    return vi || 'accounting_reports';
+    if (['accounting_reports', 'general_ledger', 'deferred_revenue'].includes(vi)) {
+      return vi as AccountingReportViewId;
+    }
+    return 'accounting_reports';
   }
 
-  // 2. Standard resolution under macro sections
+  // 2. Resolve macro section analytics
   if (sec === 'analytics') {
-    const validViews = ['overview', 'collections', 'overdue', 'expenses', 'property_analytics', 'occupancy', 'maintenance_analytics'];
-    return validViews.includes(vi) ? vi : 'overview';
-  }
-  if (sec === 'accounting') {
-    const validViews = ['accounting_reports', 'general_ledger', 'deferred_revenue'];
-    return validViews.includes(vi) ? vi : 'accounting_reports';
+    if (['overview', 'collections', 'overdue', 'expenses', 'property_analytics', 'occupancy', 'maintenance_analytics'].includes(vi)) {
+      return vi as AnalyticsReportViewId;
+    }
+    return 'overview';
   }
 
+  // 3. Resolve legacy direct section parameters
+  if (['general_ledger', 'deferred_revenue'].includes(sec)) {
+    return sec as AccountingReportViewId;
+  }
+
+  if (['overview', 'collections', 'overdue', 'expenses', 'property_analytics', 'occupancy', 'maintenance_analytics'].includes(sec)) {
+    return sec as AnalyticsReportViewId;
+  }
+
+  // 4. Statements / other macro categories have no internal views
   return '';
 }
 

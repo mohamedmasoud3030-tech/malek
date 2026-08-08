@@ -59,32 +59,6 @@ const requirePermission = (permission: AppPermission) => async () => {
   }
 };
 
-const validateFinancialsSearch = (search: Record<string, unknown>) => {
-  return {
-    section: typeof search.section === 'string' ? search.section : undefined,
-    view: typeof search.view === 'string' ? search.view : undefined,
-    status: typeof search.status === 'string' ? search.status : undefined,
-    receiptId: typeof search.receiptId === 'string' ? search.receiptId : undefined,
-    dateFrom: typeof search.dateFrom === 'string' ? search.dateFrom : undefined,
-    dateTo: typeof search.dateTo === 'string' ? search.dateTo : undefined,
-    asOf: typeof search.asOf === 'string' ? search.asOf : undefined,
-    costCenterId: typeof search.costCenterId === 'string' ? search.costCenterId : undefined,
-  };
-};
-
-const validateReportsSearch = (search: Record<string, unknown>) => {
-  return {
-    section: typeof search.section === 'string' ? search.section : undefined,
-    view: typeof search.view === 'string' ? search.view : undefined,
-    asOf: typeof search.asOf === 'string' ? search.asOf : undefined,
-    from: typeof search.from === 'string' ? search.from : undefined,
-    to: typeof search.to === 'string' ? search.to : undefined,
-    costCenterId: typeof search.costCenterId === 'string' ? search.costCenterId : undefined,
-    ownerId: typeof search.ownerId === 'string' ? search.ownerId : undefined,
-    contractId: typeof search.contractId === 'string' ? search.contractId : undefined,
-  };
-};
-
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: lazyRouteComponent(() => import('@/routes/_auth.login'), 'LoginRouteComponent'), staticData: { title: 'تسجيل الدخول' } });
 const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/dashboard', component: lazyRouteComponent(() => import('@/routes/_protected.index'), 'DashboardRouteComponent'), staticData: { title: 'لوحة التحكم' } });
 const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: lazyRouteComponent(() => import('@/routes/_protected.properties'), 'PropertiesRouteComponent'), staticData: { title: 'العقارات' } });
@@ -126,10 +100,12 @@ const financialsRoute = createRoute({
 const financeCollectionsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/finance/collections',
-  beforeLoad: () => {
+  beforeLoad: ({ search }) => {
+    const section = (search as Record<string, unknown>).section;
+    const view = section === 'receipts' ? 'receipts' : 'invoices';
     throw redirect({
       to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'collections', view: 'invoices' })
+      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'collections', view })
     });
   },
   staticData: { title: 'التحصيل والفواتير' }
@@ -138,8 +114,15 @@ const financeCollectionsRoute = createRoute({
 const financeExpensesArrearsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/finance/expenses',
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     await requirePermission('expenses.view')();
+    const section = (search as Record<string, unknown>).section;
+    if (section === 'arrears') {
+      throw redirect({
+        to: '/financials',
+        search: (previous: Record<string, unknown>) => ({ ...previous, section: 'collections', view: 'arrears' })
+      });
+    }
     throw redirect({
       to: '/financials',
       search: (previous: Record<string, unknown>) => ({ ...previous, section: 'expenses', view: 'expenses' })
@@ -151,11 +134,13 @@ const financeExpensesArrearsRoute = createRoute({
 const financeDepositsSettlementsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/finance/deposits',
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     await requirePermission('financial.deposits.view')();
+    const section = (search as Record<string, unknown>).section;
+    const view = section === 'owner_settlements' ? 'owner_settlements' : 'deposits';
     throw redirect({
       to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'funds', view: 'deposits' })
+      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'funds', view })
     });
   },
   staticData: { title: 'التأمينات وتسويات الملاك' }
@@ -164,8 +149,15 @@ const financeDepositsSettlementsRoute = createRoute({
 const financeBankingCommissionsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/finance/banking',
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     await requirePermission('financial.bank_reconciliation.view')();
+    const section = (search as Record<string, unknown>).section;
+    if (section === 'commissions') {
+      throw redirect({
+        to: '/financials',
+        search: (previous: Record<string, unknown>) => ({ ...previous, section: 'expenses', view: 'commissions' })
+      });
+    }
     throw redirect({
       to: '/financials',
       search: (previous: Record<string, unknown>) => ({ ...previous, section: 'banking', view: 'bank_reconciliation' })
@@ -285,7 +277,7 @@ const accountingRoute = createRoute({
   beforeLoad: () => {
     throw redirect({
       to: '/reports',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'accounting' })
+      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'accounting', view: 'general_ledger' })
     });
   },
   staticData: { title: 'المحاسبة والتقارير' }

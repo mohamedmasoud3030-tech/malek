@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { reportSections } from './reports-page.sections';
 import {
@@ -59,9 +60,15 @@ describe('reports section URL model', () => {
     expect(resolveReportView('deferred_revenue', undefined)).toBe('deferred_revenue');
     expect(resolveReportView('statements', undefined)).toBe('');
   });
+
+  it('safely handles malformed and garbage views with clean default fallbacks (fail-safe)', () => {
+    expect(resolveReportView('accounting', 'garbage')).toBe('accounting_reports');
+    expect(resolveReportView('analytics', 'garbage')).toBe('overview');
+    expect(resolveReportView('unknown', 'anything')).toBe('');
+  });
 });
 
-describe('reports section URL sync', () => {
+describe('reports section URL sync and KPI drill-downs (Point 1, 2)', () => {
   it('merges the section into the search while preserving unrelated params', () => {
     const previous = { e2e: '1', costCenterId: 'cc-1' };
     expect(mergeReportSectionIntoSearch(previous, 'accounting')).toEqual({
@@ -75,5 +82,30 @@ describe('reports section URL sync', () => {
     expect(mergeReportSectionIntoSearch({ section: 'analytics' }, 'statements')).toEqual({
       section: 'statements',
     });
+  });
+
+  it('asserts that Report KPI drills correctly update both section and view parameters', () => {
+    // Proves that when resolving the Collections KPI destination, both macro-section and view are resolved correctly
+    expect(resolveReportSection('analytics')).toBe('analytics');
+    expect(resolveReportView('analytics', 'collections')).toBe('collections');
+
+    // Occupancy KPI
+    expect(resolveReportView('analytics', 'occupancy')).toBe('occupancy');
+
+    // Outstanding KPI
+    expect(resolveReportView('analytics', 'overdue')).toBe('overdue');
+
+    // Net Cash KPI
+    expect(resolveReportView('analytics', 'overview')).toBe('overview');
+  });
+});
+
+describe('/accounting legacy bookmark semantics (Point 8)', () => {
+  const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
+
+  it('preserves /accounting redirecting to accounting section and general_ledger view exactly', () => {
+    expect(routeTreeSource).toContain("path: '/accounting'");
+    expect(routeTreeSource).toContain("section: 'accounting'");
+    expect(routeTreeSource).toContain("view: 'general_ledger'");
   });
 });

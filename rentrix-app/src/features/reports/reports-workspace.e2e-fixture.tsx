@@ -6,6 +6,7 @@ import { ReportsWorkspace } from './components/ReportsWorkspace';
 import { getCurrentMonthFilters, type FilterState } from './reports-page.helpers';
 import type { ReportSectionId } from './reports-page.sections';
 import type { ReportsWorkspaceModel } from './use-reports-workspace';
+import { type ReportViewId } from './reports-section-model';
 
 const fixtureDate = '2026-07-15';
 
@@ -273,7 +274,7 @@ export function ReportsWorkspaceE2EFixture() {
   // The fixture renders ReportsWorkspace without the /reports route, so the
   // section selection is local state here (the real route is URL-backed).
   const [activeSection, setActiveSection] = useState<ReportSectionId>('accounting');
-  const [activeView, setActiveView] = useState('accounting_reports');
+  const [activeView, setActiveView] = useState<ReportViewId>('accounting_reports');
 
   useEffect(() => {
     queryClient.setQueryData(companySettingsKeys.detail(), {

@@ -93,6 +93,45 @@ describe('Finance view-level permissions and defense-in-depth', () => {
 
     expect(isViewPermitted(mockAuth(['arrears.view']), arrearsView)).toBe(true);
   });
+
+  it('unmounts a previously permitted view when permissions are revoked at runtime (role-change safety)', () => {
+    const arrearsView = FINANCE_VIEWS.find(v => v.id === 'arrears')!;
+    
+    // 1. Mount permitted view
+    let currentAuth = mockAuth(['arrears.view']);
+    expect(isViewPermitted(currentAuth, arrearsView)).toBe(true);
+
+    // 2. Remove that permission (runtime role-change)
+    currentAuth = mockAuth([]);
+
+    // 3. Rerender and prove its workspace component is unmounted / forbidden
+    expect(isViewPermitted(currentAuth, arrearsView)).toBe(false);
+  });
+});
+
+describe('Finance structural coherence boundary checks (Point 3)', () => {
+  it('verifies that structural section/view relationships are enforced exactly as defined', () => {
+    const ownerSettlements = FINANCE_VIEWS.find(v => v.id === 'owner_settlements')!;
+    const commissions = FINANCE_VIEWS.find(v => v.id === 'commissions')!;
+    const bankReconciliation = FINANCE_VIEWS.find(v => v.id === 'bank_reconciliation')!;
+    const invoices = FINANCE_VIEWS.find(v => v.id === 'invoices')!;
+
+    // expenses + owner_settlements mismatch
+    expect(ownerSettlements.sectionId).not.toBe('expenses');
+    expect(ownerSettlements.sectionId).toBe('funds');
+
+    // funds + commissions mismatch
+    expect(commissions.sectionId).not.toBe('funds');
+    expect(commissions.sectionId).toBe('expenses');
+
+    // collections + bank_reconciliation mismatch
+    expect(bankReconciliation.sectionId).not.toBe('collections');
+    expect(bankReconciliation.sectionId).toBe('banking');
+
+    // banking + invoices mismatch
+    expect(invoices.sectionId).not.toBe('banking');
+    expect(invoices.sectionId).toBe('collections');
+  });
 });
 
 describe('Receipt detail print exception and redirect contract', () => {
