@@ -3,8 +3,7 @@ import { KeyRound } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { updateCurrentUserPassword } from './change-password-service';
@@ -23,16 +22,7 @@ export function validateChangePasswordForm(form: ChangePasswordFormState): strin
 }
 
 export type ChangePasswordWorkspaceVariant = 'standalone' | 'embedded';
-
-type ChangePasswordWorkspaceProps = Readonly<{
-  /**
-   * 'standalone' (default) preserves the historical /change-password route:
-   * content renders inside its own PageLayout + PageHeader. 'embedded'
-   * drops both so the content can be hosted inside the governance hub
-   * without duplicating page chrome.
-   */
-  variant?: ChangePasswordWorkspaceVariant;
-}>;
+type ChangePasswordWorkspaceProps = Readonly<{ variant?: ChangePasswordWorkspaceVariant }>;
 
 export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswordWorkspaceProps = {}) {
   const [form, setForm] = useState<ChangePasswordFormState>({ password: '', confirmPassword: '' });
@@ -45,7 +35,6 @@ export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswo
     event.preventDefault();
     setSucceeded(false);
     setServiceError(null);
-
     const nextValidationError = validateChangePasswordForm(form);
     setValidationError(nextValidationError);
     if (nextValidationError) return;
@@ -53,74 +42,75 @@ export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswo
     setIsSubmitting(true);
     const result = await updateCurrentUserPassword(supabase, form.password);
     setIsSubmitting(false);
-
     if (!result.ok) {
       setServiceError(result.error);
       return;
     }
-
     setForm({ password: '', confirmPassword: '' });
     setSucceeded(true);
   };
 
   const body = (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="size-5 text-primary" />
-            بيانات كلمة المرور الجديدة
-          </CardTitle>
-          <CardDescription>استخدم كلمة مرور لا تقل عن 8 أحرف ثم أكدها قبل الحفظ.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <label className="block space-y-2 text-sm font-bold">
-              <span>كلمة المرور الجديدة</span>
-              <Input
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={Boolean(validationError)}
-                value={form.password}
-                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-              />
-            </label>
-            <label className="block space-y-2 text-sm font-bold">
-              <span>تأكيد كلمة المرور</span>
-              <Input
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={Boolean(validationError)}
-                value={form.confirmPassword}
-                onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))}
-              />
-            </label>
-            {validationError ? <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-bold text-destructive" role="alert">{validationError}</p> : null}
-            {succeeded ? <output className="block rounded-xl bg-success/10 px-3 py-2 text-sm font-bold text-success" aria-live="polite">تم تحديث كلمة المرور بنجاح.</output> : null}
-            <Button type="submit" disabled={isSubmitting} className="min-h-11">{isSubmitting ? 'جارٍ الحفظ...' : 'تحديث كلمة المرور'}</Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      <EntityForm.Root onSubmit={handleSubmit} aria-busy={isSubmitting}>
+        <EntityForm.Section
+          title="بيانات كلمة المرور الجديدة"
+          description="استخدم كلمة مرور لا تقل عن 8 أحرف ثم أكدها قبل الحفظ."
+          icon={<KeyRound className="size-5" aria-hidden="true" />}
+        >
+          <EntityForm.ErrorSummary message={validationError ?? undefined} />
+          <EntityForm.Field label="كلمة المرور الجديدة *" error={validationError && form.password.length < MIN_PASSWORD_LENGTH ? validationError : undefined}>
+            <Input
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              type="password"
+              autoComplete="new-password"
+              aria-invalid={Boolean(validationError)}
+              value={form.password}
+              onChange={(event) => {
+                setForm((current) => ({ ...current, password: event.target.value }));
+                setValidationError(null);
+              }}
+            />
+          </EntityForm.Field>
+          <EntityForm.Field label="تأكيد كلمة المرور *" error={validationError && form.password !== form.confirmPassword ? validationError : undefined}>
+            <Input
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              type="password"
+              autoComplete="new-password"
+              aria-invalid={Boolean(validationError)}
+              value={form.confirmPassword}
+              onChange={(event) => {
+                setForm((current) => ({ ...current, confirmPassword: event.target.value }));
+                setValidationError(null);
+              }}
+            />
+          </EntityForm.Field>
+          {succeeded ? (
+            <output className="block rounded-xl bg-success/10 px-3 py-2 text-sm font-bold text-success" aria-live="polite">تم تحديث كلمة المرور بنجاح.</output>
+          ) : null}
+        </EntityForm.Section>
+        <EntityForm.Actions
+          submitLabel={isSubmitting ? 'جارٍ الحفظ...' : 'تحديث كلمة المرور'}
+          isSubmitting={isSubmitting}
+          submitDisabled={!form.password || !form.confirmPassword}
+        />
+      </EntityForm.Root>
       {serviceError ? <DataErrorScreen title="فشل تحديث كلمة المرور" fallbackMessage="تحقق من الجلسة الحالية وحاول مرة أخرى." error={serviceError} /> : null}
-    </>
+    </div>
   );
 
-  if (variant === 'embedded') {
-    return <div className="max-w-3xl space-y-4">{body}</div>;
-  }
+  if (variant === 'embedded') return <div className="max-w-3xl space-y-4">{body}</div>;
 
   return (
     <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl">
-      <PageHeader
-        title="تغيير كلمة المرور"
-        description="تحديث كلمة مرور حسابك الحالي فقط عبر جلسة Supabase النشطة، بدون أي تغيير على حسابات أخرى."
-      />
+      <PageHeader title="تغيير كلمة المرور" description="تحديث كلمة مرور حسابك الحالي فقط عبر جلسة Supabase النشطة، بدون أي تغيير على حسابات أخرى." />
       {body}
     </PageLayout>
   );
 }
 
-/** Standalone /change-password route entry point — preserves historical behavior exactly. */
 export function ChangePasswordPage() {
   return <ChangePasswordWorkspace variant="standalone" />;
 }
