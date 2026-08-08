@@ -1,60 +1,41 @@
-import {
-  Archive,
-  CheckCircle2,
-  Edit,
-  RotateCcw,
-  Rows3,
-  UserRoundSearch,
-} from "lucide-react";
-import { useState } from "react";
-import { ActiveFilterBar, type ActiveFilterItem } from "@/components/ui/active-filter-bar";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { PageStateCard, WriteErrorCard } from "@/components/page-state-card";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { EntityTable, type ColumnDef } from "@/components/ui/entity-table";
-import { FilterBar } from "@/components/ui/filter-bar";
-import { EntityForm } from "@/components/ui/entity-form";
-import { Input } from "@/components/ui/input";
-import { KpiCard } from "@/components/ui/kpi-card";
-import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
-import { Select } from "@/components/ui/select";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { Textarea } from "@/components/ui/textarea";
-import type {
-  CommunicationFilters,
-  CommunicationFormValues,
-  CommunicationRecord,
-} from "../types";
+import { Archive, CheckCircle2, Edit, Rows3, UserRoundSearch } from 'lucide-react';
+import { useState } from 'react';
+import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EntityForm } from '@/components/ui/entity-form';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { Input } from '@/components/ui/input';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { Select } from '@/components/ui/select';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Textarea } from '@/components/ui/textarea';
+import { AsyncContentState } from '@/components/async-content-state';
+import { WriteErrorCard } from '@/components/page-state-card';
+import type { CommunicationFilters, CommunicationFormValues, CommunicationRecord } from '../types';
 
 const channelLabels: Record<string, string> = {
-  phone: "هاتف",
-  whatsapp: "واتساب مسجل",
-  email: "بريد إلكتروني",
-  meeting: "اجتماع",
-  note: "ملاحظة تشغيلية",
+  phone: 'هاتف',
+  whatsapp: 'واتساب',
+  email: 'بريد إلكتروني',
+  meeting: 'اجتماع',
+  note: 'ملاحظة تشغيلية',
 };
-const directionLabels: Record<string, string> = {
-  inbound: "وارد",
-  outbound: "صادر",
-  internal: "تشغيلي",
-};
+const directionLabels: Record<string, string> = { inbound: 'وارد', outbound: 'صادر', internal: 'تشغيلي' };
 const statusLabels: Record<string, string> = {
-  logged: "مسجل",
-  follow_up: "متابعة مطلوبة",
-  resolved: "مغلق",
-  archived: "مؤرشف",
+  logged: 'مسجل',
+  follow_up: 'متابعة مطلوبة',
+  resolved: 'مغلق',
+  archived: 'مؤرشف',
 };
-const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "neutral"> = {
-  logged: "info",
-  follow_up: "warning",
-  resolved: "success",
-  archived: "neutral",
+const statusTone: Record<string, 'success' | 'warning' | 'neutral' | 'info'> = {
+  logged: 'info',
+  follow_up: 'warning',
+  resolved: 'success',
+  archived: 'neutral',
 };
 
 type Props = Readonly<{
@@ -78,556 +59,205 @@ type Props = Readonly<{
   onRetry: () => void;
 }>;
 
-export function CommunicationHubView(props: Props) {
-  const {
-    rows,
-    filters,
-    draft,
-    editingRecord,
-    formOpen,
-    isLoading,
-    isSaving,
-    isArchiving,
-    error,
-    writeError,
-    onFiltersChange,
-    onDraftChange,
-    onCreate,
-    onEdit,
-    onFormOpenChange,
-    onSubmit,
-    onArchive,
-    onRetry,
-  } = props;
-  const [archiveCandidate, setArchiveCandidate] =
-    useState<CommunicationRecord | null>(null);
-  const followUps = rows.filter((row) => row.status === "follow_up").length;
-  const resolved = rows.filter((row) => row.status === "resolved").length;
-  const archived = rows.filter((row) => row.status === "archived").length;
-  const hasFilters =
-    filters.query.trim().length > 0 ||
-    filters.channel !== "all" ||
-    filters.status !== "all";
-  const activeFilters: ActiveFilterItem[] = [];
-  if (filters.query.trim()) {
-    activeFilters.push({
-      key: "query",
-      label: "بحث",
-      value: filters.query,
-      onRemove: () => onFiltersChange({ ...filters, query: "" }),
-    });
-  }
-  if (filters.channel !== "all") {
-    activeFilters.push({
-      key: "channel",
-      label: "القناة",
-      value: channelLabels[filters.channel] ?? filters.channel,
-      onRemove: () => onFiltersChange({ ...filters, channel: "all" }),
-    });
-  }
-  if (filters.status !== "all") {
-    activeFilters.push({
-      key: "status",
-      label: "الحالة",
-      value: statusLabels[filters.status] ?? filters.status,
-      onRemove: () => onFiltersChange({ ...filters, status: "all" }),
-    });
-  }
-  const showRows = !isLoading && !error && rows.length > 0;
-  const showEmpty = !isLoading && !error && rows.length === 0;
+export function CommunicationHubView({
+  rows,
+  filters,
+  draft,
+  editingRecord,
+  formOpen,
+  isLoading,
+  isSaving,
+  isArchiving,
+  error,
+  writeError,
+  onFiltersChange,
+  onDraftChange,
+  onCreate,
+  onEdit,
+  onFormOpenChange,
+  onSubmit,
+  onArchive,
+  onRetry,
+}: Props) {
+  const [archiveCandidate, setArchiveCandidate] = useState<CommunicationRecord | null>(null);
+  const followUps = rows.filter((row) => row.status === 'follow_up').length;
+  const resolved = rows.filter((row) => row.status === 'resolved').length;
+  const archived = rows.filter((row) => row.status === 'archived').length;
+  const hasFilters = filters.query.trim().length > 0 || filters.channel !== 'all' || filters.status !== 'all';
+
+  const activeFilters: ActiveFilterItem[] = [
+    ...(filters.query.trim() ? [{ key: 'query', label: 'بحث', value: filters.query.trim(), onRemove: () => onFiltersChange({ ...filters, query: '' }) }] : []),
+    ...(filters.channel !== 'all' ? [{ key: 'channel', label: 'القناة', value: channelLabels[filters.channel] ?? filters.channel, onRemove: () => onFiltersChange({ ...filters, channel: 'all' }) }] : []),
+    ...(filters.status !== 'all' ? [{ key: 'status', label: 'الحالة', value: statusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: 'all' }) }] : []),
+  ];
+  const clearFilters = () => onFiltersChange({ query: '', channel: 'all', status: 'all' });
+
+  const rowActions = (row: CommunicationRecord) => (
+    <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <Button variant="secondary" onClick={() => onEdit(row)}><Edit className="size-4" />تعديل</Button>
+      {row.status !== 'archived' ? (
+        <Button variant="danger" disabled={isArchiving} onClick={() => setArchiveCandidate(row)}><Archive className="size-4" />أرشفة</Button>
+      ) : null}
+    </div>
+  );
+
+  const columns: ColumnDef<CommunicationRecord>[] = [
+    {
+      key: 'contact',
+      header: 'جهة التواصل',
+      render: (row) => (
+        <div className="min-w-0">
+          <p className="font-bold">{row.contact_name}</p>
+          <p className="truncate text-xs text-muted-foreground" dir="ltr">{row.contact_phone || row.contact_email || '—'}</p>
+        </div>
+      ),
+    },
+    { key: 'channel', header: 'القناة', render: (row) => channelLabels[row.channel] ?? row.channel },
+    { key: 'direction', header: 'الاتجاه', render: (row) => directionLabels[row.direction] ?? row.direction },
+    {
+      key: 'subject',
+      header: 'الموضوع',
+      render: (row) => (
+        <div className="max-w-72">
+          <p className="truncate font-semibold">{row.subject || 'بدون موضوع'}</p>
+          <p className="truncate text-xs text-muted-foreground">{row.body}</p>
+        </div>
+      ),
+    },
+    { key: 'status', header: 'الحالة', render: (row) => <StatusBadge tone={statusTone[row.status] ?? 'neutral'}>{statusLabels[row.status] ?? row.status}</StatusBadge> },
+    { key: 'actions', header: 'إجراءات', render: rowActions },
+  ];
 
   return (
     <section className="space-y-5">
-      <div className="space-y-3">
-        <div className="max-w-3xl">
-          <h2 className="text-base font-bold tracking-tight">سجل التواصل</h2>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            سجل تشغيلي للمكالمات والرسائل والاجتماعات. لا يرسل رسائل خارجية ولا
-            يستدعي مزودين مدفوعين.
-          </p>
-        </div>
-        <ResponsiveCardGrid>
-          <KpiCard
-            label="إجمالي السجلات"
-            value={rows.length}
-            icon={Rows3}
-            accent="primary"
-            compact
-          />
-          <KpiCard
-            label="متابعة مطلوبة"
-            value={followUps}
-            icon={UserRoundSearch}
-            accent="amber"
-            compact
-          />
-          <KpiCard
-            label="مغلقة"
-            value={resolved}
-            icon={CheckCircle2}
-            accent="emerald"
-            compact
-          />
-          <KpiCard
-            label="مؤرشفة"
-            value={archived}
-            icon={Archive}
-            accent="sky"
-            compact
-          />
-        </ResponsiveCardGrid>
+      <div>
+        <h2 className="text-base font-bold tracking-tight">سجل التواصل</h2>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">المكالمات والرسائل والاجتماعات والمتابعات في سجل واحد؛ الربط التقني بالكيانات لا يُطلب من المستخدم يدوياً.</p>
       </div>
+
+      <ResponsiveCardGrid>
+        <KpiCard label="إجمالي السجلات" value={rows.length} icon={Rows3} accent="primary" compact />
+        <KpiCard label="متابعة مطلوبة" value={followUps} icon={UserRoundSearch} accent="amber" compact />
+        <KpiCard label="مغلقة" value={resolved} icon={CheckCircle2} accent="emerald" compact />
+        <KpiCard label="مؤرشفة" value={archived} icon={Archive} accent="sky" compact />
+      </ResponsiveCardGrid>
 
       <FilterBar
         searchValue={filters.query}
         onSearchChange={(query) => onFiltersChange({ ...filters, query })}
         searchPlaceholder="بحث بالاسم، الهاتف، الموضوع، المحتوى"
         searchAriaLabel="بحث سجل التواصل"
-        filters={
+        filters={(
           <>
-            <Select
-              value={filters.channel}
-              onChange={(event) =>
-                onFiltersChange({ ...filters, channel: event.target.value })
-              }
-              aria-label="قناة التواصل"
-              className="w-full sm:w-48"
-            >
+            <Select value={filters.channel} onChange={(event) => onFiltersChange({ ...filters, channel: event.target.value })} aria-label="قناة التواصل" className="w-full sm:w-48">
               <option value="all">كل القنوات</option>
-              {Object.entries(channelLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
+              {Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
-            <Select
-              value={filters.status}
-              onChange={(event) =>
-                onFiltersChange({ ...filters, status: event.target.value })
-              }
-              aria-label="حالة التواصل"
-              className="w-full sm:w-48"
-            >
+            <Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })} aria-label="حالة التواصل" className="w-full sm:w-48">
               <option value="all">كل الحالات</option>
-              {Object.entries(statusLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
+              {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </>
-        }
+        )}
       />
-      <ActiveFilterBar
-        filters={activeFilters}
-        onClearAll={() => onFiltersChange({ query: "", channel: "all", status: "all" })}
-      />
+      <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
 
-      {error ? (
-        <ErrorCard message="تعذر تحميل سجل التواصل" onRetry={onRetry} />
-      ) : null}
-      {writeError ? (
-        <WriteErrorCard
-          message={
-            writeError instanceof Error
-              ? writeError.message
-              : "تعذر حفظ التغيير على سجل التواصل. راجع الصلاحيات أو الاتصال ثم حاول مرة أخرى."
-          }
-        />
-      ) : null}
-      {isLoading ? <PageStateCard title="جارٍ تحميل سجل التواصل..." /> : null}
-      {showEmpty ? (
-        <PageStateCard
-          title={
-            hasFilters
-              ? "لا توجد سجلات تواصل ضمن الفلاتر الحالية"
-              : "لا توجد سجلات تواصل بعد"
-          }
-          description={
-            hasFilters
-              ? "غيّر البحث أو القناة أو الحالة لعرض سجلات تواصل أخرى."
-              : "أضف أول سجل تشغيلي عند حدوث اتصال أو اجتماع أو ملاحظة. لا يتم إرسال أي رسالة خارجية."
-          }
-          action={
-            hasFilters ? undefined : (
-              <Button onClick={onCreate}>إضافة سجل تواصل</Button>
-            )
-          }
-        />
-      ) : null}
-      {showRows ? (
-        <CommunicationRows
+      {writeError ? <WriteErrorCard message={writeError instanceof Error ? writeError.message : 'تعذر حفظ التغيير على سجل التواصل.'} /> : null}
+
+      <AsyncContentState
+        status={isLoading ? 'loading' : error ? 'error' : rows.length === 0 ? 'empty' : 'ready'}
+        error={error}
+        errorTitle="تعذر تحميل سجل التواصل"
+        errorFallbackMessage="راجع الاتصال والصلاحيات ثم أعد المحاولة."
+        errorAction={<Button variant="secondary" onClick={onRetry}>إعادة المحاولة</Button>}
+        emptyTitle={hasFilters ? 'لا توجد سجلات تواصل ضمن الفلاتر الحالية' : 'لا توجد سجلات تواصل بعد'}
+        emptyDescription={hasFilters ? 'غيّر البحث أو القناة أو الحالة أو امسح الفلاتر.' : 'أضف أول سجل عند حدوث اتصال أو اجتماع أو ملاحظة تشغيلية.'}
+        emptyAction={hasFilters ? <Button variant="secondary" onClick={clearFilters}>مسح الفلاتر</Button> : <Button onClick={onCreate}>إضافة سجل تواصل</Button>}
+      >
+        <EntityTable
+          aria-label="جدول سجل التواصل"
           rows={rows}
-          isArchiving={isArchiving}
-          onEdit={onEdit}
-          onArchiveClick={setArchiveCandidate}
+          columns={columns}
+          keyOf={(row) => row.id}
+          enableViewModeToggle
+          viewModeStorageKey="rentrix:view-mode:communication"
+          renderMobileCard={(row) => (
+            <MobileCard
+              title={row.contact_name}
+              subtitle={`${channelLabels[row.channel] ?? row.channel} · ${row.subject || 'بدون موضوع'}`}
+              badge={<StatusBadge tone={statusTone[row.status] ?? 'neutral'}>{statusLabels[row.status] ?? row.status}</StatusBadge>}
+              meta={(
+                <div className="grid gap-2 text-xs">
+                  {row.contact_phone ? <div><span className="text-muted-foreground">الهاتف: </span><strong dir="ltr">{row.contact_phone}</strong></div> : null}
+                  {row.contact_email ? <div><span className="text-muted-foreground">البريد: </span><strong dir="ltr">{row.contact_email}</strong></div> : null}
+                  <p className="line-clamp-2 text-muted-foreground">{row.body}</p>
+                </div>
+              )}
+              actions={rowActions(row)}
+            />
+          )}
         />
-      ) : null}
+      </AsyncContentState>
 
       <EntityForm.Overlay
         open={formOpen}
-        onOpenChange={onFormOpenChange}
-        title={editingRecord ? "تعديل سجل تواصل" : "إضافة سجل تواصل"}
-        description="هذا تسجيل تشغيلي فقط، ولن يرسل النظام أي رسالة خارجية عند الحفظ."
+        onOpenChange={(open) => { if (!isSaving) onFormOpenChange(open); }}
+        title={editingRecord ? 'تعديل سجل تواصل' : 'إضافة سجل تواصل'}
+        description="هذا تسجيل تشغيلي فقط؛ لن يرسل النظام رسالة خارجية عند الحفظ."
         className="max-w-2xl"
+        visualVariant="operational"
+        mobileSurface="bottom-sheet"
       >
         <EntityForm.Root
-          className="md:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
+            if (!draft.contact_name.trim() || !draft.body.trim()) return;
             onSubmit(draft);
           }}
         >
-          <EntityForm.Field label="اسم جهة التواصل">
-            <Input
-              required
-              value={draft.contact_name}
-              onChange={(event) =>
-                onDraftChange({ ...draft, contact_name: event.target.value })
-              }
-            />
-          </EntityForm.Field>
-          <EntityForm.Field label="الهاتف">
-            <Input
-              value={draft.contact_phone ?? ""}
-              onChange={(event) =>
-                onDraftChange({ ...draft, contact_phone: event.target.value })
-              }
-            />
-          </EntityForm.Field>
-          <EntityForm.Field label="البريد الإلكتروني">
-            <Input
-              type="email"
-              value={draft.contact_email ?? ""}
-              onChange={(event) =>
-                onDraftChange({ ...draft, contact_email: event.target.value })
-              }
-            />
-          </EntityForm.Field>
-          <EntityForm.Field label="الموضوع">
-            <Input
-              value={draft.subject ?? ""}
-              onChange={(event) =>
-                onDraftChange({ ...draft, subject: event.target.value })
-              }
-            />
-          </EntityForm.Field>
-          <EntityForm.Field label="القناة">
-            <Select
-              value={draft.channel}
-              onChange={(event) =>
-                onDraftChange({ ...draft, channel: event.target.value as CommunicationFormValues['channel'] })
-              }
-            >
-              {Object.entries(channelLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </EntityForm.Field>
-          <EntityForm.Field label="الاتجاه">
-            <Select
-              value={draft.direction}
-              onChange={(event) =>
-                onDraftChange({ ...draft, direction: event.target.value as CommunicationFormValues['direction'] })
-              }
-            >
-              {Object.entries(directionLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </EntityForm.Field>
-          <EntityForm.Field label="الحالة">
-            <Select
-              value={draft.status}
-              onChange={(event) =>
-                onDraftChange({ ...draft, status: event.target.value as CommunicationFormValues['status'] })
-              }
-            >
-              {Object.entries(statusLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </EntityForm.Field>
-          <EntityForm.Field label="نوع الربط">
-            <Input
-              value={draft.related_entity_type ?? ""}
-              onChange={(event) =>
-                onDraftChange({
-                  ...draft,
-                  related_entity_type: event.target.value,
-                })
-              }
-              placeholder="مستأجر، مالك، عقد، أو اتركه فارغاً"
-            />
-          </EntityForm.Field>
-          <EntityForm.Field label="معرف الربط">
-            <Input
-              value={draft.related_entity_id ?? ""}
-              onChange={(event) =>
-                onDraftChange({
-                  ...draft,
-                  related_entity_id: event.target.value,
-                })
-              }
-            />
-          </EntityForm.Field>
-          <EntityForm.Field label="المحتوى" className="md:col-span-2">
-            <Textarea
-              required
-              value={draft.body}
-              onChange={(event) =>
-                onDraftChange({ ...draft, body: event.target.value })
-              }
-            />
-          </EntityForm.Field>
-          <EntityForm.Actions
-            className="md:col-span-2"
-            onCancel={() => onFormOpenChange(false)}
-            isSubmitting={isSaving}
-            submitLabel={isSaving ? "جارٍ الحفظ..." : "حفظ"}
-          />
+          <EntityForm.Section title="جهة التواصل">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <EntityForm.Field label="اسم جهة التواصل *"><Input required value={draft.contact_name} onChange={(event) => onDraftChange({ ...draft, contact_name: event.target.value })} /></EntityForm.Field>
+              <EntityForm.Field label="الهاتف"><Input dir="ltr" value={draft.contact_phone ?? ''} onChange={(event) => onDraftChange({ ...draft, contact_phone: event.target.value })} /></EntityForm.Field>
+              <EntityForm.Field label="البريد الإلكتروني"><Input type="email" dir="ltr" value={draft.contact_email ?? ''} onChange={(event) => onDraftChange({ ...draft, contact_email: event.target.value })} /></EntityForm.Field>
+              <EntityForm.Field label="الموضوع"><Input value={draft.subject ?? ''} onChange={(event) => onDraftChange({ ...draft, subject: event.target.value })} /></EntityForm.Field>
+            </div>
+          </EntityForm.Section>
+
+          <EntityForm.Section title="تفاصيل التواصل">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <EntityForm.Field label="القناة *"><Select required value={draft.channel} onChange={(event) => onDraftChange({ ...draft, channel: event.target.value as CommunicationFormValues['channel'] })}>{Object.entries(channelLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="الاتجاه *"><Select required value={draft.direction} onChange={(event) => onDraftChange({ ...draft, direction: event.target.value as CommunicationFormValues['direction'] })}>{Object.entries(directionLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="الحالة *"><Select required value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value as CommunicationFormValues['status'] })}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+            </div>
+            <EntityForm.Field label="المحتوى *"><Textarea required className="min-h-28" value={draft.body} onChange={(event) => onDraftChange({ ...draft, body: event.target.value })} /></EntityForm.Field>
+            {editingRecord?.related_entity_id ? (
+              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">هذا السجل مرتبط بكيان موجود. تم الحفاظ على الربط كما هو بدون عرض UUID أو طلب معرف تقني منك.</p>
+            ) : null}
+          </EntityForm.Section>
+
+          <EntityForm.Actions submitLabel={isSaving ? 'جارٍ الحفظ...' : 'حفظ'} onCancel={() => onFormOpenChange(false)} isSubmitting={isSaving} submitDisabled={!draft.contact_name.trim() || !draft.body.trim()} />
         </EntityForm.Root>
       </EntityForm.Overlay>
 
       <ConfirmDialog
-        open={archiveCandidate != null}
-        onOpenChange={(open) => {
-          if (!open && !isArchiving) setArchiveCandidate(null);
-        }}
-        title={`أرشفة سجل التواصل مع ${archiveCandidate?.contact_name ?? ""}؟`}
-        description={`سيتم أرشفة سجل التواصل مع "${archiveCandidate?.contact_name ?? ""}" وإخفاؤه من القوائم النشطة. المرجع: ${archiveCandidate?.id ? archiveCandidate.id.slice(0, 8) : ''} — يمكن استرجاعه من الأرشيف.`}
+        open={Boolean(archiveCandidate)}
+        onOpenChange={(open) => { if (!open && !isArchiving) setArchiveCandidate(null); }}
+        title={`أرشفة سجل التواصل مع ${archiveCandidate?.contact_name ?? ''}؟`}
+        description={archiveCandidate ? `سيُخفى السجل من القوائم النشطة مع الاحتفاظ بتاريخ التواصل. المرجع: ${archiveCandidate.id.slice(0, 8)}` : undefined}
         confirmLabel="تأكيد الأرشفة"
+        variant="danger"
         isLoading={isArchiving}
         onConfirm={async () => {
           if (!archiveCandidate || isArchiving) return;
           try {
-            await (onArchive as any)(archiveCandidate.id);
+            await onArchive(archiveCandidate.id);
             setArchiveCandidate(null);
           } catch {
-            // keep open on failure
+            // Keep context open after failure.
           }
         }}
       />
     </section>
   );
-}
-
-function ErrorCard({
-  message,
-  onRetry,
-}: Readonly<{ message: string; onRetry: () => void }>) {
-  return (
-    <Card role="alert">
-      <CardHeader>
-        <CardTitle>{message}</CardTitle>
-        <CardDescription>
-          راجع الاتصال والصلاحيات ثم أعد المحاولة.
-        </CardDescription>
-        <Button variant="secondary" onClick={onRetry}>
-          <RotateCcw className="me-2 size-4" />
-          إعادة المحاولة
-        </Button>
-      </CardHeader>
-    </Card>
-  );
-}
-
-function CommunicationRows({
-  rows,
-  isArchiving,
-  onEdit,
-  onArchiveClick,
-}: Readonly<{
-  rows: CommunicationRecord[];
-  isArchiving: boolean;
-  onEdit: (row: CommunicationRecord) => void;
-  onArchiveClick: (row: CommunicationRecord) => void;
-}>) {
-  const columns: ColumnDef<CommunicationRecord>[] = [
-    {
-      key: "contact",
-      header: "جهة التواصل",
-      className: "max-w-56",
-      render: (row) => (
-        <>
-          <p className="whitespace-normal break-words font-bold">
-            {row.contact_name}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {row.contact_phone ?? row.contact_email ?? "بدون بيانات اتصال"}
-          </p>
-        </>
-      ),
-    },
-    {
-      key: "channel",
-      header: "النوع والاتجاه",
-      render: (row) => (
-        <>
-          {channelLabels[row.channel] ?? row.channel}
-          <p className="text-xs text-muted-foreground">
-            {directionLabels[row.direction] ?? row.direction}
-          </p>
-        </>
-      ),
-    },
-    {
-      key: "context",
-      header: "السياق",
-      className: "max-w-72",
-      render: (row) => (
-        <>
-          <span className="whitespace-normal break-words">
-            {row.subject ?? row.body.slice(0, 48)}
-          </span>
-          <p className="text-xs text-muted-foreground">
-            {formatRelatedContext(row)}
-          </p>
-        </>
-      ),
-    },
-    {
-      key: "updated_at",
-      header: "آخر تحديث",
-      render: (row) => (
-        <span className="tabular-nums" dir="ltr">
-          {formatCommunicationTimestamp(row.updated_at ?? row.created_at)}
-        </span>
-      ),
-    },
-    {
-      key: "status",
-      header: "الحالة",
-      render: (row) => (
-        <StatusBadge tone={statusTone[row.status] ?? "neutral"}>
-          {statusLabels[row.status] ?? row.status}
-        </StatusBadge>
-      ),
-    },
-    {
-      key: "actions",
-      header: "إجراءات",
-      render: (row) => (
-        <RowActions
-          id={row.id}
-          disabled={isArchiving}
-          onEdit={() => onEdit(row)}
-          onArchiveClick={() => onArchiveClick(row)}
-        />
-      ),
-    },
-  ];
-
-  return (
-    <EntityTable
-      rows={rows}
-      columns={columns}
-      keyOf={(row) => row.id}
-      aria-label="سجلات التواصل"
-      enableViewModeToggle
-      viewModeStorageKey="rentrix:view-mode:communication"
-      renderMobileCard={(row) => (
-        <CommunicationCard
-          row={row}
-          isArchiving={isArchiving}
-          onEdit={onEdit}
-          onArchiveClick={onArchiveClick}
-        />
-      )}
-    />
-  );
-}
-
-function CommunicationCard({
-  row,
-  isArchiving,
-  onEdit,
-  onArchiveClick,
-}: Readonly<{
-  row: CommunicationRecord;
-  isArchiving: boolean;
-  onEdit: (row: CommunicationRecord) => void;
-  onArchiveClick: (row: CommunicationRecord) => void;
-}>) {
-  return (
-    <div className="rounded-2xl border bg-background p-4" role="listitem">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate font-black">{row.contact_name}</p>
-          <p className="text-sm text-muted-foreground">
-            {channelLabels[row.channel] ?? row.channel} ·{" "}
-            {directionLabels[row.direction] ?? row.direction}
-          </p>
-        </div>
-        <StatusBadge tone={statusTone[row.status] ?? "neutral"}>
-          {statusLabels[row.status] ?? row.status}
-        </StatusBadge>
-      </div>
-      <p className="mt-3 line-clamp-2 text-sm">{row.subject ?? row.body}</p>
-      <div className="mt-3 grid gap-1 text-xs font-bold text-muted-foreground">
-        <span>{formatRelatedContext(row)}</span>
-        <time dateTime={row.updated_at ?? row.created_at} dir="ltr">
-          {formatCommunicationTimestamp(row.updated_at ?? row.created_at)}
-        </time>
-      </div>
-      <RowActions
-        id={row.id}
-        disabled={isArchiving}
-        onEdit={() => onEdit(row)}
-        onArchiveClick={() => onArchiveClick(row)}
-      />
-    </div>
-  );
-}
-
-function RowActions({
-  id,
-  disabled,
-  onEdit,
-  onArchiveClick,
-}: Readonly<{
-  id: string;
-  disabled: boolean;
-  onEdit: () => void;
-  onArchiveClick: () => void;
-}>) {
-  return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      <Button className="min-h-11" variant="secondary" onClick={onEdit}>
-        <Edit className="me-2 size-4" />
-        تعديل
-      </Button>
-      <Button
-        className="min-h-11"
-        variant="danger"
-        disabled={disabled}
-        onClick={onArchiveClick}
-      >
-        <Archive className="me-2 size-4" />
-        أرشفة
-      </Button>
-    </div>
-  );
-}
-
-function formatRelatedContext(row: CommunicationRecord) {
-  if (!row.related_entity_type && !row.related_entity_id)
-    return "بدون ربط بملف محدد";
-  return [row.related_entity_type, row.related_entity_id]
-    .filter(Boolean)
-    .join(" · ");
-}
-
-function formatCommunicationTimestamp(value: string | null | undefined) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("ar-u-nu-latn", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }

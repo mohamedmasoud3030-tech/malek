@@ -2,26 +2,20 @@ import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { DepositsWorkspace as DepositsWorkspaceBody } from './deposits-workspace';
 
 export type DepositsWorkspaceProps = Readonly<{
-  /**
-   * embedded: rendered inside the finance hub, which already supplies the page
-   * shell — the workspace body renders without a second layout or header.
-   * standalone (default): reached via /deposits, so it owns the page shell.
-   */
   embedded?: boolean;
 }>;
 
 /**
- * Owns the deposits workspace body. Shared verbatim between the standalone
- * /deposits route and the embedded finance hub tab so business logic,
- * queries, and mutations are never duplicated.
+ * One canonical deposits workspace shared by direct compatibility routes and
+ * the finance hub. Desktop renders a register/table; mobile renders cards.
  */
 export function DepositsWorkspace({ embedded = false }: DepositsWorkspaceProps) {
   return (
     <EmbeddableWorkspace
       embedded={embedded}
       visualVariant="malek-pro"
-      title="تأمين وأمانات المستأجرين"
-      description="تسجيل مبالغ التأمين المحتجزة للعقود النشطة، ومتابعة الخصومات والاستردادات مع مستندات الطباعة."
+      title="التأمينات"
+      description="أمانات وتأمينات المستأجرين: الاستلام، الخصومات، الاسترداد ومستندات التسوية في سجل واحد."
     >
       <DepositsWorkspaceBody />
     </EmbeddableWorkspace>

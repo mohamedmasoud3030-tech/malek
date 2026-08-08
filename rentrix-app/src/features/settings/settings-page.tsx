@@ -25,12 +25,8 @@ export function preventSettingsUnload(event: BeforeUnloadEvent) {
 }
 
 export { settingsSections };
-
 export type SettingsWorkspaceVariant = 'standalone' | 'embedded';
-
-type SettingsWorkspaceProps = Readonly<{
-  variant?: SettingsWorkspaceVariant;
-}>;
+type SettingsWorkspaceProps = Readonly<{ variant?: SettingsWorkspaceVariant }>;
 
 function SettingsVariantShell({
   variant,
@@ -48,19 +44,12 @@ function SettingsVariantShell({
   if (variant === 'embedded') {
     return (
       <EntityFormVisualProvider variant="operational">
-        <div data-visual-wave="malek-pro" className={contentClassName} dir={dir} lang={lang}>
-          {children}
-        </div>
+        <div data-visual-wave="malek-pro" className={contentClassName} dir={dir} lang={lang}>{children}</div>
       </EntityFormVisualProvider>
     );
   }
   return (
-    <PageLayout
-      dir={dir}
-      lang={lang}
-      contentClassName={contentClassName}
-      visualVariant="malek-pro"
-    >
+    <PageLayout dir={dir} lang={lang} contentClassName={contentClassName} visualVariant="malek-pro">
       {children}
     </PageLayout>
   );
@@ -96,20 +85,13 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
     return (
       <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-4">
         <SettingsHero companyName="—" hasUnsavedChanges={false} />
-        <Card>
+        <Card role="alert">
           <CardHeader>
             <CardTitle>تعذر تحميل إعدادات الشركة</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {companySettingsQuery.error instanceof Error
-                ? companySettingsQuery.error.message
-                : 'حدث خطأ غير متوقع أثناء تحميل الإعدادات.'}
-            </p>
+            <p className="text-sm text-muted-foreground">تعذر جلب الإعدادات المحفوظة. تحقق من الاتصال والصلاحيات ثم أعد المحاولة؛ لن يتم تغيير أي إعداد قبل نجاح التحميل.</p>
           </CardHeader>
           <CardContent>
-            <Button onClick={handleRetryLoad}>
-              <RefreshCcw className="me-2 size-4" aria-hidden="true" />
-              إعادة المحاولة
-            </Button>
+            <Button onClick={handleRetryLoad}><RefreshCcw className="size-4" aria-hidden="true" />إعادة المحاولة</Button>
           </CardContent>
         </Card>
       </SettingsVariantShell>
@@ -121,17 +103,8 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
       <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="space-y-4">
         <SettingsHero companyName="…" hasUnsavedChanges={false} />
         <Card>
-          <CardHeader>
-            <CardTitle>إعدادات الشركة</CardTitle>
-            <p className="text-sm text-muted-foreground">جارٍ تحميل الإعدادات المحفوظة...</p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Skeleton className="h-20" />
-              <Skeleton className="h-20" />
-              <Skeleton className="h-20" />
-            </div>
-          </CardContent>
+          <CardHeader><CardTitle>إعدادات الشركة</CardTitle><p className="text-sm text-muted-foreground">جارٍ تحميل الإعدادات المحفوظة...</p></CardHeader>
+          <CardContent><div className="grid gap-3 sm:grid-cols-3"><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></div></CardContent>
         </Card>
       </SettingsVariantShell>
     );
@@ -147,24 +120,14 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
   });
 
   return (
-    <SettingsVariantShell
-      variant={variant}
-      dir={pageLanguage.direction}
-      lang={pageLanguage.locale}
-      contentClassName="min-w-0 space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]"
-    >
+    <SettingsVariantShell variant={variant} dir={pageLanguage.direction} lang={pageLanguage.locale} contentClassName="min-w-0 space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
       <SettingsHero companyName={preview.companyName} hasUnsavedChanges={isDirty} />
       <OverviewRow tiles={summaryTiles} />
       <SettingsSaveBar isDirty={isDirty} isSaving={isSaving} onDiscard={discardDraft} />
 
       <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(230px,280px)_minmax(0,1fr)] md:items-start">
         <SettingsWorkspaceNav activeSection={activeSection} onChange={handleJumpToSection} />
-
-        <form
-          id="settings-company-form"
-          className="min-w-0 space-y-4"
-          onSubmit={handleSubmit}
-        >
+        <form id="settings-company-form" className="min-w-0 space-y-4" onSubmit={handleSubmit}>
           <CompanyProfileSections
             activeSection={activeSection}
             draft={draft}
@@ -177,21 +140,10 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
             onLogoFileChange={handleLogoFileChange}
           />
 
-          <SectionCard
-            id="cost-centers"
-            activeId={activeSection}
-            title="مراكز التكلفة"
-            subtitle="تصنيف تشغيلي للمصروفات والتقارير حسب العقار أو النشاط بدون دفتر أستاذ عام."
-          >
+          <SectionCard id="cost-centers" activeId={activeSection} title="مراكز التكلفة" subtitle="تصنيف تشغيلي للمصروفات والتقارير حسب العقار أو النشاط بدون دفتر أستاذ عام.">
             <CostCentersSettingsSection />
           </SectionCard>
-
-          <SectionCard
-            id="payment-terms"
-            activeId={activeSection}
-            title="شروط السداد"
-            subtitle="قوالب تشغيلية لاختيار جدول السداد في العقد بدون إنشاء دفتر أستاذ أو جدولة تلقائية موسعة."
-          >
+          <SectionCard id="payment-terms" activeId={activeSection} title="شروط السداد" subtitle="قوالب تشغيلية لاختيار جدول السداد في العقد بدون إنشاء دفتر أستاذ أو جدولة تلقائية موسعة.">
             <PaymentTermsSettingsSection />
           </SectionCard>
 
@@ -212,11 +164,7 @@ export function SettingsWorkspace({ variant = 'standalone' }: SettingsWorkspaceP
         </form>
       </div>
 
-      <DirtyRouteNavigationGuard
-        isDirty={isDirty}
-        disabled={isSaving}
-        onDiscard={discardDraft}
-      />
+      <DirtyRouteNavigationGuard isDirty={isDirty} disabled={isSaving} onDiscard={discardDraft} />
     </SettingsVariantShell>
   );
 }

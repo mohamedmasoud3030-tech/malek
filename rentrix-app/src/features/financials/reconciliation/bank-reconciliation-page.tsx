@@ -21,8 +21,9 @@ import { Input } from '@/components/ui/input';
 import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { defaultCompanyLocalSettings } from '@/lib/companySettings';
 import { formatCompanyDate, formatCompanyMoney } from '@/lib/companyFormatters';
+import type { CompanySettingsContract } from '@/lib/companySettings';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { BankCsvImportWorkflow } from './bank-csv-import-workflow';
 import type {
   BankMatchCandidate,
@@ -37,8 +38,8 @@ import {
   useBankReconciliationController,
 } from './useBankReconciliationController';
 
-function formatDate(value: string | null | undefined) {
-  return formatCompanyDate(defaultCompanyLocalSettings, value ? `${value}T00:00:00` : value);
+function formatDate(settings: CompanySettingsContract, value: string | null | undefined) {
+  return formatCompanyDate(settings, value ? `${value}T00:00:00` : value);
 }
 
 function statusTone(status: BankStatementLine['status']): 'success' | 'neutral' | 'warning' {
@@ -48,21 +49,12 @@ function statusTone(status: BankStatementLine['status']): 'success' | 'neutral' 
 }
 
 export type BankReconciliationWorkspaceProps = Readonly<{
-  /**
-   * embedded: rendered inside the finance hub, which already supplies the page
-   * shell — the workspace body renders without a second layout or header.
-   * standalone (default): reached via /bank-reconciliation, so it owns the shell.
-   */
   embedded?: boolean;
 }>;
 
-/**
- * Owns the bank reconciliation workspace body. Shared verbatim between the
- * standalone /bank-reconciliation route and the embedded finance hub tab so
- * business logic, queries, and mutations are never duplicated.
- */
 export function BankReconciliationWorkspace({ embedded = false }: BankReconciliationWorkspaceProps) {
   const ctrl = useBankReconciliationController();
+  const companySettings = useCompanySettingsContract();
   const activeFilters: ActiveFilterItem[] = [];
   if (ctrl.filters.bankAccountId) {
     const account = ctrl.accounts.find((item) => item.id === ctrl.filters.bankAccountId);
@@ -85,7 +77,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
     activeFilters.push({
       key: 'from',
       label: 'من',
-      value: formatDate(ctrl.filters.from),
+      value: formatDate(companySettings, ctrl.filters.from),
       onRemove: () => ctrl.setFilters({ ...ctrl.filters, from: '' }),
     });
   }
@@ -93,7 +85,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
     activeFilters.push({
       key: 'to',
       label: 'إلى',
-      value: formatDate(ctrl.filters.to),
+      value: formatDate(companySettings, ctrl.filters.to),
       onRemove: () => ctrl.setFilters({ ...ctrl.filters, to: '' }),
     });
   }
@@ -102,15 +94,15 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
     <EmbeddableWorkspace
       visualVariant="malek-pro"
       embedded={embedded}
-      title="مطابقة البنك"
+      title="المطابقة البنكية"
       description="مراجعة حركات كشف البنك ومطابقتها مع الدفعات أو الإيصالات أو المصروفات."
       secondaryActions={(
         <>
-          <Button variant="secondary" disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0} onClick={ctrl.openImportForm}>
+          <Button variant="secondary" className="min-h-11" disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0} onClick={ctrl.openImportForm}>
             <FileUp className="me-2 size-4" aria-hidden="true" />
             استيراد CSV
           </Button>
-          <Button variant="secondary" disabled={!ctrl.canManageReconciliation || ctrl.unmatchedLines.length === 0} onClick={ctrl.openMatchForm}>
+          <Button variant="secondary" className="min-h-11" disabled={!ctrl.canManageReconciliation || ctrl.unmatchedLines.length === 0} onClick={ctrl.openMatchForm}>
             <Link2 className="me-2 size-4" aria-hidden="true" />
             مطابقة حركة
           </Button>
@@ -118,6 +110,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
       )}
       primaryAction={(
         <Button
+          className="min-h-11"
           disabled={!ctrl.canManageReconciliation || ctrl.accounts.length === 0}
           title={ctrl.canManageReconciliation ? undefined : 'ليس لديك صلاحية مطابقة البنك'}
           onClick={ctrl.openManualLineForm}
@@ -127,12 +120,18 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         </Button>
       )}
     >
-
       <FinanceKpiGrid desktopColumns={4}>
         <FinanceKpiCard label="إجمالي الحركات" value={ctrl.summary.totalLines} sub="ضمن الفلاتر الحالية" icon={Landmark} accent="primary" />
         <FinanceKpiCard label="غير مطابقة" value={ctrl.summary.unmatchedCount} sub="تحتاج إلى مراجعة" icon={Unlink} accent="primary" trend="down" trendValue="مراجعة" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'unmatched' })} />
         <FinanceKpiCard label="مطابقة" value={ctrl.summary.matchedCount} sub="تم ربطها بسجلات النظام" icon={CheckCircle2} accent="primary" trend="up" trendValue="مطابق" onDrill={() => ctrl.setFilters({ ...ctrl.filters, status: 'matched' })} />
-        <FinanceKpiCard label="صافي غير مطابق" value={formatCompanyMoney(defaultCompanyLocalSettings, ctrl.summary.unmatchedAmount)} sub="إجمالي المبالغ غير المحسومة" icon={Banknote} accent="primary" unit="OMR" />
+        <FinanceKpiCard
+          label="صافي غير مطابق"
+          value={formatCompanyMoney(companySettings, ctrl.summary.unmatchedAmount)}
+          sub="إجمالي المبالغ غير المحسومة"
+          icon={Banknote}
+          accent="primary"
+          unit={companySettings.defaultCurrency}
+        />
       </FinanceKpiGrid>
 
       <FilterBar
@@ -181,6 +180,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         />
       ) : (
         <BankStatementLinesTable
+          companySettings={companySettings}
           lines={ctrl.lines}
           onIgnore={(id) => { if (ctrl.canManageReconciliation) ctrl.setPendingIgnoreLineId(id); }}
           onMatch={(line) => {
@@ -201,20 +201,18 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         onOpenChange={(open) => { if (!ctrl.createLine.isPending) ctrl.setLineFormOpen(open); }}
         title="إضافة حركة كشف يدوية"
         description="استخدم هذا النموذج للحركات التي لم تُستورد من كشف CSV."
+        visualVariant="operational"
       >
-        <EntityForm.Root
-          aria-busy={ctrl.createLine.isPending}
-          onSubmit={ctrl.handleCreateLineSubmit}
-        >
+        <EntityForm.Root aria-busy={ctrl.createLine.isPending} onSubmit={ctrl.handleCreateLineSubmit}>
           <EntityForm.Section title="بيانات الحركة" description="أدخل الحساب والتاريخ والوصف والمبلغ كما ظهر في كشف البنك.">
             <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="الحساب البنكي">
+              <EntityForm.Field label="الحساب البنكي *">
                 <Select required value={ctrl.lineDraft.bank_account_id} onChange={(event) => ctrl.setLineDraft({ ...ctrl.lineDraft, bank_account_id: event.target.value })}>
                   <option value="">اختر الحساب</option>
                   {ctrl.accounts.map((account) => <option key={account.id} value={account.id}>{account.account_name}</option>)}
                 </Select>
               </EntityForm.Field>
-              <EntityForm.Field label="تاريخ الحركة">
+              <EntityForm.Field label="تاريخ الحركة *">
                 <Input required type="date" value={ctrl.lineDraft.transaction_date} onChange={(event) => ctrl.setLineDraft({ ...ctrl.lineDraft, transaction_date: event.target.value })} />
               </EntityForm.Field>
               <EntityForm.Field label="الوصف" className="sm:col-span-2">
@@ -223,8 +221,8 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
               <EntityForm.Field label="المرجع">
                 <Input value={ctrl.lineDraft.reference} onChange={(event) => ctrl.setLineDraft({ ...ctrl.lineDraft, reference: event.target.value })} placeholder="رقم المرجع" />
               </EntityForm.Field>
-              <EntityForm.Field label="المبلغ">
-                <Input required type="number" step="0.01" inputMode="decimal" value={ctrl.lineDraft.amount} onChange={(event) => ctrl.setLineDraft({ ...ctrl.lineDraft, amount: event.target.value })} placeholder="المبلغ +/-" />
+              <EntityForm.Field label={`المبلغ (${companySettings.defaultCurrency}) *`}>
+                <Input required type="number" step="0.01" inputMode="decimal" dir="ltr" value={ctrl.lineDraft.amount} onChange={(event) => ctrl.setLineDraft({ ...ctrl.lineDraft, amount: event.target.value })} placeholder="المبلغ +/-" />
               </EntityForm.Field>
             </div>
           </EntityForm.Section>
@@ -232,7 +230,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
             submitLabel={ctrl.createLine.isPending ? 'جارٍ الحفظ...' : 'حفظ الحركة'}
             onCancel={() => ctrl.setLineFormOpen(false)}
             isSubmitting={ctrl.createLine.isPending}
-            submitDisabled={!ctrl.canManageReconciliation || !ctrl.lineDraft.bank_account_id || !ctrl.lineDraft.amount}
+            submitDisabled={!ctrl.canManageReconciliation || !ctrl.lineDraft.bank_account_id || !ctrl.lineDraft.transaction_date || !ctrl.lineDraft.amount}
           />
         </EntityForm.Root>
       </EntityForm.Overlay>
@@ -243,10 +241,8 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         defaultBankAccountId={ctrl.filters.bankAccountId || (ctrl.accounts[0]?.id ?? '')}
         canManage={ctrl.canManageReconciliation}
         onCompleted={(result) => {
-          // Refresh lines and show summary; navigation to reconciliation is already here,
-          // but we ensure filters keep account context
           ctrl.setFilters({ ...ctrl.filters, bankAccountId: result.bank_account_id });
-          ctrl.linesQuery.refetch();
+          void ctrl.linesQuery.refetch();
         }}
       />
 
@@ -255,13 +251,11 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         onOpenChange={(open) => { if (!ctrl.matchLine.isPending) ctrl.setMatchFormOpen(open); }}
         title="مطابقة حركة بنكية"
         description="اختر الحركة والسجل المقابل، ثم راجع مبلغ المطابقة قبل التأكيد."
+        visualVariant="operational"
       >
-        <EntityForm.Root
-          aria-busy={ctrl.matchLine.isPending}
-          onSubmit={ctrl.handleMatchLineSubmit}
-        >
+        <EntityForm.Root aria-busy={ctrl.matchLine.isPending} onSubmit={ctrl.handleMatchLineSubmit}>
           <EntityForm.Section title="الحركة والسجل" description="الاقتراحات تعتمد على التاريخ والمبلغ فقط وتحتاج مراجعتك.">
-            <EntityForm.Field label="الحركة غير المطابقة">
+            <EntityForm.Field label="الحركة غير المطابقة *">
               <Select
                 required
                 value={ctrl.matchDraft.statement_line_id}
@@ -277,7 +271,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
                 <option value="">اختر حركة غير مطابقة</option>
                 {ctrl.unmatchedLines.map((line) => (
                   <option key={line.id} value={line.id}>
-                    {formatDate(line.transaction_date)} — {line.description} — {formatCompanyMoney(defaultCompanyLocalSettings, line.amount)}
+                    {formatDate(companySettings, line.transaction_date)} — {line.description} — {formatCompanyMoney(companySettings, line.amount)}
                   </option>
                 ))}
               </Select>
@@ -292,11 +286,11 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
                   {Object.entries(entityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </Select>
               </EntityForm.Field>
-              <EntityForm.Field label="معرّف السجل">
+              <EntityForm.Field label="معرّف السجل *">
                 <Input required value={ctrl.matchDraft.matched_entity_id} onChange={(event) => ctrl.setMatchDraft({ ...ctrl.matchDraft, matched_entity_id: event.target.value })} placeholder="معرف السجل" />
               </EntityForm.Field>
-              <EntityForm.Field label="مبلغ المطابقة">
-                <Input required type="number" step="0.01" inputMode="decimal" value={ctrl.matchDraft.matched_amount} onChange={(event) => ctrl.setMatchDraft({ ...ctrl.matchDraft, matched_amount: event.target.value })} placeholder="مبلغ المطابقة" />
+              <EntityForm.Field label={`مبلغ المطابقة (${companySettings.defaultCurrency}) *`}>
+                <Input required type="number" step="0.01" inputMode="decimal" dir="ltr" value={ctrl.matchDraft.matched_amount} onChange={(event) => ctrl.setMatchDraft({ ...ctrl.matchDraft, matched_amount: event.target.value })} placeholder="مبلغ المطابقة" />
               </EntityForm.Field>
               <EntityForm.Field label="ملاحظات">
                 <Input value={ctrl.matchDraft.notes} onChange={(event) => ctrl.setMatchDraft({ ...ctrl.matchDraft, notes: event.target.value })} placeholder="اختياري" />
@@ -305,6 +299,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
 
             {ctrl.selectedLine ? (
               <SuggestedMatches
+                companySettings={companySettings}
                 candidates={ctrl.suggestionsQuery.data ?? []}
                 isLoading={ctrl.suggestionsQuery.isLoading}
                 isInteractive={ctrl.canManageReconciliation}
@@ -332,7 +327,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
         open={Boolean(ctrl.pendingIgnoreLine)}
         onOpenChange={(open) => { if (!open) ctrl.setPendingIgnoreLineId(null); }}
         title="تجاهل حركة كشف البنك؟"
-        description={ctrl.pendingIgnoreLine ? `سيتم استبعاد حركة ${ctrl.pendingIgnoreLine.description} بمبلغ ${formatCompanyMoney(defaultCompanyLocalSettings, ctrl.pendingIgnoreLine.amount)} من قائمة الحركات غير المطابقة. يمكن مراجعتها لاحقاً عبر فلتر المتجاهلة.` : undefined}
+        description={ctrl.pendingIgnoreLine ? `سيتم استبعاد حركة ${ctrl.pendingIgnoreLine.description} بمبلغ ${formatCompanyMoney(companySettings, ctrl.pendingIgnoreLine.amount)} من قائمة الحركات غير المطابقة. يمكن مراجعتها لاحقاً عبر فلتر المتجاهلة.` : undefined}
         confirmLabel="تجاهل الحركة"
         variant="warning"
         isLoading={ctrl.ignoreLine.isPending}
@@ -347,29 +342,31 @@ export function BankReconciliationPage() {
 }
 
 function BankStatementLinesTable({
+  companySettings,
   lines,
   onIgnore,
   onMatch,
   isIgnoring,
 }: Readonly<{
+  companySettings: CompanySettingsContract;
   lines: BankStatementLine[];
   onIgnore: (id: string) => void;
   onMatch: (line: BankStatementLine) => void;
   isIgnoring: boolean;
 }>) {
   const columns: ColumnDef<BankStatementLine>[] = [
-    { key: 'date', header: 'التاريخ', render: (line) => formatDate(line.transaction_date) },
+    { key: 'date', header: 'التاريخ', render: (line) => formatDate(companySettings, line.transaction_date) },
     { key: 'description', header: 'الوصف', render: (line) => <span className="font-bold">{line.description}</span> },
     { key: 'reference', header: 'المرجع', render: (line) => line.reference ?? '—' },
-    { key: 'amount', header: 'المبلغ', render: (line) => <span className="font-black tabular-nums">{formatCompanyMoney(defaultCompanyLocalSettings, line.amount)}</span> },
+    { key: 'amount', header: 'المبلغ', render: (line) => <span dir="ltr" className="font-black tabular-nums">{formatCompanyMoney(companySettings, line.amount)}</span> },
     { key: 'status', header: 'الحالة', render: (line) => <StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge> },
     {
       key: 'action',
       header: 'الإجراء',
       render: (line) => line.status === 'unmatched' ? (
         <div className="flex gap-2">
-          <Button variant="secondary" className="min-h-10 px-3 text-xs" onClick={() => onMatch(line)}>مطابقة</Button>
-          <Button variant="secondary" className="min-h-10 px-3 text-xs" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>تجاهل</Button>
+          <Button variant="secondary" className="min-h-11 px-3 text-xs" onClick={() => onMatch(line)}>مطابقة</Button>
+          <Button variant="secondary" className="min-h-11 px-3 text-xs" disabled={isIgnoring} onClick={() => onIgnore(line.id)}>تجاهل</Button>
         </div>
       ) : '—',
     },
@@ -383,17 +380,19 @@ function BankStatementLinesTable({
       keyOf={(line) => line.id}
       emptyTitle="لا توجد حركات كشف"
       emptyDescription="لا توجد حركات تطابق الفلاتر الحالية."
+      enableViewModeToggle
+      viewModeStorageKey="rentrix:view-mode:bank-reconciliation"
       renderMobileCard={(line) => (
         <EntityCard
           id={line.id}
           name={line.description}
-          subtitle={formatDate(line.transaction_date)}
+          subtitle={formatDate(companySettings, line.transaction_date)}
           avatarIcon={Landmark}
           badge={<StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge>}
           stats={(
             <div className="grid grid-cols-2 gap-3">
               <div><span className="block text-[10px] text-muted-foreground">المرجع</span><strong className="mt-1 block truncate text-xs">{line.reference ?? '—'}</strong></div>
-              <div><span className="block text-[10px] text-muted-foreground">المبلغ</span><strong className="mt-1 block text-sm tabular-nums">{formatCompanyMoney(defaultCompanyLocalSettings, line.amount)}</strong></div>
+              <div><span className="block text-[10px] text-muted-foreground">المبلغ</span><strong dir="ltr" className="mt-1 block text-sm tabular-nums">{formatCompanyMoney(companySettings, line.amount)}</strong></div>
             </div>
           )}
           actions={line.status === 'unmatched' ? [
@@ -407,11 +406,13 @@ function BankStatementLinesTable({
 }
 
 function SuggestedMatches({
+  companySettings,
   candidates,
   isLoading,
   isInteractive,
   onUse,
 }: Readonly<{
+  companySettings: CompanySettingsContract;
   candidates: BankMatchCandidate[];
   isLoading: boolean;
   isInteractive: boolean;
@@ -435,7 +436,7 @@ function SuggestedMatches({
           <span className="mx-2">—</span>
           <span>{candidate.label}</span>
           <span className="mx-2">—</span>
-          <span className="font-black tabular-nums">{formatCompanyMoney(defaultCompanyLocalSettings, candidate.amount)}</span>
+          <span dir="ltr" className="font-black tabular-nums">{formatCompanyMoney(companySettings, candidate.amount)}</span>
         </button>
       ))}
     </div>

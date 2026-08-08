@@ -2,16 +2,18 @@ import { useMemo, useState } from 'react';
 import { getContractStatusVariants } from '@/lib/contractStatus';
 import { CheckCircle2, DollarSign, Download, FileCheck, MinusCircle, Printer, ShieldAlert, Wallet, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { EntityForm } from '@/components/ui/entity-form';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { MobileCard } from '@/components/ui/mobile-card';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Input } from '@/components/ui/input';
 import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { AsyncContentState } from '@/components/async-content-state';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
-import { numberToArabicWords, OMR_CURRENCY_CONFIG } from '@/lib/numberToArabicWords';
+import { numberToArabicWords, getCurrencyWordConfig } from '@/lib/numberToArabicWords';
+import { formatMoney as formatCurrencyMoney, formatLatinNumber, normalizeCurrency } from '@/lib/formatters';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { runDocumentAction } from '@/services/documents/runDocumentAction';
@@ -41,19 +43,16 @@ import {
 import type { Contract } from '@/types/domain';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import { formatLatinNumber } from '@/lib/formatters';
 
 function useContracts() {
   return useQuery({
     queryKey: ['contracts-for-deposits'],
     queryFn: async () => {
-      // The UUID stays the option VALUE; these joined display fields keep raw
-      // identifiers out of the option labels.
       const { data, error } = await supabase
         .from('contracts')
         .select('id, tenant_id, property_id, unit_id, people:tenant_id(id,full_name), properties:property_id(id,title), units:unit_id(id,unit_number)')
         .is('deleted_at', null)
-        .in('status', getContractStatusVariants('active') as Contract['status'][]) // legacy rows may be stored as 'ACTIVE'
+        .in('status', getContractStatusVariants('active') as Contract['status'][])
         .limit(100)
         .returns<DepositContractOption[]>();
       if (error) handleSupabaseError(error, 'تعذر تحميل العقود');
@@ -93,6 +92,9 @@ export function DepositsWorkspace() {
   const documentSettings = useDocumentSettings();
   const deposits = depositsQuery.data ?? [];
   const selectedContract = contractsQuery.data?.find((contract) => contract.id === createForm.contract_id) ?? null;
+  const currencyCode = normalizeCurrency(documentSettings.companySettings.currency);
+  const currencyLabel = documentSettings.companySettings.currencySymbol || currencyCode;
+  const formatDepositMoney = (value: number) => formatCurrencyMoney({ amount: value, currency: currencyCode, locale: 'ar' });
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -107,7 +109,7 @@ export function DepositsWorkspace() {
       toast.success('تم تسجيل وديعة التأمين بنجاح');
       setActionType(null);
       setCreateForm({ contract_id: '', amount: 0, received_date: getTodayLocalDateString(), notes: '' });
-      queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
+      void queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل إنشاء الوديعة'),
   });
@@ -130,7 +132,7 @@ export function DepositsWorkspace() {
       setActionType(null);
       setAmountInput(0);
       setDescriptionInput('');
-      queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
+      void queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل الخصم - تحقق من الرصيد'),
   });
@@ -153,7 +155,7 @@ export function DepositsWorkspace() {
       setActionType(null);
       setAmountInput(0);
       setDescriptionInput('');
-      queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
+      void queryClient.invalidateQueries({ queryKey: ['tenant-deposits'] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل الاسترداد - تحقق من الرصيد'),
   });
@@ -163,14 +165,9 @@ export function DepositsWorkspace() {
   const totalRefunded = useMemo(() => deposits.reduce((sum, deposit) => sum + deposit.refunded_amount, 0), [deposits]);
   const contentStatus = getContentStatus(depositsQuery.isLoading, depositsQuery.isError, deposits.length === 0);
 
-  // Real currency label for the printed amounts — sourced from company
-  // settings, never a hardcoded symbol. Only used once settings are ready.
-  const currencyLabel = documentSettings.companySettings.currencySymbol || documentSettings.companySettings.currency;
-
   const buildDepositClearanceDocument = (deposit: DepositRecord) => {
     const printableAmount = deposit.remaining_amount > 0 ? deposit.remaining_amount : deposit.deposit_amount;
-    const tafqeet = numberToArabicWords(printableAmount, OMR_CURRENCY_CONFIG);
-    // Readable contract reference instead of the raw contract UUID.
+    const tafqeet = numberToArabicWords(printableAmount, getCurrencyWordConfig(currencyCode));
     const contractReference = formatDepositContractReference(deposit);
     return {
       reportTitle: 'سند تسوية ومخالصة مبلغ التأمين',
@@ -213,6 +210,13 @@ export function DepositsWorkspace() {
     );
   };
 
+  const openDepositAction = (deposit: DepositRecord, type: 'deduct' | 'refund') => {
+    setSelectedDeposit(deposit);
+    setActionType(type);
+    setAmountInput(deposit.remaining_amount);
+    setDescriptionInput('');
+  };
+
   const executeSelectedAction = () => {
     if (actionType === 'deduct') {
       deductMut.mutate();
@@ -220,6 +224,65 @@ export function DepositsWorkspace() {
     }
     refundMut.mutate();
   };
+
+  const depositActions = (deposit: DepositRecord) => [
+    { id: 'print', label: 'طباعة', icon: Printer, onClick: () => handlePrint(deposit), disabled: !documentSettings.isReady },
+    { id: 'pdf', label: 'تنزيل PDF', icon: Download, onClick: () => handleDownloadPdf(deposit), disabled: !documentSettings.isReady },
+    ...(deposit.remaining_amount > 0
+      ? [
+          { id: 'deduct', label: 'خصم ضرر', icon: ShieldAlert, onClick: () => openDepositAction(deposit, 'deduct') },
+          { id: 'refund', label: 'رد التأمين', icon: DollarSign, onClick: () => openDepositAction(deposit, 'refund') },
+        ]
+      : []),
+  ];
+
+  const columns: ColumnDef<DepositRecord>[] = [
+    {
+      key: 'contract',
+      header: 'العقد والمستأجر',
+      render: (deposit) => (
+        <div className="min-w-0">
+          <p className="font-bold">{formatDepositContractReference(deposit)}</p>
+          {deposit.tenant_name ? <p className="mt-0.5 text-xs text-muted-foreground">{deposit.tenant_name}</p> : null}
+        </div>
+      ),
+    },
+    {
+      key: 'received_date',
+      header: 'تاريخ الاستلام',
+      render: (deposit) => <span dir="ltr" className="tabular-nums">{deposit.received_date}</span>,
+    },
+    {
+      key: 'original',
+      header: 'الأصلي',
+      render: (deposit) => <span dir="ltr" className="font-bold tabular-nums">{formatDepositMoney(deposit.deposit_amount)}</span>,
+    },
+    {
+      key: 'deducted',
+      header: 'المخصوم',
+      render: (deposit) => <span dir="ltr" className="font-bold text-destructive tabular-nums">{formatDepositMoney(deposit.deducted_amount)}</span>,
+    },
+    {
+      key: 'refunded',
+      header: 'المسترد',
+      render: (deposit) => <span dir="ltr" className="font-bold text-success tabular-nums">{formatDepositMoney(deposit.refunded_amount)}</span>,
+    },
+    {
+      key: 'remaining',
+      header: 'المتبقي',
+      render: (deposit) => <span dir="ltr" className="font-black text-primary tabular-nums">{formatDepositMoney(deposit.remaining_amount)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'الحالة',
+      render: (deposit) => <StatusBadge tone={getDepositTone(deposit.status)}>{depositStatusLabels[deposit.status]}</StatusBadge>,
+    },
+    {
+      key: 'actions',
+      header: 'إجراءات',
+      render: (deposit) => <ActionMenu label={`إجراءات ${formatDepositContractReference(deposit)}`} items={depositActions(deposit)} />,
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -236,14 +299,12 @@ export function DepositsWorkspace() {
         </Button>
       </section>
 
-      {!documentSettings.isReady && !documentSettings.isLoading ? (
-        <DocumentReadinessNotice />
-      ) : null}
+      {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
 
       <FinanceKpiGrid desktopColumns={4} className="mb-2">
-        <FinanceKpiCard label="الأمانات المحتجزة" value={formatMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" unit="OMR" />
-        <FinanceKpiCard label="الخصومات" value={formatMoney(totalDeductions)} icon={MinusCircle} accent="primary" sub="أضرار وصيانة" unit="OMR" />
-        <FinanceKpiCard label="المسترد" value={formatMoney(totalRefunded)} icon={CheckCircle2} accent="primary" sub="تم رده" unit="OMR" />
+        <FinanceKpiCard label="الأمانات المحتجزة" value={formatDepositMoney(totalHeld)} icon={Wallet} accent="primary" sub="واجب الرد" unit={currencyCode} />
+        <FinanceKpiCard label="الخصومات" value={formatDepositMoney(totalDeductions)} icon={MinusCircle} accent="primary" sub="أضرار وصيانة" unit={currencyCode} />
+        <FinanceKpiCard label="المسترد" value={formatDepositMoney(totalRefunded)} icon={CheckCircle2} accent="primary" sub="تم رده" unit={currencyCode} />
         <FinanceKpiCard label="عدد الودائع" value={formatLatinNumber(deposits.length, 'ar')} icon={FileCheck} accent="primary" sub="سجلات" />
       </FinanceKpiGrid>
 
@@ -256,64 +317,63 @@ export function DepositsWorkspace() {
         emptyDescription="ابدأ بتسجيل وديعة تأمين مرتبطة بعقد نشط. سيتم حفظها عبر RPC ذري مع قيد محاسبي."
         emptyAction={<Button onClick={() => setActionType('create')}>تسجيل أول وديعة</Button>}
       >
-        <div className="grid gap-3">
-          {deposits.map((deposit) => (
-            <Card key={deposit.id} className="border-border/60">
-              <CardContent className="space-y-3 p-4">
-                <div className="flex flex-wrap justify-between gap-2 border-b pb-2">
-                  <div>
-                    {/* Readable contract reference — never the raw UUID or tenant_id */}
-                    <p className="text-sm font-bold">وديعة تأمين · {formatDepositContractReference(deposit)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      استلام: {deposit.received_date}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge tone={getDepositTone(deposit.status)}>{depositStatusLabels[deposit.status]}</StatusBadge>
-                    <Button variant="outline" size="sm" onClick={() => handlePrint(deposit)} disabled={!documentSettings.isReady} className="gap-1">
-                      <Printer className="size-3.5" />
-                      طباعة
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDownloadPdf(deposit)} disabled={!documentSettings.isReady} className="gap-1">
-                      <Download className="size-3.5" />
-                      PDF
-                    </Button>
-                  </div>
-                </div>
+        <EntityTable
+          aria-label="جدول التأمينات"
+          rows={deposits}
+          columns={columns}
+          keyOf={(deposit) => deposit.id}
+          enableViewModeToggle
+          viewModeStorageKey="rentrix:view-mode:deposits"
+          renderMobileCard={(deposit) => (
+            <MobileCard
+              title={formatDepositContractReference(deposit)}
+              subtitle={`${deposit.tenant_name ?? 'مستأجر غير محدد'} · استلام ${deposit.received_date}`}
+              badge={<StatusBadge tone={getDepositTone(deposit.status)}>{depositStatusLabels[deposit.status]}</StatusBadge>}
+              stats={(
                 <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                  <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">الأصلي</span><strong dir="ltr">{formatMoney(deposit.deposit_amount)}</strong></div>
-                  <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">المخصوم</span><strong className="text-destructive" dir="ltr">{formatMoney(deposit.deducted_amount)}</strong></div>
-                  <div className="rounded-xl bg-muted/20 p-2"><span className="block text-muted-foreground">المسترد</span><strong className="text-success" dir="ltr">{formatMoney(deposit.refunded_amount)}</strong></div>
-                  <div className="rounded-xl bg-primary/10 p-2"><span className="block text-muted-foreground">المتبقي</span><strong className="text-primary" dir="ltr">{formatMoney(deposit.remaining_amount)}</strong></div>
+                  <div><span className="block text-muted-foreground">الأصلي</span><strong dir="ltr">{formatDepositMoney(deposit.deposit_amount)}</strong></div>
+                  <div><span className="block text-muted-foreground">المخصوم</span><strong className="text-destructive" dir="ltr">{formatDepositMoney(deposit.deducted_amount)}</strong></div>
+                  <div><span className="block text-muted-foreground">المسترد</span><strong className="text-success" dir="ltr">{formatDepositMoney(deposit.refunded_amount)}</strong></div>
+                  <div><span className="block text-muted-foreground">المتبقي</span><strong className="text-primary" dir="ltr">{formatDepositMoney(deposit.remaining_amount)}</strong></div>
                 </div>
-                {deposit.remaining_amount > 0 && (
-                  <div className="flex gap-2 border-t pt-2">
-                    <Button size="sm" variant="outline" className="gap-1 text-xs text-destructive" onClick={() => { setSelectedDeposit(deposit); setActionType('deduct'); setAmountInput(deposit.remaining_amount); }}>
-                      <ShieldAlert className="size-3.5" />
-                      خصم ضرر
-                    </Button>
-                    <Button size="sm" variant="secondary" className="gap-1 text-xs" onClick={() => { setSelectedDeposit(deposit); setActionType('refund'); setAmountInput(deposit.remaining_amount); }}>
-                      <DollarSign className="size-3.5" />
-                      رد التأمين
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              )}
+              actions={(
+                <div className="grid w-full grid-cols-2 gap-2">
+                  {deposit.remaining_amount > 0 ? (
+                    <>
+                      <Button variant="secondary" className="min-h-11" onClick={() => openDepositAction(deposit, 'deduct')}>
+                        <ShieldAlert className="me-1 size-4" />خصم ضرر
+                      </Button>
+                      <Button variant="secondary" className="min-h-11" onClick={() => openDepositAction(deposit, 'refund')}>
+                        <DollarSign className="me-1 size-4" />رد التأمين
+                      </Button>
+                    </>
+                  ) : null}
+                  <Button variant="outline" className="min-h-11" onClick={() => handlePrint(deposit)} disabled={!documentSettings.isReady}>
+                    <Printer className="me-1 size-4" />طباعة
+                  </Button>
+                  <Button variant="outline" className="min-h-11" onClick={() => handleDownloadPdf(deposit)} disabled={!documentSettings.isReady}>
+                    <Download className="me-1 size-4" />PDF
+                  </Button>
+                </div>
+              )}
+            />
+          )}
+        />
       </AsyncContentState>
 
       <EntityForm.Overlay
         open={actionType === 'create'}
-        onOpenChange={(open) => { if (!open) setActionType(null); }}
+        onOpenChange={(open) => { if (!open && !createMut.isPending) setActionType(null); }}
         title="تسجيل وديعة تأمين جديدة"
         description="يتم حفظ الوديعة عبر RPC ذري مع قيد محاسبي: مدين نقدية / دائن التزامات ودائع."
+        visualVariant="operational"
       >
         <EntityForm.Root
           aria-busy={createMut.isPending}
           onSubmit={(event) => {
             event.preventDefault();
+            if (!createForm.contract_id || createForm.amount <= 0 || !createForm.received_date) return;
             createMut.mutate();
           }}
         >
@@ -327,16 +387,14 @@ export function DepositsWorkspace() {
                 ))}
               </Select>
             </EntityForm.Field>
-            {/* Visual confirmation of the selected contract before saving — the
-                UUID stays the internal value and is never the label. */}
             {selectedContract ? (
               <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
                 العقد المحدد: {describeSelectedContract(selectedContract)}
               </p>
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
-              <EntityForm.Field label="المبلغ *">
-                <Input required type="number" dir="ltr" value={createForm.amount} onChange={(event) => setCreateForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} />
+              <EntityForm.Field label={`المبلغ (${currencyCode}) *`}>
+                <Input required type="number" min="0.01" step="0.01" inputMode="decimal" dir="ltr" value={createForm.amount} onChange={(event) => setCreateForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} />
               </EntityForm.Field>
               <EntityForm.Field label="تاريخ الاستلام *">
                 <Input required type="date" value={createForm.received_date} onChange={(event) => setCreateForm((form) => ({ ...form, received_date: event.target.value }))} />
@@ -350,44 +408,52 @@ export function DepositsWorkspace() {
             submitLabel={createMut.isPending ? 'جارٍ الحفظ...' : 'حفظ الوديعة'}
             onCancel={() => setActionType(null)}
             isSubmitting={createMut.isPending}
-            submitDisabled={!createForm.contract_id || createForm.amount <= 0}
+            submitDisabled={!createForm.contract_id || createForm.amount <= 0 || !createForm.received_date}
           />
         </EntityForm.Root>
       </EntityForm.Overlay>
 
       <EntityForm.Overlay
         open={actionType === 'deduct' || actionType === 'refund'}
-        onOpenChange={(open) => { if (!open) { setActionType(null); setSelectedDeposit(null); } }}
+        onOpenChange={(open) => {
+          if (!open && !deductMut.isPending && !refundMut.isPending) {
+            setActionType(null);
+            setSelectedDeposit(null);
+          }
+        }}
         title={actionType === 'deduct' ? 'خصم من وديعة التأمين' : 'رد وديعة التأمين'}
-        description={selectedDeposit ? `المتبقي: ${formatMoney(selectedDeposit.remaining_amount)} - لن يسمح النظام بتجاوز الرصيد` : undefined}
+        description={selectedDeposit ? `المتبقي: ${formatDepositMoney(selectedDeposit.remaining_amount)} — لن يسمح النظام بتجاوز الرصيد` : undefined}
+        visualVariant="operational"
       >
         <EntityForm.Root
           aria-busy={deductMut.isPending || refundMut.isPending}
           onSubmit={(event) => {
             event.preventDefault();
+            if (amountInput <= 0 || !selectedDeposit || amountInput > selectedDeposit.remaining_amount) return;
+            if (actionType === 'deduct' && !descriptionInput.trim()) return;
             executeSelectedAction();
           }}
         >
           <EntityForm.ErrorSummary message={(deductMut.error as Error)?.message || (refundMut.error as Error)?.message} />
           <EntityForm.Section title="بيانات العملية">
-            <EntityForm.Field label="المبلغ *">
-              <Input required type="number" dir="ltr" value={amountInput} onChange={(event) => setAmountInput(Number(event.target.value) || 0)} max={selectedDeposit?.remaining_amount} />
+            <EntityForm.Field label={`المبلغ (${currencyCode}) *`}>
+              <Input required type="number" min="0.01" step="0.01" inputMode="decimal" dir="ltr" value={amountInput} onChange={(event) => setAmountInput(Number(event.target.value) || 0)} max={selectedDeposit?.remaining_amount} />
             </EntityForm.Field>
             {actionType === 'deduct' ? (
               <>
                 <EntityForm.Field label="سبب الخصم *">
-                  <Select value={reasonInput} onChange={(event) => setReasonInput(event.target.value as DepositDeductionPayload['reason'])}>
+                  <Select required value={reasonInput} onChange={(event) => setReasonInput(event.target.value as DepositDeductionPayload['reason'])}>
                     {Object.entries(deductionReasonLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
                   </Select>
                 </EntityForm.Field>
-                <EntityForm.Field label="وصف تفصيلي *">
-                  <Textarea value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} placeholder="تفاصيل الأضرار..." />
+                <EntityForm.Field label="وصف تفصيلي *" error={!descriptionInput.trim() ? 'الوصف مطلوب لتوثيق سبب الخصم.' : undefined}>
+                  <Textarea required value={descriptionInput} onChange={(event) => setDescriptionInput(event.target.value)} placeholder="تفاصيل الأضرار..." />
                 </EntityForm.Field>
               </>
             ) : (
               <>
                 <EntityForm.Field label="طريقة الدفع *">
-                  <Select value={paymentMethodInput} onChange={(event) => setPaymentMethodInput(event.target.value as DepositRefundPayload['payment_method'])}>
+                  <Select required value={paymentMethodInput} onChange={(event) => setPaymentMethodInput(event.target.value as DepositRefundPayload['payment_method'])}>
                     <option value="bank_transfer">تحويل بنكي</option>
                     <option value="cash">نقداً</option>
                     <option value="check">شيك</option>
@@ -403,7 +469,12 @@ export function DepositsWorkspace() {
             submitLabel={deductMut.isPending || refundMut.isPending ? 'جارٍ التنفيذ...' : 'تأكيد العملية'}
             onCancel={() => { setActionType(null); setSelectedDeposit(null); }}
             isSubmitting={deductMut.isPending || refundMut.isPending}
-            submitDisabled={amountInput <= 0 || !selectedDeposit || amountInput > selectedDeposit.remaining_amount}
+            submitDisabled={
+              amountInput <= 0
+              || !selectedDeposit
+              || amountInput > selectedDeposit.remaining_amount
+              || (actionType === 'deduct' && !descriptionInput.trim())
+            }
           />
         </EntityForm.Root>
       </EntityForm.Overlay>

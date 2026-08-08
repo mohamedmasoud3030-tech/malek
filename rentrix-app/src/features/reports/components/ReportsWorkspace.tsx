@@ -3,8 +3,10 @@ import { AlertTriangle, Building2, Receipt, TrendingUp } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { formatMoney, getErrorMessage } from '@/features/financials/components/financials-formatters';
+import { getErrorMessage } from '@/features/financials/components/financials-formatters';
 import { FinanceKpiGrid, FinanceKpiCard, FinanceSection } from '@/features/financials/components/finance-reporting-visual-foundations';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatCompanyMoney } from '@/lib/companyFormatters';
 import type { ReportsWorkspaceModel } from '../use-reports-workspace';
 import type { FilterState } from '../reports-page.helpers';
 import {
@@ -58,6 +60,8 @@ export function ReportsWorkspace({
   onFiltersChange,
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
+  const companySettings = useCompanySettingsContract();
+  const money = (value: number | null | undefined) => formatCompanyMoney(companySettings, value);
   const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
   const ActiveSectionIcon = activeSectionMeta.icon;
   const summary = model.hero.summary;
@@ -104,15 +108,15 @@ export function ReportsWorkspace({
         <FinanceKpiGrid desktopColumns={4}>
           <FinanceKpiCard
             label="المحصّل للفترة"
-            value={formatMoney(summary?.paid ?? 0)}
+            value={money(summary?.paid ?? 0)}
             icon={Receipt}
             sub={`${summary?.paymentsCount ?? 0} مدفوعات مسجلة`}
             trend={collectionRate >= 85 ? 'up' : collectionRate >= 65 ? 'neutral' : 'down'}
             trendValue={`${collectionRate}%`}
             accent="primary"
             onDrill={() => onSectionChange('collections' as ReportSectionId)}
-            drillAriaLabel={`المحصّل للفترة ${summary?.paid ?? 0} — عرض تقرير التحصيل`}
-            unit="OMR"
+            drillAriaLabel={`المحصّل للفترة ${money(summary?.paid ?? 0)} — عرض تقرير التحصيل`}
+            unit={companySettings.defaultCurrency}
           />
           <FinanceKpiCard
             label="نسبة الإشغال"
@@ -127,26 +131,26 @@ export function ReportsWorkspace({
           />
           <FinanceKpiCard
             label="الرصيد المستحق"
-            value={formatMoney(summary?.outstanding ?? 0)}
+            value={money(summary?.outstanding ?? 0)}
             icon={AlertTriangle}
             sub="رصيد يحتاج متابعة التحصيل"
             trend="neutral"
             trendValue={`${summary?.invoicesCount ?? 0} فواتير`}
             accent="primary"
             onDrill={() => onSectionChange('overdue' as ReportSectionId)}
-            drillAriaLabel={`الرصيد المستحق ${summary?.outstanding ?? 0} — عرض تقرير المتأخرات`}
-            unit="OMR"
+            drillAriaLabel={`الرصيد المستحق ${money(summary?.outstanding ?? 0)} — عرض تقرير المتأخرات`}
+            unit={companySettings.defaultCurrency}
           />
           <FinanceKpiCard
             label="صافي الحركة"
-            value={formatMoney(summary?.netCash ?? 0)}
+            value={money(summary?.netCash ?? 0)}
             icon={TrendingUp}
             sub={(summary?.netCash ?? 0) >= 0 ? 'الحركة النقدية موجبة' : 'المصروفات أعلى من التحصيل'}
             trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
             trendValue={(summary?.netCash ?? 0) >= 0 ? 'موجب' : 'سالب'}
             accent="primary"
             onDrill={() => onSectionChange('overview' as ReportSectionId)}
-            unit="OMR"
+            unit={companySettings.defaultCurrency}
           />
         </FinanceKpiGrid>
       </FinanceSection>
@@ -180,7 +184,6 @@ export function ReportsWorkspace({
           </div>
         </div>
 
-        {/* Mobile ( <640px ): compact select — solves 11-tab 320px horizontal maze while keeping one secondary layer */}
         <div className="border-b border-border/60 bg-card/95 px-3 py-3 sm:hidden" data-reports-mobile-nav>
           <label htmlFor="reports-section-select" className="sr-only">
             أقسام التقارير
@@ -221,7 +224,6 @@ export function ReportsWorkspace({
           </div>
         </div>
 
-        {/* Desktop+tablet (>=640px): single SectionTabs row (one secondary layer) */}
         <div
           className="no-scrollbar sticky top-0 z-20 hidden overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 sm:block sm:px-4"
           tabIndex={0}

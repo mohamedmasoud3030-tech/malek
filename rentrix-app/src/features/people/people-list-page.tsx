@@ -411,7 +411,6 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                       onClick: () => setDeleteId(person.id),
                     },
                   ]}
-                  onClick={() => openEdit(person.id)}
                 />
               )}
             />
