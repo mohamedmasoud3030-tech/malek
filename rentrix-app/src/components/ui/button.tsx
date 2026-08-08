@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
  * Button — the single operational button for MALEK.
  *
  * Backward compatible: the legacy names `primary`/`default`, `danger`/`destructive`
- * remain. Wave 3 adds `soft`, `success`, `warning`, `link`, sizes `xs`/`xl`,
- * `loading`, `fullWidth`, and `leftIcon`/`rightIcon`. The 44px minimum hit area
- * is preserved and motion is reduced for `prefers-reduced-motion`.
+ * remain. Every interactive size now enforces a true 44px minimum hit area;
+ * visual density is controlled by padding/font size rather than shrinking the
+ * touch target below the product accessibility contract.
  */
 export const buttonVariants = cva(
   [
@@ -37,12 +37,12 @@ export const buttonVariants = cva(
         link: 'rounded-none bg-transparent p-0 font-bold text-primary underline-offset-4 hover:underline shadow-none',
       },
       size: {
-        xs: 'min-h-9 min-w-9 rounded-md px-2.5 py-1 text-xs',
-        sm: 'min-h-10 min-w-10 rounded-lg px-3 py-1.5 text-xs',
-        md: 'min-h-10 min-w-10 rounded-lg px-4 py-2 text-sm',
+        xs: 'min-h-11 min-w-11 rounded-md px-2.5 py-1 text-xs',
+        sm: 'min-h-11 min-w-11 rounded-lg px-3 py-1.5 text-xs',
+        md: 'min-h-11 min-w-11 rounded-lg px-4 py-2 text-sm',
         lg: 'min-h-11 min-w-11 rounded-xl px-5 py-2.5 text-base',
         xl: 'min-h-12 min-w-12 rounded-xl px-6 py-3 text-base',
-        icon: 'size-10 rounded-lg p-0',
+        icon: 'size-11 rounded-lg p-0',
       },
       fullWidth: {
         true: 'w-full',
@@ -63,7 +63,6 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariantProps['variant'];
   size?: ButtonVariantProps['size'];
   fullWidth?: boolean;
-  /** Replaces the button content with a centered spinner when true. */
   loading?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
@@ -100,10 +99,6 @@ export function Button({
     </>
   );
 
-  // Data/state attributes belong to the rendered <button> only. When asChild is
-  // used, Radix Slot forwards props to the child element; attaching data-* to
-  // the Slot can land on a React.Fragment and emit invalid-prop warnings, so we
-  // keep them off the asChild path (child elements own their own attributes).
   const stateProps = asChild
     ? null
     : {
@@ -122,9 +117,6 @@ export function Button({
       type={asChild ? undefined : type}
       {...props}
     >
-      {/* asChild must hand Radix Slot a single element child; the `content`
-          fragment would swallow className/props (React.Fragment strips them),
-          rendering an unstyled link. */}
       {asChild ? children : content}
     </Component>
   );
