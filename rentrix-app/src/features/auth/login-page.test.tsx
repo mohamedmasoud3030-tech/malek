@@ -97,10 +97,7 @@ describe('LoginPage — structural contract', () => {
 
   it('is a single centered auth card — no split layout, no promotional side panel', () => {
     const html = renderToStaticMarkup(<LoginPage />);
-    // The compact centered card is the login surface.
     expect(html).toContain('data-login-card');
-    // No split-screen halves (the promotional command-center panel was removed
-    // from the login journey; it remains a standalone component only).
     expect(html).not.toContain('data-command-center-panel');
     expect(html).not.toContain('md:w-[60%]');
     expect(html).not.toContain('md:flex-row');
@@ -172,13 +169,16 @@ describe('LoginPage — interaction behaviour', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /تسجيل الدخول/i })).not.toBeDisabled());
   });
 
-  it('renders contact information as small plain footer text without links', () => {
+  it('renders actionable phone and email support links', () => {
     const { container } = setup();
     const footer = container.querySelector('[data-contact-footer]');
     expect(footer).toBeInTheDocument();
     expect(footer).toHaveTextContent('+968 9192 8186');
     expect(footer).toHaveTextContent('Ahmedmasoud@outlook.com');
-    expect(footer?.querySelector('a')).toBeNull();
+    const links = footer?.querySelectorAll('a') ?? [];
+    expect(links.length).toBeGreaterThan(0);
+    expect(footer?.querySelector('a[href^="tel:"]')).toBeInTheDocument();
+    expect(footer?.querySelector('a[href^="mailto:"]')).toBeInTheDocument();
     expect(screen.queryByText('تحتاج مساعدة؟ تواصل معنا')).not.toBeInTheDocument();
   });
 
