@@ -47,22 +47,48 @@ type MembershipRow = {
  *
  * 2. user_metadata.company_id is an untrusted browser preference. It becomes
  *    authoritative only after the server-side custom_access_token_hook validates
- *    it against an active membership and stamps app_metadata.company_id during
- *    token issuance. The browser can never write app_metadata directly.
+ *    it against an active membership and stamps app_metadata.company_id into the
+ *    ACCESS TOKEN claims during token issuance. The browser can never write
+ *    app_metadata directly.
  *
  * 3. RLS policies and every financial SECURITY DEFINER RPC derive the tenant
  *    from public.current_company_id() = app_metadata.company_id in the JWT.
- *    The provider therefore unlocks the UI ONLY when the refreshed JWT claim
- *    exactly matches a membership-authorized company. A client-side-only
- *    fallback would render the UI scoped to one tenant while PostgreSQL keeps
- *    another (or none) — so any unresolved mismatch fails closed instead of
- *    bypassing tenant isolation cosmetically.
+ *    The provider therefore reads the SAME issued access-token claim that
+ *    PostgreSQL sees. session.user.app_metadata is the Auth user record and is
+ *    not guaranteed to contain transient claims added by Custom Access Token
+ *    Hooks, so it is deliberately not used as the tenant authority here.
  */
 
 function readCompanyIdFromAppMetadata(appMetadata: unknown): string | null {
   if (!appMetadata || typeof appMetadata !== 'object') return null;
   const companyId = (appMetadata as Record<string, unknown>).company_id;
   return typeof companyId === 'string' && companyId.length > 0 ? companyId : null;
+}
+
+/**
+ * Decodes only the payload of an access token already returned by Supabase Auth.
+ * Signature verification remains a server responsibility; the browser uses the
+ * decoded value only to keep its UI tenant aligned with the exact token sent to
+ * PostgREST/RPCs. Malformed tokens fail closed.
+ */
+function readCompanyIdFromAccessToken(accessToken: string | null | undefined): string | null {
+  if (!accessToken) return null;
+
+  try {
+    const payloadSegment = accessToken.split('.')[1];
+    if (!payloadSegment) return null;
+
+    const base64 = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const binary = globalThis.atob(padded);
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const claims = JSON.parse(new TextDecoder().decode(bytes)) as unknown;
+
+    if (!claims || typeof claims !== 'object') return null;
+    return readCompanyIdFromAppMetadata((claims as Record<string, unknown>).app_metadata);
+  } catch {
+    return null;
+  }
 }
 
 /** Selects a company ONLY when the server-issued claim matches an authorized membership. */
@@ -74,8 +100,9 @@ function pickClaimMatchedCompany(companyList: Company[], claim: string | null): 
 /**
  * Server-side JWT sync for the active company:
  * stores the selection intent in user_metadata (untrusted preference), then asks
- * the auth server for a freshly hooked token and returns the claim the SERVER
- * actually issued. Callers must verify the returned claim before exposing data.
+ * the auth server for a freshly hooked token and returns the company claim from
+ * that exact ACCESS TOKEN. Callers must verify the returned claim before exposing
+ * tenant data.
  */
 async function requestServerClaimSync(companyId: string): Promise<string | null> {
   const { error: updateError } = await supabase.auth.updateUser({
@@ -86,7 +113,7 @@ async function requestServerClaimSync(companyId: string): Promise<string | null>
   const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
   if (refreshError) throw refreshError;
 
-  return readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata);
+  return readCompanyIdFromAccessToken(refreshed.session?.access_token);
 }
 
 export function CompanyProvider({ children }: PropsWithChildren) {
@@ -123,6 +150,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
     }
 
     const sessionUser = session.user;
+    const sessionAccessToken = session.access_token;
 
     async function loadCompanies() {
       setIsLoading(true);
@@ -159,8 +187,8 @@ export function CompanyProvider({ children }: PropsWithChildren) {
           throw new Error(ACTIVE_COMPANY_ERROR);
         }
 
-        // Step 1 — the already-issued claim selects among authorized memberships.
-        let jwtCompanyId = readCompanyIdFromAppMetadata(sessionUser.app_metadata);
+        // Step 1 — use the claim from the actual server-issued access token.
+        let jwtCompanyId = readCompanyIdFromAccessToken(sessionAccessToken);
         let selectedCompany = pickClaimMatchedCompany(companyList, jwtCompanyId);
 
         // Step 2 — a cached token may predate the membership or the hook:
@@ -168,21 +196,18 @@ export function CompanyProvider({ children }: PropsWithChildren) {
         if (!selectedCompany) {
           const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
           if (refreshError) throw refreshError;
-          jwtCompanyId = readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata);
+          jwtCompanyId = readCompanyIdFromAccessToken(refreshed.session?.access_token);
           selectedCompany = pickClaimMatchedCompany(companyList, jwtCompanyId);
         }
 
         // Step 3 — the claim still matches no authorized membership. Resolve the
         // deterministic membership default, sync the preference server-side, and
-        // unlock only if the server-issued claim verifies against it.
+        // unlock only if the ACCESS TOKEN issued by the server verifies it.
         if (!selectedCompany) {
           const membershipDefault = companyList[0];
           const verifiedClaim = await requestServerClaimSync(membershipDefault.id);
           if (!mounted) return;
           if (verifiedClaim !== membershipDefault.id) {
-            // The server refused to honor/derive this membership (misconfigured
-            // or outdated auth hook). Fail closed — never render scoped to a
-            // company the JWT does not claim.
             throw new Error(ACTIVE_COMPANY_ERROR);
           }
           selectedCompany = membershipDefault;
@@ -202,10 +227,6 @@ export function CompanyProvider({ children }: PropsWithChildren) {
           setCompanies([]);
           setActiveCompany(null);
           setCurrentRole(null);
-          // A failed resolution is still a TERMINAL state for this user: all
-          // tenant state was cleared above, so the transition gate may open and
-          // the fail-closed screen becomes reachable instead of an endless
-          // loading spinner.
           setResolvedUserId(sessionUser.id);
           setLoadError(ACTIVE_COMPANY_ERROR);
         }
@@ -231,9 +252,7 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       if (!session) throw new Error(ACTIVE_COMPANY_ERROR);
       sessionUserId = session.user.id;
 
-      if (readCompanyIdFromAppMetadata(session.user.app_metadata) !== companyId) {
-        // Persist the intent as a preference, then require the server (auth
-        // hook, validating active membership) to issue the matching claim.
+      if (readCompanyIdFromAccessToken(session.access_token) !== companyId) {
         const verifiedClaim = await requestServerClaimSync(companyId);
         if (verifiedClaim !== companyId) {
           throw new Error(ACTIVE_COMPANY_ERROR);
@@ -262,8 +281,6 @@ export function CompanyProvider({ children }: PropsWithChildren) {
       queryClient.clear();
       setActiveCompany(null);
       setCurrentRole(null);
-      // Terminal (fail-closed) state for the current user: tenant state is
-      // cleared, so the error screen must be reachable, not a stuck spinner.
       setResolvedUserId(sessionUserId);
       setLoadError(ACTIVE_COMPANY_ERROR);
       throw error;
