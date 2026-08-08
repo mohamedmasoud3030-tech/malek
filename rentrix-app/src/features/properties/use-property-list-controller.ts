@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { openEntityPreview } from '@/components/ui/entity-preview-events';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
 import type { PropertyStatusFilter } from './property-service';
@@ -17,7 +18,6 @@ export function usePropertyListController() {
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editPropertyId, setEditPropertyId] = useState<string | undefined>();
-  const [previewPropertyId, setPreviewPropertyId] = useState<string | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<{ id: string; title: string } | null>(null);
 
   const params = useMemo(() => ({ search, status, page, pageSize: PAGE_SIZE }), [page, search, status]);
@@ -41,14 +41,8 @@ export function usePropertyListController() {
   const clearFilters = () => { setSearch(''); setStatus('all'); setPage(1); };
 
   const openCreateModal = () => { setEditPropertyId(undefined); setModalOpen(true); };
-  const openEditModal = (id: string) => {
-    setPreviewPropertyId(null);
-    setEditPropertyId(id);
-    setModalOpen(true);
-  };
+  const openEditModal = (id: string) => { setEditPropertyId(id); setModalOpen(true); };
   const closeModal = () => { setModalOpen(false); setEditPropertyId(undefined); };
-  const openPreview = (propertyId: string) => setPreviewPropertyId(propertyId);
-  const closePreview = () => setPreviewPropertyId(null);
   const requestArchive = (id: string, title: string) => setArchiveTarget({ id, title });
   const cancelArchive = () => setArchiveTarget(null);
 
@@ -56,6 +50,10 @@ export function usePropertyListController() {
     if (!archiveTarget) return;
     await deleteMutation.mutateAsync(archiveTarget.id);
     setArchiveTarget(null);
+  };
+
+  const navigateToProperty = (propertyId: string) => {
+    openEntityPreview({ kind: 'property', id: propertyId });
   };
 
   return {
@@ -80,13 +78,11 @@ export function usePropertyListController() {
     openCreateModal,
     openEditModal,
     closeModal,
-    previewPropertyId,
-    openPreview,
-    closePreview,
     archiveTarget,
     requestArchive,
     cancelArchive,
     confirmArchive,
     isArchiving: deleteMutation.isPending,
+    navigateToProperty,
   };
 }
