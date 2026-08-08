@@ -19,6 +19,7 @@ export function ContractResults({
   onCreate,
   onDelete,
   onEdit,
+  onPreview,
   onRetry,
   pagination,
   setExpandedId,
@@ -34,15 +35,13 @@ export function ContractResults({
   onCreate?: () => void;
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
+  onPreview: (id: string) => void;
   onRetry: () => void;
   pagination?: { page: number; pageSize: number; total: number; onPageChange: (page: number) => void };
   setExpandedId: (updater: (value: string | null) => string | null) => void;
 }) {
   return (
-    <section
-      data-contract-register
-      className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
-    >
+    <section data-contract-register className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
       <header className="flex flex-col gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
           <div className="flex items-center gap-2">
@@ -69,6 +68,7 @@ export function ContractResults({
           onCreate={onCreate}
           onDelete={onDelete}
           onEdit={onEdit}
+          onPreview={onPreview}
           onRetry={onRetry}
           pagination={pagination}
           setExpandedId={setExpandedId}
