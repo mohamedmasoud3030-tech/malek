@@ -1,0 +1,269 @@
+/*
+ * ============================================
+ * MALIK PRO Design System -_tokens
+ * ============================================
+ * Identity Visual & Functional Reference for MALEK PRO
+ * 
+ * Color Palette:
+ * - Primary Green: #3B8A64 / #2D7A53 (Buttons, Completed States)
+ * - Secondary Blue: #3B82F6 / #2563EB (Secondary Actions, Reports)
+ * - Dark Navy/Black: #111827 / #1F2937 (Dark Buttons, Alerts)
+ * - Light Gray Backgrounds: #F9FAFB / #F3F4F6 (Cards, Surfaces)
+ * 
+ * Design Tokens:
+ * - Border Radius: 12px - 16px (Soft rounded corners)
+ * - RTL Direction
+ * - Currency: ر.ع (Omani Rial)
+ */
+
+:root {
+  /* ── MALIK PRO Color Palette ── */
+  
+  /* Primary Green - Main brand color */
+  --malik-primary: 160 84% 29%;
+  --malik-primary-light: 160 75% 38%;
+  --malik-primary-dark: 160 85% 24%;
+  --malik-primary-foreground: 0 0% 100%;
+  --malik-primary-soft: 160 50% 95%;
+  
+  /* Secondary Blue - Reports & Secondary Actions */
+  --malik-secondary: 217 91% 60%;
+  --malik-secondary-light: 217 91% 65%;
+  --malik-secondary-dark: 217 91% 50%;
+  --malik-secondary-foreground: 0 0% 100%;
+  --malik-secondary-soft: 217 91% 95%;
+  
+  /* Dark Navy - Dark buttons & Alerts */
+  --malik-dark: 222 47% 11%;
+  --malik-dark-light: 222 25% 15%;
+  --malik-dark-foreground: 0 0% 100%;
+  
+  /* Light Gray - Backgrounds & Cards */
+  --malik-bg-light: 210 40% 98%;
+  --malik-bg-lighter: 210 40% 99%;
+  --malik-card: 0 0% 100%;
+  --malik-card-foreground: 222 47% 11%;
+  
+  /* Surface & Border Colors */
+  --malik-muted: 210 30% 96%;
+  --malik-muted-foreground: 215 14% 46%;
+  --malik-border: 214 25% 88%;
+  --malik-border-light: 214 25% 93%;
+  --malik-input: 214 25% 84%;
+  
+  /* Status Colors - Extended Palette */
+  --malik-success: 152 66% 26%;
+  --malik-success-bg: 152 58% 94%;
+  --malik-success-light: 152 60% 35%;
+  
+  --malik-warning: 34 82% 31%;
+  --malik-warning-bg: 43 94% 91%;
+  --malik-warning-light: 34 85% 40%;
+  
+  --malik-danger: 350 76% 42%;
+  --malik-danger-bg: 350 86% 96%;
+  --malik-danger-light: 350 80% 50%;
+  
+  --malik-info: 211 72% 36%;
+  --malik-info-bg: 207 88% 95%;
+  --malik-info-light: 211 72% 45%;
+  
+  --malik-neutral: 215 16% 40%;
+  --malik-neutral-bg: 215 20% 93%;
+  
+  /* Shadows - Soft and elevated */
+  --malik-shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 4px 12px -8px rgb(15 23 42 / 0.15);
+  --malik-shadow-card-hover: 0 2px 6px 0 rgb(0 0 0 / 0.05), 0 8px 20px -10px rgb(15 23 42 / 0.2);
+  --malik-shadow-elevated: 0 8px 32px -12px rgb(15 23 42 / 0.25), 0 4px 12px -4px rgb(15 23 42 / 0.15);
+  --malik-shadow-modal: 0 24px 60px -20px rgb(15 23 42 / 0.4);
+  
+  /* Border Radius - Soft corners (12px - 16px) */
+  --malik-radius-xs: 0.5rem;
+  --malik-radius-sm: 0.625rem;
+  --malik-radius-md: 0.75rem;
+  --malik-radius-lg: 1rem;
+  --malik-radius-xl: 1.25rem;
+  --malik-radius-2xl: 1.5rem;
+  
+  /* Foreground Colors */
+  --malik-foreground: 222 47% 11%;
+  --malik-foreground-secondary: 222 25% 35%;
+  --malik-foreground-muted: 215 14% 46%;
+  
+  /* Focus Ring */
+  --malik-focus-ring: 160 84% 32%;
+  
+  /* Typography */
+  --malik-font: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+  --malik-font-bold: 700;
+  --malik-font-medium: 500;
+  
+  /* Sidebar */
+  --malik-sidebar-bg: 222 40% 10%;
+  --malik-sidebar-text: 210 20% 80%;
+  --malik-sidebar-active-bg: 160 84% 29%;
+  --malik-sidebar-active-text: 0 0% 100%;
+  --malik-sidebar-hover-bg: 222 35% 14%;
+  
+  /* Accent Colors for Tags */
+  --malik-accent-emerald: 160 60% 30%;
+  --malik-accent-emerald-soft: 152 50% 93%;
+  --malik-accent-sky: 199 83% 43%;
+  --malik-accent-sky-soft: 198 85% 93%;
+  --malik-accent-violet: 263 69% 52%;
+  --malik-accent-violet-soft: 263 78% 95%;
+  --malik-accent-amber: 36 88% 42%;
+  --malik-accent-amber-soft: 43 96% 91%;
+  --malik-accent-rose: 347 74% 48%;
+  --malik-accent-rose-soft: 349 82% 94%;
+  --malik-accent-slate: 215 20% 42%;
+  --malik-accent-slate-soft: 214 24% 93%;
+}
+
+/* Dark Mode Overrides */
+[data-theme='dark'] {
+  --malik-primary: 160 70% 43%;
+  --malik-primary-light: 160 65% 50%;
+  --malik-primary-dark: 160 75% 36%;
+  --malik-primary-soft: 160 35% 14%;
+  
+  --malik-secondary: 217 86% 67%;
+  --malik-secondary-soft: 217 50% 16%;
+  
+  --malik-dark: 210 30% 90%;
+  --malik-dark-light: 215 20% 20%;
+  
+  --malik-bg-light: 222 37% 8%;
+  --malik-bg-lighter: 222 37% 6%;
+  --malik-card: 222 30% 11%;
+  --malik-card-foreground: 210 30% 94%;
+  
+  --malik-muted: 218 24% 15%;
+  --malik-muted-foreground: 215 15% 62%;
+  --malik-border: 218 22% 20%;
+  --malik-border-light: 218 22% 16%;
+  
+  --malik-foreground: 210 30% 94%;
+  --malik-foreground-secondary: 210 20% 72%;
+  --malik-foreground-muted: 215 15% 62%;
+  
+  --malik-success: 154 68% 63%;
+  --malik-success-bg: 154 40% 14%;
+  
+  --malik-warning: 43 91% 66%;
+  --malik-warning-bg: 38 55% 15%;
+  
+  --malik-danger: 350 83% 70%;
+  --malik-danger-bg: 350 42% 16%;
+  
+  --malik-info: 207 86% 70%;
+  --malik-info-bg: 208 45% 15%;
+  
+  --malik-neutral: 215 14% 62%;
+  --malik-neutral-bg: 218 18% 18%;
+  
+  --malik-shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.2), 0 4px 12px -8px rgb(0 0 0 / 0.4);
+  --malik-shadow-card-hover: 0 2px 6px 0 rgb(0 0 0 / 0.25), 0 8px 20px -10px rgb(0 0 0 / 0.5);
+  --malik-shadow-elevated: 0 8px 32px -12px rgb(0 0 0 / 0.5);
+  --malik-shadow-modal: 0 24px 60px -20px rgb(0 0 0 / 0.7);
+  
+  --malik-sidebar-bg: 222 42% 6%;
+  --malik-sidebar-text: 210 20% 75%;
+  --malik-sidebar-active-bg: 160 70% 43%;
+  --malik-sidebar-hover-bg: 222 38% 12%;
+}
+
+/* ============================================
+ * MALIK PRO Tailwind v4 Theme Bridge
+ * ============================================ */
+@theme inline {
+  /* Primary - Green */
+  --color-malik-primary: hsl(var(--malik-primary));
+  --color-malik-primary-light: hsl(var(--malik-primary-light));
+  --color-malik-primary-dark: hsl(var(--malik-primary-dark));
+  --color-malik-primary-fg: hsl(var(--malik-primary-foreground));
+  --color-malik-primary-soft: hsl(var(--malik-primary-soft));
+  
+  /* Secondary - Blue */
+  --color-malik-secondary: hsl(var(--malik-secondary));
+  --color-malik-secondary-light: hsl(var(--malik-secondary-light));
+  --color-malik-secondary-dark: hsl(var(--malik-secondary-dark));
+  --color-malik-secondary-fg: hsl(var(--malik-secondary-foreground));
+  --color-malik-secondary-soft: hsl(var(--malik-secondary-soft));
+  
+  /* Dark Navy */
+  --color-malik-dark: hsl(var(--malik-dark));
+  --color-malik-dark-light: hsl(var(--malik-dark-light));
+  --color-malik-dark-fg: hsl(var(--malik-dark-foreground));
+  
+  /* Surfaces */
+  --color-malik-bg: hsl(var(--malik-bg-light));
+  --color-malik-bg-lighter: hsl(var(--malik-bg-lighter));
+  --color-malik-card: hsl(var(--malik-card));
+  --color-malik-card-fg: hsl(var(--malik-card-foreground));
+  --color-malik-muted: hsl(var(--malik-muted));
+  --color-malik-muted-fg: hsl(var(--malik-muted-foreground));
+  --color-malik-border: hsl(var(--malik-border));
+  --color-malik-border-light: hsl(var(--malik-border-light));
+  --color-malik-input: hsl(var(--malik-input));
+  --color-malik-fg: hsl(var(--malik-foreground));
+  --color-malik-fg-secondary: hsl(var(--malik-foreground-secondary));
+  --color-malik-fg-muted: hsl(var(--malik-foreground-muted));
+  
+  /* Status Colors */
+  --color-malik-success: hsl(var(--malik-success));
+  --color-malik-success-bg: hsl(var(--malik-success-bg));
+  --color-malik-success-light: hsl(var(--malik-success-light));
+  --color-malik-warning: hsl(var(--malik-warning));
+  --color-malik-warning-bg: hsl(var(--malik-warning-bg));
+  --color-malik-warning-light: hsl(var(--malik-warning-light));
+  --color-malik-danger: hsl(var(--malik-danger));
+  --color-malik-danger-bg: hsl(var(--malik-danger-bg));
+  --color-malik-danger-light: hsl(var(--malik-danger-light));
+  --color-malik-info: hsl(var(--malik-info));
+  --color-malik-info-bg: hsl(var(--malik-info-bg));
+  --color-malik-info-light: hsl(var(--malik-info-light));
+  --color-malik-neutral: hsl(var(--malik-neutral));
+  --color-malik-neutral-bg: hsl(var(--malik-neutral-bg));
+  
+  /* Accent Colors for Tags */
+  --color-malik-emerald: hsl(var(--malik-accent-emerald));
+  --color-malik-emerald-soft: hsl(var(--malik-accent-emerald-soft));
+  --color-malik-sky: hsl(var(--malik-accent-sky));
+  --color-malik-sky-soft: hsl(var(--malik-accent-sky-soft));
+  --color-malik-violet: hsl(var(--malik-accent-violet));
+  --color-malik-violet-soft: hsl(var(--malik-accent-violet-soft));
+  --color-malik-amber: hsl(var(--malik-accent-amber));
+  --color-malik-amber-soft: hsl(var(--malik-accent-amber-soft));
+  --color-malik-rose: hsl(var(--malik-accent-rose));
+  --color-malik-rose-soft: hsl(var(--malik-accent-rose-soft));
+  --color-malik-slate: hsl(var(--malik-accent-slate));
+  --color-malik-slate-soft: hsl(var(--malik-accent-slate-soft));
+  
+  /* Sidebar */
+  --color-malik-sidebar: hsl(var(--malik-sidebar-bg));
+  --color-malik-sidebar-text: hsl(var(--malik-sidebar-text));
+  --color-malik-sidebar-active: hsl(var(--malik-sidebar-active-bg));
+  --color-malik-sidebar-active-fg: hsl(var(--malik-sidebar-active-text));
+  --color-malik-sidebar-hover: hsl(var(--malik-sidebar-hover-bg));
+  
+  /* Focus */
+  --color-malik-focus: hsl(var(--malik-focus-ring));
+  
+  /* Shadows */
+  --shadow-malik-card: var(--malik-shadow-card);
+  --shadow-malik-card-hover: var(--malik-shadow-card-hover);
+  --shadow-malik-elevated: var(--malik-shadow-elevated);
+  --shadow-malik-modal: var(--malik-shadow-modal);
+  
+  /* Radius - MALIK PRO: 12px - 16px range */
+  --radius-malik-xs: var(--malik-radius-xs);
+  --radius-malik-sm: var(--malik-radius-sm);
+  --radius-malik-md: var(--malik-radius-md);
+  --radius-malik-lg: var(--malik-radius-lg);
+  --radius-malik-xl: var(--malik-radius-xl);
+  --radius-malik-2xl: var(--malik-radius-2xl);
+  
+  /* Font */
+  --font-malik: var(--malik-font);
+}

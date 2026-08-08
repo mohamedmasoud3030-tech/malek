@@ -1,0 +1,895 @@
+/*
+ * ============================================
+ * MALIK PRO Visual System v3.0
+ * Complete UI/UX Redesign for MALEK PRO
+ * ============================================
+ * 
+ * Based on: Visual & Functional Reference for MALEK PRO
+ * Design Tokens: malik-pro-tokens.css
+ * 
+ * Features:
+ * - RTL Support
+ * - Currency: ر.ع (Omani Rial)
+ * - Soft rounded corners (12px - 16px)
+ * - Modern Arabic typography
+ */
+
+@import 'tailwindcss';
+@import './tokens.css';
+@import './malik-pro-tokens.css';
+
+/* ============================================
+ * MALIK PRO Layout & Components
+ * ============================================ */
+
+[data-malik-pro] {
+  --background: var(--malik-bg-light);
+  --foreground: var(--malik-foreground);
+  --card: var(--malik-card);
+  --card-foreground: var(--malik-card-foreground);
+  --primary: var(--malik-primary);
+  --primary-foreground: var(--malik-primary-foreground);
+  --secondary: var(--malik-secondary);
+  --secondary-foreground: var(--malik-secondary-foreground);
+  --muted: var(--malik-muted);
+  --muted-foreground: var(--malik-muted-foreground);
+  --border: var(--malik-border);
+  --input: var(--malik-input);
+  --destructive: var(--malik-danger);
+  --destructive-foreground: var(--malik-primary-foreground);
+  --success: var(--malik-success);
+  --success-foreground: var(--malik-primary-foreground);
+  --warning: var(--malik-warning);
+  --warning-foreground: var(--malik-primary-foreground);
+  --info: var(--malik-info);
+  --info-foreground: var(--malik-primary-foreground);
+}
+
+/* ── Page Layout ── */
+[data-malik-pro] [data-page-layout] {
+  background: var(--malik-bg-light);
+  min-height: 100vh;
+}
+
+[data-malik-pro] [data-page-header] {
+  padding: 1.5rem;
+  background: linear-gradient(180deg, var(--malik-card) 0%, var(--malik-muted) 100%);
+  border-bottom: 1px solid var(--malik-border);
+}
+
+[data-malik-pro] [data-page-content] {
+  padding: 1.5rem;
+}
+
+/* ── Card Surfaces ── */
+[data-malik-pro] [data-malik-card] {
+  background: var(--malik-card);
+  border: 1px solid var(--malik-border);
+  border-radius: var(--malik-radius-lg);
+  box-shadow: var(--malik-shadow-card);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+[data-malik-pro] [data-malik-card]:hover {
+  box-shadow: var(--malik-shadow-card-hover);
+  border-color: hsl(var(--malik-primary) / 0.3);
+}
+
+[data-malik-pro] [data-malik-card-flat] {
+  background: var(--malik-card);
+  border: 1px solid var(--malik-border-light);
+  border-radius: var(--malik-radius-md);
+}
+
+[data-malik-pro] [data-malik-card-elevated] {
+  background: var(--malik-card);
+  border: 1px solid var(--malik-border);
+  border-radius: var(--malik-radius-xl);
+  box-shadow: var(--malik-shadow-elevated);
+}
+
+[data-malik-pro] [data-malik-card-interactive] {
+  background: var(--malik-card);
+  border: 1px solid var(--malik-border);
+  border-radius: var(--malik-radius-lg);
+  box-shadow: var(--malik-shadow-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+[data-malik-pro] [data-malik-card-interactive]:hover {
+  box-shadow: var(--malik-shadow-card-hover);
+  border-color: hsl(var(--malik-primary) / 0.4);
+  transform: translateY(-2px);
+}
+
+/* ── Buttons ── */
+[data-malik-pro] [data-malik-btn] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--malik-radius-md);
+  font-family: var(--malik-font);
+  font-weight: var(--malik-font-bold);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+[data-malik-pro] [data-malik-btn]:focus-visible {
+  box-shadow: 0 0 0 4px hsl(var(--malik-focus-ring) / 0.2);
+}
+
+[data-malik-pro] [data-malik-btn]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary Button - Green */
+[data-malik-pro] [data-malik-btn-primary] {
+  background: hsl(var(--malik-primary));
+  color: hsl(var(--malik-primary-foreground));
+  border: none;
+}
+
+[data-malik-pro] [data-malik-btn-primary]:hover:not(:disabled) {
+  background: hsl(var(--malik-primary-dark));
+}
+
+[data-malik-pro] [data-malik-btn-primary]:active:not(:disabled) {
+  background: hsl(var(--malik-primary));
+  transform: scale(0.98);
+}
+
+/* Secondary Button - Blue */
+[data-malik-pro] [data-malik-btn-secondary] {
+  background: hsl(var(--malik-secondary));
+  color: hsl(var(--malik-secondary-foreground));
+  border: none;
+}
+
+[data-malik-pro] [data-malik-btn-secondary]:hover:not(:disabled) {
+  background: hsl(var(--malik-secondary-dark));
+}
+
+/* Dark Button - Navy/Black */
+[data-malik-pro] [data-malik-btn-dark] {
+  background: hsl(var(--malik-dark));
+  color: hsl(var(--malik-dark-foreground));
+  border: none;
+}
+
+[data-malik-pro] [data-malik-btn-dark]:hover:not(:disabled) {
+  background: hsl(var(--malik-dark-light));
+}
+
+/* Outline Button */
+[data-malik-pro] [data-malik-btn-outline] {
+  background: transparent;
+  color: var(--malik-foreground);
+  border: 1px solid var(--malik-border);
+}
+
+[data-malik-pro] [data-malik-btn-outline]:hover:not(:disabled) {
+  background: var(--malik-muted);
+  border-color: hsl(var(--malik-primary) / 0.4);
+}
+
+/* Ghost Button */
+[data-malik-pro] [data-malik-btn-ghost] {
+  background: transparent;
+  color: var(--malik-foreground);
+  border: none;
+}
+
+[data-malik-pro] [data-malik-btn-ghost]:hover:not(:disabled) {
+  background: var(--malik-muted);
+}
+
+/* Soft Button */
+[data-malik-pro] [data-malik-btn-soft] {
+  background: hsl(var(--malik-primary) / 0.1);
+  color: hsl(var(--malik-primary));
+  border: none;
+}
+
+[data-malik-pro] [data-malik-btn-soft]:hover:not(:disabled) {
+  background: hsl(var(--malik-primary) / 0.15);
+}
+
+/* Success Button */
+[data-malik-pro] [data-malik-btn-success] {
+  background: hsl(var(--malik-success));
+  color: white;
+  border: none;
+}
+
+/* Danger Button */
+[data-malik-pro] [data-malik-btn-danger] {
+  background: hsl(var(--malik-danger));
+  color: white;
+  border: none;
+}
+
+/* Button Sizes */
+[data-malik-pro] [data-malik-btn-sm] {
+  min-height: 36px;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+[data-malik-pro] [data-malik-btn-lg] {
+  min-height: 52px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: var(--malik-radius-lg);
+}
+
+[data-malik-pro] [data-malik-btn-icon] {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: var(--malik-radius-md);
+}
+
+/* ── Form Inputs ── */
+[data-malik-pro] [data-malik-input] {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  background: var(--malik-card);
+  border: 1px solid var(--malik-border);
+  border-radius: var(--malik-radius-md);
+  font-family: var(--malik-font);
+  font-size: 0.9375rem;
+  color: var(--malik-foreground);
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+[data-malik-pro] [data-malik-input]::placeholder {
+  color: var(--malik-foreground-muted);
+}
+
+[data-malik-pro] [data-malik-input]:focus {
+  border-color: hsl(var(--malik-primary));
+  box-shadow: 0 0 0 4px hsl(var(--malik-primary) / 0.1);
+}
+
+[data-malik-pro] [data-malik-input]:disabled {
+  background: var(--malik-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+[data-malik-pro] [data-malik-input-error] {
+  border-color: hsl(var(--malik-danger));
+}
+
+[data-malik-pro] [data-malik-input-error]:focus {
+  box-shadow: 0 0 0 4px hsl(var(--malik-danger) / 0.1);
+}
+
+/* Labels */
+[data-malik-pro] [data-malik-label] {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: var(--malik-font);
+  font-weight: var(--malik-font-bold);
+  font-size: 0.8125rem;
+  color: var(--malik-foreground);
+  line-height: 1.4;
+}
+
+[data-malik-pro] [data-malik-label-required]::after {
+  content: ' *';
+  color: hsl(var(--malik-danger));
+}
+
+/* Error Messages */
+[data-malik-pro] [data-malik-error] {
+  margin-top: 0.375rem;
+  font-size: 0.8125rem;
+  color: hsl(var(--malik-danger));
+}
+
+/* Select Dropdown */
+[data-malik-pro] [data-malik-select] {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 0.75rem center;
+  padding-left: 2.5rem;
+  cursor: pointer;
+}
+
+/* ── Modal / Dialog ── */
+[data-malik-pro] [data-malik-modal-overlay] {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(0 0 0 / 0.45);
+  backdrop-filter: blur(4px);
+}
+
+[data-malik-pro] [data-malik-modal] {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 101;
+  width: calc(100vw - 2rem);
+  max-width: 42rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background: var(--malik-card);
+  border-radius: var(--malik-radius-xl);
+  box-shadow: var(--malik-shadow-modal);
+  direction: rtl;
+}
+
+[data-malik-pro] [data-malik-modal-header] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: hsl(var(--malik-dark));
+  border-radius: var(--malik-radius-xl) var(--malik-radius-xl) 0 0;
+}
+
+[data-malik-pro] [data-malik-modal-title] {
+  font-family: var(--malik-font);
+  font-weight: var(--malik-font-bold);
+  font-size: 1.125rem;
+  color: white;
+  margin: 0;
+}
+
+[data-malik-pro] [data-malik-modal-close] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgb(255 255 255 / 0.15);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-malik-pro] [data-malik-modal-close]:hover {
+  background: rgb(255 255 255 / 0.25);
+}
+
+[data-malik-pro] [data-malik-modal-body] {
+  padding: 1.5rem;
+}
+
+[data-malik-pro] [data-malik-modal-footer] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: var(--malik-muted);
+  border-top: 1px solid var(--malik-border-light);
+  border-radius: 0 0 var(--malik-radius-xl) var(--malik-radius-xl);
+}
+
+/* Modal with 2-column grid */
+[data-malik-pro] [data-malik-form-grid] {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  [data-malik-pro] [data-malik-form-grid] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Status Badges ── */
+[data-malik-pro] [data-malik-badge] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  font-family: var(--malik-font);
+  font-weight: var(--malik-font-bold);
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+[data-malik-pro] [data-malik-badge-success] {
+  background: hsl(var(--malik-success-bg));
+  color: hsl(var(--malik-success));
+}
+
+[data-malik-pro] [data-malik-badge-warning] {
+  background: hsl(var(--malik-warning-bg));
+  color: hsl(var(--malik-warning));
+}
+
+[data-malik-pro] [data-malik-badge-danger] {
+  background: hsl(var(--malik-danger-bg));
+  color: hsl(var(--malik-danger));
+}
+
+[data-malik-pro] [data-malik-badge-info] {
+  background: hsl(var(--malik-info-bg));
+  color: hsl(var(--malik-info));
+}
+
+[data-malik-pro] [data-malik-badge-neutral] {
+  background: hsl(var(--malik-neutral-bg));
+  color: hsl(var(--malik-neutral));
+}
+
+[data-malik-pro] [data-malik-badge-primary] {
+  background: hsl(var(--malik-primary-soft));
+  color: hsl(var(--malik-primary-dark));
+}
+
+[data-malik-pro] [data-malik-badge-secondary] {
+  background: hsl(var(--malik-secondary-soft));
+  color: hsl(var(--malik-secondary-dark));
+}
+
+/* ── Tabs ── */
+[data-malik-pro] [data-malik-tabs] {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--malik-muted);
+  border-radius: var(--malik-radius-lg);
+}
+
+[data-malik-pro] [data-malik-tab] {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  border-radius: var(--malik-radius-md);
+  font-family: var(--malik-font);
+  font-weight: var(--malik-font-medium);
+  font-size: 0.875rem;
+  color: var(--malik-foreground-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-malik-pro] [data-malik-tab]:hover {
+  color: var(--malik-foreground);
+  background: var(--malik-card);
+}
+
+[data-malik-pro] [data-malik-tab-active] {
+  background: var(--malik-card);
+  color: var(--malik-foreground);
+  box-shadow: 0 2px 8px -4px rgb(15 23 42 / 0.2);
+  font-weight: var(--malik-font-bold);
+}
+
+/* ── Summary Cards / Info Cards ── */
+[data-malik-pro] [data-malik-info-card] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--malik-muted);
+  border: 1px solid var(--malik-border-light);
+  border-radius: var(--malik-radius-md);
+}
+
+[data-malik-pro] [data-malik-info-card-label] {
+  font-family: var(--malik-font);
+  font-size: 0.75rem;
+  font-weight: var(--malik-font-medium);
+  color: var(--malik-foreground-muted);
+}
+
+[data-malik-pro] [data-malik-info-card-value] {
+  font-family: var(--malik-font);
+  font-size: 1rem;
+  font-weight: var(--malik-font-bold);
+  color: var(--malik-foreground);
+}
+
+/* Amount Display */
+[data-malik-pro] [data-malik-amount] {
+  font-family: var(--malik-font);
+  font-weight: var(--malik-font-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-malik-pro] [data-malik-amount-success] {
+  color: hsl(var(--malik-success));
+}
+
+[data-malik-pro] [data-malik-amount-danger] {
+  color: hsl(var(--malik-danger));
+}
+
+[data-malik-pro] [data-malik-amount-currency]::before {
+  content: 'ر.ع ';
+}
+
+/* ── Tables ── */
+[data-malik-pro] [data-malik-table] {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--malik-font);
+}
+
+[data-malik-pro] [data-malik-table] thead {
+  background: var(--malik-muted);
+}
+
+[data-malik-pro] [data-malik-table] th {
+  padding: 0.875rem 1rem;
+  font-size: 0.75rem;
+  font-weight: var(--malik-font-bold);
+  color: var(--malik-foreground-muted);
+  text-align: right;
+  border-bottom: 1px solid var(--malik-border);
+}
+
+[data-malik-pro] [data-malik-table] td {
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  color: var(--malik-foreground);
+  border-bottom: 1px solid var(--malik-border-light);
+}
+
+[data-malik-pro] [data-malik-table] tbody tr:hover {
+  background: hsl(var(--malik-primary) / 0.04);
+}
+
+[data-malik-pro] [data-malik-table] tbody tr:nth-child(even) {
+  background: hsl(var(--malik-muted) / 0.3);
+}
+
+/* ── Receipt Document Card ── */
+[data-malik-pro] [data-malik-receipt-card] {
+  background: var(--malik-card);
+  border: 1px solid var(--malik-border);
+  border-radius: var(--malik-radius-xl);
+  box-shadow: var(--malik-shadow-card);
+  overflow: hidden;
+}
+
+[data-malik-pro] [data-malik-receipt-header] {
+  padding: 1.25rem;
+  background: linear-gradient(135deg, hsl(var(--malik-primary)) 0%, hsl(var(--malik-primary-dark)) 100%);
+  color: white;
+}
+
+[data-malik-pro] [data-malik-receipt-body] {
+  padding: 1.5rem;
+}
+
+[data-malik-pro] [data-malik-receipt-footer] {
+  padding: 1rem 1.5rem;
+  background: var(--malik-muted);
+  border-top: 1px solid var(--malik-border-light);
+}
+
+[data-malik-pro] [data-malik-receipt-amount] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: hsl(var(--malik-success-bg));
+  border-radius: var(--malik-radius-lg);
+}
+
+[data-malik-pro] [data-malik-receipt-amount-value] {
+  font-size: 2rem;
+  font-weight: 800;
+  color: hsl(var(--malik-success));
+  font-variant-numeric: tabular-nums;
+}
+
+[data-malik-pro] [data-malik-receipt-amount-label] {
+  font-size: 0.875rem;
+  font-weight: var(--malik-font-medium);
+  color: hsl(var(--malik-success));
+  margin-top: 0.25rem;
+}
+
+/* ── Maintenance Request Cards ── */
+[data-malik-pro] [data-malik-maintenance-card] {
+  background: var(--malik-card);
+  border: 1px solid var(--malik-border);
+  border-radius: var(--malik-radius-lg);
+  box-shadow: var(--malik-shadow-card);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+[data-malik-pro] [data-malik-maintenance-card]:hover {
+  box-shadow: var(--malik-shadow-card-hover);
+  border-color: hsl(var(--malik-primary) / 0.3);
+}
+
+[data-malik-pro] [data-malik-maintenance-card-accent] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, hsl(var(--malik-primary)), hsl(var(--malik-secondary)));
+}
+
+/* ── Filter Bar ── */
+[data-malik-pro] [data-malik-filter-bar] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--malik-card);
+  border: 1px solid var(--malik-border);
+  border-radius: var(--malik-radius-lg);
+  box-shadow: var(--malik-shadow-card);
+}
+
+/* ── Action Row ── */
+[data-malik-pro] [data-malik-actions] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+[data-malik-pro] [data-malik-actions-end] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* ── Responsive Grid ── */
+[data-malik-pro] [data-malik-grid-2] {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  [data-malik-pro] [data-malik-grid-2] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+[data-malik-pro] [data-malik-grid-3] {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  [data-malik-pro] [data-malik-grid-3] {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+[data-malik-pro] [data-malik-grid-4] {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  [data-malik-pro] [data-malik-grid-4] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-malik-pro] [data-malik-grid-4] {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── Loading States ── */
+[data-malik-pro] [data-malik-skeleton] {
+  background: linear-gradient(
+    90deg,
+    var(--malik-muted) 0%,
+    var(--malik-border-light) 50%,
+    var(--malik-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: malik-shimmer 1.5s infinite;
+  border-radius: var(--malik-radius-sm);
+}
+
+@keyframes malik-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Empty State ── */
+[data-malik-pro] [data-malik-empty] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+[data-malik-pro] [data-malik-empty-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1rem;
+  background: hsl(var(--malik-primary) / 0.1);
+  border-radius: var(--malik-radius-xl);
+  color: hsl(var(--malik-primary));
+}
+
+[data-malik-pro] [data-malik-empty-title] {
+  font-family: var(--malik-font);
+  font-size: 1rem;
+  font-weight: var(--malik-font-bold);
+  color: var(--malik-foreground);
+  margin-bottom: 0.5rem;
+}
+
+[data-malik-pro] [data-malik-empty-desc] {
+  font-family: var(--malik-font);
+  font-size: 0.875rem;
+  color: var(--malik-foreground-muted);
+  max-width: 24rem;
+}
+
+/* ── Alert / Notice ── */
+[data-malik-pro] [data-malik-alert] {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--malik-radius-md);
+  font-family: var(--malik-font);
+  font-size: 0.875rem;
+}
+
+[data-malik-pro] [data-malik-alert-success] {
+  background: hsl(var(--malik-success-bg));
+  color: hsl(var(--malik-success));
+  border: 1px solid hsl(var(--malik-success) / 0.2);
+}
+
+[data-malik-pro] [data-malik-alert-warning] {
+  background: hsl(var(--malik-warning-bg));
+  color: hsl(var(--malik-warning));
+  border: 1px solid hsl(var(--malik-warning) / 0.2);
+}
+
+[data-malik-pro] [data-malik-alert-danger] {
+  background: hsl(var(--malik-danger-bg));
+  color: hsl(var(--malik-danger));
+  border: 1px solid hsl(var(--malik-danger) / 0.2);
+}
+
+[data-malik-pro] [data-malik-alert-info] {
+  background: hsl(var(--malik-info-bg));
+  color: hsl(var(--malik-info));
+  border: 1px solid hsl(var(--malik-info) / 0.2);
+}
+
+/* ── Payment Method Cards ── */
+[data-malik-pro] [data-malik-payment-method] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--malik-card);
+  border: 2px solid var(--malik-border);
+  border-radius: var(--malik-radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-malik-pro] [data-malik-payment-method]:hover {
+  border-color: hsl(var(--malik-primary) / 0.4);
+  background: hsl(var(--malik-primary) / 0.02);
+}
+
+[data-malik-pro] [data-malik-payment-method-active] {
+  border-color: hsl(var(--malik-primary));
+  background: hsl(var(--malik-primary-soft));
+}
+
+[data-malik-pro] [data-malik-payment-method-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--malik-muted);
+  border-radius: var(--malik-radius-sm);
+  color: var(--malik-foreground);
+}
+
+/* ── Print Styles ── */
+@media print {
+  [data-malik-pro] [data-malik-modal-overlay],
+  [data-malik-pro] [data-malik-modal-close],
+  [data-malik-pro] [data-malik-modal-footer] {
+    display: none !important;
+  }
+  
+  [data-malik-pro] [data-malik-modal] {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    box-shadow: none;
+  }
+  
+  [data-malik-pro] [data-malik-receipt-card] {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
+/* ── Animations ── */
+[data-malik-pro] [data-animate-fade-in] {
+  animation: malik-fade-in 0.2s ease-out;
+}
+
+@keyframes malik-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-malik-pro] [data-animate-scale-in] {
+  animation: malik-scale-in 0.2s ease-out;
+}
+
+@keyframes malik-scale-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ── Utility Classes ── */
+[data-malik-pro] .malik-dir-ltr {
+  direction: ltr;
+}
+
+[data-malik-pro] .malik-dir-rtl {
+  direction: rtl;
+}
+
+[data-malik-pro] .malik-num-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-malik-pro] .malik-currency::before {
+  content: 'ر.ع ';
+}
