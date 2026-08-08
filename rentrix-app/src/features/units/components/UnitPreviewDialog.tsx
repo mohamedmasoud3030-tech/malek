@@ -4,9 +4,9 @@ import { DetailFields } from '@/components/ui/detail-fields';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { useAllUnits } from '../use-units';
 import { useProperties } from '@/features/properties/use-properties';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { normalizeUnitStatus, unitStatusLabels } from '../unit-schema';
 
 const ALL_PROPERTIES_PARAMS = { page: 1, pageSize: 500, search: '', status: 'all' as const };
@@ -22,6 +22,7 @@ export function UnitPreviewDialog({
 }>) {
   const unitsQuery = useAllUnits();
   const propertiesQuery = useProperties(ALL_PROPERTIES_PARAMS);
+  const companyFormatters = useCompanyFormatters();
   const unit = unitsQuery.data?.find((candidate) => candidate.id === unitId);
   const property = propertiesQuery.data?.rows.find((candidate) => candidate.id === unit?.property_id);
   const status = unit ? normalizeUnitStatus(String(unit.status)) : null;
@@ -62,7 +63,7 @@ export function UnitPreviewDialog({
               fields={[
                 { label: 'رقم الوحدة', value: unit.unit_number },
                 { label: 'الدور', value: unit.floor ?? '—' },
-                { label: 'الإيجار', value: <span dir="ltr">{formatMoney(unit.rent_amount ?? 0)}</span> },
+                { label: 'الإيجار', value: <span dir="ltr">{companyFormatters.money(unit.rent_amount ?? 0)}</span> },
                 { label: 'العقار', value: property?.title ?? '—' },
                 { label: 'الحالة', value: status ? unitStatusLabels[status] : '—' },
                 { label: 'ملاحظات', value: unit.notes ?? '—', wide: true },
