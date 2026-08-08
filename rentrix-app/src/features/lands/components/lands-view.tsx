@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { WriteErrorCard } from '@/components/page-state-card';
-import { useOperationalOwners } from '@/features/owners/useOwners';
+import { useOwnerOptions } from '@/hooks/use-owner-options';
 import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
 import type { LandFilters, LandRecord } from '../types';
 import type { LandFormValues } from '../land-schema';
@@ -95,7 +95,7 @@ export function LandsView({
   embedded = false,
 }: Props) {
   const [archiveCandidate, setArchiveCandidate] = useState<LandRecord | null>(null);
-  const ownersQuery = useOperationalOwners({ enabled: formOpen });
+  const ownersQuery = useOwnerOptions();
   const owners = ownersQuery.data ?? [];
   const activeRows = rows.filter((row) => row.status !== 'archived').length;
   const availableRows = rows.filter((row) => row.status === 'available').length;
