@@ -55,19 +55,9 @@
 [data-status-row='overdue']  { border-inline-start: 3px solid hsl(var(--color-danger-text)); }
 [data-status-row='void']     { opacity: 0.65; }
 
-/* ── Unified MALEK presentation shell ─────────
-   The header is a distinct workspace surface, while the primary action keeps
-   the deep-navy operational hierarchy used by modal headers. */
-[data-page-header] [data-ui-button][data-variant='primary'],
-[data-page-header] [data-ui-button][data-variant='default'] {
-  background: hsl(var(--sidebar));
-  box-shadow: 0 8px 18px hsl(var(--sidebar) / 0.16);
-}
-
-[data-page-header] [data-ui-button][data-variant='primary']:hover,
-[data-page-header] [data-ui-button][data-variant='default']:hover {
-  background: hsl(var(--sidebar) / 0.92);
-}
+/* ── Contextual primary actions ────────────────
+   Page CTAs inherit their module token. A screen that needs a navy structural
+   action opts in locally; this avoids forcing one colour onto every module. */
 
 /* Entity-form overlays follow the same navy-header / white-body composition.
    These selectors intentionally affect only presentation; forms retain their
