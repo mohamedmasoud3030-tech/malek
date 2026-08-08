@@ -24,8 +24,10 @@ import { AsyncContentState } from '@/components/async-content-state';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess } from '@/features/auth/permissions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityForm } from '@/components/ui/entity-form';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -57,10 +59,6 @@ const settlementsQueryKey = ['owner-settlements'] as const;
 const settlementTargetsQueryKey = ['owner-settlement-targets'] as const;
 const settlementPreviewQueryKey = 'owner-settlement-preview' as const;
 
-// P1: the draft form holds NO amount fields — every number comes from the
-// server-derived preview (calculate_owner_net_payout) and is stored by the
-// write RPC itself. The client only sends scope (owner/property/period), a
-// per-attempt idempotency key, and optional notes.
 type DraftFormState = {
   targetKey: string;
   periodStart: string;
@@ -95,9 +93,6 @@ function settlementTone(status: OwnerSettlementRecord['status']) {
 
 export function OwnerSettlementWorkspace() {
   const queryClient = useQueryClient();
-  // Financial-control gate: opening this page only requires
-  // financial.owner_settlements.view, but approval and payout execution stay
-  // behind their dedicated permissions (ADMIN by default).
   const { authorization } = useAuth();
   const canApproveSettlement = canAccess(authorization, 'financial.owner_settlements.approve');
   const canPaySettlement = canAccess(authorization, 'financial.owner_settlements.pay');
@@ -105,21 +100,13 @@ export function OwnerSettlementWorkspace() {
   const [draftOpen, setDraftOpen] = useState(false);
   const [draftForm, setDraftForm] = useState<DraftFormState>(initialDraftForm);
   const [draftValidationError, setDraftValidationError] = useState('');
-  // One idempotency key per creation attempt: generated when the overlay opens,
-  // kept stable across retries and double-clicks, replaced on the next attempt.
   const [draftRequestId, setDraftRequestId] = useState<string | null>(null);
   const [selectedSettlement, setSelectedSettlement] = useState<OwnerSettlementRecord | null>(null);
   const [payoutRef, setPayoutRef] = useState('');
   const [payoutMethod, setPayoutMethod] = useState<ProcessPayoutPayload['payout_method']>('bank_transfer');
 
-  const settlementsQuery = useQuery({
-    queryKey: settlementsQueryKey,
-    queryFn: listOwnerSettlements,
-  });
-  const targetsQuery = useQuery({
-    queryKey: settlementTargetsQueryKey,
-    queryFn: listOwnerSettlementTargets,
-  });
+  const settlementsQuery = useQuery({ queryKey: settlementsQueryKey, queryFn: listOwnerSettlements });
+  const targetsQuery = useQuery({ queryKey: settlementTargetsQueryKey, queryFn: listOwnerSettlementTargets });
 
   const refreshSettlements = async () => {
     await queryClient.invalidateQueries({ queryKey: settlementsQueryKey });
@@ -134,10 +121,7 @@ export function OwnerSettlementWorkspace() {
       setDraftValidationError('');
     },
   });
-  const approveMutation = useMutation({
-    mutationFn: approveOwnerSettlement,
-    onSuccess: refreshSettlements,
-  });
+  const approveMutation = useMutation({ mutationFn: approveOwnerSettlement, onSuccess: refreshSettlements });
   const payoutMutation = useMutation({
     mutationFn: processOwnerPayout,
     onSuccess: async () => {
@@ -166,18 +150,13 @@ export function OwnerSettlementWorkspace() {
     enabled: previewScopeValid,
   });
   const preview = previewQuery.data ?? null;
-
   const totals = useMemo(() => summarizeLiveOwnerSettlements(settlements), [settlements]);
-
   const activeMutationError = createMutation.error ?? approveMutation.error ?? payoutMutation.error;
-  const backgroundRefreshError = settlements.length > 0 && settlementsQuery.isError
-    ? settlementsQuery.error
-    : null;
+  const backgroundRefreshError = settlements.length > 0 && settlementsQuery.isError ? settlementsQuery.error : null;
 
   const handleDraftOpenChange = (open: boolean) => {
     setDraftOpen(open);
     if (open) {
-      // fresh attempt → fresh idempotency key
       setDraftRequestId(crypto.randomUUID());
     } else {
       setDraftForm(initialDraftForm());
@@ -253,9 +232,7 @@ export function OwnerSettlementWorkspace() {
     );
   };
 
-  const handleTargetChange = (value: string) => {
-    setDraftForm((current) => ({ ...current, targetKey: value }));
-  };
+  const handleTargetChange = (value: string) => setDraftForm((current) => ({ ...current, targetKey: value }));
 
   const handleCreateDraft = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -268,21 +245,10 @@ export function OwnerSettlementWorkspace() {
       setDraftValidationError('حدد فترة صحيحة؛ تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.');
       return;
     }
-    // Drafts are created exclusively from a SUCCESSFUL server preview — no
-    // local arithmetic and no client-supplied amounts ever reach the write RPC.
     if (!preview) {
-      setDraftValidationError(
-        previewQuery.isError
-          ? errorMessage(previewQuery.error)
-          : 'انتظر اكتمال معاينة الخادم قبل إنشاء المسودة.',
-      );
+      setDraftValidationError(previewQuery.isError ? errorMessage(previewQuery.error) : 'انتظر اكتمال معاينة الخادم قبل إنشاء المسودة.');
       return;
     }
-
-    // Stable per-attempt idempotency key: double-clicks/retries reuse the SAME
-    // request_id, so the server replays the cached result instead of writing
-    // two drafts (server guard: financial_operation_idempotency + duplicate
-    // period rejection).
     const requestId = draftRequestId ?? crypto.randomUUID();
     if (!draftRequestId) setDraftRequestId(requestId);
     const payload: CreateSettlementDraftPayload = {
@@ -314,6 +280,48 @@ export function OwnerSettlementWorkspace() {
         ? 'empty'
         : 'ready';
 
+  const settlementActions = (settlement: OwnerSettlementRecord) => {
+    const isApproving = approveMutation.isPending && approveMutation.variables?.settlement_id === settlement.id;
+    return [
+      { id: 'print', label: 'طباعة الكشف', icon: Printer, onClick: () => handlePrint(settlement), disabled: !documentSettings.isReady },
+      { id: 'pdf', label: 'تنزيل PDF', icon: Download, onClick: () => handleDownloadPdf(settlement), disabled: !documentSettings.isReady },
+      ...(settlement.status === 'pending' && canApproveSettlement
+        ? [{ id: 'approve', label: isApproving ? 'جارٍ الاعتماد…' : 'اعتماد التسوية', icon: CheckCircle2, onClick: () => approveMutation.mutate({ settlement_id: settlement.id }), disabled: approveMutation.isPending }]
+        : []),
+      ...(settlement.status === 'approved' && canPaySettlement
+        ? [{ id: 'payout', label: 'تسجيل صرف المستحق', icon: Send, onClick: () => setSelectedSettlement(settlement), disabled: payoutMutation.isPending }]
+        : []),
+    ];
+  };
+
+  const columns: ColumnDef<OwnerSettlementRecord>[] = [
+    {
+      key: 'owner',
+      header: 'المالك والعقار',
+      render: (settlement) => (
+        <div className="min-w-0">
+          <p className="font-bold">{settlement.owner_name}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{settlement.property_title}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'period',
+      header: 'الفترة',
+      render: (settlement) => <span dir="ltr" className="text-xs tabular-nums">{settlement.period_start} → {settlement.period_end}</span>,
+    },
+    { key: 'gross', header: 'المحصّل', render: (settlement) => <strong dir="ltr">{formatMoney(settlement.gross_rent_collected)}</strong> },
+    { key: 'fees', header: 'أتعاب المكتب', render: (settlement) => <strong dir="ltr" className="text-primary">{formatMoney(settlement.management_fee_amount)}</strong> },
+    {
+      key: 'deductions',
+      header: 'الخصومات',
+      render: (settlement) => <strong dir="ltr" className="text-destructive">{formatMoney(settlement.maintenance_deductions + settlement.utility_deductions)}</strong>,
+    },
+    { key: 'net', header: 'الصافي', render: (settlement) => <strong dir="ltr" className="text-success">{formatMoney(settlement.net_payable_amount)}</strong> },
+    { key: 'status', header: 'الحالة', render: (settlement) => <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge> },
+    { key: 'actions', header: 'إجراءات', render: (settlement) => <ActionMenu label={`إجراءات تسوية ${settlement.owner_name}`} items={settlementActions(settlement)} /> },
+  ];
+
   return (
     <div className="space-y-4">
       <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -324,15 +332,11 @@ export function OwnerSettlementWorkspace() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 sm:shrink-0">
-          <Button variant="outline" size="sm" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
+          <Button variant="outline" className="min-h-11" onClick={() => settlementsQuery.refetch()} disabled={settlementsQuery.isFetching}>
             <RefreshCw className="size-4" />
             تحديث
           </Button>
-          <Button
-            size="sm"
-            onClick={() => handleDraftOpenChange(true)}
-            disabled={targetsQuery.isPending || targets.length === 0}
-          >
+          <Button className="min-h-11" onClick={() => handleDraftOpenChange(true)} disabled={targetsQuery.isPending || targets.length === 0}>
             <Plus className="size-4" />
             إنشاء مسودة تسوية
           </Button>
@@ -360,86 +364,68 @@ export function OwnerSettlementWorkspace() {
         <EntityForm.ErrorSummary message="أكمل اسم الشركة والعملة في الإعدادات لتفعيل طباعة كشوف التسوية دون بيانات افتراضية." />
       ) : null}
 
-      <Card className="border-border/60">
-        <CardHeader className="border-b border-border/60 px-4 py-3 sm:px-5">
-          <CardTitle className="text-sm font-bold">التسويات المسجلة</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 p-4 sm:p-5">
-          <AsyncContentState
-            status={listStatus}
-            error={settlementsQuery.error}
-            errorTitle="تعذر تحميل تسويات الملاك"
-            errorAction={<Button variant="outline" onClick={() => settlementsQuery.refetch()}>إعادة المحاولة</Button>}
-            emptyTitle="لا توجد تسويات مسجلة"
-            emptyDescription="أنشئ أول مسودة من اتفاقية مالك وعقار؛ لن تظهر هنا أي بيانات تجريبية."
-            emptyAction={targets.length > 0 ? <Button onClick={() => handleDraftOpenChange(true)}>إنشاء مسودة تسوية</Button> : undefined}
-          >
-            {settlements.map((settlement) => {
-              const isApproving = approveMutation.isPending && approveMutation.variables?.settlement_id === settlement.id;
-              return (
-                <article key={settlement.id} className="space-y-3 rounded-2xl border border-border/60 bg-background p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
-                    <div>
-                      <p className="text-sm font-bold">{settlement.owner_name}</p>
-                      <p className="text-xs text-muted-foreground">{settlement.property_title} · {settlement.period_start} إلى {settlement.period_end}</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge>
-                      <Button variant="outline" size="sm" onClick={() => handlePrint(settlement)} disabled={!documentSettings.isReady}>
-                        <Printer className="size-3.5" />
-                        طباعة الكشف
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDownloadPdf(settlement)} disabled={!documentSettings.isReady}>
-                        <Download className="size-3.5" />
-                        PDF
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
-                    <Metric label="المحصل" value={settlement.gross_rent_collected} />
+      <section className="space-y-3 rounded-2xl border border-border/60 bg-card p-3 shadow-card sm:p-4" aria-label="سجل تسويات الملاك">
+        <header className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-black">التسويات المسجلة</h3>
+            <p className="mt-1 text-xs text-muted-foreground">جدول على سطح المكتب وبطاقات عملية على الهاتف.</p>
+          </div>
+          <StatusBadge tone="neutral">{settlements.length} سجل</StatusBadge>
+        </header>
+        <AsyncContentState
+          status={listStatus}
+          error={settlementsQuery.error}
+          errorTitle="تعذر تحميل تسويات الملاك"
+          errorAction={<Button variant="outline" onClick={() => settlementsQuery.refetch()}>إعادة المحاولة</Button>}
+          emptyTitle="لا توجد تسويات مسجلة"
+          emptyDescription="أنشئ أول مسودة من اتفاقية مالك وعقار؛ لن تظهر هنا أي بيانات تجريبية."
+          emptyAction={targets.length > 0 ? <Button onClick={() => handleDraftOpenChange(true)}>إنشاء مسودة تسوية</Button> : undefined}
+        >
+          <EntityTable
+            aria-label="جدول تسويات الملاك"
+            rows={settlements}
+            columns={columns}
+            keyOf={(settlement) => settlement.id}
+            enableViewModeToggle
+            viewModeStorageKey="rentrix:view-mode:owner-settlements"
+            renderMobileCard={(settlement) => (
+              <MobileCard
+                title={settlement.owner_name}
+                subtitle={`${settlement.property_title} · ${settlement.period_start} إلى ${settlement.period_end}`}
+                badge={<StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge>}
+                stats={(
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <Metric label="المحصّل" value={settlement.gross_rent_collected} />
                     <Metric label="أتعاب المكتب" value={settlement.management_fee_amount} tone="primary" />
-                    <Metric label="المصروفات والضريبة" value={settlement.maintenance_deductions + settlement.utility_deductions} tone="danger" />
+                    <Metric label="الخصومات" value={settlement.maintenance_deductions + settlement.utility_deductions} tone="danger" />
                     <Metric label="الصافي للمالك" value={settlement.net_payable_amount} tone="success" />
                   </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2 text-xs">
-                    <span className="text-muted-foreground">
-                      {settlement.status === 'paid'
-                        ? `تم الصرف${settlement.paid_at ? ` بتاريخ ${formatDate(settlement.paid_at)}` : ''}`
-                        : settlement.status === 'approved'
-                          ? 'معتمدة للصرف'
-                          : settlement.status === 'cancelled'
-                            ? 'ملغاة'
-                            : 'في انتظار الاعتماد المالي'}
-                      {settlement.payout_reference ? ` · مرجع الصرف: ${settlement.payout_reference}` : ''}
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {settlement.status === 'pending' && canApproveSettlement ? (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => approveMutation.mutate({ settlement_id: settlement.id })}
-                          disabled={approveMutation.isPending}
-                        >
-                          <CheckCircle2 className="size-3.5" />
-                          {isApproving ? 'جارٍ الاعتماد…' : 'اعتماد التسوية'}
-                        </Button>
-                      ) : null}
-                      {settlement.status === 'approved' && canPaySettlement ? (
-                        <Button size="sm" onClick={() => setSelectedSettlement(settlement)} disabled={payoutMutation.isPending}>
-                          <Send className="size-3.5" />
-                          تسجيل صرف المستحق
-                        </Button>
-                      ) : null}
-                    </div>
+                )}
+                actions={(
+                  <div className="grid w-full grid-cols-2 gap-2">
+                    <Button variant="secondary" className="min-h-11" onClick={() => handlePrint(settlement)} disabled={!documentSettings.isReady}>
+                      <Printer className="me-1 size-4" />طباعة
+                    </Button>
+                    <Button variant="secondary" className="min-h-11" onClick={() => handleDownloadPdf(settlement)} disabled={!documentSettings.isReady}>
+                      <Download className="me-1 size-4" />PDF
+                    </Button>
+                    {settlement.status === 'pending' && canApproveSettlement ? (
+                      <Button className="min-h-11" onClick={() => approveMutation.mutate({ settlement_id: settlement.id })} disabled={approveMutation.isPending}>
+                        <CheckCircle2 className="me-1 size-4" />اعتماد
+                      </Button>
+                    ) : null}
+                    {settlement.status === 'approved' && canPaySettlement ? (
+                      <Button className="min-h-11" onClick={() => setSelectedSettlement(settlement)} disabled={payoutMutation.isPending}>
+                        <Send className="me-1 size-4" />صرف
+                      </Button>
+                    ) : null}
                   </div>
-                </article>
-              );
-            })}
-          </AsyncContentState>
-        </CardContent>
-      </Card>
+                )}
+              />
+            )}
+          />
+        </AsyncContentState>
+      </section>
 
       <DraftOverlay
         open={draftOpen}
@@ -463,6 +449,7 @@ export function OwnerSettlementWorkspace() {
         onOpenChange={handlePayoutOpenChange}
         title="تسجيل صرف مستحق المالك"
         description={selectedSettlement ? `${selectedSettlement.owner_name} · ${formatMoney(selectedSettlement.net_payable_amount)}` : undefined}
+        visualVariant="operational"
       >
         <EntityForm.Root onSubmit={handlePayout} aria-busy={payoutMutation.isPending}>
           <EntityForm.ErrorSummary message={payoutMutation.error ? errorMessage(payoutMutation.error) : undefined} />
@@ -485,14 +472,14 @@ export function OwnerSettlementWorkspace() {
             </EntityForm.Section>
           ) : null}
           <EntityForm.Section title="بيانات الصرف" description="عند التأكيد تُنشئ قاعدة البيانات قيد مالك مستحق/نقدية متوازنًا.">
-            <EntityForm.Field label="وسيلة الصرف">
-              <Select value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value as ProcessPayoutPayload['payout_method'])}>
+            <EntityForm.Field label="وسيلة الصرف *">
+              <Select required value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value as ProcessPayoutPayload['payout_method'])}>
                 <option value="bank_transfer">تحويل بنكي</option>
                 <option value="check">شيك مصرفي</option>
                 <option value="cash">نقدًا</option>
               </Select>
             </EntityForm.Field>
-            <EntityForm.Field label="رقم المرجع / المعاملة">
+            <EntityForm.Field label="رقم المرجع / المعاملة *">
               <Input placeholder="مثال: TR-902184 / CHK-102" value={payoutRef} onChange={(event) => setPayoutRef(event.target.value)} required />
             </EntityForm.Field>
           </EntityForm.Section>
@@ -563,11 +550,12 @@ function DraftOverlay({
       onOpenChange={onOpenChange}
       title="إنشاء مسودة تسوية مالك"
       description="المبالغ تُشتق آليًا من الخادم (التحصيلات المرحّلة، الاتفاقية الحاكمة، المصروفات المعتمدة) وتُحفظ كما تظهر هنا."
+      visualVariant="operational"
     >
       <EntityForm.Root onSubmit={onSubmit} aria-busy={isSubmitting}>
         <EntityForm.ErrorSummary message={validationError || (mutationError ? errorMessage(mutationError) : undefined)} />
         <EntityForm.Section title="المالك والعقار" description="لا تظهر إلا الروابط التي لديها اتفاقية إدارة حية.">
-          <EntityForm.Field label="اتفاقية المالك والعقار">
+          <EntityForm.Field label="اتفاقية المالك والعقار *">
             <Select value={form.targetKey} onChange={(event) => onTargetChange(event.target.value)} required>
               <option value="">اختر المالك والعقار</option>
               {targets.map((target) => (
@@ -588,8 +576,8 @@ function DraftOverlay({
 
         <EntityForm.Section title="الفترة">
           <div className="grid gap-4 sm:grid-cols-2">
-            <DraftField label="بداية الفترة" type="date" value={form.periodStart} onChange={(value) => setForm((current) => ({ ...current, periodStart: value }))} />
-            <DraftField label="نهاية الفترة" type="date" value={form.periodEnd} onChange={(value) => setForm((current) => ({ ...current, periodEnd: value }))} />
+            <DraftField label="بداية الفترة *" type="date" value={form.periodStart} onChange={(value) => setForm((current) => ({ ...current, periodStart: value }))} />
+            <DraftField label="نهاية الفترة *" type="date" value={form.periodEnd} onChange={(value) => setForm((current) => ({ ...current, periodEnd: value }))} />
           </div>
         </EntityForm.Section>
 
@@ -618,15 +606,9 @@ function DraftOverlay({
                   ? ` · ضريبة ${preview.breakdown.vat.rate ?? 0}% على أتعاب المكتب`
                   : ' · الضريبة غير مفعّلة لهذه الشركة'}
               </p>
-              {previewLoading ? (
-                <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs font-medium leading-5 text-warning" role="status">
-                  تغيّرت معايير الاتفاقية أو الفترة — جارٍ إعادة حساب المبالغ من الخادم. لن يُفعّل الإنشاء إلا بعد اكتمال المعاينة الجديدة.
-                </p>
-              ) : (
-                <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
-                  عند إنشاء المسودة تُحجز التحصيلات والمصروفات المدرجة ذرّيًا، ولا يمكن سحبها إلى تسوية أخرى لنفس الفترة (قاعدة الحجز D14).
-                </p>
-              )}
+              <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
+                عند إنشاء المسودة تُحجز التحصيلات والمصروفات المدرجة ذرّيًا، ولا يمكن سحبها إلى تسوية أخرى لنفس الفترة.
+              </p>
             </>
           ) : (
             <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium text-muted-foreground">
@@ -677,15 +659,6 @@ function DraftField({
   );
 }
 
-
-/**
- * Wave D — first-run ADMIN supervision UX.
- *
- * Surfaces the supervision gap the owner audit flags for E7: approval and
- * payout are ADMIN-gated (financial.owner_settlements.approve/.pay), and the
- * first payout should run under ADMIN eyes. This banner only informs — it
- * never changes permissions or accounting.
- */
 export function SettlementSupervisionBanner({
   settlements,
   canApproveSettlement,
@@ -701,7 +674,6 @@ export function SettlementSupervisionBanner({
 
   if (settlements.length === 0) return null;
 
-  // The cashier/operator view: settlements need a role they do not hold.
   if (hasPending && !canApproveSettlement) {
     return (
       <div
@@ -711,14 +683,12 @@ export function SettlementSupervisionBanner({
       >
         <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         <p className="text-xs font-medium leading-5">
-          توجد تسويات بانتظار الاعتماد المالي. الاعتماد والصرف يتطلبان صلاحية المدير/المسؤول —
-          راجع مسؤول النظام لتفعيلها لحسابك.
+          توجد تسويات بانتظار الاعتماد المالي. الاعتماد والصرف يتطلبان صلاحية المدير/المسؤول — راجع مسؤول النظام لتفعيلها لحسابك.
         </p>
       </div>
     );
   }
 
-  // First-run supervision: the very first payout cycle runs under ADMIN eyes.
   if (!hasPaid && (hasPending || hasApproved) && (canApproveSettlement || canPaySettlement)) {
     return (
       <div
@@ -728,8 +698,7 @@ export function SettlementSupervisionBanner({
       >
         <ShieldCheck className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
         <p className="text-xs font-medium leading-5">
-          أول دورة تسويات للمكتب — يُنصح بإشراف المدير/المسؤول على أول اعتماد وصرف والتحقق من
-          بيانات المالك والحساب قبل التنفيذ. هذه ملاحظة تشغيلية فقط ولا تغيّر الصلاحيات.
+          أول دورة تسويات للمكتب — يُنصح بإشراف المدير/المسؤول على أول اعتماد وصرف والتحقق من بيانات المالك والحساب قبل التنفيذ. هذه ملاحظة تشغيلية فقط ولا تغيّر الصلاحيات.
         </p>
       </div>
     );
