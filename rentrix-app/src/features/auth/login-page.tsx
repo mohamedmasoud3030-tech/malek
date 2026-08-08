@@ -89,27 +89,15 @@ export function LoginPage() {
             className="size-16 object-contain sm:size-20"
             data-malek-canonical-lockup
           />
-          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-[1.75rem]">
-            {APP_BRAND_NAME}
-          </h1>
-          <p
-            className="mt-1.5 text-lg font-medium leading-7 text-muted-foreground sm:text-xl"
-            data-login-tagline
-          >
+          <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-foreground sm:text-[1.75rem]">{APP_BRAND_NAME}</h1>
+          <p className="mt-1.5 text-lg font-medium leading-7 text-muted-foreground sm:text-xl" data-login-tagline>
             {APP_BRAND_TAGLINE_AR}
           </p>
         </header>
 
-        <form
-          className="space-y-5"
-          onSubmit={handleSubmit}
-          noValidate={false}
-          aria-describedby={hasFieldError ? 'login-error' : undefined}
-        >
+        <form className="space-y-5" onSubmit={handleSubmit} noValidate={false} aria-describedby={hasFieldError ? 'login-error' : undefined}>
           <div className="grid gap-2">
-            <label htmlFor="login-email" className="text-sm font-semibold text-foreground">
-              البريد الإلكتروني
-            </label>
+            <label htmlFor="login-email" className="text-sm font-semibold text-foreground">البريد الإلكتروني</label>
             <div className="relative">
               <Mail className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
               <Input
@@ -117,10 +105,7 @@ export function LoginPage() {
                 className="h-12 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm"
                 type="email"
                 value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  setFormError(null);
-                }}
+                onChange={(event) => { setEmail(event.target.value); setFormError(null); }}
                 required
                 autoComplete="email"
                 inputMode="email"
@@ -133,9 +118,7 @@ export function LoginPage() {
           </div>
 
           <div className="grid gap-2">
-            <label htmlFor="login-password" className="text-sm font-semibold text-foreground">
-              كلمة المرور
-            </label>
+            <label htmlFor="login-password" className="text-sm font-semibold text-foreground">كلمة المرور</label>
             <div className="relative">
               <LockKeyhole className="pointer-events-none absolute inset-y-0 right-3 my-auto size-4 text-muted-foreground" aria-hidden="true" />
               <Input
@@ -143,10 +126,7 @@ export function LoginPage() {
                 className="h-12 ps-10 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm"
                 type={isPasswordVisible ? 'text' : 'password'}
                 value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  setFormError(null);
-                }}
+                onChange={(event) => { setPassword(event.target.value); setFormError(null); }}
                 onKeyDown={handlePasswordKeyDown}
                 onKeyUp={handleCapsLockDetect}
                 required
@@ -177,11 +157,7 @@ export function LoginPage() {
           </div>
 
           {hasFieldError ? (
-            <div
-              id="login-error"
-              className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/5 p-3 text-danger"
-              role="alert"
-            >
+            <div id="login-error" className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/5 p-3 text-danger" role="alert">
               <AlertTriangle className="mt-0.5 size-4 shrink-0" />
               <div className="text-xs leading-relaxed">{runtimeError ?? formError}</div>
             </div>
@@ -207,32 +183,32 @@ export function LoginPage() {
           </Button>
         </form>
 
-        <footer
-          className="mt-7 border-t border-border/60 pt-5 text-center"
-          data-contact-footer
-          aria-label="بيانات الدعم والتواصل"
-        >
+        <footer className="mt-7 border-t border-border/60 pt-5 text-center" data-contact-footer aria-label="بيانات الدعم والتواصل">
           <p className="mb-3 text-xs font-semibold text-muted-foreground">الدعم والتواصل</p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             {[SUPPORT_CONTACTS.oman, SUPPORT_CONTACTS.egypt, SUPPORT_CONTACTS.saudi].map((contact) => (
-              <span
+              <a
                 key={contact.number}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground"
+                href={`tel:${contact.number.replace(/\s+/g, '')}`}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground outline-none transition-colors hover:border-primary/30 hover:text-primary focus-visible:ring-4 focus-visible:ring-primary/20"
+                aria-label={`اتصال بالدعم على ${contact.number}`}
               >
                 <MessageCircle className="size-3.5 text-muted-foreground" aria-hidden="true" />
                 <span dir="ltr">{contact.number}</span>
-              </span>
+              </a>
             ))}
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
             {SUPPORT_CONTACTS.emails.map((contact) => (
-              <span
+              <a
                 key={contact.address}
-                className="inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-medium text-muted-foreground"
+                href={`mailto:${contact.address}`}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground outline-none transition-colors hover:text-primary focus-visible:ring-4 focus-visible:ring-primary/20"
+                aria-label={`مراسلة الدعم على ${contact.address}`}
               >
                 <Mail className="size-3.5" aria-hidden="true" />
                 <span dir="ltr">{contact.address}</span>
-              </span>
+              </a>
             ))}
           </div>
         </footer>
