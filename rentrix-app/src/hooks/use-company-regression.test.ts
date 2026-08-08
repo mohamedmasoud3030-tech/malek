@@ -26,6 +26,15 @@ describe('active company write guard', () => {
     expect(companyHook).not.toContain('companyList.length === 1');
   });
 
+  it('reads transient custom-hook company claims from the issued access token, never the Auth user record', () => {
+    expect(companyHook).toContain('readCompanyIdFromAccessToken(sessionAccessToken)');
+    expect(companyHook).toContain('readCompanyIdFromAccessToken(refreshed.session?.access_token)');
+    expect(companyHook).toContain('readCompanyIdFromAccessToken(session.access_token)');
+    expect(companyHook).not.toContain('readCompanyIdFromAppMetadata(sessionUser.app_metadata)');
+    expect(companyHook).not.toContain('readCompanyIdFromAppMetadata(refreshed.session?.user.app_metadata)');
+    expect(companyHook).not.toContain('readCompanyIdFromAppMetadata(session.user.app_metadata)');
+  });
+
   it('syncs the JWT server-side and verifies the issued claim before unlocking', () => {
     expect(companyHook).toContain('supabase.auth.refreshSession()');
     expect(companyHook).toContain('requestServerClaimSync');

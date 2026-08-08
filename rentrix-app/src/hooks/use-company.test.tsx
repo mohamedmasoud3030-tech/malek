@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   getSession: vi.fn(),
   refreshSession: vi.fn(),
   updateUser: vi.fn(),
-  sessionHolder: { current: null as { user: { id: string; app_metadata: Record<string, unknown> } } | null },
+  sessionHolder: { current: null as { access_token: string; user: { id: string; app_metadata: Record<string, unknown> } } | null },
 }));
 
 vi.mock('@/lib/supabase', () => ({
@@ -36,13 +36,32 @@ const COMPANY_B: CompanyShape = { id: 'company-b-uuid', name: 'شركة ب', slu
 const USER_ID = 'user-uuid-1';
 const OTHER_USER_ID = 'user-uuid-2';
 
+function encodeJwtPayload(payload: Record<string, unknown>): string {
+  const json = JSON.stringify(payload);
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return globalThis.btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function makeAccessToken(claimCompanyId: string | null): string {
+  const appMetadata = claimCompanyId
+    ? { company_id: claimCompanyId, user_role: 'ADMIN' }
+    : { user_role: 'ADMIN' };
+  return `eyJhbGciOiJub25lIn0.${encodeJwtPayload({ app_metadata: appMetadata })}.test-signature`;
+}
+
 function makeSession(userId: string, claimCompanyId: string | null) {
   return {
-    access_token: 'test-token',
+    // The Custom Access Token Hook stamps company_id into the ACCESS TOKEN.
+    access_token: makeAccessToken(claimCompanyId),
     user: {
       id: userId,
       email: `${userId}@example.test`,
-      app_metadata: claimCompanyId ? { company_id: claimCompanyId, user_role: 'ADMIN' } : { user_role: 'ADMIN' },
+      // Supabase's returned Auth user record is not required to mirror transient
+      // custom access-token claims. Keeping company_id absent here reproduces the
+      // real Live shape that exposed the regression.
+      app_metadata: { user_role: 'ADMIN' },
       user_metadata: {},
     },
   };
@@ -129,12 +148,13 @@ afterEach(() => {
 });
 
 describe('CompanyProvider resolution', () => {
-  it('opens immediately when the issued claim matches the membership', async () => {
+  it('opens immediately from the issued JWT claim even when user.app_metadata has no company_id', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, COMPANY_A.id);
     membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER')], error: null };
     renderProvider();
     await waitFor(() => expect(screen.getByTestId('active')).toHaveTextContent(COMPANY_A.id));
     expect(screen.getByTestId('role')).toHaveTextContent('OWNER');
+    expect(mocks.sessionHolder.current?.user.app_metadata).not.toHaveProperty('company_id');
     expect(mocks.refreshSession).not.toHaveBeenCalled();
     expect(mocks.updateUser).not.toHaveBeenCalled();
   });
@@ -149,7 +169,7 @@ describe('CompanyProvider resolution', () => {
     expect(mocks.updateUser).not.toHaveBeenCalled();
   });
 
-  it('syncs a deterministic membership preference and verifies the issued claim', async () => {
+  it('syncs a deterministic membership preference and verifies the issued access-token claim', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, null);
     membershipsResult = { data: [membershipRow(COMPANY_A, 'MEMBER')], error: null };
     mocks.refreshSession
@@ -160,7 +180,7 @@ describe('CompanyProvider resolution', () => {
     expect(mocks.updateUser).toHaveBeenCalledWith({ data: { company_id: COMPANY_A.id } });
   });
 
-  it('honours the server claim for a second membership', async () => {
+  it('honours the server JWT claim for a second membership', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, COMPANY_B.id);
     membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER'), membershipRow(COMPANY_B, 'VIEWER')], error: null };
     renderProvider();
@@ -169,7 +189,7 @@ describe('CompanyProvider resolution', () => {
     expect(screen.getByTestId('count')).toHaveTextContent('2');
   });
 
-  it('switches companies only after server claim verification', async () => {
+  it('switches companies only after server access-token claim verification', async () => {
     mocks.sessionHolder.current = makeSession(USER_ID, COMPANY_A.id);
     membershipsResult = { data: [membershipRow(COMPANY_A, 'OWNER'), membershipRow(COMPANY_B, 'ADMIN')], error: null };
     roleResult = { data: { role: 'ADMIN' }, error: null };
