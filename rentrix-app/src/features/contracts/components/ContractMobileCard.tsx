@@ -1,4 +1,3 @@
-import { useNavigate } from '@tanstack/react-router';
 import { Calendar, Clock, Edit, Trash2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EntityCard } from '@/components/ui/entity-card';
@@ -23,13 +22,14 @@ export function ContractMobileCard({
   contract,
   onDelete,
   onEdit,
+  onPreview,
 }: {
   companySettings: CompanySettingsContract;
   contract: ContractListItem;
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
+  onPreview: (id: string) => void;
 }) {
-  const navigate = useNavigate();
   const expiringSoon = isExpiringSoon(contract);
   const daysUntilEnd = getDaysUntilEnd(contract);
   const canonicalStatus = normalizeContractStatus(contract.status);
@@ -44,7 +44,7 @@ export function ContractMobileCard({
         avatarIcon={User}
         badge={<StatusBadge tone={contractStatusTone[canonicalStatus]} className="shrink-0">{contractStatusLabels[canonicalStatus]}</StatusBadge>}
         className={cn(daysUntilEnd !== null && daysUntilEnd <= 7 && canonicalStatus === 'active' && 'border-danger/40')}
-        onClick={() => navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}
+        onClick={() => onPreview(contract.id)}
         stats={(
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -61,19 +61,12 @@ export function ContractMobileCard({
           </div>
         )}
       />
-      {expiringSoon && (
-        <p className="px-1 text-xs font-semibold text-warning">ينتهي خلال {daysUntilEnd} يوم</p>
-      )}
+      {expiringSoon && <p className="px-1 text-xs font-semibold text-warning">ينتهي خلال {daysUntilEnd} يوم</p>}
       <div className="grid grid-cols-2 gap-2 px-1">
         <Button variant="secondary" className="min-h-11" onClick={() => onEdit(contract.id)}>
           <Edit className="me-1 size-3.5" aria-hidden="true" />تعديل
         </Button>
-        <Button
-          variant="danger"
-          className="min-h-11"
-          aria-label={`أرشفة العقد ${getContractNumber(contract)}`}
-          onClick={() => onDelete(contract.id)}
-        >
+        <Button variant="danger" className="min-h-11" aria-label={`أرشفة العقد ${getContractNumber(contract)}`} onClick={() => onDelete(contract.id)}>
           <Trash2 className="me-1 size-3.5" aria-hidden="true" />أرشفة
         </Button>
       </div>
