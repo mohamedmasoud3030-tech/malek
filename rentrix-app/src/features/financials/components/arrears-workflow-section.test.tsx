@@ -92,7 +92,7 @@ describe('ArrearsWorkflowSection', () => {
   it('renders the loading state', () => {
     const html = renderToStaticMarkup(<ArrearsWorkflowSection {...baseProps} isLoading />);
 
-    expect(html).toContain('جارٍ تحميل معاينة تحصيل المتأخرات للقراءة فقط...');
+    expect(html).toContain('جارٍ تحميل بيانات المتأخرات...');
   });
 
   it('renders the error state', () => {

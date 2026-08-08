@@ -1,5 +1,18 @@
-import { lazy, Suspense, useMemo } from 'react';
-import { AlertTriangle, Building2, Receipt, TrendingUp } from 'lucide-react';
+import { lazy, Suspense, useMemo, useState, useEffect } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import {
+  AlertTriangle,
+  Building2,
+  Receipt,
+  TrendingUp,
+  BookOpenCheck,
+  Layers,
+  Scale,
+  FileSpreadsheet,
+  ClipboardList,
+  Wrench,
+  LayoutDashboard
+} from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionTabPanel, SectionTabs } from '@/components/ui/section-tabs';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -46,7 +59,9 @@ type ReportsWorkspaceProps = Readonly<{
   filters: FilterState;
   canExportReports: boolean;
   activeSection: ReportSectionId;
+  activeView: string;
   onSectionChange: (section: ReportSectionId) => void;
+  onSectionViewChange: (section: ReportSectionId, view: string) => void;
   onFiltersChange: (filters: FilterState) => void;
   onResetCurrentMonth: () => void;
 }>;
@@ -56,15 +71,42 @@ export function ReportsWorkspace({
   filters,
   canExportReports,
   activeSection,
+  activeView,
   onSectionChange,
+  onSectionViewChange,
   onFiltersChange,
   onResetCurrentMonth,
 }: ReportsWorkspaceProps) {
   const companySettings = useCompanySettingsContract();
+  
   const money = (value: number | null | undefined) => formatCompanyMoney(companySettings, value);
   const activeSectionMeta = reportSections.find((section) => section.id === activeSection) ?? reportSections[0];
   const ActiveSectionIcon = activeSectionMeta.icon;
   const summary = model.hero.summary;
+
+  const handleAccountingViewChange = (viewId: string) => {
+    onSectionViewChange('accounting', viewId);
+  };
+
+  const handleAnalyticsViewChange = (viewId: string) => {
+    onSectionViewChange('analytics', viewId);
+  };
+
+  const accountingSubViews = useMemo(() => [
+    { id: 'accounting_reports', label: 'ميزان المراجعة والقوائم', icon: Scale },
+    { id: 'general_ledger', label: 'دفتر الأستاذ والشجرة', icon: BookOpenCheck },
+    { id: 'deferred_revenue', label: 'تسوية الإيرادات', icon: Layers },
+  ], []);
+
+  const analyticsSubViews = useMemo(() => [
+    { id: 'overview', label: 'نظرة عامة على الأداء', icon: LayoutDashboard },
+    { id: 'collections', label: 'تحليلات التحصيل', icon: Receipt },
+    { id: 'overdue', label: 'تعتيق المتأخرات', icon: AlertTriangle },
+    { id: 'expenses', label: 'تحليلات المصاريف', icon: ClipboardList },
+    { id: 'property_analytics', label: 'تحليلات العقارات', icon: Building2 },
+    { id: 'occupancy', label: 'تحليلات الإشغال', icon: Building2 },
+    { id: 'maintenance_analytics', label: 'تحليلات الصيانة', icon: Wrench },
+  ], []);
 
   const occupancy = useMemo(() => {
     const totals = model.sections.occupancy.occupancyRows.reduce(
@@ -114,7 +156,7 @@ export function ReportsWorkspace({
             trend={collectionRate >= 85 ? 'up' : collectionRate >= 65 ? 'neutral' : 'down'}
             trendValue={`${collectionRate}%`}
             accent="primary"
-            onDrill={() => onSectionChange('collections' as ReportSectionId)}
+            onDrill={() => onSectionChange('analytics')}
             drillAriaLabel={`المحصّل للفترة ${money(summary?.paid ?? 0)} — عرض تقرير التحصيل`}
             unit={companySettings.defaultCurrency}
           />
@@ -126,7 +168,7 @@ export function ReportsWorkspace({
             trend={occupancy.rate >= 90 ? 'up' : occupancy.rate >= 75 ? 'neutral' : 'down'}
             trendValue={`${occupancy.vacant} شاغرة`}
             accent="primary"
-            onDrill={() => onSectionChange('occupancy' as ReportSectionId)}
+            onDrill={() => onSectionChange('analytics')}
             drillAriaLabel={`نسبة الإشغال ${occupancy.rate}% — عرض تقرير الإشغال`}
           />
           <FinanceKpiCard
@@ -137,7 +179,7 @@ export function ReportsWorkspace({
             trend="neutral"
             trendValue={`${summary?.invoicesCount ?? 0} فواتير`}
             accent="primary"
-            onDrill={() => onSectionChange('overdue' as ReportSectionId)}
+            onDrill={() => onSectionChange('analytics')}
             drillAriaLabel={`الرصيد المستحق ${money(summary?.outstanding ?? 0)} — عرض تقرير المتأخرات`}
             unit={companySettings.defaultCurrency}
           />
@@ -149,7 +191,7 @@ export function ReportsWorkspace({
             trend={(summary?.netCash ?? 0) >= 0 ? 'up' : 'down'}
             trendValue={(summary?.netCash ?? 0) >= 0 ? 'موجب' : 'سالب'}
             accent="primary"
-            onDrill={() => onSectionChange('overview' as ReportSectionId)}
+            onDrill={() => onSectionChange('analytics')}
             unit={companySettings.defaultCurrency}
           />
         </FinanceKpiGrid>
@@ -184,6 +226,7 @@ export function ReportsWorkspace({
           </div>
         </div>
 
+        {/* Mobile reports navigation */}
         <div className="border-b border-border/60 bg-card/95 px-3 py-3 sm:hidden" data-reports-mobile-nav>
           <label htmlFor="reports-section-select" className="sr-only">
             أقسام التقارير
@@ -200,30 +243,16 @@ export function ReportsWorkspace({
               className="min-h-11 flex-1 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
               dir="rtl"
             >
-              {reportSections.map((section) => {
-                const category = reportCategories.find((c) => c.id === section.category);
-                return (
-                  <option key={section.id} value={section.id}>
-                    {section.label} — {category?.shortLabel ?? section.category}
-                  </option>
-                );
-              })}
+              {reportSections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.label}
+                </option>
+              ))}
             </select>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {reportCategories.map((category) => (
-              <span
-                key={category.id}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground"
-                title={`${category.label} — ${category.description}`}
-              >
-                <category.icon className="size-3" aria-hidden="true" />
-                {category.shortLabel}
-              </span>
-            ))}
           </div>
         </div>
 
+        {/* Desktop reports navigation */}
         <div
           className="no-scrollbar sticky top-0 z-20 hidden overflow-x-auto border-b border-border/60 bg-card/95 px-3 pt-3 backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35 sm:block sm:px-4"
           tabIndex={0}
@@ -231,18 +260,6 @@ export function ReportsWorkspace({
           aria-label="شريط أقسام التقارير القابل للتمرير أفقياً"
         >
           <div className="min-w-0 space-y-2">
-            <div className="flex flex-wrap gap-1.5 pb-1">
-              {reportCategories.map((category) => (
-                <span
-                  key={category.id}
-                  className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground"
-                  title={`${category.label} — ${category.description}`}
-                >
-                  <category.icon className="size-3" aria-hidden="true" />
-                  {category.shortLabel}
-                </span>
-              ))}
-            </div>
             <SectionTabs
               items={reportSections}
               activeId={activeSection}
@@ -253,10 +270,58 @@ export function ReportsWorkspace({
         </div>
       </section>
 
+      {/* Internal Sub-navigation Tabs */}
+      {activeSection === 'accounting' && (
+        <div className="border-b border-border/50 pb-2">
+          <SectionTabs
+            items={accountingSubViews}
+            activeId={activeView}
+            onChange={handleAccountingViewChange}
+            ariaLabel="أقسام فرعية للمحاسبة"
+          />
+        </div>
+      )}
+      {activeSection === 'analytics' && (
+        <div className="border-b border-border/50 pb-2">
+          <SectionTabs
+            items={analyticsSubViews}
+            activeId={activeView}
+            onChange={handleAnalyticsViewChange}
+            ariaLabel="أقسام فرعية للتحليلات"
+          />
+        </div>
+      )}
+
+      {/* Render selected section & view */}
       <div className="min-w-0" key={activeSection}>
         <Suspense fallback={<SectionFallback />}>
-          {activeSection === 'overview' && (
-            <SectionTabPanel id="overview" activeId={activeSection}>
+          {/* Accounting Section & Views */}
+          {activeSection === 'accounting' && activeView === 'accounting_reports' && (
+            <SectionTabPanel id="accounting" activeId={activeSection}>
+              <AccountingReportsSection {...model.sections.accounting} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'accounting' && activeView === 'general_ledger' && (
+            <SectionTabPanel id="accounting" activeId={activeSection}>
+              <GeneralLedgerCoreSection />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'accounting' && activeView === 'deferred_revenue' && (
+            <SectionTabPanel id="accounting" activeId={activeSection}>
+              <DeferredRevenueReportSection {...model.sections.deferredRevenue} canExportReports={canExportReports} />
+            </SectionTabPanel>
+          )}
+
+          {/* Statements Section */}
+          {activeSection === 'statements' && (
+            <SectionTabPanel id="statements" activeId={activeSection}>
+              <StatementsSection {...model.sections.statements} filters={filters} />
+            </SectionTabPanel>
+          )}
+
+          {/* Analytics Section & Views */}
+          {activeSection === 'analytics' && activeView === 'overview' && (
+            <SectionTabPanel id="analytics" activeId={activeSection}>
               <OverviewSection
                 {...model.sections.overview}
                 receiptRows={model.sections.collections.receiptRows}
@@ -266,13 +331,23 @@ export function ReportsWorkspace({
               />
             </SectionTabPanel>
           )}
-          {activeSection === 'general_ledger' && (
-            <SectionTabPanel id="general_ledger" activeId={activeSection}>
-              <GeneralLedgerCoreSection />
+          {activeSection === 'analytics' && activeView === 'collections' && (
+            <SectionTabPanel id="analytics" activeId={activeSection}>
+              <CollectionsSection {...model.sections.collections} canExportReports={canExportReports} />
             </SectionTabPanel>
           )}
-          {activeSection === 'property_analytics' && (
-            <SectionTabPanel id="property_analytics" activeId={activeSection}>
+          {activeSection === 'analytics' && activeView === 'overdue' && (
+            <SectionTabPanel id="analytics" activeId={activeSection}>
+              <OverdueSection {...model.sections.overdue} canExportReports={canExportReports} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'analytics' && activeView === 'expenses' && (
+            <SectionTabPanel id="analytics" activeId={activeSection}>
+              <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />
+            </SectionTabPanel>
+          )}
+          {activeSection === 'analytics' && activeView === 'property_analytics' && (
+            <SectionTabPanel id="analytics" activeId={activeSection}>
               <PropertyAnalyticsSection
                 occupancyRows={model.sections.occupancy.occupancyRows}
                 expenseRows={model.sections.expenses.report?.byProperty ?? []}
@@ -280,44 +355,14 @@ export function ReportsWorkspace({
               />
             </SectionTabPanel>
           )}
-          {activeSection === 'overdue' && (
-            <SectionTabPanel id="overdue" activeId={activeSection}>
-              <OverdueSection {...model.sections.overdue} canExportReports={canExportReports} />
-            </SectionTabPanel>
-          )}
-          {activeSection === 'occupancy' && (
-            <SectionTabPanel id="occupancy" activeId={activeSection}>
+          {activeSection === 'analytics' && activeView === 'occupancy' && (
+            <SectionTabPanel id="analytics" activeId={activeSection}>
               <OccupancySection {...model.sections.occupancy} />
             </SectionTabPanel>
           )}
-          {activeSection === 'collections' && (
-            <SectionTabPanel id="collections" activeId={activeSection}>
-              <CollectionsSection {...model.sections.collections} canExportReports={canExportReports} />
-            </SectionTabPanel>
-          )}
-          {activeSection === 'expenses' && (
-            <SectionTabPanel id="expenses" activeId={activeSection}>
-              <ExpensesSection {...model.sections.expenses} canExportReports={canExportReports} />
-            </SectionTabPanel>
-          )}
-          {activeSection === 'maintenance_analytics' && (
-            <SectionTabPanel id="maintenance_analytics" activeId={activeSection}>
+          {activeSection === 'analytics' && activeView === 'maintenance_analytics' && (
+            <SectionTabPanel id="analytics" activeId={activeSection}>
               <MaintenanceReportSection {...model.sections.maintenance} />
-            </SectionTabPanel>
-          )}
-          {activeSection === 'deferred_revenue' && (
-            <SectionTabPanel id="deferred_revenue" activeId={activeSection}>
-              <DeferredRevenueReportSection {...model.sections.deferredRevenue} canExportReports={canExportReports} />
-            </SectionTabPanel>
-          )}
-          {activeSection === 'statements' && (
-            <SectionTabPanel id="statements" activeId={activeSection}>
-              <StatementsSection {...model.sections.statements} filters={filters} />
-            </SectionTabPanel>
-          )}
-          {activeSection === 'accounting' && (
-            <SectionTabPanel id="accounting" activeId={activeSection}>
-              <AccountingReportsSection {...model.sections.accounting} />
             </SectionTabPanel>
           )}
         </Suspense>

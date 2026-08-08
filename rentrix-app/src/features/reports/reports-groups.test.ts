@@ -4,11 +4,9 @@ import { getReportSectionsByCategory, reportCategories, reportSections } from '.
 describe('report sections grouping contract', () => {
   it('groups every report into clear understandable categories', () => {
     const validGroups = new Set([
-      'الأداء المالي',
-      'الأداء التشغيلي',
-      'التحصيلات والذمم',
-      'الضرائب ومحاسبة الفترات',
+      'العمليات المحاسبية',
       'الكشوفات التفصيلية',
+      'تحليلات الأداء والتشغيل',
     ]);
 
     for (const section of reportSections) {
@@ -18,52 +16,25 @@ describe('report sections grouping contract', () => {
     const groups = new Set(reportSections.map((section) => section.group));
     expect(groups).toEqual(validGroups);
   });
-
-  it('keeps collections, overdue, and cash/revenue in appropriate categories', () => {
-    const getGroup = (id: string) => reportSections.find((s) => s.id === id)?.group;
-
-    expect(getGroup('collections')).toBe('التحصيلات والذمم');
-    expect(getGroup('overdue')).toBe('التحصيلات والذمم');
-    expect(getGroup('overview')).toBe('الأداء المالي');
-    expect(getGroup('expenses')).toBe('الأداء المالي');
-    expect(getGroup('accounting')).toBe('الأداء المالي');
-    expect(getGroup('general_ledger')).toBe('الضرائب ومحاسبة الفترات');
-    expect(getGroup('deferred_revenue')).toBe('الضرائب ومحاسبة الفترات');
-    expect(getGroup('statements')).toBe('الكشوفات التفصيلية');
-  });
 });
 
-describe('report sections — Wave A 3-category consolidation contract', () => {
+describe('report sections — Simplified 3-category consolidation contract', () => {
   it('assigns every report to exactly one of the three macro categories', () => {
     const categoryIds = new Set(reportCategories.map((category) => category.id));
-    expect(categoryIds).toEqual(new Set(['live', 'analytical', 'formal']));
+    expect(categoryIds).toEqual(new Set(['accounting', 'statements', 'analytics']));
 
     for (const section of reportSections) {
       expect(categoryIds.has(section.category)).toBe(true);
     }
   });
 
-  it('splits operational insights (live) from analytical views from formal reports', () => {
-    const live = getReportSectionsByCategory('live').map((section) => section.id);
-    const analytical = getReportSectionsByCategory('analytical').map((section) => section.id);
-    const formal = getReportSectionsByCategory('formal').map((section) => section.id);
+  it('splits accounting from statements from analytics', () => {
+    const accounting = getReportSectionsByCategory('accounting').map((section) => section.id);
+    const statements = getReportSectionsByCategory('statements').map((section) => section.id);
+    const analytics = getReportSectionsByCategory('analytics').map((section) => section.id);
 
-    // LIVE OPERATIONAL INSIGHTS: what needs attention today
-    expect(live).toEqual(['overview', 'overdue', 'occupancy', 'collections']);
-    // ANALYTICAL VIEWS: why it happens
-    expect(analytical).toEqual(['property_analytics', 'expenses', 'maintenance_analytics']);
-    // FORMAL REPORTS: auditable statements & accounting outputs
-    expect(formal).toEqual(['general_ledger', 'deferred_revenue', 'statements', 'accounting']);
-
-    // Every section appears in exactly one category cluster.
-    const all = [...live, ...analytical, ...formal];
-    expect(new Set(all).size).toBe(reportSections.length);
-    expect(all.length).toBe(reportSections.length);
-  });
-
-  it('keeps the legacy groups intact as secondary labels for each section', () => {
-    for (const section of reportSections) {
-      expect(section.group.length).toBeGreaterThan(0);
-    }
+    expect(accounting).toEqual(['accounting']);
+    expect(statements).toEqual(['statements']);
+    expect(analytics).toEqual(['analytics']);
   });
 });

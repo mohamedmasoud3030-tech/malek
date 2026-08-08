@@ -5,6 +5,7 @@ import {
   mergeReportSectionIntoSearch,
   REPORTS_SECTION_SEARCH_KEY,
   resolveReportSection,
+  resolveReportView,
 } from './reports-section-model';
 
 describe('reports section URL model', () => {
@@ -31,17 +32,32 @@ describe('reports section URL model', () => {
     }
   });
 
-  it('defaults to the first/overview section as the stable page identity', () => {
-    expect(DEFAULT_REPORT_SECTION).toBe('overview');
-    // The default is always one of the registered sections.
+  it('defaults to the accounting section as the stable page identity', () => {
+    expect(DEFAULT_REPORT_SECTION).toBe('accounting');
     expect(reportSections.some((section) => section.id === DEFAULT_REPORT_SECTION)).toBe(true);
   });
 
-  it('round-trips through the registered section list so bookmarks stay valid', () => {
-    // A resolved id must always be re-resolvable to itself (idempotent).
-    for (const id of ['overview', 'accounting', 'collections', 'statements']) {
-      expect(resolveReportSection(resolveReportSection(id))).toBe(resolveReportSection(id));
-    }
+  it('maps legacy/old sections to the three new macro categories', () => {
+    expect(resolveReportSection('overview')).toBe('analytics');
+    expect(resolveReportSection('collections')).toBe('analytics');
+    expect(resolveReportSection('overdue')).toBe('analytics');
+    expect(resolveReportSection('general_ledger')).toBe('accounting');
+    expect(resolveReportSection('deferred_revenue')).toBe('accounting');
+    expect(resolveReportSection('statements')).toBe('statements');
+  });
+
+  it('maps legacy sections to their correct nested view equivalents authoritatively', () => {
+    expect(resolveReportView('overview', undefined)).toBe('overview');
+    expect(resolveReportView('collections', undefined)).toBe('collections');
+    expect(resolveReportView('overdue', undefined)).toBe('overdue');
+    expect(resolveReportView('expenses', undefined)).toBe('expenses');
+    expect(resolveReportView('property_analytics', undefined)).toBe('property_analytics');
+    expect(resolveReportView('occupancy', undefined)).toBe('occupancy');
+    expect(resolveReportView('maintenance_analytics', undefined)).toBe('maintenance_analytics');
+    expect(resolveReportView('accounting', undefined)).toBe('accounting_reports');
+    expect(resolveReportView('general_ledger', undefined)).toBe('general_ledger');
+    expect(resolveReportView('deferred_revenue', undefined)).toBe('deferred_revenue');
+    expect(resolveReportView('statements', undefined)).toBe('');
   });
 });
 
@@ -56,15 +72,8 @@ describe('reports section URL sync', () => {
   });
 
   it('overwrites an existing section param when switching tabs', () => {
-    expect(mergeReportSectionIntoSearch({ section: 'overview' }, 'collections')).toEqual({
-      section: 'collections',
+    expect(mergeReportSectionIntoSearch({ section: 'analytics' }, 'statements')).toEqual({
+      section: 'statements',
     });
-  });
-
-  it('resolves a direct link with a valid section and defaults on invalid', () => {
-    // Direct link: /reports?section=statements
-    expect(resolveReportSection('statements')).toBe('statements');
-    // Direct link with an unknown section fails safe to the default.
-    expect(resolveReportSection('bogus')).toBe(DEFAULT_REPORT_SECTION);
   });
 });

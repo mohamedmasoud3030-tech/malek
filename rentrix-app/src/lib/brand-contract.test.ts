@@ -123,10 +123,7 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'src/features/onboarding/useOnboarding.ts',
     'Persisted localStorage keys rentrix_onboarding_* — renaming would reset onboarding for existing users.',
   ],
-  [
-    'src/features/tenants/phase4-tenant-hub.test.tsx',
-    'Asserts the route tree for the tenants redirect to /contracts.',
-  ],
+
   [
     'src/hooks/use-auth.tsx',
     'Auth session storage key rentrix-auth-session — renaming would sign every user out.',
@@ -187,6 +184,13 @@ const VIEW_MODE_KEY_FILES = [
   'src/features/tenants/TenantsPage.tsx',
   'src/features/units/units-list.tsx',
   'src/features/units/units-page.tsx',
+  'src/features/audit/components/audit-log-view.tsx',
+  'src/features/automation/components/automation-center-view.tsx',
+  'src/features/financials/components/overdue-invoices-table.tsx',
+  'src/features/financials/deposits/deposits-workspace.tsx',
+  'src/features/financials/reconciliation/bank-reconciliation-page.tsx',
+  'src/features/owners/components/OwnerSettlementWorkspace.tsx',
+  'src/features/utilities/components/utilities-workspace.tsx',
 ];
 for (const file of VIEW_MODE_KEY_FILES) {
   DISPLAY_NAME_ALLOWLIST.set(file, 'Persisted view-mode key rentrix:view-mode:* kept stable for existing users.');

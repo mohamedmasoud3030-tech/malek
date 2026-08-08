@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { useGeneralLedgerCore, type AccountType, type NormalBalance, type AccountingPeriodStatus, type JournalBatchStatus } from '../use-general-ledger-core';
 
 function accountTypeLabel(type: AccountType): string {
@@ -52,6 +53,8 @@ function batchStatusBadge(status: JournalBatchStatus) {
 
 export function GeneralLedgerCoreSection() {
   const { accounts, periods, batches, isLoading, isError, refetchAll } = useGeneralLedgerCore();
+  const companySettings = useCompanySettingsContract();
+  const currencyCode = companySettings.defaultCurrency || 'OMR';
 
   if (isLoading) {
     return (
@@ -92,7 +95,7 @@ export function GeneralLedgerCoreSection() {
               <div>
                 <CardTitle className="text-base font-extrabold">شجرة الحسابات الموحدة (Chart of Accounts)</CardTitle>
                 <CardDescription className="text-xs">
-                  الحسابات المحاسبية الأساسية المؤمّنة في نظام الأستاذ العام بالريال العماني (OMR).
+                  الحسابات المحاسبية الأساسية المؤمّنة في نظام الأستاذ العام بالعملة المعتمدة ({currencyCode}).
                 </CardDescription>
               </div>
             </div>
@@ -126,7 +129,7 @@ export function GeneralLedgerCoreSection() {
                         </span>
                       </td>
                       <td className="p-3 font-medium">{normalBalanceLabel(account.normal_balance)}</td>
-                      <td className="p-3 font-mono text-muted-foreground">{account.currency_code || 'OMR'}</td>
+                      <td className="p-3 font-mono text-muted-foreground">{account.currency_code || currencyCode}</td>
                       <td className="p-3">
                         <StatusBadge tone={account.is_active ? 'green' : 'neutral'}>
                           {account.is_active ? 'نشط' : 'غير نشط'}

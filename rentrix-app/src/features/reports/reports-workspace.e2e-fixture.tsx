@@ -272,7 +272,8 @@ export function ReportsWorkspaceE2EFixture() {
   }));
   // The fixture renders ReportsWorkspace without the /reports route, so the
   // section selection is local state here (the real route is URL-backed).
-  const [activeSection, setActiveSection] = useState<ReportSectionId>('overview');
+  const [activeSection, setActiveSection] = useState<ReportSectionId>('accounting');
+  const [activeView, setActiveView] = useState('accounting_reports');
 
   useEffect(() => {
     queryClient.setQueryData(companySettingsKeys.detail(), {
@@ -305,7 +306,16 @@ export function ReportsWorkspaceE2EFixture() {
           filters={filters}
           canExportReports={false}
           activeSection={activeSection}
-          onSectionChange={setActiveSection}
+          activeView={activeView}
+          onSectionChange={(sec) => {
+            setActiveSection(sec);
+            if (sec === 'accounting') setActiveView('accounting_reports');
+            else if (sec === 'analytics') setActiveView('overview');
+          }}
+          onSectionViewChange={(sec, vi) => {
+            setActiveSection(sec);
+            setActiveView(vi);
+          }}
           onFiltersChange={setFilters}
           onResetCurrentMonth={() => setFilters({
             ...getCurrentMonthFilters(),

@@ -1,8 +1,20 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
-import { financialWorkflowGroups } from './financials-workflow-groups';
+import { describe, expect, it, vi } from 'vitest';
+import { FINANCE_VIEWS, isViewPermitted } from './financials-page';
 
 const readPage = () => readFileSync(new URL('./financials-page.tsx', import.meta.url), 'utf8');
+const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
+
+vi.mock('@/features/auth/permissions', async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return {
+    ...actual,
+    canAccess: (context: any, permission: string) => {
+      if (!context || !context.permissions) return false;
+      return context.permissions.has(permission);
+    }
+  };
+});
 
 describe('/financials consolidated operational entry', () => {
   it('keeps one Arabic finance page identity', () => {
@@ -11,40 +23,87 @@ describe('/financials consolidated operational entry', () => {
     expect(source).toContain('title="المالية"');
   });
 
-  it('does not restore a second workspace navigation bar', () => {
+  it('uses one secondary contextual navigation layer', () => {
     const source = readPage();
     expect(source).not.toContain('WorkspaceSubNav');
-    expect(source).not.toContain('SectionTabs');
+    expect(source).toContain('SectionTabs');
   });
 
-  it('exposes the four internal finance drill-downs from the single finance page', () => {
+  it('contains the five final finance sections', () => {
     const source = readPage();
-    expect(source).toContain("to: '/finance/collections'");
-    expect(source).toContain("to: '/finance/expenses'");
-    expect(source).toContain("to: '/finance/deposits'");
-    expect(source).toContain("to: '/finance/banking'");
+    expect(source).toContain("id: 'overview'");
+    expect(source).toContain("id: 'collections'");
+    expect(source).toContain("id: 'expenses'");
+    expect(source).toContain("id: 'funds'");
+    expect(source).toContain("id: 'banking'");
   });
 
   it('links accounting and formal reporting as the second finance/accounting destination', () => {
     expect(readPage()).toContain('to="/reports"');
   });
 
-  it('does not embed duplicate operational lists on the directory page', () => {
+  it('lazy loads operational workspace sections for high performance', () => {
     const source = readPage();
-    expect(source).not.toContain('ReceiptsWorkspace');
-    expect(source).not.toContain('InvoicesWorkspace');
-    expect(source).not.toContain('ExpensesWorkspace');
+    expect(source).toContain('InvoicesWorkspace = lazy(');
+    expect(source).toContain('ReceiptsWorkspace = lazy(');
+    expect(source).toContain('ExpensesWorkspace = lazy(');
   });
 });
 
-describe('financial workflow groups registry compatibility', () => {
-  it('keeps the internal finance hub routes stable for bookmarks and drill-downs', () => {
-    const routes = financialWorkflowGroups.map((group) => group.route).sort();
-    expect(routes).toEqual([
-      '/finance/banking',
-      '/finance/collections',
-      '/finance/deposits',
-      '/finance/expenses',
-    ]);
+describe('Finance view-level permissions and defense-in-depth', () => {
+  const mockAuth = (permissions: string[]) => ({
+    user: { id: 'test' },
+    permissions: new Set(permissions),
+  });
+
+  it('enforces exact permission boundary for expenses vs commissions', () => {
+    const expensesView = FINANCE_VIEWS.find(v => v.id === 'expenses')!;
+    const commissionsView = FINANCE_VIEWS.find(v => v.id === 'commissions')!;
+
+    // expenses.view does not imply commissions.view
+    expect(isViewPermitted(mockAuth(['expenses.view']), expensesView)).toBe(true);
+    expect(isViewPermitted(mockAuth(['expenses.view']), commissionsView)).toBe(false);
+
+    // commissions.view does not imply expenses.view
+    expect(isViewPermitted(mockAuth(['commissions.view']), expensesView)).toBe(false);
+    expect(isViewPermitted(mockAuth(['commissions.view']), commissionsView)).toBe(true);
+  });
+
+  it('enforces exact permission boundary for deposits vs settlements', () => {
+    const depositsView = FINANCE_VIEWS.find(v => v.id === 'deposits')!;
+    const settlementsView = FINANCE_VIEWS.find(v => v.id === 'owner_settlements')!;
+
+    // deposits does not imply settlements
+    expect(isViewPermitted(mockAuth(['financial.deposits.view']), depositsView)).toBe(true);
+    expect(isViewPermitted(mockAuth(['financial.deposits.view']), settlementsView)).toBe(false);
+
+    // settlements does not imply deposits
+    expect(isViewPermitted(mockAuth(['financial.owner_settlements.view']), depositsView)).toBe(false);
+    expect(isViewPermitted(mockAuth(['financial.owner_settlements.view']), settlementsView)).toBe(true);
+  });
+
+  it('allows authenticated-only access to invoices and receipts but requires arrears.view for arrears', () => {
+    const invoicesView = FINANCE_VIEWS.find(v => v.id === 'invoices')!;
+    const receiptsView = FINANCE_VIEWS.find(v => v.id === 'receipts')!;
+    const arrearsView = FINANCE_VIEWS.find(v => v.id === 'arrears')!;
+
+    expect(isViewPermitted(mockAuth([]), invoicesView)).toBe(true);
+    expect(isViewPermitted(mockAuth([]), receiptsView)).toBe(true);
+    expect(isViewPermitted(mockAuth([]), arrearsView)).toBe(false);
+
+    expect(isViewPermitted(mockAuth(['arrears.view']), arrearsView)).toBe(true);
+  });
+});
+
+describe('Receipt detail print exception and redirect contract', () => {
+  it('redirects /receipts to consolidated receipt register when no receiptId is present', () => {
+    expect(routeTreeSource).toContain("path: '/receipts'");
+    expect(routeTreeSource).toContain("receiptId");
+    expect(routeTreeSource).toContain("section: 'collections', view: 'receipts'");
+  });
+
+  it('does NOT redirect /receipts?receiptId=valid-id away and renders the print shell component', () => {
+    expect(routeTreeSource).toContain("const requestedReceiptId = (search as Record<string, unknown>).receiptId;");
+    expect(routeTreeSource).toContain("if (typeof requestedReceiptId === 'string' && requestedReceiptId !== '') return;");
   });
 });
