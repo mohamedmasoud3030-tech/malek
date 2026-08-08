@@ -1,33 +1,52 @@
 import { useMemo, useState } from 'react';
-import { Activity, AlertCircle, CheckCircle2, Download, Droplets, Flame, Plus, Printer, ShieldCheck, Wifi, Zap, Edit, Trash2 } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, Download, Droplets, Flame, Plus, Printer, ShieldCheck, Trash2, Wifi, Zap } from 'lucide-react';
+import { AsyncContentState } from '@/components/async-content-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EntityForm } from '@/components/ui/entity-form';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { AsyncContentState } from '@/components/async-content-state';
-import { FilterBar } from '@/components/ui/filter-bar';
-import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { useProperties } from '@/features/properties/use-properties';
-import { formatMoney } from '@/features/financials/components/financials-formatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatCompanyMoney } from '@/lib/companyFormatters';
+import { formatLatinNumber } from '@/lib/formatters';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import { runDocumentAction } from '@/services/documents/runDocumentAction';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
-import { useUtilityBills, useUtilityMeters, useCreateUtilityMeter, useCreateUtilityBill, useDeleteUtilityMeter, useDeleteUtilityBill } from '../use-utilities';
-import { responsiblePartyLabels, utilityBillStatusLabels, utilityTypeLabels, type UtilityBill, type UtilityBillStatus, type UtilityMeterFormValues, type UtilityBillFormValues, type UtilityType, type ResponsibleParty } from '../utilities-service';
-import { formatLatinNumber } from '@/lib/formatters';
+import {
+  useUtilityBills,
+  useUtilityMeters,
+  useCreateUtilityMeter,
+  useCreateUtilityBill,
+  useDeleteUtilityMeter,
+  useDeleteUtilityBill,
+} from '../use-utilities';
+import {
+  responsiblePartyLabels,
+  utilityBillStatusLabels,
+  utilityTypeLabels,
+  type UtilityBill,
+  type UtilityBillStatus,
+  type UtilityMeter,
+  type UtilityMeterFormValues,
+  type UtilityBillFormValues,
+  type UtilityType,
+  type ResponsibleParty,
+} from '../utilities-service';
 
 const utilityIcons: Record<UtilityType, typeof Zap> = {
   electricity: Zap,
@@ -38,7 +57,6 @@ const utilityIcons: Record<UtilityType, typeof Zap> = {
   other: ShieldCheck,
 };
 
-
 function utilityBillStatusTone(status: UtilityBillStatus): 'success' | 'warning' | 'danger' {
   if (status === 'paid') return 'success';
   if (status === 'partially_paid') return 'warning';
@@ -46,60 +64,48 @@ function utilityBillStatusTone(status: UtilityBillStatus): 'success' | 'warning'
 }
 
 export type UtilitiesWorkspaceMode = 'standalone' | 'embedded';
+export type UtilitiesWorkspaceProps = Readonly<{ mode?: UtilitiesWorkspaceMode }>;
 
-export type UtilitiesWorkspaceProps = Readonly<{
-  /**
-   * standalone: renders the full page shell (PageLayout + PageHeader) —
-   * used by the legacy /utilities route when visited directly.
-   * embedded: renders only the workspace body — used inside the operations
-   * hub, which already supplies its own page shell and section header.
-   */
-  mode?: UtilitiesWorkspaceMode;
-}>;
+const emptyMeterForm = (): UtilityMeterFormValues => ({
+  property_id: '',
+  utility_type: 'electricity',
+  meter_number: '',
+  account_number: '',
+  provider_name: '',
+  responsible_party: 'tenant',
+  is_active: true,
+  notes: '',
+});
 
-/**
- * Owns all utilities workspace UI: KPI summary, meter/bill dialogs, filters,
- * and lists. Shared verbatim between the standalone /utilities route and the
- * embedded operations hub tab so business logic, queries, and mutations are
- * never duplicated.
- */
+const emptyBillForm = (): UtilityBillFormValues => ({
+  meter_id: null,
+  property_id: '',
+  unit_id: null,
+  amount: 1,
+  paid_amount: 0,
+  previous_reading: null,
+  current_reading: null,
+  consumption_units: null,
+  due_date: getTodayLocalDateString(),
+  responsible_party: 'tenant',
+  billing_period_start: null,
+  billing_period_end: null,
+  bill_number: null,
+  notes: null,
+  attachment_url: null,
+});
+
 export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspaceProps) {
   const [utilityFilter, setUtilityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<UtilityBillStatus | 'all'>('all');
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const [showMeterDialog, setShowMeterDialog] = useState(false);
-  const [showBillDialog, setShowBillDialog] = useState(false);
-
-  const [meterForm, setMeterForm] = useState<UtilityMeterFormValues>({
-    property_id: '',
-    utility_type: 'electricity',
-    meter_number: '',
-    account_number: '',
-    provider_name: '',
-    responsible_party: 'tenant',
-    is_active: true,
-    notes: '',
-  });
-
-  const [billForm, setBillForm] = useState<UtilityBillFormValues>({
-    meter_id: null,
-    property_id: '',
-    unit_id: null,
-    amount: 1,
-    paid_amount: 0,
-    previous_reading: null,
-    current_reading: null,
-    consumption_units: null,
-    due_date: getTodayLocalDateString(),
-    responsible_party: 'tenant',
-    billing_period_start: null,
-    billing_period_end: null,
-    bill_number: null,
-    notes: null,
-    attachment_url: null,
-  });
+  const [showMeterForm, setShowMeterForm] = useState(false);
+  const [showBillForm, setShowBillForm] = useState(false);
+  const [meterForm, setMeterForm] = useState<UtilityMeterFormValues>(emptyMeterForm);
+  const [billForm, setBillForm] = useState<UtilityBillFormValues>(emptyBillForm);
+  const [meterToArchive, setMeterToArchive] = useState<UtilityMeter | null>(null);
+  const [billToArchive, setBillToArchive] = useState<UtilityBill | null>(null);
 
   const propertiesQuery = useProperties({ page: 1, pageSize: 100, search: '', status: 'all' });
   const metersQuery = useUtilityMeters(propertyFilter !== 'all' ? propertyFilter : undefined);
@@ -108,131 +114,108 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     status: statusFilter !== 'all' ? statusFilter : undefined,
     meterId: utilityFilter !== 'all' && utilityFilter.startsWith('meter:') ? utilityFilter.replace('meter:', '') : undefined,
   });
-
   const createMeterMut = useCreateUtilityMeter();
   const createBillMut = useCreateUtilityBill();
   const deleteMeterMut = useDeleteUtilityMeter();
   const deleteBillMut = useDeleteUtilityBill();
   const documentSettings = useDocumentSettings();
-
-  // The bill the user asked to remove. The first click only stages it here and
-  // opens the confirmation dialog — the mutation runs only after an explicit
-  // confirm, so a stray tap can never delete a bill.
-  const [billToArchive, setBillToArchive] = useState<UtilityBill | null>(null);
+  const companySettings = useCompanySettingsContract();
 
   const meters = metersQuery.data ?? [];
   const bills = billsQuery.data ?? [];
-
-  const archiveBillMutationPending = deleteBillMut.isPending;
-
-  const handleConfirmArchiveBill = () => {
-    if (!billToArchive || archiveBillMutationPending) return;
-    deleteBillMut.mutate(billToArchive.id, {
-      onSuccess: () => {
-        toast.success('تمت أرشفة فاتورة المرافق وإزالتها من القائمة');
-        setBillToArchive(null);
-      },
-      onError: (error) => {
-        toast.error(error instanceof Error && error.message ? error.message : 'تعذر أرشفة فاتورة المرافق');
-      },
-    });
-  };
-
-  // Human-readable context shown inside the archive confirmation so the user
-  // can verify exactly which bill is about to be removed.
-  const archiveUtilityLabel = (bill: UtilityBill) => {
-    const meter = meters.find((m) => m.id === bill.meter_id);
-    return meter ? utilityTypeLabels[meter.utility_type] : 'مرفق غير محدد';
-  };
-  const archivePropertyLabel = (bill: UtilityBill) => {
-    const prop = propertiesQuery.data?.rows?.find((p: any) => p.id === bill.property_id);
-    return prop?.title ?? 'عقار غير محدد';
-  };
-  const archivePeriodLabel = (bill: UtilityBill) => {
-    if (bill.billing_period_start && bill.billing_period_end) {
-      return `${bill.billing_period_start} → ${bill.billing_period_end}`;
-    }
-    return bill.due_date;
-  };
+  const properties = propertiesQuery.data?.rows ?? [];
+  const propertyName = (propertyId: string) => properties.find((property) => property.id === propertyId)?.title ?? 'عقار غير محدد';
+  const money = (value: number) => formatCompanyMoney(companySettings, value);
 
   const filteredBills = useMemo(() => {
     let list = bills;
     if (utilityFilter !== 'all' && !utilityFilter.startsWith('meter:')) {
-      list = list.filter((b) => {
-        const meter = meters.find((m) => m.id === b.meter_id);
-        return meter?.utility_type === utilityFilter;
-      });
+      list = list.filter((bill) => meters.find((meter) => meter.id === bill.meter_id)?.utility_type === utilityFilter);
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter((b) => (b.bill_number?.toLowerCase().includes(q) || b.notes?.toLowerCase().includes(q)));
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      list = list.filter((bill) => bill.bill_number?.toLowerCase().includes(query) || bill.notes?.toLowerCase().includes(query));
     }
     return list;
   }, [bills, meters, utilityFilter, searchQuery]);
 
-  const totalBilled = useMemo(() => filteredBills.reduce((acc, b) => acc + b.amount, 0), [filteredBills]);
-  const totalPaid = useMemo(() => filteredBills.reduce((acc, b) => acc + b.paid_amount, 0), [filteredBills]);
+  const totalBilled = useMemo(() => filteredBills.reduce((total, bill) => total + bill.amount, 0), [filteredBills]);
+  const totalPaid = useMemo(() => filteredBills.reduce((total, bill) => total + bill.paid_amount, 0), [filteredBills]);
   const totalUnpaid = totalBilled - totalPaid;
 
   const activeFilters = useMemo<ActiveFilterItem[]>(() => {
     const items: ActiveFilterItem[] = [];
     if (propertyFilter !== 'all') {
-      const prop = propertiesQuery.data?.rows?.find((p: any) => p.id === propertyFilter);
-      items.push({ key: 'property', label: 'العقار', value: prop?.title ?? propertyFilter, onRemove: () => setPropertyFilter('all') });
+      items.push({ key: 'property', label: 'العقار', value: propertyName(propertyFilter), onRemove: () => setPropertyFilter('all') });
     }
     if (utilityFilter !== 'all') {
-      const label = utilityFilter.startsWith('meter:') ? 'عداد محدد' : utilityTypeLabels[utilityFilter as UtilityType] ?? utilityFilter;
+      const meterId = utilityFilter.startsWith('meter:') ? utilityFilter.replace('meter:', '') : null;
+      const label = meterId
+        ? `عداد ${meters.find((meter) => meter.id === meterId)?.meter_number ?? 'محدد'}`
+        : utilityTypeLabels[utilityFilter as UtilityType] ?? utilityFilter;
       items.push({ key: 'utility', label: 'المرفق', value: label, onRemove: () => setUtilityFilter('all') });
     }
     if (statusFilter !== 'all') {
       items.push({ key: 'status', label: 'الحالة', value: utilityBillStatusLabels[statusFilter], onRemove: () => setStatusFilter('all') });
     }
     if (searchQuery.trim()) {
-      items.push({ key: 'search', label: 'بحث', value: searchQuery, onRemove: () => setSearchQuery('') });
+      items.push({ key: 'search', label: 'بحث', value: searchQuery.trim(), onRemove: () => setSearchQuery('') });
     }
     return items;
-  }, [propertyFilter, utilityFilter, statusFilter, searchQuery, propertiesQuery.data]);
+  }, [propertyFilter, utilityFilter, statusFilter, searchQuery, meters, properties]);
+
+  const clearFilters = () => {
+    setPropertyFilter('all');
+    setUtilityFilter('all');
+    setStatusFilter('all');
+    setSearchQuery('');
+  };
 
   const handleCreateMeter = async () => {
+    if (!meterForm.property_id || !meterForm.meter_number.trim() || !meterForm.account_number.trim()) return;
     try {
       await createMeterMut.mutateAsync(meterForm);
-      setShowMeterDialog(false);
-      setMeterForm({ property_id: '', utility_type: 'electricity', meter_number: '', account_number: '', provider_name: '', responsible_party: 'tenant', is_active: true, notes: '' });
-    } catch (e) {
-      console.error(e);
+      setShowMeterForm(false);
+      setMeterForm(emptyMeterForm());
+    } catch {
+      // Mutation exposes its error inside the form.
     }
   };
 
   const handleCreateBill = async () => {
+    if (!billForm.property_id || billForm.amount <= 0 || !billForm.due_date) return;
     try {
       await createBillMut.mutateAsync(billForm);
-      setShowBillDialog(false);
-      setBillForm({
-        meter_id: null,
-        property_id: '',
-        unit_id: null,
-        amount: 1,
-        paid_amount: 0,
-        previous_reading: null,
-        current_reading: null,
-        consumption_units: null,
-        due_date: getTodayLocalDateString(),
-        responsible_party: 'tenant',
-        billing_period_start: null,
-        billing_period_end: null,
-        bill_number: null,
-        notes: null,
-        attachment_url: null,
-      });
-    } catch (e) {
-      console.error(e);
+      setShowBillForm(false);
+      setBillForm(emptyBillForm());
+    } catch {
+      // Mutation exposes its error inside the form.
     }
   };
 
-  // Real currency label for the printed amounts — sourced from company
-  // settings, never a hardcoded symbol. Only used once settings are ready.
-  const currencyLabel = documentSettings.companySettings.currencySymbol || documentSettings.companySettings.currency;
+  const handleConfirmArchiveMeter = () => {
+    if (!meterToArchive || deleteMeterMut.isPending) return;
+    deleteMeterMut.mutate(meterToArchive.id, {
+      onSuccess: () => {
+        toast.success('تمت أرشفة العداد');
+        setMeterToArchive(null);
+      },
+      onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر أرشفة العداد'),
+    });
+  };
 
+  const handleConfirmArchiveBill = () => {
+    if (!billToArchive || deleteBillMut.isPending) return;
+    deleteBillMut.mutate(billToArchive.id, {
+      onSuccess: () => {
+        toast.success('تمت أرشفة فاتورة المرافق');
+        setBillToArchive(null);
+      },
+      onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر أرشفة فاتورة المرافق'),
+    });
+  };
+
+  const currencyLabel = documentSettings.companySettings.currencySymbol || documentSettings.companySettings.currency;
   const buildUtilitiesReport = () => {
     const today = getTodayLocalDateString();
     return {
@@ -240,16 +223,14 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       reportType: 'Property_Utilities_Statement',
       periodFrom: today,
       periodTo: today,
-      sections: [
-        {
-          title: 'جدول فواتير المرافق',
-          rows: filteredBills.map((b) => ({
-            label: `فاتورة ${b.bill_number || b.id.slice(0, 8)}`,
-            value: `المبلغ: ${b.amount} ${currencyLabel} | المسدد: ${b.paid_amount} | المسؤول: ${responsiblePartyLabels[b.responsible_party]} | الاستحقاق: ${b.due_date}`,
-          })),
-          totals: ['إجمالي المطالبات', `${totalBilled} ${currencyLabel}`],
-        },
-      ],
+      sections: [{
+        title: 'جدول فواتير المرافق',
+        rows: filteredBills.map((bill) => ({
+          label: `فاتورة ${bill.bill_number || bill.id.slice(0, 8)}`,
+          value: `المبلغ: ${bill.amount} ${currencyLabel} | المسدد: ${bill.paid_amount} | المسؤول: ${responsiblePartyLabels[bill.responsible_party]} | الاستحقاق: ${bill.due_date}`,
+        })),
+        totals: ['إجمالي المطالبات', `${totalBilled} ${currencyLabel}`],
+      }],
       totalSummary: `الإجمالي: ${totalBilled} ${currencyLabel} | المسدد: ${totalPaid} ${currencyLabel} | المتبقي: ${totalUnpaid} ${currencyLabel}`,
     };
   };
@@ -272,38 +253,75 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
     );
   };
 
-  const isLoading = metersQuery.isLoading || billsQuery.isLoading;
-  const isError = metersQuery.isError || billsQuery.isError;
-  const error = (metersQuery.error as Error) || (billsQuery.error as Error);
+  const isLoading = metersQuery.isLoading || billsQuery.isLoading || propertiesQuery.isLoading;
+  const error = metersQuery.error ?? billsQuery.error ?? propertiesQuery.error;
+  const isError = Boolean(error);
+
+  const meterColumns: ColumnDef<UtilityMeter>[] = [
+    {
+      key: 'meter',
+      header: 'العداد',
+      render: (meter) => {
+        const Icon = utilityIcons[meter.utility_type];
+        return (
+          <div className="flex items-center gap-2">
+            <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="size-4" /></span>
+            <div><p className="font-bold">{utilityTypeLabels[meter.utility_type]} · {meter.meter_number}</p><p className="text-xs text-muted-foreground">{meter.provider_name || 'مزود غير محدد'}</p></div>
+          </div>
+        );
+      },
+    },
+    { key: 'property', header: 'العقار', render: (meter) => propertyName(meter.property_id) },
+    { key: 'account', header: 'رقم الحساب', render: (meter) => <span dir="ltr" className="tabular-nums">{meter.account_number}</span> },
+    { key: 'responsible', header: 'المسؤول', render: (meter) => responsiblePartyLabels[meter.responsible_party] },
+    { key: 'status', header: 'الحالة', render: (meter) => <StatusBadge tone={meter.is_active ? 'success' : 'neutral'}>{meter.is_active ? 'نشط' : 'غير نشط'}</StatusBadge> },
+    {
+      key: 'actions',
+      header: 'إجراء',
+      render: (meter) => (
+        <Button variant="danger" size="sm" aria-label={`أرشفة العداد ${meter.meter_number}`} onClick={() => setMeterToArchive(meter)}>
+          <Trash2 className="size-4" />أرشفة
+        </Button>
+      ),
+    },
+  ];
+
+  const billColumns: ColumnDef<UtilityBill>[] = [
+    { key: 'bill', header: 'الفاتورة', render: (bill) => <span className="font-bold">{bill.bill_number || `#${bill.id.slice(0, 8)}`}</span> },
+    { key: 'property', header: 'العقار', render: (bill) => propertyName(bill.property_id) },
+    { key: 'amount', header: 'المبلغ', render: (bill) => <strong dir="ltr">{money(bill.amount)}</strong> },
+    { key: 'paid', header: 'المسدد', render: (bill) => <strong dir="ltr" className="text-success">{money(bill.paid_amount)}</strong> },
+    { key: 'due', header: 'الاستحقاق', render: (bill) => <span dir="ltr">{bill.due_date}</span> },
+    { key: 'responsible', header: 'المسؤول', render: (bill) => responsiblePartyLabels[bill.responsible_party] },
+    { key: 'status', header: 'الحالة', render: (bill) => <StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge> },
+    {
+      key: 'actions',
+      header: 'إجراء',
+      render: (bill) => (
+        <Button variant="danger" size="sm" aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? bill.id.slice(0, 8)}`} onClick={() => setBillToArchive(bill)}>
+          <Trash2 className="size-4" />أرشفة
+        </Button>
+      ),
+    },
+  ];
 
   const headerActions = (
     <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" onClick={handlePrint} disabled={!documentSettings.isReady} className="min-h-11 gap-2 font-bold">
-        <Printer className="size-4 text-primary" aria-hidden="true" />
-        طباعة كشف المرافق A4
-      </Button>
-      <Button type="button" variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady} className="min-h-11 gap-2 font-bold">
-        <Download className="size-4" aria-hidden="true" />
-        تنزيل PDF
-      </Button>
+      <Button variant="outline" onClick={handlePrint} disabled={!documentSettings.isReady}><Printer className="size-4" />طباعة كشف المرافق</Button>
+      <Button variant="secondary" onClick={handleDownloadPdf} disabled={!documentSettings.isReady}><Download className="size-4" />تنزيل PDF</Button>
     </div>
   );
 
   const body = (
     <>
-      {mode === 'embedded' ? (
-        <div className="flex flex-wrap justify-end gap-2">{headerActions}</div>
-      ) : null}
-
-      {!documentSettings.isReady && !documentSettings.isLoading ? (
-        <DocumentReadinessNotice />
-      ) : null}
+      {mode === 'embedded' ? <div className="flex flex-wrap justify-end gap-2">{headerActions}</div> : null}
+      {!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}
 
       <ResponsiveCardGrid desktopColumns={4}>
-        <KpiCard label="العدادات المسجلة" value={formatLatinNumber(meters.length, 'ar')} icon={Zap} accent="primary" sub="عدادات نشطة" />
-        <KpiCard label="إجمالي الفواتير" value={formatMoney(totalBilled)} icon={Activity} accent="sky" sub="مطالبات مسجلة" />
-        <KpiCard label="المسدد" value={formatMoney(totalPaid)} icon={CheckCircle2} accent="emerald" sub="مدفوعات" />
-        <KpiCard label="المتبقي" value={formatMoney(totalUnpaid)} icon={AlertCircle} accent="rose" sub="مستحق" />
+        <KpiCard label="العدادات المسجلة" value={formatLatinNumber(meters.length, 'ar')} icon={Zap} accent="primary" sub="عدادات مرتبطة بالعقارات" />
+        <KpiCard label="إجمالي الفواتير" value={money(totalBilled)} icon={Activity} accent="sky" sub="مطالبات مسجلة" />
+        <KpiCard label="المسدد" value={money(totalPaid)} icon={CheckCircle2} accent="emerald" sub="مدفوعات" />
+        <KpiCard label="المتبقي" value={money(totalUnpaid)} icon={AlertCircle} accent="rose" sub="مستحق" />
       </ResponsiveCardGrid>
 
       <FilterBar
@@ -311,340 +329,144 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         onSearchChange={setSearchQuery}
         searchPlaceholder="بحث برقم الفاتورة أو الملاحظات..."
         searchAriaLabel="بحث في فواتير المرافق"
-        filters={
+        filters={(
           <>
-            <Select aria-label="العقار" value={propertyFilter} onChange={(e) => setPropertyFilter(e.target.value)} className="w-full sm:w-44">
+            <Select aria-label="العقار" value={propertyFilter} onChange={(event) => setPropertyFilter(event.target.value)} className="w-full sm:w-44">
               <option value="all">كل العقارات</option>
-              {propertiesQuery.data?.rows?.map((p: any) => (
-                <option key={p.id} value={p.id}>
-                  {p.title}
-                </option>
-              ))}
+              {properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
             </Select>
-            <Select aria-label="نوع المرفق" value={utilityFilter} onChange={(e) => setUtilityFilter(e.target.value)} className="w-full sm:w-44">
+            <Select aria-label="نوع المرفق" value={utilityFilter} onChange={(event) => setUtilityFilter(event.target.value)} className="w-full sm:w-44">
               <option value="all">كل أنواع المرافق</option>
-              <option value="electricity">كهرباء</option>
-              <option value="water">مياه</option>
-              <option value="gas">غاز</option>
-              <option value="internet">إنترنت</option>
-              <option value="sanitation">صرف صحي</option>
+              {Object.entries(utilityTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               <optgroup label="حسب العداد">
-                {meters.map((m) => (
-                  <option key={m.id} value={`meter:${m.id}`}>
-                    {utilityTypeLabels[m.utility_type]} - {m.meter_number}
-                  </option>
-                ))}
+                {meters.map((meter) => <option key={meter.id} value={`meter:${meter.id}`}>{utilityTypeLabels[meter.utility_type]} · {meter.meter_number}</option>)}
               </optgroup>
             </Select>
-            <Select aria-label="حالة السداد" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="w-full sm:w-36">
+            <Select aria-label="حالة السداد" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as UtilityBillStatus | 'all')} className="w-full sm:w-40">
               <option value="all">كل الحالات</option>
-              <option value="unpaid">مستحقة</option>
-              <option value="partially_paid">جزئية</option>
-              <option value="paid">مسددة</option>
+              {Object.entries(utilityBillStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </>
-        }
-        actions={
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Dialog open={showMeterDialog} onOpenChange={setShowMeterDialog}>
-              <DialogTrigger asChild>
-                <Button className="min-h-11 w-full sm:w-auto gap-2">
-                  <Plus className="size-4" />
-                  إضافة عداد
-                </Button>
-              </DialogTrigger>
-              <DialogContent dir="rtl" className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>إضافة عداد مرافق جديد</DialogTitle>
-                  <DialogDescription>املأ بيانات العداد وربطه بالعقار والوحدة.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-2">
-                  <div className="grid gap-2">
-                    <Label>العقار *</Label>
-                    <Select value={meterForm.property_id} onChange={(e) => setMeterForm((f) => ({ ...f, property_id: e.target.value }))}>
-                      <option value="">اختر العقار</option>
-                      {propertiesQuery.data?.rows?.map((p: any) => (
-                        <option key={p.id} value={p.id}>
-                          {p.title}
-                        </option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label>نوع المرفق *</Label>
-                      <Select value={meterForm.utility_type} onChange={(e) => setMeterForm((f) => ({ ...f, utility_type: e.target.value as UtilityType }))}>
-                        <option value="electricity">كهرباء</option>
-                        <option value="water">مياه</option>
-                        <option value="gas">غاز</option>
-                        <option value="internet">إنترنت</option>
-                        <option value="sanitation">صرف صحي</option>
-                        <option value="other">أخرى</option>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>المسؤول *</Label>
-                      <Select value={meterForm.responsible_party} onChange={(e) => setMeterForm((f) => ({ ...f, responsible_party: e.target.value as ResponsibleParty }))}>
-                        <option value="tenant">المستأجر</option>
-                        <option value="landlord">المالك</option>
-                        <option value="company">المكتب</option>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label>رقم العداد *</Label>
-                      <Input value={meterForm.meter_number} onChange={(e) => setMeterForm((f) => ({ ...f, meter_number: e.target.value }))} placeholder="E-123456" />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>رقم الحساب *</Label>
-                      <Input value={meterForm.account_number} onChange={(e) => setMeterForm((f) => ({ ...f, account_number: e.target.value }))} placeholder="ACC-123" />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>مزود الخدمة</Label>
-                    <Input value={meterForm.provider_name || ''} onChange={(e) => setMeterForm((f) => ({ ...f, provider_name: e.target.value }))} placeholder="شركة كهرباء مسقط" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>ملاحظات</Label>
-                    <Textarea value={meterForm.notes || ''} onChange={(e) => setMeterForm((f) => ({ ...f, notes: e.target.value }))} placeholder="ملاحظات إضافية..." />
-                  </div>
-                  {createMeterMut.isError && <p className="text-sm text-destructive">{(createMeterMut.error as Error)?.message}</p>}
-                  <Button onClick={handleCreateMeter} disabled={createMeterMut.isPending} className="min-h-11">
-                    {createMeterMut.isPending ? 'جارٍ الحفظ...' : 'حفظ العداد'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={showBillDialog} onOpenChange={setShowBillDialog}>
-              <DialogTrigger asChild>
-                <Button variant="secondary" className="min-h-11 w-full sm:w-auto gap-2">
-                  <Plus className="size-4" />
-                  فاتورة مرافق
-                </Button>
-              </DialogTrigger>
-              <DialogContent dir="rtl" className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>إضافة فاتورة مرافق</DialogTitle>
-                  <DialogDescription>سجل قراءة استهلاك ومبلغ مستحق.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-2">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label>العقار *</Label>
-                      <Select value={billForm.property_id} onChange={(e) => setBillForm((f) => ({ ...f, property_id: e.target.value }))}>
-                        <option value="">اختر العقار</option>
-                        {propertiesQuery.data?.rows?.map((p: any) => (
-                          <option key={p.id} value={p.id}>
-                            {p.title}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>العداد</Label>
-                      <Select value={billForm.meter_id || ''} onChange={(e) => setBillForm((f) => ({ ...f, meter_id: e.target.value || null }))}>
-                        <option value="">بدون عداد محدد</option>
-                        {meters.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.meter_number} - {utilityTypeLabels[m.utility_type]}
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="grid gap-2">
-                      <Label>السابق</Label>
-                      <Input type="number" value={billForm.previous_reading ?? ''} onChange={(e) => setBillForm((f) => ({ ...f, previous_reading: e.target.value ? Number(e.target.value) : null }))} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>الحالي</Label>
-                      <Input type="number" value={billForm.current_reading ?? ''} onChange={(e) => setBillForm((f) => ({ ...f, current_reading: e.target.value ? Number(e.target.value) : null }))} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>الاستهلاك</Label>
-                      <Input type="number" value={billForm.consumption_units ?? ''} onChange={(e) => setBillForm((f) => ({ ...f, consumption_units: e.target.value ? Number(e.target.value) : null }))} placeholder="تلقائي" />
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label>المبلغ *</Label>
-                      <Input type="number" step="0.001" value={billForm.amount} onChange={(e) => setBillForm((f) => ({ ...f, amount: Number(e.target.value) || 0 }))} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>تاريخ الاستحقاق *</Label>
-                      <Input type="date" value={billForm.due_date} onChange={(e) => setBillForm((f) => ({ ...f, due_date: e.target.value }))} />
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label>المسؤول</Label>
-                      <Select value={billForm.responsible_party} onChange={(e) => setBillForm((f) => ({ ...f, responsible_party: e.target.value as ResponsibleParty }))}>
-                        <option value="tenant">المستأجر</option>
-                        <option value="landlord">المالك</option>
-                        <option value="company">المكتب</option>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>رقم الفاتورة</Label>
-                      <Input value={billForm.bill_number || ''} onChange={(e) => setBillForm((f) => ({ ...f, bill_number: e.target.value }))} />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>ملاحظات</Label>
-                    <Textarea value={billForm.notes || ''} onChange={(e) => setBillForm((f) => ({ ...f, notes: e.target.value }))} />
-                  </div>
-                  {createBillMut.isError && <p className="text-sm text-destructive">{(createBillMut.error as Error)?.message}</p>}
-                  <Button onClick={handleCreateBill} disabled={createBillMut.isPending} className="min-h-11">
-                    {createBillMut.isPending ? 'جارٍ الحفظ...' : 'حفظ الفاتورة'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+        )}
+        actions={(
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Button onClick={() => setShowMeterForm(true)}><Plus className="size-4" />إضافة عداد</Button>
+            <Button variant="secondary" onClick={() => setShowBillForm(true)}><Plus className="size-4" />فاتورة مرافق</Button>
           </div>
-        }
+        )}
       />
-
-      <ActiveFilterBar filters={activeFilters} onClearAll={() => { setPropertyFilter('all'); setUtilityFilter('all'); setStatusFilter('all'); setSearchQuery(''); }} />
+      <ActiveFilterBar filters={activeFilters} onClearAll={clearFilters} />
 
       <AsyncContentState
         status={isLoading ? 'loading' : isError ? 'error' : meters.length === 0 && filteredBills.length === 0 ? 'empty' : 'ready'}
         error={error}
         errorTitle="تعذر تحميل بيانات المرافق"
-        errorAction={<Button onClick={() => { metersQuery.refetch(); billsQuery.refetch(); }}>إعادة المحاولة</Button>}
+        errorAction={<Button onClick={() => { void metersQuery.refetch(); void billsQuery.refetch(); void propertiesQuery.refetch(); }}>إعادة المحاولة</Button>}
         emptyTitle="لا توجد عدادات أو فواتير مرافق"
-        emptyDescription="ابدأ بإضافة عداد مرافق جديد (كهرباء، مياه، غاز) ثم سجل فواتير الاستهلاك الشهرية."
-        emptyAction={
-          <div className="flex gap-2">
-            <Button onClick={() => setShowMeterDialog(true)}>إضافة أول عداد</Button>
-          </div>
-        }
+        emptyDescription="ابدأ بإضافة عداد مرافق وربطه بعقار، ثم سجل فواتير الاستهلاك."
+        emptyAction={<Button onClick={() => setShowMeterForm(true)}>إضافة أول عداد</Button>}
       >
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-border/60">
-            <CardHeader className="border-b border-border/60">
-              <CardTitle className="text-sm font-black">العدادات المسجلة ({meters.length})</CardTitle>
-              <CardDescription>قائمة العدادات المرتبطة بالعقارات.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4">
-              {meters.map((meter) => {
-                const IconComp = utilityIcons[meter.utility_type] || Zap;
+        <div className="space-y-5">
+          <section className="space-y-3" aria-label="العدادات المسجلة">
+            <div><h2 className="text-sm font-black">العدادات المسجلة</h2><p className="text-xs text-muted-foreground">جدول على سطح المكتب وبطاقات على الهاتف.</p></div>
+            <EntityTable
+              aria-label="جدول عدادات المرافق"
+              rows={meters}
+              columns={meterColumns}
+              keyOf={(meter) => meter.id}
+              emptyTitle="لا توجد عدادات"
+              emptyDescription="أضف عدادًا جديدًا لبدء تسجيل الاستهلاك والفواتير."
+              enableViewModeToggle
+              viewModeStorageKey="rentrix:view-mode:utility-meters"
+              renderMobileCard={(meter) => {
+                const Icon = utilityIcons[meter.utility_type];
                 return (
-                  <div key={meter.id} className="flex items-start justify-between gap-3 rounded-2xl border bg-background p-4">
-                    <div className="flex gap-3">
-                      <span className="grid size-10 place-items-center rounded-2xl bg-primary/10 text-primary">
-                        <IconComp className="size-5" />
-                      </span>
-                      <div className="space-y-1">
-                        <p className="font-bold text-sm">{utilityTypeLabels[meter.utility_type]} - {meter.meter_number}</p>
-                        <p className="text-xs text-muted-foreground font-mono" dir="ltr">{meter.account_number} | {meter.provider_name}</p>
-                        <p className="text-xs">المسؤول: <strong>{responsiblePartyLabels[meter.responsible_party]}</strong> {meter.is_active ? '' : '· غير نشط'}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" aria-label="حذف العداد" onClick={() => deleteMeterMut.mutate(meter.id)} disabled={deleteMeterMut.isPending}>
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  <MobileCard
+                    title={`${utilityTypeLabels[meter.utility_type]} · ${meter.meter_number}`}
+                    subtitle={`${propertyName(meter.property_id)} · ${meter.provider_name || 'مزود غير محدد'}`}
+                    badge={<StatusBadge tone={meter.is_active ? 'success' : 'neutral'}>{meter.is_active ? 'نشط' : 'غير نشط'}</StatusBadge>}
+                    meta={<div className="flex items-center gap-2 text-xs"><Icon className="size-4 text-primary" /><span dir="ltr">{meter.account_number}</span><span>· {responsiblePartyLabels[meter.responsible_party]}</span></div>}
+                    actions={<Button variant="danger" className="min-h-11" onClick={() => setMeterToArchive(meter)}><Trash2 className="me-1 size-4" />أرشفة العداد</Button>}
+                  />
                 );
-              })}
-              {meters.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">لا توجد عدادات.</p>}
-            </CardContent>
-          </Card>
+              }}
+            />
+          </section>
 
-          <Card className="border-border/60">
-            <CardHeader className="border-b border-border/60">
-              <CardTitle className="text-sm font-black">فواتير المرافق ({filteredBills.length})</CardTitle>
-              <CardDescription>سجل الاستهلاك والمبالغ المستحقة.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4">
-              {filteredBills.map((bill) => (
-                <div key={bill.id} className="space-y-2 rounded-2xl border bg-background p-4">
-                  <div className="flex items-center justify-between gap-2 border-b pb-2">
-                    <span className="font-bold text-sm">فاتورة {bill.bill_number || bill.id.slice(0, 8)}</span>
-                    <StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <div>المبلغ: <strong className="text-foreground">{formatMoney(bill.amount)}</strong></div>
-                    <div>المسدد: <strong className="text-foreground">{formatMoney(bill.paid_amount)}</strong></div>
-                    <div>الاستحقاق: <strong className="text-foreground">{bill.due_date}</strong></div>
-                    <div>المسؤول: <strong className="text-foreground">{responsiblePartyLabels[bill.responsible_party]}</strong></div>
-                    {bill.consumption_units != null && <div className="col-span-2">الاستهلاك: <strong className="text-foreground">{bill.consumption_units} وحدة</strong> {bill.previous_reading != null && `(${bill.previous_reading} → ${bill.current_reading})`}</div>}
-                  </div>
-                  <div className="flex justify-end">
-                    {/* First click only opens the confirmation dialog — nothing is removed yet. */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? ''}`.trim()}
-                      onClick={() => setBillToArchive(bill)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {filteredBills.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">لا توجد فواتير تطابق الفلاتر.</p>}
-            </CardContent>
-          </Card>
+          <section className="space-y-3" aria-label="فواتير المرافق">
+            <div><h2 className="text-sm font-black">فواتير المرافق</h2><p className="text-xs text-muted-foreground">الاستهلاك والمبالغ وحالة السداد.</p></div>
+            <EntityTable
+              aria-label="جدول فواتير المرافق"
+              rows={filteredBills}
+              columns={billColumns}
+              keyOf={(bill) => bill.id}
+              emptyTitle="لا توجد فواتير مطابقة"
+              emptyDescription="غيّر الفلاتر أو أضف فاتورة مرافق جديدة."
+              enableViewModeToggle
+              viewModeStorageKey="rentrix:view-mode:utility-bills"
+              renderMobileCard={(bill) => (
+                <MobileCard
+                  title={`فاتورة ${bill.bill_number || bill.id.slice(0, 8)}`}
+                  subtitle={`${propertyName(bill.property_id)} · استحقاق ${bill.due_date}`}
+                  badge={<StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge>}
+                  stats={<div className="grid grid-cols-2 gap-2 text-xs"><div><span className="block text-muted-foreground">المبلغ</span><strong dir="ltr">{money(bill.amount)}</strong></div><div><span className="block text-muted-foreground">المسدد</span><strong dir="ltr" className="text-success">{money(bill.paid_amount)}</strong></div><div><span className="block text-muted-foreground">المسؤول</span><strong>{responsiblePartyLabels[bill.responsible_party]}</strong></div><div><span className="block text-muted-foreground">الاستهلاك</span><strong>{bill.consumption_units ?? '—'}</strong></div></div>}
+                  actions={<Button variant="danger" className="min-h-11" onClick={() => setBillToArchive(bill)}><Trash2 className="me-1 size-4" />أرشفة الفاتورة</Button>}
+                />
+              )}
+            />
+          </section>
         </div>
       </AsyncContentState>
 
-      {/* Archive confirmation — the backend performs a logical delete
-          (deleted_at), so the wording is "archive", not permanent deletion. */}
-      <ConfirmDialog
-        open={Boolean(billToArchive)}
-        onOpenChange={(open) => { if (!open) setBillToArchive(null); }}
-        title="أرشفة فاتورة المرافق؟"
-        description="ستُخفى الفاتورة من القائمة وتبقى محفوظة كسجل أرشيفي. لا يمكن تكرار الإجراء أثناء التنفيذ."
-        confirmLabel="تأكيد الأرشفة"
-        cancelLabel="إلغاء"
-        variant="danger"
-        isLoading={archiveBillMutationPending}
-        onConfirm={handleConfirmArchiveBill}
-      >
-        {billToArchive ? (
-          <div className="grid gap-1.5 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs leading-5">
-            <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">رقم الفاتورة</span>
-              <strong>{billToArchive.bill_number ?? '—'}</strong>
+      <EntityForm.Overlay open={showMeterForm} onOpenChange={(open) => { if (!createMeterMut.isPending) setShowMeterForm(open); }} title="إضافة عداد مرافق" description="اربط العداد بعقار وحدد بيانات الحساب والمسؤول." visualVariant="operational" mobileSurface="bottom-sheet">
+        <EntityForm.Root onSubmit={(event) => { event.preventDefault(); void handleCreateMeter(); }} aria-busy={createMeterMut.isPending}>
+          <EntityForm.ErrorSummary message={createMeterMut.isError ? (createMeterMut.error as Error).message : undefined} />
+          <EntityForm.Section title="بيانات العداد">
+            <EntityForm.Field label="العقار *"><Select required value={meterForm.property_id} onChange={(event) => setMeterForm((form) => ({ ...form, property_id: event.target.value }))}><option value="">اختر العقار</option>{properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select></EntityForm.Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <EntityForm.Field label="نوع المرفق *"><Select required value={meterForm.utility_type} onChange={(event) => setMeterForm((form) => ({ ...form, utility_type: event.target.value as UtilityType }))}>{Object.entries(utilityTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="المسؤول *"><Select required value={meterForm.responsible_party} onChange={(event) => setMeterForm((form) => ({ ...form, responsible_party: event.target.value as ResponsibleParty }))}>{Object.entries(responsiblePartyLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="رقم العداد *"><Input required value={meterForm.meter_number} onChange={(event) => setMeterForm((form) => ({ ...form, meter_number: event.target.value }))} /></EntityForm.Field>
+              <EntityForm.Field label="رقم الحساب *"><Input required value={meterForm.account_number} onChange={(event) => setMeterForm((form) => ({ ...form, account_number: event.target.value }))} /></EntityForm.Field>
             </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">نوع المرفق</span>
-              <strong>{archiveUtilityLabel(billToArchive)}</strong>
+            <EntityForm.Field label="مزود الخدمة"><Input value={meterForm.provider_name || ''} onChange={(event) => setMeterForm((form) => ({ ...form, provider_name: event.target.value }))} /></EntityForm.Field>
+            <EntityForm.Field label="ملاحظات"><Textarea value={meterForm.notes || ''} onChange={(event) => setMeterForm((form) => ({ ...form, notes: event.target.value }))} /></EntityForm.Field>
+          </EntityForm.Section>
+          <EntityForm.Actions submitLabel={createMeterMut.isPending ? 'جارٍ الحفظ...' : 'حفظ العداد'} onCancel={() => setShowMeterForm(false)} isSubmitting={createMeterMut.isPending} submitDisabled={!meterForm.property_id || !meterForm.meter_number.trim() || !meterForm.account_number.trim()} />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
+
+      <EntityForm.Overlay open={showBillForm} onOpenChange={(open) => { if (!createBillMut.isPending) setShowBillForm(open); }} title="إضافة فاتورة مرافق" description="سجل القراءة والمبلغ وتاريخ الاستحقاق." visualVariant="operational" mobileSurface="bottom-sheet">
+        <EntityForm.Root onSubmit={(event) => { event.preventDefault(); void handleCreateBill(); }} aria-busy={createBillMut.isPending}>
+          <EntityForm.ErrorSummary message={createBillMut.isError ? (createBillMut.error as Error).message : undefined} />
+          <EntityForm.Section title="بيانات الفاتورة">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <EntityForm.Field label="العقار *"><Select required value={billForm.property_id} onChange={(event) => setBillForm((form) => ({ ...form, property_id: event.target.value }))}><option value="">اختر العقار</option>{properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="العداد"><Select value={billForm.meter_id || ''} onChange={(event) => setBillForm((form) => ({ ...form, meter_id: event.target.value || null }))}><option value="">بدون عداد محدد</option>{meters.map((meter) => <option key={meter.id} value={meter.id}>{utilityTypeLabels[meter.utility_type]} · {meter.meter_number}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="المبلغ *"><Input required type="number" min="0.01" step="0.01" inputMode="decimal" dir="ltr" value={billForm.amount} onChange={(event) => setBillForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} /></EntityForm.Field>
+              <EntityForm.Field label="تاريخ الاستحقاق *"><Input required type="date" value={billForm.due_date} onChange={(event) => setBillForm((form) => ({ ...form, due_date: event.target.value }))} /></EntityForm.Field>
+              <EntityForm.Field label="القراءة السابقة"><Input type="number" inputMode="decimal" value={billForm.previous_reading ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, previous_reading: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
+              <EntityForm.Field label="القراءة الحالية"><Input type="number" inputMode="decimal" value={billForm.current_reading ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, current_reading: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
+              <EntityForm.Field label="الاستهلاك"><Input type="number" inputMode="decimal" value={billForm.consumption_units ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, consumption_units: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
+              <EntityForm.Field label="المسؤول"><Select value={billForm.responsible_party} onChange={(event) => setBillForm((form) => ({ ...form, responsible_party: event.target.value as ResponsibleParty }))}>{Object.entries(responsiblePartyLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></EntityForm.Field>
+              <EntityForm.Field label="رقم الفاتورة"><Input value={billForm.bill_number || ''} onChange={(event) => setBillForm((form) => ({ ...form, bill_number: event.target.value }))} /></EntityForm.Field>
             </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">العقار</span>
-              <strong>{archivePropertyLabel(billToArchive)}</strong>
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">المبلغ</span>
-              <strong>{formatMoney(billToArchive.amount)}</strong>
-            </div>
-            <div className="flex justify-between gap-2">
-              <span className="text-muted-foreground">الفترة / الاستحقاق</span>
-              <strong>{archivePeriodLabel(billToArchive)}</strong>
-            </div>
-          </div>
-        ) : null}
-      </ConfirmDialog>
+            <EntityForm.Field label="ملاحظات"><Textarea value={billForm.notes || ''} onChange={(event) => setBillForm((form) => ({ ...form, notes: event.target.value }))} /></EntityForm.Field>
+          </EntityForm.Section>
+          <EntityForm.Actions submitLabel={createBillMut.isPending ? 'جارٍ الحفظ...' : 'حفظ الفاتورة'} onCancel={() => setShowBillForm(false)} isSubmitting={createBillMut.isPending} submitDisabled={!billForm.property_id || billForm.amount <= 0 || !billForm.due_date} />
+        </EntityForm.Root>
+      </EntityForm.Overlay>
+
+      <ConfirmDialog open={Boolean(meterToArchive)} onOpenChange={(open) => { if (!open && !deleteMeterMut.isPending) setMeterToArchive(null); }} title="أرشفة عداد المرافق؟" description={meterToArchive ? `سيتم أرشفة العداد ${meterToArchive.meter_number} المرتبط بـ ${propertyName(meterToArchive.property_id)} وإخفاؤه من القوائم النشطة.` : undefined} confirmLabel="تأكيد الأرشفة" variant="danger" isLoading={deleteMeterMut.isPending} onConfirm={handleConfirmArchiveMeter} />
+      <ConfirmDialog open={Boolean(billToArchive)} onOpenChange={(open) => { if (!open && !deleteBillMut.isPending) setBillToArchive(null); }} title="أرشفة فاتورة المرافق؟" description={billToArchive ? `ستُؤرشف الفاتورة ${billToArchive.bill_number ?? billToArchive.id.slice(0, 8)} بقيمة ${money(billToArchive.amount)} للعقار ${propertyName(billToArchive.property_id)}.` : undefined} confirmLabel="تأكيد الأرشفة" variant="danger" isLoading={deleteBillMut.isPending} onConfirm={handleConfirmArchiveBill} />
     </>
   );
 
-  if (mode === 'embedded') {
-    return <div className="space-y-5">{body}</div>;
-  }
+  if (mode === 'embedded') return <div className="space-y-5">{body}</div>;
 
   return (
-    <PageLayout dir="rtl" lang="ar" size="wide">
-      <PageHeader
-        title="إدارة المرافق والعدادات"
-        description="إدارة حقيقية لعدادات الكهرباء والمياه والخدمات مع ربط العقار والوحدة وتسجيل القراءات والفواتير."
-        primaryAction={headerActions}
-      />
+    <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
+      <PageHeader title="إدارة المرافق والعدادات" description="العدادات وفواتير الاستهلاك في سجلات واضحة على سطح المكتب وبطاقات عملية على الهاتف." primaryAction={headerActions} />
       {body}
     </PageLayout>
   );
