@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { AlertTriangle, Edit, FileText, KeyRound, Mail, Phone, Plus, ReceiptText, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
+import { AlertTriangle, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -55,29 +55,10 @@ function TenantSafeLinks({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceR
       <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
         <Edit className="me-1 size-4" />تعديل
       </Button>
-      <Button variant="secondary" className="min-h-11 px-3" asChild>
-        <Link to="/reports">
-          <ReceiptText className="me-1 size-4" />كشف الحساب
-        </Link>
-      </Button>
       {tenant.primaryContractId !== null && (
         <Button variant="secondary" className="min-h-11 px-3" asChild>
           <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}>
-            <FileText className="me-1 size-4" />العقد
-          </Link>
-        </Button>
-      )}
-      {tenant.hasInvoices && (
-        <Button variant="secondary" className="min-h-11 px-3" asChild>
-          <Link to="/invoices">
-            <ReceiptText className="me-1 size-4" />الفواتير
-          </Link>
-        </Button>
-      )}
-      {tenant.hasArrears && (
-        <Button variant="secondary" className="min-h-11 px-3 text-warning" asChild>
-          <Link to="/arrears">
-            <TriangleAlert className="me-1 size-4" />المتأخرات
+            <FileText className="me-1 size-4" />فتح العقد
           </Link>
         </Button>
       )}
@@ -92,7 +73,7 @@ function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; t
   const items = [
     { label: 'إجمالي المستأجرين', value: total, icon: Users, hint: 'جميع السجلات المطابقة' },
     { label: 'العقود النشطة', value: activeContracts, icon: KeyRound, hint: 'ضمن الصفحة الحالية' },
-    { label: 'بحاجة لمتابعة', value: arrearsCount, icon: AlertTriangle, hint: 'لديهم متأخرات' },
+    { label: 'بحاجة لمتابعة', value: arrearsCount, icon: AlertTriangle, hint: 'ضمن الصفحة الحالية' },
   ];
 
   return (
@@ -129,7 +110,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
   const totalCount = tenantsQuery.data?.count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const openCreate = () => { setEditingPersonId(undefined); setFormOpen(true); };
   const openEdit = (personId: string) => { setEditingPersonId(personId); setFormOpen(true); };
@@ -144,9 +124,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       render: (tenant) => (
         <div className="flex flex-col gap-1">
           <span className="font-bold">{tenant.person.full_name}</span>
-          {tenant.person.phone && (
-            <span className="text-xs text-muted-foreground" dir="ltr">{tenant.person.phone}</span>
-          )}
+          {tenant.person.phone && <span className="text-xs text-muted-foreground" dir="ltr">{tenant.person.phone}</span>}
         </div>
       ),
     },
@@ -181,11 +159,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       key: 'actions',
       header: 'إجراءات',
       render: (tenant) => (
-        <div
-          className="flex flex-wrap gap-2"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
+        <div className="flex flex-wrap gap-2">
           <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(tenant.person.id)}>
             <Edit className="me-1 size-4" />تعديل
           </Button>
@@ -193,13 +167,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
             <Button variant="secondary" className="min-h-11 px-3" asChild>
               <Link to="/contracts/$contractId" params={{ contractId: tenant.primaryContractId }}>
                 <FileText className="me-1 size-4" />العقد
-              </Link>
-            </Button>
-          )}
-          {tenant.hasArrears && (
-            <Button variant="secondary" className="min-h-11 px-3 text-warning" asChild>
-              <Link to="/arrears">
-                <TriangleAlert className="me-1 size-4" />المتأخرات
               </Link>
             </Button>
           )}
@@ -219,10 +186,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
         searchAriaLabel="بحث في المستأجرين"
       />
 
-      <section
-        data-tenant-register
-        className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card"
-      >
+      <section data-tenant-register className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
         <header className="flex items-start justify-between gap-3 border-b border-border/70 bg-muted/35 px-4 py-4 sm:px-5">
           <div>
             <div className="flex items-center gap-2">
@@ -231,9 +195,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
               </span>
               <h2 className="text-base font-black">سجل المستأجرين</h2>
             </div>
-            <p className="mt-1.5 text-xs font-medium text-muted-foreground">
-              {rows.length} مستأجر في الصفحة الحالية.
-            </p>
+            <p className="mt-1.5 text-xs font-medium text-muted-foreground">{rows.length} مستأجر في الصفحة الحالية.</p>
           </div>
         </header>
 
@@ -259,13 +221,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
               emptyTitle="لا توجد سجلات مستأجرين"
               emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
               emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
-              pagination={{
-                page,
-                pageSize,
-                total: totalCount,
-                onPageChange: setPage,
-              }}
-              onRowClick={(tenant) => openEdit(tenant.person.id)}
+              pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
               enableViewModeToggle
               viewModeStorageKey="rentrix:view-mode:tenants"
               renderMobileCard={(tenant) => {
@@ -293,7 +249,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
                         <TenantSafeLinks tenant={tenant} onEdit={openEdit} />
                       </div>
                     )}
-                    onClick={() => openEdit(tenant.person.id)}
                   />
                 );
               }}
@@ -312,8 +267,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   ) : (
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       <PageHeader
-        title="المستأجرين"
-        description="مساحة تشغيل موحدة لمتابعة المستأجر والعقد والوحدة والحالة المالية من مكان واحد."
+        title="المستأجرون"
+        description="ملفات المستأجرين وعقودهم ووحداتهم وحالة المتابعة من مكان واحد."
         count={totalCount}
         action={createAction}
       />
