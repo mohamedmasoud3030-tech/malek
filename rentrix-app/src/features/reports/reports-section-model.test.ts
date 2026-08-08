@@ -5,8 +5,7 @@ import {
   DEFAULT_REPORT_SECTION,
   mergeReportSectionIntoSearch,
   REPORTS_SECTION_SEARCH_KEY,
-  resolveReportSection,
-  resolveReportView,
+  resolveReportLocation,
 } from './reports-section-model';
 
 describe('reports section URL model', () => {
@@ -15,56 +14,33 @@ describe('reports section URL model', () => {
   });
 
   it('fails safely to the default when no section is requested', () => {
-    expect(resolveReportSection(undefined)).toBe(DEFAULT_REPORT_SECTION);
-    expect(resolveReportSection(null)).toBe(DEFAULT_REPORT_SECTION);
-    expect(resolveReportSection('')).toBe(DEFAULT_REPORT_SECTION);
+    expect(resolveReportLocation(undefined, undefined)).toEqual({ section: 'accounting', view: 'accounting_reports' });
+    expect(resolveReportLocation(null, null)).toEqual({ section: 'accounting', view: 'accounting_reports' });
+    expect(resolveReportLocation('', '')).toEqual({ section: 'accounting', view: 'accounting_reports' });
   });
 
-  it('fails safely to the default for unknown or malformed values', () => {
-    expect(resolveReportSection('not-a-section')).toBe(DEFAULT_REPORT_SECTION);
-    expect(resolveReportSection(12345)).toBe(DEFAULT_REPORT_SECTION);
-    expect(resolveReportSection({})).toBe(DEFAULT_REPORT_SECTION);
-    expect(resolveReportSection(['overview'])).toBe(DEFAULT_REPORT_SECTION);
+  it('fails safely to default accounting_reports for unknown/malformed section values', () => {
+    expect(resolveReportLocation('not-a-section', 'anything')).toEqual({ section: 'accounting', view: 'accounting_reports' });
+    expect(resolveReportLocation(12345, {})).toEqual({ section: 'accounting', view: 'accounting_reports' });
   });
 
-  it('accepts every registered report section id', () => {
-    for (const section of reportSections) {
-      expect(resolveReportSection(section.id)).toBe(section.id);
-    }
-  });
-
-  it('defaults to the accounting section as the stable page identity', () => {
-    expect(DEFAULT_REPORT_SECTION).toBe('accounting');
-    expect(reportSections.some((section) => section.id === DEFAULT_REPORT_SECTION)).toBe(true);
-  });
-
-  it('maps legacy/old sections to the three new macro categories', () => {
-    expect(resolveReportSection('overview')).toBe('analytics');
-    expect(resolveReportSection('collections')).toBe('analytics');
-    expect(resolveReportSection('overdue')).toBe('analytics');
-    expect(resolveReportSection('general_ledger')).toBe('accounting');
-    expect(resolveReportSection('deferred_revenue')).toBe('accounting');
-    expect(resolveReportSection('statements')).toBe('statements');
-  });
-
-  it('maps legacy sections to their correct nested view equivalents authoritatively', () => {
-    expect(resolveReportView('overview', undefined)).toBe('overview');
-    expect(resolveReportView('collections', undefined)).toBe('collections');
-    expect(resolveReportView('overdue', undefined)).toBe('overdue');
-    expect(resolveReportView('expenses', undefined)).toBe('expenses');
-    expect(resolveReportView('property_analytics', undefined)).toBe('property_analytics');
-    expect(resolveReportView('occupancy', undefined)).toBe('occupancy');
-    expect(resolveReportView('maintenance_analytics', undefined)).toBe('maintenance_analytics');
-    expect(resolveReportView('accounting', undefined)).toBe('accounting_reports');
-    expect(resolveReportView('general_ledger', undefined)).toBe('general_ledger');
-    expect(resolveReportView('deferred_revenue', undefined)).toBe('deferred_revenue');
-    expect(resolveReportView('statements', undefined)).toBe('');
+  it('maps legacy/old sections directly to their correct nested view equivalents authoritatively', () => {
+    expect(resolveReportLocation('overview', undefined)).toEqual({ section: 'analytics', view: 'overview' });
+    expect(resolveReportLocation('collections', undefined)).toEqual({ section: 'analytics', view: 'collections' });
+    expect(resolveReportLocation('overdue', undefined)).toEqual({ section: 'analytics', view: 'overdue' });
+    expect(resolveReportLocation('expenses', undefined)).toEqual({ section: 'analytics', view: 'expenses' });
+    expect(resolveReportLocation('property_analytics', undefined)).toEqual({ section: 'analytics', view: 'property_analytics' });
+    expect(resolveReportLocation('occupancy', undefined)).toEqual({ section: 'analytics', view: 'occupancy' });
+    expect(resolveReportLocation('maintenance_analytics', undefined)).toEqual({ section: 'analytics', view: 'maintenance_analytics' });
+    expect(resolveReportLocation('accounting', undefined)).toEqual({ section: 'accounting', view: 'accounting_reports' });
+    expect(resolveReportLocation('general_ledger', undefined)).toEqual({ section: 'accounting', view: 'general_ledger' });
+    expect(resolveReportLocation('deferred_revenue', undefined)).toEqual({ section: 'accounting', view: 'deferred_revenue' });
+    expect(resolveReportLocation('statements', undefined)).toEqual({ section: 'statements', view: '' });
   });
 
   it('safely handles malformed and garbage views with clean default fallbacks (fail-safe)', () => {
-    expect(resolveReportView('accounting', 'garbage')).toBe('accounting_reports');
-    expect(resolveReportView('analytics', 'garbage')).toBe('overview');
-    expect(resolveReportView('unknown', 'anything')).toBe('');
+    expect(resolveReportLocation('accounting', 'garbage')).toEqual({ section: 'accounting', view: 'accounting_reports' });
+    expect(resolveReportLocation('analytics', 'garbage')).toEqual({ section: 'analytics', view: 'overview' });
   });
 });
 
@@ -86,17 +62,16 @@ describe('reports section URL sync and KPI drill-downs (Point 1, 2)', () => {
 
   it('asserts that Report KPI drills correctly update both section and view parameters', () => {
     // Proves that when resolving the Collections KPI destination, both macro-section and view are resolved correctly
-    expect(resolveReportSection('analytics')).toBe('analytics');
-    expect(resolveReportView('analytics', 'collections')).toBe('collections');
+    expect(resolveReportLocation('analytics', 'collections')).toEqual({ section: 'analytics', view: 'collections' });
 
     // Occupancy KPI
-    expect(resolveReportView('analytics', 'occupancy')).toBe('occupancy');
+    expect(resolveReportLocation('analytics', 'occupancy')).toEqual({ section: 'analytics', view: 'occupancy' });
 
     // Outstanding KPI
-    expect(resolveReportView('analytics', 'overdue')).toBe('overdue');
+    expect(resolveReportLocation('analytics', 'overdue')).toEqual({ section: 'analytics', view: 'overdue' });
 
     // Net Cash KPI
-    expect(resolveReportView('analytics', 'overview')).toBe('overview');
+    expect(resolveReportLocation('analytics', 'overview')).toEqual({ section: 'analytics', view: 'overview' });
   });
 });
 

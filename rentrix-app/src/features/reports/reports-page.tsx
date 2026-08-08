@@ -13,8 +13,7 @@ import type { ReportSectionId } from './reports-page.sections';
 import {
   mergeReportSectionIntoSearch,
   REPORTS_SECTION_SEARCH_KEY,
-  resolveReportSection,
-  resolveReportView,
+  resolveReportLocation,
   type ReportViewId,
 } from './reports-section-model';
 import { useReportsWorkspace } from './use-reports-workspace';
@@ -30,8 +29,11 @@ export function ReportsPage() {
   const workspace = useReportsWorkspace(filters);
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
   const canViewReports = canAccess(authorization, financialOperationPermissions.exportReports);
-  const activeSection = resolveReportSection(search[REPORTS_SECTION_SEARCH_KEY]);
-  const activeView = resolveReportView(search[REPORTS_SECTION_SEARCH_KEY], search.view);
+  
+  const { section: activeSection, view: activeView } = resolveReportLocation(
+    search[REPORTS_SECTION_SEARCH_KEY],
+    search.view
+  );
 
   const reportsLabel = translateSharedLabel('financialsSectionReports');
   const pageDescription = translateSharedLabel('reportsPageDescription');

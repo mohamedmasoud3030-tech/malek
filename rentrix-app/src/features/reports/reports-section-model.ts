@@ -18,73 +18,67 @@ export type AnalyticsReportViewId =
 
 export type ReportViewId = AccountingReportViewId | AnalyticsReportViewId | '';
 
-/**
- * Resolve the active report section from an unknown URL value.
- * Maps legacy section IDs to the three new macro categories.
- */
-export function resolveReportSection(requested: unknown): ReportSectionId {
-  if (typeof requested !== 'string') return DEFAULT_REPORT_SECTION;
-  
-  const req = requested.toLowerCase().trim();
-  if (['accounting', 'general_ledger', 'deferred_revenue', 'accounting_reports'].includes(req)) {
-    return 'accounting';
-  }
-  if (req === 'statements') {
-    return 'statements';
-  }
-  if (
-    [
-      'analytics',
-      'overview',
-      'collections',
-      'overdue',
-      'expenses',
-      'property_analytics',
-      'occupancy',
-      'maintenance_analytics',
-    ].includes(req)
-  ) {
-    return 'analytics';
-  }
-  
-  return DEFAULT_REPORT_SECTION;
+export interface ReportLocation {
+  section: ReportSectionId;
+  view: ReportViewId;
 }
 
 /**
- * Resolve the active report view from the URL section and view parameters,
- * mapping legacy sections to their new nested view equivalents.
+ * Resolve the active report section and view from unknown URL values.
+ * Maps legacy section IDs and handles malformed fallbacks cleanly and atomically.
  */
-export function resolveReportView(requestedSection: unknown, requestedView: unknown): ReportViewId {
+export function resolveReportLocation(requestedSection: unknown, requestedView: unknown): ReportLocation {
   const sec = typeof requestedSection === 'string' ? requestedSection.toLowerCase().trim() : '';
   const vi = typeof requestedView === 'string' ? requestedView.toLowerCase().trim() : '';
 
-  // 1. Resolve macro section accounting
+  // 1. Direct legacy mapping: if section contains a legacy report name
+  if (sec === 'overview') {
+    return { section: 'analytics', view: 'overview' };
+  }
+  if (sec === 'collections') {
+    return { section: 'analytics', view: 'collections' };
+  }
+  if (sec === 'overdue') {
+    return { section: 'analytics', view: 'overdue' };
+  }
+  if (sec === 'expenses') {
+    return { section: 'analytics', view: 'expenses' };
+  }
+  if (sec === 'property_analytics') {
+    return { section: 'analytics', view: 'property_analytics' };
+  }
+  if (sec === 'occupancy') {
+    return { section: 'analytics', view: 'occupancy' };
+  }
+  if (sec === 'maintenance_analytics') {
+    return { section: 'analytics', view: 'maintenance_analytics' };
+  }
+  if (sec === 'general_ledger') {
+    return { section: 'accounting', view: 'general_ledger' };
+  }
+  if (sec === 'deferred_revenue') {
+    return { section: 'accounting', view: 'deferred_revenue' };
+  }
+  if (sec === 'statements') {
+    return { section: 'statements', view: '' };
+  }
+
+  // 2. Standard resolution under macro categories (when ?section is already analytics or accounting)
   if (sec === 'accounting') {
     if (['accounting_reports', 'general_ledger', 'deferred_revenue'].includes(vi)) {
-      return vi as AccountingReportViewId;
+      return { section: 'accounting', view: vi as AccountingReportViewId };
     }
-    return 'accounting_reports';
+    return { section: 'accounting', view: 'accounting_reports' };
   }
-
-  // 2. Resolve macro section analytics
   if (sec === 'analytics') {
     if (['overview', 'collections', 'overdue', 'expenses', 'property_analytics', 'occupancy', 'maintenance_analytics'].includes(vi)) {
-      return vi as AnalyticsReportViewId;
+      return { section: 'analytics', view: vi as AnalyticsReportViewId };
     }
-    return 'overview';
+    return { section: 'analytics', view: 'overview' };
   }
 
-  // 3. Resolve legacy direct section parameters
-  if (['general_ledger', 'deferred_revenue'].includes(sec)) {
-    return sec as AccountingReportViewId;
-  }
-
-  if (['overview', 'collections', 'overdue', 'expenses', 'property_analytics', 'occupancy', 'maintenance_analytics'].includes(sec)) {
-    return sec as AnalyticsReportViewId;
-  }
-
-  // 4. Statements / other macro categories have no internal views
-  return '';
+  // 3. Fallbacks for missing/unknown/garbage sections
+  return { section: 'accounting', view: 'accounting_reports' };
 }
 
 /**
