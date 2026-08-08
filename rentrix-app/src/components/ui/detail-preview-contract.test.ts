@@ -9,9 +9,15 @@ const propertyController = readFileSync(new URL('../../features/properties/use-p
 const unitController = readFileSync(new URL('../../features/units/use-units-list-controller.ts', import.meta.url), 'utf8');
 const ownerWorkspace = readFileSync(new URL('../../features/owners/components/owner-workspace-table.tsx', import.meta.url), 'utf8');
 const maintenanceWorkspace = readFileSync(new URL('../../features/maintenance/components/maintenance-workspace.tsx', import.meta.url), 'utf8');
+const maintenanceOverlay = readFileSync(new URL('../../features/maintenance/components/maintenance-detail-resolve-overlays.tsx', import.meta.url), 'utf8');
 const previewDialog = readFileSync(new URL('./entity-preview-dialog.tsx', import.meta.url), 'utf8');
+const previewHost = readFileSync(new URL('./entity-preview-host.tsx', import.meta.url), 'utf8');
+const contractDetailRoute = readFileSync(new URL('../../routes/_protected.contracts.$contractId.tsx', import.meta.url), 'utf8');
+const ownerDetailRoute = readFileSync(new URL('../../routes/_protected.owners.$ownerId.tsx', import.meta.url), 'utf8');
+const propertyDetailRoute = readFileSync(new URL('../../routes/_protected.properties.$propertyId.index.tsx', import.meta.url), 'utf8');
+const unitDetailRoute = readFileSync(new URL('../../routes/_protected.properties.$propertyId.units.$unitId.tsx', import.meta.url), 'utf8');
 
-describe('in-place detail preview contract', () => {
+describe('unified detail preview contract', () => {
   it('uses one shared large MALEK Pro preview surface for record details', () => {
     expect(previewDialog).toContain('EntityPreviewDialog');
     expect(previewDialog).toContain('max-w-5xl');
@@ -30,10 +36,8 @@ describe('in-place detail preview contract', () => {
   it('renders invoice and receipt details inside the shared preview surface', () => {
     expect(invoiceWorkspace).toContain('<EntityPreviewDialog');
     expect(invoiceWorkspace).toContain('<InvoiceDetailSection');
-    expect(invoiceWorkspace).toContain("ctrl.setSelectedInvoiceId('')");
     expect(receiptsSection).toContain('<EntityPreviewDialog');
     expect(receiptsSection).toContain('<ReceiptDetailCard');
-    expect(receiptsSection).toContain("onSelectReceipt('')");
   });
 
   it('routes property and unit register browsing into the global preview host', () => {
@@ -41,10 +45,29 @@ describe('in-place detail preview contract', () => {
     expect(unitController).toContain("openEntityPreview({ kind: 'unit', id: unit.id })");
   });
 
-  it('opens owner details in place and preserves maintenance existing overlay behavior', () => {
+  it('keeps owner and maintenance details on the same shared EntityPreviewDialog primitive', () => {
     expect(ownerWorkspace).toContain('<EntityPreviewDialog');
     expect(ownerWorkspace).not.toContain("navigate({ to: '/owners/$ownerId'");
     expect(maintenanceWorkspace).toContain('<MaintenanceDetailsOverlay');
-    expect(maintenanceWorkspace).toContain('onViewDetails={controller.setDetailsRequest}');
+    expect(maintenanceOverlay).toContain('<EntityPreviewDialog');
+    expect(maintenanceOverlay).not.toContain('title="تفاصيل طلب الصيانة"');
+  });
+
+  it('global preview host supports all canonical entity detail kinds', () => {
+    expect(previewHost).toContain("request?.kind === 'property'");
+    expect(previewHost).toContain("request?.kind === 'unit'");
+    expect(previewHost).toContain("request?.kind === 'contract'");
+    expect(previewHost).toContain("request?.kind === 'owner'");
+  });
+
+  it('dedicated entity detail routes are compatibility adapters, not detail pages', () => {
+    expect(contractDetailRoute).toContain("openEntityPreview({ kind: 'contract'");
+    expect(ownerDetailRoute).toContain("openEntityPreview({ kind: 'owner'");
+    expect(propertyDetailRoute).toContain("openEntityPreview({ kind: 'property'");
+    expect(unitDetailRoute).toContain("openEntityPreview({ kind: 'unit'");
+    expect(contractDetailRoute).not.toContain('ContractDetailPage');
+    expect(ownerDetailRoute).not.toContain('OwnerDetailPage');
+    expect(propertyDetailRoute).not.toContain('PropertyOverview');
+    expect(unitDetailRoute).not.toContain('PropertyUnitDetailPage');
   });
 });
