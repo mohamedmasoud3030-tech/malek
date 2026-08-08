@@ -12,7 +12,6 @@ import {
   type RelationshipsHubSectionId,
 } from './relationships-hub-sections';
 
-/** `?section=` deep-link contract for the relationships hub. */
 export const RELATIONSHIPS_HUB_SECTION_SEARCH_KEY = 'section';
 
 const ContractsBody = lazy(async () => {
@@ -22,10 +21,6 @@ const ContractsBody = lazy(async () => {
 const PeopleBody = lazy(async () => {
   const { PeopleWorkspace } = await import('@/features/people/people-list-page');
   return { default: function PeopleEmbedded() { return <PeopleWorkspace embedded />; } };
-});
-const TenantsBody = lazy(async () => {
-  const { TenantsWorkspace } = await import('@/features/tenants/TenantsPage');
-  return { default: function TenantsEmbedded() { return <TenantsWorkspace embedded />; } };
 });
 const LeadsBody = lazy(async () => {
   const { LeadsWorkspace } = await import('@/features/leads/leads-page');
@@ -39,7 +34,6 @@ const CommunicationBody = lazy(async () => {
 const sectionComponents: Record<RelationshipsHubSectionId, ComponentType> = {
   contracts: ContractsBody,
   people: PeopleBody,
-  tenants: TenantsBody,
   leads: LeadsBody,
   communication: CommunicationBody,
 };
@@ -61,13 +55,13 @@ export type RelationshipsHubWorkspaceProps = Readonly<{
 }>;
 
 /**
- * Unified relationships hub at /contracts.
- * Tabs: Contracts, People, Tenants, Leads, Communication — permission-filtered, URL-synced.
+ * Contract workspace. Tenants are intentionally a separate first-class page at
+ * /tenants; this hub keeps only contract work plus supporting relationship tools.
  */
 export function RelationshipsHubWorkspace({
   defaultSection = 'contracts',
-  title = 'العلاقات والعقود',
-  description = 'العقود والأشخاص والمستأجرون والعملاء المحتملون والتواصل في مساحة عمل واحدة.',
+  title = 'العقود',
+  description = 'العقود والتجديدات مع جهات التعامل والعملاء المحتملين والتواصل المساند.',
   mode = 'standalone',
 }: RelationshipsHubWorkspaceProps) {
   const { authorization } = useAuth();
@@ -111,11 +105,11 @@ export function RelationshipsHubWorkspace({
   };
 
   if (hasNoVisibleSections) {
-    return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام العلاقات والعقود." />);
+    return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام العقود." />);
   }
 
   if (isRequestedSectionForbidden || !activeSection) {
-    return shell(<AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من العلاقات." />);
+    return shell(<AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من العقود." />);
   }
 
   return shell(
@@ -124,7 +118,7 @@ export function RelationshipsHubWorkspace({
         items={visibleSections}
         activeId={activeSection}
         onChange={handleSectionChange}
-        ariaLabel="أقسام العلاقات والعقود"
+        ariaLabel="أقسام العقود"
       />
 
       {relationshipsHubSections
@@ -156,10 +150,8 @@ export function RelationshipsHubWorkspace({
   );
 }
 
-/** Thin page entry used by the /contracts route. */
 export function RelationshipsHubPage() {
   return <RelationshipsHubWorkspace defaultSection="contracts" mode="standalone" />;
 }
 
-/** Alias matching the stage brief's ContractsWorkspace name. */
 export { RelationshipsHubWorkspace as ContractsWorkspace };
