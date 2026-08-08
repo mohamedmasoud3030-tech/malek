@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -7,10 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SectionTabs } from '@/components/ui/section-tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { resolveRelationshipsHubState } from './relationships-hub-model';
-import {
-  relationshipsHubSections,
-  type RelationshipsHubSectionId,
-} from './relationships-hub-sections';
+import { relationshipsHubSections, type RelationshipsHubSectionId } from './relationships-hub-sections';
 
 export const RELATIONSHIPS_HUB_SECTION_SEARCH_KEY = 'section';
 
@@ -54,10 +51,6 @@ export type RelationshipsHubWorkspaceProps = Readonly<{
   mode?: 'standalone' | 'embedded';
 }>;
 
-/**
- * Contract workspace. Tenants are intentionally a separate first-class page at
- * /tenants; this hub keeps only contract work plus supporting relationship tools.
- */
 export function RelationshipsHubWorkspace({
   defaultSection = 'contracts',
   title = 'العقود',
@@ -76,6 +69,11 @@ export function RelationshipsHubWorkspace({
 
   const mountedSections = useRef(new Set<RelationshipsHubSectionId>());
   if (activeSection) mountedSections.current.add(activeSection);
+
+  useEffect(() => {
+    if (requestedSection !== 'tenants') return;
+    void navigate({ to: '/tenants', replace: true });
+  }, [navigate, requestedSection]);
 
   const handleSectionChange = useCallback(
     (nextSection: RelationshipsHubSectionId) => {
@@ -104,6 +102,11 @@ export function RelationshipsHubWorkspace({
     );
   };
 
+  // Compatibility for links/bookmarks from the previous hub structure.
+  if (requestedSection === 'tenants') {
+    return shell(<SectionFallback />);
+  }
+
   if (hasNoVisibleSections) {
     return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام العقود." />);
   }
@@ -114,23 +117,12 @@ export function RelationshipsHubWorkspace({
 
   return shell(
     <>
-      <SectionTabs
-        items={visibleSections}
-        activeId={activeSection}
-        onChange={handleSectionChange}
-        ariaLabel="أقسام العقود"
-      />
-
+      <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام العقود" />
       {relationshipsHubSections
-        .filter(
-          (section) =>
-            mountedSections.current.has(section.id) &&
-            visibleSections.some((visible) => visible.id === section.id),
-        )
+        .filter((section) => mountedSections.current.has(section.id) && visibleSections.some((visible) => visible.id === section.id))
         .map((section) => {
           const SectionBody = sectionComponents[section.id];
           const isActive = section.id === activeSection;
-
           return (
             <div
               key={section.id}
@@ -140,9 +132,7 @@ export function RelationshipsHubWorkspace({
               data-relationships-section={section.id}
               hidden={!isActive}
             >
-              <Suspense fallback={<SectionFallback />}>
-                <SectionBody />
-              </Suspense>
+              <Suspense fallback={<SectionFallback />}><SectionBody /></Suspense>
             </div>
           );
         })}
