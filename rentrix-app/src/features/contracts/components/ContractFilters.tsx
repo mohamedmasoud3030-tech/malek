@@ -40,7 +40,7 @@ export function ContractFilters({
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div className="flex flex-wrap items-center gap-2">
-        <FilterTabs options={filterOptions} value={status} onChange={setStatus} />
+        <FilterTabs options={filterOptions} value={status} onChange={setStatus} tone="contracts" />
         <Button
           variant={expiringOnly ? 'primary' : 'secondary'}
           onClick={() => setExpiringOnly((value) => !value)}
