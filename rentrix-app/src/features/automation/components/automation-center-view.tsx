@@ -1,22 +1,34 @@
 import { AlertTriangle, BellRing, CalendarClock, ExternalLink, Mail, MessageCircle, PauseCircle, PlayCircle, RefreshCw, Smartphone, Wrench } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { AsyncContentState } from '@/components/async-content-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterTabs } from '@/components/ui/filter-tabs';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionHeader } from '@/components/ui/section-header';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { AsyncContentState } from '@/components/async-content-state';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { listAutomationRules, toggleAutomationRule, executeAutomationRule, listAutomationRuns, listAutomationNotifications } from '../automation-service';
+import {
+  executeAutomationRule,
+  listAutomationNotifications,
+  listAutomationRules,
+  listAutomationRuns,
+  toggleAutomationRule,
+} from '../automation-service';
 import { automationTemplatePreviews } from '../automation-catalog';
 import { buildTemplateWhatsAppDemoUrl } from '../automation-whatsapp';
 import type { AutomationChannel } from '../types';
-import { formatLatinDateTime, formatLatinNumber } from '@/lib/formatters';
+import { formatLatinDateTime } from '@/lib/formatters';
+
+type AutomationRule = Awaited<ReturnType<typeof listAutomationRules>>[number];
+type AutomationRun = Awaited<ReturnType<typeof listAutomationRuns>>[number];
+type AutomationNotification = Awaited<ReturnType<typeof listAutomationNotifications>>[number];
+type StatusFilter = 'all' | 'enabled' | 'disabled';
 
 const channelLabel: Record<AutomationChannel, string> = {
   whatsapp: 'واتساب',
@@ -32,9 +44,6 @@ const channelIcon: Record<AutomationChannel, typeof MessageCircle> = {
   sms: Smartphone,
 };
 
-type StatusFilter = 'all' | 'enabled' | 'disabled';
-
-
 function automationRunStatusTone(status: string): 'success' | 'danger' | 'warning' {
   if (status === 'success') return 'success';
   if (status === 'failed') return 'danger';
@@ -43,24 +52,26 @@ function automationRunStatusTone(status: string): 'success' | 'danger' | 'warnin
 
 function mapRuleTypeToCategory(type: string) {
   switch (type) {
-    case 'contract_expiry':
-      return 'العقود';
+    case 'contract_expiry': return 'العقود';
     case 'overdue_invoice':
-    case 'payment_reminder':
-      return 'الإيجار';
-    case 'maintenance_overdue':
-      return 'الصيانة';
-    case 'large_payment_alert':
-      return 'التحصيل';
-    default:
-      return 'عام';
+    case 'payment_reminder': return 'الإيجار';
+    case 'maintenance_overdue': return 'الصيانة';
+    case 'large_payment_alert': return 'التحصيل';
+    default: return 'عام';
   }
+}
+
+function formatAutomationDate(value: string | number | null | undefined) {
+  if (value == null || value === '') return '—';
+  const date = typeof value === 'number' || /^\d+$/.test(String(value))
+    ? new Date(Number(value))
+    : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? '—' : formatLatinDateTime(date, 'ar');
 }
 
 export function AutomationCenterView() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const queryClient = useQueryClient();
-
   const rulesQuery = useQuery({ queryKey: ['automation-rules'], queryFn: listAutomationRules });
   const runsQuery = useQuery({ queryKey: ['automation-runs'], queryFn: () => listAutomationRuns(10) });
   const notificationsQuery = useQuery({ queryKey: ['automation-notifications'], queryFn: () => listAutomationNotifications(20) });
@@ -69,47 +80,87 @@ export function AutomationCenterView() {
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) => toggleAutomationRule(id, enabled),
     onSuccess: () => {
       toast.success('تم تحديث حالة القاعدة');
-      queryClient.invalidateQueries({ queryKey: ['automation-rules'] });
+      void queryClient.invalidateQueries({ queryKey: ['automation-rules'] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'فشل تحديث القاعدة'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل تحديث القاعدة'),
   });
 
   const executeMut = useMutation({
     mutationFn: (ruleId: string) => executeAutomationRule(ruleId),
     onSuccess: (result) => {
       toast.success(`تم التنفيذ: ${result.processed} عنصر، ${result.notifications} إشعار`);
-      queryClient.invalidateQueries({ queryKey: ['automation-rules'] });
-      queryClient.invalidateQueries({ queryKey: ['automation-runs'] });
-      queryClient.invalidateQueries({ queryKey: ['automation-notifications'] });
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['automation-rules'] }),
+        queryClient.invalidateQueries({ queryKey: ['automation-runs'] }),
+        queryClient.invalidateQueries({ queryKey: ['automation-notifications'] }),
+      ]);
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'فشل التنفيذ'),
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'فشل التنفيذ'),
   });
 
   const rules = rulesQuery.data ?? [];
+  const runs = runsQuery.data ?? [];
+  const notifications = notificationsQuery.data ?? [];
+  const filteredRules = useMemo(
+    () => rules.filter((rule) => statusFilter === 'all' || (statusFilter === 'enabled' ? rule.is_enabled : !rule.is_enabled)),
+    [rules, statusFilter],
+  );
+  const counts = useMemo(() => ({
+    all: rules.length,
+    enabled: rules.filter((rule) => rule.is_enabled).length,
+    disabled: rules.filter((rule) => !rule.is_enabled).length,
+  }), [rules]);
 
-  const filteredRules = useMemo(() => {
-    return rules.filter((r) => {
-      if (statusFilter === 'all') return true;
-      if (statusFilter === 'enabled') return r.is_enabled;
-      if (statusFilter === 'disabled') return !r.is_enabled;
-      return true;
-    });
-  }, [rules, statusFilter]);
+  const ruleActions = (rule: AutomationRule) => (
+    <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <Button variant="secondary" disabled={toggleMut.isPending} onClick={() => toggleMut.mutate({ id: rule.id, enabled: !rule.is_enabled })}>
+        {rule.is_enabled ? <PauseCircle className="size-4" /> : <PlayCircle className="size-4" />}
+        {rule.is_enabled ? 'إيقاف' : 'تفعيل'}
+      </Button>
+      <Button variant="outline" disabled={executeMut.isPending} onClick={() => executeMut.mutate(rule.id)}>
+        <RefreshCw className="size-4" />تشغيل الآن
+      </Button>
+    </div>
+  );
 
-  const counts = useMemo(() => {
-    return { all: rules.length, enabled: rules.filter((r) => r.is_enabled).length, disabled: rules.filter((r) => !r.is_enabled).length };
-  }, [rules]);
+  const ruleColumns: ColumnDef<AutomationRule>[] = [
+    {
+      key: 'rule',
+      header: 'القاعدة',
+      render: (rule) => <div><p className="font-bold">{rule.name}</p><p className="max-w-lg truncate text-xs text-muted-foreground">{rule.description || '—'}</p></div>,
+    },
+    { key: 'category', header: 'الفئة', render: (rule) => <Badge variant="outline">{mapRuleTypeToCategory(rule.rule_type)}</Badge> },
+    { key: 'last_run', header: 'آخر تشغيل', render: (rule) => formatAutomationDate(rule.last_run_at) },
+    { key: 'result', header: 'النتيجة', render: (rule) => rule.last_run_result || '—' },
+    { key: 'status', header: 'الحالة', render: (rule) => <StatusBadge tone={rule.is_enabled ? 'success' : 'warning'}>{rule.is_enabled ? 'مفعّل' : 'متوقف'}</StatusBadge> },
+    { key: 'actions', header: 'إجراءات', render: ruleActions },
+  ];
+
+  const runColumns: ColumnDef<AutomationRun>[] = [
+    { key: 'job', header: 'التشغيل', render: (run) => <span className="font-bold">{run.job_name}</span> },
+    { key: 'started', header: 'وقت البدء', render: (run) => formatAutomationDate(run.started_at) },
+    { key: 'processed', header: 'تمت معالجته', render: (run) => run.items_processed },
+    { key: 'failed', header: 'فشل', render: (run) => <span className={run.items_failed > 0 ? 'font-bold text-destructive' : undefined}>{run.items_failed}</span> },
+    { key: 'status', header: 'الحالة', render: (run) => <StatusBadge tone={automationRunStatusTone(run.status)}>{run.status}</StatusBadge> },
+  ];
+
+  const notificationColumns: ColumnDef<AutomationNotification>[] = [
+    { key: 'title', header: 'الإشعار', render: (notification) => <div><p className="font-bold">{notification.title}</p><p className="max-w-xl truncate text-xs text-muted-foreground">{notification.body}</p></div> },
+    { key: 'created', header: 'التاريخ', render: (notification) => formatAutomationDate(notification.created_at) },
+    {
+      key: 'related',
+      header: 'السياق',
+      render: (notification) => notification.related_entity_type ? `مرتبط بـ ${notification.related_entity_type}` : 'عام',
+    },
+  ];
 
   return (
     <section className="space-y-5" dir="rtl">
-      <h2 className="sr-only">مركز الأتمتة</h2>
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-3xl">
             <h2 className="text-base font-bold tracking-tight">قواعد الأتمتة</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              قواعد محفوظة في قاعدة البيانات مع سجل تشغيل وإشعارات داخل النظام ومنع تكرار.
-            </p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">قواعد محفوظة في قاعدة البيانات مع سجل تشغيل وإشعارات داخل النظام ومنع تكرار.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <StatusBadge tone="success" dot>{counts.enabled} مفعّل</StatusBadge>
@@ -118,30 +169,10 @@ export function AutomationCenterView() {
           </div>
         </div>
         <ResponsiveCardGrid>
-          <KpiCard
-            label="قواعد العقود"
-            value={String(rules.filter((rule) => rule.rule_type === 'contract_expiry').length)}
-            icon={CalendarClock}
-            accent="primary"
-          />
-          <KpiCard
-            label="قواعد الإيجار"
-            value={String(rules.filter((rule) => rule.rule_type === 'overdue_invoice').length)}
-            icon={MessageCircle}
-            accent="amber"
-          />
-          <KpiCard
-            label="إجمالي التشغيلات"
-            value={String(runsQuery.data?.length ?? 0)}
-            icon={Mail}
-            accent="sky"
-          />
-          <KpiCard
-            label="إشعارات النظام"
-            value={String(notificationsQuery.data?.length ?? 0)}
-            icon={Wrench}
-            accent="emerald"
-          />
+          <KpiCard label="قواعد العقود" value={rules.filter((rule) => rule.rule_type === 'contract_expiry').length} icon={CalendarClock} accent="primary" />
+          <KpiCard label="قواعد الإيجار" value={rules.filter((rule) => rule.rule_type === 'overdue_invoice').length} icon={MessageCircle} accent="amber" />
+          <KpiCard label="إجمالي التشغيلات" value={runs.length} icon={Mail} accent="sky" />
+          <KpiCard label="إشعارات النظام" value={notifications.length} icon={Wrench} accent="emerald" />
         </ResponsiveCardGrid>
       </div>
 
@@ -157,140 +188,61 @@ export function AutomationCenterView() {
 
       <AsyncContentState
         status={rulesQuery.isLoading ? 'loading' : rulesQuery.isError ? 'error' : filteredRules.length === 0 ? 'empty' : 'ready'}
-        error={rulesQuery.error as Error}
+        error={rulesQuery.error}
         errorTitle="تعذر تحميل قواعد الأتمتة"
         errorAction={<Button onClick={() => rulesQuery.refetch()}>إعادة المحاولة</Button>}
         emptyTitle="لا توجد قواعد أتمتة"
-        emptyDescription="سيتم إنشاء القواعد الافتراضية تلقائياً عند تطبيق الترحيلات."
+        emptyDescription="لا توجد قواعد مطابقة للحالة الحالية."
       >
-        <div className="grid gap-3 md:hidden">
-          {filteredRules.map((rule) => (
+        <EntityTable
+          aria-label="جدول قواعد الأتمتة"
+          rows={filteredRules}
+          columns={ruleColumns}
+          keyOf={(rule) => rule.id}
+          enableViewModeToggle
+          viewModeStorageKey="rentrix:view-mode:automation-rules"
+          renderMobileCard={(rule) => (
             <MobileCard
-              key={rule.id}
               title={rule.name}
-              subtitle={rule.description || ''}
+              subtitle={rule.description || mapRuleTypeToCategory(rule.rule_type)}
               badge={<StatusBadge tone={rule.is_enabled ? 'success' : 'warning'}>{rule.is_enabled ? 'مفعّل' : 'متوقف'}</StatusBadge>}
-              meta={
-                <div className="space-y-1 text-xs">
-                  <p>النوع: {mapRuleTypeToCategory(rule.rule_type)}</p>
-                  <p>آخر تشغيل: {rule.last_run_at ? formatLatinDateTime(new Date(rule.last_run_at), 'ar-OM') : 'لم يشغل بعد'}</p>
-                  <p>النتيجة: {rule.last_run_result || '—'}</p>
-                </div>
-              }
-              actions={
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="secondary" className="min-h-11" onClick={() => toggleMut.mutate({ id: rule.id, enabled: !rule.is_enabled })} disabled={toggleMut.isPending}>
-                    {rule.is_enabled ? (
-                      <>
-                        <PauseCircle className="me-2 size-4" />
-                        إيقاف
-                      </>
-                    ) : (
-                      <>
-                        <PlayCircle className="me-2 size-4" />
-                        تفعيل
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" className="min-h-11" onClick={() => executeMut.mutate(rule.id)} disabled={executeMut.isPending}>
-                    <RefreshCw className="me-2 size-4" />
-                    تشغيل الآن
-                  </Button>
-                </div>
-              }
+              meta={<div className="space-y-1 text-xs"><p>الفئة: {mapRuleTypeToCategory(rule.rule_type)}</p><p>آخر تشغيل: {formatAutomationDate(rule.last_run_at)}</p><p>النتيجة: {rule.last_run_result || '—'}</p></div>}
+              actions={ruleActions(rule)}
             />
-          ))}
-        </div>
-
-        <div className="hidden gap-3 md:grid">
-          {filteredRules.map((rule) => (
-            <Card key={rule.id} className="border-border/70">
-              <CardContent className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-black">{rule.name}</h3>
-                    <StatusBadge tone={rule.is_enabled ? 'success' : 'warning'}>{rule.is_enabled ? 'مفعّل' : 'متوقف'}</StatusBadge>
-                    <Badge variant="outline">{mapRuleTypeToCategory(rule.rule_type)}</Badge>
-                    {rule.last_run_status && <Badge variant="outline">{rule.last_run_status}</Badge>}
-                  </div>
-                  <p className="text-sm leading-6 text-muted-foreground">{rule.description}</p>
-                  <div className="flex flex-wrap gap-3 text-xs font-bold text-muted-foreground">
-                    <span>آخر تشغيل: {rule.last_run_at ? formatLatinDateTime(new Date(rule.last_run_at), 'ar-OM') : '—'}</span>
-                    <span>النتيجة: {rule.last_run_result || '—'}</span>
-                  </div>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button variant="secondary" onClick={() => toggleMut.mutate({ id: rule.id, enabled: !rule.is_enabled })} disabled={toggleMut.isPending}>
-                    {rule.is_enabled ? (
-                      <>
-                        <PauseCircle className="me-2 size-4" />
-                        إيقاف
-                      </>
-                    ) : (
-                      <>
-                        <PlayCircle className="me-2 size-4" />
-                        تفعيل
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" onClick={() => executeMut.mutate(rule.id)} disabled={executeMut.isPending}>
-                    <RefreshCw className="me-2 size-4" />
-                    تشغيل الآن
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          )}
+        />
       </AsyncContentState>
 
       <section className="space-y-3">
-        <SectionHeader title="سجل التشغيلات" description="آخر 10 عمليات تشغيل مع عدد العناصر المعالجة والأخطاء." />
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            {(runsQuery.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">لا يوجد سجل تشغيل بعد. شغل قاعدة للبدء.</p>
-            ) : (
-              (runsQuery.data ?? []).map((run) => (
-                <div key={run.id} className="flex justify-between items-center rounded-xl border p-3 text-sm">
-                  <div>
-                    <p className="font-bold">{run.job_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      بدء: {formatLatinDateTime(new Date(Number(run.started_at)), 'ar-OM')} · معالجة: {run.items_processed} · فشل: {run.items_failed}
-                    </p>
-                  </div>
-                  <StatusBadge tone={automationRunStatusTone(run.status)}>{run.status}</StatusBadge>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+        <SectionHeader title="سجل التشغيلات" description="آخر عمليات التشغيل وعدد العناصر المعالجة والأخطاء." />
+        <AsyncContentState
+          status={runsQuery.isLoading ? 'loading' : runsQuery.isError ? 'error' : runs.length === 0 ? 'empty' : 'ready'}
+          error={runsQuery.error}
+          errorTitle="تعذر تحميل سجل التشغيل"
+          errorAction={<Button onClick={() => runsQuery.refetch()}>إعادة المحاولة</Button>}
+          emptyTitle="لا يوجد سجل تشغيل بعد"
+          emptyDescription="شغّل قاعدة أتمتة لبدء تسجيل التشغيلات."
+        >
+          <EntityTable aria-label="جدول تشغيلات الأتمتة" rows={runs} columns={runColumns} keyOf={(run) => run.id} emptyTitle="لا يوجد سجل تشغيل" />
+        </AsyncContentState>
       </section>
 
       <section className="space-y-3">
-        <SectionHeader title="إشعارات النظام" description="الإشعارات التي أنشأتها قواعد الأتمتة داخل النظام فقط، دون إرسال خارجي." />
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            {(notificationsQuery.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">لا توجد إشعارات. تشغيل قواعد العقود المنتهية أو الفواتير المتأخرة سيُنشئ إشعارات.</p>
-            ) : (
-              (notificationsQuery.data ?? []).map((notif) => (
-                <div key={notif.id} className="rounded-xl border p-3 space-y-1">
-                  <div className="flex justify-between">
-                    <p className="font-bold text-sm">{notif.title}</p>
-                    <span className="text-xs text-muted-foreground">{formatLatinDateTime(new Date(notif.created_at), 'ar-OM')}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{notif.body}</p>
-                  {notif.related_entity_type && <p className="text-xs">مرتبط: {notif.related_entity_type} {notif.related_entity_id?.slice(0, 8)}</p>}
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+        <SectionHeader title="إشعارات النظام" description="الإشعارات التي أنشأتها قواعد الأتمتة داخل النظام دون إظهار معرفات تقنية." />
+        <AsyncContentState
+          status={notificationsQuery.isLoading ? 'loading' : notificationsQuery.isError ? 'error' : notifications.length === 0 ? 'empty' : 'ready'}
+          error={notificationsQuery.error}
+          errorTitle="تعذر تحميل إشعارات الأتمتة"
+          errorAction={<Button onClick={() => notificationsQuery.refetch()}>إعادة المحاولة</Button>}
+          emptyTitle="لا توجد إشعارات"
+          emptyDescription="ستظهر إشعارات القواعد هنا بعد تشغيلها."
+        >
+          <EntityTable aria-label="جدول إشعارات الأتمتة" rows={notifications} columns={notificationColumns} keyOf={(notification) => notification.id} emptyTitle="لا توجد إشعارات" />
+        </AsyncContentState>
       </section>
 
       <section className="space-y-3">
-        <SectionHeader title="قوالب الإشعارات" description="قوالب قابلة للتوسعة - لا يتم إرسال رسائل خارجية بدون إعداد مزود واضح." />
+        <SectionHeader title="قوالب الإشعارات" description="قوالب معاينة قابلة للتوسعة؛ لا يتم إرسال رسائل خارجية بدون مزود مهيأ." />
         <div className="grid gap-3 md:grid-cols-2">
           {automationTemplatePreviews.map((template) => {
             const Icon = channelIcon[template.channel as AutomationChannel] || MessageCircle;
@@ -298,20 +250,14 @@ export function AutomationCenterView() {
             return (
               <Card key={template.id}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Icon className="size-4 text-primary" />
-                    {template.title}
-                  </CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-sm"><Icon className="size-4 text-primary" />{template.title}</CardTitle>
                   <CardDescription>{channelLabel[template.channel as AutomationChannel]}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <pre className="whitespace-pre-wrap rounded-2xl bg-muted/50 p-3 text-xs font-bold leading-6 text-muted-foreground">{template.body}</pre>
                   {whatsappPreviewUrl ? (
-                    <Button type="button" variant="secondary" size="sm" className="min-h-11" asChild>
-                      <a href={whatsappPreviewUrl} target="_blank" rel="noreferrer">
-                        <ExternalLink className="me-2 size-3.5" aria-hidden="true" />
-                        معاينة واتساب
-                      </a>
+                    <Button type="button" variant="secondary" size="sm" asChild>
+                      <a href={whatsappPreviewUrl} target="_blank" rel="noreferrer"><ExternalLink className="size-4" />معاينة واتساب</a>
                     </Button>
                   ) : null}
                 </CardContent>
@@ -323,13 +269,8 @@ export function AutomationCenterView() {
 
       <Card className="border-warning/40 bg-warning/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-warning">
-            <AlertTriangle className="size-5" />
-            ملاحظات الأمان
-          </CardTitle>
-          <CardDescription>
-            لا يتم إرسال رسائل واتساب/بريد/ SMS خارجية فعلياً من هذا المركز بدون إعداد مزود. النظام يسجل إشعارات داخل النظام فقط ويسجل runs/logs مع منع تكرار عبر قفل الصفوف. لإضافة إرسال خارجي: اضبط متغيرات المزود في Edge Function منفصلة.
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2 text-warning"><AlertTriangle className="size-5" />ملاحظات الأمان</CardTitle>
+          <CardDescription>لا يتم إرسال واتساب أو بريد أو SMS خارجياً من هذا المركز بدون إعداد مزود. التشغيل الحالي يسجل إشعارات داخل النظام وسجل تشغيل فقط.</CardDescription>
         </CardHeader>
       </Card>
     </section>
