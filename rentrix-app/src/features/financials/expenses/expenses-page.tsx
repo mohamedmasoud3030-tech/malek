@@ -9,7 +9,7 @@ import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { useProperties } from '@/features/properties/use-properties';
 import { useCostCenters } from '@/features/settings/useCostCenters';
-import { defaultCompanyLocalSettings } from '@/lib/companySettings';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyMoney, formatCompanyNumber } from '@/lib/companyFormatters';
 import { ExpensesSection, type ExpenseFormValues } from '../components/expenses-section';
 import { getTodayLocalDateString } from '../financials-date-utils';
@@ -55,6 +55,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
     from: '',
     to: '',
   });
+  const companySettings = useCompanySettingsContract();
   const propertiesQuery = useProperties({ page: 1, pageSize: 500, search: '', status: 'all' });
   const costCentersQuery = useCostCenters();
   const expensesQuery = useExpenses(filters);
@@ -128,8 +129,8 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
     <EmbeddableWorkspace
       embedded={embedded}
       size="default"
-      title="المصاريف"
-      description="تسجيل ومراجعة مصاريف العقارات مع فلاتر للعقار والتصنيف والتاريخ."
+      title="المصروفات"
+      description="تسجيل ومراجعة مصروفات العقارات مع فلاتر للعقار والتصنيف والتاريخ."
       visualVariant="malek-pro"
       secondaryActions={
         <>
@@ -142,7 +143,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
           <Button variant="secondary" className="min-h-11" asChild>
             <Link to="/reports">
               <ReceiptText className="me-2 size-4" />
-              التقارير
+              المحاسبة والتقارير
             </Link>
           </Button>
         </>
@@ -168,7 +169,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
           {expensesQuery.isError ? (
             <FinanceCluster>
               <EmptyState
-                title="تعذر تحميل المصاريف"
+                title="تعذر تحميل المصروفات"
                 description="أعد المحاولة أو غيّر عوامل التصفية الحالية. الخطأ لا يظهر كحالة فارغة."
                 role="alert"
                 ariaLive="assertive"
@@ -177,35 +178,35 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
           ) : null}
         </FinanceSection>
 
-        <FinanceSection ariaLabel="ملخص المصاريف">
+        <FinanceSection ariaLabel="ملخص المصروفات">
           <FinanceKpiGrid desktopColumns={4}>
             <FinanceKpiCard
-              label="عدد المصاريف"
-              value={formatCompanyNumber(defaultCompanyLocalSettings, summary.visibleCount)}
+              label="عدد المصروفات"
+              value={formatCompanyNumber(companySettings, summary.visibleCount)}
               sub="ضمن الفلاتر الحالية"
               icon={ReceiptText}
               accent="primary"
             />
             <FinanceKpiCard
               label="إجمالي المبلغ"
-              value={formatCompanyMoney(defaultCompanyLocalSettings, summary.visibleAmount)}
-              sub="للمصاريف المعروضة"
+              value={formatCompanyMoney(companySettings, summary.visibleAmount)}
+              sub="للمصروفات المعروضة"
               icon={Banknote}
               accent="primary"
               trend="neutral"
               trendValue="إجمالي"
-              unit="OMR"
+              unit={companySettings.defaultCurrency}
             />
             <FinanceKpiCard
               label="العقارات المتأثرة"
-              value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byPropertyCount)}
-              sub="عقارات لديها مصاريف"
+              value={formatCompanyNumber(companySettings, summary.byPropertyCount)}
+              sub="عقارات لديها مصروفات"
               icon={WalletCards}
               accent="primary"
             />
             <FinanceKpiCard
               label="التصنيفات"
-              value={formatCompanyNumber(defaultCompanyLocalSettings, summary.byCategoryCount)}
+              value={formatCompanyNumber(companySettings, summary.byCategoryCount)}
               sub="تصنيفات مستخدمة"
               icon={CalendarDays}
               accent="primary"
@@ -213,7 +214,7 @@ export function ExpensesWorkspace({ embedded = false }: ExpensesWorkspaceProps) 
           </FinanceKpiGrid>
         </FinanceSection>
 
-        <FinanceSection ariaLabel="جدول المصاريف والفلاتر">
+        <FinanceSection ariaLabel="جدول المصروفات والفلاتر">
           <ExpensesSection
             expenses={expenses}
             propertyRows={propertyRows}
