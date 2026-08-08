@@ -269,9 +269,9 @@ function FullPageOverlay({
       aria-label={title}
     >
       <div className={cn('mx-auto flex h-full w-full max-w-4xl min-w-0 flex-col overflow-hidden', className)}>
-        <header className="safe-top-app flex shrink-0 items-start gap-2 border-b border-border/70 bg-background/96 px-3 py-2.5 backdrop-blur sm:items-center sm:gap-3 sm:px-6 sm:py-3">
+        <header className="safe-top-app flex shrink-0 items-start gap-2 bg-[hsl(var(--sidebar))] px-3 py-3 text-white shadow-sm sm:items-center sm:gap-3 sm:px-6 sm:py-4">
           <OverlayHeader title={title} description={description} headerExtra={headerExtra} />
-          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => onOpenChange(false)} aria-label="إغلاق">
+          <Button variant="ghost" size="icon" className="shrink-0 text-white hover:bg-white/10 hover:text-white focus-visible:ring-white/35" onClick={() => onOpenChange(false)} aria-label="إغلاق">
             <X className="size-5" aria-hidden="true" />
           </Button>
         </header>
@@ -352,12 +352,12 @@ function Overlay({
         data-entity-form-variant={resolvedVisualVariant}
         className={cn('flex max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),54rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0', className)}
       >
-        <DialogHeader className="shrink-0 border-b border-border/60 bg-background/96 px-6 py-5 pe-14 backdrop-blur">
+        <DialogHeader className="shrink-0 bg-[hsl(var(--sidebar))] px-6 py-5 pe-14 text-white shadow-sm">
           <div className="flex flex-wrap items-center gap-2">
-            <DialogTitle>{title}</DialogTitle>
+            <DialogTitle className="text-white">{title}</DialogTitle>
             {headerExtra}
           </div>
-          {description ? <DialogDescription className="leading-6">{description}</DialogDescription> : null}
+          {description ? <DialogDescription className="leading-6 text-white/75">{description}</DialogDescription> : null}
         </DialogHeader>
         <DialogBody data-entity-form-scroll className="px-6 pb-6 pt-4">
           {children}

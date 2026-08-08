@@ -36,7 +36,7 @@ export function TableRow({
     <tr
       data-selected={selected ? 'true' : undefined}
       className={cn(
-        'border-b border-border transition-colors hover:bg-muted/60',
+        'border-b border-border/70 transition-colors hover:bg-muted/45',
         selected && 'bg-primary/8 hover:bg-primary/12',
         className,
       )}
@@ -49,7 +49,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       className={cn(
-        'h-12 whitespace-nowrap px-4 text-start align-middle text-xs font-semibold text-muted-foreground',
+        'h-14 whitespace-nowrap bg-muted/55 px-4 text-start align-middle text-xs font-bold text-muted-foreground sm:px-5',
         className,
       )}
       {...props}
@@ -58,7 +58,7 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn('px-4 py-4 align-middle', className)} {...props} />;
+  return <td className={cn('px-4 py-5 align-middle sm:px-5', className)} {...props} />;
 }
 
 export function TableCaption({ className, ...props }: HTMLAttributes<HTMLElement>) {

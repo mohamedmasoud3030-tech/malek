@@ -346,7 +346,7 @@ export function EntityTable<T>({
       <Card
         data-entity-table-wrapper
         className={cn(
-          "overflow-hidden",
+          "overflow-hidden rounded-[1.5rem] border-border/70 bg-card shadow-card",
           renderMobileCard !== undefined ? "hidden md:block" : "",
           viewMode === "grid" && "md:hidden",
         )}
