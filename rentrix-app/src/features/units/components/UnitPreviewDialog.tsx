@@ -1,6 +1,5 @@
-import { Building2, DoorOpen, Pencil } from 'lucide-react';
+import { Building2, DoorOpen } from 'lucide-react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
-import { Button } from '@/components/ui/button';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
@@ -66,7 +65,7 @@ export function UnitPreviewDialog({
                 { label: 'الإيجار', value: <span dir="ltr">{formatMoney(unit.rent_amount ?? 0)}</span> },
                 { label: 'العقار', value: property?.title ?? '—' },
                 { label: 'الحالة', value: status ? unitStatusLabels[status] : '—' },
-                { label: 'ملاحظات', value: unit.notes ?? '—', span: 3 },
+                { label: 'ملاحظات', value: unit.notes ?? '—', wide: true },
               ]}
             />
           </div>
