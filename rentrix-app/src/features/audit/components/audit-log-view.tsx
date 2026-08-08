@@ -10,14 +10,12 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
 import type { CompanySettingsContract } from '@/lib/companySettings';
-import type { AuditLogResult } from '../types';
+import type { AuditLogRecord, AuditLogResult } from '../types';
 
 export type AuditLogViewState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; error: unknown }>
   | Readonly<{ status: 'ready'; result: AuditLogResult }>;
-
-type AuditRecord = Extract<AuditLogResult, { status: 'ready' }>['records'][number];
 
 function formatAuditDate(settings: CompanySettingsContract, value: string): string {
   const date = new Date(value);
@@ -45,7 +43,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
     );
   }
 
-  const columns: ColumnDef<AuditRecord>[] = [
+  const columns: ColumnDef<AuditLogRecord>[] = [
     { key: 'time', header: 'الوقت', render: (record) => <span className="font-bold">{formatAuditDate(companySettings, record.occurredAt)}</span> },
     { key: 'actor', header: 'المستخدم', render: (record) => record.actor },
     { key: 'action', header: 'الإجراء', render: (record) => <StatusBadge tone="info">{record.action}</StatusBadge> },
