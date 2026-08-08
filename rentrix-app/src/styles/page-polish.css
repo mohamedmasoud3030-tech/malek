@@ -13,16 +13,16 @@
   font-weight: 600;
   text-transform: uppercase;
   color: hsl(var(--color-text-muted));
-  background: hsl(var(--muted) / 0.4);
-  padding: 0.625rem 1rem;
+  background: hsl(var(--muted) / 0.55);
+  padding: 1rem 1.25rem;
   text-align: start;
   border-bottom: 1px solid hsl(var(--border));
   white-space: nowrap;
 }
 
 [data-entity-table] tbody td {
-  font-size: 0.8125rem;
-  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  padding: 1.125rem 1.25rem;
   border-bottom: 1px solid hsl(var(--color-border-light));
   color: hsl(var(--color-text-primary));
   min-height: 44px;
@@ -54,3 +54,23 @@
 [data-status-row='partial']  { border-inline-start: 3px solid hsl(var(--color-warning-text)); }
 [data-status-row='overdue']  { border-inline-start: 3px solid hsl(var(--color-danger-text)); }
 [data-status-row='void']     { opacity: 0.65; }
+
+/* ── Contextual primary actions ────────────────
+   Page CTAs inherit their module token. A screen that needs a navy structural
+   action opts in locally; this avoids forcing one colour onto every module. */
+
+/* Entity-form overlays follow the same navy-header / white-body composition.
+   These selectors intentionally affect only presentation; forms retain their
+   existing fields, validation, handlers, and responsive surface decisions. */
+[data-entity-form-surface='dialog'] > button[aria-label='إغلاق'] {
+  color: white;
+}
+
+[data-entity-form-surface='dialog'] > button[aria-label='إغلاق']:hover {
+  background: hsl(0 0% 100% / 0.1);
+  color: white;
+}
+
+[data-entity-form-surface='full-page'] header p {
+  color: hsl(0 0% 100% / 0.75);
+}

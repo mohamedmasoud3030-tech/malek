@@ -25,7 +25,7 @@ export function AutomationWorkspace({ mode = 'standalone' }: AutomationWorkspace
   }
 
   return (
-    <PageLayout dir="rtl" lang="ar">
+    <PageLayout dir="rtl" lang="ar" visualVariant="malek-pro">
       <PageHeader
         title="مركز الأتمتة"
         description="إدارة تذكيرات انتهاء العقود، استحقاق الإيجار، تقارير الملاك، وتنبيهات الصيانة من مكان واحد."

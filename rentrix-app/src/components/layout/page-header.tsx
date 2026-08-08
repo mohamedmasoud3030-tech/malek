@@ -19,7 +19,7 @@ interface PageHeaderProps {
 }
 
 /**
- * Page title + actions — flat design (not a card).
+ * Page title + actions — a shared elevated page-header surface.
  * Mobile: primary always visible compact, secondary collapsed into overflow menu.
  * Destructive actions separated, touch targets 44px, safe-area preserved.
  */
@@ -40,9 +40,12 @@ export function PageHeader({
   return (
     <header
       data-page-header
-      className={cn('border-b border-border/60 pb-3 sm:pb-4', className)}
+      className={cn(
+        'rounded-[1.5rem] border border-border/70 bg-card px-4 py-4 shadow-card sm:px-6 sm:py-5',
+        className,
+      )}
     >
-      <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-4">
+      <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-5">
         {/* Title + description */}
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">

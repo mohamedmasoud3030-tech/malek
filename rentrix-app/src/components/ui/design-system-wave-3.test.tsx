@@ -53,7 +53,9 @@ describe('Button (Wave 3)', () => {
 
   it('supports sizes xs and xl', () => {
     const { rerender } = render(<Button size="xs">x</Button>);
-    expect(screen.getByRole('button').className).toContain('min-h-9');
+    // The product accessibility contract requires every shared button,
+    // including the compact visual size, to retain a 44px hit target.
+    expect(screen.getByRole('button').className).toContain('min-h-11');
     rerender(<Button size="xl">x</Button>);
     expect(screen.getByRole('button').className).toContain('min-h-12');
   });

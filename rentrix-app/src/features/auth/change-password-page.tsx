@@ -99,7 +99,7 @@ export function ChangePasswordWorkspace({ variant = 'standalone' }: ChangePasswo
   if (variant === 'embedded') return <div className="max-w-3xl space-y-4">{body}</div>;
 
   return (
-    <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl">
+    <PageLayout dir="rtl" lang="ar" contentClassName="max-w-3xl" visualVariant="malek-pro">
       <PageHeader title="تغيير كلمة المرور" description="تحديث كلمة مرور حسابك الحالي فقط عبر جلسة Supabase النشطة، بدون أي تغيير على حسابات أخرى." />
       {body}
     </PageLayout>

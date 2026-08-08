@@ -99,7 +99,7 @@ export function QuickAddMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
-        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/35 motion-reduce:transition-none"
+        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-[0.85rem] bg-primary text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/35 motion-reduce:transition-none"
       >
         <Plus className="size-[1.1rem]" aria-hidden="true" />
       </button>
@@ -295,42 +295,42 @@ export function AppShell() {
       <div className={cn('w-full transition-[padding] duration-200 motion-reduce:transition-none lg:pr-64', sidebarCollapsed && 'lg:pr-[4.5rem]')}>
         <header
           data-app-shell-header
-          className="sticky top-0 z-20 border-b border-border/80 bg-background/92 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md"
+          className="sticky top-0 z-20 border-b border-border/70 bg-card/95 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-card/85"
         >
-          <div className="mx-auto flex min-h-[3.25rem] w-full max-w-[110rem] items-center gap-1 px-2 py-1 sm:min-h-[3.5rem] sm:gap-2 sm:px-4 sm:py-1.5">
+          <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center gap-1.5 px-2 py-1 sm:min-h-14 sm:gap-2 sm:px-4">
             <Button
               variant="ghost"
-              className="size-10 shrink-0 px-0 text-muted-foreground hover:text-foreground lg:hidden"
+              className="size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
               onClick={() => setMobileNavOpen(true)}
               aria-label={sharedLabel('openMenu')}
             >
-              <Menu className="size-[1.1rem]" aria-hidden="true" />
+              <Menu className="size-[1.15rem]" aria-hidden="true" />
             </Button>
 
             <Button
               variant="ghost"
-              className="hidden size-10 shrink-0 px-0 text-muted-foreground hover:text-foreground lg:inline-flex"
+              className="hidden size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
               onClick={toggleSidebar}
               aria-label={sharedLabel('collapseMenu')}
             >
-              <Menu className="size-[1.1rem]" aria-hidden="true" />
+              <Menu className="size-[1.15rem]" aria-hidden="true" />
             </Button>
 
-            <div className="min-w-0 flex-1">
-              <div className="hidden items-center gap-1 sm:flex">
+            <div className="min-w-0 flex-1 px-1">
+              <div className="hidden items-center gap-1.5 sm:flex">
                 <span className="text-[11px] font-medium text-muted-foreground">{sharedLabel('home')}</span>
                 <ChevronLeft className="size-3 text-muted-foreground/60" aria-hidden="true" />
                 <span className="truncate text-[11px] font-semibold text-foreground">{pageTitle}</span>
               </div>
-              <p className="truncate text-[0.9375rem] font-bold tracking-tight sm:hidden">{pageTitle}</p>
+              <p className="truncate text-[0.95rem] font-bold tracking-tight sm:hidden">{pageTitle}</p>
             </div>
 
-            <div className="flex items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center gap-1 sm:gap-1.5">
               {writeAccessState === 'full' ? (
                 <QuickAddMenu authorization={authorization} sharedLabel={sharedLabel} />
               ) : null}
 
-              <span className="hidden rounded-lg border border-border bg-card px-2.5 py-1 text-[10px] font-medium text-muted-foreground sm:inline-flex lg:text-[11px] lg:px-3 lg:py-1.5">
+              <span className="hidden rounded-xl border border-border/70 bg-muted/60 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground sm:inline-flex lg:text-[11px] lg:px-3 lg:py-1.5">
                 {statusLabel(syncStatus)}
                 {lastSyncedAt
                   ? ` · ${formatLatinTime(new Date(lastSyncedAt), appLanguage.locale)}`
@@ -339,21 +339,21 @@ export function AppShell() {
 
               <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
 
-              <Button
-                variant="ghost"
-                className="size-11 px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              <button
+                type="button"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 aria-label={sharedLabel('toggleTheme')}
+                className="inline-flex size-11 items-center justify-center rounded-xl border border-border/70 bg-card text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25 motion-reduce:transition-none"
               >
                 {theme === 'dark' ? (
-                  <Sun className="size-[1rem]" aria-hidden="true" />
+                  <Sun className="size-[1.05rem]" aria-hidden="true" />
                 ) : (
-                  <Moon className="size-[1rem]" aria-hidden="true" />
+                  <Moon className="size-[1.05rem]" aria-hidden="true" />
                 )}
-              </Button>
+              </button>
 
               <span
-                className="hidden size-8 place-items-center rounded-lg bg-primary text-xs font-bold text-primary-foreground sm:grid xl:size-9"
+                className="hidden size-10 place-items-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm sm:grid xl:size-11"
                 title={user?.email}
                 aria-label={user?.email ?? undefined}
               >
@@ -363,7 +363,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main id="main-content" tabIndex={-1} className="safe-bottom-app min-w-0 overflow-x-hidden bg-background/70 p-3 outline-none sm:p-4 lg:p-5 lg:pb-6">
+        <main id="main-content" tabIndex={-1} className="safe-bottom-app min-w-0 overflow-x-hidden bg-[hsl(210_33%_97.5%)] p-3 outline-none sm:p-4 lg:p-5 lg:pb-6 dark:bg-background">
           {writeAccessNotice ? (
             <div
               role="status"

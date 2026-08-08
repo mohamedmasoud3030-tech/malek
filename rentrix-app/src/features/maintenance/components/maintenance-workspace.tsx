@@ -152,7 +152,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     <Button
       type="button"
       onClick={controller.openCreateForm}
-      className="min-h-11"
+      className="min-h-11 bg-info text-white hover:bg-info/90"
     >
       <PlusCircle className="me-2 size-4" aria-hidden="true" />
       طلب صيانة جديد

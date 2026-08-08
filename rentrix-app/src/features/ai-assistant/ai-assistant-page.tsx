@@ -153,7 +153,7 @@ export function AiAssistantPage() {
   }
 
   return (
-    <PageLayout size="wide" dir="rtl" lang="ar">
+    <PageLayout size="wide" dir="rtl" lang="ar" visualVariant="malek-pro">
       <PageHeader
         title="مساعد الذكاء الاصطناعي"
         description={`مساعد تشغيلي قراءة فقط يستخدم ملخصات آمنة من بيانات ${APP_BRAND_NAME} المسموح لحسابك بقراءتها، ولا ينفذ أي تعديل أو SQL.`}

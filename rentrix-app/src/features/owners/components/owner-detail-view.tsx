@@ -72,7 +72,7 @@ export function OwnerDetailView({
   });
 
   return (
-    <PageLayout dir="rtl" size="wide">
+    <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
       <EntityDetailHeader
         title={getOwnerDisplayName(owner)}
         subtitle="ملف المالك وبياناته والعقارات المرتبطة والتسويات المتاحة."

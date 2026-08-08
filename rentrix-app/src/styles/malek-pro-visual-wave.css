@@ -135,7 +135,7 @@
 
 /* App chrome remains independent from dashboard and feature-wave ownership. */
 [data-app-shell] {
-  background: hsl(210 33% 98%);
+  background: hsl(210 33% 97.5%);
 }
 
 [data-theme='dark'] [data-app-shell] {
@@ -143,11 +143,19 @@
 }
 
 [data-app-shell] [data-app-shell-header] {
-  box-shadow: 0 1px 0 hsl(214 25% 87% / 0.8), 0 8px 24px -24px rgb(15 23 42 / 0.32);
+  box-shadow: 0 1px 0 hsl(214 25% 87% / 0.7), 0 10px 28px -24px rgb(15 23 42 / 0.18);
 }
 
 [data-theme='dark'] [data-app-shell] [data-app-shell-header] {
   box-shadow: 0 1px 0 hsl(218 22% 21% / 0.9), 0 8px 24px -24px rgb(0 0 0 / 0.75);
+}
+
+[data-app-shell] main#main-content {
+  background: hsl(210 33% 97.5%);
+}
+
+[data-theme='dark'] [data-app-shell] main#main-content {
+  background: hsl(222 37% 8%);
 }
 
 [data-app-shell] [data-sidebar] {
@@ -232,22 +240,20 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: hsl(222 32% 16%);
-  color: rgb(248 250 252 / 0.92);
+  background: hsl(var(--muted) / 0.88);
+  color: hsl(var(--foreground) / 0.85);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
-  height: 3.25rem;
-  /* Win over the generic page-polish `thead th` surface so the dark command
-     header keeps its intended contrast in every theme (was: muted grey text
-     on a washed muted/0.4 overlay — a real contrast defect). */
+  height: 3rem;
   background: transparent;
-  color: rgb(248 250 252 / 0.92);
-  border-color: rgb(255 255 255 / 0.08);
-  border-bottom-color: rgb(255 255 255 / 0.08);
+  color: hsl(var(--foreground) / 0.78);
+  border-color: hsl(var(--border) / 0.55);
+  border-bottom-color: hsl(var(--border) / 0.65);
   font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.01em;
+  text-transform: none;
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr {
@@ -261,6 +267,15 @@
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] tbody tr:hover {
   background: hsl(var(--primary) / 0.075);
   box-shadow: inset 4px 0 0 hsl(var(--primary));
+}
+
+[data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead {
+  background: hsl(var(--muted) / 0.35);
+  color: hsl(var(--foreground) / 0.92);
+}
+[data-theme='dark'] [data-operational-route='true'] [data-visual-wave='malek-pro'] [data-entity-table] thead th {
+  color: hsl(var(--foreground) / 0.8);
+  border-bottom-color: hsl(var(--border) / 0.55);
 }
 
 [data-operational-route='true'] [data-visual-wave='malek-pro'] [role='tablist'] {
