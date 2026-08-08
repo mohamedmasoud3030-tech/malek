@@ -1,20 +1,20 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
+import type { AuthorizationContext } from '@/features/auth/permissions';
 import { FINANCE_VIEWS, isViewPermitted } from './financials-page';
 
 const readPage = () => readFileSync(new URL('./financials-page.tsx', import.meta.url), 'utf8');
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 
 vi.mock('@/features/auth/permissions', async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = await importOriginal() as Record<string, unknown>;
   return {
     ...actual,
-    canAccess: (context: any, permission: string) => {
-      if (!context || !context.permissions) return false;
-      return context.permissions.has(permission);
-    }
+    canAccess: (context: AuthorizationContext & { permissions?: ReadonlySet<string> } | null | undefined, permission: string) => Boolean(context?.permissions?.has(permission)),
   };
 });
+
+type TestAuthorizationContext = AuthorizationContext & Readonly<{ permissions: ReadonlySet<string> }>;
 
 describe('/financials consolidated operational entry', () => {
   it('keeps one Arabic finance page identity', () => {
@@ -51,8 +51,10 @@ describe('/financials consolidated operational entry', () => {
 });
 
 describe('Finance view-level permissions and defense-in-depth', () => {
-  const mockAuth = (permissions: string[]) => ({
-    user: { id: 'test' },
+  const mockAuth = (permissions: string[]): TestAuthorizationContext => ({
+    userId: 'test',
+    email: 'test@example.com',
+    role: 'USER',
     permissions: new Set(permissions),
   });
 
@@ -60,11 +62,8 @@ describe('Finance view-level permissions and defense-in-depth', () => {
     const expensesView = FINANCE_VIEWS.find(v => v.id === 'expenses')!;
     const commissionsView = FINANCE_VIEWS.find(v => v.id === 'commissions')!;
 
-    // expenses.view does not imply commissions.view
     expect(isViewPermitted(mockAuth(['expenses.view']), expensesView)).toBe(true);
     expect(isViewPermitted(mockAuth(['expenses.view']), commissionsView)).toBe(false);
-
-    // commissions.view does not imply expenses.view
     expect(isViewPermitted(mockAuth(['commissions.view']), expensesView)).toBe(false);
     expect(isViewPermitted(mockAuth(['commissions.view']), commissionsView)).toBe(true);
   });
@@ -73,11 +72,8 @@ describe('Finance view-level permissions and defense-in-depth', () => {
     const depositsView = FINANCE_VIEWS.find(v => v.id === 'deposits')!;
     const settlementsView = FINANCE_VIEWS.find(v => v.id === 'owner_settlements')!;
 
-    // deposits does not imply settlements
     expect(isViewPermitted(mockAuth(['financial.deposits.view']), depositsView)).toBe(true);
     expect(isViewPermitted(mockAuth(['financial.deposits.view']), settlementsView)).toBe(false);
-
-    // settlements does not imply deposits
     expect(isViewPermitted(mockAuth(['financial.owner_settlements.view']), depositsView)).toBe(false);
     expect(isViewPermitted(mockAuth(['financial.owner_settlements.view']), settlementsView)).toBe(true);
   });
@@ -90,21 +86,14 @@ describe('Finance view-level permissions and defense-in-depth', () => {
     expect(isViewPermitted(mockAuth([]), invoicesView)).toBe(true);
     expect(isViewPermitted(mockAuth([]), receiptsView)).toBe(true);
     expect(isViewPermitted(mockAuth([]), arrearsView)).toBe(false);
-
     expect(isViewPermitted(mockAuth(['arrears.view']), arrearsView)).toBe(true);
   });
 
   it('unmounts a previously permitted view when permissions are revoked at runtime (role-change safety)', () => {
     const arrearsView = FINANCE_VIEWS.find(v => v.id === 'arrears')!;
-    
-    // 1. Mount permitted view
     let currentAuth = mockAuth(['arrears.view']);
     expect(isViewPermitted(currentAuth, arrearsView)).toBe(true);
-
-    // 2. Remove that permission (runtime role-change)
     currentAuth = mockAuth([]);
-
-    // 3. Rerender and prove its workspace component is unmounted / forbidden
     expect(isViewPermitted(currentAuth, arrearsView)).toBe(false);
   });
 });
@@ -116,19 +105,12 @@ describe('Finance structural coherence boundary checks (Point 3)', () => {
     const bankReconciliation = FINANCE_VIEWS.find(v => v.id === 'bank_reconciliation')!;
     const invoices = FINANCE_VIEWS.find(v => v.id === 'invoices')!;
 
-    // expenses + owner_settlements mismatch
     expect(ownerSettlements.sectionId).not.toBe('expenses');
     expect(ownerSettlements.sectionId).toBe('funds');
-
-    // funds + commissions mismatch
     expect(commissions.sectionId).not.toBe('funds');
     expect(commissions.sectionId).toBe('expenses');
-
-    // collections + bank_reconciliation mismatch
     expect(bankReconciliation.sectionId).not.toBe('collections');
     expect(bankReconciliation.sectionId).toBe('banking');
-
-    // banking + invoices mismatch
     expect(invoices.sectionId).not.toBe('banking');
     expect(invoices.sectionId).toBe('collections');
   });
@@ -137,7 +119,7 @@ describe('Finance structural coherence boundary checks (Point 3)', () => {
 describe('Receipt detail print exception and redirect contract', () => {
   it('redirects /receipts to consolidated receipt register when no receiptId is present', () => {
     expect(routeTreeSource).toContain("path: '/receipts'");
-    expect(routeTreeSource).toContain("receiptId");
+    expect(routeTreeSource).toContain('receiptId');
     expect(routeTreeSource).toContain("section: 'collections', view: 'receipts'");
   });
 
