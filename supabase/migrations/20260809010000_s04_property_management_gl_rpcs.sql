@@ -716,51 +716,131 @@ security definer
 set search_path = public, pg_temp
 as $fn$
 declare
-  v_company_id     uuid    := (p_payload->>'company_id')::uuid;
-  v_deposit_id     uuid    := (p_payload->>'deposit_id')::uuid;
-  v_target_type    text    := p_payload->>'target_type';
-  v_amount         numeric := public.gl_pm_round_omr((p_payload->>'amount')::numeric);
-  v_effective_date date    := (p_payload->>'effective_date')::date;
-  v_dep_id    text;
+  v_company_id uuid := (p_payload->>'company_id')::uuid;
+  v_deposit_id text := nullif(btrim(coalesce(p_payload->>'deposit_id', '')), '');
+  v_target_type text := nullif(btrim(coalesce(p_payload->>'target_type', '')), '');
+  v_request_id text := coalesce(
+    nullif(btrim(coalesce(p_payload->>'request_id', '')), ''),
+    v_deposit_id || ':apply:' || coalesce(v_target_type, '')
+  );
+  v_amount numeric := public.gl_pm_round_omr((p_payload->>'amount')::numeric);
+  v_effective_date date := (p_payload->>'effective_date')::date;
+  v_deposit public.tenant_deposits%rowtype;
+  v_collection_role text;
+  v_deposit_beneficiary text;
+  v_dep_id text;
   v_target_id text;
   v_target_no text;
-  v_result    jsonb;
+  v_reason text;
+  v_transaction_created boolean := false;
+  v_result jsonb;
 begin
-  if v_company_id is null or v_deposit_id is null or v_effective_date is null then
-    raise exception 'GL_PM_DEPOSIT_APP: company_id, deposit_id, and effective_date required' using errcode = '22023';
+  if v_company_id is null or v_deposit_id is null or v_target_type is null or v_effective_date is null then
+    raise exception 'GL_PM_DEPOSIT_APP: company_id, deposit_id, target_type, and effective_date required' using errcode = '22023';
   end if;
   if v_amount is null or v_amount <= 0 then
     raise exception 'GL_PM_DEPOSIT_APP: amount must be > 0' using errcode = '22023';
   end if;
 
-  v_target_no := case v_target_type
-    when 'rent_receivable' then '1201'
-    when 'owner_funds'     then '2000'
-    when 'damage'          then '4300'
-    else null
-  end;
+  -- The application target is never caller-authoritative. Lock the actual
+  -- deposit and derive the legal recipient from the contract's frozen terms.
+  select d.*, c.collection_role_snapshot, v.deposit_beneficiary
+    into v_deposit, v_collection_role, v_deposit_beneficiary
+    from public.tenant_deposits d
+    join public.contracts c
+      on c.id::text = d.contract_id::text
+     and c.company_id = v_company_id
+     and c.deleted_at is null
+    left join public.owner_agreement_versions v
+      on v.id = c.agreement_version_id
+     and v.company_id = v_company_id
+   where d.id = v_deposit_id
+     and d.company_id = v_company_id
+     and d.deleted_at is null
+   for update of d;
 
-  if v_target_no is null then
-    raise exception 'GL_PM_DEPOSIT_APP: target_type must be rent_receivable, owner_funds, or damage' using errcode = '22023';
+  if not found then
+    raise exception 'GL_PM_DEPOSIT_APP: deposit not found for company' using errcode = '42501';
+  end if;
+  if v_deposit.remaining_amount < v_amount then
+    raise exception 'GL_PM_DEPOSIT_APP: amount exceeds remaining deposit balance' using errcode = '22023';
   end if;
 
-  v_dep_id    := public.gl_pm_require_account(v_company_id, '2200');
+  case v_target_type
+    when 'rent_arrears' then
+      if v_collection_role <> 'OFFICE_IS_CREDITOR' then
+        raise exception 'GL_PM_DEPOSIT_APP: rent arrears use 2000 Owner Funds Payable for OWNER_IS_CREDITOR contracts' using errcode = '22023';
+      end if;
+      v_target_no := '1201';
+      v_reason := 'unpaid_arrears';
+    when 'owner_arrears' then
+      if v_collection_role <> 'OWNER_IS_CREDITOR' then
+        raise exception 'GL_PM_DEPOSIT_APP: owner_arrears is only valid for OWNER_IS_CREDITOR contracts' using errcode = '22023';
+      end if;
+      v_target_no := '2000';
+      v_reason := 'unpaid_arrears';
+    when 'damage' then
+      if v_deposit_beneficiary = 'OWNER' then
+        v_target_no := '2000';
+      elsif v_deposit_beneficiary = 'OFFICE' then
+        v_target_no := '4300';
+      else
+        raise exception 'GL_PM_DEPOSIT_APP: damage beneficiary is not fixed in the contract agreement snapshot' using errcode = '23514';
+      end if;
+      v_reason := 'maintenance_damage';
+    else
+      raise exception 'GL_PM_DEPOSIT_APP: target_type must be rent_arrears, owner_arrears, or damage' using errcode = '22023';
+  end case;
+
+  v_dep_id := public.gl_pm_require_account(v_company_id, '2200');
   v_target_id := public.gl_pm_require_account(v_company_id, v_target_no);
 
   v_result := public.post_journal_event(jsonb_build_object(
-    'company_id',    v_company_id,
-    'source_type',   'pm_deposit_application',
-    'source_id',     v_deposit_id::text,
-    'event_id',      'apply:' || v_target_type,
+    'company_id', v_company_id,
+    'source_type', 'pm_deposit_application',
+    'source_id', v_deposit_id,
+    'event_id', 'apply:' || v_target_type,
     'effective_date', v_effective_date,
-    'description',   'Deposit applied to ' || v_target_type,
+    'description', 'Deposit applied to ' || v_target_type,
     'lines', jsonb_build_array(
-      jsonb_build_object('account_id', v_dep_id,    'debit', v_amount, 'credit', 0),
+      jsonb_build_object('account_id', v_dep_id, 'debit', v_amount, 'credit', 0),
       jsonb_build_object('account_id', v_target_id, 'debit', 0, 'credit', v_amount)
     )
   ));
 
-  return jsonb_build_object('step', 'deposit_application', 'deposit_id', v_deposit_id, 'target_type', v_target_type, 'amount', v_amount, 'batch', v_result);
+  insert into public.deposit_transactions (
+    deposit_id, type, amount, reason, description, request_id
+  ) values (
+    v_deposit_id, 'deduction', v_amount, v_reason,
+    'GL deposit application: ' || v_target_type, v_request_id
+  )
+  on conflict (request_id) do nothing;
+
+  get diagnostics v_transaction_created = row_count > 0;
+  if v_transaction_created then
+    update public.tenant_deposits
+       set deducted_amount = public.gl_pm_round_omr(deducted_amount + v_amount),
+           remaining_amount = public.gl_pm_round_omr(remaining_amount - v_amount),
+           status = case
+             when public.gl_pm_round_omr(remaining_amount - v_amount) = 0
+               then case when v_reason = 'unpaid_arrears' then 'forfeited_arrears' else 'forfeited_damage' end
+             else 'partially_deducted'
+           end,
+           settled_date = case when public.gl_pm_round_omr(remaining_amount - v_amount) = 0 then v_effective_date else settled_date end,
+           updated_at = now()
+     where id = v_deposit_id
+       and company_id = v_company_id;
+  end if;
+
+  return jsonb_build_object(
+    'step', 'deposit_application',
+    'deposit_id', v_deposit_id,
+    'target_type', v_target_type,
+    'target_account_no', v_target_no,
+    'amount', v_amount,
+    'idempotent', not v_transaction_created,
+    'batch', v_result
+  );
 end;
 $fn$;
 
