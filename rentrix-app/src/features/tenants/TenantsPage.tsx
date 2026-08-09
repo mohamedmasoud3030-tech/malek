@@ -5,7 +5,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { EntityActions } from '@/components/ui/entity-actions';
-import { useLocation, useNavigate } from '@tanstack/react-router';
+import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { MobileCard } from '@/components/ui/mobile-card';
@@ -103,7 +103,8 @@ type TenantsWorkspaceProps = Readonly<{
 export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const navigate = useNavigate();
   const dialogLocation = useLocation();
-  const [search, setSearch] = useState('');
+  const urlSearch = (useSearch({ strict: false }) as any).search || '';
+  const [search, setSearch] = useState(urlSearch);
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();

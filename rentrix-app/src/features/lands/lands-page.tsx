@@ -1,5 +1,6 @@
 import { useCrudFormState } from '@/hooks/use-crud-form-state';
 import { useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
 import { LandsView } from './components/lands-view';
 import { useArchiveLand, useLands, useSaveLand } from './use-lands';
 import { landFormSchema, type LandFormValues } from './land-schema';
@@ -40,7 +41,8 @@ export type LandsWorkspaceProps = Readonly<{
 }>;
 
 export function LandsWorkspace({ embedded = false }: LandsWorkspaceProps) {
-  const [filters, setFilters] = useState<LandFilters>({ query: '', status: 'all' });
+  const urlSearch = (useSearch({ strict: false }) as any).search || '';
+  const [filters, setFilters] = useState<LandFilters>({ query: urlSearch, status: 'all' });
   const [formError, setFormError] = useState<string | null>(null);
   const formState = useCrudFormState<LandRecord, LandFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLand });
   const landsQuery = useLands(filters);

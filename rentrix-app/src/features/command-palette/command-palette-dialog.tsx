@@ -45,6 +45,13 @@ export function CommandPaletteDialog() {
 
   const handleSelectEntity = (item: typeof entities[number]) => {
     close();
+    if (item.category === 'tenants' || item.category === 'lands') {
+      void navigate({
+        to: item.route,
+        search: { search: item.title } as any,
+      });
+      return;
+    }
     // Navigate with backgroundLocation so detail routes automatically render as Dialogs!
     void navigate({
       to: item.route,

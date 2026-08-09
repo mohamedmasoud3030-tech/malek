@@ -1,7 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
+import { useActiveCompanyId } from '@/hooks/use-company';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useCommandPaletteStore } from './command-palette-store';
 import { STATIC_COMMANDS, type StaticCommand } from './command-registry';
 
 export interface SearchResultItem {
@@ -23,6 +26,20 @@ export function normalizeText(str: string): string {
     .replace(/\s+/g, ' ');
 }
 
+export function escapePostgREST(str: string): string {
+  if (!str) return '';
+  // Escape backslashes first, then commas, parentheses, colons, dots, percents, and underscores
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/,/g, '\\,')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+    .replace(/:/g, '\\:')
+    .replace(/\./g, '\\.')
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_');
+}
+
 // Perform simple match ranking
 export function scoreResult(title: string, subtitle: string, searchNormalized: string): number {
   const tNorm = normalizeText(title);
@@ -35,11 +52,13 @@ export function scoreResult(title: string, subtitle: string, searchNormalized: s
 }
 
 export function useCommandSearch(query: string) {
-  const { canAccess, isAuthenticated } = useAuth();
+  const { canAccess, isAuthenticated, authorization } = useAuth();
+  const activeCompanyId = useActiveCompanyId();
+  const { isOpen } = useCommandPaletteStore();
   const trimmed = query.trim();
   const normalizedQuery = normalizeText(trimmed);
 
-  // 1. Static commands search (fast & local, respects permissions)
+  // Instant local search for Static commands (respects permissions)
   const filteredStaticCommands = useMemo(() => {
     if (!isAuthenticated) return [];
     return STATIC_COMMANDS.filter((cmd) => {
@@ -55,26 +74,24 @@ export function useCommandSearch(query: string) {
     });
   }, [normalizedQuery, trimmed, canAccess, isAuthenticated]);
 
-  // 2. Global Entity Search (React Query server-state search with debounce handled by caller or state)
-  const isQueryLongEnough = trimmed.length >= 2;
+  // Debounce the network query for entities
+  const debouncedQuery = useDebounce(trimmed, 300);
+  const isQueryLongEnough = debouncedQuery.length >= 2;
+
+  const canAccessOwners = canAccess('owners.hub.view');
+  const canAccessLands = canAccess('lands.view');
 
   const entitySearchQuery = useQuery({
-    queryKey: ['global-entity-search', trimmed],
+    // Cache is strictly scoped to activeCompanyId and userId to prevent cache bleed
+    queryKey: ['global-entity-search', activeCompanyId, authorization?.userId, debouncedQuery],
     queryFn: async ({ signal }): Promise<SearchResultItem[]> => {
-      if (!isQueryLongEnough) return [];
+      if (!isQueryLongEnough || !isOpen) return [];
 
-      const escaped = trimmed.replaceAll('%', '\\%').replaceAll('_', '\\_');
+      const escaped = escapePostgREST(debouncedQuery);
       const term = `%${escaped}%`;
 
-      // Concurrent execution of all 6 entity queries with abort signal support
-      const [
-        peopleRes,
-        propertiesRes,
-        unitsRes,
-        contractsRes,
-        ownersRes,
-        landsRes,
-      ] = await Promise.all([
+      // Concurrent execution of authorized entity queries with abort signal support
+      const promises = [
         supabase
           .from('people')
           .select('id, full_name, phone, email, type')
@@ -98,24 +115,53 @@ export function useCommandSearch(query: string) {
           .abortSignal(signal),
         supabase
           .from('contracts')
-          .select('id, status, start_date, end_date, properties:property_id(title), people:tenant_id(full_name)')
+          .select('id, status, start_date, end_date, properties:property_id!inner(title), people:tenant_id!inner(full_name)')
           .is('deleted_at', null)
-          .limit(15)
-          .abortSignal(signal),
-        supabase
-          .from('owners')
-          .select('id, full_name, display_name, phone, email')
-          .is('deleted_at', null)
-          .or(`full_name.ilike.${term},display_name.ilike.${term},phone.ilike.${term},email.ilike.${term}`)
+          .or(`property_id.title.ilike.${term},tenant_id.full_name.ilike.${term}`) // Server-side contract search!
           .limit(5)
           .abortSignal(signal),
-        supabase
-          .from('lands')
-          .select('id, name, plot_no, location, category, status')
-          .or(`plot_no.ilike.${term},name.ilike.${term},location.ilike.${term}`)
-          .limit(5)
-          .abortSignal(signal),
-      ]);
+        canAccessOwners
+          ? supabase
+              .from('owners')
+              .select('id, full_name, display_name, phone, email')
+              .is('deleted_at', null)
+              .or(`full_name.ilike.${term},display_name.ilike.${term},phone.ilike.${term},email.ilike.${term}`)
+              .limit(5)
+              .abortSignal(signal)
+          : Promise.resolve({ data: [], error: null }),
+        canAccessLands
+          ? supabase
+              .from('lands')
+              .select('id, name, plot_no, location, category, status')
+              .or(`plot_no.ilike.${term},name.ilike.${term},location.ilike.${term}`)
+              .limit(5)
+              .abortSignal(signal)
+          : Promise.resolve({ data: [], error: null }),
+      ];
+
+      const [
+        peopleRes,
+        propertiesRes,
+        unitsRes,
+        contractsRes,
+        ownersRes,
+        landsRes,
+      ] = await Promise.all(promises);
+
+      // Explicit error handling: Fail search as a single unit on any response failure
+      const errors = [
+        peopleRes.error,
+        propertiesRes.error,
+        unitsRes.error,
+        contractsRes.error,
+        ownersRes.error,
+        landsRes.error,
+      ].filter(Boolean);
+
+      if (errors.length > 0) {
+        console.error('Supabase query error in command palette search:', errors[0]);
+        throw new Error(errors[0]?.message || 'تعذر جلب نتائج البحث من السيرفر');
+      }
 
       const results: SearchResultItem[] = [];
 
@@ -135,6 +181,7 @@ export function useCommandSearch(query: string) {
           title: p.full_name,
           subtitle,
           category: p.type === 'tenant' ? 'tenants' : 'people',
+          // Tenant redirects to tenants list filtered by search term for perfect navigation
           route: p.type === 'tenant' ? `/tenants` : `/people/${p.id}/edit`,
         });
       }
@@ -163,15 +210,8 @@ export function useCommandSearch(query: string) {
         });
       }
 
-      // ── Process Contracts (with client-side filtering and ranking)
-      const filteredContracts = contractsData.filter((c) => {
-        const propTitle = c.properties?.title ?? '';
-        const tenantName = c.people?.full_name ?? '';
-        const combined = `${propTitle} ${tenantName} ${c.status}`.toLowerCase();
-        return combined.includes(trimmed.toLowerCase());
-      });
-
-      for (const c of filteredContracts.slice(0, 5)) {
+      // ── Process Contracts
+      for (const c of contractsData) {
         const propTitle = c.properties?.title ?? '';
         const tenantName = c.people?.full_name ?? '';
         const statusLabel = c.status === 'active' ? 'نشط' : c.status === 'draft' ? 'مسودة' : 'منتهي';
@@ -207,14 +247,14 @@ export function useCommandSearch(query: string) {
         });
       }
 
-      // 3. Simple matching & ranking:
+      // Simple matching & ranking:
       return results.sort((a, b) => {
         const scoreA = scoreResult(a.title, a.subtitle, normalizedQuery);
         const scoreB = scoreResult(b.title, b.subtitle, normalizedQuery);
         return scoreB - scoreA;
       });
     },
-    enabled: isQueryLongEnough,
+    enabled: isOpen && isQueryLongEnough,
     staleTime: 5000,
   });
 
@@ -226,3 +266,4 @@ export function useCommandSearch(query: string) {
     error: entitySearchQuery.error,
   };
 }
+export default useCommandSearch;
