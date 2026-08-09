@@ -353,7 +353,7 @@ describe('Stage S04 — Property Management Accounting Lifecycle', () => {
   });
 
   it('proves Company B is 100% isolated from Company A transactions', async () => {
-    const { rows: bBatches } = await db.query(
+    const { rows: bBatches } = await db.query<{ n: number }>(
       `select count(*)::int as n from public.journal_batches where company_id = $1::uuid`,
       [COMPANY_B],
     );
