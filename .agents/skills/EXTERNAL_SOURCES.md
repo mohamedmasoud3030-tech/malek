@@ -12,6 +12,10 @@ Only one externally sourced skill remains from the upstream repos above:
 
 - `superpowers-systematic-debugging` (from obra/superpowers)
 
+Additional vendored skill:
+
+- `vibehub` from [oil-oil/vibe-hub-skill](https://github.com/oil-oil/vibe-hub-skill), revision `aa2f2add8397daae06c55f9ca9d75dc7eee6c08d` (2026-08-09)
+
 All `anthropics/skills` and `mattpocock/skills` copies remain removed. The `EXTERNAL_LICENSES/LICENSE-superpowers` file is retained for the remaining superpowers-sourced skill.
 
 The ECC-origin skills (`react-patterns`, `react-testing`, `postgres-patterns`, `database-migrations`, `security-review`, `error-handling`, `vite-patterns`, `browser-qa`, `design-system`, `frontend-a11y`) are not tracked against a specific upstream commit here; see each `SKILL.md` front matter for `metadata.origin`.
