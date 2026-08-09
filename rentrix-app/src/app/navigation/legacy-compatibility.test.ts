@@ -62,7 +62,6 @@ const REDIRECT_SPECS: Array<{ path: string; to: string; section?: string; view?:
   { path: '/communication', to: '/contracts', section: 'communication' },
   { path: '/utilities', to: '/maintenance', section: 'utilities' },
   { path: '/automation', to: '/maintenance', section: 'automation' },
-  { path: '/documents-vault', to: '/maintenance', section: 'documents_vault' },
   { path: '/finance/collections', to: '/financials', section: 'collections' },
   { path: '/finance/expenses', to: '/financials' }, // conditional: arrears vs expenses — don’t pin single section
   { path: '/finance/deposits', to: '/financials', section: 'funds' },

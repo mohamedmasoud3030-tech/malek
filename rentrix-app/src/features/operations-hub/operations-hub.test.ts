@@ -18,7 +18,6 @@ describe('operations hub contract', () => {
       'maintenance',
       'utilities',
       'automation',
-      'documents_vault',
     ]);
     expect(new Set(operationsHubSections.map((section) => section.id)).size).toBe(
       operationsHubSections.length,
@@ -27,14 +26,13 @@ describe('operations hub contract', () => {
 
   it('keeps authenticated-only tabs while filtering permission-gated tabs', () => {
     const denied = getVisibleOperationsHubSections(() => false);
-    expect(denied.map((section) => section.id)).toEqual(['utilities', 'documents_vault']);
+    expect(denied.map((section) => section.id)).toEqual(['utilities']);
 
     const granted = new Set<OperationsHubPermission>(['maintenance.view']);
     const visible = getVisibleOperationsHubSections((permission) => granted.has(permission));
     expect(visible.map((section) => section.id)).toEqual([
       'maintenance',
       'utilities',
-      'documents_vault',
     ]);
   });
 
@@ -70,7 +68,7 @@ describe('operations hub contract', () => {
 
     expect(routeDefinition('/maintenance')).not.toContain("requirePermission('maintenance.view')");
     expect(routeDefinition('/utilities')).toContain("section: 'utilities'");
-    expect(routeDefinition('/documents-vault')).toContain("section: 'documents_vault'");
+    expect(routeDefinition('/documents-vault')).toContain("_protected.documents-vault");
     expect(routeDefinition('/automation')).toContain("requirePermission('automation.view')");
   });
 });
@@ -92,7 +90,6 @@ describe('operations hub model', () => {
       'maintenance',
       'utilities',
       'automation',
-      'documents_vault',
     ]);
   });
 

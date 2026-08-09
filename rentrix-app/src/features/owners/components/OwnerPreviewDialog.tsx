@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Building2, DoorOpen, FileText, UserRoundCog, WalletCards } from 'lucide-react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
@@ -104,6 +105,8 @@ export function OwnerPreviewDialog({
               ) : <p className="text-sm text-muted-foreground">لا توجد عقارات مرتبطة بهذا المالك.</p>}
             </CardContent>
           </Card>
+
+          <ContextualDocumentsSection entityType="owner" entityId={owner.id} entityLabel="المالك" />
 
           {canViewSettlements && settlementsQuery.data ? (
             <Card>

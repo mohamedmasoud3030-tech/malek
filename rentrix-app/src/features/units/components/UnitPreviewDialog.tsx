@@ -1,5 +1,6 @@
 import { Building2, DoorOpen } from 'lucide-react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
@@ -70,6 +71,7 @@ export function UnitPreviewDialog({
               ]}
             />
           </div>
+          <ContextualDocumentsSection entityType="unit" entityId={unit.id} entityLabel="الوحدة" />
         </div>
       ) : null}
     </EntityPreviewDialog>

@@ -1,6 +1,7 @@
 import { AlertTriangle, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { PageLayout } from '@/components/layout/page-layout';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
@@ -107,6 +108,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
+  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const params = useMemo(() => ({ search, page, pageSize }), [page, search]);
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
@@ -221,7 +223,9 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
               emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
               emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
               pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
+              onRowClick={(tenant) => setSelectedTenantId(tenant.person.id)}
             />
+            {selectedTenantId ? <ContextualDocumentsSection entityType="tenant" entityId={selectedTenantId} entityLabel="المستأجر" /> : null}
           </AsyncContentState>
         </div>
       </section>

@@ -1,6 +1,7 @@
 import { Archive, Edit, Layers, MapPinned, Plus, Tag, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
@@ -94,6 +95,7 @@ export function LandsView({
   embedded = false,
 }: Props) {
   const [archiveCandidate, setArchiveCandidate] = useState<LandRecord | null>(null);
+  const [selectedLandId, setSelectedLandId] = useState<string | null>(null);
   const ownersQuery = useOwnerOptions();
   const owners = ownersQuery.data ?? [];
   const activeRows = rows.filter((row) => row.status !== 'archived').length;
@@ -204,7 +206,9 @@ export function LandsView({
           rows={rows}
           columns={columns}
           keyOf={(row) => row.id}
+          onRowClick={(row) => setSelectedLandId(row.id)}
         />
+        {selectedLandId ? <ContextualDocumentsSection entityType="land" entityId={selectedLandId} entityLabel="الأرض" /> : null}
       </AsyncContentState>
 
       <EntityForm.Overlay

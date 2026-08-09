@@ -37,14 +37,13 @@ function makeProbe(name: string) {
 vi.mock('@/features/maintenance/components/maintenance-workspace', () => ({ MaintenanceWorkspace: makeProbe('maintenance') }));
 vi.mock('@/features/utilities/components/utilities-workspace', () => ({ UtilitiesWorkspace: makeProbe('utilities') }));
 vi.mock('@/features/automation/components/automation-workspace', () => ({ AutomationWorkspace: makeProbe('automation') }));
-vi.mock('@/features/documents-vault/components/documents-vault-workspace', () => ({ DocumentsVaultWorkspace: makeProbe('documents_vault') }));
 
 const { OperationsHubWorkspace } = await import('./operations-hub-workspace');
 
 type RenderOptions = Readonly<{
   initialUrl?: string;
   role?: AuthorizationRole | null;
-  defaultSection?: 'maintenance' | 'utilities' | 'automation' | 'documents_vault';
+  defaultSection?: 'maintenance' | 'utilities' | 'automation';
   mode?: 'standalone' | 'embedded';
 }>;
 
@@ -121,7 +120,7 @@ describe('operations hub — standalone rendering', () => {
   it('renders the tab bar with one tab per permitted section', async () => {
     renderHub();
     await screen.findByTestId('maintenance-body');
-    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    expect(screen.getAllByRole('tab')).toHaveLength(3);
   });
 
   it('embeds child workspaces in embedded mode', async () => {
@@ -210,7 +209,7 @@ describe('operations hub — permission filtering', () => {
 
     const tabNames = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
     expect(tabNames.join(' ')).toContain('المرافق');
-    expect(tabNames.join(' ')).toContain('خزينة');
+    expect(tabNames.join(' ')).not.toContain('خزينة');
     expect(tabNames.join(' ')).not.toContain('الصيانة');
     expect(tabNames.join(' ')).not.toContain('الأتمتة');
   });
@@ -244,7 +243,7 @@ describe('operations hub — no duplicated layout or header', () => {
     const { container } = renderHub();
     await screen.findByTestId('maintenance-body');
 
-    for (const tabName of [/المرافق والعدادات/, /الأتمتة والتنبيهات/, /خزينة المستندات/, /الصيانة/]) {
+    for (const tabName of [/المرافق والعدادات/, /الأتمتة والتنبيهات/, /الصيانة/]) {
       await user.click(screen.getByRole('tab', { name: tabName }));
       await waitFor(() => {
         expect(pageLayoutCount(container)).toBe(1);
