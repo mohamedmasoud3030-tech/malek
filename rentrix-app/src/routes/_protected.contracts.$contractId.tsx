@@ -24,7 +24,10 @@ export function ContractDetailRouteComponent() {
           contractId={contractId}
           open
           onOpenChange={(open) => {
-            if (!open) void navigate({ to: '/contracts' });
+            if (!open) {
+              if (isDialog) window.history.back();
+              else void navigate({ to: '/contracts' });
+            }
           }}
         />
       </>

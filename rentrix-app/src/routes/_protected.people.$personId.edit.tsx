@@ -1,20 +1,22 @@
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import { PeopleListPage } from '@/features/people/people-list-page';
+import { useBackgroundLocation } from '@/app/router/background-location';
 
 /**
  * /people/$personId/edit — quick-edit journey.
  *
- * Wave A (UX simplification): the edit surface is the same compact centered
- * modal used by the directory (PersonFormModal), rendered over the people
- * workspace instead of a standalone full page. The user never loses the
- * directory context; cancel/close returns to it directly.
+ * Route-native dialog: internal from /people shows modal over list,
+ * direct/refresh shows same modal over list (no blank) with fallback to /people.
  */
 export function PersonEditRouteComponent() {
   const { personId } = useParams({ strict: false }) as { personId: string };
   const navigate = useNavigate();
+  const background = useBackgroundLocation();
+  const isDialog = background !== null && background.pathname === '/people';
   const closeToDirectory = () => {
-    void navigate({ to: '/people' });
+    if (isDialog) window.history.back();
+    else void navigate({ to: '/people' });
   };
 
   if (!personId) {

@@ -1,20 +1,22 @@
 import { useNavigate } from '@tanstack/react-router';
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import { PeopleListPage } from '@/features/people/people-list-page';
+import { useBackgroundLocation } from '@/app/router/background-location';
 
 /**
  * /people/new — quick-create journey.
  *
- * Wave A (UX simplification): this route no longer renders a standalone
- * full-page form. It renders the people directory workspace with the compact
- * centered create modal on top, so the user keeps workspace context and lands
- * back in the directory on close/cancel. Business logic, validation, and
- * permissions are unchanged — they live in PersonFormModal.
+ * Route-native dialog: internal navigation from /people shows modal over list
+ * (background preserved), direct/refresh shows same modal over list (no blank)
+ * with close falling back to /people. Business logic unchanged.
  */
 export function PersonNewRouteComponent() {
   const navigate = useNavigate();
+  const background = useBackgroundLocation();
+  const isDialog = background !== null && background.pathname === '/people';
   const closeToDirectory = () => {
-    void navigate({ to: '/people' });
+    if (isDialog) window.history.back();
+    else void navigate({ to: '/people' });
   };
 
   return (

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const contractTable = readFileSync(new URL('../../features/contracts/components/ContractTable.tsx', import.meta.url), 'utf8');
@@ -11,11 +11,13 @@ const ownerWorkspace = readFileSync(new URL('../../features/owners/components/ow
 const maintenanceWorkspace = readFileSync(new URL('../../features/maintenance/components/maintenance-workspace.tsx', import.meta.url), 'utf8');
 const maintenanceOverlay = readFileSync(new URL('../../features/maintenance/components/maintenance-detail-resolve-overlays.tsx', import.meta.url), 'utf8');
 const previewDialog = readFileSync(new URL('./entity-preview-dialog.tsx', import.meta.url), 'utf8');
-const previewHost = readFileSync(new URL('./entity-preview-host.tsx', import.meta.url), 'utf8');
 const contractDetailRoute = readFileSync(new URL('../../routes/_protected.contracts.$contractId.tsx', import.meta.url), 'utf8');
 const ownerDetailRoute = readFileSync(new URL('../../routes/_protected.owners.$ownerId.tsx', import.meta.url), 'utf8');
 const propertyDetailRoute = readFileSync(new URL('../../routes/_protected.properties.$propertyId.index.tsx', import.meta.url), 'utf8');
 const unitDetailRoute = readFileSync(new URL('../../routes/_protected.properties.$propertyId.units.$unitId.tsx', import.meta.url), 'utf8');
+const backgroundLocation = readFileSync(new URL('../../app/router/background-location.tsx', import.meta.url), 'utf8');
+const legacyRedirect = readFileSync(new URL('../../app/router/legacy-preview-redirect.tsx', import.meta.url), 'utf8');
+const protectedRoute = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
 
 describe('unified detail preview contract', () => {
   it('uses one shared large MALEK Pro preview surface for record details', () => {
@@ -55,11 +57,17 @@ describe('unified detail preview contract', () => {
     expect(maintenanceOverlay).not.toContain('title="تفاصيل طلب الصيانة"');
   });
 
-  it('global preview host supports all canonical entity detail kinds', () => {
-    expect(previewHost).toContain("request?.kind === 'property'");
-    expect(previewHost).toContain("request?.kind === 'unit'");
-    expect(previewHost).toContain("request?.kind === 'contract'");
-    expect(previewHost).toContain("request?.kind === 'owner'");
+  it('Phase 3.1: global event bus deleted, replaced by route-native background location', () => {
+    expect(existsSync(new URL('./entity-preview-events.ts', import.meta.url))).toBe(false);
+    expect(existsSync(new URL('./entity-preview-host.tsx', import.meta.url))).toBe(false);
+    expect(backgroundLocation).toContain('BackgroundLocationProvider');
+    expect(backgroundLocation).toContain('useBackgroundLocation');
+    expect(backgroundLocation).toContain('backgroundLocation');
+    expect(legacyRedirect).toContain('previewKind');
+    expect(legacyRedirect).toContain('previewId');
+    expect(protectedRoute).toContain('BackgroundLocationProvider');
+    expect(protectedRoute).toContain('LegacyPreviewRedirect');
+    expect(protectedRoute).not.toContain('EntityPreviewHost');
   });
 
   it('dedicated entity detail routes are route-native (Phase 3: dialog over background vs full page)', () => {

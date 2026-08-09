@@ -5,7 +5,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { EntityActions } from '@/components/ui/entity-actions';
-import { openEntityPreview } from '@/components/ui/entity-preview-events';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { MobileCard } from '@/components/ui/mobile-card';
@@ -50,13 +50,15 @@ function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
 }
 
 function TenantSafeLinks({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void }>) {
+  const navigate = useNavigate();
+  const location = useLocation();
   return (
     <EntityActions className="flex flex-wrap gap-2">
       <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
         <Edit className="me-1 size-4" />تعديل
       </Button>
       {tenant.primaryContractId !== null && (
-        <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEntityPreview({ kind: 'contract', id: tenant.primaryContractId! })}>
+        <Button variant="secondary" className="min-h-11 px-3" onClick={() => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: location } as unknown as Record<string, unknown> })}>
           <FileText className="me-1 size-4" />فتح العقد
         </Button>
       )}
@@ -100,6 +102,8 @@ type TenantsWorkspaceProps = Readonly<{
 }>;
 
 export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
+  const navigate = useNavigate();
+  const dialogLocation = useLocation();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
@@ -162,7 +166,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
             <Edit className="me-1 size-4" />تعديل
           </Button>
           {tenant.primaryContractId !== null && (
-            <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEntityPreview({ kind: 'contract', id: tenant.primaryContractId! })}>
+            <Button variant="secondary" className="min-h-11 px-3" onClick={() => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: dialogLocation } as unknown as Record<string, unknown> })}>
               <FileText className="me-1 size-4" />العقد
             </Button>
           )}
@@ -281,6 +285,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
 }
 
 export function TenantsPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   return <TenantsWorkspace />;
 }
 

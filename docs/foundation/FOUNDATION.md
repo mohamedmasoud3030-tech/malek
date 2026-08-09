@@ -1,7 +1,7 @@
 # MALEK — Foundation / IA Contract / Migration Safety — Phase 1+2
 
-> **Status:** Phase 3 — Route-native entity dialogs completed. People/Lands/Commissions canonical + Contracts/Properties/Units/Owners now route-native (dialog over background vs full page). Foundation contracts updated, no business logic/schema change.
-> **Phase 3 Commit baseline:** on top of Phase 2 commit `62ad49a`. Date: 2026-08-09
+> **Status:** Phase 3.1 — Route-native hardening completed. BackgroundLocation now search-aware + state-aware (nested dialogs, same pathname different search), Event Bus deleted, Legacy preview query → canonical, Close uses history.back. Foundation contracts updated, no business logic/schema change.
+> **Phase 3.1 Commit baseline:** on top of Phase 3 commit `fdd1115`. Date: 2026-08-09
 
 ---
 

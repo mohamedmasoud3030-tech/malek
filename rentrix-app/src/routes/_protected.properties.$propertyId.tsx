@@ -26,7 +26,10 @@ export function PropertyDetailRouteComponent() {
         propertyId={propertyId}
         open
         onOpenChange={(open) => {
-          if (!open) void navigate({ to: '/properties' });
+          if (!open) {
+            if (isDialog) window.history.back();
+            else void navigate({ to: '/properties' });
+          }
         }}
       />
     </>

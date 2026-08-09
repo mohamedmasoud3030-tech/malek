@@ -23,7 +23,10 @@ export function PropertyUnitDetailRouteComponent() {
           unitId={unitId}
           open
           onOpenChange={(open) => {
-            if (!open) void navigate({ to: '/properties/$propertyId/units', params: { propertyId: params.propertyId ?? '' } });
+            if (!open) {
+              if (isDialog) window.history.back();
+              else void navigate({ to: '/properties/$propertyId/units', params: { propertyId: params.propertyId ?? '' } });
+            }
           }}
         />
       </>

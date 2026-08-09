@@ -23,7 +23,10 @@ export function OwnerDetailRouteComponent() {
           ownerId={ownerId}
           open
           onOpenChange={(open) => {
-            if (!open) void navigate({ to: '/owners' });
+            if (!open) {
+              if (isDialog) window.history.back();
+              else void navigate({ to: '/owners' });
+            }
           }}
         />
       </>
