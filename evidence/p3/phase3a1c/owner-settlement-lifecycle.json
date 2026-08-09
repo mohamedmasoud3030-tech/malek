@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-07-26T15:51:28.601Z",
-  "settlementId": "b27a5e94-7d99-47a8-b33d-966b435851d9",
+  "generatedAt": "2026-08-09T04:18:45.400Z",
+  "settlementId": "990d42e4-6992-49a6-9e68-ddb30979ac63",
   "status": "PAID",
   "netPayable": 895,
-  "journalBatchId": "04d1e81f-76c2-4ee7-ab37-3d55415cea66",
+  "journalBatchId": "74a22919-1255-42e6-893b-a6a063122591",
   "journalLines": [
     {
       "type": "CREDIT",
-      "amount": "895.00",
+      "amount": "895.000",
       "no": "1111",
       "account_company": "c31b0000-0000-4000-8000-000000000001"
     },
     {
       "type": "DEBIT",
-      "amount": "895.00",
+      "amount": "895.000",
       "no": "2000",
       "account_company": "c31b0000-0000-4000-8000-000000000001"
     }

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-07-26T15:53:43.689Z",
-  "total": 157,
-  "applied": 157,
-  "failedCount": 0,
+  "generatedAt": "2026-08-09T04:22:38.947Z",
+  "total": 189,
+  "applied": 182,
+  "failedCount": 7,
   "appliedFiles": [
     "20250101000001_core_schema.sql",
     "20250101000002_rls_policies_and_grants.sql",
@@ -160,7 +160,61 @@
     "20260727092000_phase3a1a_execution_hardening.sql",
     "20260727093000_phase3a1a_cost_center_and_reason_hardening.sql",
     "20260727094000_phase3a1a_update_expense_type_safety.sql",
-    "20260730090000_fix_automation_rule_contract_expiry_date_cast.sql"
+    "20260730090000_fix_automation_rule_contract_expiry_date_cast.sql",
+    "20260730090500_fix_automation_rule_company_isolation_and_safe_date.sql",
+    "20260730091000_reconcile_audit_journal_trigger_security.sql",
+    "20260731190947_create_maintenance_atomic_rpc.sql",
+    "20260731190948_rollback_create_maintenance_atomic_rpc.sql",
+    "20260801000001_authoritative_property_ownership_view.sql",
+    "20260801000002_pay_commission_atomic.sql",
+    "20260805000001_bank_csv_import_hardening.sql",
+    "20260805110000_s02_document_reference_trigger_resilience.sql",
+    "20260805120000_s02_bank_csv_import_atomic_contract.sql",
+    "20260807015000_s08_accounting_periods_replay_compatibility.sql",
+    "20260807020000_s08_read_only_historical_analysis.sql",
+    "20260807133000_multi_company_jwt_selection.sql",
+    "20260807160000_s02_bank_csv_import_server_guards.sql",
+    "20260807163000_s02_owner_settlement_stale_total_rejection.sql",
+    "20260807170000_s02_revoke_internal_owner_settlement_helper_execute.sql",
+    "20260807174000_s03_engine_managed_receipt_void.sql",
+    "20260807174500_s03_late_posting_legacy_compat_fix.sql",
+    "20260807180000_s03_close_direct_account_writes.sql",
+    "20260807232056_s08_security_invoker_live_hardening.sql",
+    "20260807232244_harden_cross_company_balance_maintenance_automation.sql",
+    "20260807232413_harden_rls_membership_and_invoker_helpers.sql",
+    "20260807232604_harden_bank_reconciliation_match_authorization.sql",
+    "20260807233224_harden_active_user_authorization_helpers.sql",
+    "20260807233732_harden_company_membership_rls_authority.sql",
+    "20260807234004_allow_multi_company_membership_discovery.sql"
   ],
-  "failedFiles": []
+  "failedFiles": [
+    {
+      "file": "20260807172900_s03_wire_post_receipt_to_gl_engine.sql",
+      "error": "error: S03_RECEIPT_WIRING_ABORT: expected legacy journal loop marker was not found."
+    },
+    {
+      "file": "20260807173000_s03_late_posting_contract.sql",
+      "error": "error: ALTER action ADD COLUMN cannot be performed on relation \"journal_batches\""
+    },
+    {
+      "file": "20260807175000_s03_receipt_reversal_compatibility_projection.sql",
+      "error": "error: \"journal_entries\" is not a view"
+    },
+    {
+      "file": "20260807200000_s04_owner_agreement_versioning.sql",
+      "error": "error: function public.require_company_id() does not exist"
+    },
+    {
+      "file": "20260807203000_s04_contract_agreement_snapshot.sql",
+      "error": "error: relation \"public.owner_agreement_versions\" does not exist"
+    },
+    {
+      "file": "20260807203500_s04_contract_snapshot_legacy_bridge_hardening.sql",
+      "error": "error: relation \"public.owner_agreement_versions\" does not exist"
+    },
+    {
+      "file": "20260808010000_s04_contract_lifecycle_maker_checker_v2.sql",
+      "error": "error: relation \"public.owner_agreement_versions\" does not exist"
+    }
+  ]
 }

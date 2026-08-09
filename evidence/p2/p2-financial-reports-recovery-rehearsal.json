@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-07-26T15:51:15.334Z",
+  "generatedAt": "2026-08-09T04:18:24.847Z",
   "replayCoverage": {
-    "total": 163,
-    "applied": 163,
+    "total": 210,
+    "applied": 210,
     "failed": []
   },
   "anonViolations": [],
@@ -15,6 +15,13 @@
         "type": "asset",
         "balance": 800,
         "balance_type": "debit"
+      },
+      {
+        "code": "4000",
+        "name": "Rental Revenue",
+        "type": "revenue",
+        "balance": 1000,
+        "balance_type": "credit"
       },
       {
         "code": "6100",
@@ -38,6 +45,11 @@
       }
     ],
     "equity": [
+      {
+        "code": "4000",
+        "name": "Rental Revenue",
+        "amount": 1000
+      },
       {
         "code": "6100",
         "name": "Operating Expenses",
@@ -106,11 +118,11 @@
         "unit_type": "E-3",
         "rent_amount": 9000,
         "tenant_name": "مستأجر ث",
-        "contract_end": "2026-12-31",
+        "contract_end": "2026-08-31",
         "tenant_phone": null,
         "property_name": "عقار الثابت",
         "contract_start": "2026-01-01",
-        "days_to_expiry": 153,
+        "days_to_expiry": 31,
         "overdue_balance": 0
       },
       {

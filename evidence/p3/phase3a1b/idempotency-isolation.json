@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T15:50:45.446Z",
+  "generatedAt": "2026-08-09T04:23:20.161Z",
   "scenario": "same request_id executed by A and B for record / post / void",
   "namespacing": "<operation_name>:<company_uuid>",
   "immutableLogicalRequestRule": "request_id identifies one immutable logical financial request inside one company",
@@ -73,14 +73,6 @@
     {
       "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
       "request_id": "p3a1b-void-1"
-    },
-    {
-      "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
-      "request_id": "p3a1b-void-2"
-    },
-    {
-      "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
-      "request_id": "p3a1b-void-3"
     },
     {
       "operation_name": "void_receipt_atomic:c31b0000-0000-4000-8000-000000000002",

@@ -2,12 +2,22 @@
   {
     "name": "approve_owner_settlement_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "cancel_commission_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "cancel_owner_settlement_atomic",
     "security": "DEFINER",
     "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "create_commission_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "create_contract_atomic",
@@ -40,9 +50,19 @@
     "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
+    "name": "import_bank_statement_batch_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "pay_commission_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
     "name": "pay_owner_settlement_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "post_receipt_atomic",
@@ -68,6 +88,11 @@
     "name": "renew_contract_atomic",
     "security": "DEFINER",
     "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "reverse_commission_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "rpt_aged_receivables",
@@ -143,6 +168,11 @@
     "name": "terminate_contract_atomic",
     "security": "DEFINER",
     "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "update_commission_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "update_contract_atomic",
