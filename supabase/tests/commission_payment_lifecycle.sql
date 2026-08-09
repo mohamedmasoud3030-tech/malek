@@ -9,7 +9,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(19);
 
 select ok(
   to_regprocedure('public.pay_commission_atomic(jsonb)') is not null,
