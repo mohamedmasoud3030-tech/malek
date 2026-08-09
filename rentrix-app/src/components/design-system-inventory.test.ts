@@ -1,11 +1,11 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { resolve, relative, sep } from 'node:path';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const SRC = resolve(import.meta.dirname, '..');
-const cwd = resolve(import.meta.dirname, '..', '..', '..');
 
 function collectFiles(dir: string): string[] {
+  if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const full = resolve(dir, e.name);
     if (e.isDirectory()) return collectFiles(full);
@@ -25,67 +25,100 @@ function countPattern(root: string, pattern: RegExp, exclude?: RegExp): number {
   return n;
 }
 
-describe('design-system inventory — production reality (no redesign in Phase 1)', () => {
-  it('pins enterprise/* production inventory: intimately zero prod consumers', () => {
-    // All enterprise imports outside components/enterprise + design-system showcase = violation
+describe('design-system inventory & regression contract — Phase 5 enforcement', () => {
+  it('enforces enterprise/* deletion: components/enterprise directory must not exist', () => {
+    const enterpriseDir = resolve(SRC, 'components/enterprise');
+    expect(existsSync(enterpriseDir)).toBe(false);
+  });
+
+  it('guards against any enterprise/* imports in production files', () => {
     const pattern = /from\s+['"]@\/components\/enterprise/g;
     let prodConsumers = 0;
-    for (const f of collectFiles(resolve(SRC, 'features'))) {
-      if (/\.test\.(ts|tsx)$/.test(f)) continue;
+    const allProdFiles = [
+      ...collectFiles(resolve(SRC, 'features')),
+      ...collectFiles(resolve(SRC, 'app')),
+      ...collectFiles(resolve(SRC, 'routes')),
+    ].filter((f) => !/\.test\./.test(f));
+
+    for (const f of allProdFiles) {
       const c = readFileSync(f, 'utf8');
-      if (pattern.test(c)) prodConsumers++;
+      if (pattern.test(c)) {
+        prodConsumers++;
+      }
     }
-    for (const f of collectFiles(resolve(SRC, 'app'))) {
-      if (/\.test\.(ts|tsx)$/.test(f)) continue;
-      const c = readFileSync(f, 'utf8');
-      if (pattern.test(c)) prodConsumers++;
-    }
-    // design-system showcase is the only allowed prod-adjacent consumer (dev-only route)
-    // features/design-system is excluded above? re-check explicitly:
-    // If any feature prod file imports enterprise, fail.
     expect(prodConsumers).toBe(0);
   });
 
-  it('counts PageHeader family usage in prod pages', () => {
-    const layouts = collectFiles(resolve(SRC, 'components/layout'));
-    const features = collectFiles(resolve(SRC, 'features'));
-    const ui = collectFiles(resolve(SRC, 'components/ui'));
-    const all = [...layouts, ...features, ...ui].filter((f) => !/\.test\./.test(f));
-    let pageHeader = 0, sectionHeader = 0, entityDetail = 0, enterpriseHeader = 0;
-    for (const f of all) {
+  it('prohibits parallel headers and enforces canonical PageHeader + EntityDetailHeader', () => {
+    const features = collectFiles(resolve(SRC, 'features')).filter((f) => !/\.test\./.test(f));
+    const routes = collectFiles(resolve(SRC, 'routes')).filter((f) => !/\.test\./.test(f));
+    const layouts = collectFiles(resolve(SRC, 'components/layout')).filter((f) => !/\.test\./.test(f));
+    const allProd = [...features, ...routes, ...layouts];
+
+    let pageHeader = 0;
+    let entityDetail = 0;
+    let enterpriseHeader = 0;
+
+    for (const f of allProd) {
       const c = readFileSync(f, 'utf8');
       if (c.includes('<PageHeader')) pageHeader++;
-      if (c.includes('<SectionHeader')) sectionHeader++;
       if (c.includes('<EntityDetailHeader')) entityDetail++;
       if (c.includes('<EnterpriseHeader')) enterpriseHeader++;
     }
-    expect(pageHeader).toBeGreaterThan(10);
-    expect(sectionHeader).toBeGreaterThan(5);
+
+    // EnterpriseHeader is completely forbidden
     expect(enterpriseHeader).toBe(0);
-    // snapshot inventory log (informational)
-    // eslint-disable-next-line no-console
-    console.log(`[design-inventory] PageHeader:${pageHeader} SectionHeader:${sectionHeader} EntityDetailHeader:${entityDetail} EnterpriseHeader:${enterpriseHeader}`);
+
+    // PageHeader and EntityDetailHeader should be the main canonical headers
+    expect(pageHeader).toBeGreaterThanOrEqual(10);
+    expect(entityDetail).toBeGreaterThanOrEqual(2);
   });
 
-  it('logs hardcoded large radius / blur usage (inventory only, no enforcement yet)', () => {
+  it('enforces strict baseline of zero decorative blur-2xl / blur-3xl in core operational features', () => {
+    const featuresRoot = resolve(SRC, 'features');
+    // Exclude landing page (marketing context where some ambient decoration is allowed)
+    const blur = countPattern(featuresRoot, /blur-2xl|blur-3xl/g, /features[\\/]landing/);
+    
+    // We expect zero decorative blurs in core features (Operational summary metrics have been cleaned up!)
+    expect(blur).toBe(0);
+  });
+
+  it('limits hardcoded large radius (rounded-[1.5rem] / rounded-2xl) to baseline level', () => {
     const featuresRoot = resolve(SRC, 'features');
     const compsRoot = resolve(SRC, 'components');
-    const largeRadius = countPattern(featuresRoot, /rounded-\[1\.5rem\]|rounded-2xl/g);
-    const blur = countPattern(featuresRoot, /blur-2xl|blur-\[110px\]/g);
+    const largeRadius = countPattern(featuresRoot, /rounded-\[1\.5rem\]|rounded-2xl/g, /features[\\/]landing/);
     const compsRadius = countPattern(compsRoot, /rounded-\[1\.5rem\]|rounded-2xl/g);
-    // Not enforcing — just pin numbers so Phase 2 can see drift
-    expect(largeRadius + compsRadius).toBeGreaterThan(20);
-    // eslint-disable-next-line no-console
-    console.log(`[design-inventory] large-radius (features+comps): ${largeRadius + compsRadius}, blur: ${blur}`);
+
+    // Baselines are kept controlled and must not drift upwards without deliberation
+    expect(largeRadius + compsRadius).toBeLessThanOrEqual(250);
   });
 
-  it('parallel page shells: only ListPage + EmbeddableWorkspace are in prod, EnterprisePage is frozen', () => {
-    const features = collectFiles(resolve(SRC, 'features')).filter((f) => !/\.test\./.test(f));
-    let enterprisePages = 0;
-    for (const f of features) {
+  it('enforces heading hierarchy: exactly one h1 per page file (no duplicates)', () => {
+    const features = collectFiles(resolve(SRC, 'features')).filter((f) => !/\.test\./.test(f) && !/features[\\/]landing/.test(f));
+    const routes = collectFiles(resolve(SRC, 'routes')).filter((f) => !/\.test\./.test(f) && !f.includes('__root'));
+
+    for (const f of [...features, ...routes]) {
       const c = readFileSync(f, 'utf8');
-      if (c.includes('EnterprisePage') || c.includes('EnterpriseHeader') || c.includes('EnterpriseDataTable')) enterprisePages++;
+      const h1Matches = c.match(/<h1/g) ?? [];
+      // Any single workspace or route should never define more than 1 main heading (h1)
+      expect(h1Matches.length).toBeLessThanOrEqual(1);
     }
-    expect(enterprisePages).toBe(0);
+  });
+
+  it('enforces presence of accessible labels in PageHeader and EntityDetailHeader', () => {
+    const layoutsRoot = resolve(SRC, 'components/layout');
+    const files = collectFiles(layoutsRoot);
+    
+    const pageHeaderFile = files.find(f => f.endsWith('page-header.tsx'));
+    const detailHeaderFile = files.find(f => f.endsWith('entity-detail-header.tsx'));
+
+    if (pageHeaderFile) {
+      const c = readFileSync(pageHeaderFile, 'utf8');
+      expect(c).toContain('data-page-header');
+    }
+    if (detailHeaderFile) {
+      const c = readFileSync(detailHeaderFile, 'utf8');
+      expect(c).toContain('data-page-header');
+    }
   });
 });

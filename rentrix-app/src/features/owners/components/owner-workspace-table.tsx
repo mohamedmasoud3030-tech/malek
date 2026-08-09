@@ -140,7 +140,7 @@ export function OwnerWorkspaceTable({
                   <ActionMenu
                     label={`إجراءات ${getOwnerDisplayLabel(row.owner)}`}
                     items={[
-                      { id: 'details', label: 'معاينة', icon: Eye, onClick: () => openPreview(row.owner.id) },
+                      { id: 'details', label: 'التفاصيل', icon: Eye, onClick: () => openPreview(row.owner.id) },
                       { id: 'relationships', label: 'العلاقات', icon: LinkIcon, onClick: () => onSelectOwner(row.owner.id) },
                       { id: 'edit', label: 'تعديل', icon: Pencil, onClick: () => onEditOwner(row.owner) },
                     ]}

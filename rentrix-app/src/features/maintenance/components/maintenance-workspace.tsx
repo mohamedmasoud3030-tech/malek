@@ -37,10 +37,6 @@ function MaintenanceMetric({
 }>) {
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-      <div
-        className="absolute inset-inline-end-0 inset-block-start-0 size-24 rounded-full bg-primary/7 blur-2xl transition-colors group-hover:bg-primary/12"
-        aria-hidden="true"
-      />
       <div className="relative flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold text-muted-foreground">{label}</p>
@@ -187,10 +183,6 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         className="grid gap-3 lg:grid-cols-[minmax(17rem,1.05fr)_minmax(0,2fr)]"
       >
         <article className="relative overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-elevated">
-          <div
-            className="absolute -inset-inline-end-12 -inset-block-start-16 size-48 rounded-full bg-destructive/20 blur-3xl"
-            aria-hidden="true"
-          />
           <div className="relative">
             <div className="flex items-start justify-between gap-4">
               <div>

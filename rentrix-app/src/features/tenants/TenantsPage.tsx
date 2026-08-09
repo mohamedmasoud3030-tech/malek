@@ -80,7 +80,6 @@ function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; t
     <section data-tenant-summary aria-label="ملخص المستأجرين" className="grid gap-3 sm:grid-cols-3">
       {items.map(({ label, value, icon: Icon, hint }) => (
         <div key={label} className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-          <div className="absolute inset-inline-end-0 inset-block-start-0 size-24 rounded-full bg-primary/7 blur-2xl transition group-hover:bg-primary/12" aria-hidden="true" />
           <div className="relative flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-bold text-muted-foreground">{label}</p>

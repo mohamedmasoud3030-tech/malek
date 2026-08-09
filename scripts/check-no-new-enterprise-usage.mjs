@@ -19,9 +19,8 @@ const ROOT = resolve(import.meta.dirname, '..');
 const SRC = resolve(ROOT, 'rentrix-app/src');
 const strict = process.argv.includes('--strict');
 
-// Allowlist: files that MAY import enterprise/*
+// Allowlist: files that MAY import enterprise/* (now enterprise is completely deleted, only design-system allowed)
 const allowedPrefixes = [
-  `rentrix-app/src/components/enterprise/`,
   `rentrix-app/src/features/design-system/`,
 ];
 

@@ -5,9 +5,8 @@ import { resolve, relative, sep } from 'node:path';
 const ROOT = resolve(import.meta.dirname, '..');
 const SRC = resolve(ROOT, 'rentrix-app/src');
 
-// Same allowlist as the guard
+// Same allowlist as the guard (now enterprise is completely removed, only design-system allowed)
 const allowedPrefixes = [
-  `rentrix-app/src/components/enterprise/`,
   `rentrix-app/src/features/design-system/`,
 ];
 

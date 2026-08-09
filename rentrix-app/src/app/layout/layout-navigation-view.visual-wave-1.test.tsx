@@ -47,15 +47,15 @@ function anchor(html: string, href: string) {
 }
 
 describe('Visual Wave 1 — route-derived app navigation', () => {
-  it('marks the portfolio root as current on an owner detail route', () => {
+  it('marks the owners root as current on an owner detail route', () => {
     pathname = '/owners/owner-42';
 
     const html = renderToStaticMarkup(
       <NavigationLinks authorization={admin} expanded sharedLabel={sharedLabel} />,
     );
 
-    expect(anchor(html, '/properties')?.getAttribute('aria-current')).toBe('page');
-    expect(anchor(html, '/contracts')?.getAttribute('aria-current')).toBeNull();
+    expect(anchor(html, '/owners')?.getAttribute('aria-current')).toBe('page');
+    expect(anchor(html, '/properties')?.getAttribute('aria-current')).toBeNull();
   });
 
   it('marks exactly the finance hub current for a finance child route in bottom navigation', () => {
