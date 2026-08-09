@@ -14,10 +14,11 @@ import { cn } from '@/lib/utils';
 import { useUiStore } from '@/store/ui-store';
 import type { SyncStatus } from '@/types/domain';
 import { quickCreateItems } from '@/app/navigation/app-nav-items';
-import { MobileBottomNav, NavigationLinks, type SharedLabel } from './layout-navigation-view';
+import { MobileFloatingControl, NavigationLinks, type SharedLabel } from './layout-navigation-view';
 import { NotificationsMenu } from './notifications-menu';
 import { CommandPaletteTrigger } from '@/features/command-palette/command-palette-trigger';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
+import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
 
 function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
@@ -302,7 +303,7 @@ export function AppShell() {
           <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center gap-1.5 px-2 py-1 sm:min-h-14 sm:gap-2 sm:px-4">
             <Button
               variant="ghost"
-              className="size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+              className="hidden size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={() => setMobileNavOpen(true)}
               aria-label={sharedLabel('openMenu')}
             >
@@ -342,6 +343,7 @@ export function AppShell() {
               </span>
 
               <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
+              <AiAssistantGlobalAction />
 
               <button
                 type="button"
@@ -384,7 +386,7 @@ export function AppShell() {
         </main>
       </div>
 
-      <MobileBottomNav authorization={authorization} sharedLabel={sharedLabel} />
+      <MobileFloatingControl onMenu={() => setMobileNavOpen(true)} />
       <CommandPaletteDialog />
     </div>
   );

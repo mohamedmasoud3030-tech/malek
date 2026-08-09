@@ -1,4 +1,4 @@
-import { createElement, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import { createElement, isValidElement, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dropdown } from '@/components/ui/dropdown';
@@ -39,7 +39,9 @@ function isActionMenuItem(item: ActionMenuEntry): item is ActionMenuItem {
 
 function getIcon(item: ActionMenuEntry): ReactNode {
   if (!item.icon) return null;
-  return typeof item.icon === 'function' ? createElement(item.icon, { className: 'size-4' }) : item.icon;
+  if (isValidElement(item.icon)) return item.icon;
+  // lucide-react exports forwardRef components as objects rather than functions.
+  return createElement(item.icon as ComponentType<{ className?: string }>, { className: 'size-4' });
 }
 
 function selectItem(item: ActionMenuEntry): void {

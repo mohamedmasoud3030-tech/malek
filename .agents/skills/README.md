@@ -31,6 +31,7 @@ Do not route work through removed status/TODO/archive documents.
 | `superpowers-systematic-debugging` | Bugs, failed tests, or unexpected behavior | `.agents/skills/superpowers-systematic-debugging/SKILL.md` |
 | `error-handling` | Typed errors, retries, user-facing failures, and boundaries | `.agents/skills/error-handling/SKILL.md` |
 | `vite-patterns` | Vite config, plugins, env, dev-server, or build behavior | `.agents/skills/vite-patterns/SKILL.md` |
+| `vibehub` | Vibe Coding requests, ambiguous wording, terminology clarification, or translating plain-language requirements into precise Agent prompts | `.agents/skills/vibehub/SKILL.md` |
 | `browser-qa` | Browser-level validation when explicitly required by scope/policy | `.agents/skills/browser-qa/SKILL.md` |
 | `design-system` | Visual consistency, layout, navigation, shared components | `.agents/skills/design-system/SKILL.md` |
 | `frontend-a11y` | Interactive UI, forms, semantics, keyboard/focus, screen readers | `.agents/skills/frontend-a11y/SKILL.md` |

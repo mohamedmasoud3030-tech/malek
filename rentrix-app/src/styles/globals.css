@@ -111,7 +111,7 @@
   .sidebar-scroll::-webkit-scrollbar-thumb    { border-radius: 999px; background: hsl(var(--sidebar-foreground) / 0.18); }
 
   .safe-bottom-app {
-    padding-bottom: calc(var(--app-bottom-nav-height, 4rem) + 1rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--mobile-floating-control-height, 4.5rem) + 1rem + env(safe-area-inset-bottom, 0px));
   }
   .safe-top-app     { padding-top: env(safe-area-inset-top, 0px); }
   .safe-bottom-overlay { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }

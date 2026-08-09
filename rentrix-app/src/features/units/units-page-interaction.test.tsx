@@ -143,18 +143,16 @@ describe('Global UnitsPage Real Rendered User-Interaction Tests', () => {
     });
   });
 
-  it('proves clicking a mobile card in UnitsPage navigates to nested unit detail URL', async () => {
+  it('proves clicking a compact responsive table row in UnitsPage navigates to nested unit detail URL', async () => {
     await act(async () => {
       root.render(<UnitsPage />);
     });
 
-    // Locate the first mobile entity card
-    const cardButton = container?.querySelector('[role="listitem"] [role="button"]') as HTMLElement;
-    expect(cardButton).not.toBeNull();
+    const row = container?.querySelector('tbody tr') as HTMLElement;
+    expect(row).not.toBeNull();
 
-    // Click the mobile card
     await act(async () => {
-      cardButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     // Verify card click correctly navigates to nested unit detail

@@ -1,7 +1,7 @@
-import { FolderKanban, Settings2, Wrench, Zap } from 'lucide-react';
+import { Settings2, Wrench, Zap } from 'lucide-react';
 import type { SectionTabItem } from '@/components/ui/section-tabs';
 
-export type OperationsHubSectionId = 'maintenance' | 'utilities' | 'automation' | 'documents_vault';
+export type OperationsHubSectionId = 'maintenance' | 'utilities' | 'automation';
 
 export type OperationsHubSection = SectionTabItem<OperationsHubSectionId> & Readonly<{
   description: string;
@@ -11,7 +11,8 @@ export type OperationsHubSection = SectionTabItem<OperationsHubSectionId> & Read
 
 /**
  * Single source of truth for the operations hub tabs. Mirrors the standalone
- * routes it embeds: /maintenance, /utilities, /automation, /documents-vault.
+ * routes it embeds: /maintenance, /utilities, /automation. Documents are
+ * contextual to their owning entity and are intentionally not an operations tab.
  * Permissions here must stay identical to the route-level guards in
  * app/router/route-tree.ts — this file does not grant or widen access, it
  * only decides which already-permitted tab to render/hide.
@@ -37,13 +38,6 @@ export const operationsHubSections: readonly OperationsHubSection[] = [
     icon: Settings2,
     description: 'قواعد الأتمتة وتذكيرات العقود والإيجار وسجل التشغيل.',
     permission: 'automation.view',
-  },
-  {
-    id: 'documents_vault',
-    label: 'خزينة المستندات',
-    icon: FolderKanban,
-    description: 'أرشيف المستندات والمرفقات في تخزين خاص وآمن.',
-    permission: null,
   },
 ] as const;
 

@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 /**
  * UX foundation contract — يحمي قواعد سطح الهاتف التي يصعب التقاطها بوحدات المكوّنات:
  *
- * 1. ارتفاع شريط التنقل السفلي هو متغير مركزي واحد (--mobile-bottom-nav-height)
+ * 1. مساحة التحكم العائم على الموبايل هي متغير مركزي واحد (--mobile-floating-control-height)
  *    ومساحة التحرُّر أسفل الصفحة مشتقة منه (لا أرقام سحرية مكررة).
  * 2. حالات الضغط (press/anti-ghost-hover) محصورة في أجهزة لمس حقيقية
  *    (hover: none) وإلا أجهزة اللابتوب الهجينة تفقد حالات hover الحقيقية بالماوس.
@@ -36,9 +36,9 @@ function mediaBlock(source: string, query: string): string {
 
 describe('ux foundation — mobile surface contracts', () => {
   it('derives the mobile bottom-nav clearance from one central height token', () => {
-    expect(ux).toContain('--mobile-bottom-nav-height: 3.75rem');
+    expect(ux).toContain('--mobile-floating-control-height: 4.5rem');
     const clearance = mediaBlock(ux, '(max-width: 1023px)');
-    expect(clearance).toContain('var(--mobile-bottom-nav-height)');
+    expect(clearance).toContain('var(--mobile-floating-control-height)');
     expect(clearance).toContain('env(safe-area-inset-bottom');
     expect(clearance).not.toContain('calc(4.5rem');
   });

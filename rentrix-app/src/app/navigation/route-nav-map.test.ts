@@ -5,19 +5,19 @@ import { workspaceLabels } from './terminology-registry';
 describe('Route-to-nav-root map', () => {
   it('keeps core entities as distinct primary roots', () => {
     expect(getNavRoot('/properties')).toBe('/properties');
-    expect(getNavRoot('/owners')).toBe('/owners');
-    expect(getNavRoot('/owners/owner-1')).toBe('/owners');
-    expect(getNavRoot('/tenants')).toBe('/tenants');
+    expect(getNavRoot('/owners')).toBe('/people');
+    expect(getNavRoot('/owners/owner-1')).toBe('/people');
+    expect(getNavRoot('/tenants')).toBe('/people');
     expect(getNavRoot('/contracts')).toBe('/contracts');
   });
 
-  it('keeps asset support under properties and relationship support under contracts (Phase 2: people/lands first-class)', () => {
+  it('keeps asset support under properties and relationship support under people', () => {
     expect(getNavRoot('/units')).toBe('/properties');
     expect(getNavRoot('/lands')).toBe('/lands');
     expect(getNavRoot('/people')).toBe('/people');
     expect(getNavRoot('/people/new')).toBe('/people');
-    expect(getNavRoot('/leads')).toBe('/contracts');
-    expect(getNavRoot('/communication')).toBe('/contracts');
+    expect(getNavRoot('/leads')).toBe('/people');
+    expect(getNavRoot('/communication')).toBe('/people');
   });
 
   it('maps finance detail routes to financials, commissions standalone (Phase 2)', () => {
@@ -43,7 +43,7 @@ describe('Route-to-nav-root map', () => {
   it('maps accounting compatibility deep links into accounting and reports', () => {
     expect(getNavRoot('/reports')).toBe('/reports');
     expect(getNavRoot('/accounting')).toBe('/reports');
-    expect(getNavRoot('/ai-assistant')).toBe('/ai-assistant');
+    expect(getNavRoot('/ai-assistant')).toBe('/dashboard');
   });
 
   it('maps settings children to settings and operations children to maintenance', () => {
@@ -52,7 +52,7 @@ describe('Route-to-nav-root map', () => {
     expect(getNavRoot('/data-integrity')).toBe('/settings');
     expect(getNavRoot('/system')).toBe('/settings');
     expect(getNavRoot('/utilities')).toBe('/maintenance');
-    expect(getNavRoot('/automation')).toBe('/maintenance');
+    expect(getNavRoot('/automation')).toBe('/settings');
     expect(getNavRoot('/documents-vault')).toBe('/maintenance');
   });
 
@@ -62,7 +62,7 @@ describe('Route-to-nav-root map', () => {
   });
 
   it('has Arabic titles for every primary navigation root (Phase 2: people/lands/commissions)', () => {
-    for (const root of ['/dashboard', '/people', '/properties', '/lands', '/owners', '/tenants', '/contracts', '/maintenance', '/financials', '/commissions', '/reports', '/ai-assistant', '/settings']) {
+    for (const root of ['/dashboard', '/people', '/properties', '/lands', '/owners', '/tenants', '/contracts', '/maintenance', '/financials', '/commissions', '/reports', '/settings']) {
       expect(navRootTitle[root]).toMatch(/[\u0600-\u06FF]/);
     }
   });

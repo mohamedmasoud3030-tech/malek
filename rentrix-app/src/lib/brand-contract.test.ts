@@ -157,10 +157,6 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'Persisted theme key rentrix-theme, also read by the inline theme script in index.html.',
   ],
   [
-    'src/components/ui/entity-table.tsx',
-    'Persisted view-mode key prefix rentrix:view-mode:*.',
-  ],
-  [
     'src/features/landing/constants.ts',
     'Fallback canonical host rentrixapp.vercel.app — frozen until a MALEK domain is approved.',
   ],
@@ -169,32 +165,6 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'Static asset path /landing/rentrix-demo.mp4.',
   ],
 ]);
-
-/** Persisted view-mode keys keep the legacy prefix; listing them keeps the scan honest. */
-const VIEW_MODE_KEY_FILES = [
-  'src/features/commissions/components/commissions-view.tsx',
-  'src/features/communication/components/communication-hub-view.tsx',
-  'src/features/contracts/components/ContractTable.tsx',
-  'src/features/lands/components/lands-view.tsx',
-  'src/features/leads/components/leads-view.tsx',
-  'src/features/maintenance/components/maintenance-list.tsx',
-  'src/features/owners/components/owner-workspace-table.tsx',
-  'src/features/people/people-list-page.tsx',
-  'src/features/properties/properties-list-page.tsx',
-  'src/features/tenants/TenantsPage.tsx',
-  'src/features/units/units-list.tsx',
-  'src/features/units/units-page.tsx',
-  'src/features/audit/components/audit-log-view.tsx',
-  'src/features/automation/components/automation-center-view.tsx',
-  'src/features/financials/components/overdue-invoices-table.tsx',
-  'src/features/financials/deposits/deposits-workspace.tsx',
-  'src/features/financials/reconciliation/bank-reconciliation-page.tsx',
-  'src/features/owners/components/OwnerSettlementWorkspace.tsx',
-  'src/features/utilities/components/utilities-workspace.tsx',
-];
-for (const file of VIEW_MODE_KEY_FILES) {
-  DISPLAY_NAME_ALLOWLIST.set(file, 'Persisted view-mode key rentrix:view-mode:* kept stable for existing users.');
-}
 
 function collectFiles(root: string): string[] {
   const found: string[] = [];

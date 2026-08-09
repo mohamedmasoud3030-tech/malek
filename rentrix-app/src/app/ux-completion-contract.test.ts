@@ -28,7 +28,7 @@ describe('UX completion contract', () => {
     expect(deposits).not.toContain('OMR_CURRENCY_CONFIG');
   });
 
-  it('keeps high-volume registers as desktop tables with mobile cards', () => {
+  it('keeps high-volume registers on the shared compact responsive table', () => {
     const files = [
       'features/financials/deposits/deposits-workspace.tsx',
       'features/owners/components/OwnerSettlementWorkspace.tsx',
@@ -47,8 +47,9 @@ describe('UX completion contract', () => {
       expect(code, file).toContain('EntityTable');
     }
 
-    for (const file of files.filter((file) => !file.includes('audit-log-view'))) {
-      expect(source(file), file).toContain('MobileCard');
+    for (const file of files) {
+      expect(source(file), file).not.toContain('renderMobileCard');
+      expect(source(file), file).not.toContain('enableViewModeToggle');
     }
   });
 

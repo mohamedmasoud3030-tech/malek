@@ -8,7 +8,6 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -179,23 +178,6 @@ export function CommunicationHubView({
           rows={rows}
           columns={columns}
           keyOf={(row) => row.id}
-          enableViewModeToggle
-          viewModeStorageKey="rentrix:view-mode:communication"
-          renderMobileCard={(row) => (
-            <MobileCard
-              title={row.contact_name}
-              subtitle={`${channelLabels[row.channel] ?? row.channel} · ${row.subject || 'بدون موضوع'}`}
-              badge={<StatusBadge tone={statusTone[row.status] ?? 'neutral'}>{statusLabels[row.status] ?? row.status}</StatusBadge>}
-              meta={(
-                <div className="grid gap-2 text-xs">
-                  {row.contact_phone ? <div><span className="text-muted-foreground">الهاتف: </span><strong dir="ltr">{row.contact_phone}</strong></div> : null}
-                  {row.contact_email ? <div><span className="text-muted-foreground">البريد: </span><strong dir="ltr">{row.contact_email}</strong></div> : null}
-                  <p className="line-clamp-2 text-muted-foreground">{row.body}</p>
-                </div>
-              )}
-              actions={rowActions(row)}
-            />
-          )}
         />
       </AsyncContentState>
 

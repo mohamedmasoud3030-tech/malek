@@ -1,6 +1,10 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
-import { Plus, FileText, Wrench, FolderKanban, ShieldCheck } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Plus, FileText, Wrench, ShieldCheck } from 'lucide-react';
+import { ContextualDocumentsPanel } from '@/components/documents/contextual-documents-panel';
+import { ATTACHMENTS_ACCEPT } from '@/lib/attachments-contract';
+import { archiveContextualDocument, getContextualDocumentSignedUrl, listContextualDocuments, uploadContextualDocument, type ContextualDocumentRow } from '@/services/documents/contextualDocumentsService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -230,19 +234,37 @@ export function PropertyMaintenanceTab({ propertyId }: PropertyTabProps) {
 }
 
 export function PropertyDocumentsTab({ propertyId }: PropertyTabProps) {
+  const queryClient = useQueryClient();
+  const documentsQuery = useQuery({ queryKey: ['contextual-documents', 'property', propertyId], queryFn: () => listContextualDocuments('property', propertyId) });
+  const uploadMutation = useMutation({ mutationFn: (file: File) => uploadContextualDocument({ file, title: file.name, category: 'other', relatedEntityType: 'property', relatedEntityId: propertyId }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contextual-documents', 'property', propertyId] }) });
+  const archiveMutation = useMutation({ mutationFn: (id: string) => archiveContextualDocument(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contextual-documents', 'property', propertyId] }) });
+  const documents = documentsQuery.data ?? [];
   return (
-    <Card className="border-border bg-muted/20">
-      <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-3">
-        <FolderKanban className="size-8 text-muted-foreground" aria-hidden="true" />
-        <div>
-          <h3 className="font-bold text-foreground">أرشيف المستندات والمرفقات الخاصة بالعقار</h3>
-          <p className="mt-1 text-xs text-muted-foreground">يمكنك استعراض وإرفاق العقود والمستندات القانونية من خزينة المستندات الموحدة.</p>
-        </div>
-        <Button size="sm" variant="outline" className="min-h-11" asChild>
-          <Link to="/documents-vault">فتح خزينة المستندات</Link>
-        </Button>
-      </CardContent>
-    </Card>
+    <ContextualDocumentsPanel
+      entityLabel="العقار"
+      documents={documents.map((document: ContextualDocumentRow) => ({
+        id: document.id,
+        title: document.title,
+        typeLabel: document.category,
+        reference: document.related_entity_id,
+        fileName: document.file_name,
+        fileSize: document.file_size ? `${(document.file_size / 1024).toFixed(1)} KB` : null,
+        mimeType: document.mime_type,
+        relatedEntity: document.related_entity_type,
+      }))}
+      isLoading={documentsQuery.isLoading}
+      isError={documentsQuery.isError}
+      onRetry={() => void documentsQuery.refetch()}
+      onUpload={async (file) => { await uploadMutation.mutateAsync(file); }}
+      onArchive={async (document) => { await archiveMutation.mutateAsync(document.id); }}
+      isUploading={uploadMutation.isPending}
+      archivingId={archiveMutation.isPending ? archiveMutation.variables ?? null : null}
+      resolveUrl={async (document) => {
+        const source = documents.find((candidate) => candidate.id === document.id);
+        return source ? getContextualDocumentSignedUrl(source.storage_path) : null;
+      }}
+      accept={ATTACHMENTS_ACCEPT}
+    />
   );
 }
 

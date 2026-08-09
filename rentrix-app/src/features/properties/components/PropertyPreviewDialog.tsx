@@ -1,5 +1,6 @@
 import { Building2, DoorOpen, MapPin, Pencil, UserRound } from 'lucide-react';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DetailFields } from '@/components/ui/detail-fields';
@@ -112,6 +113,7 @@ export function PropertyPreviewDialog({
               ) : null}
             </CardContent>
           </Card>
+          <ContextualDocumentsSection entityType="property" entityId={property.id} entityLabel="العقار" />
         </div>
       ) : null}
     </EntityPreviewDialog>

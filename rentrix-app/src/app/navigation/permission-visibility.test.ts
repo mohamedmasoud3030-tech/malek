@@ -78,12 +78,13 @@ describe('permission visibility — nav item permission must match route guard',
   });
 
   it('workspace child count matches actual operational needs (no shadow nav)', () => {
-    // Phase 2: people and lands are first-class, no longer children
-    expect(workspaceChildNavItems['/people'].length).toBe(0);
+    // P0 canonical IA: People owns relationship registers; settings hides admin-only
+    // legacy routes from primary navigation while keeping their routes reachable.
+    expect(workspaceChildNavItems['/people'].length).toBe(4);
     expect(workspaceChildNavItems['/properties'].length).toBe(1);
     expect(workspaceChildNavItems['/lands'].length).toBe(0);
-    expect(workspaceChildNavItems['/contracts'].length).toBe(2);
-    expect(workspaceChildNavItems['/maintenance'].length).toBe(3);
-    expect(workspaceChildNavItems['/settings'].length).toBe(4);
+    expect(workspaceChildNavItems['/contracts'].length).toBe(0);
+    expect(workspaceChildNavItems['/maintenance'].length).toBe(1);
+    expect(workspaceChildNavItems['/settings'].length).toBe(2);
   });
 });

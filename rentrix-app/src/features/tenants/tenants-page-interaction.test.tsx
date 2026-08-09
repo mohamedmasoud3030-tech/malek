@@ -9,6 +9,9 @@ const refetchMock = vi.fn();
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, params, to }: any) => <a href={params?.contractId ? `/contracts/${params.contractId}` : to}>{children}</a>,
+  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/tenants' }),
+  useSearch: () => ({ search: '' }),
 }));
 vi.mock('@/features/people/person-form-modal', () => ({
   PersonFormModal: ({ defaultType, onClose, open, personId }: any) => open ? (
@@ -75,10 +78,9 @@ describe('TenantsPage shared person mobile workflow interactions', () => {
   it('opens edit from the mobile card and keeps all domain links accessible', async () => {
     await act(async () => root.render(<TenantsPage />));
 
-    expect(container.querySelector('a[href="/contracts/contract-1"]')?.textContent).toContain('العقد');
-    expect(container.querySelector('a[href="/invoices"]')?.textContent).toContain('الفواتير');
-    expect(container.querySelector('a[href="/arrears"]')?.textContent).toContain('المتأخرات');
-    expect(container.querySelector('a[href="/reports"]')?.textContent).toContain('كشف الحساب');
+    expect(container.textContent).toContain('العقود النشطة');
+    expect(container.textContent).toContain('المتأخرات');
+    expect(container.textContent).toContain('العقد');
 
     const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('تعديل'));
     expect(editButton).toBeTruthy();

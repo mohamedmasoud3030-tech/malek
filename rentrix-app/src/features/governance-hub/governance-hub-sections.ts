@@ -1,4 +1,4 @@
-import { Building2, KeyRound, ListChecks, SearchCheck, ShieldAlert } from 'lucide-react';
+import { Building2, KeyRound, ListChecks, SearchCheck, Settings2, ShieldAlert } from 'lucide-react';
 
 /**
  * Governance hub tab catalogue. Each tab maps 1:1 to a legacy standalone
@@ -35,6 +35,13 @@ export const governanceHubSections = [
     description: 'فحوصات تطابق وسلامة العلاقات الأساسية في المخطط.',
     icon: SearchCheck,
     permission: 'integrity.view',
+  },
+  {
+    id: 'automation',
+    label: 'الأتمتة',
+    description: 'قواعد الأتمتة والتنبيهات وسجل التشغيل داخل Settings.',
+    icon: Settings2,
+    permission: 'automation.view',
   },
   {
     id: 'security',

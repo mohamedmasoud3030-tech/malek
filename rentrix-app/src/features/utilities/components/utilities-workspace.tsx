@@ -11,7 +11,6 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -376,20 +375,6 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               keyOf={(meter) => meter.id}
               emptyTitle="لا توجد عدادات"
               emptyDescription="أضف عدادًا جديدًا لبدء تسجيل الاستهلاك والفواتير."
-              enableViewModeToggle
-              viewModeStorageKey="rentrix:view-mode:utility-meters"
-              renderMobileCard={(meter) => {
-                const Icon = utilityIcons[meter.utility_type];
-                return (
-                  <MobileCard
-                    title={`${utilityTypeLabels[meter.utility_type]} · ${meter.meter_number}`}
-                    subtitle={`${propertyName(meter.property_id)} · ${meter.provider_name || 'مزود غير محدد'}`}
-                    badge={<StatusBadge tone={meter.is_active ? 'success' : 'neutral'}>{meter.is_active ? 'نشط' : 'غير نشط'}</StatusBadge>}
-                    meta={<div className="flex items-center gap-2 text-xs"><Icon className="size-4 text-primary" /><span dir="ltr">{meter.account_number}</span><span>· {responsiblePartyLabels[meter.responsible_party]}</span></div>}
-                    actions={<Button variant="danger" className="min-h-11" onClick={() => setMeterToArchive(meter)}><Trash2 className="me-1 size-4" />أرشفة العداد</Button>}
-                  />
-                );
-              }}
             />
           </section>
 
@@ -402,17 +387,6 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               keyOf={(bill) => bill.id}
               emptyTitle="لا توجد فواتير مطابقة"
               emptyDescription="غيّر الفلاتر أو أضف فاتورة مرافق جديدة."
-              enableViewModeToggle
-              viewModeStorageKey="rentrix:view-mode:utility-bills"
-              renderMobileCard={(bill) => (
-                <MobileCard
-                  title={`فاتورة ${bill.bill_number || bill.id.slice(0, 8)}`}
-                  subtitle={`${propertyName(bill.property_id)} · استحقاق ${bill.due_date}`}
-                  badge={<StatusBadge tone={utilityBillStatusTone(bill.status)}>{utilityBillStatusLabels[bill.status]}</StatusBadge>}
-                  stats={<div className="grid grid-cols-2 gap-2 text-xs"><div><span className="block text-muted-foreground">المبلغ</span><strong dir="ltr">{money(bill.amount)}</strong></div><div><span className="block text-muted-foreground">المسدد</span><strong dir="ltr" className="text-success">{money(bill.paid_amount)}</strong></div><div><span className="block text-muted-foreground">المسؤول</span><strong>{responsiblePartyLabels[bill.responsible_party]}</strong></div><div><span className="block text-muted-foreground">الاستهلاك</span><strong>{bill.consumption_units ?? '—'}</strong></div></div>}
-                  actions={<Button variant="danger" className="min-h-11" onClick={() => setBillToArchive(bill)}><Trash2 className="me-1 size-4" />أرشفة الفاتورة</Button>}
-                />
-              )}
             />
           </section>
         </div>

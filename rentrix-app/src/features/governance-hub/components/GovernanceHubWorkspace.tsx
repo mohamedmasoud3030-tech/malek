@@ -1,4 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -25,6 +26,9 @@ const DataIntegrityWorkspace = lazy(() =>
 const ChangePasswordWorkspace = lazy(() =>
   import('@/features/auth/change-password-page').then((m) => ({ default: m.ChangePasswordWorkspace })),
 );
+const AutomationWorkspace = lazy(() =>
+  import('@/features/automation/components/automation-workspace').then((m) => ({ default: m.AutomationWorkspace })),
+);
 
 const TabFallback = () => <LoadingState variant="section" label="جارٍ تحميل القسم..." />;
 
@@ -38,11 +42,12 @@ const TabFallback = () => <LoadingState variant="section" label="جارٍ تحم
  */
 export function GovernanceHubWorkspace() {
   const { canAccess } = useAuth();
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
   const visibleSections = useMemo(() => getVisibleGovernanceHubSections(canAccess), [canAccess]);
+  const requestedSection = typeof search.section === 'string' ? search.section : null;
+  const initialSection = visibleSections.some((section) => section.id === requestedSection) ? requestedSection as GovernanceHubSectionId : (visibleSections[0]?.id ?? 'office');
 
-  const [activeTab, setActiveTab] = useState<GovernanceHubSectionId>(
-    () => visibleSections[0]?.id ?? 'office',
-  );
+  const [activeTab, setActiveTab] = useState<GovernanceHubSectionId>(initialSection);
   const [mountedTabs, setMountedTabs] = useState<ReadonlySet<GovernanceHubSectionId>>(
     () => new Set<GovernanceHubSectionId>([visibleSections[0]?.id ?? 'office']),
   );
@@ -123,6 +128,11 @@ export function GovernanceHubWorkspace() {
           {shouldRenderTab('data-integrity') && (
             <SectionTabPanel id="data-integrity" activeId={resolvedActiveTab}>
               <DataIntegrityWorkspace variant="embedded" />
+            </SectionTabPanel>
+          )}
+          {shouldRenderTab('automation') && (
+            <SectionTabPanel id="automation" activeId={resolvedActiveTab}>
+              <AutomationWorkspace mode="embedded" />
             </SectionTabPanel>
           )}
           {shouldRenderTab('security') && (

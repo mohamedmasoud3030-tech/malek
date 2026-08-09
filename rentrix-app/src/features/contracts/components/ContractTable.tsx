@@ -15,7 +15,6 @@ import { contractStatusLabels, contractStatusTone, paymentCycleLabels } from "..
 import { normalizeContractStatus } from "@/lib/contractStatus";
 import type { ContractListItem } from "../services/contractService";
 import { getDaysUntilEnd, isExpiringSoon } from "../hooks/useContractFilters";
-import { ContractMobileCard } from "./ContractMobileCard";
 
 function DetailBox({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -98,13 +97,16 @@ export function ContractTable({
             aria-label={`معاينة تفاصيل العقد ${getContractNumber(contract)}`}
             onClick={() => onPreview(contract.id)}
           >
-            <Eye className="size-4" />
+            <Eye className="size-4" aria-hidden="true" />
+            عرض
           </Button>
           <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(contract.id)}>
-            <Edit className="size-4" />
+            <Edit className="size-4" aria-hidden="true" />
+            تعديل
           </Button>
           <Button variant="danger" className="min-h-11 px-3" aria-label={`أرشفة العقد ${getContractNumber(contract)}`} onClick={() => onDelete(contract.id)}>
-            <Trash2 className="size-4" />
+            <Trash2 className="size-4" aria-hidden="true" />
+            أرشفة
           </Button>
         </div>
       ),
@@ -126,17 +128,6 @@ export function ContractTable({
       emptyAction={onCreate ? <Button onClick={onCreate}>إنشاء عقد</Button> : undefined}
       pagination={pagination}
       onRowClick={(contract) => setExpandedId((current) => current === contract.id ? null : contract.id)}
-      enableViewModeToggle
-      viewModeStorageKey="rentrix:view-mode:contracts"
-      renderMobileCard={(contract) => (
-        <ContractMobileCard
-          companySettings={companySettings}
-          contract={contract}
-          onDelete={onDelete}
-          onEdit={onEdit}
-          onPreview={onPreview}
-        />
-      )}
       renderRowExpansion={(contract) => (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <DetailBox label="بيانات المستأجر">

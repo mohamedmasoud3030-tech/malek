@@ -8,7 +8,6 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { EntityTable } from '@/components/ui/entity-table';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
@@ -174,26 +173,7 @@ export function OwnerDetailView({
             emptyTitle="لا توجد عقارات مرتبطة"
             emptyDescription="لا توجد علاقة ملكية نشطة موثقة لهذا المالك."
             onRowClick={(property) => openProperty(property.id)}
-            renderMobileCard={(property) => {
-              const ownershipPercentage = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;
-              const activeContracts = contracts.filter((contract) => contract.property_id === property.id && contract.status === 'active').length;
-              return (
-                <MobileCard
-                  title={property.title}
-                  subtitle={property.address}
-                  badge={<StatusBadge tone={property.status === 'active' ? 'success' : 'neutral'} dot>{property.status === 'active' ? 'نشط' : property.status}</StatusBadge>}
-                  stats={<div className="grid grid-cols-3 gap-2 text-center text-xs"><span><strong>{formatCompanyNumber(companySettings, ownershipPercentage)}%</strong><br />الملكية</span><span><strong>{formatCompanyNumber(companySettings, units.filter((unit) => unit.property_id === property.id).length)}</strong><br />الوحدات</span><span><strong>{formatCompanyNumber(companySettings, activeContracts)}</strong><br />عقود نشطة</span></div>}
-                  actions={(
-                    <Button variant="secondary" className="min-h-11 w-full text-xs" asChild>
-                      <Link to="/properties/$propertyId" params={{ propertyId: property.id }}>
-                        <Building2 className="me-1 size-4" />فتح العقار
-                      </Link>
-                    </Button>
-                  )}
-                  onClick={() => openProperty(property.id)}
-                />
-              );
-            }}
+
           />
         </CardContent>
       </Card>

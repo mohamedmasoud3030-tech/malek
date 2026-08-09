@@ -12,10 +12,10 @@ export const routeNavRoot = new Map<string, string>([
   ['/units', '/properties'],
   ['/lands', '/lands'],
 
-  ['/owners', '/owners'],
-  ['/owners/$ownerId', '/owners'],
+  ['/owners', '/people'],
+  ['/owners/$ownerId', '/people'],
 
-  ['/tenants', '/tenants'],
+  ['/tenants', '/people'],
 
   ['/contracts', '/contracts'],
   ['/contracts/new', '/contracts'],
@@ -24,12 +24,12 @@ export const routeNavRoot = new Map<string, string>([
   ['/people', '/people'],
   ['/people/new', '/people'],
   ['/people/$personId/edit', '/people'],
-  ['/leads', '/contracts'],
-  ['/communication', '/contracts'],
+  ['/leads', '/people'],
+  ['/communication', '/people'],
 
   ['/maintenance', '/maintenance'],
   ['/utilities', '/maintenance'],
-  ['/automation', '/maintenance'],
+  ['/automation', '/settings'],
   ['/documents-vault', '/maintenance'],
 
   // Finance has one primary destination. The operational subroutes stay valid
@@ -52,7 +52,7 @@ export const routeNavRoot = new Map<string, string>([
   // compatibility deep-link into the general-ledger report section.
   ['/reports', '/reports'],
   ['/accounting', '/reports'],
-  ['/ai-assistant', '/ai-assistant'],
+  ['/ai-assistant', '/dashboard'],
 
   ['/settings', '/settings'],
   ['/change-password', '/settings'],
@@ -73,7 +73,6 @@ export const navRootTitle: Record<string, string> = {
   '/financials': 'المالية',
   '/commissions': 'العمولات',
   '/reports': 'المحاسبة والتقارير',
-  '/ai-assistant': 'المساعد الذكي',
   '/settings': 'الإعدادات',
 };
 

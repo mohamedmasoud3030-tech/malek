@@ -6,7 +6,6 @@ import { Building2, Download, Edit, Eye, Plus, Printer, ReceiptText, Tags, Walle
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from '@/components/ui/data-table';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityForm } from '@/components/ui/entity-form';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -255,22 +254,7 @@ export function ExpensesSection({
               />
             ) },
           ]}
-          renderMobileCard={(expense) => {
-            const label = buildExpensePropertyLabel(expense, propertyById);
-            const costCenterLabel = expense.cost_center_id ? costCenterById.get(expense.cost_center_id)?.name ?? 'مركز تكلفة غير معروف' : null;
-            return (
-              <MobileCard
-                title={label}
-                subtitle={`${formatDate(expense.expense_date)} · ${expense.category}${costCenterLabel ? ` · ${costCenterLabel}` : ''}${getExpenseChargedToLabel(getExpenseChargedTo(expense)) !== 'الشركة' ? ` · يتحمّلها ${getExpenseChargedToLabel(getExpenseChargedTo(expense))}` : ''}`}
-                stats={<span className="text-base font-black tabular-nums" dir="ltr">{formatMoney(expense.amount)}</span>}
-                actions={(
-                  <Button type="button" variant="secondary" className="min-h-11 w-full px-3 text-xs" onClick={() => openEditForm(expense)}>
-                    <Edit className="me-2 size-4" aria-hidden="true" />تعديل
-                  </Button>
-                )}
-              />
-            );
-          }}
+
         />
       </CardContent>
 

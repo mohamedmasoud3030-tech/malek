@@ -1,10 +1,13 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { Lock } from 'lucide-react';
-import { canShowNavigationItem, canAccessRoute, type AuthorizationContext } from '@/features/auth/permissions';
+import { useState } from 'react';
+import { Lock, ChevronDown, Menu, Search } from 'lucide-react';
+import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
+import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
+import { PermissionRequestDialog } from '@/components/layout/permission-request-dialog';
 import { getNavRoot } from '@/app/navigation/route-nav-map';
 import { navigationLabels } from '@/app/navigation/terminology-registry';
 import { cn } from '@/lib/utils';
-import { mobileNavItems, navGroups } from '@/app/navigation/app-nav-items';
+import { navGroups, workspaceChildNavItems, type NavItem } from '@/app/navigation/app-nav-items';
 
 export type SharedLabel = (key: string) => string;
 
@@ -20,129 +23,112 @@ export function NavigationLinks({
 }: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
   const location = useLocation();
   const activeRoot = getNavRoot(location.pathname);
-  let hiddenLockedCount = 0;
+  const [lockedRequest, setLockedRequest] = useState<{ permission: AppPermission; route: string; label: string } | null>(null);
 
-  const groups = navGroups.map(([sectionTitle, items, adminOnly]) => {
-    if (adminOnly) {
-      const hasAnyAdminPermission = items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission));
-      if (!hasAnyAdminPermission) return null;
-    }
-    const visibleItems = items.filter(([, , , , permission]) => {
-      const isLocked = Boolean(permission) && !canAccessRoute(authorization, permission);
-      if (isLocked) {
-        hiddenLockedCount += 1;
-        return false;
-      }
-      return canShowNavigationItem(authorization, permission);
-    });
-    if (visibleItems.length === 0) return null;
-    return { sectionTitle, visibleItems };
-  });
+  const isItemLocked = (permission?: Parameters<typeof canAccessRoute>[1]) => Boolean(permission) && !canAccessRoute(authorization, permission);
+
+  const renderItem = ([to, labelKey, description, Icon, permission]: NavItem, isChild = false) => {
+    const isLocked = isItemLocked(permission);
+    const isActive = isChild
+      ? activeRoot === to || location.pathname.startsWith(`${to}/`)
+      : activeRoot === to;
+    const label = navLabel(labelKey, sharedLabel);
+    return (
+      <Link
+        key={`${to}:${labelKey}`}
+        to={to}
+        onClick={(event) => {
+          if (isLocked && permission) {
+            event.preventDefault();
+            setLockedRequest({ permission, route: to, label });
+            return;
+          }
+          onNavigate?.();
+        }}
+        aria-current={isActive ? 'page' : undefined}
+        aria-disabled={isLocked ? 'true' : undefined}
+        aria-label={label}
+        title={expanded ? description : label}
+        activeOptions={{ exact: true }}
+        data-nav-item
+        data-nav-child={isChild ? 'true' : undefined}
+        data-active={isActive ? 'true' : undefined}
+        className={cn(
+          'group relative flex min-h-10 items-center gap-2.5 rounded-xl border border-transparent px-3 py-1.5 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
+          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
+          isChild && 'ms-3 min-h-9 border-s-2 border-s-sidebar-border/70 ps-3',
+          isLocked && 'cursor-not-allowed opacity-70',
+          isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)]',
+        )}
+      >
+        <Icon className={cn(isChild ? 'size-4' : 'size-5', 'shrink-0')} aria-hidden="true" />
+        {isLocked ? <Lock className="ms-auto size-3.5 text-warning" aria-hidden="true" /> : null}
+        {expanded ? <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{label}</span> : null}
+        {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground" aria-hidden="true" /> : null}
+      </Link>
+    );
+  };
 
   return (
-    <div className="space-y-4">
-      {groups.map((group) => {
-        if (!group) return null;
-        const { sectionTitle, visibleItems } = group;
+    <div className="space-y-3">
+      {navGroups.map(([sectionTitle, items, adminOnly]) => {
+        if (adminOnly) {
+          const hasAnyAdminPermission = items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission));
+          if (!hasAnyAdminPermission) return null;
+        }
+        const visibleItems = items;
+        if (visibleItems.length === 0) return null;
         return (
-          <section key={sectionTitle} className="space-y-1">
-            {expanded ? (
-              <div className="px-3 pb-1">
-                <p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50">{sectionTitle}</p>
-              </div>
-            ) : (
-              <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />
-            )}
-            {visibleItems.map(([to, labelKey, description, Icon]) => {
-              const isActive = activeRoot === to;
-              const label = navLabel(labelKey, sharedLabel);
+          <section key={sectionTitle} className="space-y-0.5">
+            {expanded ? <div className="px-3 pb-1 pt-1"><p className="text-[10px] font-semibold tracking-[0.08em] text-sidebar-foreground/50">{sectionTitle}</p></div> : <div aria-hidden="true" className="mx-3 mb-1 h-px bg-white/10" />}
+            {visibleItems.map((item) => {
+              const [to] = item;
+              const children = workspaceChildNavItems[to] ?? [];
+              const visibleChildren = children;
               return (
-                <Link
-                  key={`${to}:${labelKey}`}
-                  to={to}
-                  onClick={onNavigate}
-                  aria-current={isActive ? 'page' : undefined}
-                  aria-label={label}
-                  title={expanded ? description : label}
-                  activeOptions={{ exact: true }}
-                  data-nav-item
-                  data-active={isActive ? 'true' : undefined}
-                  className={cn(
-                    'group relative flex min-h-11 items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
-                    'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
-                    isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)]',
-                  )}
-                >
-                  <Icon className={cn('size-5 shrink-0 transition-transform duration-150 motion-reduce:transition-none', !isActive && 'group-hover:scale-110')} aria-hidden="true" />
-                  {expanded ? (
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-semibold">{label}</span>
-                    </span>
-                  ) : null}
-                  {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground" aria-hidden="true" /> : null}
-                </Link>
+                <div key={to} className="space-y-0.5">
+                  <div className="flex items-center gap-1">
+                    <div className="min-w-0 flex-1">{renderItem(item)}</div>
+                    {expanded && visibleChildren.length > 0 ? <ChevronDown className="me-2 size-3.5 shrink-0 text-sidebar-foreground/45" aria-hidden="true" /> : null}
+                  </div>
+                  {expanded && visibleChildren.length > 0 ? <div className="space-y-0.5">{visibleChildren.map((child) => renderItem(child, true))}</div> : null}
+                </div>
               );
             })}
           </section>
         );
       })}
 
-      {expanded && hiddenLockedCount > 0 ? (
-        <section
-          aria-label={sharedLabel('navUpgradeTitle')}
-          className="rounded-2xl border border-[hsl(var(--color-warning-text)/0.22)] bg-[hsl(var(--color-warning-bg)/0.07)] px-3 py-3"
-        >
-          <div className="flex items-center gap-2">
-            <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[hsl(var(--color-warning-bg)/0.16)] text-warning">
-              <Lock className="size-3.5" aria-hidden="true" />
-            </span>
-            <p className="text-[12px] font-bold text-warning">أقسام حسب الصلاحية</p>
-            <span className="ms-auto rounded-full bg-[hsl(var(--color-warning-bg)/0.16)] px-2 py-0.5 text-[10px] font-bold text-warning/90">{hiddenLockedCount}</span>
-          </div>
-          <p className="mt-2 text-[11px] leading-5 text-sidebar-foreground/65">بعض الأقسام مخفية لأن دورك الحالي لا يملك صلاحية الوصول إليها.</p>
-        </section>
-      ) : null}
+      <PermissionRequestDialog
+        open={lockedRequest !== null}
+        onOpenChange={(open) => { if (!open) setLockedRequest(null); }}
+        permission={lockedRequest?.permission ?? 'settings.manage'}
+        resourceRoute={lockedRequest?.route ?? '/settings'}
+        label={lockedRequest?.label ?? 'هذا القسم'}
+      />
     </div>
   );
 }
 
-export function MobileBottomNav({ authorization, sharedLabel }: Readonly<{ authorization: AuthorizationContext | null; sharedLabel: SharedLabel }>) {
-  const location = useLocation();
-  const activeRoot = getNavRoot(location.pathname);
-  const visibleItems = mobileNavItems.filter(([, , , permission]) => canShowNavigationItem(authorization, permission));
+export function MobileFloatingControl({ onMenu }: Readonly<{ onMenu: () => void }>) {
+  const { open } = useCommandPaletteStore();
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-background/95 pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-1px_0_0_rgb(148_163_184_/_0.24),0_-16px_40px_-24px_rgb(15_23_42_/_0.28)] backdrop-blur-xl lg:hidden"
-      aria-label="التنقل الرئيسي"
-      data-mobile-bottom-nav
+    <div
+      className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] lg:hidden"
+      data-mobile-floating-control
+      aria-label="أدوات الوصول السريع"
     >
-      <div className="flex h-[3.875rem] min-w-0 items-stretch overflow-x-auto px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {visibleItems.map(([to, labelKey, Icon]) => {
-          const isActive = activeRoot === to;
-          const label = navLabel(labelKey, sharedLabel);
-          return (
-            <Link
-              key={to}
-              to={to}
-              activeOptions={{ exact: true }}
-              aria-current={isActive ? 'page' : undefined}
-              aria-label={label}
-              data-nav-item
-              data-active={isActive ? 'true' : undefined}
-              className={cn(
-                'group relative flex min-h-11 min-w-11 flex-1 basis-0 flex-col items-center justify-center gap-0.5 px-1 py-2 text-muted-foreground outline-none transition-colors duration-150 focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-primary/35 motion-reduce:transition-none',
-                isActive && 'text-primary',
-              )}
-            >
-              <span aria-hidden="true" className={cn('absolute inset-x-1.5 inset-y-1 rounded-2xl transition-colors duration-150 motion-reduce:transition-none', isActive ? 'bg-primary/12' : 'bg-transparent')} />
-              <span aria-hidden="true" className={cn('absolute inset-x-4 top-0 h-0.5 rounded-full transition-opacity duration-150 motion-reduce:transition-none', isActive ? 'bg-primary opacity-100' : 'bg-transparent opacity-0')} />
-              <Icon className="relative z-10 size-[1.2rem] shrink-0 transition-transform duration-150 group-active:scale-90 motion-reduce:transition-none" aria-hidden="true" />
-              <span className="relative z-10 max-w-full truncate text-[9.5px] font-bold leading-none tracking-tight">{label}</span>
-            </Link>
-          );
-        })}
+      <div className="flex items-center gap-1 rounded-2xl border border-border/80 bg-background/95 p-1 shadow-[0_14px_40px_-16px_rgb(15_23_42_/_0.45)] backdrop-blur-xl">
+        <button type="button" onClick={onMenu} aria-label="فتح القائمة" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl px-3 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25">
+          <Menu className="size-5" aria-hidden="true" />
+          <span className="sr-only">القائمة</span>
+        </button>
+        <button type="button" onClick={open} aria-label="فتح البحث" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl px-3 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-primary/25">
+          <Search className="size-5" aria-hidden="true" />
+          <span className="sr-only">بحث</span>
+        </button>
       </div>
-    </nav>
+    </div>
   );
 }

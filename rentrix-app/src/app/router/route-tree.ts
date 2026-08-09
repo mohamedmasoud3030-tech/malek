@@ -283,9 +283,10 @@ const reportsRoute = createRoute({
 });
 const aiAssistantRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/ai-assistant', component: lazyRouteComponent(() => import('@/routes/_protected.ai-assistant'), 'AiAssistantRouteComponent'), staticData: { title: 'المساعد الذكي' } });
 
-const automationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/automation', beforeLoad: async () => { await requirePermission('automation.view')(); throw redirect({ to: '/maintenance', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'automation' }) }); }, staticData: { title: 'الأتمتة' } });
+const automationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/automation', beforeLoad: async () => { await requirePermission('automation.view')(); throw redirect({ to: '/settings', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'automation' }) }); }, staticData: { title: 'الأتمتة' } });
 const utilitiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/utilities', beforeLoad: () => { throw redirect({ to: '/maintenance', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'utilities' }) }); }, staticData: { title: 'المرافق والعدادات' } });
-const documentsVaultRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/documents-vault', beforeLoad: () => { throw redirect({ to: '/maintenance', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'documents_vault' }) }); }, staticData: { title: 'خزينة المستندات' } });
+// Legacy compatibility only: retained for old bookmarks, never exposed in product navigation.
+const documentsVaultRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/documents-vault', component: lazyRouteComponent(() => import('@/routes/_protected.documents-vault'), 'DocumentsVaultRouteComponent'), staticData: { title: 'المستندات — توافق قديم' } });
 
 const systemRoute = createRoute({
   getParentRoute: () => protectedRoute,

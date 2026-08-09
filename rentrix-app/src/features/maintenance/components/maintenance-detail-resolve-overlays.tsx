@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { Input } from '@/components/ui/input';
 import { SelectionCard } from '@/components/ui/selection-card';
@@ -96,6 +97,7 @@ export function MaintenanceDetailsOverlay({ request, onOpenChange }: Maintenance
               </div>
             </div>
           ) : null}
+          <ContextualDocumentsSection entityType="maintenance" entityId={request.id} entityLabel="طلب الصيانة" />
         </div>
       ) : null}
     </EntityPreviewDialog>

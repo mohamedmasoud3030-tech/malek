@@ -11,6 +11,8 @@ let propertiesRows: any[] = [];
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, params, to }: any) => <a href={params?.ownerId ? `/owners/${params.ownerId}` : params?.propertyId ? `/properties/${params.propertyId}` : to}>{children}</a>,
+  useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/owners' }),
 }));
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('./useOwners', () => ({
@@ -104,10 +106,14 @@ describe('OwnersPage actual owner-model mobile workflow interactions', () => {
     await act(async () => root.render(<OwnersPage />));
 
     expect(container.textContent).toContain('عقار المالك');
-    expect(container.querySelector('a[href="/owners/owner-1"]')?.textContent).toContain('التفاصيل');
-    expect(container.querySelector('a[href="/reports"]')?.textContent).toContain('كشف الحساب');
+    const actionMenu = container.querySelector('button[aria-haspopup="listbox"]');
+    expect(actionMenu).toBeTruthy();
+    await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(document.body.textContent).toContain('التفاصيل');
+    expect(document.body.textContent).toContain('العلاقات');
+    expect(document.body.textContent).toContain('تعديل');
 
-    const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('تعديل'));
+    const editButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('تعديل بيانات المالك');

@@ -87,13 +87,14 @@ describe('ContractsListPage load states', () => {
     expect(html).toContain('إنشاء عقد');
   });
 
-  it('renders desktop rows and mobile cards through the shared entity table', () => {
+  it('renders the shared compact responsive table at every viewport', () => {
     contractsMocks.contractsQuery.data = { rows: [contractFixture], count: 1 };
 
     const html = renderToStaticMarkup(<ContractsListPage />);
 
     expect(html).toContain('aria-label="جدول العقود"');
-    expect(html).toContain('role="list" aria-label="جدول العقود"');
+    expect(html).toContain('data-compact-responsive-table="true"');
+    expect(html).not.toContain('role="list" aria-label="جدول العقود"');
     expect(html).toContain('أحمد سالم');
     expect(html).toContain('A-101');
   });

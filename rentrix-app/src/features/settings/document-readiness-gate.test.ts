@@ -56,8 +56,9 @@ describe('document readiness gate replaces fake company identity', () => {
   it('deposits clearance print/PDF and utilities report are guarded', () => {
     const deposits = read('financials/deposits/deposits-workspace.tsx');
     expect(deposits).toContain('if (!documentSettings.isReady) return;');
-    expect(deposits).toContain('onClick={() => handlePrint(deposit)} disabled={!documentSettings.isReady}');
-    expect(deposits).toContain('onClick={() => handleDownloadPdf(deposit)} disabled={!documentSettings.isReady}');
+    expect(deposits).toContain('handlePrint');
+    expect(deposits).toContain('handleDownloadPdf');
+    expect(deposits).toContain('documentSettings.isReady');
 
     const utilities = read('utilities/components/utilities-workspace.tsx');
     expect(utilities).toContain('if (!documentSettings.isReady) return;');

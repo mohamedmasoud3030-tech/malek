@@ -54,6 +54,7 @@ export type AuthorizationContext = Readonly<{
   userId: string;
   email: string | null;
   role: AuthorizationRole;
+  grantedPermissions?: readonly AppPermission[];
 }>;
 
 export type AuthorizationDiagnostics = Readonly<{
@@ -103,6 +104,7 @@ const rolePermissions = {
   MANAGER: new Set<AppPermission>([
     'app.dashboard.view',
     'maintenance.view',
+    'system.view',
     'owners.hub.view',
     'owners.detail.view',
     'lands.view',
@@ -180,7 +182,7 @@ export function hasRole(context: AuthorizationContext | null | undefined, role: 
 export function canAccess(context: AuthorizationContext | null | undefined, permission: AppPermission): boolean {
   if (!context) return false;
 
-  return rolePermissions[context.role]?.has(permission) ?? false;
+  return Boolean(context.grantedPermissions?.includes(permission)) || (rolePermissions[context.role]?.has(permission) ?? false);
 }
 
 export function canAccessAny(context: AuthorizationContext | null | undefined, permissions: readonly AppPermission[]): boolean {

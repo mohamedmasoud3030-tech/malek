@@ -12,6 +12,7 @@ import type { UserRole } from '@/domain/types';
 import { useAuth } from '@/hooks/use-auth';
 import { canManageGovernedUser, getRoleLabel, governedUserRoles } from '../user-roles-model';
 import { fetchGovernedUsers, updateGovernedUserAccess, type GovernedUser } from '../user-roles-service';
+import { decidePermissionRequest, listPermissionRequests, type PermissionRequest } from '@/features/auth/permission-request-service';
 
 const roleDescriptions: ReadonlyArray<Readonly<{ role: UserRole; description: string }>> = [
   { role: 'ADMIN', description: 'إدارة كاملة للمكتب والمستخدمين والحوكمة.' },
@@ -75,6 +76,14 @@ function UserAccessCard({ user, currentUserId, isSaving, onSave }: Readonly<{
       </CardContent>
     </Card>
   );
+}
+
+function PermissionRequestsQueue() {
+  const queryClient = useQueryClient();
+  const requestsQuery = useQuery({ queryKey: ['permission-requests'], queryFn: () => listPermissionRequests() });
+  const decisionMutation = useMutation({ mutationFn: ({ id, decision }: { id: string; decision: 'APPROVED' | 'REJECTED' }) => decidePermissionRequest(id, decision, ''), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['permission-requests'] }) });
+  const requests = requestsQuery.data ?? [];
+  return <section id="permission-requests" className="space-y-3 rounded-2xl border border-border bg-card p-4"><div><h2 className="text-base font-black">طلبات الصلاحية</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">مراجعة الطلبات وتسجيل القرار في سجل التدقيق.</p></div>{requestsQuery.isPending ? <LoadingState label="جارٍ تحميل طلبات الصلاحية..." /> : requests.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد طلبات صلاحية.</p> : <div className="space-y-2">{requests.map((request: PermissionRequest) => <div key={request.id} className="grid gap-3 rounded-xl border border-border/70 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"><div><p className="font-bold">{request.permission}</p><p className="text-xs text-muted-foreground">المستخدم: {request.requester_user_id} · {request.reason || 'بدون سبب'} · {request.status}</p></div>{request.status === 'PENDING' ? <div className="flex gap-2"><Button className="min-h-11" disabled={decisionMutation.isPending} onClick={() => decisionMutation.mutate({ id: request.id, decision: 'APPROVED' })}>موافقة</Button><Button variant="danger" className="min-h-11" disabled={decisionMutation.isPending} onClick={() => decisionMutation.mutate({ id: request.id, decision: 'REJECTED' })}>رفض</Button></div> : null}</div>)}</div>}</section>;
 }
 
 /** Actual management surface for existing application users. Account creation
@@ -145,6 +154,7 @@ export function UserRolesWorkspace() {
           ))}
         </div>
       )}
+      <PermissionRequestsQueue />
     </section>
   );
 }

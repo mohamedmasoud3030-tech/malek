@@ -24,7 +24,7 @@ vi.mock('@tanstack/react-router', () => ({
   useLocation: () => ({ pathname }),
 }));
 
-import { MobileBottomNav, NavigationLinks } from './layout-navigation-view';
+import { MobileFloatingControl, NavigationLinks } from './layout-navigation-view';
 
 const admin: AuthorizationContext = {
   userId: 'admin-1',
@@ -47,38 +47,35 @@ function anchor(html: string, href: string) {
 }
 
 describe('Visual Wave 1 — route-derived app navigation', () => {
-  it('marks the owners root as current on an owner detail route', () => {
+  it('marks the People root as current on an owner detail route', () => {
     pathname = '/owners/owner-42';
 
     const html = renderToStaticMarkup(
       <NavigationLinks authorization={admin} expanded sharedLabel={sharedLabel} />,
     );
 
-    expect(anchor(html, '/owners')?.getAttribute('aria-current')).toBe('page');
+    expect(anchor(html, '/people')?.getAttribute('aria-current')).toBe('page');
     expect(anchor(html, '/properties')?.getAttribute('aria-current')).toBeNull();
   });
 
-  it('marks exactly the finance hub current for a finance child route in bottom navigation', () => {
-    pathname = '/finance/collections';
-
-    const html = renderToStaticMarkup(
-      <MobileBottomNav authorization={admin} sharedLabel={sharedLabel} />,
-    );
+  it('renders only Menu and Search in the mobile floating control', () => {
+    const html = renderToStaticMarkup(<MobileFloatingControl onMenu={() => undefined} />);
     const host = document.createElement('div');
     host.innerHTML = html;
 
-    const activeLinks = Array.from(host.querySelectorAll('a[aria-current="page"]'));
-    expect(activeLinks).toHaveLength(1);
-    expect(activeLinks[0]?.getAttribute('href')).toBe('/financials');
+    expect(host.querySelector('[data-mobile-floating-control]')).not.toBeNull();
+    expect(host.querySelectorAll('button')).toHaveLength(2);
+    expect(host.querySelectorAll('a')).toHaveLength(0);
   });
 
-  it('does not render the settings navigation root for a role without its route permission', () => {
+  it('renders the settings navigation root as locked for a role without its route permission', () => {
     pathname = '/dashboard';
 
     const html = renderToStaticMarkup(
       <NavigationLinks authorization={user} expanded sharedLabel={sharedLabel} />,
     );
 
-    expect(anchor(html, '/settings')).toBeNull();
+    expect(anchor(html, '/settings')?.getAttribute('aria-disabled')).toBe('true');
+    expect(html).toContain('text-warning');
   });
 });

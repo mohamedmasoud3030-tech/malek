@@ -5,7 +5,6 @@ import { EmptyState } from '@/components/empty-state';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
@@ -59,21 +58,6 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
       keyOf={(record) => record.id}
       emptyTitle="لا توجد أحداث تدقيق"
       emptyDescription="لا توجد أحداث للعرض."
-      enableViewModeToggle
-      viewModeStorageKey="rentrix:view-mode:audit-log"
-      renderMobileCard={(record) => (
-        <MobileCard
-          title={record.action}
-          subtitle={`${record.actor} · ${record.entityType || 'عام'}`}
-          badge={<StatusBadge tone="info">تدقيق</StatusBadge>}
-          meta={(
-            <div className="space-y-2 text-xs">
-              <p className="flex items-center gap-1.5 text-muted-foreground"><ShieldCheck className="size-3.5" />{formatAuditDate(companySettings, record.occurredAt)}</p>
-              {record.description ? <p className="leading-5 text-muted-foreground">{record.description}</p> : null}
-            </div>
-          )}
-        />
-      )}
     />
   );
 }

@@ -4,7 +4,6 @@ import { CheckCircle2, DollarSign, Download, FileCheck, MinusCircle, Printer, Sh
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { Input } from '@/components/ui/input';
 import { FinanceKpiGrid, FinanceKpiCard } from '../components/finance-reporting-visual-foundations';
@@ -322,43 +321,6 @@ export function DepositsWorkspace() {
           rows={deposits}
           columns={columns}
           keyOf={(deposit) => deposit.id}
-          enableViewModeToggle
-          viewModeStorageKey="rentrix:view-mode:deposits"
-          renderMobileCard={(deposit) => (
-            <MobileCard
-              title={formatDepositContractReference(deposit)}
-              subtitle={`${deposit.tenant_name ?? 'مستأجر غير محدد'} · استلام ${deposit.received_date}`}
-              badge={<StatusBadge tone={getDepositTone(deposit.status)}>{depositStatusLabels[deposit.status]}</StatusBadge>}
-              stats={(
-                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                  <div><span className="block text-muted-foreground">الأصلي</span><strong dir="ltr">{formatDepositMoney(deposit.deposit_amount)}</strong></div>
-                  <div><span className="block text-muted-foreground">المخصوم</span><strong className="text-destructive" dir="ltr">{formatDepositMoney(deposit.deducted_amount)}</strong></div>
-                  <div><span className="block text-muted-foreground">المسترد</span><strong className="text-success" dir="ltr">{formatDepositMoney(deposit.refunded_amount)}</strong></div>
-                  <div><span className="block text-muted-foreground">المتبقي</span><strong className="text-primary" dir="ltr">{formatDepositMoney(deposit.remaining_amount)}</strong></div>
-                </div>
-              )}
-              actions={(
-                <div className="grid w-full grid-cols-2 gap-2">
-                  {deposit.remaining_amount > 0 ? (
-                    <>
-                      <Button variant="secondary" className="min-h-11" onClick={() => openDepositAction(deposit, 'deduct')}>
-                        <ShieldAlert className="me-1 size-4" />خصم ضرر
-                      </Button>
-                      <Button variant="secondary" className="min-h-11" onClick={() => openDepositAction(deposit, 'refund')}>
-                        <DollarSign className="me-1 size-4" />رد التأمين
-                      </Button>
-                    </>
-                  ) : null}
-                  <Button variant="outline" className="min-h-11" onClick={() => handlePrint(deposit)} disabled={!documentSettings.isReady}>
-                    <Printer className="me-1 size-4" />طباعة
-                  </Button>
-                  <Button variant="outline" className="min-h-11" onClick={() => handleDownloadPdf(deposit)} disabled={!documentSettings.isReady}>
-                    <Download className="me-1 size-4" />PDF
-                  </Button>
-                </div>
-              )}
-            />
-          )}
         />
       </AsyncContentState>
 

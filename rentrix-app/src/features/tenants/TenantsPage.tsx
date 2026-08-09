@@ -1,6 +1,8 @@
 import { AlertTriangle, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
+import { TenantPreviewDialog } from './components/TenantPreviewDialog';
 import { PageLayout } from '@/components/layout/page-layout';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
@@ -8,7 +10,6 @@ import { EntityActions } from '@/components/ui/entity-actions';
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
@@ -49,11 +50,12 @@ function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   );
 }
 
-function TenantSafeLinks({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void }>) {
+function TenantSafeLinks({ tenant, onEdit, onPreview }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void; onPreview: (tenant: TenantWorkspaceRow) => void }>) {
   const navigate = useNavigate();
   const location = useLocation();
   return (
-    <EntityActions className="flex flex-wrap gap-2">
+        <EntityActions className="flex flex-wrap gap-2">
+      <Button variant="secondary" className="min-h-11 px-3" onClick={() => onPreview(tenant)}>عرض</Button>
       <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
         <Edit className="me-1 size-4" />تعديل
       </Button>
@@ -108,6 +110,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
+  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
+  const [previewTenantId, setPreviewTenantId] = useState<string | null>(null);
   const params = useMemo(() => ({ search, page, pageSize }), [page, search]);
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
@@ -161,7 +165,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       key: 'actions',
       header: 'إجراءات',
       render: (tenant) => (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
+          <Button variant="secondary" className="min-h-11 px-3" onClick={() => setPreviewTenantId(tenant.person.id)}>عرض</Button>
           <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(tenant.person.id)}>
             <Edit className="me-1 size-4" />تعديل
           </Button>
@@ -222,37 +227,9 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
               emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
               emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
               pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
-              enableViewModeToggle
-              viewModeStorageKey="rentrix:view-mode:tenants"
-              renderMobileCard={(tenant) => {
-                const location = getTenantLocationText(tenant);
-                return (
-                  <MobileCard
-                    title={tenant.person.full_name}
-                    subtitle={`عقود نشطة: ${tenant.activeContractCount}`}
-                    badge={(
-                      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-2.5 py-1 text-[11px] font-black text-primary">
-                        <Users className="size-3" aria-hidden="true" />مستأجر
-                      </span>
-                    )}
-                    meta={(
-                      <div className="grid gap-2 sm:grid-cols-3">
-                        <InfoPill icon={Phone} label="الهاتف" value={tenant.person.phone} dir="ltr" />
-                        <InfoPill icon={Mail} label="الإيميل" value={tenant.person.email} dir="ltr" />
-                        <InfoPill icon={ShieldCheck} label="رقم الهوية" value={tenant.person.national_id} />
-                      </div>
-                    )}
-                    stats={<TenantLocation tenant={tenant} />}
-                    actions={(
-                      <div className="w-full rounded-xl border border-dashed border-border/80 bg-background/70 p-3">
-                        <p className="mb-2 text-xs font-bold text-muted-foreground">الإجراءات والروابط</p>
-                        <TenantSafeLinks tenant={tenant} onEdit={openEdit} />
-                      </div>
-                    )}
-                  />
-                );
-              }}
+              onRowClick={(tenant) => setSelectedTenantId(tenant.person.id)}
             />
+            {selectedTenantId ? <ContextualDocumentsSection entityType="tenant" entityId={selectedTenantId} entityLabel="المستأجر" /> : null}
           </AsyncContentState>
         </div>
       </section>
@@ -279,6 +256,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   return (
     <>
       {workspace}
+      <TenantPreviewDialog tenant={rows.find((tenant) => tenant.person.id === previewTenantId) ?? null} open={Boolean(previewTenantId)} onOpenChange={(open) => { if (!open) setPreviewTenantId(null); }} onEdit={(personId) => { setPreviewTenantId(null); openEdit(personId); }} />
       <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
     </>
   );

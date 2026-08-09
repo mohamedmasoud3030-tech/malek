@@ -83,15 +83,18 @@ describe('PropertiesListPage mobile workflow interactions', () => {
     expect(document.body.textContent).toContain('قيمة العمولة');
   });
 
-  it('opens details from the mobile card and exposes mobile edit', async () => {
+  it('opens details from the compact register row and exposes edit', async () => {
     await act(async () => root.render(<PropertiesListPage />));
 
-    const cardButton = container.querySelector('[role="button"]') as HTMLElement | null;
-    expect(cardButton).toBeTruthy();
-    await act(async () => cardButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const row = container.querySelector('tbody tr') as HTMLElement | null;
+    expect(row).toBeTruthy();
+    await act(async () => row?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'property-1' } });
 
-    const editButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('تعديل'));
+    const actionMenu = container.querySelector('button[aria-haspopup="listbox"]');
+    expect(actionMenu).toBeTruthy();
+    await act(async () => actionMenu?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    const editButton = Array.from(document.body.querySelectorAll('button')).find((button) => button.textContent?.trim() === 'تعديل');
     expect(editButton).toBeTruthy();
     await act(async () => editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true })));
     expect(document.body.textContent).toContain('تعديل عقار');

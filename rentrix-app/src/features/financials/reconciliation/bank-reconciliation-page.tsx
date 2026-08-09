@@ -380,27 +380,6 @@ function BankStatementLinesTable({
       keyOf={(line) => line.id}
       emptyTitle="لا توجد حركات كشف"
       emptyDescription="لا توجد حركات تطابق الفلاتر الحالية."
-      enableViewModeToggle
-      viewModeStorageKey="rentrix:view-mode:bank-reconciliation"
-      renderMobileCard={(line) => (
-        <EntityCard
-          id={line.id}
-          name={line.description}
-          subtitle={formatDate(companySettings, line.transaction_date)}
-          avatarIcon={Landmark}
-          badge={<StatusBadge tone={statusTone(line.status)}>{statusLabels[line.status]}</StatusBadge>}
-          stats={(
-            <div className="grid grid-cols-2 gap-3">
-              <div><span className="block text-[10px] text-muted-foreground">المرجع</span><strong className="mt-1 block truncate text-xs">{line.reference ?? '—'}</strong></div>
-              <div><span className="block text-[10px] text-muted-foreground">المبلغ</span><strong dir="ltr" className="mt-1 block text-sm tabular-nums">{formatCompanyMoney(companySettings, line.amount)}</strong></div>
-            </div>
-          )}
-          actions={line.status === 'unmatched' ? [
-            { label: 'مطابقة', icon: ShieldCheck, variant: 'default', onClick: () => onMatch(line) },
-            { label: 'تجاهل', icon: Unlink, onClick: () => onIgnore(line.id) },
-          ] : undefined}
-        />
-      )}
     />
   );
 }

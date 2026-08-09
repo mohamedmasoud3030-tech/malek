@@ -15,15 +15,10 @@ import {
 import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
 import { RouteLoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
-import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EntityTable } from "@/components/ui/entity-table";
-import { MobileCard } from "@/components/ui/mobile-card";
 import { FilterBar } from "@/components/ui/filter-bar";
-import { EntityCard } from "@/components/ui/entity-card";
-import { ViewModeToggle } from "@/components/ui/view-mode-toggle";
-import { useViewModePreference } from "@/hooks/use-view-mode-preference";
 import { formatMoney, formatNumber } from "@/hooks/useCompanyFormatters";
 import { UnitFormModal } from "./unit-form-modal";
 
@@ -67,10 +62,6 @@ export type UnitsWorkspaceProps = Readonly<{
 
 export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const ctrl = useUnitsListController();
-  const [viewMode, setViewMode] = useViewModePreference(
-    "rentrix:view-mode:units",
-  );
-
   if (ctrl.isLoading) return <RouteLoadingState />;
 
   const totalUnits = ctrl.units.length;
@@ -83,7 +74,6 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
 
   const primaryAction = (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <ViewModeToggle value={viewMode} onChange={setViewMode} />
       <Button onClick={ctrl.openCreate}>
         <Plus className="me-2 size-4" />
         إضافة وحدة
@@ -251,10 +241,9 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
         </header>
 
         <div className="p-3 sm:p-4">
-          {viewMode === "list" ? (
+          {
             <EntityTable
               aria-label="جدول الوحدات"
-              enableViewModeToggle={false}
               rows={ctrl.filteredUnits}
               columns={[
                 {
@@ -346,78 +335,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 },
               ]}
               onRowClick={ctrl.navigateToUnit}
-              renderMobileCard={(unit) => {
-                const property = ctrl.propertyById.get(unit.property_id);
-                const unitStatus = getUnitPageStatus(unit);
-                return (
-                  <MobileCard
-                    title={`وحدة ${unit.unit_number}`}
-                    subtitle={
-                      property
-                        ? `${property.title}${unit.floor ? ` · الدور ${unit.floor}` : ""}`
-                        : unit.floor
-                          ? `الدور: ${unit.floor}`
-                          : "العقار غير محدد"
-                    }
-                    badge={
-                      <StatusBadge
-                        tone={unitStatusTone[unitStatus]}
-                        className="shrink-0"
-                      >
-                        {ctrl.statusLabels[unitStatus]}
-                      </StatusBadge>
-                    }
-                    stats={
-                      <div className="flex items-center justify-between gap-3">
-                        {unit.notes ? (
-                          <p className="min-w-0 flex-1 truncate text-xs leading-relaxed text-muted-foreground">
-                            {unit.notes}
-                          </p>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            بدون ملاحظات
-                          </span>
-                        )}
-                        {unit.rent_amount != null ? (
-                          <p
-                            className="shrink-0 whitespace-nowrap text-sm font-bold text-success tabular-nums"
-                            dir="ltr"
-                          >
-                            {formatMoney(unit.rent_amount)}
-                          </p>
-                        ) : null}
-                      </div>
-                    }
-                    onClick={() => ctrl.navigateToUnit(unit)}
-                    actions={
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          variant="secondary"
-                          className="min-h-11"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            ctrl.openEdit(unit);
-                          }}
-                        >
-                          <Edit className="me-1 size-4" aria-hidden="true" />
-                          تعديل
-                        </Button>
-                        <Button variant="ghost" className="min-h-11" asChild>
-                          <Link
-                            to="/properties/$propertyId/units/$unitId"
-                            params={{
-                              propertyId: unit.property_id,
-                              unitId: unit.id,
-                            }}
-                          >
-                            التفاصيل
-                          </Link>
-                        </Button>
-                      </div>
-                    }
-                  />
-                );
-              }}
+
               keyOf={(unit) => unit.id}
               isLoading={
                 ctrl.unitsQuery.isLoading || ctrl.propertiesQuery.isLoading
@@ -434,49 +352,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 </Button>
               }
             />
-          ) : (
-            <ResponsiveCardGrid desktopColumns={3} gap="lg">
-              {ctrl.filteredUnits.map((unit) => {
-                const property = ctrl.propertyById.get(unit.property_id);
-                const unitStatus = getUnitPageStatus(unit);
-                return (
-                  <EntityCard
-                    key={unit.id}
-                    id={unit.id}
-                    name={`وحدة ${unit.unit_number}`}
-                    subtitle={property?.title ?? "العقار غير محدد"}
-                    supportingText={
-                      unit.floor ? `الدور ${unit.floor}` : "الدور غير محدد"
-                    }
-                    avatarIcon={DoorOpen}
-                    badge={
-                      <StatusBadge tone={unitStatusTone[unitStatus]}>
-                        {ctrl.statusLabels[unitStatus]}
-                      </StatusBadge>
-                    }
-                    stats={
-                      <span className="font-bold tabular-nums" dir="ltr">
-                        {formatMoney(unit.rent_amount)}
-                      </span>
-                    }
-                    meta={
-                      unit.notes
-                        ? [{ label: "ملاحظات:", value: unit.notes }]
-                        : undefined
-                    }
-                    onClick={() => ctrl.navigateToUnit(unit)}
-                    actions={[
-                      {
-                        label: "تعديل",
-                        icon: Edit,
-                        onClick: () => ctrl.openEdit(unit),
-                      },
-                    ]}
-                  />
-                );
-              })}
-            </ResponsiveCardGrid>
-          )}
+          }
         </div>
       </section>
 
