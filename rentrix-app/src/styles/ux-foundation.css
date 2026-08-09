@@ -5,7 +5,7 @@
   --app-page-gutter-inline: clamp(0.75rem, 2.4vw, 1.5rem);
   --app-page-gutter-block: clamp(0.75rem, 2vw, 1.5rem);
   --entity-form-action-clearance: 6rem;
-  --mobile-bottom-nav-height: 3.75rem;
+  --mobile-floating-control-height: 4.5rem;
 }
 
 #main-content {
@@ -135,12 +135,12 @@
   }
 }
 
-/* ── Bottom nav clearance ─────────────────── */
-/* Ensures content is never hidden behind the bottom nav on small screens */
+/* ── Floating control clearance ───────────── */
+/* Ensures content is never hidden behind the mobile Menu + Search control. */
 @media (max-width: 1023px) {
   [data-page-layout] {
     padding-block-end: calc(
-      var(--mobile-bottom-nav-height) + 0.75rem + env(safe-area-inset-bottom, 0px)
+      var(--mobile-floating-control-height) + 0.75rem + env(safe-area-inset-bottom, 0px)
     );
   }
 }

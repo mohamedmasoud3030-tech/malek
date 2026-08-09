@@ -12,10 +12,10 @@ export const routeNavRoot = new Map<string, string>([
   ['/units', '/properties'],
   ['/lands', '/lands'],
 
-  ['/owners', '/owners'],
-  ['/owners/$ownerId', '/owners'],
+  ['/owners', '/people'],
+  ['/owners/$ownerId', '/people'],
 
-  ['/tenants', '/tenants'],
+  ['/tenants', '/people'],
 
   ['/contracts', '/contracts'],
   ['/contracts/new', '/contracts'],
@@ -24,12 +24,12 @@ export const routeNavRoot = new Map<string, string>([
   ['/people', '/people'],
   ['/people/new', '/people'],
   ['/people/$personId/edit', '/people'],
-  ['/leads', '/contracts'],
-  ['/communication', '/contracts'],
+  ['/leads', '/people'],
+  ['/communication', '/people'],
 
   ['/maintenance', '/maintenance'],
   ['/utilities', '/maintenance'],
-  ['/automation', '/maintenance'],
+  ['/automation', '/settings'],
   ['/documents-vault', '/maintenance'],
 
   // Finance has one primary destination. The operational subroutes stay valid

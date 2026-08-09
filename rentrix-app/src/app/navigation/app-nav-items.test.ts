@@ -37,13 +37,13 @@ describe('app route and navigation parity', () => {
     expect(routeTreeSource).toContain('notFoundComponent: NotFoundPage');
   });
 
-  it('promotes the six core property-management entities to direct primary destinations (Phase 2)', () => {
+  it('keeps the approved domain roots primary and nests people records beneath People', () => {
     const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    expect(primaryPaths).toEqual(expect.arrayContaining(['/people', '/properties', '/lands', '/owners', '/tenants', '/contracts']));
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).not.toContain('/owners');
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).not.toContain('/tenants');
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).not.toContain('/lands');
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).not.toContain('/people');
+    expect(primaryPaths).toEqual(expect.arrayContaining(['/people', '/properties', '/lands', '/contracts', '/financials', '/reports', '/maintenance', '/settings']));
+    expect(primaryPaths).not.toContain('/owners');
+    expect(primaryPaths).not.toContain('/tenants');
+    expect(workspaceChildNavItems['/people'].map(([to]) => to)).toEqual(['/leads', '/owners', '/tenants', '/communication']);
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units']);
   });
 
   it('keeps finance, commissions, and reports as three distinct primary entries (Phase 2)', () => {
@@ -61,12 +61,11 @@ describe('app route and navigation parity', () => {
     }
   });
 
-  it('keeps secondary tools inside their natural workspaces (Phase 2: people/lands first-class)', () => {
+  it('keeps secondary tools inside their natural workspaces', () => {
     expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units']);
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/leads', '/communication']);
-    expect(workspaceChildNavItems['/maintenance'].map(([to]) => to)).toEqual(['/utilities', '/automation', '/documents-vault']);
-    expect(workspaceChildNavItems['/settings'].map(([to]) => to)).toEqual(['/change-password', '/audit-log', '/data-integrity', '/system']);
-    expect(workspaceChildNavItems['/people']).toEqual([]);
+    expect(workspaceChildNavItems['/people'].map(([to]) => to)).toEqual(['/leads', '/owners', '/tenants', '/communication']);
+    expect(workspaceChildNavItems['/maintenance'].map(([to]) => to)).toEqual(['/utilities']);
+    expect(workspaceChildNavItems['/settings'].map(([to]) => to)).toEqual(['/system', '/automation']);
     expect(workspaceChildNavItems['/lands']).toEqual([]);
   });
 
@@ -94,11 +93,8 @@ describe('app route and navigation parity', () => {
     expect(getRouteDefinition('/tenants')).not.toContain('requirePermission(');
   });
 
-  it('keeps five daily mobile destinations without horizontal clutter', () => {
-    expect(mobileNavItems).toHaveLength(5);
-    expect(mobileNavItems.map(([to]) => to)).toEqual([
-      '/dashboard', '/properties', '/tenants', '/contracts', '/financials',
-    ]);
+  it('removes the legacy five-item mobile navigation', () => {
+    expect(mobileNavItems).toHaveLength(0);
   });
 
   it('keeps administration as one primary destination while preserving governed subroutes', () => {

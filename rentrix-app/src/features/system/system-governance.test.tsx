@@ -83,10 +83,11 @@ describe('system and governance route authorization', () => {
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = settingsAndGovernanceItems.map(([to]) => to);
 
-    expect(systemRoutes).toEqual(expect.arrayContaining(['/audit-log', '/data-integrity', '/system', '/settings']));
-    expect(systemRoutes).toContain('/audit-log');
-    expect(systemRoutes).toContain('/data-integrity');
-    expect(systemRoutes).toContain('/change-password');
+    expect(systemRoutes).toEqual(expect.arrayContaining(['/system', '/settings']));
+    expect(systemRoutes).toContain('/system');
+    expect(systemRoutes).not.toContain('/audit-log');
+    expect(systemRoutes).not.toContain('/data-integrity');
+    expect(systemRoutes).not.toContain('/change-password');
     const filteredSettingsItems = settingsAndGovernanceItems.filter(([, , , , permission]) => {
       const canShow = canShowNavigationItem(adminContext, permission);
       return canShow;

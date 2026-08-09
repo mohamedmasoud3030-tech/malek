@@ -22,7 +22,7 @@ describe('Phase 2 — Canonical IA + Navigation restructure', () => {
     const allPrimary = navGroups.flatMap(([, items]) => items.map(([to]) => to));
     expect(allPrimary).toContain('/people');
     expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).not.toContain('/people');
-    expect(workspaceChildNavItems['/people']).toEqual([]);
+    expect(workspaceChildNavItems['/people'].map(([to]) => to)).toEqual(['/leads', '/owners', '/tenants', '/communication']);
   });
 
   it('legacy /contracts?section=people reaches /people (hub redirect)', () => {
@@ -138,10 +138,8 @@ describe('Phase 2 — Canonical IA + Navigation restructure', () => {
     expect(commissions.sidebarRoot).toBe('/commissions');
   });
 
-  it('mobile bottom nav remains 5 primaries and does not mis-highlight', () => {
-    expect(mobileNavItems).toHaveLength(5);
-    for (const [to] of mobileNavItems) {
-      expect(getNavRoot(to)).toBe(to);
-    }
+  it('mobile navigation is replaced by the Menu + Search floating control', () => {
+    expect(mobileNavItems).toHaveLength(0);
+    expect(readFileSync(new URL('../layout/app-shell.tsx', import.meta.url), 'utf8')).toContain('MobileFloatingControl');
   });
 });
