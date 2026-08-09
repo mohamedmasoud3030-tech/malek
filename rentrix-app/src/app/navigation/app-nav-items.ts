@@ -61,7 +61,9 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/automation', 'automation', 'تذكيرات العقود والإيجار وتنبيهات التشغيل', Settings2, 'automation.view'],
     ['/documents-vault', 'documentsVault', 'أرشيف المستندات وخزينة المرفقات', FolderKanban],
   ],
-  '/financials': [],
+  '/financials': [
+    ['/commissions', 'commissions', 'عمولات المكتب والمناديب والوسطاء', PieChart, 'commissions.view'],
+  ],
   '/reports': [],
   '/ai-assistant': [],
   '/settings': [

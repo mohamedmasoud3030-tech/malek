@@ -47,7 +47,7 @@ export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) 
     { key: 'time', header: 'الوقت', render: (record) => <span className="font-bold">{formatAuditDate(companySettings, record.occurredAt)}</span> },
     { key: 'actor', header: 'المستخدم', render: (record) => record.actor },
     { key: 'action', header: 'الإجراء', render: (record) => <StatusBadge tone="info">{record.action}</StatusBadge> },
-    { key: 'scope', header: 'النطاق', render: (record) => record.entityType || 'عام' },
+    { key: 'scope', header: 'النطاق', render: (record) => record.entityId ? `${record.entityType} / ${record.entityId}` : (record.entityType || 'عام') },
     { key: 'description', header: 'الوصف', render: (record) => <span className="max-w-lg whitespace-normal text-muted-foreground">{record.description ?? 'لا يوجد وصف'}</span> },
   ];
 

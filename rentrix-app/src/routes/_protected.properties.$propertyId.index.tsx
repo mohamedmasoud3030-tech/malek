@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { openEntityPreview } from '@/components/ui/entity-preview-events';
 
-export function PropertyOverviewRouteComponent() {
+export function PropertyIndexRouteComponent() {
   const navigate = useNavigate();
   const params = useParams({ strict: false }) as Record<string, string | undefined>;
   const propertyId = params.propertyId;

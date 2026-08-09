@@ -4,6 +4,7 @@ import { Plus, FileText, Wrench, FolderKanban, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import {
   usePropertyActivityTab,
   usePropertyContractsTab,
@@ -20,6 +21,7 @@ export interface PropertyTabProps {
 export function PropertyContractsTab({ propertyId }: PropertyTabProps) {
   const { canWriteContract } = usePropertyTabPermissions();
   const { data, isLoading, isError, error, refetch } = usePropertyContractsTab(propertyId);
+  const { money } = useCompanyFormatters();
 
   const propertyContracts = data ?? [];
 
@@ -86,7 +88,7 @@ export function PropertyContractsTab({ propertyId }: PropertyTabProps) {
                 </StatusBadge>
               </div>
               <p className="text-xs text-muted-foreground">
-                الوحدة: {contract.units?.unit_number ?? '—'} | الإيجار: {Number(contract.rent_amount ?? 0).toLocaleString()} OMR
+                الوحدة: {contract.units?.unit_number ?? '—'} | الإيجار: {money(contract.rent_amount ?? 0)}
               </p>
               <p className="text-xs text-muted-foreground">
                 الفترة: {contract.start_date} إلى {contract.end_date}
@@ -101,6 +103,7 @@ export function PropertyContractsTab({ propertyId }: PropertyTabProps) {
 
 export function PropertyFinancialsTab({ propertyId }: PropertyTabProps) {
   const { data, isLoading, isError, error, refetch } = usePropertyInvoicesTab(propertyId);
+  const { money } = useCompanyFormatters();
 
   const propertyInvoices = data ?? [];
 
@@ -147,7 +150,7 @@ export function PropertyFinancialsTab({ propertyId }: PropertyTabProps) {
                 </StatusBadge>
               </div>
               <p className="text-xs text-muted-foreground">
-                المبلغ: {Number(invoice.amount ?? 0).toLocaleString()} OMR | تاريخ الاستحقاق: {invoice.due_date}
+                المبلغ: {money(invoice.amount ?? 0)} | تاريخ الاستحقاق: {invoice.due_date}
               </p>
             </Card>
           ))}

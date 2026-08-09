@@ -458,7 +458,17 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       </EntityForm.Overlay>
 
       <ConfirmDialog open={Boolean(meterToArchive)} onOpenChange={(open) => { if (!open && !deleteMeterMut.isPending) setMeterToArchive(null); }} title="أرشفة عداد المرافق؟" description={meterToArchive ? `سيتم أرشفة العداد ${meterToArchive.meter_number} المرتبط بـ ${propertyName(meterToArchive.property_id)} وإخفاؤه من القوائم النشطة.` : undefined} confirmLabel="تأكيد الأرشفة" variant="danger" isLoading={deleteMeterMut.isPending} onConfirm={handleConfirmArchiveMeter} />
-      <ConfirmDialog open={Boolean(billToArchive)} onOpenChange={(open) => { if (!open && !deleteBillMut.isPending) setBillToArchive(null); }} title="أرشفة فاتورة المرافق؟" description={billToArchive ? `ستُؤرشف الفاتورة ${billToArchive.bill_number ?? billToArchive.id.slice(0, 8)} بقيمة ${money(billToArchive.amount)} للعقار ${propertyName(billToArchive.property_id)}.` : undefined} confirmLabel="تأكيد الأرشفة" variant="danger" isLoading={deleteBillMut.isPending} onConfirm={handleConfirmArchiveBill} />
+      <ConfirmDialog open={Boolean(billToArchive)} onOpenChange={(open) => { if (!open && !deleteBillMut.isPending) setBillToArchive(null); }} title="أرشفة فاتورة المرافق؟" description={billToArchive ? `ستُؤرشف الفاتورة ${billToArchive.bill_number ?? billToArchive.id.slice(0, 8)} بقيمة ${money(billToArchive.amount)} للعقار ${propertyName(billToArchive.property_id)}.` : undefined} confirmLabel="تأكيد الأرشفة" variant="danger" isLoading={deleteBillMut.isPending} onConfirm={handleConfirmArchiveBill}>
+        {billToArchive && (
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>رقم الفاتورة: {billToArchive.bill_number}</p>
+            <p>النوع: {utilityTypeLabels[meters.find(m => m.id === billToArchive.meter_id)?.utility_type ?? 'electricity'] || 'كهرباء'}</p>
+            <p>العقار: {propertyName(billToArchive.property_id)}</p>
+            <p>الفترة: {billToArchive.billing_period_start} → {billToArchive.billing_period_end}</p>
+            <p>المبلغ: {money(billToArchive.amount)}</p>
+          </div>
+        )}
+      </ConfirmDialog>
     </>
   );
 

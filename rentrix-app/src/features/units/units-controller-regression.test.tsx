@@ -15,6 +15,11 @@ import { computeUnitKpis, getUnitPageStatus } from './use-units-list-controller'
 import type { Unit } from '@/types/domain';
 
 const mockNavigate = vi.fn();
+const mockOpenEntityPreview = vi.fn();
+
+vi.mock('@/components/ui/entity-preview-events', () => ({
+  openEntityPreview: (...args: any[]) => mockOpenEntityPreview(...args),
+}));
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
@@ -170,9 +175,9 @@ describe('UnitsPage controller regression', () => {
     const row = container.querySelector('tbody tr') as HTMLElement;
     expect(row).toBeTruthy();
     await act(async () => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/properties/$propertyId/units/$unitId',
-      params: { propertyId: 'p1', unitId: 'u1' },
+    expect(mockOpenEntityPreview).toHaveBeenCalledWith({
+      kind: 'unit',
+      id: 'u1',
     });
   });
 
@@ -181,9 +186,9 @@ describe('UnitsPage controller regression', () => {
     const card = container.querySelector('[role="listitem"] [role="button"]') as HTMLElement;
     expect(card).toBeTruthy();
     await act(async () => { card.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: '/properties/$propertyId/units/$unitId',
-      params: { propertyId: 'p1', unitId: 'u1' },
+    expect(mockOpenEntityPreview).toHaveBeenCalledWith({
+      kind: 'unit',
+      id: 'u1',
     });
   });
 

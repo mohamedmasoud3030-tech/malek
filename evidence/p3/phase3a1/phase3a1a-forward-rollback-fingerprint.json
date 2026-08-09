@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T15:52:32.092Z",
+  "generatedAt": "2026-08-09T02:04:07.948Z",
   "migrations": [
     "20260727091000_phase3a1a_canonical_accounts_expenses_deposits.sql",
     "20260727092000_phase3a1a_execution_hardening.sql",

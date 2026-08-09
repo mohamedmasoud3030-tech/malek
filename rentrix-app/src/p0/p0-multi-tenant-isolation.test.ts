@@ -478,6 +478,9 @@ beforeAll(async () => {
       !f.includes('phase2_financial_integrity') &&
       !f.includes('phase3a1b_canonical_accounts') &&
       !f.includes('business_document_references') &&
+      !f.includes('s03_') &&
+      !f.includes('s04_') &&
+      !f.includes('s08_') &&
       // Later S02 hardening would mask the exact pre-P0 visibility and RPC
       // behavior this causality suite is designed to measure.
       !f.includes('s02_financial_direct_write_hardening_payments_expenses') &&

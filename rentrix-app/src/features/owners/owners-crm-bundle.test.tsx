@@ -3,12 +3,21 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { canAccess, canShowNavigationItem, getAuthorizationContextFromUser } from '@/features/auth/permissions';
 import { getAllNavItems, navGroups, type NavItem } from '@/app/navigation/app-nav-items';
 import { CommissionsView } from '@/features/commissions/components/commissions-view';
 import { CommunicationHubView } from '@/features/communication/components/communication-hub-view';
 import { LandsView } from '@/features/lands/components/lands-view';
 import { LeadsView } from '@/features/leads/components/leads-view';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
 
 const sourceRoot = fileURLToPath(new URL('../..', import.meta.url));
 const forbiddenNamePieces = [
@@ -69,9 +78,13 @@ describe('Owners and CRM navigation visibility', () => {
 
 describe('Approved CRM module views', () => {
   it('renders lands as a working module with create action', () => {
-    const html = renderToStaticMarkup(<LandsView rows={[]} filters={{ query: '', status: 'all' }} draft={{ plot_no: '', name: '', location: '', area: '', owner_id: '', purchase_price: '', owner_price: '', commission: '', category: 'residential', status: 'available', notes: '' }} editingLand={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />);
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={queryClient}>
+        <LandsView rows={[]} filters={{ query: '', status: 'all' }} draft={{ plot_no: '', name: '', location: '', area: '', owner_id: '', purchase_price: '', owner_price: '', commission: '', category: 'residential', status: 'available', notes: '' }} editingLand={null} formOpen={false} isLoading={false} isSaving={false} isArchiving={false} error={null} writeError={null} onFiltersChange={() => undefined} onDraftChange={() => undefined} onCreate={() => undefined} onEdit={() => undefined} onFormOpenChange={() => undefined} onSubmit={() => undefined} onArchive={() => undefined} onRetry={() => undefined} />
+      </QueryClientProvider>
+    );
 
-    expect(html).toContain('إضافة سجل أرض');
+    expect(html).toContain('إضافة أرض');
     expect(html).not.toContain('غير متاح');
   });
 

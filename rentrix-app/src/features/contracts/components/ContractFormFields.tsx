@@ -5,6 +5,7 @@ import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { calculateContractSchedulePreview } from '../contract-schedule-preview';
 import { getContractUnitDefaultRent } from '../contract-unit-options';
 import { ContractAgreementMissingAlert } from './ContractAgreementMissingAlert';
@@ -39,6 +40,7 @@ export function ContractFormFields({
   showAttachment = false,
   autoFocusProperty = false,
 }: ContractFormFieldsProps) {
+  const { money } = useCompanyFormatters();
   const {
     form,
     submitting,
@@ -245,7 +247,7 @@ export function ContractFormFields({
             </div>
             <div>
               <span className="text-muted-foreground text-xs">قيمة الدفعة المقدرة:</span>
-              <p className="font-semibold">{schedulePreview.amountPerInstallment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} OMR</p>
+              <p className="font-semibold">{money(schedulePreview.amountPerInstallment)}</p>
             </div>
             <div>
               <span className="text-muted-foreground text-xs">عدد الدفعات المتوقع:</span>

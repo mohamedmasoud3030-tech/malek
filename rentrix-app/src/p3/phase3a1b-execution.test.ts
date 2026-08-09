@@ -643,8 +643,10 @@ describe('Phase 3A-1B execution lifecycle', () => {
          from public.journal_entries o
          join public.journal_entries r on r.account_id = o.account_id and r.amount = o.amount
         where o.source_id::text = $1 and coalesce(o.entity_type,'') <> 'receipt_void'
-          and r.source_id::text = $1 and r.entity_type = 'receipt_void'
-          and r.request_id = 'void:' || $1
+          and (
+            (r.source_id::text = $1 and r.entity_type = 'receipt_void' and r.request_id = 'void:' || $1)
+            or r.batch_id in (select id from public.journal_batches where source_type = 'journal_reversal' and reversal_of_batch_id = o.batch_id)
+          )
         order by 1`,
       [receipt2],
     );

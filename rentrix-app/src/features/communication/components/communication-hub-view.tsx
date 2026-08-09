@@ -132,7 +132,7 @@ export function CommunicationHubView({
     <section className="space-y-5">
       <div>
         <h2 className="text-base font-bold tracking-tight">سجل التواصل</h2>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">المكالمات والرسائل والاجتماعات والمتابعات في سجل واحد؛ الربط التقني بالكيانات لا يُطلب من المستخدم يدوياً.</p>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">المكالمات والرسائل والاجتماعات والمتابعات في سجل تشغيلي واحد؛ الربط التقني بالكيانات لا يُطلب من المستخدم يدوياً.</p>
       </div>
 
       <ResponsiveCardGrid>

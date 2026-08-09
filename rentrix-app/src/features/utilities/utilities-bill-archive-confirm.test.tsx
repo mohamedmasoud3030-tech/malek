@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { UtilityBill, UtilityMeter } from './utilities-service';
 
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
@@ -60,6 +61,11 @@ vi.mock('@/features/properties/use-properties', () => ({
   useProperties: () => ({ data: { rows: [{ id: 'property-1', title: 'عقار النور' }] }, isLoading: false }),
 }));
 
+vi.mock('@/features/settings/useCompanySettings', () => ({
+  useCompanySettingsContract: () => ({ defaultCurrency: 'OMR', currency: 'OMR', companyName: 'شركة الأفق العقارية' }),
+  useCompanySettings: () => ({ data: { company_name: 'شركة الأفق العقارية', currency: 'OMR' }, isLoading: false }),
+}));
+
 vi.mock('@/features/settings/useDocumentSettings', () => ({
   useDocumentSettings: () => ({
     isReady: true,
@@ -114,11 +120,20 @@ function click(element: HTMLElement) {
   });
 }
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
 describe('utility bill removal requires explicit confirmation (P0)', () => {
   let container: HTMLDivElement | null = null;
   let root: ReturnType<typeof createRoot> | null = null;
 
   beforeEach(() => {
+    queryClient.clear();
     vi.clearAllMocks();
     deleteBillMutState.isPending = false;
     container = document.createElement('div');
@@ -137,7 +152,11 @@ describe('utility bill removal requires explicit confirmation (P0)', () => {
 
   async function renderWorkspace() {
     await act(async () => {
-      root!.render(<UtilitiesWorkspace mode="embedded" />);
+      root!.render(
+        <QueryClientProvider client={queryClient}>
+          <UtilitiesWorkspace mode="embedded" />
+        </QueryClientProvider>
+      );
     });
   }
 

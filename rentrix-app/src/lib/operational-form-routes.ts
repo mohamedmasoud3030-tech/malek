@@ -1,5 +1,4 @@
 const operationalFormRoutePrefixes = [
-  '/dashboard',
   '/properties',
   '/units',
   '/people',
