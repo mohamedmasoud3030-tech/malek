@@ -36,7 +36,9 @@ drop table if exists public.master_lease_schedule_rows;
 drop table if exists public.master_lease_measurements;
 drop function if exists public.gl_ml_provision_supporting_accounts(uuid);
 
--- Accounts 1650/4400/6400 are deliberately retained. They are additive chart
+-- Accounts 4400/6400 are deliberately retained. They are additive chart
 -- configuration and may already be referenced by canonical journal history.
+-- The existing Stage 3 master-lease accounts (1600/2500/4000/6200/6300) are
+-- never touched by this rollback.
 
 commit;
