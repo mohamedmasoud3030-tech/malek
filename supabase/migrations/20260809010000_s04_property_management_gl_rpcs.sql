@@ -675,6 +675,7 @@ declare
   v_dep_id text;
   v_cash_id text;
   v_transaction_created boolean := false;
+  v_transaction_rows integer := 0;
   v_result jsonb;
 begin
   if v_company_id is null or v_deposit_id is null or v_effective_date is null then
@@ -723,7 +724,8 @@ begin
     'GL tenant deposit refund', v_request_id
   )
   on conflict (request_id) do nothing;
-  get diagnostics v_transaction_created = row_count > 0;
+  get diagnostics v_transaction_rows = row_count;
+  v_transaction_created := v_transaction_rows > 0;
 
   if v_transaction_created then
     update public.tenant_deposits
@@ -778,6 +780,7 @@ declare
   v_target_no text;
   v_reason text;
   v_transaction_created boolean := false;
+  v_transaction_rows integer := 0;
   v_result jsonb;
 begin
   if v_company_id is null or v_deposit_id is null or v_target_type is null or v_effective_date is null then
@@ -861,7 +864,8 @@ begin
   )
   on conflict (request_id) do nothing;
 
-  get diagnostics v_transaction_created = row_count > 0;
+  get diagnostics v_transaction_rows = row_count;
+  v_transaction_created := v_transaction_rows > 0;
   if v_transaction_created then
     update public.tenant_deposits
        set deducted_amount = public.gl_pm_round_omr(deducted_amount + v_amount),
