@@ -66,7 +66,6 @@ export function FinancialReportsPreviewSection({
                 drillTo="/finance/collections"
                 drillSearch={{ section: 'invoices', dateFrom: reportFilters.dateFrom, dateTo: reportFilters.dateTo }}
                 drillAriaLabel="الفواتير: عرض قائمة الفواتير ضمن نفس الفترة"
-                unit="OMR"
               />
               <FinanceKpiCard
                 label="المدفوع"
@@ -78,7 +77,6 @@ export function FinancialReportsPreviewSection({
                 trendValue="محصّل"
                 drillTo="/finance/collections"
                 drillSearch={{ section: 'receipts', dateFrom: reportFilters.dateFrom, dateTo: reportFilters.dateTo }}
-                unit="OMR"
               />
               <FinanceKpiCard
                 label="المتبقي"
@@ -90,7 +88,6 @@ export function FinancialReportsPreviewSection({
                 trendValue="مستحق"
                 drillTo="/finance/expenses"
                 drillSearch={{ section: 'arrears' }}
-                unit="OMR"
               />
               <FinanceKpiCard
                 label="الإيصالات"
@@ -118,7 +115,6 @@ export function FinancialReportsPreviewSection({
                 accent="primary"
                 drillTo="/finance/expenses"
                 drillSearch={{ section: 'expenses', from: reportFilters.dateFrom, to: reportFilters.dateTo }}
-                unit="OMR"
               />
             </FinanceKpiGrid>
 

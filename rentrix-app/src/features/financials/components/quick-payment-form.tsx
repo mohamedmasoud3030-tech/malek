@@ -1,19 +1,19 @@
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { SelectionCard } from '@/components/ui/selection-card';
 import type { Payment } from '@/types/domain';
 import { QUICK_PAYMENT_AMOUNT_INPUT_ID, QUICK_PAYMENT_FORM_ID } from '../invoices/quick-collect';
 import { formatMoney } from './financials-formatters';
 
 const methods: Payment['payment_method'][] = ['cash', 'bank_transfer', 'card', 'check', 'other'];
 
-const methodLabels: Record<Payment['payment_method'], string> = {
-  cash: 'نقدي',
-  bank_transfer: 'تحويل بنكي',
-  card: 'بطاقة',
-  check: 'شيك',
-  other: 'أخرى',
+const methodDetails: Record<Payment['payment_method'], { label: string; desc: string }> = {
+  cash: { label: 'نقدي', desc: 'دفع مباشر نقداً' },
+  bank_transfer: { label: 'تحويل بنكي', desc: 'إيداع أو تحويل حساب' },
+  card: { label: 'بطاقة', desc: 'دفع إلكتروني شبكة' },
+  check: { label: 'شيك', desc: 'شيك بنكي مصدق' },
+  other: { label: 'أخرى', desc: 'سداد بطريقة إضافية' },
 };
 
 type QuickPaymentFormProps = {
@@ -55,40 +55,75 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
   };
 
   return (
-    <div className="rounded-2xl border p-4">
-      <h4 className="font-black">تسجيل دفعة سريعة</h4>
-      <form id={QUICK_PAYMENT_FORM_ID} className="mt-3 grid gap-3 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] lg:items-start" onSubmit={onSubmit}>
-        <div>
-          <div className="mb-1 flex items-center justify-between gap-2">
-            <label className="block text-xs font-bold text-muted-foreground" htmlFor={QUICK_PAYMENT_AMOUNT_INPUT_ID}>المبلغ</label>
-            {typeof remainingAmount === 'number' && remainingAmount > 0 ? (
-              <button
-                type="button"
-                className="rounded-md text-xs font-bold text-primary underline-offset-2 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                onClick={() => onAmountChange(String(Math.round(remainingAmount * 1000) / 1000))}
-              >
-                كامل المتبقي ({formatMoney(remainingAmount)})
-              </button>
-            ) : null}
+    <div className="rounded-2xl border bg-card p-4 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h4 className="font-black text-foreground">تسجيل دفعة سريعة</h4>
+        {typeof remainingAmount === 'number' && remainingAmount > 0 ? (
+          <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-foreground">
+            <span>المبلغ المتبقي للتحصيل:</span>
+            <span className="text-primary tabular-nums font-extrabold">{formatMoney(remainingAmount)}</span>
+            <button
+              type="button"
+              className="ms-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-extrabold text-primary transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              onClick={() => onAmountChange(String(Math.round(remainingAmount * 1000) / 1000))}
+            >
+              كامل المتبقي
+            </button>
           </div>
-          <Input id={QUICK_PAYMENT_AMOUNT_INPUT_ID} ref={amountInputRef} type="number" min="0.01" inputMode="decimal" step="0.01" placeholder="المبلغ" value={amount} onChange={(event) => onAmountChange(event.target.value)} />
-          {amountValidationMessage ? <p className="mt-2 text-sm text-destructive">{amountValidationMessage}</p> : null}
+        ) : null}
+      </div>
+
+      <form id={QUICK_PAYMENT_FORM_ID} className="space-y-4" onSubmit={onSubmit}>
+        <div className="space-y-2">
+          <label className="block text-xs font-bold text-muted-foreground">اختر طريقة الدفع</label>
+          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+            {methods.map((item) => (
+              <SelectionCard
+                key={item}
+                selected={method === item}
+                title={methodDetails[item].label}
+                description={methodDetails[item].desc}
+                onClick={() => onMethodChange(item)}
+              />
+            ))}
+          </div>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-bold text-muted-foreground">طريقة الدفع</label>
-          <Select value={method} onChange={(event) => onMethodChange(event.target.value as Payment['payment_method'])}>
-            {methods.map((item) => <option key={item} value={item}>{methodLabels[item]}</option>)}
-          </Select>
+
+        <div className="grid gap-3 sm:grid-cols-3 items-start">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-muted-foreground" htmlFor={QUICK_PAYMENT_AMOUNT_INPUT_ID}>
+              المبلغ المقبوض
+            </label>
+            <Input
+              id={QUICK_PAYMENT_AMOUNT_INPUT_ID}
+              ref={amountInputRef}
+              type="number"
+              min="0.01"
+              inputMode="decimal"
+              step="0.01"
+              placeholder="المبلغ"
+              value={amount}
+              onChange={(event) => onAmountChange(event.target.value)}
+            />
+            {amountValidationMessage ? <p className="mt-2 text-sm text-destructive">{amountValidationMessage}</p> : null}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-bold text-muted-foreground">تاريخ الدفع</label>
+            <Input type="date" value={paymentDate} onChange={(event) => onPaymentDateChange(event.target.value)} />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-bold text-muted-foreground">المرجع (اختياري)</label>
+            <Input placeholder="رقم الشيك أو التحويل" value={reference} onChange={(event) => onReferenceChange(event.target.value)} />
+          </div>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-bold text-muted-foreground">تاريخ الدفع</label>
-          <Input type="date" value={paymentDate} onChange={(event) => onPaymentDateChange(event.target.value)} />
+
+        <div className="flex justify-end pt-1">
+          <Button type="submit" size="lg" disabled={isPaymentDisabled}>
+            {isPending ? 'جارٍ التسجيل...' : 'تسجيل دفعة'}
+          </Button>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-bold text-muted-foreground">المرجع</label>
-          <Input placeholder="اختياري" value={reference} onChange={(event) => onReferenceChange(event.target.value)} />
-        </div>
-        <Button type="submit" className="lg:mt-5" disabled={isPaymentDisabled}>{isPending ? 'جارٍ التسجيل...' : 'تسجيل دفعة'}</Button>
       </form>
     </div>
   );

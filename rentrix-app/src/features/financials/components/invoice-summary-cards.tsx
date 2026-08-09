@@ -35,7 +35,6 @@ export function InvoiceSummaryCards({ summary, currentFilters, onStatusDrill }: 
         accent="primary"
         drillAriaLabel={`إجمالي الفواتير ${summary.totalAmount} — عرض التفاصيل`}
         onDrill={onStatusDrill ? () => onStatusDrill('all') : undefined}
-        unit="OMR"
       />
       <FinanceKpiCard
         label="إجمالي VAT"
@@ -45,7 +44,6 @@ export function InvoiceSummaryCards({ summary, currentFilters, onStatusDrill }: 
         accent="primary"
         drillAriaLabel={`إجمالي VAT ${summary.totalTax}`}
         onDrill={onStatusDrill ? () => onStatusDrill('all') : undefined}
-        unit="OMR"
       />
       <FinanceKpiCard
         label="إجمالي المدفوع"
@@ -57,7 +55,6 @@ export function InvoiceSummaryCards({ summary, currentFilters, onStatusDrill }: 
         trendValue="مدفوع"
         drillAriaLabel={`إجمالي المدفوع ${summary.totalPaid} — عرض المدفوعات`}
         onDrill={onStatusDrill ? () => onStatusDrill('paid') : undefined}
-        unit="OMR"
       />
       <FinanceKpiCard
         label="إجمالي المتبقي"
@@ -69,7 +66,6 @@ export function InvoiceSummaryCards({ summary, currentFilters, onStatusDrill }: 
         trendValue={summary.totalRemaining > 0 ? 'مستحق' : 'مكتمل'}
         drillAriaLabel={`إجمالي المتبقي ${summary.totalRemaining} — عرض المتأخرات`}
         onDrill={onStatusDrill ? () => onStatusDrill('unpaid') : undefined}
-        unit="OMR"
       />
     </FinanceKpiGrid>
   );

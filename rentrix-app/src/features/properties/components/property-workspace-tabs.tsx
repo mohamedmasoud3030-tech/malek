@@ -4,6 +4,7 @@ import { Plus, FileText, Wrench, FolderKanban, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import {
   usePropertyActivityTab,
   usePropertyContractsTab,
@@ -86,7 +87,7 @@ export function PropertyContractsTab({ propertyId }: PropertyTabProps) {
                 </StatusBadge>
               </div>
               <p className="text-xs text-muted-foreground">
-                الوحدة: {contract.units?.unit_number ?? '—'} | الإيجار: {Number(contract.rent_amount ?? 0).toLocaleString()} OMR
+                الوحدة: {contract.units?.unit_number ?? '—'} | الإيجار: {formatDefaultCompanyMoney(contract.rent_amount)}
               </p>
               <p className="text-xs text-muted-foreground">
                 الفترة: {contract.start_date} إلى {contract.end_date}
@@ -147,7 +148,7 @@ export function PropertyFinancialsTab({ propertyId }: PropertyTabProps) {
                 </StatusBadge>
               </div>
               <p className="text-xs text-muted-foreground">
-                المبلغ: {Number(invoice.amount ?? 0).toLocaleString()} OMR | تاريخ الاستحقاق: {invoice.due_date}
+                المبلغ: {formatDefaultCompanyMoney(invoice.amount)} | تاريخ الاستحقاق: {invoice.due_date}
               </p>
             </Card>
           ))}

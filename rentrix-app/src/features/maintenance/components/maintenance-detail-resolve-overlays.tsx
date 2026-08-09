@@ -2,9 +2,10 @@ import type { UseFormReturn } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { SelectionCard } from '@/components/ui/selection-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import type { Maintenance } from '../maintenance-service';
 import type { MaintenanceResolveFormValues } from '../useMaintenancePageController';
 import {
@@ -21,6 +22,13 @@ export const chargeTargetLabels: Record<ChargeTarget, string> = {
   tenant: 'إصدار فاتورة مطالبة على المستأجر (سوء استخدام)',
   office: 'مصروف تشغيلي عام على شركة الإدارة',
   split_landlord_tenant: 'مناصفة بين المالك والمستأجر (50% / 50%)',
+};
+
+export const chargeTargetShortLabels: Record<ChargeTarget, { title: string; desc: string }> = {
+  landlord: { title: 'المالك (استقطاع)', desc: 'تحميل المالك تكلفة الصيانة من حسابه' },
+  tenant: { title: 'المستأجر (مطالبة)', desc: 'إصدار فاتورة مطالبة بسبب سوء الاستخدام' },
+  office: { title: 'شركة الإدارة (تشغيلي)', desc: 'مصروف تشغيلي عام على المكتب' },
+  split_landlord_tenant: { title: 'مناصفة (50% / 50%)', desc: 'تقسيم بالتساوي بين المالك والمستأجر' },
 };
 
 export type MaintenanceDetailsOverlayProps = Readonly<{
@@ -70,7 +78,7 @@ export function MaintenanceDetailsOverlay({ request, onOpenChange }: Maintenance
 
             <div>
               <span className="text-xs font-medium text-muted-foreground">التكلفة الفعلية</span>
-              <p className="mt-1 font-semibold text-primary">{request.cost != null ? `${request.cost} ر.ع` : '—'}</p>
+              <p className="mt-1 font-semibold text-primary">{request.cost != null ? formatDefaultCompanyMoney(request.cost) : '—'}</p>
             </div>
           </div>
 
@@ -104,6 +112,8 @@ export type MaintenanceResolveOverlayProps = Readonly<{
 
 /** Overlay for entering actual cost and assigning charge target upon maintenance resolution. */
 export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstError, onOpenChange, onSubmit }: MaintenanceResolveOverlayProps) {
+  const currentChargeTarget = (form.watch('charge_target') as ChargeTarget) || 'landlord';
+
   return (
     <EntityForm.Overlay
       open={target != null}
@@ -114,15 +124,27 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
       <EntityForm.Root aria-busy={isSubmitting} onSubmit={form.handleSubmit(onSubmit)}>
         <EntityForm.ErrorSummary message={firstError} />
         <EntityForm.Section title="التكلفة وتوزيع المسؤولية" description={target ? target.title : undefined}>
-          <EntityForm.Field label="التكلفة الفعلية للأعمال (ر.ع)" error={form.formState.errors.cost?.message}>
+          <EntityForm.Field label="التكلفة الفعلية للأعمال" error={form.formState.errors.cost?.message}>
             <Input dir="ltr" type="number" min="0" step="0.01" inputMode="decimal" {...form.register('cost')} aria-invalid={Boolean(form.formState.errors.cost)} />
           </EntityForm.Field>
 
-          <EntityForm.Field label="توجيه التكلفة والجهة المسؤولة عن السداد">
-            <Select aria-label="توجيه تكلفة الصيانة" defaultValue="landlord">
-              {Object.entries(chargeTargetLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-            </Select>
-          </EntityForm.Field>
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-muted-foreground">توجيه التكلفة والجهة المسؤولة عن السداد</label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(Object.keys(chargeTargetShortLabels) as ChargeTarget[]).map((key) => {
+                const info = chargeTargetShortLabels[key];
+                return (
+                  <SelectionCard
+                    key={key}
+                    selected={currentChargeTarget === key}
+                    title={info.title}
+                    description={info.desc}
+                    onClick={() => form.setValue('charge_target', key, { shouldDirty: true, shouldValidate: true })}
+                  />
+                );
+              })}
+            </div>
+          </div>
 
           <EntityForm.Field label="ملاحظات وتوجيهات التسوية (اختياري)">
             <Textarea className="min-h-20" placeholder="اكتب أي ملاحظات فنية أو سبب تحميل التكلفة..." {...form.register('notes')} />

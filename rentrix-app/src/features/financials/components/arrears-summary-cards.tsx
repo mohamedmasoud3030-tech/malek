@@ -48,7 +48,6 @@ export function ArrearsSummaryCards({
         trendValue="متأخر"
         onDrill={onDrill ? () => onDrill({ status: 'overdue' }) : undefined}
         drillAriaLabel={`إجمالي المتأخرات ${totalOverdue} — عرض الفواتير المتأخرة`}
-        unit="OMR"
       />
       <FinanceKpiCard
         label="فواتير متأخرة"
@@ -74,7 +73,6 @@ export function ArrearsSummaryCards({
         trend="down"
         trendValue="90+"
         onDrill={onDrill ? () => onDrill({ aging: '90+' }) : undefined}
-        unit="OMR"
       />
       <FinanceKpiCard
         label="إجمالي المتبقي الموجب"
@@ -84,7 +82,6 @@ export function ArrearsSummaryCards({
         accent="primary"
         trend="neutral"
         trendValue="متبقي"
-        unit="OMR"
       />
     </FinanceKpiGrid>
   );
