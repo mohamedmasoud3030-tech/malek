@@ -5,6 +5,7 @@ import { SelectionCard } from '@/components/ui/selection-card';
 import type { Payment } from '@/types/domain';
 import { QUICK_PAYMENT_AMOUNT_INPUT_ID, QUICK_PAYMENT_FORM_ID } from '../invoices/quick-collect';
 import { formatMoney } from './financials-formatters';
+import { toFinancialNumber } from '../financialMath';
 
 const methods: Payment['payment_method'][] = ['cash', 'bank_transfer', 'card', 'check', 'other'];
 
@@ -65,7 +66,7 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
             <button
               type="button"
               className="ms-2 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-extrabold text-primary transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-              onClick={() => onAmountChange(String(Math.round(remainingAmount * 1000) / 1000))}
+              onClick={() => onAmountChange(String(toFinancialNumber(remainingAmount)))}
             >
               كامل المتبقي
             </button>
