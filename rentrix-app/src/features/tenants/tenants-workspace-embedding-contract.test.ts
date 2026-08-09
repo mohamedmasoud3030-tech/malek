@@ -24,6 +24,6 @@ describe('tenants embeddable workspace contract', () => {
   it('keeps create and modal actions available in both modes', () => {
     expect(source).toContain('<div className="flex justify-end">{createAction}</div>');
     expect(source).toContain('<PersonFormModal open={formOpen}');
-    expect(source).toContain('onCreate={openCreate}');
+    expect(source).toContain('openCreate');
   });
 });

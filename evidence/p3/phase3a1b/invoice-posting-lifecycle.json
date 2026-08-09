@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-07-26T15:50:45.446Z",
+  "generatedAt": "2026-08-09T07:55:53.747Z",
   "scenario": "generate → retry → B-require-failure",
-  "generatedInvoiceId": "2066fdf3-5821-442a-8cfb-050b3eceaa1f",
+  "generatedInvoiceId": "2666d4b2-1a11-4665-90c2-6c374b816438",
   "totals": {
     "amount": 1000,
     "tax": 50,
@@ -12,7 +12,7 @@
       "account_id": "1201",
       "account_no": "1201",
       "account_company": "c31b0000-0000-4000-8000-000000000001",
-      "amount": "1050.00",
+      "amount": "1050.000",
       "type": "DEBIT",
       "company_id": "c31b0000-0000-4000-8000-000000000001"
     },
@@ -20,7 +20,7 @@
       "account_id": "2100",
       "account_no": "2100",
       "account_company": "c31b0000-0000-4000-8000-000000000001",
-      "amount": "50.00",
+      "amount": "50.000",
       "type": "CREDIT",
       "company_id": "c31b0000-0000-4000-8000-000000000001"
     },
@@ -28,7 +28,7 @@
       "account_id": "4000",
       "account_no": "4000",
       "account_company": "c31b0000-0000-4000-8000-000000000001",
-      "amount": "1000.00",
+      "amount": "1000.000",
       "type": "CREDIT",
       "company_id": "c31b0000-0000-4000-8000-000000000001"
     }

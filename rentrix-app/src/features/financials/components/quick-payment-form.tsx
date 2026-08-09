@@ -99,9 +99,9 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
               id={QUICK_PAYMENT_AMOUNT_INPUT_ID}
               ref={amountInputRef}
               type="number"
-              min="0.01"
+              min="0.001"
               inputMode="decimal"
-              step="0.01"
+              step="0.001"
               placeholder="المبلغ"
               value={amount}
               onChange={(event) => onAmountChange(event.target.value)}
@@ -110,13 +110,13 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-bold text-muted-foreground">تاريخ الدفع</label>
-            <Input type="date" value={paymentDate} onChange={(event) => onPaymentDateChange(event.target.value)} />
+            <label className="mb-1 block text-xs font-bold text-muted-foreground" htmlFor="quick-payment-date">تاريخ الدفع</label>
+            <Input id="quick-payment-date" type="date" value={paymentDate} onChange={(event) => onPaymentDateChange(event.target.value)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-bold text-muted-foreground">المرجع (اختياري)</label>
-            <Input placeholder="رقم الشيك أو التحويل" value={reference} onChange={(event) => onReferenceChange(event.target.value)} />
+            <label className="mb-1 block text-xs font-bold text-muted-foreground" htmlFor="quick-payment-reference">المرجع (اختياري)</label>
+            <Input id="quick-payment-reference" placeholder="رقم الشيك أو التحويل" value={reference} onChange={(event) => onReferenceChange(event.target.value)} />
           </div>
         </div>
 

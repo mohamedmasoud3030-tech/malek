@@ -6,6 +6,11 @@
       "column_default": null
     },
     {
+      "table_name": "accounting_periods",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
       "table_name": "accounts",
       "is_nullable": "NO",
       "column_default": null
@@ -111,6 +116,11 @@
       "column_default": null
     },
     {
+      "table_name": "current_property_ownership",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
       "table_name": "deposit_transactions",
       "is_nullable": "NO",
       "column_default": null
@@ -131,8 +141,18 @@
       "column_default": null
     },
     {
+      "table_name": "journal_batches",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
       "table_name": "journal_entries",
       "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "journal_lines",
+      "is_nullable": "YES",
       "column_default": null
     },
     {
@@ -221,6 +241,31 @@
       "column_default": null
     },
     {
+      "table_name": "s08_analysis_scope",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "s08_liability_balances_by_period",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "s08_master_lease_readiness",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "s08_retroactive_version_differences",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "s08_subledger_gl_reconciliation",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
       "table_name": "serials",
       "is_nullable": "NO",
       "column_default": null
@@ -284,6 +329,18 @@
       "event_manipulation": "UPDATE"
     },
     {
+      "tbl": "commissions",
+      "trigger_name": "trg_guard_commission_financial_fields",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "commissions",
+      "trigger_name": "trg_guard_commission_financial_fields",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
       "tbl": "company_settings",
       "trigger_name": "set_company_settings_updated_at",
       "action_timing": "BEFORE",
@@ -293,7 +350,7 @@
       "tbl": "contracts",
       "trigger_name": "update_unit_status_after_contract_change",
       "action_timing": "AFTER",
-      "event_manipulation": "DELETE"
+      "event_manipulation": "UPDATE"
     },
     {
       "tbl": "contracts",
@@ -305,7 +362,7 @@
       "tbl": "contracts",
       "trigger_name": "update_unit_status_after_contract_change",
       "action_timing": "AFTER",
-      "event_manipulation": "UPDATE"
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "contracts",
@@ -315,39 +372,39 @@
     },
     {
       "tbl": "cost_centers",
+      "trigger_name": "trg_phase3a1a_cost_center_company",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "cost_centers",
+      "trigger_name": "trg_phase3a1a_cost_center_company",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "cost_centers",
       "trigger_name": "update_cost_centers_updated_at",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "cost_centers",
-      "trigger_name": "trg_phase3a1a_cost_center_company",
-      "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
-    },
-    {
-      "tbl": "cost_centers",
-      "trigger_name": "trg_phase3a1a_cost_center_company",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "expenses",
-      "trigger_name": "trigger_update_owner_balance_on_expense",
-      "action_timing": "AFTER",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "expenses",
-      "trigger_name": "trigger_update_owner_balance_on_expense",
-      "action_timing": "AFTER",
-      "event_manipulation": "INSERT"
     },
     {
       "tbl": "expenses",
       "trigger_name": "trigger_update_owner_balance_on_expense",
       "action_timing": "AFTER",
       "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "expenses",
+      "trigger_name": "trigger_update_owner_balance_on_expense",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "expenses",
+      "trigger_name": "trigger_update_owner_balance_on_expense",
+      "action_timing": "AFTER",
+      "event_manipulation": "UPDATE"
     },
     {
       "tbl": "expenses",
@@ -431,7 +488,7 @@
       "tbl": "owner_agreements",
       "trigger_name": "trg_owner_agreement_requires_ownership",
       "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "owner_agreements",
@@ -447,15 +504,15 @@
     },
     {
       "tbl": "owner_agreements",
-      "trigger_name": "trg_owner_agreements_contract_coverage",
+      "trigger_name": "trg_owner_agreement_requires_ownership",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
     },
     {
       "tbl": "owner_agreements",
-      "trigger_name": "trg_owner_agreement_requires_ownership",
+      "trigger_name": "trg_owner_agreements_contract_coverage",
       "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
+      "event_manipulation": "UPDATE"
     },
     {
       "tbl": "owners",
@@ -465,15 +522,15 @@
     },
     {
       "tbl": "owners",
-      "trigger_name": "trg_prevent_owner_delete_with_balances",
-      "action_timing": "BEFORE",
-      "event_manipulation": "DELETE"
-    },
-    {
-      "tbl": "owners",
       "trigger_name": "set_owners_updated_at",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "owners",
+      "trigger_name": "trg_prevent_owner_delete_with_balances",
+      "action_timing": "BEFORE",
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "owners",
@@ -491,7 +548,7 @@
       "tbl": "payments",
       "trigger_name": "trigger_update_owner_balance_on_payment",
       "action_timing": "AFTER",
-      "event_manipulation": "INSERT"
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "payments",
@@ -503,11 +560,17 @@
       "tbl": "payments",
       "trigger_name": "trigger_update_owner_balance_on_payment",
       "action_timing": "AFTER",
-      "event_manipulation": "DELETE"
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "payments",
-      "trigger_name": "payments_sync_reference_fields",
+      "trigger_name": "payments_prevent_receipt_identity_mutation",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "payments",
+      "trigger_name": "set_payments_updated_at",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
     },
@@ -525,13 +588,7 @@
     },
     {
       "tbl": "payments",
-      "trigger_name": "payments_prevent_receipt_identity_mutation",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "payments",
-      "trigger_name": "set_payments_updated_at",
+      "trigger_name": "payments_sync_reference_fields",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
     },
@@ -543,7 +600,7 @@
     },
     {
       "tbl": "properties",
-      "trigger_name": "trg_sync_property_compatibility_fields",
+      "trigger_name": "set_properties_updated_at",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
     },
@@ -555,9 +612,21 @@
     },
     {
       "tbl": "properties",
-      "trigger_name": "set_properties_updated_at",
+      "trigger_name": "trg_sync_property_compatibility_fields",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_sync_property_owner_projection",
+      "action_timing": "AFTER",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_sync_property_owner_projection",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "property_owners",
@@ -567,15 +636,27 @@
     },
     {
       "tbl": "property_owners",
-      "trigger_name": "trg_sync_property_owner_projection",
-      "action_timing": "AFTER",
+      "trigger_name": "validate_property_owner_active_totals",
+      "action_timing": "BEFORE",
       "event_manipulation": "INSERT"
     },
     {
       "tbl": "property_owners",
-      "trigger_name": "trg_sync_property_owner_projection",
-      "action_timing": "AFTER",
+      "trigger_name": "validate_property_owner_active_totals",
+      "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_property_owners_temporal_integrity",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_property_owners_temporal_integrity",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "property_owners",
@@ -584,40 +665,16 @@
       "event_manipulation": "UPDATE"
     },
     {
-      "tbl": "property_owners",
-      "trigger_name": "trg_property_owners_temporal_integrity",
-      "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
-    },
-    {
-      "tbl": "property_owners",
-      "trigger_name": "trg_property_owners_temporal_integrity",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "property_owners",
-      "trigger_name": "validate_property_owner_active_totals",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "property_owners",
-      "trigger_name": "validate_property_owner_active_totals",
-      "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
-    },
-    {
-      "tbl": "receipt_allocations",
-      "trigger_name": "trg_receipt_allocations_update_contract_balance",
-      "action_timing": "AFTER",
-      "event_manipulation": "INSERT"
-    },
-    {
       "tbl": "receipt_allocations",
       "trigger_name": "trg_receipt_allocations_update_contract_balance",
       "action_timing": "AFTER",
       "event_manipulation": "DELETE"
+    },
+    {
+      "tbl": "receipt_allocations",
+      "trigger_name": "trg_receipt_allocations_update_contract_balance",
+      "action_timing": "AFTER",
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "receipt_allocations",
@@ -645,18 +702,6 @@
     },
     {
       "tbl": "units",
-      "trigger_name": "units_normalize_status_contract",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "units",
-      "trigger_name": "enforce_unit_operational_status_on_units",
-      "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
-    },
-    {
-      "tbl": "units",
       "trigger_name": "enforce_unit_operational_status_on_units",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
@@ -670,6 +715,18 @@
     {
       "tbl": "units",
       "trigger_name": "units_normalize_status_contract",
+      "action_timing": "BEFORE",
+      "event_manipulation": "INSERT"
+    },
+    {
+      "tbl": "units",
+      "trigger_name": "units_normalize_status_contract",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "units",
+      "trigger_name": "enforce_unit_operational_status_on_units",
       "action_timing": "BEFORE",
       "event_manipulation": "INSERT"
     },

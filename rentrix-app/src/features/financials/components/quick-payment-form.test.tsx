@@ -27,6 +27,15 @@ describe('QuickPaymentForm', () => {
     expect(html).toContain(`id="${QUICK_PAYMENT_AMOUNT_INPUT_ID}"`);
   });
 
+  it('keeps OMR collection input at three-decimal precision and exposes stable field ids', () => {
+    const html = renderToStaticMarkup(<QuickPaymentForm {...baseProps} />);
+    expect(html).toContain('min="0.001"');
+    expect(html).toContain('step="0.001"');
+    expect(html).toContain('id="quick-payment-date"');
+    expect(html).toContain('id="quick-payment-reference"');
+    expect(html).toContain('for="quick-payment-reference"');
+  });
+
   it('offers the pay-in-full shortcut when a gross remaining amount exists', () => {
     const html = renderToStaticMarkup(<QuickPaymentForm {...baseProps} remainingAmount={115} />);
     expect(html).toContain('كامل المتبقي');

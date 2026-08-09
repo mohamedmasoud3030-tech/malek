@@ -482,7 +482,16 @@ beforeAll(async () => {
       // behavior this causality suite is designed to measure.
       !f.includes('s02_financial_direct_write_hardening_payments_expenses') &&
       !f.includes('s02_remove_residual_financial_write_policies') &&
-      !f.includes('s02_financial_rpc_auth_sqlstate'),
+      !f.includes('s02_financial_rpc_auth_sqlstate') &&
+      !f.includes('s02_revoke_internal_owner_settlement_helper_execute') &&
+      !f.includes('s02_owner_settlement_stale_total_rejection') &&
+      !f.includes('s02_bank_csv_import_server_guards') &&
+      !f.includes('stage3_') &&
+      !f.includes('_s03_') &&
+      !f.includes('_s04_') &&
+      !f.includes('_s08_') &&
+      !f.includes('fa003_') &&
+      !f.includes('pay_commission_atomic'),
     )
     .sort();
   for (const file of files) {

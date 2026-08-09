@@ -12,6 +12,7 @@ vi.mock('../settings/useCompanySettings', async () => {
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: Readonly<{ children: React.ReactNode; to: string }>) => <a href={to}>{children}</a>,
+  useNavigate: () => vi.fn(),
 }));
 
 const owner: Owner = {

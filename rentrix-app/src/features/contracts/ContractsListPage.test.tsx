@@ -7,7 +7,10 @@ import type { ContractListItem } from './services/contractService';
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
 
-  return { useCompanySettingsContract: () => testCompanySettingsContract };
+  return {
+    useCompanySettings: () => ({ data: testCompanySettingsContract }),
+    useCompanySettingsContract: () => testCompanySettingsContract,
+  };
 });
 
 vi.mock('@tanstack/react-router', () => ({

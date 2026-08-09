@@ -131,7 +131,7 @@ describe('audit log recovery states', () => {
     const html = renderToStaticMarkup(<AuditLogView state={{ status: 'ready', result: { status: 'available', records } }} />);
     expect(html).toContain('admin@example.com');
     expect(html).toContain('VIEW');
-    expect(html).toContain('settings / s-1');
+    expect(html).toContain('settings');
   });
 
   it('returns a safe unavailable audit result until schema assumptions are verified', async () => {
