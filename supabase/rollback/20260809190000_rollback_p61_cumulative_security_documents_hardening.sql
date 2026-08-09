@@ -1,17 +1,12 @@
 -- Manual rollback — not auto-applied; emergency use only after security review.
 -- Rollback for: 20260809190000_p61_cumulative_security_documents_hardening.sql
--- This rollback reopens the historical P3 behavior and therefore must never be
--- used merely to resolve an application defect. It intentionally leaves
--- document metadata columns/data in place because dropping them is destructive.
+-- This mitigation reopens the historical P3 table policies and therefore must
+-- never be used merely to resolve an application defect. It intentionally keeps
+-- the hardened RPC/catalog and document metadata so rollback cannot strand the
+-- application with missing function dependencies or destroy document history.
 
 begin;
 
-drop function if exists public.revoke_permission_grant(uuid,text,text);
-drop function if exists public.list_permission_requests_for_review(text);
-drop function if exists public.role_has_app_permission(text,text);
-drop trigger if exists permission_requests_catalog_guard on public.permission_requests;
-drop trigger if exists user_permission_grants_catalog_guard on public.user_permission_grants;
-drop function if exists public.enforce_app_permission_catalog();
 
 -- Restore the prior role-based company-settings policy.
 drop policy if exists admin_write_company_settings on public.company_settings;
@@ -39,6 +34,5 @@ create policy permission_grants_manager_write on public.user_permission_grants
 grant insert, update on public.permission_requests to authenticated;
 grant insert, update, delete on public.user_permission_grants to authenticated;
 
-drop table if exists public.app_permission_catalog;
 
 commit;
