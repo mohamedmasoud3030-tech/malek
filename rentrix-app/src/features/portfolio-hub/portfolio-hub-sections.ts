@@ -1,8 +1,8 @@
-import { Building2, DoorOpen, MapPinned } from 'lucide-react';
+import { Building2, DoorOpen } from 'lucide-react';
 import type { SectionTabItem } from '@/components/ui/section-tabs';
 import type { AppPermission } from '@/features/auth/permissions';
 
-export type PortfolioHubSectionId = 'properties' | 'units' | 'lands';
+export type PortfolioHubSectionId = 'properties' | 'units';
 
 export type PortfolioHubSection = SectionTabItem<PortfolioHubSectionId> & Readonly<{
   description: string;
@@ -11,7 +11,8 @@ export type PortfolioHubSection = SectionTabItem<PortfolioHubSectionId> & Readon
 
 /**
  * Property workspace keeps only asset-specific secondary sections.
- * Owners are a first-class entity and live at /owners, not inside /properties.
+ * Owners are a first-class entity at /owners; Lands is now a first-class
+ * entity at /lands (Phase 2). Legacy ?section=lands redirects to /lands.
  */
 export const portfolioHubSections: readonly PortfolioHubSection[] = [
   {
@@ -27,13 +28,6 @@ export const portfolioHubSections: readonly PortfolioHubSection[] = [
     icon: DoorOpen,
     description: 'كل الوحدات وحالات الإشغال.',
     permission: null,
-  },
-  {
-    id: 'lands',
-    label: 'الأراضي',
-    icon: MapPinned,
-    description: 'إدارة قطع الأراضي ومتابعة حالتها.',
-    permission: 'lands.view',
   },
 ] as const;
 

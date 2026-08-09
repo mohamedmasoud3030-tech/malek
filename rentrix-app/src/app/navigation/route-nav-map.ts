@@ -10,7 +10,7 @@ export const routeNavRoot = new Map<string, string>([
   ['/properties/$propertyId/units', '/properties'],
   ['/properties/$propertyId/units/$unitId', '/properties'],
   ['/units', '/properties'],
-  ['/lands', '/properties'],
+  ['/lands', '/lands'],
 
   ['/owners', '/owners'],
   ['/owners/$ownerId', '/owners'],
@@ -21,9 +21,9 @@ export const routeNavRoot = new Map<string, string>([
   ['/contracts/new', '/contracts'],
   ['/contracts/$contractId', '/contracts'],
   ['/contracts/$contractId/edit', '/contracts'],
-  ['/people', '/contracts'],
-  ['/people/new', '/contracts'],
-  ['/people/$personId/edit', '/contracts'],
+  ['/people', '/people'],
+  ['/people/new', '/people'],
+  ['/people/$personId/edit', '/people'],
   ['/leads', '/contracts'],
   ['/communication', '/contracts'],
 
@@ -46,7 +46,7 @@ export const routeNavRoot = new Map<string, string>([
   ['/deposits', '/financials'],
   ['/owner-settlements', '/financials'],
   ['/bank-reconciliation', '/financials'],
-  ['/commissions', '/financials'],
+  ['/commissions', '/commissions'],
 
   // Accounting and reports are one primary destination. /accounting remains a
   // compatibility deep-link into the general-ledger report section.
@@ -63,12 +63,15 @@ export const routeNavRoot = new Map<string, string>([
 
 export const navRootTitle: Record<string, string> = {
   '/dashboard': 'لوحة التحكم',
+  '/people': 'جهات التعامل',
   '/properties': 'العقارات',
+  '/lands': 'الأراضي',
   '/owners': 'الملاك',
   '/tenants': 'المستأجرون',
   '/contracts': 'العقود',
   '/maintenance': 'التشغيل والصيانة',
   '/financials': 'المالية',
+  '/commissions': 'العمولات',
   '/reports': 'المحاسبة والتقارير',
   '/ai-assistant': 'المساعد الذكي',
   '/settings': 'الإعدادات',

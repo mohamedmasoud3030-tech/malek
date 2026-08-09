@@ -7,13 +7,12 @@ import {
   Landmark,
   FileSpreadsheet,
   ClipboardList,
-  BadgeDollarSign,
   FileCheck,
   HandCoins,
   Building2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useMemo, useRef, lazy, Suspense, useCallback } from 'react';
+import { useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { useAuth } from '@/hooks/use-auth';
@@ -68,9 +67,9 @@ const OwnerSettlementsWorkspace = lazy(async () => ({
 const BankReconciliationWorkspace = lazy(async () => ({
   default: (await import('@/features/financials/reconciliation/bank-reconciliation-page')).BankReconciliationWorkspace,
 }));
-const CommissionsWorkspace = lazy(async () => ({
-  default: (await import('@/features/commissions/commissions-page')).CommissionsWorkspace,
-}));
+// Commissions is now a standalone top-level module at /commissions (Phase 2).
+// Legacy deep-links (?view=commissions, /finance/banking?section=commissions) redirect
+// to /commissions via effect below and via route-tree redirects.
 
 // ==================================================
 // APPROVED TYPED FINANCE VIEW MODEL (Points 3, 4)
@@ -84,7 +83,6 @@ export type FinanceViewId =
   | 'receipts'
   | 'arrears'
   | 'expenses'
-  | 'commissions'
   | 'deposits'
   | 'owner_settlements'
   | 'bank_reconciliation';
@@ -118,7 +116,6 @@ export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
   { id: 'receipts', sectionId: 'collections', label: 'سجل الإيصالات', icon: ReceiptText, permission: null },
   { id: 'arrears', sectionId: 'collections', label: 'المتأخرات والديون', icon: ClipboardList, permission: 'arrears.view' },
   { id: 'expenses', sectionId: 'expenses', label: 'المصروفات', icon: WalletCards, permission: 'expenses.view' },
-  { id: 'commissions', sectionId: 'expenses', label: 'العمولات', icon: BadgeDollarSign, permission: 'commissions.view' },
   { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
   { id: 'owner_settlements', sectionId: 'funds', label: 'تسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
   { id: 'bank_reconciliation', sectionId: 'banking', label: 'مطابقة كشف البنك', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
@@ -177,6 +174,15 @@ export function FinancialsPage() {
   const rawSection = search.section || '';
   const rawView = search.view || '';
 
+  // Phase 2: legacy commissions deep-links redirect to standalone /commissions
+  useEffect(() => {
+    const sec = rawSection.toLowerCase().trim();
+    const vi = rawView.toLowerCase().trim();
+    if (sec === 'commissions' || vi === 'commissions') {
+      void navigate({ to: '/commissions', replace: true });
+    }
+  }, [rawSection, rawView, navigate]);
+
   const { resolvedSectionId, resolvedViewId } = useMemo(() => {
     let sId: FinanceSectionId = 'overview';
     let vId: FinanceViewId = 'overview';
@@ -192,10 +198,13 @@ export function FinancialsPage() {
       sId = 'collections';
       const defaultView = sec === 'collections' ? 'invoices' : sec;
       vId = (vi || defaultView) as FinanceViewId;
-    } else if (['expenses', 'commissions'].includes(sec)) {
+    } else if (['expenses'].includes(sec)) {
       sId = 'expenses';
-      const defaultView = sec === 'expenses' ? 'expenses' : sec;
-      vId = (vi || defaultView) as FinanceViewId;
+      vId = 'expenses';
+    } else if (sec === 'commissions' || vi === 'commissions') {
+      // Legacy commissions — handled by redirect effect above; map to expenses fallback here so hardening doesn't crash
+      sId = 'expenses';
+      vId = 'expenses';
     } else if (['funds', 'deposits', 'owner_settlements'].includes(sec)) {
       sId = 'funds';
       const defaultView = sec === 'funds' ? 'deposits' : sec;
@@ -459,13 +468,6 @@ export function FinancialsPage() {
                 <div id="section-panel-expenses" role="tabpanel" hidden={activeSection !== 'expenses' || activeView !== 'expenses'}>
                   <Suspense fallback={<SectionFallback />}>
                     <ExpensesWorkspace embedded={true} />
-                  </Suspense>
-                </div>
-              )}
-              {shouldRenderView('commissions') && (
-                <div id="section-panel-commissions" role="tabpanel" hidden={activeSection !== 'expenses' || activeView !== 'commissions'}>
-                  <Suspense fallback={<SectionFallback />}>
-                    <CommissionsWorkspace embedded={true} />
                   </Suspense>
                 </div>
               )}

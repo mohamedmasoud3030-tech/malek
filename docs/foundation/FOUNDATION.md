@@ -1,12 +1,14 @@
-# MALEK — Foundation / IA Contract / Migration Safety — Phase 1
+# MALEK — Foundation / IA Contract / Migration Safety — Phase 1+2
 
-> **Status:** Phase 1 only — foundation & safety net. No page redesign, no domain move, no finance logic change.
-> **Source of truth:** `malik/main` branch + runtime code (`rentrix-app/src/app/router/route-tree.ts`, `rentrix-app/src/app/navigation/*`). Docs older than code are secondary.
-> **Date:** 2026-08-09 | **Commit baseline:** `e633e3a` (feat s06 master lease). This doc pins target IA and compatibility contracts for Phase 2+.
+> **Status:** Phase 2 — Canonical IA completed. People/Lands/Commissions are now first-class standalone; Finance uses progressive disclosure without commissions; Reports remains independent. Foundation contracts updated, no business logic change.
+> **Phase 2 Commit baseline:** on top of Phase 1 commit `1170f4b`. Date: 2026-08-09
 
 ---
 
-## 1) Current State — Actual IA (code-verified 2026-08-09)
+
+---
+
+## 1) Current State — Actual IA (code-verified 2026-08-09 — updated Phase 2: people/lands/commissions now canonical, hub sections pruned)
 
 ### 1.1 Primary navigation actually rendered (7 entries — sidebar)
 | Group | Route | Label | Permission |
@@ -173,4 +175,5 @@ Full typed list in `rentrix-app/src/app/navigation/route-contract.ts` (`ROUTE_CO
 
 ## 9) Change log
 
+- `2026-08-09` Phase 2: promoted `/people` (`PeopleListPage` standalone), `/lands` (`LandsWorkspace` standalone), `/commissions` (`CommissionsWorkspace` standalone) to first-class canonical routes; updated `route-contract.ts`, `route-nav-map.ts`, `app-nav-items.ts` (new groups: الأشخاص والعقارات / المالية / العمولات / التقارير), removed people/lands/commissions from hub children, added hub legacy redirects (`?section=people`→`/people`, `?section=lands`→`/lands`, `?view=commissions`→`/commissions` via `finance/banking` redirect + financials effect), kept all 21→19 redirect routes (people/lands/commissions no longer redirects) + 14 new regression tests; typecheck/build pass.
 - `2026-08-09` Phase 1: pinned target IA (الأشخاص/الأراضي/التقارير/العمولات) and deferred finance split + masking + per-user grants. No page redesign. Prior doc status (01/02/03) remains; this file is the Phase-gate reference.

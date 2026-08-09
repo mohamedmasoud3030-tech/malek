@@ -82,12 +82,18 @@ describe('route-contract — single source of truth', () => {
     }
   });
 
-  it('documents known IA mismatches with targetIANote', () => {
+  it('documents Phase 2 canonical promotions with targetIANote', () => {
     const people = ROUTE_CONTRACT.find((e) => e.canonical === '/people')!;
-    expect(people.targetIANote).toMatch(/IA MISMATCH/);
+    expect(people.targetIANote).toMatch(/Phase 2 canonical standalone/);
+    expect(people.isPrimaryNav).toBe(true);
+    expect(people.sidebarRoot).toBe('/people');
     const lands = ROUTE_CONTRACT.find((e) => e.canonical === '/lands')!;
-    expect(lands.targetIANote).toMatch(/target IA/);
+    expect(lands.targetIANote).toMatch(/Phase 2 canonical standalone/);
+    expect(lands.isPrimaryNav).toBe(true);
+    expect(lands.sidebarRoot).toBe('/lands');
     const commissions = ROUTE_CONTRACT.find((e) => e.canonical === '/commissions')!;
-    expect(commissions.targetIANote).toMatch(/Business semantics/);
+    expect(commissions.targetIANote).toMatch(/Phase 2 canonical standalone/);
+    expect(commissions.isPrimaryNav).toBe(true);
+    expect(commissions.sidebarRoot).toBe('/commissions');
   });
 });

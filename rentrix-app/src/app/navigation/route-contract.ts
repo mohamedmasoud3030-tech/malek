@@ -1,16 +1,14 @@
 /**
- * Route / Navigation Contract — Phase 1 Foundation
+ * Route / Navigation Contract — Phase 2 Canonical IA
  *
  * Single source of truth that binds:
  *   canonical route → legacy aliases → sidebar location → permission → mobile navigation → target IA
  *
- * This contract is CODE, not docs — tests import it. The docs may describe intent, but
- * this file (plus route-tree.ts) is the enforceable reality.
- *
- * Target IA (deferred, not yet implemented):
- *   /dashboard | /people | /properties | /lands | /contracts |
+ * Phase 2 implements canonical IA:
+ *   /dashboard | /people* | /properties | /lands* | /contracts |
  *   /financials (invoices/receipts/expenses/deposits/owner_settlements/bank_reconciliation) |
- *   /reports | /services(=maintenance) | /commissions | /settings
+ *   /reports | /services(=maintenance) | /commissions* | /settings
+ *   * = newly promoted to first-class in Phase 2 (previously aliases).
  *
  * Critical invariants enforced elsewhere:
  *   - No legacy URL may 404 (must redirect preserving ?search).
@@ -27,12 +25,15 @@ import type { AppPermission } from '@/features/auth/permissions';
 
 export type SidebarRoot =
   | '/dashboard'
+  | '/people'
   | '/properties'
+  | '/lands'
   | '/owners'
   | '/tenants'
   | '/contracts'
   | '/maintenance'
   | '/financials'
+  | '/commissions'
   | '/reports'
   | '/ai-assistant'
   | '/settings';
@@ -80,18 +81,18 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/properties/new', titleAr: 'إضافة عقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'properties.write', legacyAliases: [], viewBinding: null },
   { canonical: '/properties/$propertyId', titleAr: 'تفاصيل العقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/properties/$propertyId/edit', titleAr: 'تعديل عقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'properties.write', legacyAliases: [], viewBinding: null },
-  { canonical: '/units', titleAr: 'الوحدات', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'units' }, targetIANote: 'Redirects to /properties?section=units — target IA keeps units under properties.' },
-  { canonical: '/lands', titleAr: 'الأراضي', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'lands.view', legacyAliases: [], viewBinding: { param: 'section', section: 'lands' }, targetIANote: 'Currently alias under properties; target IA promotes to own top-level /lands.' },
+  { canonical: '/units', titleAr: 'الوحدات', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'units' }, targetIANote: 'Redirects to /properties?section=units — stays under properties.' },
+  { canonical: '/lands', titleAr: 'الأراضي', sidebarRoot: '/lands', isPrimaryNav: true, inMobileNav: false, permission: 'lands.view', legacyAliases: [], viewBinding: null, targetIANote: 'Phase 2 canonical standalone — legacy /properties?section=lands redirects to /lands via hub.' },
 
   // ── الملاك والمستأجرون
   { canonical: '/owners', titleAr: 'الملاك', sidebarRoot: '/owners', isPrimaryNav: true, inMobileNav: false, permission: 'owners.hub.view', legacyAliases: [], viewBinding: null },
   { canonical: '/owners/$ownerId', titleAr: 'ملف المالك', sidebarRoot: '/owners', isPrimaryNav: false, inMobileNav: false, permission: 'owners.detail.view', legacyAliases: [], viewBinding: null },
   { canonical: '/tenants', titleAr: 'المستأجرون', sidebarRoot: '/tenants', isPrimaryNav: true, inMobileNav: true, permission: null, legacyAliases: [], viewBinding: null },
 
-  // ── الأشخاص — CURRENTLY child of contracts, TARGET: own top-level
-  { canonical: '/people', titleAr: 'جهات التعامل', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'people' }, targetIANote: 'CRITICAL IA MISMATCH: currently redirects to /contracts?section=people — target IA = standalone /people under "الأشخاص".' },
-  { canonical: '/people/new', titleAr: 'إضافة شخص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Direct route even while /people list redirects — keep until target IA moves people out.' },
-  { canonical: '/people/$personId/edit', titleAr: 'تعديل شخص', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
+  // ── الأشخاص — Phase 2 canonical standalone
+  { canonical: '/people', titleAr: 'جهات التعامل', sidebarRoot: '/people', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Phase 2 canonical standalone — legacy /contracts?section=people redirects to /people via hub.' },
+  { canonical: '/people/new', titleAr: 'إضافة شخص', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/people/$personId/edit', titleAr: 'تعديل شخص', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/leads', titleAr: 'العملاء المحتملون', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'leads.view', legacyAliases: [], viewBinding: { param: 'section', section: 'leads' }, targetIANote: 'Currently alias under contracts; target IA: evaluate standalone or under People.' },
   { canonical: '/communication', titleAr: 'التواصل', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'communication.view', legacyAliases: [], viewBinding: { param: 'section', section: 'communication' } },
 
@@ -112,7 +113,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/finance/collections', titleAr: 'التحصيل والفواتير', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'collections' } },
   { canonical: '/finance/expenses', titleAr: 'المصروفات والمتأخرات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'expenses.view', legacyAliases: [], viewBinding: { param: 'section', section: 'expenses' } },
   { canonical: '/finance/deposits', titleAr: 'التأمينات وتسويات الملاك', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.deposits.view', legacyAliases: [], viewBinding: { param: 'section', section: 'funds' } },
-  { canonical: '/finance/banking', titleAr: 'البنوك والعمولات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'banking' } },
+  { canonical: '/finance/banking', titleAr: 'البنوك', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'banking' } },
   { canonical: '/invoices', titleAr: 'الفواتير', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'collections', view: 'invoices' } },
   { canonical: '/receipts', titleAr: 'الإيصالات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'collections', view: 'receipts' } },
   { canonical: '/expenses', titleAr: 'المصروفات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'expenses.view', legacyAliases: [], viewBinding: { param: 'section', section: 'expenses', view: 'expenses' } },
@@ -120,7 +121,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/deposits', titleAr: 'التأمينات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.deposits.view', legacyAliases: [], viewBinding: { param: 'section', section: 'funds', view: 'deposits' } },
   { canonical: '/owner-settlements', titleAr: 'تسويات الملاك', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.owner_settlements.view', legacyAliases: [], viewBinding: { param: 'section', section: 'funds', view: 'owner_settlements' } },
   { canonical: '/bank-reconciliation', titleAr: 'المطابقة البنكية', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.bank_reconciliation.view', legacyAliases: [], viewBinding: { param: 'section', section: 'banking' } },
-  { canonical: '/commissions', titleAr: 'العمولات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'commissions.view', legacyAliases: [], viewBinding: { param: 'section', section: 'expenses', view: 'commissions' }, targetIANote: 'Business semantics: commissions = sales/collection commission, not banking fee — currently under financials/expenses; target IA: standalone /commissions module.' },
+  { canonical: '/commissions', titleAr: 'العمولات', sidebarRoot: '/commissions', isPrimaryNav: true, inMobileNav: false, permission: 'commissions.view', legacyAliases: [], viewBinding: null, targetIANote: 'Phase 2 canonical standalone — cross-domain commission workflow, not banking fee. Legacy /financials?section=expenses&view=commissions and /finance/banking?section=commissions redirect to /commissions.' },
 
   // ── التقارير — independent
   { canonical: '/reports', titleAr: 'المحاسبة والتقارير', sidebarRoot: '/reports', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Must remain visually & conceptually independent from Finance — no shared page chrome.' },
@@ -150,8 +151,6 @@ export const LEGACY_REDIRECT_PATHS = ROUTE_CONTRACT.flatMap((e) =>
 export const REDIRECT_ROUTES = [
   '/landing',
   '/units',
-  '/lands',
-  '/people',
   '/leads',
   '/communication',
   '/utilities',
@@ -161,7 +160,6 @@ export const REDIRECT_ROUTES = [
   '/finance/expenses',
   '/finance/deposits',
   '/finance/banking',
-  '/commissions',
   '/expenses',
   '/invoices',
   // /receipts special: redirect only when receiptId absent (print shell exception)

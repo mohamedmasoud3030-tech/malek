@@ -14,7 +14,7 @@ export function PersonEditRouteComponent() {
   const { personId } = useParams({ strict: false }) as { personId: string };
   const navigate = useNavigate();
   const closeToDirectory = () => {
-    void navigate({ to: '/contracts', search: { section: 'people' } });
+    void navigate({ to: '/people' });
   };
 
   if (!personId) {

@@ -19,15 +19,10 @@ const UnitsBody = lazy(async () => {
   const { UnitsWorkspace } = await import('@/features/units/units-page');
   return { default: function UnitsEmbedded() { return <UnitsWorkspace embedded />; } };
 });
-const LandsBody = lazy(async () => {
-  const { LandsWorkspace } = await import('@/features/lands/lands-page');
-  return { default: function LandsEmbedded() { return <LandsWorkspace embedded />; } };
-});
 
 const sectionComponents: Record<PortfolioHubSectionId, ComponentType> = {
   properties: PropertiesBody,
   units: UnitsBody,
-  lands: LandsBody,
 };
 
 function SectionFallback() {
@@ -66,8 +61,14 @@ export function PortfolioHubWorkspace({
   if (activeSection) mountedSections.current.add(activeSection);
 
   useEffect(() => {
-    if (requestedSection !== 'owners') return;
-    void navigate({ to: '/owners', replace: true });
+    if (requestedSection === 'owners') {
+      void navigate({ to: '/owners', replace: true });
+      return;
+    }
+    if (requestedSection === 'lands') {
+      void navigate({ to: '/lands', replace: true });
+      return;
+    }
   }, [navigate, requestedSection]);
 
   const handleSectionChange = useCallback(
@@ -97,9 +98,8 @@ export function PortfolioHubWorkspace({
     );
   };
 
-  // Backward compatibility for bookmarks created before Owners became a
-  // first-class route. The destination route keeps its own permission guard.
-  if (requestedSection === 'owners') {
+  // Backward compatibility: owners and lands are now first-class routes (Phase 2).
+  if (requestedSection === 'owners' || requestedSection === 'lands') {
     return shell(<SectionFallback />);
   }
 

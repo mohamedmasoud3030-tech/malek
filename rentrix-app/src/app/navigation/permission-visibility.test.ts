@@ -78,8 +78,11 @@ describe('permission visibility — nav item permission must match route guard',
   });
 
   it('workspace child count matches actual operational needs (no shadow nav)', () => {
-    expect(workspaceChildNavItems['/properties'].length).toBe(2);
-    expect(workspaceChildNavItems['/contracts'].length).toBe(3);
+    // Phase 2: people and lands are first-class, no longer children
+    expect(workspaceChildNavItems['/people'].length).toBe(0);
+    expect(workspaceChildNavItems['/properties'].length).toBe(1);
+    expect(workspaceChildNavItems['/lands'].length).toBe(0);
+    expect(workspaceChildNavItems['/contracts'].length).toBe(2);
     expect(workspaceChildNavItems['/maintenance'].length).toBe(3);
     expect(workspaceChildNavItems['/settings'].length).toBe(4);
   });

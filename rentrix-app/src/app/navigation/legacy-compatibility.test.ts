@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 const source = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 
 /**
- * Phase 1 legacy compatibility — never break bookmarked / deep links.
+ * Phase 2 legacy compatibility — Phase 1+2: people/lands/commissions now canonical standalone; hub legacy ?section= handled via workspace redirects — never break bookmarked / deep links.
  * Every redirect route must preserve incoming search via:
  *   search: (previous) => ({ ...previous, section: ..., view: ... })
  * and must use `throw redirect({ to: canonical })`.
@@ -58,8 +58,6 @@ function getRouteBlockForRedirect(path: string): string {
 const REDIRECT_SPECS: Array<{ path: string; to: string; section?: string; view?: string; allowRoot?: boolean }> = [
   { path: '/landing', to: '/', allowRoot: true },
   { path: '/units', to: '/properties', section: 'units' },
-  { path: '/lands', to: '/properties', section: 'lands' },
-  { path: '/people', to: '/contracts', section: 'people' },
   { path: '/leads', to: '/contracts', section: 'leads' },
   { path: '/communication', to: '/contracts', section: 'communication' },
   { path: '/utilities', to: '/maintenance', section: 'utilities' },
@@ -68,8 +66,7 @@ const REDIRECT_SPECS: Array<{ path: string; to: string; section?: string; view?:
   { path: '/finance/collections', to: '/financials', section: 'collections' },
   { path: '/finance/expenses', to: '/financials' }, // conditional: arrears vs expenses — don’t pin single section
   { path: '/finance/deposits', to: '/financials', section: 'funds' },
-  { path: '/finance/banking', to: '/financials' }, // conditional: commissions vs banking
-  { path: '/commissions', to: '/financials', section: 'expenses', view: 'commissions' },
+  { path: '/finance/banking', to: '/financials' },
   { path: '/expenses', to: '/financials', section: 'expenses', view: 'expenses' },
   { path: '/invoices', to: '/financials', section: 'collections', view: 'invoices' },
   { path: '/arrears', to: '/financials', section: 'collections', view: 'arrears' },
@@ -89,7 +86,7 @@ describe('legacy compatibility — redirects preserve bookmarks and deep links',
   });
 
   it.each(REDIRECT_SPECS.filter((r) => r.section))('$path preserves incoming search (?section=)', ({ path, section }) => {
-    // finance/expenses and finance/banking have branching — just check they preserve previous and contain at least one relevant section
+    // finance/expenses has branching (arrears vs expenses)
     if (path === '/finance/expenses') {
       expect(containsNear(path, "section: 'collections'")).toBe(true);
       expect(containsNear(path, "section: 'expenses'")).toBe(true);
@@ -97,7 +94,6 @@ describe('legacy compatibility — redirects preserve bookmarks and deep links',
       return;
     }
     if (path === '/finance/banking') {
-      expect(containsNear(path, "section: 'expenses'")).toBe(true);
       expect(containsNear(path, "section: 'banking'")).toBe(true);
       expect(containsNear(path, '...previous')).toBe(true);
       return;

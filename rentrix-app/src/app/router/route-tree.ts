@@ -69,17 +69,17 @@ const propertyUnitsRoute = createRoute({ getParentRoute: () => propertyDetailRou
 const propertyUnitDetailRoute = createRoute({ getParentRoute: () => propertyDetailRoute, path: '/units/$unitId', component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.units.$unitId'), 'PropertyUnitDetailRouteComponent'), staticData: { title: 'تفاصيل الوحدة بالعقار' } });
 const propertyEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/$propertyId/edit', beforeLoad: requirePermission('properties.write'), component: lazyRouteComponent(() => import('@/routes/_protected.properties.$propertyId.edit'), 'PropertyEditRouteComponent'), staticData: { title: 'تعديل عقار' } });
 
-// Asset-supporting routes stay inside the property workspace.
+// Asset-supporting routes: units stays inside property workspace; lands is now first-class standalone (Phase 2).
 const unitsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/units', beforeLoad: () => { throw redirect({ to: '/properties', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'units' }) }); }, staticData: { title: 'الوحدات' } });
-const landsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands', beforeLoad: async () => { await requirePermission('lands.view')(); throw redirect({ to: '/properties', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'lands' }) }); }, staticData: { title: 'الأراضي' } });
+const landsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/lands', beforeLoad: requirePermission('lands.view'), component: lazyRouteComponent(() => import('@/routes/_protected.lands'), 'LandsRouteComponent'), staticData: { title: 'الأراضي' } });
 
 // Owners and tenants are core entities with first-class standalone routes.
 const ownersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners', beforeLoad: requirePermission('owners.hub.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owners'), 'OwnersRouteComponent'), staticData: { title: 'الملاك' } });
 const ownerDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners/$ownerId', beforeLoad: requirePermission('owners.detail.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owners.$ownerId'), 'OwnerDetailRouteComponent'), staticData: { title: 'ملف المالك' } });
 const tenantsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants', component: lazyRouteComponent(() => import('@/routes/_protected.tenants'), 'TenantsRouteComponent'), staticData: { title: 'المستأجرون' } });
 
-// Supporting relationship tools stay inside the contracts workspace.
-const peopleRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people', beforeLoad: () => { throw redirect({ to: '/contracts', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'people' }) }); }, staticData: { title: 'جهات التعامل' } });
+// People directory is now first-class standalone (Phase 2). Legacy contracts?section=people redirects via hub.
+const peopleRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people', component: lazyRouteComponent(() => import('@/routes/_protected.people'), 'PeopleRouteComponent'), staticData: { title: 'جهات التعامل' } });
 const leadsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/leads', beforeLoad: async () => { await requirePermission('leads.view')(); throw redirect({ to: '/contracts', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'leads' }) }); }, staticData: { title: 'العملاء المحتملون' } });
 const communicationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/communication', beforeLoad: async () => { await requirePermission('communication.view')(); throw redirect({ to: '/contracts', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'communication' }) }); }, staticData: { title: 'التواصل' } });
 const personNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/people/new', component: lazyRouteComponent(() => import('@/routes/_protected.people.new'), 'PersonNewRouteComponent'), staticData: { title: 'إضافة شخص' } });
@@ -153,29 +153,21 @@ const financeBankingCommissionsRoute = createRoute({
     await requirePermission('financial.bank_reconciliation.view')();
     const section = (search as Record<string, unknown>).section;
     if (section === 'commissions') {
-      throw redirect({
-        to: '/financials',
-        search: (previous: Record<string, unknown>) => ({ ...previous, section: 'expenses', view: 'commissions' })
-      });
+      throw redirect({ to: '/commissions' });
     }
     throw redirect({
       to: '/financials',
       search: (previous: Record<string, unknown>) => ({ ...previous, section: 'banking', view: 'bank_reconciliation' })
     });
   },
-  staticData: { title: 'البنوك والعمولات' }
+  staticData: { title: 'البنوك' }
 });
 
 const commissionsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/commissions',
-  beforeLoad: async () => {
-    await requirePermission('commissions.view')();
-    throw redirect({
-      to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'expenses', view: 'commissions' })
-    });
-  },
+  beforeLoad: requirePermission('commissions.view'),
+  component: lazyRouteComponent(() => import('@/routes/_protected.commissions'), 'CommissionsRouteComponent'),
   staticData: { title: 'العمولات' }
 });
 

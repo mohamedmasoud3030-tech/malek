@@ -14,7 +14,7 @@ import { PeopleListPage } from '@/features/people/people-list-page';
 export function PersonNewRouteComponent() {
   const navigate = useNavigate();
   const closeToDirectory = () => {
-    void navigate({ to: '/contracts', search: { section: 'people' } });
+    void navigate({ to: '/people' });
   };
 
   return (

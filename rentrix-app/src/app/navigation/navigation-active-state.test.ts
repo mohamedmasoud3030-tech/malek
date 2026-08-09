@@ -25,15 +25,15 @@ describe('navigation active-state — no blank or unmapped routes', () => {
   });
 
   it('quick-create deep links highlight their logical parent (not isolated)', () => {
-    // /contracts/new → /contracts, /properties/new → /properties, /people/new → /contracts (until target IA)
+    // Phase 2: people is now first-class at /people
     expect(getNavRoot('/contracts/new')).toBe('/contracts');
     expect(getNavRoot('/properties/new')).toBe('/properties');
-    expect(getNavRoot('/people/new')).toBe('/contracts');
+    expect(getNavRoot('/people/new')).toBe('/people');
   });
 
   it('no protected route should resolve to /dashboard fallback unexpectedly', () => {
     // These would indicate a missing map entry and would blank the active state
-    const protectedRoots = ['/properties', '/owners', '/tenants', '/contracts', '/maintenance', '/financials', '/reports', '/settings'];
+    const protectedRoots = ['/people', '/properties', '/lands', '/owners', '/tenants', '/contracts', '/maintenance', '/financials', '/commissions', '/reports', '/settings'];
     for (const root of protectedRoots) {
       expect(getNavRoot(root)).not.toBe('/dashboard');
     }
