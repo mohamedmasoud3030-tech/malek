@@ -12,7 +12,6 @@ const accounts = {
   leaseLiability: '2500',
   cashOrBank: '1120',
   depreciationExpense: '6200',
-  accumulatedRouDepreciation: '1650',
   leaseInterestExpense: '6300',
 } as const;
 
@@ -58,6 +57,13 @@ describe('master lease accounting kernel integration', () => {
       const sum = totals(intent.lines);
       expect(sum.debit).toBe(sum.credit);
     }
+    expect(
+      intents.slice(1).every((intent) =>
+        intent.lines
+          .filter((line) => line.creditMinor > 0 && line.accountCode === '1600')
+          .every((line) => line.creditMinor > 0),
+      ),
+    ).toBe(true);
   });
 
   it('remeasures and produces a balanced adjustment intent', () => {
