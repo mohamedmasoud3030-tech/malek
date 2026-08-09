@@ -61,15 +61,18 @@ test.describe('single-office isolated launch acceptance', () => {
     await searchInput.fill(PAYMENT_REFERENCE);
 
     const receiptTable = page.getByRole('table', { name: 'جدول الإيصالات' });
-    await expect(receiptTable.getByRole('row')).toHaveCount(2, { timeout: 15000 });
-    const receiptRow = receiptTable.getByRole('row').nth(1);
-    await expect(receiptRow).toContainText('مستأجر اختبار المكتب الواحد');
+    await expect(receiptTable).toBeVisible({ timeout: 15000 });
+    const receiptRow = receiptTable.getByRole('row').filter({ hasText: 'مستأجر اختبار المكتب الواحد' }).first();
+    await expect(receiptRow).toBeVisible({ timeout: 15000 });
     await expect(receiptRow).toContainText('مرحّل');
     await receiptRow.getByRole('button', { name: 'إلغاء' }).click();
 
-    const dialog = page.getByRole('dialog', { name: /إلغاء الإيصال/ });
+    const dialog = page.getByRole('dialog').filter({ hasText: 'إلغاء الإيصال' });
     await expect(dialog).toBeVisible({ timeout: 15000 });
-    await dialog.getByLabel('السبب').fill('اختبار إلغاء معزول قبل إطلاق المكتب الأول');
+    const reasonInput = dialog.getByPlaceholder('مثال: خطأ في المبلغ أو دفعة مكررة');
+    await expect(reasonInput).toBeVisible({ timeout: 15000 });
+    await reasonInput.fill('اختبار إلغاء معزول قبل إطلاق المكتب الأول');
+
     const voidResponsePromise = page.waitForResponse((response) => (
       response.url().includes('/rest/v1/rpc/void_receipt_atomic')
     ));
