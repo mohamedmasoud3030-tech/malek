@@ -187,7 +187,7 @@ const receiptsRoute = createRoute({
     if (typeof requestedReceiptId === 'string' && requestedReceiptId !== '') return;
     throw redirect({
       to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'collections', view: 'receipts' })
+      search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'collections', view: 'receipts' })
     });
   },
   component: lazyRouteComponent(() => import('@/routes/_protected.receipts'), 'ReceiptsRouteComponent'),
@@ -197,11 +197,11 @@ const receiptsRoute = createRoute({
 const expensesRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/expenses',
-  beforeLoad: async () => {
+  beforeLoad: async ({ search }) => {
     await requirePermission('expenses.view')();
     throw redirect({
       to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'expenses', view: 'expenses' })
+      search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'expenses', view: 'expenses' })
     });
   },
   staticData: { title: 'المصروفات' }
@@ -210,10 +210,10 @@ const expensesRoute = createRoute({
 const invoicesRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/invoices',
-  beforeLoad: () => {
+  beforeLoad: ({ search }) => {
     throw redirect({
       to: '/financials',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'collections', view: 'invoices' })
+      search: (previous: Record<string, unknown>) => ({ ...previous, ...(search as Record<string, unknown>), section: 'collections', view: 'invoices' })
     });
   },
   staticData: { title: 'الفواتير' }
