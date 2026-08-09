@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
@@ -112,7 +113,7 @@ export type MaintenanceResolveOverlayProps = Readonly<{
 
 /** Overlay for entering actual cost and assigning charge target upon maintenance resolution. */
 export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstError, onOpenChange, onSubmit }: MaintenanceResolveOverlayProps) {
-  const currentChargeTarget = (form.watch('charge_target') as ChargeTarget) || 'landlord';
+  const [chargeTarget, setChargeTarget] = useState<ChargeTarget>('landlord');
 
   return (
     <EntityForm.Overlay
@@ -136,10 +137,10 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
                 return (
                   <SelectionCard
                     key={key}
-                    selected={currentChargeTarget === key}
+                    selected={chargeTarget === key}
                     title={info.title}
                     description={info.desc}
-                    onClick={() => form.setValue('charge_target', key, { shouldDirty: true, shouldValidate: true })}
+                    onClick={() => setChargeTarget(key)}
                   />
                 );
               })}
