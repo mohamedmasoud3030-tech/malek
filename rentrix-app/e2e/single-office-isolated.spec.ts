@@ -46,8 +46,8 @@ test.describe('single-office isolated launch acceptance', () => {
     await expect(paymentForm).toBeVisible({ timeout: 15000 });
     const amount = paymentForm.locator('#quick-payment-amount');
     await expect(amount).toHaveValue('1000', { timeout: 15000 });
-    await paymentForm.locator('input[type="date"]').fill('2026-07-25');
-    await paymentForm.getByPlaceholder('اختياري').fill(PAYMENT_REFERENCE);
+    await paymentForm.locator('#quick-payment-date').fill('2026-07-25');
+    await paymentForm.locator('#quick-payment-reference').fill(PAYMENT_REFERENCE);
     const paymentResponsePromise = page.waitForResponse((response) => (
       response.url().includes('/rest/v1/rpc/record_invoice_payment_atomic')
     ));
