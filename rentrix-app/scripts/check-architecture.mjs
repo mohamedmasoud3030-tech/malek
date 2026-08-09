@@ -16,6 +16,11 @@ const featureDependencyAllowList = new Map([
   // properties to build a typed, permission-aware source selector that replaces
   // the free-text UUID entry.
   ['commissions', new Set(['contracts', 'financials', 'lands', 'leads', 'people', 'properties'])],
+  // command-palette gates each registered command by permission, so it reads
+  // the shared `AppPermission` type from the auth feature (type-only import —
+  // no runtime coupling). This is the reviewed integration seam for the
+  // Phase 6 command palette.
+  ['command-palette', new Set(['auth'])],
   ['contracts', new Set(['financials', 'owners', 'people', 'properties', 'settings', 'units'])],
   ['dashboard', new Set(['contracts', 'financials', 'maintenance', 'onboarding'])],
   // finance-hub is the composition layer for the finance workspaces: it owns
