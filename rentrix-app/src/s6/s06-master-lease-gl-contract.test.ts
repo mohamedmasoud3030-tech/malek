@@ -30,13 +30,23 @@ describe('S06 master lease DB/GL contract', () => {
     expect(migration).not.toContain('grant execute on function public.gl_ml_create_initial_measurement(jsonb) to authenticated');
   });
 
-  it('uses the approved master-lease accounts including the missing contra asset and modification gain/loss', () => {
-    for (const account of ['1600', '1650', '2500', '4000', '4400', '6200', '6300', '6400']) {
+  it('uses the approved net ROU/liability/revenue/expense accounts plus modification gain/loss', () => {
+    for (const account of ['1600', '2500', '4000', '4400', '6200', '6300', '6400']) {
       expect(migration).toContain(`'${account}'`);
     }
-    expect(migration).toContain("'1650','Accumulated ROU Depreciation'");
+    expect(migration).not.toContain("'1650'");
     expect(migration).toContain("'4400','Lease Modification / Termination Gain'");
     expect(migration).toContain("'6400','Lease Modification / Termination Loss'");
+  });
+
+  it('depreciates the net ROU carrying-value account directly', () => {
+    const start = migration.indexOf('function public.gl_ml_post_period');
+    const end = migration.indexOf('function public.gl_ml_create_remeasurement', start);
+    const body = migration.slice(start, end);
+    expect(body).toContain("v_dep_id := public.require_company_account_id(v_company,'6200')");
+    expect(body).toContain("v_rou_id := public.require_company_account_id(v_company,'1600')");
+    expect(body).toContain("jsonb_build_object('account_id',v_rou_id,'debit',0,'credit',v_r.rou_depreciation)");
+    expect(body).not.toContain('1650');
   });
 
   it('posts every recognized master-lease financial event through the canonical S03 GL engine', () => {
@@ -58,7 +68,7 @@ describe('S06 master lease DB/GL contract', () => {
   it('keeps master lease PRINCIPAL accounting outside owner-funds payable', () => {
     const start = migration.indexOf('function public.gl_ml_post_sublease_receipt');
     const body = migration.slice(start);
-    expect(body).toContain("agreement_type='master_lease'");
+    expect(body).toContain("oa.agreement_type='master_lease'");
     expect(body).toContain("require_company_account_id(v_company,'4000')");
     expect(body).not.toContain("require_company_account_id(v_company,'2000')");
   });
@@ -68,14 +78,20 @@ describe('S06 master lease DB/GL contract', () => {
     const end = migration.indexOf('function public.gl_ml_post_remeasurement', start);
     const body = migration.slice(start, end);
     expect(body).toContain('GL_ML_REMEASUREMENT_REQUIRES_POSTED_PERIOD_BOUNDARY');
-    expect(body).toContain('v_carry_liability:=v_last.closing_liability');
-    expect(body).toContain('v_carry_rou:=v_last.closing_rou_asset');
+    expect(body).toContain('v_carry_liability := v_last.closing_liability');
+    expect(body).toContain('v_carry_rou := v_last.closing_rou_asset');
     expect(body).not.toContain("p_payload->>'carrying_liability'");
     expect(body).not.toContain("p_payload->>'carrying_rou'");
   });
 
-  it('supports short-term election, partial termination and full termination without rewriting history', () => {
+  it('blocks old future periods once a remeasurement draft freezes the boundary', () => {
+    expect(migration).toContain('GL_ML_PERIOD_BLOCKED_BY_PENDING_REMEASUREMENT');
+    expect(migration).toContain('GL_ML_REMEASUREMENT_DRAFT_STALE');
+  });
+
+  it('supports short-term election, renewal/remeasurement, partial termination and full termination', () => {
     expect(migration).toContain('GL_ML_SHORT_TERM_EXEMPTION_TERM_EXCEEDS_12_MONTHS');
+    expect(migration).toContain("'REMEASUREMENT'");
     expect(migration).toContain("'PARTIAL_TERMINATION'");
     expect(migration).toContain("'FULL_TERMINATION'");
     expect(migration).toContain('GL_ML_FULL_TERMINATION_REVISED_PAYMENTS_FORBIDDEN');
@@ -86,7 +102,7 @@ describe('S06 master lease DB/GL contract', () => {
   it('uses a guarded, non-destructive rollback', () => {
     expect(rollback).toContain('S06_ROLLBACK_REFUSED');
     expect(rollback).toContain('master-lease measurements exist');
-    expect(rollback).toContain('Accounts 1650/4400/6400 are deliberately retained');
+    expect(rollback).toContain('Accounts 4400/6400 are deliberately retained');
     expect(rollback).not.toMatch(/delete\s+from\s+public\.journal/i);
     expect(rollback).not.toMatch(/truncate\s+public\.journal/i);
   });
