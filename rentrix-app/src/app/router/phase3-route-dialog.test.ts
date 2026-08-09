@@ -13,7 +13,6 @@ const propertyController = readFileSync(new URL('../../features/properties/use-p
 const unitController = readFileSync(new URL('../../features/units/use-units-list-controller.ts', import.meta.url), 'utf8');
 const backgroundProvider = readFileSync(new URL('./background-location.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
-const previewHost = readFileSync(new URL('../../components/ui/entity-preview-host.tsx', import.meta.url), 'utf8');
 
 describe('Phase 3 — Route-native entity dialogs', () => {
   it('People new/edit are reference implementation: canonical URLs with list+modal, no event bus', () => {
@@ -75,7 +74,6 @@ describe('Phase 3 — Route-native entity dialogs', () => {
     expect(backgroundProvider).toContain('useBackgroundLocation');
     expect(backgroundProvider).toContain('useIsDialogRoute');
     expect(protectedRoute).toContain('BackgroundLocationProvider');
-    expect(protectedRoute).toContain('EntityPreviewHost');
   });
 
   it('Direct navigation preserves URL and does not redirect to parent', () => {
@@ -120,9 +118,7 @@ describe('Phase 3 — Route-native entity dialogs', () => {
   });
 
   it('Legacy mappings still work (Phase 1+2 contracts)', () => {
-    // Old previewKind search param still supported via EntityPreviewHost for backward compat
-    expect(previewHost).toContain('previewKind');
-    expect(previewHost).toContain('previewId');
+    // Old previewKind search param is handled via legacy-preview-redirect in Phase 3.1
     // But new detail routes are canonical, not via search
     expect(routeTree).toContain("path: '/people'");
     expect(routeTree).toContain("path: '/lands'");

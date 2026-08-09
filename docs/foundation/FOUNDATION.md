@@ -1,7 +1,7 @@
 # MALEK — Foundation / IA Contract / Migration Safety — Phase 1+2
 
-> **Status:** Phase 3.1 — Route-native hardening completed. BackgroundLocation now search-aware + state-aware (nested dialogs, same pathname different search), Event Bus deleted, Legacy preview query → canonical, Close uses history.back. Foundation contracts updated, no business logic/schema change.
-> **Phase 3.1 Commit baseline:** on top of Phase 3 commit `fdd1115`. Date: 2026-08-09
+> **Status:** Phase 4 — Financials Active-View Architecture completed. Only the active financial view is mounted in the DOM; "mounted-but-hidden" panels have been fully removed; no global KeepAlive is used; Deep Links / Legacy URLs / Back-Forward and important filters are preserved; React Query manages server state cache. Foundation contracts updated, no business logic/schema change.
+> **Phase 4 Commit baseline:** on top of Phase 3.1 commit `fa4d13e`. Date: 2026-08-09
 
 ---
 

@@ -38,9 +38,9 @@ describe('accessibility baseline — landmarks & nav semantics', () => {
     expect(financialsSource).toContain('aria-label="أقسام المالية"');
   });
 
-  it('hidden finance panels use role="tabpanel" + hidden so AT ignores inactive content', () => {
+  it('active finance panels use role="tabpanel", while inactive ones are unmounted from DOM completely', () => {
     expect(financialsSource).toContain('role="tabpanel"');
-    expect(financialsSource).toContain('hidden={activeSection !==');
+    expect(financialsSource).not.toContain('hidden={activeSection !==');
   });
 
   it('PageHeader always renders one h1 (heading hierarchy)', () => {

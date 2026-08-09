@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-09T06:48:04.392Z",
-  "total": 190,
+  "generatedAt": "2026-08-09T12:35:13.992Z",
+  "total": 191,
   "applied": 183,
-  "failedCount": 7,
+  "failedCount": 8,
   "appliedFiles": [
     "20250101000001_core_schema.sql",
     "20250101000002_rls_policies_and_grants.sql",
@@ -216,6 +216,10 @@
     {
       "file": "20260808010000_s04_contract_lifecycle_maker_checker_v2.sql",
       "error": "error: relation \"public.owner_agreement_versions\" does not exist"
+    },
+    {
+      "file": "20260809020000_s06_master_lease_gl_lifecycle.sql",
+      "error": "error: column \"account_type\" of relation \"accounts\" does not exist"
     }
   ]
 }
