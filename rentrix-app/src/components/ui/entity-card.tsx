@@ -138,7 +138,7 @@ export function EntityCard({
               </p>
             ) : null}
             {supportingText ? (
-              <p className="mt-0.5 text-[10px] font-bold leading-4 text-muted-foreground/75 sm:mt-1">{supportingText}</p>
+              <p className="mt-0.5 text-[10px] font-bold leading-4 text-muted-foreground sm:mt-1">{supportingText}</p>
             ) : null}
           </div>
         </div>

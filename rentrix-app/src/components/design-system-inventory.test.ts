@@ -93,6 +93,14 @@ describe('design-system inventory & regression contract — Phase 5 enforcement'
     expect(largeRadius + compsRadius).toBeLessThanOrEqual(250);
   });
 
+  it('pins the strict arbitrary radius rounded-[...] baseline in core operational UI', () => {
+    // Specifically count occurrences of arbitrary "rounded-[" excluding the landing features and test inventory file itself
+    const allRoot = resolve(SRC);
+    const count = countPattern(allRoot, /rounded-\[[^\]]+\]/g, /features[\\/]landing|design-system-inventory\.test\.ts/);
+    // There should be exactly 6 occurrences in core operational files
+    expect(count).toBe(6);
+  });
+
   it('enforces heading hierarchy: exactly one h1 per page file (no duplicates)', () => {
     const features = collectFiles(resolve(SRC, 'features')).filter((f) => !/\.test\./.test(f) && !/features[\\/]landing/.test(f));
     const routes = collectFiles(resolve(SRC, 'routes')).filter((f) => !/\.test\./.test(f) && !f.includes('__root'));

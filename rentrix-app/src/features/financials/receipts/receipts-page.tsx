@@ -309,7 +309,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
                       <strong className="whitespace-nowrap text-base font-black tabular-nums text-success">{formatMoney(receipt.amount)}</strong>
                     </div>
                     <div className="line-clamp-2 leading-5">{formatReceiptContext(receipt)}</div>
-                    <div className="text-[10px] text-muted-foreground/75">فاتورة #{formatShortId(receipt.invoice_id)}</div>
+                    <div className="text-[10px] text-muted-foreground">فاتورة #{formatShortId(receipt.invoice_id)}</div>
                   </div>
                 )}
                 actions={(
