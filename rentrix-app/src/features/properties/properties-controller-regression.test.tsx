@@ -88,16 +88,14 @@ describe('PropertiesListPage controller regression', () => {
     expect(badge?.textContent).toBe('0');
   });
 
-  it('renders both desktop table rows and mobile cards for each property', async () => {
+  it('renders one dense row per property without duplicate mobile cards', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
 
-    // Desktop table rows (hidden on mobile by CSS, but present in DOM)
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(2);
 
-    // Mobile cards (rendered inside [role="listitem"])
-    const mobileCards = container.querySelectorAll('[role="listitem"]');
-    expect(mobileCards.length).toBe(2);
+    expect(container.querySelectorAll('[role="listitem"]')).toHaveLength(0);
+    expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
   });
 
   it('opens create modal and shows agreement fields', async () => {
@@ -119,27 +117,32 @@ describe('PropertiesListPage controller regression', () => {
     // (in happy-dom, overlay stays open until state change)
   });
 
-  it('navigates to property detail from mobile card click', async () => {
+  it('navigates to property detail from table row click', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
-    const card = container.querySelector('[role="button"]') as HTMLElement;
-    expect(card).toBeTruthy();
-    await act(async () => { card.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    const row = container.querySelector('tbody tr') as HTMLElement;
+    expect(row).toBeTruthy();
+    await act(async () => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/properties/$propertyId', params: { propertyId: 'p1' } });
   });
 
-  it('opens edit modal from mobile card edit button', async () => {
+  it('opens edit modal from the nested row action', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
-    const editBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.includes('تعديل'));
+    const menu = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إجراءات العقار')) as HTMLButtonElement | undefined;
+    expect(menu).toBeTruthy();
+    await act(async () => { menu?.click(); });
+    const editBtn = Array.from(document.body.querySelectorAll('[role="option"]')).find((button) => button.textContent?.includes('تعديل'));
     expect(editBtn).toBeTruthy();
-    await act(async () => { editBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    await act(async () => { (editBtn as HTMLButtonElement).click(); });
     expect(document.body.textContent).toContain('تعديل عقار');
   });
 
   it('shows archive confirmation dialog', async () => {
     await act(async () => { root.render(<PropertiesListPage />); });
-    const archiveBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.includes('أرشفة'));
+    const menu = Array.from(container.querySelectorAll('button')).find((button) => button.textContent?.includes('إجراءات العقار')) as HTMLButtonElement | undefined;
+    await act(async () => { menu?.click(); });
+    const archiveBtn = Array.from(document.body.querySelectorAll('[role="option"]')).find((button) => button.textContent?.includes('أرشفة'));
     expect(archiveBtn).toBeTruthy();
-    await act(async () => { archiveBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    await act(async () => { (archiveBtn as HTMLButtonElement).click(); });
     expect(document.body.textContent).toContain('أرشفة العقار');
   });
 

@@ -78,10 +78,28 @@ export function ContextualDocumentsPanel({
     void handler(file);
   };
 
+  const resolveDocumentUrl = async (document: ContextualDocument) => document.url ?? (resolveUrl ? await resolveUrl(document) : null);
+
   const previewDocument = async (document: ContextualDocument) => {
     setResolvingId(document.id);
     try {
-      setPreview({ document, url: document.url ?? (resolveUrl ? await resolveUrl(document) : null) });
+      setPreview({ document, url: await resolveDocumentUrl(document) });
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
+  const downloadDocument = async (document: ContextualDocument) => {
+    setResolvingId(document.id);
+    try {
+      const url = await resolveDocumentUrl(document);
+      if (!url) return;
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = document.fileName;
+      anchor.rel = 'noopener noreferrer';
+      anchor.target = '_blank';
+      anchor.click();
     } finally {
       setResolvingId(null);
     }
@@ -123,7 +141,7 @@ export function ContextualDocumentsPanel({
               </div>
               <div className="flex flex-wrap gap-2 sm:justify-end">
                 <Button type="button" variant="secondary" className="min-h-11" disabled={resolvingId === document.id} onClick={() => void previewDocument(document)}><Eye className="me-1 size-4" aria-hidden="true" />عرض</Button>
-                {document.url ? <Button type="button" variant="ghost" className="min-h-11" asChild><a href={document.url} target="_blank" rel="noopener noreferrer" download><Download className="me-1 size-4" aria-hidden="true" />تنزيل</a></Button> : null}
+                {document.url || resolveUrl ? <Button type="button" variant="ghost" className="min-h-11" disabled={resolvingId === document.id} onClick={() => void downloadDocument(document)}><Download className="me-1 size-4" aria-hidden="true" />تنزيل</Button> : null}
                 {onReplace ? <Button type="button" variant="ghost" className="min-h-11" onClick={() => { setReplaceTarget(document); window.setTimeout(() => window.document.getElementById('contextual-document-replace')?.click(), 0); }}><RefreshCw className="me-1 size-4" aria-hidden="true" />استبدال</Button> : null}
                 {canArchive ? <Button type="button" variant="ghost" className="min-h-11 text-destructive" onClick={() => setArchiveTarget(document)} disabled={archivingId === document.id}><Trash2 className="me-1 size-4" aria-hidden="true" />أرشفة</Button> : null}
               </div>
@@ -137,7 +155,7 @@ export function ContextualDocumentsPanel({
       </EntityPreviewDialog>
 
       <input id="contextual-document-replace" type="file" className="sr-only" accept={accept} aria-label="استبدال المستند" onChange={(event) => { if (replaceTarget) pickFile(event.target.files?.[0], (file) => onReplace?.(replaceTarget, file)); event.target.value = ''; setReplaceTarget(null); }} />
-      <ConfirmDialog open={Boolean(archiveTarget)} onOpenChange={(open) => { if (!open && !archivingId) setArchiveTarget(null); }} title="أرشفة المستند؟" description={`سيتم إخفاء المستند "${archiveTarget?.title ?? ''}" من سياق ${entityLabel} مع الاحتفاظ بسجله.`} confirmLabel="تأكيد الأرشفة" isLoading={Boolean(archiveTarget && archivingId === archiveTarget.id)} onConfirm={() => { if (archiveTarget) void onArchive?.(archiveTarget); }} />
+      <ConfirmDialog open={Boolean(archiveTarget)} onOpenChange={(open) => { if (!open && !archivingId) setArchiveTarget(null); }} title="أرشفة المستند؟" description={`سيتم إخفاء المستند "${archiveTarget?.title ?? ''}" من سياق ${entityLabel} مع الاحتفاظ بسجله.`} confirmLabel="تأكيد الأرشفة" isLoading={Boolean(archiveTarget && archivingId === archiveTarget.id)} onConfirm={() => { if (archiveTarget) void Promise.resolve(onArchive?.(archiveTarget)).then(() => setArchiveTarget(null)); }} />
     </section>
   );
 }

@@ -6,6 +6,8 @@ import type { AuthorizationContext } from '@/features/auth/permissions';
 
 let pathname = '/dashboard';
 
+vi.mock('@/components/layout/permission-request-dialog', () => ({ PermissionRequestDialog: () => null }));
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     children,
@@ -21,7 +23,7 @@ vi.mock('@tanstack/react-router', () => ({
   } & Record<string, unknown>) => (
     <a href={to} className={className} {...props}>{children}</a>
   ),
-  useLocation: () => ({ pathname }),
+  useLocation: () => ({ pathname, search: {} }),
 }));
 
 import { MobileFloatingControl, NavigationLinks } from './layout-navigation-view';
@@ -68,14 +70,16 @@ describe('Visual Wave 1 — route-derived app navigation', () => {
     expect(host.querySelectorAll('a')).toHaveLength(0);
   });
 
-  it('renders the settings navigation root as locked for a role without its route permission', () => {
+  it('keeps the Settings shell reachable while locking unauthorized children', () => {
     pathname = '/dashboard';
 
     const html = renderToStaticMarkup(
       <NavigationLinks authorization={user} expanded sharedLabel={sharedLabel} />,
     );
 
-    expect(anchor(html, '/settings')?.getAttribute('aria-disabled')).toBe('true');
-    expect(html).toContain('text-warning');
+    expect(anchor(html, '/settings')?.getAttribute('aria-disabled')).toBeNull();
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    expect(host.querySelectorAll('a[href="/settings"][aria-disabled="true"]').length).toBeGreaterThan(0);
   });
 });

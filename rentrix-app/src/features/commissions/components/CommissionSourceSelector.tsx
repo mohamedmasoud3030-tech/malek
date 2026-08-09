@@ -50,7 +50,7 @@ export function CommissionSourceSelector({
         aria-label="المصدر (تحصيل)"
       >
         <option value="">اختر التحصيل المرتبط</option>
-        {value && <option value={value}>تحصيل #{value.slice(0, 8)}</option>}
+        {value && <option value={value}>المصدر الحالي المسجل</option>}
       </Select>
     );
   }

@@ -1,15 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const viewportMatrix = [
-  { name: 'mobile-360', width: 360, height: 800 },
+  { name: 'mobile-320', width: 320, height: 740 },
+  { name: 'mobile-375', width: 375, height: 844 },
   { name: 'mobile-390', width: 390, height: 844 },
   { name: 'mobile-430', width: 430, height: 932 },
   { name: 'tablet-768', width: 768, height: 1024 },
+  { name: 'desktop-1024', width: 1024, height: 900 },
   { name: 'desktop-1440', width: 1440, height: 1000 },
 ] as const;
 
 const themes = ['light', 'dark'] as const;
-type FixtureSurface = 'bottom-sheet' | 'full-page' | 'raw-dialog';
+type FixtureSurface = 'dialog' | 'raw-dialog';
 
 test.beforeEach(async ({}, testInfo) => {
   test.skip(
@@ -18,7 +20,7 @@ test.beforeEach(async ({}, testInfo) => {
   );
 });
 
-async function openFixture(page: Page, theme: (typeof themes)[number], surface: FixtureSurface = 'full-page') {
+async function openFixture(page: Page, theme: (typeof themes)[number], surface: FixtureSurface = 'dialog') {
   await page.addInitScript((selectedTheme) => {
     document.documentElement.dataset.theme = selectedTheme;
     document.documentElement.dir = 'rtl';
@@ -85,25 +87,19 @@ for (const viewport of viewportMatrix) {
   }
 }
 
-test('bottom sheet follows a reduced and offset visual viewport and keeps actions reachable', async ({ page }) => {
+test('shared entity Dialog follows a reduced visual viewport and keeps actions reachable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await openFixture(page, 'dark', 'bottom-sheet');
-
+  await openFixture(page, 'dark', 'dialog');
   await page.evaluate(() => {
     document.documentElement.style.setProperty('--visual-viewport-height', '560px');
     document.documentElement.style.setProperty('--visual-viewport-offset-top', '36px');
+    document.documentElement.style.setProperty('--visual-viewport-center-y', '316px');
   });
-
-  const root = page.locator('[data-bottom-sheet-root]');
-  const sheet = page.locator('[data-bottom-sheet]');
-  await expect(sheet).toBeVisible();
-  const rootBox = await root.boundingBox();
-  const sheetBox = await sheet.boundingBox();
-  expect(rootBox?.y).toBe(36);
-  expect(rootBox?.height).toBeLessThanOrEqual(560);
-  expect(sheetBox?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(560);
-  expect((sheetBox?.y ?? 0) + (sheetBox?.height ?? 0)).toBeLessThanOrEqual(596);
-
+  const dialog = page.locator('[data-entity-form-surface="dialog"]');
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('[data-bottom-sheet]')).toHaveCount(0);
+  const box = await dialog.boundingBox();
+  expect(box?.height ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(560);
   const lastField = page.locator('[data-e2e-last-field]');
   await lastField.scrollIntoViewIfNeeded();
   await expect(lastField).toBeVisible();

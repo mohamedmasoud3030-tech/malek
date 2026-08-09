@@ -23,13 +23,15 @@ describe('Phase 0 Settings + Auth audit invariants', () => {
     }
   });
 
-  it('keeps settings management restricted to admin and manager roles in frontend authorization', () => {
+  it('keeps settings management restricted to the dedicated admin authority in frontend authorization', () => {
     const admin = getAuthorizationContextFromUser({ id: 'admin-1', email: 'admin@example.com', app_metadata: { user_role: 'ADMIN' } });
     const manager = getAuthorizationContextFromUser({ id: 'manager-1', email: 'manager@example.com', app_metadata: { user_role: 'MANAGER' } });
     const user = getAuthorizationContextFromUser({ id: 'user-1', email: 'user@example.com', app_metadata: { user_role: 'USER' } });
 
     expect(canAccess(admin, 'settings.manage')).toBe(true);
-    expect(canAccess(manager, 'settings.manage')).toBe(true);
+    expect(canAccess(manager, 'settings.manage')).toBe(false);
+    expect(canAccess(manager, 'permission_requests.review')).toBe(true);
+    expect(canAccess(manager, 'company.settings.manage')).toBe(false);
     expect(canAccess(user, 'settings.manage')).toBe(false);
   });
 

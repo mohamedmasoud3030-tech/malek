@@ -147,14 +147,12 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
     });
 
-    // Locate the Edit button in the actions td cell
-    const buttons = container?.querySelectorAll('tbody td button') as NodeListOf<HTMLButtonElement>;
-    expect(buttons.length).toBeGreaterThanOrEqual(1);
-    const editButton = buttons[0]; // First button is Edit
+    const editButton = container?.querySelector<HTMLButtonElement>('button[aria-label="تعديل وحدة 101"]');
+    expect(editButton).not.toBeNull();
 
     // Trigger a click on the secondary Edit button
     await act(async () => {
-      editButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      editButton!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     // 1. Verify row navigation was NOT triggered due to stopPropagation!
@@ -175,14 +173,12 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
     });
 
-    // Locate the Archive button in the actions td cell
-    const buttons = container?.querySelectorAll('tbody td button') as NodeListOf<HTMLButtonElement>;
-    expect(buttons.length).toBeGreaterThanOrEqual(2);
-    const archiveButton = buttons[1]; // Second button is Archive
+    const archiveButton = container?.querySelector<HTMLButtonElement>('button[aria-label="أرشفة وحدة 101"]');
+    expect(archiveButton).not.toBeNull();
 
     // Trigger a click on the secondary Archive button
     await act(async () => {
-      archiveButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      archiveButton!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     // 1. Verify row navigation was NOT triggered due to stopPropagation!

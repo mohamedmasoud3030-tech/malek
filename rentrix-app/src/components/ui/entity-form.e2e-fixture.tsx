@@ -1,17 +1,15 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { EntityForm, type ResponsiveFormSurface } from '@/components/ui/entity-form';
+import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-type FixtureSurface = Exclude<ResponsiveFormSurface, 'dialog'> | 'raw-dialog';
-
 interface EntityFormE2EFixtureProps {
-  mobileSurface?: FixtureSurface;
+  rawDialog?: boolean;
 }
 
-export function EntityFormE2EFixture({ mobileSurface = 'bottom-sheet' }: EntityFormE2EFixtureProps) {
+export function EntityFormE2EFixture({ rawDialog = false }: EntityFormE2EFixtureProps) {
   const [open, setOpen] = useState(true);
   const [nameError, setNameError] = useState<string | null>(null);
 
@@ -30,7 +28,7 @@ export function EntityFormE2EFixture({ mobileSurface = 'bottom-sheet' }: EntityF
     </div>
   );
 
-  if (mobileSurface === 'raw-dialog') {
+  if (rawDialog) {
     return (
       <main dir="rtl" className="min-h-dvh bg-background p-3 text-foreground sm:p-6" data-e2e-form-contract>
         <div className="mx-auto max-w-3xl space-y-4">{fixtureHeader}</div>
@@ -77,7 +75,6 @@ export function EntityFormE2EFixture({ mobileSurface = 'bottom-sheet' }: EntityF
           onOpenChange={setOpen}
           title="إضافة جهة اتصال"
           description="مثال منخفض المخاطر لاختبار الكيبورد والتمرير والأخطاء وsafe-area."
-          mobileSurface={mobileSurface}
           visualVariant="operational"
         >
           <EntityForm.Root onSubmit={handleSubmit}>

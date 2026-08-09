@@ -114,7 +114,7 @@ export function InvoiceWorkspaceSection() {
         open={Boolean(ctrl.selectedInvoiceId)}
         onOpenChange={(open) => { if (!open) ctrl.setSelectedInvoiceId(''); }}
         title="معاينة الفاتورة"
-        description={ctrl.invoiceDetail ? `الفاتورة #${ctrl.invoiceDetail.id.slice(0, 8)} — التفاصيل والتحصيل بدون مغادرة سجل الفواتير.` : 'تحميل تفاصيل الفاتورة...'}
+        description={ctrl.invoiceDetail ? `${ctrl.invoiceDetail.reference ?? 'فاتورة بلا مرجع'} — التفاصيل والتحصيل بدون مغادرة سجل الفواتير.` : 'تحميل تفاصيل الفاتورة...'}
       >
         <InvoiceDetailSection
           selectedInvoiceId={ctrl.selectedInvoiceId}

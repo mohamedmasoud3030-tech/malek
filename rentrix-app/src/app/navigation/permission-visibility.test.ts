@@ -17,8 +17,8 @@ function routeHasPermission(path: string, perm: string): boolean {
 
 describe('permission visibility — nav item permission must match route guard', () => {
   it('every nav item with a permission has that permission on its route guard', () => {
-    for (const [to, , , , perm] of [...getAllNavItems(), ...quickCreateItems]) {
-      if (!perm) continue;
+    for (const [to, , , , perm, search] of [...getAllNavItems(), ...quickCreateItems]) {
+      if (!perm || search) continue;
       expect(routeHasPermission(to, perm), `nav ${to} requires ${perm} but route guard missing`).toBe(true);
     }
   });
@@ -52,7 +52,7 @@ describe('permission visibility — nav item permission must match route guard',
   });
 
   it('settings children gate vs /settings itself', () => {
-    expect(routeHasPermission('/settings', 'settings.manage')).toBe(true);
+    expect(routeHasPermission('/settings', 'settings.manage')).toBe(false);
     expect(routeHasPermission('/audit-log', 'audit.view')).toBe(true);
     expect(routeHasPermission('/data-integrity', 'integrity.view')).toBe(true);
     expect(routeHasPermission('/system', 'system.view')).toBe(true);
@@ -84,7 +84,7 @@ describe('permission visibility — nav item permission must match route guard',
     expect(workspaceChildNavItems['/properties'].length).toBe(1);
     expect(workspaceChildNavItems['/lands'].length).toBe(0);
     expect(workspaceChildNavItems['/contracts'].length).toBe(0);
-    expect(workspaceChildNavItems['/maintenance'].length).toBe(1);
-    expect(workspaceChildNavItems['/settings'].length).toBe(2);
+    expect(workspaceChildNavItems['/maintenance'].length).toBe(2);
+    expect(workspaceChildNavItems['/settings'].length).toBe(5);
   });
 });

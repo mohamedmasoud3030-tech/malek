@@ -102,7 +102,7 @@ describe('receiptService', () => {
   it('formats receipt numbers from the payment id prefix', async () => {
     const { formatReceiptNumber } = await import('./receiptService');
 
-    expect(formatReceiptNumber('1234567890abcdef')).toBe('REC-12345678');
+    expect(formatReceiptNumber('1234567890abcdef')).toBe('إيصال بلا مرجع تجاري');
   });
 
   it('lists receipt projections with batched invoice, contract, tenant, unit, and property enrichment', async () => {
@@ -121,9 +121,10 @@ describe('receiptService', () => {
     expect(receipts).toEqual([
       {
         id: 'pay_1234567890abcdef',
-        receipt_number: 'REC-pay_1234',
+        receipt_number: 'إيصال بلا مرجع تجاري',
         payment_id: 'pay_1234567890abcdef',
         invoice_id: 'inv_1',
+        invoice_reference: null,
         invoice_status: 'paid',
         contract_id: 'contract_1',
         payment_date: '2026-05-14',
@@ -210,7 +211,7 @@ describe('receiptService', () => {
 
     expect(receipt).toMatchObject({
       id: 'pay_1234567890abcdef',
-      receipt_number: 'REC-pay_1234',
+      receipt_number: 'إيصال بلا مرجع تجاري',
       payment_id: 'pay_1234567890abcdef',
       invoice_id: 'inv_1',
       invoice_status: 'partial',
@@ -236,7 +237,7 @@ describe('receiptService', () => {
 
     expect(receipt.id).toBe('payment_123');
     expect(receipt.payment_id).toBe('payment_123');
-    expect(receipt.receipt_number).toBe('REC-payment_');
+    expect(receipt.receipt_number).toBe('إيصال بلا مرجع تجاري');
     expect(log.filter((entry) => entry.table === 'payments' && entry.method === 'eq')).toEqual([
       { table: 'payments', method: 'eq', args: ['id', 'payment_123'] },
     ]);

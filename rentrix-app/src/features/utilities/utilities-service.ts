@@ -132,7 +132,7 @@ function mapBill(row: any): UtilityBill {
     meter_id: row.meter_id ?? null,
     property_id: row.property_id,
     unit_id: row.unit_id ?? null,
-    bill_number: row.reference_no ?? row.id?.slice(0, 8) ?? null,
+    bill_number: row.reference_no ?? null,
     billing_period_start: row.billing_period_start ?? null,
     billing_period_end: row.billing_period_end ?? null,
     previous_reading: toNumberOrNull(row.previous_reading),

@@ -2,12 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { Unit } from '@/types/domain';
 import type { UnitPayload } from './unit-schema';
-import { createUnit, listUnits, listUnitsByProperty, softDeleteUnit, updateUnit } from './unit-service';
+import { createUnit, getUnitDetail, listUnits, listUnitsByProperty, softDeleteUnit, updateUnit } from './unit-service';
 
 export const unitKeys = {
   all: ['units'] as const,
   list: () => [...unitKeys.all, 'list'] as const,
   property: (propertyId: string) => [...unitKeys.all, 'property', propertyId] as const,
+  detail: (unitId: string) => [...unitKeys.all, 'detail', unitId] as const,
 };
 
 const contractQueries = ['contracts'] as const;
@@ -16,6 +17,14 @@ export function useAllUnits() {
   return useQuery({
     queryKey: unitKeys.list(),
     queryFn: listUnits,
+  });
+}
+
+export function useUnitDetail(unitId: string) {
+  return useQuery({
+    queryKey: unitKeys.detail(unitId),
+    queryFn: () => getUnitDetail(unitId),
+    enabled: Boolean(unitId),
   });
 }
 

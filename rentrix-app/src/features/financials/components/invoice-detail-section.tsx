@@ -99,7 +99,7 @@ export function InvoiceDetailSection({
           <div className="grid gap-3 md:grid-cols-6">
             <div className="rounded-2xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">رقم الفاتورة</p>
-              <p className="mt-2 font-black">#{invoiceDetail.id.slice(0, 8)}</p>
+              <p className="mt-2 font-black">{invoiceDetail.reference ?? 'فاتورة بلا مرجع'}</p>
             </div>
             <div className="rounded-2xl border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">تاريخ الاستحقاق</p>

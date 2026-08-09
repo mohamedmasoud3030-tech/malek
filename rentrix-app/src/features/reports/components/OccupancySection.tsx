@@ -163,7 +163,7 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
                     title={(
                       <span>
                         {row.property}
-                        {!row.hasTitle && row.shortPropertyId ? <span className="ms-2 text-[10px] text-muted-foreground" dir="ltr">#{row.shortPropertyId}</span> : null}
+                        {!row.hasTitle ? <span className="ms-2 text-[10px] text-muted-foreground">اسم العقار غير موثق</span> : null}
                       </span>
                     )}
                     subtitle={`${formatCompanyNumber(defaultCompanyLocalSettings, row.occupied)} مشغولة · ${formatCompanyNumber(defaultCompanyLocalSettings, row.vacant)} شاغرة`}

@@ -1,25 +1,79 @@
 import { supabase } from '@/lib/supabase';
+import { announceEffectivePermissionsChanged } from './effective-permissions';
 import type { AppPermission } from './permissions';
 
 export type PermissionRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-export type PermissionRequest = Readonly<{ id: string; requester_user_id: string; permission: AppPermission; resource_route: string | null; reason: string; status: PermissionRequestStatus; reviewer_user_id: string | null; decided_at: string | null; decision_reason: string | null; created_at: string }>;
+export type PermissionRequest = Readonly<{
+  id: string;
+  requester_user_id: string;
+  requester_name?: string | null;
+  requester_email?: string | null;
+  permission: AppPermission;
+  resource_route: string | null;
+  reason: string;
+  status: PermissionRequestStatus;
+  reviewer_user_id: string | null;
+  decided_at: string | null;
+  decision_reason: string | null;
+  created_at: string;
+}>;
 
 export async function requestPermission(permission: AppPermission, resourceRoute: string | null, reason: string) {
-  const { data, error } = await (supabase as any).rpc('request_permission', { p_permission: permission, p_resource_route: resourceRoute, p_reason: reason });
+  const { data, error } = await (supabase as any).rpc('request_permission', {
+    p_permission: permission,
+    p_resource_route: resourceRoute,
+    p_reason: reason,
+  });
   if (error) throw error;
   return data as PermissionRequest;
 }
 
-export async function listPermissionRequests(status?: PermissionRequestStatus) {
-  let query = (supabase as any).from('permission_requests').select('*').order('created_at', { ascending: false });
-  if (status) query = query.eq('status', status);
-  const { data, error } = await query;
+export async function listMyPermissionRequests() {
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!authData.user) return [];
+  const { data, error } = await (supabase as any)
+    .from('permission_requests')
+    .select('*')
+    .eq('requester_user_id', authData.user.id)
+    .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []) as PermissionRequest[];
 }
 
-export async function decidePermissionRequest(id: string, decision: Exclude<PermissionRequestStatus, 'PENDING'>, reason: string) {
-  const { data, error } = await (supabase as any).rpc('decide_permission_request', { p_request_id: id, p_decision: decision, p_reason: reason || null });
+export async function listPermissionRequestsForReview(status?: PermissionRequestStatus) {
+  const { data, error } = await (supabase as any).rpc('list_permission_requests_for_review', {
+    p_status: status ?? null,
+  });
   if (error) throw error;
+  return (data ?? []) as PermissionRequest[];
+}
+
+/** @deprecated Use the audience-specific list function. */
+export const listPermissionRequests = listMyPermissionRequests;
+
+export async function decidePermissionRequest(
+  id: string,
+  decision: Exclude<PermissionRequestStatus, 'PENDING'>,
+  reason: string,
+) {
+  const { data, error } = await (supabase as any).rpc('decide_permission_request', {
+    p_request_id: id,
+    p_decision: decision,
+    p_reason: reason.trim() || null,
+  });
+  if (error) throw error;
+  announceEffectivePermissionsChanged();
   return data as PermissionRequest;
+}
+
+export async function revokePermissionGrant(userId: string, permission: AppPermission, reason: string) {
+  const { data, error } = await (supabase as any).rpc('revoke_permission_grant', {
+    p_user_id: userId,
+    p_permission: permission,
+    p_reason: reason.trim(),
+  });
+  if (error) throw error;
+  announceEffectivePermissionsChanged();
+  return data as { revoked: boolean };
 }

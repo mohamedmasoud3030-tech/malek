@@ -4,7 +4,7 @@
  * Regression tests for useUnitsListController covering:
  * - KPI computation from real data
  * - filter application
- * - mobile card rendering parity with desktop
+ * - compact responsive table behavior without card duplication
  * - modal open/close lifecycle
  */
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
@@ -117,14 +117,14 @@ describe('UnitsPage controller regression', () => {
     container.innerHTML = '';
   });
 
-  it('renders both desktop rows and mobile cards for each unit', async () => {
+  it('renders one dense table row per unit without duplicate mobile cards', async () => {
     await act(async () => { root.render(<UnitsPage />); });
 
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(3);
 
-    const mobileCards = container.querySelectorAll('[role="listitem"]');
-    expect(mobileCards.length).toBe(3);
+    expect(container.querySelectorAll('[role="listitem"]')).toHaveLength(0);
+    expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
   });
 
   it('renders KPI cards with computed values', async () => {
@@ -156,7 +156,7 @@ describe('UnitsPage controller regression', () => {
     expect(document.body.textContent).toContain('اختيار العقار مطلوب');
   });
 
-  it('opens edit modal from mobile card without property selection', async () => {
+  it('opens edit modal from the row action without property selection', async () => {
     await act(async () => { root.render(<UnitsPage />); });
     const editBtn = Array.from(container.querySelectorAll('button')).find(b => b.textContent?.includes('تعديل'));
     expect(editBtn).toBeTruthy();
@@ -176,11 +176,11 @@ describe('UnitsPage controller regression', () => {
     });
   });
 
-  it('navigates to unit detail from mobile card click', async () => {
+  it('navigates to unit detail from keyboard row activation', async () => {
     await act(async () => { root.render(<UnitsPage />); });
-    const card = container.querySelector('[role="listitem"] [role="button"]') as HTMLElement;
-    expect(card).toBeTruthy();
-    await act(async () => { card.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    const row = container.querySelector('tbody tr') as HTMLElement;
+    expect(row?.tabIndex).toBe(0);
+    await act(async () => { row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/properties/$propertyId/units/$unitId',
       params: { propertyId: 'p1', unitId: 'u1' },

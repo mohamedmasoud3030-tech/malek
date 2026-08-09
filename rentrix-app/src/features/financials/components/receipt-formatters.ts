@@ -20,12 +20,11 @@ export function formatReceiptContext(receipt: { tenant_name: string | null; unit
 }
 
 /**
- * Receipt numbers always derive from the payment id: receipt records are
- * payment-backed (payments.id === receipts.id for invoice payments), so one
- * prefix identifies both ledger faces of the same collection.
+ * Legacy payment rows may lack the server-generated receipt reference. Never
+ * turn their internal payment identifier into a user-facing document number.
  */
 export function formatReceiptNumber(paymentId: string) {
-  return `REC-${paymentId.slice(0, 8)}`;
+  return paymentId ? 'إيصال بلا مرجع تجاري' : '—';
 }
 
 export type PaymentReceiptBinding = {

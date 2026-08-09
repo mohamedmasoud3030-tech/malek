@@ -59,7 +59,6 @@ export function MaintenanceRequestForm({
       onOpenChange={(nextOpen) => { if (!isSubmitting) onOpenChange(nextOpen); }}
       title={isEditing ? 'تعديل طلب صيانة' : 'طلب صيانة جديد'}
       description="حدد الموقع والأولوية والمسؤول والموعد المجدول إن وجد."
-      mobileSurface="bottom-sheet"
       visualVariant="operational"
     >
       <EntityForm.Root aria-busy={isSubmitting} onSubmit={form.handleSubmit(onSubmit)}>

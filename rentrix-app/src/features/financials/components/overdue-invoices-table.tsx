@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
-import { formatDate, formatInvoiceStatusLabel, formatMoney, formatShortId } from './financials-formatters';
+import { formatDate, formatInvoiceStatusLabel, formatMoney } from './financials-formatters';
 import { formatLatinNumber } from '@/lib/formatters';
 
 type OverdueInvoicesTableProps = Readonly<{
@@ -28,13 +28,13 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
       header: 'الفاتورة',
       render: (row) => (
         <Button variant="link" className="min-h-11 px-1 font-black" onClick={() => onSelectInvoice(row.invoiceId)}>
-          #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}
+          {row.invoiceReference ?? 'فاتورة بلا مرجع'}
         </Button>
       ),
     },
     { key: 'tenant', header: 'المستأجر', render: (row) => row.tenantName ?? EMPTY_FIELD_VALUE },
     { key: 'context', header: 'العقار / الوحدة', render: (row) => getContextLabel(row) },
-    { key: 'contract_id', header: 'العقد', render: (row) => formatShortId(row.contractId) },
+    { key: 'contract_id', header: 'العقد', render: (row) => row.contractReference ?? 'عقد بلا مرجع' },
     { key: 'due_date', header: 'الاستحقاق', render: (row) => formatDate(row.dueDate) },
     { key: 'days_overdue', header: 'أيام التأخير', render: (row) => formatLatinNumber(row.daysOverdue, ARABIC_LOCALE) },
     { key: 'amount', header: 'الإجمالي', render: (row) => <span dir="ltr">{formatMoney(row.amount)}</span> },
@@ -90,7 +90,7 @@ export function SelectedOverdueInvoiceCard({ row, onShowInvoice, onCollectInvoic
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold text-muted-foreground">تفاصيل التحصيل</p>
-          <h3 className="mt-1 text-lg font-black">فاتورة #{row.shortInvoiceId || row.invoiceId.slice(0, 8)}</h3>
+          <h3 className="mt-1 text-lg font-black">فاتورة {row.invoiceReference ?? 'فاتورة بلا مرجع'}</h3>
         </div>
         <StatusBadge tone="danger">{getArrearsBucketLabel(bucket)}</StatusBadge>
       </div>

@@ -30,6 +30,15 @@ export function LegacyPreviewRedirect() {
     } else if (kind === 'owner') {
       to = '/owners/$ownerId';
       params = { ownerId: id };
+    } else if (kind === 'person') {
+      to = '/people/$personId';
+      params = { personId: id };
+    } else if (kind === 'tenant') {
+      to = '/tenants/$tenantId';
+      params = { tenantId: id };
+    } else if (kind === 'land') {
+      to = '/lands/$landId';
+      params = { landId: id };
     } else if (kind === 'unit') {
       // Unit preview: need propertyId to build canonical /properties/:propertyId/units/:unitId
       // Resolve via Supabase lookup (read-only, RLS-protected)

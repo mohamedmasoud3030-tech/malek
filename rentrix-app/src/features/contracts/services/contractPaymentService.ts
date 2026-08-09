@@ -5,7 +5,6 @@ import {
   toFinancialNumber,
 } from '@/features/financials/financialMath';
 import { getInvoiceGrossAmount } from '@/features/financials/invoices/invoiceService';
-import { formatReceiptNumber } from '@/features/financials/receipts/receiptService';
 
 export type ContractInvoicePaymentRow = Readonly<{
   id: string;
@@ -17,6 +16,7 @@ export type ContractInvoicePaymentRow = Readonly<{
   payment_method: Payment['payment_method'];
   reference_number: string | null;
   receipt_reference: string;
+  invoice_reference: string | null;
 }>;
 
 export type ContractInvoiceRow = Readonly<{
@@ -28,6 +28,7 @@ export type ContractInvoiceRow = Readonly<{
   remaining_amount: number;
   status: Invoice['status'];
   notes: string | null;
+  reference: string | null;
   payments: ContractInvoicePaymentRow[];
 }>;
 
@@ -54,7 +55,7 @@ type InvoiceRow = Pick<
   | 'paid_amount'
   | 'status'
   | 'notes'
-> & Partial<Pick<Invoice, 'tax_amount'>>;
+> & Partial<Pick<Invoice, 'tax_amount'>> & { reference: string | null };
 type PaymentRow = Pick<
   Payment,
   | 'id'
@@ -78,7 +79,8 @@ function toPaymentRow(
     amount: payment.amount ?? 0,
     payment_method: payment.payment_method ?? '',
     reference_number: payment.reference_number,
-    receipt_reference: formatReceiptNumber(payment.id),
+    receipt_reference: payment.reference_number || 'إيصال مسجل',
+    invoice_reference: invoice.reference,
   };
 }
 
@@ -109,7 +111,7 @@ export async function getContractPaymentsSnapshot(
 ): Promise<ContractPaymentsSnapshot> {
   const { data: invoices, error: invoicesError } = await supabase
     .from('invoices')
-    .select('id, issue_date, due_date, amount, tax_amount, paid_amount, status, notes')
+    .select('id, reference, issue_date, due_date, amount, tax_amount, paid_amount, status, notes')
     .eq('contract_id', contractId)
     .is('deleted_at', null)
     .order('due_date', { ascending: false })
@@ -165,6 +167,7 @@ export async function getContractPaymentsSnapshot(
     ),
     status: invoice.status,
     notes: invoice.notes,
+    reference: invoice.reference,
     payments: paymentsByInvoiceId.get(invoice.id) ?? [],
   }));
 

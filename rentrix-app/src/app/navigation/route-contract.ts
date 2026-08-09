@@ -47,7 +47,7 @@ export interface RouteContractEntry {
   sidebarRoot: SidebarRoot;
   /** Visible as top-level sidebar entry? */
   isPrimaryNav: boolean;
-  /** Included in mobile bottom nav (max 5)? */
+  /** Legacy flag; always false because mobile exposes Menu + Search only. */
   inMobileNav: boolean;
   /** Permission guard or null (auth-only). */
   permission: AppPermission | null;
@@ -74,42 +74,45 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/terms', titleAr: 'شروط الاستخدام', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
 
   // ── لوحة التحكم
-  { canonical: '/dashboard', titleAr: 'لوحة التحكم', sidebarRoot: '/dashboard', isPrimaryNav: true, inMobileNav: true, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/dashboard', titleAr: 'لوحة التحكم', sidebarRoot: '/dashboard', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
 
   // ── العقارات + asset support
-  { canonical: '/properties', titleAr: 'العقارات', sidebarRoot: '/properties', isPrimaryNav: true, inMobileNav: true, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Stays primary. Lands leaves to own top-level in target IA.' },
+  { canonical: '/properties', titleAr: 'العقارات', sidebarRoot: '/properties', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Stays primary. Lands leaves to own top-level in target IA.' },
   { canonical: '/properties/new', titleAr: 'إضافة عقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'properties.write', legacyAliases: [], viewBinding: null },
   { canonical: '/properties/$propertyId', titleAr: 'تفاصيل العقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/properties/$propertyId/edit', titleAr: 'تعديل عقار', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: 'properties.write', legacyAliases: [], viewBinding: null },
   { canonical: '/units', titleAr: 'الوحدات', sidebarRoot: '/properties', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'units' }, targetIANote: 'Redirects to /properties?section=units — stays under properties.' },
-  { canonical: '/lands', titleAr: 'الأراضي', sidebarRoot: '/lands', isPrimaryNav: true, inMobileNav: false, permission: 'lands.view', legacyAliases: [], viewBinding: null, targetIANote: 'Phase 2 canonical standalone — legacy /properties?section=lands redirects to /lands via hub.' },
+  { canonical: '/lands', titleAr: 'الأراضي', sidebarRoot: '/lands', isPrimaryNav: true, inMobileNav: false, permission: 'lands.view', legacyAliases: [], viewBinding: null },
+  { canonical: '/lands/$landId', titleAr: 'ملف الأرض', sidebarRoot: '/lands', isPrimaryNav: false, inMobileNav: false, permission: 'lands.view', legacyAliases: [], viewBinding: null },
 
   // ── الملاك والمستأجرون
   { canonical: '/owners', titleAr: 'الملاك', sidebarRoot: '/people', isPrimaryNav: true, inMobileNav: false, permission: 'owners.hub.view', legacyAliases: [], viewBinding: null },
   { canonical: '/owners/$ownerId', titleAr: 'ملف المالك', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: 'owners.detail.view', legacyAliases: [], viewBinding: null },
-  { canonical: '/tenants', titleAr: 'المستأجرون', sidebarRoot: '/people', isPrimaryNav: true, inMobileNav: true, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/tenants', titleAr: 'المستأجرون', sidebarRoot: '/people', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/tenants/$tenantId', titleAr: 'ملف المستأجر', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
 
   // ── الأشخاص — Phase 2 canonical standalone
-  { canonical: '/people', titleAr: 'جهات التعامل', sidebarRoot: '/people', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Phase 2 canonical standalone — legacy /contracts?section=people redirects to /people via hub.' },
+  { canonical: '/people', titleAr: 'جهات التعامل', sidebarRoot: '/people', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/people/$personId', titleAr: 'ملف الشخص', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/people/new', titleAr: 'إضافة شخص', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/people/$personId/edit', titleAr: 'تعديل شخص', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
-  { canonical: '/leads', titleAr: 'العملاء المحتملون', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: 'leads.view', legacyAliases: [], viewBinding: { param: 'section', section: 'leads' }, targetIANote: 'Currently alias under contracts; target IA: evaluate standalone or under People.' },
-  { canonical: '/communication', titleAr: 'التواصل', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: 'communication.view', legacyAliases: [], viewBinding: { param: 'section', section: 'communication' } },
+  { canonical: '/leads', titleAr: 'العملاء المحتملون', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: 'leads.view', legacyAliases: [], viewBinding: null, targetIANote: 'People-owned first-class workspace.' },
+  { canonical: '/communication', titleAr: 'التواصل', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: 'communication.view', legacyAliases: [], viewBinding: null },
 
   // ── العقود
-  { canonical: '/contracts', titleAr: 'العقود', sidebarRoot: '/contracts', isPrimaryNav: true, inMobileNav: true, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/contracts', titleAr: 'العقود', sidebarRoot: '/contracts', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/contracts/new', titleAr: 'إنشاء عقد', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.write', legacyAliases: [], viewBinding: null },
   { canonical: '/contracts/$contractId', titleAr: 'تفاصيل العقد', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/contracts/$contractId/edit', titleAr: 'تعديل عقد', sidebarRoot: '/contracts', isPrimaryNav: false, inMobileNav: false, permission: 'contracts.write', legacyAliases: [], viewBinding: null },
 
   // ── التشغيل / الخدمات
-  { canonical: '/maintenance', titleAr: 'التشغيل والصيانة', sidebarRoot: '/maintenance', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Target IA renames conceptually to "الخدمات" but route stays /maintenance for compatibility.' },
+  { canonical: '/maintenance', titleAr: 'الخدمات', sidebarRoot: '/maintenance', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Target IA renames conceptually to "الخدمات" but route stays /maintenance for compatibility.' },
   { canonical: '/utilities', titleAr: 'المرافق والعدادات', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'utilities' } },
   { canonical: '/automation', titleAr: 'الأتمتة', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'automation.view', legacyAliases: [], viewBinding: { param: 'section', section: 'automation' } },
   { canonical: '/documents-vault', titleAr: 'خزينة المستندات', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'documents_vault' } },
 
   // ── المالية — one primary hub, many views (no radical split in Phase 1)
-  { canonical: '/financials', titleAr: 'المالية', sidebarRoot: '/financials', isPrimaryNav: true, inMobileNav: true, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/financials', titleAr: 'المالية', sidebarRoot: '/financials', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/finance/collections', titleAr: 'التحصيل والفواتير', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'collections' } },
   { canonical: '/finance/expenses', titleAr: 'المصروفات والمتأخرات', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'expenses.view', legacyAliases: [], viewBinding: { param: 'section', section: 'expenses' } },
   { canonical: '/finance/deposits', titleAr: 'التأمينات وتسويات الملاك', sidebarRoot: '/financials', isPrimaryNav: false, inMobileNav: false, permission: 'financial.deposits.view', legacyAliases: [], viewBinding: { param: 'section', section: 'funds' } },
@@ -131,7 +134,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/ai-assistant', titleAr: 'المساعد الذكي', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Legacy deep-link only; the assistant is now a global overlay action.' },
 
   // ── الإدارة
-  { canonical: '/settings', titleAr: 'الإعدادات', sidebarRoot: '/settings', isPrimaryNav: true, inMobileNav: false, permission: 'settings.manage', legacyAliases: [], viewBinding: null },
+  { canonical: '/settings', titleAr: 'الإعدادات', sidebarRoot: '/settings', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/change-password', titleAr: 'تغيير كلمة المرور', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'auth.password.change', legacyAliases: [], viewBinding: { param: 'section', section: 'change-password' } },
   { canonical: '/audit-log', titleAr: 'سجل التدقيق', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'audit.view', legacyAliases: [], viewBinding: null },
   { canonical: '/data-integrity', titleAr: 'سلامة البيانات', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'integrity.view', legacyAliases: [], viewBinding: null },
@@ -151,8 +154,6 @@ export const LEGACY_REDIRECT_PATHS = ROUTE_CONTRACT.flatMap((e) =>
 export const REDIRECT_ROUTES = [
   '/landing',
   '/units',
-  '/leads',
-  '/communication',
   '/utilities',
   '/automation',
   '/documents-vault',
@@ -169,6 +170,11 @@ export const REDIRECT_ROUTES = [
   '/owner-settlements',
   '/bank-reconciliation',
   '/accounting',
+  '/ai-assistant',
+  '/change-password',
+  '/audit-log',
+  '/data-integrity',
+  '/system',
 ] as const;
 
 export const TARGET_IA_TOP_LEVEL = [

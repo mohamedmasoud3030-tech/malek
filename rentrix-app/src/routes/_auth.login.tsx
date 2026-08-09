@@ -20,11 +20,7 @@ export function LoginRouteComponent() {
   if (import.meta.env.VITE_E2E && typeof window !== 'undefined') {
     const search = new URLSearchParams(window.location.search);
     if (search.get('e2e-form-contract') === '1') {
-      const requestedSurface = search.get('surface');
-      const mobileSurface = requestedSurface === 'full-page' || requestedSurface === 'raw-dialog'
-        ? requestedSurface
-        : 'bottom-sheet';
-      return <EntityFormE2EFixture mobileSurface={mobileSurface} />;
+      return <EntityFormE2EFixture rawDialog={search.get('surface') === 'raw-dialog'} />;
     }
 
     if (search.get('e2e-dashboard-workspace') === '1') {

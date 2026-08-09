@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import type { Session, User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import {
-  appPermissions,
   canAccess as canAccessPermission,
   getAuthorizationContextFromSession,
   getAuthorizationDiagnosticsFromSession,
@@ -12,6 +11,10 @@ import {
   type AuthorizationDiagnostics,
 } from '@/features/auth/permissions';
 import { supabase } from '@/lib/supabase';
+import {
+  EFFECTIVE_PERMISSIONS_CHANGED_EVENT,
+  loadGrantedPermissions,
+} from '@/features/auth/effective-permissions';
 import { getCurrentSession, signInWithEmail, signOut } from '@/services/auth-service';
 
 type AuthContextValue = {
@@ -22,6 +25,7 @@ type AuthContextValue = {
   canAccess: (permission: AppPermission) => boolean;
   isLoading: boolean;
   isAuthenticated: boolean;
+  refreshPermissions: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -57,6 +61,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // user-facing explanation instead of a silent redirect.
   const hadSessionRef = useRef(false);
   const explicitLogoutRef = useRef(false);
+
+  const refreshPermissions = useCallback(async () => {
+    const userId = session?.user.id;
+    if (!userId) {
+      setGrantedPermissions([]);
+      return;
+    }
+    try {
+      setGrantedPermissions(await loadGrantedPermissions(userId));
+    } catch {
+      // Authorization data is security-sensitive: a failed refresh must never
+      // retain a stale approved grant in the browser.
+      setGrantedPermissions([]);
+    }
+  }, [session?.user.id]);
 
   useEffect(() => {
     let mounted = true;
@@ -124,15 +143,40 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, [appRouter]);
 
   useEffect(() => {
-    let cancelled = false;
-    if (!session?.user.id) { setGrantedPermissions([]); return undefined; }
-    void supabase.from('user_permission_grants' as never).select('permission').eq('user_id', session.user.id).is('revoked_at', null).then(({ data }) => {
-      if (cancelled) return;
-      const permissions = (data as Array<{ permission?: string }> | null)?.map((row) => row.permission).filter((permission): permission is AppPermission => typeof permission === 'string' && (appPermissions as readonly string[]).includes(permission)) ?? [];
-      setGrantedPermissions(permissions);
-    }).then(undefined, () => { if (!cancelled) setGrantedPermissions([]); });
-    return () => { cancelled = true; };
-  }, [session?.user.id]);
+    const userId = session?.user.id;
+    if (!userId) {
+      setGrantedPermissions([]);
+      return undefined;
+    }
+
+    void refreshPermissions();
+    const handleRefresh = () => { void refreshPermissions(); };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') void refreshPermissions();
+    };
+    window.addEventListener(EFFECTIVE_PERMISSIONS_CHANGED_EVENT, handleRefresh);
+    window.addEventListener('focus', handleRefresh);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Realtime provides immediate approval/revoke propagation where enabled;
+    // focus/visibility refresh above remains the deterministic fallback.
+    const channel = (supabase as any)
+      .channel(`effective-permissions:${userId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_permission_grants',
+        filter: `user_id=eq.${userId}`,
+      }, handleRefresh)
+      .subscribe();
+
+    return () => {
+      window.removeEventListener(EFFECTIVE_PERMISSIONS_CHANGED_EVENT, handleRefresh);
+      window.removeEventListener('focus', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      void (supabase as any).removeChannel(channel);
+    };
+  }, [refreshPermissions, session?.user.id]);
 
   const authorization = useMemo(() => {
     const base = getAuthorizationContextFromSession(session);
@@ -160,6 +204,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       canAccess: (permission) => canAccessPermission(authorization, permission),
       isLoading,
       isAuthenticated: Boolean(session),
+      refreshPermissions,
       login: async (email, password) => {
         await signInWithEmail(email, password);
         await appRouter.navigate({ to: '/dashboard', replace: true });
@@ -170,7 +215,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setSession(null);
       },
     }),
-    [appRouter, authorization, authorizationDiagnostics, isLoading, session],
+    [appRouter, authorization, authorizationDiagnostics, isLoading, refreshPermissions, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -180,4 +225,9 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
+}
+
+/** Read-only integrations may render in isolated document/print tests. */
+export function useOptionalAuth() {
+  return useContext(AuthContext);
 }

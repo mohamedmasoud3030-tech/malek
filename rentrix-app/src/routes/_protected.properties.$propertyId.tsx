@@ -9,9 +9,7 @@ export function PropertyDetailRouteComponent() {
   const propertyId = params.propertyId ?? '';
   const navigate = useNavigate();
   const background = useBackgroundLocation();
-  const isDialog =
-    background !== null &&
-    (background.pathname === '/properties' || background.pathname.startsWith('/properties'));
+  const isDialog = background !== null;
 
   // Direct or refresh → full detail page (preserves URL, no redirect)
   if (!isDialog) {

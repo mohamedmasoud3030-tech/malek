@@ -21,8 +21,8 @@ const CSV_HEADERS = [
   'الحالة',
 ] as const;
 
-export function getContractNumber(contract: Pick<ContractListItem, 'id'>) {
-  return `#${contract.id.slice(0, 8)}`;
+export function getContractNumber(contract: Pick<ContractListItem, 'id' | 'reference'>) {
+  return contract.reference ?? 'عقد بلا مرجع تجاري';
 }
 
 export function escapeContractCsvCell(value: string | number | null | undefined) {

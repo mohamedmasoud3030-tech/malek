@@ -167,7 +167,7 @@ export function UnitsList({
           if (!open && !deleteMutation.isPending) setArchiveCandidate(null);
         }}
         title={`أرشفة الوحدة ${archiveCandidate?.unit_number ?? ""}؟`}
-        description={`سيتم أرشفة الوحدة "${archiveCandidate?.unit_number ?? ''}" — العقار: ${archiveCandidate?.property_id ? archiveCandidate.property_id.slice(0, 8) : ''} — ستبقى البيانات محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة.`}
+        description={`سيتم أرشفة الوحدة "${archiveCandidate?.unit_number ?? ''}" — ستبقى البيانات محفوظة كسجل أرشيفي ولن تظهر ضمن الوحدات النشطة.`}
         confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmArchive}

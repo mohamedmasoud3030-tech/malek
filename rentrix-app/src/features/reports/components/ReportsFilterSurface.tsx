@@ -47,7 +47,7 @@ export function ReportsFilterSurface({
   const summary = buildReportFilterSummary(filters, defaults, {
     costCenter: selectedCostCenter,
     owner: selectedOwner?.display_name ?? selectedOwner?.full_name,
-    contract: selectedContract ? `عقد ${selectedContract.id.slice(0, 8)}` : undefined,
+    contract: selectedContract ? selectedContract.reference || `${selectedContract.people?.full_name ?? 'مستأجر'} — ${selectedContract.properties?.title ?? 'عقار'}` : undefined,
   });
 
   return (

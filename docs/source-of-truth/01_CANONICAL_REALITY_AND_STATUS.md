@@ -20,7 +20,7 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Contract create/edit routes → centered modal over workspace context | `VERIFIED_COMPLETE` | commit `5f585a06`; `contract-form-workflow.test.ts`, `ux041-agreement-recovery.test.tsx` |
 | Compact enterprise forms (sensible width, grouped fields, responsive grids, progressive disclosure, dirty protection, single-pass validation) | `VERIFIED_COMPLETE` | `form-single-pass-validation.test.ts`, `mobile-accessibility-ux.test.ts` |
 | Quick collect deep link stays in invoice workspace (`?invoiceId=&collect=1`) | `VERIFIED_COMPLETE` | `quick-collect.ts`, `useInvoiceWorkspaceController.ts` |
-| Mobile surfaces: tables degrade to cards in all primary workspaces | `VERIFIED_COMPLETE` | `MobileCard`/`renderMobileCard` in properties/owners/units/people/tenants/contracts/invoices/receipts/expenses/arrears/deposits/commissions/reconciliation/maintenance/utilities |
+| Mobile dense registers: one compact responsive table with column priority, progressive disclosure, sticky identity/actions, and controlled horizontal scrolling; no card duplication | `VERIFIED_COMPLETE` | `EntityTable` / `CompactResponsiveTable` + behavioral interaction coverage |
 
 ### A3 — Reports experience (consolidation)
 
@@ -73,7 +73,7 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Loading/error/retry/empty states with actions in all primary workspaces | `VERIFIED_COMPLETE` | `AsyncContentState`, `PageStateCard`, `EmptyState` across modules |
 | Document vault upload validation (mime + 5MB contract, accept attribute) | `VERIFIED_COMPLETE` | `attachments-contract.ts`, `documents-vault-service.ts` |
 | CSV export with UTF-8 BOM, dated filenames | `VERIFIED_COMPLETE` | `csvExport.ts`, `reports-page.helpers.ts` |
-| Navigation exposure: all safe features reachable from hub child nav + mobile drawer; 5 primary mobile destinations | `VERIFIED_COMPLETE` | `app-nav-items.ts` |
+| Navigation exposure: all safe features reachable from collapsible domain groups + mobile drawer; mobile persistent control is Menu + Search only | `VERIFIED_COMPLETE` | `app-nav-items.ts`, `layout-navigation-view.tsx` |
 | Permission-consistent UI (void/approve/pay/export gates) | `VERIFIED_COMPLETE` | `permissions.ts` + per-workspace gates |
 
 ---

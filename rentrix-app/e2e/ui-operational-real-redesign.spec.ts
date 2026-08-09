@@ -63,7 +63,7 @@ async function openFixture(
 
 async function openOperationalFormFixture(page: Page, theme: 'light' | 'dark') {
   await applyTheme(page, theme);
-  await page.goto('/login?e2e-form-contract=1&surface=bottom-sheet', {
+  await page.goto('/login?e2e-form-contract=1&surface=dialog', {
     waitUntil: 'domcontentloaded',
   });
   await page.evaluate((selectedTheme) => {
@@ -102,30 +102,20 @@ for (const [name, fixture] of Object.entries(fixtures)) {
   }
 }
 
-test('operational create form is a Bottom Sheet on mobile with visible actions', async ({ page }, testInfo) => {
+test('operational create form is a scrollable Dialog on mobile with visible actions', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 375, height: 844 });
   await openOperationalFormFixture(page, 'light');
-
-  const bottomSheet = page.locator('[data-bottom-sheet]');
-  const formSurface = page.locator(
-    '[data-entity-form-surface="bottom-sheet"][data-entity-form-variant="operational"]',
-  );
-  await expect(bottomSheet).toBeVisible();
-  await expect(formSurface).toBeVisible();
-  await expect(page.locator('[data-entity-form-surface="full-page"]')).toHaveCount(0);
-  await expect(bottomSheet.getByRole('heading', { name: 'إضافة جهة اتصال' })).toBeVisible();
-  await expect(formSurface.locator('[data-entity-form-actions]')).toBeVisible();
-  await expectNoHorizontalOverflow(page, 'operational create bottom sheet');
-
-  const sheetBox = await bottomSheet.boundingBox();
-  expect(sheetBox).not.toBeNull();
-  expect(sheetBox!.width).toBeLessThanOrEqual(375);
-  expect(sheetBox!.height).toBeLessThanOrEqual(844);
-
-  await page.screenshot({
-    path: testInfo.outputPath('operational-create-375-bottom-sheet.png'),
-    fullPage: true,
-  });
+  const dialog = page.locator('[data-entity-form-surface="dialog"][data-entity-form-variant="operational"]');
+  await expect(dialog).toBeVisible();
+  await expect(page.locator('[data-bottom-sheet]')).toHaveCount(0);
+  await expect(dialog.getByRole('heading', { name: 'إضافة جهة اتصال' })).toBeVisible();
+  await expect(dialog.locator('[data-entity-form-actions]')).toBeVisible();
+  await expectNoHorizontalOverflow(page, 'operational create mobile dialog');
+  const box = await dialog.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeLessThanOrEqual(375);
+  expect(box!.height).toBeLessThanOrEqual(844);
+  await page.screenshot({ path: testInfo.outputPath('operational-create-375-dialog.png'), fullPage: true });
 });
 
 test('operational create form remains a Dialog on desktop', async ({ page }, testInfo) => {

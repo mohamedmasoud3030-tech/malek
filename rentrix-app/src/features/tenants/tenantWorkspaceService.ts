@@ -133,6 +133,49 @@ async function listTenantInvoices(contractIds: string[]) {
   return rows;
 }
 
+export type TenantDossier = Readonly<{
+  person: TenantPerson;
+  contracts: Array<TenantContract & { reference?: string | null }>;
+  invoices: Array<TenantInvoice & { id: string; reference?: string | null }>;
+  latestActivity: Array<{ id: string; subject: string | null; body: string; status: string | null; created_at: string }>;
+}>;
+
+/** One-tenant dossier query; no full people/property/unit register fetches. */
+export async function getTenantDossier(tenantId: string, options: { includeFinancial: boolean; includeActivity: boolean }): Promise<TenantDossier> {
+  const { data: person, error: personError } = await supabase
+    .from('people')
+    .select('id,full_name,phone,email,national_id')
+    .eq('id', tenantId)
+    .eq('type', 'tenant')
+    .is('deleted_at', null)
+    .single()
+    .returns<TenantPerson>();
+  if (personError) throw personError;
+  if (!person) throw new Error('المستأجر غير موجود أو غير متاح لصلاحياتك.');
+
+  const { data: contractsData, error: contractsError } = await (supabase as any)
+    .from('contracts')
+    .select('*, properties:property_id(id,title), units:unit_id(id,unit_number)')
+    .eq('tenant_id', tenantId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+  if (contractsError) throw contractsError;
+  const contracts = (contractsData ?? []) as TenantDossier['contracts'];
+  const contractIds = contracts.map((contract) => contract.id);
+
+  const [invoiceResult, activityResult] = await Promise.all([
+    options.includeFinancial && contractIds.length > 0
+      ? (supabase as any).from('invoices').select('id,reference,contract_id,status,amount,paid_amount,due_date').in('contract_id', contractIds).is('deleted_at', null).order('due_date', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    options.includeActivity
+      ? (supabase as any).from('communication_records').select('id,subject,body,status,created_at').in('related_entity_type', ['tenant', 'person']).eq('related_entity_id', tenantId).is('deleted_at', null).order('created_at', { ascending: false }).limit(10)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (invoiceResult.error) throw invoiceResult.error;
+  if (activityResult.error) throw activityResult.error;
+  return { person, contracts, invoices: invoiceResult.data ?? [], latestActivity: activityResult.data ?? [] } as TenantDossier;
+}
+
 function getInvoicesByTenant(contractsByTenant: Record<string, TenantContract[]>, invoicesByContract: Record<string, TenantInvoice[]>) {
   return Object.fromEntries(
     Object.entries(contractsByTenant).map(([tenantId, contracts]) => [

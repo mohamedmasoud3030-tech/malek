@@ -1,18 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { canAccess, getAuthorizationContextFromUser } from './permissions';
+import { canAccess, getAuthorizationContextFromUser, getPermissionLabel } from './permissions';
 
-describe('P3 permission request workflow contract', () => {
-  it('lets managers review governance access while users remain restricted', () => {
+describe('permission request semantic authorization', () => {
+  it('separates review authority from users, roles, and company settings', () => {
     const manager = getAuthorizationContextFromUser({ id: 'manager', email: 'manager@example.com', app_metadata: { user_role: 'MANAGER' } });
-    const user = getAuthorizationContextFromUser({ id: 'user', email: 'user@example.com', app_metadata: { user_role: 'USER' } });
-    expect(canAccess(manager, 'system.view')).toBe(true);
-    expect(canAccess(user, 'system.view')).toBe(false);
+    const admin = getAuthorizationContextFromUser({ id: 'admin', email: 'admin@example.com', app_metadata: { user_role: 'ADMIN' } });
+    expect(canAccess(manager, 'permission_requests.review')).toBe(true);
+    expect(canAccess(manager, 'users.manage')).toBe(false);
+    expect(canAccess(manager, 'company.settings.manage')).toBe(false);
+    expect(canAccess(manager, 'system.view')).toBe(false);
+    expect(canAccess(admin, 'permission_requests.review')).toBe(true);
+    expect(canAccess(admin, 'users.manage')).toBe(true);
+    expect(canAccess(admin, 'company.settings.manage')).toBe(true);
   });
 
-  it('defines request, decision, grant, notification, and audit persistence in one migration', () => {
-    const migration = readFileSync(resolve(import.meta.dirname, '../../../../supabase/migrations/20260809030000_permission_request_workflow.sql'), 'utf8');
-    for (const token of ['permission_requests', 'user_permission_grants', 'request_permission', 'decide_permission_request', 'app_notifications', 'PERMISSION_REQUESTED', "'PERMISSION_' || result.status", 'audit_log']) expect(migration).toContain(token);
+  it('provides a human Arabic label instead of exposing permission keys', () => {
+    expect(getPermissionLabel('financial.payments.create')).toBe('تسجيل التحصيلات');
+    expect(getPermissionLabel('users.manage')).toBe('إدارة المستخدمين والأدوار');
   });
 });

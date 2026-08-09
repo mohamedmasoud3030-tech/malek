@@ -886,8 +886,10 @@ describe('financialReportsService Supabase queries', () => {
       invoiceCount: 1,
       rows: [{
         invoiceId: 'invoice_due',
-        shortInvoiceId: 'invoice_',
+        shortInvoiceId: 'فاتورة بلا مرجع تجاري',
+        invoiceReference: null,
         contractId: 'contract_1',
+        contractReference: null,
         tenantId: 'tenant_1',
         tenantName: 'Tenant One',
         propertyId: 'property_1',

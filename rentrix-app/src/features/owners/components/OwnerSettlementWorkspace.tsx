@@ -367,7 +367,7 @@ export function OwnerSettlementWorkspace() {
         <header className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-black">التسويات المسجلة</h3>
-            <p className="mt-1 text-xs text-muted-foreground">جدول على سطح المكتب وبطاقات عملية على الهاتف.</p>
+            <p className="mt-1 text-xs text-muted-foreground">جدول مدمج مع إفصاح تدريجي على الهاتف.</p>
           </div>
           <StatusBadge tone="neutral">{settlements.length} سجل</StatusBadge>
         </header>

@@ -6,7 +6,6 @@ import { ROUTE_CONTRACT } from './route-contract';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
-const relationshipsHubSource = readFileSync(new URL('../../features/relationships-hub/relationships-hub-workspace.tsx', import.meta.url), 'utf8');
 const financialsSource = readFileSync(new URL('../../features/financials/financials-page.tsx', import.meta.url), 'utf8');
 
 function hasRoute(path: string): boolean {
@@ -25,10 +24,11 @@ describe('Phase 2 — Canonical IA + Navigation restructure', () => {
     expect(workspaceChildNavItems['/people'].map(([to]) => to)).toEqual(['/leads', '/owners', '/tenants', '/communication']);
   });
 
-  it('legacy /contracts?section=people reaches /people (hub redirect)', () => {
-    expect(relationshipsHubSource).toContain("requestedSection === 'people'");
-    expect(relationshipsHubSource).toContain("navigate({ to: '/people'");
-    expect(relationshipsHubSource).toContain("if (requestedSection === 'tenants' || requestedSection === 'people')");
+  it('legacy /contracts?section destinations redirect to their People-owned routes', () => {
+    expect(routeTreeSource).toContain("legacySection === 'people'");
+    expect(routeTreeSource).toContain("legacySection === 'leads'");
+    expect(routeTreeSource).toContain("? '/communication'");
+    expect(routeTreeSource).toContain('throw redirect({');
   });
 
   it('/lands is first-class canonical (not redirect) with lands.view guard', () => {
@@ -114,7 +114,7 @@ describe('Phase 2 — Canonical IA + Navigation restructure', () => {
 
   it('legacy hub redirects use replace:true for correct Back/Forward', () => {
     expect(portfolioHubSource).toMatch(/navigate\(\{ to: '\/lands', replace: true \}\)/);
-    expect(relationshipsHubSource).toMatch(/navigate\(\{ to: '\/people', replace: true \}\)/);
+    expect(routeTreeSource).toContain("legacyTarget = legacySection === 'people'");
     expect(financialsSource).toMatch(/navigate\(\{ to: '\/commissions', replace: true \}\)/);
     // finance/banking legacy also uses redirect (route-tree)
     expect(routeTreeSource).toContain("throw redirect({ to: '/commissions' })");

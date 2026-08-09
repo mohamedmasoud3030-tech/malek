@@ -125,7 +125,7 @@ export const STATIC_COMMANDS: StaticCommand[] = [
     title: 'الإعدادات العامة للنظام',
     category: 'navigation',
     canonicalRoute: '/settings',
-    permission: 'settings.manage',
+    permission: null,
     keywords: ['الإعدادات', 'إعدادات النظام', 'الملف الشخصي', 'settings', 'configuration'],
     icon: Settings,
   },

@@ -45,7 +45,7 @@ function ContractPaymentsSummary({ snapshot }: Readonly<{ snapshot: ContractPaym
 
 function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymentsSnapshot }>) {
   const columns: ColumnDef<Invoice>[] = [
-    { key: 'id', header: 'الفاتورة', render: (inv) => <span className="font-mono text-xs font-bold">#{inv.id.slice(0, 8)}</span> },
+    { key: 'id', header: 'الفاتورة', render: (inv) => <span className="font-mono text-xs font-bold">{inv.reference ?? 'فاتورة بلا مرجع'}</span> },
     { key: 'due_date', header: 'الاستحقاق', render: (inv) => formatDate(inv.due_date) },
     {
       key: 'status', header: 'الحالة',
@@ -77,7 +77,7 @@ function ContractPaymentsTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
     { key: 'payment_date', header: 'تاريخ الدفع', render: (p) => formatDate(p.payment_date) },
     { key: 'amount', header: 'المبلغ', render: (p) => <span className="font-bold">{formatDefaultCompanyMoney(p.amount)}</span> },
     { key: 'method', header: 'طريقة الدفع', render: (p) => paymentMethodLabels[p.payment_method] },
-    { key: 'invoice_id', header: 'مرجع الفاتورة', render: (p) => <span className="font-mono text-xs font-bold">#{p.invoice_id.slice(0, 8)}</span> },
+    { key: 'invoice_id', header: 'مرجع الفاتورة', render: (p) => <span className="font-mono text-xs font-bold">{p.invoice_reference ?? 'فاتورة بلا مرجع'}</span> },
     { key: 'receipt_ref', header: 'مرجع الإيصال', render: (p) => <span className="font-mono text-xs font-bold">{p.receipt_reference}</span> },
     { key: 'ref_number', header: 'مرجع خارجي', render: (p) => p.reference_number ?? '—' },
   ];

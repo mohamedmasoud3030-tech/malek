@@ -37,7 +37,7 @@ async function fetchContractSources(): Promise<SourceOption[]> {
     id: c.id,
     label: c.properties?.title
       ? `عقد ${c.properties.title} — ${c.people?.full_name ?? '—'} (${c.start_date} → ${c.end_date})`
-      : `عقد #${c.id.slice(0, 8)}`,
+      : c.reference ?? 'عقد بلا مرجع تجاري',
   }));
 }
 
@@ -45,7 +45,7 @@ async function fetchOwnerSources(): Promise<SourceOption[]> {
   const result = await listPeople({ search: '', type: 'owner', page: 1, pageSize: 200 });
   return (result.rows ?? []).map((p) => ({
     id: p.id,
-    label: p.full_name ?? `مالك #${p.id.slice(0, 8)}`,
+    label: p.full_name ?? 'مالك مسجل',
   }));
 }
 
@@ -53,7 +53,7 @@ async function fetchLeadSources(): Promise<SourceOption[]> {
   const leads = await listLeads({ query: '', status: 'all', source: 'all' });
   return leads.map((l) => ({
     id: l.id,
-    label: l.name ?? `عميل محتمل #${l.id.slice(0, 8)}`,
+    label: l.name ?? 'عميل محتمل مسجل',
   }));
 }
 
@@ -61,6 +61,6 @@ async function fetchLandSources(): Promise<SourceOption[]> {
   const lands = await listLands({ query: '', status: 'all' });
   return lands.map((l) => ({
     id: l.id,
-    label: l.name ?? l.plot_no ?? `أرض #${l.id.slice(0, 8)}`,
+    label: l.name ?? l.plot_no ?? 'أرض مسجلة',
   }));
 }

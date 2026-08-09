@@ -15,8 +15,17 @@ const queryState = vi.hoisted(() => ({
   refetch: vi.fn(),
 }));
 
+const persistedState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false, isError: false, refetch: vi.fn() }));
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: () => queryState,
+  useQuery: ({ queryKey }: { queryKey: unknown[] }) => queryKey[0] === 'app-notifications' ? persistedState : queryState,
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+  useMutation: ({ mutationFn }: { mutationFn: (id: string) => Promise<unknown> }) => ({ mutate: (id: string) => { void mutationFn(id); }, isPending: false }),
+}));
+
+const markRead = vi.hoisted(() => vi.fn(async () => undefined));
+vi.mock('./app-notifications-service', () => ({
+  listAppNotifications: vi.fn(async () => []),
+  markAppNotificationRead: markRead,
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -59,6 +68,10 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     queryState.isLoading = false;
     queryState.isError = false;
     queryState.refetch.mockReset();
+    persistedState.data = [];
+    persistedState.isLoading = false;
+    persistedState.isError = false;
+    persistedState.refetch.mockReset();
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
@@ -113,6 +126,23 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     });
     expect(trigger?.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it('renders an unread permission request and marks it read on direct queue navigation', () => {
+    persistedState.data = [{
+      id: 'permission-1', title: 'طلب صلاحية جديد', message: 'مستخدم طلب عرض الأراضي',
+      link: '/settings?section=users-permissions&sub=permission-requests', isRead: false,
+      createdAt: '2026-08-09T00:00:00Z', type: 'permission_request',
+    }];
+    queryState.data = { arrears: { overdueInvoices: [] }, maintenance: { urgentRequests: [] }, activeContracts: [] };
+    act(() => { root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />); });
+    expect(host.querySelector('button[aria-label="التنبيهات (1)"]')).toBeTruthy();
+    open(host);
+    expect(host.textContent).toContain('طلب صلاحية جديد');
+    expect(host.textContent).toContain('مستخدم طلب عرض الأراضي');
+    const link = host.querySelector<HTMLAnchorElement>('a[href="/settings?section=users-permissions&sub=permission-requests"]');
+    act(() => { link?.click(); });
+    expect(markRead).toHaveBeenCalledWith('permission-1');
   });
 
   it('keeps notification controls at the 44px touch-target contract', () => {

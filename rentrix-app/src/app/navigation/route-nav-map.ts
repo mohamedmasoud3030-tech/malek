@@ -11,17 +11,20 @@ export const routeNavRoot = new Map<string, string>([
   ['/properties/$propertyId/units/$unitId', '/properties'],
   ['/units', '/properties'],
   ['/lands', '/lands'],
+  ['/lands/$landId', '/lands'],
 
   ['/owners', '/people'],
   ['/owners/$ownerId', '/people'],
 
   ['/tenants', '/people'],
+  ['/tenants/$tenantId', '/people'],
 
   ['/contracts', '/contracts'],
   ['/contracts/new', '/contracts'],
   ['/contracts/$contractId', '/contracts'],
   ['/contracts/$contractId/edit', '/contracts'],
   ['/people', '/people'],
+  ['/people/$personId', '/people'],
   ['/people/new', '/people'],
   ['/people/$personId/edit', '/people'],
   ['/leads', '/people'],

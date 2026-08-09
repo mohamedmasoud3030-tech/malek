@@ -60,6 +60,37 @@ describe("EntityTable — التفاعل", () => {
     expect(onRowClick).toHaveBeenCalledWith(rows[0]);
   });
 
+  it("supports sorting, keyboard row activation, progressive disclosure, and nested actions", () => {
+    const onSort = vi.fn();
+    const onRowClick = vi.fn();
+    const nestedAction = vi.fn();
+    const richColumns: ColumnDef<Row>[] = [
+      { key: "name", header: "الاسم", sortable: true, priority: "identity", render: (row) => row.name },
+      { key: "detail", header: "تفصيل كامل", priority: "detail", render: (row) => `تفاصيل ${row.name}` },
+      { key: "actions", header: "إجراءات", priority: "actions", render: () => <button type="button" onClick={nestedAction}>إجراء داخلي</button> },
+    ];
+    act(() => { root.render(<EntityTable {...tableProps({ columns: richColumns, sort: { field: "name", direction: "asc" }, onSort, onRowClick })} />); });
+
+    const sortButton = Array.from(container.querySelectorAll("thead button")).find((button) => button.textContent?.includes("الاسم"));
+    act(() => { (sortButton as HTMLElement | undefined)?.click(); });
+    expect(onSort).toHaveBeenCalledWith("name", "desc");
+
+    const firstRow = container.querySelector<HTMLTableRowElement>("tbody tr");
+    act(() => { firstRow?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })); });
+    expect(onRowClick).toHaveBeenCalledWith(rows[0]);
+
+    const nested = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "إجراء داخلي");
+    act(() => { nested?.click(); });
+    expect(nestedAction).toHaveBeenCalledOnce();
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+
+    const disclosure = container.querySelector<HTMLButtonElement>('button[aria-label="عرض كل تفاصيل الصف"]');
+    expect(disclosure?.getAttribute("aria-expanded")).toBe("false");
+    act(() => { disclosure?.click(); });
+    expect(container.textContent).toContain("تفاصيل الأول");
+    expect(container.querySelector('[data-row-disclosure]')).not.toBeNull();
+  });
+
   it("keeps the table compact and removes the view-mode switch", () => {
     act(() => { root.render(<EntityTable {...tableProps({ enableViewModeToggle: true, viewModeStorageKey: "test:view-mode", renderMobileCard: (row) => <div>بطاقة {row.name}</div> })} />); });
     expect(container.querySelector('[aria-label="طريقة العرض"]')).toBeNull();

@@ -18,9 +18,10 @@ export type FinancialReportFilters = {
   status?: FinancialReportStatus;
 };
 
-export type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'> & { unit_id?: Contract['unit_id'] };
+export type ContractContext = Pick<Contract, 'id' | 'property_id' | 'tenant_id'> & { unit_id?: Contract['unit_id']; reference?: string | null };
 
 export type InvoiceReportRow = Pick<Invoice, 'id' | 'contract_id' | 'issue_date' | 'due_date' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'> & Partial<Pick<Invoice, 'tax_amount'>> & {
+  reference?: string | null;
   contracts?: ContractContext | null;
 };
 

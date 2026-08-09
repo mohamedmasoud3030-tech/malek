@@ -38,7 +38,9 @@ export type AgedReceivablesBucket = {
 export type OverdueInvoiceReportRow = {
   invoiceId: string;
   shortInvoiceId: string;
+  invoiceReference?: string | null;
   contractId: string;
+  contractReference?: string | null;
   tenantId: string | null;
   tenantName: string | null;
   propertyId: string | null;
@@ -118,7 +120,7 @@ const receivableInvoiceStatuses: Invoice['status'][] = [
 ];
 const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
-const invoiceReportSelect = 'id, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, property_id, tenant_id, unit_id)';
+const invoiceReportSelect = 'id, reference, contract_id, issue_date, due_date, amount, paid_amount, status, deleted_at, contracts:contract_id(id, reference, property_id, tenant_id, unit_id)';
 
 function createEmptyAgingBuckets(): Record<AgingBucketKey, AgedReceivablesBucket> {
   return agingBucketOrder.reduce((buckets, key) => {
@@ -172,7 +174,7 @@ type ArrearsContextMaps = {
 type ArrearsInvoiceRow = InvoiceReportRow & { contracts?: ContractContext | null };
 type ArrearsEntityContextFields = Pick<
   OverdueInvoiceReportRow,
-  'contractId' | 'tenantId' | 'tenantName' | 'propertyId' | 'propertyTitle' | 'unitId' | 'unitNumber'
+  'contractId' | 'contractReference' | 'tenantId' | 'tenantName' | 'propertyId' | 'propertyTitle' | 'unitId' | 'unitNumber'
 >;
 
 function getArrearsEntityContextFields(invoice: ArrearsInvoiceRow, contexts: ArrearsContextMaps = {}): ArrearsEntityContextFields {
@@ -183,6 +185,7 @@ function getArrearsEntityContextFields(invoice: ArrearsInvoiceRow, contexts: Arr
 
   return {
     contractId: invoice.contract_id,
+    contractReference: contract?.reference ?? null,
     tenantId: contract?.tenant_id ?? null,
     tenantName: tenant?.full_name ?? null,
     propertyId: contract?.property_id ?? null,
@@ -195,7 +198,8 @@ function getArrearsEntityContextFields(invoice: ArrearsInvoiceRow, contexts: Arr
 function buildOverdueInvoiceRow(invoice: ArrearsInvoiceRow, asOf: string, contexts: ArrearsContextMaps = {}): OverdueInvoiceReportRow {
   return {
     invoiceId: invoice.id,
-    shortInvoiceId: invoice.id.slice(0, 8),
+    shortInvoiceId: invoice.reference ?? 'فاتورة بلا مرجع تجاري',
+    invoiceReference: invoice.reference ?? null,
     ...getArrearsEntityContextFields(invoice, contexts),
     dueDate: invoice.due_date,
     daysOverdue: calculateDaysOverdue(invoice.due_date, asOf),

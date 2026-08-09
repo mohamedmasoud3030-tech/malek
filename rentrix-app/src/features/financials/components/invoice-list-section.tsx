@@ -169,7 +169,7 @@ export function InvoiceListSection({
                 {
                   key: 'id',
                   header: 'رقم الفاتورة',
-                  render: (invoice) => <span className="font-bold tabular-nums">#{invoice.id.slice(0, 8)}</span>,
+                  render: (invoice) => <span className="font-bold tabular-nums">{invoice.reference ?? 'فاتورة بلا مرجع'}</span>,
                 },
                 {
                   key: 'due_date',
@@ -239,7 +239,7 @@ export function InvoiceListSection({
                         {showCollect ? (
                           <Button
                             className="h-11 min-w-11 bg-primary text-primary-foreground hover:bg-primary/90"
-                            aria-label={`تحصيل فاتورة ${invoice.id.slice(0, 8)}`}
+                            aria-label={`تحصيل ${invoice.reference ?? 'فاتورة مسجلة'}`}
                             onClick={() => onCollectInvoice(invoice.id)}
                             title="تسجيل دفعة على هذه الفاتورة مباشرة"
                           >

@@ -82,18 +82,17 @@ describe('route-contract — single source of truth', () => {
     }
   });
 
-  it('documents Phase 2 canonical promotions with targetIANote', () => {
+  it('pins final People ownership and standalone domain roots', () => {
     const people = ROUTE_CONTRACT.find((e) => e.canonical === '/people')!;
-    expect(people.targetIANote).toMatch(/Phase 2 canonical standalone/);
     expect(people.isPrimaryNav).toBe(true);
     expect(people.sidebarRoot).toBe('/people');
-    const lands = ROUTE_CONTRACT.find((e) => e.canonical === '/lands')!;
-    expect(lands.targetIANote).toMatch(/Phase 2 canonical standalone/);
-    expect(lands.isPrimaryNav).toBe(true);
-    expect(lands.sidebarRoot).toBe('/lands');
-    const commissions = ROUTE_CONTRACT.find((e) => e.canonical === '/commissions')!;
-    expect(commissions.targetIANote).toMatch(/Phase 2 canonical standalone/);
-    expect(commissions.isPrimaryNav).toBe(true);
-    expect(commissions.sidebarRoot).toBe('/commissions');
+    for (const path of ['/people/$personId', '/tenants/$tenantId', '/leads', '/communication']) {
+      expect(ROUTE_CONTRACT.find((entry) => entry.canonical === path)?.sidebarRoot).toBe('/people');
+    }
+    for (const path of ['/lands', '/commissions']) {
+      const entry = ROUTE_CONTRACT.find((candidate) => candidate.canonical === path)!;
+      expect(entry.isPrimaryNav).toBe(true);
+      expect(entry.sidebarRoot).toBe(path);
+    }
   });
 });

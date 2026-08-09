@@ -45,17 +45,14 @@ export function CommandPaletteDialog() {
 
   const handleSelectEntity = (item: typeof entities[number]) => {
     close();
-    if (item.category === 'tenants' || item.category === 'lands') {
-      void navigate({
-        to: item.route,
-        search: { search: item.title } as any,
-      });
-      return;
-    }
-    // Navigate with backgroundLocation so detail routes automatically render as Dialogs!
-    void navigate({
+    // Every result owns a canonical record URL/search binding. The current
+    // workspace is retained as background so native detail routes open as
+    // dialogs and Back/Forward restore the exact previous location.
+    void (navigate as unknown as (options: unknown) => void)({
       to: item.route,
-      state: { backgroundLocation: location } as any,
+      params: item.params,
+      search: item.search,
+      state: { backgroundLocation: location },
     });
   };
 
@@ -69,6 +66,9 @@ export function CommandPaletteDialog() {
       owners: [],
       tenants: [],
       lands: [],
+      invoices: [],
+      receipts: [],
+      maintenance: [],
     };
     for (const item of entities) {
       if (groups[item.category]) {
@@ -86,6 +86,9 @@ export function CommandPaletteDialog() {
     owners: 'الملاك',
     tenants: 'المستأجرون',
     lands: 'الأراضي والمخططات',
+    invoices: 'الفواتير',
+    receipts: 'الإيصالات والتحصيلات',
+    maintenance: 'طلبات الصيانة',
   };
 
   return (

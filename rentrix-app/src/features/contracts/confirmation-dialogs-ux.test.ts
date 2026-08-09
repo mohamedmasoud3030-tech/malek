@@ -14,7 +14,7 @@ describe('destructive action terminology and confirmation dialogs UX contract', 
   );
 
   const docShellSource = readFileSync(
-    resolve(import.meta.dirname, './contractDocumentsShell.tsx'),
+    resolve(import.meta.dirname, '../../components/documents/contextual-documents-panel.tsx'),
     'utf8',
   );
 
@@ -33,7 +33,7 @@ describe('destructive action terminology and confirmation dialogs UX contract', 
   it('removes cannot be undone language from contract document archive dialogs', () => {
     expect(docShellSource).not.toContain('لا يمكن التراجع عن هذا الإجراء بعد الحذف.');
     expect(docShellSource).toContain('أرشفة المستند');
-    expect(docShellSource).toContain('مع الاحتفاظ بسجله وتاريخه في الأرشيف');
+    expect(docShellSource).toContain('مع الاحتفاظ بسجله.');
   });
 
   it('updates default confirm dialog description to explain archival record retention', () => {

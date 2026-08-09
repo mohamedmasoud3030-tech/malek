@@ -11,16 +11,17 @@ import { useAuth } from '@/hooks/use-auth';
 type GovernanceLink = Readonly<{
   to: string;
   title: string;
+  search?: Record<string, string>;
   description: string;
   permission: AppPermission;
   icon: typeof ShieldCheck;
 }>;
 
 const governanceLinks: readonly GovernanceLink[] = [
-  { to: '/audit-log', title: 'سجل التدقيق', description: 'عرض أحداث الحوكمة قراءة فقط — لا يُعدَّل أي سجل.', permission: 'audit.view', icon: ListChecks },
-  { to: '/data-integrity', title: 'سلامة البيانات', description: 'تشغيل فحوصات قراءة فقط على العلاقات الأساسية في المخطط.', permission: 'integrity.view', icon: SearchCheck },
-  { to: '/change-password', title: 'تغيير كلمة المرور', description: 'تحديث كلمة مرور حسابك الحالي بأمان.', permission: 'auth.password.change', icon: KeyRound },
-  { to: '/settings', title: 'إعدادات الشركة', description: 'إدارة إعدادات العملة واللغة والمعلومات التجارية.', permission: 'settings.manage', icon: Settings },
+  { to: '/settings', search: { section: 'audit-log' }, title: 'سجل التدقيق', description: 'عرض أحداث الحوكمة قراءة فقط — لا يُعدَّل أي سجل.', permission: 'audit.view', icon: ListChecks },
+  { to: '/settings', search: { section: 'data-integrity' }, title: 'سلامة البيانات', description: 'تشغيل فحوصات قراءة فقط على العلاقات الأساسية في المخطط.', permission: 'integrity.view', icon: SearchCheck },
+  { to: '/settings', search: { section: 'security' }, title: 'تغيير كلمة المرور', description: 'تحديث كلمة مرور حسابك الحالي بأمان.', permission: 'auth.password.change', icon: KeyRound },
+  { to: '/settings', search: { section: 'company' }, title: 'إعدادات الشركة', description: 'إدارة إعدادات العملة واللغة والمعلومات التجارية.', permission: 'company.settings.manage', icon: Settings },
 ];
 
 const governancePrinciples = [
@@ -69,7 +70,7 @@ export function SystemWorkspace({ variant = 'standalone' }: SystemWorkspaceProps
           {visibleLinks.map((item) => {
             const Icon = item.icon;
             return (
-              <Card key={item.to} className="rounded-2xl transition-shadow hover:shadow-card-hover">
+              <Card key={`${item.to}:${item.title}`} className="rounded-2xl transition-shadow hover:shadow-card-hover">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -81,7 +82,7 @@ export function SystemWorkspace({ variant = 'standalone' }: SystemWorkspaceProps
                 </CardHeader>
                 <CardContent>
                   <Button asChild variant="secondary" className="min-h-11">
-                    <Link to={item.to}>فتح</Link>
+                    <Link to={item.to} search={item.search}>فتح</Link>
                   </Button>
                 </CardContent>
               </Card>

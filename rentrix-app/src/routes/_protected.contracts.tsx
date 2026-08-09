@@ -1,1 +1,1 @@
-export { RelationshipsHubPage as ContractsRouteComponent } from '@/features/relationships-hub/relationships-hub-workspace';
+export { ContractsListPage as ContractsRouteComponent } from '@/features/contracts/ContractsListPage';

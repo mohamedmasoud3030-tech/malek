@@ -64,7 +64,7 @@ function money(value: number | null) {
 function formatSourceLabel(type: string | null, sourceId: string | null): string {
   if (!sourceId) return "بدون مصدر";
   const prefix = typeLabels[type ?? ""] ?? type ?? "مصدر";
-  return `${prefix} #${sourceId.slice(0, 8)}`;
+  return sourceId ? `${prefix} مرتبط` : 'غير مرتبط بمصدر';
 }
 
 type Props = Readonly<{
@@ -281,7 +281,7 @@ export function CommissionsView(props: Props) {
         open={archiveCandidate != null}
         onOpenChange={(open) => { if (!open && !isArchiving) setArchiveCandidate(null); }}
         title={`إلغاء العمولة لـ ${archiveCandidate?.staff_name ?? ""}؟`}
-        description={`سيتم إلغاء العمولة للموظف "${archiveCandidate?.staff_name ?? ""}" — المرجع: ${archiveCandidate?.id ? archiveCandidate.id.slice(0, 8) : ''} — المبلغ: ${money(archiveCandidate?.amount ?? 0)} — الحالة الحالية: ${archiveCandidate?.status ? statusLabels[archiveCandidate.status] ?? archiveCandidate.status : ''}. لن تُحتسب ضمن المبالغ النشطة ويمكن مراجعتها في الأرشيف.`}
+        description={`سيتم إلغاء العمولة للموظف "${archiveCandidate?.staff_name ?? ""}" — المبلغ: ${money(archiveCandidate?.amount ?? 0)} — الحالة الحالية: ${archiveCandidate?.status ? statusLabels[archiveCandidate.status] ?? archiveCandidate.status : ''}. لن تُحتسب ضمن المبالغ النشطة ويمكن مراجعتها في الأرشيف.`}
         confirmLabel="تأكيد الإلغاء"
         isLoading={isArchiving}
         onConfirm={async () => {

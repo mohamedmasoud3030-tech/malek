@@ -66,11 +66,11 @@ describe('CommissionSourceSelector (UX-049)', () => {
     expect(selectorSource).toContain("payment: 'تحصيل'");
   });
 
-  it('formats source labels using readable prefix not UUID slices as primary', () => {
-    // The formatSourceLabel in commissions-view uses prefix + truncated slice
+  it('formats source labels without UUID fragments', () => {
     expect(viewSource).toContain('formatSourceLabel');
-    // Should use type prefix not bare UUID
-    expect(viewSource).toContain('${prefix} #');
+    expect(viewSource).toContain('${prefix} مرتبط');
+    expect(viewSource).not.toContain('sourceId.slice');
+    expect(serviceSource).not.toContain('.id.slice');
   });
 
   it('keeps UUID as internal submitted value only', () => {

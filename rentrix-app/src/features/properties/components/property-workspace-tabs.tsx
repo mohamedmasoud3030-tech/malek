@@ -1,10 +1,7 @@
 import React from 'react';
 import { Link } from '@tanstack/react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, FileText, Wrench, ShieldCheck } from 'lucide-react';
-import { ContextualDocumentsPanel } from '@/components/documents/contextual-documents-panel';
-import { ATTACHMENTS_ACCEPT } from '@/lib/attachments-contract';
-import { archiveContextualDocument, getContextualDocumentSignedUrl, listContextualDocuments, uploadContextualDocument, type ContextualDocumentRow } from '@/services/documents/contextualDocumentsService';
+import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -146,7 +143,7 @@ export function PropertyFinancialsTab({ propertyId }: PropertyTabProps) {
           {propertyInvoices.slice(0, 10).map((invoice) => (
             <Card key={invoice.id} className="p-4 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-sm">فاتورة رقم #{invoice.id.slice(0, 8)}</span>
+                <span className="font-bold text-sm">{invoice.reference ?? 'فاتورة بلا مرجع'}</span>
                 <StatusBadge tone={invoice.status === 'paid' ? 'success' : 'warning'}>
                   {invoice.status === 'paid' ? 'مدفوعة' : invoice.status}
                 </StatusBadge>
@@ -234,38 +231,7 @@ export function PropertyMaintenanceTab({ propertyId }: PropertyTabProps) {
 }
 
 export function PropertyDocumentsTab({ propertyId }: PropertyTabProps) {
-  const queryClient = useQueryClient();
-  const documentsQuery = useQuery({ queryKey: ['contextual-documents', 'property', propertyId], queryFn: () => listContextualDocuments('property', propertyId) });
-  const uploadMutation = useMutation({ mutationFn: (file: File) => uploadContextualDocument({ file, title: file.name, category: 'other', relatedEntityType: 'property', relatedEntityId: propertyId }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contextual-documents', 'property', propertyId] }) });
-  const archiveMutation = useMutation({ mutationFn: (id: string) => archiveContextualDocument(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['contextual-documents', 'property', propertyId] }) });
-  const documents = documentsQuery.data ?? [];
-  return (
-    <ContextualDocumentsPanel
-      entityLabel="العقار"
-      documents={documents.map((document: ContextualDocumentRow) => ({
-        id: document.id,
-        title: document.title,
-        typeLabel: document.category,
-        reference: document.related_entity_id,
-        fileName: document.file_name,
-        fileSize: document.file_size ? `${(document.file_size / 1024).toFixed(1)} KB` : null,
-        mimeType: document.mime_type,
-        relatedEntity: document.related_entity_type,
-      }))}
-      isLoading={documentsQuery.isLoading}
-      isError={documentsQuery.isError}
-      onRetry={() => void documentsQuery.refetch()}
-      onUpload={async (file) => { await uploadMutation.mutateAsync(file); }}
-      onArchive={async (document) => { await archiveMutation.mutateAsync(document.id); }}
-      isUploading={uploadMutation.isPending}
-      archivingId={archiveMutation.isPending ? archiveMutation.variables ?? null : null}
-      resolveUrl={async (document) => {
-        const source = documents.find((candidate) => candidate.id === document.id);
-        return source ? getContextualDocumentSignedUrl(source.storage_path) : null;
-      }}
-      accept={ATTACHMENTS_ACCEPT}
-    />
-  );
+  return <ContextualDocumentsSection entityType="property" entityId={propertyId} entityLabel="العقار" />;
 }
 
 export function PropertyActivityTab({ propertyId }: PropertyTabProps) {
