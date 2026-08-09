@@ -4,7 +4,6 @@ import { useDeferredValue, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
@@ -291,47 +290,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
             emptyTitle="لا توجد إيصالات مطابقة"
             emptyDescription={hasFilters ? 'غيّر البحث أو الفلاتر لعرض إيصالات أخرى.' : 'لا توجد إيصالات منشورة حتى الآن.'}
             onRowClick={(receipt) => setSelectedReceiptId(receipt.id)}
-            renderMobileCard={(receipt) => (
-              <MobileCard
-                title={`إيصال #${receipt.receipt_number}`}
-                subtitle={formatDate(receipt.payment_date)}
-                badge={(
-                  <StatusBadge tone={receiptStatusTone(receipt.status)} className="shrink-0">
-                    <CheckCircle2 className="size-3" aria-hidden="true" />
-                    {receiptStatusLabels[receipt.status] ?? receipt.status}
-                  </StatusBadge>
-                )}
-                onClick={() => setSelectedReceiptId(receipt.id)}
-                stats={(
-                  <div className="grid gap-2 text-xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex min-w-0 items-center gap-2 font-bold"><Wallet className="size-4 shrink-0" aria-hidden="true" />{paymentMethodLabels[receipt.payment_method] ?? receipt.payment_method}</span>
-                      <strong className="whitespace-nowrap text-base font-black tabular-nums text-success">{formatMoney(receipt.amount)}</strong>
-                    </div>
-                    <div className="line-clamp-2 leading-5">{formatReceiptContext(receipt)}</div>
-                    <div className="text-[10px] text-muted-foreground">فاتورة #{formatShortId(receipt.invoice_id)}</div>
-                  </div>
-                )}
-                actions={(
-                  <div className="flex flex-wrap gap-2 w-full">
-                    <Button variant="outline" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => setSelectedReceiptId(receipt.id)}>
-                      <Eye className="size-4" />
-                      عرض
-                    </Button>
-                    <Button variant="outline" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => openReceiptPrintView(receipt.id)}>
-                      <Printer className="size-4" />
-                      طباعة
-                    </Button>
-                    {canVoidReceipt && receipt.status === 'posted' ? (
-                      <Button variant="danger" size="sm" className="min-h-9 px-3 gap-1.5 text-xs font-bold" onClick={() => openVoidDialog(receipt)}>
-                        <Ban className="size-4" />
-                        إلغاء
-                      </Button>
-                    ) : null}
-                  </div>
-                )}
-              />
-            )}
+
           />
 
           {(hasMoreReceipts || receiptsLimit > RECEIPTS_PAGE_SIZE) ? (

@@ -10,7 +10,6 @@ import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -205,23 +204,6 @@ export function LandsView({
           rows={rows}
           columns={columns}
           keyOf={(row) => row.id}
-          enableViewModeToggle
-          viewModeStorageKey="rentrix:view-mode:lands"
-          renderMobileCard={(row) => (
-            <MobileCard
-              title={row.name || row.plot_no || 'بدون اسم'}
-              subtitle={`${row.location || 'بدون موقع'} · ${categoryLabels[row.category ?? ''] ?? row.category ?? 'بدون تصنيف'}`}
-              badge={<StatusBadge tone={tone(row.status)}>{statusLabels[row.status ?? ''] ?? row.status ?? '—'}</StatusBadge>}
-              meta={(
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="block text-muted-foreground">المساحة</span><strong dir="ltr">{area(row.area)}</strong></div>
-                  <div><span className="block text-muted-foreground">القيمة</span><strong dir="ltr">{money(row.owner_price ?? row.purchase_price)}</strong></div>
-                  <div className="col-span-2"><span className="block text-muted-foreground">المالك</span><strong>{ownerLabel(row.owner_id)}</strong></div>
-                </div>
-              )}
-              actions={rowActions(row)}
-            />
-          )}
         />
       </AsyncContentState>
 

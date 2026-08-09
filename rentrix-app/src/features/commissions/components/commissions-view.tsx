@@ -24,7 +24,6 @@ import { EntityForm } from "@/components/ui/entity-form";
 import { EntityTable } from "@/components/ui/entity-table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { Input } from "@/components/ui/input";
-import { MobileCard } from "@/components/ui/mobile-card";
 import { FinanceKpiGrid, FinanceKpiCard } from "@/features/financials/components/finance-reporting-visual-foundations";
 import { PageHeader } from "@/components/layout/page-header";
 import { Select } from "@/components/ui/select";
@@ -430,22 +429,6 @@ function CommissionRows({
         },
         { key: "actions", header: "إجراءات", render: actionsFor },
       ]}
-      enableViewModeToggle
-      viewModeStorageKey="rentrix:view-mode:commissions"
-      renderMobileCard={(row) => (
-        <MobileCard
-          title={row.staff_name ?? "—"}
-          subtitle={formatSourceLabel(row.type, row.source_id)}
-          badge={<StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>{statusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>}
-          stats={(
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div><span className="block text-muted-foreground">النوع</span><strong>{typeLabels[row.type ?? ""] ?? row.type ?? "—"}</strong></div>
-              <div><span className="block text-muted-foreground">المبلغ</span><strong dir="ltr">{money(row.amount)}</strong></div>
-            </div>
-          )}
-          actions={actionsFor(row)}
-        />
-      )}
     />
   );
 }

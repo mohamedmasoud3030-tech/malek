@@ -12,7 +12,6 @@ import {
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityTable } from "@/components/ui/entity-table";
-import { MobileCard } from "@/components/ui/mobile-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/hooks/useCompanyFormatters";
 import type { Unit } from "@/types/domain";
@@ -153,64 +152,6 @@ export function UnitsList({
               params: { propertyId, unitId: unit.id },
             })
           }
-          enableViewModeToggle
-          viewModeStorageKey="rentrix:view-mode:property-units"
-          renderMobileCard={(unit) => (
-            <MobileCard
-              title={`وحدة ${unit.unit_number}`}
-              subtitle={unit.floor ? `الدور ${unit.floor}` : "الدور غير محدد"}
-              badge={
-                <StatusBadge tone={unitStatusTone[unit.status]}>
-                  {unitStatusLabels[unit.status]}
-                </StatusBadge>
-              }
-              stats={
-                <div className="flex items-center gap-4 text-sm font-bold">
-                  {unit.rent_amount != null ? (
-                    <span dir="ltr">{formatMoney(unit.rent_amount)}</span>
-                  ) : null}
-                  {unit.notes ? (
-                    <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-                      {unit.notes}
-                    </span>
-                  ) : null}
-                </div>
-              }
-              onClick={() =>
-                navigate({
-                  to: "/properties/$propertyId/units/$unitId",
-                  params: { propertyId, unitId: unit.id },
-                })
-              }
-              actions={
-                <div className="grid w-full grid-cols-2 gap-2">
-                  <Button
-                    className="min-h-11"
-                    variant="secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openForEdit(unit);
-                    }}
-                  >
-                    <Edit className="me-2 size-4" />
-                    تعديل
-                  </Button>
-                  <Button
-                    className="min-h-11"
-                    variant="danger"
-                    disabled={deleteMutation.isPending}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setArchiveCandidate(unit);
-                    }}
-                  >
-                    <Archive className="me-2 size-4" />
-                    أرشفة
-                  </Button>
-                </div>
-              }
-            />
-          )}
         />
       </div>
 

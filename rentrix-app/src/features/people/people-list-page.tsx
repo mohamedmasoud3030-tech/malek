@@ -5,6 +5,7 @@ import { PersonFormModal } from "./person-form-modal";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EntityCell } from "@/components/ui/entity-cell";
+import { EntityPreviewDialog } from "@/components/ui/entity-preview-dialog";
 import {
   ActiveFilterBar,
   type ActiveFilterItem,
@@ -69,6 +70,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editPersonId, setEditPersonId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [previewPersonId, setPreviewPersonId] = useState<string | null>(null);
   const debouncedSearch = useDebounce(search, 300);
 
   const params = useMemo(
@@ -218,9 +220,17 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           <Button
             variant="secondary"
             className="min-h-11 px-3"
+            onClick={() => setPreviewPersonId(person.id)}
+          >
+            عرض
+          </Button>
+          <Button
+            variant="secondary"
+            className="min-h-11 px-3"
             onClick={() => openEdit(person.id)}
           >
-            <Edit className="size-4" />
+            <Edit className="size-4" aria-hidden="true" />
+            تعديل
           </Button>
           <Button
             variant="danger"
@@ -228,7 +238,8 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
             aria-label={`أرشفة ${person.full_name}`}
             onClick={() => setDeleteId(person.id)}
           >
-            <Trash2 className="size-4" />
+            <Trash2 className="size-4" aria-hidden="true" />
+            أرشفة
           </Button>
         </div>
       ),
@@ -368,47 +379,6 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                 total: totalCount,
                 onPageChange: setPage,
               }}
-              enableViewModeToggle
-              viewModeStorageKey="rentrix:view-mode:people"
-              renderMobileCard={(person) => (
-                <EntityCard
-                  id={person.id}
-                  name={person.full_name}
-                  subtitle={person.address}
-                  type={person.type}
-                  meta={[
-                    ...(person.phone
-                      ? [entityCardContactMeta.phone(person.phone)]
-                      : []),
-                    ...(person.email
-                      ? [entityCardContactMeta.email(person.email)]
-                      : []),
-                    ...(person.national_id
-                      ? [
-                          {
-                            icon: IdCard,
-                            value: person.national_id,
-                            dir: "ltr" as const,
-                          },
-                        ]
-                      : []),
-                  ]}
-                  actions={[
-                    {
-                      label: "تعديل",
-                      icon: Edit,
-                      onClick: () => openEdit(person.id),
-                    },
-                    {
-                      label: "أرشفة",
-                      icon: Trash2,
-                      variant: "danger",
-                      ariaLabel: `أرشفة ${person.full_name}`,
-                      onClick: () => setDeleteId(person.id),
-                    },
-                  ]}
-                />
-              )}
             />
           </div>
         </section>
@@ -419,6 +389,19 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         onClose={closeModal}
         personId={editPersonId}
       />
+
+      <EntityPreviewDialog
+        open={Boolean(previewPersonId)}
+        onOpenChange={(open) => { if (!open) setPreviewPersonId(null); }}
+        title={rows.find((person) => person.id === previewPersonId)?.full_name ?? 'معاينة الشخص'}
+        description="بيانات الشخص الأساسية بدون مغادرة السجل."
+        actions={previewPersonId ? <Button onClick={() => { openEdit(previewPersonId); setPreviewPersonId(null); }}><Edit className="me-2 size-4" aria-hidden="true" />تعديل</Button> : undefined}
+      >
+        {rows.find((person) => person.id === previewPersonId) ? (() => {
+          const person = rows.find((candidate) => candidate.id === previewPersonId)!;
+          return <div className="grid gap-3 sm:grid-cols-2 text-sm"><p><strong>النوع:</strong> {personTypeLabels[person.type]}</p><p><strong>الهاتف:</strong> {person.phone ?? '—'}</p><p><strong>البريد:</strong> {person.email ?? '—'}</p><p><strong>رقم الهوية:</strong> {person.national_id ?? '—'}</p><p className="sm:col-span-2"><strong>العنوان:</strong> {person.address ?? '—'}</p></div>;
+        })() : null}
+      </EntityPreviewDialog>
 
       <ConfirmDialog
         open={Boolean(deleteId)}

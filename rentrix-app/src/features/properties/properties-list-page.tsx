@@ -21,12 +21,7 @@ import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ActiveFilterBar } from "@/components/ui/active-filter-bar";
 import { DataTable } from "@/components/ui/data-table";
-import { MobileCard } from "@/components/ui/mobile-card";
 import { ActionMenu } from "@/components/ui/action-menu";
-import { EntityCard } from "@/components/ui/entity-card";
-import { ResponsiveCardGrid } from "@/components/ui/responsive-card-grid";
-import { ViewModeToggle } from "@/components/ui/view-mode-toggle";
-import { useViewModePreference } from "@/hooks/use-view-mode-preference";
 import { getAppLanguageState, translateSharedLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 import {
@@ -73,10 +68,6 @@ export type PropertiesListPageProps = Readonly<{
 
 export function PropertiesListPage({ embedded = false }: PropertiesListPageProps) {
   const controller = usePropertyListController();
-  const [viewMode, setViewMode] = useViewModePreference(
-    "rentrix:view-mode:properties",
-  );
-
   const readyCount = controller.properties.filter(
     (property) => property.workflow_health === "ready",
   ).length;
@@ -128,7 +119,6 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
         }
         secondaryActions={
           <div className="flex items-center gap-2">
-            <ViewModeToggle value={viewMode} onChange={setViewMode} />
             <Button
               type="button"
               variant="secondary"
@@ -277,10 +267,9 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                 ) : undefined
               }
             >
-              {viewMode === "list" ? (
+              {
                 <DataTable
                   aria-label="جدول العقارات"
-                  enableViewModeToggle={false}
                   rows={controller.properties}
                   keyOf={(property) => property.id}
                   onRowClick={(property) => controller.navigateToProperty(property.id)}
@@ -357,121 +346,9 @@ export function PropertiesListPage({ embedded = false }: PropertiesListPageProps
                       ),
                     },
                   ]}
-                  renderMobileCard={(property) => (
-                    <MobileCard
-                      title={property.title ?? "عقار"}
-                      subtitle={property.address ?? "العنوان غير محدد"}
-                      badge={
-                        <StatusBadge
-                          tone={
-                            propertyStatusTone[
-                              property.status as keyof typeof propertyStatusTone
-                            ] ?? "gray"
-                          }
-                          dot
-                        >
-                          {controller.statusLabels[
-                            property.status as keyof typeof controller.statusLabels
-                          ] ?? property.status}
-                        </StatusBadge>
-                      }
-                      stats={<PropertyWorkflowStatus property={property} />}
-                      onClick={() => controller.navigateToProperty(property.id)}
-                      actions={
-                        <div className="grid w-full grid-cols-2 gap-2">
-                          <Button
-                            variant="secondary"
-                            className="min-h-11 gap-1 text-xs"
-                            onClick={() => controller.openEditModal(property.id)}
-                          >
-                            <Edit className="size-3.5" />
-                            تعديل
-                          </Button>
-                          <Button
-                            variant="danger"
-                            className="min-h-11 gap-1 text-xs"
-                            onClick={() => controller.requestArchive(
-                              property.id,
-                              property.title ?? "عقار",
-                            )}
-                          >
-                            <Trash2 className="size-3.5" />
-                            أرشفة
-                          </Button>
-                        </div>
-                      }
-                    />
-                  )}
+
                 />
-              ) : (
-                <ResponsiveCardGrid desktopColumns={3} gap="lg">
-                  {controller.properties.map((property) => (
-                    <EntityCard
-                      key={property.id}
-                      id={property.id}
-                      name={property.title ?? "عقار"}
-                      subtitle={property.address ?? "العنوان غير محدد"}
-                      avatarIcon={Building2}
-                      badge={
-                        <StatusBadge
-                          tone={
-                            propertyStatusTone[
-                              property.status as keyof typeof propertyStatusTone
-                            ] ?? "gray"
-                          }
-                        >
-                          {controller.statusLabels[
-                            property.status as keyof typeof controller.statusLabels
-                          ] ?? property.status}
-                        </StatusBadge>
-                      }
-                      meta={[
-                        {
-                          icon: MapPin,
-                          value: property.address ?? "العنوان غير محدد",
-                        },
-                        {
-                          icon: Handshake,
-                          value: property.workflow_health === "owner_unavailable"
-                            ? property.current_owner_name
-                              ? `المالك المرتبط غير نشط: ${property.current_owner_name}`
-                              : "سجل المالك المرتبط غير متاح"
-                            : property.current_owner_name
-                              ? `المالك: ${property.current_owner_name}`
-                              : "لا يوجد ربط ملكية ساري",
-                        },
-                        {
-                          icon: Building2,
-                          value: property.workflow_health === "ready"
-                            ? "جاهز للتشغيل"
-                            : property.workflow_health === "missing_owner"
-                              ? "يحتاج ربط مالك"
-                              : property.workflow_health === "owner_unavailable"
-                                ? "راجع حالة المالك المرتبط"
-                                : "يحتاج اتفاقية تشغيل",
-                        },
-                      ]}
-                      onClick={() => controller.navigateToProperty(property.id)}
-                      actions={[
-                        {
-                          label: "تعديل",
-                          icon: Edit,
-                          onClick: () => controller.openEditModal(property.id),
-                        },
-                        {
-                          label: "أرشفة",
-                          icon: Trash2,
-                          variant: "danger",
-                          onClick: () => controller.requestArchive(
-                            property.id,
-                            property.title ?? "عقار",
-                          ),
-                        },
-                      ]}
-                    />
-                  ))}
-                </ResponsiveCardGrid>
-              )}
+              }
             </AsyncContentState>
           </div>
         </section>

@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { SectionHeader } from '@/components/ui/section-header';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -159,7 +158,7 @@ export function AutomationCenterView() {
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-3xl">
-            <h2 className="text-base font-bold tracking-tight">قواعد الأتمتة</h2>
+            <h2 className="text-base font-bold tracking-tight">مركز الأتمتة</h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">قواعد محفوظة في قاعدة البيانات مع سجل تشغيل وإشعارات داخل النظام ومنع تكرار.</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -199,17 +198,6 @@ export function AutomationCenterView() {
           rows={filteredRules}
           columns={ruleColumns}
           keyOf={(rule) => rule.id}
-          enableViewModeToggle
-          viewModeStorageKey="rentrix:view-mode:automation-rules"
-          renderMobileCard={(rule) => (
-            <MobileCard
-              title={rule.name}
-              subtitle={rule.description || mapRuleTypeToCategory(rule.rule_type)}
-              badge={<StatusBadge tone={rule.is_enabled ? 'success' : 'warning'}>{rule.is_enabled ? 'مفعّل' : 'متوقف'}</StatusBadge>}
-              meta={<div className="space-y-1 text-xs"><p>الفئة: {mapRuleTypeToCategory(rule.rule_type)}</p><p>آخر تشغيل: {formatAutomationDate(rule.last_run_at)}</p><p>النتيجة: {rule.last_run_result || '—'}</p></div>}
-              actions={ruleActions(rule)}
-            />
-          )}
         />
       </AsyncContentState>
 

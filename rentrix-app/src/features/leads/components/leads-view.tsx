@@ -491,16 +491,6 @@ function LeadRows({
       columns={columns}
       keyOf={(row) => row.id}
       aria-label="قائمة العملاء المحتملين"
-      enableViewModeToggle
-      viewModeStorageKey="rentrix:view-mode:leads"
-      renderMobileCard={(row) => (
-        <LeadCard
-          row={row}
-          isArchiving={isArchiving}
-          onEdit={onEdit}
-          onArchiveClick={onArchiveClick}
-        />
-      )}
     />
   );
 }

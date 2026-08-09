@@ -7,7 +7,7 @@
  * - Empty state
  * - Pagination
  * - Sorting (اختياري)
- * - Mobile card view عبر renderMobileCard
+ * - Compact responsive table at every viewport (mobile uses horizontal overflow)
  * - Row actions
  * - Accessibility: aria-label, keyboard navigation, aria-sort
  */
@@ -32,8 +32,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ViewModeToggle } from "@/components/ui/view-mode-toggle";
-import { useViewModePreference } from "@/hooks/use-view-mode-preference";
 import { cn } from "@/lib/utils";
 
 export interface ColumnDef<T> {
@@ -75,10 +73,11 @@ export interface EntityTableProps<T> {
   onRowClick?: (row: T) => void;
   renderRowExpansion?: (row: T) => ReactNode;
   expandedRowId?: string | null;
+  /** @deprecated Kept for source compatibility; registers always render the shared table. */
   renderMobileCard?: (row: T) => ReactNode;
-  /** Enables list/card switching whenever a card renderer is available. */
+  /** @deprecated View switching was removed from data-heavy registers in P1. */
   enableViewModeToggle?: boolean;
-  /** Keeps each page's preference independent across visits. */
+  /** @deprecated Kept for source compatibility; no longer controls rendering. */
   viewModeStorageKey?: string;
   "aria-label": string;
   className?: string;
@@ -95,19 +94,9 @@ function SortIcon({ field, sort }: { field: string; sort?: SortState }) {
   );
 }
 
-function TableSkeleton({
-  rows,
-  cols,
-  hasMobileCards,
-}: {
-  rows: number;
-  cols: number;
-  hasMobileCards: boolean;
-}) {
+function TableSkeleton({ rows, cols }: { rows: number; cols: number }) {
   return (
-    <Card
-      className={cn("overflow-hidden", hasMobileCards && "hidden md:block")}
-    >
+    <Card className="overflow-hidden">
       <div className="mobile-scroll-x">
         <Table>
           <TableHeader>
@@ -133,27 +122,6 @@ function TableSkeleton({
         </Table>
       </div>
     </Card>
-  );
-}
-
-function MobileSkeleton({
-  rows,
-  desktop = false,
-}: {
-  rows: number;
-  desktop?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        "grid gap-3 sm:grid-cols-2",
-        desktop ? "xl:grid-cols-3" : "md:hidden",
-      )}
-    >
-      {Array.from({ length: rows }, (_, i) => (
-        <Skeleton key={i} className="h-32 w-full rounded-2xl" />
-      ))}
-    </div>
   );
 }
 
@@ -236,41 +204,15 @@ export function EntityTable<T>({
   onRowClick,
   renderRowExpansion,
   expandedRowId,
-  renderMobileCard,
-  enableViewModeToggle = false,
-  viewModeStorageKey,
   "aria-label": ariaLabel,
   className,
   skeletonRows = 5,
 }: EntityTableProps<T>) {
-  const canSwitchView = enableViewModeToggle && renderMobileCard !== undefined;
-  const storageKey = viewModeStorageKey ?? `rentrix:view-mode:${ariaLabel}`;
-  const [viewMode, setViewMode] = useViewModePreference(
-    storageKey,
-    "list",
-    canSwitchView,
-  );
 
   if (isLoading) {
     return (
       <div className={cn("space-y-4", className)}>
-        {canSwitchView ? (
-          <ViewModeToggle
-            value={viewMode}
-            onChange={setViewMode}
-            className="ms-auto"
-          />
-        ) : null}
-        {renderMobileCard && (
-          <MobileSkeleton rows={skeletonRows} desktop={viewMode === "grid"} />
-        )}
-        {viewMode === "list" ? (
-          <TableSkeleton
-            rows={skeletonRows}
-            cols={columns.length}
-            hasMobileCards={renderMobileCard !== undefined}
-          />
-        ) : null}
+        <TableSkeleton rows={skeletonRows} cols={columns.length} />
       </div>
     );
   }
@@ -320,50 +262,19 @@ export function EntityTable<T>({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {canSwitchView ? (
-        <div className="flex items-center justify-end">
-          <ViewModeToggle value={viewMode} onChange={setViewMode} />
-        </div>
-      ) : null}
-
-      {renderMobileCard !== undefined && (
-        <div
-          className={cn(
-            "grid gap-3 sm:grid-cols-2",
-            viewMode === "grid" ? "xl:grid-cols-3" : "md:hidden",
-          )}
-          role="list"
-          aria-label={ariaLabel}
-        >
-          {rows.map((row) => (
-            <div key={keyOf(row)} role="listitem">
-              {renderMobileCard(row)}
-            </div>
-          ))}
-        </div>
-      )}
-
       <Card
         data-entity-table-wrapper
-        className={cn(
-          "overflow-hidden rounded-[1.5rem] border-border/70 bg-card shadow-card",
-          renderMobileCard !== undefined ? "hidden md:block" : "",
-          viewMode === "grid" && "md:hidden",
-        )}
+        data-compact-responsive-table
+        className="overflow-hidden rounded-[1.5rem] border-border/70 bg-card shadow-card"
       >
         <div
           data-entity-table-scroll
           tabIndex={0}
           role="region"
           aria-label={`${ariaLabel} — منطقة جدول قابلة للتمرير أفقياً عند الحاجة`}
-          className={cn(
-            renderMobileCard !== undefined
-              ? "overflow-x-auto"
-              : "mobile-scroll-x",
-            "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20",
-          )}
+          className="mobile-scroll-x focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
         >
-          <Table data-entity-table aria-label={ariaLabel}>
+          <Table data-entity-table density="compact" aria-label={ariaLabel} className="text-xs sm:text-sm">
             <TableHeader>
               <TableRow>
                 {hasExpansion && <TableHead className="w-12" />}
@@ -475,3 +386,6 @@ export function EntityTable<T>({
     </div>
   );
 }
+
+/** Canonical shared foundation name for compact desktop/mobile registers. */
+export const CompactResponsiveTable = EntityTable;

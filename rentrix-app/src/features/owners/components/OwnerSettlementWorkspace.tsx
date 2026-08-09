@@ -27,7 +27,6 @@ import { Button } from '@/components/ui/button';
 import { ActionMenu } from '@/components/ui/action-menu';
 import { EntityForm } from '@/components/ui/entity-form';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
@@ -386,43 +385,6 @@ export function OwnerSettlementWorkspace() {
             rows={settlements}
             columns={columns}
             keyOf={(settlement) => settlement.id}
-            enableViewModeToggle
-            viewModeStorageKey="rentrix:view-mode:owner-settlements"
-            renderMobileCard={(settlement) => (
-              <MobileCard
-                title={settlement.owner_name}
-                subtitle={`${settlement.property_title} · ${settlement.period_start} إلى ${settlement.period_end}`}
-                badge={<StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge>}
-                stats={(
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <Metric label="المحصّل" value={settlement.gross_rent_collected} />
-                    <Metric label="أتعاب المكتب" value={settlement.management_fee_amount} tone="primary" />
-                    <Metric label="الخصومات" value={settlement.maintenance_deductions + settlement.utility_deductions} tone="danger" />
-                    <Metric label="الصافي للمالك" value={settlement.net_payable_amount} tone="success" />
-                  </div>
-                )}
-                actions={(
-                  <div className="grid w-full grid-cols-2 gap-2">
-                    <Button variant="secondary" className="min-h-11" onClick={() => handlePrint(settlement)} disabled={!documentSettings.isReady}>
-                      <Printer className="me-1 size-4" />طباعة
-                    </Button>
-                    <Button variant="secondary" className="min-h-11" onClick={() => handleDownloadPdf(settlement)} disabled={!documentSettings.isReady}>
-                      <Download className="me-1 size-4" />PDF
-                    </Button>
-                    {settlement.status === 'pending' && canApproveSettlement ? (
-                      <Button className="min-h-11" onClick={() => approveMutation.mutate({ settlement_id: settlement.id })} disabled={approveMutation.isPending}>
-                        <CheckCircle2 className="me-1 size-4" />اعتماد
-                      </Button>
-                    ) : null}
-                    {settlement.status === 'approved' && canPaySettlement ? (
-                      <Button className="min-h-11" onClick={() => setSelectedSettlement(settlement)} disabled={payoutMutation.isPending}>
-                        <Send className="me-1 size-4" />صرف
-                      </Button>
-                    ) : null}
-                  </div>
-                )}
-              />
-            )}
           />
         </AsyncContentState>
       </section>

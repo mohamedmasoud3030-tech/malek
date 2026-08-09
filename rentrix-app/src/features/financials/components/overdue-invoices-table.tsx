@@ -1,7 +1,6 @@
 import { HandCoins } from 'lucide-react';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { Button } from '@/components/ui/button';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import type { OverdueInvoiceReportRow } from '../reports/financialReportsService';
 import { ARABIC_LOCALE, EMPTY_FIELD_VALUE, getArrearsBucketLabel, getOverdueRowBucketKey } from './arrears-workflow-helpers';
@@ -66,38 +65,6 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
       keyOf={(row) => row.invoiceId}
       emptyTitle="لا توجد فواتير متأخرة"
       emptyDescription="لا توجد فواتير متأخرة حتى تاريخ التقرير الحالي."
-      enableViewModeToggle
-      viewModeStorageKey="rentrix:view-mode:arrears"
-      renderMobileCard={(row) => {
-        const isSelected = selectedInvoiceId === row.invoiceId;
-        const bucket = getOverdueRowBucketKey(row);
-        return (
-          <MobileCard
-            title={`فاتورة #${row.shortInvoiceId || row.invoiceId.slice(0, 8)}`}
-            subtitle={`${row.tenantName ?? EMPTY_FIELD_VALUE} · ${getContextLabel(row)}`}
-            badge={<StatusBadge tone="danger">{getArrearsBucketLabel(bucket)}</StatusBadge>}
-            className={isSelected ? 'ring-2 ring-primary/40 bg-primary/5' : undefined}
-            meta={(
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div><span className="block text-muted-foreground">الاستحقاق</span><strong>{formatDate(row.dueDate)}</strong></div>
-                <div><span className="block text-muted-foreground">أيام التأخير</span><strong className="text-destructive">{formatLatinNumber(row.daysOverdue, ARABIC_LOCALE)}</strong></div>
-                <div><span className="block text-muted-foreground">المتبقي</span><strong dir="ltr" className="text-destructive">{formatMoney(row.remainingAmount)}</strong></div>
-                <div><span className="block text-muted-foreground">الحالة</span><strong>{formatInvoiceStatusLabel(row.status)}</strong></div>
-              </div>
-            )}
-            actions={(
-              <div className="grid w-full grid-cols-2 gap-2">
-                <Button variant="secondary" className="min-h-11" onClick={() => onSelectInvoice(row.invoiceId)}>عرض التفاصيل</Button>
-                {onCollectInvoice ? (
-                  <Button className="min-h-11" onClick={() => onCollectInvoice(row.invoiceId)}>
-                    <HandCoins className="me-1 size-4" />تحصيل
-                  </Button>
-                ) : null}
-              </div>
-            )}
-          />
-        );
-      }}
     />
   );
 }

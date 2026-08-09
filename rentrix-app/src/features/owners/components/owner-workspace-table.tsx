@@ -9,7 +9,6 @@ import { EntityPreviewDialog } from '@/components/ui/entity-preview-dialog';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { DetailFields } from '@/components/ui/detail-fields';
 import { FilterBar } from '@/components/ui/filter-bar';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { formatLatinNumber } from '@/lib/formatters';
 import type { Owner } from '../services/owner-service';
@@ -152,35 +151,6 @@ export function OwnerWorkspaceTable({
           keyOf={(row) => row.owner.id}
           emptyTitle="لا يوجد ملاك"
           emptyDescription="أضف أول مالك لبدء ربطه بالعقارات."
-          enableViewModeToggle
-          viewModeStorageKey="rentrix:view-mode:owners"
-          renderMobileCard={(row) => (
-            <MobileCard
-              title={getOwnerDisplayLabel(row.owner)}
-              subtitle={row.owner.display_name ? row.owner.full_name : 'مالك'}
-              badge={<StatusBadge tone={row.owner.is_active ? 'success' : 'neutral'} dot>{row.owner.is_active ? 'نشط' : 'غير نشط'}</StatusBadge>}
-              meta={(
-                <div className="space-y-1 text-xs text-muted-foreground">
-                  {row.owner.phone ? <p dir="ltr">{row.owner.phone}</p> : null}
-                  {row.owner.email ? <p dir="ltr" className="truncate">{row.owner.email}</p> : null}
-                </div>
-              )}
-              stats={(
-                <div className="flex items-center justify-between gap-3 text-xs">
-                  <span><Building2 className="me-1 inline size-3.5" />{formatLatinNumber(row.propertyCount, 'ar')} عقار</span>
-                  <span className="font-bold text-primary">{formatLatinNumber(row.activeContractCount, 'ar')} عقد نشط</span>
-                </div>
-              )}
-              actions={(
-                <div className="grid w-full grid-cols-3 gap-2">
-                  <Button variant="secondary" className="text-xs" onClick={() => openPreview(row.owner.id)}><Eye className="size-4" />معاينة</Button>
-                  <Button variant="secondary" className="text-xs" onClick={() => onSelectOwner(row.owner.id)}><LinkIcon className="size-4" />العلاقات</Button>
-                  <Button variant="secondary" className="text-xs" onClick={() => onEditOwner(row.owner)}><Pencil className="size-4" />تعديل</Button>
-                </div>
-              )}
-              onClick={() => openPreview(row.owner.id)}
-            />
-          )}
         />
       ) : emptyState}
 

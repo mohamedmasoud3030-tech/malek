@@ -115,7 +115,7 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
     });
   });
 
-  it('proves clicking a mobile UnitCard triggers correct unit detail navigation', async () => {
+  it('proves clicking a compact responsive table row triggers correct unit detail navigation', async () => {
     const unitsQuery = makeUnitsQuery({
       data: [{ id: 'unit-101', unit_number: '101', status: 'available', rent_amount: 1500, floor: '1' } as Unit],
     });
@@ -124,13 +124,11 @@ describe('UnitsList Real Rendered User-Interaction Tests', () => {
       root.render(<UnitsList propertyId="property-123" unitsQuery={unitsQuery} />);
     });
 
-    // Locate the rendered mobile entity card in the DOM
-    const cardButton = container?.querySelector('[role="listitem"] [role="button"]') as HTMLElement;
-    expect(cardButton).not.toBeNull();
+    const row = container?.querySelector('tbody tr') as HTMLElement;
+    expect(row).not.toBeNull();
 
-    // Trigger a real user click on the mobile card
     await act(async () => {
-      cardButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      row.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
 
     // Expect navigation to the nested unit detail URL

@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, HandCoins, Printer, ReceiptText } from 'lucide-react';
 import { EntityTable } from '@/components/ui/entity-table';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { getSafeRemainingAmount } from '../financialMath';
 import { isInvoiceCollectible } from '../invoices/quick-collect';
 import {
@@ -266,93 +265,7 @@ export function InvoiceListSection({
                   },
                 },
               ]}
-              renderMobileCard={(invoice) => {
-                const grossAmount = getInvoiceGrossAmount(invoice);
-                const rowRemaining = getSafeRemainingAmount(grossAmount, invoice.paid_amount);
-                const isSelected = selectedInvoiceId === invoice.id;
-                const kind = mapInvoiceStatusToFinanceKind(invoice.status);
-                const showCollect = canCollectPayments && onCollectInvoice && isInvoiceCollectible(invoice);
-                return (
-                  <div
-                    data-finance-mobile-card
-                    className={isSelected ? 'ring-2 ring-primary/20' : undefined}
-                  >
-                    <MobileCard
-                      variant={isSelected ? 'elevated' : 'default'}
-                      accent={normalizeInvoiceStatus(invoice.status) === 'overdue' ? 'danger' : rowRemaining > 0 ? 'warning' : 'success'}
-                      className={isSelected ? 'ring-2 ring-primary/20' : undefined}
-                      title={`فاتورة #${invoice.id.slice(0, 8)}`}
-                      subtitle={`استحقاق ${formatDate(invoice.due_date)} — المبلغ ${formatMoney(grossAmount)}`}
-                      badge={<FinanceStatusBadge kind={kind} label={formatInvoiceStatusLabel(invoice.status)} />}
-                      onClick={() => onSelectInvoice(invoice.id)}
-                      stats={
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          <div className="rounded-xl bg-muted/50 p-2">
-                            <p className="text-[10px] font-bold text-muted-foreground">الإجمالي</p>
-                            <p className="mt-1 text-sm font-black tabular-nums" dir="ltr">
-                              {formatMoney(grossAmount)}
-                            </p>
-                          </div>
-                          <div className="rounded-xl bg-muted/50 p-2">
-                            <p className="text-[10px] font-bold text-muted-foreground">المدفوع</p>
-                            <p className="mt-1 text-sm font-black text-success tabular-nums" dir="ltr">
-                              {formatMoney(invoice.paid_amount)}
-                            </p>
-                          </div>
-                          <div className="rounded-xl bg-muted/50 p-2">
-                            <p className="text-[10px] font-bold text-muted-foreground">المتبقي</p>
-                            <p className="mt-1 text-sm font-black text-destructive tabular-nums" dir="ltr">
-                              {formatMoney(rowRemaining)}
-                            </p>
-                          </div>
-                        </div>
-                      }
-                      footer={
-                        invoice.tax_amount
-                          ? `ضريبة القيمة المضافة: ${formatMoney(invoice.tax_amount)}`
-                          : `الحالة: ${formatInvoiceStatusLabel(invoice.status)} — اضغط لفتح التفاصيل الكاملة`
-                      }
-                      actions={
-                        (showCollect || onPrintInvoice || onExportInvoice) ? (
-                          <div className="flex w-full flex-col gap-2">
-                            {showCollect ? (
-                              <Button
-                                className="min-h-11 w-full rounded-xl bg-primary text-primary-foreground"
-                                onClick={() => onCollectInvoice(invoice.id)}
-                              >
-                                <HandCoins className="me-1 size-4" />
-                                تحصيل الفاتورة
-                              </Button>
-                            ) : null}
-                            <div className="grid w-full grid-cols-2 gap-2">
-                              {onPrintInvoice && (
-                                <Button
-                                  variant="secondary"
-                                  className="min-h-11 rounded-xl"
-                                  onClick={() => onPrintInvoice(invoice.id)}
-                                >
-                                  <Printer className="me-1 size-4" />
-                                  طباعة
-                                </Button>
-                              )}
-                              {onExportInvoice && (
-                                <Button
-                                  variant="secondary"
-                                  className="min-h-11 rounded-xl"
-                                  onClick={() => onExportInvoice(invoice.id)}
-                                >
-                                  <Download className="me-1 size-4" />
-                                  PDF
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ) : undefined
-                      }
-                    />
-                  </div>
-                );
-              }}
+
             />
           </div>
 

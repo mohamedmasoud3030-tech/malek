@@ -12,7 +12,6 @@ import { ListPage } from '@/components/layout/list-page';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { EntityCell } from '@/components/ui/entity-cell';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { propertyStatusTone } from './components/property-status';
@@ -232,33 +231,7 @@ export function PropertiesListE2EFixture() {
               rows={fixtureProperties}
               keyOf={(property) => property.id}
               onRowClick={() => undefined}
-              renderMobileCard={(property) => (
-                <MobileCard
-                  title={property.title ?? 'عقار'}
-                  subtitle={property.address ?? 'العنوان غير محدد'}
-                  badge={(
-                    <StatusBadge tone={propertyStatusTone[property.status] ?? 'neutral'} dot>
-                      {statusLabels[property.status] ?? property.status}
-                    </StatusBadge>
-                  )}
-                  stats={(
-                    <span className="text-xs font-bold text-muted-foreground">
-                      {property.status === 'active' ? 'جاهز للتشغيل' : 'يحتاج متابعة'}
-                    </span>
-                  )}
-                  onClick={() => undefined}
-                  actions={(
-                    <div className="grid w-full grid-cols-2 gap-2">
-                      <Button variant="secondary" className="min-h-11 gap-1 text-xs">
-                        <Edit className="size-3.5" />تعديل
-                      </Button>
-                      <Button variant="danger" className="min-h-11 gap-1 text-xs">
-                        <Trash2 className="size-3.5" />أرشفة
-                      </Button>
-                    </div>
-                  )}
-                />
-              )}
+
               columns={[
                 {
                   key: 'title',

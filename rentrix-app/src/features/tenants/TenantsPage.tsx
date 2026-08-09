@@ -8,7 +8,6 @@ import { EntityActions } from '@/components/ui/entity-actions';
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
-import { MobileCard } from '@/components/ui/mobile-card';
 import { PersonFormModal } from '@/features/people/person-form-modal';
 import type { TenantWorkspaceRow } from './tenantWorkspaceService';
 import { useTenantWorkspace } from './useTenantWorkspace';
@@ -222,36 +221,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
               emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
               emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
               pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
-              enableViewModeToggle
-              viewModeStorageKey="rentrix:view-mode:tenants"
-              renderMobileCard={(tenant) => {
-                const location = getTenantLocationText(tenant);
-                return (
-                  <MobileCard
-                    title={tenant.person.full_name}
-                    subtitle={`عقود نشطة: ${tenant.activeContractCount}`}
-                    badge={(
-                      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/20 bg-primary/8 px-2.5 py-1 text-[11px] font-black text-primary">
-                        <Users className="size-3" aria-hidden="true" />مستأجر
-                      </span>
-                    )}
-                    meta={(
-                      <div className="grid gap-2 sm:grid-cols-3">
-                        <InfoPill icon={Phone} label="الهاتف" value={tenant.person.phone} dir="ltr" />
-                        <InfoPill icon={Mail} label="الإيميل" value={tenant.person.email} dir="ltr" />
-                        <InfoPill icon={ShieldCheck} label="رقم الهوية" value={tenant.person.national_id} />
-                      </div>
-                    )}
-                    stats={<TenantLocation tenant={tenant} />}
-                    actions={(
-                      <div className="w-full rounded-xl border border-dashed border-border/80 bg-background/70 p-3">
-                        <p className="mb-2 text-xs font-bold text-muted-foreground">الإجراءات والروابط</p>
-                        <TenantSafeLinks tenant={tenant} onEdit={openEdit} />
-                      </div>
-                    )}
-                  />
-                );
-              }}
             />
           </AsyncContentState>
         </div>
