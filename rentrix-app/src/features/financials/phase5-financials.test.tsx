@@ -31,11 +31,10 @@ describe('financials route wiring (IA 2026-08: hub-canonical, legacy redirects)'
     expect(routeTreeSource).toContain("path: '/owner-settlements'");
     expect(routeTreeSource).toContain("view: 'owner_settlements'");
 
-    // Bank reconciliation/commissions → banking hub
+    // Bank reconciliation/commissions → banking hub / standalone commissions
     expect(routeTreeSource).toContain("path: '/bank-reconciliation'");
     expect(routeTreeSource).toContain("section: 'banking'");
     expect(routeTreeSource).toContain("path: '/commissions'");
-    expect(routeTreeSource).toContain("view: 'commissions'");
   });
 
   it('canonical finance implementations remain in features (one per hub tab), not duplicate route files', () => {
@@ -64,6 +63,6 @@ describe('financials route wiring (IA 2026-08: hub-canonical, legacy redirects)'
 
     // /finance/banking?section=commissions
     expect(routeTreeSource).toContain("if (section === 'commissions') {");
-    expect(routeTreeSource).toContain("section: 'expenses', view: 'commissions'");
+    expect(routeTreeSource).toContain("throw redirect({ to: '/commissions' })");
   });
 });

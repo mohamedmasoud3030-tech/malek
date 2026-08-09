@@ -5,7 +5,7 @@ import { PageLayout } from '@/components/layout/page-layout';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { EntityActions } from '@/components/ui/entity-actions';
-import { openEntityPreview } from '@/components/ui/entity-preview-events';
+import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { MobileCard } from '@/components/ui/mobile-card';
@@ -50,13 +50,15 @@ function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
 }
 
 function TenantSafeLinks({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void }>) {
+  const navigate = useNavigate();
+  const location = useLocation();
   return (
     <EntityActions className="flex flex-wrap gap-2">
       <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
         <Edit className="me-1 size-4" />تعديل
       </Button>
       {tenant.primaryContractId !== null && (
-        <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEntityPreview({ kind: 'contract', id: tenant.primaryContractId! })}>
+        <Button variant="secondary" className="min-h-11 px-3" onClick={() => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: location } as unknown as Record<string, unknown> })}>
           <FileText className="me-1 size-4" />فتح العقد
         </Button>
       )}
@@ -78,7 +80,6 @@ function TenantSummary({ rows, total }: Readonly<{ rows: TenantWorkspaceRow[]; t
     <section data-tenant-summary aria-label="ملخص المستأجرين" className="grid gap-3 sm:grid-cols-3">
       {items.map(({ label, value, icon: Icon, hint }) => (
         <div key={label} className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-          <div className="absolute inset-inline-end-0 inset-block-start-0 size-24 rounded-full bg-primary/7 blur-2xl transition group-hover:bg-primary/12" aria-hidden="true" />
           <div className="relative flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-bold text-muted-foreground">{label}</p>
@@ -100,7 +101,10 @@ type TenantsWorkspaceProps = Readonly<{
 }>;
 
 export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
-  const [search, setSearch] = useState('');
+  const navigate = useNavigate();
+  const dialogLocation = useLocation();
+  const urlSearch = (useSearch({ strict: false }) as any).search || '';
+  const [search, setSearch] = useState(urlSearch);
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
@@ -162,7 +166,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
             <Edit className="me-1 size-4" />تعديل
           </Button>
           {tenant.primaryContractId !== null && (
-            <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEntityPreview({ kind: 'contract', id: tenant.primaryContractId! })}>
+            <Button variant="secondary" className="min-h-11 px-3" onClick={() => (navigate as unknown as (opts: unknown) => void)({ to: '/contracts/$contractId', params: { contractId: tenant.primaryContractId! }, state: { backgroundLocation: dialogLocation } as unknown as Record<string, unknown> })}>
               <FileText className="me-1 size-4" />العقد
             </Button>
           )}
@@ -281,6 +285,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
 }
 
 export function TenantsPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   return <TenantsWorkspace />;
 }
 

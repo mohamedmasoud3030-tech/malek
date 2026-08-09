@@ -15,10 +15,6 @@ const ContractsBody = lazy(async () => {
   const { ContractsWorkspace } = await import('@/features/contracts/ContractsListPage');
   return { default: function ContractsEmbedded() { return <ContractsWorkspace embedded />; } };
 });
-const PeopleBody = lazy(async () => {
-  const { PeopleWorkspace } = await import('@/features/people/people-list-page');
-  return { default: function PeopleEmbedded() { return <PeopleWorkspace embedded />; } };
-});
 const LeadsBody = lazy(async () => {
   const { LeadsWorkspace } = await import('@/features/leads/leads-page');
   return { default: function LeadsEmbedded() { return <LeadsWorkspace embedded />; } };
@@ -30,7 +26,6 @@ const CommunicationBody = lazy(async () => {
 
 const sectionComponents: Record<RelationshipsHubSectionId, ComponentType> = {
   contracts: ContractsBody,
-  people: PeopleBody,
   leads: LeadsBody,
   communication: CommunicationBody,
 };
@@ -71,8 +66,14 @@ export function RelationshipsHubWorkspace({
   if (activeSection) mountedSections.current.add(activeSection);
 
   useEffect(() => {
-    if (requestedSection !== 'tenants') return;
-    void navigate({ to: '/tenants', replace: true });
+    if (requestedSection === 'tenants') {
+      void navigate({ to: '/tenants', replace: true });
+      return;
+    }
+    if (requestedSection === 'people') {
+      void navigate({ to: '/people', replace: true });
+      return;
+    }
   }, [navigate, requestedSection]);
 
   const handleSectionChange = useCallback(
@@ -102,8 +103,8 @@ export function RelationshipsHubWorkspace({
     );
   };
 
-  // Compatibility for links/bookmarks from the previous hub structure.
-  if (requestedSection === 'tenants') {
+  // Phase 2: people is now first-class at /people; tenants remains first-class.
+  if (requestedSection === 'tenants' || requestedSection === 'people') {
     return shell(<SectionFallback />);
   }
 

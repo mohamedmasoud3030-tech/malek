@@ -29,10 +29,6 @@ export function OperationalMetricCard({
 }>) {
   return (
     <article data-operational-metric className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-      <div
-        className="absolute inset-inline-end-0 inset-block-start-0 size-24 rounded-full bg-primary/7 blur-2xl transition-colors group-hover:bg-primary/12"
-        aria-hidden="true"
-      />
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-bold text-muted-foreground">{label}</p>
@@ -70,13 +66,6 @@ export function OperationalCommandPanel({
 
   return (
     <article data-operational-command className="relative overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar p-5 text-sidebar-foreground shadow-elevated">
-      <div
-        className={cn(
-          'absolute -inset-inline-end-12 -inset-block-start-16 size-48 rounded-full blur-3xl',
-          glowToneClasses[tone],
-        )}
-        aria-hidden="true"
-      />
       <div className="relative">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">

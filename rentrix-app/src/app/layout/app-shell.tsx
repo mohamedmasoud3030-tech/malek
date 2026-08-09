@@ -16,6 +16,8 @@ import type { SyncStatus } from '@/types/domain';
 import { quickCreateItems } from '@/app/navigation/app-nav-items';
 import { MobileBottomNav, NavigationLinks, type SharedLabel } from './layout-navigation-view';
 import { NotificationsMenu } from './notifications-menu';
+import { CommandPaletteTrigger } from '@/features/command-palette/command-palette-trigger';
+import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
 
 function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
@@ -316,13 +318,15 @@ export function AppShell() {
               <Menu className="size-[1.15rem]" aria-hidden="true" />
             </Button>
 
-            <div className="min-w-0 flex-1 px-1">
+            <div className="min-w-0 flex-1 px-1 flex items-center justify-between gap-4">
               <div className="hidden items-center gap-1.5 sm:flex">
                 <span className="text-[11px] font-medium text-muted-foreground">{sharedLabel('home')}</span>
                 <ChevronLeft className="size-3 text-muted-foreground/60" aria-hidden="true" />
                 <span className="truncate text-[11px] font-semibold text-foreground">{pageTitle}</span>
               </div>
               <p className="truncate text-[0.95rem] font-bold tracking-tight sm:hidden">{pageTitle}</p>
+
+              <CommandPaletteTrigger />
             </div>
 
             <div className="flex items-center gap-1 sm:gap-1.5">
@@ -381,6 +385,7 @@ export function AppShell() {
       </div>
 
       <MobileBottomNav authorization={authorization} sharedLabel={sharedLabel} />
+      <CommandPaletteDialog />
     </div>
   );
 }

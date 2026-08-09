@@ -11,15 +11,16 @@ describe('Route-to-nav-root map', () => {
     expect(getNavRoot('/contracts')).toBe('/contracts');
   });
 
-  it('keeps asset support under properties and relationship support under contracts', () => {
+  it('keeps asset support under properties and relationship support under contracts (Phase 2: people/lands first-class)', () => {
     expect(getNavRoot('/units')).toBe('/properties');
-    expect(getNavRoot('/lands')).toBe('/properties');
-    expect(getNavRoot('/people')).toBe('/contracts');
+    expect(getNavRoot('/lands')).toBe('/lands');
+    expect(getNavRoot('/people')).toBe('/people');
+    expect(getNavRoot('/people/new')).toBe('/people');
     expect(getNavRoot('/leads')).toBe('/contracts');
     expect(getNavRoot('/communication')).toBe('/contracts');
   });
 
-  it('maps every finance detail route to the single finance primary root', () => {
+  it('maps finance detail routes to financials, commissions standalone (Phase 2)', () => {
     for (const path of [
       '/financials',
       '/finance/collections',
@@ -33,10 +34,10 @@ describe('Route-to-nav-root map', () => {
       '/deposits',
       '/owner-settlements',
       '/bank-reconciliation',
-      '/commissions',
     ]) {
       expect(getNavRoot(path)).toBe('/financials');
     }
+    expect(getNavRoot('/commissions')).toBe('/commissions');
   });
 
   it('maps accounting compatibility deep links into accounting and reports', () => {
@@ -60,8 +61,8 @@ describe('Route-to-nav-root map', () => {
     expect(new Set(paths).size).toBe(paths.length);
   });
 
-  it('has Arabic titles for every primary navigation root', () => {
-    for (const root of ['/dashboard', '/properties', '/owners', '/tenants', '/contracts', '/maintenance', '/financials', '/reports', '/ai-assistant', '/settings']) {
+  it('has Arabic titles for every primary navigation root (Phase 2: people/lands/commissions)', () => {
+    for (const root of ['/dashboard', '/people', '/properties', '/lands', '/owners', '/tenants', '/contracts', '/maintenance', '/financials', '/commissions', '/reports', '/ai-assistant', '/settings']) {
       expect(navRootTitle[root]).toMatch(/[\u0600-\u06FF]/);
     }
   });

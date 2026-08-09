@@ -1,10 +1,9 @@
-import { ContactRound, FileText, MessageSquareText, Users } from 'lucide-react';
+import { ContactRound, FileText, MessageSquareText } from 'lucide-react';
 import type { SectionTabItem } from '@/components/ui/section-tabs';
 import type { AppPermission } from '@/features/auth/permissions';
 
 export type RelationshipsHubSectionId =
   | 'contracts'
-  | 'people'
   | 'leads'
   | 'communication';
 
@@ -14,8 +13,9 @@ export type RelationshipsHubSection = SectionTabItem<RelationshipsHubSectionId> 
 }>;
 
 /**
- * Contract workspace keeps supporting relationship tools only. Tenants are a
- * first-class entity and live at /tenants instead of a contract tab.
+ * Contract workspace keeps supporting relationship tools only.
+ * Tenants are a first-class entity at /tenants; People is now a first-class
+ * entity at /people (Phase 2). Legacy ?section=people redirects to /people.
  */
 export const relationshipsHubSections: readonly RelationshipsHubSection[] = [
   {
@@ -23,13 +23,6 @@ export const relationshipsHubSections: readonly RelationshipsHubSection[] = [
     label: 'العقود',
     icon: FileText,
     description: 'العقود والتجديدات ودورة حياة العقد.',
-    permission: null,
-  },
-  {
-    id: 'people',
-    label: 'جهات التعامل',
-    icon: Users,
-    description: 'دليل الأشخاص وجهات التعامل المساندة للعقود.',
     permission: null,
   },
   {

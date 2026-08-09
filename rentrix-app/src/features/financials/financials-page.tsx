@@ -7,13 +7,12 @@ import {
   Landmark,
   FileSpreadsheet,
   ClipboardList,
-  BadgeDollarSign,
   FileCheck,
   HandCoins,
   Building2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useMemo, useRef, lazy, Suspense, useCallback } from 'react';
+import { useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { useAuth } from '@/hooks/use-auth';
@@ -68,9 +67,9 @@ const OwnerSettlementsWorkspace = lazy(async () => ({
 const BankReconciliationWorkspace = lazy(async () => ({
   default: (await import('@/features/financials/reconciliation/bank-reconciliation-page')).BankReconciliationWorkspace,
 }));
-const CommissionsWorkspace = lazy(async () => ({
-  default: (await import('@/features/commissions/commissions-page')).CommissionsWorkspace,
-}));
+// Commissions is now a standalone top-level module at /commissions (Phase 2).
+// Legacy deep-links (?view=commissions, /finance/banking?section=commissions) redirect
+// to /commissions via effect below and via route-tree redirects.
 
 // ==================================================
 // APPROVED TYPED FINANCE VIEW MODEL (Points 3, 4)
@@ -84,7 +83,6 @@ export type FinanceViewId =
   | 'receipts'
   | 'arrears'
   | 'expenses'
-  | 'commissions'
   | 'deposits'
   | 'owner_settlements'
   | 'bank_reconciliation';
@@ -118,7 +116,6 @@ export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
   { id: 'receipts', sectionId: 'collections', label: 'سجل الإيصالات', icon: ReceiptText, permission: null },
   { id: 'arrears', sectionId: 'collections', label: 'المتأخرات والديون', icon: ClipboardList, permission: 'arrears.view' },
   { id: 'expenses', sectionId: 'expenses', label: 'المصروفات', icon: WalletCards, permission: 'expenses.view' },
-  { id: 'commissions', sectionId: 'expenses', label: 'العمولات', icon: BadgeDollarSign, permission: 'commissions.view' },
   { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
   { id: 'owner_settlements', sectionId: 'funds', label: 'تسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
   { id: 'bank_reconciliation', sectionId: 'banking', label: 'مطابقة كشف البنك', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
@@ -177,6 +174,15 @@ export function FinancialsPage() {
   const rawSection = search.section || '';
   const rawView = search.view || '';
 
+  // Phase 2: legacy commissions deep-links redirect to standalone /commissions
+  useEffect(() => {
+    const sec = rawSection.toLowerCase().trim();
+    const vi = rawView.toLowerCase().trim();
+    if (sec === 'commissions' || vi === 'commissions') {
+      void navigate({ to: '/commissions', replace: true });
+    }
+  }, [rawSection, rawView, navigate]);
+
   const { resolvedSectionId, resolvedViewId } = useMemo(() => {
     let sId: FinanceSectionId = 'overview';
     let vId: FinanceViewId = 'overview';
@@ -192,10 +198,13 @@ export function FinancialsPage() {
       sId = 'collections';
       const defaultView = sec === 'collections' ? 'invoices' : sec;
       vId = (vi || defaultView) as FinanceViewId;
-    } else if (['expenses', 'commissions'].includes(sec)) {
+    } else if (['expenses'].includes(sec)) {
       sId = 'expenses';
-      const defaultView = sec === 'expenses' ? 'expenses' : sec;
-      vId = (vi || defaultView) as FinanceViewId;
+      vId = 'expenses';
+    } else if (sec === 'commissions' || vi === 'commissions') {
+      // Legacy commissions — handled by redirect effect above; map to expenses fallback here so hardening doesn't crash
+      sId = 'expenses';
+      vId = 'expenses';
     } else if (['funds', 'deposits', 'owner_settlements'].includes(sec)) {
       sId = 'funds';
       const defaultView = sec === 'funds' ? 'deposits' : sec;
@@ -286,20 +295,6 @@ export function FinancialsPage() {
       replace: true,
     });
   }, [navigate]);
-
-  // Keep track of mounted sections to preserve their states
-  const mountedViews = useRef(new Set<string>());
-  if (activeSection === 'overview') {
-    mountedViews.current.add('overview');
-  } else if (activeView) {
-    mountedViews.current.add(activeView);
-  }
-
-  const shouldRenderView = useCallback((viewId: FinanceViewId): boolean => {
-    const view = FINANCE_VIEWS.find(v => v.id === viewId);
-    if (!view) return false;
-    return mountedViews.current.has(viewId) && isViewPermitted(authorization, view);
-  }, [authorization]);
 
   // Get active section sub-views/tabs
   const subViews = useMemo(() => {
@@ -404,50 +399,52 @@ export function FinancialsPage() {
             {/* View Panels */}
             <div className="relative min-w-0">
               {/* Overview Operational Dashboard */}
-              <div id="section-panel-overview" role="tabpanel" aria-labelledby="section-tab-overview" hidden={activeSection !== 'overview'}>
-                <div className="space-y-5">
-                  <section data-finance-section aria-label="ملخص التحصيل الشهري" className="space-y-3">
-                    <FinancialReportsPreviewSection
-                      reportFilters={reportFilters}
-                      collectionSummary={collectionReport.data}
-                      isLoading={collectionReport.isLoading}
-                      isError={collectionReport.isError}
-                      error={collectionReport.error}
-                    />
-                  </section>
+              {activeSection === 'overview' && (
+                <div id="section-panel-overview" role="tabpanel" aria-labelledby="section-tab-overview">
+                  <div className="space-y-5">
+                    <section data-finance-section aria-label="ملخص التحصيل الشهري" className="space-y-3">
+                      <FinancialReportsPreviewSection
+                        reportFilters={reportFilters}
+                        collectionSummary={collectionReport.data}
+                        isLoading={collectionReport.isLoading}
+                        isError={collectionReport.isError}
+                        error={collectionReport.error}
+                      />
+                    </section>
 
-                  <Link
-                    to="/reports"
-                    className="flex min-h-14 items-center gap-3 rounded-2xl border border-border/80 bg-card px-4 py-3 font-bold outline-none transition-colors hover:border-primary/30 hover:bg-primary/[0.025] focus-visible:ring-4 focus-visible:ring-primary/20"
-                  >
-                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
-                      <Building2 className="size-5" aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm">المحاسبة والتقارير</span>
-                      <span className="mt-0.5 block text-xs font-medium text-muted-foreground">دفتر الأستاذ والكشوف والتحليلات والتقارير الرسمية.</span>
-                    </span>
-                  </Link>
+                    <Link
+                      to="/reports"
+                      className="flex min-h-14 items-center gap-3 rounded-2xl border border-border/80 bg-card px-4 py-3 font-bold outline-none transition-colors hover:border-primary/30 hover:bg-primary/[0.025] focus-visible:ring-4 focus-visible:ring-primary/20"
+                    >
+                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+                        <Building2 className="size-5" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm">المحاسبة والتقارير</span>
+                        <span className="mt-0.5 block text-xs font-medium text-muted-foreground">دفتر الأستاذ والكشوف والتحليلات والتقارير الرسمية.</span>
+                      </span>
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Collections & Receivables */}
-              {shouldRenderView('invoices') && (
-                <div id="section-panel-invoices" role="tabpanel" hidden={activeSection !== 'collections' || activeView !== 'invoices'}>
+              {activeSection === 'collections' && activeView === 'invoices' && (
+                <div id="section-panel-invoices" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <InvoicesWorkspace embedded={true} />
                   </Suspense>
                 </div>
               )}
-              {shouldRenderView('receipts') && (
-                <div id="section-panel-receipts" role="tabpanel" hidden={activeSection !== 'collections' || activeView !== 'receipts'}>
+              {activeSection === 'collections' && activeView === 'receipts' && (
+                <div id="section-panel-receipts" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <ReceiptsWorkspace embedded={true} />
                   </Suspense>
                 </div>
               )}
-              {shouldRenderView('arrears') && (
-                <div id="section-panel-arrears" role="tabpanel" hidden={activeSection !== 'collections' || activeView !== 'arrears'}>
+              {activeSection === 'collections' && activeView === 'arrears' && (
+                <div id="section-panel-arrears" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <ArrearsWorkspace embedded={true} />
                   </Suspense>
@@ -455,31 +452,24 @@ export function FinancialsPage() {
               )}
 
               {/* Expenses & Payables */}
-              {shouldRenderView('expenses') && (
-                <div id="section-panel-expenses" role="tabpanel" hidden={activeSection !== 'expenses' || activeView !== 'expenses'}>
+              {activeSection === 'expenses' && activeView === 'expenses' && (
+                <div id="section-panel-expenses" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <ExpensesWorkspace embedded={true} />
                   </Suspense>
                 </div>
               )}
-              {shouldRenderView('commissions') && (
-                <div id="section-panel-commissions" role="tabpanel" hidden={activeSection !== 'expenses' || activeView !== 'commissions'}>
-                  <Suspense fallback={<SectionFallback />}>
-                    <CommissionsWorkspace embedded={true} />
-                  </Suspense>
-                </div>
-              )}
 
               {/* Custody Funds & Owners */}
-              {shouldRenderView('deposits') && (
-                <div id="section-panel-deposits" role="tabpanel" hidden={activeSection !== 'funds' || activeView !== 'deposits'}>
+              {activeSection === 'funds' && activeView === 'deposits' && (
+                <div id="section-panel-deposits" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <DepositsWorkspace />
                   </Suspense>
                 </div>
               )}
-              {shouldRenderView('owner_settlements') && (
-                <div id="section-panel-owner_settlements" role="tabpanel" hidden={activeSection !== 'funds' || activeView !== 'owner_settlements'}>
+              {activeSection === 'funds' && activeView === 'owner_settlements' && (
+                <div id="section-panel-owner_settlements" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <OwnerSettlementsWorkspace embedded={true} />
                   </Suspense>
@@ -487,8 +477,8 @@ export function FinancialsPage() {
               )}
 
               {/* Banking & Reconciliation */}
-              {shouldRenderView('bank_reconciliation') && (
-                <div id="section-panel-bank_reconciliation" role="tabpanel" hidden={activeSection !== 'banking'}>
+              {activeSection === 'banking' && activeView === 'bank_reconciliation' && (
+                <div id="section-panel-bank_reconciliation" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <BankReconciliationWorkspace embedded={true} />
                   </Suspense>

@@ -48,7 +48,6 @@ describe('operational summary primitives', () => {
       />,
     );
 
-    expect(html).toContain('bg-destructive/20');
     expect(html).toContain('text-destructive');
     expect(html).toContain('تحتاج متابعة فورية');
   });

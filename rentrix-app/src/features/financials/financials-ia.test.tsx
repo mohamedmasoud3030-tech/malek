@@ -58,14 +58,16 @@ describe('Finance view-level permissions and defense-in-depth', () => {
     permissions: new Set(permissions),
   });
 
-  it('enforces exact permission boundary for expenses vs commissions', () => {
+  it('enforces commissions is standalone (not inside finance hub) and expenses view remains gated', () => {
     const expensesView = FINANCE_VIEWS.find(v => v.id === 'expenses')!;
-    const commissionsView = FINANCE_VIEWS.find(v => v.id === 'commissions')!;
-
+    const commissionsView = FINANCE_VIEWS.find(v => (v.id as string) === 'commissions');
+    // Phase 2: commissions is a standalone top-level module at /commissions, not a finance view
+    expect(commissionsView).toBeUndefined();
     expect(isViewPermitted(mockAuth(['expenses.view']), expensesView)).toBe(true);
-    expect(isViewPermitted(mockAuth(['expenses.view']), commissionsView)).toBe(false);
-    expect(isViewPermitted(mockAuth(['commissions.view']), expensesView)).toBe(false);
-    expect(isViewPermitted(mockAuth(['commissions.view']), commissionsView)).toBe(true);
+    expect(isViewPermitted(mockAuth([]), expensesView)).toBe(false);
+    // Standalone commissions route keeps its own permission guard (checked in route-contract)
+    expect(routeTreeSource).toContain("path: '/commissions'");
+    expect(routeTreeSource).toContain("commissions.view");
   });
 
   it('enforces exact permission boundary for deposits vs settlements', () => {
@@ -99,20 +101,20 @@ describe('Finance view-level permissions and defense-in-depth', () => {
 });
 
 describe('Finance structural coherence boundary checks (Point 3)', () => {
-  it('verifies that structural section/view relationships are enforced exactly as defined', () => {
+  it('verifies that structural section/view relationships are enforced exactly as defined (Phase 2: commissions standalone)', () => {
     const ownerSettlements = FINANCE_VIEWS.find(v => v.id === 'owner_settlements')!;
-    const commissions = FINANCE_VIEWS.find(v => v.id === 'commissions')!;
     const bankReconciliation = FINANCE_VIEWS.find(v => v.id === 'bank_reconciliation')!;
     const invoices = FINANCE_VIEWS.find(v => v.id === 'invoices')!;
+    const expenses = FINANCE_VIEWS.find(v => v.id === 'expenses')!;
 
     expect(ownerSettlements.sectionId).not.toBe('expenses');
     expect(ownerSettlements.sectionId).toBe('funds');
-    expect(commissions.sectionId).not.toBe('funds');
-    expect(commissions.sectionId).toBe('expenses');
     expect(bankReconciliation.sectionId).not.toBe('collections');
     expect(bankReconciliation.sectionId).toBe('banking');
     expect(invoices.sectionId).not.toBe('banking');
     expect(invoices.sectionId).toBe('collections');
+    expect(expenses.sectionId).toBe('expenses');
+    expect(FINANCE_VIEWS.some(v => (v.id as string) === 'commissions')).toBe(false);
   });
 });
 

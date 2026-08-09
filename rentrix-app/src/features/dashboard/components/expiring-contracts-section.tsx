@@ -1,6 +1,5 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { CalendarClock, Clock } from 'lucide-react';
-import { openEntityPreview } from '@/components/ui/entity-preview-events';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
@@ -14,6 +13,8 @@ interface ExpiringContractsSectionProps {
 
 export function ExpiringContractsSection({ rows, isLoading, settings }: ExpiringContractsSectionProps) {
   const { date } = settings;
+  const navigate = useNavigate();
+  const location = useLocation();
   return (
     <section className="dashboard-queue-card" aria-labelledby="expiring-contracts-title">
       <div className="dashboard-queue-card__header">
@@ -55,7 +56,13 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
               <button
                 key={row.id}
                 type="button"
-                onClick={() => openEntityPreview({ kind: 'contract', id: row.id })}
+                onClick={() =>
+                  (navigate as unknown as (opts: unknown) => void)({
+                    to: '/contracts/$contractId',
+                    params: { contractId: row.id },
+                    state: { backgroundLocation: location } as unknown as Record<string, unknown>,
+                  })
+                }
                 className={cn('dashboard-queue-row w-full text-start', row.daysRemaining <= 7 && 'dashboard-queue-row--danger', row.daysRemaining > 7 && row.daysRemaining <= 14 && 'dashboard-queue-row--warning')}
                 data-dashboard-queue-link
                 role="listitem"

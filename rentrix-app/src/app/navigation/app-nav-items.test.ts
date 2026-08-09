@@ -37,16 +37,22 @@ describe('app route and navigation parity', () => {
     expect(routeTreeSource).toContain('notFoundComponent: NotFoundPage');
   });
 
-  it('promotes the four core property-management entities to direct primary destinations', () => {
+  it('promotes the six core property-management entities to direct primary destinations (Phase 2)', () => {
     const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    expect(primaryPaths).toEqual(expect.arrayContaining(['/properties', '/owners', '/tenants', '/contracts']));
+    expect(primaryPaths).toEqual(expect.arrayContaining(['/people', '/properties', '/lands', '/owners', '/tenants', '/contracts']));
     expect(workspaceChildNavItems['/properties'].map(([to]) => to)).not.toContain('/owners');
     expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).not.toContain('/tenants');
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).not.toContain('/lands');
+    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).not.toContain('/people');
   });
 
-  it('keeps finance and accounting to exactly two visible primary entries', () => {
-    const group = navGroups.find(([title]) => title === 'المالية والمحاسبة');
-    expect(group?.[1].map(([to]) => to)).toEqual(['/financials', '/reports']);
+  it('keeps finance, commissions, and reports as three distinct primary entries (Phase 2)', () => {
+    const financeGroup = navGroups.find(([title]) => title === 'المالية');
+    expect(financeGroup?.[1].map(([to]) => to)).toEqual(['/financials']);
+    const commissionsGroup = navGroups.find(([title]) => title === 'العمولات');
+    expect(commissionsGroup?.[1].map(([to]) => to)).toEqual(['/commissions']);
+    const reportsGroup = navGroups.find(([title]) => title === 'التقارير');
+    expect(reportsGroup?.[1].map(([to]) => to)).toEqual(['/reports']);
 
     const allPrimary = navGroups.flatMap(([, items]) => items.map(([to]) => to));
     for (const internalRoute of ['/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']) {
@@ -55,11 +61,13 @@ describe('app route and navigation parity', () => {
     }
   });
 
-  it('keeps secondary tools inside their natural workspaces', () => {
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units', '/lands']);
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/people', '/leads', '/communication']);
+  it('keeps secondary tools inside their natural workspaces (Phase 2: people/lands first-class)', () => {
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units']);
+    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/leads', '/communication']);
     expect(workspaceChildNavItems['/maintenance'].map(([to]) => to)).toEqual(['/utilities', '/automation', '/documents-vault']);
     expect(workspaceChildNavItems['/settings'].map(([to]) => to)).toEqual(['/change-password', '/audit-log', '/data-integrity', '/system']);
+    expect(workspaceChildNavItems['/people']).toEqual([]);
+    expect(workspaceChildNavItems['/lands']).toEqual([]);
   });
 
   it('maps every visible navigation, mobile and quick-create item to a registered route without duplicate keys', () => {

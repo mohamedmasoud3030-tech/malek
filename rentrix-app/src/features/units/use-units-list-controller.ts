@@ -1,5 +1,5 @@
 import { useDeferredValue, useMemo, useState } from 'react';
-import { openEntityPreview } from '@/components/ui/entity-preview-events';
+import { useNavigate } from '@tanstack/react-router';
 import { useProperties } from '@/features/properties/use-properties';
 import type { Property, Unit } from '@/types/domain';
 import { normalizeUnitStatus, unitStatusLabels, unitStatusValues, type UnitStatus } from './unit-schema';
@@ -67,7 +67,12 @@ export function useUnitsListController() {
   const closeCreate = () => setIsCreateOpen(false);
   const openEdit = (unit: Unit) => setEditingUnit(unit);
   const closeEdit = () => setEditingUnit(null);
-  const navigateToUnit = (unit: Unit) => openEntityPreview({ kind: 'unit', id: unit.id });
+  const navigate = useNavigate();
+  const navigateToUnit = (unit: Unit) =>
+    void navigate({
+      to: '/properties/$propertyId/units/$unitId',
+      params: { propertyId: unit.property_id, unitId: unit.id },
+    });
   const refetchAll = () => { unitsQuery.refetch(); propertiesQuery.refetch(); };
 
   return {

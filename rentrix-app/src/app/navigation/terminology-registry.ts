@@ -22,6 +22,7 @@ export const navigationLabels: Readonly<Record<string, string>> = {
   peopleDirectory: 'جهات التعامل',
   units: 'الوحدات',
   lands: 'الأراضي',
+  commissions: 'العمولات',
   leads: 'العملاء المحتملون',
   communication: 'التواصل والمتابعات',
   utilities: 'المرافق',

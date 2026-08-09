@@ -44,10 +44,6 @@ function PeopleMetric({
 }>) {
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-border/75 bg-card p-4 shadow-card">
-      <div
-        className="absolute inset-inline-end-0 inset-block-start-0 size-24 rounded-full bg-primary/7 blur-2xl transition-colors group-hover:bg-primary/12"
-        aria-hidden="true"
-      />
       <div className="relative flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold text-muted-foreground">{label}</p>
