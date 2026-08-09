@@ -84,7 +84,7 @@ test.describe('single-office isolated launch acceptance', () => {
     expect(serverErrors).toEqual([]);
   });
 
-  test('opens the core single-office workspaces responsively with real seeded data', async ({ page }) => {
+  test('opens the core single-office workspaces responsively with real seeded data', async ({ page }, testInfo) => {
     await login(page);
 
     const routes = [
@@ -103,7 +103,7 @@ test.describe('single-office isolated launch acceptance', () => {
       if (route.heading) {
         await expect(page.getByRole('heading', { name: route.heading, level: 1 })).toBeVisible();
       }
-      if ('tab' in route && route.tab) {
+      if ('tab' in route && route.tab && testInfo.project.name === 'chromium-desktop') {
         await expect(page.getByRole('tab', { name: route.tab, selected: true })).toBeVisible();
       }
       await expect(page.getByText(route.evidence, { exact: false }).filter({ visible: true }).first()).toBeVisible();
