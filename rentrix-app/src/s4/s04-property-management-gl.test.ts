@@ -236,10 +236,52 @@ describe('Stage S04 — Property Management Accounting Lifecycle', () => {
     expect(opex.netDebit).toBe(0);
   });
 
-  it('posts Tenant Deposit collection, refund, and application flows', async () => {
+  it('derives a deposit damage recipient from the frozen agreement and updates the deposit ledger atomically', async () => {
+    const propertyId = '00000000-0000-4000-8000-000000005010';
+    const unitId = '00000000-0000-4000-8000-000000005011';
+    const tenantId = '00000000-0000-4000-8000-000000005012';
+    const agreementId = '00000000-0000-4000-8000-000000005013';
+    const contractId = '00000000-0000-4000-8000-000000005014';
     const depositId = '00000000-0000-4000-8000-000000005001';
 
-    // 1. Receipt: Dr Bank / Cr 2200 Tenant Deposits Payable (never revenue)
+    await db.exec(`
+      insert into public.properties (id, title, name, type, address, company_id)
+      values ('${propertyId}', 'Deposit Property', 'Deposit Property', 'residential', 'Sohar', '${COMPANY_A}');
+
+      insert into public.property_owners
+        (property_id, owner_id, ownership_percentage, is_primary, starts_on, company_id)
+      values ('${propertyId}', '${OWNER_A}', 100, true, date '2026-01-01', '${COMPANY_A}');
+
+      insert into public.owner_agreements
+        (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, company_id)
+      values ('${agreementId}', '${OWNER_A}', '${propertyId}', 'property_management', 'RATE', 10, date '2026-01-01', '${COMPANY_A}');
+
+      insert into public.units (id, property_id, name, unit_number, company_id)
+      values ('${unitId}', '${propertyId}', 'Deposit Unit', 'D-1', '${COMPANY_A}');
+
+      insert into public.people (id, full_name, type, company_id)
+      values ('${tenantId}', 'Deposit Tenant', 'tenant', '${COMPANY_A}');
+
+      insert into public.contracts
+        (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date, rent_amount, status, company_id)
+      values (
+        '${contractId}', '${propertyId}', '${unitId}', '${tenantId}', '${agreementId}',
+        date '2026-01-01', date '2026-12-31', 1000, 'active', '${COMPANY_A}'
+      );
+
+      update public.owner_agreement_versions
+         set deposit_beneficiary = 'OWNER'
+       where owner_agreement_id = '${agreementId}'::uuid
+         and company_id = '${COMPANY_A}'::uuid;
+
+      insert into public.tenant_deposits
+        (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, request_id, company_id)
+      values (
+        '${depositId}', '${contractId}', '${tenantId}', '${propertyId}', '${unitId}',
+        300, 300, 'held', date '2026-08-09', 's04-deposit-seed', '${COMPANY_A}'
+      );
+    `);
+
     await rpc(db, 'gl_pm_post_deposit_receipt', {
       company_id: COMPANY_A,
       deposit_id: depositId,
@@ -249,7 +291,6 @@ describe('Stage S04 — Property Management Accounting Lifecycle', () => {
     let dep = await getAccountBalance(db, COMPANY_A, '2200');
     expect(dep.netCredit).toBe(300);
 
-    // 2. Refund: Dr 2200 / Cr Bank (100 OMR refunded)
     await rpc(db, 'gl_pm_post_deposit_refund', {
       company_id: COMPANY_A,
       deposit_id: depositId,
@@ -259,19 +300,30 @@ describe('Stage S04 — Property Management Accounting Lifecycle', () => {
     dep = await getAccountBalance(db, COMPANY_A, '2200');
     expect(dep.netCredit).toBe(200);
 
-    // 3. Application to damage: Dr 2200 / Cr 4300 Damage Compensation Revenue (200 OMR)
-    await rpc(db, 'gl_pm_post_deposit_application', {
+    // OWNER is frozen as the damage beneficiary: the caller cannot redirect the
+    // credit to office revenue 4300. It must increase Owner Funds Payable 2000.
+    const applied = await rpc(db, 'gl_pm_post_deposit_application', {
       company_id: COMPANY_A,
       deposit_id: depositId,
       target_type: 'damage',
       amount: 200,
       effective_date: '2026-08-09',
     });
+    expect(applied.target_account_no).toBe('2000');
+
     dep = await getAccountBalance(db, COMPANY_A, '2200');
     expect(dep.netCredit).toBe(0);
-
+    const ofp = await getAccountBalance(db, COMPANY_A, '2000');
+    expect(ofp.netCredit).toBe(200);
     const dmg = await getAccountBalance(db, COMPANY_A, '4300');
-    expect(dmg.netCredit).toBe(200);
+    expect(dmg.netCredit).toBe(0);
+
+    const { rows } = await db.query<{ remaining_amount: string; refunded_amount: string; deducted_amount: string }>(
+      `select remaining_amount::text, refunded_amount::text, deducted_amount::text
+         from public.tenant_deposits where id = $1`,
+      [depositId],
+    );
+    expect(rows[0]).toEqual({ remaining_amount: '0.000', refunded_amount: '100.000', deducted_amount: '200.000' });
   });
 
   it('posts Broker Commission approval and payout flows', async () => {
