@@ -5,6 +5,7 @@ import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { calculateContractSchedulePreview } from '../contract-schedule-preview';
 import { getContractUnitDefaultRent } from '../contract-unit-options';
 import { ContractAgreementMissingAlert } from './ContractAgreementMissingAlert';
@@ -53,10 +54,22 @@ export function ContractFormFields({
     currentLinkedUnitId,
   } = controller;
   const propertyId = form.watch('property_id');
+  const unitId = form.watch('unit_id');
+  const tenantId = form.watch('tenant_id');
   const startDate = form.watch('start_date');
   const endDate = form.watch('end_date');
   const rentAmount = Number(form.watch('rent_amount') || 0);
   const paymentCycle = form.watch('payment_cycle');
+
+  const selectedUnit = useMemo(
+    () => unitsQuery.data?.find((u) => u.id === unitId),
+    [unitsQuery.data, unitId],
+  );
+
+  const selectedTenant = useMemo(
+    () => peopleQuery.data?.rows.find((p) => p.id === tenantId),
+    [peopleQuery.data, tenantId],
+  );
 
   const schedulePreview = useMemo(
     () => calculateContractSchedulePreview(startDate, endDate, paymentCycle, rentAmount),
@@ -163,6 +176,19 @@ export function ContractFormFields({
             </Select>
           </EntityForm.Field>
         </div>
+
+        {selectedProperty ? (
+          <div className="mt-4 rounded-xl border border-border/60 bg-muted/20 p-3 text-xs space-y-1">
+            <span className="font-bold text-foreground">ملخص العقار المحدد: </span>
+            <span className="text-muted-foreground">{selectedProperty.title}</span>
+            {selectedUnit ? (
+              <span className="text-muted-foreground"> • الوحدة {selectedUnit.unit_number}</span>
+            ) : null}
+            {selectedTenant ? (
+              <span className="text-muted-foreground"> • المستأجر: {selectedTenant.full_name}</span>
+            ) : null}
+          </div>
+        ) : null}
       </EntityForm.Section>
 
       <EntityForm.Section
@@ -245,7 +271,7 @@ export function ContractFormFields({
             </div>
             <div>
               <span className="text-muted-foreground text-xs">قيمة الدفعة المقدرة:</span>
-              <p className="font-semibold">{schedulePreview.amountPerInstallment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} OMR</p>
+              <p className="font-semibold">{formatDefaultCompanyMoney(schedulePreview.amountPerInstallment)}</p>
             </div>
             <div>
               <span className="text-muted-foreground text-xs">عدد الدفعات المتوقع:</span>

@@ -3,6 +3,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { SelectionCard } from '@/components/ui/selection-card';
 import { Textarea } from '@/components/ui/textarea';
 import type { Property, Unit } from '@/types/domain';
 import type { MaintenanceFormValues } from '../useMaintenancePageController';
@@ -22,6 +23,13 @@ export type MaintenanceRequestFormProps = Readonly<{
   onSubmit: (values: MaintenanceFormValues) => void;
 }>;
 
+const priorityOptions: Array<{ value: 'low' | 'medium' | 'high' | 'urgent'; label: string; desc: string }> = [
+  { value: 'low', label: 'منخفضة', desc: 'أعمال اعتيادية غير طارئة' },
+  { value: 'medium', label: 'متوسطة', desc: 'صيانة تشغيلية خلال أيام' },
+  { value: 'high', label: 'عالية', desc: 'تتطلب معالجة سريعة' },
+  { value: 'urgent', label: 'عاجلة', desc: 'أعطال حرجة تؤثر على السلامة' },
+];
+
 export function MaintenanceRequestForm({
   open,
   isEditing,
@@ -36,6 +44,15 @@ export function MaintenanceRequestForm({
   onOpenChange,
   onSubmit,
 }: MaintenanceRequestFormProps) {
+  const currentPriority = form.watch('priority') || 'medium';
+  const currentTitle = form.watch('title');
+  const currentScheduledDate = form.watch('scheduled_date');
+  const currentAssignedTo = form.watch('assigned_to');
+  const currentUnitId = form.watch('unit_id');
+
+  const selectedProp = properties.find((p) => p.id === formPropertyId);
+  const selectedUnit = units.find((u) => u.id === currentUnitId);
+
   return (
     <EntityForm.Overlay
       open={open}
@@ -76,7 +93,7 @@ export function MaintenanceRequestForm({
           </p>
         ) : null}
 
-        <EntityForm.Section title="تفاصيل الطلب" description="اكتب عنواناً قصيراً ثم أضف الوصف والأولوية.">
+        <EntityForm.Section title="تفاصيل الطلب والأولوية" description="اكتب عنواناً قصيراً ثم حدد مستوى الأولوية.">
           <EntityForm.Field label="عنوان الطلب *" error={form.formState.errors.title?.message}>
             <Input required aria-label="عنوان الطلب" placeholder="مثال: تسريب مياه في المطبخ" {...form.register('title')} aria-invalid={Boolean(form.formState.errors.title)} />
           </EntityForm.Field>
@@ -85,25 +102,29 @@ export function MaintenanceRequestForm({
             <Textarea aria-label="وصف الطلب" placeholder="الوصف (اختياري)" className="min-h-24" {...form.register('description')} />
           </EntityForm.Field>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <EntityForm.Field label="الأولوية *">
-              <Select required aria-label="الأولوية" {...form.register('priority')}>
-                <option value="low">منخفضة</option>
-                <option value="medium">متوسطة</option>
-                <option value="high">عالية</option>
-                <option value="urgent">عاجلة</option>
-              </Select>
-            </EntityForm.Field>
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-muted-foreground">درجة الأولوية *</label>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {priorityOptions.map((opt) => (
+                <SelectionCard
+                  key={opt.value}
+                  selected={currentPriority === opt.value}
+                  title={opt.label}
+                  description={opt.desc}
+                  onClick={() => form.setValue('priority', opt.value, { shouldDirty: true, shouldValidate: true })}
+                />
+              ))}
+            </div>
+          </div>
 
+          <div className="grid gap-4 sm:grid-cols-2 mt-3">
             <EntityForm.Field label="المسؤول/الفني">
               <Input aria-label="المسؤول/الفني" placeholder="اسم الفني أو المسؤول" {...form.register('assigned_to')} />
             </EntityForm.Field>
 
-            <div className="sm:col-span-2">
-              <EntityForm.Field label="تاريخ الجدولة">
-                <Input aria-label="تاريخ الجدولة" type="date" {...form.register('scheduled_date')} />
-              </EntityForm.Field>
-            </div>
+            <EntityForm.Field label="تاريخ الجدولة">
+              <Input aria-label="تاريخ الجدولة" type="date" {...form.register('scheduled_date')} />
+            </EntityForm.Field>
           </div>
 
           <Controller
@@ -114,6 +135,31 @@ export function MaintenanceRequestForm({
             )}
           />
         </EntityForm.Section>
+
+        {currentTitle || selectedProp ? (
+          <EntityForm.Section title="معاينة الطلب قبل الاعتماد" description="مراجعة ملخص البيانات المدخلة قبل الحفظ النهائي.">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs space-y-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <span className="text-muted-foreground">الموقع:</span>
+                  <p className="font-semibold text-foreground">{selectedProp?.title || '—'}{selectedUnit ? ` (${selectedUnit.unit_number})` : ''}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">الأولوية:</span>
+                  <p className="font-semibold text-foreground">{priorityOptions.find((p) => p.value === currentPriority)?.label}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">المسؤول/الفني:</span>
+                  <p className="font-semibold text-foreground">{currentAssignedTo || 'غير محدد'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">الموعد:</span>
+                  <p className="font-semibold text-foreground">{currentScheduledDate || 'غير مجدول'}</p>
+                </div>
+              </div>
+            </div>
+          </EntityForm.Section>
+        ) : null}
 
         <EntityForm.Actions
           submitLabel={isSubmitting ? 'جارٍ الحفظ...' : isEditing ? 'حفظ التعديل' : 'حفظ الطلب'}
