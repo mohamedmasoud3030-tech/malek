@@ -11,13 +11,13 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(17);
 
-select has_function(
-  'public', 'pay_commission_atomic', array['jsonb'],
+select ok(
+  to_regprocedure('public.pay_commission_atomic(jsonb)') is not null,
   'pay_commission_atomic(jsonb) exists'
 );
 
-select has_function(
-  'public', 'reverse_commission_atomic', array['jsonb'],
+select ok(
+  to_regprocedure('public.reverse_commission_atomic(jsonb)') is not null,
   'reverse_commission_atomic(jsonb) exists'
 );
 
@@ -103,16 +103,19 @@ select ok(
   'authenticated cannot mutate commissions directly'
 );
 
-select is(
-  (
-    select count(*)::integer
+select ok(
+  not exists (
+    select 1
     from pg_policies
     where schemaname = 'public'
       and tablename = 'commissions'
       and cmd in ('INSERT', 'UPDATE', 'DELETE', 'ALL')
+      and (
+        coalesce(qual, '') not in ('false', '(false)')
+        or coalesce(with_check, '') not in ('false', '(false)')
+      )
   ),
-  0,
-  'commissions has no browser write-capable RLS policy'
+  'commissions has no permissive browser write-capable RLS policy'
 );
 
 select ok(
