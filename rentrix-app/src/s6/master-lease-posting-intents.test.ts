@@ -7,7 +7,6 @@ const accounts = {
   leaseLiability: '2500',
   cashOrBank: '1120',
   depreciationExpense: '6200',
-  accumulatedRouDepreciation: '1690',
   leaseInterestExpense: '6300',
 } as const;
 
@@ -34,6 +33,19 @@ describe('buildMasterLeasePostingIntents', () => {
       expect(debit).toBe(credit);
       expect(intent.lines.every((line) => line.debitMinor >= 0 && line.creditMinor >= 0)).toBe(true);
     }
+
+    const firstPeriod = intents[1]!;
+    const depreciation = schedule.rows[0]!.rouDepreciationMinor;
+    expect(firstPeriod.lines).toContainEqual({
+      accountCode: '6200',
+      debitMinor: depreciation,
+      creditMinor: 0,
+    });
+    expect(firstPeriod.lines).toContainEqual({
+      accountCode: '1600',
+      debitMinor: 0,
+      creditMinor: depreciation,
+    });
   });
 
   it('keeps direct-cost and incentive differences out of the liability amount', () => {
