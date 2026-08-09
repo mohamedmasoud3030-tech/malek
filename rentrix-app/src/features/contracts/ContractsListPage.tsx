@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { Download, Plus } from 'lucide-react';
 import { ContractFilters } from './components/ContractFilters';
 import { ContractKpiGrid } from './components/ContractKpiGrid';
 import { ContractResults } from './components/ContractResults';
-import { ContractPreviewDialog } from './components/ContractPreviewDialog';
 import { ContractFormModal } from './contract-form-modal';
 import { ListControlSurface } from '@/components/layout/list-controls';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
@@ -33,11 +33,11 @@ function exportContractsCsv(contracts: ContractListItem[]) {
 export type ContractsListPageProps = Readonly<{ embedded?: boolean }>;
 
 export function ContractsListPage({ embedded = false }: ContractsListPageProps) {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<ContractStatusFilter>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [expiringOnly, setExpiringOnly] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [previewContractId, setPreviewContractId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editContractId, setEditContractId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -68,11 +68,13 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
 
   const openCreate = () => { setEditContractId(undefined); setModalOpen(true); };
   const openEdit = (id: string) => {
-    setPreviewContractId(null);
     setEditContractId(id);
     setModalOpen(true);
   };
   const closeModal = () => { setModalOpen(false); setEditContractId(undefined); };
+  const handlePreview = (id: string) => {
+    void navigate({ to: '/contracts/$contractId', params: { contractId: id } });
+  };
   const resetFilters = () => { setStatus('all'); setSearchTerm(''); setExpiringOnly(false); setPage(1); };
   const confirmDelete = async () => {
     if (!deleteId || deleteMutation.isPending) return;
@@ -132,19 +134,12 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
           onCreate={hasActiveFilters ? undefined : openCreate}
           onDelete={setDeleteId}
           onEdit={openEdit}
-          onPreview={setPreviewContractId}
+          onPreview={handlePreview}
           onRetry={() => contractsQuery.refetch()}
           pagination={!hasClientFilter && totalPages > 1 ? { page, pageSize, total: contractsQuery.data?.count ?? 0, onPageChange: setPage } : undefined}
           setExpandedId={setExpandedId}
         />
       </EmbeddableWorkspace>
-
-      <ContractPreviewDialog
-        contractId={previewContractId}
-        open={Boolean(previewContractId)}
-        onOpenChange={(open) => { if (!open) setPreviewContractId(null); }}
-        onEdit={openEdit}
-      />
 
       <ContractFormModal open={modalOpen} onClose={closeModal} contractId={editContractId} />
 

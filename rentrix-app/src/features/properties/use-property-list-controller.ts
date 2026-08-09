@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { openEntityPreview } from '@/components/ui/entity-preview-events';
+import { useNavigate } from '@tanstack/react-router';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { useProperties, useSoftDeleteProperty } from './use-properties';
 import type { PropertyStatusFilter } from './property-service';
@@ -52,8 +52,9 @@ export function usePropertyListController() {
     setArchiveTarget(null);
   };
 
+  const navigate = useNavigate();
   const navigateToProperty = (propertyId: string) => {
-    openEntityPreview({ kind: 'property', id: propertyId });
+    void navigate({ to: '/properties/$propertyId', params: { propertyId } });
   };
 
   return {

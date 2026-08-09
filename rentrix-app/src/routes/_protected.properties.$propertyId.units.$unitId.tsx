@@ -1,21 +1,34 @@
-import { useEffect } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
-import { openEntityPreview } from '@/components/ui/entity-preview-events';
+import { UnitPreviewDialog } from '@/features/units/components/UnitPreviewDialog';
+import { PropertyUnitDetailPage } from '@/features/properties/units/property-unit-detail-page';
+import { useBackgroundLocation } from '@/app/router/background-location';
+import { PropertyDetailPage } from '@/features/properties/property-detail-page';
 
 export function PropertyUnitDetailRouteComponent() {
-  const navigate = useNavigate();
   const params = useParams({ strict: false }) as Record<string, string | undefined>;
-  const unitId = params.unitId;
+  const unitId = params.unitId ?? '';
+  const navigate = useNavigate();
+  const background = useBackgroundLocation();
+  const isDialog =
+    background !== null &&
+    (background.pathname.includes('/properties') && background.pathname.includes('/units'));
 
-  useEffect(() => {
-    if (!unitId) return;
-    openEntityPreview({ kind: 'unit', id: unitId });
-    void navigate({
-      to: '/properties',
-      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'units' }),
-      replace: true,
-    });
-  }, [navigate, unitId]);
+  if (!unitId) return null;
 
-  return null;
+  if (isDialog) {
+    return (
+      <>
+        <PropertyDetailPage />
+        <UnitPreviewDialog
+          unitId={unitId}
+          open
+          onOpenChange={(open) => {
+            if (!open) void navigate({ to: '/properties/$propertyId/units', params: { propertyId: params.propertyId ?? '' } });
+          }}
+        />
+      </>
+    );
+  }
+
+  return <PropertyUnitDetailPage />;
 }

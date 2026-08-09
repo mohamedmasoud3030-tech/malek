@@ -40,9 +40,11 @@ describe('unified detail preview contract', () => {
     expect(receiptsSection).toContain('<ReceiptDetailCard');
   });
 
-  it('routes property and unit register browsing into the global preview host', () => {
-    expect(propertyController).toContain("openEntityPreview({ kind: 'property', id: propertyId })");
-    expect(unitController).toContain("openEntityPreview({ kind: 'unit', id: unit.id })");
+  it('routes property and unit register browsing via route-native navigation (Phase 3)', () => {
+    expect(propertyController).toContain("to: '/properties/$propertyId'");
+    expect(propertyController).not.toContain("openEntityPreview");
+    expect(unitController).toContain("to: '/properties/$propertyId/units/$unitId'");
+    expect(unitController).not.toContain("openEntityPreview");
   });
 
   it('keeps owner and maintenance details on the same shared EntityPreviewDialog primitive', () => {
@@ -60,14 +62,29 @@ describe('unified detail preview contract', () => {
     expect(previewHost).toContain("request?.kind === 'owner'");
   });
 
-  it('dedicated entity detail routes are compatibility adapters, not detail pages', () => {
-    expect(contractDetailRoute).toContain("openEntityPreview({ kind: 'contract'");
-    expect(ownerDetailRoute).toContain("openEntityPreview({ kind: 'owner'");
-    expect(propertyDetailRoute).toContain("openEntityPreview({ kind: 'property'");
-    expect(unitDetailRoute).toContain("openEntityPreview({ kind: 'unit'");
-    expect(contractDetailRoute).not.toContain('ContractDetailPage');
-    expect(ownerDetailRoute).not.toContain('OwnerDetailPage');
-    expect(propertyDetailRoute).not.toContain('PropertyOverview');
-    expect(unitDetailRoute).not.toContain('PropertyUnitDetailPage');
+  it('dedicated entity detail routes are route-native (Phase 3: dialog over background vs full page)', () => {
+    // Contract
+    expect(contractDetailRoute).toContain('useBackgroundLocation');
+    expect(contractDetailRoute).toContain('isDialog');
+    expect(contractDetailRoute).toContain('ContractPreviewDialog');
+    expect(contractDetailRoute).toContain('ContractDetailPage');
+    expect(contractDetailRoute).not.toContain("openEntityPreview");
+    // Owner
+    expect(ownerDetailRoute).toContain('useBackgroundLocation');
+    expect(ownerDetailRoute).toContain('OwnerPreviewDialog');
+    expect(ownerDetailRoute).toContain('OwnerDetailPage');
+    expect(ownerDetailRoute).not.toContain("openEntityPreview");
+    // Property detail now handles dialog vs full page directly
+    const propertyDetailFull = readFileSync(new URL('../../routes/_protected.properties.$propertyId.tsx', import.meta.url), 'utf8');
+    expect(propertyDetailFull).toContain('useBackgroundLocation');
+    expect(propertyDetailFull).toContain('PropertyPreviewDialog');
+    expect(propertyDetailFull).toContain('PropertyDetailPage');
+    // Property overview is now real content, not adapter
+    expect(propertyDetailRoute).toContain('PropertyOverview');
+    expect(propertyDetailRoute).not.toContain("openEntityPreview");
+    expect(unitDetailRoute).toContain('useBackgroundLocation');
+    expect(unitDetailRoute).toContain('PropertyUnitDetailPage');
+    expect(unitDetailRoute).toContain('UnitPreviewDialog');
+    expect(unitDetailRoute).not.toContain("openEntityPreview");
   });
 });

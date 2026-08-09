@@ -1,7 +1,7 @@
 # MALEK — Foundation / IA Contract / Migration Safety — Phase 1+2
 
-> **Status:** Phase 2 — Canonical IA completed. People/Lands/Commissions are now first-class standalone; Finance uses progressive disclosure without commissions; Reports remains independent. Foundation contracts updated, no business logic change.
-> **Phase 2 Commit baseline:** on top of Phase 1 commit `1170f4b`. Date: 2026-08-09
+> **Status:** Phase 3 — Route-native entity dialogs completed. People/Lands/Commissions canonical + Contracts/Properties/Units/Owners now route-native (dialog over background vs full page). Foundation contracts updated, no business logic/schema change.
+> **Phase 3 Commit baseline:** on top of Phase 2 commit `62ad49a`. Date: 2026-08-09
 
 ---
 
@@ -175,5 +175,6 @@ Full typed list in `rentrix-app/src/app/navigation/route-contract.ts` (`ROUTE_CO
 
 ## 9) Change log
 
+- `2026-08-09` Phase 3: route-native dialogs for People (reference) + Properties/Units/Contracts/Owners via `BackgroundLocationProvider` (`background-location.tsx`), detail routes now check `useBackgroundLocation` → dialog over list (internal) vs full page (direct/refresh/new tab), list controllers now use `navigate({ to: '/.../$id' })` instead of `openEntityPreview`, `detail-preview-contract.test` updated to Phase 3, new `phase3-route-dialog.test.ts` (14 tests) covers internal/direct/back/forward/permissions/no-blank, no `replace:true` hiding, accessibility via `EntityPreviewDialog`, `enterprise/*` freeze still PASS.
 - `2026-08-09` Phase 2: promoted `/people` (`PeopleListPage` standalone), `/lands` (`LandsWorkspace` standalone), `/commissions` (`CommissionsWorkspace` standalone) to first-class canonical routes; updated `route-contract.ts`, `route-nav-map.ts`, `app-nav-items.ts` (new groups: الأشخاص والعقارات / المالية / العمولات / التقارير), removed people/lands/commissions from hub children, added hub legacy redirects (`?section=people`→`/people`, `?section=lands`→`/lands`, `?view=commissions`→`/commissions` via `finance/banking` redirect + financials effect), kept all 21→19 redirect routes (people/lands/commissions no longer redirects) + 14 new regression tests; typecheck/build pass.
 - `2026-08-09` Phase 1: pinned target IA (الأشخاص/الأراضي/التقارير/العمولات) and deferred finance split + masking + per-user grants. No page redesign. Prior doc status (01/02/03) remains; this file is the Phase-gate reference.
