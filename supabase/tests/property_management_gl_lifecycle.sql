@@ -6,7 +6,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(32);
 
 -- Temp table for collecting test results
 create temp table _s04_test_results (seq serial, line text);
