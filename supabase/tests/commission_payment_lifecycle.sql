@@ -81,8 +81,14 @@ select ok(
   'reverse_commission_atomic is executable by approved trusted callers'
 );
 
-select has_trigger(
-  'public', 'commissions', 'trg_guard_commission_financial_fields',
+select ok(
+  exists (
+    select 1
+    from pg_trigger t
+    where t.tgrelid = 'public.commissions'::regclass
+      and t.tgname = 'trg_guard_commission_financial_fields'
+      and not t.tgisinternal
+  ),
   'commissions has its financial-field write guard'
 );
 
@@ -110,6 +116,7 @@ select ok(
     where schemaname = 'public'
       and tablename = 'commissions'
       and cmd in ('INSERT', 'UPDATE', 'DELETE', 'ALL')
+      and permissive = 'PERMISSIVE'
       and (
         coalesce(qual, '') not in ('false', '(false)')
         or coalesce(with_check, '') not in ('false', '(false)')
