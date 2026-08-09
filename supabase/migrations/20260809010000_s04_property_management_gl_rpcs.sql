@@ -665,14 +665,17 @@ security definer
 set search_path = public, pg_temp
 as $fn$
 declare
-  v_company_id     uuid    := (p_payload->>'company_id')::uuid;
-  v_deposit_id     uuid    := (p_payload->>'deposit_id')::uuid;
-  v_amount         numeric := public.gl_pm_round_omr((p_payload->>'amount')::numeric);
-  v_cash_no        text    := coalesce(nullif(p_payload->>'cash_account_no',''), '1120');
-  v_effective_date date    := (p_payload->>'effective_date')::date;
-  v_dep_id  text;
+  v_company_id uuid := (p_payload->>'company_id')::uuid;
+  v_deposit_id text := nullif(btrim(coalesce(p_payload->>'deposit_id', '')), '');
+  v_request_id text := coalesce(nullif(btrim(coalesce(p_payload->>'request_id', '')), ''), v_deposit_id || ':refund');
+  v_amount numeric := public.gl_pm_round_omr((p_payload->>'amount')::numeric);
+  v_cash_no text := coalesce(nullif(p_payload->>'cash_account_no',''), '1120');
+  v_effective_date date := (p_payload->>'effective_date')::date;
+  v_deposit public.tenant_deposits%rowtype;
+  v_dep_id text;
   v_cash_id text;
-  v_result  jsonb;
+  v_transaction_created boolean := false;
+  v_result jsonb;
 begin
   if v_company_id is null or v_deposit_id is null or v_effective_date is null then
     raise exception 'GL_PM_DEPOSIT_REFUND: company_id, deposit_id, and effective_date required' using errcode = '22023';
@@ -680,24 +683,66 @@ begin
   if v_amount is null or v_amount <= 0 then
     raise exception 'GL_PM_DEPOSIT_REFUND: amount must be > 0' using errcode = '22023';
   end if;
+  if v_cash_no not in ('1111', '1120') then
+    raise exception 'GL_PM_DEPOSIT_REFUND: cash_account_no must be 1111 or 1120' using errcode = '22023';
+  end if;
 
-  v_dep_id  := public.gl_pm_require_account(v_company_id, '2200');
+  select * into v_deposit
+    from public.tenant_deposits
+   where id = v_deposit_id
+     and company_id = v_company_id
+     and deleted_at is null
+   for update;
+  if not found then
+    raise exception 'GL_PM_DEPOSIT_REFUND: deposit not found for company' using errcode = '42501';
+  end if;
+  if v_deposit.remaining_amount < v_amount then
+    raise exception 'GL_PM_DEPOSIT_REFUND: refund exceeds remaining deposit balance' using errcode = '22023';
+  end if;
+
+  v_dep_id := public.gl_pm_require_account(v_company_id, '2200');
   v_cash_id := public.gl_pm_require_account(v_company_id, v_cash_no);
 
   v_result := public.post_journal_event(jsonb_build_object(
-    'company_id',    v_company_id,
-    'source_type',   'pm_deposit_refund',
-    'source_id',     v_deposit_id::text,
-    'event_id',      'refund_deposit',
+    'company_id', v_company_id,
+    'source_type', 'pm_deposit_refund',
+    'source_id', v_deposit_id,
+    'event_id', 'refund_deposit',
     'effective_date', v_effective_date,
-    'description',   'Tenant security deposit refunded from Tenant Deposits Payable',
+    'description', 'Tenant security deposit refunded from Tenant Deposits Payable',
     'lines', jsonb_build_array(
-      jsonb_build_object('account_id', v_dep_id,  'debit', v_amount, 'credit', 0),
+      jsonb_build_object('account_id', v_dep_id, 'debit', v_amount, 'credit', 0),
       jsonb_build_object('account_id', v_cash_id, 'debit', 0, 'credit', v_amount)
     )
   ));
 
-  return jsonb_build_object('step', 'deposit_refund', 'deposit_id', v_deposit_id, 'amount', v_amount, 'batch', v_result);
+  insert into public.deposit_transactions (
+    deposit_id, type, amount, reason, description, request_id
+  ) values (
+    v_deposit_id, 'refund', v_amount, 'refund_partial',
+    'GL tenant deposit refund', v_request_id
+  )
+  on conflict (request_id) do nothing;
+  get diagnostics v_transaction_created = row_count > 0;
+
+  if v_transaction_created then
+    update public.tenant_deposits
+       set refunded_amount = public.gl_pm_round_omr(refunded_amount + v_amount),
+           remaining_amount = public.gl_pm_round_omr(remaining_amount - v_amount),
+           status = case when public.gl_pm_round_omr(remaining_amount - v_amount) = 0 then 'refunded' else 'partially_refunded' end,
+           settled_date = case when public.gl_pm_round_omr(remaining_amount - v_amount) = 0 then v_effective_date else settled_date end,
+           updated_at = now()
+     where id = v_deposit_id
+       and company_id = v_company_id;
+  end if;
+
+  return jsonb_build_object(
+    'step', 'deposit_refund',
+    'deposit_id', v_deposit_id,
+    'amount', v_amount,
+    'idempotent', not v_transaction_created,
+    'batch', v_result
+  );
 end;
 $fn$;
 
