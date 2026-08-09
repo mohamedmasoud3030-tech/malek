@@ -18,6 +18,7 @@ import { MobileFloatingControl, NavigationLinks, type SharedLabel } from './layo
 import { NotificationsMenu } from './notifications-menu';
 import { CommandPaletteTrigger } from '@/features/command-palette/command-palette-trigger';
 import { CommandPaletteDialog } from '@/features/command-palette/command-palette-dialog';
+import { AiAssistantGlobalAction } from '@/features/ai-assistant/ai-assistant-global-action';
 
 function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
@@ -342,6 +343,7 @@ export function AppShell() {
               </span>
 
               <NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />
+              <AiAssistantGlobalAction />
 
               <button
                 type="button"

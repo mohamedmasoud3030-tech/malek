@@ -52,7 +52,7 @@ export const routeNavRoot = new Map<string, string>([
   // compatibility deep-link into the general-ledger report section.
   ['/reports', '/reports'],
   ['/accounting', '/reports'],
-  ['/ai-assistant', '/ai-assistant'],
+  ['/ai-assistant', '/dashboard'],
 
   ['/settings', '/settings'],
   ['/change-password', '/settings'],
@@ -73,7 +73,6 @@ export const navRootTitle: Record<string, string> = {
   '/financials': 'المالية',
   '/commissions': 'العمولات',
   '/reports': 'المحاسبة والتقارير',
-  '/ai-assistant': 'المساعد الذكي',
   '/settings': 'الإعدادات',
 };
 

@@ -43,7 +43,7 @@ describe('Route-to-nav-root map', () => {
   it('maps accounting compatibility deep links into accounting and reports', () => {
     expect(getNavRoot('/reports')).toBe('/reports');
     expect(getNavRoot('/accounting')).toBe('/reports');
-    expect(getNavRoot('/ai-assistant')).toBe('/ai-assistant');
+    expect(getNavRoot('/ai-assistant')).toBe('/dashboard');
   });
 
   it('maps settings children to settings and operations children to maintenance', () => {
@@ -62,7 +62,7 @@ describe('Route-to-nav-root map', () => {
   });
 
   it('has Arabic titles for every primary navigation root (Phase 2: people/lands/commissions)', () => {
-    for (const root of ['/dashboard', '/people', '/properties', '/lands', '/owners', '/tenants', '/contracts', '/maintenance', '/financials', '/commissions', '/reports', '/ai-assistant', '/settings']) {
+    for (const root of ['/dashboard', '/people', '/properties', '/lands', '/owners', '/tenants', '/contracts', '/maintenance', '/financials', '/commissions', '/reports', '/settings']) {
       expect(navRootTitle[root]).toMatch(/[\u0600-\u06FF]/);
     }
   });

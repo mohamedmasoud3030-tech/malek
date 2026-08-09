@@ -128,7 +128,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/accounting', titleAr: 'المحاسبة والتقارير', sidebarRoot: '/reports', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'accounting', view: 'general_ledger' } },
 
   // ── الأدوات
-  { canonical: '/ai-assistant', titleAr: 'المساعد الذكي', sidebarRoot: '/ai-assistant', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
+  { canonical: '/ai-assistant', titleAr: 'المساعد الذكي', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Legacy deep-link only; the assistant is now a global overlay action.' },
 
   // ── الإدارة
   { canonical: '/settings', titleAr: 'الإعدادات', sidebarRoot: '/settings', isPrimaryNav: true, inMobileNav: false, permission: 'settings.manage', legacyAliases: [], viewBinding: null },
