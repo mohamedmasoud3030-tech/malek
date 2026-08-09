@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T15:50:45.446Z",
+  "generatedAt": "2026-08-09T06:43:28.220Z",
   "scenario": "multi-invoice allocation + immutable request replay + row-count/overpay/foreign-account rejections (atomic)",
   "receiptId": "77cc31b0-0000-4000-8000-000000000001",
   "allocationTotal": 700,
@@ -39,8 +39,8 @@
     "noPartialState": true
   },
   "recordLifecycle": {
-    "receipt1": "2ef0a016-70bc-4b7b-bf79-5df9574e93d7",
-    "receipt2": "06730b0a-54d9-41de-9c91-e6bd8abf54d0",
+    "receipt1": "3a08f814-c6d9-4ad9-8625-7d9d46d3463b",
+    "receipt2": "824737a2-5c7a-40d6-a1e2-dd6e38e606ea",
     "retrySameReceipt": true,
     "replayResponseExact": true,
     "replaySideEffects": {

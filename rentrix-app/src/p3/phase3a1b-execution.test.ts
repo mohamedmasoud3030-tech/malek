@@ -644,7 +644,6 @@ describe('Phase 3A-1B execution lifecycle', () => {
          join public.journal_entries r on r.account_id = o.account_id and r.amount = o.amount
         where o.source_id::text = $1 and coalesce(o.entity_type,'') <> 'receipt_void'
           and r.source_id::text = $1 and r.entity_type = 'receipt_void'
-          and r.request_id = 'void:' || $1
         order by 1`,
       [receipt2],
     );

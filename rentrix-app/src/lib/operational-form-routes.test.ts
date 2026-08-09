@@ -3,6 +3,7 @@ import { isOperationalFormRoute } from './operational-form-routes';
 
 describe('protected operational form scope', () => {
   it.each([
+    '/dashboard',
     '/properties',
     '/properties/property-1',
     '/units',
@@ -27,7 +28,6 @@ describe('protected operational form scope', () => {
     '/reports',
     '/commissions',
     '/owner-settlements',
-    '/dashboard',
   ])('keeps Finance and Reporting outside the operational form scope for %s', (pathname) => {
     expect(isOperationalFormRoute(pathname)).toBe(false);
   });
