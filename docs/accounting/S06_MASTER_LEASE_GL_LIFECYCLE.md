@@ -14,19 +14,20 @@ S06 persists an immutable measurement history and derives the liability/ROU sche
 
 The Stage 3 chart already provides the primary master-lease accounts:
 
-- `1600` — Right-of-Use Asset
+- `1600` — Right-of-Use Asset — maintained at **net carrying value**
 - `2500` — Lease Liability
 - `4000` — Sublease Rental Revenue
 - `6200` — ROU Depreciation Expense
 - `6300` — Lease Interest Expense
 
-The merged S06 calculation kernel also requires three supporting accounts, provisioned additively by the S06 migration:
+S06 adds only the modification/termination result accounts:
 
-- `1650` — Accumulated ROU Depreciation — asset / **credit** normal balance (contra-asset)
 - `4400` — Lease Modification / Termination Gain — revenue / credit
 - `6400` — Lease Modification / Termination Loss — expense / debit
 
-Existing account rows are never overwritten. If one of these numbers exists with incompatible accounting semantics, S06 fails closed.
+`1600` is intentionally a net carrying-value asset account. Period depreciation credits `1600` directly instead of creating a separate accumulated-depreciation account. That keeps the same carrying balance usable for remeasurement, partial termination and full termination without leaving incompatible gross/contra-asset balances behind.
+
+Existing account rows are never overwritten. If `4400` or `6400` already exists with incompatible accounting semantics, S06 fails closed.
 
 ## Initial measurement and recognition
 
@@ -57,7 +58,7 @@ Dr 2500 Lease Liability
 
 ROU depreciation:
 Dr 6200 ROU Depreciation
-  Cr 1650 Accumulated ROU Depreciation
+  Cr 1600 Right-of-Use Asset
 ```
 
 All three components can be carried by the same canonical business-event batch. The S03 engine enforces balance, company scope, accounting periods, OMR precision and event idempotency.
@@ -66,15 +67,15 @@ All three components can be carried by the same canonical business-event batch. 
 
 A short-term election is allowed only when the supplied schedule does not exceed 12 months. No ROU asset or lease liability is recognized in that path. Scheduled lease payments are expensed to `6100 Company Operating Expense` against cash/bank.
 
-## Remeasurement and modification
+## Remeasurement, renewal and modification
 
-A modification is measured only at a **posted schedule boundary**. This is deliberate: S06 does not invent mid-period accrued interest.
+A modification or renewal is measured only at a **posted schedule boundary**. This is deliberate: S06 does not invent mid-period accrued interest.
 
-Carrying liability and carrying ROU are read from the posted old schedule; callers cannot provide them. The new measurement is append-only and references the superseded version.
+Carrying liability and carrying ROU are read from the posted old schedule; callers cannot provide them. The new measurement is append-only and references the superseded version. Once a remeasurement DRAFT is created, future old-schedule periods are blocked from posting so the frozen carrying values cannot become stale.
 
-For a normal remeasurement, the liability delta adjusts the ROU carrying amount. Future depreciation is rebased to the new ROU carrying amount rather than being incorrectly tied to the new liability.
+For a normal remeasurement or renewal, the liability delta adjusts the ROU carrying amount. Future depreciation is rebased to the new ROU carrying amount rather than being incorrectly tied to the new liability.
 
-For a partial termination, the engine proportionally derecognizes the carrying liability and ROU, recognizes the resulting gain/loss, and then remeasures the remaining liability. A 100% scope reduction is a full termination and must have no revised payment schedule.
+For a partial termination, the engine proportionally derecognizes the carrying liability and net ROU, recognizes the resulting gain/loss, and then remeasures the remaining liability. A 100% scope reduction is a full termination and must have no revised payment schedule.
 
 Posting uses signed movements in:
 
