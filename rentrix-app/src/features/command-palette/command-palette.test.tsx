@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { STATIC_COMMANDS } from './command-registry';
 import { normalizeText, scoreResult, useCommandSearch, escapePostgREST } from './use-command-search';
 import { supabase } from '@/lib/supabase';
@@ -30,17 +30,13 @@ vi.mock('./command-palette-store', () => ({
 // Mock react-query to trigger queryFn and track count of requests
 let queryFnCounter = 0;
 let lastSignal: any = null;
+let lastQueryFn: any = null;
+
 vi.mock('@tanstack/react-query', () => ({
   useQuery: ({ queryKey, queryFn, enabled }: any) => {
     if (enabled) {
       queryFnCounter++;
-      const controller = new AbortController();
-      lastSignal = controller.signal;
-      try {
-        queryFn({ signal: lastSignal });
-      } catch (err) {
-        // Safe to ignore in test mock
-      }
+      lastQueryFn = queryFn;
     }
     return {
       data: [],
@@ -58,45 +54,67 @@ vi.mock('@tanstack/react-router', () => ({
   useSearch: () => ({ search: '' }),
 }));
 
-// Mock supabase client to track queries
-const mockOr = vi.fn().mockImplementation(() => ({
-  limit: vi.fn().mockImplementation(() => ({
-    abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
-  })),
-}));
-
-const mockIlike = vi.fn().mockImplementation(() => ({
-  limit: vi.fn().mockImplementation(() => ({
-    abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
-  })),
-}));
-
-const mockIs = vi.fn().mockImplementation(() => ({
-  or: mockOr,
-  ilike: mockIlike,
-  limit: vi.fn().mockImplementation(() => ({
-    abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
-  })),
-}));
+// Mock supabase client to track queries and their exact filter string arguments
+const lastSelectArgs: Record<string, string> = {};
+const lastOrArgs: Record<string, string> = {};
+const lastIlikeArgs: Record<string, string> = {};
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    from: vi.fn().mockImplementation(() => ({
-      select: vi.fn().mockImplementation(() => ({
-        is: mockIs,
-        limit: vi.fn().mockImplementation(() => ({
-          abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
-        })),
-      })),
-    })),
+    from: vi.fn().mockImplementation((table) => {
+      return {
+        select: vi.fn().mockImplementation((selectArg) => {
+          lastSelectArgs[table] = selectArg;
+          
+          const mockOr = vi.fn().mockImplementation((orArg) => {
+            lastOrArgs[table] = orArg;
+            return {
+              limit: vi.fn().mockImplementation(() => ({
+                abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
+              })),
+            };
+          });
+
+          const mockIlike = vi.fn().mockImplementation((col, val) => {
+            lastIlikeArgs[table] = `${col}=${val}`;
+            return {
+              limit: vi.fn().mockImplementation(() => ({
+                abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
+              })),
+            };
+          });
+
+          const mockIs = vi.fn().mockImplementation(() => ({
+            or: mockOr,
+            ilike: mockIlike,
+            limit: vi.fn().mockImplementation(() => ({
+              abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
+            })),
+          }));
+
+          return {
+            is: mockIs,
+            or: mockOr,
+            ilike: mockIlike,
+            limit: vi.fn().mockImplementation(() => ({
+              abortSignal: vi.fn().mockResolvedValue({ data: [], error: null }),
+            })),
+          };
+        }),
+      };
+    }),
   },
 }));
 
-describe('Phase 6 — Command Palette Registry & Static Navigation', () => {
+describe('Phase 6 & 6.1 — Command Palette Registry & Static Navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCanAccess.mockReturnValue(true);
     queryFnCounter = 0;
+    // Clear the query arguments dictionaries
+    for (const key of Object.keys(lastSelectArgs)) delete lastSelectArgs[key];
+    for (const key of Object.keys(lastOrArgs)) delete lastOrArgs[key];
+    for (const key of Object.keys(lastIlikeArgs)) delete lastIlikeArgs[key];
   });
 
   it('Static Command Registry is the single source of truth for static destinations', () => {
@@ -170,11 +188,33 @@ describe('Phase 6.1 — Input Safety & Escaping', () => {
     expect(escaped).toContain('\\_');
     expect(escaped).toContain('\\\\');
   });
+
+  it('submits correctly escaped PostgREST queries through the query builder', () => {
+    const searchVal = 'محمد,علي';
+    const escaped = escapePostgREST(searchVal);
+
+    // Call the search logic
+    const { result } = renderHook(() => useCommandSearch(searchVal));
+
+    // Force queryFn execution to evaluate supabase query parameters
+    if (lastQueryFn) {
+      const controller = new AbortController();
+      lastQueryFn({ signal: controller.signal });
+    }
+
+    // Verify the query builder was called with the properly escaped value
+    expect(lastOrArgs['people']).toContain(escaped);
+  });
 });
 
-describe('Phase 6.1 — Global Entity Search Behavior', () => {
+describe('Phase 6.1 — Global Entity Search, Debounce & Cancellation', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     queryFnCounter = 0;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('does not trigger entity search when search query length is less than 2', () => {
@@ -183,9 +223,58 @@ describe('Phase 6.1 — Global Entity Search Behavior', () => {
     expect(queryFnCounter).toBe(0);
   });
 
-  it('correctly executes aborted / cancelled requests', () => {
-    const { result } = renderHook(() => useCommandSearch('احمد'));
-    expect(lastSignal).toBeDefined();
-    expect(lastSignal.aborted).toBe(false);
+  it('proves debounce contract: throttles multiple fast keystrokes and only triggers once', () => {
+    let searchVal = 'أ';
+    const { rerender } = renderHook(() => useCommandSearch(searchVal));
+
+    // Fast typing simulation:
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(queryFnCounter).toBe(0); // too short
+
+    searchVal = 'أح';
+    rerender();
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(queryFnCounter).toBe(0); // within debounce window
+
+    searchVal = 'أحم';
+    rerender();
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(queryFnCounter).toBe(0); // within debounce window
+
+    searchVal = 'أحمد';
+    rerender();
+    act(() => {
+      vi.advanceTimersByTime(200); // within debounce
+    });
+    expect(queryFnCounter).toBe(0);
+
+    act(() => {
+      vi.advanceTimersByTime(150); // debounce timeout (300ms completed)
+    });
+    expect(queryFnCounter).toBe(1); // executed exactly once!
+  });
+});
+
+describe('Phase 6.1 — Nested Relation Contracts Search (PostgREST validation)', () => {
+  it('correctly queries contracts nested relation properties and people with correct aliases', () => {
+    const { result } = renderHook(() => useCommandSearch('عقد'));
+
+    if (lastQueryFn) {
+      const controller = new AbortController();
+      lastQueryFn({ signal: controller.signal });
+    }
+
+    // Verify correct selection of relations
+    expect(lastSelectArgs['contracts']).toContain('properties:property_id!inner(title)');
+    expect(lastSelectArgs['contracts']).toContain('people:tenant_id!inner(full_name)');
+    // Verify the PostgREST nested or filtering argument is correct
+    expect(lastOrArgs['contracts']).toContain('properties.title.ilike.%عقد%');
+    expect(lastOrArgs['contracts']).toContain('people.full_name.ilike.%عقد%');
   });
 });

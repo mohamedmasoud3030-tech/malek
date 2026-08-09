@@ -117,7 +117,7 @@ export function useCommandSearch(query: string) {
           .from('contracts')
           .select('id, status, start_date, end_date, properties:property_id!inner(title), people:tenant_id!inner(full_name)')
           .is('deleted_at', null)
-          .or(`property_id.title.ilike.${term},tenant_id.full_name.ilike.${term}`) // Server-side contract search!
+          .or(`properties.title.ilike.${term},people.full_name.ilike.${term}`) // Server-side contract search!
           .limit(5)
           .abortSignal(signal),
         canAccessOwners
