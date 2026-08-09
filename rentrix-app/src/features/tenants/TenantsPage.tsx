@@ -2,6 +2,7 @@ import { AlertTriangle, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
+import { TenantPreviewDialog } from './components/TenantPreviewDialog';
 import { PageLayout } from '@/components/layout/page-layout';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
@@ -49,11 +50,12 @@ function TenantLocation({ tenant }: Readonly<{ tenant: TenantWorkspaceRow }>) {
   );
 }
 
-function TenantSafeLinks({ tenant, onEdit }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void }>) {
+function TenantSafeLinks({ tenant, onEdit, onPreview }: Readonly<{ tenant: TenantWorkspaceRow; onEdit: (personId: string) => void; onPreview: (tenant: TenantWorkspaceRow) => void }>) {
   const navigate = useNavigate();
   const location = useLocation();
   return (
-    <EntityActions className="flex flex-wrap gap-2">
+        <EntityActions className="flex flex-wrap gap-2">
+      <Button variant="secondary" className="min-h-11 px-3" onClick={() => onPreview(tenant)}>عرض</Button>
       <Button variant="secondary" className="min-h-11 px-3" onClick={() => onEdit(tenant.person.id)}>
         <Edit className="me-1 size-4" />تعديل
       </Button>
@@ -109,6 +111,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
+  const [previewTenantId, setPreviewTenantId] = useState<string | null>(null);
   const params = useMemo(() => ({ search, page, pageSize }), [page, search]);
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
@@ -162,7 +165,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       key: 'actions',
       header: 'إجراءات',
       render: (tenant) => (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
+          <Button variant="secondary" className="min-h-11 px-3" onClick={() => setPreviewTenantId(tenant.person.id)}>عرض</Button>
           <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(tenant.person.id)}>
             <Edit className="me-1 size-4" />تعديل
           </Button>
@@ -252,6 +256,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   return (
     <>
       {workspace}
+      <TenantPreviewDialog tenant={rows.find((tenant) => tenant.person.id === previewTenantId) ?? null} open={Boolean(previewTenantId)} onOpenChange={(open) => { if (!open) setPreviewTenantId(null); }} onEdit={(personId) => { setPreviewTenantId(null); openEdit(personId); }} />
       <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
     </>
   );

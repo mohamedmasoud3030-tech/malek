@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EntityCell } from "@/components/ui/entity-cell";
 import { EntityPreviewDialog } from "@/components/ui/entity-preview-dialog";
+import { ContextualDocumentsSection } from "@/components/documents/contextual-documents-section";
 import {
   ActiveFilterBar,
   type ActiveFilterItem,
@@ -399,7 +400,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
       >
         {rows.find((person) => person.id === previewPersonId) ? (() => {
           const person = rows.find((candidate) => candidate.id === previewPersonId)!;
-          return <div className="grid gap-3 sm:grid-cols-2 text-sm"><p><strong>النوع:</strong> {personTypeLabels[person.type]}</p><p><strong>الهاتف:</strong> {person.phone ?? '—'}</p><p><strong>البريد:</strong> {person.email ?? '—'}</p><p><strong>رقم الهوية:</strong> {person.national_id ?? '—'}</p><p className="sm:col-span-2"><strong>العنوان:</strong> {person.address ?? '—'}</p></div>;
+          return <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-2 text-sm"><p><strong>النوع:</strong> {personTypeLabels[person.type]}</p><p><strong>الهاتف:</strong> {person.phone ?? '—'}</p><p><strong>البريد:</strong> {person.email ?? '—'}</p><p><strong>رقم الهوية:</strong> {person.national_id ?? '—'}</p><p className="sm:col-span-2"><strong>العنوان:</strong> {person.address ?? '—'}</p><p><strong>آخر تحديث:</strong> {person.updated_at ?? 'غير متاح'}</p></div><ContextualDocumentsSection entityType="person" entityId={person.id} entityLabel="الشخص" /></div>;
         })() : null}
       </EntityPreviewDialog>
 
