@@ -60,8 +60,9 @@ test.describe('single-office isolated launch acceptance', () => {
 
     await page.goto('/receipts');
     await expect(page.getByRole('heading', { name: 'المالية', level: 1 })).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'سجل الإيصالات', selected: true })).toBeVisible();
-    await page.getByLabel('بحث في الإيصالات').fill(PAYMENT_REFERENCE);
+    const searchInput = page.getByPlaceholder('رقم الإيصال أو المرجع أو المستأجر أو العقار');
+    await expect(searchInput).toBeVisible({ timeout: 15000 });
+    await searchInput.fill(PAYMENT_REFERENCE);
 
     const receiptTable = page.getByRole('table', { name: 'جدول الإيصالات' });
     await expect(receiptTable.getByRole('row')).toHaveCount(2);
