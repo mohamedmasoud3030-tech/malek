@@ -671,7 +671,8 @@ declare
   v_amount numeric := public.gl_pm_round_omr((p_payload->>'amount')::numeric);
   v_cash_no text := coalesce(nullif(p_payload->>'cash_account_no',''), '1120');
   v_effective_date date := (p_payload->>'effective_date')::date;
-  v_deposit public.tenant_deposits%rowtype;
+  v_remaining_amount numeric;
+  v_refunded_amount numeric;
   v_dep_id text;
   v_cash_id text;
   v_transaction_created boolean := false;
@@ -688,16 +689,18 @@ begin
     raise exception 'GL_PM_DEPOSIT_REFUND: cash_account_no must be 1111 or 1120' using errcode = '22023';
   end if;
 
-  select * into v_deposit
-    from public.tenant_deposits
-   where id = v_deposit_id
-     and company_id = v_company_id
-     and deleted_at is null
+  select d.remaining_amount, d.refunded_amount
+    into v_remaining_amount, v_refunded_amount
+    from public.tenant_deposits d
+   where d.id = v_deposit_id
+     and d.company_id = v_company_id
+     and d.deleted_at is null
    for update;
+
   if not found then
     raise exception 'GL_PM_DEPOSIT_REFUND: deposit not found for company' using errcode = '42501';
   end if;
-  if v_deposit.remaining_amount < v_amount then
+  if v_remaining_amount < v_amount then
     raise exception 'GL_PM_DEPOSIT_REFUND: refund exceeds remaining deposit balance' using errcode = '22023';
   end if;
 
@@ -718,10 +721,10 @@ begin
   ));
 
   insert into public.deposit_transactions (
-    deposit_id, type, amount, reason, description, request_id
+    deposit_id, type, amount, reason, description, request_id, company_id
   ) values (
     v_deposit_id, 'refund', v_amount, 'refund_partial',
-    'GL tenant deposit refund', v_request_id
+    'GL tenant deposit refund', v_request_id, v_company_id
   )
   on conflict (request_id) do nothing;
   get diagnostics v_transaction_rows = row_count;
@@ -772,7 +775,8 @@ declare
   );
   v_amount numeric := public.gl_pm_round_omr((p_payload->>'amount')::numeric);
   v_effective_date date := (p_payload->>'effective_date')::date;
-  v_deposit public.tenant_deposits%rowtype;
+  v_remaining_amount numeric;
+  v_deducted_amount numeric;
   v_collection_role text;
   v_deposit_beneficiary text;
   v_dep_id text;
@@ -792,8 +796,8 @@ begin
 
   -- The application target is never caller-authoritative. Lock the actual
   -- deposit and derive the legal recipient from the contract's frozen terms.
-  select d.*, c.collection_role_snapshot, v.deposit_beneficiary
-    into v_deposit, v_collection_role, v_deposit_beneficiary
+  select d.remaining_amount, d.deducted_amount, c.collection_role_snapshot, v.deposit_beneficiary
+    into v_remaining_amount, v_deducted_amount, v_collection_role, v_deposit_beneficiary
     from public.tenant_deposits d
     join public.contracts c
       on c.id::text = d.contract_id::text
@@ -810,7 +814,7 @@ begin
   if not found then
     raise exception 'GL_PM_DEPOSIT_APP: deposit not found for company' using errcode = '42501';
   end if;
-  if v_deposit.remaining_amount < v_amount then
+  if v_remaining_amount < v_amount then
     raise exception 'GL_PM_DEPOSIT_APP: amount exceeds remaining deposit balance' using errcode = '22023';
   end if;
 
@@ -857,10 +861,10 @@ begin
   ));
 
   insert into public.deposit_transactions (
-    deposit_id, type, amount, reason, description, request_id
+    deposit_id, type, amount, reason, description, request_id, company_id
   ) values (
     v_deposit_id, 'deduction', v_amount, v_reason,
-    'GL deposit application: ' || v_target_type, v_request_id
+    'GL deposit application: ' || v_target_type, v_request_id, v_company_id
   )
   on conflict (request_id) do nothing;
 

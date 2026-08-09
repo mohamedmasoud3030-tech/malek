@@ -314,16 +314,20 @@ describe('Stage S04 — Property Management Accounting Lifecycle', () => {
     dep = await getAccountBalance(db, COMPANY_A, '2200');
     expect(dep.netCredit).toBe(0);
     const ofp = await getAccountBalance(db, COMPANY_A, '2000');
-    expect(ofp.netCredit).toBe(200);
+    expect(ofp.netCredit).toBe(737); // 537 from earlier OFC collection + 200 damage deposit
     const dmg = await getAccountBalance(db, COMPANY_A, '4300');
     expect(dmg.netCredit).toBe(0);
 
     const { rows } = await db.query<{ remaining_amount: string; refunded_amount: string; deducted_amount: string }>(
-      `select remaining_amount::text, refunded_amount::text, deducted_amount::text
+      `select remaining_amount::numeric::text as remaining_amount,
+              refunded_amount::numeric::text as refunded_amount,
+              deducted_amount::numeric::text as deducted_amount
          from public.tenant_deposits where id = $1`,
       [depositId],
     );
-    expect(rows[0]).toEqual({ remaining_amount: '0.000', refunded_amount: '100.000', deducted_amount: '200.000' });
+    expect(Number(rows[0]?.remaining_amount)).toBe(0);
+    expect(Number(rows[0]?.refunded_amount)).toBe(100);
+    expect(Number(rows[0]?.deducted_amount)).toBe(200);
   });
 
   it('posts Broker Commission approval and payout flows', async () => {

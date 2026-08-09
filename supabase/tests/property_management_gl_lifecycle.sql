@@ -219,8 +219,43 @@ begin
 
   -- Test 24: Deposit Receipt and Refund
   declare
-    v_dep_id uuid := gen_random_uuid();
+    v_dep_id text := '00000000-0000-4000-8000-000000005001';
+    v_prop_id text := '00000000-0000-4000-8000-000000005010';
+    v_unit_id text := '00000000-0000-4000-8000-000000005011';
+    v_ten_id uuid := '00000000-0000-4000-8000-000000005012';
+    v_agmt_id text := '00000000-0000-4000-8000-000000005013';
+    v_cont_id text := '00000000-0000-4000-8000-000000005014';
   begin
+    insert into public.properties (id, title, name, type, address, company_id)
+    values (v_prop_id::uuid, 'Deposit Prop', 'Deposit Prop', 'residential', 'Muscat', v_co_a)
+    on conflict (id) do nothing;
+
+    insert into public.people (id, full_name, type, company_id)
+    values (v_ten_id, 'Tenant Dep', 'tenant', v_co_a)
+    on conflict (id) do nothing;
+
+    insert into public.property_owners
+      (property_id, owner_id, ownership_percentage, is_primary, starts_on, company_id)
+    values (v_prop_id::uuid, '0a040000-0000-4000-8000-000000000001'::uuid, 100, true, date '2026-01-01', v_co_a)
+    on conflict do nothing;
+
+    insert into public.owner_agreements
+      (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, company_id)
+    values (v_agmt_id::uuid, '0a040000-0000-4000-8000-000000000001'::uuid, v_prop_id::uuid, 'property_management', 'RATE', 10, date '2026-01-01', v_co_a)
+    on conflict (id) do nothing;
+
+    insert into public.units (id, property_id, name, unit_number, company_id)
+    values (v_unit_id::uuid, v_prop_id::uuid, 'Unit Dep', '101', v_co_a)
+    on conflict (id) do nothing;
+
+    insert into public.contracts (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date, rent_amount, status, company_id)
+    values (v_cont_id::uuid, v_prop_id::uuid, v_unit_id::uuid, v_ten_id, v_agmt_id::uuid, '2026-01-01', '2026-12-31', 500, 'active', v_co_a)
+    on conflict (id) do nothing;
+
+    insert into public.tenant_deposits (id, contract_id, tenant_id, property_id, unit_id, deposit_amount, remaining_amount, status, received_date, company_id)
+    values (v_dep_id::uuid, v_cont_id::uuid, v_ten_id, v_prop_id::uuid, v_unit_id::uuid, 200, 200, 'held', '2026-08-09', v_co_a)
+    on conflict (id) do update set remaining_amount = 200, refunded_amount = 0, status = 'held';
+
     perform public.gl_pm_post_deposit_receipt(jsonb_build_object(
       'company_id', v_co_a,
       'deposit_id', v_dep_id,
