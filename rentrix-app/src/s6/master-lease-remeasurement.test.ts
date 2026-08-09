@@ -7,7 +7,7 @@ const revisedPayments = [
 ] as const;
 
 describe('remeasureMasterLease', () => {
-  it('adjusts the ROU asset by the liability delta when there is no scope reduction', () => {
+  it('adjusts the ROU asset by the liability delta and rebases future depreciation', () => {
     const result = remeasureMasterLease({
       leaseId: 'lease-1',
       effectivePeriod: 7,
@@ -21,10 +21,12 @@ describe('remeasureMasterLease', () => {
     expect(result.revisedSchedule.initialLiabilityMinor).toBe(80_000);
     expect(result.liabilityDeltaMinor).toBe(10_000);
     expect(result.rouAdjustmentMinor).toBe(10_000);
+    expect(result.revisedSchedule.initialRouAssetMinor).toBe(75_000);
+    expect(result.revisedSchedule.rows.at(-1)?.closingRouAssetMinor).toBe(0);
     expect(result.terminationGainLossMinor).toBe(0);
   });
 
-  it('recognizes a proportional gain or loss for a partial termination', () => {
+  it('recognizes a proportional gain or loss for a partial termination and rebases ROU', () => {
     const result = remeasureMasterLease({
       leaseId: 'lease-2',
       effectivePeriod: 4,
@@ -39,6 +41,28 @@ describe('remeasureMasterLease', () => {
     expect(result.terminationGainLossMinor).toBe(5_000);
     expect(result.liabilityDeltaMinor).toBe(-20_000);
     expect(result.rouAdjustmentMinor).toBe(-15_000);
+    expect(result.revisedSchedule.initialRouAssetMinor).toBe(75_000);
+    expect(result.revisedSchedule.rows.at(-1)?.closingRouAssetMinor).toBe(0);
+  });
+
+  it('supports full termination with no revised payment schedule', () => {
+    const result = remeasureMasterLease({
+      leaseId: 'lease-full-termination',
+      effectivePeriod: 10,
+      carryingLiabilityMinor: 50_000,
+      carryingRouAssetMinor: 45_000,
+      revisedPayments: [],
+      annualDiscountRateBps: 500,
+      periodsPerYear: 12,
+      scopeReductionBps: 10_000,
+    });
+
+    expect(result.liabilityDeltaMinor).toBe(-50_000);
+    expect(result.rouAdjustmentMinor).toBe(-45_000);
+    expect(result.terminationGainLossMinor).toBe(5_000);
+    expect(result.revisedSchedule.initialLiabilityMinor).toBe(0);
+    expect(result.revisedSchedule.initialRouAssetMinor).toBe(0);
+    expect(result.revisedSchedule.rows).toEqual([]);
   });
 
   it('produces a stable event id for the same business event', () => {
@@ -76,5 +100,16 @@ describe('remeasureMasterLease', () => {
       periodsPerYear: 12,
       scopeReductionBps: 10_001,
     })).toThrow('scopeReductionBps');
+
+    expect(() => remeasureMasterLease({
+      leaseId: 'lease-5',
+      effectivePeriod: 1,
+      carryingLiabilityMinor: 10_000,
+      carryingRouAssetMinor: 10_000,
+      revisedPayments,
+      annualDiscountRateBps: 0,
+      periodsPerYear: 12,
+      scopeReductionBps: 10_000,
+    })).toThrow('full termination');
   });
 });

@@ -5,7 +5,6 @@ export type MasterLeaseAccountCodes = Readonly<{
   leaseLiability: string;
   cashOrBank: string;
   depreciationExpense: string;
-  accumulatedRouDepreciation: string;
   leaseInterestExpense: string;
 }>;
 
@@ -90,9 +89,13 @@ export function buildMasterLeasePostingIntents(input: Readonly<{
     }
 
     if (row.rouDepreciationMinor > 0) {
+      // 1600 is the net carrying-value ROU asset account. Crediting the same
+      // account keeps remeasurement / partial termination / full termination
+      // mathematically and financially consistent without a parallel contra
+      // account whose gross/accumulated balances would need separate disposal.
       lines.push(
         { accountCode: input.accounts.depreciationExpense, debitMinor: row.rouDepreciationMinor, creditMinor: 0 },
-        { accountCode: input.accounts.accumulatedRouDepreciation, debitMinor: 0, creditMinor: row.rouDepreciationMinor },
+        { accountCode: input.accounts.rouAsset, debitMinor: 0, creditMinor: row.rouDepreciationMinor },
       );
     }
 
