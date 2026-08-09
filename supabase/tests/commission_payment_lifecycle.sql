@@ -39,23 +39,21 @@ select ok(
   'reverse_commission_atomic is SECURITY DEFINER'
 );
 
-select like(
+select ok(
   (
     select array_to_string(p.proconfig, ',')
     from pg_proc p
     where p.oid = 'public.pay_commission_atomic(jsonb)'::regprocedure
-  ),
-  '%search_path=public, pg_temp%',
+  ) like '%search_path=public, pg_temp%',
   'pay_commission_atomic pins public, pg_temp search_path'
 );
 
-select like(
+select ok(
   (
     select array_to_string(p.proconfig, ',')
     from pg_proc p
     where p.oid = 'public.reverse_commission_atomic(jsonb)'::regprocedure
-  ),
-  '%search_path=public, pg_temp%',
+  ) like '%search_path=public, pg_temp%',
   'reverse_commission_atomic pins public, pg_temp search_path'
 );
 
@@ -88,14 +86,13 @@ select has_trigger(
   'commissions has its financial-field write guard'
 );
 
-select like(
+select ok(
   (
     select pg_get_triggerdef(t.oid)
     from pg_trigger t
     where t.tgrelid = 'public.commissions'::regclass
       and t.tgname = 'trg_guard_commission_financial_fields'
-  ),
-  '%BEFORE INSERT OR UPDATE OF status, paid_at, expense_id%',
+  ) like '%BEFORE INSERT OR UPDATE OF status, paid_at, expense_id%',
   'financial-field guard covers status, paid_at and expense_id'
 );
 
@@ -118,21 +115,18 @@ select is(
   'commissions has no browser write-capable RLS policy'
 );
 
-select like(
-  pg_get_functiondef('public.pay_commission_atomic(jsonb)'::regprocedure),
-  '%pg_advisory_xact_lock%',
+select ok(
+  pg_get_functiondef('public.pay_commission_atomic(jsonb)'::regprocedure) like '%pg_advisory_xact_lock%',
   'payment serializes the commission payment operation'
 );
 
-select like(
-  pg_get_functiondef('public.pay_commission_atomic(jsonb)'::regprocedure),
-  '%company_id = v_company_id%',
+select ok(
+  pg_get_functiondef('public.pay_commission_atomic(jsonb)'::regprocedure) like '%company_id = v_company_id%',
   'payment scopes the commission mutation to the active company'
 );
 
-select like(
-  pg_get_functiondef('public.reverse_commission_atomic(jsonb)'::regprocedure),
-  '%company_id = v_company_id%',
+select ok(
+  pg_get_functiondef('public.reverse_commission_atomic(jsonb)'::regprocedure) like '%company_id = v_company_id%',
   'reversal scopes financial rows to the active company'
 );
 
