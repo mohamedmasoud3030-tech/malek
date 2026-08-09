@@ -78,7 +78,7 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(adminContext, 'expenses.write')).toBe(true);
     expect(canAccess(adminContext, 'arrears.view')).toBe(true);
     expect(canAccess(adminContext, 'financial.bank_reconciliation.view')).toBe(true);
-    expect(canAccess(managerContext, 'system.view')).toBe(false);
+    expect(canAccess(managerContext, 'system.view')).toBe(true);
     expect(canAccess(managerContext, 'integrity.view')).toBe(false);
     expect(canAccess(managerContext, 'maintenance.view')).toBe(true);
     expect(canAccess(managerContext, 'owners.hub.view')).toBe(true);

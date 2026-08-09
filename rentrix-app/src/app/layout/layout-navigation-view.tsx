@@ -1,7 +1,9 @@
 import { Link, useLocation } from '@tanstack/react-router';
+import { useState } from 'react';
 import { Lock, ChevronDown, Menu, Search } from 'lucide-react';
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store';
-import { canShowNavigationItem, canAccessRoute, type AuthorizationContext } from '@/features/auth/permissions';
+import { canShowNavigationItem, canAccessRoute, type AuthorizationContext, type AppPermission } from '@/features/auth/permissions';
+import { PermissionRequestDialog } from '@/components/layout/permission-request-dialog';
 import { getNavRoot } from '@/app/navigation/route-nav-map';
 import { navigationLabels } from '@/app/navigation/terminology-registry';
 import { cn } from '@/lib/utils';
@@ -21,11 +23,12 @@ export function NavigationLinks({
 }: Readonly<{ authorization: AuthorizationContext | null; expanded: boolean; sharedLabel: SharedLabel; onNavigate?: () => void }>) {
   const location = useLocation();
   const activeRoot = getNavRoot(location.pathname);
-  let hiddenLockedCount = 0;
+  const [lockedRequest, setLockedRequest] = useState<{ permission: AppPermission; route: string; label: string } | null>(null);
 
   const isItemLocked = (permission?: Parameters<typeof canAccessRoute>[1]) => Boolean(permission) && !canAccessRoute(authorization, permission);
 
-  const renderItem = ([to, labelKey, description, Icon]: NavItem, isChild = false) => {
+  const renderItem = ([to, labelKey, description, Icon, permission]: NavItem, isChild = false) => {
+    const isLocked = isItemLocked(permission);
     const isActive = isChild
       ? activeRoot === to || location.pathname.startsWith(`${to}/`)
       : activeRoot === to;
@@ -34,8 +37,16 @@ export function NavigationLinks({
       <Link
         key={`${to}:${labelKey}`}
         to={to}
-        onClick={onNavigate}
+        onClick={(event) => {
+          if (isLocked && permission) {
+            event.preventDefault();
+            setLockedRequest({ permission, route: to, label });
+            return;
+          }
+          onNavigate?.();
+        }}
         aria-current={isActive ? 'page' : undefined}
+        aria-disabled={isLocked ? 'true' : undefined}
         aria-label={label}
         title={expanded ? description : label}
         activeOptions={{ exact: true }}
@@ -46,10 +57,12 @@ export function NavigationLinks({
           'group relative flex min-h-10 items-center gap-2.5 rounded-xl border border-transparent px-3 py-1.5 text-sidebar-foreground outline-none transition-[background-color,border-color,color,box-shadow] duration-150',
           'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-4 focus-visible:ring-sidebar-accent/35 motion-reduce:transition-none',
           isChild && 'ms-3 min-h-9 border-s-2 border-s-sidebar-border/70 ps-3',
+          isLocked && 'cursor-not-allowed opacity-70',
           isActive && 'border-sidebar-accent/20 bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_hsl(var(--sidebar-accent-foreground)),0_12px_28px_-20px_rgb(0_0_0_/_0.9)]',
         )}
       >
         <Icon className={cn(isChild ? 'size-4' : 'size-5', 'shrink-0')} aria-hidden="true" />
+        {isLocked ? <Lock className="ms-auto size-3.5 text-warning" aria-hidden="true" /> : null}
         {expanded ? <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{label}</span> : null}
         {isActive ? <span className="size-1.5 shrink-0 rounded-full bg-sidebar-accent-foreground" aria-hidden="true" /> : null}
       </Link>
@@ -63,10 +76,7 @@ export function NavigationLinks({
           const hasAnyAdminPermission = items.some(([, , , , permission]) => canShowNavigationItem(authorization, permission));
           if (!hasAnyAdminPermission) return null;
         }
-        const visibleItems = items.filter(([, , , , permission]) => {
-          if (isItemLocked(permission)) hiddenLockedCount += 1;
-          return canShowNavigationItem(authorization, permission);
-        });
+        const visibleItems = items;
         if (visibleItems.length === 0) return null;
         return (
           <section key={sectionTitle} className="space-y-0.5">
@@ -74,10 +84,7 @@ export function NavigationLinks({
             {visibleItems.map((item) => {
               const [to] = item;
               const children = workspaceChildNavItems[to] ?? [];
-              const visibleChildren = children.filter(([, , , , permission]) => {
-                if (isItemLocked(permission)) hiddenLockedCount += 1;
-                return canShowNavigationItem(authorization, permission);
-              });
+              const visibleChildren = children;
               return (
                 <div key={to} className="space-y-0.5">
                   <div className="flex items-center gap-1">
@@ -92,16 +99,13 @@ export function NavigationLinks({
         );
       })}
 
-      {expanded && hiddenLockedCount > 0 ? (
-        <section aria-label={sharedLabel('navUpgradeTitle')} className="rounded-2xl border border-[hsl(var(--color-warning-text)/0.22)] bg-[hsl(var(--color-warning-bg)/0.07)] px-3 py-3">
-          <div className="flex items-center gap-2">
-            <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[hsl(var(--color-warning-bg)/0.16)] text-warning"><Lock className="size-3.5" aria-hidden="true" /></span>
-            <p className="text-[12px] font-bold text-warning">أقسام حسب الصلاحية</p>
-            <span className="ms-auto rounded-full bg-[hsl(var(--color-warning-bg)/0.16)] px-2 py-0.5 text-[10px] font-bold text-warning/90">{hiddenLockedCount}</span>
-          </div>
-          <p className="mt-2 text-[11px] leading-5 text-sidebar-foreground/65">بعض الأقسام مخفية لأن دورك الحالي لا يملك صلاحية الوصول إليها.</p>
-        </section>
-      ) : null}
+      <PermissionRequestDialog
+        open={lockedRequest !== null}
+        onOpenChange={(open) => { if (!open) setLockedRequest(null); }}
+        permission={lockedRequest?.permission ?? 'settings.manage'}
+        resourceRoute={lockedRequest?.route ?? '/settings'}
+        label={lockedRequest?.label ?? 'هذا القسم'}
+      />
     </div>
   );
 }

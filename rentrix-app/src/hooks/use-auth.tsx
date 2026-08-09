@@ -3,6 +3,7 @@ import { useRouter } from '@tanstack/react-router';
 import type { Session, User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import {
+  appPermissions,
   canAccess as canAccessPermission,
   getAuthorizationContextFromSession,
   getAuthorizationDiagnosticsFromSession,
@@ -47,6 +48,7 @@ function clearStaleSessionStorage(): void {
 export function AuthProvider({ children }: PropsWithChildren) {
   const appRouter = useRouter();
   const [session, setSession] = useState<Session | null>(null);
+  const [grantedPermissions, setGrantedPermissions] = useState<readonly AppPermission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   // Tracks whether we last observed an authenticated session, so a SIGNED_OUT
   // event can be told apart from an explicit user-initiated logout (which
@@ -121,7 +123,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, [appRouter]);
 
-  const authorization = useMemo(() => getAuthorizationContextFromSession(session), [session]);
+  useEffect(() => {
+    let cancelled = false;
+    if (!session?.user.id) { setGrantedPermissions([]); return undefined; }
+    void supabase.from('user_permission_grants' as never).select('permission').eq('user_id', session.user.id).is('revoked_at', null).then(({ data }) => {
+      if (cancelled) return;
+      const permissions = (data as Array<{ permission?: string }> | null)?.map((row) => row.permission).filter((permission): permission is AppPermission => typeof permission === 'string' && (appPermissions as readonly string[]).includes(permission)) ?? [];
+      setGrantedPermissions(permissions);
+    }).then(undefined, () => { if (!cancelled) setGrantedPermissions([]); });
+    return () => { cancelled = true; };
+  }, [session?.user.id]);
+
+  const authorization = useMemo(() => {
+    const base = getAuthorizationContextFromSession(session);
+    return base ? { ...base, grantedPermissions } : null;
+  }, [grantedPermissions, session]);
   const authorizationDiagnostics = useMemo(() => getAuthorizationDiagnosticsFromSession(session), [session]);
 
   useEffect(() => {

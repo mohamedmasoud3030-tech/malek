@@ -68,13 +68,14 @@ describe('Visual Wave 1 — route-derived app navigation', () => {
     expect(host.querySelectorAll('a')).toHaveLength(0);
   });
 
-  it('does not render the settings navigation root for a role without its route permission', () => {
+  it('renders the settings navigation root as locked for a role without its route permission', () => {
     pathname = '/dashboard';
 
     const html = renderToStaticMarkup(
       <NavigationLinks authorization={user} expanded sharedLabel={sharedLabel} />,
     );
 
-    expect(anchor(html, '/settings')).toBeNull();
+    expect(anchor(html, '/settings')?.getAttribute('aria-disabled')).toBe('true');
+    expect(html).toContain('text-warning');
   });
 });
