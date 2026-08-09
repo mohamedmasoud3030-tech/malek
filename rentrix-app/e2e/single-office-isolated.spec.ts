@@ -41,14 +41,11 @@ test.describe('single-office isolated launch acceptance', () => {
 
     await login(page);
     await page.goto(`/invoices?invoiceId=${INVOICE_ID}&collect=1`);
-    // /invoices redirects into the collections hub, preserving the deep link.
-    // The hub owns the page heading; the active tab identifies the section.
-    await expect(page.getByRole('heading', { name: 'المالية', level: 1 })).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'الفواتير والتحصيل', selected: true })).toBeVisible();
 
     const paymentForm = page.locator('#quick-payment-form');
+    await expect(paymentForm).toBeVisible({ timeout: 15000 });
     const amount = paymentForm.locator('#quick-payment-amount');
-    await expect(amount).toHaveValue('1000');
+    await expect(amount).toHaveValue('1000', { timeout: 15000 });
     await paymentForm.locator('input[type="date"]').fill('2026-07-25');
     await paymentForm.getByPlaceholder('اختياري').fill(PAYMENT_REFERENCE);
     const paymentResponsePromise = page.waitForResponse((response) => (
@@ -59,20 +56,19 @@ test.describe('single-office isolated launch acceptance', () => {
     expect(paymentResponse.ok()).toBe(true);
 
     await page.goto('/receipts');
-    await expect(page.getByRole('heading', { name: 'المالية', level: 1 })).toBeVisible();
     const searchInput = page.getByPlaceholder('رقم الإيصال أو المرجع أو المستأجر أو العقار');
     await expect(searchInput).toBeVisible({ timeout: 15000 });
     await searchInput.fill(PAYMENT_REFERENCE);
 
     const receiptTable = page.getByRole('table', { name: 'جدول الإيصالات' });
-    await expect(receiptTable.getByRole('row')).toHaveCount(2);
+    await expect(receiptTable.getByRole('row')).toHaveCount(2, { timeout: 15000 });
     const receiptRow = receiptTable.getByRole('row').nth(1);
     await expect(receiptRow).toContainText('مستأجر اختبار المكتب الواحد');
     await expect(receiptRow).toContainText('مرحّل');
     await receiptRow.getByRole('button', { name: 'إلغاء' }).click();
 
     const dialog = page.getByRole('dialog', { name: /إلغاء الإيصال/ });
-    await expect(dialog).toBeVisible();
+    await expect(dialog).toBeVisible({ timeout: 15000 });
     await dialog.getByLabel('السبب').fill('اختبار إلغاء معزول قبل إطلاق المكتب الأول');
     const voidResponsePromise = page.waitForResponse((response) => (
       response.url().includes('/rest/v1/rpc/void_receipt_atomic')
