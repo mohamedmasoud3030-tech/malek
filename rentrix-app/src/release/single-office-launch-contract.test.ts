@@ -7,10 +7,12 @@ const repoRoot = resolve(import.meta.dirname, '../../..');
 const read = (path: string) => readFileSync(resolve(repoRoot, path), 'utf8');
 
 describe('single-office launch gate contract', () => {
-  it('keeps the financial mutation smoke local-only and refuses Production', () => {
+  it('keeps the financial mutation smoke isolated to local/approved QA and refuses Production', () => {
     const script = read('rentrix-app/scripts/single-office-isolated-smoke.mjs');
-    expect(script).toContain("E2E_ENVIRONMENT_KIND.trim().toLowerCase() !== 'local'");
+    expect(script).toContain("!['local', 'qa'].includes(ENVIRONMENT_KIND)");
     expect(script).toContain('Refusing to run the single-office mutation smoke against Production.');
+    expect(script).toContain('QA smoke requires QA_SUPABASE_PROJECT_REF matching VITE_SUPABASE_URL exactly.');
+    expect(script).toContain('QA smoke requires QA_MUTATION_APPROVED=1');
     expect(script).toContain('productionMutation: false');
     expect(script).toContain('must exist exactly once for the launch company');
     expect(script).toContain("select('id,amount,type,entity_type,entity_id')");

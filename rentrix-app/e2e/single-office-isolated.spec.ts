@@ -6,8 +6,10 @@ const INVOICE_ID = '00000000-0000-0000-0000-000000009801';
 const PAYMENT_REFERENCE = 'SO-E2E-001';
 
 test.skip(
-  process.env.E2E_ENVIRONMENT_KIND !== 'local' || !process.env.E2E_SINGLE_OFFICE_ENABLED,
-  'The single-office lifecycle runs only against the disposable local Supabase gate.',
+  !['local', 'qa'].includes(process.env.E2E_ENVIRONMENT_KIND ?? '')
+    || !process.env.E2E_SINGLE_OFFICE_ENABLED
+    || (process.env.E2E_ENVIRONMENT_KIND === 'qa' && process.env.QA_MUTATION_APPROVED !== '1'),
+  'The single-office lifecycle runs only against local or an explicitly approved disposable QA environment.',
 );
 
 async function login(page: Page) {

@@ -3,8 +3,9 @@ import { dirname } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 
 const COMPANY_ID = '00000000-0000-4000-8000-000000000001';
-const EMAIL = process.env.E2E_SINGLE_OFFICE_EMAIL ?? 'single-office-admin@rentrix.test';
-const PASSWORD = process.env.E2E_SINGLE_OFFICE_PASSWORD ?? 'SingleOffice-Aa1!';
+const ENVIRONMENT_KIND = process.env.E2E_ENVIRONMENT_KIND?.trim().toLowerCase();
+const EMAIL = process.env.E2E_SINGLE_OFFICE_EMAIL?.trim();
+const PASSWORD = process.env.E2E_SINGLE_OFFICE_PASSWORD?.trim();
 const PAYMENT_REFERENCE = 'SO-E2E-001';
 const PAYMENT_DATE = '2026-07-25';
 const IDS = {
@@ -24,20 +25,31 @@ const requiredEnvironment = [
   'VITE_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'PRODUCTION_SUPABASE_PROJECT_REF',
+  'E2E_SINGLE_OFFICE_EMAIL',
+  'E2E_SINGLE_OFFICE_PASSWORD',
 ];
 
 for (const name of requiredEnvironment) {
   if (!process.env[name]?.trim()) throw new Error(`${name} is required for the single-office isolated smoke.`);
 }
 
-if (process.env.E2E_ENVIRONMENT_KIND.trim().toLowerCase() !== 'local') {
-  throw new Error('The single-office mutation smoke is allowed only on a disposable local Supabase stack.');
+if (!['local', 'qa'].includes(ENVIRONMENT_KIND)) {
+  throw new Error('The single-office mutation smoke is allowed only on local or the dedicated QA Supabase stack.');
 }
 
 const supabaseUrl = new URL(process.env.VITE_SUPABASE_URL.trim());
 const productionRef = process.env.PRODUCTION_SUPABASE_PROJECT_REF.trim();
 if (supabaseUrl.hostname === `${productionRef}.supabase.co` || supabaseUrl.hostname.startsWith(`${productionRef}.`)) {
   throw new Error('Refusing to run the single-office mutation smoke against Production.');
+}
+if (ENVIRONMENT_KIND === 'qa') {
+  const qaRef = process.env.QA_SUPABASE_PROJECT_REF?.trim();
+  if (!qaRef || supabaseUrl.hostname !== `${qaRef}.supabase.co`) {
+    throw new Error('QA smoke requires QA_SUPABASE_PROJECT_REF matching VITE_SUPABASE_URL exactly.');
+  }
+  if (process.env.QA_MUTATION_APPROVED !== '1') {
+    throw new Error('QA smoke requires QA_MUTATION_APPROVED=1 for the intentional seed/lifecycle mutation.');
+  }
 }
 
 const serviceClient = createClient(supabaseUrl.toString(), process.env.SUPABASE_SERVICE_ROLE_KEY.trim(), {
@@ -213,7 +225,7 @@ async function seed() {
 
   const evidence = {
     action: 'seed',
-    environment: 'disposable-local-supabase',
+    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
     productionMutation: false,
     companyId: COMPANY_ID,
     userId: user.id,
@@ -326,7 +338,7 @@ async function verify() {
 
   const evidence = {
     action: 'verify',
-    environment: 'disposable-local-supabase',
+    environment: ENVIRONMENT_KIND === 'qa' ? 'hosted-qa-supabase' : 'disposable-local-supabase',
     productionMutation: false,
     companyId: COMPANY_ID,
     invoice: { id: invoice.id, status: invoice.status, paidAmount: Number(invoice.paid_amount) },
