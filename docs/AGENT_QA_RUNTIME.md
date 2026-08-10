@@ -42,6 +42,54 @@ pnpm qa:database-contracts
 pnpm qa:lifecycle
 ```
 
+## Autonomous agent loop (required for affected work)
+
+This runtime is for the coding agent's own repair loop, not merely a CI gate.
+For any route, form, client/server mapping, authentication, permission, or
+financial workflow it changes, the agent must:
+
+1. Run the app locally or open the matching QA/preview deployment.
+2. Drive the real route with its available browser automation. Check the
+   rendered screen at desktop and mobile widths, console errors, failed network
+   requests, route transitions, and both success and recoverable-error states.
+3. Where the route relies on Supabase, run `pnpm qa:preflight` and
+   `pnpm qa:database-contracts` against the separate QA project before assuming
+   a frontend defect. These detect an incorrect deployed URL, Auth/JWT/company
+   membership problems, RLS/API failures, and frontend-to-schema/RPC drift.
+4. For the disposable invoice -> payment -> receipt -> void journey only, set
+   `QA_MUTATION_APPROVED=1` in the QA secret runtime and run
+   `pnpm qa:lifecycle`. It seeds and verifies QA only; it deliberately refuses
+   Production.
+5. If the browser or contract check exposes a defect, trace UI -> service/map
+   -> RPC/API -> database, repair it, then re-open and re-run the same scenario.
+   Do not report the task complete before the observed failure is rechecked or
+   recorded as a real external blocker.
+
+The agent should retain Playwright trace/screenshot/report artifacts on a
+failure and include their result in its handoff. Browser automation may be
+Playwright or an available browser-control integration; the required outcome is
+an actual inspected application, not a claim inferred from source code.
+
+## GitHub execution path
+
+Use **Hosted QA Verification** when the QA secrets are held in GitHub rather
+than in an interactive agent runtime. Every dispatch first runs the read-only
+Auth/API/schema/RLS proof. The `run_financial_lifecycle` input defaults to
+false; setting it to true is the separate, explicit authorization for the
+disposable QA invoice → payment → receipt → VOID journey. It cannot target
+Production because the same project-reference equality and exact-URL guards
+run before any browser or seed action.
+
+The GitHub environment must expose these QA-only secrets:
+
+| Secret | Used for |
+| --- | --- |
+| `QA_SUPABASE_PROJECT_REF`, `QA_SUPABASE_URL`, `QA_SUPABASE_ANON_KEY` | exact QA identity and browser/API connection |
+| `PRODUCTION_SUPABASE_PROJECT_REF` | comparison-only Production boundary |
+| `QA_ADMIN_EMAIL`, `QA_ADMIN_PASSWORD` | read-only Auth/RLS/API proof |
+| `QA_SUPABASE_DB_URL` | read-only PostgreSQL catalog contract |
+| `QA_SINGLE_OFFICE_EMAIL`, `QA_SINGLE_OFFICE_PASSWORD`, `QA_SUPABASE_SERVICE_ROLE_KEY` | disposable QA lifecycle only |
+
 `qa:lifecycle` is repeatable: it uses fixed QA-only identifiers and validates
 the final invoice, receipt, journal, idempotency, and report state. It must
 never target Production. The command is intentionally stopped by default until
