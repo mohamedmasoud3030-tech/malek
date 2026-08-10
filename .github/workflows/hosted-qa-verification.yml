@@ -1,0 +1,102 @@
+name: Hosted QA Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_financial_lifecycle:
+        description: Run the intentional invoice → payment → receipt → VOID journey against disposable QA data
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hosted-qa-verification
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PLAYWRIGHT_VERSION: '1.61.1'
+  QA_ENVIRONMENT_KIND: qa
+  E2E_ENVIRONMENT_KIND: qa
+  QA_SUPABASE_PROJECT_REF: ${{ secrets.QA_SUPABASE_PROJECT_REF }}
+  PRODUCTION_SUPABASE_PROJECT_REF: ${{ secrets.PRODUCTION_SUPABASE_PROJECT_REF }}
+  VITE_SUPABASE_URL: ${{ secrets.QA_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.QA_SUPABASE_ANON_KEY }}
+  QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
+  QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
+  E2E_SINGLE_OFFICE_EMAIL: ${{ secrets.QA_SINGLE_OFFICE_EMAIL }}
+  E2E_SINGLE_OFFICE_PASSWORD: ${{ secrets.QA_SINGLE_OFFICE_PASSWORD }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.QA_SUPABASE_SERVICE_ROLE_KEY }}
+  SUPABASE_DB_URL: ${{ secrets.QA_SUPABASE_DB_URL }}
+
+jobs:
+  qa-contracts:
+    name: QA Auth, API, schema and RLS contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: qa
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies with lifecycle scripts disabled
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Rebuild approved native toolchain package
+        run: pnpm rebuild esbuild
+      - name: Install PostgreSQL client for read-only catalog inspection
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Prove hosted QA identity, Auth, API, schema, RPCs and RLS
+        run: |
+          pnpm qa:preflight
+          pnpm qa:database-contracts
+
+  qa-financial-lifecycle:
+    name: QA financial lifecycle (explicitly approved)
+    if: ${{ inputs.run_financial_lifecycle }}
+    needs: qa-contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: qa
+    env:
+      QA_MUTATION_APPROVED: '1'
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies with lifecycle scripts disabled
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Rebuild approved native toolchain package
+        run: pnpm rebuild esbuild
+      - name: Install PostgreSQL client for the QA read-only contract
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Restore Chromium binary cache
+        id: playwright-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install Chromium system dependencies
+        run: pnpm --filter ./rentrix-app exec playwright install-deps chromium
+      - name: Install Chromium binary on cache miss
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter ./rentrix-app exec playwright install chromium
+      - name: Run the approved disposable-QA lifecycle
+        run: pnpm qa:lifecycle
+      - name: Upload QA lifecycle diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: hosted-qa-lifecycle-${{ github.run_id }}
+          path: |
+            rentrix-app/playwright-report
+            rentrix-app/test-results
+          if-no-files-found: ignore

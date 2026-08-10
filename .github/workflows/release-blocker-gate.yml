@@ -19,7 +19,6 @@ env:
 
 jobs:
   release-blocker-code:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
     name: release-blocker-code
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -65,7 +64,6 @@ jobs:
         run: bash scripts/check-release-secret-leaks.sh rentrix-app/dist
 
   release-blocker-database:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
     name: release-blocker-database
     runs-on: ubuntu-latest
     timeout-minutes: 50

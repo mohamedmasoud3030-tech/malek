@@ -20,7 +20,13 @@ pnpm qa:lifecycle # explicitly approved hosted-QA financial lifecycle only
 # and docs/SEEDED_STAGING_READINESS_RUNBOOK.md.
 ```
 
-This is the same core sequence `.github/workflows/ci.yml` runs (plus a `pnpm supabase:migration-evidence` preflight step before typecheck). CI sets placeholder `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` values so the app builds without real credentials; do the same locally if you hit Supabase-config errors during build. Browser coverage lives in `.github/workflows/browser-readiness.yml` and runs the Playwright readiness matrix on pull requests. The Release Blocker workflow separately proves the code gate, an isolated Supabase lifecycle, the authenticated single-office journey, and approved Production read-only checks. For optional live read-only migration/schema/RPC/RLS reconciliation, run `pnpm supabase:live-readiness` with `SUPABASE_DB_URL` in an operator environment that has `psql` installed. A 99.9% readiness claim additionally requires completing `docs/RELEASE_EVIDENCE_LEDGER.md` and `docs/SEEDED_STAGING_READINESS_RUNBOOK.md` for the exact release commit.
+Every pull request now runs the application suite, financial suite, local browser matrix, and an isolated Supabase replay with real Auth/RLS/Storage and the invoice → payment → receipt → VOID journey. CI sets placeholder `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` values so the app builds without real credentials; do the same locally if you hit Supabase-config errors during build. The dedicated **Hosted QA Verification** workflow separately proves deployed QA Auth, RLS/API, schema/RPC contracts, and—only after an explicit workflow approval—the mutating financial lifecycle. Production stays outside that mutation path. For optional live read-only migration/schema/RPC/RLS reconciliation, run `pnpm supabase:live-readiness` with `SUPABASE_DB_URL` in an operator environment that has `psql` installed. A 99.9% readiness claim additionally requires completing `docs/RELEASE_EVIDENCE_LEDGER.md` and `docs/SEEDED_STAGING_READINESS_RUNBOOK.md` for the exact release commit.
+
+These commands also support the coding agent's autonomous browser-and-repair
+loop. They are not a substitute for it: when a task affects a real user flow,
+the agent opens the app or QA/preview in browser automation, observes the
+result, fixes defects, and repeats the affected route. The authoritative
+procedure is [`AGENT_QA_RUNTIME.md`](AGENT_QA_RUNTIME.md).
 
 ## What each command does
 
