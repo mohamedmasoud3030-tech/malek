@@ -1,79 +1,81 @@
 # MALEK — الحالة التنفيذية الرسمية للمراحل العشر
 
-> **Snapshot base:** `main@1da93df9576ac044f39f96f347785b76b86d9792`  
-> **Decision state:** `0 BLOCKED / 0 PROVISIONAL`  
-> **الخطة:** `governance/10-stage-master-plan.json`  
-> **تنفيذ الوكيل:** `docs/execution/10_STAGE_AGENT_CHECKLIST_AR.md`  
-> **المراجعة:** `docs/execution/10_STAGE_REVIEW_LEDGER_AR.md`  
-> **نطاق هذا التحديث:** تسوية Evidence المرحلة S03 فقط؛ حالات المراحل الأخرى لا تُمنح Credit إضافيًا دون تسوية مستقلة وفق دفاترها.
+> **Repository reality baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`  
+> **Governed stage authority:** `governance/10-stage-master-plan.json` + Agent/Reviewer ledgers  
+> **Canonical implementation reality:** `docs/source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`  
+> **قاعدة إلزامية:** وجود كود/SQL/اختبارات لا يمنح Stage Credit تلقائيًا، وغياب Credit لا يعني أن الكود غير موجود.
 
-## قاعدة قراءة الحالة
+## لماذا يوجد عمودان للحقيقة؟
 
-- `COMPLETE`: كل بنود Agent وReviewer مكتملة، PR مدمج، وmain أخضر.
-- `IN_PROGRESS`: المرحلة الحالية لها عمل جارٍ على فرع واحد.
-- `PARTIAL`: يوجد تنفيذ قديم أو أجزاء مفيدة، أو اكتمل Agent لكن لم تُراجع المرحلة مستقلًا بعد، ولذلك لا تُحسب مكتملة.
-- `NOT_STARTED`: لا يوجد تنفيذ معتمد وفق الخطة الجديدة.
+المشروع Brownfield. بعض المراحل لديها تنفيذ فعلي سابق أو أحدث من حالة دفاتر الحوكمة، لكن `D18` يمنع الوكيل من منح Reviewer Credit بنفسه. لذلك نعرض:
 
-وجود جدول أو RPC أو صفحة قديمة لا يعطي Credit تلقائيًا. الوكيل يجب أن يفحصها ويثبت توافقها، ثم المراجع يتحقق مستقلًا.
+1. **Governed Credit** — الحالة الرسمية التي يملكها الـmaster plan والـledgers.
+2. **Repository Reality** — ما هو موجود فعليًا في `main` عند الـbaseline، دون ادعاء أنه معتمد أو deployed.
 
-## ملخص الحالة
+هذا الفصل يمنع خطأين سابقين: وصف مرحلة فيها كود بأنها “لم تبدأ إطلاقًا”، أو اعتبار وجود migration/test دليلًا على أن المرحلة “مكتملة”.
 
-| المرحلة | الحالة | Agent | Reviewer | ما تم فعليًا | المتبقي الحاسم |
-|---|---|---:|---:|---|---|
-| S01 — الأساس والحوكمة وتنظيف مساحة العمل | COMPLETE | 8/8 | 8/8 | #1342 و#1343 أُغلقا، #1344 و#1345 دُمجا، القرارات D01–D18 نهائية، الخطة والدفتران والحارسان موجودة على main وكل بوابات #1345 خضراء | لا شيء؛ المرحلة مغلقة |
-| S02 — العزل وسلامة التسويات والاستيراد | PARTIAL | 0/10 | 0/10 | توجد طبقات RLS/RPC وعملية استيراد قديمة | فحص كل SECURITY DEFINER، إصلاح اتفاقيات الملاك، حجز عناصر التسوية، RPC-only، وإصلاح CSV fail-closed |
-| S03 — GL ودليل الحسابات والفترات | PARTIAL | 10/10 | 0/10 | Gap audit؛ company-scoped COA؛ 18-account provisioning؛ immutable DRAFT/POSTED/REVERSED batches؛ server-derived posting/late metadata؛ receipt/payment cutover؛ engine-managed receipt reversal؛ browser account-write lock؛ no-new-legacy-write CI guard؛ GL runbook؛ real two-session event-id concurrency proof. PRs #1387–#1392 مدمجة على main. | `READY_FOR_INDEPENDENT_REVIEW`: المراجع المستقل وحده يختبر Ledger S03 ويقرر Reviewer 10/10؛ ممنوع وصف المرحلة COMPLETE قبل ذلك |
-| S04 — إدارة أملاك الغير | NOT_STARTED | 0/10 | 0/10 | توجد عقود وفواتير وتسويات Legacy | اتفاقيات versioned، lifecycle، signatures، schedule frozen، OWNER/OFFICE creditor postings والأتعاب الصحيحة |
-| S05 — المصروفات والتأمين والرسوم والضريبة والاسترداد | PARTIAL | 0/10 | 0/10 | توجد صفحات وخدمات لبعض المصروفات والتأمين والعمولات | مسارات قيد موحدة، مستفيد التأمين، VAT configurable، late fees، termination، credit notes/refunds |
-| S06 — Master Lease | NOT_STARTED | 0/10 | 0/10 | توجد تسمية تشغيلية فقط، لا وحدة محاسبية كاملة | Head lease، ROU، liability schedule، depreciation، remeasurement، modifications، short-term election |
-| S07 — التقارير والمصالحات والإقفال | PARTIAL | 0/10 | 0/10 | توجد تقارير تشغيلية ومالية متفرقة | GL statements، control reconciliations، cash-flow completeness، close blocking، truthful bank statuses |
-| S08 — تحليل التاريخ | NOT_STARTED | 0/10 | 0/10 | لا يوجد تقرير تحليل معتمد ومجمّد | Read-only inventory لكل الفروق والازدواجيات والاتفاقيات والتأمين وMaster Lease |
-| S09 — التصحيح التاريخي | NOT_STARTED | 0/10 | 0/10 | ممنوع البدء قبل S08 | Correction batches append-only مع before/after واعتماد وعكس |
-| S10 — الاختبارات والPilot والإطلاق | NOT_STARTED | 0/10 | 0/10 | توجد بنية CI واختبارات كثيرة، لكنها ليست دليل إكمال الخطة | Acceptance matrix، live gates، إزالة استثناءات التغطية الواسعة، pilot دورة كاملة، sign-off وإطلاق تدريجي |
+## الحالة الحالية
 
-## ما أُغلق كقرار نهائي
+| المرحلة | Governed Credit | Repository Reality عند baseline | ما يلزم قبل الإغلاق الرسمي |
+|---|---|---|---|
+| S01 — الأساس والحوكمة | COMPLETE | الحوكمة والقرارات والخطة والـguards موجودة | لا شيء جوهري ضمن هذه الحزمة |
+| S02 — العزل وسلامة التسويات والاستيراد | PARTIAL | migrations لعزل الشركات وowner-agreement hardening وsettlement reservations/RPCs واختبارات موجودة؛ focused isolation tests نجحت في التدقيق | مراجعة/اعتماد مستقل + live company/Auth/RLS proof + غلق أي sensitive direct-write gaps |
+| S03 — GL ودليل الحسابات والفترات | PARTIAL | نواة GL، 18-account provisioning، periods، posting/reversal/idempotency وreceipt wiring موجودة؛ focused Stage-3 tests نجحت | Reviewer credit مستقل + أي release reconciliation/runtime gates المتبقية |
+| S04 — إدارة أملاك الغير | NOT_STARTED | **يوجد تنفيذ فعلي**: `20260809010000_s04_property_management_gl_rpcs.sql` واختبارات `src/s4/`؛ لا يعني ذلك اكتمال الرحلة أو Stage Credit | إغلاق owner-agency E2E: fee wiring، contract/agreement lifecycle، due-from-owner/deposits/settlements/reconciliation ثم مراجعة مستقلة |
+| S05 — المصروفات والتأمين والرسوم والضريبة والاسترداد | PARTIAL | توجد أجزاء تشغيلية وGL لعدة مسارات | غلق deposit/tax/refund/termination/late-fee matrix وربطها بالمصالحات |
+| S06 — Master Lease | NOT_STARTED | **يوجد تنفيذ فعلي**: `20260809020000_s06_master_lease_gl_lifecycle.sql`، pgTAP/integration/unit contract tests؛ لا يوجد دليل كافٍ على E2E/reporting completion | إكمال UI/service/RPC/report/reconciliation + truthful IFRS labeling + Reviewer credit |
+| S07 — التقارير والمصالحات والإقفال | PARTIAL | تقارير/Accounting surfaces وGL موجودة جزئيًا؛ الـmaster plan نفسه يسجل PARTIAL | إكمال financial statements، control reconciliations، cash flow، close blocking وcurrent-SHA evidence |
+| S08 — تحليل التاريخ | NOT_STARTED | **يوجد تنفيذ فعلي**: `scripts/s08/` و`evidence/s08/` و`src/s08/` tests؛ لكنه لم يحصل على governed approval/frozen analysis credit | مراجعة مستقلة، frozen baseline، approval/sign-off قبل أي S09 writes |
+| S09 — التصحيح التاريخي | NOT_STARTED | لا يجوز الاستدلال على التصحيح من وجود S08 code | ممنوع البدء قبل اعتماد S08؛ بعدها append-only scoped corrections فقط |
+| S10 — الاختبارات والPilot والإطلاق | NOT_STARTED | بنية CI/QA واختبارات كثيرة موجودة؛ توجد release blockers/baseline failures خارج هذا doc-only branch | hosted QA، zero release blockers، live config/backup proof، one-office pilot، reconciliation، accountant/owner sign-off |
 
-- Invoice/receivable حسب `collection_role`.
-- RATE على التحصيل وFIXED_MONTHLY يوميًا.
-- Brokerage/Renewal/Setup recognition.
-- Owner expense وOffset order.
-- Deposit beneficiary/application/reversal.
-- Monthly periods وHard Close غير قابل لإعادة الفتح.
-- Master Lease measurement/modification/short-term election.
-- Tax Profile/Tax Codes بلا hard-coded rate.
-- Late fees بلا compounding وبحد أقصى.
-- Early termination وسجل الإنهاء وعدم حذف الجدول.
-- Maker–Checker والتوقيع قبل التفعيل.
-- Onboarding templates وإعفاءات Admin الموثقة.
-- Agreement/contract versioning.
-- Settlement reservations/refunds.
-- Credit notes/void/refund.
-- Bank CSV fail-closed.
-- Historical append-only correction.
+## أدلة Repository Reality المهمة
+
+- S02 owner agreement isolation: `supabase/migrations/20260804000000_fix_owner_agreement_company_isolation.sql` و`supabase/tests/owner_agreement_company_isolation.sql`.
+- S02 settlement reservation: `20260804010000_fa003_owner_settlement_input_reservation_foundation.sql` و`20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql`.
+- S03 GL core: `20260804030000_stage3_gl_core_chart_of_accounts_and_periods.sql`, `20260804030200_stage3_gl_core_posting_engine_and_rpcs.sql`.
+- S04 property-management GL: `20260809010000_s04_property_management_gl_rpcs.sql`, `rentrix-app/src/s4/s04-property-management-gl.test.ts`.
+- S06 master-lease GL: `20260809020000_s06_master_lease_gl_lifecycle.sql`, `supabase/tests/master_lease_gl_lifecycle.sql`, `rentrix-app/src/s6/`.
+- S08 analysis: `scripts/s08/`, `evidence/s08/`, `rentrix-app/src/s08/`.
+
+## نتائج التدقيق المركز المرتبطة بالـbaseline
+
+- 139/139: navigation/permissions + S03 + S04 + S06 + S08 focused suites.
+- 38/38: company-isolation and permission-request lifecycle focused suites.
+- الإجمالي: **177/177** focused tests passed.
+- TypeScript build: passed with pnpm `10.11.1`.
+- Production build: passed with pnpm `10.11.1`.
+
+هذه النتائج تخص Repository Reality فقط. لا تعني أن hosted/live environment أو Reviewer ledger تم اعتمادهما.
+
+## ما تم حسمه كقرارات وليس كـStage Credit
+
+`governance/final-decision-register.json` يقفل D01–D18، ومنها:
+
+- receivable حسب `collection_role`؛
+- RATE on collection وFIXED_MONTHLY daily accrual؛
+- Due from Owner والـoffset rules؛
+- deposit liability/application/reversal؛
+- periods/late posting؛
+- independent Master Lease؛
+- configurable tax؛
+- Maker-Checker/signatures؛
+- agreement/contract versioning؛
+- settlement reservations/refunds؛
+- credit note/void/refund؛
+- fail-closed Bank CSV؛
+- read-only analysis before append-only correction؛
 - Agent/Reviewer separation.
 
-## الفجوات المكتشفة التي لم تُنسَ
+وجود قرار نهائي يعني أن التنفيذ يجب أن يتبعه؛ لا يعني أن التنفيذ اكتمل.
 
-1. `update_owner_agreement_atomic` يحتاج عزل شركة وقفل صف ومنع تغيير owner.
-2. عناصر التحصيل والمصروف يمكن أن تتكرر في أكثر من تسوية دون روابط حجز ذرية.
-3. بعض الكتابات المالية الحساسة يجب إغلاقها خلف RPC فقط.
-4. Bank CSV على main لا يثبت حتى الآن fail-closed/counts/limits/3dp بصورة كافية؛ إصلاح فرع #1343 لم يُدمج وسيعاد من main.
-5. مصروفات الصيانة/المالك/المستأجر تحتاج مسار تخصيص واضح ودعم Backend حقيقي قبل أي UI يدعي split.
-6. Master Lease غير مكتمل محاسبيًا.
-7. استخدام التأمين ومسارات العكس تحتاج قيودًا واختبارات كاملة.
-8. تغطية Sonar الواسعة المستثناة (`**/*.ts`, `**/*.tsx`) يجب إزالتها أو تضييقها في S10 وإثبات Coverage حقيقية.
-9. لا يجوز استخدام أرقام اختبارات أو Advisor قديمة كدليل حالي؛ Evidence دائمًا مرتبط بالـSHA الحالي.
-10. الفرع `business/domain-contract-foundation` ملغى كمصدر تنفيذ؛ ممنوع دمجه أو cherry-pick منه.
+## الممنوع
 
-## المرحلة التالية
+- لا يغيّر الوكيل Reviewer Ledger.
+- لا يمنح Stage Credit من تلقاء نفسه.
+- لا يكتب “NOT_STARTED = no code exists”.
+- لا يكتب “migration/test exists = stage COMPLETE”.
+- لا يبدأ historical correction/backfill قبل governed S08 approval.
+- لا يستخدم نتيجة CI/test من SHA مختلف كدليل حالي دون ذكرها.
 
-S03 أصبحت `READY_FOR_INDEPENDENT_REVIEW` من جهة Agent فقط. الخطوة الإلزامية لإغلاقها هي مراجعة مستقلة لدفتر `10_STAGE_REVIEW_LEDGER_AR.md`; لا يغيّر الوكيل أي Reviewer checkbox ولا يصف S03 بأنها COMPLETE. أي تحضير للمرحلة التالية قبل إغلاق المراجعة يبقى Audit/Read-only فقط ولا يمنح S04 Credit ولا يضيف قيودًا محاسبية جديدة.
-
-## ممنوعات الوكيل
-
-- ممنوع تغيير القرارات بحجة أن الكود القديم مختلف.
-- ممنوع تعليم Reviewer Ledger.
-- ممنوع كتابة «تم» دون Evidence.
-- ممنوع دمج مرحلة أخرى أو إصلاح غير معلن.
-- ممنوع استخدام نتائج CI من SHA مختلف.
-- ممنوع حذف التاريخ المالي أو تعديل Migration قديمة.
+للحالة التفصيلية لكل قاعدة وفجوة راجع `docs/source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`، ولخطة الإغلاق راجع `08_CLOSEOUT_ROADMAP_AND_RELEASE_GATES.md`.

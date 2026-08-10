@@ -25,6 +25,8 @@ export type ReplayResult = {
   failed: { file: string; error: string }[];
 };
 
+const LATER_GOVERNED_STAGE_MARKERS = ['_s03_', '_s04_', '_s06_', '_s08_'] as const;
+
 export async function createFullReplayedDatabase(options?: {
   throughMigration?: string;
   excludeMigrations?: string[];
@@ -45,10 +47,14 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  if (options?.excludeMigrations) {
-    files = files.filter((f) => {
-      return !options.excludeMigrations!.some((ex) => f.includes(ex));
-    });
+  // Callers that provide explicit exclusions are checkpoint/isolation suites.
+  // Keep later governed S03/S04/S06/S08 migrations out of those historical
+  // baselines. Current stage suites call with writeEvidence:false and no
+  // explicit exclusions, so they still receive the complete migration chain.
+  const checkpointExcludes = options?.excludeMigrations ? [...LATER_GOVERNED_STAGE_MARKERS] : [];
+  const excludes = [...checkpointExcludes, ...(options?.excludeMigrations ?? [])];
+  if (excludes.length > 0) {
+    files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
   }
 
   const applied: string[] = [];
@@ -74,7 +80,6 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  // Only write replay-coverage inside evidence/p1/ if writeEvidence is explicitly true (retaining default P1 behavior)
   if (options?.writeEvidence === true) {
     mkdirSync(evidenceDir, { recursive: true });
     writeFileSync(

@@ -1,10 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 192" fill="none" role="img" aria-labelledby="malek-mark-title">
   <title id="malek-mark-title">MALEK</title>
-  <g id="malek-angular-m">
-    <path fill="#071B3C" d="M28 160 78 32l50 76-24 26-24-38-25 64H28Z"/>
-    <path fill="#102A54" d="m78 32 50 76-24 26-43-65 17-37Z"/>
-    <path fill="#18B9E6" d="m128 108 50-76 50 128h-27l-25-64-24 38-24-26Z"/>
-    <path fill="#087BAE" d="m128 108 24 26 43-65-17-37-50 76Z"/>
-    <path fill="#FFFFFF" d="m104 134 24-26 24 26-24 38-24-38Z" opacity=".96"/>
-  </g>
+  <path fill="#071B3C" d="M28 160V54c0-8 9-13 16-9l84 53-24 31-44-28v59H28Z"/>
+  <path fill="#1688BC" d="M228 160V54c0-8-9-13-16-9l-84 53 24 31 44-28v59h32Z"/>
+  <path fill="#18B9E6" d="m128 98 84-53c7-4 16 1 16 9v18l-76 57-24-31Z"/>
+  <path fill="#102A54" d="M28 54c0-8 9-13 16-9l84 53-24 31-76-57V54Z" opacity=".72"/>
+  <path fill="#FFFFFF" d="m104 129 24-31 24 31v31h-48v-31Z"/>
 </svg>

@@ -99,6 +99,10 @@ beforeAll(async () => {
       && !f.includes('phase2_financial_integrity')
       && !f.includes('phase3a1c_owner_settlement')
       && !f.includes('20260804') // FA-003 owner-settlement input reservation
+      && !f.includes('_s03_')
+      && !f.includes('_s04_')
+      && !f.includes('_s06_')
+      && !f.includes('_s08_')
     )
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];
@@ -167,20 +171,15 @@ describe('P1 forward → verify → rollback → fingerprint', () => {
     expect(create[0].body).toContain('calculate_owner_net_payout');
     expect(create[0].body).toContain('server_derived');
 
-    // the P1 amount-immutability guard exists after the forward apply
     const guard = await q(
       `select (select count(*)::int from pg_trigger where not tgisinternal and tgname = 'p1_owner_settlements_amounts_immutable') as tg,
               (select count(*)::int from pg_proc where proname = 'enforce_owner_settlement_amount_immutability') as fn`,
     );
     expect(guard[0]).toEqual({ tg: 1, fn: 1 });
 
-    // pay/approve bodies untouched by P1 (already proven by md5 in the probe).
     const unchanged = await q(
       `SELECT md5(p.prosrc) AS md5 FROM pg_proc p WHERE p.oid = 'public.pay_owner_settlement_atomic(jsonb)'::regprocedure`,
     );
-    // Reference is the replayed baseline body at the P0 checkpoint; P1 must
-    // leave it byte-for-byte identical. Refresh only when a migration outside
-    // P1 legitimately changes the function (see history).
     expect(unchanged[0].md5).toBe('db166a442b07ad83e143a9ed047dc8db');
   }, 120_000);
 
@@ -189,24 +188,22 @@ describe('P1 forward → verify → rollback → fingerprint', () => {
     fpB = await fingerprint();
 
     const calcAfter = (fpB as any).functions.filter((f: any) => f.name === 'calculate_owner_net_payout');
-    expect(calcAfter).toEqual([]); // the only object P1 introduced is gone
+    expect(calcAfter).toEqual([]);
 
     expect(JSON.stringify(fpB) === JSON.stringify(fpA)).toBe(true);
 
-    // the P1 trigger + its function are gone too
     const leftovers = await q(
       `select (select count(*)::int from pg_trigger where not tgisinternal and tgname = 'p1_owner_settlements_amounts_immutable') as tg,
               (select count(*)::int from pg_proc where proname in ('calculate_owner_net_payout', 'enforce_owner_settlement_amount_immutability')) as fn`,
     );
     expect(leftovers[0]).toEqual({ tg: 0, fn: 0 });
 
-    // directive §6: re-applying P1 after the rollback succeeds again
     await db.exec(withHarnessTransforms(readFileSync(join(migDir, fixFile), 'utf8'), fixFile));
     const reapplied = await q(
       `select count(*)::int as n from pg_proc where proname in ('calculate_owner_net_payout', 'enforce_owner_settlement_amount_immutability')`,
     );
     expect(reapplied[0].n).toBe(2);
-    await db.exec(readFileSync(rollbackPath, 'utf8')); // leave the DB at baseline
+    await db.exec(readFileSync(rollbackPath, 'utf8'));
 
     mkdirSync(evidenceDir, { recursive: true });
     if (process.env.WRITE_EVIDENCE === 'true') {
@@ -241,8 +238,6 @@ describe('P1 forward → verify → rollback → fingerprint', () => {
     expect(rbTop).toContain('drop function if exists public.calculate_owner_net_payout(uuid, date, date, uuid);');
     expect(rbTop).toContain('drop trigger if exists p1_owner_settlements_amounts_immutable on public.owner_settlements;');
     expect(rbTop).toContain('drop function if exists public.enforce_owner_settlement_amount_immutability();');
-    // rollback restores the create body; it must NOT re-grant the write RPC
-    // (authenticated-only posture from 20260723000000 is preserved throughout).
     expect(rbTop).toContain('create or replace function public.create_owner_settlement_draft_atomic');
     expect(rbTop.includes('grant execute on function public.create_owner_settlement_draft_atomic')).toBe(false);
     expect(rbTop.includes('revoke all on function public.create_owner_settlement_draft_atomic')).toBe(false);

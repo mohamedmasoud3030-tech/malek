@@ -36,14 +36,19 @@ export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   'unit_archive_history',
   'contract_workflow',
   '20260804', // FA-003 owner-settlement input reservation (redefines settlement RPCs)
-  // S02 is a later security stage. Replaying it inside the P0 checkpoint would
-  // mask the exact pre-P0 row visibility and alter RPC fingerprints that P0
-  // forward/rollback tests intentionally compare.
+  'fa003_',
+  'pay_commission_atomic',
   's02_financial_direct_write_hardening_payments_expenses',
   's02_remove_residual_financial_write_policies',
   's02_financial_rpc_auth_sqlstate',
-  // Stage 3 business document references: independent of the P0 isolation fix
-  // and measured at its own checkpoint (see src/p3/stage3-business-references.test.ts).
+  's02_revoke_internal_owner_settlement_helper_execute',
+  's02_owner_settlement_stale_total_rejection',
+  's02_bank_csv_import_server_guards',
+  '_s03_',
+  '_s04_',
+  '_s06_',
+  '_s08_',
+  'stage3_',
   'business_document_references',
 ] as const;
 
@@ -59,15 +64,25 @@ export async function createReplayedDatabase(options?: {
     .filter((f) => f.endsWith('.sql'))
     .sort((a, b) => a.localeCompare(b));
 
-  // P0 causality and rollback equivalence are measured at the P0 checkpoint,
-  // before later stages redefine the same policies and functions.
-  const excludes = options?.excludeMigrations ?? P0_CHECKPOINT_EXCLUDED_MIGRATIONS;
-  files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
+  if (!options) {
+    // The default P0 harness represents the exact historical schema immediately
+    // before the P0 fix. Do not replay future migrations and try to maintain an
+    // ever-growing blacklist: later migrations can introduce dependencies and
+    // redefine helpers that the historical rollback intentionally removes.
+    const p0Index = files.findIndex((f) => f.includes('p0_company_isolation'));
+    if (p0Index === -1) {
+      throw new Error('P0 migration not found; cannot establish the pre-P0 checkpoint');
+    }
+    files = files.slice(0, p0Index);
+  } else {
+    const excludes = options.excludeMigrations ?? P0_CHECKPOINT_EXCLUDED_MIGRATIONS;
+    files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
 
-  if (options?.throughMigration) {
-    const targetIdx = files.findIndex((f) => f.includes(options.throughMigration!));
-    if (targetIdx !== -1) {
-      files = files.slice(0, targetIdx + 1);
+    if (options.throughMigration) {
+      const targetIdx = files.findIndex((f) => f.includes(options.throughMigration!));
+      if (targetIdx !== -1) {
+        files = files.slice(0, targetIdx + 1);
+      }
     }
   }
 
@@ -94,8 +109,6 @@ export async function createReplayedDatabase(options?: {
     }
   }
 
-  // Only write replay-coverage.json inside evidence/p0/ if options are empty (representing default P0 behavior),
-  // preventing rewriting historical evidence directories.
   if (!options) {
     mkdirSync(evidenceDir, { recursive: true });
     writeFileSync(

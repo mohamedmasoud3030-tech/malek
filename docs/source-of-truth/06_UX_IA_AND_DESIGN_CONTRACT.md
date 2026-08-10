@@ -1,0 +1,123 @@
+# MALEK Canonical Pack — Document 6: UX, IA, and Design Contract
+
+> **Status:** CANONICAL  
+> **Baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`
+
+## UX contract
+
+MALEK is Arabic-first, RTL and mobile-conscious, but desktop remains a first-class operational surface. IA is defined by the implemented route/navigation contract, not by stale screenshots or legacy page names.
+
+## Canonical UX/IA rules
+
+| Rule ID | Canonical rule |
+|---|---|
+| `UX-001` | The interface is Arabic-first/RTL, responsive and mobile-conscious; dense operational screens must remain usable on both phone and desktop. |
+| `UX-002` | Canonical navigation/routes follow `route-contract.ts` and `route-tree.ts`; aliases/views preserve compatibility instead of inventing duplicate page authorities. |
+| `UX-003` | Financial operations use the `/financials` hub plus canonical `/finance/*` section routes/view bindings; legacy `/invoices`, `/receipts`, `/expenses`, `/deposits`, etc. are compatibility surfaces, not separate information architectures. |
+| `UX-004` | `/reports` (Accounting & Reports) remains a distinct top-level workspace and must not be visually or conceptually collapsed into Financials. |
+| `UX-005` | People is the navigation root for people/owners/tenants and related interactions; owner/tenant dossiers may have first-class routes while remaining part of the People domain. |
+| `UX-006` | Maintenance/Services is an operational root; Service Providers is a company-scoped subordinate workflow with its own list/detail/create/edit routes and permissions. |
+| `UX-007` | AI Assistant is a separate `/ai-assistant` route; it is not embedded as accounting authority or a Reports tab. |
+| `UX-008` | Shared design tokens/components, company-aware money/date formatting, accessible states, printing/document guards and consistent loading/empty/error/permission states form one design contract; parallel token systems and hidden unsafe handlers are not allowed. |
+
+## Current canonical route reality
+
+Evidence: `rentrix-app/src/app/navigation/route-contract.ts`.
+
+### Top-level operational roots
+
+- `/dashboard`
+- `/people`
+- `/properties`
+- `/lands`
+- `/contracts`
+- `/maintenance` (conceptually Services)
+- `/financials`
+- `/commissions`
+- `/reports`
+- `/ai-assistant`
+- `/settings`
+
+Not every route above is equally release-critical. Presence in the route contract proves the implemented navigation surface, not completion of its business lifecycle.
+
+### People domain
+
+- `/people`
+- `/owners`, `/owners/$ownerId`, `/owners/$ownerId/edit`
+- `/tenants`, `/tenants/$tenantId`
+- `/leads`
+- `/communication`
+
+Owners and tenants remain dossiers/workspaces under the People navigation root rather than being treated as unrelated products.
+
+### Properties and assets
+
+- `/properties`, create/detail/edit
+- `/units` binds into the Properties section
+- `/lands` is a separate first-class asset route where implemented
+
+### Services
+
+- `/maintenance`
+- `/service-providers`, create/detail/edit
+- `/utilities` as an operational section/view
+- document-vault surfaces under operations where the route contract maps them
+
+### Financials
+
+Canonical section routes bind into the Financials hub:
+
+- `/finance/collections`
+- `/finance/expenses`
+- `/finance/deposits`
+- `/finance/banking`
+
+Compatibility routes such as `/invoices`, `/receipts`, `/expenses`, `/arrears`, `/deposits`, `/owner-settlements` and `/bank-reconciliation` bind to hub sections/views. Documentation must not invent non-existent routes such as `/financials/receipts` when the route contract uses a hub/view binding instead.
+
+### Reports and AI
+
+`/reports` is independent. `/ai-assistant` is independent. Neither is a nested Financials tab by canonical IA.
+
+## Dossier contract
+
+Owner, tenant, person and property detail surfaces present operational context, related contracts/documents/activity and carefully labeled financial context. They do not relabel tenant receivables as owner balances or display unscoped activity from another entity/company.
+
+## Permission UX
+
+Navigation visibility and button state must reflect effective permission, but the backend remains authoritative. A user with a granted write capability should not see a global “read-only” message that contradicts their effective grant; unrelated actions remain individually gated.
+
+Permission requests that require action must be visibly actionable, with enough requester/permission/state/reason context to review them without guesswork.
+
+## Mobile/desktop behavior
+
+- Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer.
+- Long contract/agreement forms may use mobile steppers while desktop retains an efficient single-scroll workflow.
+- Shared entity tables preserve the most important secondary datum on mobile and use disclosure/expansion for the rest.
+- Safe-area/sticky actions must not hide validation or prevent access to submit/cancel.
+
+## Design system
+
+Use the repository’s canonical design tokens/shared enterprise components. Do not create a second token layer for one feature. Money uses company-aware formatting and the canonical OMR precision contract; hard-coded currency/decimal presentation is not authoritative.
+
+## State contract
+
+Every protected/loaded surface must have intentional loading, empty, error and permission-denied states. A route must not render a blank screen merely because a query failed or data is absent.
+
+## Printing and documents
+
+Print/PDF controls require real company/document readiness. Guard the action handler as well as the visible button; hiding/disabling a button is not sufficient if the handler can still run through another path. Signed versions and generated financial/legal documents must preserve the correct company, party, currency and data snapshot.
+
+## Accessibility
+
+Text contrast, focus order, keyboard interaction, dialog labeling, touch targets and semantic tables/forms must remain compatible with WCAG-oriented enterprise use. Small helper text must not become unreadable simply to reduce density.
+
+## Evidence anchors
+
+- `rentrix-app/src/app/navigation/route-contract.ts`
+- `rentrix-app/src/app/router/route-tree.ts`
+- `rentrix-app/src/app/navigation/app-nav-items.test.ts`
+- `rentrix-app/src/app/navigation/legacy-compatibility.test.ts`
+- `rentrix-app/src/features/auth/permissions.ts`
+- visual/IA decisions in `docs/decisions/` and `docs/ui-ux/`
+
+Actual implementation/verification gaps are owned by Document 7 rather than hidden inside this design contract.

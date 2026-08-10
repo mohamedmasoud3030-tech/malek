@@ -6,274 +6,118 @@ import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/re
 import { LoginPage } from './login-page';
 
 const mockLogin = vi.fn();
-const mockNavigate = vi.fn();
+vi.mock('@/hooks/use-auth', () => ({ useAuth: () => ({ login: mockLogin }) }));
+vi.mock('@/lib/runtime-diagnostics', () => ({ getEnvDiagnostics: () => [] }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-vi.mock('@tanstack/react-router', () => ({
-  useRouter: () => ({ navigate: mockNavigate }),
-}));
+describe('LoginPage — minimal SaaS contract', () => {
+  afterEach(() => cleanup());
 
-vi.mock('@/hooks/use-auth', () => ({
-  useAuth: () => ({ login: mockLogin }),
-}));
-
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      onAuthStateChange: () => ({
-        data: { subscription: { unsubscribe: vi.fn() } },
-      }),
-    },
-  },
-}));
-
-vi.mock('@/lib/runtime-diagnostics', () => ({
-  getEnvDiagnostics: () => [],
-}));
-
-vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
-}));
-
-describe('LoginPage — structural contract', () => {
-  it('renders the PWA brand and login form together', () => {
+  it('renders the canonical brand, focused login copy and no promotional panel', () => {
     const html = renderToStaticMarkup(<LoginPage />);
     expect(html).toContain('data-login-surface');
-    expect(html).toContain('data-login-main');
-    expect(html).toContain('data-login-brand');
-    expect(html).toContain('MALEK');
-    expect(html).toContain('كل أملاكك في مكان واحد');
-    expect(html).toContain('>تسجيل الدخول<');
-    expect(html).not.toContain('>تسجيل الدخول</h1>');
-    expect(html).not.toContain('مرحباً بعودتك');
-  });
-
-  it('uses the exact PWA icon and promotes the enlarged tagline to the page heading', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
+    expect(html).toContain('data-login-card');
     expect(html).toContain('src="/malek-lockup.svg"');
-    expect(html).toContain('data-malek-canonical-lockup');
-    expect(html).toContain('data-login-tagline');
-    expect(html).toContain('text-lg');
-    expect(html).toContain('sm:text-xl');
+    expect(html).toContain('مرحبًا بعودتك');
+    expect(html).toContain('سجّل الدخول إلى مساحة عملك في MALEK');
+    expect(html).not.toContain('كل أملاكك في مكان واحد');
+    expect(html).not.toContain('data-command-center-panel');
   });
 
-  it('does NOT contain security badges or secondary descriptions', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).not.toContain('دخول آمن لمساحة العمل');
-    expect(html).not.toContain('جلسة عمل محمية');
-    expect(html).not.toContain('أدخل بيانات حسابك للانتقال');
-  });
-
-  it('does NOT contain marketing-panel copy from previous iterations', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).not.toContain('إدارة واضحة للأصول');
-    expect(html).not.toContain('متابعة مالية أسرع');
-    expect(html).not.toContain('قرارات أدق');
-  });
-
-  it('has correct autoComplete attributes on email and password', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('autoComplete="email"');
-    expect(html).toContain('autoComplete="current-password"');
-  });
-
-  it('links labels to inputs via htmlFor/id', () => {
+  it('keeps accessible field contracts and safe-area layout', () => {
     const html = renderToStaticMarkup(<LoginPage />);
     expect(html).toContain('for="login-email"');
     expect(html).toContain('id="login-email"');
     expect(html).toContain('for="login-password"');
     expect(html).toContain('id="login-password"');
-  });
-
-  it('has a password visibility toggle button with aria-label', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('إظهار كلمة المرور');
-  });
-
-  it('does NOT contain a forgot-password link (no such flow exists)', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
+    expect(html).toContain('autoComplete="email"');
+    expect(html).toContain('autoComplete="current-password"');
+    expect(html).toContain('safe-top-app');
+    expect(html).toContain('safe-bottom-overlay');
     expect(html).not.toContain('نسيت');
     expect(html).not.toContain('reset-password');
   });
 
-  it('is a single centered auth card — no split layout, no promotional side panel', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('data-login-card');
-    expect(html).not.toContain('data-command-center-panel');
-    expect(html).not.toContain('md:w-[60%]');
-    expect(html).not.toContain('md:flex-row');
-  });
-
-  it('keeps the brand lockup restrained instead of a giant artwork', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('data-malek-canonical-lockup');
-    expect(html).not.toContain('size-28');
-    expect(html).not.toContain('size-32');
+  it('keeps support compact until requested', () => {
+    render(<LoginPage />);
+    expect(screen.getByRole('button', { name: /تحتاج مساعدة؟ تواصل معنا/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('+968 9192 8186')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /تحتاج مساعدة؟ تواصل معنا/i }));
+    expect(screen.getByText('+968 9192 8186')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /تحتاج مساعدة؟ تواصل معنا/i })).toHaveAttribute('aria-expanded', 'true');
   });
 });
 
 describe('LoginPage — interaction behaviour', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockLogin.mockResolvedValue(undefined);
-  });
-
+  beforeEach(() => { vi.clearAllMocks(); mockLogin.mockResolvedValue(undefined); });
   afterEach(() => cleanup());
 
-  function setup() {
-    return render(
-      <div dir="rtl">
-        <LoginPage />
-      </div>,
-    );
-  }
+  function setup() { return render(<div dir="rtl"><LoginPage /></div>); }
 
-  it('calls login with the entered email and password on submit', async () => {
+  it('submits credentials once', async () => {
     setup();
-    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), {
-      target: { value: 'test@example.com' },
-    });
-    fireEvent.input(screen.getByLabelText('كلمة المرور', { selector: 'input' }), {
-      target: { value: 'secret123' },
-    });
+    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), { target: { value: 'test@example.com' } });
+    fireEvent.input(screen.getByLabelText('كلمة المرور', { selector: 'input' }), { target: { value: 'secret123' } });
     fireEvent.submit(screen.getByRole('button', { name: /تسجيل الدخول/i }).closest('form')!);
     await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'secret123'));
     expect(mockLogin).toHaveBeenCalledTimes(1);
   });
 
-  it('submits on Enter key in the password field', async () => {
+  it('submits from Enter in the password field', async () => {
     setup();
-    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), {
-      target: { value: 'a@b.com' },
-    });
-    const pw = screen.getByLabelText('كلمة المرور', { selector: 'input' });
-    fireEvent.input(pw, { target: { value: 'pw' } });
-    fireEvent.submit(pw.closest('form')!);
-    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('a@b.com', 'pw'));
+    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), { target: { value: 'enter@example.com' } });
+    const password = screen.getByLabelText('كلمة المرور', { selector: 'input' });
+    fireEvent.input(password, { target: { value: 'secret123' } });
+    fireEvent.keyDown(password, { key: 'Enter' });
+    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('enter@example.com', 'secret123'));
+    expect(mockLogin).toHaveBeenCalledTimes(1);
   });
 
-  it('disables the submit button while login is in progress (prevents double-submit)', async () => {
+  it('prevents double-submit while login is pending', async () => {
     let resolveLogin!: () => void;
     mockLogin.mockImplementation(() => new Promise<void>((resolve) => { resolveLogin = resolve; }));
     setup();
-    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), {
-      target: { value: 'x@y.com' },
-    });
-    fireEvent.input(screen.getByLabelText('كلمة المرور', { selector: 'input' }), {
-      target: { value: 'pw' },
-    });
-    const submitBtn = screen.getByRole('button', { name: /تسجيل الدخول/i });
-    fireEvent.submit(submitBtn.closest('form')!);
+    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), { target: { value: 'x@y.com' } });
+    fireEvent.input(screen.getByLabelText('كلمة المرور', { selector: 'input' }), { target: { value: 'pw' } });
+    const form = screen.getByRole('button', { name: /تسجيل الدخول/i }).closest('form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
     await waitFor(() => expect(screen.getByRole('button', { name: /جارٍ التحقق.../i })).toBeDisabled());
     expect(mockLogin).toHaveBeenCalledTimes(1);
     resolveLogin();
     await waitFor(() => expect(screen.getByRole('button', { name: /تسجيل الدخول/i })).not.toBeDisabled());
   });
 
-  it('renders actionable phone and email support links', () => {
-    const { container } = setup();
-    const footer = container.querySelector('[data-contact-footer]');
-    expect(footer).toBeInTheDocument();
-    expect(footer).toHaveTextContent('+968 9192 8186');
-    expect(footer).toHaveTextContent('Ahmedmasoud@outlook.com');
-    const links = footer?.querySelectorAll('a') ?? [];
-    expect(links.length).toBeGreaterThan(0);
-    expect(footer?.querySelector('a[href^="tel:"]')).toBeInTheDocument();
-    expect(footer?.querySelector('a[href^="mailto:"]')).toBeInTheDocument();
-    expect(screen.queryByText('تحتاج مساعدة؟ تواصل معنا')).not.toBeInTheDocument();
-  });
-
-  it('shows a safe generic error message when login fails', async () => {
-    mockLogin.mockRejectedValue(new Error('Invalid login credentials'));
+  it('shows a safe generic error and clears it on edit', async () => {
+    mockLogin.mockRejectedValueOnce(new Error('Invalid login credentials'));
     setup();
-    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), {
-      target: { value: 'bad@x.com' },
-    });
-    fireEvent.input(screen.getByLabelText('كلمة المرور', { selector: 'input' }), {
-      target: { value: 'wrong' },
-    });
+    const email = screen.getByLabelText('البريد الإلكتروني', { selector: 'input' });
+    fireEvent.input(email, { target: { value: 'bad@x.com' } });
+    fireEvent.input(screen.getByLabelText('كلمة المرور', { selector: 'input' }), { target: { value: 'wrong' } });
     fireEvent.submit(screen.getByRole('button', { name: /تسجيل الدخول/i }).closest('form')!);
-    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
-    const form = screen.getByRole('button', { name: /تسجيل الدخول/i }).closest('form')!;
-    expect(form.getAttribute('aria-describedby')).toBe('login-error');
-    expect(screen.getByRole('alert')).toHaveTextContent('تعذر تسجيل الدخول. راجع البريد الإلكتروني وكلمة المرور ثم حاول مرة أخرى.');
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('تعذر تسجيل الدخول'));
     expect(screen.getByRole('alert')).not.toHaveTextContent('Invalid login credentials');
-    expect(screen.getByRole('button', { name: /تسجيل الدخول/i })).toBeEnabled();
+    fireEvent.input(email, { target: { value: 'new@x.com' } });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('toggles password visibility', () => {
     setup();
-    const pwInput = screen.getByLabelText('كلمة المرور', { selector: 'input' });
-    expect(pwInput).toHaveAttribute('type', 'password');
+    const password = screen.getByLabelText('كلمة المرور', { selector: 'input' });
     fireEvent.click(screen.getByRole('button', { name: /إظهار كلمة المرور/i }));
-    expect(pwInput).toHaveAttribute('type', 'text');
-    expect(screen.getByRole('button', { name: /إخفاء كلمة المرور/i })).toBeInTheDocument();
+    expect(password).toHaveAttribute('type', 'text');
     fireEvent.click(screen.getByRole('button', { name: /إخفاء كلمة المرور/i }));
-    expect(pwInput).toHaveAttribute('type', 'password');
+    expect(password).toHaveAttribute('type', 'password');
   });
 
-  it('clears form error when user starts typing again', async () => {
-    mockLogin.mockRejectedValueOnce(new Error('بيانات الدخول غير صحيحة'));
+  it('reports Caps Lock state without blocking entry', () => {
     setup();
-    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), {
-      target: { value: 'e@x.com' },
+    const password = screen.getByLabelText('كلمة المرور', { selector: 'input' });
+    const event = new KeyboardEvent('keyup', { key: 'A', bubbles: true });
+    Object.defineProperty(event, 'getModifierState', {
+      value: (key: string) => key === 'CapsLock',
     });
-    fireEvent.input(screen.getByLabelText('كلمة المرور', { selector: 'input' }), {
-      target: { value: 'pw' },
-    });
-    fireEvent.submit(screen.getByRole('button', { name: /تسجيل الدخول/i }).closest('form')!);
-    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
-    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), {
-      target: { value: 'new@x.com' },
-    });
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  });
-});
-
-describe('LoginPage — layout and accessibility', () => {
-  afterEach(() => cleanup());
-
-  it('renders with dir=rtl for Arabic RTL layout', () => {
-    expect(renderToStaticMarkup(<LoginPage />)).toContain('dir="rtl"');
-  });
-
-  it('renders the login surface container', () => {
-    expect(renderToStaticMarkup(<LoginPage />)).toContain('data-login-surface');
-  });
-
-  it('uses safe area utility classes for notched devices', () => {
-    const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('safe-top-app');
-    expect(html).toContain('safe-bottom-overlay');
-  });
-
-  it('caps-lock-warning is not rendered initially (only on keyup detection)', () => {
-    expect(renderToStaticMarkup(<LoginPage />)).not.toContain('caps-lock-warning');
-  });
-
-  it('password input has aria-invalid available for error state linking', () => {
-    expect(renderToStaticMarkup(<LoginPage />)).not.toContain('aria-invalid');
-  });
-});
-
-describe('CommandCenterPanel — presentation only', () => {
-  it('renders without crashing and contains tagline', async () => {
-    const { CommandCenterPanel } = await import('./command-center-panel');
-    const html = renderToStaticMarkup(<CommandCenterPanel />);
-    expect(html).not.toContain('<aside');
-    expect(html).toContain('MALEK');
-    expect(html).toContain('كل أملاكك في مكان واحد');
-  });
-
-  it('does NOT contain fake statistics', async () => {
-    const { CommandCenterPanel } = await import('./command-center-panel');
-    const html = renderToStaticMarkup(<CommandCenterPanel />);
-    expect(html).not.toContain('وحدة');
-    expect(html).not.toContain('عقد');
-    expect(html).not.toContain('نسبة الإشغال');
-  });
-
-  it('uses the MalikMark component indirectly via MalikBrand', async () => {
-    const { CommandCenterPanel } = await import('./command-center-panel');
-    expect(renderToStaticMarkup(<CommandCenterPanel />)).toContain('svg');
+    fireEvent(password, event);
+    expect(screen.getByRole('status')).toHaveTextContent('Caps Lock مفعّل');
   });
 });
