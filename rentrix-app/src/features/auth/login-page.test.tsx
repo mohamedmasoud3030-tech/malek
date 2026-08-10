@@ -113,7 +113,11 @@ describe('LoginPage — interaction behaviour', () => {
   it('reports Caps Lock state without blocking entry', () => {
     setup();
     const password = screen.getByLabelText('كلمة المرور', { selector: 'input' });
-    fireEvent.keyUp(password, { getModifierState: (key: string) => key === 'CapsLock' });
+    const event = new KeyboardEvent('keyup', { key: 'A', bubbles: true });
+    Object.defineProperty(event, 'getModifierState', {
+      value: (key: string) => key === 'CapsLock',
+    });
+    fireEvent(password, event);
     expect(screen.getByRole('status')).toHaveTextContent('Caps Lock مفعّل');
   });
 });
