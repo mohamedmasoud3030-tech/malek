@@ -42,6 +42,14 @@ export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   's02_financial_direct_write_hardening_payments_expenses',
   's02_remove_residual_financial_write_policies',
   's02_financial_rpc_auth_sqlstate',
+  // S03/S04/S06/S08 are later governed stages. They rely on schema shapes that
+  // intentionally do not exist at the P0 checkpoint and must not leak into the
+  // historical PGlite replay. Real PostgreSQL replay is covered independently
+  // by the release-blocker database gate.
+  '_s03_',
+  '_s04_',
+  '_s06_',
+  '_s08_',
   // Stage 3 business document references: independent of the P0 isolation fix
   // and measured at its own checkpoint (see src/p3/stage3-business-references.test.ts).
   'business_document_references',
