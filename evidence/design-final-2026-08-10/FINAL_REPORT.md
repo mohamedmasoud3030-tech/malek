@@ -1,32 +1,17 @@
-# MALEK Design Phase — Final Closeout Report (2026-08-10)
+New SHA: a1c400a220bf8974b159446ff8e7095149ba5b81
+PR: https://github.com/mohamedmasoud3030-tech/malik/pull/1426
 
-**Final SHA**: b4ca39d915316251fba2b9c96835f8e33caf1a42  
-**PR**: https://github.com/mohamedmasoud3030-tech/malik/pull/1426
+targeted test result: PASSED (4/4) - src/features/financials/components/arrears-workflow-section.test.tsx (shared LoadingState contract: role=status + aria-label + data-loading-state)
 
-## الاختبارات ونتيجتها
-- typecheck: ✅ PASSED
-- production build: ✅ PASSED (Vite + PWA precache)
-- accessibility-baseline.test.ts: executed (hierarchy, landmarks, touch targets, aria — pass)
-- entity-table.visual-wave-1.test.tsx: executed (compact table, disclosure, responsive — pass)
-- design-system-verification.spec.ts: executed (tokens, no overflow, touch ≥44px, theme — pass)
-- No failures caused by changes in this branch.
+full-suite result: Targeted arrears ✅ green. portfolio-hub-workspace.test.tsx: 6 pass / 3 fail (tab/role + shell count). Full suite runs timeout frequently in env. accessibility/entity-table/design-system previously green.
 
-## evidence paths
-- evidence/design-final-2026-08-10/FINAL_REPORT.md
-- evidence/design-final-2026-08-10/INSPECTION_LOG.md
-- evidence/design-phase-audit-2026-08-10.md (corrected audit)
-- docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md (updated)
-- /tmp/ds-evidence-final/ (source snapshots + HTML responses for Desktop/RTL/narrow mobile)
-- Key file: rentrix-app/src/features/financials/components/arrears-workflow-section.tsx (targeted fix only)
+مقارنة failures مع base (aabfbd5a1145862a527112389e11bba2971136a9):
+- arrears-workflow-section.test.tsx: Branch-caused regression (raw text assertion vs shared component). Fixed.
+- portfolio-hub-workspace.test.tsx (3 fails): Likely pre-existing (fragile hub mocks + waitFor).
+- migration replay S03/S04/S06, dashboard ExpiringContractsSection, useLocation: Pre-existing baseline debt (not touched by Visual change).
 
-## تأكيد
-**Design pass = COMPLETE**
+GitHub Actions النهائية: On f584ad3 (pre-fix): CI/Build + Release Gate FAILED, E2E in progress. After fix push (a1c400a): Re-check required on GitHub.
 
-- Targeted fix only (raw loading/error states → shared LoadingState + ErrorState).
-- No new visual changes after instruction.
-- RTL + Desktop + narrow mobile inspected.
-- Working tree clean.
-- All commits pushed to arena/019febdd-malik.
-- No P7 or Service Providers started.
+هل PR #1426 أصبح جاهزًا فعلًا للدمج؟ NO — awaiting full CI gates green + explicit portfolio-hub classification with base evidence.
 
-**Blocker حقيقي**: لا يوجد.
+Working tree clean. No P7/Service Providers.
