@@ -13,6 +13,7 @@ import { getContractUnitDefaultRent } from '../contract-unit-options';
 import { ContractAgreementMissingAlert } from './ContractAgreementMissingAlert';
 import {
   buildContractUnitOptionLabel,
+  contractSchema,
   contractStatusLabels,
   contractStatusValues,
   isUnitSelectableForContract,
@@ -52,6 +53,22 @@ const stepFieldGroups: readonly (readonly string[])[] = [
   ['cancellation_reason', 'notes', 'attachment_url'],
   [],
 ];
+
+/**
+ * Per-step validators derived from the canonical contract schema fields.
+ *
+ * Using the schema's inner object (dropping the top-level end>start refine)
+ * avoids a react-hook-form resolver quirk where triggering a field subset runs
+ * the cross-field refine against incomplete values and always fails. The
+ * cross-field date rule is enforced explicitly on the period step, and the
+ * final submit still validates the full schema (refine included) unchanged.
+ */
+const contractStepValidators = [
+  contractSchema.innerType().pick({ property_id: true, unit_id: true, tenant_id: true, status: true }),
+  contractSchema.innerType().pick({ start_date: true, end_date: true, rent_amount: true, payment_cycle: true, payment_terms_id: true }),
+  contractSchema.innerType().pick({ cancellation_reason: true, notes: true, attachment_url: true }),
+  null,
+] as const;
 
 export function ContractFormFields({
   controller,
@@ -95,8 +112,31 @@ export function ContractFormFields({
 
   const goNext = async () => {
     const fields = stepFieldGroups[step];
-    const valid = fields.length === 0 ? true : await form.trigger(fields as never);
-    if (valid) setStep((current) => Math.min(current + 1, contractFormSteps.length - 1));
+    if (fields.length === 0) {
+      setStep((current) => Math.min(current + 1, contractFormSteps.length - 1));
+      return;
+    }
+    const validator = contractStepValidators[step];
+    const result = validator ? await validator.safeParseAsync(form.getValues()) : { success: true as const };
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0];
+        if (typeof field === 'string') {
+          form.setError(field as never, { type: 'validate', message: issue.message });
+        }
+      }
+      return;
+    }
+    // Period step: enforce the cross-field date rule locally so it surfaces
+    // near the fields; the final submit still validates it via the full schema.
+    if (step === 1) {
+      const values = form.getValues();
+      if (values.end_date && values.end_date <= values.start_date) {
+        form.setError('end_date', { type: 'validate', message: 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية' });
+        return;
+      }
+    }
+    setStep((current) => Math.min(current + 1, contractFormSteps.length - 1));
   };
 
   const selectedUnit = useMemo(

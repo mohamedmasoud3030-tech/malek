@@ -8,7 +8,8 @@ import { fetchOwnerActivity } from '@/services/owner-workspace-service';
 import { useOwnerDetailSnapshot } from './useOwners';
 
 export function OwnerDetailPage() {
-  const { ownerId } = useParams({ from: '/protected/owners/$ownerId' });
+  const params = useParams({ strict: false });
+  const ownerId = typeof params.ownerId === 'string' ? params.ownerId : '';
   const ownerDetailQuery = useOwnerDetailSnapshot(ownerId);
   const { authorization } = useAuth();
   const canViewSettlements = canAccess(authorization, 'financial.owner_settlements.view');

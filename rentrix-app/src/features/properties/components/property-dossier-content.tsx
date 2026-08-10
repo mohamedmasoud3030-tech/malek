@@ -7,7 +7,8 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useDialogNavigate } from '@/app/router/background-location';
-import { formatDefaultCompanyMoney, formatCompanyDate } from '@/lib/companyFormatters';
+import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
+import { formatCompanyMoney, formatCompanyDate, formatCompanyNumber } from '@/lib/companyFormatters';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { usePropertyOwners } from '@/features/owners/useOwners';
 import { useProperty } from '../use-properties';
@@ -54,10 +55,6 @@ function getInvoiceRemaining(invoice: { amount: number; paid_amount: number }): 
   return Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount));
 }
 
-function formatCount(value: number): string {
-  return new Intl.NumberFormat('en-US').format(value);
-}
-
 function getOwnerName(link: { owner?: { display_name?: string | null; full_name?: string | null } | null }): string {
   return link.owner?.display_name?.trim() || link.owner?.full_name?.trim() || 'مالك غير محدد';
 }
@@ -66,11 +63,15 @@ function getOwnerName(link: { owner?: { display_name?: string | null; full_name?
  * Shared property dossier body used by both the property preview dialog and
  * the full property detail overview tab, so both surfaces read as the same
  * product. Read-only operational context only: identity, owners, units,
- * contract context, financial context, and documents. Management actions
- * (agreements, edit, tabs) live in their own surfaces.
+ * contract context, tenant-receivable context, and documents. Management
+ * actions (agreements, edit, tabs) live in their own surfaces.
+ *
+ * All money/numbers/dates use Malik's canonical company-aware formatters
+ * (current company currency/precision), never default local helpers.
  */
 export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: string }>) {
   const dialogNavigate = useDialogNavigate();
+  const companySettings = useCompanySettingsContract();
   const propertyQuery = useProperty(propertyId);
   const unitsQuery = useUnits(propertyId);
   const ownersQuery = usePropertyOwners(propertyId);
@@ -97,10 +98,10 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
       <PropertyIdentityCard property={property} />
 
       <ResponsiveCardGrid>
-        <KpiCard label="إجمالي الوحدات" value={formatCount(units.length)} icon={DoorOpen} accent="primary" />
-        <KpiCard label="الوحدات المشغولة" value={formatCount(occupiedUnits)} icon={DoorOpen} accent="emerald" />
-        <KpiCard label="العقود النشطة" value={formatCount(activeContracts.length)} sub={`من أصل ${formatCount(contracts.length)} عقود`} icon={FileText} accent="sky" />
-        <KpiCard label="الرصيد المستحق" value={formatDefaultCompanyMoney(outstandingBalance)} sub={`${formatCount(openInvoices.length)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
+        <KpiCard label="إجمالي الوحدات" value={formatCompanyNumber(companySettings, units.length)} icon={DoorOpen} accent="primary" />
+        <KpiCard label="الوحدات المشغولة" value={formatCompanyNumber(companySettings, occupiedUnits)} icon={DoorOpen} accent="emerald" />
+        <KpiCard label="العقود النشطة" value={formatCompanyNumber(companySettings, activeContracts.length)} sub={`من أصل ${formatCompanyNumber(companySettings, contracts.length)} عقود`} icon={FileText} accent="sky" />
+        <KpiCard label="مستحقات المستأجرين" value={formatCompanyMoney(companySettings, outstandingBalance)} sub={`${formatCompanyNumber(companySettings, openInvoices.length)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
       </ResponsiveCardGrid>
 
       {/* Owners */}
@@ -120,7 +121,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                   {link.is_primary ? <StatusBadge tone="info">مالك أساسي</StatusBadge> : null}
                   <span className="ms-auto flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">نسبة الملكية</span>
-                    <span className="font-semibold tabular-nums" dir="ltr">{formatCount(link.ownership_percentage ?? 100)}%</span>
+                    <span className="font-semibold tabular-nums" dir="ltr">{formatCompanyNumber(companySettings, link.ownership_percentage ?? 100)}%</span>
                   </span>
                 </li>
               ))}
@@ -153,7 +154,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                     <span className="text-xs text-muted-foreground">{unit.floor ? `الدور ${unit.floor}` : 'بدون دور'}</span>
                     <span className="ms-auto flex items-center gap-2">
                       <StatusBadge tone={unitStatusTone(unit.status)}>{unitStatusLabels[unit.status] ?? unit.status}</StatusBadge>
-                      <span className="text-xs font-semibold tabular-nums" dir="ltr">{formatDefaultCompanyMoney(unit.rent_amount)}</span>
+                      <span className="text-xs font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, unit.rent_amount)}</span>
                     </span>
                   </button>
                 </li>
@@ -188,7 +189,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                       {businessReferenceOrLabel(contract, 'عقد مسجل')}
                       {contract.units?.unit_number ? ` · وحدة ${contract.units.unit_number}` : ''}
                       {' · '}
-                      <span dir="ltr">{formatCompanyDate(undefined, contract.start_date)} → {formatCompanyDate(undefined, contract.end_date)}</span>
+                      <span dir="ltr">{formatCompanyDate(companySettings, contract.start_date)} → {formatCompanyDate(companySettings, contract.end_date)}</span>
                     </p>
                   </div>
                   <Button variant="secondary" className="min-h-11" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>
@@ -206,17 +207,17 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
         </CardContent>
       </Card>
 
-      {/* Financial context */}
+      {/* Financial context — tenant receivables on this property */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" aria-hidden="true" />السياق المالي</CardTitle>
-          <CardDescription>الفواتير والتحصيلات الخاصة بالعقار عبر عقوده.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" aria-hidden="true" />فواتير المستأجرين على العقار</CardTitle>
+          <CardDescription>المبالغ المتبقية على فواتير مستأجرين عبر عقود هذا العقار — لا تمثل رصيداً مستحقاً للمالك.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            <StatusBadge tone="info">{formatCount(openInvoices.length)} فواتير مفتوحة</StatusBadge>
+            <StatusBadge tone="info">{formatCompanyNumber(companySettings, openInvoices.length)} فواتير مفتوحة</StatusBadge>
             <StatusBadge tone={outstandingBalance > 0 ? 'warning' : 'success'}>
-              إجمالي المتبقي: {formatDefaultCompanyMoney(outstandingBalance)}
+              إجمالي المتبقي على المستأجرين: {formatCompanyMoney(companySettings, outstandingBalance)}
             </StatusBadge>
           </div>
           {openInvoices.length === 0 ? (
@@ -228,7 +229,7 @@ export function PropertyDossierContent({ propertyId }: Readonly<{ propertyId: st
                   <span className="min-w-0 font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span>
                   <span className="flex flex-wrap items-center gap-2">
                     <StatusBadge tone={invoiceStatusTone(invoice.status)}>{invoiceStatusLabels[invoice.status] ?? invoice.status}</StatusBadge>
-                    <span className="font-semibold tabular-nums" dir="ltr">{formatDefaultCompanyMoney(getInvoiceRemaining(invoice))}</span>
+                    <span className="font-semibold tabular-nums" dir="ltr">{formatCompanyMoney(companySettings, getInvoiceRemaining(invoice))}</span>
                   </span>
                 </li>
               ))}

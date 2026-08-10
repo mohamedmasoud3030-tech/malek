@@ -15,12 +15,23 @@ export interface OwnerActivityRecord {
   occurredAt: string;
 }
 
+/**
+ * The audit log stores entity as the table name (or a legacy singular variant).
+ * An entity dossier must receive ONLY records belonging to that exact entity:
+ * the entity id is the hard requirement, and the entity type merely validates
+ * that the row is an owner record (supporting the legacy singular variant).
+ */
+export function isOwnerAuditRecord(record: AuditLogRecord, ownerId: string): boolean {
+  return (
+    record.entityId === ownerId
+    && (record.entityType === 'owners' || record.entityType === 'owner')
+  );
+}
+
 export async function fetchOwnerActivity(ownerId: string): Promise<OwnerActivityRecord[]> {
   const result = await fetchAuditLog();
   if (result.status !== 'available') return [];
-  const records = result.records.filter(
-    (record: AuditLogRecord) => record.entityId === ownerId || record.entityType === 'owners',
-  );
+  const records = result.records.filter((record: AuditLogRecord) => isOwnerAuditRecord(record, ownerId));
   return records.map((record) => ({
     id: record.id,
     action: record.action,

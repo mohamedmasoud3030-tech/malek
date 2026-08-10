@@ -41,8 +41,13 @@ export async function fetchPropertyMaintenance(propertyId: string) {
 export async function fetchPropertyActivity(propertyId: string): Promise<PropertyActivityRecord[]> {
   const result = await fetchAuditLog();
   if (result.status !== 'available') return [];
+  // Property-scoped: only records whose entity id is this exact property (with
+  // the entity type validated as a property record, supporting the legacy
+  // singular variant). Records of other properties never leak into the dossier.
   const records = result.records.filter(
-    (record: AuditLogRecord) => record.entityId === propertyId || record.entityType === 'properties',
+    (record: AuditLogRecord) =>
+      record.entityId === propertyId
+      && (record.entityType === 'properties' || record.entityType === 'property'),
   );
   return records.map((r) => ({
     id: r.id,

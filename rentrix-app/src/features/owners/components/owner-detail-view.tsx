@@ -1,9 +1,11 @@
-import { Link } from '@tanstack/react-router';
 import { Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { canAccess } from '@/features/auth/permissions';
+import { useAuth } from '@/hooks/use-auth';
+import { useDialogNavigate } from '@/app/router/background-location';
 import type { OwnerSettlementRecord } from '../services/owner-settlements-service';
 import type { OwnerActivityRecord } from '@/services/owner-workspace-service';
 import type { OwnerDetailState } from '../types';
@@ -49,6 +51,11 @@ export function OwnerDetailView({
   }
 
   const { owner } = state.snapshot;
+  const { authorization } = useAuth();
+  const dialogNavigate = useDialogNavigate();
+  // Owner writes are governed by the canonical owners write gate (owners.hub.view):
+  // effective grant (or ADMIN/MANAGER role) determines edit availability.
+  const canEditOwner = canAccess(authorization, 'owners.hub.view');
 
   return (
     <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
@@ -58,11 +65,11 @@ export function OwnerDetailView({
         backTo="/owners"
         backLabel="الملاك"
         actions={
-          <Button asChild className="min-h-11">
-            <Link to="/owners/$ownerId/edit" params={{ ownerId: owner.id }}>
+          canEditOwner ? (
+            <Button className="min-h-11" onClick={() => dialogNavigate({ to: '/owners/$ownerId/edit', params: { ownerId: owner.id } })}>
               <Edit className="me-2 size-4" />تعديل
-            </Link>
-          </Button>
+            </Button>
+          ) : undefined
         }
       />
       <OwnerDossierBody

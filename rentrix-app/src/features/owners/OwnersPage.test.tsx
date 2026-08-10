@@ -17,6 +17,15 @@ vi.mock('@tanstack/react-router', () => ({
   useLocation: () => ({ pathname: '/owners', search: {}, hash: '', state: undefined }),
 }));
 
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: null, canAccess: () => false }),
+  useOptionalAuth: () => null,
+}));
+
+vi.mock('@/app/router/background-location', () => ({
+  useDialogNavigate: () => vi.fn(),
+}));
+
 const owner: Owner = {
   id: 'owner-1',
   full_name: 'مالك موثق',
@@ -98,7 +107,7 @@ describe('Owner detail recovery states', () => {
     expect(html).toContain('مالك موثق');
     expect(html).toContain('العقارات المرتبطة');
     expect(html).toContain('العقود النشطة');
-    expect(html).toContain('الرصيد المستحق');
+    expect(html).toContain('مستحقات المستأجرين');
     expect(html).toContain('OMR');
     expect(html).toContain('750');
     expect(html).toContain('/owners');
@@ -151,7 +160,10 @@ describe('Owner detail recovery states', () => {
     };
     const html = renderOwnerDetail({ state: { status: 'ready', snapshot } });
 
-    expect(html).not.toContain('تسويات المالك');
+    // The settlements section (with its dedicated description) must be absent
+    // when no settlement data is provided.
+    expect(html).not.toContain('أحدث التسويات المعدة لهذا المالك');
+    expect(html).not.toContain('مسودة بانتظار الاعتماد');
   });
 
   it('renders the owner detail unavailable state', () => {

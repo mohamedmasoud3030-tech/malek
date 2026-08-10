@@ -146,7 +146,7 @@ export function OwnerDossierBody({
         <KpiCard label="العقارات" value={formatCompanyNumber(companySettings, properties.length)} icon={Building2} accent="primary" />
         <KpiCard label="الوحدات" value={formatCompanyNumber(companySettings, ownerUnitCount)} icon={DoorOpen} accent="sky" />
         <KpiCard label="العقود النشطة" value={formatCompanyNumber(companySettings, activeContracts.length)} sub={`من أصل ${formatCompanyNumber(companySettings, contracts.length)} عقود`} icon={FileText} accent="emerald" />
-        <KpiCard label="الرصيد المستحق" value={formatCompanyMoney(companySettings, financialSummary.outstandingBalance)} sub={`${formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
+        <KpiCard label="مستحقات المستأجرين" value={formatCompanyMoney(companySettings, financialSummary.outstandingBalance)} sub={`${formatCompanyNumber(companySettings, financialSummary.outstandingInvoicesCount)} فواتير مفتوحة`} icon={WalletCards} accent="amber" />
       </ResponsiveCardGrid>
 
       {/* Related properties */}
@@ -267,17 +267,17 @@ export function OwnerDossierBody({
         </CardContent>
       </Card>
 
-      {/* Financial context */}
+      {/* Financial context — tenant receivables, never presented as owner balance */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" aria-hidden="true" />السياق المالي</CardTitle>
-          <CardDescription>الفواتير المفتوحة والمتبقي لكل فاتورة عبر عقارات المالك.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" aria-hidden="true" />فواتير المستأجرين على العقارات</CardTitle>
+          <CardDescription>المبالغ المتبقية على فواتير مستأجرين عبر عقارات المالك — لا تمثل رصيداً مستحقاً للمالك؛ صافي التسوية المستحق للمالك يُعرض في قسم تسويات المالك.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <StatusBadge tone="info">{formatCompanyNumber(companySettings, openInvoices.length)} فواتير مفتوحة</StatusBadge>
             <StatusBadge tone={financialSummary.outstandingBalance > 0 ? 'warning' : 'success'}>
-              إجمالي المتبقي: {formatCompanyMoney(companySettings, financialSummary.outstandingBalance)}
+              إجمالي المتبقي على المستأجرين: {formatCompanyMoney(companySettings, financialSummary.outstandingBalance)}
             </StatusBadge>
           </div>
           {openInvoices.length === 0 ? (

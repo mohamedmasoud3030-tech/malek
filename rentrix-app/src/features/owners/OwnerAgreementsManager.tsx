@@ -109,9 +109,23 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
         return;
       }
     }
-    if (agreementStep === 2 && !form.starts_on) {
-      setFormError('تاريخ بداية الاتفاقية مطلوب.');
-      return;
+    if (agreementStep === 2) {
+      if (!form.starts_on) {
+        setFormError('تاريخ بداية الاتفاقية مطلوب.');
+        return;
+      }
+      if (form.ends_on && form.ends_on < form.starts_on) {
+        setFormError('تاريخ نهاية الاتفاقية يجب ألا يسبق البداية.');
+        return;
+      }
+      // The owner may have been chosen before the period: recompute eligibility
+      // with the real domain helper and block advancing when the selected owner
+      // no longer covers the whole chosen period.
+      const eligibleForPeriod = getEligibleAgreementOwners(ownershipLinks, form.starts_on, form.ends_on || null);
+      if (!eligibleForPeriod.some((owner) => owner.id === form.owner_id)) {
+        setFormError('المالك المحدد لا تغطي ملكيته الفترة المختارة كاملة — اختر مالكاً آخر أو عدّل التواريخ.');
+        return;
+      }
     }
     setFormError(null);
     setAgreementStep((current) => Math.min(current + 1, agreementFormSteps.length - 1));

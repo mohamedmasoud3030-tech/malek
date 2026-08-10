@@ -43,6 +43,11 @@ vi.mock('@/features/units/use-units', () => ({
   }),
 }));
 
+vi.mock('@/features/settings/useCompanySettings', async () => {
+  const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
+  return { useCompanySettingsContract: () => testCompanySettingsContract };
+});
+
 vi.mock('@/features/owners/useOwners', () => ({
   usePropertyOwners: () => ({
     data: [],
@@ -80,7 +85,7 @@ describe('PropertyOverview Component Rendering and Copy Integrity', () => {
     // Renders the current service-backed empty state for owner agreements
     expect(html).toContain('لا توجد اتفاقية سارية اليوم.');
     // The overview now renders the real property financial context (was a stub).
-    expect(html).toContain('السياق المالي');
+    expect(html).toContain('فواتير المستأجرين على العقار');
     expect(html).toContain('لا توجد فواتير مفتوحة على عقود هذا العقار.');
 
     // DOES NOT render unsupported legacy wording
