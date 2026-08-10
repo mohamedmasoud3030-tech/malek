@@ -92,7 +92,11 @@ describe('ArrearsWorkflowSection', () => {
   it('renders the loading state', () => {
     const html = renderToStaticMarkup(<ArrearsWorkflowSection {...baseProps} isLoading />);
 
-    expect(html).toContain('جارٍ تحميل بيانات المتأخرات...');
+    // Shared LoadingState contract (section variant): role=status + aria-label + data-loading-state
+    // No visible text label for 'section' (skeletons only); label lives in aria-label.
+    expect(html).toContain('role="status"');
+    expect(html).toContain('aria-label="جارٍ تحميل بيانات المتأخرات"');
+    expect(html).toContain('data-loading-state');
   });
 
   it('renders the error state', () => {
