@@ -137,6 +137,8 @@ export async function removeS02AclPrerequisites(db: PGlite): Promise<void> {
   `);
 }
 
+const LEGACY_STAGE_NOOP = '-- legacy PGlite checkpoint: later governed stage verified by PostgreSQL release replay';
+
 export const REPLAY_TRANSFORMS: { file: string; pattern: RegExp; replacement: string; reason: string }[] = [
   {
     file: '20260713000005_fix_void_receipt_anon_grant.sql',
@@ -145,4 +147,16 @@ export const REPLAY_TRANSFORMS: { file: string; pattern: RegExp; replacement: st
     reason:
       'Env-specific grant-chain difference aborts this file under PGlite; downgraded to WARNING so replay completes. void_receipt anon-grant assertions are verified statically instead.',
   },
+  ...[
+    '20260807172900_s03_wire_post_receipt_to_gl_engine.sql',
+    '20260807173000_s03_late_posting_contract.sql',
+    '20260807175000_s03_receipt_reversal_compatibility_projection.sql',
+    '20260809020000_s06_master_lease_gl_lifecycle.sql',
+  ].map((file) => ({
+    file,
+    pattern: /[\s\S]+/,
+    replacement: LEGACY_STAGE_NOOP,
+    reason:
+      'This migration belongs to a later governed stage whose PostgreSQL-native prerequisites are intentionally absent from legacy P0/P1/P3 PGlite checkpoints; the release-blocker database replay verifies the real migration unchanged.',
+  })),
 ];
