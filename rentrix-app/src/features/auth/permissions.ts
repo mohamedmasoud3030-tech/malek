@@ -9,6 +9,8 @@ export const appPermissions = [
   'audit.view',
   'integrity.view',
   'maintenance.view',
+  'service_providers.view',
+  'service_providers.write',
   'system.view',
   'users.manage',
   'permission_requests.review',
@@ -49,6 +51,8 @@ export const permissionLabelsAr: Readonly<Record<AppPermission, string>> = {
   'audit.view': 'عرض سجل التدقيق',
   'integrity.view': 'عرض سلامة البيانات',
   'maintenance.view': 'عرض الصيانة',
+  'service_providers.view': 'عرض مزودي الخدمات',
+  'service_providers.write': 'إضافة وتعديل وأرشفة مزودي الخدمات',
   'system.view': 'عرض إعدادات النظام والحوكمة',
   'users.manage': 'إدارة المستخدمين والأدوار',
   'permission_requests.review': 'مراجعة طلبات الصلاحية',
@@ -121,6 +125,8 @@ const rolePermissions = {
     'audit.view',
     'integrity.view',
     'maintenance.view',
+    'service_providers.view',
+    'service_providers.write',
     'system.view',
     'users.manage',
     'permission_requests.review',
@@ -156,6 +162,8 @@ const rolePermissions = {
   MANAGER: new Set<AppPermission>([
     'app.dashboard.view',
     'maintenance.view',
+    'service_providers.view',
+    'service_providers.write',
     'permission_requests.review',
     'cost_centers.manage',
     'documents.write',
@@ -256,6 +264,7 @@ export type WriteAccessState = 'full' | 'read-only' | 'unconfigured';
  */
 export const writeAccessPermissions = [
   'documents.write',
+  'service_providers.write',
   'properties.write',
   'contracts.write',
   'expenses.write',

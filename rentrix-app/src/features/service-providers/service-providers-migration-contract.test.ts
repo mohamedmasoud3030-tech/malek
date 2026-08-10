@@ -6,8 +6,16 @@ const migration = readFileSync(
   resolve(import.meta.dirname, '../../../../supabase/migrations/20260810170000_service_providers_production_grade.sql'),
   'utf8',
 ).toLowerCase();
+const atomicWritesMigration = readFileSync(
+  resolve(import.meta.dirname, '../../../../supabase/migrations/20260810171000_service_provider_atomic_writes.sql'),
+  'utf8',
+).toLowerCase();
 const rollback = readFileSync(
   resolve(import.meta.dirname, '../../../../supabase/rollback/20260810170000_rollback_service_providers_production_grade.sql'),
+  'utf8',
+).toLowerCase();
+const atomicWritesRollback = readFileSync(
+  resolve(import.meta.dirname, '../../../../supabase/rollback/20260810171000_rollback_service_provider_atomic_writes.sql'),
   'utf8',
 ).toLowerCase();
 
@@ -57,6 +65,15 @@ describe('Service Providers database contract', () => {
     expect(migration).toContain("jsonb_build_object('company_id', v_company_id, 'category_id', v_category_id)");
     expect(migration).not.toContain("jsonb_build_object('email'");
     expect(migration).not.toContain("jsonb_build_object('phone'");
+  });
+
+  it('keeps provider and category assignment writes in one server transaction', () => {
+    expect(atomicWritesMigration).toContain('save_service_provider_atomic');
+    expect(atomicWritesMigration).toContain("current_user_has_effective_app_permission('service_providers.write')");
+    expect(atomicWritesMigration).toContain('delete from public.service_provider_category_links');
+    expect(atomicWritesMigration).toContain('insert into public.service_provider_category_links');
+    expect(atomicWritesMigration).toContain('set search_path = public, pg_temp');
+    expect(atomicWritesRollback).toContain('drop function if exists public.save_service_provider_atomic');
   });
 
   it('ships a manual rollback that restores the prior Maintenance RPC and document contract', () => {

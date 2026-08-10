@@ -279,6 +279,59 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['company_settings']['Row']>;
         Relationships: [];
       };
+      service_providers: {
+        Row: {
+          id: string;
+          company_id: string;
+          name: string;
+          legal_name: string | null;
+          registration_number: string | null;
+          tax_number: string | null;
+          contact_name: string | null;
+          phone: string | null;
+          alternate_phone: string | null;
+          email: string | null;
+          website: string | null;
+          address: string | null;
+          service_area: string | null;
+          availability_notes: string | null;
+          notes: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['service_providers']['Row']> & Pick<Database['public']['Tables']['service_providers']['Row'], 'name'>;
+        Update: Partial<Database['public']['Tables']['service_providers']['Row']>;
+        Relationships: [];
+      };
+      service_provider_categories: {
+        Row: {
+          id: string;
+          company_id: string;
+          name: string;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['service_provider_categories']['Row']> & Pick<Database['public']['Tables']['service_provider_categories']['Row'], 'name'>;
+        Update: Partial<Database['public']['Tables']['service_provider_categories']['Row']>;
+        Relationships: [];
+      };
+      service_provider_category_links: {
+        Row: {
+          id: string;
+          company_id: string;
+          service_provider_id: string;
+          category_id: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['service_provider_category_links']['Row']> & Pick<Database['public']['Tables']['service_provider_category_links']['Row'], 'service_provider_id' | 'category_id'>;
+        Update: Partial<Database['public']['Tables']['service_provider_category_links']['Row']>;
+        Relationships: [];
+      };
       owners: {
         Row: {
           id: string;
@@ -644,6 +697,8 @@ export type Database = {
           no: string | null;
           property_id: string | null;
           unit_id: string | null;
+          service_provider_id: string | null;
+          service_provider_category_id: string | null;
           title: string | null;
           description: string | null;
           priority: 'low' | 'medium' | 'high' | 'urgent' | 'NORMAL' | string | null;
@@ -891,8 +946,18 @@ export type Database = {
           p_scheduled_date?: string | null;
           p_attachment_url?: string | null;
           p_request_id?: string | null;
+          p_service_provider_category_id?: string | null;
+          p_service_provider_id?: string | null;
         };
         Returns: { maintenance: Json; idempotent: boolean };
+      };
+      save_service_provider_atomic: {
+        Args: { p_provider_id: string | null; p_payload: Json; p_category_ids?: string[] };
+        Returns: { provider: Json; category_ids: string[] };
+      };
+      archive_service_provider_atomic: {
+        Args: { p_provider_id: string };
+        Returns: { provider_id: string; archived: boolean };
       };
       provision_company_chart_of_accounts: {
         Args: { p_company_id: string };
