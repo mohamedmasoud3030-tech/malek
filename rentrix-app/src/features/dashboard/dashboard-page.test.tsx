@@ -18,6 +18,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
       </a>
     ),
     useNavigate: () => vi.fn(),
+    useLocation: () => ({ pathname: '/dashboard', search: {}, hash: '', state: {} }),
   };
 });
 
@@ -171,30 +172,24 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
   }
 
   it('renders the core dashboard and calls getDashboardSnapshot at the service boundary', async () => {
-    // Configure getDashboardSnapshot mock resolved value
     (getDashboardSnapshot as any).mockResolvedValue(mockSnapshot);
 
     await renderPage();
 
-    // Verify getDashboardSnapshot was invoked at least once
     expect(getDashboardSnapshot).toHaveBeenCalled();
 
     const text = container?.textContent ?? '';
 
-    // 1. Dashboard title / operating overview
     expect(text).toContain('لوحة التحكم');
     expect(text).toContain('صورة الأداء');
     expect(text).toContain('نسبة الإشغال');
 
-    // 2. Expiring contracts section
     expect(text).toContain('العقود المنتهية قريباً');
     expect(text).toContain('سالم الكعبي');
 
-    // 3. Overdue items section
     expect(text).toContain('أعلى المتأخرات');
     expect(text).toContain('أحمد الفارسي');
 
-    // 4. Decision hierarchy and reduced duplication
     expect(text).toContain('الأولوية الآن');
     expect(text).toContain('قوائم العمل');
     expect(text).toContain('المحفظة والتحصيل');
@@ -208,10 +203,8 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
 
     const scope = container?.querySelector('[data-visual-contract="v2"]');
     expect(scope).not.toBeNull();
-    // The scope is the Dashboard subtree root: hero + every section live inside it.
     expect(scope?.querySelector('[data-dashboard-hero]')).not.toBeNull();
     expect(scope?.querySelectorAll('[data-dashboard-section]').length).toBeGreaterThanOrEqual(4);
-    // It must not be confused with the shared PageLayout node.
     expect(container?.querySelector('[data-page-layout][data-visual-contract]')).toBeNull();
   });
 
@@ -242,7 +235,6 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
 
     await renderPage();
 
-    // USER holds none of the quick-action permissions: no dead-end actions.
     expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(0);
     expect(container?.textContent ?? '').not.toContain('إجراءات سريعة');
   });
@@ -260,7 +252,6 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
   });
 
   it('handles query loading state correctly by rendering skeletons', async () => {
-    // Return a pending promise to keep it in loading state
     (getDashboardSnapshot as any).mockReturnValue(new Promise(() => {}));
 
     await act(async () => {
@@ -271,7 +262,6 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
       );
     });
 
-    // Check if skeletons are rendered in the DOM
     const skeletons = container?.querySelectorAll('.skeleton-shimmer');
     expect(skeletons?.length).toBeGreaterThan(0);
   });
@@ -283,7 +273,6 @@ describe('Modular DashboardPage Query Boundary Tests', () => {
     const text = container?.textContent ?? '';
 
     expect(text).toContain('تعذر تحميل لوحة التحكم');
-    // Data sections are suppressed rather than filled with fabricated zeros.
     expect(container?.querySelector('[data-dashboard-kpi-grid]')).toBeNull();
     expect(container?.querySelector('[data-dashboard-section="kpis"]')).toBeNull();
   });
