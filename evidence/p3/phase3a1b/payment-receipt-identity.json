@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-09T12:52:12.501Z",
+  "generatedAt": "2026-08-10T13:40:28.148Z",
   "multiReceipt": {
     "receiptId": "77cc31b0-0000-4000-8000-000000000001",
     "paymentId": "77cc31b0-0000-4000-8000-000000000001",
@@ -7,13 +7,13 @@
   },
   "recordedReceipts": [
     {
-      "receiptId": "25a1a8d5-0efc-405b-891e-2a2f2dd35441",
-      "paymentId": "25a1a8d5-0efc-405b-891e-2a2f2dd35441",
+      "receiptId": "10e21069-5618-4aec-8b76-0393f850aadc",
+      "paymentId": "10e21069-5618-4aec-8b76-0393f850aadc",
       "shared": true
     },
     {
-      "receiptId": "45c29701-a26e-442a-8746-192426a90220",
-      "paymentId": "45c29701-a26e-442a-8746-192426a90220",
+      "receiptId": "b35c592e-3be5-4168-aa4b-60f5d7e89e18",
+      "paymentId": "b35c592e-3be5-4168-aa4b-60f5d7e89e18",
       "shared": true
     }
   ],

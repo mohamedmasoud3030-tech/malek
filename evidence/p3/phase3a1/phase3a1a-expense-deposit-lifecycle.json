@@ -1,23 +1,23 @@
 {
-  "generatedAt": "2026-08-09T12:53:11.894Z",
+  "generatedAt": "2026-08-10T13:41:54.839Z",
   "expense": {
     "created": {
       "success": true,
-      "expense_id": "d136add9-d9ef-4940-be73-d592822b7965",
-      "expense_no": "EXP-20260809-phase3",
+      "expense_id": "9b818237-f9fe-4ae7-b50f-880934e3b4e5",
+      "expense_no": "EXP-20260810-phase3",
       "idempotent": false,
       "request_id": "phase3a-expense-shared"
     },
     "retried": {
       "success": true,
-      "expense_id": "d136add9-d9ef-4940-be73-d592822b7965",
-      "expense_no": "EXP-20260809-phase3",
+      "expense_id": "9b818237-f9fe-4ae7-b50f-880934e3b4e5",
+      "expense_no": "EXP-20260810-phase3",
       "idempotent": true,
       "request_id": "phase3a-expense-shared"
     },
     "updated": {
       "success": true,
-      "expense_id": "d136add9-d9ef-4940-be73-d592822b7965",
+      "expense_id": "9b818237-f9fe-4ae7-b50f-880934e3b4e5",
       "idempotent": false,
       "new_amount": 15.125,
       "old_amount": 12.35,
@@ -35,13 +35,13 @@
     "created": {
       "amount": 100,
       "success": true,
-      "deposit_id": "7944e6c3-14c7-4ec6-890c-86547a91a2b6",
+      "deposit_id": "b9144785-f4b2-4c40-8aaf-7fe661da56d2",
       "request_id": "phase3a-deposit-create"
     },
     "retried": {
       "amount": 100,
       "success": true,
-      "deposit_id": "7944e6c3-14c7-4ec6-890c-86547a91a2b6",
+      "deposit_id": "b9144785-f4b2-4c40-8aaf-7fe661da56d2",
       "idempotent": true,
       "request_id": "phase3a-deposit-create"
     },
@@ -49,7 +49,7 @@
       "success": true,
       "deducted": 25,
       "remaining": 75,
-      "deposit_id": "7944e6c3-14c7-4ec6-890c-86547a91a2b6",
+      "deposit_id": "b9144785-f4b2-4c40-8aaf-7fe661da56d2",
       "new_status": "partially_deducted",
       "request_id": "phase3a-deposit-deduct"
     },
@@ -57,7 +57,7 @@
       "success": true,
       "refunded": 30,
       "remaining": 45,
-      "deposit_id": "7944e6c3-14c7-4ec6-890c-86547a91a2b6",
+      "deposit_id": "b9144785-f4b2-4c40-8aaf-7fe661da56d2",
       "request_id": "phase3a-deposit-refund"
     },
     "balance": {

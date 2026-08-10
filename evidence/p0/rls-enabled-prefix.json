@@ -15,6 +15,11 @@
     "rls_forced": false
   },
   {
+    "tablename": "app_permission_catalog",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
     "tablename": "attachments",
     "rls_enabled": true,
     "rls_forced": false
@@ -240,6 +245,11 @@
     "rls_forced": false
   },
   {
+    "tablename": "permission_requests",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
     "tablename": "profiles",
     "rls_enabled": true,
     "rls_forced": false
@@ -316,6 +326,11 @@
   },
   {
     "tablename": "units",
+    "rls_enabled": true,
+    "rls_forced": false
+  },
+  {
+    "tablename": "user_permission_grants",
     "rls_enabled": true,
     "rls_forced": false
   },

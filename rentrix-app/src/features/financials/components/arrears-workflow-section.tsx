@@ -1,4 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import type { AgedReceivablesReport, ArrearsSummaryReport, OverdueInvoicesReport } from '../reports/financialReportsService';
 import { ArrearsAgingBuckets } from './arrears-aging-buckets';
 import { ArrearsFilters } from './arrears-filters';
@@ -69,11 +71,15 @@ export function ArrearsWorkflowSection({
           onBucketFilterChange={onBucketFilterChange}
         />
 
-        {isLoading ? <div className="rounded-2xl border border-dashed p-6 text-center text-muted-foreground" role="status">جارٍ تحميل بيانات المتأخرات...</div> : null}
+        {isLoading ? (
+          <LoadingState variant="section" label="جارٍ تحميل بيانات المتأخرات" />
+        ) : null}
         {isError ? (
-          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-center text-destructive" role="alert">
-            {getErrorMessage(error, 'تعذر تحميل تقارير المتأخرات. إعادة المحاولة أو تحديث الصفحة آمن ولن ينفّذ أي عملية دفع.')}
-          </div>
+          <ErrorState
+            title="تعذر تحميل تقارير المتأخرات"
+            description={getErrorMessage(error, 'إعادة المحاولة أو تحديث الصفحة آمن ولن ينفّذ أي عملية دفع.')}
+            onRetry={undefined}
+          />
         ) : null}
 
         {canShowReportContent ? (

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-09T12:54:26.130Z",
-  "total": 191,
-  "applied": 183,
+  "generatedAt": "2026-08-10T13:49:57.961Z",
+  "total": 194,
+  "applied": 186,
   "failedCount": 8,
   "appliedFiles": [
     "20250101000001_core_schema.sql",
@@ -186,7 +186,10 @@
     "20260807233224_harden_active_user_authorization_helpers.sql",
     "20260807233732_harden_company_membership_rls_authority.sql",
     "20260807234004_allow_multi_company_membership_discovery.sql",
-    "20260809010000_s04_property_management_gl_rpcs.sql"
+    "20260809010000_s04_property_management_gl_rpcs.sql",
+    "20260809030000_permission_request_workflow.sql",
+    "20260809190000_p61_cumulative_security_documents_hardening.sql",
+    "20260810113000_p61_permission_reviewer_authority_closeout.sql"
   ],
   "failedFiles": [
     {
