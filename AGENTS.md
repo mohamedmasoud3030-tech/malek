@@ -26,6 +26,34 @@ Do not use old status snapshots, archived plans, TODO lists, handover reports, o
 - For schema/RPC work, reconcile live-vs-repo migration reality before adding migrations.
 - Never invent a business, accounting, legal, or permission rule to unblock yourself. Record the blocker and continue with independent safe work.
 
+## Autonomous verification loop
+
+When a task changes a user-facing flow, an API/RPC, authentication/permissions,
+or data mapping, do not stop at code inspection or a static test result. Operate
+the application as part of the task, then fix and re-check what you observe.
+
+1. Start the local app or use the task's deployed **QA/preview** URL.
+2. Open the affected route with browser automation. Inspect the rendered UI at
+   the relevant desktop and mobile sizes, browser console, failed network
+   requests, navigation, and success/error states.
+3. For a live backend-dependent flow, run the matching hosted-QA proof before
+   diagnosing the UI: `pnpm qa:preflight` for Auth/API/RLS and
+   `pnpm qa:database-contracts` for schema/RPC/RLS drift. For an approved
+   disposable financial flow, use `pnpm qa:lifecycle`.
+4. Treat a browser-visible failure, console error, failed request, schema
+   mismatch, permission mismatch, unexpected response, overflow, or broken
+   state as a defect. Trace it across UI -> mapper/service -> RPC/API ->
+   database, implement the smallest correct repair, and repeat the same route
+   and scenario.
+5. Preserve useful evidence from the browser runner (screenshots, traces, and
+   reports) when a failure occurs. State exactly what was actually run; never
+   describe a flow as visually or end-to-end verified if the agent did not open
+   it.
+
+Use the repo's `browser-qa` and `testing-release-readiness` skills for this
+loop. The normal target is QA/preview. Production browser activity is
+read-only; no financial or other mutating journey may run there.
+
 ## When to stop and ask
 
 Stop only when the remaining work requires a genuine owner/accounting/legal decision or an explicitly unauthorized production mutation. Ordinary implementation choices are not blockers.
