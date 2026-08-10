@@ -35,6 +35,7 @@ function makeProbe(name: string) {
 }
 
 vi.mock('@/features/maintenance/components/maintenance-workspace', () => ({ MaintenanceWorkspace: makeProbe('maintenance') }));
+vi.mock('@/features/service-providers/service-providers-page', () => ({ ServiceProvidersWorkspace: makeProbe('service-providers') }));
 vi.mock('@/features/utilities/components/utilities-workspace', () => ({ UtilitiesWorkspace: makeProbe('utilities') }));
 vi.mock('@/features/automation/components/automation-workspace', () => ({ AutomationWorkspace: makeProbe('automation') }));
 
@@ -43,7 +44,7 @@ const { OperationsHubWorkspace } = await import('./operations-hub-workspace');
 type RenderOptions = Readonly<{
   initialUrl?: string;
   role?: AuthorizationRole | null;
-  defaultSection?: 'maintenance' | 'utilities' | 'automation';
+  defaultSection?: 'maintenance' | 'service_providers' | 'utilities' | 'automation';
   mode?: 'standalone' | 'embedded';
 }>;
 
@@ -120,7 +121,7 @@ describe('operations hub — standalone rendering', () => {
   it('renders the tab bar with one tab per permitted section', async () => {
     renderHub();
     await screen.findByTestId('maintenance-body');
-    expect(screen.getAllByRole('tab')).toHaveLength(3);
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
   });
 
   it('embeds child workspaces in embedded mode', async () => {

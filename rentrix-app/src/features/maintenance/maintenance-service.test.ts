@@ -45,11 +45,19 @@ describe('maintenance service failure and mutation boundaries', () => {
     supabaseMock.rpc.mockReturnValue(rpcChain);
     const { createMaintenance } = await import('./maintenance-service');
 
-    await expect(createMaintenance({ property_id: 'property-1', title: 'Test', priority: 'medium' })).rejects.toThrow('تعذر إنشاء طلب الصيانة');
+    await expect(createMaintenance({
+      property_id: 'property-1',
+      title: 'Test',
+      priority: 'medium',
+      service_provider_category_id: '10000000-0000-4000-8000-000000000001',
+      service_provider_id: '10000000-0000-4000-8000-000000000002',
+    })).rejects.toThrow('تعذر إنشاء طلب الصيانة');
     expect(supabaseMock.rpc).toHaveBeenCalledWith('create_maintenance_atomic', expect.objectContaining({
       p_property_id: 'property-1',
       p_title: 'Test',
       p_priority: 'medium',
+      p_service_provider_category_id: '10000000-0000-4000-8000-000000000001',
+      p_service_provider_id: '10000000-0000-4000-8000-000000000002',
       p_request_id: expect.any(String),
     }));
     // Raw insert path must never be reached.
@@ -79,6 +87,8 @@ describe('maintenance service failure and mutation boundaries', () => {
 
     await updateMaintenance('maintenance-1', {
       title: 'إصلاح المضخة',
+      service_provider_category_id: '10000000-0000-4000-8000-000000000001',
+      service_provider_id: '10000000-0000-4000-8000-000000000002',
       priority: 'high',
       assigned_to: 'فني الاختبار',
       scheduled_date: '2026-07-14',
@@ -86,6 +96,8 @@ describe('maintenance service failure and mutation boundaries', () => {
 
     expect(chain.update).toHaveBeenCalledWith({
       title: 'إصلاح المضخة',
+      service_provider_category_id: '10000000-0000-4000-8000-000000000001',
+      service_provider_id: '10000000-0000-4000-8000-000000000002',
       priority: 'high',
       assigned_to: 'فني الاختبار',
       scheduled_date: '2026-07-14',

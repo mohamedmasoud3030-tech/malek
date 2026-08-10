@@ -10,6 +10,8 @@ export type MaintenancePayload = Database['public']['Tables']['maintenance_recor
 export type MaintenanceUpdate = Pick<Database['public']['Tables']['maintenance_records']['Update'],
   | 'property_id'
   | 'unit_id'
+  | 'service_provider_id'
+  | 'service_provider_category_id'
   | 'title'
   | 'description'
   | 'priority'
@@ -43,6 +45,8 @@ export async function listMaintenance(status: MaintenanceStatus, propertyId: str
 export type CreateMaintenanceInput = {
   property_id: string;
   unit_id?: string | null;
+  service_provider_id?: string | null;
+  service_provider_category_id?: string | null;
   title: string;
   description?: string | null;
   priority: 'low' | 'medium' | 'high' | 'urgent';
@@ -89,6 +93,8 @@ export async function createMaintenance(
       p_scheduled_date: input.scheduled_date ?? null,
       p_attachment_url: input.attachment_url ?? null,
       p_request_id: requestId,
+      p_service_provider_category_id: input.service_provider_category_id ?? null,
+      p_service_provider_id: input.service_provider_id ?? null,
     })
     .single();
   if (error) handleSupabaseError(error, 'تعذر إنشاء طلب الصيانة');

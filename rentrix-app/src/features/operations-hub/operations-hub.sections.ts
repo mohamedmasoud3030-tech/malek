@@ -1,12 +1,12 @@
-import { Settings2, Wrench, Zap } from 'lucide-react';
+import { BriefcaseBusiness, Settings2, Wrench, Zap } from 'lucide-react';
 import type { SectionTabItem } from '@/components/ui/section-tabs';
 
-export type OperationsHubSectionId = 'maintenance' | 'utilities' | 'automation';
+export type OperationsHubSectionId = 'maintenance' | 'service_providers' | 'utilities' | 'automation';
 
 export type OperationsHubSection = SectionTabItem<OperationsHubSectionId> & Readonly<{
   description: string;
   /** null means no extra permission is required beyond being an authenticated user. */
-  permission: 'maintenance.view' | 'automation.view' | null;
+  permission: 'maintenance.view' | 'service_providers.view' | 'automation.view' | null;
 }>;
 
 /**
@@ -24,6 +24,13 @@ export const operationsHubSections: readonly OperationsHubSection[] = [
     icon: Wrench,
     description: 'تتبع طلبات الصيانة حسب الحالة والأولوية والعقار.',
     permission: 'maintenance.view',
+  },
+  {
+    id: 'service_providers',
+    label: 'مزودو الخدمات',
+    icon: BriefcaseBusiness,
+    description: 'ملفات المزودين وتخصصاتهم وبيانات التواصل وأعمال الصيانة المرتبطة.',
+    permission: 'service_providers.view',
   },
   {
     id: 'utilities',

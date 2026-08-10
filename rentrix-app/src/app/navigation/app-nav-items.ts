@@ -1,6 +1,7 @@
 import {
   BadgeDollarSign,
   BarChart3,
+  BriefcaseBusiness,
   Building2,
   ContactRound,
   DoorOpen,
@@ -70,8 +71,8 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   ],
   '/reports': [],
   '/maintenance': [
-    // Service Providers is intentionally absent: no provider domain/table exists.
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, undefined, { section: 'maintenance' }],
+    ['/service-providers', 'serviceProviders', 'ملفات مزودي الخدمات وتخصصاتهم', BriefcaseBusiness, 'service_providers.view'],
     ['/utilities', 'utilities', 'المرافق والعدادات', Zap],
   ],
   '/commissions': [],

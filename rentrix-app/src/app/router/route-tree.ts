@@ -346,6 +346,10 @@ const settingsRoute = createRoute({
   component: lazyRouteComponent(() => import('@/routes/_protected.settings'), 'SettingsRouteComponent'),
   staticData: { title: 'الإعدادات' },
 });
+const serviceProvidersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers', beforeLoad: requirePermission('service_providers.view'), component: lazyRouteComponent(() => import('@/routes/_protected.service-providers'), 'ServiceProvidersRouteComponent'), staticData: { title: 'مزودو الخدمات' } });
+const serviceProviderNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/new', beforeLoad: requirePermission('service_providers.write'), component: lazyRouteComponent(() => import('@/routes/_protected.service-providers.new'), 'ServiceProviderNewRouteComponent'), staticData: { title: 'إضافة مزود خدمة' } });
+const serviceProviderDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/$providerId', beforeLoad: requirePermission('service_providers.view'), component: lazyRouteComponent(() => import('@/routes/_protected.service-providers.$providerId'), 'ServiceProviderDetailRouteComponent'), staticData: { title: 'ملف مزود الخدمة' } });
+const serviceProviderEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/service-providers/$providerId/edit', beforeLoad: requirePermission('service_providers.write'), component: lazyRouteComponent(() => import('@/routes/_protected.service-providers.$providerId.edit'), 'ServiceProviderEditRouteComponent'), staticData: { title: 'تعديل مزود الخدمة' } });
 const maintenanceRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/maintenance',
@@ -431,6 +435,10 @@ export const routeTree = rootRoute.addChildren([
     dataIntegrityRoute,
     changePasswordRoute,
     maintenanceRoute,
+    serviceProvidersRoute,
+    serviceProviderNewRoute,
+    serviceProviderDetailRoute,
+    serviceProviderEditRoute,
     settingsRoute,
   ]),
 ]);

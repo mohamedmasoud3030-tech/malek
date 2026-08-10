@@ -61,6 +61,7 @@ async function resolveVaultEntityLabels(rows: any[]): Promise<Map<string, string
     { type: 'expense', table: 'expenses', select: 'id,reference', label: (row) => row.reference },
     { type: 'maintenance', table: 'maintenance_records', select: 'id,reference,title', label: (row) => row.reference || row.title },
     { type: 'utility_bill', table: 'utility_bills', select: 'id,reference', label: (row) => row.reference },
+    { type: 'service_provider', table: 'service_providers', select: 'id,name', label: (row) => row.name },
   ];
   await Promise.all(definitions.map(async (definition) => {
     const ids = Array.from(new Set(rows.filter((row) => row.related_entity_type === definition.type).map((row) => row.related_entity_id).filter(Boolean)));

@@ -29,6 +29,10 @@ const MaintenanceBody = lazy(async () => {
   const { MaintenanceWorkspace } = await import('@/features/maintenance/components/maintenance-workspace');
   return { default: function MaintenanceEmbedded() { return <MaintenanceWorkspace mode="embedded" />; } };
 });
+const ServiceProvidersBody = lazy(async () => {
+  const { ServiceProvidersWorkspace } = await import('@/features/service-providers/service-providers-page');
+  return { default: function ServiceProvidersEmbedded() { return <ServiceProvidersWorkspace embedded />; } };
+});
 const UtilitiesBody = lazy(async () => {
   const { UtilitiesWorkspace } = await import('@/features/utilities/components/utilities-workspace');
   return { default: function UtilitiesEmbedded() { return <UtilitiesWorkspace mode="embedded" />; } };
@@ -39,6 +43,7 @@ const AutomationBody = lazy(async () => {
 });
 const sectionComponents: Record<OperationsHubSectionId, ComponentType> = {
   maintenance: MaintenanceBody,
+  service_providers: ServiceProvidersBody,
   utilities: UtilitiesBody,
   automation: AutomationBody,
 };

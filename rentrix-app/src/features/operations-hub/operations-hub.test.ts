@@ -16,6 +16,7 @@ describe('operations hub contract', () => {
   it('maps every operational workspace once in the intended order', () => {
     expect(operationsHubSections.map((section) => section.id)).toEqual([
       'maintenance',
+      'service_providers',
       'utilities',
       'automation',
     ]);
@@ -88,6 +89,7 @@ describe('operations hub model', () => {
   it('returns all sections for ADMIN', () => {
     expect(getVisibleOperationsSections(admin).map((s) => s.id)).toEqual([
       'maintenance',
+      'service_providers',
       'utilities',
       'automation',
     ]);

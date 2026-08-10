@@ -23,6 +23,8 @@ const fixtureUnits: Unit[] = [
 const base = {
   company_id: '00000000-0000-4000-8000-000000000001',
   no: null,
+  service_provider_id: null,
+  service_provider_category_id: null,
   description: null,
   assigned_to: null,
   cost: null,
@@ -180,6 +182,7 @@ export function MaintenanceE2EFixture() {
               rows={fixtureRows}
               properties={fixtureProperties}
               allUnits={fixtureUnits}
+              providerOptions={[]}
               actionsPending={false}
               onViewDetails={() => undefined}
               onEdit={() => undefined}

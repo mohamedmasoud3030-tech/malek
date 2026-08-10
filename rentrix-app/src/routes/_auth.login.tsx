@@ -15,6 +15,7 @@ import { UtilitiesWorkspaceE2EFixture } from '@/features/utilities/utilities-wor
 import { DocumentsVaultWorkspaceE2EFixture } from '@/features/documents-vault/documents-vault-workspace.e2e-fixture';
 import { DepositsWorkspaceE2EFixture } from '@/features/financials/deposits/deposits-workspace.e2e-fixture';
 import { AutomationWorkspaceE2EFixture } from '@/features/automation/automation-workspace.e2e-fixture';
+import { ServiceProvidersWorkspaceE2EFixture } from '@/features/service-providers/service-providers-workspace.e2e-fixture';
 
 export function LoginRouteComponent() {
   if (import.meta.env.VITE_E2E && typeof window !== 'undefined') {
@@ -57,6 +58,10 @@ export function LoginRouteComponent() {
 
     if (search.get('e2e-automation-workspace') === '1') {
       return <AutomationWorkspaceE2EFixture />;
+    }
+
+    if (search.get('e2e-service-providers-workspace') === '1') {
+      return <ServiceProvidersWorkspaceE2EFixture />;
     }
 
     // Marketing showcase captures (landing screenshots/video sources)

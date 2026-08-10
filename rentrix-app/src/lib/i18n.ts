@@ -59,6 +59,7 @@ const sharedTranslationEntries = [
   ['reportsAndStatements', 'التقارير والكشوف', 'Reports & statements'],
   ['aiAssistant', 'مساعد الذكاء', 'AI assistant'],
   ['maintenance', 'الصيانة', 'Maintenance'],
+  ['serviceProviders', 'مزودو الخدمات', 'Service providers'],
   ['system', 'النظام', 'System'],
   ['auditLog', 'سجل التدقيق', 'Audit log'],
   ['dataIntegrity', 'سلامة البيانات', 'Data integrity'],

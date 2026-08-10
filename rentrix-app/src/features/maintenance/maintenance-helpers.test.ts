@@ -8,6 +8,8 @@ const baseRequest: Maintenance = {
   no: null,
   property_id: 'property-1',
   unit_id: 'unit-1',
+  service_provider_id: null,
+  service_provider_category_id: null,
   title: 'إصلاح المكيف',
   description: null,
   priority: 'urgent',

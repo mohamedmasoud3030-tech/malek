@@ -65,6 +65,8 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(adminContext, 'audit.view')).toBe(true);
     expect(canAccess(adminContext, 'integrity.view')).toBe(true);
     expect(canAccess(adminContext, 'maintenance.view')).toBe(true);
+    expect(canAccess(adminContext, 'service_providers.view')).toBe(true);
+    expect(canAccess(adminContext, 'service_providers.write')).toBe(true);
     expect(canAccess(adminContext, 'system.view')).toBe(true);
     expect(canAccess(adminContext, 'auth.password.change')).toBe(true);
     expect(canAccess(adminContext, 'owners.hub.view')).toBe(true);
@@ -85,6 +87,8 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(managerContext, 'permission_requests.review')).toBe(true);
     expect(canAccess(managerContext, 'integrity.view')).toBe(false);
     expect(canAccess(managerContext, 'maintenance.view')).toBe(true);
+    expect(canAccess(managerContext, 'service_providers.view')).toBe(true);
+    expect(canAccess(managerContext, 'service_providers.write')).toBe(true);
     expect(canAccess(managerContext, 'owners.hub.view')).toBe(true);
     expect(canAccess(managerContext, 'properties.write')).toBe(true);
     expect(canAccess(managerContext, 'contracts.write')).toBe(true);
@@ -101,6 +105,8 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(userContext, 'auth.password.change')).toBe(true);
     expect(canAccess(userContext, 'system.view')).toBe(false);
     expect(canAccess(userContext, 'maintenance.view')).toBe(false);
+    expect(canAccess(userContext, 'service_providers.view')).toBe(false);
+    expect(canAccess(userContext, 'service_providers.write')).toBe(false);
     expect(canAccess(userContext, 'owners.hub.view')).toBe(false);
     expect(canAccess(userContext, 'leads.view')).toBe(false);
     expect(canAccess(userContext, 'settings.manage')).toBe(false);
