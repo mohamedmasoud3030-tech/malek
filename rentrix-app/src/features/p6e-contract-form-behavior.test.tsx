@@ -16,7 +16,7 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 import { ContractFormFields } from '@/features/contracts/components/ContractFormFields';
-import { contractSchema, type ContractFormValues } from '@/features/contracts/contractSchema';
+import { contractSchema, type ContractFormValues, type ContractPayload } from '@/features/contracts/contractSchema';
 import type { useContractForm } from '@/features/contracts/useContractForm';
 
 type ContractFormController = ReturnType<typeof useContractForm>;
@@ -75,7 +75,7 @@ function Harness({ onSubmit }: { onSubmit: (values: ContractFormValues) => Promi
 }
 
 /** Mirrors the real submission path: schema.parse(values) before persisting. */
-async function parseAndStore(values: ContractFormValues, store: (parsed: ContractFormValues) => void) {
+async function parseAndStore(values: ContractFormValues, store: (parsed: ContractPayload) => void) {
   store(contractSchema.parse(values));
 }
 
@@ -134,7 +134,7 @@ function stepLabel(host: HTMLElement): string {
 describe('contract form mobile stepper — behavioral', () => {
   let host: HTMLDivElement;
   let root: ReturnType<typeof createRoot>;
-  let submitted: ContractFormValues | null;
+  let submitted: ContractPayload | null;
 
   beforeEach(() => {
     submitted = null;
