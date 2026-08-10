@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act } from 'react';
+import { act, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +12,7 @@ const closeSignals = vi.hoisted(() => ({ fn: null as null | (() => void) }));
 vi.mock('@tanstack/react-router', () => ({
   useParams: () => ({ ownerId: 'owner-1' }),
   useNavigate: () => navigateMock,
-  Link: ({ children }: { children: unknown }) => <a>{children}</a>,
+  Link: ({ children }: { children: ReactNode }) => <a>{children}</a>,
 }));
 
 vi.mock('@/app/router/background-location', () => ({
