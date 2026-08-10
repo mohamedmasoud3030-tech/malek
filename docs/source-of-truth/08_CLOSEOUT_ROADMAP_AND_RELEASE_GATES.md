@@ -1,568 +1,247 @@
-# MALEK Canonical Pack — Document 8: ClosEOUT Roadmap and Release Gates
+# MALEK Canonical Pack — Document 8: Closeout Roadmap and Release Gates
 
 > **Status:** CANONICAL  
-> **Rule ID Prefix:** REL-###  
-> **Effective Date:** 2026-08-10
+> **Baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`  
+> **Open gaps:** 23  
+> **Work packages:** 7
 
----
+## Purpose
 
-## 1. Work Package Overview
+This roadmap converts the 23 deduplicated gaps in Document 7 into a finite closeout program. It is not a new 10-stage master plan and does not grant stage credit. It is the implementation bridge from current repository reality to a Release Candidate.
 
-This document converts the Gap Register from Document 7 into a finite closeout program. Each work package groups related gaps and defines exit criteria.
+Each gap has exactly one owning work package. Related rule IDs may span multiple canonical documents, but ownership is not duplicated.
 
----
-
-## 2. Work Package Definitions
-
-### WP-01: Security and Company Isolation
-
-**Included Gap IDs:** GAP-001, GAP-010, SEC-401 (conflict)
-
-**Intended Outcome:**
-- 6 product roles implemented per ADR 0015 and ADR 0003
-- Master Lease accounting module implemented as separate principal model
-- Full permission granularity for production use
-
-**Explicit Exclusions:**
-- UI implementation of new permission features (handled in WP-06)
-- Master Lease IFRS modifier modules beyond kernel (separate S06 execution)
+## Release rules
 
-**Dependencies:**
-- None (foundation work)
+| Rule ID | Canonical rule |
+|---|---|
+| `REL-001` | Repository implementation reality, governed stage credit, test verification and live/runtime verification are separate truths and must be reported separately. |
+| `REL-002` | Every open release gap belongs to exactly one finite Work Package with explicit exit evidence; micro-PR churn is not a substitute for closing an end-to-end capability. |
+| `REL-003` | Release Candidate requires all release-blocking gates green, hosted QA/runtime evidence, financial reconciliation, one-office pilot evidence and explicit sign-off. |
+| `REL-004` | Historical correction/backfill cannot start merely because S08 code exists; the read-only analysis must be governed/approved first, then append-only S09 correction controls must be accepted. |
 
-**Data/Migration Impact:**
-- Permission table schema changes
-- New role entries
-- Master Lease account provisioning
-
-**Security/Accounting Risk:**
-- HIGH — Permission model is foundational to production readiness
-- Unauthorized access risk if not implemented
-
-**Required Implementation Layers:**
-1. Database: Role and permission table expansion
-2. RPC: Permission evaluation logic update
-3. JWT: Role claim expansion
-4. UI: Role-based visibility updates
-
-**Smallest Meaningful Verification:**
-- 6 roles appear in permission dropdown
-- Each role has distinct access patterns
-- Cross-role access is correctly denied
-
-**Exit Criteria:**
-- [ ] 6 roles implemented in schema
-- [ ] Role assignment UI functional
-- [ ] Permission checks verified per role
-- [ ] Master Lease schema kernel deployed
-- [ ] No permission escalation possible
-- [ ] Permission tests green
-
-**Rollback Considerations:**
-- Database migration rollback
-- Role assignments reset to existing roles
-
----
-
-### WP-02: Financial Integrity and GL Wiring
-
-**Included Gap IDs:** GAP-002 (FIN-401, FIN-412, FIN-461)
-
-**Intended Outcome:**
-- All business events post to GL with balanced journal entries
-- Invoice issuance posts correctly for both collection models
-- Receipt recording posts correctly for both collection models
-- Void operations create balanced reversal batches
-
-**Explicit Exclusions:**
-- Fee recognition (handled in WP-03)
-- Deposit GL posting (handled in WP-04)
-- Master Lease GL posting (handled in WP-01)
-
-**Dependencies:**
-- S03 GL engine verified (READY_FOR_INDEPENDENT_REVIEW)
-- Accounting period management implemented
-
-**Data/Migration Impact:**
-- Invoice posting RPC modifications
-- Receipt posting RPC modifications
-- Void RPC modifications
-- Journal entry verification tests
-
-**Security/Accounting Risk:**
-- CRITICAL — Financial integrity depends on correct GL wiring
-- Incorrect posting could corrupt financial history
-
-**Required Implementation Layers:**
-1. Database: Journal entry creation in invoice/ receipt/void RPCs
-2. RPC: Business logic → GL posting integration
-3. Service: Amount derivation and precision
-4. UI: GL verification views
-
-**Smallest Meaningful Verification:**
-- Invoice created → journal batch posted
-- Receipt recorded → journal batch posted
-- Void executed → reversal batch posted
-- All batches balanced (debits = credits)
-- Period assignment correct
-
-**Exit Criteria:**
-- [ ] Invoice posting creates balanced GL entry
-- [ ] Receipt posting creates balanced GL entry
-- [ ] OWNER_IS_CREDITOR posts to 2000 (Owner Payable)
-- [ ] OFFICE_IS_CREDITOR posts to 1201 (Tenant AR)
-- [ ] Void creates balanced reversal
-- [ ] Period assignment correct for all events
-- [ ] GL/subledger reconciliation passes
-- [ ] Financial acceptance tests green
-
-**Rollback Considerations:**
-- GL entries are append-only; reversal is the rollback mechanism
-- Cannot delete GL history
-
----
-
-### WP-03: Contracts and Owner-Agency Lifecycle
-
-**Included Gap IDs:** GAP-003, GAP-004, GAP-011 (OPS-421, OPS-621, OPS-102, FIN-421, FIN-422)
-
-**Intended Outcome:**
-- Maker-Checker separation for contract activation and void operations
-- Contract signature evidence collection and verification
-- Management fee recognition on collection (RATE) and daily accrual (FIXED_MONTHLY)
-- Server-side amount derivation for all financial operations
-
-**Explicit Exclusions:**
-- Legal template wording (requires external legal review)
-- Jurisdiction-specific contract requirements
-
-**Dependencies:**
-- WP-01 (permission model for Maker-Checker roles)
-- WP-02 (GL wiring for fee posting)
-
-**Data/Migration Impact:**
-- Contract workflow state expansion
-- Signature evidence storage
-- Fee calculation and posting
-- Audit log entries
-
-**Security/Accounting Risk:**
-- HIGH — Incorrect fee recognition violates revenue recognition rules
-- Maker-Checker bypass risks audit trail validity
-
-**Required Implementation Layers:**
-1. Database: Workflow state and signature tables
-2. RPC: Maker-Checker validation logic
-3. Service: Fee calculation (RATE on collection, FIXED_MONTHLY daily)
-4. UI: Approval workflow, signature upload
-5. GL: Fee posting integration
-
-**Smallest Meaningful Verification:**
-- Creator cannot approve own contract
-- Maker-Checker required for activation
-- RATE fee calculated on collection
-- FIXED_MONTHLY fee accrued daily
-- Fee amount matches contract terms
-- Fee posted to correct GL account
-
-**Exit Criteria:**
-- [ ] Maker-Checker enforced for contract activation
-- [ ] Maker-Checker enforced for receipt void
-- [ ] Emergency void requires extra reason
-- [ ] Signature evidence collected before activation
-- [ ] RATE fee = contract_rate × collection_amount
-- [ ] FIXED_MONTHLY fee = monthly_fee / days_in_month per day
-- [ ] Fee amounts server-derived, not client-provided
-- [ ] Fee GL posting verified
-- [ ] Audit trail complete
-
-**Rollback Considerations:**
-- Workflow state changes reversible
-- Fee reversals via adjustment entries
-
----
-
-### WP-04: Expenses, Deposits, Refunds, and Settlements
-
-**Included Gap IDs:** GAP-005, GAP-006, GAP-007 (OPS-901, OPS-952, OPS-701, OPS-801)
-
-**Intended Outcome:**
-- Owner expenses booked as Due from Owner (1205)
-- Deposit receive/apply/refund workflow complete with GL posting
-- Owner settlement with atomic reservation
-- Due-from-Owner recovery for post-payment refunds
-
-**Explicit Exclusions:**
-- Legal template wording for deposit receipts
-- Automatic deposit application rules
-
-**Dependencies:**
-- WP-02 (GL wiring foundation)
-- WP-03 (fee recognition for settlement)
-
-**Data/Migration Impact:**
-- Deposit transaction atomic operations
-- Due-from-Owner tracking
-- Settlement reservation implementation
-- GL posting for all settlement components
-
-**Security/Accounting Risk:**
-- HIGH — Owner fund segregation critical for trust
-- Incorrect deposit treatment creates liability issues
-
-**Required Implementation Layers:**
-1. Database: Deposit transaction table, Due-from-Owner tracking
-2. RPC: Atomic deposit operations, settlement reservation
-3. Service: Offset calculation, Due-from-Owner recovery
-4. GL: Due-from-Owner posting, deposit liability posting
-5. UI: Deposit workflow, Due-from-Owner visibility
-
-**Smallest Meaningful Verification:**
-- Owner expense → Dr 1205 Due from Owners
-- Deposit receipt → Cr 2200 Tenant Deposits Payable
-- Deposit application → balanced entry with evidence
-- Settlement reservation atomic
-- Same receipt/expense not in two active settlements
-- Post-payment refund → Due from Owner created
-- Owner Payable never goes negative
-
-**Exit Criteria:**
-- [ ] Owner expense booked to 1205
-- [ ] Office expense booked to 6100
-- [ ] Deposit receipt creates liability
-- [ ] Deposit application with evidence
-- [ ] Deposit refund with payment-out event
-- [ ] Settlement reservation atomic
-- [ ] Settlement totals server-derived
-- [ ] Due-from-Owner created on post-payment refund
-- [ ] GL/subledger reconciliation verified
-- [ ] Settlement acceptance tests green
-
-**Rollback Considerations:**
-- Financial corrections via adjustment entries
-- Deposit transactions immutable after completion
-
----
-
-### WP-05: Reports and Reconciliation
-
-**Included Gap IDs:** GAP-008, GAP-009 (OPS-1001, OPS-1021, OPS-1101, FIN-501)
-
-**Intended Outcome:**
-- FGR-006 approval flow for bank reconciliation
-- Period close checklist with reconciliation verification
-- Complete financial statement generation from GL
-- Subledger-to-GL reconciliation dashboard
-
-**Explicit Exclusions:**
-- Advanced analytics and forecasting
-- Multi-company consolidated reports
-
-**Dependencies:**
-- WP-02 (GL wiring for statement generation)
-- WP-04 (deposit and expense posting)
-
-**Data/Migration Impact:**
-- Reconciliation approval workflow
-- Period close checklist tracking
-- Statement generation queries
-
-**Security/Accounting Risk:**
-- MEDIUM — Reports must reflect true financial position
-- Incorrect statements could mislead stakeholders
-
-**Required Implementation Layers:**
-1. Database: Reconciliation status, approval records
-2. RPC: Approval workflow validation
-3. Service: Statement generation from GL
-4. UI: Approval flow, close checklist, reconciliation dashboard
-5. Reports: Trial balance, income statement, balance sheet
-
-**Smallest Meaningful Verification:**
-- FGR-006 approval required for final reconciliation
-- Period close blocked if differences exist
-- Trial balance debits = credits
-- Income statement totals match GL
-- Balance sheet balances
-
-**Exit Criteria:**
-- [ ] Bank reconciliation requires approval
-- [ ] Period close checklist complete
-- [ ] Period soft-close blocks normal postings
-- [ ] Period hard-close irreversible
-- [ ] Late posting routes to first open period
-- [ ] Trial balance balances
-- [ ] Income statement totals correct
-- [ ] Balance sheet balances
-- [ ] Subledger reconciliation verified
-- [ ] Report acceptance tests green
-
-**Rollback Considerations:**
-- Period can be reopened (if SOFT_CLOSED)
-- Hard-closed periods cannot be reopened
-
----
-
-### WP-06: UX, Documents, and Consistency
-
-**Included Gap IDs:** GAP-012, GAP-013, GAP-014 (UX-1001, PRD-030, PRD-001)
-
-**Intended Outcome:**
-- Legal document templates integrated for print output
-- CRM features removed or clearly documented as future scope
-- Brand consistency (MALEK visible, MALIK eliminated)
-- UI consistency across all modules
-
-**Explicit Exclusions:**
-- New feature development
-- Major UX redesigns
-
-**Dependencies:**
-- None (cleanup work)
-
-**Data/Migration Impact:**
-- Document template storage
-- Branding asset updates
-
-**Security/Accounting Risk:**
-- LOW — UX consistency improvements
-
-**Required Implementation Layers:**
-1. Storage: Legal template upload
-2. Service: Template integration with documentService
-3. UI: Brand updates, CRM feature visibility
-4. Code: Remove or mark CRM features
-
-**Smallest Meaningful Verification:**
-- PDF output uses MALEK branding
-- Legal templates appear in print output
-- CRM test file marked as future scope or removed
-- All visible text uses MALEK
-
-**Exit Criteria:**
-- [ ] Legal templates uploaded
-- [ ] PDF output correct branding
-- [ ] CRM features documented as future scope
-- [ ] Brand consistency verified
-- [ ] UI consistency audit passed
-
-**Rollback Considerations:**
-- Branding changes revert via CSS
-- Templates can be replaced
-
----
-
-### WP-07: Release Readiness and Pilot
-
-**Included Gap IDs:** REL-001, REL-010, REL-020, REL-030 (all release criteria)
-
-**Intended Outcome:**
-- All release-blocking gaps resolved
-- CI pipeline green
-- One-office pilot data cycle completed
-- Production launch decision approved
-
-**Explicit Exclusions:**
-- P7 (Reports and Reconciliation) was not started
-- Multi-office deployment
-- Historical correction (S08/S09)
-
-**Dependencies:**
-- WP-01 through WP-06 completed
-
-**Data/Migration Impact:**
-- Pilot database setup
-- Data sanitization for test data
-
-**Security/Accounting Risk:**
-- CRITICAL — Production deployment requires all safeguards
-
-**Required Implementation Layers:**
-1. CI: All gates green
-2. Testing: Acceptance test suite complete
-3. Documentation: User guides, runbooks
-4. Operations: Deployment process, rollback plan
-5. Pilot: Single company, full period
-
-**Smallest Meaningful Verification:**
-- Main CI green
-- Unit tests pass
-- Integration tests pass
-- E2E tests pass (desktop, mobile, RTL)
-- Pilot company data cycle complete
-- No unresolved critical gaps
-
-**Exit Criteria:**
-- [ ] Canonical decisions approved (D01-D18)
-- [ ] No unresolved release-blocking conflicts
-- [ ] Company isolation verified
-- [ ] Financial posting and reversal verified
-- [ ] GL/subledger reconciliation verified
-- [ ] Permissions verified
-- [ ] Main CI green
-- [ ] Mobile, desktop, RTL acceptance
-- [ ] Printable documents acceptance
-- [ ] Pilot data cycle completed
-- [ ] Release Candidate approved
-- [ ] One-office pilot completed
-- [ ] Production launch decision recorded
-
-**Rollback Considerations:**
-- Deployment rollback via previous image
-- Financial reversal via adjustment entries
-
----
-
-## 3. Release Gate Definitions
-
-### Gate 1: Canonical Decisions Approved
-**Owner:** Product Owner  
-**Criteria:**
-- [ ] D01-D18 in final-decision-register.json all FINAL
-- [ ] 00_INDEX.md in place
-- [ ] All 8 canonical documents created
-- [ ] No BLOCKED or PROVISIONAL decisions
-
-### Gate 2: No Unresolved Release-Blocking Conflict
-**Owner:** Technical Lead  
-**Criteria:**
-- [ ] SEC-401 conflict resolved (6-role model)
-- [ ] No CONFLICT status in traceability matrix
-- [ ] All RELEASE_BLOCKING gaps in work packages
-
-### Gate 3: Company Isolation Verified
-**Owner:** Security  
-**Criteria:**
-- [ ] RLS policies on all tables verified
-- [ ] Cross-company access denied
-- [ ] Multi-company JWT selection functional
-- [ ] Security tests green
-
-### Gate 4: Financial Posting and Reversal Verified
-**Owner:** Accounting/Finance  
-**Criteria:**
-- [ ] Invoice posting creates balanced GL entry
-- [ ] Receipt posting creates balanced GL entry
-- [ ] Void creates balanced reversal
-- [ ] GL wiring acceptance tests green
-
-### Gate 5: GL/Subledger Reconciliation Verified
-**Owner:** Accounting  
-**Criteria:**
-- [ ] Trial balance balances
-- [ ] Subledger-to-GL differences = 0
-- [ ] Reconciliation tests green
-
-### Gate 6: Permissions Verified
-**Owner:** Security  
-**Criteria:**
-- [ ] 6 roles implemented
-- [ ] Role-based access correct
-- [ ] Maker-Checker separation enforced
-- [ ] Permission tests green
-
-### Gate 7: Main CI Green
-**Owner:** CI/CD  
-**Criteria:**
-- [ ] All checks pass on main
-- [ ] No failing tests
-- [ ] Build successful
-
-### Gate 8: Mobile, Desktop, and RTL Acceptance
-**Owner:** QA  
-**Criteria:**
-- [ ] Mobile viewport (375px) functional
-- [ ] Desktop viewport (1024px+) functional
-- [ ] RTL layout correct
-- [ ] Accessibility (WCAG AA) met
-
-### Gate 9: Printable Documents Acceptance
-**Owner:** Product  
-**Criteria:**
-- [ ] Receipt PDF correct
-- [ ] Invoice PDF correct
-- [ ] Settlement statement PDF correct
-- [ ] Branding consistent
-
-### Gate 10: Pilot Data Cycle Completed
-**Owner:** Operations  
-**Criteria:**
-- [ ] One company through full period
-- [ ] Collections recorded
-- [ ] Settlements processed
-- [ ] Bank reconciliation complete
-
-### Gate 11: Release Candidate Approved
-**Owner:** Product Owner  
-**Criteria:**
-- [ ] All Gates 1-10 passed
-- [ ] Product owner sign-off
-- [ ] Go/No-Go decision recorded
-
-### Gate 12: One-Office Pilot
-**Owner:** Operations  
-**Criteria:**
-- [ ] Live operation with real data
-- [ ] No critical issues
-- [ ] User acceptance confirmed
-
-### Gate 13: Production Launch Decision
-**Owner:** Executive  
-**Criteria:**
-- [ ] Pilot success confirmed
-- [ ] Rollback plan ready
-- [ ] Monitoring in place
-- [ ] Launch authorized
-
----
-
-## 4. P7 Prohibition
-
-**P7 (Reports and Subledger Reconciliation) was NOT started on this branch.**
-
-This branch (`arena/019fecf2-malik`) is a documentation-only branch. P7 represents future work that requires:
-
-1. WP-02 (GL Wiring) completion
-2. WP-04 (Settlement wiring) completion
-3. Dedicated P7 implementation branch
-4. S07-T01 through S07-T10 completion
-
-Do not claim P7 is in progress, partially complete, or ready for review based on documentation in this branch.
-
----
-
-## 5. External Dependencies
-
-| Dependency | Owner | Status | Impact |
-|------------|-------|--------|--------|
-| Legal document templates | External Legal | PENDING | WP-06 blocked |
-| Hosted QA environment | Operations | PENDING | Verification blocked |
-| Production secrets | Operations | PENDING | Deployment blocked |
-| Accounting sign-off | Finance | PENDING | Release blocked |
-| S08 historical analysis | — | BLOCKED | S09 blocked |
-
----
-
-## 6. Summary
-
-| Work Package | Critical Gaps | Release Blocking | Estimated Status |
-|--------------|---------------|-------------------|------------------|
-| WP-01: Security | 2 | Yes | Must start |
-| WP-02: GL Wiring | 1 | Yes | Must start |
-| WP-03: Contracts | 3 | Yes | Must start |
-| WP-04: Expenses/Deposits | 2 | Yes | Must start |
-| WP-05: Reports | 1 | Yes | After WP-02/04 |
-| WP-06: UX/Consistency | 2 | No | Can parallel |
-| WP-07: Release | 4 | Yes | Final gate |
-
-**Total Release-Blocking Gaps:** 5 (GAP-001 through GAP-005)
-
----
-
-## Cross-References
-
-- **Traceability Matrix:** `07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`
-- **Gap Register:** Section 3 of Document 7
-- **Execution Plan:** `governance/10-stage-master-plan.json`
-- **Decision Register:** `governance/final-decision-register.json`
-- **Canonical Index:** `00_INDEX.md`
+## Governed stage credit vs repository reality
+
+The locked master plan still records:
+
+- S01 COMPLETE
+- S02 PARTIAL
+- S03 PARTIAL
+- S04 NOT_STARTED
+- S05 PARTIAL
+- S06 NOT_STARTED
+- S07 PARTIAL
+- S08 NOT_STARTED
+- S09 NOT_STARTED
+- S10 NOT_STARTED
+
+Repository artifacts exist for portions of S02/S04/S06/S07/S08. This roadmap closes gaps based on actual code while leaving Reviewer credit untouched until the governance process grants it.
+
+## WP-01 — Security, authorization and company isolation
+
+**Owns:** GAP-001, GAP-002, GAP-003, GAP-018.
+
+### Intended outcome
+
+A coherent six-role/effective-permission model with authoritative Maker-Checker, complete sensitive-write inventory and current live company-isolation evidence.
+
+### Included work
+
+- Migrate `ADMIN/MANAGER/USER` deployment semantics to the approved six-role model without widening access.
+- Preserve action-specific effective grants.
+- Enforce creator/requester separation for designated contract/VOID/financial approvals at backend/RPC policy level.
+- Inventory sensitive browser writes and close any path that bypasses canonical RPC/server ownership.
+- Run current-SHA live cross-company and Auth/RLS drift checks in the authorized environment.
+
+### Exclusions
+
+No new business features, no historical backfill, no accounting-policy redesign.
+
+### Exit criteria
+
+- GAP-001/002/003/018 closed in Document 7.
+- Role migration and fail-closed behavior tested.
+- Cross-company negative tests pass in repository and deployed target.
+- Every designated Maker-Checker action proves identity separation.
+- Sensitive financial write inventory reports zero unintended browser-owned financial mutations.
+
+## WP-02 — Owner-agency financial lifecycle
+
+**Owns:** GAP-006, GAP-007, GAP-008, GAP-009, GAP-010, GAP-011.
+
+### Intended outcome
+
+A complete agent-net property-management lifecycle from invoice/collection through fee/tax/deposit/owner-receivable/settlement/refund, reconciled to GL.
+
+### Included work
+
+- Close RATE fee wiring from actual collection event.
+- Implement/prove FIXED_MONTHLY daily accrual, catch-up and reversal.
+- Complete Due-from-Owner recovery and lawful offset behavior, including post-payout refunds.
+- Close deposit beneficiary/application/refund/reversal matrix.
+- Finish company tax profile/code snapshots and fail-closed taxable posting.
+- Complete VOID/credit-note/cash-refund/late-fee/termination event matrix.
+
+### Exit criteria
+
+- OWNER_IS_CREDITOR and OFFICE_IS_CREDITOR scenarios pass end-to-end.
+- Example 1,000 OMR / 10% management fee produces 100 OMR office fee (plus configured tax where applicable), correct owner liability and correct cash after payout.
+- Fixed monthly partial-month tests pass at 3dp.
+- Owner expenses never hit 6100 when they are owner obligations.
+- No deposit or refund path produces an untraceable or destructive correction.
+- All related subledgers reconcile to GL controls.
+
+## WP-03 — Contracts, onboarding, versioning and legal evidence
+
+**Owns:** GAP-004, GAP-005, GAP-019.
+
+### Intended outcome
+
+A production-safe agreement/contract lifecycle with immutable signed evidence, explicit amendments and evidence-driven onboarding.
+
+### Included work
+
+- Authoritative owner-agreement versioning.
+- Tenant contract DRAFT→REVIEW→APPROVED→SIGNED→ACTIVE lifecycle.
+- Signed artifact immutability and amendment/renewal traceability.
+- Seven-step property onboarding with permitted/admin evidence waivers and non-waivable identity/safety gates.
+- Jurisdiction-specific legal template review before production use.
+
+### Exit criteria
+
+- No material retroactive mutation of signed/financial terms.
+- Activation is impossible without required approval/signatures/evidence.
+- Legal templates used in production are externally reviewed/approved.
+- All version/amendment records are company-scoped and auditable.
+
+## WP-04 — Independent MASTER_LEASE closeout
+
+**Owns:** GAP-012.
+
+### Intended outcome
+
+A complete master-lease/principal module that is independent from owner-agency settlements and truthfully reportable.
+
+### Included work
+
+- Head-lease inception and measurement.
+- ROU asset and lease liability.
+- Payment/interest schedule, depreciation and remeasurement/modification.
+- Short-term election where applicable.
+- Sublease revenue and vacancy economics.
+- UI/service/RPC/database/report/reconciliation wiring.
+
+### Exit criteria
+
+- `gl_ml_*`/S06 kernel is wired through the actual product journey.
+- Master-lease balances reconcile to 1600/2500/6200/6300/4000 as applicable.
+- Owner Funds Payable 2000 is not used as lease liability.
+- Operational reports no longer overstate IFRS completeness.
+- Governance review may then determine stage credit independently.
+
+## WP-05 — Banking, reports, reconciliation and history
+
+**Owns:** GAP-013, GAP-014, GAP-015, GAP-016, GAP-017.
+
+### Intended outcome
+
+Financial statements and operational subledgers reconcile deterministically; bank import is fail-closed; historical analysis/correction follows the locked sequence.
+
+### Included work
+
+- Tenant/owner/deposit/due-from-owner/commission control reconciliations.
+- Trial balance, P&L, balance sheet, general ledger and complete cash-flow reporting from GL.
+- Current-SHA Bank CSV preview/count/limits/3dp/ambiguity/no-partial-success proof.
+- Independent S08 review and frozen approved analysis evidence.
+- S09 append-only correction batches only after S08 approval.
+
+### Exit criteria
+
+- Every control subledger equals its GL control account within 0.001 OMR.
+- Financial statements tie to posted GL and exclude VOID/CANCELLED economic effects correctly.
+- Cash flow covers deposits, settlements, commissions and all bank/cash accounts.
+- Invalid/ambiguous bank import rejects the whole batch.
+- S08 approved/frozen before any S09 write.
+- S09 uses before/after, company/period/source detail and reversible append-only corrections.
+
+## WP-06 — UX acceptance, hosted QA and release CI
+
+**Owns:** GAP-020, GAP-023.
+
+### Intended outcome
+
+The implemented product is actually operable in browser/mobile/desktop/RTL and the candidate SHA has no release-blocking CI ambiguity.
+
+### Included work
+
+- Autonomous browser observe→trace→repair→recheck on affected critical routes.
+- Mobile/desktop/RTL acceptance for core journeys.
+- Print/PDF readiness and handler-level guards.
+- Loading/empty/error/permission states.
+- Resolve pre-existing release-blocking test failures rather than hiding them behind baseline exceptions.
+- Remove or narrow misleading coverage exclusions before release.
+
+### Exit criteria
+
+- Candidate SHA passes mandatory application, financial, browser and release-blocker gates.
+- No unexplained baseline failures are carried into release.
+- Core critical routes are observed in a hosted/runtime environment, not merely unit-tested.
+- Print/PDF controls fail closed when real company/document readiness is missing.
+
+## WP-07 — Live environment, pilot and production decision
+
+**Owns:** GAP-021, GAP-022.
+
+### Intended outcome
+
+Prove the exact Release Candidate in the actual deployment environment and complete one real controlled office cycle before broader rollout.
+
+### Included work
+
+- Verify deployed schema/migrations/RLS/Auth Hook/functions/config/secrets for the candidate SHA.
+- Backup and restore evidence.
+- One-office pilot with anonymized/authorized data as appropriate.
+- Daily reconciliation through a complete accounting period.
+- Accountant/owner sign-off.
+- Controlled production rollout decision.
+
+### Exit criteria
+
+- Exact deployed SHA/config recorded.
+- Live cross-company isolation and critical financial lifecycles pass.
+- Backup/restore rehearsal is documented.
+- One complete pilot period reconciles without unexplained GL/subledger differences.
+- Explicit accountant/product-owner release sign-off exists.
+
+## Final release gates
+
+A Release Candidate is not approved until all of the following are true:
+
+1. Canonical decisions remain consistent and no release-blocking `CONFLICT` remains.
+2. All 23 current Gap IDs are closed, superseded by evidence, or explicitly reclassified through a canonical decision.
+3. Six-role/effective-permission and Maker-Checker controls are authoritative.
+4. Company isolation is verified both in repository tests and the deployed target.
+5. Property-management posting, reversal, fees, deposits, owner receivables and settlements reconcile.
+6. MASTER_LEASE is either fully completed/reconciled or explicitly excluded from release without misleading reporting.
+7. GL financial statements reconcile to all required operational control subledgers.
+8. Hosted mobile/desktop/RTL/print acceptance passes.
+9. Mandatory CI/release gates are green on the candidate SHA.
+10. S08/S09 historical remediation sequence is respected; no unauthorized backfill exists.
+11. Backup/restore and deployed configuration evidence is current.
+12. One-office pilot and full-period reconciliation are complete.
+13. Accountant/product-owner sign-off is recorded.
+
+## PR strategy
+
+Do not create one PR for every small symptom. Each Work Package should be split only where risk or migration safety genuinely requires it, while preserving one end-to-end exit target. A merged PR that leaves the Work Package exit criteria false does not close the package.
+
+## Rollback/recovery principles
+
+- Database migrations require forward-safe rollback/recovery instructions consistent with repository policy.
+- Posted financial corrections use reversal/compensating entries, not deletion.
+- Role/security changes fail closed on uncertainty.
+- Pilot/deployment changes must have backup/restore and configuration rollback paths.
+
+## Closeout completion
+
+When all release gates pass, Document 7 becomes the evidence record of closed rules/gaps and this document becomes the release closeout record. Governed stage ledgers are then updated only by their authorized Agent/Reviewer process; this roadmap never self-grants stage completion.
