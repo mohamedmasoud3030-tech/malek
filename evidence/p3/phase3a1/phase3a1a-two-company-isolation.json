@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-08-10T13:41:54.839Z",
+  "generatedAt": "2026-08-10T13:59:13.551Z",
   "crossCompanyIdempotency": {
     "isolated": true,
     "requestId": "phase3a-expense-shared",
-    "companyBExpenseId": "2b8960d9-298e-40ec-8924-447a4ccc3e36",
+    "companyBExpenseId": "d14b6ae3-89a9-4937-a9f9-3956d9913c77",
     "companyBProvisionedAccounts": 2
   },
   "helperAcl": {
