@@ -98,7 +98,16 @@ describe('Owner detail recovery states', () => {
         { id: 'contract-2', property_id: property.id, unit_id: 'unit-1', start_date: '2025-01-01', end_date: '2025-12-31', status: 'expired' },
       ],
       invoices: [
-        { id: 'invoice-1', contract_id: 'contract-1', amount: 1000, paid_amount: 250, status: 'partial', deleted_at: null },
+        {
+          id: 'invoice-1',
+          contract_id: 'contract-1',
+          amount: 1000,
+          paid_amount: 250,
+          status: 'partial',
+          deleted_at: null,
+          due_date: '2026-02-01',
+          created_at: '2026-01-01T00:00:00.000Z',
+        },
       ],
       financialSummary: { outstandingBalance: 750, outstandingInvoicesCount: 1 },
     };
