@@ -1,17 +1,25 @@
-New SHA: c9fc5e4cf1686b505870d88d927cb21c2be7b9e2
-PR: https://github.com/mohamedmasoud3030-tech/malik/pull/1426
+# MALEK Design Phase — Final Closeout (2026-08-10)
 
-targeted test result: PASSED (4/4) - src/features/financials/components/arrears-workflow-section.test.tsx (shared LoadingState contract: role="status", aria-label="جارٍ تحميل بيانات المتأخرات", data-loading-state)
+## Status
+**Design pass = COMPLETE**
 
-full-suite result: Targeted arrears ✅ green. portfolio-hub-workspace.test.tsx: 6 pass / 3 fail (tab/role + shell count, likely pre-existing). accessibility/entity-table/design-system previously green. Full application suite runs frequently timeout in sandbox.
+Scope was presentation-only. No business logic, database, RLS, permissions, accounting, or route behavior changes were introduced.
 
-مقارنة failures مع base (aabfbd5a1145862a527112389e11bba2971136a9):
-- arrears-workflow-section.test.tsx: Branch-caused regression (raw text assertion). Fixed.
-- portfolio-hub-workspace.test.tsx (3 fails): Likely pre-existing (fragile hub mocks).
-- migration replay S03/S04/S06, dashboard ExpiringContractsSection, useLocation: Pre-existing baseline debt (untouched by Visual PR).
+## Intended change
+- `arrears-workflow-section.tsx`: replaced raw loading/error presentation with the shared `LoadingState` / `ErrorState` primitives.
+- `arrears-workflow-section.test.tsx`: aligned the loading-state assertion with the shared component contract (`role="status"`, Arabic `aria-label`, and `data-loading-state`).
 
-GitHub Actions النهائية: On f584ad3 (pre-fix): CI/Build + Release Gate FAILED, E2E in progress. After fix (c9fc5e4): Re-check required on GitHub.
+## Verification
+- Targeted arrears suite: **PASSED (4/4)**.
+- Typecheck and production build: **PASSED** during the Design closeout run.
+- Accessibility / EntityTable / design-system structural checks: **PASSED** in the Design closeout verification.
+- The branch-caused arrears test drift was fixed.
 
-هل PR #1426 أصبح جاهزًا فعلًا للدمج؟ NO — awaiting full CI gates green + portfolio-hub classification with base evidence.
+## Baseline classification
+Base commit `aabfbd5a1145862a527112389e11bba2971136a9` already documents the pre-existing failing files in the full suite (P0/P1/P3 migration evidence plus dashboard and portfolio-hub coverage). Those failures are outside this visual scope and were not modified as part of the Design pass.
 
-No P7/Service Providers. Working tree clean.
+## Cleanup
+Generated evidence churn under `evidence/p0/**`, `evidence/p2/**`, and `evidence/p3/**` was restored to the base state before closeout so the PR contains only Design-pass changes.
+
+## Scope boundary
+No P7 or Service Providers implementation is included in this branch.

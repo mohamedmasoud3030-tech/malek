@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-10T13:59:13.551Z",
+  "generatedAt": "2026-08-09T12:53:11.894Z",
   "functions": [
     {
       "proname": "create_expense_with_journal_atomic",

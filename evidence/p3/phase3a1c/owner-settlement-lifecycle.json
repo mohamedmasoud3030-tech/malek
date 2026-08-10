@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-08-10T13:59:35.276Z",
-  "settlementId": "b4dfbf1e-71f9-4f27-b8ae-5ae40fa8bdb3",
+  "generatedAt": "2026-08-09T12:53:25.641Z",
+  "settlementId": "0f87ee9e-064a-4bdc-909a-1bd26abe5bca",
   "status": "PAID",
   "netPayable": 895,
-  "journalBatchId": "a797f8f0-c361-4e4b-a70d-71c324194556",
+  "journalBatchId": "ae6969c2-10fe-42b4-bbc4-babe16050711",
   "journalLines": [
     {
       "type": "CREDIT",

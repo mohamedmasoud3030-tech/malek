@@ -221,11 +221,6 @@
       "column_default": null
     },
     {
-      "table_name": "permission_requests",
-      "is_nullable": "NO",
-      "column_default": null
-    },
-    {
       "table_name": "properties",
       "is_nullable": "NO",
       "column_default": null
@@ -311,11 +306,6 @@
       "column_default": null
     },
     {
-      "table_name": "user_permission_grants",
-      "is_nullable": "NO",
-      "column_default": null
-    },
-    {
       "table_name": "utility_bills",
       "is_nullable": "NO",
       "column_default": null
@@ -384,6 +374,12 @@
       "tbl": "cost_centers",
       "trigger_name": "trg_phase3a1a_cost_center_company",
       "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "cost_centers",
+      "trigger_name": "trg_phase3a1a_cost_center_company",
+      "action_timing": "BEFORE",
       "event_manipulation": "INSERT"
     },
     {
@@ -393,10 +389,10 @@
       "event_manipulation": "UPDATE"
     },
     {
-      "tbl": "cost_centers",
-      "trigger_name": "trg_phase3a1a_cost_center_company",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
+      "tbl": "expenses",
+      "trigger_name": "trigger_update_owner_balance_on_expense",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "expenses",
@@ -409,12 +405,6 @@
       "trigger_name": "trigger_update_owner_balance_on_expense",
       "action_timing": "AFTER",
       "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "expenses",
-      "trigger_name": "trigger_update_owner_balance_on_expense",
-      "action_timing": "AFTER",
-      "event_manipulation": "DELETE"
     },
     {
       "tbl": "expenses",
@@ -432,13 +422,13 @@
       "tbl": "invoices",
       "trigger_name": "trg_invoices_update_contract_balance",
       "action_timing": "AFTER",
-      "event_manipulation": "DELETE"
+      "event_manipulation": "UPDATE"
     },
     {
       "tbl": "invoices",
       "trigger_name": "trg_invoices_update_contract_balance",
       "action_timing": "AFTER",
-      "event_manipulation": "UPDATE"
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "invoices",
@@ -462,19 +452,19 @@
       "tbl": "journal_entries",
       "trigger_name": "prevent_journal_entries_mutation_after_posting",
       "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "journal_entries",
       "trigger_name": "prevent_journal_entries_mutation_after_posting",
       "action_timing": "BEFORE",
-      "event_manipulation": "DELETE"
+      "event_manipulation": "UPDATE"
     },
     {
       "tbl": "maintenance_records",
       "trigger_name": "update_unit_status_after_maintenance_change",
       "action_timing": "AFTER",
-      "event_manipulation": "UPDATE"
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "maintenance_records",
@@ -486,7 +476,7 @@
       "tbl": "maintenance_records",
       "trigger_name": "update_unit_status_after_maintenance_change",
       "action_timing": "AFTER",
-      "event_manipulation": "DELETE"
+      "event_manipulation": "UPDATE"
     },
     {
       "tbl": "maintenance_records",
@@ -496,9 +486,9 @@
     },
     {
       "tbl": "owner_agreements",
-      "trigger_name": "trg_owner_agreements_contract_coverage",
+      "trigger_name": "trg_owner_agreement_requires_ownership",
       "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "owner_agreements",
@@ -508,12 +498,6 @@
     },
     {
       "tbl": "owner_agreements",
-      "trigger_name": "trg_owner_agreement_requires_ownership",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "owner_agreements",
       "trigger_name": "trg_owner_agreements_contract_coverage",
       "action_timing": "BEFORE",
       "event_manipulation": "DELETE"
@@ -522,13 +506,19 @@
       "tbl": "owner_agreements",
       "trigger_name": "trg_owner_agreement_requires_ownership",
       "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "owner_agreements",
+      "trigger_name": "trg_owner_agreements_contract_coverage",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
     },
     {
       "tbl": "owners",
-      "trigger_name": "trg_prevent_owner_delete_with_balances",
+      "trigger_name": "trg_sync_owner_compatibility_fields",
       "action_timing": "BEFORE",
-      "event_manipulation": "DELETE"
+      "event_manipulation": "UPDATE"
     },
     {
       "tbl": "owners",
@@ -538,15 +528,15 @@
     },
     {
       "tbl": "owners",
-      "trigger_name": "trg_sync_owner_compatibility_fields",
+      "trigger_name": "trg_prevent_owner_delete_with_balances",
       "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "owners",
       "trigger_name": "trg_sync_owner_compatibility_fields",
       "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "payment_terms_templates",
@@ -558,7 +548,7 @@
       "tbl": "payments",
       "trigger_name": "trigger_update_owner_balance_on_payment",
       "action_timing": "AFTER",
-      "event_manipulation": "INSERT"
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "payments",
@@ -570,7 +560,7 @@
       "tbl": "payments",
       "trigger_name": "trigger_update_owner_balance_on_payment",
       "action_timing": "AFTER",
-      "event_manipulation": "DELETE"
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "payments",
@@ -580,7 +570,7 @@
     },
     {
       "tbl": "payments",
-      "trigger_name": "payments_sync_reference_fields",
+      "trigger_name": "set_payments_updated_at",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
     },
@@ -592,31 +582,19 @@
     },
     {
       "tbl": "payments",
-      "trigger_name": "set_payments_updated_at",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "payments",
       "trigger_name": "payments_sync_reference_fields",
       "action_timing": "BEFORE",
       "event_manipulation": "INSERT"
     },
     {
-      "tbl": "people",
-      "trigger_name": "set_people_updated_at",
+      "tbl": "payments",
+      "trigger_name": "payments_sync_reference_fields",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
     },
     {
-      "tbl": "permission_requests",
-      "trigger_name": "permission_requests_catalog_guard",
-      "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
-    },
-    {
-      "tbl": "permission_requests",
-      "trigger_name": "permission_requests_catalog_guard",
+      "tbl": "people",
+      "trigger_name": "set_people_updated_at",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
     },
@@ -648,17 +626,17 @@
       "tbl": "property_owners",
       "trigger_name": "trg_sync_property_owner_projection",
       "action_timing": "AFTER",
-      "event_manipulation": "DELETE"
+      "event_manipulation": "INSERT"
     },
     {
       "tbl": "property_owners",
       "trigger_name": "trg_sync_property_owner_projection",
       "action_timing": "AFTER",
-      "event_manipulation": "INSERT"
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "property_owners",
-      "trigger_name": "trg_property_owners_temporal_integrity",
+      "trigger_name": "validate_property_owner_active_totals",
       "action_timing": "BEFORE",
       "event_manipulation": "INSERT"
     },
@@ -670,7 +648,13 @@
     },
     {
       "tbl": "property_owners",
-      "trigger_name": "validate_property_owner_active_totals",
+      "trigger_name": "trg_property_owners_temporal_integrity",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "property_owners",
+      "trigger_name": "trg_property_owners_temporal_integrity",
       "action_timing": "BEFORE",
       "event_manipulation": "INSERT"
     },
@@ -681,22 +665,16 @@
       "event_manipulation": "UPDATE"
     },
     {
-      "tbl": "property_owners",
-      "trigger_name": "trg_property_owners_temporal_integrity",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
+      "tbl": "receipt_allocations",
+      "trigger_name": "trg_receipt_allocations_update_contract_balance",
+      "action_timing": "AFTER",
+      "event_manipulation": "DELETE"
     },
     {
       "tbl": "receipt_allocations",
       "trigger_name": "trg_receipt_allocations_update_contract_balance",
       "action_timing": "AFTER",
       "event_manipulation": "INSERT"
-    },
-    {
-      "tbl": "receipt_allocations",
-      "trigger_name": "trg_receipt_allocations_update_contract_balance",
-      "action_timing": "AFTER",
-      "event_manipulation": "DELETE"
     },
     {
       "tbl": "receipt_allocations",
@@ -724,6 +702,12 @@
     },
     {
       "tbl": "units",
+      "trigger_name": "enforce_unit_operational_status_on_units",
+      "action_timing": "BEFORE",
+      "event_manipulation": "UPDATE"
+    },
+    {
+      "tbl": "units",
       "trigger_name": "set_units_updated_at",
       "action_timing": "BEFORE",
       "event_manipulation": "UPDATE"
@@ -743,24 +727,6 @@
     {
       "tbl": "units",
       "trigger_name": "enforce_unit_operational_status_on_units",
-      "action_timing": "BEFORE",
-      "event_manipulation": "INSERT"
-    },
-    {
-      "tbl": "units",
-      "trigger_name": "enforce_unit_operational_status_on_units",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "user_permission_grants",
-      "trigger_name": "user_permission_grants_catalog_guard",
-      "action_timing": "BEFORE",
-      "event_manipulation": "UPDATE"
-    },
-    {
-      "tbl": "user_permission_grants",
-      "trigger_name": "user_permission_grants_catalog_guard",
       "action_timing": "BEFORE",
       "event_manipulation": "INSERT"
     },
