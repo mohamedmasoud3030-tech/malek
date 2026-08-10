@@ -15,7 +15,6 @@ pnpm --filter ./rentrix-app run test:financials
 pnpm e2e
 pnpm supabase:live-readiness # optional; requires SUPABASE_DB_URL + psql
 pnpm qa:preflight # hosted QA Auth/RLS/API proof; requires injected QA credentials
-pnpm qa:database-contracts # read-only hosted QA schema/RPC/RLS contract
 pnpm qa:lifecycle # explicitly approved hosted-QA financial lifecycle only
 # For 99.9% readiness claims, also complete docs/RELEASE_EVIDENCE_LEDGER.md
 # and docs/SEEDED_STAGING_READINESS_RUNBOOK.md.
