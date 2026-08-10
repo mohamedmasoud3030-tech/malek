@@ -6,6 +6,7 @@ import { handleSupabaseError } from '@/lib/supabase-error';
 export const documentEntityTypes = [
   'property', 'unit', 'land', 'person', 'tenant', 'owner', 'contract',
   'invoice', 'payment', 'receipt', 'expense', 'maintenance', 'utility_bill',
+  'service_provider',
 ] as const;
 export type DocumentEntityType = (typeof documentEntityTypes)[number];
 export type DocumentCategory = 'contracts' | 'identity' | 'receipts' | 'maintenance' | 'expenses' | 'utilities' | 'other';

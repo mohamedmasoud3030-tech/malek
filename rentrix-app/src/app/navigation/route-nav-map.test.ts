@@ -52,6 +52,8 @@ describe('Route-to-nav-root map', () => {
     expect(getNavRoot('/data-integrity')).toBe('/settings');
     expect(getNavRoot('/system')).toBe('/settings');
     expect(getNavRoot('/utilities')).toBe('/maintenance');
+    expect(getNavRoot('/service-providers')).toBe('/maintenance');
+    expect(getNavRoot('/service-providers/provider-1')).toBe('/maintenance');
     expect(getNavRoot('/automation')).toBe('/settings');
     expect(getNavRoot('/documents-vault')).toBe('/maintenance');
   });

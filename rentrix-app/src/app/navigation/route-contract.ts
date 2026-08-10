@@ -108,6 +108,10 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
 
   // ── التشغيل / الخدمات
   { canonical: '/maintenance', titleAr: 'الخدمات', sidebarRoot: '/maintenance', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Target IA renames conceptually to "الخدمات" but route stays /maintenance for compatibility.' },
+  { canonical: '/service-providers', titleAr: 'مزودو الخدمات', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.view', legacyAliases: [], viewBinding: null },
+  { canonical: '/service-providers/new', titleAr: 'إضافة مزود خدمة', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.write', legacyAliases: [], viewBinding: null },
+  { canonical: '/service-providers/$providerId', titleAr: 'ملف مزود الخدمة', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.view', legacyAliases: [], viewBinding: null },
+  { canonical: '/service-providers/$providerId/edit', titleAr: 'تعديل مزود الخدمة', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: 'service_providers.write', legacyAliases: [], viewBinding: null },
   { canonical: '/utilities', titleAr: 'المرافق والعدادات', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'utilities' } },
   { canonical: '/automation', titleAr: 'الأتمتة', sidebarRoot: '/settings', isPrimaryNav: false, inMobileNav: false, permission: 'automation.view', legacyAliases: [], viewBinding: { param: 'section', section: 'automation' } },
   { canonical: '/documents-vault', titleAr: 'خزينة المستندات', sidebarRoot: '/maintenance', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'documents_vault' } },

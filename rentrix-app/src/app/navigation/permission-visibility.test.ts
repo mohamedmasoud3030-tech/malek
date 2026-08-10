@@ -36,10 +36,14 @@ describe('permission visibility — nav item permission must match route guard',
     expect(routeHasPermission('/owners/$ownerId', 'owners.detail.view')).toBe(true);
   });
 
-  it('lands, leads, communication are gated as declared in nav', () => {
+  it('lands, leads, communication, and service providers are gated as declared in nav', () => {
     expect(routeHasPermission('/lands', 'lands.view')).toBe(true);
     expect(routeHasPermission('/leads', 'leads.view')).toBe(true);
     expect(routeHasPermission('/communication', 'communication.view')).toBe(true);
+    expect(routeHasPermission('/service-providers', 'service_providers.view')).toBe(true);
+    expect(routeHasPermission('/service-providers/new', 'service_providers.write')).toBe(true);
+    expect(routeHasPermission('/service-providers/$providerId', 'service_providers.view')).toBe(true);
+    expect(routeHasPermission('/service-providers/$providerId/edit', 'service_providers.write')).toBe(true);
   });
 
   it('finance subroutes gate correctly (commissions/expenses/arreas/deposits etc)', () => {
@@ -84,7 +88,7 @@ describe('permission visibility — nav item permission must match route guard',
     expect(workspaceChildNavItems['/properties'].length).toBe(1);
     expect(workspaceChildNavItems['/lands'].length).toBe(0);
     expect(workspaceChildNavItems['/contracts'].length).toBe(0);
-    expect(workspaceChildNavItems['/maintenance'].length).toBe(2);
+    expect(workspaceChildNavItems['/maintenance'].length).toBe(3);
     expect(workspaceChildNavItems['/settings'].length).toBe(5);
   });
 });

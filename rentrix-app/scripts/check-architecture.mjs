@@ -33,10 +33,10 @@ const featureDependencyAllowList = new Map([
   // maintenance reads the shared document-print readiness seam
   // (useDocumentSettings) so the A4 statement only prints with real company
   // identity — same reviewed seam already granted to financials/owners/reports.
-  ['maintenance', new Set(['financials', 'properties', 'reports', 'settings', 'units'])],
+  ['maintenance', new Set(['financials', 'properties', 'reports', 'service-providers', 'settings', 'units'])],
   ['onboarding', new Set(['owners'])],
   // operations-hub composes maintenance/utilities/automation/documents-vault.
-  ['operations-hub', new Set(['auth', 'automation', 'documents-vault', 'maintenance', 'utilities'])],
+  ['operations-hub', new Set(['auth', 'automation', 'documents-vault', 'maintenance', 'service-providers', 'utilities'])],
   ['owners', new Set(['auth', 'financials', 'properties', 'reports', 'settings'])],
   ['people', new Set(['tenants'])],
   // portfolio-hub composes properties/owners/units/lands under /properties.

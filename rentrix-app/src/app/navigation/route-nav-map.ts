@@ -31,6 +31,10 @@ export const routeNavRoot = new Map<string, string>([
   ['/communication', '/people'],
 
   ['/maintenance', '/maintenance'],
+  ['/service-providers', '/maintenance'],
+  ['/service-providers/new', '/maintenance'],
+  ['/service-providers/$providerId', '/maintenance'],
+  ['/service-providers/$providerId/edit', '/maintenance'],
   ['/utilities', '/maintenance'],
   ['/automation', '/settings'],
   ['/documents-vault', '/maintenance'],

@@ -196,15 +196,20 @@ export async function getServiceProviderSummary(): Promise<ServiceProviderSummar
 }
 
 export async function listServiceProviderCategories(options: { includeInactive?: boolean } = {}): Promise<ServiceProviderCategory[]> {
-  let query = (supabase as any)
-    .from('service_provider_categories')
-    .select('*')
-    .is('deleted_at', null)
-    .order('name', { ascending: true })
-    .order('id', { ascending: true });
-  if (!options.includeInactive) query = query.eq('is_active', true);
-  const { rows } = await fetchAllRows<ServiceProviderCategory>(() => query);
-  return rows;
+  try {
+    let query = (supabase as any)
+      .from('service_provider_categories')
+      .select('*')
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+      .order('id', { ascending: true });
+    if (!options.includeInactive) query = query.eq('is_active', true);
+    const { rows } = await fetchAllRows<ServiceProviderCategory>(() => query);
+    return rows;
+  } catch (error) {
+    handleSupabaseError(error, 'تعذر تحميل أنواع خدمات المزودين');
+    throw error;
+  }
 }
 
 export async function listActiveServiceProviderOptions(): Promise<ServiceProviderOption[]> {
@@ -306,10 +311,13 @@ export async function updateServiceProviderCategory(categoryId: string, values: 
 }
 
 export async function archiveServiceProviderCategory(categoryId: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('service_provider_categories')
     .update({ is_active: false, deleted_at: new Date().toISOString() })
     .eq('id', categoryId)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
+    .select('id')
+    .single();
   if (error) handleSupabaseError(error, 'تعذر أرشفة نوع الخدمة');
+  if (!data) throw new Error('نوع الخدمة غير متاح للأرشفة');
 }
