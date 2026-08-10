@@ -23,8 +23,15 @@ export async function fetchPropertyContracts(propertyId: string) {
 }
 
 export async function fetchPropertyInvoices(propertyId: string) {
+  // Property-scoped: only invoices whose contract belongs to this property.
+  // Previously the filter only checked `contract_id != null`, which leaked
+  // invoices from other properties into this property's financial context.
+  const propertyContracts = await fetchPropertyContracts(propertyId);
+  const propertyContractIds = new Set(propertyContracts.map((contract) => contract.id));
   const result = await listInvoices({ search: '', status: 'all' });
-  return (result ?? []).filter((invoice: InvoiceListItem) => invoice.contract_id != null);
+  return (result ?? []).filter(
+    (invoice: InvoiceListItem) => invoice.contract_id != null && propertyContractIds.has(invoice.contract_id),
+  );
 }
 
 export async function fetchPropertyMaintenance(propertyId: string) {
@@ -34,8 +41,13 @@ export async function fetchPropertyMaintenance(propertyId: string) {
 export async function fetchPropertyActivity(propertyId: string): Promise<PropertyActivityRecord[]> {
   const result = await fetchAuditLog();
   if (result.status !== 'available') return [];
+  // Property-scoped: only records whose entity id is this exact property (with
+  // the entity type validated as a property record, supporting the legacy
+  // singular variant). Records of other properties never leak into the dossier.
   const records = result.records.filter(
-    (record: AuditLogRecord) => record.entityId === propertyId || record.entityType === 'properties',
+    (record: AuditLogRecord) =>
+      record.entityId === propertyId
+      && (record.entityType === 'properties' || record.entityType === 'property'),
   );
   return records.map((r) => ({
     id: r.id,

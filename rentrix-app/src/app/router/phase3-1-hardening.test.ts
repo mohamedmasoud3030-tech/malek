@@ -12,6 +12,9 @@ const peopleNew = readFileSync(new URL('../../routes/_protected.people.new.tsx',
 const peopleEdit = readFileSync(new URL('../../routes/_protected.people.$personId.edit.tsx', import.meta.url), 'utf8');
 const dashboard = readFileSync(new URL('../../features/dashboard/components/expiring-contracts-section.tsx', import.meta.url), 'utf8');
 const ownerPreview = readFileSync(new URL('../../features/owners/components/OwnerPreviewDialog.tsx', import.meta.url), 'utf8');
+// Owner preview and full dossier share one dossier body that owns the nested
+// route navigation to related entities.
+const ownerDossierBody = readFileSync(new URL('../../features/owners/components/owner-dossier-body.tsx', import.meta.url), 'utf8');
 const ownerWorkspace = readFileSync(new URL('../../features/owners/components/owner-workspace-table.tsx', import.meta.url), 'utf8');
 const tenants = readFileSync(new URL('../../features/tenants/TenantsPage.tsx', import.meta.url), 'utf8');
 const protectedRoute = readFileSync(new URL('../../routes/_protected.tsx', import.meta.url), 'utf8');
@@ -151,9 +154,12 @@ describe('Phase 3.1 — Behavioral coverage (dashboard/tenant/owner nesting)', (
   });
 
   it('owner → property uses route navigation (nested)', () => {
-    expect(ownerPreview).toContain("to: '/properties/$propertyId'");
-    expect(ownerPreview).toContain('backgroundLocation');
+    expect(ownerPreview + ownerDossierBody).toContain("to: '/properties/$propertyId'");
+    // Nested navigation preserves the original background via useDialogNavigate
+    // (the shared dossier body) or explicit backgroundLocation (the workspace).
+    expect(ownerDossierBody).toContain('useDialogNavigate');
     expect(ownerWorkspace).toContain("to: '/properties/$propertyId'");
+    expect(ownerWorkspace).toContain('backgroundLocation');
   });
 
   it('nested transitions keep original background (via useDialogNavigate)', () => {

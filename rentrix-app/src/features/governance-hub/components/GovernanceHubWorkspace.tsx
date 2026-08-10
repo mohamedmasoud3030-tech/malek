@@ -61,6 +61,27 @@ export function GovernanceHubWorkspace() {
   const resolvedActiveTab = visibleSections.some((section) => section.id === activeTab) ? activeTab : fallbackSection;
   const shouldRenderTab = (tab: GovernanceHubSectionId) => visibleSections.some((section) => section.id === tab) && (mountedTabs.has(tab) || resolvedActiveTab === tab);
 
+  // Deep link from a permission-request notification (sub=permission-requests):
+  // after the users-permissions tab mounts, bring the review queue into view.
+  const requestedSub = typeof search.sub === 'string' ? search.sub : null;
+  useEffect(() => {
+    if (resolvedActiveTab !== 'users-permissions' || requestedSub !== 'permission-requests') return;
+    let cancelled = false;
+    let attempts = 0;
+    const tryScroll = () => {
+      if (cancelled) return;
+      const target = document.getElementById('permission-requests');
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      attempts += 1;
+      if (attempts < 12) window.setTimeout(tryScroll, 150);
+    };
+    const frame = window.requestAnimationFrame(() => window.setTimeout(tryScroll, 50));
+    return () => { cancelled = true; window.cancelAnimationFrame(frame); };
+  }, [requestedSub, resolvedActiveTab]);
+
   return (
     <PageLayout dir="rtl" lang="ar" contentClassName="min-w-0 space-y-4">
       <PageHeader title="الإعدادات" description="الشركة، المستخدمون والصلاحيات، مراكز التكلفة، الأتمتة، إعدادات النظام والأمان." />

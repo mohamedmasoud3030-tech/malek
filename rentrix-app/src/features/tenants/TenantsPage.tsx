@@ -222,6 +222,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
               rows={rows}
               columns={columns}
               keyOf={(tenant) => tenant.person.id}
+              mobileVisibleSecondaryKey="arrears"
               isLoading={tenantsQuery.isLoading}
               error={tenantsQuery.isError ? tenantsQuery.error : null}
               errorTitle="تعذر تحميل المستأجرين"

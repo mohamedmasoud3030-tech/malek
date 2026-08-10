@@ -321,6 +321,7 @@ export function DepositsWorkspace() {
           rows={deposits}
           columns={columns}
           keyOf={(deposit) => deposit.id}
+          mobileVisibleSecondaryKey="remaining"
         />
       </AsyncContentState>
 

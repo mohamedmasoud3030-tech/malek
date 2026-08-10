@@ -41,7 +41,10 @@ const featureDependencyAllowList = new Map([
   ['people', new Set(['tenants'])],
   // portfolio-hub composes properties/owners/units/lands under /properties.
   ['portfolio-hub', new Set(['auth', 'lands', 'owners', 'properties', 'units'])],
-  ['properties', new Set(['financials', 'owners', 'units'])],
+  // properties reads the shared company-settings seam (useCompanySettingsContract)
+  // for canonical company-aware money/number/date formatting in the property
+  // dossier — same reviewed seam already granted to owners/maintenance.
+  ['properties', new Set(['financials', 'owners', 'settings', 'units'])],
   // relationships-hub composes contracts/people/tenants/leads/communication.
   ['relationships-hub', new Set(['auth', 'communication', 'contracts', 'leads', 'people', 'tenants'])],
   ['reports', new Set(['accounting', 'auth', 'contracts', 'financials', 'maintenance', 'owners', 'properties', 'settings', 'units'])],

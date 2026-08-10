@@ -88,6 +88,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   // ── الملاك والمستأجرون
   { canonical: '/owners', titleAr: 'الملاك', sidebarRoot: '/people', isPrimaryNav: true, inMobileNav: false, permission: 'owners.hub.view', legacyAliases: [], viewBinding: null },
   { canonical: '/owners/$ownerId', titleAr: 'ملف المالك', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: 'owners.detail.view', legacyAliases: [], viewBinding: null },
+  { canonical: '/owners/$ownerId/edit', titleAr: 'تعديل مالك', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: 'owners.hub.view', legacyAliases: [], viewBinding: null },
   { canonical: '/tenants', titleAr: 'المستأجرون', sidebarRoot: '/people', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
   { canonical: '/tenants/$tenantId', titleAr: 'ملف المستأجر', sidebarRoot: '/people', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
 

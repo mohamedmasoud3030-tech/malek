@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, CalendarClock, CreditCard, RefreshCcw, ShieldCheck, Wrench, type LucideIcon } from 'lucide-react';
+import { Bell, CalendarClock, CreditCard, RefreshCcw, ShieldAlert, ShieldCheck, Wrench, type LucideIcon } from 'lucide-react';
 import { getDashboardSnapshot } from '@/features/dashboard/dashboard-snapshot';
 import { toDateInputValue } from '@/features/dashboard/dashboard-utils';
-import { canShowNavigationItem, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
+import { canAccess, canShowNavigationItem, getPermissionLabel, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
+import { listPermissionRequestsForReview, type PermissionRequest } from '@/features/auth/permission-request-service';
 import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
 import type { SharedLabel } from './layout-navigation-view';
 import { listAppNotifications, markAppNotificationRead } from './app-notifications-service';
@@ -92,6 +94,18 @@ export function NotificationsMenu({
     retry: false,
     staleTime: 30_000,
   });
+  // Pending permission requests are real persisted records. Managers get a
+  // distinct, actionable group instead of a generic bell notification so the
+  // request never competes with operational alerts.
+  const canReviewRequests = canAccess(authorization, 'permission_requests.review');
+  const permissionRequestsQuery = useQuery({
+    queryKey: ['permission-requests', 'review', 'notifications'],
+    queryFn: () => listPermissionRequestsForReview(),
+    enabled: Boolean(authorization?.userId) && canReviewRequests,
+    retry: false,
+    staleTime: 30_000,
+  });
+  const pendingPermissionRequests: readonly PermissionRequest[] = (permissionRequestsQuery.data ?? []).filter((request) => request.status === 'PENDING');
   const markReadMutation = useMutation({
     mutationFn: markAppNotificationRead,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-notifications'] }),
@@ -104,19 +118,24 @@ export function NotificationsMenu({
   const operationalItems = buildNotificationItems(snapshotQuery.data, today)
     .filter((item) => canShowNavigationItem(authorization, item.permission))
     .map((item) => ({ ...item, id: `operational:${item.to}`, title: sharedLabel(item.labelKey), message: '', isRead: false }));
-  const persistedItems = (persistedQuery.data ?? []).map((item) => ({
-    id: item.id,
-    to: item.link,
-    labelKey: '',
-    title: item.title,
-    message: item.message,
-    count: 1,
-    Icon: item.type === 'permission_request' || item.type === 'permission_decision' ? ShieldCheck : Bell,
-    isRead: item.isRead,
-  }));
+  const persistedItems = (persistedQuery.data ?? [])
+    // Pending permission requests are rendered in their own actionable group;
+    // historical decisions stay in the general feed.
+    .filter((item) => item.type !== 'permission_request')
+    .map((item) => ({
+      id: item.id,
+      to: item.link,
+      labelKey: '',
+      title: item.title,
+      message: item.message,
+      count: 1,
+      Icon: item.type === 'permission_decision' ? ShieldCheck : Bell,
+      isRead: item.isRead,
+    }));
   const visibleItems = [...persistedItems, ...operationalItems];
   const totalCount = operationalItems.reduce((sum, item) => sum + item.count, 0)
-    + persistedItems.filter((item) => !item.isRead).length;
+    + persistedItems.filter((item) => !item.isRead).length
+    + pendingPermissionRequests.length;
 
   const closeAndRestoreFocus = () => {
     setIsOpen(false);
@@ -212,38 +231,82 @@ export function NotificationsMenu({
                 إعادة المحاولة
               </Button>
             </div>
-          ) : visibleItems.length === 0 ? (
-            <>
-              <p className="mt-1 text-[11px] font-medium text-muted-foreground">{sharedLabel('notificationsNone')}</p>
-              <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{sharedLabel('notificationsHint')}</p>
-            </>
           ) : (
-            <ul className="mt-2 space-y-1" aria-label={sharedLabel('notifications')}>
-              {visibleItems.map((item, index) => (
-                <li key={item.id}>
-                  <Link
-                    ref={(node) => { itemRefs.current[index] = node; }}
-                    to={item.to}
-                    onClick={() => {
-                      if (!item.id.startsWith('operational:') && !item.isRead) markReadMutation.mutate(item.id);
-                      setIsOpen(false);
-                    }}
-                    className={cn(
-                      'flex min-h-11 items-center gap-2.5 rounded-xl px-3 text-[12px] font-semibold text-foreground/90 transition-colors hover:bg-muted',
-                      'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
-                    )}
-                  >
-                    <item.Icon className="size-4 shrink-0 text-warning" aria-hidden="true" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{item.title}</span>
-                      {item.message ? <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-foreground">{item.message}</span> : null}
-                    </span>
-                    {!item.isRead ? <span className="size-2 shrink-0 rounded-full bg-primary" aria-label="غير مقروء" /> : null}
-                    {item.count > 1 ? <span className="grid min-w-6 place-items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-bold text-danger">{item.count}</span> : null}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <>
+              {canReviewRequests && pendingPermissionRequests.length > 0 ? (
+                <div data-permission-requests-need-action className="mt-2 rounded-xl border border-warning/40 bg-warning/[0.08] p-2">
+                  <p className="flex items-center gap-1.5 px-1.5 pb-1.5 text-[11px] font-extrabold text-warning">
+                    <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" />
+                    طلبات تحتاج إجراء ({pendingPermissionRequests.length})
+                  </p>
+                  <ul className="space-y-1" aria-label="طلبات الصلاحية التي تحتاج مراجعة">
+                    {pendingPermissionRequests.slice(0, 4).map((request) => (
+                      <li key={request.id}>
+                        <Link
+                          to="/settings"
+                          search={{ section: 'users-permissions', sub: 'permission-requests' } as never}
+                          onClick={() => setIsOpen(false)}
+                          className="flex min-h-11 items-center gap-2 rounded-xl px-2.5 py-2 text-start transition-colors hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none"
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[12px] font-bold text-foreground">
+                              {request.requester_name?.trim() || request.requester_email || 'مستخدم مسجل'}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[11px] font-semibold text-muted-foreground">
+                              {getPermissionLabel(request.permission)}
+                            </span>
+                            {request.reason ? (
+                              <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-foreground">{request.reason}</span>
+                            ) : null}
+                          </span>
+                          <StatusBadge tone="warning" dot>قيد المراجعة</StatusBadge>
+                          <span className="shrink-0 rounded-lg bg-warning/15 px-2 py-1 text-[10px] font-extrabold text-warning">مراجعة</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {pendingPermissionRequests.length > 4 ? (
+                    <p className="px-1.5 pt-1 text-[10px] font-medium text-muted-foreground">
+                      + {pendingPermissionRequests.length - 4} طلبات إضافية — افتح الشاشة للاستعراض الكامل.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {visibleItems.length === 0 ? (
+                <>
+                  <p className="mt-1 text-[11px] font-medium text-muted-foreground">{sharedLabel('notificationsNone')}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-muted-foreground">{sharedLabel('notificationsHint')}</p>
+                </>
+              ) : (
+                <ul className="mt-2 space-y-1" aria-label={sharedLabel('notifications')}>
+                  {visibleItems.map((item, index) => (
+                    <li key={item.id}>
+                      <Link
+                        ref={(node) => { itemRefs.current[index] = node; }}
+                        to={item.to}
+                        onClick={() => {
+                          if (!item.id.startsWith('operational:') && !item.isRead) markReadMutation.mutate(item.id);
+                          setIsOpen(false);
+                        }}
+                        className={cn(
+                          'flex min-h-11 items-center gap-2.5 rounded-xl px-3 text-[12px] font-semibold text-foreground/90 transition-colors hover:bg-muted',
+                          'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
+                        )}
+                      >
+                        <item.Icon className="size-4 shrink-0 text-warning" aria-hidden="true" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate">{item.title}</span>
+                          {item.message ? <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-foreground">{item.message}</span> : null}
+                        </span>
+                        {!item.isRead ? <span className="size-2 shrink-0 rounded-full bg-primary" aria-label="غير مقروء" /> : null}
+                        {item.count > 1 ? <span className="grid min-w-6 place-items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-bold text-danger">{item.count}</span> : null}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
       ) : null}

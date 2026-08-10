@@ -83,6 +83,13 @@ export interface EntityTableProps<T> {
   renderRowExpansion?: (row: T) => ReactNode;
   expandedRowId?: string | null;
   onExpandedRowChange?: (rowId: string | null) => void;
+  /**
+   * Designate ONE high-value secondary/detail column (e.g. amount, status,
+   * date, outstanding balance) to stay visible on narrow mobile layouts.
+   * Only a single intentional datum — everything else keeps progressive
+   * disclosure. Ignored for identity/primary/actions columns.
+   */
+  mobileVisibleSecondaryKey?: string;
   /** @deprecated Registers always render the shared compact table. */
   renderMobileCard?: (row: T) => ReactNode;
   /** @deprecated View switching was removed from dense registers. */
@@ -96,7 +103,7 @@ export interface EntityTableProps<T> {
 
 type ResolvedColumn<T> = ColumnDef<T> & { resolvedPriority: ColumnPriority };
 
-function resolveColumns<T>(columns: ColumnDef<T>[]): ResolvedColumn<T>[] {
+function resolveColumns<T>(columns: ColumnDef<T>[], mobileVisibleSecondaryKey?: string): ResolvedColumn<T>[] {
   return columns.map((column, index) => {
     let resolvedPriority = column.priority;
     if (!resolvedPriority) {
@@ -104,6 +111,15 @@ function resolveColumns<T>(columns: ColumnDef<T>[]): ResolvedColumn<T>[] {
       else if (index === 0) resolvedPriority = "identity";
       else if (index <= 2) resolvedPriority = "primary";
       else resolvedPriority = "secondary";
+    }
+    if (
+      mobileVisibleSecondaryKey
+      && column.key === mobileVisibleSecondaryKey
+      && (resolvedPriority === "secondary" || resolvedPriority === "detail")
+    ) {
+      // Keep this one datum readable on narrow screens; everything else
+      // continues to disclose progressively.
+      resolvedPriority = "primary";
     }
     return { ...column, resolvedPriority };
   });
@@ -206,23 +222,54 @@ export function EntityTable<T>({
   renderRowExpansion,
   expandedRowId,
   onExpandedRowChange,
+  mobileVisibleSecondaryKey,
   "aria-label": ariaLabel,
   className,
   skeletonRows = 5,
 }: EntityTableProps<T>) {
   const disclosurePrefix = useId();
-  const [internalExpandedRowId, setInternalExpandedRowId] = useState<string | null>(null);
-  const resolvedColumns = resolveColumns(columns);
+  // Uncontrolled mode supports several expanded rows at once so multiple
+  // disclosures remain usable on mobile; controlled mode (expandedRowId) keeps
+  // the legacy single-row contract unchanged.
+  const [internalExpandedRows, setInternalExpandedRows] = useState<Set<string>>(() => new Set());
+  const isControlledSingle = expandedRowId !== undefined;
+  const resolvedColumns = resolveColumns(columns, mobileVisibleSecondaryKey);
   const disclosedColumns = resolvedColumns.filter((column) => column.resolvedPriority === "secondary" || column.resolvedPriority === "detail");
   const hasResponsiveDisclosure = disclosedColumns.length > 0;
   const hasCustomExpansion = renderRowExpansion !== undefined;
   const hasExpansion = hasResponsiveDisclosure || hasCustomExpansion;
-  const resolvedExpandedRowId = expandedRowId === undefined ? internalExpandedRowId : expandedRowId;
+  const resolvedExpandedRowId = expandedRowId === undefined ? null : expandedRowId;
 
-  const setExpanded = (rowId: string | null) => {
-    if (expandedRowId === undefined) setInternalExpandedRowId(rowId);
-    onExpandedRowChange?.(rowId);
+  const isRowExpanded = (rowKey: string) =>
+    isControlledSingle ? resolvedExpandedRowId === rowKey : internalExpandedRows.has(rowKey);
+
+  const toggleRow = (rowKey: string) => {
+    if (isControlledSingle) {
+      onExpandedRowChange?.(resolvedExpandedRowId === rowKey ? null : rowKey);
+      return;
+    }
+    setInternalExpandedRows((current) => {
+      const next = new Set(current);
+      if (next.has(rowKey)) next.delete(rowKey);
+      else next.add(rowKey);
+      return next;
+    });
+    onExpandedRowChange?.(rowKey);
   };
+
+  const collapseAllRows = () => {
+    if (isControlledSingle) return;
+    setInternalExpandedRows(new Set());
+    onExpandedRowChange?.(null);
+  };
+
+  const expandAllRows = () => {
+    if (isControlledSingle) return;
+    setInternalExpandedRows(new Set(rows.map((row) => keyOf(row))));
+    onExpandedRowChange?.(null);
+  };
+
+  const allRowsExpanded = !isControlledSingle && rows.length > 0 && rows.every((row) => internalExpandedRows.has(keyOf(row)));
 
   if (isLoading) return <div className={cn("space-y-4", className)}><TableSkeleton rows={skeletonRows} cols={columns.length} /></div>;
   if (error != null) {
@@ -250,6 +297,13 @@ export function EntityTable<T>({
 
   return (
     <div className={cn("space-y-4", className)}>
+      {hasExpansion && !isControlledSingle ? (
+        <div className="flex items-center justify-end gap-2 sm:hidden" data-entity-table-bulk-disclosure>
+          <Button variant="secondary" size="sm" className="min-h-10 px-3" onClick={allRowsExpanded ? collapseAllRows : expandAllRows} aria-label={allRowsExpanded ? "طي كل الصفوف" : "توسيع كل الصفوف"}>
+            {allRowsExpanded ? "طي الكل" : "توسيع الكل"}
+          </Button>
+        </div>
+      ) : null}
       <Card data-entity-table-wrapper data-compact-responsive-table className="overflow-hidden rounded-[1.5rem] border-border/70 bg-card shadow-card">
         <div
           data-entity-table-scroll
@@ -286,7 +340,7 @@ export function EntityTable<T>({
             <TableBody>
               {rows.map((row) => {
                 const rowKey = keyOf(row);
-                const isExpanded = resolvedExpandedRowId === rowKey;
+                const isExpanded = isRowExpanded(rowKey);
                 const detailId = `${disclosurePrefix}-${rowKey}`;
                 return (
                   <Fragment key={rowKey}>
@@ -305,7 +359,7 @@ export function EntityTable<T>({
                             aria-label={isExpanded ? "إخفاء تفاصيل الصف" : "عرض كل تفاصيل الصف"}
                             aria-expanded={isExpanded}
                             aria-controls={detailId}
-                            onClick={() => setExpanded(isExpanded ? null : rowKey)}
+                            onClick={() => toggleRow(rowKey)}
                           >
                             {isExpanded ? <ChevronUp className="size-4" aria-hidden="true" /> : <ChevronDown className="size-4" aria-hidden="true" />}
                           </button>

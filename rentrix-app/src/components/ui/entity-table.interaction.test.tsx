@@ -97,4 +97,48 @@ describe("EntityTable — التفاعل", () => {
     expect(container.querySelector('[data-compact-responsive-table]')).not.toBeNull();
     expect(container.querySelector('[role="list"]')).toBeNull();
   });
+
+  it("keeps ONE designated secondary datum visible on narrow mobile layouts", () => {
+    const richColumns: ColumnDef<Row>[] = [
+      { key: "name", header: "الاسم", priority: "identity", render: (row) => row.name },
+      { key: "amount", header: "المبلغ", priority: "secondary", render: (row) => row.name },
+      { key: "date", header: "التاريخ", priority: "detail", render: (row) => row.name },
+    ];
+    act(() => { root.render(<EntityTable {...tableProps({ columns: richColumns, mobileVisibleSecondaryKey: "amount" })} />); });
+    // The designated column loses the narrow-screen hide; the other stays hidden.
+    const amountCell = container.querySelector('th[data-column-priority="primary"]');
+    expect(amountCell?.textContent).toContain("المبلغ");
+    const hiddenDetail = container.querySelector('th[data-column-priority="detail"]');
+    expect(hiddenDetail?.getAttribute("class")).toContain("max-sm:hidden");
+  });
+
+  it("expands several rows at once and supports expand-all / collapse-all", () => {
+    const richColumns: ColumnDef<Row>[] = [
+      { key: "name", header: "الاسم", priority: "identity", render: (row) => row.name },
+      { key: "detail", header: "تفصيل كامل", priority: "detail", render: (row) => `تفاصيل ${row.name}` },
+    ];
+    act(() => { root.render(<EntityTable {...tableProps({ rows: rows.concat([{ id: "3", name: "الثالث" }]), columns: richColumns })} />); });
+
+    // Expand the first row, then a second row — both stay expanded.
+    const disclosures = Array.from(container.querySelectorAll<HTMLButtonElement>('button[aria-label="عرض كل تفاصيل الصف"]'));
+    act(() => { disclosures[0]?.click(); });
+    act(() => { disclosures[1]?.click(); });
+    expect(container.querySelectorAll('[data-row-disclosure]').length).toBe(2);
+    expect(container.textContent).toContain("تفاصيل الأول");
+    expect(container.textContent).toContain("تفاصيل الثاني");
+
+    // Expand all / collapse all toggle every disclosure row.
+    const expandAll = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("توسيع الكل"));
+    act(() => { (expandAll as HTMLButtonElement | undefined)?.click(); });
+    expect(container.querySelectorAll('[data-row-disclosure]').length).toBe(3);
+
+    const collapseAll = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("طي الكل"));
+    act(() => { (collapseAll as HTMLButtonElement | undefined)?.click(); });
+    expect(container.querySelectorAll('[data-row-disclosure]').length).toBe(0);
+  });
+
+  it("never shows bulk disclosure controls for tables without disclosure data", () => {
+    act(() => { root.render(<EntityTable {...tableProps()} />); });
+    expect(container.querySelector('[data-entity-table-bulk-disclosure]')).toBeNull();
+  });
 });

@@ -110,6 +110,7 @@ export function OwnerWorkspaceTable({
           aria-label="جدول الملاك"
           rows={rows}
           onRowClick={(row) => openPreview(row.owner.id)}
+          mobileVisibleSecondaryKey="contracts"
           columns={[
             {
               key: 'name',

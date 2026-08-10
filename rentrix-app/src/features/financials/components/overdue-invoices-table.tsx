@@ -63,6 +63,7 @@ export function OverdueInvoicesTable({ rows, selectedInvoiceId, onSelectInvoice,
       rows={rows}
       columns={columns}
       keyOf={(row) => row.invoiceId}
+      mobileVisibleSecondaryKey="remaining"
       emptyTitle="لا توجد فواتير متأخرة"
       emptyDescription="لا توجد فواتير متأخرة حتى تاريخ التقرير الحالي."
     />

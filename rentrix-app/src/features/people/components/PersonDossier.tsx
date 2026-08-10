@@ -12,6 +12,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
+import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { personTypeLabels } from '../person-schema';
 import { usePersonDossier } from '../use-people';
 import { useDialogNavigate } from '@/app/router/background-location';
@@ -29,6 +30,7 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
   if (!dossier) return null;
 
   const outstanding = dossier.invoices.reduce((sum, invoice) => sum + Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)), 0);
+  const activeContracts = dossier.contracts.filter((contract) => contract.status === 'active');
   return (
     <div className="space-y-5">
       <Card>
@@ -39,6 +41,8 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
             { label: 'الهاتف', value: dossier.person.phone ? <span dir="ltr">{dossier.person.phone}</span> : 'غير موثق' },
             { label: 'البريد', value: dossier.person.email ? <span dir="ltr">{dossier.person.email}</span> : 'غير موثق' },
             { label: 'رقم الهوية', value: dossier.person.national_id ?? 'غير موثق' },
+            { label: 'العقود النشطة', value: activeContracts.length },
+            { label: 'إجمالي العقود', value: dossier.contracts.length },
             { label: 'العنوان', value: dossier.person.address ?? 'غير موثق', wide: true },
             { label: 'ملاحظات', value: dossier.person.notes ?? '—', wide: true },
           ]} />
@@ -65,8 +69,8 @@ export function PersonDossierContent({ personId }: Readonly<{ personId: string }
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />السياق المالي</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-2"><StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge><StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح: {outstanding.toFixed(3)}</StatusBadge></div>
-            {dossier.invoices.map((invoice) => <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm"><span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span><span>الاستحقاق {invoice.due_date} · المتبقي {(Number(invoice.amount) - Number(invoice.paid_amount)).toFixed(3)}</span></div>)}
+            <div className="flex flex-wrap gap-2"><StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge><StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح: {formatDefaultCompanyMoney(outstanding)}</StatusBadge></div>
+            {dossier.invoices.map((invoice) => <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm"><span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span><span className="flex flex-wrap items-center gap-2"><span>الاستحقاق {invoice.due_date} · المتبقي {formatDefaultCompanyMoney(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span><Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button></span></div>)}
             <Button asChild variant="secondary"><Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId: dossier.person.id } as never}>فتح تقرير المتأخرات</Link></Button>
           </CardContent>
         </Card>

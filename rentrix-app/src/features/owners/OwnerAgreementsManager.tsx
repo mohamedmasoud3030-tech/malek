@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { EntityForm } from '@/components/ui/entity-form';
+import { MobileFormStepperFooter, MobileFormStepperHeader } from '@/components/ui/mobile-form-stepper';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { formatMoney, formatNumber, formatDate } from '@/hooks/useCompanyFormatters';
 import { listOwners, listPropertyOwners, type Owner } from './services/owner-service';
 import {
@@ -34,6 +36,14 @@ type AgreementFormState = {
 const emptyForm: AgreementFormState = { owner_id: '', agreement_type: 'property_management', commission_type: 'RATE', commission_value: '10', starts_on: '', ends_on: '', notes: '' };
 const agreementTypeLabels = { property_management: 'إدارة عقار', master_lease: 'استئجار رئيسي' } as const;
 const commissionTypeLabels = { RATE: 'نسبة', FIXED_MONTHLY: 'مبلغ شهري ثابت' } as const;
+
+/** Mobile stepper steps for the owner agreement overlay (actual domain fields only). */
+const agreementFormSteps = [
+  { id: 'owner', label: 'المالك والسياق' },
+  { id: 'scope', label: 'النطاق والشروط المالية' },
+  { id: 'period', label: 'المدة والملاحظات' },
+  { id: 'review', label: 'المراجعة والتأكيد' },
+] as const;
 
 function agreementToForm(agreement: OwnerAgreement): AgreementFormState {
   return { owner_id: agreement.owner_id, agreement_type: agreement.agreement_type, commission_type: agreement.commission_type, commission_value: String(agreement.commission_value), starts_on: agreement.starts_on, ends_on: agreement.ends_on ?? '', notes: agreement.notes ?? '' };
@@ -85,6 +95,43 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
   const [form, setForm] = useState<AgreementFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [agreementStep, setAgreementStep] = useState(0);
+
+  const goNextAgreementStep = () => {
+    if (agreementStep === 0 && !form.owner_id) {
+      setFormError('اختر المالك الذي تغطي ملكيته الفترة.');
+      return;
+    }
+    if (agreementStep === 1) {
+      const commissionValue = Number(form.commission_value);
+      if (!form.commission_value.trim() || !Number.isFinite(commissionValue) || commissionValue <= 0) {
+        setFormError('قيمة العمولة يجب أن تكون رقماً موجباً.');
+        return;
+      }
+    }
+    if (agreementStep === 2) {
+      if (!form.starts_on) {
+        setFormError('تاريخ بداية الاتفاقية مطلوب.');
+        return;
+      }
+      if (form.ends_on && form.ends_on < form.starts_on) {
+        setFormError('تاريخ نهاية الاتفاقية يجب ألا يسبق البداية.');
+        return;
+      }
+      // The owner may have been chosen before the period: recompute eligibility
+      // with the real domain helper and block advancing when the selected owner
+      // no longer covers the whole chosen period.
+      const eligibleForPeriod = getEligibleAgreementOwners(ownershipLinks, form.starts_on, form.ends_on || null);
+      if (!eligibleForPeriod.some((owner) => owner.id === form.owner_id)) {
+        setFormError('المالك المحدد لا تغطي ملكيته الفترة المختارة كاملة — اختر مالكاً آخر أو عدّل التواريخ.');
+        return;
+      }
+    }
+    setFormError(null);
+    setAgreementStep((current) => Math.min(current + 1, agreementFormSteps.length - 1));
+  };
+
+  const stepVisibility = (stepIndex: number) => (agreementStep === stepIndex ? '' : 'max-md:hidden');
   const grouped = useMemo(() => groupAgreementsByTemporalStatus(agreementsQuery.data ?? []), [agreementsQuery.data]);
   const ownershipLinks = ownershipQuery.data ?? [];
   const propertyOwners = useMemo(() => {
@@ -114,10 +161,11 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
     setEditing(null);
     setForm({ ...emptyForm, owner_id: propertyOwners.length === 1 ? propertyOwners[0].id : '' });
     setFormError(null);
+    setAgreementStep(0);
     setFormOpen(true);
   };
-  const startEdit = (agreement: OwnerAgreement) => { setEditing(agreement); setForm(agreementToForm(agreement)); setFormError(null); setFormOpen(true); };
-  const closeForm = () => { setFormOpen(false); setEditing(null); setForm(emptyForm); setFormError(null); };
+  const startEdit = (agreement: OwnerAgreement) => { setEditing(agreement); setForm(agreementToForm(agreement)); setFormError(null); setAgreementStep(0); setFormOpen(true); };
+  const closeForm = () => { setFormOpen(false); setEditing(null); setForm(emptyForm); setFormError(null); setAgreementStep(0); };
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -203,13 +251,11 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
       >
         <EntityForm.Root className="md:grid-cols-2" onSubmit={submit}>
           <EntityForm.ErrorSummary message={formError} className="md:col-span-2" />
-          <EntityForm.Field label="تاريخ البداية">
-            <Input type="date" value={form.starts_on} onChange={(e) => setForm((v) => ({ ...v, starts_on: e.target.value }))} required />
-          </EntityForm.Field>
-          <EntityForm.Field label="تاريخ النهاية">
-            <Input type="date" value={form.ends_on} onChange={(e) => setForm((v) => ({ ...v, ends_on: e.target.value }))} />
-          </EntityForm.Field>
-          <EntityForm.Field label="المالك" className="md:col-span-2">
+          <div className="md:col-span-2">
+            <MobileFormStepperHeader steps={agreementFormSteps} current={agreementStep} />
+          </div>
+
+          <EntityForm.Field label="المالك" className={cn('md:col-span-2', stepVisibility(0))}>
             <Select value={form.owner_id} onChange={(e) => setForm((v) => ({ ...v, owner_id: e.target.value }))} required>
               <option value="">اختر المالك الذي تغطي ملكيته الفترة</option>
               {eligibleOwners.map((owner) => <option key={owner.id} value={owner.id}>{owner.display_name || owner.full_name}</option>)}
@@ -224,25 +270,57 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
               </p>
             )}
           </EntityForm.Field>
-          <EntityForm.Field label="نوع الاتفاقية">
+
+          <EntityForm.Field label="نوع الاتفاقية" className={stepVisibility(1)}>
             <Select value={form.agreement_type} onChange={(e) => setForm((v) => ({ ...v, agreement_type: e.target.value as AgreementFormState['agreement_type'] }))}>
               <option value="property_management">إدارة عقار</option>
               <option value="master_lease">استئجار رئيسي</option>
             </Select>
           </EntityForm.Field>
-          <EntityForm.Field label="نوع العمولة">
+          <EntityForm.Field label="نوع العمولة" className={stepVisibility(1)}>
             <Select value={form.commission_type} onChange={(e) => setForm((v) => ({ ...v, commission_type: e.target.value as AgreementFormState['commission_type'] }))}>
               <option value="RATE">نسبة</option>
               <option value="FIXED_MONTHLY">مبلغ شهري ثابت</option>
             </Select>
           </EntityForm.Field>
-          <EntityForm.Field label="قيمة العمولة">
+          <EntityForm.Field label="قيمة العمولة" className={stepVisibility(1)}>
             <Input type="number" step="0.01" min="0" value={form.commission_value} onChange={(e) => setForm((v) => ({ ...v, commission_value: e.target.value }))} required />
           </EntityForm.Field>
-          <EntityForm.Field label="ملاحظات" className="md:col-span-2">
+
+          <EntityForm.Field label="تاريخ البداية" className={stepVisibility(2)}>
+            <Input type="date" value={form.starts_on} onChange={(e) => setForm((v) => ({ ...v, starts_on: e.target.value }))} required />
+          </EntityForm.Field>
+          <EntityForm.Field label="تاريخ النهاية" className={stepVisibility(2)}>
+            <Input type="date" value={form.ends_on} onChange={(e) => setForm((v) => ({ ...v, ends_on: e.target.value }))} />
+          </EntityForm.Field>
+          <EntityForm.Field label="ملاحظات" className={cn('md:col-span-2', stepVisibility(2))}>
             <Textarea value={form.notes} onChange={(e) => setForm((v) => ({ ...v, notes: e.target.value }))} />
           </EntityForm.Field>
-          <EntityForm.Actions className="md:col-span-2" onCancel={closeForm} isSubmitting={saving} submitLabel={saving ? 'جار الحفظ...' : 'حفظ الاتفاقية'} />
+
+          <div className={cn('rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm space-y-2 md:col-span-2', stepVisibility(3))}>
+            <p className="font-black">مراجعة الاتفاقية قبل الحفظ</p>
+            <dl className="grid gap-2 text-sm sm:grid-cols-2">
+              <div><dt className="text-xs text-muted-foreground">المالك</dt><dd className="font-semibold">{getOwnerName(owners, form.owner_id)}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">نوع الاتفاقية</dt><dd className="font-semibold">{agreementTypeLabels[form.agreement_type]}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">العمولة</dt><dd className="font-semibold">{commissionTypeLabels[form.commission_type]} · {form.commission_type === 'RATE' ? `${formatNumber(Number(form.commission_value) || 0)}%` : formatMoney(Number(form.commission_value) || 0)}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">الفترة</dt><dd className="font-semibold">{form.starts_on ? formatDate(form.starts_on) : '—'} — {form.ends_on ? formatDate(form.ends_on) : 'مفتوحة'}</dd></div>
+            </dl>
+            {form.notes ? <p className="text-xs text-muted-foreground">الملاحظات: {form.notes}</p> : null}
+            <p className="text-xs text-muted-foreground border-t border-primary/10 pt-2">
+              تُحفظ الاتفاقية ضمن قيود العقود والملكية المرتبطة فقط، ولا تُنشئ قيوداً محاسبية.
+            </p>
+          </div>
+
+          <MobileFormStepperFooter
+            current={agreementStep}
+            steps={agreementFormSteps}
+            onBack={() => { setFormError(null); setAgreementStep((current) => Math.max(0, current - 1)); }}
+            onNext={goNextAgreementStep}
+            onCancel={closeForm}
+            isSubmitting={saving}
+            submitLabel={saving ? 'جار الحفظ...' : 'حفظ الاتفاقية'}
+          />
+          <EntityForm.Actions className="max-md:hidden md:col-span-2" onCancel={closeForm} isSubmitting={saving} submitLabel={saving ? 'جار الحفظ...' : 'حفظ الاتفاقية'} />
         </EntityForm.Root>
       </EntityForm.Overlay>
     </Card>

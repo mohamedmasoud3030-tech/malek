@@ -119,6 +119,7 @@ export function ContractTable({
       rows={contracts}
       columns={columns}
       keyOf={(c) => c.id}
+      mobileVisibleSecondaryKey="rent_amount"
       isLoading={isLoading}
       error={error}
       errorTitle="تعذر تحميل العقود"

@@ -12,6 +12,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
+import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { useTenantDossier } from '../useTenantWorkspace';
 import { useDialogNavigate } from '@/app/router/background-location';
 
@@ -49,7 +50,7 @@ export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }
       {canViewFinancial ? (
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><ReceiptText className="size-5 text-primary" />الفواتير والمتأخرات</CardTitle></CardHeader>
-          <CardContent className="space-y-3"><div className="flex flex-wrap gap-2"><StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge><StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {outstanding.toFixed(3)}</StatusBadge></div>{dossier.invoices.map((invoice) => <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3"><span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span><span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {(Number(invoice.amount) - Number(invoice.paid_amount)).toFixed(3)}</span><Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button></div>)}<Button asChild variant="secondary"><Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId } as never}>تقرير المتأخرات</Link></Button></CardContent>
+          <CardContent className="space-y-3"><div className="flex flex-wrap gap-2"><StatusBadge tone="info">{dossier.invoices.length} فواتير</StatusBadge><StatusBadge tone={outstanding > 0 ? 'warning' : 'success'}>الرصيد المفتوح {formatDefaultCompanyMoney(outstanding)}</StatusBadge></div>{dossier.invoices.map((invoice) => <div key={invoice.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3"><span className="font-bold">{businessReferenceOrLabel(invoice, 'فاتورة مسجلة')}</span><span className="text-sm">الاستحقاق {invoice.due_date} · المتبقي {formatDefaultCompanyMoney(Math.max(0, Number(invoice.amount) - Number(invoice.paid_amount)))}</span><Button asChild variant="secondary"><Link to="/invoices" search={{ invoiceId: invoice.id } as never}>فتح الفاتورة</Link></Button></div>)}<Button asChild variant="secondary"><Link to="/reports" search={{ section: 'analytics', view: 'overdue', tenantId } as never}>تقرير المتأخرات</Link></Button></CardContent>
         </Card>
       ) : null}
 

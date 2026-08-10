@@ -155,6 +155,7 @@ export function InvoiceListSection({
               aria-label="جدول الفواتير"
               rows={invoices}
               keyOf={(invoice) => invoice.id}
+              mobileVisibleSecondaryKey="remaining"
               isLoading={isLoading}
               error={isError ? error : undefined}
               errorTitle="تعذر تحميل الفواتير"

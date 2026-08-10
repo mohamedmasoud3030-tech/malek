@@ -62,10 +62,18 @@ function money(value: number | null) {
 }
 
 function formatSourceLabel(type: string | null, sourceId: string | null): string {
-  if (!sourceId) return "بدون مصدر";
+  if (!sourceId) return "بدون مصدر محدد";
   const prefix = typeLabels[type ?? ""] ?? type ?? "مصدر";
-  return sourceId ? `${prefix} مرتبط` : 'غير مرتبط بمصدر';
+  return sourceId ? `من ${prefix} مرتبط` : 'غير مرتبط بمصدر';
 }
+
+/** The single next action available for each lifecycle state. */
+const nextActionLabels: Record<string, string> = {
+  pending: "التالي: اعتماد",
+  approved: "التالي: صرف مالي",
+  paid: "التالي: عكس الصرف",
+  cancelled: "لا إجراء متاح",
+};
 
 type Props = Readonly<{
   rows: CommissionRecord[];
@@ -163,6 +171,19 @@ export function CommissionsView(props: Props) {
             </Button>
           }
         />
+      </div>
+
+      <div data-commission-domain-note className="rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 text-xs leading-6 text-muted-foreground" role="note">
+        <p>
+          <span className="font-extrabold text-foreground">توضيح المجال: </span>
+          عمولات التشغيل هنا خاصة بالوسطاء والموظفين وترتبط بمصدر محدد (عقد، تحصيل، مالك، عميل محتمل، أرض) وتُصرف
+          عبر تدفق مالي مستقل. أتعاب إدارة الملاك الواردة في اتفاقيات التشغيل مفهوم منفصل ولا تُدمج هنا مالياً أو محاسبياً.
+        </p>
+        <p className="mt-1.5">
+          <span className="font-extrabold text-foreground">دورة الحالة: </span>
+          قيد المراجعة ← معتمدة ← مسجلة كمدفوعة؛ الإلغاء ينهي السجل، والعكس المحاسبي يعيد السجل إلى ملغاة مع إلغاء قيد
+          المصروف المرتبط.
+        </p>
       </div>
 
       <section data-finance-section aria-label="ملخص العمولات">
@@ -409,6 +430,7 @@ function CommissionRows({
       aria-label="جدول العمولات"
       rows={rows}
       keyOf={(row) => row.id}
+      mobileVisibleSecondaryKey="amount"
       columns={[
         {
           key: "staff_name",
@@ -425,7 +447,12 @@ function CommissionRows({
         {
           key: "status",
           header: "الحالة",
-          render: (row) => <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>{statusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>,
+          render: (row) => (
+            <span className="flex flex-col items-start gap-1">
+              <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>{statusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
+              {nextActionLabels[row.status ?? ""] ? <span className="text-[10px] font-semibold text-muted-foreground">{nextActionLabels[row.status ?? ""]}</span> : null}
+            </span>
+          ),
         },
         { key: "actions", header: "إجراءات", render: actionsFor },
       ]}
