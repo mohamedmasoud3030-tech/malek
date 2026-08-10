@@ -16,8 +16,9 @@ const queryState = vi.hoisted(() => ({
 }));
 
 const persistedState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false, isError: false, refetch: vi.fn() }));
+const requestsState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false, isError: false, refetch: vi.fn() }));
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: ({ queryKey }: { queryKey: unknown[] }) => queryKey[0] === 'app-notifications' ? persistedState : queryState,
+  useQuery: ({ queryKey }: { queryKey: unknown[] }) => queryKey[0] === 'app-notifications' ? persistedState : queryKey[0] === 'permission-requests' ? requestsState : queryState,
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   useMutation: ({ mutationFn }: { mutationFn: (id: string) => Promise<unknown> }) => ({ mutate: (id: string) => { void mutationFn(id); }, isPending: false }),
 }));
@@ -26,6 +27,10 @@ const markRead = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock('./app-notifications-service', () => ({
   listAppNotifications: vi.fn(async () => []),
   markAppNotificationRead: markRead,
+}));
+
+vi.mock('@/features/auth/permission-request-service', () => ({
+  listPermissionRequestsForReview: vi.fn(async () => []),
 }));
 
 vi.mock('@tanstack/react-router', () => ({
@@ -72,6 +77,10 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     persistedState.isLoading = false;
     persistedState.isError = false;
     persistedState.refetch.mockReset();
+    requestsState.data = [];
+    requestsState.isLoading = false;
+    requestsState.isError = false;
+    requestsState.refetch.mockReset();
     host = document.createElement('div');
     document.body.appendChild(host);
     root = createRoot(host);
@@ -128,21 +137,44 @@ describe('Visual Wave 1 — app-shell notification states', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('renders an unread permission request and marks it read on direct queue navigation', () => {
-    persistedState.data = [{
-      id: 'permission-1', title: 'طلب صلاحية جديد', message: 'مستخدم طلب عرض الأراضي',
-      link: '/settings?section=users-permissions&sub=permission-requests', isRead: false,
-      createdAt: '2026-08-09T00:00:00Z', type: 'permission_request',
+  it('renders pending permission requests as a distinct actionable group, not an ordinary notification', () => {
+    requestsState.data = [{
+      id: 'permission-1', requester_user_id: 'user-1', requester_name: 'أحمد السالمي',
+      requester_email: 'ahmed@malek.test', permission: 'lands.view', resource_route: '/lands',
+      reason: 'لإدارة سجل الأراضي', status: 'PENDING', reviewer_user_id: null,
+      decided_at: null, decision_reason: null, created_at: '2026-08-09T00:00:00Z',
     }];
+    persistedState.data = [];
     queryState.data = { arrears: { overdueInvoices: [] }, maintenance: { urgentRequests: [] }, activeContracts: [] };
     act(() => { root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />); });
+    // The pending request must be reflected in the bell count.
     expect(host.querySelector('button[aria-label="التنبيهات (1)"]')).toBeTruthy();
     open(host);
-    expect(host.textContent).toContain('طلب صلاحية جديد');
-    expect(host.textContent).toContain('مستخدم طلب عرض الأراضي');
-    const link = host.querySelector<HTMLAnchorElement>('a[href="/settings?section=users-permissions&sub=permission-requests"]');
+    // Distinct group communicates "this requires action" with requester,
+    // requested permission, pending badge, and a direct review CTA.
+    expect(host.textContent).toContain('طلبات تحتاج إجراء (1)');
+    expect(host.textContent).toContain('أحمد السالمي');
+    expect(host.textContent).toContain('عرض الأراضي');
+    expect(host.textContent).toContain('قيد المراجعة');
+    expect(host.querySelector('[data-permission-requests-need-action]')).not.toBeNull();
+    const cta = host.querySelector<HTMLAnchorElement>('a[href="/settings"]');
+    expect(cta).not.toBeNull();
+  });
+
+  it('keeps historical permission decisions in the ordinary feed and marks them read on navigation', () => {
+    persistedState.data = [{
+      id: 'decision-1', title: 'تم اعتماد طلب الصلاحية', message: 'تم منح عرض الأراضي',
+      link: '/settings?section=users-permissions', isRead: false,
+      createdAt: '2026-08-09T00:00:00Z', type: 'permission_decision',
+    }];
+    requestsState.data = [];
+    queryState.data = { arrears: { overdueInvoices: [] }, maintenance: { urgentRequests: [] }, activeContracts: [] };
+    act(() => { root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />); });
+    open(host);
+    expect(host.textContent).toContain('تم اعتماد طلب الصلاحية');
+    const link = host.querySelector<HTMLAnchorElement>('a[href="/settings?section=users-permissions"]');
     act(() => { link?.click(); });
-    expect(markRead).toHaveBeenCalledWith('permission-1');
+    expect(markRead).toHaveBeenCalledWith('decision-1');
   });
 
   it('keeps notification controls at the 44px touch-target contract', () => {
