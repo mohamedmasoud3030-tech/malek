@@ -348,7 +348,7 @@ for each row execute function public.validate_maintenance_service_provider_assig
 
 -- Replace the existing Maintenance create RPC in place. Its original parameter
 -- names/defaults remain valid; the two new optional parameters are appended.
-drop function public.create_maintenance_atomic(
+drop function if exists public.create_maintenance_atomic(
   text, text, text, text, text, text, text, date, text, text
 );
 
