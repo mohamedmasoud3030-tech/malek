@@ -20,6 +20,7 @@ describe('LoginPage — minimal SaaS contract', () => {
     expect(html).toContain('src="/malek-lockup.svg"');
     expect(html).toContain('مرحبًا بعودتك');
     expect(html).toContain('سجّل الدخول إلى مساحة عملك في MALEK');
+    expect(html).not.toContain('كل أملاكك في مكان واحد');
     expect(html).not.toContain('data-command-center-panel');
   });
 
@@ -27,11 +28,14 @@ describe('LoginPage — minimal SaaS contract', () => {
     const html = renderToStaticMarkup(<LoginPage />);
     expect(html).toContain('for="login-email"');
     expect(html).toContain('id="login-email"');
+    expect(html).toContain('for="login-password"');
+    expect(html).toContain('id="login-password"');
     expect(html).toContain('autoComplete="email"');
     expect(html).toContain('autoComplete="current-password"');
     expect(html).toContain('safe-top-app');
     expect(html).toContain('safe-bottom-overlay');
     expect(html).not.toContain('نسيت');
+    expect(html).not.toContain('reset-password');
   });
 
   it('keeps support compact until requested', () => {
@@ -59,13 +63,25 @@ describe('LoginPage — interaction behaviour', () => {
     expect(mockLogin).toHaveBeenCalledTimes(1);
   });
 
+  it('submits from Enter in the password field', async () => {
+    setup();
+    fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), { target: { value: 'enter@example.com' } });
+    const password = screen.getByLabelText('كلمة المرور', { selector: 'input' });
+    fireEvent.input(password, { target: { value: 'secret123' } });
+    fireEvent.keyDown(password, { key: 'Enter' });
+    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('enter@example.com', 'secret123'));
+    expect(mockLogin).toHaveBeenCalledTimes(1);
+  });
+
   it('prevents double-submit while login is pending', async () => {
     let resolveLogin!: () => void;
     mockLogin.mockImplementation(() => new Promise<void>((resolve) => { resolveLogin = resolve; }));
     setup();
     fireEvent.input(screen.getByLabelText('البريد الإلكتروني', { selector: 'input' }), { target: { value: 'x@y.com' } });
     fireEvent.input(screen.getByLabelText('كلمة المرور', { selector: 'input' }), { target: { value: 'pw' } });
-    fireEvent.submit(screen.getByRole('button', { name: /تسجيل الدخول/i }).closest('form')!);
+    const form = screen.getByRole('button', { name: /تسجيل الدخول/i }).closest('form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
     await waitFor(() => expect(screen.getByRole('button', { name: /جارٍ التحقق.../i })).toBeDisabled());
     expect(mockLogin).toHaveBeenCalledTimes(1);
     resolveLogin();
@@ -92,5 +108,12 @@ describe('LoginPage — interaction behaviour', () => {
     expect(password).toHaveAttribute('type', 'text');
     fireEvent.click(screen.getByRole('button', { name: /إخفاء كلمة المرور/i }));
     expect(password).toHaveAttribute('type', 'password');
+  });
+
+  it('reports Caps Lock state without blocking entry', () => {
+    setup();
+    const password = screen.getByLabelText('كلمة المرور', { selector: 'input' });
+    fireEvent.keyUp(password, { getModifierState: (key: string) => key === 'CapsLock' });
+    expect(screen.getByRole('status')).toHaveTextContent('Caps Lock مفعّل');
   });
 });
