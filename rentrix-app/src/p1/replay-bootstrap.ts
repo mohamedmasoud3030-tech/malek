@@ -25,6 +25,8 @@ export type ReplayResult = {
   failed: { file: string; error: string }[];
 };
 
+const LATER_GOVERNED_STAGE_MARKERS = ['_s03_', '_s04_', '_s06_', '_s08_'] as const;
+
 export async function createFullReplayedDatabase(options?: {
   throughMigration?: string;
   excludeMigrations?: string[];
@@ -45,10 +47,16 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  if (options?.excludeMigrations) {
-    files = files.filter((f) => {
-      return !options.excludeMigrations!.some((ex) => f.includes(ex));
-    });
+  // Historical P1/P3 callers predate the governed S03/S04/S06/S08 stages and
+  // intentionally fingerprint an earlier repository checkpoint. Current stage
+  // suites explicitly call this helper with writeEvidence:false; those callers
+  // must receive the complete chain so their own stage migrations are exercised.
+  // Merge caller exclusions instead of replacing them so phase-specific
+  // baselines keep their own target migration out as well.
+  const checkpointExcludes = options?.writeEvidence === false ? [] : [...LATER_GOVERNED_STAGE_MARKERS];
+  const excludes = [...checkpointExcludes, ...(options?.excludeMigrations ?? [])];
+  if (excludes.length > 0) {
+    files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
   }
 
   const applied: string[] = [];
@@ -74,7 +82,6 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  // Only write replay-coverage inside evidence/p1/ if writeEvidence is explicitly true (retaining default P1 behavior)
   if (options?.writeEvidence === true) {
     mkdirSync(evidenceDir, { recursive: true });
     writeFileSync(
