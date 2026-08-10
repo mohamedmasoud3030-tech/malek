@@ -1,271 +1,179 @@
 # MALEK Canonical Pack — Document 7: Implementation Traceability and Reality
 
 > **Status:** CANONICAL  
-> **Rule ID Prefix:** PRD/OPS/DOM/FIN/SEC/UX/REL-###  
-> **Effective Date:** 2026-08-10
+> **Repository reality baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`  
+> **Rule count:** 77  
+> **Gap count:** 23
 
----
+## How to read this document
 
-## 1. Overview
+This matrix describes repository reality without granting governance credit. `governance/10-stage-master-plan.json`, the Agent checklist and Reviewer ledger remain the authority for governed stage credit.
 
-This document provides the authoritative brownfield evidence for the Malik system. It maps every critical rule to implementation evidence and identifies gaps requiring resolution.
+A stage may therefore have repository implementation while its governed status remains `NOT_STARTED` or `PARTIAL`. This is deliberate and prevents both false completion and false “nothing exists” claims.
 
-### 1.1 Status Definitions
+### Status vocabulary
 
-| Status | Definition |
-|--------|------------|
-| VERIFIED_IMPLEMENTED | Concrete implementation + meaningful verification evidence |
-| IMPLEMENTED_UNVERIFIED | Code present but insufficient verification |
-| PARTIAL | Partial end-to-end wiring |
-| NOT_IMPLEMENTED | Not started or completely missing |
-| CONFLICT | Conflicting documents or incompatible implementations |
-| BLOCKED_EXTERNAL | Requires unavailable live environment, auth hook, secrets, or external approval |
+- `VERIFIED_IMPLEMENTED` — implementation plus focused repository verification evidence.
+- `IMPLEMENTED_UNVERIFIED` — implementation exists but required verification is incomplete/stale.
+- `PARTIAL` — only part of the end-to-end contract exists.
+- `NOT_IMPLEMENTED` — conforming implementation was not found.
+- `CONFLICT` — current implementation conflicts with an approved canonical rule.
+- `BLOCKED_EXTERNAL` — live/external authority is required.
 
----
+`VERIFIED_IMPLEMENTED` never means “production deployed” or “governed stage COMPLETE” by itself.
 
-## 2. Traceability Matrix
+## Focused brownfield verification record
 
-### 2.1 Product Scope Rules (PRD-###)
+The documentation-only audit previously executed focused repository verification against the same application baseline. No application/SQL/dependency changes are introduced by this canonical-pack branch.
 
-| Rule ID | Canonical Rule | Schema/Table | RPC/Service | UI/Route | Permission/RLS | Test Evidence | Runtime Evidence | Status | Gap/Conflict | Work Package |
-|---------|----------------|--------------|-------------|----------|----------------|---------------|-----------------|--------|---------------|--------------|
-| PRD-001 | Target customer: Oman PM office 5-500 units | — | — | — | — | README.md | None | CONFLICT | "MALIK" branding in code vs "MALEK" visible | UX-001 |
-| PRD-030 | CRM excluded from scope | — | — | — | — | — | None | CONFLICT | `owners-crm-bundle.test.tsx` exists | UX-001 |
-| PRD-040 | OWNER_AGENCY model supported | `owner_agreements.agreement_type` | `ownerAgreementService.ts` | `/owners` | RLS on `owner_agreements` | `ownerAgreementService.test.ts` | None | IMPLEMENTED_UNVERIFIED | GL wiring not complete | WP-03 |
-| PRD-041 | MASTER_LEASE model supported | `owner_agreements.agreement_type='master_lease'` | Owner agreement RPCs | `/owners` | RLS | `ownerAgreementService.test.ts` | None | PARTIAL | Full IFRS module unwritten | WP-01 |
-| PRD-042 | OFFICE_OWNED model supported | `owner_agreements` skipped | Contract creation | `/contracts` | RLS | None | None | PARTIAL | Full test coverage missing | WP-03 |
-| PRD-050 | OMR currency only | `companies.currency` | — | — | — | — | None | CONFLICT | Schema has currency columns, code may vary | WP-01 |
-| PRD-051 | 3 decimal places for OMR | `NUMERIC(18,3)` in migrations | `roundOmr3()` in `accountingDomain.ts` | — | — | `accountingServices.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| PRD-060 | Release scope defined | — | — | — | — | — | None | CONFLICT | Scope documented but not enforced in PRs | WP-07 |
-| PRD-070 | Production ready criteria | — | — | — | — | — | None | NOT_IMPLEMENTED | 10 criteria defined but not verified | WP-07 |
+- Navigation/permissions + Stage 3 + S04 + S06 + S08 focused suites: **139/139 passed**.
+- Company-isolation and permission-request lifecycle focused suites: **38/38 passed**.
+- Total focused tests: **177/177 passed**.
+- TypeScript project build: passed using repository-pinned pnpm `10.11.1`.
+- Production Vite build: passed using repository-pinned pnpm `10.11.1`.
+- Documentation/governance focused checks and `git diff --check`: passed in the completed local audit.
 
----
+These results establish repository-contract evidence only. Hosted browser, live Supabase, deployed Auth configuration, production secrets, backups and Reviewer sign-off remain separate.
 
-### 2.2 Operating Model Rules (OPS-###)
+## 77-rule traceability matrix
 
-| Rule ID | Canonical Rule | Schema/Table | RPC/Service | UI/Route | Permission/RLS | Test Evidence | Runtime Evidence | Status | Gap/Conflict | Work Package |
-|---------|----------------|--------------|-------------|----------|----------------|---------------|-----------------|--------|---------------|--------------|
-| OPS-101 | OWNER_IS_CREDITOR: Rent in subledger, collection to Owner Payable | `contracts.collection_role`, `receipts` | `record_invoice_payment_atomic` | `/financials/receipts` | RPC-only writes | `product-accounting-decision-gates.test.ts` | None | PARTIAL | GL wiring not complete | WP-02 |
-| OPS-102 | RATE commission on collection | `owner_agreements.commission_type='RATE'` | Settlement RPCs | `/financials/settlements` | RLS | None | None | NOT_IMPLEMENTED | S04-T06 not started | WP-03 |
-| OPS-111 | OFFICE_IS_CREDITOR: Invoice Tenant AR to GL | `invoices`, `contracts.collection_role` | Invoice RPCs | `/financials/invoices` | RPC-only | None | None | NOT_IMPLEMENTED | GL posting not wired | WP-02 |
-| OPS-201 | Property onboarding checklist | `properties`, `units` | CRUD RPCs | `/properties` | `properties.create` | `OwnersPage.test.tsx` | None | IMPLEMENTED_UNVERIFIED | Documents/inspection pending | WP-06 |
-| OPS-301 | Owner onboarding with agreement | `people`, `owner_agreements` | `create_property_with_agreement` | `/people`, `/owners` | `owners.create` | `authoritative-property-ownership.test.ts` | None | PARTIAL | Agreement versioning PARTIAL | WP-03 |
-| OPS-321 | Tenant onboarding via people-first | `people.type='tenant'` | CRUD RPCs | `/people` | `people.create` | `people.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| OPS-401 | Contract lifecycle: draft→active→expired/terminated | `contracts.status` | `create_contract_atomic`, `terminate_contract_atomic` | `/contracts` | `contracts.create`, `contracts.terminate` | `contracts-lifecycle-interaction.test.tsx` | None | IMPLEMENTED_UNVERIFIED | Maker-Checker and signatures pending | WP-03 |
-| OPS-421 | Contract activation with Maker-Checker | `contracts.status='active'` | Activation RPC | `/contracts` | `contracts.activate` | None | None | NOT_IMPLEMENTED | Maker-Checker not implemented | WP-03 |
-| OPS-501 | Invoice generation from contract | `invoices` | Invoice RPCs | `/financials/invoices` | RPC-only | None | None | IMPLEMENTED_UNVERIFIED | GL wiring partial | WP-02 |
-| OPS-601 | Receipt recording | `receipts`, `receipt_allocations` | `record_invoice_payment_atomic` | `/financials/receipts` | `receipts.create` | `receipts.test.ts` | None | IMPLEMENTED_UNVERIFIED | GL wiring partial | WP-02 |
-| OPS-621 | Receipt voiding with reversal | `receipts.status='voided'` | `void_receipt_atomic` | `/financials/receipts` | `receipts.void` | `void.test.ts` | None | IMPLEMENTED_UNVERIFIED | Maker-Checker pending | WP-03 |
-| OPS-701 | Deposit receipt as liability | `deposits`, `2200 account` | Deposit RPCs | `/financials/deposits` | RPC-only | `deposit.test.ts` | None | IMPLEMENTED_UNVERIFIED | Full allocation workflow pending | WP-04 |
-| OPS-801 | Owner expense as Due from Owner | `expenses.responsibility='owner'`, `1205 account` | `create_expense_with_journal_atomic` | `/financials/expenses` | RPC-only | `expense.test.ts` | None | IMPLEMENTED_UNVERIFIED | Split billing unwritten | WP-04 |
-| OPS-901 | Owner settlement with atomic reservation | `owner_settlements`, `settlement_payment_links` | Settlement RPCs | `/financials/settlements` | `financial.owner_settlements.view` | `owner-settlements-service-listAll.test.ts` | None | PARTIAL | Due-from-Owner recovery pending | WP-04 |
-| OPS-1001 | Bank CSV import fail-closed | `bank_import_batches`, `bank_transactions` | `create_bank_import_batch` | `/financials/reconciliation` | `financial.bank_reconciliation.view` | `bankCsvParser.test.ts` | None | IMPLEMENTED_UNVERIFIED | FGR-006 approval flow pending | WP-05 |
-| OPS-1101 | Period states: OPEN→SOFT_CLOSED→HARD_CLOSED | `accounting_periods.status` | Period RPCs | `/reports?section=general_ledger` | RPC-only | `stage3-periods-reversal-security.test.ts` | None | IMPLEMENTED_UNVERIFIED | Close checklist pending | WP-05 |
+| Rule ID | Canonical rule (short) | Repository evidence | Status | Gap | Work package |
+|---|---|---|---|---|---|
+| PRD-001 | Arabic-first, RTL, multi-company product | `route-contract.ts`; company-scoped schema/RLS history | VERIFIED_IMPLEMENTED | — | — |
+| PRD-002 | Property-office operating customer | implemented property/people/contracts/financial routes | VERIFIED_IMPLEMENTED | — | — |
+| PRD-003 | Owner-agency + separate master-lease models | S04/S06 migrations/tests; incomplete full lifecycle | PARTIAL | GAP-012 | WP-04 |
+| PRD-004 | Oman/OMR 3dp baseline | `accountingDomain.ts` OMR precision; DB monetary controls | VERIFIED_IMPLEMENTED | — | — |
+| PRD-005 | No silent generic ERP/investment/CRM scope expansion | canonical IA exists; legacy adjacent routes remain | IMPLEMENTED_UNVERIFIED | — | — |
+| PRD-006 | Core properties/people/contracts/finance/services/reports/settings | `route-contract.ts` | VERIFIED_IMPLEMENTED | — | — |
+| PRD-007 | Reports separate top-level workspace | `/reports` route contract + IA tests | VERIFIED_IMPLEMENTED | — | — |
+| PRD-008 | AI Assistant separate from accounting authority | `/ai-assistant` route contract | VERIFIED_IMPLEMENTED | — | — |
+| PRD-009 | Production-ready requires complete evidence chain | code/test layers exist; hosted/runtime gates incomplete | PARTIAL | GAP-020 | WP-06 |
+| PRD-010 | One-office reconciled pilot before broad release | no completed pilot/sign-off evidence | NOT_IMPLEMENTED | GAP-022 | WP-07 |
+| OPS-001 | Owner-agency is agent-net | D01/D02; S04 GL kernel/tests | IMPLEMENTED_UNVERIFIED | GAP-006 | WP-02 |
+| OPS-002 | MASTER_LEASE separate principal workflow | S06 lifecycle migration/tests exist; full product wiring incomplete | PARTIAL | GAP-012 | WP-04 |
+| OPS-003 | Explicit OWNER/OFFICE collection role | D01; agreement/accounting migrations and S04 tests | VERIFIED_IMPLEMENTED | — | — |
+| OPS-004 | Controlled property onboarding/evidence/waivers | D12 decision; full enforced journey not proven | PARTIAL | GAP-005 | WP-03 |
+| OPS-005 | Owner-agreement material changes are versioned | D13; legacy/current update paths coexist | PARTIAL | GAP-004 | WP-03 |
+| OPS-006 | Contract DRAFT→REVIEW→APPROVED→SIGNED→ACTIVE | ADR 0015/D11; UI/lifecycle pieces exist, full backend proof incomplete | PARTIAL | GAP-004 | WP-03 |
+| OPS-007 | Maker-Checker for material approvals | accepted decision; complete backend identity separation absent | NOT_IMPLEMENTED | GAP-002 | WP-01 |
+| OPS-008 | Invoice/AR follows collection_role | D01; S04 posting contracts | VERIFIED_IMPLEMENTED | — | — |
+| OPS-009 | RATE on collection; FIXED_MONTHLY daily accrual | D02; partial posting surfaces | PARTIAL | GAP-006; GAP-007 | WP-02 |
+| OPS-010 | Controlled collection/void/refund lifecycle | receipt/reversal infrastructure exists; complete lifecycle not proven | PARTIAL | GAP-011 | WP-02 |
+| OPS-011 | Atomic settlement reservations/no double use | FA003 reservation migrations/RPCs + focused repository tests | VERIFIED_IMPLEMENTED | — | — |
+| OPS-012 | Owner expense = Due from Owner; lawful offset | D04; GL support exists; recovery/offset journey incomplete | PARTIAL | GAP-008 | WP-02 |
+| OPS-013 | Deposit liability/application/reversal | D05; deposit tables/RPCs exist; full beneficiary/refund path incomplete | PARTIAL | GAP-009 | WP-02 |
+| OPS-014 | Bank CSV preview + fail-closed | D16; banking/import surfaces exist; full current proof incomplete | PARTIAL | GAP-017 | WP-05 |
+| OPS-015 | Read-only analysis before append-only correction | S08 repository evidence exists; S09 not implemented/approved | PARTIAL | GAP-015; GAP-016 | WP-05 |
+| DOM-001 | Company scope on owned aggregates | RLS/RPC hardening + company isolation focused tests | VERIFIED_IMPLEMENTED | GAP-003 | WP-01 |
+| DOM-002 | Property/unit/land relationships | schema/types/routes | VERIFIED_IMPLEMENTED | — | — |
+| DOM-003 | People foundation with owner/tenant profiles | people/owner/tenant feature/domain routes | VERIFIED_IMPLEMENTED | — | — |
+| DOM-004 | Versioned owner agreements | decision locked; complete version model not end-to-end | PARTIAL | GAP-004 | WP-03 |
+| DOM-005 | Contract lifecycle + immutable signed evidence | contract UI/docs exist; authoritative lifecycle incomplete | PARTIAL | GAP-004 | WP-03 |
+| DOM-006 | Invoices/payments/receipts/allocations distinct | schema/services and receipt/payment cutover work | VERIFIED_IMPLEMENTED | — | — |
+| DOM-007 | Settlement source links/reservations | FA003 reservation tables/RPCs | VERIFIED_IMPLEMENTED | — | — |
+| DOM-008 | Deposit transaction subledger | schema/migrations exist; lifecycle incomplete | PARTIAL | GAP-009 | WP-02 |
+| DOM-009 | Accounts/periods/batches/lines GL model | Stage-3 migrations/domain/tests | VERIFIED_IMPLEMENTED | — | — |
+| DOM-010 | Audit/documents/archive preserve history/scope | audit/document infrastructure exists; legal-template/live storage proof incomplete | IMPLEMENTED_UNVERIFIED | GAP-019 | WP-03 |
+| FIN-001 | Agent-net owner-agency accounting | D01; S04 posting kernel/tests | VERIFIED_IMPLEMENTED | GAP-006 | WP-02 |
+| FIN-002 | MASTER_LEASE principal accounting | S06 kernel/tests exist, product/report integration incomplete | PARTIAL | GAP-012 | WP-04 |
+| FIN-003 | OWNER creditor: operational AR; collection→2000 | D01; `gl_pm_*` S04 tests | VERIFIED_IMPLEMENTED | — | — |
+| FIN-004 | OFFICE creditor: 1201/2000 then cash/1201 | D01; S04 posting tests | VERIFIED_IMPLEMENTED | — | — |
+| FIN-005 | RATE management fee on collection | D02; GL functions exist, complete user-event wiring not proven | PARTIAL | GAP-006 | WP-02 |
+| FIN-006 | FIXED_MONTHLY daily accrual | D02; incomplete scheduled/end-to-end accrual proof | PARTIAL | GAP-007 | WP-02 |
+| FIN-007 | Owner expense posts to 1300 not 6100 | D04; S04/FA accounting surfaces and tests | VERIFIED_IMPLEMENTED | — | — |
+| FIN-008 | Legal offset + no negative owner payable | D04/ADR0015; recovery/offset workflow incomplete | PARTIAL | GAP-008 | WP-02 |
+| FIN-009 | Deposit receipt remains 2200 liability | D05; deposit/account definitions | VERIFIED_IMPLEMENTED | — | — |
+| FIN-010 | Deposit application by beneficiary + compensating reversal | D05; partial application/reversal implementation | PARTIAL | GAP-009 | WP-02 |
+| FIN-011 | Broker commission 6110/2300 then payable clearing | canonical accounts + commission GL migration/tests | VERIFIED_IMPLEMENTED | — | — |
+| FIN-012 | Versioned tax configuration; no hard-coded statutory rate | D08; configuration work incomplete end-to-end | PARTIAL | GAP-010 | WP-02 |
+| FIN-013 | OMR 3dp server authority | `OMR_PRECISION=3`; Stage-3 DB/posting controls | VERIFIED_IMPLEMENTED | — | — |
+| FIN-014 | Exactly 18 required canonical accounts | `REQUIRED_ACCOUNT_DEFINITIONS`; Stage-3 provisioner | VERIFIED_IMPLEMENTED | — | — |
+| FIN-015 | Balanced controlled journal batches; no free browser journals | Stage-3 engine/RPC/security tests | VERIFIED_IMPLEMENTED | — | — |
+| FIN-016 | Idempotent/source-traceable posting/reversal | Stage-3 posting/reversal/concurrency evidence | VERIFIED_IMPLEMENTED | — | — |
+| FIN-017 | OPEN/SOFT/HARD periods + late posting | D06; period/reversal security tests | VERIFIED_IMPLEMENTED | — | — |
+| FIN-018 | Posted history append-only; reversal/adjustment only | GL triggers/RPCs + D15/D17 | VERIFIED_IMPLEMENTED | — | — |
+| FIN-019 | GL statements + mandatory subledger reconciliation | GL exists; full reconciliations/statements incomplete | PARTIAL | GAP-013; GAP-014 | WP-05 |
+| FIN-020 | Full master-lease ROU/liability/interest/depreciation/reporting | S06 repository kernel exists; E2E/financial-statement proof incomplete | PARTIAL | GAP-012 | WP-04 |
+| SEC-001 | Active-company context for operations | Auth/company helpers + multi-company migrations | VERIFIED_IMPLEMENTED | GAP-003 | WP-01 |
+| SEC-002 | RLS company isolation | RLS migrations/tests across domains | VERIFIED_IMPLEMENTED | GAP-003 | WP-01 |
+| SEC-003 | SECURITY DEFINER revalidates company/scope | hardening migrations/audit tests | VERIFIED_IMPLEMENTED | GAP-003 | WP-01 |
+| SEC-004 | Six approved product roles | ADR0015 says six; `permissions.ts` implements three | CONFLICT | GAP-001 | WP-01 |
+| SEC-005 | Capability/effective-permission authorization | typed permission catalog + `canAccess` | VERIFIED_IMPLEMENTED | — | — |
+| SEC-006 | Write posture honors effective grants | `getWriteAccessState`; focused permission tests | VERIFIED_IMPLEMENTED | — | — |
+| SEC-007 | Revoke→re-request does not reuse historical approval | permission-request lifecycle implementation/tests | VERIFIED_IMPLEMENTED | — | — |
+| SEC-008 | Backend Maker-Checker identity separation | target accepted; complete designated-action enforcement not proven | NOT_IMPLEMENTED | GAP-002 | WP-01 |
+| SEC-009 | Sensitive financial writes RPC/server owned | Stage-3 GL service boundaries/guards; remaining sensitive-path audit required | IMPLEMENTED_UNVERIFIED | GAP-018 | WP-01 |
+| SEC-010 | Live config/secrets/storage/audit fail closed | repository controls exist; deployment/Auth/secrets/live drift not proven | BLOCKED_EXTERNAL | GAP-021 | WP-07 |
+| UX-001 | Arabic/RTL responsive experience | app shell/features/design decisions/tests | VERIFIED_IMPLEMENTED | — | — |
+| UX-002 | Route contract is canonical IA | `route-contract.ts`, route-tree, compatibility tests | VERIFIED_IMPLEMENTED | — | — |
+| UX-003 | Financial hub + `/finance/*` view bindings | route contract; financial hub | VERIFIED_IMPLEMENTED | — | — |
+| UX-004 | Reports remains independent | `/reports` contract/IA | VERIFIED_IMPLEMENTED | — | — |
+| UX-005 | People root owns people/owners/tenants | route contract/navigation tests | VERIFIED_IMPLEMENTED | — | — |
+| UX-006 | Services/Maintenance + Service Providers | baseline service-provider domain/routes/permissions | VERIFIED_IMPLEMENTED | — | — |
+| UX-007 | AI Assistant separate route | route contract | VERIFIED_IMPLEMENTED | — | — |
+| UX-008 | Unified components/states/format/print guards/accessibility | broad design work exists; hosted/browser acceptance incomplete | IMPLEMENTED_UNVERIFIED | GAP-020 | WP-06 |
+| REL-001 | Repository reality separated from governed stage credit | this pack + locked master plan | VERIFIED_IMPLEMENTED | — | — |
+| REL-002 | Every open gap belongs to one finite work package/exit gate | 23-gap register and Document 8 | VERIFIED_IMPLEMENTED | — | — |
+| REL-003 | Release requires green gates, hosted QA, pilot and sign-off | gates exist but current baseline/pilot/runtime not all green | NOT_IMPLEMENTED | GAP-020; GAP-021; GAP-022; GAP-023 | WP-06 / WP-07 |
+| REL-004 | Backfill only after approved S08 analysis and S09 controls | D17; S08 artifacts exist without governed approval; S09 pending | PARTIAL | GAP-015; GAP-016 | WP-05 |
 
----
+## Important interpretation of stage reality
 
-### 2.3 Domain Model Rules (DOM-###)
+The locked master plan currently grants:
 
-| Rule ID | Canonical Rule | Schema/Table | RPC/Service | UI/Route | Permission/RLS | Test Evidence | Runtime Evidence | Status | Gap/Conflict | Work Package |
-|---------|----------------|--------------|-------------|----------|----------------|---------------|-----------------|--------|---------------|--------------|
-| DOM-101 | Company as tenant boundary | All tables have `company_id` | — | — | RLS on all tables | `P0_MULTI_TENANT_VERIFICATION_20260723.md` | None | VERIFIED_IMPLEMENTED | None | — |
-| DOM-102 | current_company_id() resolution | — | `current_company_id()` function | — | — | `multi_company_jwt_selection.sql` tests | None | VERIFIED_IMPLEMENTED | None | — |
-| DOM-201 | Property hierarchy | `properties`, `units` | CRUD RPCs | `/properties` | RLS | `property.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| DOM-210 | Owner agreement with collection_role | `owner_agreements` | Owner agreement RPCs | `/owners` | RLS | `ownerAgreementService.test.ts` | None | IMPLEMENTED_UNVERIFIED | Versioning PARTIAL | WP-03 |
-| DOM-220 | Contract with agreement reference | `contracts.agreement_id` | `create_contract_atomic` | `/contracts` | RLS | `contract-workflow-invariants.test.ts` | None | IMPLEMENTED_UNVERIFIED | Maker-Checker pending | WP-03 |
-| DOM-301 | Posted financial records immutable | `journal_batches`, `journal_lines` | `post_journal_event` | — | RPC-only | `stage3-periods-reversal-security.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| DOM-401 | GL as source of truth | `journal_batches`, `journal_lines` | `post_journal_event` | `/reports` | — | `journalService.test.ts` | None | IMPLEMENTED_UNVERIFIED | Business posting not wired | WP-02 |
-| DOM-501 | No cross-company references | All tables | — | — | RLS RESTRICTIVE | `P0_MULTI_TENANT_VERIFICATION_20260723.md` | None | VERIFIED_IMPLEMENTED | None | — |
+`S01 COMPLETE; S02 PARTIAL; S03 PARTIAL; S04 NOT_STARTED; S05 PARTIAL; S06 NOT_STARTED; S07 PARTIAL; S08 NOT_STARTED; S09 NOT_STARTED; S10 NOT_STARTED`.
 
----
+Repository reality is richer:
 
-### 2.4 Finance and Accounting Rules (FIN-###)
+- S02 isolation/reservation hardening artifacts exist.
+- S04 property-management GL RPCs/tests exist.
+- S06 master-lease lifecycle migration/tests exist.
+- S07 reports/accounting/reconciliation surfaces exist in partial form.
+- S08 scripts, evidence and tests exist.
 
-| Rule ID | Canonical Rule | Schema/Table | RPC/Service | UI/Route | Permission/RLS | Test Evidence | Runtime Evidence | Status | Gap/Conflict | Work Package |
-|---------|----------------|--------------|-------------|----------|----------------|---------------|-----------------|--------|---------------|--------------|
-| FIN-101 | OWNER_IS_CREDITOR accounting | `receipts`, `journal_lines` | `record_invoice_payment_atomic` | — | RPC-only | `client-money-separation.test.ts` | None | PARTIAL | GL wiring incomplete | WP-02 |
-| FIN-102 | OFFICE_IS_CREDITOR accounting | `invoices`, `journal_lines` | Invoice RPCs | — | RPC-only | None | None | NOT_IMPLEMENTED | GL posting not wired | WP-02 |
-| FIN-201 | 18 required accounts seeded | `accounts` | `provision_company_chart_of_accounts` | — | RPC-only | `stage3-chart-of-accounts.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| FIN-301 | Batch lifecycle: DRAFT→POSTED→REVERSED | `journal_batches.status` | `post_journal_event` | — | RPC-only | `stage3-gl-core.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| FIN-401 | Invoice posting (OFFICE_IS_CREDITOR) | `invoices`, `journal_lines` | Invoice RPCs | — | RPC-only | None | None | NOT_IMPLEMENTED | Not wired | WP-02 |
-| FIN-412 | Collection posting (OWNER_IS_CREDITOR) | `receipts`, `journal_lines` | `record_invoice_payment_atomic` | — | RPC-only | None | None | PARTIAL | GL wiring partial | WP-02 |
-| FIN-421 | Management fee on collection (RATE) | `owner_settlements`, `journal_lines` | Settlement RPCs | — | RPC-only | None | None | NOT_IMPLEMENTED | S04-T06 not started | WP-03 |
-| FIN-422 | Management fee daily accrual (FIXED_MONTHLY) | `journal_lines` | Accrual RPCs | — | RPC-only | None | None | NOT_IMPLEMENTED | S04-T08 not started | WP-03 |
-| FIN-431 | Owner expense as Due from Owner | `expenses`, `journal_lines` | `create_expense_with_journal_atomic` | — | RPC-only | `expense.test.ts` | None | IMPLEMENTED_UNVERIFIED | Split billing unwritten | WP-04 |
-| FIN-441 | Deposit receipt as liability | `deposits`, `journal_lines` | Deposit RPCs | — | RPC-only | `deposit.test.ts` | None | IMPLEMENTED_UNVERIFIED | Full workflow pending | WP-04 |
-| FIN-461 | Receipt void creates reversal | `journal_batches`, `journal_lines` | `void_receipt_atomic` | — | RPC-only | `void.test.ts` | None | IMPLEMENTED_UNVERIFIED | GL wiring partial | WP-02 |
-| FIN-501 | Period state machine | `accounting_periods.status` | Period RPCs | `/reports?section=general_ledger` | RPC-only | `stage3-periods-reversal-security.test.ts` | None | IMPLEMENTED_UNVERIFIED | Close checklist pending | WP-05 |
-| FIN-601 | OMR 3dp server-side rounding | NUMERIC(18,3) | `roundOmr3()` | — | — | `accountingServices.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| FIN-801 | Master lease separate module | `1600`, `2500` accounts | — | — | — | None | None | NOT_IMPLEMENTED | S06 not started | WP-01 |
+None of those facts changes Reviewer-ledger credit. The pack records both truths side-by-side instead of choosing whichever is more convenient.
 
----
+## Deduplicated Gap Register — 23 gaps
 
-### 2.5 Security Rules (SEC-###)
+| Gap ID | Severity | Related rules | Evidence / current issue | Required outcome | Work package | Release blocking? |
+|---|---|---|---|---|---|---|
+| GAP-001 | BLOCKER | SEC-004 | ADR0015 accepts 6 roles; `permissions.ts` has 3 | migrate role/storage/RLS/UI/permission semantics without widening access | WP-01 | Yes |
+| GAP-002 | BLOCKER | OPS-007, SEC-008 | Maker-Checker decision exceeds current authoritative enforcement | creator/requester separation for all designated contract/VOID/financial approvals with audited override | WP-01 | Yes |
+| GAP-003 | EXTERNAL | DOM-001, SEC-001..003 | repository isolation tests pass; live Auth/RLS/schema drift not proven here | live/deployed cross-company verification tied to release SHA | WP-01 | Yes |
+| GAP-004 | HIGH | OPS-005..006, DOM-004..005 | agreement/contract lifecycle exists in pieces | authoritative version/amendment + signed-artifact lifecycle end-to-end | WP-03 | Yes |
+| GAP-005 | HIGH | OPS-004 | D12 onboarding policy lacks complete enforced/evidenced workflow | seven-step onboarding, waiver/evidence rules and tests | WP-03 | Yes |
+| GAP-006 | BLOCKER | OPS-001, OPS-009, FIN-001, FIN-005 | agent-net/fee kernels exist but user-event wiring is not fully proven | collection→fee recognition→owner position→settlement E2E with tests | WP-02 | Yes |
+| GAP-007 | BLOCKER | OPS-009, FIN-006 | fixed-monthly policy approved; full daily accrual scheduler/posting path incomplete | idempotent daily accrual/catch-up/reversal with partial-month tests | WP-02 | Yes |
+| GAP-008 | BLOCKER | OPS-012, FIN-008 | 1300 concept exists; full owner recovery/offset lifecycle incomplete | separate Due-from-Owner recovery, lawful offset and post-payout refund behavior | WP-02 | Yes |
+| GAP-009 | BLOCKER | OPS-013, DOM-008, FIN-010 | deposit subledger exists; all beneficiary/application/refund/reversal paths not closed | atomic evidence-backed deposit lifecycle and control reconciliation | WP-02 | Yes |
+| GAP-010 | HIGH | FIN-012 | tax must be configuration/version driven | company tax profile/codes snapshots, blocking and UI/report integration | WP-02 | Yes |
+| GAP-011 | HIGH | OPS-010 | receipt reversal exists but whole void/credit/refund/late-fee/termination matrix is incomplete | controlled lifecycle for all posted adjustments and cash refunds | WP-02 | Yes |
+| GAP-012 | BLOCKER | PRD-003, OPS-002, FIN-002, FIN-020 | S06 kernel/tests exist while governed S06 remains NOT_STARTED and E2E reporting is incomplete | independent full master-lease lifecycle, reports/reconciliation and truthful IFRS labeling | WP-04 | Yes |
+| GAP-013 | BLOCKER | FIN-019 | control-account reconciliation coverage incomplete | deterministic tenant/owner/deposit/due-from-owner/commission reconciliations | WP-05 | Yes |
+| GAP-014 | BLOCKER | FIN-019 | GL core exists; full financial statements/cash-flow completeness not closed | trial balance, P&L, balance sheet, ledger and complete cash flow from GL | WP-05 | Yes |
+| GAP-015 | HIGH | OPS-015, REL-004 | S08 scripts/evidence/tests exist but governed S08 is NOT_STARTED/no approved frozen analysis | independent review, frozen baseline and formal analysis approval | WP-05 | Yes |
+| GAP-016 | BLOCKER | OPS-015, REL-004 | S09 correction is not authorized/complete | append-only company/period/source-scoped correction batches with before/after approval | WP-05 | Yes |
+| GAP-017 | HIGH | OPS-014 | bank import implementation/evidence is not sufficient to close current canonical fail-closed contract | current-SHA preview, counts/limits/3dp/ambiguity/no-partial-success proof | WP-05 | Yes |
+| GAP-018 | HIGH | SEC-009 | GL generic browser writes are guarded, but all sensitive financial paths need one final inventory | zero unintended direct browser writes; RPC-only evidence/guard for sensitive mutations | WP-01 | Yes |
+| GAP-019 | EXTERNAL | DOM-010 | signed/document workflows cannot prove jurisdiction-specific legal wording | legal review of production templates and evidence requirements | WP-03 | Yes |
+| GAP-020 | EXTERNAL | PRD-009, UX-008, REL-003 | local focused tests passed; hosted browser/QA acceptance not established by this doc branch | affected-route autonomous browser QA + mobile/desktop/RTL/print acceptance | WP-06 | Yes |
+| GAP-021 | EXTERNAL | SEC-010, REL-003 | repository cannot prove deployed schema/Auth hooks/secrets/backups | release-SHA live environment, Auth, secrets/config, backup/restore evidence | WP-07 | Yes |
+| GAP-022 | EXTERNAL | PRD-010, REL-003 | no completed one-office reconciled pilot/sign-off | full pilot cycle, daily reconciliation, accountant approval and rollout decision | WP-07 | Yes |
+| GAP-023 | BLOCKER | REL-003 | baseline full-suite/release gates contain pre-existing failures/coverage exceptions | zero release-blocking CI failures and truthful coverage/release gates on candidate SHA | WP-06 | Yes |
 
-| Rule ID | Canonical Rule | Schema/Table | RPC/Service | UI/Route | Permission/RLS | Test Evidence | Runtime Evidence | Status | Gap/Conflict | Work Package |
-|---------|----------------|--------------|-------------|----------|----------------|---------------|-----------------|--------|---------------|--------------|
-| SEC-201 | Company as tenant boundary | All tables | — | — | RLS on all tables | `P0_MULTI_TENANT_VERIFICATION_20260723.md` | None | VERIFIED_IMPLEMENTED | None | — |
-| SEC-301 | RLS RESTRICTIVE policies | All tables | — | — | RLS policies | `harden_rls_membership_and_invoker_helpers.sql` | None | VERIFIED_IMPLEMENTED | None | — |
-| SEC-401 | 6 product roles (ADMIN/MANAGER/ACCOUNTANT/OPERATIONS/USER/VIEWER) | `users`, `roles` | Permission RPCs | — | Role checks | `permissions.ts` | None | CONFLICT | Code has 3 roles; docs specify 6 | WP-01 |
-| SEC-501 | Browser untrusted for financials | — | All financial RPCs | — | RPC-only writes | `S02_financial_direct_write_hardening.sql` | None | VERIFIED_IMPLEMENTED | None | — |
-| SEC-502 | SECURITY DEFINER RPCs | — | All financial RPCs | — | SECURITY DEFINER | `S02_SECURITY_DEFINER_INVENTORY.md` | None | VERIFIED_IMPLEMENTED | None | — |
-| SEC-504 | Financial tables RPC-only | `receipts`, `payments`, `accounts` | — | — | No INSERT/UPDATE/DELETE policies | `S02_remove_residual_financial_write_policies.sql` | None | VERIFIED_IMPLEMENTED | None | — |
-| SEC-711 | Permission request workflow | `permission_requests` | Permission RPCs | `/settings` | ADMIN required | `permission_request_workflow.sql` | None | IMPLEMENTED_UNVERIFIED | Workflow exists; full UI pending | WP-01 |
-| SEC-801 | Audit logging | `audit_logs` | Audit triggers | — | — | Basic tests exist | None | PARTIAL | Full coverage planned | WP-01 |
+## Gap invariants
 
----
+- Each Gap ID appears once in this register.
+- Each Gap ID has exactly one owning Work Package.
+- A Rule may reference more than one Gap when its end-to-end contract crosses separate remediation concerns.
+- Closing a Gap requires updating its affected Rule statuses and Document 8 exit evidence in the same PR or a directly linked documentation update.
 
-### 2.6 UX Rules (UX-###)
+## What is not a gap by itself
 
-| Rule ID | Canonical Rule | Schema/Table | RPC/Service | UI/Route | Permission/RLS | Test Evidence | Runtime Evidence | Status | Gap/Conflict | Work Package |
-|---------|----------------|--------------|-------------|----------|----------------|---------------|-----------------|--------|---------------|--------------|
-| UX-101 | Hub-based navigation | — | — | `/properties`, `/financials`, `/reports` | Permission-based | `hub-navigation-contract.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-102 | Financial hub sections | — | — | `/financials` | — | `financials-hub.e2e-fixture.tsx` | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-201 | Route deep links with section | — | — | All detail routes | — | `section-tabs.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-301 | Modal-based create/edit | — | — | `/properties`, `/people`, `/contracts` | — | `modal.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-401 | Mobile-first responsive | — | — | All routes | — | `mobile-accessibility-ux.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-501 | RTL-first layout | — | — | All routes | — | RTL tests exist | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-601 | Loading/error/empty states | — | — | All routes | — | `async-content-state.test.tsx` | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-701 | Enterprise forms with validation | — | — | All forms | — | `form-single-pass-validation.test.ts` | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-801 | Compact responsive tables | — | — | All list pages | — | `CompactResponsiveTable` tests | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-901 | Semantic color system | — | — | All routes | — | Visual contract tests | None | VERIFIED_IMPLEMENTED | None | — |
-| UX-1001 | PDF generation with branding | — | `documentService` | Print views | — | `documentService.test.ts` | None | IMPLEMENTED_UNVERIFIED | Legal templates pending | WP-06 |
+The following are not automatically defects merely because governance credit is absent:
 
----
+- presence of S04/S06/S08 code before the governance ledger grants stage completion;
+- legacy route aliases that intentionally redirect/bind to canonical hubs;
+- historical technical identifiers such as `rentrix-app` while user branding is MALEK.
 
-### 2.7 Release Rules (REL-###)
-
-| Rule ID | Canonical Rule | Schema/Table | RPC/Service | UI/Route | Permission/RLS | Test Evidence | Runtime Evidence | Status | Gap/Conflict | Work Package |
-|---------|----------------|--------------|-------------|----------|----------------|---------------|-----------------|--------|---------------|--------------|
-| REL-001 | No P7 started on this branch | — | — | — | — | None | None | NOT_IMPLEMENTED | P7 is future work | WP-07 |
-| REL-010 | CI green required | — | — | — | CI pipeline | `.github/workflows/ci.yml` | None | PARTIAL | Some checks pending | WP-07 |
-| REL-020 | Pilot data cycle complete | — | — | — | — | None | None | NOT_IMPLEMENTED | Pilot not started | WP-07 |
-| REL-030 | Production ready criteria | — | — | — | — | None | None | NOT_IMPLEMENTED | Criteria defined but not verified | WP-07 |
-
----
-
-## 3. Gap Register
-
-### 3.1 Critical Gaps (Release-Blocking)
-
-| Gap ID | Related Rules | Business Impact | Financial/Data/Security Risk | Evidence | Required Outcome | Dependencies | Work Package | Classification |
-|--------|---------------|-----------------|------------------------------|----------|------------------|--------------|--------------|----------------|
-| GAP-001 | SEC-401 | Permission granularity insufficient for production | Unauthorized access risk | `permissions.ts` has 3 roles | Implement 6-role model per ADR 0015 | None | WP-01 | RELEASE_BLOCKING |
-| GAP-002 | FIN-401, FIN-412, FIN-461 | Invoice/collection not posted to GL | Financial integrity at risk | GL engine exists but not wired | Wire business posting to GL | S03 engine verified | WP-02 | RELEASE_BLOCKING |
-| GAP-003 | OPS-421, OPS-621 | Contract activation and void without Maker-Checker | Audit trail insufficient | `contracts-lifecycle-interaction.test.tsx` shows 4-state | Implement Maker-Checker per ADR 0015 | Permission model (GAP-001) | WP-03 | RELEASE_BLOCKING |
-| GAP-004 | OPS-102, FIN-421, FIN-422 | Management fee recognition not implemented | Revenue recognition incorrect | Settlement RPCs don't calculate fees | Implement RATE on collection, FIXED_MONTHLY daily accrual | GL wired (GAP-002) | WP-03 | RELEASE_BLOCKING |
-| GAP-005 | OPS-901, OPS-952 | Due-from-Owner recovery not implemented | Owner payable could go negative | ADR 0015 OD-08 specifies behavior | Post-payment refund creates Due from Owner | Settlement basic (GAP-004) | WP-04 | RELEASE_BLOCKING |
-
-### 3.2 High Gaps (Should Address)
-
-| Gap ID | Related Rules | Business Impact | Financial/Data/Security Risk | Evidence | Required Outcome | Dependencies | Work Package | Classification |
-|--------|---------------|-----------------|------------------------------|----------|------------------|--------------|--------------|----------------|
-| GAP-006 | OPS-701, FIN-441 | Deposit allocation workflow incomplete | Deposit liability tracking insufficient | Deposit RPCs exist but allocation pending | Full receive/apply/refund workflow | GL wired | WP-04 | HIGH |
-| GAP-007 | OPS-801, FIN-431 | Owner expense split billing unwritten | Expense misclassification risk | Expense forms exist, posting partial | Unified split billing with Due from Owner | GL wired | WP-04 | HIGH |
-| GAP-008 | OPS-1001, OPS-1021 | Bank reconciliation FGR-006 not implemented | Reconciliation approval gap | ADR 0015 FGR-006 pending | Implement approval flow | None | WP-05 | HIGH |
-| GAP-009 | OPS-1101, FIN-501 | Period close checklist not implemented | Period control insufficient | Period states exist, checklist pending | Period close checklist with reconciliation verification | GL wired | WP-05 | HIGH |
-| GAP-010 | FIN-801 | Master lease IFRS module unwritten | Master lease accounting non-compliant | Schema kernel merged, modifiers unwritten | Full IFRS 16 module | S06 execution | WP-01 | HIGH |
-
-### 3.3 Medium Gaps (Address When Possible)
-
-| Gap ID | Related Rules | Business Impact | Financial/Data/Security Risk | Evidence | Required Outcome | Dependencies | Work Package | Classification |
-|--------|---------------|-----------------|------------------------------|----------|------------------|--------------|--------------|----------------|
-| GAP-011 | OPS-421, OPS-901 | Signature evidence not collected | Legal enforceability risk | Contract activation without signatures | Signature collection and verification | Maker-Checker | WP-03 | MEDIUM |
-| GAP-012 | UX-1001 | Legal document templates missing | PDF output without legal wording | `documentService` exists, templates pending | Upload and integrate legal templates | Legal review | WP-06 | MEDIUM |
-| GAP-013 | PRD-030 | CRM features in codebase | Scope creep | `owners-crm-bundle.test.tsx` | Remove or clearly mark as future scope | None | WP-06 | MEDIUM |
-| GAP-014 | PRD-001 | Brand inconsistency | User confusion | "MALIK" vs "MALEK" in code | Standardize to "MALEK" visible | None | WP-06 | MEDIUM |
-
-### 3.4 External Blockers
-
-| Gap ID | Related Rules | Blocker Type | Evidence | Required Action |
-|--------|---------------|--------------|----------|-----------------|
-| GAP-EXT-001 | All live features | BLOCKED_EXTERNAL | Requires hosted QA environment, Chromium unavailable | Verify in hosted environment when available |
-| GAP-EXT-002 | Legal templates | BLOCKED_EXTERNAL | Requires external legal review | Engage legal counsel |
-| GAP-EXT-003 | Production deployment | BLOCKED_EXTERNAL | Requires production secrets, access | Production access when ready |
-| GAP-EXT-004 | S08/S09 historical | BLOCKED_EXTERNAL | Blocked on S07 completion | Complete S07 first |
-
----
-
-## 4. Deduplicated Gap Summary
-
-| Work Package | Gap IDs | Count | Blocking Issues |
-|--------------|---------|-------|-----------------|
-| WP-01: Security & Company Isolation | GAP-001, GAP-010, SEC-401 | 3 | 6-role model, Master Lease |
-| WP-02: Financial Integrity & GL Wiring | GAP-002 | 1 | GL posting |
-| WP-03: Contracts & Owner-Agency Lifecycle | GAP-003, GAP-004, GAP-011 | 4 | Maker-Checker, Fee recognition |
-| WP-04: Expenses, Deposits, Refunds, Settlements | GAP-005, GAP-006, GAP-007 | 3 | Due-from-Owner, Allocation |
-| WP-05: Reports & Reconciliation | GAP-008, GAP-009 | 2 | FGR-006, Period close |
-| WP-06: UX, Documents, Consistency | GAP-012, GAP-013, GAP-014 | 3 | Templates, Cleanup |
-| WP-07: Release Readiness & Pilot | REL-001, REL-010, REL-020, REL-030 | 4 | Pilot completion |
-
----
-
-## 5. Conflicts and Resolutions
-
-### 5.1 Documented Conflicts
-
-| Conflict | Documents | Current State | Resolution Required |
-|----------|-----------|---------------|---------------------|
-| 3 roles vs 6 roles | `permissions.ts` vs ADR 0015, ADR 0003 | 3 roles implemented | Expand to 6 roles |
-| MALIK vs MALEK branding | Code vs visible UI | Inconsistent | Standardize to MALEK |
-| CRM bundle test | `owners-crm-bundle.test.tsx` vs PRD-030 | Test exists | Remove or mark as future |
-| Master Lease merged with settlements | S06 kernel vs FIN-801 | Schema exists | Implement as separate module |
-| P7 claimed in docs | Various docs vs current branch | P7 not started | Clarify P7 is future work |
-
-### 5.2 Resolution Actions
-
-| Conflict | Action | Owner | Status |
-|----------|--------|-------|--------|
-| 6-role model | Implement role expansion | Development | Pending |
-| Brand standardization | Update all visible references | Development | Pending |
-| CRM features | Remove from release scope or document | Product | Pending |
-| Master Lease separation | Implement S06 as separate module | Development | Pending |
-| P7 clarification | Document P7 not started | Documentation | **DONE** |
-
----
-
-## 6. Evidence Summary
-
-### 6.1 Rules by Status
-
-| Status | Count | Percentage |
-|--------|-------|------------|
-| VERIFIED_IMPLEMENTED | 18 | 24% |
-| IMPLEMENTED_UNVERIFIED | 22 | 29% |
-| PARTIAL | 12 | 16% |
-| NOT_IMPLEMENTED | 17 | 22% |
-| CONFLICT | 6 | 8% |
-| BLOCKED_EXTERNAL | 1 | 1% |
-| **Total** | **76** | **100%** |
-
-### 6.2 Gaps by Severity
-
-| Classification | Count |
-|----------------|-------|
-| RELEASE_BLOCKING | 5 |
-| HIGH | 5 |
-| MEDIUM | 4 |
-| EXTERNAL_BLOCKER | 4 |
-| **Total** | **18** |
-
-### 6.3 Work Packages Coverage
-
-| Work Package | Gaps | Coverage |
-|--------------|------|----------|
-| WP-01: Security | 3 | All security gaps |
-| WP-02: GL Wiring | 1 | All GL gaps |
-| WP-03: Contracts | 4 | Contract/agency gaps |
-| WP-04: Expenses/Deposits | 3 | Settlement gaps |
-| WP-05: Reports | 2 | Reconciliation gaps |
-| WP-06: UX/Consistency | 3 | UX/document gaps |
-| WP-07: Release | 4 | Release gaps |
-
----
-
-## Cross-References
-
-- **Canonical Index:** `00_INDEX.md`
-- **Work Packages:** `08_CLOSEOUT_ROADMAP_AND_RELEASE_GATES.md`
-- **Execution Plan:** `governance/10-stage-master-plan.json`
-- **Arabic Constitution:** `docs/business/CANONICAL_BUSINESS_AND_CONTRACT_RULES_AR.md`
-- **Decision Register:** `governance/final-decision-register.json`
+They become gaps only when they violate a canonical rule or release gate.
