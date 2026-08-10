@@ -25,15 +25,6 @@ export type ReplayResult = {
   failed: { file: string; error: string }[];
 };
 
-/**
- * These governed stages were added after the P1/P3 historical replay suites.
- * Their PostgreSQL-native contracts are verified by their own stage tests and
- * the release-blocker database replay. Feeding them into the older PGlite
- * checkpoint changes relation shapes (table/view and account catalogs) that
- * those suites intentionally freeze.
- */
-export const LEGACY_REPLAY_EXCLUDED_GOVERNED_STAGES = ['_s03_', '_s04_', '_s06_', '_s08_'] as const;
-
 export async function createFullReplayedDatabase(options?: {
   throughMigration?: string;
   excludeMigrations?: string[];
@@ -54,8 +45,11 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  const excludes = [...LEGACY_REPLAY_EXCLUDED_GOVERNED_STAGES, ...(options?.excludeMigrations ?? [])];
-  files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
+  if (options?.excludeMigrations) {
+    files = files.filter((f) => {
+      return !options.excludeMigrations!.some((ex) => f.includes(ex));
+    });
+  }
 
   const applied: string[] = [];
   const failed: { file: string; error: string }[] = [];
