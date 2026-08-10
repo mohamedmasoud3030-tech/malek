@@ -9,9 +9,7 @@ export function PropertyUnitDetailRouteComponent() {
   const unitId = params.unitId ?? '';
   const navigate = useNavigate();
   const background = useBackgroundLocation();
-  const isDialog =
-    background !== null &&
-    (background.pathname.includes('/properties') && background.pathname.includes('/units'));
+  const isDialog = background !== null;
 
   if (!unitId) return null;
 

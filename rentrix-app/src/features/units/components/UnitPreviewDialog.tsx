@@ -6,11 +6,9 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
-import { useAllUnits } from '../use-units';
-import { useProperties } from '@/features/properties/use-properties';
+import { useUnitDetail } from '../use-units';
 import { normalizeUnitStatus, unitStatusLabels } from '../unit-schema';
 
-const ALL_PROPERTIES_PARAMS = { page: 1, pageSize: 500, search: '', status: 'all' as const };
 
 export function UnitPreviewDialog({
   unitId,
@@ -21,11 +19,10 @@ export function UnitPreviewDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }>) {
-  const unitsQuery = useAllUnits();
-  const propertiesQuery = useProperties(ALL_PROPERTIES_PARAMS);
+  const unitQuery = useUnitDetail(unitId ?? '');
   const companyFormatters = useCompanyFormatters();
-  const unit = unitsQuery.data?.find((candidate) => candidate.id === unitId);
-  const property = propertiesQuery.data?.rows.find((candidate) => candidate.id === unit?.property_id);
+  const unit = unitQuery.data;
+  const property = unit?.property;
   const status = unit ? normalizeUnitStatus(String(unit.status)) : null;
 
   return (
@@ -35,14 +32,13 @@ export function UnitPreviewDialog({
       title={unit ? `معاينة الوحدة ${unit.unit_number}` : 'معاينة الوحدة'}
       description="تفاصيل الوحدة الأساسية بدون مغادرة سجل الوحدات."
     >
-      {unitsQuery.isLoading || propertiesQuery.isLoading ? <LoadingState label="جارٍ تحميل تفاصيل الوحدة" /> : null}
-      {unitsQuery.isError || propertiesQuery.isError ? (
+      {unitQuery.isLoading ? <LoadingState label="جارٍ تحميل تفاصيل الوحدة" /> : null}
+      {unitQuery.isError ? (
         <ErrorState
           title="تعذر تحميل الوحدة"
-          error={unitsQuery.error ?? propertiesQuery.error}
+          error={unitQuery.error}
           onRetry={() => {
-            void unitsQuery.refetch();
-            void propertiesQuery.refetch();
+            void unitQuery.refetch();
           }}
         />
       ) : null}

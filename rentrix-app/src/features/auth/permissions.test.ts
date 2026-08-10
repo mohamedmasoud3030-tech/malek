@@ -78,7 +78,11 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(adminContext, 'expenses.write')).toBe(true);
     expect(canAccess(adminContext, 'arrears.view')).toBe(true);
     expect(canAccess(adminContext, 'financial.bank_reconciliation.view')).toBe(true);
-    expect(canAccess(managerContext, 'system.view')).toBe(true);
+    expect(canAccess(managerContext, 'system.view')).toBe(false);
+    expect(canAccess(managerContext, 'settings.manage')).toBe(false);
+    expect(canAccess(managerContext, 'company.settings.manage')).toBe(false);
+    expect(canAccess(managerContext, 'users.manage')).toBe(false);
+    expect(canAccess(managerContext, 'permission_requests.review')).toBe(true);
     expect(canAccess(managerContext, 'integrity.view')).toBe(false);
     expect(canAccess(managerContext, 'maintenance.view')).toBe(true);
     expect(canAccess(managerContext, 'owners.hub.view')).toBe(true);
@@ -159,6 +163,21 @@ describe('canonical authorization permissions', () => {
     expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('MANAGER')))).toBe('full');
     expect(getWriteAccessState(getAuthorizationContextFromUser(userWithRole('USER')))).toBe('read-only');
     expect(getWriteAccessState(null)).toBe('unconfigured');
+  });
+
+  it('uses effective grants for shell write posture while retaining action-level gates', () => {
+    const approvedWriter = {
+      ...getAuthorizationContextFromUser(userWithRole('USER'))!,
+      grantedPermissions: ['properties.write'] as const,
+    };
+    const readOnlyUser = getAuthorizationContextFromUser(userWithRole('USER'));
+
+    expect(getWriteAccessState(approvedWriter)).toBe('full');
+    expect(canAccessRoute(approvedWriter, 'properties.write')).toBe(true);
+    expect(canShowNavigationItem(approvedWriter, 'properties.write')).toBe(true);
+    expect(canAccess(approvedWriter, 'contracts.write')).toBe(false);
+    expect(getWriteAccessState(readOnlyUser)).toBe('read-only');
+    expect(canAccessRoute(readOnlyUser, 'properties.write')).toBe(false);
   });
 
   it('normalizes roles safely', () => {

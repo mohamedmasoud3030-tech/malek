@@ -88,6 +88,24 @@ export async function listUnitsByProperty(propertyId: string): Promise<Unit[]> {
   return rows.map(normalizeUnitRecord);
 }
 
+export type UnitDetail = Unit & {
+  property: { id: string; title: string | null; address: string | null } | null;
+};
+
+/** Targeted dossier query: one unit plus its owning property, never whole registers. */
+export async function getUnitDetail(unitId: string): Promise<UnitDetail> {
+  const { data, error } = await (supabase as any)
+    .from('units')
+    .select('*, property:property_id(id,title,address)')
+    .eq('id', unitId)
+    .is('deleted_at', null)
+    .single();
+  if (error) throw new Error(error.message || 'تعذر تحميل الوحدة.');
+  if (!data) throw new Error('الوحدة غير موجودة أو غير متاحة لصلاحياتك.');
+  const normalized = normalizeUnitRecord(data as UnitWithLegacyRent);
+  return { ...normalized, property: (data as UnitDetail).property ?? null };
+}
+
 export async function createUnit(propertyId: string, payload: UnitPayload): Promise<Unit> {
   const insertPayload = normalizeUnitPayload(propertyId, payload);
   const { data, error } = await supabase

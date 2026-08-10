@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { canAccess, canShowNavigationItem, getAuthorizationContextFromUser } from '@/features/auth/permissions';
 import { getAllNavItems, navGroups, type NavItem } from '@/app/navigation/app-nav-items';
@@ -10,6 +10,8 @@ import { CommissionsView } from '@/features/commissions/components/commissions-v
 import { CommunicationHubView } from '@/features/communication/components/communication-hub-view';
 import { LandsView } from '@/features/lands/components/lands-view';
 import { LeadsView } from '@/features/leads/components/leads-view';
+
+vi.mock('@/app/router/background-location', () => ({ useDialogNavigate: () => vi.fn() }));
 
 const sourceRoot = fileURLToPath(new URL('../..', import.meta.url));
 const forbiddenNamePieces = [

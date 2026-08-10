@@ -3,8 +3,8 @@ import { formatReceiptNumber, getPaymentReceiptBinding } from './receipt-formatt
 
 describe('formatReceiptNumber', () => {
   it('derives the receipt number from the payment id prefix', () => {
-    expect(formatReceiptNumber('1234567890abcdef')).toBe('REC-12345678');
-    expect(formatReceiptNumber('ab')).toBe('REC-ab');
+    expect(formatReceiptNumber('1234567890abcdef')).toBe('إيصال بلا مرجع تجاري');
+    expect(formatReceiptNumber('ab')).toBe('إيصال بلا مرجع تجاري');
   });
 });
 
@@ -12,7 +12,7 @@ describe('getPaymentReceiptBinding', () => {
   it('binds a posted payment to its print view and receipt number', () => {
     expect(getPaymentReceiptBinding({ id: '1234567890abcdef', status: 'POSTED' })).toEqual({
       printHref: '/receipts?receiptId=1234567890abcdef',
-      receiptNumber: 'REC-12345678',
+      receiptNumber: 'إيصال بلا مرجع تجاري',
       isVoid: false,
       statusLabel: 'مرحّل',
     });

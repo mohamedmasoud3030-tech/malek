@@ -1,6 +1,6 @@
 import { useCrudFormState } from '@/hooks/use-crud-form-state';
-import { useState } from 'react';
-import { useSearch } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { LandsView } from './components/lands-view';
 import { useArchiveLand, useLands, useSaveLand } from './use-lands';
 import { landFormSchema, type LandFormValues } from './land-schema';
@@ -41,13 +41,21 @@ export type LandsWorkspaceProps = Readonly<{
 }>;
 
 export function LandsWorkspace({ embedded = false }: LandsWorkspaceProps) {
-  const urlSearch = (useSearch({ strict: false }) as any).search || '';
-  const [filters, setFilters] = useState<LandFilters>({ query: urlSearch, status: 'all' });
+  const navigate = useNavigate();
+  const routeSearch = useSearch({ strict: false }) as Record<string, unknown>;
+  const urlSearch = typeof routeSearch.search === 'string' ? routeSearch.search : '';
+  const urlStatus = typeof routeSearch.status === 'string' ? routeSearch.status : 'all';
+  const [filters, setFilters] = useState<LandFilters>({ query: urlSearch, status: urlStatus });
   const [formError, setFormError] = useState<string | null>(null);
   const formState = useCrudFormState<LandRecord, LandFormValues>({ emptyDraft: emptyForm, draftFromRecord: formFromLand });
   const landsQuery = useLands(filters);
   const saveLand = useSaveLand();
   const archiveLand = useArchiveLand();
+
+  useEffect(() => {
+    if (embedded) return;
+    void navigate({ to: '/lands', replace: true, search: (previous: Record<string, unknown>) => ({ ...previous, search: filters.query || undefined, status: filters.status === 'all' ? undefined : filters.status }) });
+  }, [embedded, filters.query, filters.status, navigate]);
 
   const handleSubmit = (values: LandFormValues) => {
     setFormError(null);

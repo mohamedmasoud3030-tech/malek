@@ -2,13 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tenantWorkspaceKeys } from '@/features/tenants/useTenantWorkspace';
 import type { PersonFormValues, PersonPayload } from './person-schema';
-import { createPerson, getPerson, listPeople, softDeletePerson, updatePerson, type PeopleListParams } from './people-service';
+import { createPerson, getPerson, getPersonDossier, listPeople, softDeletePerson, updatePerson, type PeopleListParams } from './people-service';
 
 export const peopleKeys = {
   all: ['people'] as const,
   lists: () => [...peopleKeys.all, 'list'] as const,
   list: (params: PeopleListParams) => [...peopleKeys.lists(), params] as const,
   detail: (personId: string) => [...peopleKeys.all, 'detail', personId] as const,
+  dossier: (personId: string, includeFinancial: boolean, includeActivity: boolean) => [...peopleKeys.all, 'dossier', personId, includeFinancial, includeActivity] as const,
 };
 
 export function usePeople(params: PeopleListParams) {
@@ -22,6 +23,14 @@ export function usePerson(personId: string) {
   return useQuery({
     queryKey: peopleKeys.detail(personId),
     queryFn: () => getPerson(personId),
+    enabled: Boolean(personId),
+  });
+}
+
+export function usePersonDossier(personId: string, includeFinancial: boolean, includeActivity: boolean) {
+  return useQuery({
+    queryKey: peopleKeys.dossier(personId, includeFinancial, includeActivity),
+    queryFn: () => getPersonDossier(personId, { includeFinancial, includeActivity }),
     enabled: Boolean(personId),
   });
 }

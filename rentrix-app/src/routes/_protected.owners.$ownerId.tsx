@@ -9,9 +9,7 @@ export function OwnerDetailRouteComponent() {
   const ownerId = params.ownerId ?? '';
   const navigate = useNavigate();
   const background = useBackgroundLocation();
-  const isDialog =
-    background !== null &&
-    (background.pathname === '/owners' || background.pathname.startsWith('/owners'));
+  const isDialog = background !== null;
 
   if (!ownerId) return null;
 

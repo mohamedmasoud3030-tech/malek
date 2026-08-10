@@ -1,6 +1,7 @@
 import { ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
+import type { DocumentEntityType } from '@/services/documents/contextualDocumentsService';
 import { fetchAllRows } from '@/lib/paginatedRead';
 
 export type VaultCategory = 'all' | 'contracts' | 'identity' | 'receipts' | 'maintenance' | 'expenses' | 'utilities' | 'other';
@@ -9,7 +10,7 @@ export type VaultDocumentItem = {
   id: string;
   title: string;
   category: VaultCategory;
-  relatedEntityType?: string | null;
+  relatedEntityType?: DocumentEntityType | null;
   relatedEntityId?: string | null;
   relatedEntityTitle?: string | null;
   fileName: string;
@@ -36,7 +37,7 @@ export const vaultCategoryLabels: Record<VaultCategory, string> = {
 export type VaultListParams = {
   category?: VaultCategory;
   search?: string;
-  relatedEntityType?: string;
+  relatedEntityType?: DocumentEntityType;
   relatedEntityId?: string;
 };
 
@@ -44,6 +45,34 @@ export const VAULT_MAX_FILE_SIZE = ATTACHMENTS_MAX_FILE_SIZE;
 export const VAULT_ALLOWED_MIME_TYPES = ATTACHMENTS_ALLOWED_MIME_TYPES;
 
 const SIGNED_URL_EXPIRY_SECONDS = 60 * 60;
+
+async function resolveVaultEntityLabels(rows: any[]): Promise<Map<string, string>> {
+  const labels = new Map<string, string>();
+  const definitions: Array<{ type: DocumentEntityType; table: string; select: string; label: (row: any) => string | null }> = [
+    { type: 'property', table: 'properties', select: 'id,title', label: (row) => row.title },
+    { type: 'unit', table: 'units', select: 'id,unit_number', label: (row) => row.unit_number ? `وحدة ${row.unit_number}` : null },
+    { type: 'land', table: 'lands', select: 'id,name,plot_no', label: (row) => row.name || (row.plot_no ? `قطعة ${row.plot_no}` : null) },
+    { type: 'person', table: 'people', select: 'id,full_name', label: (row) => row.full_name },
+    { type: 'tenant', table: 'people', select: 'id,full_name', label: (row) => row.full_name },
+    { type: 'owner', table: 'owners', select: 'id,display_name,full_name', label: (row) => row.display_name || row.full_name },
+    { type: 'contract', table: 'contracts', select: 'id,reference', label: (row) => row.reference },
+    { type: 'invoice', table: 'invoices', select: 'id,reference', label: (row) => row.reference },
+    { type: 'receipt', table: 'receipts', select: 'id,reference', label: (row) => row.reference },
+    { type: 'expense', table: 'expenses', select: 'id,reference', label: (row) => row.reference },
+    { type: 'maintenance', table: 'maintenance_records', select: 'id,reference,title', label: (row) => row.reference || row.title },
+    { type: 'utility_bill', table: 'utility_bills', select: 'id,reference', label: (row) => row.reference },
+  ];
+  await Promise.all(definitions.map(async (definition) => {
+    const ids = Array.from(new Set(rows.filter((row) => row.related_entity_type === definition.type).map((row) => row.related_entity_id).filter(Boolean)));
+    if (ids.length === 0) return;
+    const { data } = await (supabase as any).from(definition.table).select(definition.select).in('id', ids);
+    for (const row of data ?? []) {
+      const label = definition.label(row);
+      if (label) labels.set(`${definition.type}:${row.id}`, label);
+    }
+  }));
+  return labels;
+}
 
 export async function listVaultDocuments(params: VaultListParams = {}): Promise<VaultDocumentItem[]> {
   let query = (supabase as any).from('vault_documents').select('*').is('deleted_at', null).order('created_at', { ascending: false });
@@ -64,13 +93,14 @@ export async function listVaultDocuments(params: VaultListParams = {}): Promise<
     throw error;
   }
 
+  const entityLabels = await resolveVaultEntityLabels(rows);
   return rows.map((row: any) => ({
     id: row.id,
     title: row.title,
     category: row.category as VaultCategory,
     relatedEntityType: row.related_entity_type ?? null,
     relatedEntityId: row.related_entity_id ?? null,
-    relatedEntityTitle: row.related_entity_id ? `${row.related_entity_type ?? ''} ${row.related_entity_id.slice(0, 8)}` : null,
+    relatedEntityTitle: row.related_entity_id ? entityLabels.get(`${row.related_entity_type}:${row.related_entity_id}`) ?? 'سجل مرتبط' : null,
     fileName: row.file_name,
     fileUrl: row.file_url,
     storagePath: row.storage_path,
@@ -85,7 +115,7 @@ export type UploadVaultDocumentParams = {
   file: File;
   title: string;
   category: VaultCategory;
-  relatedEntityType?: string | null;
+  relatedEntityType?: DocumentEntityType | null;
   relatedEntityId?: string | null;
 };
 
@@ -143,7 +173,7 @@ export async function uploadVaultDocument(params: UploadVaultDocumentParams): Pr
       category: data.category as VaultCategory,
       relatedEntityType: data.related_entity_type ?? null,
       relatedEntityId: data.related_entity_id ?? null,
-      relatedEntityTitle: data.related_entity_id,
+      relatedEntityTitle: data.related_entity_id ? 'سجل مرتبط' : null,
       fileName: data.file_name,
       fileUrl: data.file_url,
       storagePath: data.storage_path,

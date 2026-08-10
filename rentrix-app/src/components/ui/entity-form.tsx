@@ -1,12 +1,13 @@
-import { X } from 'lucide-react';
 import type { ComponentPropsWithoutRef, FormEventHandler, ReactNode } from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext } from 'react';
 import { Button } from '@/components/ui/button';
-import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
-const mobileFormQuery = '(max-width: 767px)';
+export type ResponsiveFormSurface = 'dialog';
+export type EntityFormSurfacePreference = 'auto' | 'dialog';
+export type EntityFormVisualVariant = 'operational';
+
 const invalidFieldSelector = [
   '[aria-invalid="true"]:not([disabled])',
   '[data-invalid="true"]:not([disabled])',
@@ -14,10 +15,6 @@ const invalidFieldSelector = [
   'select:invalid:not([disabled])',
   'textarea:invalid:not([disabled])',
 ].join(',');
-
-export type ResponsiveFormSurface = 'bottom-sheet' | 'dialog' | 'full-page';
-export type EntityFormSurfacePreference = 'auto' | ResponsiveFormSurface;
-export type EntityFormVisualVariant = 'operational';
 
 const EntityFormVisualContext = createContext<EntityFormVisualVariant | undefined>(undefined);
 
@@ -35,13 +32,8 @@ export function EntityFormVisualProvider({
   );
 }
 
-export function getResponsiveFormSurface(
-  matchesMobile: boolean,
-  preference: EntityFormSurfacePreference = 'auto',
-  mobilePreference: Exclude<ResponsiveFormSurface, 'dialog'> = 'full-page',
-): ResponsiveFormSurface {
-  if (preference !== 'auto') return preference;
-  return matchesMobile ? mobilePreference : 'dialog';
+export function getResponsiveFormSurface(): ResponsiveFormSurface {
+  return 'dialog';
 }
 
 export function focusFirstInvalidField(form: HTMLFormElement, behavior: ScrollBehavior = 'smooth') {
@@ -60,24 +52,6 @@ export function focusFirstInvalidField(form: HTMLFormElement, behavior: ScrollBe
 function scheduleInvalidFieldFocus(form: HTMLFormElement) {
   if (typeof window === 'undefined') return;
   window.setTimeout(() => focusFirstInvalidField(form), 0);
-}
-
-function useMediaQuery(query: string) {
-  const [matches, setMatches] = useState(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-    return window.matchMedia(query).matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const mediaQuery = window.matchMedia(query);
-    const updateMatches = () => setMatches(mediaQuery.matches);
-    updateMatches();
-    mediaQuery.addEventListener('change', updateMatches);
-    return () => mediaQuery.removeEventListener('change', updateMatches);
-  }, [query]);
-
-  return matches;
 }
 
 type EntityFormRootProps = Readonly<ComponentPropsWithoutRef<'form'> & {
@@ -224,8 +198,8 @@ type EntityFormOverlayProps = Readonly<{
   headerExtra?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** @deprecated Entity forms always use the shared responsive Dialog. */
   surface?: EntityFormSurfacePreference;
-  mobileSurface?: Exclude<ResponsiveFormSurface, 'dialog'>;
   visualVariant?: EntityFormVisualVariant;
 }>;
 
@@ -241,51 +215,6 @@ function OverlayHeader({ title, description, headerExtra }: Pick<EntityFormOverl
   );
 }
 
-function FullPageOverlay({
-  open,
-  onOpenChange,
-  title,
-  description,
-  headerExtra,
-  children,
-  className,
-  visualVariant,
-}: EntityFormOverlayProps) {
-  if (!open) return null;
-
-  return (
-    <div
-      data-entity-form-surface="full-page"
-      data-entity-form-variant={visualVariant}
-      className="fixed z-[110] min-w-0 overflow-hidden bg-background text-foreground"
-      style={{
-        top: 'var(--visual-viewport-offset-top, 0px)',
-        left: 'var(--visual-viewport-offset-left, 0px)',
-        width: 'var(--visual-viewport-width, 100vw)',
-        height: 'var(--visual-viewport-height, 100dvh)',
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      <div className={cn('mx-auto flex h-full w-full max-w-4xl min-w-0 flex-col overflow-hidden', className)}>
-        <header className="safe-top-app flex shrink-0 items-start gap-2 bg-[hsl(var(--sidebar))] px-3 py-3 text-white shadow-sm sm:items-center sm:gap-3 sm:px-6 sm:py-4">
-          <OverlayHeader title={title} description={description} headerExtra={headerExtra} />
-          <Button variant="ghost" size="icon" className="shrink-0 text-white hover:bg-white/10 hover:text-white focus-visible:ring-white/35" onClick={() => onOpenChange(false)} aria-label="إغلاق">
-            <X className="size-5" aria-hidden="true" />
-          </Button>
-        </header>
-        <div
-          data-entity-form-scroll
-          className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-6 sm:py-6 sm:[scrollbar-gutter:stable]"
-        >
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Overlay({
   open,
   onOpenChange,
@@ -294,72 +223,26 @@ function Overlay({
   headerExtra,
   children,
   className,
-  surface = 'auto',
-  mobileSurface,
   visualVariant,
 }: EntityFormOverlayProps) {
   const inheritedVisualVariant = useContext(EntityFormVisualContext);
   const resolvedVisualVariant = visualVariant ?? inheritedVisualVariant;
-  const resolvedMobileSurface = mobileSurface ?? (
-    resolvedVisualVariant === 'operational' ? 'bottom-sheet' : 'full-page'
-  );
-  const resolvedSurface = getResponsiveFormSurface(
-    useMediaQuery(mobileFormQuery),
-    surface,
-    resolvedMobileSurface,
-  );
-
-  if (resolvedSurface === 'full-page') {
-    return (
-      <FullPageOverlay
-        open={open}
-        onOpenChange={onOpenChange}
-        title={title}
-        description={description}
-        headerExtra={headerExtra}
-        className={className}
-        visualVariant={resolvedVisualVariant}
-      >
-        {children}
-      </FullPageOverlay>
-    );
-  }
-
-  if (resolvedSurface === 'bottom-sheet') {
-    return (
-      <BottomSheet open={open} onClose={() => onOpenChange(false)} title={title} className={className}>
-        <div
-          data-entity-form-surface="bottom-sheet"
-          data-entity-form-variant={resolvedVisualVariant}
-          className="min-w-0 max-w-full overflow-x-hidden"
-        >
-          {description || headerExtra ? (
-            <div className="mb-4 flex min-w-0 flex-wrap items-center gap-2 rounded-2xl bg-muted/35 p-3">
-              {description ? <p className="min-w-0 flex-1 text-sm font-medium leading-6 text-muted-foreground">{description}</p> : null}
-              {headerExtra}
-            </div>
-          ) : null}
-          {children}
-        </div>
-      </BottomSheet>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         data-entity-form-surface="dialog"
         data-entity-form-variant={resolvedVisualVariant}
-        className={cn('flex max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),54rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0', className)}
+        className={cn('flex max-h-[calc(var(--visual-viewport-height,100dvh)-1rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-2rem),54rem)]', className)}
       >
-        <DialogHeader className="shrink-0 bg-[hsl(var(--sidebar))] px-6 py-5 pe-14 text-white shadow-sm">
+        <DialogHeader className="shrink-0 bg-[hsl(var(--sidebar))] px-4 py-4 pe-14 text-white shadow-sm sm:px-6 sm:py-5">
           <div className="flex flex-wrap items-center gap-2">
             <DialogTitle className="text-white">{title}</DialogTitle>
             {headerExtra}
           </div>
           {description ? <DialogDescription className="leading-6 text-white/75">{description}</DialogDescription> : null}
         </DialogHeader>
-        <DialogBody data-entity-form-scroll className="px-6 pb-6 pt-4">
+        <DialogBody data-entity-form-scroll className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-6 sm:pb-6">
           {children}
         </DialogBody>
       </DialogContent>

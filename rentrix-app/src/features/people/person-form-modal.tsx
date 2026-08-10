@@ -116,7 +116,6 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         title={title}
         description={description}
         className="max-w-2xl"
-        mobileSurface="bottom-sheet"
         visualVariant="operational"
         headerExtra={form.formState.isDirty && !isSubmitting ? (
           <StatusBadge tone="warning">

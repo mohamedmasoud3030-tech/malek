@@ -51,7 +51,7 @@ export function buildExpiringContracts(
     .slice(0, MAX_EXPIRING_ROWS)
     .map((c) => ({
       id: c.id,
-      contractNumber: c.id.slice(0, 8),
+      contractNumber: c.reference ?? 'عقد بلا مرجع تجاري',
       tenantName: c.people?.full_name ?? 'مستأجر',
       location: getContractLocation(c),
       endDate: c.end_date ?? '',

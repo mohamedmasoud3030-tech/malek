@@ -72,7 +72,7 @@ export function ContractPreviewDialog({
         open={open}
         onOpenChange={onOpenChange}
         title="معاينة العقد"
-        description={contract ? `العقد رقم #${contract.id.slice(0, 8)} — التفاصيل كاملة بدون مغادرة سجل العقود.` : 'تحميل تفاصيل العقد...'}
+        description={contract ? `${contract.reference ?? 'عقد بلا مرجع تجاري'} — التفاصيل كاملة بدون مغادرة سجل العقود.` : 'تحميل تفاصيل العقد...'}
         actions={actions}
       >
         {contractQuery.isLoading ? <LoadingState label="جارٍ تحميل تفاصيل العقد" /> : null}

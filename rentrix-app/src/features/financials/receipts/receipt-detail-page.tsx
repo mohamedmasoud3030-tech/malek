@@ -44,7 +44,7 @@ export function ReceiptDetailPage() {
         tenantName: receipt.tenant_name ?? '—',
         propertyName: receipt.property_title ?? '—',
         unitNumber: receipt.unit_number ?? '—',
-        invoiceNumber: receipt.invoice_id?.slice(0, 8) ?? '—',
+        invoiceNumber: receipt.invoice_reference ?? 'فاتورة بلا مرجع',
         // PostgREST delivers `numeric` columns as strings; the document
         // engine only accepts finite numbers, so coerce at the boundary —
         // exactly like the invoice and contract callers do.
@@ -267,7 +267,7 @@ export function ReceiptDetailPage() {
             <div className="rounded-2xl border border-dashed border-border/80 bg-background p-4">
               <p className="text-xs font-bold text-muted-foreground">الفاتورة المرتبطة</p>
               <div className="mt-2 flex items-center justify-between gap-4">
-                <span className="font-bold" dir="ltr">#{receipt.invoice_id?.slice(0, 8)}...</span>
+                <span className="font-bold" dir="ltr">{receipt.invoice_reference ?? 'فاتورة بلا مرجع'}</span>
                 <Button variant="secondary" size="sm" className="min-h-11 print:hidden" asChild>
                   <Link to="/invoices">
                     عرض الفاتورة

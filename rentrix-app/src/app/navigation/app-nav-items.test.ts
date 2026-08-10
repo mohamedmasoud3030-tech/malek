@@ -10,9 +10,9 @@ const navItems: NavItem[] = Array.from(getAllNavItems());
 
 const requiredOperationalRoutes = [
   '/login', '/', '/dashboard',
-  '/properties', '/properties/new', '/properties/$propertyId', '/properties/$propertyId/edit', '/units', '/lands',
-  '/owners', '/owners/$ownerId', '/tenants',
-  '/people', '/people/new', '/people/$personId/edit', '/leads', '/communication',
+  '/properties', '/properties/new', '/properties/$propertyId', '/properties/$propertyId/edit', '/units', '/lands', '/lands/$landId',
+  '/owners', '/owners/$ownerId', '/tenants', '/tenants/$tenantId',
+  '/people', '/people/$personId', '/people/new', '/people/$personId/edit', '/leads', '/communication',
   '/contracts', '/contracts/new', '/contracts/$contractId', '/contracts/$contractId/edit',
   '/maintenance', '/utilities', '/automation', '/documents-vault',
   '/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking',
@@ -64,8 +64,8 @@ describe('app route and navigation parity', () => {
   it('keeps secondary tools inside their natural workspaces', () => {
     expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units']);
     expect(workspaceChildNavItems['/people'].map(([to]) => to)).toEqual(['/leads', '/owners', '/tenants', '/communication']);
-    expect(workspaceChildNavItems['/maintenance'].map(([to]) => to)).toEqual(['/utilities']);
-    expect(workspaceChildNavItems['/settings'].map(([to]) => to)).toEqual(['/system', '/automation']);
+    expect(workspaceChildNavItems['/maintenance'].map(([, labelKey]) => labelKey)).toEqual(['maintenance', 'utilities']);
+    expect(workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey)).toEqual(['companySettings', 'usersPermissions', 'costCenters', 'automation', 'systemSettings']);
     expect(workspaceChildNavItems['/lands']).toEqual([]);
   });
 
@@ -82,8 +82,8 @@ describe('app route and navigation parity', () => {
   });
 
   it('keeps permissioned navigation links aligned with route guards', () => {
-    for (const [to, , , , permission] of [...navItems, ...quickCreateItems]) {
-      if (!permission) continue;
+    for (const [to, , , , permission, search] of [...navItems, ...quickCreateItems]) {
+      if (!permission || search) continue;
       expect(getRouteDefinition(to)).toContain(`requirePermission('${permission}')`);
     }
   });

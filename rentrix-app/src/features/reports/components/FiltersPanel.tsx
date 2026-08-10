@@ -62,7 +62,7 @@ export function FiltersPanel({
               <option value="">كل العقود</option>
               {contractRows.map((contract) => (
                 <option key={contract.id} value={contract.id}>
-                  {(contract.people?.full_name ?? 'مستأجر غير محدد')} · {(contract.properties?.title ?? 'عقار غير محدد')} · {contract.id.slice(0, 8)}
+                  {contract.reference || 'عقد بلا مرجع'} · {(contract.people?.full_name ?? 'مستأجر غير محدد')} · {(contract.properties?.title ?? 'عقار غير محدد')}
                 </option>
               ))}
             </Select>
@@ -82,7 +82,7 @@ export function FiltersPanel({
         <span>الاحتساب: {filters.asOf || '—'}</span>
         {selectedCostCenter ? <><span aria-hidden="true">•</span><span>مركز التكلفة: {selectedCostCenter}</span></> : null}
         {selectedOwner ? <><span aria-hidden="true">•</span><span>المالك: {selectedOwner.display_name ?? selectedOwner.full_name}</span></> : null}
-        {selectedContract ? <><span aria-hidden="true">•</span><span>العقد: {selectedContract.id.slice(0, 8)}</span></> : null}
+        {selectedContract ? <><span aria-hidden="true">•</span><span>العقد: {selectedContract.reference || `${selectedContract.people?.full_name ?? 'مستأجر'} — ${selectedContract.properties?.title ?? 'عقار'}`}</span></> : null}
       </div>
     </div>
   );

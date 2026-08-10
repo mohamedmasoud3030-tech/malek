@@ -8,6 +8,13 @@ const createPersonMock = vi.fn();
 const updatePersonMock = vi.fn();
 let peopleRows: any[] = [];
 
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
+  useLocation: () => ({ pathname: '/people', search: {}, state: {}, hash: '' }),
+  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+}));
+
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock('./use-people', () => ({
   usePeople: () => ({

@@ -120,7 +120,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
       setImportResult(result);
       setStep('completed');
       if (result.is_duplicate_file) {
-        toast.success(`الملف مستورد مسبقاً — المرجع ${result.reference ?? result.id.slice(0, 8)}`);
+        toast.success(`الملف مستورد مسبقاً — المرجع ${result.reference ?? 'استيراد بلا مرجع تجاري'}`);
       } else {
         toast.success(`تم الاستيراد بنجاح — ${result.accepted_rows} حركة جديدة`);
       }
@@ -369,7 +369,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
               <span className="text-xs text-muted-foreground">المرجع</span>
-              <p className="font-mono font-bold">{importResult.reference ?? importResult.id.slice(0, 8)}</p>
+              <p className="font-mono font-bold">{importResult.reference ?? 'استيراد بلا مرجع تجاري'}</p>
             </div>
             <div>
               <span className="text-xs text-muted-foreground">الملف</span>

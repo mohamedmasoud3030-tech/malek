@@ -326,7 +326,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
                 controller.updateStatusMutation.isPending ||
                 controller.resolveMutation.isPending
               }
-              onViewDetails={controller.setDetailsRequest}
+              onViewDetails={controller.openDetailsRequest}
               onEdit={controller.openEditForm}
               onStatusAction={controller.handleStatusAction}
             />
@@ -355,7 +355,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
       <MaintenanceDetailsOverlay
         request={controller.detailsRequest}
         onOpenChange={(open) => {
-          if (!open) controller.setDetailsRequest(null);
+          if (!open) controller.closeDetailsRequest();
         }}
       />
 

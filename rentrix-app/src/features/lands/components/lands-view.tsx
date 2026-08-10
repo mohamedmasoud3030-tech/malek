@@ -1,8 +1,8 @@
 import { Archive, Edit, Layers, MapPinned, Plus, Tag, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
-import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
+import { useDialogNavigate } from '@/app/router/background-location';
 import { ActiveFilterBar, type ActiveFilterItem } from '@/components/ui/active-filter-bar';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -95,7 +95,7 @@ export function LandsView({
   embedded = false,
 }: Props) {
   const [archiveCandidate, setArchiveCandidate] = useState<LandRecord | null>(null);
-  const [selectedLandId, setSelectedLandId] = useState<string | null>(null);
+  const dialogNavigate = useDialogNavigate();
   const ownersQuery = useOwnerOptions();
   const owners = ownersQuery.data ?? [];
   const activeRows = rows.filter((row) => row.status !== 'archived').length;
@@ -206,9 +206,8 @@ export function LandsView({
           rows={rows}
           columns={columns}
           keyOf={(row) => row.id}
-          onRowClick={(row) => setSelectedLandId(row.id)}
+          onRowClick={(row) => dialogNavigate({ to: '/lands/$landId', params: { landId: row.id } })}
         />
-        {selectedLandId ? <ContextualDocumentsSection entityType="land" entityId={selectedLandId} entityLabel="الأرض" /> : null}
       </AsyncContentState>
 
       <EntityForm.Overlay
@@ -217,7 +216,6 @@ export function LandsView({
         title={editingLand ? 'تعديل أرض' : 'إضافة أرض'}
         description="أدخل بيانات الأرض واختر المالك بالاسم عند الحاجة."
         visualVariant="operational"
-        mobileSurface="bottom-sheet"
         className="max-w-2xl"
       >
         <EntityForm.Root
@@ -262,7 +260,7 @@ export function LandsView({
         open={Boolean(archiveCandidate)}
         onOpenChange={(open) => { if (!open && !isArchiving) setArchiveCandidate(null); }}
         title={`أرشفة الأرض ${archiveCandidate?.name ?? archiveCandidate?.plot_no ?? ''}؟`}
-        description={archiveCandidate ? `ستُخفى الأرض من القوائم النشطة مع الاحتفاظ بسجلها. المرجع: ${archiveCandidate.id.slice(0, 8)}` : undefined}
+        description={archiveCandidate ? `ستُخفى الأرض من القوائم النشطة مع الاحتفاظ بسجلها وعلاقاتها ومستنداتها.` : undefined}
         confirmLabel="تأكيد الأرشفة"
         variant="danger"
         isLoading={isArchiving}

@@ -406,7 +406,7 @@ export function LeadsView(props: Props) {
           if (!open && !isArchiving) setArchiveCandidate(null);
         }}
         title={`أرشفة العميل ${archiveCandidate?.name ?? ""}؟`}
-        description={`سيتم أرشفة العميل "${archiveCandidate?.name ?? ""}" وإخفاؤه من القوائم النشطة. المرجع: ${archiveCandidate?.id ? archiveCandidate.id.slice(0, 8) : ''} — يمكن استرجاعه من الأرشيف.`}
+        description={`سيتم أرشفة العميل "${archiveCandidate?.name ?? ""}" وإخفاؤه من القوائم النشطة مع الاحتفاظ بتاريخ المتابعة والعلاقات.`}
         confirmLabel="تأكيد الأرشفة"
         isLoading={isArchiving}
         onConfirm={async () => {

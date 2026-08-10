@@ -140,7 +140,7 @@ describe('Phase 6 & 6.1 — Command Palette Registry & Static Navigation', () =>
     const settingsExists = result.current.staticCommands.some(c => c.id === 'settings');
 
     expect(landsExists).toBe(false);
-    expect(settingsExists).toBe(false);
+    expect(settingsExists).toBe(true); // Settings is the canonical shell; its children remain permission-gated
   });
 });
 

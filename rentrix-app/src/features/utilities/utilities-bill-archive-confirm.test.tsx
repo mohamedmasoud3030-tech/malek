@@ -60,6 +60,10 @@ vi.mock('@/features/properties/use-properties', () => ({
   useProperties: () => ({ data: { rows: [{ id: 'property-1', title: 'عقار النور' }] }, isLoading: false }),
 }));
 
+vi.mock('@/features/settings/useCompanySettings', () => ({
+  useCompanySettingsContract: () => ({ defaultCurrency: 'OMR', locale: 'ar-OM', defaultLanguage: 'ar' }),
+}));
+
 vi.mock('@/features/settings/useDocumentSettings', () => ({
   useDocumentSettings: () => ({
     isReady: true,

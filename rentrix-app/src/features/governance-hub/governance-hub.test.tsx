@@ -22,13 +22,13 @@ const readSource = (path: string) => readFileSync(new URL(path, import.meta.url)
 describe('governance hub permissions', () => {
   it('keeps only sections accepted by the shared permission seam', () => {
     const allowed = new Set<GovernanceHubPermission>([
-      'settings.manage',
+      'company.settings.manage',
       'audit.view',
       'auth.password.change',
     ]);
 
     expect(getVisibleGovernanceHubSections((permission) => allowed.has(permission)).map((section) => section.id))
-      .toEqual(['office', 'audit-log', 'security']);
+      .toEqual(['company', 'audit-log', 'security']);
   });
 
   it('returns no tabs when the session has no matching permission', () => {

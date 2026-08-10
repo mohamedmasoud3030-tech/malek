@@ -1,9 +1,8 @@
 import { AlertTriangle, Edit, FileText, KeyRound, Mail, Phone, Plus, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
-import { ContextualDocumentsSection } from '@/components/documents/contextual-documents-section';
-import { TenantPreviewDialog } from './components/TenantPreviewDialog';
 import { PageLayout } from '@/components/layout/page-layout';
+import { useDialogNavigate } from '@/app/router/background-location';
 import { AsyncContentState } from '@/components/async-content-state';
 import { Button } from '@/components/ui/button';
 import { EntityActions } from '@/components/ui/entity-actions';
@@ -104,14 +103,18 @@ type TenantsWorkspaceProps = Readonly<{
 
 export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   const navigate = useNavigate();
+  const dialogNavigate = useDialogNavigate();
   const dialogLocation = useLocation();
-  const urlSearch = (useSearch({ strict: false }) as any).search || '';
+  const routeSearch = useSearch({ strict: false }) as Record<string, unknown>;
+  const urlSearch = typeof routeSearch.search === 'string' ? routeSearch.search : '';
   const [search, setSearch] = useState(urlSearch);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(typeof routeSearch.page === 'number' && routeSearch.page > 0 ? routeSearch.page : 1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | undefined>();
-  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
-  const [previewTenantId, setPreviewTenantId] = useState<string | null>(null);
+  useEffect(() => {
+    if (embedded) return;
+    void navigate({ to: '/tenants', replace: true, search: (previous: Record<string, unknown>) => ({ ...previous, search: search || undefined, page: page === 1 ? undefined : page }) });
+  }, [embedded, navigate, page, search]);
   const params = useMemo(() => ({ search, page, pageSize }), [page, search]);
   const tenantsQuery = useTenantWorkspace(params);
   const rows = tenantsQuery.data?.rows ?? [];
@@ -166,7 +169,7 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
       header: 'إجراءات',
       render: (tenant) => (
         <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
-          <Button variant="secondary" className="min-h-11 px-3" onClick={() => setPreviewTenantId(tenant.person.id)}>عرض</Button>
+          <Button variant="secondary" className="min-h-11 px-3" onClick={() => dialogNavigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } })}>عرض</Button>
           <Button variant="secondary" className="min-h-11 px-3" onClick={() => openEdit(tenant.person.id)}>
             <Edit className="me-1 size-4" />تعديل
           </Button>
@@ -227,9 +230,8 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
               emptyDescription="سيظهر هنا أي شخص مصنف كمستأجر من نموذج الأشخاص الحالي."
               emptyAction={<Button onClick={openCreate}><Plus className="me-2 size-4" />إضافة مستأجر</Button>}
               pagination={{ page, pageSize, total: totalCount, onPageChange: setPage }}
-              onRowClick={(tenant) => setSelectedTenantId(tenant.person.id)}
+              onRowClick={(tenant) => dialogNavigate({ to: '/tenants/$tenantId', params: { tenantId: tenant.person.id } })}
             />
-            {selectedTenantId ? <ContextualDocumentsSection entityType="tenant" entityId={selectedTenantId} entityLabel="المستأجر" /> : null}
           </AsyncContentState>
         </div>
       </section>
@@ -256,7 +258,6 @@ export function TenantsWorkspace({ embedded = false }: TenantsWorkspaceProps) {
   return (
     <>
       {workspace}
-      <TenantPreviewDialog tenant={rows.find((tenant) => tenant.person.id === previewTenantId) ?? null} open={Boolean(previewTenantId)} onOpenChange={(open) => { if (!open) setPreviewTenantId(null); }} onEdit={(personId) => { setPreviewTenantId(null); openEdit(personId); }} />
       <PersonFormModal open={formOpen} onClose={closeForm} personId={editingPersonId} defaultType="tenant" />
     </>
   );

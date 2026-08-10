@@ -158,7 +158,7 @@ export type Database = {
           created_by: string | null;
           deleted_at: string | null;
           company_id: string | null;
-          reference: string | null;
+          reference?: string | null;
           file_name: string | null;
           file_fingerprint: string | null;
           file_size: number | null;
@@ -182,7 +182,7 @@ export type Database = {
           bank_account_id: string;
           transaction_date: string;
           description: string;
-          reference: string | null;
+          reference?: string | null;
           amount: number;
           status: 'unmatched' | 'matched' | 'ignored';
           created_at: string;
@@ -523,6 +523,7 @@ export type Database = {
       contracts: {
         Row: {
           id: string;
+          reference?: string | null;
           property_id: string;
           unit_id: string | null;
           tenant_id: string;
@@ -548,6 +549,7 @@ export type Database = {
       invoices: {
         Row: {
           id: string;
+          reference?: string | null;
           contract_id: string;
           issue_date: string;
           due_date: string;
@@ -593,6 +595,7 @@ export type Database = {
       receipts: {
         Row: {
           id: string;
+          reference?: string | null;
           no: string | null;
           contract_id: string | null;
           date_time: string;
@@ -636,6 +639,7 @@ export type Database = {
       maintenance_records: {
         Row: {
           id: string;
+          reference?: string | null;
           company_id: string;
           no: string | null;
           property_id: string | null;
@@ -671,6 +675,7 @@ export type Database = {
       expenses: {
         Row: {
           id: string;
+          reference?: string | null;
           property_id: string;
           category: string;
           amount: number;

@@ -69,19 +69,20 @@ test.describe('Maintenance workspace RTL polish', () => {
         await expect(page.getByLabel('تصفية حسب العقار')).toBeVisible();
       });
 
-      test(`mobile cards use full-width touch targets at ${vp.width}px [${scheme}]`, async ({ page }) => {
-        test.skip(vp.width >= 768, 'desktop breakpoint — DataTable shown instead');
+      test(`mobile compact table keeps keyboard scrolling and 44px actions at ${vp.width}px [${scheme}]`, async ({ page }) => {
+        test.skip(vp.width >= 768, 'mobile-width assertion');
         await page.emulateMedia({ colorScheme: scheme });
         await page.setViewportSize(vp);
         await page.goto('/login?e2e-maintenance-workspace=1');
-        // If there are rows, confirm buttons are at least 44px tall
-        const firstButton = page.locator('[data-entity-card] button, .mobile-card button').first();
-        const count = await firstButton.count();
-        if (count > 0) {
+        await expect(page.locator('[data-entity-card], .mobile-card')).toHaveCount(0);
+        const scroller = page.locator('[data-entity-table-scroll]').first();
+        await expect(scroller).toBeVisible();
+        await scroller.focus();
+        await expect(scroller).toBeFocused();
+        const firstButton = scroller.locator('button').first();
+        if (await firstButton.count()) {
           const box = await firstButton.boundingBox();
-          if (box) {
-            expect(box.height, 'touch target must be ≥ 44px').toBeGreaterThanOrEqual(44);
-          }
+          if (box) expect(box.height, 'touch target must be ≥ 44px').toBeGreaterThanOrEqual(44);
         }
       });
     }

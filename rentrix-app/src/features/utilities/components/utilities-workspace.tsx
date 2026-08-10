@@ -225,7 +225,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       sections: [{
         title: 'جدول فواتير المرافق',
         rows: filteredBills.map((bill) => ({
-          label: `فاتورة ${bill.bill_number || bill.id.slice(0, 8)}`,
+          label: `فاتورة ${bill.bill_number || 'فاتورة مرافق بلا مرجع'}`,
           value: `المبلغ: ${bill.amount} ${currencyLabel} | المسدد: ${bill.paid_amount} | المسؤول: ${responsiblePartyLabels[bill.responsible_party]} | الاستحقاق: ${bill.due_date}`,
         })),
         totals: ['إجمالي المطالبات', `${totalBilled} ${currencyLabel}`],
@@ -286,7 +286,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   ];
 
   const billColumns: ColumnDef<UtilityBill>[] = [
-    { key: 'bill', header: 'الفاتورة', render: (bill) => <span className="font-bold">{bill.bill_number || `#${bill.id.slice(0, 8)}`}</span> },
+    { key: 'bill', header: 'الفاتورة', render: (bill) => <span className="font-bold">{bill.bill_number || 'فاتورة مرافق بلا مرجع'}</span> },
     { key: 'property', header: 'العقار', render: (bill) => propertyName(bill.property_id) },
     { key: 'amount', header: 'المبلغ', render: (bill) => <strong dir="ltr">{money(bill.amount)}</strong> },
     { key: 'paid', header: 'المسدد', render: (bill) => <strong dir="ltr" className="text-success">{money(bill.paid_amount)}</strong> },
@@ -297,7 +297,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       key: 'actions',
       header: 'إجراء',
       render: (bill) => (
-        <Button variant="danger" size="sm" aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? bill.id.slice(0, 8)}`} onClick={() => setBillToArchive(bill)}>
+        <Button variant="danger" size="sm" aria-label={`أرشفة فاتورة المرافق ${bill.bill_number ?? 'فاتورة مرافق بلا مرجع'}`} onClick={() => setBillToArchive(bill)}>
           <Trash2 className="size-4" />أرشفة
         </Button>
       ),
@@ -367,7 +367,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       >
         <div className="space-y-5">
           <section className="space-y-3" aria-label="العدادات المسجلة">
-            <div><h2 className="text-sm font-black">العدادات المسجلة</h2><p className="text-xs text-muted-foreground">جدول على سطح المكتب وبطاقات على الهاتف.</p></div>
+            <div><h2 className="text-sm font-black">العدادات المسجلة</h2><p className="text-xs text-muted-foreground">جدول مدمج يحفظ التفاصيل على كل المقاسات.</p></div>
             <EntityTable
               aria-label="جدول عدادات المرافق"
               rows={meters}
@@ -392,7 +392,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         </div>
       </AsyncContentState>
 
-      <EntityForm.Overlay open={showMeterForm} onOpenChange={(open) => { if (!createMeterMut.isPending) setShowMeterForm(open); }} title="إضافة عداد مرافق" description="اربط العداد بعقار وحدد بيانات الحساب والمسؤول." visualVariant="operational" mobileSurface="bottom-sheet">
+      <EntityForm.Overlay open={showMeterForm} onOpenChange={(open) => { if (!createMeterMut.isPending) setShowMeterForm(open); }} title="إضافة عداد مرافق" description="اربط العداد بعقار وحدد بيانات الحساب والمسؤول." visualVariant="operational">
         <EntityForm.Root onSubmit={(event) => { event.preventDefault(); void handleCreateMeter(); }} aria-busy={createMeterMut.isPending}>
           <EntityForm.ErrorSummary message={createMeterMut.isError ? (createMeterMut.error as Error).message : undefined} />
           <EntityForm.Section title="بيانات العداد">
@@ -410,7 +410,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
         </EntityForm.Root>
       </EntityForm.Overlay>
 
-      <EntityForm.Overlay open={showBillForm} onOpenChange={(open) => { if (!createBillMut.isPending) setShowBillForm(open); }} title="إضافة فاتورة مرافق" description="سجل القراءة والمبلغ وتاريخ الاستحقاق." visualVariant="operational" mobileSurface="bottom-sheet">
+      <EntityForm.Overlay open={showBillForm} onOpenChange={(open) => { if (!createBillMut.isPending) setShowBillForm(open); }} title="إضافة فاتورة مرافق" description="سجل القراءة والمبلغ وتاريخ الاستحقاق." visualVariant="operational">
         <EntityForm.Root onSubmit={(event) => { event.preventDefault(); void handleCreateBill(); }} aria-busy={createBillMut.isPending}>
           <EntityForm.ErrorSummary message={createBillMut.isError ? (createBillMut.error as Error).message : undefined} />
           <EntityForm.Section title="بيانات الفاتورة">
@@ -432,7 +432,26 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
       </EntityForm.Overlay>
 
       <ConfirmDialog open={Boolean(meterToArchive)} onOpenChange={(open) => { if (!open && !deleteMeterMut.isPending) setMeterToArchive(null); }} title="أرشفة عداد المرافق؟" description={meterToArchive ? `سيتم أرشفة العداد ${meterToArchive.meter_number} المرتبط بـ ${propertyName(meterToArchive.property_id)} وإخفاؤه من القوائم النشطة.` : undefined} confirmLabel="تأكيد الأرشفة" variant="danger" isLoading={deleteMeterMut.isPending} onConfirm={handleConfirmArchiveMeter} />
-      <ConfirmDialog open={Boolean(billToArchive)} onOpenChange={(open) => { if (!open && !deleteBillMut.isPending) setBillToArchive(null); }} title="أرشفة فاتورة المرافق؟" description={billToArchive ? `ستُؤرشف الفاتورة ${billToArchive.bill_number ?? billToArchive.id.slice(0, 8)} بقيمة ${money(billToArchive.amount)} للعقار ${propertyName(billToArchive.property_id)}.` : undefined} confirmLabel="تأكيد الأرشفة" variant="danger" isLoading={deleteBillMut.isPending} onConfirm={handleConfirmArchiveBill} />
+      <ConfirmDialog
+        open={Boolean(billToArchive)}
+        onOpenChange={(open) => { if (!open && !deleteBillMut.isPending) setBillToArchive(null); }}
+        title="أرشفة فاتورة المرافق؟"
+        description={billToArchive ? `ستُخفى الفاتورة من السجل النشط مع الاحتفاظ بتاريخها وارتباطاتها.` : undefined}
+        confirmLabel="تأكيد الأرشفة"
+        variant="danger"
+        isLoading={deleteBillMut.isPending}
+        onConfirm={handleConfirmArchiveBill}
+      >
+        {billToArchive ? (
+          <dl className="grid gap-2 rounded-xl border border-border/70 bg-muted/20 p-3 text-sm sm:grid-cols-2">
+            <div><dt className="text-xs text-muted-foreground">الفاتورة</dt><dd className="font-bold">{billToArchive.bill_number ?? 'فاتورة مرافق بلا مرجع'}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">نوع المرفق</dt><dd className="font-bold">{utilityTypeLabels[meters.find((meter) => meter.id === billToArchive.meter_id)?.utility_type ?? 'electricity']}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">العقار</dt><dd className="font-bold">{propertyName(billToArchive.property_id)}</dd></div>
+            <div><dt className="text-xs text-muted-foreground">المبلغ</dt><dd className="font-bold">{money(billToArchive.amount)}</dd></div>
+            <div className="sm:col-span-2"><dt className="text-xs text-muted-foreground">فترة الفاتورة</dt><dd className="font-bold" dir="ltr">{billToArchive.billing_period_start || '—'} → {billToArchive.billing_period_end || '—'}</dd></div>
+          </dl>
+        ) : null}
+      </ConfirmDialog>
     </>
   );
 
@@ -440,7 +459,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
 
   return (
     <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
-      <PageHeader title="إدارة المرافق والعدادات" description="العدادات وفواتير الاستهلاك في سجلات واضحة على سطح المكتب وبطاقات عملية على الهاتف." primaryAction={headerActions} />
+      <PageHeader title="إدارة المرافق والعدادات" description="العدادات وفواتير الاستهلاك في جداول مدمجة تحفظ كامل المعلومات على كل المقاسات." primaryAction={headerActions} />
       {body}
     </PageLayout>
   );

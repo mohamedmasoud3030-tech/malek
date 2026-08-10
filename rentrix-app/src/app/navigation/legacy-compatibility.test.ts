@@ -58,8 +58,6 @@ function getRouteBlockForRedirect(path: string): string {
 const REDIRECT_SPECS: Array<{ path: string; to: string; section?: string; view?: string; allowRoot?: boolean }> = [
   { path: '/landing', to: '/', allowRoot: true },
   { path: '/units', to: '/properties', section: 'units' },
-  { path: '/leads', to: '/contracts', section: 'leads' },
-  { path: '/communication', to: '/contracts', section: 'communication' },
   { path: '/utilities', to: '/maintenance', section: 'utilities' },
   { path: '/automation', to: '/settings', section: 'automation' },
   { path: '/finance/collections', to: '/financials', section: 'collections' },
@@ -77,6 +75,14 @@ const REDIRECT_SPECS: Array<{ path: string; to: string; section?: string; view?:
 ];
 
 describe('legacy compatibility — redirects preserve bookmarks and deep links', () => {
+  it('keeps Leads and Communication first-class while adapting old contract section links', () => {
+    expect(containsNear('/leads', "@/routes/_protected.leads")).toBe(true);
+    expect(containsNear('/communication', "@/routes/_protected.communication")).toBe(true);
+    expect(containsNear('/leads', "to: '/contracts'")).toBe(false);
+    expect(source).toContain("legacySection === 'leads'");
+    expect(source).toContain("? '/communication'");
+  });
+
   it.each(REDIRECT_SPECS)('$path redirects to $to', ({ path, to }) => {
     const token = `path: '${path}'`;
     expect(source).toContain(token);

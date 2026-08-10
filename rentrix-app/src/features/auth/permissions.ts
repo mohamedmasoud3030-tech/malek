@@ -10,6 +10,11 @@ export const appPermissions = [
   'integrity.view',
   'maintenance.view',
   'system.view',
+  'users.manage',
+  'permission_requests.review',
+  'company.settings.manage',
+  'cost_centers.manage',
+  'documents.write',
   'owners.hub.view',
   'owners.detail.view',
   'lands.view',
@@ -38,6 +43,48 @@ export const appPermissions = [
 ] as const;
 
 export type AppPermission = (typeof appPermissions)[number];
+
+export const permissionLabelsAr: Readonly<Record<AppPermission, string>> = {
+  'app.dashboard.view': 'عرض لوحة التحكم',
+  'audit.view': 'عرض سجل التدقيق',
+  'integrity.view': 'عرض سلامة البيانات',
+  'maintenance.view': 'عرض الصيانة',
+  'system.view': 'عرض إعدادات النظام والحوكمة',
+  'users.manage': 'إدارة المستخدمين والأدوار',
+  'permission_requests.review': 'مراجعة طلبات الصلاحية',
+  'company.settings.manage': 'إدارة إعدادات الشركة',
+  'cost_centers.manage': 'إدارة مراكز التكلفة',
+  'documents.write': 'رفع واستبدال وأرشفة المستندات',
+  'owners.hub.view': 'عرض سجل الملاك',
+  'owners.detail.view': 'عرض ملف المالك',
+  'lands.view': 'عرض الأراضي',
+  'leads.view': 'عرض العملاء المحتملين',
+  'commissions.view': 'عرض العمولات',
+  'communication.view': 'عرض التواصل والمتابعات',
+  'automation.view': 'عرض الأتمتة',
+  'auth.password.change': 'تغيير كلمة المرور',
+  'settings.manage': 'إدارة الإعدادات (توافق قديم)',
+  'properties.write': 'إضافة وتعديل العقارات',
+  'contracts.write': 'إضافة وتعديل العقود',
+  'expenses.view': 'عرض المصروفات',
+  'expenses.write': 'إضافة وتعديل المصروفات',
+  'arrears.view': 'عرض المتأخرات',
+  'financial.deposits.view': 'عرض التأمينات',
+  'financial.invoices.generate': 'إنشاء الفواتير',
+  'financial.invoices.export': 'تصدير الفواتير',
+  'financial.payments.create': 'تسجيل التحصيلات',
+  'financial.receipts.void': 'إلغاء الإيصالات',
+  'financial.reports.export': 'تصدير التقارير المالية',
+  'financial.bank_reconciliation.view': 'عرض المطابقة البنكية',
+  'financial.bank_reconciliation.match': 'تنفيذ المطابقة البنكية',
+  'financial.owner_settlements.view': 'عرض تسويات الملاك',
+  'financial.owner_settlements.approve': 'اعتماد تسويات الملاك',
+  'financial.owner_settlements.pay': 'صرف تسويات الملاك',
+};
+
+export function getPermissionLabel(permission: AppPermission): string {
+  return permissionLabelsAr[permission];
+}
 
 export const financialOperationPermissions = {
   generateInvoices: 'financial.invoices.generate',
@@ -75,6 +122,11 @@ const rolePermissions = {
     'integrity.view',
     'maintenance.view',
     'system.view',
+    'users.manage',
+    'permission_requests.review',
+    'company.settings.manage',
+    'cost_centers.manage',
+    'documents.write',
     'owners.hub.view',
     'owners.detail.view',
     'lands.view',
@@ -104,7 +156,9 @@ const rolePermissions = {
   MANAGER: new Set<AppPermission>([
     'app.dashboard.view',
     'maintenance.view',
-    'system.view',
+    'permission_requests.review',
+    'cost_centers.manage',
+    'documents.write',
     'owners.hub.view',
     'owners.detail.view',
     'lands.view',
@@ -113,7 +167,6 @@ const rolePermissions = {
     'communication.view',
     'automation.view',
     'auth.password.change',
-    'settings.manage',
     'properties.write',
     'contracts.write',
     'expenses.view',
@@ -195,11 +248,30 @@ export function canAccessRoute(context: AuthorizationContext | null | undefined,
 
 export type WriteAccessState = 'full' | 'read-only' | 'unconfigured';
 
+/**
+ * Shell-level write posture is deliberately broad, while every individual
+ * affordance remains guarded by its own capability.  This prevents a USER
+ * with one approved write grant from being mislabeled read-only without
+ * accidentally exposing unrelated mutations.
+ */
+export const writeAccessPermissions = [
+  'documents.write',
+  'properties.write',
+  'contracts.write',
+  'expenses.write',
+  'financial.invoices.generate',
+  'financial.payments.create',
+  'financial.receipts.void',
+  'financial.bank_reconciliation.match',
+  'financial.owner_settlements.approve',
+  'financial.owner_settlements.pay',
+] as const satisfies readonly AppPermission[];
+
 export function getWriteAccessState(
   context: AuthorizationContext | null | undefined,
 ): WriteAccessState {
   if (!context) return 'unconfigured';
-  return context.role === 'USER' ? 'read-only' : 'full';
+  return canAccessAny(context, writeAccessPermissions) ? 'full' : 'read-only';
 }
 
 export function canShowNavigationItem(context: AuthorizationContext | null | undefined, permission: AppPermission | null | undefined): boolean {

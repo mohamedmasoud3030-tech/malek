@@ -4,6 +4,7 @@ import type { ContractListItem } from './services/contractService';
 
 const baseContract: ContractListItem = {
   id: 'contract-123456789',
+  reference: 'CNT-2026-000001',
   property_id: 'property-1',
   unit_id: 'unit-1',
   tenant_id: 'tenant-1',
@@ -31,7 +32,7 @@ describe('contract list CSV export helpers', () => {
     const csv = buildContractsCsv([baseContract]);
 
     expect(csv).toContain('رقم العقد,المستأجر,هاتف المستأجر,الوحدة,العقار,عنوان العقار,الإيجار,العملة,دورة السداد,تاريخ البداية,تاريخ النهاية,الحالة');
-    expect(csv).toContain('#contract');
+    expect(csv).toContain('CNT-2026-000001');
     expect(csv).toContain('أحمد بن سالم');
     expect(csv).toContain('OMR');
     expect(csv).toContain('شهري');
@@ -61,7 +62,7 @@ describe('contract list CSV export helpers', () => {
   });
 
   it('keeps contract export filenames deterministic from the provided date', () => {
-    expect(getContractNumber(baseContract)).toBe('#contract');
+    expect(getContractNumber(baseContract)).toBe('CNT-2026-000001');
     expect(buildContractsCsvFilename(new Date('2026-05-17T12:00:00Z'))).toBe('malek-contracts-2026-05-17.csv');
   });
 });

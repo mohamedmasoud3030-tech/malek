@@ -11,8 +11,10 @@ export interface SearchResultItem {
   id: string;
   title: string;
   subtitle: string;
-  category: 'people' | 'properties' | 'units' | 'contracts' | 'owners' | 'tenants' | 'lands';
+  category: 'people' | 'properties' | 'units' | 'contracts' | 'owners' | 'tenants' | 'lands' | 'invoices' | 'receipts' | 'maintenance';
   route: string;
+  params?: Record<string, string>;
+  search?: Record<string, string>;
 }
 
 export function normalizeText(str: string): string {
@@ -80,6 +82,7 @@ export function useCommandSearch(query: string) {
 
   const canAccessOwners = canAccess('owners.hub.view');
   const canAccessLands = canAccess('lands.view');
+  const canAccessMaintenance = canAccess('maintenance.view');
 
   const entitySearchQuery = useQuery({
     // Cache is strictly scoped to activeCompanyId and userId to prevent cache bleed
@@ -115,7 +118,7 @@ export function useCommandSearch(query: string) {
           .abortSignal(signal),
         supabase
           .from('contracts')
-          .select('id, status, start_date, end_date, properties:property_id!inner(title), people:tenant_id!inner(full_name)')
+          .select('id, reference, status, start_date, end_date, properties:property_id!inner(title), people:tenant_id!inner(full_name)')
           .is('deleted_at', null)
           .or(`properties.title.ilike.${term},people.full_name.ilike.${term}`) // Server-side contract search!
           .limit(5)
@@ -137,6 +140,26 @@ export function useCommandSearch(query: string) {
               .limit(5)
               .abortSignal(signal)
           : Promise.resolve({ data: [], error: null }),
+        (supabase as any)
+          .from('invoices')
+          .select('id,reference,status,due_date,amount,contracts:contract_id(people:tenant_id(full_name),properties:property_id(title))')
+          .ilike('reference', term)
+          .limit(5)
+          .abortSignal(signal),
+        (supabase as any)
+          .from('receipts')
+          .select('id,reference,amount,date_time')
+          .ilike('reference', term)
+          .limit(5)
+          .abortSignal(signal),
+        canAccessMaintenance
+          ? (supabase as any)
+              .from('maintenance_records')
+              .select('id,reference,title,status,priority,properties:property_id(title)')
+              .or(`reference.ilike.${term},title.ilike.${term}`)
+              .limit(5)
+              .abortSignal(signal)
+          : Promise.resolve({ data: [], error: null }),
       ];
 
       const [
@@ -146,6 +169,9 @@ export function useCommandSearch(query: string) {
         contractsRes,
         ownersRes,
         landsRes,
+        invoicesRes,
+        receiptsRes,
+        maintenanceRes,
       ] = await Promise.all(promises);
 
       // Explicit error handling: Fail search as a single unit on any response failure
@@ -156,6 +182,9 @@ export function useCommandSearch(query: string) {
         contractsRes.error,
         ownersRes.error,
         landsRes.error,
+        invoicesRes.error,
+        receiptsRes.error,
+        maintenanceRes.error,
       ].filter(Boolean);
 
       if (errors.length > 0) {
@@ -171,6 +200,9 @@ export function useCommandSearch(query: string) {
       const contractsData = (contractsRes.data || []) as any[];
       const ownersData = (ownersRes.data || []) as any[];
       const landsData = (landsRes.data || []) as any[];
+      const invoicesData = (invoicesRes.data || []) as any[];
+      const receiptsData = (receiptsRes.data || []) as any[];
+      const maintenanceData = (maintenanceRes.data || []) as any[];
 
       // ── Process People (separating general People from Tenants)
       for (const p of peopleData) {
@@ -182,7 +214,8 @@ export function useCommandSearch(query: string) {
           subtitle,
           category: p.type === 'tenant' ? 'tenants' : 'people',
           // Tenant redirects to tenants list filtered by search term for perfect navigation
-          route: p.type === 'tenant' ? `/tenants` : `/people/${p.id}/edit`,
+          route: p.type === 'tenant' ? '/tenants/$tenantId' : '/people/$personId',
+          params: p.type === 'tenant' ? { tenantId: p.id } : { personId: p.id },
         });
       }
 
@@ -193,7 +226,8 @@ export function useCommandSearch(query: string) {
           title: prop.title,
           subtitle: prop.address ?? 'العنوان غير محدد',
           category: 'properties',
-          route: `/properties/${prop.id}`,
+          route: '/properties/$propertyId',
+          params: { propertyId: prop.id },
         });
       }
 
@@ -206,7 +240,8 @@ export function useCommandSearch(query: string) {
           title: `وحدة رقم ${u.unit_number}`,
           subtitle: `${propTitle} • حالة: ${statusLabel}`,
           category: 'units',
-          route: `/properties/${u.property_id}/units/${u.id}`,
+          route: '/properties/$propertyId/units/$unitId',
+          params: { propertyId: u.property_id, unitId: u.id },
         });
       }
 
@@ -217,10 +252,11 @@ export function useCommandSearch(query: string) {
         const statusLabel = c.status === 'active' ? 'نشط' : c.status === 'draft' ? 'مسودة' : 'منتهي';
         results.push({
           id: c.id,
-          title: `عقد المستأجر ${tenantName}`,
+          title: c.reference || `عقد المستأجر ${tenantName}`,
           subtitle: `${propTitle} • حالة: ${statusLabel}`,
           category: 'contracts',
-          route: `/contracts/${c.id}`,
+          route: '/contracts/$contractId',
+          params: { contractId: c.id },
         });
       }
 
@@ -232,7 +268,8 @@ export function useCommandSearch(query: string) {
           title: name,
           subtitle: `مالك • ${o.phone ?? o.email ?? ''}`,
           category: 'owners',
-          route: `/owners/${o.id}`,
+          route: '/owners/$ownerId',
+          params: { ownerId: o.id },
         });
       }
 
@@ -243,7 +280,43 @@ export function useCommandSearch(query: string) {
           title: `أرض: ${l.name}`,
           subtitle: `مخطط رقم ${l.plot_no} • ${l.location ?? ''}`,
           category: 'lands',
-          route: `/lands`,
+          route: '/lands/$landId',
+          params: { landId: l.id },
+        });
+      }
+
+      for (const invoice of invoicesData) {
+        const context = invoice.contracts;
+        const tenantName = context?.people?.full_name ?? 'مستأجر غير محدد';
+        results.push({
+          id: invoice.id,
+          title: invoice.reference || 'فاتورة مسجلة',
+          subtitle: `${tenantName} • استحقاق ${invoice.due_date}`,
+          category: 'invoices',
+          route: '/invoices',
+          search: { invoiceId: invoice.id },
+        });
+      }
+
+      for (const receipt of receiptsData) {
+        results.push({
+          id: receipt.id,
+          title: receipt.reference || 'إيصال مسجل',
+          subtitle: `تحصيل بقيمة ${receipt.amount} • ${receipt.date_time}`,
+          category: 'receipts',
+          route: '/receipts',
+          search: { receiptId: receipt.id },
+        });
+      }
+
+      for (const request of maintenanceData) {
+        results.push({
+          id: request.id,
+          title: request.reference || request.title || 'طلب صيانة',
+          subtitle: `${request.properties?.title ?? 'عقار غير محدد'} • ${request.status}`,
+          category: 'maintenance',
+          route: '/maintenance',
+          search: { requestId: request.id },
         });
       }
 

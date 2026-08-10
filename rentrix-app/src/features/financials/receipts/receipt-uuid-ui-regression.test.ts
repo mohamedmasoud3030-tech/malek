@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 /**
  * UI regression — raw UUIDs must not be the primary visible label on the
  * audited receipt surfaces. The server-generated company-scoped reference
- * (receipt_number) is the primary label; the UUID is only ever secondary
- * metadata and the truncated formatter is a fallback for legacy rows only.
+ * (receipt_number) is the primary label; internal IDs are routing keys only
+ * and never become fabricated document references.
  */
 
 function readSource(relativePath: string): string {
@@ -25,10 +25,10 @@ describe('receipt UI — no raw UUID as primary visible label', () => {
     expect(card).not.toContain('{receiptDetail.id}');
   });
 
-  it('keeps the truncated UUID formatter strictly as a fallback, never a primary source', () => {
+  it('never fabricates a receipt reference from an internal payment id', () => {
     const formatters = readSource('receipt-formatters.ts');
-    // The fallback exists for legacy rows but is documented as a fallback only.
     expect(formatters).toContain('formatReceiptNumber');
-    expect(formatters).toContain('REC-');
+    expect(formatters).toContain('إيصال بلا مرجع تجاري');
+    expect(formatters).not.toContain('paymentId.slice');
   });
 });

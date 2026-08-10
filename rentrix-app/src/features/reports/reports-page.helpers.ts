@@ -28,6 +28,7 @@ export type OccupancyChartRow = {
 export type PaymentsTrendRow = { month: string; collections: number; overdue: number };
 export type RentRollReportRow = {
   contractId: string;
+  contractReference?: string | null;
   tenantName: string;
   propertyTitle: string;
   unitNumber: string;
@@ -204,7 +205,7 @@ export function buildOccupancyRows(
     const row: OccupancyChartRow = {
       property: hasTitle ? title! : 'عقار بدون اسم',
       propertyId: id,
-      shortPropertyId: id.slice(0, 8),
+      shortPropertyId: '',
       hasTitle,
       occupied: isOccupiedUnitStatus(unit.status) ? 1 : 0,
       vacant: isOccupiedUnitStatus(unit.status) ? 0 : 1,
@@ -264,6 +265,7 @@ export function buildRentRollRows(
   return contracts
     .map((contract) => ({
       contractId: contract.id,
+      contractReference: contract.reference ?? null,
       tenantName: valueOrDash(contract.people?.full_name),
       propertyTitle: valueOrDash(contract.properties?.title),
       unitNumber: valueOrDash(contract.units?.unit_number),

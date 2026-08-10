@@ -1,13 +1,14 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { Link } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { Bell, CalendarClock, CreditCard, RefreshCcw, Wrench, type LucideIcon } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Bell, CalendarClock, CreditCard, RefreshCcw, ShieldCheck, Wrench, type LucideIcon } from 'lucide-react';
 import { getDashboardSnapshot } from '@/features/dashboard/dashboard-snapshot';
 import { toDateInputValue } from '@/features/dashboard/dashboard-utils';
 import { canShowNavigationItem, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { SharedLabel } from './layout-navigation-view';
+import { listAppNotifications, markAppNotificationRead } from './app-notifications-service';
 
 /** Contracts expiring within this window are surfaced as notifications. */
 const EXPIRING_CONTRACT_WINDOW_DAYS = 30;
@@ -82,14 +83,40 @@ export function NotificationsMenu({
   const panelRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const [today] = useState(() => new Date());
+  const queryClient = useQueryClient();
   const snapshotQuery = useDashboardSnapshotForNotifications(today);
-  const isInitialLoading = snapshotQuery.isLoading && snapshotQuery.data === undefined;
-  const hasBlockingError = snapshotQuery.isError && snapshotQuery.data === undefined;
+  const persistedQuery = useQuery({
+    queryKey: ['app-notifications', authorization?.userId],
+    queryFn: listAppNotifications,
+    enabled: Boolean(authorization?.userId),
+    retry: false,
+    staleTime: 30_000,
+  });
+  const markReadMutation = useMutation({
+    mutationFn: markAppNotificationRead,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-notifications'] }),
+  });
+  const isInitialLoading = (snapshotQuery.isLoading && snapshotQuery.data === undefined)
+    || (persistedQuery.isLoading && persistedQuery.data === undefined);
+  const hasBlockingError = (snapshotQuery.isError && snapshotQuery.data === undefined)
+    || (persistedQuery.isError && persistedQuery.data === undefined);
 
-  const visibleItems = buildNotificationItems(snapshotQuery.data, today).filter((item) =>
-    canShowNavigationItem(authorization, item.permission),
-  );
-  const totalCount = visibleItems.reduce((sum, item) => sum + item.count, 0);
+  const operationalItems = buildNotificationItems(snapshotQuery.data, today)
+    .filter((item) => canShowNavigationItem(authorization, item.permission))
+    .map((item) => ({ ...item, id: `operational:${item.to}`, title: sharedLabel(item.labelKey), message: '', isRead: false }));
+  const persistedItems = (persistedQuery.data ?? []).map((item) => ({
+    id: item.id,
+    to: item.link,
+    labelKey: '',
+    title: item.title,
+    message: item.message,
+    count: 1,
+    Icon: item.type === 'permission_request' || item.type === 'permission_decision' ? ShieldCheck : Bell,
+    isRead: item.isRead,
+  }));
+  const visibleItems = [...persistedItems, ...operationalItems];
+  const totalCount = operationalItems.reduce((sum, item) => sum + item.count, 0)
+    + persistedItems.filter((item) => !item.isRead).length;
 
   const closeAndRestoreFocus = () => {
     setIsOpen(false);
@@ -179,7 +206,7 @@ export function NotificationsMenu({
                 size="sm"
                 variant="secondary"
                 className="mt-3 w-full"
-                onClick={() => { void snapshotQuery.refetch(); }}
+                onClick={() => { void Promise.all([snapshotQuery.refetch(), persistedQuery.refetch()]); }}
               >
                 <RefreshCcw className="me-1.5 size-4" aria-hidden="true" />
                 إعادة المحاولة
@@ -193,21 +220,26 @@ export function NotificationsMenu({
           ) : (
             <ul className="mt-2 space-y-1" aria-label={sharedLabel('notifications')}>
               {visibleItems.map((item, index) => (
-                <li key={item.to}>
+                <li key={item.id}>
                   <Link
                     ref={(node) => { itemRefs.current[index] = node; }}
                     to={item.to}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      if (!item.id.startsWith('operational:') && !item.isRead) markReadMutation.mutate(item.id);
+                      setIsOpen(false);
+                    }}
                     className={cn(
                       'flex min-h-11 items-center gap-2.5 rounded-xl px-3 text-[12px] font-semibold text-foreground/90 transition-colors hover:bg-muted',
                       'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',
                     )}
                   >
                     <item.Icon className="size-4 shrink-0 text-warning" aria-hidden="true" />
-                    <span className="min-w-0 flex-1 truncate">{sharedLabel(item.labelKey)}</span>
-                    <span className="grid min-w-6 place-items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-bold text-danger">
-                      {item.count}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{item.title}</span>
+                      {item.message ? <span className="mt-0.5 block truncate text-[10px] font-medium text-muted-foreground">{item.message}</span> : null}
                     </span>
+                    {!item.isRead ? <span className="size-2 shrink-0 rounded-full bg-primary" aria-label="غير مقروء" /> : null}
+                    {item.count > 1 ? <span className="grid min-w-6 place-items-center rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-bold text-danger">{item.count}</span> : null}
                   </Link>
                 </li>
               ))}

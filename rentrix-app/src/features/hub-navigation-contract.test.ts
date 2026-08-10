@@ -17,7 +17,6 @@ import { describe, expect, it } from 'vitest';
 const HUB_WORKSPACES = [
   'portfolio-hub/portfolio-hub-workspace.tsx',
   'operations-hub/operations-hub-workspace.tsx',
-  'relationships-hub/relationships-hub-workspace.tsx',
   'governance-hub/components/GovernanceHubWorkspace.tsx',
 ] as const;
 

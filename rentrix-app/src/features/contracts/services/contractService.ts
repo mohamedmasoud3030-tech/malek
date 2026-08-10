@@ -7,6 +7,7 @@ import type { ContractPayload, RenewalPayload } from '../contractSchema';
 
 export type ContractStatusFilter = Contract['status'] | 'all';
 export type ContractListItem = Contract & {
+  reference?: string | null;
   properties: Pick<Property, 'id' | 'title' | 'address'> | null;
   units: Pick<Unit, 'id' | 'unit_number' | 'floor' | 'status' | 'rent_amount'> | null;
   people: Pick<Person, 'id' | 'full_name' | 'phone' | 'email' | 'national_id'> | null;

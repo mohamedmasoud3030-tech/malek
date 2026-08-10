@@ -220,20 +220,20 @@ export function GeneralLedgerCoreSection() {
               <table className="w-full text-start text-xs">
                 <thead className="border-b border-border/60 bg-muted/30 text-muted-foreground">
                   <tr>
-                    <th className="p-3 text-start font-bold">رقم القيد</th>
+                    <th className="p-3 text-start font-bold">القيد</th>
                     <th className="p-3 text-start font-bold">تاريخ الترحيل</th>
                     <th className="p-3 text-start font-bold">المصدر</th>
-                    <th className="p-3 text-start font-bold">المعرّف</th>
+                    <th className="p-3 text-start font-bold">البيان</th>
                     <th className="p-3 text-start font-bold">الحالة</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
                   {batches.map((batch) => (
                     <tr key={batch.id} className="hover:bg-muted/15">
-                      <td className="p-3 font-mono font-bold">{batch.id ? batch.id.slice(0, 8) : '—'}</td>
+                      <td className="p-3 font-mono font-bold">{batch.description || 'قيد يومية'}</td>
                       <td className="p-3 font-mono text-muted-foreground">{batch.effective_date}</td>
                       <td className="p-3 font-semibold">{batch.source_type || '—'}</td>
-                      <td className="p-3 font-mono text-xs text-muted-foreground">{batch.description || batch.source_id || '—'}</td>
+                      <td className="p-3 font-mono text-xs text-muted-foreground">{batch.description || 'مصدر محاسبي مسجل'}</td>
                       <td className="p-3">{batchStatusBadge(batch.status)}</td>
                     </tr>
                   ))}

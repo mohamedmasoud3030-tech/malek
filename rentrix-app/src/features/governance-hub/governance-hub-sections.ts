@@ -1,52 +1,61 @@
-import { Building2, KeyRound, ListChecks, SearchCheck, Settings2, ShieldAlert } from 'lucide-react';
+import { Building2, FolderTree, KeyRound, ListChecks, SearchCheck, Settings2, ShieldAlert, SlidersHorizontal } from 'lucide-react';
+import type { AppPermission } from '@/features/auth/permissions';
 
-/**
- * Governance hub tab catalogue. Each tab maps 1:1 to a legacy standalone
- * route/page and is gated by the same permission that route already
- * enforces (see route-tree.ts requirePermission calls) — the hub does not
- * introduce or relax any access rule, it only re-presents the same gated
- * surfaces as tabs instead of separate pages.
- */
+/** Settings owns administration, security, automation, audit and governance. */
 export const governanceHubSections = [
   {
-    id: 'office',
-    label: 'إعدادات المكتب',
-    description: 'هوية المكتب، الوثائق، مراكز التكلفة، شروط السداد، والمظهر.',
+    id: 'company',
+    label: 'الشركة',
+    description: 'هوية الشركة والوثائق والإعدادات التجارية.',
     icon: Building2,
-    permission: 'settings.manage',
+    permission: 'company.settings.manage',
   },
   {
-    id: 'users-roles',
-    label: 'المستخدمون والأدوار',
-    description: 'إدارة أدوار الحسابات الحالية وحالتها ضمن حوكمة الوصول.',
+    id: 'users-permissions',
+    label: 'المستخدمون والصلاحيات',
+    description: 'إدارة المستخدمين للمسؤول ومراجعة الطلبات للمخوّلين فقط.',
     icon: ShieldAlert,
+    permission: 'permission_requests.review',
+  },
+  {
+    id: 'cost-centers',
+    label: 'مراكز التكلفة',
+    description: 'إدارة تصنيفات مراكز التكلفة التشغيلية.',
+    icon: FolderTree,
+    permission: 'cost_centers.manage',
+  },
+  {
+    id: 'automation',
+    label: 'الأتمتة',
+    description: 'قواعد الأتمتة والتنبيهات وسجل التشغيل.',
+    icon: Settings2,
+    permission: 'automation.view',
+  },
+  {
+    id: 'system-settings',
+    label: 'إعدادات النظام',
+    description: 'حوكمة النظام وإعداداته الإدارية.',
+    icon: SlidersHorizontal,
     permission: 'system.view',
   },
   {
     id: 'audit-log',
     label: 'سجل التدقيق',
-    description: 'عرض قراءة فقط لأحداث الحوكمة المسجلة في النظام.',
+    description: 'سجل قراءة فقط لأحداث الحوكمة.',
     icon: ListChecks,
     permission: 'audit.view',
   },
   {
     id: 'data-integrity',
     label: 'سلامة البيانات',
-    description: 'فحوصات تطابق وسلامة العلاقات الأساسية في المخطط.',
+    description: 'فحوصات سلامة العلاقات الأساسية.',
     icon: SearchCheck,
     permission: 'integrity.view',
   },
   {
-    id: 'automation',
-    label: 'الأتمتة',
-    description: 'قواعد الأتمتة والتنبيهات وسجل التشغيل داخل Settings.',
-    icon: Settings2,
-    permission: 'automation.view',
-  },
-  {
     id: 'security',
-    label: 'كلمة المرور والأمان',
-    description: 'تحديث كلمة مرور حسابك الحالي بأمان.',
+    label: 'الأمان',
+    description: 'تحديث كلمة مرور الحساب الحالي.',
     icon: KeyRound,
     permission: 'auth.password.change',
   },
@@ -55,15 +64,12 @@ export const governanceHubSections = [
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
-  permission: string;
+  permission: AppPermission;
 }>;
 
 export type GovernanceHubSectionId = (typeof governanceHubSections)[number]['id'];
 export type GovernanceHubPermission = (typeof governanceHubSections)[number]['permission'];
 
-/** Returns only the tabs accepted by the shared authorization seam. */
-export function getVisibleGovernanceHubSections(
-  canAccess: (permission: GovernanceHubPermission) => boolean,
-) {
+export function getVisibleGovernanceHubSections(canAccess: (permission: GovernanceHubPermission) => boolean) {
   return governanceHubSections.filter((section) => canAccess(section.permission));
 }

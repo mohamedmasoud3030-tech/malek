@@ -1,46 +1,53 @@
-import { BadgeDollarSign, BarChart3, Building2, ContactRound, DoorOpen, FileText, FolderKanban, LayoutDashboard, MapPinned, MessageSquareText, PieChart, Settings, Settings2, ShieldCheck, UserCheck, UserPlus, UserRoundCog, Users, Wrench, Zap } from 'lucide-react';
+import {
+  BadgeDollarSign,
+  BarChart3,
+  Building2,
+  ContactRound,
+  DoorOpen,
+  FileText,
+  FolderKanban,
+  LayoutDashboard,
+  MapPinned,
+  MessageSquareText,
+  PieChart,
+  Settings,
+  Settings2,
+  ShieldCheck,
+  UserCheck,
+  UserPlus,
+  UserRoundCog,
+  Users,
+  Wrench,
+  Zap,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AppPermission } from '@/features/auth/permissions';
 
-export type NavItem = readonly [to: string, labelKey: string, description: string, Icon: LucideIcon, permission?: AppPermission];
+export type NavItem = readonly [
+  to: string,
+  labelKey: string,
+  description: string,
+  Icon: LucideIcon,
+  permission?: AppPermission,
+  search?: Readonly<Record<string, string>>,
+];
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
-/** Canonical product IA. Supporting routes are rendered beneath their owning domain. */
+/** Final P6 IA. Children are owned by their visible parent domain. */
 export const navGroups: readonly NavGroup[] = [
-  ['الرئيسية', [
-    ['/dashboard', 'dashboard', 'ملخص الأداء اليومي وما يحتاج متابعة', LayoutDashboard],
-  ]],
-  ['الأشخاص', [
-    ['/people', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users],
-  ]],
-  ['العقارات', [
-    ['/properties', 'properties', 'العقارات والوحدات', Building2],
-  ]],
-  ['الأراضي', [
-    ['/lands', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view'],
-  ]],
-  ['العقود', [
-    ['/contracts', 'contracts', 'العقود والتجديدات ودورة الحياة', FileText],
-  ]],
-  ['المالية', [
-    ['/financials', 'financials', 'العمليات المالية اليومية والتحصيل والمصروفات والتسويات والبنوك', PieChart],
-  ]],
-  ['التقارير', [
-    ['/reports', 'accountingReports', 'التقارير والتحليلات والكشوف', BarChart3],
-  ]],
-  ['الخدمات', [
-    ['/maintenance', 'maintenance', 'الصيانة والمرافق والتشغيل', Wrench],
-  ]],
-  ['العمولات', [
-    ['/commissions', 'commissions', 'عمولات التحصيل والمبيعات المرتبطة بالمصادر', BadgeDollarSign, 'commissions.view'],
-  ]],
-  ['الإعدادات', [
-    ['/settings', 'settings', 'إعدادات الشركة والمستخدمين والنظام', Settings, 'settings.manage'],
-  ]],
+  ['الرئيسية', [['/dashboard', 'dashboard', 'ملخص الأداء اليومي وما يحتاج متابعة', LayoutDashboard]]],
+  ['الأشخاص', [['/people', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users]]],
+  ['العقارات', [['/properties', 'properties', 'العقارات والوحدات', Building2]]],
+  ['الأراضي', [['/lands', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view']]],
+  ['العقود', [['/contracts', 'contracts', 'العقود والتجديدات ودورة الحياة', FileText]]],
+  ['المالية', [['/financials', 'financials', 'الفواتير والتحصيل والمصروفات والتسويات والبنوك', PieChart]]],
+  ['التقارير', [['/reports', 'accountingReports', 'التقارير والتحليلات والكشوف', BarChart3]]],
+  ['الخدمات', [['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench]]],
+  ['العمولات', [['/commissions', 'commissions', 'عمولات التحصيل والمبيعات المرتبطة بالمصادر', BadgeDollarSign, 'commissions.view']]],
+  ['الإعدادات', [['/settings', 'settings', 'إعدادات الشركة والصلاحيات والأتمتة والنظام', Settings]]],
 ];
 
-/** Child destinations stay grouped under their domain while retaining their canonical routes. */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/people': [
     ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
@@ -63,23 +70,25 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   ],
   '/reports': [],
   '/maintenance': [
+    // Service Providers is intentionally absent: no provider domain/table exists.
+    ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, undefined, { section: 'maintenance' }],
     ['/utilities', 'utilities', 'المرافق والعدادات', Zap],
   ],
   '/commissions': [],
   '/settings': [
-    ['/system', 'system', 'المستخدمون والصلاحيات وإعدادات النظام والحوكمة', ShieldCheck, 'system.view'],
-    ['/automation', 'automation', 'الأتمتة', Settings2, 'automation.view'],
+    ['/settings', 'companySettings', 'بيانات الشركة وإعداداتها', Building2, 'company.settings.manage', { section: 'company' }],
+    ['/settings', 'usersPermissions', 'المستخدمون وطلبات الصلاحيات', ShieldCheck, 'permission_requests.review', { section: 'users-permissions' }],
+    ['/settings', 'costCenters', 'مراكز التكلفة', FolderKanban, 'cost_centers.manage', { section: 'cost-centers' }],
+    ['/settings', 'automation', 'الأتمتة', Settings2, 'automation.view', { section: 'automation' }],
+    ['/settings', 'systemSettings', 'إعدادات النظام والحوكمة', Settings, 'system.view', { section: 'system-settings' }],
   ],
 };
 
 export function getAllNavItems(): readonly NavItem[] {
-  const topLevel = navGroups.flatMap((group) => group[1]);
-  const children = Object.values(workspaceChildNavItems).flat();
-  return [...topLevel, ...children];
+  return [...navGroups.flatMap((group) => group[1]), ...Object.values(workspaceChildNavItems).flat()];
 }
 
-// The mobile shell intentionally exposes only Menu + Search. Kept as an empty
-// compatibility export for consumers/tests that imported the former 5-item model.
+/** Mobile navigation is exclusively the floating Menu + Search control. */
 export const mobileNavItems: readonly MobileNavItem[] = [];
 
 export const quickCreateItems: readonly MobileNavItem[] = [

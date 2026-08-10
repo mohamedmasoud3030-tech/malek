@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,6 +71,9 @@ export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 're
  */
 export function useMaintenancePageController() {
   const activeCompanyId = useActiveCompanyId();
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const requestedId = typeof search.requestId === 'string' ? search.requestId : '';
   const [statusFilter, setStatusFilter] = useState<MaintenanceStatusFilter>('all');
   const [priorityFilter, setPriorityFilter] = useState<MaintenancePriorityFilter>('all');
   const [propertyFilterId, setPropertyFilterId] = useState('');
@@ -102,6 +106,34 @@ export function useMaintenancePageController() {
   const units = unitsQuery.data ?? [];
   const allUnits = allUnitsQuery.data ?? [];
   const maintenanceRows = maintenanceQuery.data ?? [];
+
+  useEffect(() => {
+    if (!requestedId) {
+      setDetailsRequest(null);
+      return;
+    }
+    const requested = maintenanceRows.find((row) => row.id === requestedId);
+    if (requested) setDetailsRequest(requested);
+  }, [maintenanceRows, requestedId]);
+
+  const openDetailsRequest = (request: Maintenance) => {
+    setDetailsRequest(request);
+    void navigate({ to: '/maintenance', search: (previous: Record<string, unknown>) => ({ ...previous, requestId: request.id }) });
+  };
+
+  const closeDetailsRequest = () => {
+    setDetailsRequest(null);
+    void navigate({
+      to: '/maintenance',
+      replace: true,
+      search: (previous: Record<string, unknown>) => {
+        const next = { ...previous };
+        delete next.requestId;
+        return next;
+      },
+    });
+  };
+
   const filteredMaintenanceRows = useMemo(
     () => filterMaintenanceRequests(maintenanceRows, {
       status: statusFilter,
@@ -221,7 +253,8 @@ export function useMaintenancePageController() {
     setShowForm,
     editingRequest,
     detailsRequest,
-    setDetailsRequest,
+    openDetailsRequest,
+    closeDetailsRequest,
     resolveTarget,
     setResolveTarget,
     form,

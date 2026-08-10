@@ -188,7 +188,6 @@ export function CommunicationHubView({
         description="هذا تسجيل تشغيلي فقط؛ لن يرسل النظام رسالة خارجية عند الحفظ."
         className="max-w-2xl"
         visualVariant="operational"
-        mobileSurface="bottom-sheet"
       >
         <EntityForm.Root
           onSubmit={(event) => {
@@ -226,7 +225,7 @@ export function CommunicationHubView({
         open={Boolean(archiveCandidate)}
         onOpenChange={(open) => { if (!open && !isArchiving) setArchiveCandidate(null); }}
         title={`أرشفة سجل التواصل مع ${archiveCandidate?.contact_name ?? ''}؟`}
-        description={archiveCandidate ? `سيُخفى السجل من القوائم النشطة مع الاحتفاظ بتاريخ التواصل. المرجع: ${archiveCandidate.id.slice(0, 8)}` : undefined}
+        description={archiveCandidate ? `سيُخفى السجل من القوائم النشطة مع الاحتفاظ بتاريخ التواصل وعلاقاته` : undefined}
         confirmLabel="تأكيد الأرشفة"
         variant="danger"
         isLoading={isArchiving}

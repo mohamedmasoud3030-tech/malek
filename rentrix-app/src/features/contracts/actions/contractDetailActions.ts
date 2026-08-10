@@ -62,7 +62,7 @@ async function runDocumentAction(action: () => Promise<void>, fallback: string):
 }
 
 export async function shareContractLink(contract: ContractDetail) {
-  const title = `عقد #${contract.id.slice(0, 8)}`;
+  const title = contract.reference ?? 'عقد مسجل';
   try {
     const result = await shareOrCopy({ title, url: window.location.href });
     if (result === 'copied') toast.success('تم نسخ رابط العقد');
@@ -74,6 +74,6 @@ export async function shareContractLink(contract: ContractDetail) {
 
 export function openContractWhatsApp(contract: ContractDetail) {
   const tenantName = contract.people?.full_name ? ` ${contract.people.full_name}` : '';
-  const message = `مرحباً${tenantName}، بخصوص عقد #${contract.id.slice(0, 8)} على ${contract.properties?.title ?? 'العقار'} / ${contract.units?.unit_number ?? 'الوحدة'}.`;
+  const message = `مرحباً${tenantName}، بخصوص ${contract.reference ?? 'العقد المسجل'} على ${contract.properties?.title ?? 'العقار'} / ${contract.units?.unit_number ?? 'الوحدة'}.`;
   openWhatsApp(contract.people?.phone, message);
 }

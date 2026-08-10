@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
+import { useDialogNavigate } from '@/app/router/background-location';
 import { useProperty } from '../use-properties';
 import { useUnits } from '@/features/units/use-units';
 import { propertyStatusLabels } from '../property-schema';
@@ -25,6 +26,7 @@ export function PropertyPreviewDialog({
   onOpenChange: (open: boolean) => void;
   onEdit?: (propertyId: string) => void;
 }>) {
+  const dialogNavigate = useDialogNavigate();
   const propertyQuery = useProperty(propertyId ?? '');
   const unitsQuery = useUnits(propertyId ?? '');
   const property = propertyQuery.data;
@@ -99,15 +101,22 @@ export function PropertyPreviewDialog({
               {units.length > 0 ? (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {units.slice(0, 6).map((unit) => (
-                    <div key={unit.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-black">وحدة {unit.unit_number}</p>
-                        <StatusBadge tone={unit.status === 'occupied' ? 'success' : unit.status === 'available' ? 'info' : 'warning'}>
-                          {unit.status}
-                        </StatusBadge>
-                      </div>
-                      <p className="mt-2 text-xs text-muted-foreground">الدور: {unit.floor ?? '—'}</p>
-                    </div>
+                    <button
+                      key={unit.id}
+                      type="button"
+                      className="min-h-11 rounded-2xl border border-border/70 bg-muted/20 p-4 text-start outline-none transition hover:border-primary/35 hover:bg-primary/5 focus-visible:ring-4 focus-visible:ring-primary/25"
+                      onClick={() => dialogNavigate({
+                        to: '/properties/$propertyId/units/$unitId',
+                        params: { propertyId: property.id, unitId: unit.id },
+                      })}
+                      aria-label={`فتح ملف الوحدة ${unit.unit_number}`}
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="font-black">وحدة {unit.unit_number}</span>
+                        <StatusBadge tone={unit.status === 'occupied' ? 'success' : unit.status === 'available' ? 'info' : 'warning'}>{unit.status}</StatusBadge>
+                      </span>
+                      <span className="mt-2 block text-xs text-muted-foreground">الدور: {unit.floor ?? '—'} · فتح الملف</span>
+                    </button>
                   ))}
                 </div>
               ) : null}

@@ -1,12 +1,12 @@
 import { Edit, IdCard, Plus, Trash2, UserCheck, UserRound, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from "sonner";
 import { PersonFormModal } from "./person-form-modal";
+import { useDialogNavigate } from "@/app/router/background-location";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EntityCell } from "@/components/ui/entity-cell";
-import { EntityPreviewDialog } from "@/components/ui/entity-preview-dialog";
-import { ContextualDocumentsSection } from "@/components/documents/contextual-documents-section";
 import {
   ActiveFilterBar,
   type ActiveFilterItem,
@@ -65,14 +65,25 @@ export type PeopleListPageProps = Readonly<{
 }>;
 
 export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState<PersonTypeFilter>("all");
-  const [page, setPage] = useState(1);
+  const navigate = useNavigate();
+  const url = useSearch({ strict: false }) as Record<string, unknown>;
+  const [search, setSearch] = useState(typeof url.search === 'string' ? url.search : '');
+  const [type, setType] = useState<PersonTypeFilter>(personTypeValues.includes(url.type as never) ? url.type as PersonTypeFilter : 'all');
+  const [page, setPage] = useState(typeof url.page === 'number' && url.page > 0 ? url.page : 1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editPersonId, setEditPersonId] = useState<string | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [previewPersonId, setPreviewPersonId] = useState<string | null>(null);
+  const dialogNavigate = useDialogNavigate();
   const debouncedSearch = useDebounce(search, 300);
+
+  useEffect(() => {
+    if (embedded) return;
+    void navigate({
+      to: '/people',
+      replace: true,
+      search: (previous: Record<string, unknown>) => ({ ...previous, search: debouncedSearch || undefined, type: type === 'all' ? undefined : type, page: page === 1 ? undefined : page }),
+    });
+  }, [debouncedSearch, embedded, navigate, page, type]);
 
   const params = useMemo(
     () => ({ search: debouncedSearch, type, page, pageSize }),
@@ -221,7 +232,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
           <Button
             variant="secondary"
             className="min-h-11 px-3"
-            onClick={() => setPreviewPersonId(person.id)}
+            onClick={() => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } })}
           >
             عرض
           </Button>
@@ -380,6 +391,7 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
                 total: totalCount,
                 onPageChange: setPage,
               }}
+              onRowClick={(person) => dialogNavigate({ to: '/people/$personId', params: { personId: person.id } })}
             />
           </div>
         </section>
@@ -391,26 +403,13 @@ export function PeopleListPage({ embedded = false }: PeopleListPageProps) {
         personId={editPersonId}
       />
 
-      <EntityPreviewDialog
-        open={Boolean(previewPersonId)}
-        onOpenChange={(open) => { if (!open) setPreviewPersonId(null); }}
-        title={rows.find((person) => person.id === previewPersonId)?.full_name ?? 'معاينة الشخص'}
-        description="بيانات الشخص الأساسية بدون مغادرة السجل."
-        actions={previewPersonId ? <Button onClick={() => { openEdit(previewPersonId); setPreviewPersonId(null); }}><Edit className="me-2 size-4" aria-hidden="true" />تعديل</Button> : undefined}
-      >
-        {rows.find((person) => person.id === previewPersonId) ? (() => {
-          const person = rows.find((candidate) => candidate.id === previewPersonId)!;
-          return <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-2 text-sm"><p><strong>النوع:</strong> {personTypeLabels[person.type]}</p><p><strong>الهاتف:</strong> {person.phone ?? '—'}</p><p><strong>البريد:</strong> {person.email ?? '—'}</p><p><strong>رقم الهوية:</strong> {person.national_id ?? '—'}</p><p className="sm:col-span-2"><strong>العنوان:</strong> {person.address ?? '—'}</p><p><strong>آخر تحديث:</strong> {person.updated_at ?? 'غير متاح'}</p></div><ContextualDocumentsSection entityType="person" entityId={person.id} entityLabel="الشخص" /></div>;
-        })() : null}
-      </EntityPreviewDialog>
-
       <ConfirmDialog
         open={Boolean(deleteId)}
         onOpenChange={(open) => {
           if (!open && !deleteMutation.isPending) setDeleteId(null);
         }}
         title="أرشفة الشخص؟"
-        description={`سيتم أرشفة الشخص "${rows.find((person) => person.id === deleteId)?.full_name ?? ""}" ولن يظهر في القوائم الرئيسية. المرجع: ${deleteId ? deleteId.slice(0, 8) : ""} — ستبقى السجلات المرتبطة محفوظة.`}
+        description={`سيتم أرشفة الشخص "${rows.find((person) => person.id === deleteId)?.full_name ?? ""}" ولن يظهر في القوائم الرئيسية، وستبقى العقود والمستندات والسجلات المرتبطة محفوظة.`}
         confirmLabel="تأكيد الأرشفة"
         isLoading={deleteMutation.isPending}
         onConfirm={confirmDelete}

@@ -95,6 +95,7 @@ export function useDialogNavigate() {
     }
     return (navigate as unknown as (opts: unknown) => void)({
       ...to,
+      search: to.search ?? (location.search as Record<string, unknown>),
       state: { backgroundLocation: nextBackground } as unknown as Record<string, unknown>,
     });
   };

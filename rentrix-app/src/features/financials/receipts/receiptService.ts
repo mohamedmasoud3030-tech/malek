@@ -13,6 +13,7 @@ export type ReceiptRecord = {
   receipt_number: string;
   payment_id: string;
   invoice_id: string | null;
+  invoice_reference?: string | null;
   invoice_status: Invoice['status'] | null;
   contract_id: string | null;
   payment_date: string;
@@ -26,7 +27,7 @@ export type ReceiptRecord = {
   property_title: string | null;
 };
 
-type ReceiptInvoiceContext = Pick<Invoice, 'id' | 'contract_id' | 'status'>;
+type ReceiptInvoiceContext = Pick<Invoice, 'id' | 'contract_id' | 'status' | 'reference'>;
 type ReceiptContractContext = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 'tenant_id'>;
 type ReceiptUnitContext = Pick<Unit, 'id' | 'unit_number'>;
 type ReceiptPropertyContext = Pick<Property, 'id' | 'title'>;
@@ -65,6 +66,7 @@ function toReceiptRecord(
     receipt_number: referenceByReceiptId.get(receiptId) ?? formatReceiptNumber(payment.id),
     payment_id: payment.id,
     invoice_id: invoice?.id ?? invoiceId,
+    invoice_reference: invoice?.reference ?? null,
     invoice_status: invoice?.status ?? null,
     contract_id: invoice?.contract_id ?? null,
     payment_date: payment.payment_date ?? '',
@@ -141,7 +143,7 @@ async function loadReceiptRecords(payments: Payment[]): Promise<ReceiptRecord[]>
     return results;
   };
 
-  const invoiceRows = await fetchInChunks<ReceiptInvoiceContext>(invoiceIds, 'invoices', 'id, contract_id, status');
+  const invoiceRows = await fetchInChunks<ReceiptInvoiceContext>(invoiceIds, 'invoices', 'id, reference, contract_id, status');
   const contractIds = uniqueStrings(invoiceRows.map((invoice) => invoice.contract_id));
   const contractRows = await fetchInChunks<ReceiptContractContext>(contractIds, 'contracts', 'id, property_id, unit_id, tenant_id');
 

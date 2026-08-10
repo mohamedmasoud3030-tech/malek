@@ -11,6 +11,14 @@ import { DataIntegrityView } from './components/data-integrity-view';
 import { DATA_INTEGRITY_MAX_PAGES, DATA_INTEGRITY_PAGE_SIZE, buildDataIntegritySnapshot, fetchPaginatedRows } from './services/data-integrity-service';
 import { getAllNavItems, navGroups, type NavItem } from '@/app/navigation/app-nav-items';
 
+
+vi.mock('@/features/auth/effective-permissions', async () => {
+  const permissions = await import('@/features/auth/permissions');
+  return {
+    getEffectiveAuthorizationContextFromSession: async (session: any) => permissions.getAuthorizationContextFromSession(session),
+  };
+});
+
 vi.mock('@/features/settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('@/test/companySettingsContractMock');
 
@@ -63,17 +71,17 @@ function getIntegrityCount(input: IntegritySnapshotInput, checkId: string): numb
 }
 
 describe('system and governance route authorization', () => {
-  it('allows a route when the current session has the required permission', () => {
-    expect(() => assertSessionPermission(adminSession, 'audit.view')).not.toThrow();
+  it('allows a route when the current session has the required permission', async () => {
+    await expect(assertSessionPermission(adminSession, 'audit.view')).resolves.toBeUndefined();
   });
 
-  it('denies direct route access when the current session lacks the required permission', () => {
-    expect(() => assertSessionPermission(userSession, 'audit.view')).toThrow();
+  it('denies direct route access when the current session lacks the required permission', async () => {
+    await expect(assertSessionPermission(userSession, 'audit.view')).rejects.toBeDefined();
   });
 
-  it('fails closed for missing and unknown role claims', () => {
-    expect(() => assertSessionPermission(null, 'system.view')).toThrow();
-    expect(() => assertSessionPermission(unknownRoleSession, 'system.view')).toThrow();
+  it('fails closed for missing and unknown role claims', async () => {
+    await expect(assertSessionPermission(null, 'system.view')).rejects.toBeDefined();
+    await expect(assertSessionPermission(unknownRoleSession, 'system.view')).rejects.toBeDefined();
   });
 
   it('exposes governance surfaces in navigation from v0.3 onwards', () => {
@@ -83,8 +91,9 @@ describe('system and governance route authorization', () => {
     const adminContext = { userId: 'user-1', email: 'admin@example.com', role: 'ADMIN' as const };
     const systemRoutes = settingsAndGovernanceItems.map(([to]) => to);
 
-    expect(systemRoutes).toEqual(expect.arrayContaining(['/system', '/settings']));
-    expect(systemRoutes).toContain('/system');
+    expect(systemRoutes).toHaveLength(6);
+    expect(systemRoutes.every((route) => route === '/settings')).toBe(true);
+    expect(systemRoutes).not.toContain('/system');
     expect(systemRoutes).not.toContain('/audit-log');
     expect(systemRoutes).not.toContain('/data-integrity');
     expect(systemRoutes).not.toContain('/change-password');
