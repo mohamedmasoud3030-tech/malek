@@ -10,10 +10,19 @@ export const documentEntityTypes = [
 export type DocumentEntityType = (typeof documentEntityTypes)[number];
 export type DocumentCategory = 'contracts' | 'identity' | 'receipts' | 'maintenance' | 'expenses' | 'utilities' | 'other';
 export type DocumentTypedMetadata = Readonly<{
-  originalFileName: string;
-  contentType: string;
-  sizeBytes: number;
+  originalFileName?: string;
+  contentType?: string;
+  sizeBytes?: number;
   replacedAt?: string;
+  businessReference?: string;
+  reference?: string;
+  parties?: string | readonly string[];
+  issueDate?: string;
+  importantDate?: string;
+  expiryDate?: string;
+  expiresAt?: string;
+  amount?: number | string;
+  status?: string;
 }>;
 
 export const documentCategoryLabels: Readonly<Record<DocumentCategory, string>> = {
@@ -65,8 +74,10 @@ function buildStoragePath(entityType: DocumentEntityType, entityId: string, file
   return `vault/contextual/${entityType}/${entityId}/${crypto.randomUUID()}.${safeExtension(file.name)}`;
 }
 
-function typedMetadata(file: Pick<File, 'name' | 'size' | 'type'>, replacedAt?: string): DocumentTypedMetadata {
-  return { originalFileName: file.name, contentType: file.type, sizeBytes: file.size, ...(replacedAt ? { replacedAt } : {}) };
+function typedMetadata(file: Pick<File, 'name' | 'size' | 'type'>, replacedAt?: string, existing: DocumentTypedMetadata | null = null): DocumentTypedMetadata {
+  // File replacement must not erase real business metadata attached to the
+  // document. File-system facts are refreshed; typed contextual facts survive.
+  return { ...existing, originalFileName: file.name, contentType: file.type, sizeBytes: file.size, ...(replacedAt ? { replacedAt } : {}) };
 }
 
 export async function listContextualDocuments(relatedEntityType: DocumentEntityType, relatedEntityId: string) {
@@ -115,7 +126,7 @@ export async function uploadContextualDocument(params: {
 
 export async function replaceContextualDocument(documentId: string, file: File) {
   validateContextualDocumentFile(file);
-  const { data: existing, error: readError } = await (supabase as any).from('vault_documents').select('id,related_entity_type,related_entity_id,storage_path').eq('id', documentId).is('deleted_at', null).single();
+  const { data: existing, error: readError } = await (supabase as any).from('vault_documents').select('id,related_entity_type,related_entity_id,storage_path,metadata').eq('id', documentId).is('deleted_at', null).single();
   if (readError || !existing) throw readError ?? new Error('المستند غير موجود.');
   const entityType = existing.related_entity_type as DocumentEntityType;
   const newStoragePath = buildStoragePath(entityType, existing.related_entity_id, file);
@@ -129,7 +140,7 @@ export async function replaceContextualDocument(documentId: string, file: File) 
     file_size: file.size,
     mime_type: file.type,
     document_type: documentTypeFromMime(file.type),
-    metadata: typedMetadata(file, replacedAt),
+    metadata: typedMetadata(file, replacedAt, (existing.metadata ?? null) as DocumentTypedMetadata | null),
     updated_at: replacedAt,
   }).eq('id', documentId).is('deleted_at', null).select('*').single();
   if (error) {

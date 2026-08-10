@@ -1,5 +1,6 @@
 import { useParams } from '@tanstack/react-router';
 import { useBackgroundLocation } from '@/app/router/background-location';
+import { ContextualBackground } from '@/app/router/contextual-background';
 import { PeopleListPage } from '@/features/people/people-list-page';
 import { PersonDetailPage, PersonPreviewDialog } from '@/features/people/components/PersonDossier';
 
@@ -11,7 +12,7 @@ export function PersonDetailRouteComponent() {
   if (!isDialog) return <PersonDetailPage personId={personId} />;
   return (
     <>
-      <PeopleListPage embedded />
+      <ContextualBackground location={background} fallback={<PeopleListPage embedded />} />
       <PersonPreviewDialog personId={personId} open onOpenChange={(open) => { if (!open) window.history.back(); }} />
     </>
   );

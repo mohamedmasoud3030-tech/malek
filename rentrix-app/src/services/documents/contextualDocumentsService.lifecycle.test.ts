@@ -82,11 +82,13 @@ describe('contextual document lifecycle', () => {
     await expect(getContextualDocumentSignedUrl(created.storage_path)).resolves.toBe('https://signed.test/document');
 
     const oldPath = created.storage_path;
+    row.metadata = { ...row.metadata, businessReference: 'CTR-2026-001', parties: ['المؤجر', 'المستأجر'], expiryDate: '2027-01-01', amount: '125.500', status: 'ACTIVE' };
     const replacement = new File(['replacement'], 'lease-new.pdf', { type: 'application/pdf' });
     const replaced = await replaceContextualDocument(created.id, replacement);
     expect(replaced.storage_path).not.toBe(oldPath);
     expect(updatedPayloads.at(-1)).toMatchObject({ file_name: 'lease-new.pdf', document_type: 'pdf' });
     expect(updatedPayloads.at(-1).metadata.replacedAt).toBeTruthy();
+    expect(updatedPayloads.at(-1).metadata).toMatchObject({ businessReference: 'CTR-2026-001', parties: ['المؤجر', 'المستأجر'], expiryDate: '2027-01-01', amount: '125.500', status: 'ACTIVE' });
     expect(remove).toHaveBeenCalledWith([oldPath]);
 
     await archiveContextualDocument(created.id);

@@ -9,6 +9,7 @@ const MANAGER_A = '91000000-0000-4000-8000-000000000002';
 const USER_A = '91000000-0000-4000-8000-000000000003';
 const USER_A2 = '91000000-0000-4000-8000-000000000004';
 const MANAGER_B = '91000000-0000-4000-8000-000000000005';
+const REVIEWER_A = '91000000-0000-4000-8000-000000000006';
 
 let db: PGlite;
 
@@ -39,9 +40,9 @@ async function errorOf(operation: () => Promise<unknown>) {
 }
 
 beforeAll(async () => {
-  const replay = await createFullReplayedDatabase({ throughMigration: '20260809190000' });
+  const replay = await createFullReplayedDatabase({ throughMigration: '20260810113000' });
   db = replay.db;
-  expect(replay.failed.filter((failure) => failure.file.includes('20260809190000')), JSON.stringify(replay.failed.slice(-5))).toEqual([]);
+  expect(replay.failed.filter((failure) => failure.file.includes('20260810113000')), JSON.stringify(replay.failed.slice(-5))).toEqual([]);
 
   await db.query(`insert into public.companies(id,name,slug) values
     ($1,'Permission A','permission-a'),($2,'Permission B','permission-b') on conflict(id) do nothing`, [COMPANY_A, COMPANY_B]);
@@ -51,13 +52,14 @@ beforeAll(async () => {
     [USER_A, 'user-a@test.invalid', 'User A', 'USER'],
     [USER_A2, 'user-a2@test.invalid', 'User A2', 'USER'],
     [MANAGER_B, 'manager-b@test.invalid', 'Manager B', 'MANAGER'],
+    [REVIEWER_A, 'reviewer-a@test.invalid', 'Reviewer A', 'USER'],
   ] as const;
   for (const [id, email, name, role] of users) {
     await db.query(`insert into auth.users(id,email,raw_app_meta_data) values($1,$2,'{}') on conflict(id) do nothing`, [id, email]);
     await db.query(`insert into public.users(id,email,name,full_name,role,status,is_active) values($1,$2,$3,$3,$4,'ACTIVE',true)
       on conflict(id) do update set role=excluded.role,status='ACTIVE',is_active=true`, [id, email, name, role]);
   }
-  for (const id of [ADMIN_A, MANAGER_A, USER_A, USER_A2]) {
+  for (const id of [ADMIN_A, MANAGER_A, USER_A, USER_A2, REVIEWER_A]) {
     await db.query(`insert into public.company_members(company_id,user_id,role) values($1,$2,'ADMIN') on conflict(company_id,user_id) do update set is_active=true`, [COMPANY_A, id]);
   }
   await db.query(`insert into public.company_members(company_id,user_id,role) values($1,$2,'ADMIN') on conflict(company_id,user_id) do update set is_active=true`, [COMPANY_B, MANAGER_B]);
@@ -124,6 +126,27 @@ describe('P6.1 permission workflow — database behavior', () => {
     expect(revoked.rows[0].result.revoked).toBe(true);
     const retry = await db.query<{ result: { revoked: boolean } }>(`select public.revoke_permission_grant($1::uuid,'lands.view','إعادة') as result`, [USER_A]);
     expect(retry.rows[0].result.revoked).toBe(false);
+
+    await assume(USER_A, COMPANY_A);
+    const rerequestId = await request('lands.view', '/lands', 'الحاجة عادت');
+    expect(rerequestId).not.toBe(landsRequestId);
+    await reset();
+    const lifecycle = await db.query<{ approved_history: number; active_grants: number }>(`
+      select
+        (select count(*)::int from public.permission_requests where id=$1::uuid and status='APPROVED') as approved_history,
+        (select count(*)::int from public.user_permission_grants where company_id=$2::uuid and user_id=$3::uuid and permission='lands.view' and revoked_at is null) as active_grants`, [landsRequestId, COMPANY_A, USER_A]);
+    expect(lifecycle.rows[0]).toEqual({ approved_history: 1, active_grants: 0 });
+  });
+
+  it('allows a delegated reviewer to review but rejects grant/revoke outside its authority', async () => {
+    await db.query(`insert into public.user_permission_grants(company_id,user_id,permission,granted_by)
+      values($1,$2,'permission_requests.review',$3)
+      on conflict(company_id,user_id,permission) do update set revoked_at=null`, [COMPANY_A, REVIEWER_A, ADMIN_A]);
+    await assume(USER_A2, COMPANY_A);
+    const requestId = await request('lands.view', '/lands', 'طلب يحتاج مراجع');
+    await assume(REVIEWER_A, COMPANY_A);
+    expect(await errorOf(() => decide(requestId, 'APPROVED', 'محاولة خارج النطاق'))).toMatch(/cannot grant/i);
+    expect(await errorOf(() => db.query(`select public.revoke_permission_grant($1::uuid,'lands.view','محاولة خارج النطاق')`, [USER_A]))).toMatch(/cannot revoke/i);
   });
 
   it('requires a rejection reason and records one decision only', async () => {

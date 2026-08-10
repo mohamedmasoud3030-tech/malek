@@ -13,8 +13,10 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { useAuth } from '@/hooks/use-auth';
 import { businessReferenceOrLabel } from '@/lib/business-reference';
 import { useTenantDossier } from '../useTenantWorkspace';
+import { useDialogNavigate } from '@/app/router/background-location';
 
 export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }>) {
+  const dialogNavigate = useDialogNavigate();
   const { canAccess } = useAuth();
   const canViewFinancial = canAccess('arrears.view');
   const canViewActivity = canAccess('communication.view');
@@ -41,7 +43,7 @@ export function TenantDossierContent({ tenantId }: Readonly<{ tenantId: string }
 
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><FileText className="size-5 text-primary" />العقود والعقارات والوحدات</CardTitle></CardHeader>
-        <CardContent>{dossier.contracts.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عقود مسجلة لهذا المستأجر.</p> : <ul className="space-y-2">{dossier.contracts.map((contract) => <li key={contract.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"><div><p className="font-bold">{businessReferenceOrLabel(contract, 'عقد مسجل')}</p><p className="mt-1 text-xs text-muted-foreground">{contract.properties?.title ?? 'عقار غير محدد'} · {contract.units?.unit_number ? `وحدة ${contract.units.unit_number}` : 'بدون وحدة'} · {contract.start_date} — {contract.end_date}</p></div><div className="flex items-center gap-2"><StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status}</StatusBadge><Button asChild variant="secondary"><Link to="/contracts/$contractId" params={{ contractId: contract.id }}>فتح العقد</Link></Button></div></li>)}</ul>}</CardContent>
+        <CardContent>{dossier.contracts.length === 0 ? <p className="text-sm text-muted-foreground">لا توجد عقود مسجلة لهذا المستأجر.</p> : <ul className="space-y-2">{dossier.contracts.map((contract) => <li key={contract.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"><div><p className="font-bold">{businessReferenceOrLabel(contract, 'عقد مسجل')}</p><p className="mt-1 text-xs text-muted-foreground">{contract.properties?.title ?? 'عقار غير محدد'} · {contract.units?.unit_number ? `وحدة ${contract.units.unit_number}` : 'بدون وحدة'} · {contract.start_date} — {contract.end_date}</p></div><div className="flex items-center gap-2"><StatusBadge tone={contract.status === 'active' ? 'success' : 'neutral'}>{contract.status}</StatusBadge><Button variant="secondary" onClick={() => dialogNavigate({ to: '/contracts/$contractId', params: { contractId: contract.id } })}>فتح العقد</Button></div></li>)}</ul>}</CardContent>
       </Card>
 
       {canViewFinancial ? (

@@ -248,11 +248,30 @@ export function canAccessRoute(context: AuthorizationContext | null | undefined,
 
 export type WriteAccessState = 'full' | 'read-only' | 'unconfigured';
 
+/**
+ * Shell-level write posture is deliberately broad, while every individual
+ * affordance remains guarded by its own capability.  This prevents a USER
+ * with one approved write grant from being mislabeled read-only without
+ * accidentally exposing unrelated mutations.
+ */
+export const writeAccessPermissions = [
+  'documents.write',
+  'properties.write',
+  'contracts.write',
+  'expenses.write',
+  'financial.invoices.generate',
+  'financial.payments.create',
+  'financial.receipts.void',
+  'financial.bank_reconciliation.match',
+  'financial.owner_settlements.approve',
+  'financial.owner_settlements.pay',
+] as const satisfies readonly AppPermission[];
+
 export function getWriteAccessState(
   context: AuthorizationContext | null | undefined,
 ): WriteAccessState {
   if (!context) return 'unconfigured';
-  return context.role === 'USER' ? 'read-only' : 'full';
+  return canAccessAny(context, writeAccessPermissions) ? 'full' : 'read-only';
 }
 
 export function canShowNavigationItem(context: AuthorizationContext | null | undefined, permission: AppPermission | null | undefined): boolean {

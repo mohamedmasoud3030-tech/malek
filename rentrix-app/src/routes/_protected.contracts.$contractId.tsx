@@ -2,6 +2,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { ContractPreviewDialog } from '@/features/contracts/components/ContractPreviewDialog';
 import { ContractDetailPage } from '@/features/contracts/pages/ContractDetailPage';
 import { useBackgroundLocation } from '@/app/router/background-location';
+import { ContextualBackground } from '@/app/router/contextual-background';
 import { ContractsListPage } from '@/features/contracts/ContractsListPage';
 
 export function ContractDetailRouteComponent() {
@@ -17,7 +18,7 @@ export function ContractDetailRouteComponent() {
   if (isDialog) {
     return (
       <>
-        <ContractsListPage />
+        <ContextualBackground location={background} fallback={<ContractsListPage />} />
         <ContractPreviewDialog
           contractId={contractId}
           open

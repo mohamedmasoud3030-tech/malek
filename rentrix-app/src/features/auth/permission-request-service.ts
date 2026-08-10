@@ -16,6 +16,8 @@ export type PermissionRequest = Readonly<{
   decided_at: string | null;
   decision_reason: string | null;
   created_at: string;
+  /** Historical approval is distinct from a currently active grant. */
+  grant_active?: boolean;
 }>;
 
 export async function requestPermission(permission: AppPermission, resourceRoute: string | null, reason: string) {
@@ -38,7 +40,18 @@ export async function listMyPermissionRequests() {
     .eq('requester_user_id', authData.user.id)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as PermissionRequest[];
+  const requests = (data ?? []) as PermissionRequest[];
+  const { data: grants, error: grantsError } = await (supabase as any)
+    .from('user_permission_grants')
+    .select('permission')
+    .eq('user_id', authData.user.id)
+    .is('revoked_at', null);
+  if (grantsError) throw grantsError;
+  const activePermissions = new Set((grants ?? []).map((grant: { permission?: string }) => grant.permission));
+  return requests.map((request) => ({
+    ...request,
+    grant_active: activePermissions.has(request.permission),
+  }));
 }
 
 export async function listPermissionRequestsForReview(status?: PermissionRequestStatus) {

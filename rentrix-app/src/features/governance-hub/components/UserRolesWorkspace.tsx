@@ -72,9 +72,9 @@ function UserAccessCard({ user, currentUserId, isSaving, onSave }: Readonly<{
   );
 }
 
-function requestStatusLabel(status: PermissionRequest['status']) {
+function requestStatusLabel(status: PermissionRequest['status'], grantActive?: boolean) {
   if (status === 'PENDING') return 'قيد المراجعة';
-  if (status === 'APPROVED') return 'موافق عليه';
+  if (status === 'APPROVED') return grantActive === false ? 'موافق عليه سابقًا — المنحة ملغاة' : 'موافق عليه';
   return 'مرفوض';
 }
 
@@ -119,7 +119,7 @@ function PermissionRequestsQueue() {
         {requests.map((request) => (
           <article key={request.id} className="grid gap-3 rounded-xl border border-border/70 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
             <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-2"><p className="font-bold">{getPermissionLabel(request.permission)}</p><Badge variant={request.status === 'APPROVED' ? 'success' : request.status === 'REJECTED' ? 'warning' : 'info'}>{requestStatusLabel(request.status)}</Badge></div>
+              <div className="flex flex-wrap items-center gap-2"><p className="font-bold">{getPermissionLabel(request.permission)}</p><Badge variant={request.status === 'APPROVED' && request.grant_active !== false ? 'success' : request.status === 'REJECTED' ? 'warning' : 'info'}>{requestStatusLabel(request.status, request.grant_active)}</Badge></div>
               <p className="text-sm">{request.requester_name?.trim() || request.requester_email || 'مستخدم مسجل'}{request.requester_email && request.requester_name ? <span dir="ltr" className="ms-2 text-xs text-muted-foreground">{request.requester_email}</span> : null}</p>
               <p className="break-words text-xs text-muted-foreground">المورد: {request.resource_route || 'عام'} · السبب: {request.reason || 'لم يذكر سببًا'} · {formatRequestTime(request.created_at)}</p>
               {request.decision_reason ? <p className="text-xs font-semibold text-muted-foreground">سبب القرار: {request.decision_reason}</p> : null}
@@ -129,7 +129,7 @@ function PermissionRequestsQueue() {
                 <Button className="min-h-11" disabled={decisionMutation.isPending} onClick={() => decisionMutation.mutate({ request, decision: 'APPROVED', reason: 'تمت المراجعة والموافقة' })}>موافقة</Button>
                 <Button variant="danger" className="min-h-11" disabled={decisionMutation.isPending} onClick={() => { setRejecting(request); setDecisionReason(''); }}>رفض</Button>
               </div>
-            ) : request.status === 'APPROVED' ? (
+            ) : request.status === 'APPROVED' && request.grant_active !== false ? (
               <Button variant="secondary" className="min-h-11" disabled={revokeMutation.isPending} onClick={() => revokeMutation.mutate(request)}>إلغاء المنحة</Button>
             ) : null}
           </article>

@@ -14,6 +14,30 @@ import {
   type DocumentEntityType,
 } from '@/services/documents/contextualDocumentsService';
 
+function humanDate(value: string | undefined): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('ar-OM-u-nu-latn');
+}
+
+function richDocumentMetadata(metadata: ContextualDocumentRow['metadata']) {
+  if (!metadata) return {};
+  const parties = typeof metadata.parties === 'string' ? metadata.parties : metadata.parties?.join('، ');
+  const amount = metadata.amount === undefined || metadata.amount === null ? null : String(metadata.amount);
+  const importantDate = humanDate(metadata.importantDate ?? metadata.issueDate);
+  const expiresAt = humanDate(metadata.expiresAt ?? metadata.expiryDate);
+  const replacedAt = humanDate(metadata.replacedAt);
+  return {
+    reference: metadata.businessReference ?? metadata.reference ?? null,
+    parties: parties || null,
+    importantDate,
+    expiresAt,
+    amount,
+    status: metadata.status ?? null,
+    metadata: replacedAt ? `آخر استبدال: ${replacedAt}` : null,
+  };
+}
+
 export function ContextualDocumentsSection({
   entityType,
   entityId,
@@ -50,12 +74,11 @@ export function ContextualDocumentsSection({
         id: document.id,
         title: document.title,
         typeLabel: documentCategoryLabels[document.category] ?? 'مستند',
-        reference: null,
+        ...richDocumentMetadata(document.metadata),
         fileName: document.file_name,
         fileSize: document.file_size ? `${(document.file_size / 1024).toFixed(1)} ك.ب` : null,
         mimeType: document.mime_type,
         relatedEntity: entityLabel,
-        metadata: document.metadata?.replacedAt ? `آخر استبدال: ${new Date(document.metadata.replacedAt).toLocaleString('ar-OM-u-nu-latn')}` : null,
       }))}
       isLoading={documentsQuery.isLoading}
       isError={documentsQuery.isError}

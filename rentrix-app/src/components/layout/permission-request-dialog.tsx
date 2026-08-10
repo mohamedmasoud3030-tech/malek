@@ -58,7 +58,7 @@ export function PermissionRequestDialog({
   }, [open, permission, resourceRoute]);
 
   const submit = async () => {
-    if (pending || existingRequest?.status === 'PENDING' || existingRequest?.status === 'APPROVED') return;
+    if (pending || existingRequest?.status === 'PENDING' || (existingRequest?.status === 'APPROVED' && existingRequest.grant_active)) return;
     setPending(true);
     setError('');
     try {
@@ -87,8 +87,10 @@ export function PermissionRequestDialog({
 
   const statusText = existingRequest?.status === 'PENDING'
     ? 'قيد المراجعة — لن يُرسل طلب مكرر لهذا المورد.'
-    : existingRequest?.status === 'APPROVED'
+    : existingRequest?.status === 'APPROVED' && existingRequest.grant_active
       ? 'تمت الموافقة. حدّث صلاحيات الجلسة للمتابعة دون تسجيل خروج.'
+      : existingRequest?.status === 'APPROVED'
+        ? 'المنحة السابقة أُلغيت ولم تعد فعّالة. يمكنك طلب الصلاحية مرة أخرى مع الاحتفاظ بسجل القرار السابق.'
       : existingRequest?.status === 'REJECTED'
         ? `مرفوض${existingRequest.decision_reason ? ` — ${existingRequest.decision_reason}` : ''}. يمكنك إعادة الطلب مع توضيح جديد.`
         : null;
@@ -114,12 +116,12 @@ export function PermissionRequestDialog({
             onChange={(event) => setReason(event.target.value)}
             placeholder="اشرح سبب احتياجك لهذه الصلاحية"
             rows={4}
-            disabled={pending || existingRequest?.status === 'PENDING' || existingRequest?.status === 'APPROVED'}
+            disabled={pending || existingRequest?.status === 'PENDING' || (existingRequest?.status === 'APPROVED' && existingRequest.grant_active)}
           />
           {loadingExisting ? <p role="status" className="text-xs text-muted-foreground">جارٍ التحقق من الطلبات السابقة...</p> : null}
           {statusText ? (
             <p className="rounded-xl bg-muted/40 px-3 py-2 text-xs font-bold" role="status">
-              {existingRequest?.status === 'APPROVED' ? <CheckCircle2 className="me-1 inline size-4 text-success" aria-hidden="true" /> : null}
+              {existingRequest?.status === 'APPROVED' && existingRequest.grant_active ? <CheckCircle2 className="me-1 inline size-4 text-success" aria-hidden="true" /> : null}
               {statusText}
             </p>
           ) : null}
@@ -128,14 +130,14 @@ export function PermissionRequestDialog({
 
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={pending}>إغلاق</Button>
-          {existingRequest?.status === 'APPROVED' ? (
+          {existingRequest?.status === 'APPROVED' && existingRequest.grant_active ? (
             <Button onClick={() => void refreshApprovedPermission()} disabled={pending}>
               <RefreshCw className="me-2 size-4" aria-hidden="true" />تحديث الصلاحيات والمتابعة
             </Button>
           ) : (
             <Button onClick={() => void submit()} disabled={pending || loadingExisting || existingRequest?.status === 'PENDING'}>
               <Send className="me-2 size-4" aria-hidden="true" />
-              {pending ? 'جارٍ الإرسال...' : existingRequest?.status === 'REJECTED' ? 'إعادة إرسال الطلب' : 'إرسال طلب الصلاحية'}
+              {pending ? 'جارٍ الإرسال...' : existingRequest?.status === 'REJECTED' || existingRequest?.status === 'APPROVED' ? 'إعادة إرسال الطلب' : 'إرسال طلب الصلاحية'}
             </Button>
           )}
         </div>
