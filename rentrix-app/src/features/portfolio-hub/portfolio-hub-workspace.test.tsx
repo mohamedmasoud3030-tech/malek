@@ -35,9 +35,7 @@ function makeProbe(name: string) {
 }
 
 vi.mock('@/features/properties/properties-list-page', () => ({ PropertiesWorkspace: makeProbe('properties') }));
-vi.mock('@/features/owners/OwnersPage', () => ({ OwnersWorkspace: makeProbe('owners') }));
 vi.mock('@/features/units/units-page', () => ({ UnitsWorkspace: makeProbe('units') }));
-vi.mock('@/features/lands/lands-page', () => ({ LandsWorkspace: makeProbe('lands') }));
 
 const { PortfolioHubWorkspace } = await import('./portfolio-hub-workspace');
 
@@ -54,8 +52,18 @@ function renderHub({
     component: () => <PortfolioHubWorkspace mode={mode} />,
     validateSearch: (search: Record<string, unknown>) => search,
   });
+  const ownersRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/owners',
+    component: makeProbe('owners'),
+  });
+  const landsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/lands',
+    component: makeProbe('lands'),
+  });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([hubRoute]),
+    routeTree: rootRoute.addChildren([hubRoute, ownersRoute, landsRoute]),
     history: createMemoryHistory({ initialEntries: [initialUrl] }),
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -100,9 +108,16 @@ describe('portfolio hub', () => {
     expect(await screen.findByTestId('units-body')).toBeTruthy();
   });
 
-  it('opens a deep-linked section', async () => {
-    renderHub({ initialUrl: '/properties?section=owners' });
+  it('redirects the legacy owners section to the first-class owners route', async () => {
+    const { router } = renderHub({ initialUrl: '/properties?section=owners' });
     expect(await screen.findByTestId('owners-body')).toBeTruthy();
+    await waitFor(() => expect(router.state.location.pathname).toBe('/owners'));
+  });
+
+  it('redirects the legacy lands section to the first-class lands route', async () => {
+    const { router } = renderHub({ initialUrl: '/properties?section=lands' });
+    expect(await screen.findByTestId('lands-body')).toBeTruthy();
+    await waitFor(() => expect(router.state.location.pathname).toBe('/lands'));
   });
 
   it('preserves state across tab switches', async () => {
@@ -118,7 +133,7 @@ describe('portfolio hub', () => {
     expect(screen.getByTestId('properties-count').textContent).toBe('1');
   });
 
-  it('hides permission-gated tabs for USER', async () => {
+  it('keeps the asset-specific tabs available to USER', async () => {
     renderHub({ role: 'USER' });
     await screen.findByTestId('properties-body');
     const names = screen.getAllByRole('tab').map((t) => t.textContent ?? '').join(' ');
@@ -128,17 +143,11 @@ describe('portfolio hub', () => {
     expect(names).not.toContain('الأراضي');
   });
 
-  it('denies forbidden deep links', async () => {
-    renderHub({ initialUrl: '/properties?section=lands', role: 'USER' });
-    expect(await screen.findByText(/غير مصرح بالوصول/)).toBeTruthy();
-    expect(screen.queryByTestId('lands-body')).toBeNull();
-  });
-
   it('never duplicates the shell after tab switches', async () => {
     const user = userEvent.setup();
     const { container } = renderHub();
     await screen.findByTestId('properties-body');
-    for (const name of [/الملاك/, /الوحدات/, /الأراضي/, /العقارات/]) {
+    for (const name of [/الوحدات/, /العقارات/]) {
       await user.click(screen.getByRole('tab', { name }));
       await waitFor(() => {
         expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
