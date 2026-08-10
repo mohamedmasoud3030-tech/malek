@@ -159,6 +159,7 @@ export function OwnerDossierBody({
           <EntityTable
             aria-label="جدول عقارات المالك"
             rows={properties}
+            mobileVisibleSecondaryKey="status"
             columns={[
               { key: 'title', header: 'العقار', render: (property) => <Link to="/properties/$propertyId" params={{ propertyId: property.id }} className="font-semibold text-primary hover:underline">{property.title}</Link> },
               { key: 'address', header: 'العنوان', render: (property) => property.address ?? '—' },
