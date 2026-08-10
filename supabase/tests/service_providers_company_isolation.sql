@@ -36,9 +36,9 @@ on conflict (id) do update set role='MANAGER', status='ACTIVE', is_active=true;
 
 insert into public.company_members(id, company_id, user_id, role, is_active)
 values
-  ('71000000-0000-4000-8000-0000000000a1', '71000000-0000-4000-8000-00000000000a', '71000000-0000-4000-8000-000000000001', 'MANAGER', true),
-  ('71000000-0000-4000-8000-0000000000b1', '71000000-0000-4000-8000-00000000000b', '71000000-0000-4000-8000-000000000001', 'MANAGER', true)
-on conflict (company_id, user_id) do update set role='MANAGER', is_active=true;
+  ('71000000-0000-4000-8000-0000000000a1', '71000000-0000-4000-8000-00000000000a', '71000000-0000-4000-8000-000000000001', 'MEMBER', true),
+  ('71000000-0000-4000-8000-0000000000b1', '71000000-0000-4000-8000-00000000000b', '71000000-0000-4000-8000-000000000001', 'MEMBER', true)
+on conflict (company_id, user_id) do update set role='MEMBER', is_active=true;
 
 insert into public.service_providers(id, company_id, name)
 values
