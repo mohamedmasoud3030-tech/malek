@@ -47,13 +47,11 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  // Historical P1/P3 callers predate the governed S03/S04/S06/S08 stages and
-  // intentionally fingerprint an earlier repository checkpoint. Current stage
-  // suites explicitly call this helper with writeEvidence:false; those callers
-  // must receive the complete chain so their own stage migrations are exercised.
-  // Merge caller exclusions instead of replacing them so phase-specific
-  // baselines keep their own target migration out as well.
-  const checkpointExcludes = options?.writeEvidence === false ? [] : [...LATER_GOVERNED_STAGE_MARKERS];
+  // Callers that provide explicit exclusions are checkpoint/isolation suites.
+  // Keep later governed S03/S04/S06/S08 migrations out of those historical
+  // baselines. Current stage suites call with writeEvidence:false and no
+  // explicit exclusions, so they still receive the complete migration chain.
+  const checkpointExcludes = options?.excludeMigrations ? [...LATER_GOVERNED_STAGE_MARKERS] : [];
   const excludes = [...checkpointExcludes, ...(options?.excludeMigrations ?? [])];
   if (excludes.length > 0) {
     files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
