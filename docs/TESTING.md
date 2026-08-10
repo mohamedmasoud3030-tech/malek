@@ -34,7 +34,9 @@ This is the same core sequence `.github/workflows/ci.yml` runs (plus a `pnpm sup
 - **`pnpm e2e`** — runs the Playwright readiness suite in Chromium at desktop/tablet/mobile breakpoints. It covers public/auth boundaries, navigation and responsive workspaces, dashboard, maintenance, owners, reports, settings, new modules, accessibility checks, evidence capture, and fixture-backed authenticated paths. Seeded remote staging checks remain opt-in and require the relevant `E2E_*` environment values.
 - **`pnpm supabase:live-readiness`** — runs read-only live database checks through `scripts/verify-supabase-live-readiness.sh`. It requires `SUPABASE_DB_URL` and `psql`; without those, the script exits with an environment-limitation status instead of pretending live readiness was verified.
 - **`pnpm qa:preflight`** — signs into the dedicated hosted QA project, proves its project reference, active company membership, `current_company_id()` contract, and core table read contracts. It refuses any URL that does not exactly match the declared QA project, and refuses a QA/Production project-ref match.
+- **`pnpm qa:database-contracts`** — runs a read-only PostgreSQL catalog contract against the QA project: core tables/columns, business RPCs, RLS enablement/policies, financial `SECURITY DEFINER` boundaries, and migration ledger visibility. It fails on drift rather than reporting it as informational.
 - **`pnpm qa:lifecycle`** — the agent-operated hosted QA sequence: preflight → idempotent QA seed → real browser invoice/payment/receipt/void journey → financial/RPC verification. It requires `QA_MUTATION_APPROVED=1`, a QA-only service-role key, and will refuse Production. Setup details are in `docs/AGENT_QA_RUNTIME.md`.
+- **`pnpm test:qa-runtime`** — runs offline fail-closed checks for the hosted-QA guard: a Production reference is mandatory, QA cannot equal Production, and the URL must exactly match the declared QA project.
 
 ## When to run what
 

@@ -5,6 +5,7 @@
  * Required environment (provided by the agent runtime, never committed):
  * QA_ENVIRONMENT_KIND=qa
  * QA_SUPABASE_PROJECT_REF=<QA project ref>
+ * PRODUCTION_SUPABASE_PROJECT_REF=<production project ref; comparison only>
  * VITE_SUPABASE_URL=https://<QA project ref>.supabase.co
  * VITE_SUPABASE_ANON_KEY=<publishable/anon key>
  * QA_ADMIN_EMAIL=<seeded QA admin>
@@ -14,6 +15,7 @@
 const required = [
   'QA_ENVIRONMENT_KIND',
   'QA_SUPABASE_PROJECT_REF',
+  'PRODUCTION_SUPABASE_PROJECT_REF',
   'VITE_SUPABASE_URL',
   'VITE_SUPABASE_ANON_KEY',
   'QA_ADMIN_EMAIL',
@@ -29,8 +31,8 @@ if (process.env.QA_ENVIRONMENT_KIND.trim().toLowerCase() !== 'qa') {
 }
 
 const qaRef = process.env.QA_SUPABASE_PROJECT_REF.trim();
-const productionRef = process.env.PRODUCTION_SUPABASE_PROJECT_REF?.trim();
-if (productionRef && qaRef === productionRef) {
+const productionRef = process.env.PRODUCTION_SUPABASE_PROJECT_REF.trim();
+if (qaRef === productionRef) {
   throw new Error('QA_SUPABASE_PROJECT_REF must never equal PRODUCTION_SUPABASE_PROJECT_REF.');
 }
 

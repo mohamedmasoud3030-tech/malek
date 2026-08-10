@@ -42,6 +42,12 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Rebuild approved native toolchain package
         run: pnpm rebuild esbuild
+      - name: Validate hosted QA runtime guards
+        run: |
+          node --check scripts/agent-qa-preflight.mjs
+          bash -n scripts/verify-agent-qa-database-contracts.sh
+          bash -n scripts/run-agent-qa-lifecycle.sh
+          pnpm test:qa-runtime
       - run: pnpm supabase:migration-evidence
       - name: Run documentation link check
         id: docs-links

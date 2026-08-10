@@ -11,6 +11,7 @@ if [[ "${QA_ENVIRONMENT_KIND:-}" != "qa" || "${E2E_ENVIRONMENT_KIND:-}" != "qa" 
   exit 2
 fi
 
+pnpm qa:database-contracts
 node scripts/agent-qa-preflight.mjs
 
 E2E_SINGLE_OFFICE_ENABLED=1 \
