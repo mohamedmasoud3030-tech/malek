@@ -1,16 +1,13 @@
 import { useParams } from '@tanstack/react-router';
 import { AsyncContentState } from '@/components/async-content-state';
-import { useUnits } from '@/features/units/use-units';
-import { PropertyFinancialSummaryCard } from '../financial-summary/property-financial-summary-card';
-import { PropertyOwnerAgreementsSection } from '../ownership/property-owner-agreements-section';
 import { useProperty } from '../use-properties';
-import { PropertyIdentityCard, PropertyUnitsSummaryCard } from './property-overview-cards';
+import { PropertyOwnerAgreementsSection } from '../ownership/property-owner-agreements-section';
+import { PropertyDossierContent } from '../components/property-dossier-content';
 
 export function PropertyOverview() {
   const params = useParams({ strict: false });
   const propertyId = typeof params.propertyId === 'string' ? params.propertyId : '';
   const propertyQuery = useProperty(propertyId);
-  const unitsQuery = useUnits(propertyId);
   const property = propertyQuery.data;
 
   return (
@@ -20,10 +17,8 @@ export function PropertyOverview() {
     >
       {property && (
         <div className="space-y-6">
-          <PropertyIdentityCard property={property} />
-          <PropertyUnitsSummaryCard units={unitsQuery.data ?? []} />
+          <PropertyDossierContent propertyId={propertyId} />
           <PropertyOwnerAgreementsSection propertyId={propertyId} />
-          <PropertyFinancialSummaryCard />
         </div>
       )}
     </AsyncContentState>

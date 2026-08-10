@@ -23,8 +23,15 @@ export async function fetchPropertyContracts(propertyId: string) {
 }
 
 export async function fetchPropertyInvoices(propertyId: string) {
+  // Property-scoped: only invoices whose contract belongs to this property.
+  // Previously the filter only checked `contract_id != null`, which leaked
+  // invoices from other properties into this property's financial context.
+  const propertyContracts = await fetchPropertyContracts(propertyId);
+  const propertyContractIds = new Set(propertyContracts.map((contract) => contract.id));
   const result = await listInvoices({ search: '', status: 'all' });
-  return (result ?? []).filter((invoice: InvoiceListItem) => invoice.contract_id != null);
+  return (result ?? []).filter(
+    (invoice: InvoiceListItem) => invoice.contract_id != null && propertyContractIds.has(invoice.contract_id),
+  );
 }
 
 export async function fetchPropertyMaintenance(propertyId: string) {

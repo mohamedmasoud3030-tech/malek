@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OwnerDetailView } from './components/owner-detail-view';
 import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './services/owner-service';
 import type { OwnerSettlementRecord } from './services/owner-settlements-service';
@@ -13,6 +14,7 @@ vi.mock('../settings/useCompanySettings', async () => {
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to }: Readonly<{ children: React.ReactNode; to: string }>) => <a href={to}>{children}</a>,
   useNavigate: () => vi.fn(),
+  useLocation: () => ({ pathname: '/owners', search: {}, hash: '', state: undefined }),
 }));
 
 const owner: Owner = {
@@ -57,6 +59,21 @@ const property: PropertyWithOwners = {
   }],
 };
 
+function renderOwnerDetail(
+  props: Readonly<{
+    state: Parameters<typeof OwnerDetailView>[0]['state'];
+    settlements?: Parameters<typeof OwnerDetailView>[0]['settlements'];
+    canOpenOwnerSettlements?: boolean;
+  }>,
+) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return renderToStaticMarkup(
+    <QueryClientProvider client={client}>
+      <OwnerDetailView state={props.state} settlements={props.settlements} canOpenOwnerSettlements={props.canOpenOwnerSettlements} />
+    </QueryClientProvider>,
+  );
+}
+
 describe('Owner detail recovery states', () => {
   it('renders the owner detail loading state', () => {
     expect(renderToStaticMarkup(<OwnerDetailView state={{ status: 'loading' }} />)).toContain('aria-label="جار التحميل"');
@@ -76,7 +93,7 @@ describe('Owner detail recovery states', () => {
       ],
       financialSummary: { outstandingBalance: 750, outstandingInvoicesCount: 1 },
     };
-    const html = renderToStaticMarkup(<OwnerDetailView state={{ status: 'ready', snapshot }} />);
+    const html = renderOwnerDetail({ state: { status: 'ready', snapshot } });
 
     expect(html).toContain('مالك موثق');
     expect(html).toContain('العقارات المرتبطة');
@@ -115,13 +132,7 @@ describe('Owner detail recovery states', () => {
       status: 'pending',
       created_at: '2026-07-20T00:00:00.000Z',
     };
-    const html = renderToStaticMarkup(
-      <OwnerDetailView
-        state={{ status: 'ready', snapshot }}
-        settlements={[settlement]}
-        canOpenOwnerSettlements
-      />,
-    );
+    const html = renderOwnerDetail({ state: { status: 'ready', snapshot }, settlements: [settlement], canOpenOwnerSettlements: true });
 
     expect(html).toContain('تسويات المالك');
     expect(html).toContain('مسودة بانتظار الاعتماد');
@@ -138,7 +149,7 @@ describe('Owner detail recovery states', () => {
       invoices: [],
       financialSummary: { outstandingBalance: 0, outstandingInvoicesCount: 0 },
     };
-    const html = renderToStaticMarkup(<OwnerDetailView state={{ status: 'ready', snapshot }} />);
+    const html = renderOwnerDetail({ state: { status: 'ready', snapshot } });
 
     expect(html).not.toContain('تسويات المالك');
   });

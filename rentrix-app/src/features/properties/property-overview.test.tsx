@@ -43,6 +43,27 @@ vi.mock('@/features/units/use-units', () => ({
   }),
 }));
 
+vi.mock('@/features/owners/useOwners', () => ({
+  usePropertyOwners: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
+vi.mock('./use-property-workspace-tabs', () => ({
+  usePropertyContractsTab: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+  }),
+  usePropertyInvoicesTab: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
 vi.mock('@/features/owners/OwnerAgreementsManager', () => ({
   OwnerAgreementsManager: () => <section>لا توجد اتفاقية سارية اليوم.</section>,
 }));
@@ -58,12 +79,15 @@ describe('PropertyOverview Component Rendering and Copy Integrity', () => {
 
     // Renders the current service-backed empty state for owner agreements
     expect(html).toContain('لا توجد اتفاقية سارية اليوم.');
-    expect(html).toContain('سيظهر الملخص المالي هنا عند توفر بيانات مالية مرتبطة بالعقار.');
+    // The overview now renders the real property financial context (was a stub).
+    expect(html).toContain('السياق المالي');
+    expect(html).toContain('لا توجد فواتير مفتوحة على عقود هذا العقار.');
 
     // DOES NOT render unsupported legacy wording
     expect(html).not.toContain('ستظهر اتفاقية التشغيل هنا عند توفر بياناتها.');
     expect(html).not.toContain('لا توجد اتفاقية تشغيل نشطة مسجلة حالياً لهذا العقار.');
     expect(html).not.toContain('لا تتوفر حركات مالية أو تصفية محاسبية نشطة مسجلة لهذا العقار حالياً.');
+    expect(html).not.toContain('سيظهر الملخص المالي هنا عند توفر بيانات مالية مرتبطة بالعقار.');
   });
 
   it('renders property identity and basic details when available', () => {

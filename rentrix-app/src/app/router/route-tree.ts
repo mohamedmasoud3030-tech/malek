@@ -77,6 +77,7 @@ const landDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path
 // Owners and tenants are core entities with first-class standalone routes.
 const ownersRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners', beforeLoad: requirePermission('owners.hub.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owners'), 'OwnersRouteComponent'), staticData: { title: 'الملاك' } });
 const ownerDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners/$ownerId', beforeLoad: requirePermission('owners.detail.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owners.$ownerId'), 'OwnerDetailRouteComponent'), staticData: { title: 'ملف المالك' } });
+const ownerEditRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/owners/$ownerId/edit', beforeLoad: requirePermission('owners.detail.view'), component: lazyRouteComponent(() => import('@/routes/_protected.owners.$ownerId.edit'), 'OwnerEditRouteComponent'), staticData: { title: 'تعديل مالك' } });
 const tenantsRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants', component: lazyRouteComponent(() => import('@/routes/_protected.tenants'), 'TenantsRouteComponent'), staticData: { title: 'المستأجرون' } });
 const tenantDetailRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/tenants/$tenantId', component: lazyRouteComponent(() => import('@/routes/_protected.tenants.$tenantId'), 'TenantDetailRouteComponent'), staticData: { title: 'ملف المستأجر' } });
 
@@ -393,6 +394,7 @@ export const routeTree = rootRoute.addChildren([
     landDetailRoute,
     ownersRoute,
     ownerDetailRoute,
+    ownerEditRoute,
     tenantsRoute,
     tenantDetailRoute,
     peopleRoute,

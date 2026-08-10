@@ -71,8 +71,8 @@ export type OwnerProperty = Property & {
 };
 
 export type OwnerUnit = Pick<Unit, 'id' | 'property_id' | 'unit_number' | 'floor' | 'status' | 'rent_amount'>;
-export type OwnerContract = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 'start_date' | 'end_date' | 'status'>;
-export type OwnerInvoice = Pick<Invoice, 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'status' | 'deleted_at'>;
+export type OwnerContract = Pick<Contract, 'id' | 'property_id' | 'unit_id' | 'start_date' | 'end_date' | 'status' | 'reference'>;
+export type OwnerInvoice = Pick<Invoice, 'id' | 'contract_id' | 'amount' | 'paid_amount' | 'status' | 'deleted_at' | 'reference' | 'due_date' | 'created_at'>;
 
 export type OwnerFinancialSummary = Readonly<{
   outstandingBalance: number;
@@ -430,7 +430,7 @@ export async function listContractsForProperties(propertyIds: readonly string[])
 
   const { rows } = await fetchAllRowsInBatches<OwnerContract, string>(propertyIds, (propertyIdBatch) => supabase
     .from('contracts')
-    .select('id, property_id, unit_id, start_date, end_date, status')
+    .select('id, property_id, unit_id, start_date, end_date, status, reference')
     .in('property_id', [...propertyIdBatch])
     .is('deleted_at', null)
     .order('start_date', { ascending: false })
@@ -444,7 +444,7 @@ export async function listInvoicesForContracts(contractIds: readonly string[]): 
 
   const { rows } = await fetchAllRowsInBatches<OwnerInvoice, string>(contractIds, (contractIdBatch) => supabase
     .from('invoices')
-    .select('id, contract_id, amount, paid_amount, status, deleted_at')
+    .select('id, contract_id, amount, paid_amount, status, deleted_at, reference, due_date, created_at')
     .in('contract_id', [...contractIdBatch])
     .is('deleted_at', null)
     .order('contract_id', { ascending: true })

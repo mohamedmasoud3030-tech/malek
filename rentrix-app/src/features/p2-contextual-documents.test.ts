@@ -20,7 +20,9 @@ describe('P2 — contextual documents contract', () => {
     for (const path of [
       '../features/contracts/contractDocumentsShell.tsx',
       '../features/properties/components/property-workspace-tabs.tsx',
-      '../features/owners/components/OwnerPreviewDialog.tsx',
+      // Owner documents live in the shared owner dossier body used by both the
+      // preview dialog and the full detail page.
+      '../features/owners/components/owner-dossier-body.tsx',
       '../features/units/components/UnitPreviewDialog.tsx',
       '../features/maintenance/components/maintenance-detail-resolve-overlays.tsx',
     ]) {
