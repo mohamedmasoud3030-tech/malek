@@ -1,10 +1,12 @@
-import { useMemo, type FormEventHandler } from 'react';
+import { useEffect, useMemo, useState, type FormEventHandler } from 'react';
 import { Controller } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
 import { FileAttachmentField } from '@/components/ui/file-attachment-field';
+import { MobileFormStepperFooter, MobileFormStepperHeader } from '@/components/ui/mobile-form-stepper';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
 import { calculateContractSchedulePreview } from '../contract-schedule-preview';
 import { getContractUnitDefaultRent } from '../contract-unit-options';
@@ -31,6 +33,26 @@ type ContractFormFieldsProps = Readonly<{
   autoFocusProperty?: boolean;
 }>;
 
+/**
+ * Mobile stepper steps for the long contract create/edit form. The actual
+ * fields are grouped exactly as the existing sections: parties & asset,
+ * period & financial terms, additional details + agreement coverage, and a
+ * final review before submission. Desktop keeps the single-scroll form.
+ */
+const contractFormSteps = [
+  { id: 'parties', label: 'الأطراف والعقار' },
+  { id: 'period', label: 'المدة والمالية' },
+  { id: 'details', label: 'التفاصيل والاتفاقية' },
+  { id: 'review', label: 'المراجعة والتأكيد' },
+] as const;
+
+const stepFieldGroups: readonly (readonly string[])[] = [
+  ['property_id', 'unit_id', 'tenant_id', 'status'],
+  ['start_date', 'end_date', 'rent_amount', 'payment_cycle', 'payment_terms_id'],
+  ['cancellation_reason', 'notes', 'attachment_url'],
+  [],
+];
+
 export function ContractFormFields({
   controller,
   onSubmit,
@@ -53,6 +75,7 @@ export function ContractFormFields({
     selectedProperty,
     currentLinkedUnitId,
   } = controller;
+  const [step, setStep] = useState(0);
   const propertyId = form.watch('property_id');
   const unitId = form.watch('unit_id');
   const tenantId = form.watch('tenant_id');
@@ -60,6 +83,21 @@ export function ContractFormFields({
   const endDate = form.watch('end_date');
   const rentAmount = Number(form.watch('rent_amount') || 0);
   const paymentCycle = form.watch('payment_cycle');
+
+  // Auto-return to the step that owns the first validation error (e.g. after a
+  // failed final submission) so mobile users never see a hidden failed field.
+  const fieldErrorKeys = Object.keys(form.formState.errors);
+  useEffect(() => {
+    if (fieldErrorKeys.length === 0) return;
+    const errorStep = stepFieldGroups.findIndex((group) => group.some((field) => fieldErrorKeys.includes(field)));
+    if (errorStep >= 0 && errorStep !== step) setStep(errorStep);
+  }, [fieldErrorKeys.join('|'), step]);
+
+  const goNext = async () => {
+    const fields = stepFieldGroups[step];
+    const valid = fields.length === 0 ? true : await form.trigger(fields as never);
+    if (valid) setStep((current) => Math.min(current + 1, contractFormSteps.length - 1));
+  };
 
   const selectedUnit = useMemo(
     () => unitsQuery.data?.find((u) => u.id === unitId),
@@ -90,16 +128,24 @@ export function ContractFormFields({
     submitLabel = 'جار الحفظ...';
   }
 
+  // Section visibility: sections stay mounted (state preserved); on mobile only
+  // the current step's sections render, on md+ every section renders.
+  const stepVisibility = (stepIndex: number) => (step === stepIndex ? '' : 'max-md:hidden');
+
   return (
     <EntityForm.Root className="gap-5 md:grid-cols-2" onSubmit={onSubmit} aria-busy={submitting}>
       <EntityForm.ErrorSummary className="md:col-span-2" message={dependencyError} />
       <EntityForm.ErrorSummary className="md:col-span-2" message={coverageError} />
       <EntityForm.ErrorSummary className="md:col-span-2" message={form.formState.errors.root?.message} />
 
+      <div className="md:col-span-2">
+        <MobileFormStepperHeader steps={contractFormSteps} current={step} />
+      </div>
+
       <EntityForm.Section
         title="أطراف العقد والوحدة العقارية"
         description="اختر العقار المستهدف، ورقم العين الإيجارية المحددة، وهوية المستأجر."
-        className="md:col-span-2"
+        className={cn('md:col-span-2', stepVisibility(0))}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <EntityForm.Field label="العقار" error={form.formState.errors.property_id?.message}>
@@ -194,7 +240,7 @@ export function ContractFormFields({
       <EntityForm.Section
         title="المدد المالية ودورات السداد"
         description="تحديد تاريخ سريان العقد ونهايته، قيمة الدفعة المالية المعتمدة وقالب السداد."
-        className="md:col-span-2"
+        className={cn('md:col-span-2', stepVisibility(1))}
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <EntityForm.Field label="تاريخ البداية" error={form.formState.errors.start_date?.message}>
@@ -244,7 +290,7 @@ export function ContractFormFields({
       <EntityForm.Section
         title="اتفاقية تشغيل المالك المغطية"
         description="التحقق الآلي من وجود اتفاقية إدارة فعالة للمالك تغطي فترة العقد قبل اعتماده."
-        className="md:col-span-2"
+        className={cn('md:col-span-2', stepVisibility(2))}
       >
         <ContractAgreementMissingAlert
           property={selectedProperty}
@@ -259,9 +305,41 @@ export function ContractFormFields({
       </EntityForm.Section>
 
       <EntityForm.Section
+        title="المرفقات والتوضيحات الإضافية"
+        description="إضافة المستندات الرسمية، مبررات الإلغاء، أو أي مذكرات عامة للعقد."
+        className={cn('md:col-span-2', stepVisibility(2))}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <EntityForm.Field label="سبب الإلغاء">
+            <Textarea {...form.register('cancellation_reason')} placeholder="يظهر عند إلغاء أو إنهاء العقد الإيجاري" />
+          </EntityForm.Field>
+
+          <EntityForm.Field label="ملاحظات العقد">
+            <Textarea {...form.register('notes')} placeholder="إضافة أي ملاحظات أو شروط تشغيلية استثنائية للعقد" />
+          </EntityForm.Field>
+
+          {showAttachment ? (
+            <div className="sm:col-span-2">
+              <Controller
+                control={form.control}
+                name="attachment_url"
+                render={({ field }) => (
+                  <FileAttachmentField
+                    label="نسخة العقد الموقعة ورسمية (PDF أو صور)"
+                    value={field.value ?? null}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
+          ) : null}
+        </div>
+      </EntityForm.Section>
+
+      <EntityForm.Section
         title="مراجعة جدول الفواتير والدفعات المتوقعة"
         description="خطوة المراجعة قبل تأكيد العقد: جدولة الفواتير والدفعات المالية المعتمدة."
-        className="md:col-span-2"
+        className={cn('md:col-span-2', stepVisibility(3))}
       >
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm space-y-2">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -295,40 +373,24 @@ export function ContractFormFields({
         </div>
       </EntityForm.Section>
 
-      <EntityForm.Section
-        title="المرفقات والتوضيحات الإضافية"
-        description="إضافة المستندات الرسمية، مبررات الإلغاء، أو أي مذكرات عامة للعقد."
-        className="md:col-span-2"
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <EntityForm.Field label="سبب الإلغاء">
-            <Textarea {...form.register('cancellation_reason')} placeholder="يظهر عند إلغاء أو إنهاء العقد الإيجاري" />
-          </EntityForm.Field>
-
-          <EntityForm.Field label="ملاحظات العقد">
-            <Textarea {...form.register('notes')} placeholder="إضافة أي ملاحظات أو شروط تشغيلية استثنائية للعقد" />
-          </EntityForm.Field>
-
-          {showAttachment ? (
-            <div className="sm:col-span-2">
-              <Controller
-                control={form.control}
-                name="attachment_url"
-                render={({ field }) => (
-                  <FileAttachmentField
-                    label="نسخة العقد الموقعة ورسمية (PDF أو صور)"
-                    value={field.value ?? null}
-                    onChange={field.onChange}
-                  />
-                )}
-              />
-            </div>
-          ) : null}
-        </div>
-      </EntityForm.Section>
+      <MobileFormStepperFooter
+        current={step}
+        steps={contractFormSteps}
+        onBack={() => setStep((current) => Math.max(0, current - 1))}
+        onNext={() => void goNext()}
+        onCancel={onCancel}
+        isSubmitting={submitting}
+        submitDisabled={
+          submitting ||
+          prerequisitesLoading ||
+          Boolean(coverageError) ||
+          Boolean(dependencyError)
+        }
+        submitLabel={submitLabel}
+      />
 
       <EntityForm.Actions
-        className="md:col-span-2"
+        className="max-md:hidden md:col-span-2"
         onCancel={onCancel}
         isSubmitting={submitting}
         submitDisabled={
