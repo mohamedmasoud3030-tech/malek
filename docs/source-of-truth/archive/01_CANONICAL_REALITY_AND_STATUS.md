@@ -1,3 +1,19 @@
+# SUPERSEDED
+
+> **This document has been superseded by the MALEK Canonical Pack.**
+>
+> **Superseded Date:** 2026-08-10  
+> **Canonical Replacement:** [`00_INDEX.md`](../00_INDEX.md)
+>
+> The content of this document has been incorporated into the new 8-document Canonical Pack:
+> - Product scope → [`01_PRODUCT_CHARTER_AND_SCOPE.md`](../01_PRODUCT_CHARTER_AND_SCOPE.md)
+> - Implementation status → [`07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`](../07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md)
+> - Execution status → [`08_CLOSEOUT_ROADMAP_AND_RELEASE_GATES.md`](../08_CLOSEOUT_ROADMAP_AND_RELEASE_GATES.md)
+>
+> This archive is preserved for historical evidence only. Do not use this document as current truth.
+
+---
+
 # MALEK — Canonical Reality & Status (Document 1)
 
 > **Execution-Ready Source of Truth.** Created on 2026-08-07. This document is the authoritative feature-reality catalog: what exists, what is verified complete, what is partial, and what is intentionally untouched. Status changes require evidence (implementation + tests + reachable UI), recorded in the evidence column.
@@ -63,7 +79,7 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | 4-state lifecycle UX: draft/active/expired/terminated, renew dialog, termination dialog with reason, state badges | `VERIFIED_COMPLETE` | `lifecycle/*`, `ContractDetailSections.tsx` |
 | Documents shell, payments tab (invoices + payments), financial timeline, agreement-coverage recovery | `VERIFIED_COMPLETE` | `contractDocumentsShell.tsx`, `contractPaymentsTab.tsx`, `ContractAgreementMissingAlert.tsx` |
 | Payment schedule preview inside the form | `VERIFIED_COMPLETE` | `contract-schedule-preview.ts` + `ContractFormFields.tsx` |
-| Compact create/edit modal over workspace context | `VERIFIED_COMPLETE` | commit `5f585a06` |
+| Compact create/edit modal over workspace context | `VERIFIED_COMPLETE` | commit `5f585a06`; `contract-form-workflow.test.ts`, `ux041-agreement-recovery.test.tsx` |
 | Maker-Checker lifecycle, signature verification, future legal states | `NOT_STARTED` — decisions resolved, implementation pending | ADR 0015 fixes Maker-Checker roles and `DRAFT → REVIEW → APPROVED → SIGNED → ACTIVE`; final jurisdiction-specific legal wording still requires legal review |
 
 ### B / F — Safe completeness
@@ -108,6 +124,8 @@ Presentation-only normalization; no business behavior, routes, permissions, RPCs
 | General Ledger read-only UI under formal Reports category | `VERIFIED_COMPLETE` | `GeneralLedgerCoreSection.tsx`, `use-general-ledger-core.ts` |
 | `/accounting` canonical redirect to `/reports?section=general_ledger` | `VERIFIED_COMPLETE` | `route-tree.ts` |
 
+---
+
 ## 3. Owner Decisions
 
 Resolved by **ADR 0015 (2026-08-07)**:
@@ -124,6 +142,8 @@ Still open outside this UX decision round:
 
 ### Deferred verification (not blocking policy)
 - Browser/a11y/responsive evidence must be regenerated on the final integrated PR/main head; historical evidence is not a substitute for current CI/browser execution.
+
+---
 
 ## 4. Intentionally Untouched
 

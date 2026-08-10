@@ -25,13 +25,26 @@ pnpm --filter ./rentrix-app run test:financials
 
 ## Documentation — start here
 
-There are only three active product/source-of-truth documents:
+**The MALEK Canonical Pack is the single documentation entry point.**
 
-1. [`docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md`](docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md) — verified feature and UX reality.
-2. [`docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md`](docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md) — business, accounting, legal, brand, and document rules.
-3. [`docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md`](docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md) — architecture, execution order, blockers, and owner decisions.
+Start at: [`docs/source-of-truth/00_INDEX.md`](docs/source-of-truth/00_INDEX.md)
 
-For immutable historical decisions and CI-protected governance, use the ADR/decision and governance files referenced by those three documents. Old status reports, plans, TODOs, handovers, and duplicate summaries are intentionally removed from the active tree; Git history is the archive.
+The pack contains eight canonical documents:
+
+1. [`docs/source-of-truth/01_PRODUCT_CHARTER_AND_SCOPE.md`](docs/source-of-truth/01_PRODUCT_CHARTER_AND_SCOPE.md) — Product definition, target customer, value, boundaries
+2. [`docs/source-of-truth/02_OPERATING_MODELS_AND_JOURNEYS.md`](docs/source-of-truth/02_OPERATING_MODELS_AND_JOURNEYS.md) — Complete operating behavior for all models
+3. [`docs/source-of-truth/03_DOMAIN_AND_DATA_MODEL.md`](docs/source-of-truth/03_DOMAIN_AND_DATA_MODEL.md) — Canonical entities and data integrity rules
+4. [`docs/source-of-truth/04_FINANCE_AND_ACCOUNTING_MODEL.md`](docs/source-of-truth/04_FINANCE_AND_ACCOUNTING_MODEL.md) — Double-entry accounting model and GL specifications
+5. [`docs/source-of-truth/05_SYSTEM_ARCHITECTURE_AND_SECURITY.md`](docs/source-of-truth/05_SYSTEM_ARCHITECTURE_AND_SECURITY.md) — Technical architecture and security controls
+6. [`docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md`](docs/source-of-truth/06_UX_IA_AND_DESIGN_CONTRACT.md) — Navigation hierarchy, visual contract, UX patterns
+7. [`docs/source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`](docs/source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md) — Brownfield traceability matrix and gap register
+8. [`docs/source-of-truth/08_CLOSEOUT_ROADMAP_AND_RELEASE_GATES.md`](docs/source-of-truth/08_CLOSEOUT_ROADMAP_AND_RELEASE_GATES.md) — Work packages and release criteria
+
+For governance and execution tracking:
+- [`governance/final-decision-register.json`](governance/final-decision-register.json) — Locked decisions D01-D18
+- [`governance/10-stage-master-plan.json`](governance/10-stage-master-plan.json) — 10-stage execution plan
+- [`docs/decisions/`](docs/decisions/) — ADRs and decision files
+- [`docs/execution/`](docs/execution/) — Arabic execution checklists
 
 Read [`AGENTS.md`](AGENTS.md) before making changes.
 

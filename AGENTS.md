@@ -2,17 +2,20 @@
 
 > **Compatibility note:** user-visible branding is MALEK. Historical technical identifiers such as the repository name, `rentrix-app/`, database object names, persisted keys, and infrastructure identifiers remain unchanged unless an explicit migration says otherwise.
 
-This file is the contributor/agent entry point. Product truth lives in exactly three canonical documents.
+This file is the contributor/agent entry point. Product truth lives in the MALEK Canonical Pack.
 
 ## Before you start
 
 1. Read this file.
 2. Read `.agents/skills/README.md` and apply every repo skill whose trigger matches the task.
-3. Read the three canonical documents:
-   - `docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md`
-   - `docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md`
-   - `docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md`
+3. Read the MALEK Canonical Pack starting at `docs/source-of-truth/00_INDEX.md`.
 4. Then inspect the current code and, for database-sensitive work, the live schema before making a decision.
+
+The Canonical Pack contains eight documents covering product scope, operating models, domain model, accounting, architecture, UX, implementation traceability, and release gates. Always read the relevant canonical document before making product, accounting, permission, security, IA, or data-model changes.
+
+**Rule ID discipline:** When implementing changes, cite affected Rule IDs in your PR description. Update the traceability matrix (`07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`) when implementation status changes.
+
+**Conflict resolution:** If you discover a conflict between documentation and code, preserve the canonical rule and record the implementation as CONFLICT. Do not silently redefine the rule to match existing code.
 
 Do not use old status snapshots, archived plans, TODO lists, handover reports, or superseded architecture summaries as current truth. Git history remains available when historical evidence is needed.
 
@@ -64,4 +67,9 @@ Report:
 - what changed and why,
 - tests/checks run,
 - risks or blocked decisions,
+- affected Rule IDs (from the traceability matrix),
 - and update the relevant canonical status only when the code evidence justifies it.
+
+**Never declare a module complete** from a component test or merged PR alone. A module is complete only when the applicable chain is evidenced: UI → Service/RPC → Database → RLS/Permissions → Audit → Tests → QA evidence.
+
+**Do not create parallel source-of-truth documents.** If your change requires a new document, update the Canonical Pack instead.
