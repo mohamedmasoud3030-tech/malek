@@ -38,6 +38,10 @@ export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   '20260804', // FA-003 owner-settlement input reservation (redefines settlement RPCs)
   'fa003_',
   'pay_commission_atomic',
+  // This later RLS hardening migration introduces require_company_id(). The
+  // historical P0 rollback intentionally drops that helper, so replaying it
+  // before P0 makes exact rollback equivalence impossible.
+  'harden_rls_membership_and_invoker_helpers',
   // S02 is a later security stage. Replaying it inside the P0 checkpoint would
   // mask the exact pre-P0 row visibility and alter RPC fingerprints that P0
   // forward/rollback tests intentionally compare.
