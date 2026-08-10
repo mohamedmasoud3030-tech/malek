@@ -8,6 +8,7 @@ import { SelectionCard } from '@/components/ui/selection-card';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDefaultCompanyMoney } from '@/lib/companyFormatters';
+import type { ServiceProviderCategory, ServiceProviderOption } from '@/features/service-providers/service-provider-service';
 import type { Maintenance } from '../maintenance-service';
 import type { MaintenanceResolveFormValues } from '../useMaintenancePageController';
 import {
@@ -35,11 +36,15 @@ export const chargeTargetShortLabels: Record<ChargeTarget, { title: string; desc
 
 export type MaintenanceDetailsOverlayProps = Readonly<{
   request: Maintenance | null;
+  providerOptions: ServiceProviderOption[];
+  providerCategories: ServiceProviderCategory[];
   onOpenChange: (open: boolean) => void;
 }>;
 
 /** Read-only details preview for a single maintenance request. */
-export function MaintenanceDetailsOverlay({ request, onOpenChange }: MaintenanceDetailsOverlayProps) {
+export function MaintenanceDetailsOverlay({ request, providerOptions, providerCategories, onOpenChange }: MaintenanceDetailsOverlayProps) {
+  const providerName = providerOptions.find((provider) => provider.id === request?.service_provider_id)?.name;
+  const categoryName = providerCategories.find((category) => category.id === request?.service_provider_category_id)?.name;
   return (
     <EntityPreviewDialog
       open={request != null}
@@ -71,6 +76,16 @@ export function MaintenanceDetailsOverlay({ request, onOpenChange }: Maintenance
             <div>
               <span className="text-xs font-medium text-muted-foreground">الفني / المسؤول</span>
               <p className="mt-1 font-medium">{request.assigned_to || request.technician_name || '—'}</p>
+            </div>
+
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">نوع الخدمة</span>
+              <p className="mt-1 font-medium">{categoryName || (request.service_provider_category_id ? 'نوع مؤرشف أو غير متاح' : '—')}</p>
+            </div>
+
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">مزود الخدمة</span>
+              <p className="mt-1 font-medium">{providerName || (request.service_provider_id ? 'مزود مؤرشف أو غير متاح' : '—')}</p>
             </div>
 
             <div>

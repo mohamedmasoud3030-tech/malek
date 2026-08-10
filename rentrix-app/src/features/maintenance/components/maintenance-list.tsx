@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { Property, Unit } from "@/types/domain";
+import type { ServiceProviderOption } from "@/features/service-providers/service-provider-service";
 import type { Maintenance } from "../maintenance-service";
 import {
   buildMaintenanceLocationLabel,
@@ -50,6 +51,7 @@ export type MaintenanceListProps = Readonly<{
   rows: Maintenance[];
   properties: Property[];
   allUnits: Unit[];
+  providerOptions: ServiceProviderOption[];
   actionsPending: boolean;
   onViewDetails: (row: Maintenance) => void;
   onEdit: (row: Maintenance) => void;
@@ -64,6 +66,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
     rows,
     properties,
     allUnits,
+    providerOptions,
     actionsPending,
     onViewDetails,
     onEdit,
@@ -86,6 +89,11 @@ export function MaintenanceList(props: MaintenanceListProps) {
           header: "الموقع",
           render: (row) =>
             buildMaintenanceLocationLabel(row, properties, allUnits),
+        },
+        {
+          key: "provider",
+          header: "مزود الخدمة",
+          render: (row) => providerOptions.find((provider) => provider.id === row.service_provider_id)?.name ?? (row.service_provider_id ? 'مزود مؤرشف أو غير متاح' : 'غير معين'),
         },
         {
           key: "status",

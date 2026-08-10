@@ -322,6 +322,7 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
               rows={controller.filteredMaintenanceRows}
               properties={controller.properties}
               allUnits={controller.allUnits}
+              providerOptions={controller.providerOptions}
               actionsPending={
                 controller.updateStatusMutation.isPending ||
                 controller.resolveMutation.isPending
@@ -347,6 +348,8 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
         formPropertyId={controller.formPropertyId}
         properties={controller.properties}
         units={controller.units}
+        providerCategories={controller.providerCategories}
+        providerOptions={controller.filteredProviderOptions}
         firstError={controller.firstCreateError}
         onOpenChange={controller.setShowForm}
         onSubmit={controller.onSubmit}
@@ -354,6 +357,8 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
 
       <MaintenanceDetailsOverlay
         request={controller.detailsRequest}
+        providerOptions={controller.providerOptions}
+        providerCategories={controller.providerCategories}
         onOpenChange={(open) => {
           if (!open) controller.closeDetailsRequest();
         }}

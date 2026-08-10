@@ -6,6 +6,7 @@ import { Select } from '@/components/ui/select';
 import { SelectionCard } from '@/components/ui/selection-card';
 import { Textarea } from '@/components/ui/textarea';
 import type { Property, Unit } from '@/types/domain';
+import type { ServiceProviderCategory, ServiceProviderOption } from '@/features/service-providers/service-provider-service';
 import type { MaintenanceFormValues } from '../useMaintenancePageController';
 
 export type MaintenanceRequestFormProps = Readonly<{
@@ -18,6 +19,8 @@ export type MaintenanceRequestFormProps = Readonly<{
   formPropertyId: string;
   properties: Property[];
   units: Unit[];
+  providerCategories: ServiceProviderCategory[];
+  providerOptions: ServiceProviderOption[];
   firstError: string | undefined;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: MaintenanceFormValues) => void;
@@ -40,6 +43,8 @@ export function MaintenanceRequestForm({
   formPropertyId,
   properties,
   units,
+  providerCategories,
+  providerOptions,
   firstError,
   onOpenChange,
   onSubmit,
@@ -49,9 +54,13 @@ export function MaintenanceRequestForm({
   const currentScheduledDate = form.watch('scheduled_date');
   const currentAssignedTo = form.watch('assigned_to');
   const currentUnitId = form.watch('unit_id');
+  const currentProviderCategoryId = form.watch('service_provider_category_id');
+  const currentProviderId = form.watch('service_provider_id');
 
   const selectedProp = properties.find((p) => p.id === formPropertyId);
   const selectedUnit = units.find((u) => u.id === currentUnitId);
+  const selectedProviderCategory = providerCategories.find((category) => category.id === currentProviderCategoryId);
+  const selectedProvider = providerOptions.find((provider) => provider.id === currentProviderId);
 
   return (
     <EntityForm.Overlay
@@ -91,6 +100,26 @@ export function MaintenanceRequestForm({
             لا يمكن تغيير موقع طلب تم حله أو إغلاقه حتى يبقى مرتبطاً بالمصروف المسجل.
           </p>
         ) : null}
+
+        <EntityForm.Section title="نوع الخدمة ومزود التنفيذ" description="اختر نوع الخدمة أولاً لتظهر الجهات التي تدعم هذا النوع. يمكن حفظ الطلب بلا مزود لحين التعيين.">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <EntityForm.Field label="نوع الخدمة" error={form.formState.errors.service_provider_category_id?.message}>
+              <Select aria-label="نوع خدمة الصيانة" {...form.register('service_provider_category_id')} disabled={isEditingResolvedRequest}>
+                <option value="">غير محدد</option>
+                {providerCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="مزود الخدمة" error={form.formState.errors.service_provider_id?.message}>
+              <Select aria-label="مزود خدمة الصيانة" {...form.register('service_provider_id')} disabled={isEditingResolvedRequest || providerOptions.length === 0}>
+                <option value="">غير معين</option>
+                {providerOptions.map((provider) => <option key={provider.id} value={provider.id}>{provider.name}{provider.phone ? ` · ${provider.phone}` : ''}</option>)}
+              </Select>
+            </EntityForm.Field>
+          </div>
+          {currentProviderCategoryId && providerOptions.length === 0 ? (
+            <p className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs font-medium text-warning">لا يوجد مزود نشط يدعم نوع الخدمة المختار. اترك التعيين فارغًا أو أضف التخصص إلى ملف مزود.</p>
+          ) : null}
+        </EntityForm.Section>
 
         <EntityForm.Section title="تفاصيل الطلب والأولوية" description="اكتب عنواناً قصيراً ثم حدد مستوى الأولوية.">
           <EntityForm.Field label="عنوان الطلب *" error={form.formState.errors.title?.message}>
@@ -154,6 +183,14 @@ export function MaintenanceRequestForm({
                 <div>
                   <span className="text-muted-foreground">الموعد:</span>
                   <p className="font-semibold text-foreground">{currentScheduledDate || 'غير مجدول'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">نوع الخدمة:</span>
+                  <p className="font-semibold text-foreground">{selectedProviderCategory?.name || 'غير محدد'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">مزود التنفيذ:</span>
+                  <p className="font-semibold text-foreground">{selectedProvider?.name || 'غير معين'}</p>
                 </div>
               </div>
             </div>

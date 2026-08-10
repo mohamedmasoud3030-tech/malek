@@ -8,6 +8,8 @@ const maintenanceMocks = vi.hoisted(() => ({
   propertiesQuery: { data: { rows: [] as unknown[] }, error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   allUnitsQuery: { data: [] as unknown[], isLoading: false },
   unitsQuery: { data: [] as unknown[], isLoading: false },
+  providerCategoriesQuery: { data: [] as unknown[], error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
+  providerOptionsQuery: { data: [] as unknown[], error: null as Error | null, isError: false, isLoading: false, refetch: vi.fn() },
   updateRequestMutation: { isPending: false, mutate: vi.fn() },
   updateStatusMutation: { isPending: false, mutate: vi.fn() },
   resolveMutation: { isPending: false, mutate: vi.fn() },
@@ -27,6 +29,11 @@ vi.mock('@/features/properties/use-properties', () => ({
 vi.mock('@/features/units/use-units', () => ({
   useAllUnits: () => maintenanceMocks.allUnitsQuery,
   useUnits: () => maintenanceMocks.unitsQuery,
+}));
+
+vi.mock('@/features/service-providers/use-service-providers', () => ({
+  useServiceProviderCategories: () => maintenanceMocks.providerCategoriesQuery,
+  useActiveServiceProviderOptions: () => maintenanceMocks.providerOptionsQuery,
 }));
 
 vi.mock('./use-maintenance', () => ({
@@ -51,6 +58,8 @@ const maintenanceRow = {
   id: 'maintenance-1',
   property_id: 'property-1',
   unit_id: 'unit-1',
+  service_provider_id: 'provider-1',
+  service_provider_category_id: 'category-1',
   title: 'إصلاح المكيف',
   description: null,
   priority: 'urgent',
@@ -75,12 +84,16 @@ describe('MaintenancePage recovery states', () => {
     maintenanceMocks.propertiesQuery.isLoading = false;
     maintenanceMocks.allUnitsQuery.data = [];
     maintenanceMocks.unitsQuery.data = [];
+    maintenanceMocks.providerCategoriesQuery.data = [];
+    maintenanceMocks.providerOptionsQuery.data = [];
   });
 
   it('renders Arabic maintenance status, priority, and location labels', () => {
     maintenanceMocks.maintenanceQuery.data = [maintenanceRow];
     maintenanceMocks.propertiesQuery.data = { rows: [{ id: 'property-1', title: 'برج النخيل' }] };
     maintenanceMocks.allUnitsQuery.data = [{ id: 'unit-1', property_id: 'property-1', unit_number: 'A-12' }];
+    maintenanceMocks.providerCategoriesQuery.data = [{ id: 'category-1', name: 'تكييف' }];
+    maintenanceMocks.providerOptionsQuery.data = [{ id: 'provider-1', name: 'شركة التبريد', phone: '90000000', categoryIds: ['category-1'] }];
 
     const html = renderToStaticMarkup(<MaintenancePage />);
 
@@ -89,6 +102,7 @@ describe('MaintenancePage recovery states', () => {
     expect(html).toContain('قيد التنفيذ');
     expect(html).toContain('عاجلة');
     expect(html).toContain('تم الحل');
+    expect(html).toContain('شركة التبريد');
   });
 
   it('renders a retryable load error state', () => {

@@ -182,6 +182,7 @@ export function MaintenanceE2EFixture() {
               rows={fixtureRows}
               properties={fixtureProperties}
               allUnits={fixtureUnits}
+              providerOptions={[]}
               actionsPending={false}
               onViewDetails={() => undefined}
               onEdit={() => undefined}

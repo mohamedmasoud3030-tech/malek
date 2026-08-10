@@ -6,6 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useProperties } from '@/features/properties/use-properties';
 import { ACTIVE_COMPANY_ERROR, useActiveCompanyId } from '@/hooks/use-company';
 import { useAllUnits, useUnits } from '@/features/units/use-units';
+import { useActiveServiceProviderOptions, useServiceProviderCategories } from '@/features/service-providers/use-service-providers';
+import type { ServiceProviderOption } from '@/features/service-providers/service-provider-service';
 import {
   useCreateMaintenance,
   useMaintenance,
@@ -26,6 +28,8 @@ export const maintenanceRequestSchema = z.object({
   // contract requires a selected property, not a UUID-shaped string.
   property_id: z.string().trim().min(1, 'اختر العقار'),
   unit_id: z.string().nullable().optional().transform((value) => (value === '' ? null : value)),
+  service_provider_category_id: z.string().uuid('نوع الخدمة المحدد غير صالح').nullable().optional().transform((value) => (value === '' ? null : value)),
+  service_provider_id: z.string().uuid('مزود الخدمة المحدد غير صالح').nullable().optional().transform((value) => (value === '' ? null : value)),
   title: z.string().min(1, 'أدخل عنوان الطلب'),
   description: z.string().nullable().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']),
@@ -45,9 +49,19 @@ export type MaintenanceResolveFormValues = z.infer<typeof maintenanceResolveSche
 
 export type MaintenanceAction = Readonly<{ label: string; status: Exclude<MaintenanceStatusFilter, 'all'> }>;
 
+export function getCompatibleServiceProviderOptions(
+  options: readonly ServiceProviderOption[],
+  categoryId: string | null | undefined,
+): ServiceProviderOption[] {
+  if (!categoryId) return [...options];
+  return options.filter((provider) => provider.categoryIds.includes(categoryId));
+}
+
 const emptyFormValues: MaintenanceFormValues = {
   property_id: '',
   unit_id: null,
+  service_provider_category_id: null,
+  service_provider_id: null,
   title: '',
   description: '',
   priority: 'medium',
@@ -84,6 +98,8 @@ export function useMaintenancePageController() {
 
   const maintenanceQuery = useMaintenance(statusFilter, propertyFilterId);
   const propertiesQuery = useProperties({ search: '', status: 'all', page: 1, pageSize: 200 });
+  const providerCategoriesQuery = useServiceProviderCategories();
+  const providerOptionsQuery = useActiveServiceProviderOptions();
   const createMutation = useCreateMaintenance();
   const updateRequestMutation = useUpdateMaintenance();
   const updateStatusMutation = useUpdateMaintenanceStatus();
@@ -99,12 +115,17 @@ export function useMaintenancePageController() {
   });
 
   const formPropertyId = form.watch('property_id');
+  const selectedProviderCategoryId = form.watch('service_provider_category_id') ?? null;
+  const selectedProviderId = form.watch('service_provider_id') ?? null;
   const unitsQuery = useUnits(formPropertyId);
   const allUnitsQuery = useAllUnits();
 
   const properties = propertiesQuery.data?.rows ?? [];
   const units = unitsQuery.data ?? [];
   const allUnits = allUnitsQuery.data ?? [];
+  const providerCategories = providerCategoriesQuery.data ?? [];
+  const providerOptions = providerOptionsQuery.data ?? [];
+  const filteredProviderOptions = getCompatibleServiceProviderOptions(providerOptions, selectedProviderCategoryId);
   const maintenanceRows = maintenanceQuery.data ?? [];
 
   useEffect(() => {
@@ -115,6 +136,14 @@ export function useMaintenancePageController() {
     const requested = maintenanceRows.find((row) => row.id === requestedId);
     if (requested) setDetailsRequest(requested);
   }, [maintenanceRows, requestedId]);
+
+  useEffect(() => {
+    if (!selectedProviderId || !selectedProviderCategoryId) return;
+    const providerSupportsCategory = providerOptions.some(
+      (provider) => provider.id === selectedProviderId && provider.categoryIds.includes(selectedProviderCategoryId),
+    );
+    if (!providerSupportsCategory) form.setValue('service_provider_id', null, { shouldDirty: true });
+  }, [form, providerOptions, selectedProviderCategoryId, selectedProviderId]);
 
   const openDetailsRequest = (request: Maintenance) => {
     setDetailsRequest(request);
@@ -146,9 +175,9 @@ export function useMaintenancePageController() {
     () => summarizeMaintenanceRequests(filteredMaintenanceRows),
     [filteredMaintenanceRows],
   );
-  const loadError = maintenanceQuery.error ?? propertiesQuery.error;
-  const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError;
-  const isLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading;
+  const loadError = maintenanceQuery.error ?? propertiesQuery.error ?? providerCategoriesQuery.error ?? providerOptionsQuery.error;
+  const hasLoadError = maintenanceQuery.isError || propertiesQuery.isError || providerCategoriesQuery.isError || providerOptionsQuery.isError;
+  const isLoading = maintenanceQuery.isLoading || propertiesQuery.isLoading || providerCategoriesQuery.isLoading || providerOptionsQuery.isLoading;
   const hasFilters = statusFilter !== 'all' || priorityFilter !== 'all' || propertyFilterId.length > 0;
   const isEditingResolvedRequest = editingRequest?.status === 'resolved' || editingRequest?.status === 'closed';
 
@@ -160,7 +189,12 @@ export function useMaintenancePageController() {
     .find((message): message is string => typeof message === 'string' && message.length > 0);
 
   const retryMaintenanceWorkspace = async () => {
-    await Promise.all([maintenanceQuery.refetch(), propertiesQuery.refetch()]);
+    await Promise.all([
+      maintenanceQuery.refetch(),
+      propertiesQuery.refetch(),
+      providerCategoriesQuery.refetch(),
+      providerOptionsQuery.refetch(),
+    ]);
   };
 
   const openCreateForm = () => {
@@ -174,6 +208,8 @@ export function useMaintenancePageController() {
     form.reset({
       property_id: row.property_id ?? '',
       unit_id: row.unit_id ?? null,
+      service_provider_category_id: row.service_provider_category_id ?? null,
+      service_provider_id: row.service_provider_id ?? null,
       title: row.title ?? '',
       description: row.description ?? '',
       priority: (row.priority ?? 'medium') as MaintenanceFormValues['priority'],
@@ -214,6 +250,8 @@ export function useMaintenancePageController() {
     const payload = {
       property_id: values.property_id,
       unit_id: values.unit_id,
+      service_provider_category_id: values.service_provider_category_id ?? null,
+      service_provider_id: values.service_provider_id ?? null,
       title: values.title,
       description: values.description ?? null,
       priority: values.priority,
@@ -228,6 +266,8 @@ export function useMaintenancePageController() {
       const updatePayload = {
         property_id: values.property_id,
         unit_id: values.unit_id,
+        service_provider_category_id: values.service_provider_category_id ?? null,
+        service_provider_id: values.service_provider_id ?? null,
         title: values.title,
         description: values.description ?? null,
         priority: values.priority,
@@ -263,6 +303,10 @@ export function useMaintenancePageController() {
     properties,
     units,
     allUnits,
+    providerCategories,
+    providerOptions,
+    filteredProviderOptions,
+    selectedProviderCategoryId,
     filteredMaintenanceRows,
     maintenanceSummary,
     loadError,
