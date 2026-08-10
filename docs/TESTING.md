@@ -14,6 +14,8 @@ pnpm --filter ./rentrix-app test
 pnpm --filter ./rentrix-app run test:financials
 pnpm e2e
 pnpm supabase:live-readiness # optional; requires SUPABASE_DB_URL + psql
+pnpm qa:preflight # hosted QA Auth/RLS/API proof; requires injected QA credentials
+pnpm qa:lifecycle # explicitly approved hosted-QA financial lifecycle only
 # For 99.9% readiness claims, also complete docs/RELEASE_EVIDENCE_LEDGER.md
 # and docs/SEEDED_STAGING_READINESS_RUNBOOK.md.
 ```
@@ -31,6 +33,8 @@ This is the same core sequence `.github/workflows/ci.yml` runs (plus a `pnpm sup
 - **`pnpm --filter ./rentrix-app run test:financials`** — runs all tests under `rentrix-app/src/features/financials` (`vitest run --dir src/features/financials`), independent of the file list above. Always run this for any change touching `src/features/financials/**`, invoicing, payments, receipts, expenses, or money formatting/rounding logic (`lib/moneyNormalization.ts`, `features/financials/financialMath.ts`), even if the change looks unrelated on the surface.
 - **`pnpm e2e`** — runs the Playwright readiness suite in Chromium at desktop/tablet/mobile breakpoints. It covers public/auth boundaries, navigation and responsive workspaces, dashboard, maintenance, owners, reports, settings, new modules, accessibility checks, evidence capture, and fixture-backed authenticated paths. Seeded remote staging checks remain opt-in and require the relevant `E2E_*` environment values.
 - **`pnpm supabase:live-readiness`** — runs read-only live database checks through `scripts/verify-supabase-live-readiness.sh`. It requires `SUPABASE_DB_URL` and `psql`; without those, the script exits with an environment-limitation status instead of pretending live readiness was verified.
+- **`pnpm qa:preflight`** — signs into the dedicated hosted QA project, proves its project reference, active company membership, `current_company_id()` contract, and core table read contracts. It refuses any URL that does not exactly match the declared QA project, and refuses a QA/Production project-ref match.
+- **`pnpm qa:lifecycle`** — the agent-operated hosted QA sequence: preflight → idempotent QA seed → real browser invoice/payment/receipt/void journey → financial/RPC verification. It requires `QA_MUTATION_APPROVED=1`, a QA-only service-role key, and will refuse Production. Setup details are in `docs/AGENT_QA_RUNTIME.md`.
 
 ## When to run what
 
