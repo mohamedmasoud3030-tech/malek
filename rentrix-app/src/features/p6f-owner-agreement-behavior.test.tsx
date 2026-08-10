@@ -7,7 +7,21 @@ import type { ReactNode } from 'react';
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-const createAgreementSpy = vi.hoisted(() => vi.fn(async () => ({ id: 'agreement-1' })));
+type AgreementSubmitPayload = {
+  owner_id: string;
+  property_id: string;
+  starts_on: string;
+  ends_on: string;
+};
+
+const agreementMutation = vi.hoisted(() => {
+  const state = { payload: null as AgreementSubmitPayload | null };
+  const spy = vi.fn(async (payload: AgreementSubmitPayload) => {
+    state.payload = payload;
+    return { id: 'agreement-1' };
+  });
+  return { state, spy };
+});
 const ownershipState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false }));
 const ownersState = vi.hoisted(() => ({ data: [] as unknown[], isLoading: false }));
 
@@ -22,7 +36,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 vi.mock('@/features/owners/useOwnerAgreements', () => ({
   useOwnerAgreements: () => ({ data: [], isLoading: false }),
-  useCreateOwnerAgreement: () => ({ mutateAsync: createAgreementSpy, isPending: false }),
+  useCreateOwnerAgreement: () => ({ mutateAsync: agreementMutation.spy, isPending: false }),
   useUpdateOwnerAgreement: () => ({ mutateAsync: vi.fn(async () => ({})), isPending: false }),
 }));
 
@@ -112,7 +126,8 @@ describe('owner agreement mobile stepper — behavioral', () => {
   let root: ReturnType<typeof createRoot>;
 
   beforeEach(() => {
-    createAgreementSpy.mockClear();
+    agreementMutation.spy.mockClear();
+    agreementMutation.state.payload = null;
     ownershipState.data = [baseLink()];
     ownersState.data = [baseOwner()];
     host = document.createElement('div');
@@ -184,11 +199,11 @@ describe('owner agreement mobile stepper — behavioral', () => {
 
     await clickButton('حفظ الاتفاقية');
     await flush();
-    expect(createAgreementSpy).toHaveBeenCalledTimes(1);
-    const payload = createAgreementSpy.mock.calls[0][0] as { owner_id: string; property_id: string; starts_on: string; ends_on: string };
-    expect(payload.owner_id).toBe(OWNER_ID);
-    expect(payload.property_id).toBe(PROPERTY_ID);
-    expect(payload.starts_on).toBe('2026-07-01');
-    expect(payload.ends_on).toBe('2026-12-31');
+    expect(agreementMutation.spy).toHaveBeenCalledTimes(1);
+    expect(agreementMutation.state.payload).not.toBeNull();
+    expect(agreementMutation.state.payload?.owner_id).toBe(OWNER_ID);
+    expect(agreementMutation.state.payload?.property_id).toBe(PROPERTY_ID);
+    expect(agreementMutation.state.payload?.starts_on).toBe('2026-07-01');
+    expect(agreementMutation.state.payload?.ends_on).toBe('2026-12-31');
   });
 });
