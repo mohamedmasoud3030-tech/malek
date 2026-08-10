@@ -261,7 +261,9 @@ describe('MALEK brand contract — no legacy name reaches a user', () => {
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
     expect(loginPage).toContain('APP_BRAND_LOCKUP_ASSET');
-    expect(loginPage).toContain('APP_BRAND_TAGLINE_AR');
+    expect(loginPage).toContain('مرحبًا بعودتك');
+    expect(loginPage).toContain('سجّل الدخول إلى مساحة عملك في {APP_BRAND_NAME}');
+    expect(loginPage).not.toContain('APP_BRAND_TAGLINE_AR');
     expect(loginPage).not.toContain('Rentrix');
   });
 
@@ -356,7 +358,8 @@ describe('MALEK brand contract — mark, wordmark, and tagline', () => {
 
     const loginPage = readApp('src/features/auth/login-page.tsx');
     expect(loginPage).toContain('APP_BRAND_LOCKUP_ASSET');
-    expect(loginPage).toContain('APP_BRAND_TAGLINE_AR');
+    expect(loginPage).toContain('مرحبًا بعودتك');
+    expect(loginPage).not.toContain('APP_BRAND_TAGLINE_AR');
 
     expect(readApp('src/features/landing/components/NavBar.tsx')).toContain('<MalikBrand />');
     expect(readApp('src/components/layout/pwa-install-prompt.tsx')).toContain('MalikMark');

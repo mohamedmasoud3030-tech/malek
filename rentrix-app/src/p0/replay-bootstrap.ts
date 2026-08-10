@@ -36,14 +36,28 @@ export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   'unit_archive_history',
   'contract_workflow',
   '20260804', // FA-003 owner-settlement input reservation (redefines settlement RPCs)
+  'fa003_',
+  'pay_commission_atomic',
   // S02 is a later security stage. Replaying it inside the P0 checkpoint would
   // mask the exact pre-P0 row visibility and alter RPC fingerprints that P0
   // forward/rollback tests intentionally compare.
   's02_financial_direct_write_hardening_payments_expenses',
   's02_remove_residual_financial_write_policies',
   's02_financial_rpc_auth_sqlstate',
-  // Stage 3 business document references: independent of the P0 isolation fix
-  // and measured at its own checkpoint (see src/p3/stage3-business-references.test.ts).
+  's02_revoke_internal_owner_settlement_helper_execute',
+  's02_owner_settlement_stale_total_rejection',
+  's02_bank_csv_import_server_guards',
+  // S03/S04/S06/S08 are later governed stages. They rely on schema shapes that
+  // intentionally do not exist at the P0 checkpoint and must not leak into the
+  // historical PGlite replay. Real PostgreSQL replay is covered independently
+  // by the release-blocker database gate.
+  '_s03_',
+  '_s04_',
+  '_s06_',
+  '_s08_',
+  // Stage 3 migrations are independent of the P0 isolation fix and are
+  // verified by their own replay suites.
+  'stage3_',
   'business_document_references',
 ] as const;
 
