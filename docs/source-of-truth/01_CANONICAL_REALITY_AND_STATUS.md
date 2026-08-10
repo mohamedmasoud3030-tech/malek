@@ -76,6 +76,14 @@ Legend: `VERIFIED_COMPLETE` = implemented, connected to real data, reachable, us
 | Navigation exposure: all safe features reachable from collapsible domain groups + mobile drawer; mobile persistent control is Menu + Search only | `VERIFIED_COMPLETE` | `app-nav-items.ts`, `layout-navigation-view.tsx` |
 | Permission-consistent UI (void/approve/pay/export gates) | `VERIFIED_COMPLETE` | `permissions.ts` + per-workspace gates |
 
+### G — Service Providers
+
+| Feature | Status | Evidence |
+|---|---|---|
+| Canonical company-scoped provider register, normalized service categories, contact/operational profile, soft archive, and atomic provider/category writes | `PARTIAL` — code complete; hosted migration/browser verification unavailable in the agent environment | `20260810170000_service_providers_production_grade.sql`, `20260810171000_service_provider_atomic_writes.sql`, `service-provider-migration-execution.test.ts` |
+| Provider list, dossier, create/edit routes, category management, contextual documents, permissions, Arabic RTL/mobile states | `PARTIAL` — connected/reachable in code; browser execution blocked because Chromium and hosted QA credentials were unavailable | `/service-providers*`, `features/service-providers/*`, route/navigation/permission/component tests |
+| Maintenance service-type/provider selection with database validation and provider maintenance history | `PARTIAL` — PGlite execution and service/UI contracts verified; hosted end-to-end mutation not run | `maintenance_records.service_provider_id`, `maintenance_records.service_provider_category_id`, `maintenance-provider-selection.test.ts`, `service_providers_company_isolation.sql` |
+
 ---
 
 ## 2. Visual UX Consolidation Pass (2026-08-07, same program/PR lineage)
