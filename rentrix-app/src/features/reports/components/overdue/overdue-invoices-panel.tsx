@@ -41,7 +41,7 @@ export function OverdueInvoicesPanel({ rows, action, isLoading }: Readonly<{ row
 
   return (
     <ReportPanel title="تحليل المتأخرات" description="سجل تحليلي يربط المستأجر والعقار والوحدة والعقد والفاتورة بالتعتيق وإجراء تحصيل قابل للتنفيذ." icon={AlertTriangle} action={action} isLoading={isLoading}>
-      {rows.length === 0 ? <div className="p-4"><ReportState message="لا توجد فواتير متأخرة حسب تاريخ التقرير." /></div> : <div className="p-3 sm:p-4"><EntityTable aria-label="جدول تحليل المتأخرات" rows={rows} columns={columns} keyOf={(row) => row.invoiceId} onRowClick={(row) => setSelected(row)} /></div>}
+      {rows.length === 0 ? <div className="p-4"><ReportState message="لا توجد فواتير متأخرة حسب تاريخ التقرير." /></div> : <div className="p-3 sm:p-4"><EntityTable aria-label="جدول تحليل المتأخرات" rows={rows} columns={columns} keyOf={(row) => row.invoiceId} mobileVisibleSecondaryKey="remaining" onRowClick={(row) => setSelected(row)} /></div>}
       <EntityPreviewDialog open={Boolean(selected)} onOpenChange={(open) => { if (!open) setSelected(null); }} title={selected ? `تفاصيل المتأخرات — ${selected.invoiceReference ?? 'فاتورة مسجلة'}` : 'تفاصيل المتأخرات'} description="Drill-down سياقي إلى السجلات الأصلية بدون فقد سياق التقرير.">
         {selected ? (
           <div className="space-y-4">

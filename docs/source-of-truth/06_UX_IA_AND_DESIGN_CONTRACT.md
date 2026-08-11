@@ -111,7 +111,7 @@ Permission requests that require action must be visibly actionable, with enough 
 - Mobile has no legacy five-item bottom navigation. `mobileNavItems` is empty and `MobileFloatingControl` exposes Menu + Search; the drawer carries the full permitted navigation. Documentation must not claim a maintenance-priority bottom tab at this baseline.
 - Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer.
 - Long contract/agreement forms may use mobile steppers while desktop retains an efficient single-scroll workflow.
-- Shared entity tables preserve the most important secondary datum on mobile and use disclosure/expansion for the rest.
+- Shared entity registers render a dense semantic table on desktop/tablet (≥ 768px) and, below 768px, a true mobile register presentation: each record shows identity, one meaningful primary/secondary datum (status/amount/date), and a compact accessible «إجراءات» menu containing only the record's existing actions. Mobile registers never use horizontal scrolling, clipped labels, overlapping RTL text, disclosure/expansion rows, sticky action columns, or bulk expand-all controls.
 - Safe-area/sticky actions must not hide validation or prevent access to submit/cancel.
 
 ## Design system

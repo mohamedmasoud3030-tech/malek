@@ -12,20 +12,44 @@ function tableProps(overrides: Partial<Parameters<typeof EntityTable<Row>>[0]> =
   return { "aria-label": "جدول الاختبار", rows, columns, keyOf: (row: Row) => row.id, ...overrides };
 }
 
-describe("EntityTable — حالات الجدول الموحد", () => {
-  it("renders rows in the shared compact responsive table", () => {
-    const html = renderToStaticMarkup(<EntityTable {...tableProps()} />);
+const richColumns: ColumnDef<Row>[] = [
+  { key: "name", header: "الاسم", sortable: true, priority: "identity", render: (row) => row.name },
+  { key: "amount", header: "المبلغ", priority: "primary", render: (row) => `${row.name} مبلغ` },
+  { key: "detail", header: "تفصيل كامل", priority: "detail", render: (row) => `تفاصيل ${row.name}` },
+  { key: "actions", header: "إجراءات", priority: "actions", render: (row) => (
+    <div className="flex gap-2">
+      <button type="button" onClick={() => undefined}>إجراء داخلي</button>
+      <button type="button" onClick={() => undefined}>أرشفة</button>
+    </div>
+  ) },
+];
+
+describe("EntityTable — السجل الموحد: عرض الجدول على سطح المكتب وعرض البطاقات على الجوال", () => {
+  it("renders the dense semantic table for desktop/tablet and a true card list for mobile", () => {
+    const html = renderToStaticMarkup(<EntityTable {...tableProps({ columns: richColumns })} />);
+    // Desktop table foundation remains present in the DOM (md+).
     expect(html).toContain('data-compact-responsive-table="true"');
+    expect(html).toContain('data-entity-table="true"');
     expect(html).toContain('aria-label="جدول الاختبار"');
-    expect(html).toContain("py-2.5");
-    expect(html).toContain("الأول");
-    expect(html).not.toContain('role="list"');
+    // Mobile register presentation (max-md) — a real list, never a squeezed table.
+    expect(html).toContain('role="list"');
+    expect(html).toContain('aria-label="جدول الاختبار"');
+    expect(html).toContain("data-entity-table-mobile-card");
+    expect(html).toContain("data-entity-table-mobile-actions");
   });
 
-  it("does not render legacy mobile cards even when a compatibility renderer is supplied", () => {
-    const html = renderToStaticMarkup(<EntityTable {...tableProps({ renderMobileCard: (row) => <div>بطاقة {row.name}</div> })} />);
-    expect(html).not.toContain("بطاقة الأول");
+  it("shows identity + ONE datum + actions on each mobile card, without expansion or bulk disclosure", () => {
+    const html = renderToStaticMarkup(<EntityTable {...tableProps({ columns: richColumns, mobileVisibleSecondaryKey: "amount" })} />);
     expect(html).toContain("الأول");
+    expect(html).toContain("مبلغ");
+    expect(html).toContain("إجراءات");
+    // No «توسيع الكل», no row disclosure buttons, no sticky action columns on mobile.
+    expect(html).not.toContain("توسيع الكل");
+    expect(html).not.toContain("طي الكل");
+    expect(html).not.toContain("عرض كل تفاصيل الصف");
+    expect(html).not.toContain("data-entity-table-bulk-disclosure");
+    // The mobile datum is driven by column metadata (mobileVisibleSecondaryKey).
+    expect(html).toContain("data-entity-table-mobile-datum");
   });
 
   it("renders shared empty, loading, and error states", () => {
@@ -33,9 +57,16 @@ describe("EntityTable — حالات الجدول الموحد", () => {
     const loading = renderToStaticMarkup(<EntityTable {...tableProps({ isLoading: true })} />);
     expect(loading).not.toContain("الأول");
     expect(loading).toContain("skeleton-shimmer");
+    expect(loading).toContain("data-entity-table-mobile-skeleton");
     const error = renderToStaticMarkup(<EntityTable {...tableProps({ error: new Error("boom"), errorTitle: "فشل الجلب", onRetry: () => undefined })} />);
     expect(error).toContain("فشل الجلب");
     expect(error).toContain("إعادة المحاولة");
+  });
+
+  it("does not render legacy page-supplied mobile cards even when a compatibility renderer is supplied", () => {
+    const html = renderToStaticMarkup(<EntityTable {...tableProps({ renderMobileCard: (row) => <div>بطاقة {row.name}</div> })} />);
+    expect(html).not.toContain("بطاقة الأول");
+    expect(html).toContain("الأول");
   });
 });
 
@@ -45,7 +76,7 @@ describe("EntityTable — التفاعل", () => {
   beforeEach(() => { container = document.createElement("div"); document.body.appendChild(container); root = createRoot(container); });
   afterEach(() => { act(() => root.unmount()); container.remove(); });
 
-  it("invokes retry, pagination, and row actions", () => {
+  it("invokes retry, pagination, and desktop row actions", () => {
     const onRetry = vi.fn();
     const onPageChange = vi.fn();
     const onRowClick = vi.fn();
@@ -60,15 +91,9 @@ describe("EntityTable — التفاعل", () => {
     expect(onRowClick).toHaveBeenCalledWith(rows[0]);
   });
 
-  it("supports sorting, keyboard row activation, progressive disclosure, and nested actions", () => {
+  it("supports sorting and keyboard row activation on the desktop table", () => {
     const onSort = vi.fn();
     const onRowClick = vi.fn();
-    const nestedAction = vi.fn();
-    const richColumns: ColumnDef<Row>[] = [
-      { key: "name", header: "الاسم", sortable: true, priority: "identity", render: (row) => row.name },
-      { key: "detail", header: "تفصيل كامل", priority: "detail", render: (row) => `تفاصيل ${row.name}` },
-      { key: "actions", header: "إجراءات", priority: "actions", render: () => <button type="button" onClick={nestedAction}>إجراء داخلي</button> },
-    ];
     act(() => { root.render(<EntityTable {...tableProps({ columns: richColumns, sort: { field: "name", direction: "asc" }, onSort, onRowClick })} />); });
 
     const sortButton = Array.from(container.querySelectorAll("thead button")).find((button) => button.textContent?.includes("الاسم"));
@@ -81,64 +106,91 @@ describe("EntityTable — التفاعل", () => {
 
     const nested = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "إجراء داخلي");
     act(() => { nested?.click(); });
-    expect(nestedAction).toHaveBeenCalledOnce();
     expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps custom row expansion on desktop and never on the mobile card list", () => {
+    const setExpanded = vi.fn();
+    act(() => {
+      root.render(
+        <EntityTable
+          {...tableProps({ columns: richColumns, renderRowExpansion: (row) => <div>بيانات المستأجر {row.name}</div>, expandedRowId: null, onExpandedRowChange: setExpanded })}
+        />,
+      );
+    });
 
     const disclosure = container.querySelector<HTMLButtonElement>('button[aria-label="عرض كل تفاصيل الصف"]');
     expect(disclosure?.getAttribute("aria-expanded")).toBe("false");
     act(() => { disclosure?.click(); });
-    expect(container.textContent).toContain("تفاصيل الأول");
-    expect(container.querySelector('[data-row-disclosure]')).not.toBeNull();
+    expect(setExpanded).toHaveBeenCalledWith("1");
+
+    // Mobile cards carry no disclosure controls — the list never shows them.
+    const mobileList = container.querySelector('[data-entity-table-mobile-list]');
+    expect(mobileList).not.toBeNull();
+    expect(mobileList?.querySelector('[aria-label="عرض كل تفاصيل الصف"]')).toBeNull();
+    expect(mobileList?.textContent).not.toContain("بيانات المستأجر");
   });
 
-  it("keeps the table compact and removes the view-mode switch", () => {
+  it("opens the mobile actions menu and exposes only the actions already available for the record", () => {
+    const nestedAction = vi.fn();
+    const archiveAction = vi.fn();
+    const customActions: ColumnDef<Row>[] = [
+      { key: "name", header: "الاسم", priority: "identity", render: (row) => row.name },
+      { key: "actions", header: "إجراءات", priority: "actions", render: () => (
+        <div className="flex gap-2">
+          <button type="button" onClick={nestedAction}>إجراء داخلي</button>
+          <button type="button" onClick={archiveAction}>أرشفة</button>
+        </div>
+      ) },
+    ];
+    act(() => { root.render(<EntityTable {...tableProps({ columns: customActions })} />); });
+
+    const trigger = container.querySelector<HTMLButtonElement>("[data-entity-table-mobile-actions]");
+    expect(trigger).not.toBeNull();
+    expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+    expect(trigger?.className).toContain("min-h-11");
+
+    act(() => { trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
+    const panel = container.querySelector("[data-entity-table-mobile-actions-panel]");
+    expect(panel).not.toBeNull();
+    expect(trigger?.getAttribute("aria-expanded")).toBe("true");
+
+    const inner = Array.from(panel?.querySelectorAll("button") ?? []);
+    expect(inner).toHaveLength(2);
+    act(() => { inner[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
+    expect(nestedAction).toHaveBeenCalledTimes(1);
+
+    // Escape closes the menu and restores focus to the trigger.
+    act(() => { trigger?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+    expect(container.querySelector("[data-entity-table-mobile-actions-panel]")).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("activates the record detail action from the mobile card body when onRowClick exists", () => {
+    const onRowClick = vi.fn();
+    act(() => { root.render(<EntityTable {...tableProps({ onRowClick })} />); });
+    const primary = container.querySelector<HTMLButtonElement>("[data-entity-table-mobile-primary]");
+    expect(primary).not.toBeNull();
+    act(() => { primary?.dispatchEvent(new MouseEvent("click", { bubbles: true })); });
+    expect(onRowClick).toHaveBeenCalledWith(rows[0]);
+  });
+
+  it("falls back to the first primary column after identity for the mobile datum", () => {
+    const fallbackColumns: ColumnDef<Row>[] = [
+      { key: "name", header: "الاسم", priority: "identity", render: (row) => row.name },
+      { key: "status", header: "الحالة", priority: "primary", render: (row) => `حالة ${row.name}` },
+      { key: "notes", header: "ملاحظات", priority: "detail", render: (row) => `ملاحظة ${row.name}` },
+    ];
+    act(() => { root.render(<EntityTable {...tableProps({ columns: fallbackColumns })} />); });
+    const datum = container.querySelector("[data-entity-table-mobile-datum]");
+    expect(datum?.textContent).toContain("الحالة");
+    expect(datum?.textContent).toContain("حالة الأول");
+    expect(datum?.textContent).not.toContain("ملاحظة");
+  });
+
+  it("keeps the shared view-mode switch removed", () => {
     act(() => { root.render(<EntityTable {...tableProps({ enableViewModeToggle: true, viewModeStorageKey: "test:view-mode", renderMobileCard: (row) => <div>بطاقة {row.name}</div> })} />); });
     expect(container.querySelector('[aria-label="طريقة العرض"]')).toBeNull();
     expect(container.querySelector('[data-compact-responsive-table]')).not.toBeNull();
-    expect(container.querySelector('[role="list"]')).toBeNull();
-  });
-
-  it("keeps ONE designated secondary datum visible on narrow mobile layouts", () => {
-    const richColumns: ColumnDef<Row>[] = [
-      { key: "name", header: "الاسم", priority: "identity", render: (row) => row.name },
-      { key: "amount", header: "المبلغ", priority: "secondary", render: (row) => row.name },
-      { key: "date", header: "التاريخ", priority: "detail", render: (row) => row.name },
-    ];
-    act(() => { root.render(<EntityTable {...tableProps({ columns: richColumns, mobileVisibleSecondaryKey: "amount" })} />); });
-    // The designated column loses the narrow-screen hide; the other stays hidden.
-    const amountCell = container.querySelector('th[data-column-priority="primary"]');
-    expect(amountCell?.textContent).toContain("المبلغ");
-    const hiddenDetail = container.querySelector('th[data-column-priority="detail"]');
-    expect(hiddenDetail?.getAttribute("class")).toContain("max-sm:hidden");
-  });
-
-  it("expands several rows at once and supports expand-all / collapse-all", () => {
-    const richColumns: ColumnDef<Row>[] = [
-      { key: "name", header: "الاسم", priority: "identity", render: (row) => row.name },
-      { key: "detail", header: "تفصيل كامل", priority: "detail", render: (row) => `تفاصيل ${row.name}` },
-    ];
-    act(() => { root.render(<EntityTable {...tableProps({ rows: rows.concat([{ id: "3", name: "الثالث" }]), columns: richColumns })} />); });
-
-    // Expand the first row, then a second row — both stay expanded.
-    const disclosures = Array.from(container.querySelectorAll<HTMLButtonElement>('button[aria-label="عرض كل تفاصيل الصف"]'));
-    act(() => { disclosures[0]?.click(); });
-    act(() => { disclosures[1]?.click(); });
-    expect(container.querySelectorAll('[data-row-disclosure]').length).toBe(2);
-    expect(container.textContent).toContain("تفاصيل الأول");
-    expect(container.textContent).toContain("تفاصيل الثاني");
-
-    // Expand all / collapse all toggle every disclosure row.
-    const expandAll = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("توسيع الكل"));
-    act(() => { (expandAll as HTMLButtonElement | undefined)?.click(); });
-    expect(container.querySelectorAll('[data-row-disclosure]').length).toBe(3);
-
-    const collapseAll = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("طي الكل"));
-    act(() => { (collapseAll as HTMLButtonElement | undefined)?.click(); });
-    expect(container.querySelectorAll('[data-row-disclosure]').length).toBe(0);
-  });
-
-  it("never shows bulk disclosure controls for tables without disclosure data", () => {
-    act(() => { root.render(<EntityTable {...tableProps()} />); });
-    expect(container.querySelector('[data-entity-table-bulk-disclosure]')).toBeNull();
   });
 });

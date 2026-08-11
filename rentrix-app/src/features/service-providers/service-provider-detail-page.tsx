@@ -134,6 +134,7 @@ export function ServiceProviderDetailPage() {
           <EntityTable
             aria-label="أعمال صيانة مزود الخدمة"
             rows={[...maintenanceJobs]}
+            mobileVisibleSecondaryKey="status"
             columns={[
               { key: 'title', header: 'الطلب', render: (job) => <div><p className="font-bold">{job.title ?? 'طلب صيانة'}</p><p className="text-xs text-muted-foreground" dir="ltr">{job.reference ?? ''}</p></div> },
               { key: 'location', header: 'الموقع', render: (job) => `${job.properties?.title ?? 'عقار غير محدد'}${job.units?.unit_number ? ` / ${job.units.unit_number}` : ''}` },

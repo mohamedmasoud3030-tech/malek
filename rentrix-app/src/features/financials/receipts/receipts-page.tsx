@@ -284,6 +284,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
             rows={filteredReceipts}
             columns={receiptColumns}
             keyOf={(receipt) => receipt.id}
+            mobileVisibleSecondaryKey="amount"
             isLoading={receiptsQuery.isLoading}
             error={receiptsQuery.error}
             onRetry={() => { void receiptsQuery.refetch(); }}

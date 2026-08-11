@@ -66,6 +66,7 @@ function ContractInvoicesTable({ snapshot }: Readonly<{ snapshot: ContractPaymen
       rows={snapshot.invoices}
       columns={columns}
       keyOf={(inv) => inv.id}
+      mobileVisibleSecondaryKey="status"
       emptyTitle="لا توجد فواتير مرتبطة"
       emptyDescription="لم يتم العثور على فواتير حالية لهذا العقد عبر مسار البيانات المعتمد."
     />

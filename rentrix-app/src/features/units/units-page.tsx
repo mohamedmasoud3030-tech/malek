@@ -335,6 +335,7 @@ export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
                 },
               ]}
               onRowClick={ctrl.navigateToUnit}
+              mobileVisibleSecondaryKey="status"
 
               keyOf={(unit) => unit.id}
               isLoading={

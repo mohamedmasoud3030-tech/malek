@@ -7,8 +7,8 @@ type TestRow = { id: string; label: string };
 const rows: TestRow[] = [{ id: 'row-1', label: 'برج الواحة' }];
 const columns: ColumnDef<TestRow>[] = [{ key: 'label', header: 'العقار', render: (row) => row.label }];
 
-describe('Visual Wave 1 — table wrapper accessibility contract', () => {
-  it('marks the actual table, exposes a named keyboard-focusable overflow region, and keeps row focus visible', () => {
+describe('Visual Wave 1 — shared responsive register accessibility contract', () => {
+  it('marks the actual desktop table, exposes a named keyboard-focusable overflow region, and keeps row focus visible', () => {
     const html = renderToStaticMarkup(
       <EntityTable
         aria-label="جدول الاختبار"
@@ -25,5 +25,30 @@ describe('Visual Wave 1 — table wrapper accessibility contract', () => {
     expect(html).toContain('tabindex="0"');
     expect(html).toContain('data-entity-table="true"');
     expect(html).toContain('focus-visible:ring-primary/35');
+  });
+
+  it('names the mobile register list with the same accessible label and keeps touch targets >= 44px', () => {
+    const html = renderToStaticMarkup(
+      <EntityTable
+        aria-label="جدول الاختبار"
+        rows={rows}
+        columns={[
+          { key: 'label', header: 'العقار', priority: 'identity', render: (row) => row.label },
+          { key: 'status', header: 'الحالة', priority: 'primary', render: () => 'نشط' },
+          { key: 'actions', header: 'إجراءات', priority: 'actions', render: () => <button type="button">عرض</button> },
+        ]}
+        keyOf={(row) => row.id}
+      />,
+    );
+
+    expect(html).toContain('role="list"');
+    expect(html).toContain('aria-label="جدول الاختبار"');
+    expect(html).toContain('data-entity-table-mobile-card="true"');
+    expect(html).toContain('data-entity-table-mobile-actions="true"');
+    // Trigger + card primary area keep the 44px minimum touch target.
+    expect(html).toContain('min-h-11');
+    // Mobile register never offers bulk disclosure chrome.
+    expect(html).not.toContain('توسيع الكل');
+    expect(html).not.toContain('data-entity-table-bulk-disclosure');
   });
 });

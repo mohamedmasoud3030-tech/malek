@@ -178,6 +178,7 @@ export function CommunicationHubView({
           rows={rows}
           columns={columns}
           keyOf={(row) => row.id}
+          mobileVisibleSecondaryKey="status"
         />
       </AsyncContentState>
 
