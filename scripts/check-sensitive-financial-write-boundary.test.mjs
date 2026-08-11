@@ -78,6 +78,21 @@ describe('check-sensitive-financial-write-boundary', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  it('detects multiline .from(payments).insert writes', () => {
+    const dir = makeTmpRepo();
+    const base = getHead(dir);
+    // Multiline pattern: .from() on one line, .insert() on the next
+    write(dir, 'rentrix-app/src/violation.ts', `const { data } = await supabase\n  .from('payments')\n  .insert({ amount: 100 });\n`);
+    commit(dir);
+    try {
+      run(dir, base);
+      assert.fail('Expected non-zero exit');
+    } catch (err) {
+      assert.ok(err.status !== 0, 'Script should exit non-zero for multiline pattern');
+    }
+    rmSync(dir, { recursive: true, force: true });
+  });
+
   it('allows .from(payments).select reads', () => {
     const dir = makeTmpRepo();
     const base = getHead(dir);

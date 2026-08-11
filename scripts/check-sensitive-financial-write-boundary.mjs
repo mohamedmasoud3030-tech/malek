@@ -59,8 +59,11 @@ const SENSITIVE_TABLES = [
   'deposit_transactions',
 ];
 
+// Detect both compact and multiline .from('table').insert/update/delete/upsert chains.
+// The regex allows optional whitespace/newlines between .from(), the table argument,
+// and the mutation method. This catches multiline query-builder patterns.
 const CLIENT_WRITE_RE = new RegExp(
-  `\\.from\\s*\\(\\s*([\"'])(${SENSITIVE_TABLES.join('|')})\\1\\s*\\)\\s*\\.\\s*(insert|update|delete|upsert)\\s*\\(`,
+  `\\.from\\s*\\(\\s*([\"'])(${SENSITIVE_TABLES.join('|')})\\1\\s*\\)\\s*\\n?\\s*\\.\\s*(insert|update|delete|upsert)\\s*\\(`,
   'gi',
 );
 

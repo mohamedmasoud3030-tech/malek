@@ -44,22 +44,23 @@ export async function fetchGovernedUsers(): Promise<GovernedUser[]> {
   }));
 }
 
+/**
+ * Updates a user's role and active status. The generated database types
+ * now include all six canonical roles (ADMIN, MANAGER, ACCOUNTANT,
+ * OPERATIONS, USER, VIEWER) matching the migration CHECK constraint.
+ */
 export async function updateGovernedUserAccess(input: Readonly<{
   id: string;
   role: UserRole;
   isActive: boolean;
 }>): Promise<void> {
-  // The Supabase generated types still reflect the legacy three-role model.
-  // The database accepts all six canonical roles; this cast bridges the gap
-  // until generated types are regenerated through the approved process.
-  const updatePayload: Record<string, unknown> = {
-    role: input.role,
-    is_active: input.isActive,
-    status: input.isActive ? 'ACTIVE' : 'INACTIVE',
-  };
   const { error } = await supabase
     .from('users')
-    .update(updatePayload as never)
+    .update({
+      role: input.role,
+      is_active: input.isActive,
+      status: input.isActive ? 'ACTIVE' : 'INACTIVE',
+    })
     .eq('id', input.id);
 
   if (error) throw error;

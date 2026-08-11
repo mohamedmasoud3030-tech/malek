@@ -250,7 +250,7 @@ Repository implementation for portions of S02/S04/S06/S07/S08 is acknowledged in
 | G3 — Company isolation | repository + exact deployed negative tests | PARTIAL: repository/ephemeral pass; live absent |
 | G4 — Posting and reversal | owner-agency/master-lease included scope passes event/retry/reversal tests | PARTIAL |
 | G5 — GL/subledger reconciliation | 1201/2000/1300/2200/2300 and included lease controls tie within 0.001 | FAIL/open |
-| G6 — Permissions/Maker-Checker | six roles/effective grants/designated approvals verified | PARTIAL/open: six-role model, capability matrix, maker-checker for contracts/settlements/voids/permissions all implemented in repository; live migration and hosted verification not performed |
+| G6 — Permissions/Maker-Checker | six roles/effective grants/designated approvals verified | FAIL/open: six-role model and settlement maker-checker trigger implemented in repository; migration replay pending; receipt VOID lifecycle incomplete; live verification not performed |
 | G7 — Financial reports | GL statements and cash flow complete/reconciled | PARTIAL/open |
 | G8 — Mobile/desktop/RTL/browser | completed hosted Browser Readiness and acceptance evidence | FAIL: run cancelled; staging skipped |
 | G9 — Main CI/release checks | mandatory code/database/governance/browser checks green on candidate | PARTIAL: PR #1430 code/database/governance passed; browser did not |
