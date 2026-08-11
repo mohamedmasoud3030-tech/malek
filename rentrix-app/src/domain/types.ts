@@ -130,7 +130,7 @@ export interface OwnerSettlement {
   createdAt: string;
 }
 
-export type UserRole = 'ADMIN' | 'MANAGER' | 'USER';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER';
 
 export interface AuditEvent {
   id: string;

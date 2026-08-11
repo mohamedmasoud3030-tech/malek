@@ -25,7 +25,10 @@ import { fetchGovernedUsers, updateGovernedUserAccess, type GovernedUser } from 
 const roleDescriptions: ReadonlyArray<Readonly<{ role: UserRole; description: string }>> = [
   { role: 'ADMIN', description: 'إدارة كاملة للمكتب والمستخدمين والحوكمة.' },
   { role: 'MANAGER', description: 'تشغيل يومي ومراجعة طلبات الصلاحية فقط، دون إدارة الأدوار أو الشركة.' },
+  { role: 'ACCOUNTANT', description: 'عرض ومراجعة البيانات المالية وإعداد التقارير وعمليات المطابقة البنكية. لا يملك صلاحية الاعتماد أو الصرف.' },
+  { role: 'OPERATIONS', description: 'إدارة العقارات والعقود والصيانة ومراكز التكلفة. لا يملك صلاحيات مالية.' },
   { role: 'USER', description: 'وصول أساسي مع صلاحيات إضافية معتمدة حسب الحاجة.' },
+  { role: 'VIEWER', description: 'عرض فقط لجميع الوحدات والبيانات الأساسية دون أي صلاحية تعديل أو إنشاء.' },
 ];
 
 function UserAccessCard({ user, currentUserId, isSaving, onSave }: Readonly<{

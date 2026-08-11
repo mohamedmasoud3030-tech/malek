@@ -49,13 +49,17 @@ export async function updateGovernedUserAccess(input: Readonly<{
   role: UserRole;
   isActive: boolean;
 }>): Promise<void> {
+  // The Supabase generated types still reflect the legacy three-role model.
+  // The database accepts all six canonical roles; this cast bridges the gap
+  // until generated types are regenerated through the approved process.
+  const updatePayload: Record<string, unknown> = {
+    role: input.role,
+    is_active: input.isActive,
+    status: input.isActive ? 'ACTIVE' : 'INACTIVE',
+  };
   const { error } = await supabase
     .from('users')
-    .update({
-      role: input.role,
-      is_active: input.isActive,
-      status: input.isActive ? 'ACTIVE' : 'INACTIVE',
-    })
+    .update(updatePayload as never)
     .eq('id', input.id);
 
   if (error) throw error;
