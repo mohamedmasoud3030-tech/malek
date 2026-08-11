@@ -78,7 +78,7 @@ Evidence ليس جملة «تم». يجب أن يكون واحدًا أو أكث
 **الحالة:** Agent `10/10` — `READY_FOR_INDEPENDENT_REVIEW` على `main@1da93df9576ac044f39f96f347785b76b86d9792`. Reviewer لم يُمس ويظل مستقلًا.
 
 - [x] **S03-T01** — Audit existing GL schema against ADR 0010 and ADR 0011; produce gap matrix before SQL.
-  - Evidence: `docs/accounting/S03_T01_GL_GAP_AUDIT.md` يحصر objects والـposting paths ويصنف KEEP/CHANGE/ADD/DEPRECATE قبل SQL الجديد.
+  - Evidence: `docs/source-of-truth/04_FINANCE_AND_ACCOUNTING_MODEL.md` (Document 4) و`docs/source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md` يحصران objects والـposting paths ويصنفان الثوابت/الفجوات قبل SQL الجديد.
 - [x] **S03-T02** — Make account identity company-scoped with account_type, normal_balance, currency and precision.
   - Evidence: `20260804030000_stage3_gl_core_chart_of_accounts_and_periods.sql`; اختبارات `stage3-chart-of-accounts.test.ts` و`supabase/tests/stage3_gl_core.sql`; PR #1390 أغلق direct browser mutation على `accounts`.
 - [x] **S03-T03** — Seed required control/revenue/expense/master-lease accounts idempotently per company.
@@ -96,7 +96,7 @@ Evidence ليس جملة «تم». يجب أن يكون واحدًا أو أكث
 - [x] **S03-T09** — Make every posting RPC idempotent by event_id and safe under concurrent retries.
   - Evidence: `post_journal_event` يثبت الهوية `(company_id, source_type, source_id, event_id)`؛ PR #1392 أضاف `scripts/ci/run-stage3-posting-concurrency-test.sh` بجلستين PostgreSQL متداخلتين. Isolated Supabase run `31206119050` = SUCCESS ويثبت batch canonical واحدًا وlineين فقط مع retry `idempotent=true`.
 - [x] **S03-T10** — Publish GL posting API contract and account-resolution runbook.
-  - Evidence: PR #1390 — `docs/accounting/S03_GL_POSTING_API_RUNBOOK.md` يوثق signatures، SQLSTATEs، account resolution، period semantics، reversal contract، وحدود ترحيل writers اللاحقة.
+  - Evidence: PR #1390 — `docs/source-of-truth/04_FINANCE_AND_ACCOUNTING_MODEL.md` (Document 4) يوثق signatures، SQLSTATEs، account resolution، period semantics، reversal contract، وحدود ترحيل writers اللاحقة.
 
 ---
 

@@ -56,8 +56,6 @@ A migration/test may exist for S04/S06/S08 while the governance ledger still gra
 For governance and execution tracking:
 - [`governance/final-decision-register.json`](governance/final-decision-register.json) — Locked decisions D01-D18
 - [`governance/10-stage-master-plan.json`](governance/10-stage-master-plan.json) — Governed 10-stage execution plan/status
-- [`docs/execution/10_STAGE_STATUS_AR.md`](docs/execution/10_STAGE_STATUS_AR.md) — dual-view human status: repository reality vs governed credit
-- [`docs/decisions/`](docs/decisions/) — ADRs and decision files
 - [`docs/execution/`](docs/execution/) — Arabic execution checklists/ledgers
 
 Read [`AGENTS.md`](AGENTS.md) before making changes.

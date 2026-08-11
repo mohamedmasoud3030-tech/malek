@@ -41,7 +41,7 @@ The frontend is not a trusted security boundary. Hiding an action or route never
 - `getWriteAccessState()` based on any effective write capability;
 - action-specific financial permissions.
 
-ADR `docs/decisions/0015-owner-decisions-roles-void-due-from-owner-contract-governance.md` accepts six roles. Therefore the target-vs-current mismatch is a real implementation conflict (`GAP-001`), not an undocumented preference.
+The approved final decision register (`governance/final-decision-register.json`) accepts six roles. Therefore the target-vs-current mismatch is a real implementation conflict (`GAP-001`), not an undocumented preference.
 
 ## Multi-company isolation
 
@@ -103,7 +103,7 @@ These remain external/runtime gates and are recorded as gaps where release-relev
 
 - `rentrix-app/src/features/auth/permissions.ts`
 - `rentrix-app/src/app/navigation/route-contract.ts`
-- `docs/decisions/0015-owner-decisions-roles-void-due-from-owner-contract-governance.md`
+- `governance/final-decision-register.json`
 - `supabase/migrations/**`
 - `supabase/tests/**`
 - Document 7 for rule-by-rule implementation status.
