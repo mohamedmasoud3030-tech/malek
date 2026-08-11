@@ -2,8 +2,8 @@
 
 > **Status:** CANONICAL  
 > **Effective date:** 2026-08-11  
-> **Repository reality baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`  
-> **Working branch:** `arena/019fecf2-malik`  
+> **Repository reality baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
+> **Audit cut-off:** 2026-08-11
 > **Purpose:** one authoritative entry point for product, domain, accounting, architecture, UX, implementation reality, and release closeout.
 
 ## 1. What this pack is
@@ -106,6 +106,7 @@ This does not erase repository reality. For example, S04/S06/S08 implementation 
 | `docs/execution/10_STAGE_AGENT_CHECKLIST_AR.md` | SUPPORTING | Agent evidence ledger | Agent-owned only |
 | `docs/execution/10_STAGE_REVIEW_LEDGER_AR.md` | SUPPORTING | Reviewer evidence ledger | Reviewer-owned only |
 | `docs/execution/10_STAGE_STATUS_AR.md` | SUPPORTING | Human-readable dual-view stage snapshot | Must distinguish repository reality from credit |
+| `.agents/skills/README.md` | SUPPORTING / CONTRIBUTOR ROUTING | Repository skill routing | Must point here, never to archived authority |
 | `docs/decisions/**` and `docs/adr/**` | SUPPORTING | Immutable decision history | Canonical pack references accepted decisions |
 | `docs/accounting/**`, `docs/security/**`, `docs/ui-ux/**`, `docs/audits/**` | SUPPORTING | Evidence and specialist detail | Cannot override pack |
 | `docs/source-of-truth/archive/01_CANONICAL_REALITY_AND_STATUS.md` | SUPERSEDED | Documents 01, 07 and 08 | Historical only |
@@ -134,10 +135,18 @@ A module is not complete because a PR merged. Applicable completion evidence fol
 
 `UI → Service/RPC → Database → RLS/Permissions → Audit → Tests → QA/Runtime evidence`.
 
-## 10. Brownfield audit baseline and focused verification
+## 10. Brownfield audit baseline and verification record
 
-The pack was rebuilt against `main@75832b2f139f3b759325dcf17cf78101093671b4`. Focused verification performed during the audit covered navigation/permissions, Stage 3 GL, S04 property-management GL contracts, S06 master-lease GL contracts, S08 read-only analysis, company isolation and permission-request lifecycle. Those tests prove repository contracts only; hosted/live verification remains separately classified.
+The pack describes `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`, the merge of PR #1430. Evidence is deliberately split:
+
+- **Repository tests from the original audit:** 177/177 focused tests passed for navigation/permissions, Stage 3 GL, S04, S06, S08, company isolation and permission-request lifecycle.
+- **PR #1430 CI on head `a6aaa8648b21945c0b92a9da851cdd4f5e2c7f96`:** documentation links, typecheck, lint, architecture, production build, full application tests and financial tests passed.
+- **Release Blocker Gate on the same head:** code and ephemeral database/Storage jobs passed; authenticated staging was skipped.
+- **Browser Readiness on the same head:** the complete browser suite was cancelled during its run; seeded staging smoke was skipped. It is not passing evidence.
+- **Vercel:** the PR preview reached Ready. Availability of a preview is not acceptance of its journeys.
+
+GitHub workflow run/job evidence is recorded in Document 7. Live Supabase/Auth configuration, hosted authenticated journeys and a real one-office pilot remain separate external gates.
 
 ## 11. Release rule
 
-P7/S07 or any later stage is not started, completed, or credited merely by editing this documentation. Document 8 defines closeout work packages; governance ledgers define governed stage credit. Historical correction/backfill remains prohibited until its prerequisites and approvals are satisfied.
+P7/S07 remains `PARTIAL` in the governed master plan and is not advanced by editing this documentation. Document 8 defines closeout work packages; governance ledgers define governed stage credit. Historical correction/backfill remains prohibited until its prerequisites and approvals are satisfied.

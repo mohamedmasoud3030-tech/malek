@@ -1,7 +1,7 @@
 # MALEK Canonical Pack — Document 4: Finance and Accounting Model
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`
+> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
 
 ## Accounting authority
 
@@ -63,28 +63,44 @@ Evidence: `rentrix-app/src/features/accounting/accountingDomain.ts` and `supabas
 
 ## Event-to-accounting mapping
 
-| Event | Preconditions | Debit | Credit | Primary source / evidence | Reversal |
-|---|---|---|---|---|---|
-| OWNER creditor tenant collection | valid collection, company scope | 1111/1120 | 2000 | payment/collection event | compensating collection/refund event + GL reversal where required |
-| OFFICE creditor invoice | valid contract/invoice | 1201 | 2000 | invoice | credit note / reversal, not delete |
-| OFFICE creditor collection | open tenant receivable | 1111/1120 | 1201 | payment | refund/reversal path |
-| RATE management fee | actual qualifying collection | 2000 (and/or owner settlement position) | 4100 + 2100 if tax | fee recognition event | controlled reversal |
-| FIXED_MONTHLY fee accrual | active service period | 1300 | 4100 + 2100 if tax | accrual event | catch-up/reversal |
-| Owner expense paid by office | approved owner expense | 1300 | 1111/1120 | expense/payment | reversal/owner recovery adjustment |
-| Lawful owner offset | enforceable right + settlement evidence | 2000 | 1300 | settlement | compensating settlement adjustment |
-| Deposit receipt | deposit received | 1111/1120 | 2200 | deposit transaction | refund/application/reversal |
-| Deposit applied to OFFICE creditor AR | approved claim/allocation | 2200 | 1201 | deposit application | compensating reversal |
-| Deposit applied for owner benefit | approved claim/allocation | 2200 | 2000 | deposit application | compensating reversal |
-| Office damage compensation right | explicit contractual office right | 2200 | 4300 | approved claim | compensating reversal |
-| Broker commission approved | approved commission | 6110 | 2300 | commission | reversal |
-| Broker commission paid | approved payable | 2300 | 1111/1120 | payment | payment reversal |
-| Owner payout | approved settlement | 2000 | 1111/1120 | settlement payment | controlled reversal/correction |
-| MASTER_LEASE inception | approved head lease | 1600 | 2500 | master-lease lifecycle | modification/termination accounting |
-| MASTER_LEASE depreciation | period charge | 6200 | 1600/accumulated treatment as engine defines | schedule | adjustment |
-| MASTER_LEASE interest | liability schedule | 6300 | 2500 | schedule | adjustment |
-| Sublease rent income | principal/sublease event | cash/AR | 4000 | sublease event | reversal/credit |
+The status column describes the complete product path at the baseline, not merely whether a posting function exists.
+
+| Event | Preconditions | Debit | Credit | Source record / repository evidence | Reversal method | Status |
+|---|---|---|---|---|---|---|
+| OWNER creditor tenant collection | valid company/contract/payment; `OWNER_IS_CREDITOR`; open period; stable event id | 1111/1120 | 2000 | payment/receipt; `gl_pm_post_collection_owner_is_creditor` in `20260809010000_s04_property_management_gl_rpcs.sql` | payment/receipt VOID plus `reverse_journal_batch`/compensating refund | PARTIAL — kernel tested, UI event wiring/reconciliation open |
+| OFFICE creditor invoice | active approved contract; `OFFICE_IS_CREDITOR`; valid invoice | 1201 | 2000 | invoice; `gl_pm_post_invoice_office_is_creditor` | credit note/reversal, never delete | PARTIAL — kernel tested, complete journey open |
+| OFFICE creditor collection | open 1201 balance; valid payment | 1111/1120 | 1201 | payment; `gl_pm_post_collection_office_is_creditor` | controlled refund/reversal | PARTIAL — kernel tested, complete journey open |
+| RATE management fee | qualifying actual collection; agreement RATE/ON_COLLECTION; server amount/tax | 2000 | 4100 and 2100 when configured | collection source/event; S04 GL RPC fee split | reverse the source event/fee batch | PARTIAL — posting kernel exists; browser/service trigger not proven |
+| FIXED_MONTHLY fee accrual | active service dates; DAILY_ACCRUAL terms; open period; idempotent day/source key | 1300 | 4100 and 2100 when configured | daily accrual event | catch-up or reversal batch | NOT_IMPLEMENTED end-to-end; policy/version fields exist |
+| Company operating expense | approved company obligation and payment basis | 6100 | 1111/1120 or payable where implemented | `expenses`; expense atomic RPCs | expense reversal/adjustment | IMPLEMENTED_UNVERIFIED across all UI variants |
+| Owner expense paid by office | approved owner obligation; owner/property/agreement scope | 1300 | 1111/1120 | owner expense/payment; S04 Due-from-Owner surface | reversal or recovery adjustment | PARTIAL — posting support exists; full recovery path open |
+| Lawful owner offset | enforceable agreement `offset_allowed`; approved settlement order; sufficient 2000 | 2000 | 1300 | settlement and reserved sources | compensating settlement adjustment | PARTIAL — decision/data fields exist; end-to-end offset proof open |
+| Deposit receipt | valid contract/custodian/beneficiary; 3dp amount; atomic request | 1111/1120 | 2200 | deposit + held transaction | refund/application/reversal transaction | CONFLICT — legacy 2dp/direct-write path coexists with kernels |
+| Deposit applied to OFFICE creditor AR | approved evidence/allocation; `OFFICE_IS_CREDITOR`; amount ≤ remaining | 2200 | 1201 | deposit application; `gl_pm_post_deposit_application` | compensating deposit reversal | PARTIAL |
+| Deposit applied for owner benefit | approved evidence/allocation; owner beneficiary | 2200 | 2000 | deposit application; `gl_pm_post_deposit_application` | compensating deposit reversal | PARTIAL |
+| Office damage compensation right | explicit contract right and approved claim | 2200 | 4300 | approved deposit claim | compensating reversal | PARTIAL |
+| Broker commission approved | valid source; distinct approval where designated | 6110 | 2300 | commission; S04 commission posting / commission lifecycle migrations | commission reversal | IMPLEMENTED_UNVERIFIED end-to-end |
+| Broker commission paid | approved unpaid commission; stable request id | 2300 | 1111/1120 | `pay_commission_atomic`; `commission_payment_lifecycle.sql` | `reverse_commission_atomic` | VERIFIED_IMPLEMENTED in repository; live proof external |
+| Owner payout | approved rederived settlement; reserved sources; payment authority | 2000 | 1111/1120 | owner settlement pay RPC | controlled settlement correction; post-payout refund → 1300 | PARTIAL — reservation/stale-total path tested, wider lifecycle open |
+| Receipt/payment VOID | posted original; reason; authorized actor; idempotent reversal identity | reverse original credits | reverse original debits | `void_receipt_atomic`; Stage-3 engine-managed receipt void | reversal batch linked to original | VERIFIED_IMPLEMENTED for receipt contract; broader credit/refund matrix open |
+| MASTER_LEASE inception | approved/classified head lease; payment schedule; rate snapshot | 1600 | 2500 | measurement + `gl_ml_create_initial_measurement` | modification/termination/remeasurement | PARTIAL — DB and TypeScript kernels, no complete product workflow |
+| MASTER_LEASE payment/interest | due schedule item; open period | 2500 principal + 6300 interest | 1111/1120 | master-lease schedule/posting intent | controlled adjustment/reversal | PARTIAL |
+| MASTER_LEASE depreciation | approved ROU schedule/period | 6200 | 1600 or accumulated-depreciation treatment explicitly defined by engine | schedule/posting intent | controlled adjustment | PARTIAL |
+| Sublease rent income | valid principal sublease invoice/collection | cash or AR as event requires | 4000 | sublease event | credit/reversal | PARTIAL |
 
 The exact line shape must be produced by approved server-side posting functions; this table defines accounting intent, not browser-authored journal payloads.
+
+## Recognition and report bases
+
+| Output | Required basis | Inclusion / exclusion contract | Authoritative source at target |
+|---|---|---|---|
+| Daily collections | collected/posting date, explicitly labelled | non-VOID payment events; refunds/reversals reduce the period effect | payment subledger reconciled to cash/bank GL |
+| Tenant statement | invoiced obligations and collected/applied amounts | excludes deleted/VOID/CANCELLED economic effects; shows reversal/credit events | tenant operational subledger; 1201 reconciliation only for OFFICE creditor |
+| Owner statement/settlement | collected agent funds, earned fees/tax, owner expenses, lawful offsets and payouts | no gross owner rent as office revenue; cancelled settlements excluded | owner subledgers reconciled to 2000/1300 |
+| Trial balance, P&L, balance sheet, general ledger | POSTED GL by resolved accounting period | DRAFT excluded; REVERSED economic effect represented by reversal batch | `journal_batches` + `journal_lines` |
+| Cash flow | posted cash/bank movements by documented classification | VOID/reversal effects included correctly; all 1111/1120 movements covered | posted GL target; legacy report RPC requires reconciliation proof |
+| Rent roll | contract/invoice schedule as-of date | active occupancy and valid scheduled obligations; not a GL reconstruction | operational contract/invoice subledger |
+| VAT return | configured tax snapshots and posted taxable events | VOID/CANCELLED/reversal treatment explicit | tax subledger/posting lines reconciled to 2100 |
 
 ## GL and posting controls
 
@@ -118,6 +134,13 @@ Monthly periods progress OPEN → SOFT_CLOSED → HARD_CLOSED. HARD_CLOSED is ir
 ## Historical correction
 
 S08 read-only analysis must precede S09 correction. Approved corrections are company/period/source-scoped, append-only and accompanied by before/after evidence. No global anonymous “one correction entry” is acceptable.
+
+## Baseline conflicts and limits
+
+- `tenant_deposits`/`deposit_transactions` still carry legacy 2-decimal/direct-write behavior in `20260718100928_real_deposits_ledger.sql`; this conflicts with the 3dp/RPC-only target until `GAP-009` closes.
+- Report RPCs exist across several migration generations. Their presence does not prove every report now derives exclusively from canonical posted GL or reconciles to every operational control account (`GAP-013/014`).
+- `gl_pm_*` and `gl_ml_*` functions are meaningful implementation, but no browser/service evidence at the baseline proves the full user journey invokes them.
+- No document in the repository can supply legal offset enforceability, statutory tax approval or complete IFRS judgment. Those remain external gates.
 
 ## External limits
 

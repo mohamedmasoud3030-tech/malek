@@ -1,6 +1,6 @@
 # MALEK — الحالة التنفيذية الرسمية للمراحل العشر
 
-> **Repository reality baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`  
+> **Repository reality baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
 > **Governed stage authority:** `governance/10-stage-master-plan.json` + Agent/Reviewer ledgers  
 > **Canonical implementation reality:** `docs/source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`  
 > **قاعدة إلزامية:** وجود كود/SQL/اختبارات لا يمنح Stage Credit تلقائيًا، وغياب Credit لا يعني أن الكود غير موجود.
@@ -27,7 +27,7 @@
 | S07 — التقارير والمصالحات والإقفال | PARTIAL | تقارير/Accounting surfaces وGL موجودة جزئيًا؛ الـmaster plan نفسه يسجل PARTIAL | إكمال financial statements، control reconciliations، cash flow، close blocking وcurrent-SHA evidence |
 | S08 — تحليل التاريخ | NOT_STARTED | **يوجد تنفيذ فعلي**: `scripts/s08/` و`evidence/s08/` و`src/s08/` tests؛ لكنه لم يحصل على governed approval/frozen analysis credit | مراجعة مستقلة، frozen baseline، approval/sign-off قبل أي S09 writes |
 | S09 — التصحيح التاريخي | NOT_STARTED | لا يجوز الاستدلال على التصحيح من وجود S08 code | ممنوع البدء قبل اعتماد S08؛ بعدها append-only scoped corrections فقط |
-| S10 — الاختبارات والPilot والإطلاق | NOT_STARTED | بنية CI/QA واختبارات كثيرة موجودة؛ توجد release blockers/baseline failures خارج هذا doc-only branch | hosted QA، zero release blockers، live config/backup proof، one-office pilot، reconciliation، accountant/owner sign-off |
+| S10 — الاختبارات والPilot والإطلاق | NOT_STARTED | بنية CI/QA موجودة. على رأس PR #1430 نجح CI وRelease Blocker code/database وVercel Preview؛ لكن Browser Readiness أُلغي، seeded/authenticated staging لم يعمل، ولا يوجد live config/backup أو pilot كامل | إكمال browser/hosted QA، live config/backup proof، one-office pilot، reconciliation، accountant/owner sign-off |
 
 ## أدلة Repository Reality المهمة
 
@@ -45,6 +45,15 @@
 - الإجمالي: **177/177** focused tests passed.
 - TypeScript build: passed with pnpm `10.11.1`.
 - Production build: passed with pnpm `10.11.1`.
+
+## نتائج PR #1430 التي أنتجت الـbaseline الحالي
+
+- `CI / Typecheck, Lint & Build` — **SUCCESS** على head `a6aaa864...`: docs links، typecheck، lint، architecture، production build، test typecheck، full application tests وfinancial tests.
+- `Release Blocker Gate` — **SUCCESS** للكود وephemeral database/Storage lifecycle؛ authenticated staging job كان **SKIPPED**.
+- `Browser Readiness / E2E Smoke` — **CANCELLED** أثناء complete browser suite؛ seeded staging smoke كان **SKIPPED**.
+- Vercel Preview — **READY**، وهو دليل توفر preview فقط وليس قبولًا للرحلات.
+
+الـworkflow runs التفصيلية وأرقامها موجودة في `docs/source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md`.
 
 هذه النتائج تخص Repository Reality فقط. لا تعني أن hosted/live environment أو Reviewer ledger تم اعتمادهما.
 

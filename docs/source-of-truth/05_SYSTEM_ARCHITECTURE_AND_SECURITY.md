@@ -1,7 +1,7 @@
 # MALEK Canonical Pack — Document 5: System Architecture and Security
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`
+> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
 
 ## Architecture summary
 
@@ -30,6 +30,23 @@ The frontend is not a trusted security boundary. Hiding an action or route never
 - `rentrix-app/src/app/navigation/route-contract.ts` describes canonical routes, aliases, view bindings and permissions.
 - Feature services/hooks call Supabase/RPC boundaries; React components do not become accounting/security authorities.
 - React Query/Zustand/client state may cache/display data but cannot define financial truth.
+
+The route layer is TanStack Router, the query/cache layer is TanStack Query, and direct Supabase SDK calls are distributed across feature services/hooks. This is not a conventional server application: security and financial correctness therefore depend on RLS, restrictive grants, database constraints and narrow business RPCs. Any browser `.from(...).insert/update/delete` against a sensitive table is an explicit review target, even if the UI also checks permissions.
+
+## Evidence classification at the baseline
+
+| Area | Verified in repository | Claimed/supporting only | Requires live verification | Missing/conflicting control |
+|---|---|---|---|---|
+| React/Vite build | PR #1430 CI typecheck/lint/architecture/build/tests passed | — | actual client/browser behavior | Browser Readiness run was cancelled |
+| Routing/IA | route contract/tree and navigation tests | screenshots/old IA docs | hosted redirects and protected states | `/ai-assistant` canonical rule conflicts with redirect-to-overlay implementation (`GAP-023`) |
+| Active company | Auth Hook SQL, CompanyProvider claim validation, membership tests | migration comments | hook enabled for deployed project; issued-token claim; membership drift | live gate `GAP-003/021` |
+| RLS/company isolation | hardening migrations, pgTAP/PGlite/ephemeral release database gate | blanket “all tables isolated” claims | deployed policies/grants/schema | generated types do not enumerate all newer tables |
+| Roles/permissions | three roles, typed capabilities, effective grants and request lifecycle tests | six-role target in ADR0015 | migrated live role data and JWT semantics | three-vs-six-role conflict (`GAP-001`) |
+| Maker-Checker | contract maker/checker RPCs, constraint and pgTAP; permission-review self-approval denial | coverage of every sensitive approval | deployed behavior and audited exceptions | VOID/settlement/other designated actions not proven uniformly (`GAP-002`) |
+| GL write boundary | canonical batches/lines, lifecycle triggers, write-boundary guard/tests | “all financial paths use GL engine” | deployed grants/functions | legacy deposit/report and remaining sensitive-write inventory (`GAP-009/018`) |
+| Storage/documents | private bucket policy migrations, file validation, signed URLs, ephemeral Storage release job | legal sufficiency of templates | deployed bucket/policies/object isolation | legal/template approval external (`GAP-019/021`) |
+| Audit/idempotency | business RPC audit/source/request patterns and unique keys | universal coverage | deployed logs, retention and alerting | final sensitive-operation inventory remains open |
+| Operations/observability | QA scripts, workflow artifacts, error-state components | production monitoring/SLO/incident readiness | logs/alerts/backups/restore | release operations remain `GAP-021/022` |
 
 ## Current authorization reality
 
@@ -61,7 +78,7 @@ Repository evidence includes hardening migrations and tests such as:
 - `supabase/migrations/20260723000000_harden_remaining_rpcs_company_isolation.sql`
 - `supabase/migrations/20260804000000_fix_owner_agreement_company_isolation.sql`
 - `supabase/tests/owner_agreement_company_isolation.sql`
-- service-provider company isolation introduced by baseline commit `75832b2f...`.
+- service-provider company isolation in `20260810170000_service_providers_production_grade.sql`, `20260810171000_service_provider_atomic_writes.sql` and `supabase/tests/service_providers_company_isolation.sql`.
 
 Focused repository tests passed during the brownfield audit. This supports `VERIFIED_IMPLEMENTED` for specific repository contracts, not a blanket statement that the deployed Supabase environment is identical.
 
@@ -71,7 +88,7 @@ Effective permission is determined from the user’s current role plus current g
 
 ## Maker-Checker
 
-Approved policy requires creator/requester separation for material contracts, VOID and designated financial approvals. Current route/UI controls and permission catalog are not sufficient proof of authoritative identity separation. This remains `GAP-002` until backend enforcement and tests cover the complete designated set.
+Approved policy requires creator/requester separation for material contracts, VOID and designated financial approvals. Contract enforcement is real repository implementation: `20260808010000_s04_contract_lifecycle_maker_checker_v2.sql` stores maker/checker identities/signatures, rejects self-approval and gates activation, with pgTAP coverage in `supabase/tests/s04_contract_lifecycle_maker_checker_v2.sql`. Permission-request review also rejects self-review in `20260810113000_p61_permission_reviewer_authority_closeout.sql`. `GAP-002` is the remaining coverage gap across VOID, owner-settlement and every other designated sensitive approval, plus the absent complete React workflow—not a claim that Maker-Checker is wholly absent.
 
 ## Financial write boundary
 
@@ -80,6 +97,8 @@ GL posting/reversal functions are service/server-oriented. Browser code must cal
 ## Audit and idempotency
 
 Sensitive operations must preserve actor, company, source/event identity, timestamps/reasons and resulting business/GL references. Retried business events must be idempotent where double posting or double reservation is financially material.
+
+Concrete patterns include the GL unique key `(company_id, source_type, source_id, event_id)`, financial operation request ids, advisory locks for selected workflows, immutable settlement reservation links and reversal references. These patterns are not yet one universal platform contract: each sensitive RPC must be inventoried for company validation, safe `search_path`, grants, request identity, audit event and retry-conflict behavior.
 
 ## Storage and documents
 
@@ -97,6 +116,8 @@ The repository cannot prove by itself:
 - hosted browser behavior;
 - backup/restore readiness.
 
+`supabase/config.toml` is intentionally a deterministic local/CI database configuration and contains no Auth Hook section. The presence of `public.custom_access_token_hook` in migrations therefore cannot prove that hosted Supabase invokes it.
+
 These remain external/runtime gates and are recorded as gaps where release-relevant.
 
 ## Evidence anchors
@@ -107,3 +128,11 @@ These remain external/runtime gates and are recorded as gaps where release-relev
 - `supabase/migrations/**`
 - `supabase/tests/**`
 - Document 7 for rule-by-rule implementation status.
+
+## Error handling and operational risk
+
+- Auth/session failures clear unusable local session state and fail protected access closed in `rentrix-app/src/services/auth-service.ts`.
+- Active-company resolution clears cached queries and refuses to expose company data unless a server-issued token claim matches an active membership in `rentrix-app/src/hooks/use-company.tsx`.
+- User-facing services translate many Supabase errors, but consistent typed domain-error mapping is not universal; raw backend text must not leak sensitive schema/config detail.
+- CI artifacts and QA scripts provide diagnostics, but they are not production observability. No current repository evidence proves alert routing, retention, SLOs, incident response, backup restoration or production audit review.
+- The PR #1430 Vercel preview was Ready, while the complete Browser Readiness run was cancelled and authenticated staging was skipped. Availability must not be recorded as journey acceptance.
