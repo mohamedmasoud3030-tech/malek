@@ -2,7 +2,8 @@ import { toast } from 'sonner';
 import { openWhatsApp, shareOrCopy } from '@/services/action-service';
 import { documentService } from '@/services/documents/DocumentService';
 import { toContractDocumentPayload, type ContractDocumentData } from '@/services/documents/documentPayloadAdapters';
-import type { DocumentCompanySettings } from '@/services/documents/companyIdentity';
+import { hasCompleteCompanyIdentity, type DocumentCompanySettings } from '@/services/documents/companyIdentity';
+import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { ContractDetail } from '../services/contractService';
 
 function toContractStatus(status: ContractDetail['status']): ContractDocumentData['contractStatus'] {
@@ -33,32 +34,35 @@ function toContractDocumentData(contract: ContractDetail): ContractDocumentData 
   };
 }
 
+/**
+ * Readiness is re-derived here rather than trusted from the caller: these
+ * two functions are the contract feature's only document entry points, and
+ * they are reachable from several surfaces (detail page, preview dialog,
+ * action menu). `hasCompleteCompanyIdentity` is the same canonical rule
+ * `useDocumentSettings().isReady` uses, so a handler invoked with an
+ * incomplete identity fails closed with the standard Arabic message instead
+ * of reaching the engine.
+ */
 export function exportContractPdf(contract: ContractDetail, companySettings: DocumentCompanySettings): void {
-  void runDocumentAction(
-    () => documentService.downloadDocumentPdf('contract', {
+  void runGuardedDocumentAction({
+    isReady: hasCompleteCompanyIdentity(companySettings),
+    operation: () => documentService.downloadDocumentPdf('contract', {
       settings: companySettings,
       payload: toContractDocumentPayload(toContractDocumentData(contract)),
     }),
-    'تعذر تصدير العقد كملف PDF.',
-  );
+    fallbackMessage: 'تعذر تصدير العقد كملف PDF.',
+  });
 }
 
 export function printContractView(contract: ContractDetail, companySettings: DocumentCompanySettings): void {
-  void runDocumentAction(
-    () => documentService.printDocument('contract', {
+  void runGuardedDocumentAction({
+    isReady: hasCompleteCompanyIdentity(companySettings),
+    operation: () => documentService.printDocument('contract', {
       settings: companySettings,
       payload: toContractDocumentPayload(toContractDocumentData(contract)),
     }),
-    'تعذرت طباعة العقد.',
-  );
-}
-
-async function runDocumentAction(action: () => Promise<void>, fallback: string): Promise<void> {
-  try {
-    await action();
-  } catch (error) {
-    toast.error(error instanceof Error ? error.message : fallback);
-  }
+    fallbackMessage: 'تعذرت طباعة العقد.',
+  });
 }
 
 export async function shareContractLink(contract: ContractDetail) {

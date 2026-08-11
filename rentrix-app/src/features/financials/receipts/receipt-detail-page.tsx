@@ -17,7 +17,10 @@ import { toast } from 'sonner';
 import { openWhatsApp, shareOrCopy } from '@/services/action-service';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReceiptDocumentPayload } from '@/services/documents/documentPayloadAdapters';
-import { runDocumentAction } from '@/services/documents/runDocumentAction';
+import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
+
+/** A receipt cannot be issued before its authoritative row is loaded. */
+const MISSING_RECEIPT_MESSAGE = 'تعذر إصدار الإيصال: لم يتم تحميل بيانات الإيصال بعد. يرجى الانتظار حتى اكتمال التحميل ثم إعادة المحاولة.';
 
 function receiptDetailStatusTone(status: string): 'success' | 'danger' | 'warning' {
   if (status === 'posted') return 'success';
@@ -61,26 +64,35 @@ export function ReceiptDetailPage() {
   }, [receipt, documentSettings]);
 
   const handlePrint = useCallback(async () => {
-    const document = buildReceiptDocument();
-    if (!document || !documentSettings.isReady) return;
     setIsPrinting(true);
     try {
-      await runDocumentAction(
-        () => documentService.printDocument('receipt', { settings: document.settings, payload: toReceiptDocumentPayload(document.data) }),
-        'تعذرت طباعة الإيصال.',
-      );
+      // Readiness AND a loaded receipt are enforced inside the async
+      // boundary: the handler must fail closed with a visible Arabic reason,
+      // never emit a receipt with placeholder identity.
+      await runGuardedDocumentAction({
+        isReady: documentSettings.isReady,
+        operation: () => {
+          const receiptDocument = buildReceiptDocument();
+          if (!receiptDocument) throw new DocumentReadinessError(MISSING_RECEIPT_MESSAGE);
+          return documentService.printDocument('receipt', { settings: receiptDocument.settings, payload: toReceiptDocumentPayload(receiptDocument.data) });
+        },
+        fallbackMessage: 'تعذرت طباعة الإيصال.',
+      });
     } finally {
       window.setTimeout(() => setIsPrinting(false), 300);
     }
   }, [buildReceiptDocument, documentSettings.isReady]);
 
   const handleDownloadPdf = useCallback(async () => {
-    const document = buildReceiptDocument();
-    if (!document || !documentSettings.isReady) return;
-    await runDocumentAction(
-      () => documentService.downloadDocumentPdf('receipt', { settings: document.settings, payload: toReceiptDocumentPayload(document.data) }),
-      'تعذر تنزيل الإيصال كملف PDF.',
-    );
+    await runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => {
+        const receiptDocument = buildReceiptDocument();
+        if (!receiptDocument) throw new DocumentReadinessError(MISSING_RECEIPT_MESSAGE);
+        return documentService.downloadDocumentPdf('receipt', { settings: receiptDocument.settings, payload: toReceiptDocumentPayload(receiptDocument.data) });
+      },
+      fallbackMessage: 'تعذر تنزيل الإيصال كملف PDF.',
+    });
   }, [buildReceiptDocument, documentSettings.isReady]);
 
   const handleWhatsApp = useCallback(() => {

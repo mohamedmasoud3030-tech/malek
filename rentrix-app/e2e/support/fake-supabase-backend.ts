@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import { buildAcceptanceAccessToken } from './document-acceptance-session';
 
 /**
  * Deterministic seeded data plane for the PR 3 document/print/PDF browser
@@ -298,6 +299,18 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
   };
 
   const tables: Record<string, ReadonlyArray<Record<string, unknown>>> = {
+    // Explicitly-seeded EMPTY tables. These are real reads performed by the
+    // app shell and the workspaces this suite visits. They are declared here
+    // (rather than relying on a permissive default) so an UNSEEDED table
+    // still surfaces as a visible warning instead of silently succeeding.
+    app_notifications: [],
+    cost_centers: [],
+    expenses: [],
+    maintenance_records: [],
+    owner_agreements: [],
+    receipt_allocations: [],
+    user_permission_grants: [],
+    vault_documents: [],
     companies: [companyRow],
     company_members: [membershipRow],
     company_settings: [companySettingsRow()],
@@ -374,6 +387,29 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
       output_tax: 252.4,
       input_tax: 41.2,
       net_tax: 211.2,
+    }),
+    /**
+     * `list_permission_requests_for_review` is a SET-RETURNING function, so
+     * its contract is an ARRAY. This is seeded as its own explicit endpoint
+     * (not by loosening the unknown-RPC default) because the app shell's
+     * notifications menu calls `.filter()` on the result: any non-array
+     * answer crashes every protected route before a document can be produced.
+     * An empty array is the truthful "no pending requests" state for this
+     * seeded company; it grants nothing.
+     */
+    list_permission_requests_for_review: () => [],
+    /**
+     * Dashboard overview is a scalar/object report RPC. Seeded explicitly
+     * with zeroed figures so the shell renders without inventing financial
+     * data that any document could pick up.
+     */
+    rpt_dashboard_overview: () => ({
+      total_properties: 1,
+      total_units: 1,
+      occupied_units: 1,
+      active_contracts: 1,
+      total_collected: 0,
+      total_outstanding: 0,
     }),
   };
 
@@ -501,6 +537,10 @@ async function handleTableRequest(route: Route, seed: AcceptanceSeed): Promise<v
     return;
   }
 
+  if (!(table in seed.tables)) {
+    // eslint-disable-next-line no-console
+    console.warn(`[acceptance-backend] UNSEEDED TABLE: ${table}`);
+  }
   let rows: Array<Record<string, unknown>> = JSON.parse(JSON.stringify(seed.tables[table] ?? []));
 
   const reserved = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
@@ -579,9 +619,9 @@ async function handleRpcRequest(route: Route, seed: AcceptanceSeed): Promise<voi
 
   const handler = seed.rpcs[functionName];
   if (!handler) {
-    // Lenient default: financial report normalizers accept empty objects and
-    // degrade to zeroed/empty reports, keeping unrelated sections renderable.
-    await fulfillJson(route, 200, {});
+    // eslint-disable-next-line no-console
+    console.warn(`[acceptance-backend] UNSEEDED RPC: ${functionName}`);
+    await fulfillJson(route, 404, { code: 'PGRST202', message: `acceptance backend: RPC not seeded (${functionName})` });
     return;
   }
   await fulfillJson(route, 200, handler(args));
@@ -615,9 +655,11 @@ async function handleAuthRequest(route: Route): Promise<void> {
   }
   if (url.pathname.endsWith('/token')) {
     // Refresh flows (e.g. the company provider's one-time session refresh)
-    // receive the same long-lived seeded session.
+    // receive the same long-lived seeded session. The token must stay a real
+    // JWT carrying app_metadata.company_id: the production provider reads the
+    // tenant from that claim, exactly as PostgreSQL does.
     await fulfillJson(route, 200, {
-      access_token: 'acceptance-access-token',
+      access_token: buildAcceptanceAccessToken(IDS.user, IDS.company, Math.floor(Date.now() / 1000) + 43200),
       refresh_token: 'acceptance-refresh-token',
       expires_in: 43200,
       expires_at: Math.floor(Date.now() / 1000) + 43200,

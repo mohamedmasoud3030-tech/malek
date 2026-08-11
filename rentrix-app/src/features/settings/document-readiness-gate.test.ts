@@ -33,21 +33,29 @@ describe('document readiness gate replaces fake company identity', () => {
     const source = read(surface);
     expect(source, `useDocumentSettings in ${surface}`).toContain('useDocumentSettings');
     expect(source, `isReady gate in ${surface}`).toContain('documentSettings.isReady');
+    // WP-06: the visible gate is not enough — the handler must fail closed.
+    expect(source, `handler-level guard in ${surface}`).toContain('runGuardedDocumentAction');
   });
 
   it('receipt print/PDF actions are disabled until settings are ready', () => {
     const source = read('financials/receipts/receipt-detail-page.tsx');
     expect(source).toContain('disabled={isPrinting || !documentSettings.isReady}');
     expect(source).toContain('onClick={handleDownloadPdf} disabled={!documentSettings.isReady}');
-    // Handlers remain guarded even if a disabled button is bypassed.
-    expect(source).toContain('if (!document || !documentSettings.isReady) return;');
+    // Handlers remain guarded even if a disabled button is bypassed. The
+    // guard now runs INSIDE the async boundary (WP-06): an unready handler
+    // fails closed with a visible Arabic reason instead of returning
+    // silently, and a missing receipt row blocks output too.
+    expect(source).toContain('runGuardedDocumentAction');
+    expect(source).toContain('isReady: documentSettings.isReady');
+    expect(source).toContain('DocumentReadinessError(MISSING_RECEIPT_MESSAGE)');
     // Real identity only — no inline fallback company object.
     expect(source).toContain('settings: documentSettings.companySettings');
   });
 
   it('maintenance A4 statement is guarded and uses the real currency', () => {
     const source = read('maintenance/components/maintenance-workspace.tsx');
-    expect(source).toContain('if (!documentSettings.isReady) return;');
+    expect(source).toContain('runGuardedDocumentAction');
+    expect(source).toContain('isReady: documentSettings.isReady');
     expect(source).toMatch(/onClick=\{handlePrintMaintenanceList\}[\s\S]*?disabled=\{!documentSettings\.isReady\}/);
     expect(source).toContain('settings: documentSettings.companySettings');
     expect(source).not.toContain("`${r.cost} ر.ع`");
@@ -55,13 +63,15 @@ describe('document readiness gate replaces fake company identity', () => {
 
   it('deposits clearance print/PDF and utilities report are guarded', () => {
     const deposits = read('financials/deposits/deposits-workspace.tsx');
-    expect(deposits).toContain('if (!documentSettings.isReady) return;');
+    expect(deposits).toContain('runGuardedDocumentAction');
+    expect(deposits).toContain('isReady: documentSettings.isReady');
     expect(deposits).toContain('handlePrint');
     expect(deposits).toContain('handleDownloadPdf');
     expect(deposits).toContain('documentSettings.isReady');
 
     const utilities = read('utilities/components/utilities-workspace.tsx');
-    expect(utilities).toContain('if (!documentSettings.isReady) return;');
+    expect(utilities).toContain('runGuardedDocumentAction');
+    expect(utilities).toContain('isReady: documentSettings.isReady');
     expect(utilities).toContain('onClick={handlePrint} disabled={!documentSettings.isReady}');
     expect(utilities).toContain('onClick={handleDownloadPdf} disabled={!documentSettings.isReady}');
     expect(utilities).not.toContain('ر.ع`');

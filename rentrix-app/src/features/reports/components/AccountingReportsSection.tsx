@@ -11,7 +11,7 @@ import {
   type IncomeStatementDocumentData,
   type TrialBalanceDocumentData,
 } from '@/services/documents/documentPayloadAdapters';
-import { runDocumentAction } from '@/services/documents/runDocumentAction';
+import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { BalanceSheetPanel } from './accounting/balance-sheet-panel';
 import { IncomeStatementPanel } from './accounting/income-statement-panel';
 import { TrialBalancePanel } from './accounting/trial-balance-panel';
@@ -40,6 +40,13 @@ type AccountingDocumentActions<T> = Readonly<{
   pdf: (data: T) => Promise<void>;
   disabled: boolean;
 }>;
+
+/**
+ * An accounting report without its loaded RPC result has no authoritative
+ * figures; output is refused instead of rendering an empty statement.
+ */
+const MISSING_REPORT_DATA_MESSAGE =
+  'تعذر إصدار التقرير: لا توجد بيانات محاسبية مُحمَّلة للفترة المحددة. يرجى عرض التقرير أولاً ثم إعادة المحاولة.';
 
 export function AccountingReportsSection({
   asOf,
@@ -96,15 +103,29 @@ export function AccountingReportsSection({
   };
 
   const documentActions = <T,>({ label, builder, print, pdf, disabled }: AccountingDocumentActions<T>) => {
+    // Both guards run INSIDE the async boundary: a reachable handler must
+    // fail closed with a visible Arabic reason instead of returning silently.
     const runPrint = () => {
-      const data = builder();
-      if (!data || !isDocumentSettingsReady) return;
-      void runDocumentAction(() => print(data), 'تعذرت طباعة التقرير.');
+      void runGuardedDocumentAction({
+        isReady: isDocumentSettingsReady,
+        operation: async () => {
+          const data = builder();
+          if (!data) throw new DocumentReadinessError(MISSING_REPORT_DATA_MESSAGE);
+          await print(data);
+        },
+        fallbackMessage: 'تعذرت طباعة التقرير.',
+      });
     };
     const runPdf = () => {
-      const data = builder();
-      if (!data || !isDocumentSettingsReady) return;
-      void runDocumentAction(() => pdf(data), 'تعذر تنزيل التقرير كملف PDF.');
+      void runGuardedDocumentAction({
+        isReady: isDocumentSettingsReady,
+        operation: async () => {
+          const data = builder();
+          if (!data) throw new DocumentReadinessError(MISSING_REPORT_DATA_MESSAGE);
+          await pdf(data);
+        },
+        fallbackMessage: 'تعذر تنزيل التقرير كملف PDF.',
+      });
     };
 
     return (

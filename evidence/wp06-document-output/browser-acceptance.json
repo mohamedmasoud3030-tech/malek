@@ -1,0 +1,128 @@
+{
+  "capturedAt": "2026-08-11T05:46:16.318Z",
+  "harness": "playwright chromium (headless) against local vite dev server; Supabase HTTP boundary stubbed",
+  "note": "Artifacts are synthetic seeded data. No customer or production data is present.",
+  "artifacts": [
+    {
+      "scenario": "receipt print (scoped A4 popup)",
+      "route": "/receipts?receiptId=…",
+      "documentType": "receipt",
+      "channel": "print",
+      "file": "artifacts/receipt-print-a4.pdf",
+      "bytes": 71536,
+      "pageCount": 1,
+      "observations": [
+        "popup is dir=rtl lang=ar with @page size: A4 portrait",
+        "real company name present; product brand absent",
+        "no nav/aside/#root in the printed document (app shell not printed)",
+        "window.print() invoked exactly once on the popup",
+        "no UUID or UUID fragment shown as a document reference"
+      ]
+    },
+    {
+      "scenario": "receipt PDF download",
+      "route": "/receipts?receiptId=…",
+      "documentType": "receipt",
+      "channel": "pdf",
+      "file": "artifacts/receipt-download.pdf",
+      "bytes": 139555,
+      "pageCount": 1,
+      "pageSizePoints": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "isA4Portrait": true,
+      "suggestedFileName": "receipt-REC-2026-0001.pdf",
+      "observations": [
+        "%PDF- magic and %%EOF present",
+        "A4 portrait geometry",
+        "sanitized filename with no UUID fragment"
+      ]
+    },
+    {
+      "scenario": "double activation (single-flight)",
+      "route": "/receipts?receiptId=…",
+      "documentType": "receipt",
+      "channel": "print",
+      "observations": [
+        "rapid double-click on Print produced exactly 1 popup",
+        "rapid double-click on PDF produced exactly 1 download"
+      ]
+    },
+    {
+      "scenario": "contract print (legal document)",
+      "route": "/contracts/$contractId",
+      "documentType": "contract",
+      "channel": "print",
+      "file": "artifacts/contract-print-a4.pdf",
+      "bytes": 74355,
+      "pageCount": 1,
+      "observations": [
+        "truthful registry status wording rendered (عقد إيجار ساري المفعول)",
+        "signature/approval block present in the printed document",
+        "real tenant party name present"
+      ]
+    },
+    {
+      "scenario": "owner settlement statement",
+      "route": "/reports?section=statements",
+      "documentType": "owner_statement",
+      "channel": "pdf",
+      "file": "artifacts/owner-statement-download.pdf",
+      "bytes": 340511,
+      "pageCount": 3,
+      "pageSizePoints": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "isA4Portrait": true,
+      "suggestedFileName": "download",
+      "observations": [
+        "print artifact captured as artifacts/owner-statement-print-a4.pdf (3 page(s))",
+        "real owner name rendered in both print and PDF"
+      ]
+    },
+    {
+      "scenario": "multi-page operational/accounting report",
+      "route": "/reports?section=accounting",
+      "documentType": "trial_balance",
+      "channel": "pdf",
+      "file": "artifacts/trial-balance-multipage.pdf",
+      "bytes": 1588374,
+      "pageCount": 8,
+      "pageSizePoints": {
+        "width": 595.28,
+        "height": 841.89
+      },
+      "isA4Portrait": true,
+      "suggestedFileName": "trial-balance-2026-08-11.pdf",
+      "observations": [
+        "8 A4 pages rendered",
+        "smallest embedded page image stream = 66373 bytes (no blank trailing page)",
+        "deterministic filename prefix trial-balance-"
+      ]
+    },
+    {
+      "scenario": "readiness failure (company_settings unavailable)",
+      "route": "/receipts?receiptId=…",
+      "documentType": "receipt",
+      "channel": "print",
+      "observations": [
+        "Arabic readiness notice shown in place of the action",
+        "button disabled AND handler fails closed when force-invoked",
+        "zero popups, zero downloads, zero leaked render roots",
+        "no placeholder company identity was rendered anywhere"
+      ]
+    },
+    {
+      "scenario": "popup blocked",
+      "route": "/receipts?receiptId=…",
+      "documentType": "receipt",
+      "channel": "print",
+      "observations": [
+        "user-facing Arabic popup-blocked message shown",
+        "no orphan window, no leaked offscreen render root"
+      ]
+    }
+  ]
+}

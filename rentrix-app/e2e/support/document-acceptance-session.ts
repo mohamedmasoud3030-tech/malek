@@ -12,11 +12,77 @@ import { IDS } from './fake-supabase-backend';
 
 export const AUTH_STORAGE_KEY = 'rentrix-auth-session';
 
+/** URL-safe base64 without padding, as used by JWT segments. */
+function base64Url(value: string): string {
+  return Buffer.from(value, 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Deliberately invalid signature segment.
+ *
+ * A real Supabase JWT is HMAC-signed with the project's secret. This fixture
+ * MUST NOT carry anything that could pass server-side verification, so the
+ * signature is a fixed, obviously-fake literal. Consequences, by design:
+ *
+ *  - the token authenticates nothing: any real GoTrue/PostgREST/Postgres
+ *    endpoint rejects it, so it cannot be replayed outside the fake boundary;
+ *  - it is not a credential and contains no secret — it is a structural
+ *    fixture whose only purpose is to carry the `app_metadata.company_id`
+ *    claim the BROWSER reads;
+ *  - it is bound to the seeded UUIDs, so it is meaningless anywhere else.
+ */
+const UNVERIFIABLE_SIGNATURE = 'not-a-real-signature-e2e-fixture-only';
+
+/**
+ * Builds a structurally real, INTENTIONALLY UNVERIFIABLE access token for the
+ * acceptance session.
+ *
+ * Why this is needed: the production active-company provider derives the
+ * tenant from the `app_metadata.company_id` claim inside the ACCESS TOKEN —
+ * the same value PostgreSQL sees through `public.current_company_id()` —
+ * rather than from the Auth user record. An opaque placeholder string
+ * therefore fails closed with «تعذر تحديد الشركة النشطة» and no protected
+ * route ever renders, so no document can be reached.
+ *
+ * Emitting a correctly SHAPED token lets the suite exercise the REAL
+ * resolution path (decode claim → match it against an authorized
+ * `company_members` row → unlock) instead of stubbing or weakening it.
+ * Signature verification is a server responsibility and is deliberately not
+ * performed in the browser; production Auth logic is neither modified nor
+ * bypassed here. The claim must match the seeded membership exactly —
+ * `assertAcceptanceSessionIntegrity` enforces that.
+ */
+export function buildAcceptanceAccessToken(userId: string, companyId: string, expiresAt: number): string {
+  // Fail loudly if a caller drifts away from the seeded identities: a token
+  // whose subject/company does not match the seeded membership would make the
+  // provider fail closed and produce a confusing, unrelated test failure.
+  if (userId !== IDS.user) throw new Error(`acceptance token: subject must be the seeded user (${IDS.user})`);
+  if (companyId !== IDS.company) throw new Error(`acceptance token: company claim must be the seeded company (${IDS.company})`);
+
+  const header = base64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const payload = base64Url(
+    JSON.stringify({
+      sub: userId,
+      aud: 'authenticated',
+      role: 'authenticated',
+      exp: expiresAt,
+      email: ACCEPTANCE_EMAIL,
+      app_metadata: { provider: 'email', providers: ['email'], user_role: 'ADMIN', role: 'ADMIN', company_id: companyId },
+      user_metadata: { full_name: ACCEPTANCE_FULL_NAME },
+    }),
+  );
+  return `${header}.${payload}.${UNVERIFIABLE_SIGNATURE}`;
+}
+
+/** Seeded identity constants shared by the session and the fake backend. */
+export const ACCEPTANCE_EMAIL = 'acceptance@malek.test';
+export const ACCEPTANCE_FULL_NAME = 'اختبار القبول';
+
 export function buildAcceptanceSession(nowMs: number = Date.now()): Record<string, unknown> {
   const expiresInSeconds = 12 * 60 * 60;
   const expiresAt = Math.floor(nowMs / 1000) + expiresInSeconds;
   return {
-    access_token: 'acceptance-access-token',
+    access_token: buildAcceptanceAccessToken(IDS.user, IDS.company, expiresAt),
     refresh_token: 'acceptance-refresh-token',
     expires_at: expiresAt,
     expires_in: expiresInSeconds,
@@ -27,7 +93,7 @@ export function buildAcceptanceSession(nowMs: number = Date.now()): Record<strin
       id: IDS.user,
       aud: 'authenticated',
       role: 'authenticated',
-      email: 'acceptance@malek.test',
+      email: ACCEPTANCE_EMAIL,
       email_confirmed_at: new Date(nowMs).toISOString(),
       phone: '',
       confirmed_at: new Date(nowMs).toISOString(),

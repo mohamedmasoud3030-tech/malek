@@ -14,10 +14,20 @@ export type SharePayload = Readonly<{
   url?: string;
 }>;
 
-export function printCurrentView(): void {
-  if (typeof window === 'undefined' || typeof window.print !== 'function') return;
-  window.print();
-}
+/*
+ * `printCurrentView()` (a bare `window.print()`) used to live here. It is
+ * removed deliberately and must not come back: printing the current view
+ * prints the whole application shell — navigation, sidebar, toasts and all —
+ * instead of the intended document, and it bypasses the canonical document
+ * platform entirely (no company-readiness guard, no A4 page policy, no RTL
+ * document model, no truthful company identity).
+ *
+ * Every Print/PDF action must go through `documentService` →
+ * `DocumentEngine` → `DocumentRenderer`, which renders the document alone in
+ * a scoped A4 RTL popup. See UX-008 and the "Printing and documents"
+ * contract; the boundary is enforced by
+ * `services/documents/documentPlatform.boundaries.test.ts`.
+ */
 
 export async function shareOrCopy(payload: SharePayload): Promise<'shared' | 'copied' | 'unavailable'> {
   if (typeof window === 'undefined') return 'unavailable';
