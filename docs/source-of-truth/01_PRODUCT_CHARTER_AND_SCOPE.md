@@ -1,13 +1,19 @@
 # MALEK Canonical Pack — Document 1: Product Charter and Scope
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`
+> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
 
 ## Product definition
 
 MALEK is an Arabic-first, multi-company property-operations system for real-estate offices. It manages the operational and financial lifecycle of properties, units, owners, tenants, contracts, collections, expenses, deposits, owner settlements, maintenance, banking and reporting.
 
 The release is optimized for an operating property office, not for a generic ERP, investment platform, CRM suite, construction system, or marketplace. Adjacent legacy modules may remain for compatibility, but they do not silently expand release scope.
+
+## Customer, users and value
+
+The primary buyer/operator is a small or medium property office that needs one controlled record of occupancy, money held for others, office earnings, owner obligations and operational follow-up. The main product users are office administrators, managers, accountants, operations staff and read-only users. Owner and tenant portals are not release scope merely because party data exists.
+
+The product value is operational control with accounting traceability: the office should know what is due, what was collected, whose money it is, what may be paid or offset, and which evidence supports the result. Convenience dashboards are useful, but they do not replace the applicable operational subledger or posted GL.
 
 ## Canonical product rules
 
@@ -42,6 +48,8 @@ The release is optimized for an operating property office, not for a generic ERP
 
 Legacy leads, communication, commissions, automation and lands remain real repository surfaces, but their existence does not make them independent product pillars or authorize new scope. They are retained where they support property operations or compatibility.
 
+The AI Assistant is read-only decision support. It cannot post, approve, reinterpret accounting policy, or become a report source. At the baseline the product exposes it as a global overlay reached through a legacy `/ai-assistant` deep-link, which conflicts with the canonical separate-route rule and is tracked as `GAP-023`.
+
 ### Explicit non-goals for this closeout
 
 - Rebuilding MALEK as a generic ERP.
@@ -60,6 +68,18 @@ The canonical accounting model is a product control model. Final Omani tax rates
 - Locked business decisions: `governance/final-decision-register.json`.
 - Governed stage credit: `governance/10-stage-master-plan.json`.
 - Actual implementation status and gaps: Document 7.
+
+## Scope states at the baseline
+
+| Capability | Repository state | Release interpretation |
+|---|---|---|
+| Core property/people/contracts/financial operations | Broad UI/service/schema presence | Partial lifecycles must be closed rule by rule; presence is not readiness |
+| Canonical GL core | Implemented and tested in repository/CI | Live deployment and control reconciliations remain required |
+| Owner-agency GL kernels | Implemented at database/test layer | User-event wiring and complete fee/deposit/refund lifecycle remain open |
+| MASTER_LEASE kernels | Implemented in migrations/TypeScript tests | Full product/reporting integration is not proven and must not be called IFRS-complete |
+| Reports/reconciliation kernels | Multiple report RPCs and S07 TypeScript kernels exist | Full control-account reconciliation and hosted acceptance remain open |
+| Live tenant isolation | Repository controls/tests exist | Exact deployed Auth Hook/RLS/schema still requires live proof |
+| Pilot/release | CI foundations exist | No completed real one-office accounting-period pilot is evidenced |
 
 ## Release interpretation
 

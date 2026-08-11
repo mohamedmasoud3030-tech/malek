@@ -23,7 +23,7 @@ pnpm --filter ./rentrix-app test
 pnpm --filter ./rentrix-app run test:financials
 ```
 
-Use the repository-pinned pnpm version. The brownfield audit verified the current baseline with pnpm `10.11.1`; do not silently switch package-manager major versions when diagnosing build/test failures.
+Use the repository-pinned pnpm version `10.11.1`; do not silently switch package-manager major versions when diagnosing build/test failures. PR #1430 CI passed typecheck, lint, architecture, production build, full application tests and financial tests, while its complete Browser Readiness run was cancelled. Read Document 7 before reusing either result as current evidence.
 
 ## Documentation — start here
 

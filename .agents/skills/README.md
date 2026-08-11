@@ -2,13 +2,13 @@
 
 These skills are local to `.agents/skills/`. Every agent must read this index first, then open and apply every matching `SKILL.md` before changing code or docs.
 
-Active product/source-of-truth context comes only from:
+Active product/source-of-truth context comes only from the MALEK Canonical Pack. Start with:
 
-1. `docs/source-of-truth/01_CANONICAL_REALITY_AND_STATUS.md`
-2. `docs/source-of-truth/02_BUSINESS_CONSTITUTION_AND_ACCOUNTING.md`
-3. `docs/source-of-truth/03_TECHNICAL_ARCHITECTURE_AND_ROADMAP.md`
+1. `docs/source-of-truth/00_INDEX.md`
+2. the owning rule document in `docs/source-of-truth/01_...` through `08_...`
+3. `docs/source-of-truth/07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md` for the affected Rule IDs, evidence status and Gap IDs
 
-Do not route work through removed status/TODO/archive documents.
+The three earlier documents now under `docs/source-of-truth/archive/` are `SUPERSEDED`; never route work through them as active authority. Do not create a parallel status/TODO/source-of-truth file.
 
 ## MALEK-specific skills
 

@@ -1,7 +1,7 @@
 # MALEK Canonical Pack — Document 6: UX, IA, and Design Contract
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`
+> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
 
 ## UX contract
 
@@ -40,6 +40,23 @@ Evidence: `rentrix-app/src/app/navigation/route-contract.ts`.
 
 Not every route above is equally release-critical. Presence in the route contract proves the implemented navigation surface, not completion of its business lifecycle.
 
+### Route disposition matrix
+
+| Surface | URL/behavior at baseline | Visible navigation owner | Disposition |
+|---|---|---|---|
+| Dashboard | `/dashboard` renders | Dashboard | CANONICAL |
+| People | `/people`; owner/tenant/leads/communication first-class child routes | People | CANONICAL |
+| Properties/Units | `/properties`; `/units` redirects to `/properties?section=units` | Properties | CANONICAL + COMPATIBILITY redirect |
+| Lands | `/lands` and detail route | Lands | CANONICAL but not automatically pilot-critical |
+| Contracts | `/contracts` and create/detail/edit | Contracts | CANONICAL; canonical DB approval path not fully wired in UI |
+| Financials | `/financials`; `/finance/*` and legacy finance URLs redirect/bind to section/view search | Financials | CANONICAL HUB + COMPATIBILITY routes |
+| Reports | `/reports`; `/accounting` redirects to Reports accounting view | Reports | CANONICAL + COMPATIBILITY redirect |
+| Services | `/maintenance`; `/utilities` redirects to maintenance view; Service Providers have first-class CRUD routes | Services | CANONICAL + COMPATIBILITY redirect |
+| Settings/admin | `/settings`; `/system`, `/audit-log`, `/data-integrity`, `/automation`, `/change-password` redirect to settings sections | Settings | CANONICAL HUB + COMPATIBILITY routes |
+| AI Assistant | `/ai-assistant` redirects to `/dashboard?globalAction=ai-assistant`; shell opens a global overlay | no primary nav item | CONFLICT with `PRD-008/UX-007`; `GAP-023` |
+| Documents Vault | `/documents-vault` remains a directly rendered legacy compatibility route while route contract says maintenance view binding | no primary nav item | CONFLICTING/legacy surface to review under `UX-008/GAP-020` |
+| Dev design system | `/dev/design-system`, DEV-only | none | HIDDEN development surface, not product IA |
+
 ### People domain
 
 - `/people`
@@ -76,7 +93,7 @@ Compatibility routes such as `/invoices`, `/receipts`, `/expenses`, `/arrears`, 
 
 ### Reports and AI
 
-`/reports` is independent. `/ai-assistant` is independent. Neither is a nested Financials tab by canonical IA.
+`/reports` is independent. The approved target keeps `/ai-assistant` independent from Dashboard and from accounting authority. The baseline implementation instead treats the URL as a legacy deep-link into the single global overlay (`route-tree.ts` and `ai-assistant-global-action.tsx`), so this is an explicit conflict rather than a verified rule.
 
 ## Dossier contract
 
@@ -90,6 +107,8 @@ Permission requests that require action must be visibly actionable, with enough 
 
 ## Mobile/desktop behavior
 
+- Desktop uses a right-side collapsible sidebar generated from `navGroups`/workspace children.
+- Mobile has no legacy five-item bottom navigation. `mobileNavItems` is empty and `MobileFloatingControl` exposes Menu + Search; the drawer carries the full permitted navigation. Documentation must not claim a maintenance-priority bottom tab at this baseline.
 - Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer.
 - Long contract/agreement forms may use mobile steppers while desktop retains an efficient single-scroll workflow.
 - Shared entity tables preserve the most important secondary datum on mobile and use disclosure/expansion for the rest.
@@ -99,6 +118,8 @@ Permission requests that require action must be visibly actionable, with enough 
 
 Use the repository’s canonical design tokens/shared enterprise components. Do not create a second token layer for one feature. Money uses company-aware formatting and the canonical OMR precision contract; hard-coded currency/decimal presentation is not authoritative.
 
+Evidence includes `rentrix-app/src/index.css`, `rentrix-app/src/components/ui/**`, `rentrix-app/src/components/enterprise/**`, shared layout components and company formatters. The `enterprise/*` component name is historical; it does not authorize a second design system. New features must reuse the active tokens/components and respect the repository enterprise-freeze guard.
+
 ## State contract
 
 Every protected/loaded surface must have intentional loading, empty, error and permission-denied states. A route must not render a blank screen merely because a query failed or data is absent.
@@ -106,6 +127,8 @@ Every protected/loaded surface must have intentional loading, empty, error and p
 ## Printing and documents
 
 Print/PDF controls require real company/document readiness. Guard the action handler as well as the visible button; hiding/disabling a button is not sufficient if the handler can still run through another path. Signed versions and generated financial/legal documents must preserve the correct company, party, currency and data snapshot.
+
+Repository evidence includes `pdfService.ts`, report/document generators and targeted tests. It does not prove Arabic font rendering, pagination, signatures, totals or legal layout in the deployed browser; the cancelled Browser Readiness run leaves this under `GAP-020`.
 
 ## Accessibility
 

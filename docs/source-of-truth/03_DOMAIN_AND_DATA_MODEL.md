@@ -1,7 +1,7 @@
 # MALEK Canonical Pack — Document 3: Domain and Data Model
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`
+> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
 
 ## Domain principles
 
@@ -23,6 +23,25 @@ The database is multi-company and operational entities must remain company-scope
 | `DOM-010` | Audit records, documents and attachments preserve entity/company scope and lifecycle; destructive deletion is not a substitute for archive, void, reversal or versioning. |
 
 ## Core aggregates and relationships
+
+### Relationship and ownership matrix
+
+| Parent / root | Child / link | Cardinality and ownership invariant | Lifecycle authority | Baseline evidence / limitation |
+|---|---|---|---|---|
+| `companies` | operational/financial rows | one company owns many rows; each owned row belongs to exactly one company once migration constraints are active | RLS + FK/constraint + sensitive RPC revalidation | company columns/hardening migrations/tests exist; deployed drift remains `GAP-003` |
+| `companies` + auth user | `company_members` | many-to-many membership; only active membership in an active company may become JWT company claim | Auth Hook + membership RLS | hook function exists in migration; `supabase/config.toml` does not prove hosted hook enablement |
+| `people` | `owners` / tenant meaning | one person may acquire party roles without duplicating contact identity | party/profile services and RLS | legacy schema also exposes role-specific shapes; deduplication is an invariant, not proof of a finished migration |
+| `properties` | `units` | one property has zero-to-many units; a unit belongs to one property/company | property/unit constraints and atomic contract writes | schema/routes/tests exist |
+| `properties` ↔ `owners` | `property_owners` | many-to-many; share/primary-owner rules must be explicit and company-consistent | ownership view/constraints | `authoritative_property_ownership` work exists |
+| `owner_agreements` | `owner_agreement_versions` | one identity has ordered versions; at most one unsuperseded current version | `create_owner_agreement_version_atomic` | implemented in migrations/pgTAP; generated client types and management UI do not cover the new table |
+| `owner_agreement_versions` | `contracts` | many contracts may snapshot one applicable agreement version; snapshot is immutable after activation | contract approval/activation RPCs | columns/constraints/pgTAP exist; full React service wiring is open |
+| `contracts` | `invoices` | one contract creates many scheduled obligations; posted/void/cancel behavior is lifecycle-controlled | invoice generation/credit/reversal RPCs | legacy and canonical paths coexist |
+| `payments` ↔ `receipts` | shared identity + `receipt_allocations` | payment is cash event; receipt is evidence; allocations distribute amount to obligations | payment/receipt RPCs and identity triggers | shared identity and reversal work exists; do not collapse the records conceptually |
+| `owner_settlements` | payment/expense links | one settlement has many reserved sources; a source has at most one active reservation | create/approve/pay/cancel RPCs + partial unique indexes | implemented and concurrency-tested |
+| `tenant_deposits` | `deposit_transactions` | one deposit has append-oriented held/deduction/refund events | deposit RPCs/application posting | legacy schema uses 2dp and direct authenticated writes in part; `GAP-009` |
+| `journal_batches` | `journal_lines` | one batch has two-or-more lines; each line belongs to one same-company batch/account; posted batch must balance | GL engine, deferred balance/lifecycle triggers | canonical Stage-3 model implemented/tested |
+| `bank_*` | import/match records | one import batch owns rows; rows retain source identity and company | preview/finalize/match RPCs | repository fail-closed contracts exist; hosted proof open |
+| entity/company | audit/documents | records retain actor/company/entity and immutable or archived history | audit triggers/RPCs; private Storage policies | repository controls exist; deployed Storage/legal proof open |
 
 ### Company and authorization context
 
@@ -73,6 +92,8 @@ Owner settlements are not the origin of owner liability. They collect/reconcile 
 
 Deposits remain liabilities until refunded or applied under an approved claim/invoice. Deposit transactions must identify source deposit, beneficiary/economic destination, evidence and reversal relationship where relevant.
 
+At the baseline this target is not represented by one clean schema. `20260718100928_real_deposits_ledger.sql` defines `deposit_transactions.amount` as `numeric(14,2)`, grants authenticated insert/update paths on deposit tables, and writes through the legacy `journal_entries` compatibility surface. Later S04 GL functions add beneficiary-aware posting kernels. Until those paths are unified behind 3dp atomic RPCs, the deposit aggregate is `PARTIAL` rather than a completed canonical subledger.
+
 ### Banking model
 
 Bank accounts/statements/imports and reconciliation records support operational matching. Imported rows must retain company/batch/source identity and must never mutate unrelated-company banking data.
@@ -110,12 +131,26 @@ Audit events identify company, actor and affected entity where available. Vault/
 - Posted financial history is immutable; correction is append-only.
 - Soft delete/archive may be used only for non-posted/non-legally-final records where the domain allows it.
 
+## Lifecycle state authority
+
+| Aggregate | Canonical state progression | Data rule |
+|---|---|---|
+| Owner agreement version | current → superseded | a new version closes/supersedes the prior one; no retroactive overwrite |
+| Tenant contract | DRAFT → REVIEW/PENDING approval → APPROVED → SIGNED/ACTIVE; then renewal/termination | maker/checker and signatures precede activation; the signed snapshot is retained |
+| Invoice/payment/receipt | draft/posted operational state → paid/partial as applicable → void/credit/refund through explicit event | deletion cannot erase posted economic effect |
+| Owner settlement | DRAFT → APPROVED → PAID, or cancellable before paid | inputs rederived at approval/payment; reservations survive paid state |
+| Deposit | held/partially deducted → applied/refunded/closed through transactions | remaining value never becomes negative; corrections compensate |
+| Accounting period | OPEN → SOFT_CLOSED → HARD_CLOSED | hard close cannot reopen under the canonical decision |
+| Journal batch | DRAFT → POSTED → REVERSED | posted identity/lines are immutable; reversal references the original |
+
+Names above describe canonical meaning; legacy lowercase/alternate database values are mapped only where a cited migration or service proves compatibility.
+
 ## Repository evidence anchors
 
-- Generated database types: `rentrix-app/src/types/database.ts`.
+- Generated database types: `rentrix-app/src/types/database.ts`. This file includes the Stage-3 GL tables but omits newer material tables such as `owner_agreement_versions`, settlement link tables and deposit transactions; it is therefore evidence of client typing, not a complete live-schema inventory.
 - Core migrations and RLS/RPC history: `supabase/migrations/`.
 - Settlement reservations: `20260804010000_fa003_owner_settlement_input_reservation_foundation.sql`, `20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql`.
 - GL domain types: `rentrix-app/src/features/accounting/accountingDomain.ts`.
-- Service Providers addition at baseline: commit `75832b2f139f3b759325dcf17cf78101093671b4`.
+- Service Providers addition: migrations `20260810170000_service_providers_production_grade.sql` and `20260810171000_service_provider_atomic_writes.sql`, merged in the baseline line.
 
 Repository presence does not by itself prove the live schema equals migrations; live deployment verification is tracked separately in Document 7.

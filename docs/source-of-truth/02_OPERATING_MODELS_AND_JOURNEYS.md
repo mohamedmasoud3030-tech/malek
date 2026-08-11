@@ -1,7 +1,7 @@
 # MALEK Canonical Pack — Document 2: Operating Models and Journeys
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@75832b2f139f3b759325dcf17cf78101093671b4`
+> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
 
 ## Canonical operating models
 
@@ -33,6 +33,23 @@ MALEK supports two financially distinct rental models and one limited compatibil
 | `OPS-014` | Bank CSV import is preview-first and fail-closed: ambiguous/invalid rows block the batch; no silent partial financial import is permitted. |
 | `OPS-015` | Historical remediation is two-stage: read-only analysis first; only approved, source/company/period-scoped append-only correction batches may follow. |
 
+## Journey control matrix
+
+This matrix is the operational acceptance contract. “Repository layer” identifies what physically exists at the baseline; it is not a completion claim.
+
+| Journey | Actor / trigger | Preconditions | Authoritative records and boundary | Success state | Failure / reversal | Repository layer at baseline |
+|---|---|---|---|---|---|---|
+| A — owner-agency onboarding | Admin/Manager creates or changes mandate | active company; owner/property; evidence; approved commercial terms | `owner_agreements` identity; `owner_agreement_versions`; `create_owner_agreement_version_atomic`; RLS/RPC company checks | current non-retroactive version available for contract snapshot | invalid scope/retroactivity fails closed; later change creates a version | DB versioning/RLS/tests exist; no complete version-management UI; `GAP-004/005` |
+| B — tenant contract | Maker submits; distinct checker approves; authorized actor activates | valid company/tenant/property/unit; governing agreement version; signatures/evidence | `contracts`; `submit_contract_for_approval_atomic`; `approve_contract_atomic`; activation RPC; immutable snapshots | ACTIVE contract with maker/checker evidence and agreement/collection-role snapshot | reject/cancel/terminate through lifecycle; signed evidence is not overwritten | DB Maker-Checker/snapshot tests exist; current form/service is not proven to call full lifecycle; `GAP-004` |
+| C — owner-creditor collection | authorized collector records actual cash | active contract/invoice; `OWNER_IS_CREDITOR`; open period; idempotency identity | payment/receipt event → business RPC → journal batch/lines | cash/bank and Owner Funds Payable posted; fee split only on qualifying collection | void/refund uses reversal/compensating event | `gl_pm_post_collection_owner_is_creditor` kernel/tests exist; browser journey wiring incomplete; `GAP-006/011` |
+| D — office-creditor billing/collection | billing then collection event | active contract; `OFFICE_IS_CREDITOR`; valid invoice/payment | invoice posts 1201/2000; collection clears 1201 | tenant subledger and GL control agree | credit note/reversal/refund; no delete | S04 GL contracts exist; complete user-event/reconciliation proof open; `GAP-006/013` |
+| E — expenses/maintenance | authorized user resolves work or records expense | company/property/party scope; expense classification; evidence | `expenses`, maintenance record, expense RPC, journal batch | company expense or Due from Owner posted once according to economic owner | correction reverses prior posting; owner recovery remains separate | expense/maintenance RPCs exist; full Due-from-Owner recovery open; `GAP-008/011` |
+| F — deposit | authorized receipt, approved claim/application, or refund | valid contract/beneficiary; evidence; amount ≤ remaining; 3dp/idempotency | `tenant_deposits`, `deposit_transactions`, application GL event | liability changes exactly once and reconciles to 2200 | compensating refund/application reversal | legacy 2dp/direct-write deposit path coexists with S04 kernels; `GAP-009` |
+| G — owner settlement | preparer drafts; approver/payor acts under permissions | eligible unreserved payments/expenses; rederived totals; lawful offset | settlement + payment/expense link tables; atomic create/approve/pay/cancel RPCs | immutable paid settlement; sources remain reserved | cancellation releases eligible reservations; post-payout refund creates Due from Owner | reservations/stale-total tests exist; full offset/recovery/approval separation open; `GAP-002/008` |
+| H — MASTER_LEASE | authorized principal-accounting workflow | approved head lease; classification; discount-rate snapshot; open periods | measurement/schedule/GL lifecycle tables and `gl_ml_*` RPCs | ROU/liability/sublease events reconcile to control accounts | remeasurement/modification/termination events, never owner settlement | DB/TypeScript kernels exist; no complete UI/report journey; `GAP-012` |
+| I — banking/reconciliation | authorized importer/matcher | parsable file; server row/size/count/3dp limits; no ambiguity | import batch/rows; preview/finalize RPC; bank match RPC | whole valid batch imported and matched/approved as applicable | any invalid/ambiguous row rejects the batch; unmatch/review is audited | fail-closed migrations/pgTAP exist; hosted/current-SHA acceptance open; `GAP-017` |
+| J — historical remediation | reviewer approves frozen analysis; later authorized correction | S08 governed approval; exact company/period/source inventory | read-only S08 views/evidence, then future append-only S09 batches | reconciled before/after evidence without rewriting posted history | correction batch itself is reversible/traceable | S08 code/tests exist without governed approval; S09 not authorized; `GAP-015/016` |
+
 ## Journey A — Owner-agency onboarding
 
 **Actor:** Admin/Manager with effective write permissions.  
@@ -46,7 +63,7 @@ MALEK supports two financially distinct rental models and one limited compatibil
 
 **Flow:** draft → review → approval → signed artifact → active schedule → invoices/collections → renewal/termination.  
 **Required controls:** Maker-Checker for material approval, immutable signed version, explicit termination record, future schedule cancellation rather than deletion.  
-**Current reality:** legacy and newer contract workflows exist, but the complete canonical lifecycle is not yet proven end-to-end; see `GAP-004` and `GAP-002`.
+**Current reality:** `20260808010000_s04_contract_lifecycle_maker_checker_v2.sql` and its pgTAP tests enforce distinct maker/checker identities and signature evidence in the database. The current React contract flow is not evidenced as invoking that complete lifecycle, and Maker-Checker is not yet proven for every designated VOID/settlement/financial approval; see `GAP-004` and `GAP-002`.
 
 ## Journey C — OWNER_IS_CREDITOR collection
 
@@ -91,6 +108,15 @@ Import preview → validation/count/limits/3dp checks → atomic import or full 
 ## Journey J — Historical correction
 
 Read-only inventory by company/period/source/owner/property/agreement/transaction → approval → append-only correction/reversal batches → before/after evidence → reconciliation. No UPDATE/DELETE of posted historical journals.
+
+## Cross-journey invariants
+
+- Company context is revalidated at the authoritative write boundary; a route guard is never enough.
+- A business retry carries a stable request/event identity; a timestamp/random retry identity is not acceptable for financially material idempotency.
+- An operational record and its accounting effect remain linked through source type, source id, event id and resulting batch.
+- A posted/paid/signed state is immutable. Corrections create explicit subsequent events.
+- UI success is shown only after the authoritative operation succeeds; optimistic display cannot manufacture a financial state.
+- Financial reports state their basis (`posted`, `collected`, `invoiced`, `paid` or `accrued`) and exclude/reverse VOID, CANCELLED and deleted rows according to the owning rule.
 
 ## Evidence anchors
 
