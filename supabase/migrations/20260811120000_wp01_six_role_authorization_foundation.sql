@@ -58,7 +58,8 @@ as $$
         'automation.view','auth.password.change','properties.write','contracts.write','expenses.view','expenses.write',
         'arrears.view','financial.deposits.view','financial.invoices.generate','financial.invoices.export',
         'financial.payments.create','financial.receipts.void','financial.reports.export',
-        'financial.bank_reconciliation.view','financial.bank_reconciliation.match','financial.owner_settlements.view'
+        'financial.bank_reconciliation.view','financial.bank_reconciliation.match','financial.owner_settlements.view',
+        'service_providers.view','service_providers.write'
       ]::text[])
     when 'ACCOUNTANT' then
       p_permission = any(array[
