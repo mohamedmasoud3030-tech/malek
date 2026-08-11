@@ -117,13 +117,16 @@ describe('UnitsPage controller regression', () => {
     container.innerHTML = '';
   });
 
-  it('renders one dense table row per unit without duplicate mobile cards', async () => {
+  it('renders one dense desktop table row per unit plus the shared mobile card list', async () => {
     await act(async () => { root.render(<UnitsPage />); });
 
     const desktopRows = container.querySelectorAll('tbody tr');
     expect(desktopRows.length).toBe(3);
 
-    expect(container.querySelectorAll('[role="listitem"]')).toHaveLength(0);
+    // The shared EntityTable mobile register renders one card per record
+    // (max-md); it is the shared primitive, not a page-specific mobile layout.
+    expect(container.querySelectorAll('[role="listitem"]')).toHaveLength(3);
+    expect(container.querySelector('[data-entity-table-mobile-card]')).toBeTruthy();
     expect(container.querySelector('[data-compact-responsive-table]')).toBeTruthy();
   });
 

@@ -77,6 +77,7 @@ export function MaintenanceList(props: MaintenanceListProps) {
     <div data-visual-wave="malek-pro">
       <DataTable
         aria-label="جدول طلبات الصيانة"
+        mobileVisibleSecondaryKey="status"
       rows={rows}
       columns={[
         {

@@ -10,6 +10,7 @@ export function RentRollPanel({ rows, action, isLoading }: Readonly<{ rows: Rent
     {rows.length === 0 ? <div className="p-4"><ReportState message="لا توجد عقود ضمن البيانات الحالية." /></div> : <div className="p-4"><DataTable
       aria-label="جدول عقود الإيجار"
       rows={rows}
+      mobileVisibleSecondaryKey="status"
       columns={[
         { key: 'contract', header: 'العقد', priority: 'identity', render: (row) => <SafeAnchor href={`/contracts/${encodeURIComponent(row.contractId)}`} label={row.contractReference ?? 'عقد بلا مرجع'} /> },
         { key: 'tenant', header: 'المستأجر', priority: 'primary', render: (row) => row.tenantName },

@@ -1,6 +1,6 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { ChevronLeft, LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
+import { LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
 import { Button } from '@/components/ui/button';
@@ -320,12 +320,9 @@ export function AppShell() {
             </Button>
 
             <div className="min-w-0 flex-1 px-1 flex items-center justify-between gap-4">
-              <div className="hidden items-center gap-1.5 sm:flex">
-                <span className="text-[11px] font-medium text-muted-foreground">{sharedLabel('home')}</span>
-                <ChevronLeft className="size-3 text-muted-foreground/60" aria-hidden="true" />
-                <span className="truncate text-[11px] font-semibold text-foreground">{pageTitle}</span>
-              </div>
-              <p className="truncate text-[0.95rem] font-bold tracking-tight sm:hidden">{pageTitle}</p>
+              {/* Fixed application identity in the global header — the dynamic
+                  page name lives in <PageHeader> inside the page content. */}
+              <MalikBrand className="min-w-0" />
 
               <CommandPaletteTrigger />
             </div>

@@ -385,6 +385,7 @@ export function OwnerSettlementWorkspace() {
             rows={settlements}
             columns={columns}
             keyOf={(settlement) => settlement.id}
+            mobileVisibleSecondaryKey="net"
           />
         </AsyncContentState>
       </section>

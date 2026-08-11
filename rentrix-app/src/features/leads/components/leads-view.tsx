@@ -491,44 +491,8 @@ function LeadRows({
       columns={columns}
       keyOf={(row) => row.id}
       aria-label="قائمة العملاء المحتملين"
+      mobileVisibleSecondaryKey="status"
     />
-  );
-}
-
-function LeadCard({
-  row,
-  isArchiving,
-  onEdit,
-  onArchiveClick,
-}: Readonly<{
-  row: LeadRecord;
-  isArchiving: boolean;
-  onEdit: (row: LeadRecord) => void;
-  onArchiveClick: (row: LeadRecord) => void;
-}>) {
-  return (
-    <div className="rounded-2xl border bg-background p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-black">{row.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {row.phone ?? row.email ?? "بدون بيانات اتصال"}
-          </p>
-        </div>
-        <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>
-          {statusLabels[row.status ?? ""] ?? row.status ?? "—"}
-        </StatusBadge>
-      </div>
-      <p className="mt-3 text-sm">
-        المصدر: {sourceLabels[row.source ?? ""] ?? row.source ?? "—"}
-      </p>
-      <RowActions
-        id={row.id}
-        disabled={isArchiving}
-        onEdit={() => onEdit(row)}
-        onArchiveClick={() => onArchiveClick(row)}
-      />
-    </div>
   );
 }
 

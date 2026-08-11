@@ -206,6 +206,7 @@ export function LandsView({
           rows={rows}
           columns={columns}
           keyOf={(row) => row.id}
+          mobileVisibleSecondaryKey="status"
           onRowClick={(row) => dialogNavigate({ to: '/lands/$landId', params: { landId: row.id } })}
         />
       </AsyncContentState>

@@ -161,6 +161,7 @@ export function ServiceProvidersWorkspace({ embedded = false }: Readonly<{ embed
               rows={rows}
               columns={columns}
               keyOf={(provider) => provider.id}
+              mobileVisibleSecondaryKey="status"
               isLoading={providersQuery.isLoading || categoriesQuery.isLoading}
               error={providersQuery.isError ? providersQuery.error : categoriesQuery.isError ? categoriesQuery.error : null}
               errorTitle="تعذر تحميل مزودي الخدمات"

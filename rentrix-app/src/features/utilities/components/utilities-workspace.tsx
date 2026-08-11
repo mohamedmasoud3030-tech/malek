@@ -373,6 +373,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               rows={meters}
               columns={meterColumns}
               keyOf={(meter) => meter.id}
+              mobileVisibleSecondaryKey="status"
               emptyTitle="لا توجد عدادات"
               emptyDescription="أضف عدادًا جديدًا لبدء تسجيل الاستهلاك والفواتير."
             />
@@ -385,6 +386,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
               rows={filteredBills}
               columns={billColumns}
               keyOf={(bill) => bill.id}
+              mobileVisibleSecondaryKey="amount"
               emptyTitle="لا توجد فواتير مطابقة"
               emptyDescription="غيّر الفلاتر أو أضف فاتورة مرافق جديدة."
             />
