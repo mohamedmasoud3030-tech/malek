@@ -202,10 +202,79 @@ was modified.
      seeded with zeroed figures so no financial value is invented;
    - the backend stays read-only (mutating verbs → 405) and storage stays 404.
 
+   Behavioural proof (not just a source scan) lives in
+   `documentAcceptanceBackend.test.ts`, which drives the harness through a
+   fake Playwright route and asserts the real HTTP responses:
+   an unseeded table returns **404 `PGRST205`** (never `200 []`, never an
+   array, never an empty body), the error cannot be read as a truthful empty
+   state by a supabase-js style consumer, the table name never reaches the
+   response body (diagnostics only), an explicitly seeded EMPTY table still
+   returns `200 []`, unseeded RPCs return **404 `PGRST202`**, writes are
+   refused on every table, and storage stays 404.
+
 3. Console-error tolerance is narrow: only the known unreachable
    `realtime/v1/websocket` endpoint of the fake environment is allowlisted.
    Application errors, failed HTTP requests and unexpected production network
    calls are still asserted on, and a guard test forbids a blanket entry.
+
+## 7b. Baseline CI failures observed on this candidate (NOT caused by WP-06)
+
+Both are recorded truthfully; neither is called an infrastructure problem and
+neither is closed by this PR.
+
+### `release-blocker-database` → `single-office-isolated.spec.ts` mobile journey
+
+- **Failing expectation:** in
+  `opens the core single-office workspaces responsively with real seeded data`,
+  the loop asserts for `/contracts`:
+  `expect(page.getByText('مستأجر اختبار المكتب الواحد', { exact: false }).filter({ visible: true }).first()).toBeVisible()`
+  → element not found on the **mobile** project.
+- **Actual rendered state:** below 768px the shared register
+  (`components/ui/entity-table.tsx`) renders **only** the identity column, one
+  designated datum column and an «إجراءات» disclosure. `ContractTable` sets
+  identity = `contract_number` and `mobileVisibleSecondaryKey = "rent_amount"`,
+  so the tenant name is **absent from the mobile DOM** by design. The desktop
+  project passes because the dense table still renders every column.
+- **Classification:** a **stale assertion against a deliberate mobile IA
+  change** — not a missing seed, not a route/data mismatch, not
+  infrastructure. The seeded tenant row exists and renders on desktop.
+- **Baseline or introduced?** **Baseline.** Both the mobile register
+  presentation *and* this spec were introduced by the same commit,
+  `main@1543928` ("unify mobile registers and global malek header"); the spec
+  is 111 added lines in that commit (`git log --diff-filter=A` confirms it was
+  created there). It has therefore **never passed**, and it fails identically
+  on every branch based on `1543928` while runs predating it are green. WP-06
+  changes none of the surfaces involved.
+- **Reproduction kept in-repo:**
+  `src/components/ui/entity-table.mobile-datum-visibility.test.tsx` proves at
+  component level that the tenant name is absent from the mobile register DOM
+  and present in the desktop table, and shows that designating the `tenant`
+  column as the mobile datum would make it visible.
+- **Owner / smallest truthful repair:** the Contracts + shared-registers
+  surface (owner of `1543928`), not WP-06. Either designate the tenant column
+  as the mobile datum (`mobileVisibleSecondaryKey="tenant"`) or re-anchor the
+  spec's mobile expectation to what the canonical mobile register actually
+  shows. That is a UX-001/UX-008 register decision and must not be silently
+  made from inside a document-platform PR.
+
+### `Browser Readiness / browser-smoke` → CANCELLED
+
+- **Cancellation reason:** job timeout, not a test failure. The job ran
+  `05:48:38Z → 06:29:02Z` = **40m24s** against `timeout-minutes: 40` in
+  `.github/workflows/browser-readiness.yml`; the step
+  "Run complete browser readiness suite" (`pnpm e2e`) was cut off mid-run.
+- **Baseline or introduced?** **Baseline.** The last **14** Browser Readiness
+  runs — across `arena/019feddd`, `arena/019fee3d`,
+  `agent/canonical-pack-reality-closeout`, `arena/019feeac`, `arena/019feee2`
+  and this branch — are **all** `cancelled`. The suite has not completed on
+  any branch in this window.
+- **Contributing factors:** 20 spec files × 3 Chromium projects with
+  `fullyParallel: false` and `workers: 1` in CI, plus `retries: 1`.
+- **Correct fix (owned by the CI/browser-readiness surface):** shard the
+  matrix (e.g. one job per Playwright project) and/or raise the job timeout —
+  **without** dropping projects, skipping specs or reclassifying `cancelled`
+  as a pass. WP-06 adds 7 tests to this suite; removing them would not make it
+  finish, and the fix must not be a coverage reduction.
 
 ## 8. Handoff — items inside forbidden areas (not touched)
 
@@ -217,6 +286,10 @@ was modified.
 
 ## 9. Explicit remaining blockers
 
+- **`seeded-staging-smoke` / `release-blocker-authenticated-staging`: BLOCKED_EXTERNAL, not passed.** Both are `workflow_dispatch`-gated and require
+  `E2E_SUPABASE_URL` / `E2E_SUPABASE_ANON_KEY` / `E2E_TEST_EMAIL` /
+  `E2E_TEST_PASSWORD`. They reported `skipping` on this PR. A skipped job is
+  **not** acceptance evidence and is recorded here as an external blocker.
 - **Hosted acceptance is still open.** All browser evidence above was produced
   against a **local** dev server with the Supabase HTTP boundary stubbed. No
   deployed QA/preview environment, live Auth/Postgres/Storage, or real

@@ -108,8 +108,13 @@ describe('fake Supabase backend — fail-closed', () => {
     expect(backendSource).not.toContain('Lenient default');
   });
 
-  it('surfaces an UNSEEDED table read as a visible warning', () => {
+  it('answers an UNSEEDED table with a PostgREST error, never 200 []', () => {
     expect(backendSource).toContain('UNSEEDED TABLE');
+    expect(backendSource).toContain("code: 'PGRST205'");
+    // The `?? []` fallback that silently produced an empty 200 must stay gone:
+    // an empty 200 is indistinguishable from a truthful "no rows" state.
+    expect(backendSource).not.toContain('seed.tables[table] ?? []');
+    // Behavioural proof lives in documentAcceptanceBackend.test.ts.
   });
 
   it('seeds the permission-requests RPC as its own array contract', () => {

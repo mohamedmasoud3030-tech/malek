@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-08-11T05:46:16.318Z",
+  "capturedAt": "2026-08-11T09:55:57.703Z",
   "harness": "playwright chromium (headless) against local vite dev server; Supabase HTTP boundary stubbed",
   "note": "Artifacts are synthetic seeded data. No customer or production data is present.",
   "artifacts": [
@@ -9,7 +9,7 @@
       "documentType": "receipt",
       "channel": "print",
       "file": "artifacts/receipt-print-a4.pdf",
-      "bytes": 71536,
+      "bytes": 71391,
       "pageCount": 1,
       "observations": [
         "popup is dir=rtl lang=ar with @page size: A4 portrait",
@@ -25,7 +25,7 @@
       "documentType": "receipt",
       "channel": "pdf",
       "file": "artifacts/receipt-download.pdf",
-      "bytes": 139555,
+      "bytes": 139364,
       "pageCount": 1,
       "pageSizePoints": {
         "width": 595.28,
@@ -55,7 +55,7 @@
       "documentType": "contract",
       "channel": "print",
       "file": "artifacts/contract-print-a4.pdf",
-      "bytes": 74355,
+      "bytes": 74218,
       "pageCount": 1,
       "observations": [
         "truthful registry status wording rendered (عقد إيجار ساري المفعول)",
@@ -69,7 +69,7 @@
       "documentType": "owner_statement",
       "channel": "pdf",
       "file": "artifacts/owner-statement-download.pdf",
-      "bytes": 340511,
+      "bytes": 340174,
       "pageCount": 3,
       "pageSizePoints": {
         "width": 595.28,
@@ -88,7 +88,7 @@
       "documentType": "trial_balance",
       "channel": "pdf",
       "file": "artifacts/trial-balance-multipage.pdf",
-      "bytes": 1588374,
+      "bytes": 1588438,
       "pageCount": 8,
       "pageSizePoints": {
         "width": 595.28,
@@ -98,7 +98,7 @@
       "suggestedFileName": "trial-balance-2026-08-11.pdf",
       "observations": [
         "8 A4 pages rendered",
-        "smallest embedded page image stream = 66373 bytes (no blank trailing page)",
+        "smallest embedded page image stream = 66547 bytes (no blank trailing page)",
         "deterministic filename prefix trial-balance-"
       ]
     },

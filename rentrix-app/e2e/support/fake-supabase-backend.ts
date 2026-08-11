@@ -538,10 +538,27 @@ async function handleTableRequest(route: Route, seed: AcceptanceSeed): Promise<v
   }
 
   if (!(table in seed.tables)) {
+    // FAIL CLOSED. Answering an unseeded table with `200 []` is the single
+    // most dangerous shortcut a hermetic backend can take: an empty 200 is
+    // indistinguishable from a truthful "no rows" state, so a screen reading
+    // a table nobody seeded renders a confident, EMPTY, wrong UI and the test
+    // passes. PostgREST itself answers an unknown relation with 404/PGRST205,
+    // so that is exactly what is returned here — the suite then fails
+    // visibly and the missing seed must be added on purpose.
+    //
+    // The table name is emitted only to harness diagnostics (stderr), never
+    // into the HTTP response body.
     // eslint-disable-next-line no-console
-    console.warn(`[acceptance-backend] UNSEEDED TABLE: ${table}`);
+    console.warn(`[acceptance-backend] UNSEEDED TABLE (failing closed with 404/PGRST205): ${table}`);
+    await fulfillJson(route, 404, {
+      code: 'PGRST205',
+      message: 'acceptance backend: relation is not seeded',
+      details: null,
+      hint: 'Seed this table explicitly in buildAcceptanceSeed() — the hermetic backend never invents rows.',
+    });
+    return;
   }
-  let rows: Array<Record<string, unknown>> = JSON.parse(JSON.stringify(seed.tables[table] ?? []));
+  let rows: Array<Record<string, unknown>> = JSON.parse(JSON.stringify(seed.tables[table]));
 
   const reserved = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
   for (const [key, rawValue] of url.searchParams.entries()) {
