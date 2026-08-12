@@ -70,7 +70,7 @@ async function assertNoHorizontalOverflow(page: Page) {
 
 async function selectSection(page: Page, width: number, section: (typeof sections)[number]) {
   if (width < 640) {
-    const select = page.getByLabel('أقسام التقارير');
+    const select = page.locator('#reports-section-select');
     await expect(select).toBeVisible();
     await select.selectOption(section.id);
     await expect(select).toHaveValue(section.id);
