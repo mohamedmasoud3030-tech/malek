@@ -414,10 +414,18 @@ grant execute on function public.approve_receipt_void_atomic(jsonb)
 create or replace function public.void_receipt_atomic(payload jsonb)
 returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = public, pg_temp
 as $function$
+declare
+  v_actor uuid := auth.uid();
+  v_company_id uuid := public.current_company_id();
 begin
+  if v_actor is null or v_company_id is null then
+    raise exception 'Authentication and company_id context are required.'
+      using errcode = '42501';
+  end if;
+
   raise exception 'RECEIPT_VOID_REQUIRES_MAKER_CHECKER: call request_receipt_void_atomic, then approve_receipt_void_atomic as a different authorized user.'
     using errcode = '42501';
 end;
