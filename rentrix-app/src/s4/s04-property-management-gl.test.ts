@@ -115,12 +115,15 @@ describe('Stage S04 — Property Management Accounting Lifecycle', () => {
     expect(ofp.netCredit).toBe(900);
     expect(mfr.netCredit).toBe(100);
 
-    // Step 2: Pay 900 OMR to the owner
+    // Step 2: this pre-existing APPROVED row is a historical GL fixture,
+    // loaded through maintenance context rather than an authenticated user action.
+    await assumeIdentity(db, null, null);
     await db.exec(`
       insert into public.owner_settlements (id, company_id, owner_id, status, period_start, period_end, gross_collected, office_fee, net_payable, approved_at, approved_by)
       values ('${SETTLEMENT_1}', '${COMPANY_A}', '${OWNER_A}', 'APPROVED', '2026-08-01', '2026-08-31', 1000, 100, 900, now(), '${ADMIN_A}')
       on conflict (id) do update set status = 'APPROVED', approved_at = now(), approved_by = '${ADMIN_A}';
     `);
+    await assumeIdentity(db, ADMIN_A, COMPANY_A);
 
     const payRes = await rpc(db, 'gl_pm_post_owner_payment', {
       company_id: COMPANY_A,
