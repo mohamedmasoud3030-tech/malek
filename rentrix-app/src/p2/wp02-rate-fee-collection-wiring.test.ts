@@ -31,7 +31,10 @@ async function balance(accountNo: string) {
        join public.journal_batches b on b.id = l.batch_id
        join public.accounts a on a.id = l.account_id
       where b.company_id = $1::uuid
-        and b.status = 'POSTED'
+        -- Reversed originals remain immutable financial history. Include both
+        -- the original REVERSED batch and its POSTED compensating batch when
+        -- asserting the net economic balance after governed VOID.
+        and b.status in ('POSTED', 'REVERSED')
         and a.no = $2`,
     [COMPANY, accountNo],
   );

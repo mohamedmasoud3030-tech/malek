@@ -999,6 +999,18 @@ export type Database = {
         Args: Record<string, never>;
         Returns: Json;
       };
+      execute_fixed_monthly_accruals_atomic: {
+        Args: { p_payload: Json };
+        Returns: Json;
+      };
+      reverse_fixed_monthly_accrual_atomic: {
+        Args: { p_payload: Json };
+        Returns: Json;
+      };
+      list_fixed_monthly_accruals: {
+        Args: { p_payload?: Json };
+        Returns: Json;
+      };
       list_journal_batches: {
         Args: { p_payload?: Json | null };
         Returns: Json;
