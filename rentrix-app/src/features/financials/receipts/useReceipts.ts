@@ -1,13 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
-import { getReceiptDetail, listReceipts, type ReceiptListParams } from './receiptService';
-import { voidReceipt } from './receiptService';
+import {
+  approveReceiptVoid,
+  getReceiptDetail,
+  listPendingReceiptVoidRequests,
+  listReceipts,
+  requestReceiptVoid,
+  type ReceiptListParams,
+} from './receiptService';
 
 export const receiptKeys = {
   all: ['receipts'] as const,
   list: (params: ReceiptListParams = {}) => [...receiptKeys.all, 'list', params] as const,
   detail: (receiptOrPaymentId: string) => [...receiptKeys.all, 'detail', receiptOrPaymentId] as const,
+  pendingVoidRequests: () => [...receiptKeys.all, 'void-requests', 'pending'] as const,
 };
 
 export function useReceipts(params: ReceiptListParams = {}) {
@@ -27,16 +34,38 @@ export function useReceipt(receiptOrPaymentId: string) {
   });
 }
 
-export function useVoidReceipt() {
+export function usePendingReceiptVoidRequests(enabled = true) {
+  return useQuery({
+    queryKey: receiptKeys.pendingVoidRequests(),
+    queryFn: listPendingReceiptVoidRequests,
+    enabled,
+  });
+}
+
+export function useRequestReceiptVoid() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: voidReceipt,
+    mutationFn: requestReceiptVoid,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: receiptKeys.all });
-      toast.success('تم إلغاء الإيصال بنجاح');
+      toast.success('تم إرسال طلب إلغاء الإيصال للمراجعة');
     },
     onError: (error: unknown) => {
-      toast.error(getActionableSupabaseErrorMessage(error, 'تعذّر إلغاء الإيصال'));
+      toast.error(getActionableSupabaseErrorMessage(error, 'تعذّر إرسال طلب إلغاء الإيصال'));
+    },
+  });
+}
+
+export function useApproveReceiptVoid() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: approveReceiptVoid,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: receiptKeys.all });
+      toast.success('تم اعتماد إلغاء الإيصال وتنفيذ القيد العكسي');
+    },
+    onError: (error: unknown) => {
+      toast.error(getActionableSupabaseErrorMessage(error, 'تعذّر اعتماد إلغاء الإيصال'));
     },
   });
 }
