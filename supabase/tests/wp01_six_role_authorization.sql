@@ -9,7 +9,7 @@
 -- Requires all migrations through 20260811121000 applied.
 
 begin;
-select plan(27);
+select plan(30);
 
 -- ── Test fixtures ───────────────────────────────────────────────────────────
 -- Two companies, one user per role in company A, one cross-company user.
@@ -147,22 +147,25 @@ select ok(
   'settlements maker-checker distinct constraint exists'
 );
 
-select ok(
-  has_column('public', 'owner_settlements', 'maker_user_id',
-    'owner_settlements.maker_user_id exists'),
-  'owner_settlements.maker_user_id column exists'
+select has_column(
+  'public',
+  'owner_settlements',
+  'maker_user_id',
+  'owner_settlements.maker_user_id exists'
 );
 
-select ok(
-  has_column('public', 'owner_settlements', 'checker_user_id',
-    'owner_settlements.checker_user_id exists'),
-  'owner_settlements.checker_user_id column exists'
+select has_column(
+  'public',
+  'owner_settlements',
+  'checker_user_id',
+  'owner_settlements.checker_user_id exists'
 );
 
-select ok(
-  has_column('public', 'receipts', 'maker_user_id',
-    'receipts.maker_user_id exists'),
-  'receipts.maker_user_id column exists (reserved for VOID lifecycle)'
+select has_column(
+  'public',
+  'receipts',
+  'maker_user_id',
+  'receipts.maker_user_id exists (reserved for VOID lifecycle)'
 );
 
 -- Maker-checker enforcement is documented as PARTIAL.
