@@ -160,23 +160,6 @@ begin
       using errcode = 'P0002';
   end if;
 
-  if upper(coalesce(v_receipt.status::text, '')) <> 'POSTED' then
-    raise exception 'Only POSTED receipts can enter the VOID approval lifecycle.'
-      using errcode = '22023';
-  end if;
-
-  if not exists (
-    select 1
-    from public.payments p
-    where p.company_id = v_company_id
-      and p.deleted_at is null
-      and p.receipt_id::text = v_receipt.id::text
-      and upper(coalesce(p.status::text, '')) = 'POSTED'
-  ) then
-    raise exception 'A linked POSTED payment is required to request receipt VOID.'
-      using errcode = '22023';
-  end if;
-
   perform pg_advisory_xact_lock(
     hashtextextended('receipt_void_request:' || v_company_id::text || ':' || v_receipt.id::text, 0)
   );
@@ -207,6 +190,23 @@ begin
       'requested_by', v_existing.requested_by,
       'requested_at', v_existing.requested_at
     );
+  end if;
+
+  if upper(coalesce(v_receipt.status::text, '')) <> 'POSTED' then
+    raise exception 'Only POSTED receipts can enter the VOID approval lifecycle.'
+      using errcode = '22023';
+  end if;
+
+  if not exists (
+    select 1
+    from public.payments p
+    where p.company_id = v_company_id
+      and p.deleted_at is null
+      and p.receipt_id::text = v_receipt.id::text
+      and upper(coalesce(p.status::text, '')) = 'POSTED'
+  ) then
+    raise exception 'A linked POSTED payment is required to request receipt VOID.'
+      using errcode = '22023';
   end if;
 
   if exists (
