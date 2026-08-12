@@ -37,7 +37,8 @@ test.describe('release readiness browser smoke', () => {
 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('heading', { name: 'كل أملاكك في مكان واحد', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'مرحبًا بعودتك', exact: true })).toBeVisible();
+    await expect(page.getByText('سجّل الدخول إلى مساحة عملك في MALEK', { exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: /ودّع جداول Excel/ })).toHaveCount(0);
 
     expect(requestedUrls.some((url) => url.includes('rentrix-demo.mp4'))).toBe(false);
@@ -50,7 +51,7 @@ test.describe('release readiness browser smoke', () => {
     const consoleErrors = await collectUnexpectedConsoleErrors(page);
 
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'كل أملاكك في مكان واحد', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'مرحبًا بعودتك', exact: true })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true })).toBeVisible();
     await expect(page.getByPlaceholder('••••••••')).toBeVisible();
     await expect(page.getByRole('button', { name: /تسجيل الدخول/ })).toBeVisible();
@@ -87,7 +88,7 @@ test.describe('release readiness browser smoke', () => {
 
   test('keeps the login surface within the mobile viewport without horizontal overflow', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'كل أملاكك في مكان واحد', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'مرحبًا بعودتك', exact: true })).toBeVisible();
 
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
@@ -102,7 +103,7 @@ test.describe('release readiness browser smoke', () => {
 
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('heading', { name: 'كل أملاكك في مكان واحد', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'مرحبًا بعودتك', exact: true })).toBeVisible();
     expect(consoleErrors).toEqual([]);
   });
 });
