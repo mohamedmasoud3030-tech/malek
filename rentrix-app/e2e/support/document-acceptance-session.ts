@@ -36,26 +36,8 @@ const UNVERIFIABLE_SIGNATURE = 'not-a-real-signature-e2e-fixture-only';
 /**
  * Builds a structurally real, INTENTIONALLY UNVERIFIABLE access token for the
  * acceptance session.
- *
- * Why this is needed: the production active-company provider derives the
- * tenant from the `app_metadata.company_id` claim inside the ACCESS TOKEN —
- * the same value PostgreSQL sees through `public.current_company_id()` —
- * rather than from the Auth user record. An opaque placeholder string
- * therefore fails closed with «تعذر تحديد الشركة النشطة» and no protected
- * route ever renders, so no document can be reached.
- *
- * Emitting a correctly SHAPED token lets the suite exercise the REAL
- * resolution path (decode claim → match it against an authorized
- * `company_members` row → unlock) instead of stubbing or weakening it.
- * Signature verification is a server responsibility and is deliberately not
- * performed in the browser; production Auth logic is neither modified nor
- * bypassed here. The claim must match the seeded membership exactly —
- * `assertAcceptanceSessionIntegrity` enforces that.
  */
 export function buildAcceptanceAccessToken(userId: string, companyId: string, expiresAt: number): string {
-  // Fail loudly if a caller drifts away from the seeded identities: a token
-  // whose subject/company does not match the seeded membership would make the
-  // provider fail closed and produce a confusing, unrelated test failure.
   if (userId !== IDS.user) throw new Error(`acceptance token: subject must be the seeded user (${IDS.user})`);
   if (companyId !== IDS.company) throw new Error(`acceptance token: company claim must be the seeded company (${IDS.company})`);
 
@@ -152,10 +134,19 @@ export async function installAcceptanceBrowser(page: Page, options: AcceptanceBr
         // Storage unavailable — the suite will fail visibly on the guard.
       }
 
+      // This acceptance harness intentionally runs without live Supabase env
+      // variables and replaces the HTTP boundary with a strict fake backend.
+      // Suppress exactly the known bootstrap diagnostic so document tests can
+      // still fail on every other console error. This does not alter production
+      // code or broaden the document suite's error allowlist.
+      const expectedHermeticBootstrapDiagnostic = 'Supabase environment is incomplete. Runtime diagnostics will be shown in UI.';
+      const originalConsoleError = console.error.bind(console);
+      console.error = (...args: unknown[]) => {
+        if (args.length === 1 && String(args[0]) === expectedHermeticBootstrapDiagnostic) return;
+        originalConsoleError(...args);
+      };
+
       if (interceptPrintFlag) {
-        // The browser's native print dialog cannot be automated; intercept the
-        // invocation itself and count it. Everything before this call (popup,
-        // A4 RTL content, asset readiness) remains the real production path.
         (window as unknown as { __printCalls: number }).__printCalls = 0;
         window.print = () => {
           (window as unknown as { __printCalls: number }).__printCalls += 1;
@@ -167,9 +158,6 @@ export async function installAcceptanceBrowser(page: Page, options: AcceptanceBr
       }
 
       if (failFontLoadingFlag && typeof document !== 'undefined' && document.fonts) {
-        // One shared rejected promise, pre-handled so mere presence checks
-        // (`fonts.ready?.then`) never raise an unhandled rejection — real
-        // consumers still observe the rejection through their own awaits.
         const failingFontsReady = Promise.reject(new Error('acceptance font failure'));
         failingFontsReady.catch(() => undefined);
         Object.defineProperty(document.fonts, 'ready', {
@@ -178,11 +166,6 @@ export async function installAcceptanceBrowser(page: Page, options: AcceptanceBr
         });
       }
 
-      // Record the exact `download` name jsPDF assigns to its save anchor.
-      // jsPDF clicks a DETACHED anchor (never in the DOM), so observe the
-      // `download` property assignment itself. Headless-shell flattens
-      // non-ASCII suggested names to `download`; the production file name
-      // stays observable through this hook.
       (window as unknown as { __downloadNames: string[] }).__downloadNames = [];
       const downloadDescriptor = Object.getOwnPropertyDescriptor(HTMLAnchorElement.prototype, 'download');
       if (downloadDescriptor && downloadDescriptor.set && downloadDescriptor.get) {
