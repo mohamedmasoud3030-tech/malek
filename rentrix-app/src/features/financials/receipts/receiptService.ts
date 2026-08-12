@@ -232,7 +232,7 @@ export type RequestReceiptVoidResult = {
   void_request_id: string;
   request_id: string;
   receipt_id: string;
-  status: 'PENDING';
+  status: ReceiptVoidRequestStatus;
   reason: string;
   requested_by: string;
   requested_at: string;
@@ -269,7 +269,7 @@ function isRequestReceiptVoidResult(value: unknown): value is RequestReceiptVoid
     && typeof result.void_request_id === 'string'
     && typeof result.request_id === 'string'
     && typeof result.receipt_id === 'string'
-    && result.status === 'PENDING'
+    && ['PENDING', 'EXECUTED', 'REJECTED', 'CANCELLED'].includes(String(result.status))
     && typeof result.reason === 'string'
     && typeof result.requested_by === 'string'
     && typeof result.requested_at === 'string';
