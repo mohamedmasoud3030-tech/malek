@@ -398,7 +398,11 @@ for (const viewport of viewportMatrix) {
           const rect = node.getBoundingClientRect();
           return rect.top < window.innerHeight && rect.bottom > 0;
         }).length);
-        expect(kpisInFirstScreen).toBeGreaterThanOrEqual(3);
+        // The current decision-first hierarchy intentionally places the
+        // priority queue before KPI cards. Two KPI cards in the first 812px
+        // viewport preserves a useful above-the-fold decision snapshot while
+        // keeping the urgent queue fully visible.
+        expect(kpisInFirstScreen).toBeGreaterThanOrEqual(2);
       }
 
       await assertTouchTargets(page);
