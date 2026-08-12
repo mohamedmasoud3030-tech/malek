@@ -303,7 +303,8 @@ export async function listPendingReceiptVoidRequests(): Promise<ReceiptVoidReque
     .from('receipt_void_requests')
     .select('id, company_id, receipt_id, reason, status, requested_by, requested_at, reviewed_by, reviewed_at, request_id, execution_request_id, reversal_batch_id')
     .eq('status', 'PENDING')
-    .order('requested_at', { ascending: true });
+    .order('requested_at', { ascending: true })
+    .returns();
   if (error) throw error;
   return (data ?? []) as ReceiptVoidRequestRecord[];
 }
