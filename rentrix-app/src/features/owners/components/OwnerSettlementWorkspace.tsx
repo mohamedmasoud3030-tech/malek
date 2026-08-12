@@ -37,7 +37,7 @@ import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
 import { toOwnerStatementDocumentPayload, type OwnerStatementData } from '@/services/documents/documentPayloadAdapters';
-import { runDocumentAction } from '@/services/documents/runDocumentAction';
+import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import {
   approveOwnerSettlement,
   createOwnerSettlementDraft,
@@ -214,21 +214,29 @@ export function OwnerSettlementWorkspace() {
   });
 
   const handlePrint = (settlement: OwnerSettlementRecord) => {
-    if (!documentSettings.isReady) return;
-    const data = buildOwnerStatementData(settlement) satisfies OwnerStatementData;
-    void runDocumentAction(
-      () => documentService.printDocument('owner_statement', { settings: documentSettings.companySettings, payload: toOwnerStatementDocumentPayload(data) }),
-      'تعذرت طباعة كشف التسوية.',
-    );
+    // Guard inside the async boundary so the handler fails closed with a
+    // visible Arabic reason rather than silently doing nothing.
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => {
+        const data = buildOwnerStatementData(settlement) satisfies OwnerStatementData;
+        return documentService.printDocument('owner_statement', { settings: documentSettings.companySettings, payload: toOwnerStatementDocumentPayload(data) });
+      },
+      fallbackMessage: 'تعذرت طباعة كشف التسوية.',
+    });
   };
 
   const handleDownloadPdf = (settlement: OwnerSettlementRecord) => {
-    if (!documentSettings.isReady) return;
-    const data = buildOwnerStatementData(settlement) satisfies OwnerStatementData;
-    void runDocumentAction(
-      () => documentService.downloadDocumentPdf('owner_statement', { settings: documentSettings.companySettings, payload: toOwnerStatementDocumentPayload(data) }),
-      'تعذر تنزيل كشف التسوية كملف PDF.',
-    );
+    // Guard inside the async boundary so the handler fails closed with a
+    // visible Arabic reason rather than silently doing nothing.
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => {
+        const data = buildOwnerStatementData(settlement) satisfies OwnerStatementData;
+        return documentService.downloadDocumentPdf('owner_statement', { settings: documentSettings.companySettings, payload: toOwnerStatementDocumentPayload(data) });
+      },
+      fallbackMessage: 'تعذر تنزيل كشف التسوية كملف PDF.',
+    });
   };
 
   const handleTargetChange = (value: string) => setDraftForm((current) => ({ ...current, targetKey: value }));

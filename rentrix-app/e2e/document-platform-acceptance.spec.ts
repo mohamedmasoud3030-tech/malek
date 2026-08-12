@@ -1,8 +1,7 @@
-import { expect, test, type Download, type Page } from '@playwright/test';
+import { expect, test, type Download, type Locator, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import {
   COMPANY_NAME,
-  COMPANY_TAX_NUMBER,
   IDS,
   OWNER_NAME,
   RECEIPT_REFERENCE,
@@ -13,16 +12,11 @@ import { installAcceptanceBrowser } from './support/document-acceptance-session'
 import { auditDocumentFileName, isA4Portrait, parsePdfArtifact } from './support/pdf-artifact';
 
 /**
- * PR 3 — Browser acceptance for the document/print/PDF platform.
+ * Browser acceptance for the document/print/PDF platform.
  *
- * These tests drive the REAL production surfaces end to end:
- *   invoice workspace, receipt detail, contract detail, reports statements,
- *   accounting reports → real action handlers → `documentService` →
- *   DocumentEngine → DocumentRenderer → real popup windows and real
- *   application/pdf downloads inspected as artifacts.
- *
- * The only stubbed boundary is the Supabase HTTP API (no live project exists
- * in hermetic CI); the seeded rows mirror `supabase/migrations` shapes.
+ * The production UI, action handlers, document service, engine and renderer
+ * run unchanged. Only the Supabase HTTP boundary is replaced by the strict,
+ * fail-closed seeded backend used by this acceptance suite.
  */
 
 const DESKTOP = 'chromium-desktop';
@@ -32,6 +26,8 @@ const TABLET = 'chromium-tablet';
 const POPUP_BLOCKED_MESSAGE = 'تعذر فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة لهذا الموقع ثم إعادة المحاولة.';
 const FONT_FAILED_MESSAGE = 'تعذر تحميل الخط العربي المطلوب للطباعة. يرجى إعادة المحاولة أو التحقق من الاتصال بالإنترنت.';
 const READINESS_NOTICE = 'أكمل بيانات الشركة الأساسية في الإعدادات قبل طباعة هذا المستند.';
+const INVOICE_IDENTITY = 'فاتورة بلا مرجع';
+const EXPECTED_SETTINGS_UNAVAILABLE_RESOURCE_ERROR = 'Failed to load resource: the server responded with a status of 500 (Internal Server Error)';
 
 /** Every seeded UUID plus its historical `id.slice(0, 8)` abbreviation. */
 const FORBIDDEN_ID_FRAGMENTS = Object.values(IDS).flatMap((id) => [id, id.slice(0, 8)]);
@@ -44,15 +40,21 @@ test.beforeEach(async ({}, testInfo) => {
 /* Shared helpers                                                       */
 /* ------------------------------------------------------------------ */
 
-async function expectNoUnexpectedConsoleErrors(page: Page, collected: string[]): Promise<void> {
-  const allowed = [
-    'Supabase environment is incomplete. Runtime diagnostics will be shown in UI.',
-    'Failed to load resource',
-    'the server responded with a status of',
-    'Download the React DevTools',
-    '[vite]',
-  ];
-  const unexpected = collected.filter((text) => !allowed.some((fragment) => text.includes(fragment)));
+function isExpectedHermeticRealtimeDnsError(text: string): boolean {
+  const isKnownHermeticHost = text.includes('example.supabase.co') || text.includes('invalid.supabase.local');
+  return isKnownHermeticHost
+    && text.includes('/realtime/v1/websocket')
+    && text.includes('ERR_NAME_NOT_RESOLVED');
+}
+
+async function expectNoUnexpectedConsoleErrors(_page: Page, collected: string[]): Promise<void> {
+  expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://example.supabase.co/realtime/v1/websocket?apikey=test' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(true);
+  expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://invalid.supabase.local/realtime/v1/websocket?apikey=invalid-anon-key' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(true);
+  expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://real-project.supabase.co/realtime/v1/websocket' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(false);
+  expect(isExpectedHermeticRealtimeDnsError('https://example.supabase.co/rest/v1/contracts net::ERR_NAME_NOT_RESOLVED')).toBe(false);
+  expect(isExpectedHermeticRealtimeDnsError('example.supabase.co realtime/v1/websocket application exploded')).toBe(false);
+
+  const unexpected = collected.filter((text) => !isExpectedHermeticRealtimeDnsError(text));
   expect(unexpected).toEqual([]);
 }
 
@@ -79,15 +81,11 @@ async function assertPopupIdentity(popup: Page, expectedFragments: readonly stri
   await popup.waitForFunction(() => document.body !== null && (document.body.textContent ?? '').length > 0);
   const bodyText = await popup.evaluate(() => document.body.innerText);
   const title = await popup.title();
-  // Real company identity only — never the MALEK product brand fallback.
   expect(bodyText).toContain(COMPANY_NAME);
   expect(title).toContain(COMPANY_NAME);
   expect(bodyText).not.toContain('MALEK');
   expect(title).not.toContain('MALEK');
-  for (const fragment of expectedFragments) {
-    expect(bodyText).toContain(fragment);
-  }
-  // A shortened UUID must never surface as a document reference.
+  for (const fragment of expectedFragments) expect(bodyText).toContain(fragment);
   for (const forbidden of FORBIDDEN_ID_FRAGMENTS) {
     expect(bodyText).not.toContain(forbidden);
     expect(title).not.toContain(forbidden);
@@ -100,16 +98,10 @@ async function assertA4PrintContract(popup: Page): Promise<void> {
     Array.from(document.querySelectorAll('style')).some((style) => (style.textContent ?? '').includes('size: A4 portrait')),
   );
   expect(hasA4Rule).toBe(true);
-
-  // The renderer must actually invoke the browser print dialog on the popup
-  // (intercepted and counted — the native dialog itself is not automatable).
   await popup.waitForFunction(() => (window as unknown as { __printCalls?: number }).__printCalls === 1, undefined, { timeout: 30_000 });
 }
 
 async function popupToPdfBuffer(popup: Page): Promise<Buffer> {
-  // CDP's printToPDF walks the print lifecycle (beforeprint/afterprint). The
-  // production renderer closes the popup on `afterprint`, which would destroy
-  // the target mid-capture — neutralize the self-close for the artifact pass.
   await popup.evaluate(() => {
     window.close = () => undefined;
   });
@@ -142,11 +134,6 @@ function assertRealPdf(buffer: Buffer): ReturnType<typeof parsePdfArtifact> {
   return summary;
 }
 
-/**
- * Clicks a secondary PageHeader action on any viewport. Desktop renders the
- * button inline; mobile collapses secondary actions into an accessible
- * overflow bottom sheet («إجراءات إضافية») — both are real production paths.
- */
 async function clickHeaderSecondaryAction(page: Page, name: string | RegExp): Promise<void> {
   const viewport = page.viewportSize();
   const isMobileWidth = (viewport?.width ?? 1440) < 640;
@@ -188,6 +175,77 @@ function reportPanel(page: Page, title: string) {
     .locator('xpath=ancestor::div[contains(@class, "rounded-2xl")][1]');
 }
 
+function isInvoiceMobile(page: Page): boolean {
+  return (page.viewportSize()?.width ?? 1440) < 768;
+}
+
+function visibleInvoiceRegister(page: Page): Locator {
+  const register = isInvoiceMobile(page)
+    ? page.locator('[data-entity-table-mobile]')
+    : page.locator('[data-entity-table-wrapper]');
+  return register.filter({ hasText: INVOICE_IDENTITY }).first();
+}
+
+function mobileInvoiceCard(page: Page): Locator {
+  return page
+    .locator('[data-entity-table-mobile-card]')
+    .filter({ hasText: INVOICE_IDENTITY })
+    .first();
+}
+
+async function gotoInvoicesRegister(page: Page): Promise<Locator> {
+  await page.goto('/invoices');
+  await expect(page).toHaveURL(/\/financials\?section=collections&view=invoices(?:&|$)/);
+  await expect(page.getByRole('heading', { name: 'المالية', level: 1, exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: 'الفواتير', level: 3, exact: true })).toBeVisible({ timeout: 20_000 });
+
+  const register = visibleInvoiceRegister(page);
+  await expect(register).toBeVisible({ timeout: 20_000 });
+  await expect(register.getByText(INVOICE_IDENTITY, { exact: true }).first()).toBeVisible({ timeout: 20_000 });
+  return register;
+}
+
+async function openInvoiceDocumentActions(page: Page): Promise<void> {
+  const alreadyOpen = page.getByRole('option', { name: 'طباعة', exact: true }).first();
+  if (await alreadyOpen.isVisible().catch(() => false)) return;
+
+  if (isInvoiceMobile(page)) {
+    const card = mobileInvoiceCard(page);
+    const outerTrigger = card.locator('[data-entity-table-mobile-actions]');
+    if ((await outerTrigger.getAttribute('aria-expanded')) !== 'true') await outerTrigger.click();
+    const outerPanel = card.locator('[data-entity-table-mobile-actions-panel]');
+    await expect(outerPanel).toBeVisible();
+    await outerPanel.getByRole('button', { name: 'إجراءات إضافية للفاتورة', exact: true }).click();
+  } else {
+    await visibleInvoiceRegister(page)
+      .getByRole('button', { name: 'إجراءات إضافية للفاتورة', exact: true })
+      .first()
+      .click();
+  }
+
+  await expect(page.getByRole('option', { name: 'طباعة', exact: true }).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('option', { name: 'PDF', exact: true }).first()).toBeVisible({ timeout: 15_000 });
+}
+
+async function expectInvoiceDocumentActionsWithheld(page: Page): Promise<void> {
+  const register = visibleInvoiceRegister(page);
+  if (isInvoiceMobile(page)) {
+    const card = mobileInvoiceCard(page);
+    const outerTrigger = card.locator('[data-entity-table-mobile-actions]');
+    await expect(outerTrigger).toBeVisible();
+    await outerTrigger.click();
+    const panel = card.locator('[data-entity-table-mobile-actions-panel]');
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole('button', { name: /^تحصيل/ }).first()).toBeVisible();
+    await expect(panel.getByRole('button', { name: 'إجراءات إضافية للفاتورة', exact: true })).toHaveCount(0);
+  } else {
+    await expect(register.getByRole('button', { name: /^تحصيل/ }).first()).toBeVisible();
+    await expect(register.getByRole('button', { name: 'إجراءات إضافية للفاتورة', exact: true })).toHaveCount(0);
+  }
+  await expect(page.getByRole('option', { name: 'طباعة', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('option', { name: 'PDF', exact: true })).toHaveCount(0);
+}
+
 /* ------------------------------------------------------------------ */
 /* 1. Invoice                                                           */
 /* ------------------------------------------------------------------ */
@@ -199,16 +257,13 @@ test.describe('الفاتورة — invoice acceptance', () => {
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
 
-    await page.goto('/invoices');
-    await expect(page.getByRole('heading', { name: 'الفواتير', level: 1, exact: true })).toBeVisible();
-    const printButton = page.getByRole('button', { name: 'طباعة', exact: true }).first();
-    await expect(printButton).toBeVisible({ timeout: 20_000 });
-
-    const popup = await openPrintPopup(page, () => printButton.click());
+    await gotoInvoicesRegister(page);
+    await openInvoiceDocumentActions(page);
+    const printOption = page.getByRole('option', { name: 'طباعة', exact: true }).first();
+    const popup = await openPrintPopup(page, () => printOption.click());
     await assertPopupIdentity(popup, [TENANT_NAME, '420', 'إيجار شهر يوليو 2026']);
     await assertA4PrintContract(popup);
 
-    // Real print-layout artifact from the actual popup.
     const pdfBuffer = await popupToPdfBuffer(popup);
     const summary = assertRealPdf(pdfBuffer);
     expect(isA4Portrait(summary)).toBe(true);
@@ -223,12 +278,10 @@ test.describe('الفاتورة — invoice acceptance', () => {
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
 
-    await page.goto('/invoices');
-    await expect(page.getByRole('heading', { name: 'الفواتير', level: 1, exact: true })).toBeVisible();
-    const pdfButton = page.getByRole('button', { name: 'PDF', exact: true }).first();
-    await expect(pdfButton).toBeVisible({ timeout: 20_000 });
-
-    const { download, buffer } = await downloadPdf(page, () => pdfButton.click());
+    await gotoInvoicesRegister(page);
+    await openInvoiceDocumentActions(page);
+    const pdfOption = page.getByRole('option', { name: 'PDF', exact: true }).first();
+    const { download, buffer } = await downloadPdf(page, () => pdfOption.click());
     const summary = assertRealPdf(buffer);
     expect(isA4Portrait(summary)).toBe(true);
     expect(summary.pageCount).toBeGreaterThanOrEqual(1);
@@ -245,28 +298,25 @@ test.describe('الفاتورة — invoice acceptance', () => {
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
 
-    await page.goto('/invoices');
-    await expect(page.getByRole('heading', { name: 'الفواتير', level: 1, exact: true })).toBeVisible();
+    await gotoInvoicesRegister(page);
 
     const popups: Page[] = [];
     page.context().on('page', (opened) => popups.push(opened));
     const downloads: Download[] = [];
     page.on('download', (download) => downloads.push(download));
 
-    const printButton = page.getByRole('button', { name: 'طباعة', exact: true }).first();
-    await expect(printButton).toBeVisible({ timeout: 20_000 });
-    await printButton.dblclick();
-    // The first render stays in flight for the whole capture window; a second
-    // popup would appear immediately if single-flight protection were broken.
+    await openInvoiceDocumentActions(page);
+    await page.getByRole('option', { name: 'طباعة', exact: true }).first().dblclick();
     await page.waitForTimeout(2000);
     expect(popups.length).toBe(1);
     const [popup] = popups;
     await popup.waitForLoadState('domcontentloaded');
     await popup.close();
 
-    const pdfButton = page.getByRole('button', { name: 'PDF', exact: true }).first();
-    await pdfButton.dblclick();
-    await page.waitForEvent('download', { timeout: 120_000 });
+    await openInvoiceDocumentActions(page);
+    const downloadPromise = page.waitForEvent('download', { timeout: 120_000 });
+    await page.getByRole('option', { name: 'PDF', exact: true }).first().dblclick();
+    await downloadPromise;
     await page.waitForTimeout(2500);
     expect(downloads.length).toBe(1);
   });
@@ -325,8 +375,6 @@ test.describe('العقد — contract acceptance', () => {
     await expect(printButton).toBeVisible();
     const popup = await openPrintPopup(page, () => printButton.click());
     const bodyText = await assertPopupIdentity(popup, [TENANT_NAME, 'عقد إيجار ساري المفعول', '420']);
-    // The page header abbreviates the contract UUID for navigation, but the
-    // document itself must never carry that fragment.
     expect(bodyText).not.toContain(IDS.contract.slice(0, 8));
     await assertA4PrintContract(popup);
     const printArtifact = assertRealPdf(await popupToPdfBuffer(popup));
@@ -346,7 +394,7 @@ test.describe('العقد — contract acceptance', () => {
 });
 
 /* ------------------------------------------------------------------ */
-/* 4 & 5. Owner + tenant statements (reports workspace)                 */
+/* 4 & 5. Owner + tenant statements                                    */
 /* ------------------------------------------------------------------ */
 
 test.describe('كشوف الحسابات — statements acceptance', () => {
@@ -382,17 +430,12 @@ test.describe('كشوف الحسابات — statements acceptance', () => {
     const { download, buffer } = await downloadPdf(page, () => tenantPanel.getByRole('button', { name: 'تنزيل PDF' }).click());
     const summary = assertRealPdf(buffer);
     expect(isA4Portrait(summary)).toBe(true);
-    // 22 movement lines per table chunk plus headers/totals: the seeded
-    // statement must span multiple A4 pages.
     expect(summary.pageCount).toBeGreaterThanOrEqual(2);
-    // No blank trailing page: every captured page carries real pixels.
     expect(summary.smallestImageStream).toBeGreaterThan(10_000);
     const productionName = await lastProductionDownloadName(page);
     expect(productionName).toMatch(/^tenant-statement-/);
     const audit = auditDocumentFileName(productionName, FORBIDDEN_ID_FRAGMENTS);
     expect(audit.passes, `file name must be safe: ${productionName}`).toBe(true);
-    // Headless-shell flattens non-ASCII suggested names to `download`; real
-    // browsers keep the Arabic name. Both outcomes are accepted here.
     expect([productionName, 'download']).toContain(download.suggestedFilename());
 
     await expectNoUnexpectedConsoleErrors(page, consoleErrors);
@@ -431,7 +474,7 @@ test.describe('كشوف الحسابات — statements acceptance', () => {
 });
 
 /* ------------------------------------------------------------------ */
-/* 6. Long multi-page financial report                                  */
+/* 6. Long multi-page financial report                                 */
 /* ------------------------------------------------------------------ */
 
 test.describe('التقارير المالية — long report acceptance', () => {
@@ -444,17 +487,14 @@ test.describe('التقارير المالية — long report acceptance', () =
 
     await page.goto('/reports?section=accounting');
     const trialBalancePanel = reportPanel(page, 'ميزان المراجعة');
-    // All 150 seeded accounts must reach the panel before output is produced.
     await expect(trialBalancePanel.getByText('حساب أصول تشغيلية رقم 75 — فرع صحار').first()).toBeVisible({ timeout: 30_000 });
     await expect(trialBalancePanel.getByText('حساب التزامات وإيرادات رقم 75 — فرع صحار').first()).toBeVisible({ timeout: 30_000 });
 
-    // Print path: scoped popup with the full account table.
     const popup = await openPrintPopup(page, () => trialBalancePanel.getByRole('button', { name: 'طباعة الميزان' }).click());
     await assertPopupIdentity(popup, ['ميزان المراجعة', 'حساب أصول تشغيلية رقم 75 — فرع صحار']);
     await assertA4PrintContract(popup);
     await popup.close();
 
-    // PDF path: real artifact, multiple pages, every page carries content.
     const { download, buffer } = await downloadPdf(page, () => trialBalancePanel.getByRole('button', { name: 'PDF', exact: true }).click());
     const summary = assertRealPdf(buffer);
     expect(isA4Portrait(summary)).toBe(true);
@@ -470,7 +510,7 @@ test.describe('التقارير المالية — long report acceptance', () =
 });
 
 /* ------------------------------------------------------------------ */
-/* 7. Readiness gate — incomplete company settings                      */
+/* 7. Readiness gate — incomplete company settings                     */
 /* ------------------------------------------------------------------ */
 
 test.describe('بوابة الجاهزية — company identity not confirmed', () => {
@@ -478,25 +518,17 @@ test.describe('بوابة الجاهزية — company identity not confirmed', 
     test.setTimeout(90_000);
     const consoleErrors = watchConsoleErrors(page);
     await installAcceptanceBrowser(page);
-    // The settings read fails, so the canonical adapter never confirms a real
-    // company identity: `isReady` must stay false and every output action must
-    // be blocked with the Arabic readiness notice — no brand fallback may fire.
     await installFakeSupabaseBackend(page, 'settings-unavailable');
 
-    // Receipt detail: buttons stay visible but disabled, notice is shown.
     await page.goto(`/receipts?receiptId=${IDS.payment}`);
     await expect(page.getByText(RECEIPT_REFERENCE).first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('button', { name: /طباعة A4/ })).toBeDisabled();
     await expectHeaderSecondaryActionDisabled(page, 'تنزيل PDF');
     await expect(page.getByRole('alert').getByText(READINESS_NOTICE)).toBeVisible();
 
-    // Invoice workspace: no print/PDF affordance exists while not ready.
-    await page.goto('/invoices');
-    await expect(page.getByRole('heading', { name: 'الفواتير', level: 1, exact: true })).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByRole('button', { name: 'طباعة', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'PDF', exact: true })).toHaveCount(0);
+    await gotoInvoicesRegister(page);
+    await expectInvoiceDocumentActionsWithheld(page);
 
-    // Reports statements: actions disabled with the same notice contract.
     await page.goto('/reports?section=statements');
     await page.getByRole('button', { name: 'تعديل النطاق' }).click();
     await expect(page.getByLabel('العقد لكشف المستأجر')).toBeVisible({ timeout: 30_000 });
@@ -507,12 +539,20 @@ test.describe('بوابة الجاهزية — company identity not confirmed', 
     await expect(tenantPanel.getByRole('button', { name: 'تنزيل PDF' })).toBeDisabled();
     await expect(page.getByRole('alert').getByText(READINESS_NOTICE).first()).toBeVisible();
 
-    await expectNoUnexpectedConsoleErrors(page, consoleErrors);
+    // In this scenario the fake backend deliberately returns HTTP 500 for
+    // company-settings reads to prove the UI fails closed. Browser resource
+    // errors for those intentional 500s are expected evidence, not runtime
+    // regressions. Every other console error still goes through the narrow
+    // acceptance guard.
+    await expectNoUnexpectedConsoleErrors(
+      page,
+      consoleErrors.filter((text) => !text.includes(EXPECTED_SETTINGS_UNAVAILABLE_RESOURCE_ERROR)),
+    );
   });
 });
 
 /* ------------------------------------------------------------------ */
-/* 8. Failure surfacing                                                 */
+/* 8. Failure surfacing                                                */
 /* ------------------------------------------------------------------ */
 
 test.describe('ظهور الأخطاء — failure surfacing', () => {
@@ -553,13 +593,12 @@ test.describe('ظهور الأخطاء — failure surfacing', () => {
 
     expect(popups.length).toBe(0);
     expect(downloads.length).toBe(0);
-    // No orphan offscreen render containers may remain after failures.
     await expect(page.locator('[data-document-render-root]')).toHaveCount(0);
   });
 });
 
 /* ------------------------------------------------------------------ */
-/* 9. Mobile coverage                                                   */
+/* 9. Mobile coverage                                                  */
 /* ------------------------------------------------------------------ */
 
 test.describe('الجوال — mobile acceptance', () => {
@@ -572,18 +611,15 @@ test.describe('الجوال — mobile acceptance', () => {
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
 
-    await page.goto('/invoices');
-    await expect(page.getByRole('heading', { name: 'الفواتير', level: 1, exact: true })).toBeVisible();
-    const printButton = page.getByRole('button', { name: 'طباعة', exact: true }).first();
-    await expect(printButton).toBeVisible({ timeout: 20_000 });
-
-    const popup = await openPrintPopup(page, () => printButton.click());
+    await gotoInvoicesRegister(page);
+    await openInvoiceDocumentActions(page);
+    const popup = await openPrintPopup(page, () => page.getByRole('option', { name: 'طباعة', exact: true }).first().click());
     await assertPopupIdentity(popup, [TENANT_NAME, '420']);
     await assertA4PrintContract(popup);
     await popup.close();
 
-    const pdfButton = page.getByRole('button', { name: 'PDF', exact: true }).first();
-    const { download, buffer } = await downloadPdf(page, () => pdfButton.click());
+    await openInvoiceDocumentActions(page);
+    const { download, buffer } = await downloadPdf(page, () => page.getByRole('option', { name: 'PDF', exact: true }).first().click());
     const summary = assertRealPdf(buffer);
     expect(isA4Portrait(summary)).toBe(true);
     expect(auditDocumentFileName(download.suggestedFilename(), FORBIDDEN_ID_FRAGMENTS).passes).toBe(true);
@@ -610,8 +646,6 @@ test.describe('الجوال — mobile acceptance', () => {
     await page.goto(`/contracts/${IDS.contract}`);
     await expect(page.getByRole('heading', { name: 'تفاصيل العقد', exact: true })).toBeVisible({ timeout: 20_000 });
 
-    // On narrow viewports the direct header buttons are hidden; the contract
-    // action menu is a real listbox dropdown. Open it, then print from it.
     await page.getByRole('button', { name: 'إجراءات العقد' }).click();
     await expect(page.getByRole('option', { name: 'طباعة العقد' })).toBeVisible({ timeout: 15_000 });
     const popup = await openPrintPopup(page, () => page.getByRole('option', { name: 'طباعة العقد' }).click());
@@ -630,4 +664,3 @@ test.describe('الجوال — mobile acceptance', () => {
     await expect(page.getByRole('alert').getByText(READINESS_NOTICE)).toBeVisible();
   });
 });
-

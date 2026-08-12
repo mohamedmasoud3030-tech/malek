@@ -13,12 +13,24 @@ env:
   PLAYWRIGHT_VERSION: '1.61.1'
 
 jobs:
-  browser-smoke:
+  browser-smoke-shard:
+    name: browser-smoke-${{ matrix.project }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - chromium-desktop
+          - chromium-tablet
+          - chromium-mobile
     env:
       VITE_SUPABASE_URL: https://example.supabase.co
       VITE_SUPABASE_ANON_KEY: test-anon-key
+      # Browser Readiness is hermetic: the Supabase HTTP boundary is stubbed
+      # per browser context. Database/release gates do not set this value and
+      # therefore retain the serial workers=1 default in playwright.config.ts.
+      E2E_WORKERS: '2'
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -56,22 +68,37 @@ jobs:
         run: pnpm --filter ./rentrix-app exec playwright install chromium
       - name: Verify Chromium installation
         run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
-      - name: Run complete browser readiness suite
-        run: pnpm e2e
+      - name: Run browser readiness shard
+        run: pnpm e2e -- --project=${{ matrix.project }}
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.project }}
           path: rentrix-app/playwright-report
           if-no-files-found: ignore
       - name: Upload browser smoke artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: browser-smoke-artifacts
+          name: browser-smoke-artifacts-${{ matrix.project }}
           path: rentrix-app/test-results
           if-no-files-found: ignore
+
+  # Keep the required-check name stable while the expensive suite runs as
+  # independent project shards. This job succeeds only when every shard does.
+  browser-smoke:
+    name: browser-smoke
+    runs-on: ubuntu-latest
+    needs: browser-smoke-shard
+    if: ${{ always() }}
+    steps:
+      - name: Require every Browser Readiness shard
+        env:
+          SHARD_RESULT: ${{ needs.browser-smoke-shard.result }}
+        run: |
+          echo "Browser Readiness shard result: ${SHARD_RESULT}"
+          test "${SHARD_RESULT}" = "success"
 
   seeded-staging-smoke:
     runs-on: ubuntu-latest

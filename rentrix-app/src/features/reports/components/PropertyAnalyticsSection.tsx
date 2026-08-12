@@ -1,11 +1,11 @@
 import { Building2, DoorOpen, Download, Printer, TrendingUp, WalletCards } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { formatMoney } from '@/features/financials/components/financials-formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
+import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
 import type { OccupancyChartRow } from '../reports-page.helpers';
 import { getTodayLocalDateString } from '../reports-page.helpers';
@@ -102,19 +102,25 @@ export function PropertyAnalyticsSection({ occupancyRows, expenseRows, isLoading
   };
 
   const handlePrintPropertyAnalytics = async () => {
-    try {
-      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildPropertyAnalyticsData()) });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
-    }
+    // Readiness is enforced HERE, not only via the button's disabled prop:
+    // the handler stays reachable (keyboard, stale closure, automation), so
+    // the guard must live inside the async boundary and fail closed.
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildPropertyAnalyticsData()) }),
+      fallbackMessage: 'تعذرت طباعة التقرير.',
+    });
   };
 
   const handleDownloadPropertyAnalytics = async () => {
-    try {
-      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildPropertyAnalyticsData()) });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
-    }
+    // Readiness is enforced HERE, not only via the button's disabled prop:
+    // the handler stays reachable (keyboard, stale closure, automation), so
+    // the guard must live inside the async boundary and fail closed.
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildPropertyAnalyticsData()) }),
+      fallbackMessage: 'تعذر تنزيل ملف PDF.',
+    });
   };
 
   return (

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
-import { buildWhatsAppUrl, downloadTextFile, printCurrentView, shareOrCopy } from './action-service';
+import { buildWhatsAppUrl, downloadTextFile, shareOrCopy } from './action-service';
 
 describe('browser action service', () => {
   it('builds a safe WhatsApp hand-off URL', () => {
@@ -26,16 +26,22 @@ describe('browser action service', () => {
     expect(writeText).toHaveBeenCalledWith('https://example.test/contracts/1');
   });
 
-  it('keeps print and download at the browser boundary', () => {
+  it('keeps file download at the browser boundary without ever printing the app view', () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
 
-    printCurrentView();
     downloadTextFile('test.txt', 'content');
 
-    expect(print).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
+    // This module must never print the application shell: printing belongs to
+    // the document platform (DocumentRenderer's scoped A4 popup) only.
+    expect(print).not.toHaveBeenCalled();
     print.mockRestore();
     click.mockRestore();
+  });
+
+  it('exposes no whole-view print helper (UX-008 print bypass stays removed)', async () => {
+    const actionService = await import('./action-service');
+    expect(Object.keys(actionService)).not.toContain('printCurrentView');
   });
 });

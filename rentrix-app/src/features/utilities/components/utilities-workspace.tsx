@@ -21,7 +21,7 @@ import { formatCompanyMoney } from '@/lib/companyFormatters';
 import { formatLatinNumber } from '@/lib/formatters';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { runDocumentAction } from '@/services/documents/runDocumentAction';
+import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -235,21 +235,29 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
   };
 
   const handlePrint = () => {
-    if (!documentSettings.isReady) return;
-    const report = buildUtilitiesReport() satisfies ReportDocumentData;
-    void runDocumentAction(
-      () => documentService.printDocument('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
-      'تعذرت طباعة كشف المرافق.',
-    );
+    // Guard inside the async boundary so the handler fails closed with a
+    // visible Arabic reason rather than silently doing nothing.
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => {
+        const report = buildUtilitiesReport() satisfies ReportDocumentData;
+        return documentService.printDocument('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) });
+      },
+      fallbackMessage: 'تعذرت طباعة كشف المرافق.',
+    });
   };
 
   const handleDownloadPdf = () => {
-    if (!documentSettings.isReady) return;
-    const report = buildUtilitiesReport() satisfies ReportDocumentData;
-    void runDocumentAction(
-      () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
-      'تعذر تنزيل كشف المرافق كملف PDF.',
-    );
+    // Guard inside the async boundary so the handler fails closed with a
+    // visible Arabic reason rather than silently doing nothing.
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => {
+        const report = buildUtilitiesReport() satisfies ReportDocumentData;
+        return documentService.downloadDocumentPdf('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) });
+      },
+      fallbackMessage: 'تعذر تنزيل كشف المرافق كملف PDF.',
+    });
   };
 
   const isLoading = metersQuery.isLoading || billsQuery.isLoading || propertiesQuery.isLoading;

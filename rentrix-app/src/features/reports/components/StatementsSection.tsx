@@ -1,4 +1,3 @@
-import { toast } from 'sonner';
 import type { DailyCollectionReportRow, OwnerStatementReport, TenantStatementReport } from '@/features/financials/reports/financialReportsService';
 import {
   useAgedReceivablesReport,
@@ -10,6 +9,7 @@ import {
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { documentService } from '@/services/documents/DocumentService';
+import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import {
   toOwnerStatementDocumentPayload,
   toTenantStatementDocumentPayload,
@@ -17,6 +17,14 @@ import {
   type TenantStatementData,
 } from '@/services/documents/documentPayloadAdapters';
 import { ReportColumns } from './report-section-primitives';
+
+/**
+ * A statement is a legal/financial document: without its authoritative
+ * snapshot there is nothing truthful to render, so output is refused rather
+ * than emitting an empty or partially-populated statement.
+ */
+const MISSING_STATEMENT_DATA_MESSAGE =
+  'تعذر إصدار الكشف: لا توجد بيانات كشف حساب مُحمَّلة للفترة أو الطرف المحدد. يرجى تحديد النطاق وعرض النتائج أولاً.';
 import { OwnerStatementPanel, TenantStatementPanel } from './statements/statement-account-panels';
 import { OfficeSummaryPanel, RegulatorySummaryPanels, StatementSelectionStrip } from './statements/statement-summary-panels';
 
@@ -95,25 +103,33 @@ export function StatementsSection({
   };
 
   const handlePrintTenantStatement = async () => {
-    const data = buildTenantStatementData();
-    if (!data) return;
-    if (!isDocumentSettingsReady) return;
-    try {
-      await documentService.printDocument('tenant_statement', { settings: documentSettings, payload: toTenantStatementDocumentPayload(data) });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة الكشف.');
-    }
+    // Company readiness AND a real statement snapshot are both required, and
+    // both are checked inside the handler so a reachable handler can never
+    // emit a statement without its authoritative source data.
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: async () => {
+        const data = buildTenantStatementData();
+        if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
+        await documentService.printDocument('tenant_statement', { settings: documentSettings, payload: toTenantStatementDocumentPayload(data) });
+      },
+      fallbackMessage: 'تعذرت طباعة الكشف.',
+    });
   };
 
   const handleDownloadTenantStatement = async () => {
-    const data = buildTenantStatementData();
-    if (!data) return;
-    if (!isDocumentSettingsReady) return;
-    try {
-      await documentService.downloadDocumentPdf('tenant_statement', { settings: documentSettings, payload: toTenantStatementDocumentPayload(data) });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
-    }
+    // Company readiness AND a real statement snapshot are both required, and
+    // both are checked inside the handler so a reachable handler can never
+    // emit a statement without its authoritative source data.
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: async () => {
+        const data = buildTenantStatementData();
+        if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
+        await documentService.downloadDocumentPdf('tenant_statement', { settings: documentSettings, payload: toTenantStatementDocumentPayload(data) });
+      },
+      fallbackMessage: 'تعذر تنزيل ملف PDF.',
+    });
   };
 
   const buildOwnerStatementData = (): OwnerStatementData | null => {
@@ -141,25 +157,33 @@ export function StatementsSection({
   };
 
   const handlePrintOwnerStatement = async () => {
-    const data = buildOwnerStatementData();
-    if (!data) return;
-    if (!isDocumentSettingsReady) return;
-    try {
-      await documentService.printDocument('owner_statement', { settings: documentSettings, payload: toOwnerStatementDocumentPayload(data) });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة الكشف.');
-    }
+    // Company readiness AND a real statement snapshot are both required, and
+    // both are checked inside the handler so a reachable handler can never
+    // emit a statement without its authoritative source data.
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: async () => {
+        const data = buildOwnerStatementData();
+        if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
+        await documentService.printDocument('owner_statement', { settings: documentSettings, payload: toOwnerStatementDocumentPayload(data) });
+      },
+      fallbackMessage: 'تعذرت طباعة الكشف.',
+    });
   };
 
   const handleDownloadOwnerStatement = async () => {
-    const data = buildOwnerStatementData();
-    if (!data) return;
-    if (!isDocumentSettingsReady) return;
-    try {
-      await documentService.downloadDocumentPdf('owner_statement', { settings: documentSettings, payload: toOwnerStatementDocumentPayload(data) });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
-    }
+    // Company readiness AND a real statement snapshot are both required, and
+    // both are checked inside the handler so a reachable handler can never
+    // emit a statement without its authoritative source data.
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: async () => {
+        const data = buildOwnerStatementData();
+        if (!data) throw new DocumentReadinessError(MISSING_STATEMENT_DATA_MESSAGE);
+        await documentService.downloadDocumentPdf('owner_statement', { settings: documentSettings, payload: toOwnerStatementDocumentPayload(data) });
+      },
+      fallbackMessage: 'تعذر تنزيل ملف PDF.',
+    });
   };
 
   return (

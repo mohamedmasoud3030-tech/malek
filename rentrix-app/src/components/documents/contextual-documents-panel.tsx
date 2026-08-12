@@ -117,7 +117,7 @@ export function ContextualDocumentsPanel({
             <Button type="button" className="min-h-11" disabled={isUploading} onClick={() => inputRef.current?.click()}>
               <Upload className="me-2 size-4" aria-hidden="true" />{isUploading ? 'جارٍ الرفع...' : 'رفع مستند'}
             </Button>
-            <input ref={inputRef} type="file" className="sr-only" accept={accept} aria-label={`رفع مستند ${entityLabel}`} onChange={(event) => { pickFile(event.target.files?.[0], onUpload); event.target.value = ''; }} />
+            <input ref={inputRef} type="file" className="hidden" tabIndex={-1} accept={accept} aria-hidden="true" onChange={(event) => { pickFile(event.target.files?.[0], onUpload); event.target.value = ''; }} />
           </>
         ) : null}
       </div>
@@ -154,7 +154,7 @@ export function ContextualDocumentsPanel({
         {preview ? <div className="space-y-4">{preview.url && isImage(preview.document) ? <img src={preview.url} alt={preview.document.title} className="max-h-[60dvh] w-full rounded-xl object-contain" /> : preview.url ? <iframe title={preview.document.title} src={preview.url} className="h-[60dvh] w-full rounded-xl border" /> : <p className="rounded-xl bg-muted p-5 text-sm">تم تحميل بيانات المستند. رابط المعاينة غير متاح حاليًا.</p>}</div> : null}
       </EntityPreviewDialog>
 
-      <input id="contextual-document-replace" type="file" className="sr-only" accept={accept} aria-label="استبدال المستند" onChange={(event) => { if (replaceTarget) pickFile(event.target.files?.[0], (file) => onReplace?.(replaceTarget, file)); event.target.value = ''; setReplaceTarget(null); }} />
+      <input id="contextual-document-replace" type="file" className="hidden" tabIndex={-1} accept={accept} aria-hidden="true" onChange={(event) => { if (replaceTarget) pickFile(event.target.files?.[0], (file) => onReplace?.(replaceTarget, file)); event.target.value = ''; setReplaceTarget(null); }} />
       <ConfirmDialog open={Boolean(archiveTarget)} onOpenChange={(open) => { if (!open && !archivingId) setArchiveTarget(null); }} title="أرشفة المستند؟" description={`سيتم إخفاء المستند "${archiveTarget?.title ?? ''}" من سياق ${entityLabel} مع الاحتفاظ بسجله.`} confirmLabel="تأكيد الأرشفة" isLoading={Boolean(archiveTarget && archivingId === archiveTarget.id)} onConfirm={() => { if (archiveTarget) void Promise.resolve(onArchive?.(archiveTarget)).then(() => setArchiveTarget(null)); }} />
     </section>
   );

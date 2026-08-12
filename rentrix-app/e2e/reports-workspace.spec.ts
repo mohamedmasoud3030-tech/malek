@@ -10,28 +10,27 @@ const viewportMatrix = [
 
 const themes = ['light', 'dark'] as const;
 
-const reportTabs = [
-  { id: 'overview', label: 'نظرة عامة' },
-  { id: 'property_analytics', label: 'العقارات' },
-  { id: 'overdue', label: 'المتأخرات' },
-  { id: 'occupancy', label: 'الإشغال' },
-  { id: 'collections', label: 'التحصيلات' },
-  { id: 'expenses', label: 'المصروفات' },
-  { id: 'maintenance_analytics', label: 'الصيانة' },
-  { id: 'deferred_revenue', label: 'الاستحقاق' },
-  { id: 'statements', label: 'الكشوف' },
+const sections = [
   { id: 'accounting', label: 'المحاسبة' },
+  { id: 'statements', label: 'الكشوف' },
+  { id: 'analytics', label: 'التحليلات' },
 ] as const;
 
-const evidenceTabs = new Set([
-  'overview',
-  'overdue',
-  'collections',
-  'maintenance_analytics',
-  'deferred_revenue',
-  'statements',
-  'accounting',
-]);
+const analyticsViews = [
+  'نظرة عامة على الأداء',
+  'تحليلات التحصيل',
+  'تعتيق المتأخرات',
+  'تحليلات المصاريف',
+  'تحليلات العقارات',
+  'تحليلات الإشغال',
+  'تحليلات الصيانة',
+] as const;
+
+const accountingViews = [
+  'ميزان المراجعة والقوائم',
+  'دفتر الأستاذ والشجرة',
+  'تسوية الإيرادات',
+] as const;
 
 test.beforeEach(async ({}, testInfo) => {
   test.skip(
@@ -69,6 +68,21 @@ async function assertNoHorizontalOverflow(page: Page) {
   expect(overflow.bodyScrollWidth).toBeLessThanOrEqual(overflow.documentClientWidth + 1);
 }
 
+async function selectSection(page: Page, width: number, section: (typeof sections)[number]) {
+  if (width < 640) {
+    const select = page.locator('#reports-section-select');
+    await expect(select).toBeVisible();
+    await select.selectOption(section.id);
+    await expect(select).toHaveValue(section.id);
+    return;
+  }
+
+  const tab = page.getByRole('tab', { name: section.label, exact: true }).first();
+  await expect(tab).toBeVisible();
+  await tab.click();
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
+}
+
 for (const viewport of viewportMatrix) {
   for (const theme of themes) {
     test(`reports workspace ${viewport.name} ${theme} RTL`, async ({ page }, testInfo) => {
@@ -81,28 +95,30 @@ for (const viewport of viewportMatrix) {
 
       const sheet = page.getByRole('dialog', { name: 'فلترة نطاق التقرير' });
       await expect(sheet).toBeVisible();
-      await expect(page.getByRole('button', { name: 'تطبيق وعرض النتائج' })).toBeVisible();
       await page.getByRole('button', { name: 'تطبيق وعرض النتائج' }).click();
       await expect(sheet).toBeHidden();
 
-      for (const reportTab of reportTabs) {
-        const tab = page.getByRole('tab', { name: reportTab.label, exact: true });
+      for (const section of sections) {
+        await selectSection(page, viewport.width, section);
+        await assertNoHorizontalOverflow(page);
+      }
+
+      await selectSection(page, viewport.width, sections[2]);
+      for (const label of analyticsViews) {
+        const tab = page.getByRole('tab', { name: label, exact: true });
+        await expect(tab).toBeVisible();
         await tab.click();
         await expect(tab).toHaveAttribute('aria-selected', 'true');
-        await expect(page.locator(`[role="tabpanel"][aria-labelledby="section-tab-${reportTab.id}"]`)).toBeVisible();
-        await expect(page.getByRole('heading', { name: reportTab.label, exact: true })).toBeVisible();
         await assertNoHorizontalOverflow(page);
+      }
 
-        if (
-          theme === 'light'
-          && evidenceTabs.has(reportTab.id)
-          && (viewport.name === 'mobile-390' || viewport.name === 'desktop-1440')
-        ) {
-          await page.screenshot({
-            path: testInfo.outputPath(`reports-${reportTab.id}-${viewport.name}-${theme}.png`),
-            fullPage: true,
-          });
-        }
+      await selectSection(page, viewport.width, sections[0]);
+      for (const label of accountingViews) {
+        const tab = page.getByRole('tab', { name: label, exact: true });
+        await expect(tab).toBeVisible();
+        await tab.click();
+        await expect(tab).toHaveAttribute('aria-selected', 'true');
+        await assertNoHorizontalOverflow(page);
       }
 
       await page.screenshot({
@@ -113,12 +129,12 @@ for (const viewport of viewportMatrix) {
   }
 }
 
-test('reports accounting tab exposes working scoped PDF actions', async ({ page }) => {
+test('reports accounting view exposes working scoped PDF actions', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openFixture(page, 'light');
 
-  await page.getByRole('tab', { name: 'المحاسبة', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'المحاسبة', exact: true })).toBeVisible();
+  const accountingTab = page.getByRole('tab', { name: 'ميزان المراجعة والقوائم', exact: true });
+  await expect(accountingTab).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('heading', { name: 'ميزان المراجعة', exact: true })).toBeVisible();
 
   await expect(page.getByRole('button', { name: /طباعة الميزان/ })).toBeEnabled();

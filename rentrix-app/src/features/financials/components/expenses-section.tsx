@@ -16,7 +16,7 @@ import { ResponsiveCardGrid } from '@/components/ui/responsive-card-grid';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { runDocumentAction } from '@/services/documents/runDocumentAction';
+import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { CostCenterRecord } from '@/features/settings/costCenterService';
 import { escapeCsvValue } from '@/lib/csvExport';
 import type { Expense, Property } from '@/types/domain';
@@ -103,21 +103,21 @@ export function ExpensesSection({
   const documentSettings = useDocumentSettings();
   const clearFilters = () => onFiltersChange({ propertyId: '', category: '', costCenterId: '', from: '', to: '' });
   const exportVisibleExpenses = () => downloadExpenseCsv(`${APP_BRAND_FILE_SLUG}-expenses-${getTodayLocalDateString()}.csv`, buildExpensesCsv(expenses, propertyRows));
+  // Guards run inside the async boundary so a reachable handler fails closed
+  // with a visible Arabic reason rather than silently doing nothing.
   const exportExpenseVoucher = (expense: Expense) => {
-    if (!documentSettings.isReady) return;
-    const property = propertyById.get(expense.property_id);
-    void runDocumentAction(
-      () => exportExpenseVoucherPdf(expense, property, documentSettings.companySettings),
-      'تعذر تنزيل سند المصروف كملف PDF.',
-    );
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => exportExpenseVoucherPdf(expense, propertyById.get(expense.property_id), documentSettings.companySettings),
+      fallbackMessage: 'تعذر تنزيل سند المصروف كملف PDF.',
+    });
   };
   const printExpenseVoucher = (expense: Expense) => {
-    if (!documentSettings.isReady) return;
-    const property = propertyById.get(expense.property_id);
-    void runDocumentAction(
-      () => printExpenseVoucherDocument(expense, property, documentSettings.companySettings),
-      'تعذرت طباعة سند المصروف.',
-    );
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => printExpenseVoucherDocument(expense, propertyById.get(expense.property_id), documentSettings.companySettings),
+      fallbackMessage: 'تعذرت طباعة سند المصروف.',
+    });
   };
 
   useEffect(() => {

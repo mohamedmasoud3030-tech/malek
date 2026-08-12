@@ -15,7 +15,7 @@ import { usePostPayment } from '../payments/usePayments';
 import { openReceiptPrintTab } from '../receipts/receipt-print';
 import { useReceipt, useReceipts } from '../receipts/useReceipts';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
-import { runDocumentAction } from '@/services/documents/runDocumentAction';
+import { DocumentReadinessError, runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import type { InvoiceFilterOption } from '../components/invoice-filters';
 import { exportInvoiceDocument as exportInvoiceDocumentPdf, printInvoiceDocument as printInvoiceDocumentAction } from '../invoices/invoice-actions';
 
@@ -41,6 +41,14 @@ function contractContextForDocument(contract: any) {
 }
 
 const INVOICE_PAGE_SIZE = 10;
+
+/**
+ * An invoice document needs its contract context (tenant/unit/property) to
+ * carry truthful parties; without it the document is refused rather than
+ * rendered with placeholder parties.
+ */
+const MISSING_INVOICE_CONTEXT_MESSAGE =
+  'تعذر إصدار مستند الفاتورة: بيانات العقد المرتبط بالفاتورة غير متاحة حالياً. يرجى إعادة المحاولة بعد اكتمال تحميل العقود.';
 
 export function useInvoiceWorkspaceController() {
   const [status, setStatus] = useState<InvoiceStatusFilter>('unpaid');
@@ -249,24 +257,33 @@ export function useInvoiceWorkspaceController() {
     return contract ? { settings: documentSettings.companySettings, ...contractContextForDocument(contract) } : null;
   };
 
+  // Document readiness AND the invoice's contract context are enforced inside
+  // the async boundary, so a reachable handler fails closed with a visible
+  // Arabic reason instead of silently producing nothing. Note that
+  // `canExportInvoiceDocuments` also folds in the export permission; the
+  // permission decision itself stays owned by the authorization layer.
   const exportInvoiceDocument = (invoice: any) => {
-    if (!canExportInvoiceDocuments) return;
-    const context = invoiceDocumentContext(invoice);
-    if (!context) return;
-    void runDocumentAction(
-      () => exportInvoiceDocumentPdf(invoice, context),
-      'تعذر تنزيل الفاتورة كملف PDF.',
-    );
+    void runGuardedDocumentAction({
+      isReady: canExportInvoiceDocuments,
+      operation: () => {
+        const context = invoiceDocumentContext(invoice);
+        if (!context) throw new DocumentReadinessError(MISSING_INVOICE_CONTEXT_MESSAGE);
+        return exportInvoiceDocumentPdf(invoice, context);
+      },
+      fallbackMessage: 'تعذر تنزيل الفاتورة كملف PDF.',
+    });
   };
 
   const printInvoiceDocument = (invoice: any) => {
-    if (!canExportInvoiceDocuments) return;
-    const context = invoiceDocumentContext(invoice);
-    if (!context) return;
-    void runDocumentAction(
-      () => printInvoiceDocumentAction(invoice, context),
-      'تعذرت طباعة الفاتورة.',
-    );
+    void runGuardedDocumentAction({
+      isReady: canExportInvoiceDocuments,
+      operation: () => {
+        const context = invoiceDocumentContext(invoice);
+        if (!context) throw new DocumentReadinessError(MISSING_INVOICE_CONTEXT_MESSAGE);
+        return printInvoiceDocumentAction(invoice, context);
+      },
+      fallbackMessage: 'تعذرت طباعة الفاتورة.',
+    });
   };
 
   const onExportInvoicePdf = () => {

@@ -8,8 +8,8 @@ import { formatCompanyNumber } from '@/lib/companyFormatters';
 import { formatDate, formatShortId } from '@/features/financials/components/financials-formatters';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
 import { documentService } from '@/services/documents/DocumentService';
+import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { toast } from 'sonner';
 import { buildExpiringContractsRows, buildOccupancyRows, expiringContractWindowDays, getTodayLocalDateString } from '../reports-page.helpers';
 import { SafeAnchor } from './common';
 import {
@@ -81,19 +81,25 @@ export function OccupancySection({ occupancyRows, expiringRows, isLoading }: Rea
   };
 
   const handlePrintOccupancyReport = async () => {
-    try {
-      await documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOccupancyReportData()) });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذرت طباعة التقرير.');
-    }
+    // Readiness is enforced HERE, not only via the button's disabled prop:
+    // the handler stays reachable (keyboard, stale closure, automation), so
+    // the guard must live inside the async boundary and fail closed.
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: () => documentService.printDocument('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOccupancyReportData()) }),
+      fallbackMessage: 'تعذرت طباعة التقرير.',
+    });
   };
 
   const handleDownloadOccupancyReport = async () => {
-    try {
-      await documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOccupancyReportData()) });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'تعذر تنزيل ملف PDF.');
-    }
+    // Readiness is enforced HERE, not only via the button's disabled prop:
+    // the handler stays reachable (keyboard, stale closure, automation), so
+    // the guard must live inside the async boundary and fail closed.
+    await runGuardedDocumentAction({
+      isReady: isDocumentSettingsReady,
+      operation: () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings, payload: toReportDocumentPayload(buildOccupancyReportData()) }),
+      fallbackMessage: 'تعذر تنزيل ملف PDF.',
+    });
   };
 
   return (

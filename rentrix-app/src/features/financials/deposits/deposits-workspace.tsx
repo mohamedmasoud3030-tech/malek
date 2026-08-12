@@ -15,7 +15,7 @@ import { numberToArabicWords, getCurrencyWordConfig } from '@/lib/numberToArabic
 import { formatMoney as formatCurrencyMoney, formatLatinNumber, normalizeCurrency } from '@/lib/formatters';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { runDocumentAction } from '@/services/documents/runDocumentAction';
+import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -192,21 +192,29 @@ export function DepositsWorkspace() {
   };
 
   const handlePrint = (deposit: DepositRecord) => {
-    if (!documentSettings.isReady) return;
-    const report = buildDepositClearanceDocument(deposit) satisfies ReportDocumentData;
-    void runDocumentAction(
-      () => documentService.printDocument('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
-      'تعذرت طباعة سند تسوية الوديعة.',
-    );
+    // Guard inside the async boundary so the handler fails closed with a
+    // visible Arabic reason rather than silently doing nothing.
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => {
+        const report = buildDepositClearanceDocument(deposit) satisfies ReportDocumentData;
+        return documentService.printDocument('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) });
+      },
+      fallbackMessage: 'تعذرت طباعة سند تسوية الوديعة.',
+    });
   };
 
   const handleDownloadPdf = (deposit: DepositRecord) => {
-    if (!documentSettings.isReady) return;
-    const report = buildDepositClearanceDocument(deposit) satisfies ReportDocumentData;
-    void runDocumentAction(
-      () => documentService.downloadDocumentPdf('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) }),
-      'تعذر تنزيل سند تسوية الوديعة كملف PDF.',
-    );
+    // Guard inside the async boundary so the handler fails closed with a
+    // visible Arabic reason rather than silently doing nothing.
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => {
+        const report = buildDepositClearanceDocument(deposit) satisfies ReportDocumentData;
+        return documentService.downloadDocumentPdf('generic_report', { settings: documentSettings.companySettings, payload: toReportDocumentPayload(report) });
+      },
+      fallbackMessage: 'تعذر تنزيل سند تسوية الوديعة كملف PDF.',
+    });
   };
 
   const openDepositAction = (deposit: DepositRecord, type: 'deduct' | 'refund') => {

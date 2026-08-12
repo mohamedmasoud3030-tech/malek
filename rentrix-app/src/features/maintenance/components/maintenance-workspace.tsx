@@ -9,7 +9,7 @@ import { FilterBar } from '@/components/ui/filter-bar';
 import { Select } from '@/components/ui/select';
 import { documentService } from '@/services/documents/DocumentService';
 import { toReportDocumentPayload, type ReportDocumentData } from '@/services/documents/documentPayloadAdapters';
-import { runDocumentAction } from '@/services/documents/runDocumentAction';
+import { runGuardedDocumentAction } from '@/services/documents/runDocumentAction';
 import { getTodayLocalDateString } from '@/features/reports/reports-page.helpers';
 import { DocumentReadinessNotice } from '@/features/settings/components/document-readiness-notice';
 import { useDocumentSettings } from '@/features/settings/useDocumentSettings';
@@ -104,31 +104,35 @@ export function MaintenanceWorkspace({ mode = 'standalone' }: MaintenanceWorkspa
     documentSettings.companySettings.currency;
 
   const handlePrintMaintenanceList = () => {
-    if (!documentSettings.isReady) return;
-    const today = getTodayLocalDateString();
-    const report = {
-      reportTitle: 'كشف بلاغات وطلبات الصيانة الميدانية',
-      reportType: 'Maintenance_Requests_Report',
-      periodFrom: today,
-      periodTo: today,
-      sections: [
-        {
-          title: 'جدول طلبات الصيانة والتكلفة والأولوية',
-          rows: controller.filteredMaintenanceRows.map((row) => ({
-            label: `${row.title} - (${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority})`,
-            value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | المسؤول: ${row.assigned_to || row.technician_name || 'غير محدد'} | التكلفة: ${row.cost ? `${row.cost} ${currencyLabel}` : '—'}`,
-          })),
-        },
-      ],
-      totalSummary: `عدد الطلبات المدرجة: ${controller.filteredMaintenanceRows.length} طلب صيانة`,
-    } satisfies ReportDocumentData;
-    void runDocumentAction(
-      () => documentService.printDocument('generic_report', {
-        settings: documentSettings.companySettings,
-        payload: toReportDocumentPayload(report),
-      }),
-      'تعذرت طباعة كشف الصيانة.',
-    );
+    // Guard inside the async boundary so the handler fails closed with a
+    // visible Arabic reason rather than silently doing nothing.
+    void runGuardedDocumentAction({
+      isReady: documentSettings.isReady,
+      operation: () => {
+        const today = getTodayLocalDateString();
+        const report = {
+          reportTitle: 'كشف بلاغات وطلبات الصيانة الميدانية',
+          reportType: 'Maintenance_Requests_Report',
+          periodFrom: today,
+          periodTo: today,
+          sections: [
+            {
+              title: 'جدول طلبات الصيانة والتكلفة والأولوية',
+              rows: controller.filteredMaintenanceRows.map((row) => ({
+                label: `${row.title} - (${maintenancePriorityLabels[row.priority as keyof typeof maintenancePriorityLabels] ?? row.priority})`,
+                value: `الحالة: ${maintenanceStatusLabels[row.status as keyof typeof maintenanceStatusLabels] ?? row.status} | المسؤول: ${row.assigned_to || row.technician_name || 'غير محدد'} | التكلفة: ${row.cost ? `${row.cost} ${currencyLabel}` : '—'}`,
+              })),
+            },
+          ],
+          totalSummary: `عدد الطلبات المدرجة: ${controller.filteredMaintenanceRows.length} طلب صيانة`,
+        } satisfies ReportDocumentData;
+        return documentService.printDocument('generic_report', {
+          settings: documentSettings.companySettings,
+          payload: toReportDocumentPayload(report),
+        });
+      },
+      fallbackMessage: 'تعذرت طباعة كشف الصيانة.',
+    });
   };
 
   const printAction = (

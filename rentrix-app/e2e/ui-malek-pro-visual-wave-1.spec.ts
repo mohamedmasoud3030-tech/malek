@@ -10,9 +10,6 @@ const viewportMatrix = [
   { name: '1440', width: 1440, height: 1000 },
 ] as const;
 
-// The spec writes its explicit visual evidence itself. Disable per-failure
-// video/trace archives here only so a large browser matrix cannot turn a
-// passing visual assertion into a slow/corrupt artifact teardown.
 test.use({ trace: 'off', video: 'off', screenshot: 'off' });
 test.setTimeout(120_000);
 
@@ -87,21 +84,21 @@ for (const surface of [
   });
 }
 
-test('mobile and desktop use the same compact table with keyboard-focusable controlled scrolling', async ({ page }) => {
+test('mobile cards and desktop table expose the same property register without page overflow', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 844 });
   await setThemeAndNavigate(page, '/login?e2e-showcase-properties=1', 'dark');
 
-  await expect(page.locator('[role="list"][aria-label="جدول العقارات"]')).toHaveCount(0);
-  await expect(page.locator('table[aria-label="جدول العقارات"]')).toBeVisible();
-  await expect(page.locator('[data-row-disclosure]').first()).toHaveCount(0);
-  const mobileScroller = page.locator('[data-entity-table-scroll]').first();
-  await mobileScroller.focus();
-  await expect(mobileScroller).toBeFocused();
-  await expectNoApplicationOverflow(page, 'properties mobile compact table');
+  const mobileRegister = page.locator('[data-entity-table-mobile]').filter({ has: page.locator('[data-entity-table-mobile-card]') }).first();
+  await expect(mobileRegister).toBeVisible();
+  await expect(page.locator('table[aria-label="جدول العقارات"]')).toBeHidden();
+  await expect(page.locator('[data-row-disclosure]').first()).toBeVisible();
+  await expectNoApplicationOverflow(page, 'properties mobile card register');
 
   await page.setViewportSize({ width: 1024, height: 900 });
-  await expect(page.locator('table[aria-label="جدول العقارات"]')).toBeVisible();
-  const scroller = page.locator('[data-entity-table-scroll]').first();
+  const table = page.locator('table[aria-label="جدول العقارات"]');
+  await expect(table).toBeVisible();
+  const scroller = page.locator('[data-entity-table-scroll]:visible').first();
+  await expect(scroller).toBeVisible();
   await scroller.focus();
   await expect(scroller).toBeFocused();
 });
