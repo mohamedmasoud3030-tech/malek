@@ -8,9 +8,9 @@ test.describe('Service Providers workspace', () => {
     const workspace = page.locator('[data-e2e-service-providers]');
     await expect(workspace).toBeVisible();
     await expect(page.getByRole('heading', { name: 'مزودو الخدمات' })).toBeVisible();
-    await expect(page.locator('p:visible', { hasText: 'شركة الأفق للتبريد' }).first()).toBeVisible();
-    await expect(page.getByText('التكييف والتبريد').first()).toBeVisible();
-    await expect(page.getByText('2 جارية').first()).toBeVisible();
+    await expect(page.getByText('شركة الأفق للتبريد', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText('التكييف والتبريد', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText('2 جارية').filter({ visible: true }).first()).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
 
     const overflow = await page.evaluate(() => ({
@@ -35,10 +35,10 @@ test.describe('Service Providers workspace', () => {
     await page.goto(fixtureUrl);
     await page.getByLabel('تصفية مزودي الخدمات حسب الحالة').selectOption('inactive');
 
-    await expect(page.locator('p:visible', { hasText: 'مؤسسة الحلول السريعة' }).first()).toBeVisible();
-    await expect(page.locator('p:visible', { hasText: 'شركة الأفق للتبريد' })).toHaveCount(0);
+    await expect(page.getByText('مؤسسة الحلول السريعة', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText('شركة الأفق للتبريد', { exact: true }).filter({ visible: true })).toHaveCount(0);
 
-    const action = page.locator('button:visible', { hasText: 'عرض' }).first();
+    const action = page.getByRole('button', { name: 'عرض', exact: true }).filter({ visible: true }).first();
     await expect(action).toBeVisible();
     const box = await action.boundingBox();
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
