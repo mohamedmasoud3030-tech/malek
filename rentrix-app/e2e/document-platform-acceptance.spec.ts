@@ -40,7 +40,13 @@ test.beforeEach(async ({}, testInfo) => {
 /* ------------------------------------------------------------------ */
 
 function isExpectedHermeticRealtimeDnsError(text: string): boolean {
-  return text.includes('example.supabase.co')
+  // The env module maps placeholder Supabase URLs (example.supabase.co) to
+  // the canonical fallback host (invalid.supabase.local). The Supabase JS
+  // client therefore connects to invalid.supabase.local for realtime, not
+  // the original placeholder. Accept either host so the filter stays correct
+  // regardless of which URL the runtime resolves to.
+  const isKnownHermeticHost = text.includes('example.supabase.co') || text.includes('invalid.supabase.local');
+  return isKnownHermeticHost
     && text.includes('/realtime/v1/websocket')
     && text.includes('ERR_NAME_NOT_RESOLVED');
 }
@@ -50,6 +56,7 @@ async function expectNoUnexpectedConsoleErrors(_page: Page, collected: string[])
   // A real-project socket, another fake-host endpoint, or an application error
   // must remain visible to the test instead of being blanket-allowlisted.
   expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://example.supabase.co/realtime/v1/websocket?apikey=test' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(true);
+  expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://invalid.supabase.local/realtime/v1/websocket?apikey=invalid-anon-key' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(true);
   expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://real-project.supabase.co/realtime/v1/websocket' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(false);
   expect(isExpectedHermeticRealtimeDnsError('https://example.supabase.co/rest/v1/contracts net::ERR_NAME_NOT_RESOLVED')).toBe(false);
   expect(isExpectedHermeticRealtimeDnsError('example.supabase.co realtime/v1/websocket application exploded')).toBe(false);

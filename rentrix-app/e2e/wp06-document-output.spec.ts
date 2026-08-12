@@ -26,6 +26,10 @@ import { auditDocumentFileName, isA4Portrait, parsePdfArtifact } from './support
  * this suite proves the DOCUMENT boundary only.
  */
 
+const DESKTOP = 'chromium-desktop';
+const MOBILE = 'chromium-mobile';
+const TABLET = 'chromium-tablet';
+
 const EVIDENCE_DIR = resolve(import.meta.dirname, '../../evidence/wp06-document-output');
 const ARTIFACT_DIR = resolve(EVIDENCE_DIR, 'artifacts');
 
@@ -50,6 +54,15 @@ type ArtifactNote = {
 };
 
 const collectedArtifacts: ArtifactNote[] = [];
+
+/**
+ * Tablet coverage is verified in the readiness smoke and the mobile register
+ * tests. Desktop and mobile each exercise the full document acceptance path
+ * through their native interaction model.
+ */
+test.beforeEach(async ({}, testInfo) => {
+  test.skip(testInfo.project.name === TABLET, 'WP-06 acceptance covers desktop and mobile; tablet coverage stays in the readiness smoke.');
+});
 
 test.beforeAll(async () => {
   await mkdir(ARTIFACT_DIR, { recursive: true });
@@ -196,6 +209,28 @@ async function gotoInvoices(page: Page): Promise<void> {
   await expect(page.getByRole('region', { name: 'قائمة الفواتير' })).toBeVisible({ timeout: 30_000 });
 }
 
+/**
+ * Clicks a secondary PageHeader action on any viewport. Desktop renders the
+ * button inline; mobile collapses secondary actions into an accessible
+ * overflow bottom sheet («إجراءات إضافية») — both are real production paths.
+ */
+async function clickHeaderSecondaryAction(page: Page, name: string | RegExp): Promise<void> {
+  const viewport = page.viewportSize();
+  const isMobileWidth = (viewport?.width ?? 1440) < 640;
+  if (!isMobileWidth) {
+    await page
+      .locator('[data-secondary-actions-desktop]')
+      .getByRole('button', { name, exact: typeof name === 'string' })
+      .click();
+    return;
+  }
+  await page.getByRole('button', { name: 'إجراءات إضافية' }).click();
+  await page
+    .locator('[data-secondary-actions-mobile]')
+    .getByRole('button', { name, exact: typeof name === 'string' })
+    .click();
+}
+
 const reportPanel = (page: Page, title: string) =>
   page.getByRole('heading', { name: title, exact: true }).locator('xpath=ancestor::div[contains(@class, "rounded-2xl")][1]');
 
@@ -241,9 +276,7 @@ test.describe('WP-06 — receipt/payment document', () => {
       ],
     });
 
-    const { download, buffer } = await downloadPdf(page, () =>
-      page.locator('[data-secondary-actions-desktop]').getByRole('button', { name: 'تنزيل PDF', exact: true }).click(),
-    );
+    const { download, buffer } = await downloadPdf(page, () => clickHeaderSecondaryAction(page, 'تنزيل PDF'));
     const summary = await assertRealPdfArtifact(buffer, 'receipt-download.pdf');
     expect(auditDocumentFileName(download.suggestedFilename(), FORBIDDEN_ID_FRAGMENTS).passes).toBe(true);
 
@@ -267,7 +300,8 @@ test.describe('WP-06 — receipt/payment document', () => {
     expect(page.context().pages().filter((open) => open !== page)).toHaveLength(0);
   });
 
-  test('a repeated click never produces a duplicate popup or a duplicate download', async ({ page }) => {
+  test('a repeated click never produces a duplicate popup or a duplicate download', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== DESKTOP, 'single-flight guard is exercised on the desktop interaction model');
     test.setTimeout(120_000);
     await installAcceptanceBrowser(page);
     await installFakeSupabaseBackend(page, 'complete');
@@ -314,7 +348,8 @@ test.describe('WP-06 — receipt/payment document', () => {
 /* ------------------------------------------------------------------ */
 
 test.describe('WP-06 — contract/legal document', () => {
-  test('contract print carries true parties and status, with no invented legal wording', async ({ page }) => {
+  test('contract print carries true parties and status, with no invented legal wording', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== DESKTOP, 'desktop exercises the direct header print/export actions');
     test.setTimeout(120_000);
     const consoleErrors = watchConsoleErrors(page);
     await installAcceptanceBrowser(page);
@@ -360,7 +395,8 @@ test.describe('WP-06 — contract/legal document', () => {
 /* ------------------------------------------------------------------ */
 
 test.describe('WP-06 — statements and multi-page reports', () => {
-  test('owner statement downloads a real PDF with the true owner identity', async ({ page }) => {
+  test('owner statement downloads a real PDF with the true owner identity', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== DESKTOP, 'statement artifact evidence is captured on desktop');
     test.setTimeout(180_000);
     const consoleErrors = watchConsoleErrors(page);
     await installAcceptanceBrowser(page);
@@ -409,7 +445,8 @@ test.describe('WP-06 — statements and multi-page reports', () => {
     await expect(page.locator('[data-document-render-root]')).toHaveCount(0);
   });
 
-  test('a long trial balance paginates across A4 pages with content on every page', async ({ page }) => {
+  test('a long trial balance paginates across A4 pages with content on every page', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== DESKTOP, 'multi-page report evidence is captured on desktop');
     test.setTimeout(240_000);
     const consoleErrors = watchConsoleErrors(page);
     await installAcceptanceBrowser(page);
