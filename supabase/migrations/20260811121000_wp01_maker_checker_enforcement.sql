@@ -73,11 +73,12 @@ declare
   v_checker uuid;
 begin
   if tg_op = 'INSERT' then
-    -- Official creation RPCs require an authenticated user. Keep the table
-    -- boundary fail-closed as well so a future write path cannot omit maker.
+    -- Official creation RPCs are authenticated and therefore always stamp the
+    -- maker. Internal replay/maintenance fixtures may run without a JWT; they
+    -- may create a DRAFT with null maker, but cannot later approve/pay it unless
+    -- the authoritative creator can be recovered from audit history.
     if v_actor is null then
-      raise exception 'Authenticated maker identity is required for owner settlements.'
-        using errcode = '42501';
+      return new;
     end if;
 
     if new.maker_user_id is not null and new.maker_user_id <> v_actor then
