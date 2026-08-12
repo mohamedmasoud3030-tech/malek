@@ -636,6 +636,14 @@ select throws_ok(
   null,
   'duplicate active settlement period is rejected'
 );
+-- The checker is a different ADMIN from the settlement maker.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+set local role authenticated;
+
 select lives_ok(
   $$
     select public.approve_owner_settlement_atomic(jsonb_build_object(
