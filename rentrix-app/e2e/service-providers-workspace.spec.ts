@@ -38,7 +38,16 @@ test.describe('Service Providers workspace', () => {
     await expect(page.getByText('مؤسسة الحلول السريعة', { exact: true }).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText('شركة الأفق للتبريد', { exact: true }).filter({ visible: true })).toHaveCount(0);
 
-    const action = page.getByRole('button', { name: 'عرض', exact: true }).filter({ visible: true }).first();
+    let action = page.getByRole('button', { name: 'عرض', exact: true }).filter({ visible: true }).first();
+    if (await action.count() === 0) {
+      const trigger = page.locator('[data-entity-table-mobile-actions]').filter({ visible: true }).first();
+      await expect(trigger).toBeVisible();
+      const triggerBox = await trigger.boundingBox();
+      expect(triggerBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+      await trigger.click();
+      action = page.getByRole('button', { name: 'عرض', exact: true }).filter({ visible: true }).first();
+    }
+
     await expect(action).toBeVisible();
     const box = await action.boundingBox();
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
