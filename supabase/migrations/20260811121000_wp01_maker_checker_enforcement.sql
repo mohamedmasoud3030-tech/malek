@@ -25,8 +25,10 @@ alter table public.owner_settlements
   add column if not exists maker_user_id uuid,
   add column if not exists checker_user_id uuid;
 
--- Historical rows are allowed to remain null until a governed lifecycle write.
--- New/updated approved or paid rows must have both identities and they must differ.
+-- Historical/internal rows may be null; once both identities exist they must
+-- differ. Authoritative transition enforcement lives in the trigger below so
+-- privileged replay/maintenance fixture inserts are not misclassified as user
+-- approvals.
 do $$
 begin
   if not exists (
@@ -40,23 +42,6 @@ begin
         maker_user_id is null
         or checker_user_id is null
         or maker_user_id <> checker_user_id
-      ) not valid;
-  end if;
-
-  if not exists (
-    select 1 from pg_constraint
-    where conname = 'settlements_approved_identity_required_chk'
-      and conrelid = 'public.owner_settlements'::regclass
-  ) then
-    alter table public.owner_settlements
-      add constraint settlements_approved_identity_required_chk
-      check (
-        upper(coalesce(status::text, '')) not in ('APPROVED', 'PAID')
-        or (
-          maker_user_id is not null
-          and checker_user_id is not null
-          and maker_user_id <> checker_user_id
-        )
       ) not valid;
   end if;
 end $$;
@@ -75,10 +60,15 @@ begin
   if tg_op = 'INSERT' then
     -- Official creation RPCs are authenticated and therefore always stamp the
     -- maker. Internal replay/maintenance fixtures may run without a JWT; they
-    -- may create a DRAFT with null maker, but cannot later approve/pay it unless
-    -- the authoritative creator can be recovered from audit history.
+    -- may create rows without a maker, but a later authenticated approval/pay
+    -- remains blocked unless the authoritative creator can be proven.
     if v_actor is null then
       return new;
+    end if;
+
+    if upper(coalesce(new.status::text, 'DRAFT')) <> 'DRAFT' then
+      raise exception 'Authenticated owner settlement creation must start in DRAFT status.'
+        using errcode = '42501';
     end if;
 
     if new.maker_user_id is not null and new.maker_user_id <> v_actor then
@@ -90,8 +80,8 @@ begin
     return new;
   end if;
 
-  -- Once established, maker identity is immutable. The only allowed null ->
-  -- value transition is the controlled legacy recovery below.
+  -- Once established, maker/checker identities are immutable. The only allowed
+  -- null -> value transition is controlled legacy recovery during approval/pay.
   if old.maker_user_id is not null
      and new.maker_user_id is distinct from old.maker_user_id then
     raise exception 'Owner settlement maker identity is immutable.'
@@ -109,7 +99,7 @@ begin
 
   -- Legacy drafts created before this migration do not have maker_user_id.
   -- Recover the authoritative creator from the immutable audit event when
-  -- possible. Never guess from the current actor.
+  -- possible. Never infer maker from the current actor.
   if v_maker is null then
     select a.user_id
       into v_maker
@@ -147,17 +137,17 @@ begin
     new.maker_user_id := v_maker;
     new.checker_user_id := v_actor;
 
-    -- The lifecycle RPC already sets approved_by = auth.uid(). Enforce parity
-    -- at the table boundary so a future caller cannot spoof a different checker.
+    -- The existing lifecycle RPC writes approved_by = auth.uid(). Enforce
+    -- parity so a future authenticated path cannot spoof a different checker.
     if new.approved_by is null or new.approved_by <> v_actor then
       raise exception 'Settlement approved_by must match the authenticated checker.'
         using errcode = '42501';
     end if;
   end if;
 
-  -- APPROVED -> PAID is also financially sensitive. The original maker may not
-  -- execute the payout. Existing checker may pay; the required separation here
-  -- is maker vs final financial actor, not an invented third-person policy.
+  -- APPROVED -> PAID is financially sensitive. The original maker cannot
+  -- execute the payout. Existing checker may pay; no third-person policy is
+  -- invented beyond the approved maker-vs-final-actor separation.
   if upper(coalesce(old.status::text, '')) = 'APPROVED'
      and upper(coalesce(new.status::text, '')) = 'PAID' then
     if v_actor is null then
@@ -194,7 +184,7 @@ before insert or update on public.owner_settlements
 for each row execute function public.owner_settlement_maker_checker_guard();
 
 comment on function public.owner_settlement_maker_checker_guard() is
-  'WP-01 SEC-008 authoritative table-boundary maker-checker guard for owner settlement create, approve and payout transitions.';
+  'WP-01 SEC-008 authoritative table-boundary maker-checker guard for authenticated owner settlement create, approve and payout transitions.';
 
 comment on column public.owner_settlements.maker_user_id is
   'SEC-008: authenticated creator of the owner settlement; immutable after establishment.';
