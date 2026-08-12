@@ -21,6 +21,9 @@ insert into auth.users (
   now(), now(), now(), '{}'::jsonb, '{}'::jsonb
 );
 
+insert into auth.users (id, email)
+values ('a3100000-0000-4000-8000-000000000009', 's02-d002-checker@test.invalid');
+
 insert into public.users (id, email, name, role, status, is_active)
 values (
   'a3100000-0000-4000-8000-000000000001',
