@@ -276,6 +276,30 @@ neither is closed by this PR.
   as a pass. WP-06 adds 7 tests to this suite; removing them would not make it
   finish, and the fix must not be a coverage reduction.
 
+### `document-platform-acceptance.spec.ts` — fails on **baseline main**, blocks a green Browser Readiness
+
+Once the suite is sharded it actually *finishes*, which exposes what the
+40-minute cancellation had been hiding: this pre-existing PR-3 spec fails.
+
+- **Verified on `main@1543928` in a clean `git worktree`**, with the WP-06
+  branch's changes entirely absent: the same tests fail there, with the same
+  errors. It is **not** caused by the strict fail-closed backend — no
+  `UNSEEDED TABLE` diagnostic is emitted during these runs.
+- **Two independent baseline causes observed:**
+  1. `expectNoUnexpectedConsoleErrors` (L47–57) allow-lists five fragments but
+     **not** the unreachable realtime socket. The app emits
+     `WebSocket connection to 'wss://invalid.supabase.local/realtime/v1/websocket…' failed: … ERR_NAME_NOT_RESOLVED`,
+     so the assertion fails on an environment condition rather than a product
+     defect.
+  2. The stale-IA assertions documented in §8 (`heading{name:'الفواتير',
+     level:1}` on `/invoices`, a top-level `طباعة` button, `EGP` vs the seeded
+     `OMR`) no longer match the shipped Financials hub.
+- **Not repaired here.** Re-anchoring this spec is a Financials/IA decision
+  owned by that surface; silently loosening its console allow-list from a
+  document-platform PR would weaken a real acceptance gate. Recorded so the
+  Browser Readiness owner sees that sharding alone does not turn the gate
+  green — this spec must be fixed or retired by its owner first.
+
 ## 8. Handoff — items inside forbidden areas (not touched)
 
 | Item | Area | Why it is a handoff |

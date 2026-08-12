@@ -8,6 +8,26 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH?.
 const chromiumLaunchOptions = chromiumExecutablePath ? { executablePath: chromiumExecutablePath } : undefined;
 const videoMode = process.env.PLAYWRIGHT_DISABLE_VIDEO === 'true' || isCredentialedStaging ? 'off' : 'retain-on-failure';
 
+/**
+ * CI worker count.
+ *
+ * Defaults to 1 so every existing caller keeps its current serial semantics —
+ * in particular `scripts/ci/run-supabase-database-gate.sh`, whose
+ * single-office journey MUTATES a real Postgres instance and must never race
+ * a concurrent reader.
+ *
+ * Only hermetic runs (the Browser Readiness suite, where the Supabase HTTP
+ * boundary is stubbed per browser context) opt into parallelism by setting
+ * `E2E_WORKERS`. `fullyParallel` stays false, so tests within one spec file
+ * always run in order and only separate files are distributed across workers.
+ */
+function resolveCiWorkers(): number {
+  const raw = process.env.E2E_WORKERS?.trim();
+  if (!raw) return 1;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
@@ -15,7 +35,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: isCredentialedStaging ? 0 : process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? resolveCiWorkers() : undefined,
   reporter: process.env.CI
     ? [['list'], ['html', { open: 'never' }]]
     : [['list']],
