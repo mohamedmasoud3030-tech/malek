@@ -25,12 +25,19 @@ insert into public.users (id, email, name, role, status, is_active)
 values (
   'a3100000-0000-4000-8000-000000000001',
   's02-d002@test.invalid', 'S02 D002 Admin', 'ADMIN', 'ACTIVE', true
+), (
+  'a3100000-0000-4000-8000-000000000009',
+  's02-d002-checker@test.invalid', 'S02 D002 Checker', 'ADMIN', 'ACTIVE', true
 );
 
 insert into public.company_members (company_id, user_id, role)
 values (
   'c3100000-0000-4000-8000-000000000001',
   'a3100000-0000-4000-8000-000000000001',
+  'ADMIN'
+), (
+  'c3100000-0000-4000-8000-000000000001',
+  'a3100000-0000-4000-8000-000000000009',
   'ADMIN'
 );
 
@@ -187,6 +194,8 @@ reset role;
 update public.payments
 set amount = 1000.00
 where id = 'ab310000-0000-4000-8000-000000000001';
+-- Approval is performed by a separate ADMIN; the draft maker must not self-approve.
+select set_config('request.jwt.claims', '{"sub":"a3100000-0000-4000-8000-000000000009","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"c3100000-0000-4000-8000-000000000001"}}', true);
 set local role authenticated;
 
 select lives_ok(
