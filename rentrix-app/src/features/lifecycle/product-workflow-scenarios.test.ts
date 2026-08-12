@@ -17,6 +17,7 @@ const COMPANY_A = 'ca000000-0000-4000-8000-00000000000a';
 const COMPANY_B = 'cb000000-0000-4000-8000-00000000000b';
 const ADMIN_A = 'aa000000-0000-4000-8000-000000000001';
 const ADMIN_B = 'bb000000-0000-4000-8000-000000000002';
+const CHECKER_A = 'aa000000-0000-4000-8000-000000000009';
 
 async function assume(db: PGlite, userId: string, companyId: string | null, role = 'authenticated') {
   const claims = JSON.stringify({
@@ -57,16 +58,19 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
 
       insert into auth.users (id, email) values
         ('${ADMIN_A}', 'admin.a@malik.test'),
-        ('${ADMIN_B}', 'admin.b@malik.test')
+        ('${ADMIN_B}', 'admin.b@malik.test'),
+        ('${CHECKER_A}', 'checker.a@malik.test')
       on conflict do nothing;
 
       insert into public.users (id, email, name, role, status) values
         ('${ADMIN_A}', 'admin.a@malik.test', 'مدير ألف', 'ADMIN', 'ACTIVE'),
-        ('${ADMIN_B}', 'admin.b@malik.test', 'مدير باء', 'ADMIN', 'ACTIVE')
+        ('${ADMIN_B}', 'admin.b@malik.test', 'مدير باء', 'ADMIN', 'ACTIVE'),
+        ('${CHECKER_A}', 'checker.a@malik.test', 'مراجع ألف', 'ADMIN', 'ACTIVE')
       on conflict do nothing;
 
       insert into public.company_members (company_id, user_id, role) values
         ('${COMPANY_A}', '${ADMIN_A}', 'ADMIN'),
+        ('${COMPANY_A}', '${CHECKER_A}', 'ADMIN'),
         ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN')
       on conflict do nothing;
 
@@ -285,6 +289,7 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     expect(stlId).toBeDefined();
 
     // 2. Approve settlement via approve_owner_settlement_atomic
+    await assume(db, CHECKER_A, COMPANY_A);
     const appRes = await db.query<{ approve_owner_settlement_atomic: any }>(`
       select public.approve_owner_settlement_atomic(jsonb_build_object(
         'settlement_id', '${stlId}',
