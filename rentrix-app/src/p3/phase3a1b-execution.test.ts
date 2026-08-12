@@ -21,6 +21,8 @@ import { assumeIdentity, createFullReplayedDatabase, repoRoot } from '../p1/repl
 import {
   ADMIN_A,
   ADMIN_B,
+  CHECKER_A,
+  CHECKER_B,
   COMPANY_A,
   COMPANY_B,
   CONTRACT_A,
@@ -33,6 +35,7 @@ import {
   rpcJsonb,
   seedPhase3a1bFixture,
 } from './phase3a1b-fixture';
+import { requestAndApproveReceiptVoid } from './receipt-void-maker-checker-test-helper';
 
 const OUT_DIR = join(repoRoot, 'evidence', 'p3', 'phase3a1b');
 const MULTI_RECEIPT_ID = '77cc31b0-0000-4000-8000-000000000001';
@@ -618,7 +621,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     );
     expect(before).toEqual({ receipts: 1, payments: 1, allocations: 1, journals: 2 });
 
-    const voided = await rpcJsonb(db, 'void_receipt_atomic', {
+    const voided = await requestAndApproveReceiptVoid(db, ADMIN_A, CHECKER_A, COMPANY_A, {
       receipt_id: receipt2,
       reason: 'duplicate posting',
       request_id: 'p3a1b-void-1',
@@ -659,7 +662,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     expect(allFour.debit).toBeCloseTo(allFour.credit, 3);
 
     // Same-request retry: replayed response, still exactly one reversal batch.
-    const retried = await rpcJsonb(db, 'void_receipt_atomic', {
+    const retried = await requestAndApproveReceiptVoid(db, ADMIN_A, CHECKER_A, COMPANY_A, {
       receipt_id: receipt2,
       reason: 'duplicate posting',
       request_id: 'p3a1b-void-1',
@@ -676,7 +679,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
 
     const receipt1BeforeReuse = await receiptState(ids.receipt1);
     await expect(
-      rpcJsonb(db, 'void_receipt_atomic', {
+      requestAndApproveReceiptVoid(db, ADMIN_A, CHECKER_A, COMPANY_A, {
         receipt_id: ids.receipt1,
         reason: 'duplicate posting',
         request_id: 'p3a1b-void-1',
@@ -684,7 +687,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     ).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
     expect(await receiptState(ids.receipt1)).toEqual(receipt1BeforeReuse);
     await expect(
-      rpcJsonb(db, 'void_receipt_atomic', {
+      requestAndApproveReceiptVoid(db, ADMIN_A, CHECKER_A, COMPANY_A, {
         receipt_id: receipt2,
         reason: 'changed reason',
         request_id: 'p3a1b-void-1',
@@ -699,14 +702,15 @@ describe('Phase 3A-1B execution lifecycle', () => {
     );
     expect(counts).toEqual({ reversals: 2, audits: 1 });
 
-    // New request on an already-VOID receipt: no second reversal, no new audit.
-    const again = await rpcJsonb(db, 'void_receipt_atomic', {
-      receipt_id: receipt2,
-      reason: 'retry after void',
-      request_id: 'p3a1b-void-2',
-    });
-    expect(again.idempotent).toBe(true);
-    expect(Number(again.journal_reversal_entries)).toBe(0);
+    // A different request cannot reopen an already executed VOID lifecycle.
+    await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    await expect(
+      rpcJsonb(db, 'request_receipt_void_atomic', {
+        receipt_id: receipt2,
+        reason: 'retry after void',
+        request_id: 'p3a1b-void-2',
+      }),
+    ).rejects.toThrow(/Only POSTED receipts/);
     counts = await queryOne(
       db,
       `select count(*)::int as reversals,
@@ -718,7 +722,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
 
     // Resolution by payment id resolves the same shared identity.
     const receipt1 = ids.receipt1;
-    const voidByPayment = await rpcJsonb(db, 'void_receipt_atomic', {
+    const voidByPayment = await requestAndApproveReceiptVoid(db, ADMIN_A, CHECKER_A, COMPANY_A, {
       receipt_id: receipt1, // payments.id = receipts.id — the payment-id path covers both
       reason: 'resolved via payment identity',
       request_id: 'p3a1b-void-3',
@@ -810,12 +814,12 @@ describe('Phase 3A-1B execution lifecycle', () => {
     // B voids A's receipt → company-scoped resolution behaves exactly like P0002 not-found.
     const ids = evidence.paymentReceipt.recordLifecycle as { receipt1: string };
     await expect(
-      rpcJsonb(db, 'void_receipt_atomic', {
+      rpcJsonb(db, 'request_receipt_void_atomic', {
         receipt_id: ids.receipt1,
         reason: 'cross-company attempt',
         request_id: 'p3a1b-iso-void',
       }),
-    ).rejects.toThrow(/were not found/);
+    ).rejects.toThrow(/not found in the active company/);
     const aReceipt1 = await receiptState(ids.receipt1);
     expect(aReceipt1!.status).toBe('VOID'); // untouched by A's earlier voids only — B changed nothing
 
@@ -888,7 +892,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     // void_receipt_atomic — shared request id: B gets its OWN result, not A's cached one.
     const receiptSp = String(postedA.receipt_id);
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
-    const voidA = await rpcJsonb(db, 'void_receipt_atomic', {
+    const voidA = await requestAndApproveReceiptVoid(db, ADMIN_A, CHECKER_A, COMPANY_A, {
       receipt_id: receiptSp,
       reason: 'shared-id void A',
       request_id: 'p3a1b-shared-void',
@@ -904,7 +908,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
       journal_entries: [],
     });
     const receiptB = String(postedB.receipt_id);
-    const voidB = await rpcJsonb(db, 'void_receipt_atomic', {
+    const voidB = await requestAndApproveReceiptVoid(db, ADMIN_B, CHECKER_B, COMPANY_B, {
       receipt_id: receiptB,
       reason: 'shared-id void B',
       request_id: 'p3a1b-shared-void',
