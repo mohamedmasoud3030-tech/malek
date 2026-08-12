@@ -2,10 +2,6 @@ import { expect, test } from '@playwright/test';
 
 const fixtureUrl = '/login?e2e-service-providers-workspace=1';
 
-function visibleText(page: Parameters<typeof test>[0] extends never ? never : any, text: string) {
-  return page.locator('p:visible', { hasText: text });
-}
-
 test.describe('Service Providers workspace', () => {
   test('renders the Arabic register and provider operations without horizontal overflow', async ({ page }) => {
     await page.goto(fixtureUrl);
@@ -42,7 +38,7 @@ test.describe('Service Providers workspace', () => {
     await expect(page.locator('p:visible', { hasText: 'مؤسسة الحلول السريعة' }).first()).toBeVisible();
     await expect(page.locator('p:visible', { hasText: 'شركة الأفق للتبريد' })).toHaveCount(0);
 
-    const action = page.getByRole('button', { name: 'عرض' }).filter({ visible: true }).first();
+    const action = page.locator('button:visible', { hasText: 'عرض' }).first();
     await expect(action).toBeVisible();
     const box = await action.boundingBox();
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
