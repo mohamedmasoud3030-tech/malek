@@ -27,6 +27,7 @@ const POPUP_BLOCKED_MESSAGE = 'تعذر فتح نافذة الطباعة. يرج
 const FONT_FAILED_MESSAGE = 'تعذر تحميل الخط العربي المطلوب للطباعة. يرجى إعادة المحاولة أو التحقق من الاتصال بالإنترنت.';
 const READINESS_NOTICE = 'أكمل بيانات الشركة الأساسية في الإعدادات قبل طباعة هذا المستند.';
 const INVOICE_IDENTITY = 'فاتورة بلا مرجع';
+const EXPECTED_SETTINGS_UNAVAILABLE_RESOURCE_ERROR = 'Failed to load resource: the server responded with a status of 500 (Internal Server Error)';
 
 /** Every seeded UUID plus its historical `id.slice(0, 8)` abbreviation. */
 const FORBIDDEN_ID_FRAGMENTS = Object.values(IDS).flatMap((id) => [id, id.slice(0, 8)]);
@@ -40,11 +41,6 @@ test.beforeEach(async ({}, testInfo) => {
 /* ------------------------------------------------------------------ */
 
 function isExpectedHermeticRealtimeDnsError(text: string): boolean {
-  // The env module maps placeholder Supabase URLs (example.supabase.co) to
-  // the canonical fallback host (invalid.supabase.local). The Supabase JS
-  // client therefore connects to invalid.supabase.local for realtime, not
-  // the original placeholder. Accept either host so the filter stays correct
-  // regardless of which URL the runtime resolves to.
   const isKnownHermeticHost = text.includes('example.supabase.co') || text.includes('invalid.supabase.local');
   return isKnownHermeticHost
     && text.includes('/realtime/v1/websocket')
@@ -52,9 +48,6 @@ function isExpectedHermeticRealtimeDnsError(text: string): boolean {
 }
 
 async function expectNoUnexpectedConsoleErrors(_page: Page, collected: string[]): Promise<void> {
-  // Deliberately narrow: only the fake hermetic realtime socket may fail DNS.
-  // A real-project socket, another fake-host endpoint, or an application error
-  // must remain visible to the test instead of being blanket-allowlisted.
   expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://example.supabase.co/realtime/v1/websocket?apikey=test' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(true);
   expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://invalid.supabase.local/realtime/v1/websocket?apikey=invalid-anon-key' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(true);
   expect(isExpectedHermeticRealtimeDnsError("WebSocket connection to 'wss://real-project.supabase.co/realtime/v1/websocket' failed: net::ERR_NAME_NOT_RESOLVED")).toBe(false);
@@ -187,9 +180,10 @@ function isInvoiceMobile(page: Page): boolean {
 }
 
 function visibleInvoiceRegister(page: Page): Locator {
-  return isInvoiceMobile(page)
+  const register = isInvoiceMobile(page)
     ? page.locator('[data-entity-table-mobile]')
     : page.locator('[data-entity-table-wrapper]');
+  return register.filter({ hasText: INVOICE_IDENTITY }).first();
 }
 
 function mobileInvoiceCard(page: Page): Locator {
@@ -545,7 +539,15 @@ test.describe('بوابة الجاهزية — company identity not confirmed', 
     await expect(tenantPanel.getByRole('button', { name: 'تنزيل PDF' })).toBeDisabled();
     await expect(page.getByRole('alert').getByText(READINESS_NOTICE).first()).toBeVisible();
 
-    await expectNoUnexpectedConsoleErrors(page, consoleErrors);
+    // In this scenario the fake backend deliberately returns HTTP 500 for
+    // company-settings reads to prove the UI fails closed. Browser resource
+    // errors for those intentional 500s are expected evidence, not runtime
+    // regressions. Every other console error still goes through the narrow
+    // acceptance guard.
+    await expectNoUnexpectedConsoleErrors(
+      page,
+      consoleErrors.filter((text) => !text.includes(EXPECTED_SETTINGS_UNAVAILABLE_RESOURCE_ERROR)),
+    );
   });
 });
 
