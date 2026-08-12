@@ -203,14 +203,48 @@ export async function getReceiptDetail(receiptOrPaymentId: string): Promise<Rece
   return receipt;
 }
 
-export type VoidReceiptPayload = {
+export type ReceiptVoidRequestStatus = 'PENDING' | 'EXECUTED' | 'REJECTED' | 'CANCELLED';
+
+export type ReceiptVoidRequestRecord = {
+  id: string;
+  company_id: string;
+  receipt_id: string;
+  reason: string;
+  status: ReceiptVoidRequestStatus;
+  requested_by: string;
+  requested_at: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  request_id: string;
+  execution_request_id: string | null;
+  reversal_batch_id: string | null;
+};
+
+export type RequestReceiptVoidPayload = {
   receipt_id: string;
   reason: string;
   request_id: string;
 };
 
-export type VoidReceiptResult = {
-  success: boolean;
+export type RequestReceiptVoidResult = {
+  success: true;
+  idempotent: boolean;
+  void_request_id: string;
+  request_id: string;
+  receipt_id: string;
+  status: 'PENDING';
+  reason: string;
+  requested_by: string;
+  requested_at: string;
+};
+
+export type ApproveReceiptVoidPayload = {
+  void_request_id: string;
+  request_id: string;
+};
+
+export type ApproveReceiptVoidResult = {
+  success: true;
   idempotent: boolean;
   request_id: string;
   requested_receipt_id: string;
@@ -220,9 +254,28 @@ export type VoidReceiptResult = {
   reason: string;
   journal_reversal_batch_id: string | null;
   journal_reversal_entries: number;
+  void_request_id: string;
+  void_request_status: 'EXECUTED';
+  requested_by: string;
+  approved_by: string;
+  approval_request_id: string;
 };
 
-function isVoidReceiptResult(value: unknown): value is VoidReceiptResult {
+function isRequestReceiptVoidResult(value: unknown): value is RequestReceiptVoidResult {
+  if (!value || typeof value !== 'object') return false;
+  const result = value as Record<string, unknown>;
+  return result.success === true
+    && typeof result.idempotent === 'boolean'
+    && typeof result.void_request_id === 'string'
+    && typeof result.request_id === 'string'
+    && typeof result.receipt_id === 'string'
+    && result.status === 'PENDING'
+    && typeof result.reason === 'string'
+    && typeof result.requested_by === 'string'
+    && typeof result.requested_at === 'string';
+}
+
+function isApproveReceiptVoidResult(value: unknown): value is ApproveReceiptVoidResult {
   if (!value || typeof value !== 'object') return false;
   const result = value as Record<string, unknown>;
   return result.success === true
@@ -234,13 +287,43 @@ function isVoidReceiptResult(value: unknown): value is VoidReceiptResult {
     && result.status === 'VOID'
     && typeof result.reason === 'string'
     && (result.journal_reversal_batch_id === null || typeof result.journal_reversal_batch_id === 'string')
-    && typeof result.journal_reversal_entries === 'number';
+    && typeof result.journal_reversal_entries === 'number'
+    && typeof result.void_request_id === 'string'
+    && result.void_request_status === 'EXECUTED'
+    && typeof result.requested_by === 'string'
+    && typeof result.approved_by === 'string'
+    && typeof result.approval_request_id === 'string';
 }
 
-export async function voidReceipt(payload: VoidReceiptPayload): Promise<VoidReceiptResult> {
-  const { data, error } = await supabase.rpc('void_receipt_atomic', { payload });
+export async function listPendingReceiptVoidRequests(): Promise<ReceiptVoidRequestRecord[]> {
+  // The table is introduced by the same WP-01 migration. Cast only at this
+  // boundary until generated database types are refreshed from the deployed
+  // target; the explicit result contract below remains authoritative.
+  const { data, error } = await (supabase as any)
+    .from('receipt_void_requests')
+    .select('id, company_id, receipt_id, reason, status, requested_by, requested_at, reviewed_by, reviewed_at, request_id, execution_request_id, reversal_batch_id')
+    .eq('status', 'PENDING')
+    .order('requested_at', { ascending: true });
   if (error) throw error;
-  if (data == null) throw new Error('void_receipt_atomic returned no data');
-  if (!isVoidReceiptResult(data)) throw new Error('void_receipt_atomic returned an invalid response contract');
+  return (data ?? []) as ReceiptVoidRequestRecord[];
+}
+
+export async function requestReceiptVoid(payload: RequestReceiptVoidPayload): Promise<RequestReceiptVoidResult> {
+  const { data, error } = await supabase.rpc('request_receipt_void_atomic' as any, { payload } as any);
+  if (error) throw error;
+  if (data == null) throw new Error('request_receipt_void_atomic returned no data');
+  if (!isRequestReceiptVoidResult(data)) {
+    throw new Error('request_receipt_void_atomic returned an invalid response contract');
+  }
+  return data;
+}
+
+export async function approveReceiptVoid(payload: ApproveReceiptVoidPayload): Promise<ApproveReceiptVoidResult> {
+  const { data, error } = await supabase.rpc('approve_receipt_void_atomic' as any, { payload } as any);
+  if (error) throw error;
+  if (data == null) throw new Error('approve_receipt_void_atomic returned no data');
+  if (!isApproveReceiptVoidResult(data)) {
+    throw new Error('approve_receipt_void_atomic returned an invalid response contract');
+  }
   return data;
 }
