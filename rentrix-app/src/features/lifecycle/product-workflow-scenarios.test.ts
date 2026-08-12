@@ -3,7 +3,7 @@
  *
  * Verifies all 6 required database integration scenarios against the full replayed database schema:
  *   Scenario 1 — Complete rental lifecycle (authoritative invoice generation & balanced journals)
- *   Scenario 2 — Receipt reversal (void_receipt_atomic & balanced reversal JEs)
+ *   Scenario 2 — Receipt reversal (request → separate approval → balanced reversal JEs)
  *   Scenario 3 — Deposit lifecycle (create_deposit_atomic, refund_deposit_atomic, 2200 liability JE, Debit==Credit)
  *   Scenario 4 — Owner settlement (create draft, approve, pay, verify balances, cancel controlled reversal)
  *   Scenario 5 — Multi-owner property (60:40 allocation ratio math & >100% rejection)
@@ -208,15 +208,25 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     `);
     const receiptId = receiptRes.rows[0].id;
 
-    // 2. Reverse receipt via approved atomic flow
-    const voidRes = await db.query<{ void_receipt_atomic: any }>(`
-      select public.void_receipt_atomic(jsonb_build_object(
+    // 2. Maker requests the reversal; financial state stays unchanged.
+    const requestRes = await db.query<{ request_receipt_void_atomic: any }>(`
+      select public.request_receipt_void_atomic(jsonb_build_object(
         'receipt_id', '${receiptId}',
         'reason', 'خطأ في تسجيل طريقة الدفع',
         'request_id', 'void-req-001'
-      )) as void_receipt_atomic;
+      )) as request_receipt_void_atomic;
     `);
-    expect(voidRes.rows[0].void_receipt_atomic.success).toBe(true);
+    expect(requestRes.rows[0].request_receipt_void_atomic.status).toBe('PENDING');
+
+    // 3. A distinct checker approves and executes the canonical reversal.
+    await assume(db, CHECKER_A, COMPANY_A);
+    const voidRes = await db.query<{ approve_receipt_void_atomic: any }>(`
+      select public.approve_receipt_void_atomic(jsonb_build_object(
+        'void_request_id', '${requestRes.rows[0].request_receipt_void_atomic.void_request_id}',
+        'request_id', 'void-approval-001'
+      )) as approve_receipt_void_atomic;
+    `);
+    expect(voidRes.rows[0].approve_receipt_void_atomic.success).toBe(true);
 
     // 3. Verify original history is preserved (status updated to void, record not deleted)
     const afterVoid = await db.query<{ status: string; deleted_at: any }>(`
