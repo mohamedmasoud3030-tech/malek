@@ -270,10 +270,10 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
         where n.nspname = 'public'
           and p.proname in ('record_invoice_payment_atomic', 'post_receipt_atomic', 'void_receipt_atomic', 'generate_invoices_from_active_contracts')`,
     );
-    // The legacy void overload (uuid, timestamptz, jsonb, jsonb) is deliberately
-    // left byte-identical (§6: no proof of non-usage ⇒ no drop, no rewrite) and
-    // stays unexposed (authenticated/service_role denied) — it is out of scope
-    // for the canonical checks below.
+    // Both receipt VOID overloads are deliberately out of this executor check:
+    // the legacy overload stays unexposed and the jsonb overload is now a
+    // fail-closed Maker-Checker compatibility facade. The governed request and
+    // approval path has its own WP-01 integration contract.
     const isLegacyVoid = (r: { name: string; args: string }) =>
       r.name === 'void_receipt_atomic' && r.args.startsWith('p_receipt_id uuid');
     const problems: string[] = [];
@@ -293,7 +293,6 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
       if (
         row.name !== 'record_invoice_payment_atomic'
         && row.name !== 'post_receipt_atomic'
-        && row.name !== 'void_receipt_atomic'
       ) continue;
       const op = row.name;
       const nsBinding = new RegExp(`operation_name\\s*=\\s*'${op}:'\\s*\\|\\|\\s*v_company_id`);
