@@ -3,6 +3,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { assumeIdentity, createFullReplayedDatabase } from '../p1/replay-bootstrap';
 import {
   ADMIN_A,
+  CHECKER_A,
   COMPANY_A,
   CONTRACT_A,
   INVOICE_A1,
@@ -10,6 +11,7 @@ import {
   rpcJsonb,
   seedPhase3a1bFixture,
 } from '../p3/phase3a1b-fixture';
+import { requestAndApproveReceiptVoid } from '../p3/receipt-void-maker-checker-test-helper';
 
 const RECEIPT_ID = '53a40000-0000-4000-8000-000000000001';
 const POST_REQUEST_ID = 's03-void-source-post-1';
@@ -86,11 +88,17 @@ describe('Stage 3 — receipt VOID uses engine-managed reversal', () => {
     );
     expect(Number(beforeInvoice?.paid_amount)).toBe(100);
 
-    const result = await rpcJsonb(db, 'void_receipt_atomic', {
-      receipt_id: RECEIPT_ID,
-      reason: 'S03 engine-managed reversal proof',
-      request_id: VOID_REQUEST_ID,
-    });
+    const result = await requestAndApproveReceiptVoid(
+      db,
+      ADMIN_A,
+      CHECKER_A,
+      COMPANY_A,
+      {
+        receipt_id: RECEIPT_ID,
+        reason: 'S03 engine-managed reversal proof',
+        request_id: VOID_REQUEST_ID,
+      },
+    );
 
     expect(result).toMatchObject({
       success: true,
@@ -171,11 +179,17 @@ describe('Stage 3 — receipt VOID uses engine-managed reversal', () => {
     );
     expect(statuses).toEqual({ receipt_status: 'VOID', payment_status: 'VOID' });
 
-    const replay = await rpcJsonb(db, 'void_receipt_atomic', {
-      receipt_id: RECEIPT_ID,
-      reason: 'S03 engine-managed reversal proof',
-      request_id: VOID_REQUEST_ID,
-    });
+    const replay = await requestAndApproveReceiptVoid(
+      db,
+      ADMIN_A,
+      CHECKER_A,
+      COMPANY_A,
+      {
+        receipt_id: RECEIPT_ID,
+        reason: 'S03 engine-managed reversal proof',
+        request_id: VOID_REQUEST_ID,
+      },
+    );
     expect(replay).toMatchObject({
       success: true,
       idempotent: true,
