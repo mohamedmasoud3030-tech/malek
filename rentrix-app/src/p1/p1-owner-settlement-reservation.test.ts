@@ -339,6 +339,7 @@ describe('FA-003 — cancel releases, PAID holds', () => {
       expect(num(aRel.n)).toBeGreaterThanOrEqual(0);
 
       // paid settlement holds its links and cannot be cancelled
+      await assumeIdentity(db, ADMIN_1, COMPANY_1);
       const p = await create(OWNER_R, P_R, JULY.from, JULY.to, 61);
       const pId = p.settlement_id as string;
       await db.query(`select public.approve_owner_settlement_atomic($1::jsonb)`, [
