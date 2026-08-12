@@ -38,6 +38,8 @@ const COMPANY_2 = 'c2000000-0000-4000-8000-000000000002';
 const ADMIN_1 = 'a1000000-0000-4000-8000-000000000001';
 const MEMBER_1 = 'a1000000-0000-4000-8000-000000000002';
 const ADMIN_2 = 'a2000000-0000-4000-8000-000000000001';
+const CHECKER_1 = 'a1000000-0000-4000-8000-000000000009';
+const CHECKER_2 = 'a2000000-0000-4000-8000-000000000009';
 const OWNER_R = 'b1000000-0000-4000-8000-000000000001'; // property_management, RATE 10%
 const OWNER_F = 'b1000000-0000-4000-8000-000000000002'; // property_management, FIXED_MONTHLY 200
 const OWNER_M = 'b1000000-0000-4000-8000-000000000003'; // master_lease, FIXED_MONTHLY 300
@@ -103,18 +105,24 @@ INSERT INTO auth.users (id, email) VALUES
   ('${ADMIN_1}',  'admin1@p1.test'),
   ('${MEMBER_1}', 'member1@p1.test'),
   ('${ADMIN_2}',  'admin2@p1.test'),
+  ('${CHECKER_1}', 'checker1@p1.test'),
+  ('${CHECKER_2}', 'checker2@p1.test'),
   ('${OUTSIDER}', 'outsider@p1.test');
 
 INSERT INTO public.users (id, email, name, role, status) VALUES
   ('${ADMIN_1}',  'admin1@p1.test',  'مدير أول',  'ADMIN', 'ACTIVE'),
   ('${MEMBER_1}', 'member1@p1.test', 'عضو أول',   'USER',  'ACTIVE'),
   ('${ADMIN_2}',  'admin2@p1.test',  'مدير ثان',  'ADMIN', 'ACTIVE'),
+  ('${CHECKER_1}', 'checker1@p1.test', 'مراجع أول', 'ADMIN', 'ACTIVE'),
+  ('${CHECKER_2}', 'checker2@p1.test', 'مراجع ثان', 'ADMIN', 'ACTIVE'),
   ('${OUTSIDER}', 'outsider@p1.test','خارجي',     'USER',  'ACTIVE');
 
 INSERT INTO public.company_members (company_id, user_id, role) VALUES
   ('${COMPANY_1}', '${ADMIN_1}', 'ADMIN'),
   ('${COMPANY_1}', '${MEMBER_1}', 'MEMBER'),
-  ('${COMPANY_2}', '${ADMIN_2}', 'ADMIN');
+  ('${COMPANY_1}', '${CHECKER_1}', 'ADMIN'),
+  ('${COMPANY_2}', '${ADMIN_2}', 'ADMIN'),
+  ('${COMPANY_2}', '${CHECKER_2}', 'ADMIN');
 
 INSERT INTO public.owners (id, full_name, name, company_id) VALUES
   ('${OWNER_R}', 'مالك النسبة',   'مالك النسبة',   '${COMPANY_1}'),
@@ -518,7 +526,8 @@ describe('P1 — create_owner_settlement_draft_atomic ignores ALL client-sent am
       const sid = created?.settlement_id as string;
       expect(num(created?.net_payable)).toBe(1230);
 
-      const approved = (await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
+      const approved = (await assumeIdentity(db, CHECKER_1, COMPANY_1);
+      await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid, request_id: '12000000-0000-4000-8000-000000000002' }),
       ])).rows[0]?.out as any;
       expect(approved?.status).toBe('APPROVED');
@@ -563,10 +572,12 @@ describe('P1 — create_owner_settlement_draft_atomic ignores ALL client-sent am
       expect(num(journalAfter.n)).toBe(2);
 
       // cancel path (draft → approved → cancelled): second period for the same owner
+      await assumeIdentity(db, ADMIN_1, COMPANY_1);
       const draft2 = (await db.query<{ out: any }>(`select public.create_owner_settlement_draft_atomic($1::jsonb) as out`, [
         JSON.stringify({ ...base, period_start: '2026-02-01', period_end: '2026-02-28', request_id: '12000000-0000-4000-8000-000000000004' }),
       ])).rows[0]?.out as any;
       const sid2 = draft2?.settlement_id as string;
+      await assumeIdentity(db, CHECKER_1, COMPANY_1);
       await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid2, request_id: '12000000-0000-4000-8000-000000000005' }),
       ]);
@@ -648,7 +659,8 @@ describe('P1 — settlement integrity guards (accounts, immutability, invalid at
       ])).rows[0]?.out as any;
       const sid2 = created?.settlement_id as string;
       expect(num(created?.net_payable)).toBe(90); // derived for company 2: 100 − 10
-      const approved = (await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
+      const approved = (await assumeIdentity(db, CHECKER_2, COMPANY_2);
+      await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid2, request_id: '13000000-0000-4000-8000-000000000002' }),
       ])).rows[0]?.out as any;
       expect(approved?.status).toBe('APPROVED');
@@ -693,6 +705,7 @@ describe('P1 — settlement integrity guards (accounts, immutability, invalid at
       ).rejects.toThrow(/immutable/);
       await db.exec('ROLLBACK TO SAVEPOINT sp_t1;');
 
+      await assumeIdentity(db, CHECKER_1, COMPANY_1);
       await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid, request_id: '13000000-0000-4000-8000-000000000012' }),
       ]);
@@ -756,6 +769,7 @@ describe('P1 — settlement integrity guards (accounts, immutability, invalid at
       await assumeIdentity(db, ADMIN_1, COMPANY_1);
 
       // approve → PAID → approve again must fail (no re-derivation, no re-approval)
+      await assumeIdentity(db, CHECKER_1, COMPANY_1);
       await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid, request_id: '13000000-0000-4000-8000-000000000025' }),
       ]);
@@ -811,7 +825,8 @@ describe('P1 — settlement integrity guards (accounts, immutability, invalid at
       for (const k of ['gross_collected', 'office_fee', 'owner_expenses', 'tax_amount', 'net_payable'] as const) {
         expect(num(stored[k]), k).toBe(num((july as any)[k]));
       }
-      const approved = (await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
+      const approved = (await assumeIdentity(db, CHECKER_1, COMPANY_1);
+      await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid, request_id: '13000000-0000-4000-8000-000000000042' }),
       ])).rows[0]?.out as any;
       expect(num(approved?.net_payable)).toBe(num(july.net_payable)); // approve echoes the STORED tuple
