@@ -2,7 +2,7 @@ import { Outlet } from '@tanstack/react-router';
 
 export function AuthLayout() {
   return (
-    <main
+    <div
       className="relative isolate min-h-screen min-h-dvh overflow-x-hidden bg-[hsl(var(--color-bg))]"
       dir="rtl"
     >
@@ -19,6 +19,6 @@ export function AuthLayout() {
       <div className="relative z-10">
         <Outlet />
       </div>
-    </main>
+    </div>
   );
 }
