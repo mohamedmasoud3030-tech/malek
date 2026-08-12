@@ -1,5 +1,5 @@
 import { Link, useSearch } from '@tanstack/react-router';
-import { ArrowRight, Ban, CalendarDays, CheckCircle2, Eye, Printer, ReceiptText, Wallet, WalletCards } from 'lucide-react';
+import { ArrowRight, Ban, CalendarDays, CheckCircle2, Clock3, Eye, Printer, ReceiptText, ShieldCheck, Wallet, WalletCards } from 'lucide-react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import { formatReceiptContext, paymentMethodLabels, receiptStatusLabels } from '
 import type { ReceiptRecord } from './receiptService';
 import { ReceiptDetailPage } from './receipt-detail-page';
 import { createReceiptPrintHref, openReceiptPrintTab } from './receipt-print';
-import { useReceipt, useReceipts, useVoidReceipt } from './useReceipts';
+import { useApproveReceiptVoid, usePendingReceiptVoidRequests, useReceipt, useReceipts, useRequestReceiptVoid } from './useReceipts';
 import { formatLatinNumber } from '@/lib/formatters';
 
 // Keep the public helper reachable from this page (used by tests and older call sites).
@@ -115,8 +115,8 @@ function VoidReceiptDialog({
     <EntityForm.Overlay
       open={Boolean(state.receipt)}
       onOpenChange={(open) => { if (!open && !isLoading) onClose(); }}
-      title={`إلغاء الإيصال ${state.receipt?.receipt_number ?? ''}`}
-      description="أدخل سبب الإلغاء لتوثيق العملية. يتم تحديث الدفعة والفاتورة وإنشاء القيد العكسي داخل عملية ذرية واحدة."
+      title={`طلب إلغاء الإيصال ${state.receipt?.receipt_number ?? ''}`}
+      description="أدخل سبباً واضحاً. سيظل الإيصال منشوراً حتى يراجع الطلب مستخدم مخوّل آخر ويعتمده."
       headerExtra={<StatusBadge tone="danger"><Ban className="me-1 size-3" aria-hidden="true" />إجراء حساس</StatusBadge>}
       className="max-w-lg"
     >
@@ -128,7 +128,7 @@ function VoidReceiptDialog({
         }}
       >
         <EntityForm.ErrorSummary message={reasonMissing ? 'سبب الإلغاء مطلوب لإتمام العملية.' : undefined} />
-        <EntityForm.Section title="سبب الإلغاء" description="اكتب سبباً واضحاً يمكن الرجوع إليه في سجل التدقيق.">
+        <EntityForm.Section title="سبب طلب الإلغاء" description="يُحفظ السبب وهوية مقدم الطلب في سجل التدقيق ولا يمكن اعتماد الطلب من الشخص نفسه.">
           <EntityForm.Field label="السبب">
             <Input
               value={state.reason}
@@ -140,7 +140,7 @@ function VoidReceiptDialog({
           </EntityForm.Field>
         </EntityForm.Section>
         <EntityForm.Actions
-          submitLabel={isLoading ? 'جارٍ الإلغاء...' : 'تأكيد الإلغاء'}
+          submitLabel={isLoading ? 'جارٍ إرسال الطلب...' : 'إرسال طلب الإلغاء'}
           onCancel={onClose}
           isSubmitting={isLoading}
           submitDisabled={reasonMissing}
@@ -163,8 +163,10 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
   const receiptsQuery = useReceipts({ limit: receiptsLimit });
   const selectedDetailQuery = useReceipt(selectedReceiptId);
-  const voidReceiptMutation = useVoidReceipt();
   const canVoidReceipt = canVoidReceipts(authorization);
+  const pendingVoidRequestsQuery = usePendingReceiptVoidRequests(canVoidReceipt);
+  const requestVoidMutation = useRequestReceiptVoid();
+  const approveVoidMutation = useApproveReceiptVoid();
 
   const receipts = receiptsQuery.data ?? [];
   const hasMoreReceipts = canLoadMoreReceipts(receipts.length, receiptsLimit);
@@ -189,7 +191,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
 
   const handleConfirmVoid = () => {
     if (!voidDialog.receipt || voidDialog.receipt.status !== 'posted' || !voidDialog.reason.trim()) return;
-    voidReceiptMutation.mutate(
+    requestVoidMutation.mutate(
       {
         receipt_id: voidDialog.receipt.id,
         reason: voidDialog.reason.trim(),
@@ -197,6 +199,13 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
       },
       { onSettled: closeVoidDialog },
     );
+  };
+
+  const handleApproveVoid = (voidRequestId: string) => {
+    approveVoidMutation.mutate({
+      void_request_id: voidRequestId,
+      request_id: createVoidRequestId(),
+    });
   };
 
   const receiptColumns: ColumnDef<ReceiptRecord>[] = [
@@ -212,8 +221,8 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
         <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
         <Button variant="secondary" className="min-h-10 px-3" onClick={() => openReceiptPrintView(receipt.id)}><Printer className="me-2 size-4" />طباعة</Button>
         {canVoidReceipt && receipt.status === 'posted' ? (
-          <Button variant="danger" className="min-h-10 px-3" onClick={() => openVoidDialog(receipt)} disabled={voidReceiptMutation.isPending}>
-            <Ban className="me-2 size-4" />إلغاء
+          <Button variant="danger" className="min-h-10 px-3" onClick={() => openVoidDialog(receipt)} disabled={requestVoidMutation.isPending}>
+            <Ban className="me-2 size-4" />طلب إلغاء
           </Button>
         ) : null}
       </div>
@@ -273,6 +282,65 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
         ) : undefined}
       />
 
+      {canVoidReceipt ? (
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border/60 bg-warning/5">
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="size-5 text-warning" aria-hidden="true" />
+              طلبات إلغاء تنتظر المراجعة
+            </CardTitle>
+            <CardDescription>
+              الإلغاء لا يُنفّذ إلا بعد اعتماد مستخدم مخوّل آخر. مقدم الطلب لا يستطيع اعتماد طلبه.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 p-3 sm:p-5">
+            {pendingVoidRequestsQuery.isLoading ? (
+              <p role="status" aria-live="polite" className="text-sm text-muted-foreground">جارٍ تحميل طلبات المراجعة...</p>
+            ) : pendingVoidRequestsQuery.isError ? (
+              <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-bold text-destructive">تعذّر تحميل طلبات إلغاء الإيصالات.</p>
+                <Button variant="secondary" onClick={() => { void pendingVoidRequestsQuery.refetch(); }}>إعادة المحاولة</Button>
+              </div>
+            ) : (pendingVoidRequestsQuery.data ?? []).length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-border/70 p-4 text-sm text-muted-foreground">لا توجد طلبات إلغاء معلّقة.</p>
+            ) : (
+              <div className="grid gap-3">
+                {(pendingVoidRequestsQuery.data ?? []).map((request) => {
+                  const isOwnRequest = request.requested_by === authorization?.userId;
+                  return (
+                    <div key={request.id} className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-background p-4 sm:flex-row sm:items-center">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-black">إيصال {formatShortId(request.receipt_id)}</span>
+                          <StatusBadge tone="warning"><Clock3 className="me-1 size-3" aria-hidden="true" />قيد المراجعة</StatusBadge>
+                          {isOwnRequest ? <StatusBadge tone="neutral">طلبك</StatusBadge> : null}
+                        </div>
+                        <p className="mt-1 text-sm">{request.reason}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">تاريخ الطلب: {formatDate(request.requested_at)}</p>
+                      </div>
+                      {isOwnRequest ? (
+                        <p className="text-xs font-bold text-muted-foreground">يلزم مستخدم مخوّل آخر للاعتماد</p>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="danger"
+                          className="min-h-11"
+                          onClick={() => handleApproveVoid(request.id)}
+                          disabled={approveVoidMutation.isPending}
+                        >
+                          <ShieldCheck className="me-2 size-4" aria-hidden="true" />
+                          {approveVoidMutation.isPending ? 'جارٍ الاعتماد...' : 'اعتماد وتنفيذ الإلغاء'}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-border/60 bg-muted/20">
           <CardTitle>تاريخ الإيصالات</CardTitle>
@@ -319,7 +387,7 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
 
       <VoidReceiptDialog
         state={voidDialog}
-        isLoading={voidReceiptMutation.isPending}
+        isLoading={requestVoidMutation.isPending}
         onClose={closeVoidDialog}
         onConfirm={handleConfirmVoid}
         onReasonChange={(reason) => setVoidDialog((current) => ({ ...current, reason }))}
