@@ -34,7 +34,7 @@ function createPaymentFixture(overrides: Partial<Payment> = {}): Payment {
   return { ...basePayment, ...overrides };
 }
 
-type TableName = 'payments' | 'receipt_allocations' | 'receipts' | 'invoices' | 'contracts' | 'units' | 'properties' | 'people';
+type TableName = 'payments' | 'receipt_allocations' | 'receipts' | 'invoices' | 'contracts' | 'units' | 'properties' | 'people' | 'receipt_void_requests';
 type TableResponses = Partial<Record<TableName, unknown[]>>;
 
 type QueryLogEntry = { table: string; method: string; args: unknown[] };
@@ -302,61 +302,106 @@ describe('receiptService', () => {
   });
 });
 
-const voidReceiptRpcResult = {
+const pendingRequestRpcResult = {
   success: true,
   idempotent: false,
+  void_request_id: 'void-ledger-1',
   request_id: 'void-request-1',
+  receipt_id: 'payment_123',
+  status: 'PENDING' as const,
+  reason: 'دفعة مكررة',
+  requested_by: 'maker-1',
+  requested_at: '2026-08-13T10:00:00Z',
+};
+
+const approvedVoidRpcResult = {
+  success: true,
+  idempotent: false,
+  request_id: 'void-approved:approval-1',
   requested_receipt_id: 'payment_123',
   payment_id: 'payment_123',
-  receipt_id: 'receipt_123',
+  receipt_id: 'payment_123',
   status: 'VOID' as const,
   reason: 'دفعة مكررة',
   journal_reversal_batch_id: 'journal-batch-1',
   journal_reversal_entries: 2,
+  void_request_id: 'void-ledger-1',
+  void_request_status: 'EXECUTED' as const,
+  requested_by: 'maker-1',
+  approved_by: 'checker-1',
+  approval_request_id: 'approval-1',
 };
 
-describe('voidReceipt', () => {
-  it('voids the payment-backed receipt by id through the void facade and returns the validated atomic result', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: voidReceiptRpcResult, error: null });
-    const { voidReceipt } = await import('./receiptService');
+describe('receipt VOID maker-checker service', () => {
+  it('creates a pending request without claiming that the receipt is already void', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: pendingRequestRpcResult, error: null });
+    const { requestReceiptVoid } = await import('./receiptService');
     const payload = { receipt_id: 'payment_123', reason: 'دفعة مكررة', request_id: 'void-request-1' };
 
-    await expect(voidReceipt(payload)).resolves.toEqual(voidReceiptRpcResult);
-    expect(supabaseMock.rpc).toHaveBeenCalledWith('void_receipt_atomic', { payload });
+    await expect(requestReceiptVoid(payload)).resolves.toEqual(pendingRequestRpcResult);
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('request_receipt_void_atomic', { payload });
   });
 
-  it('sends the payment-backed receipt id as receipt_id, matching the receipt projection identifier', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: voidReceiptRpcResult, error: null });
-    const { voidReceipt } = await import('./receiptService');
+  it('approves a pending request through the separate checker RPC', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: approvedVoidRpcResult, error: null });
+    const { approveReceiptVoid } = await import('./receiptService');
+    const payload = { void_request_id: 'void-ledger-1', request_id: 'approval-1' };
 
-    await voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' });
-
-    const [, { payload }] = supabaseMock.rpc.mock.calls[0] as [string, { payload: { receipt_id: string } }];
-    expect(payload.receipt_id).toBe('payment_123');
+    await expect(approveReceiptVoid(payload)).resolves.toEqual(approvedVoidRpcResult);
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('approve_receipt_void_atomic', { payload });
   });
 
-  it('does not convert RPC errors into a fake success result', async () => {
-    const error = new Error('receipt already voided');
-    supabaseMock.rpc.mockResolvedValue({ data: null, error });
-    const { voidReceipt } = await import('./receiptService');
+  it('loads only pending company-scoped requests exposed by RLS', async () => {
+    const request = {
+      id: 'void-ledger-1',
+      company_id: 'company-1',
+      receipt_id: 'payment_123',
+      reason: 'دفعة مكررة',
+      status: 'PENDING',
+      requested_by: 'maker-1',
+      requested_at: '2026-08-13T10:00:00Z',
+      reviewed_by: null,
+      reviewed_at: null,
+      request_id: 'void-request-1',
+      execution_request_id: null,
+      reversal_batch_id: null,
+    };
+    const log = mockSupabaseTables({ receipt_void_requests: [request] });
+    const { listPendingReceiptVoidRequests } = await import('./receiptService');
 
-    await expect(voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' }))
-      .rejects.toThrow('receipt already voided');
+    await expect(listPendingReceiptVoidRequests()).resolves.toEqual([request]);
+    expect(log).toContainEqual({ table: 'receipt_void_requests', method: 'eq', args: ['status', 'PENDING'] });
   });
 
-  it('rejects explicitly when the RPC returns no data', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: null, error: null });
-    const { voidReceipt } = await import('./receiptService');
+  it('does not convert request or approval RPC errors into fake success', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: null, error: new Error('maker-checker denied') });
+    const { approveReceiptVoid, requestReceiptVoid } = await import('./receiptService');
 
-    await expect(voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' }))
-      .rejects.toThrow('void_receipt_atomic returned no data');
+    await expect(requestReceiptVoid({
+      receipt_id: 'payment_123',
+      reason: 'سبب',
+      request_id: 'void-request-1',
+    })).rejects.toThrow('maker-checker denied');
+    await expect(approveReceiptVoid({
+      void_request_id: 'void-ledger-1',
+      request_id: 'approval-1',
+    })).rejects.toThrow('maker-checker denied');
   });
 
-  it('rejects legacy or malformed RPC result contracts', async () => {
-    supabaseMock.rpc.mockResolvedValue({ data: { success: true, voided_at: '2026-05-15T08:00:00Z' }, error: null });
-    const { voidReceipt } = await import('./receiptService');
+  it('rejects missing and malformed RPC response contracts', async () => {
+    const { approveReceiptVoid, requestReceiptVoid } = await import('./receiptService');
 
-    await expect(voidReceipt({ receipt_id: 'payment_123', reason: 'سبب', request_id: 'void-request-1' }))
-      .rejects.toThrow('void_receipt_atomic returned an invalid response contract');
+    supabaseMock.rpc.mockResolvedValueOnce({ data: null, error: null });
+    await expect(requestReceiptVoid({
+      receipt_id: 'payment_123',
+      reason: 'سبب',
+      request_id: 'void-request-1',
+    })).rejects.toThrow('request_receipt_void_atomic returned no data');
+
+    supabaseMock.rpc.mockResolvedValueOnce({ data: { success: true, status: 'VOID' }, error: null });
+    await expect(approveReceiptVoid({
+      void_request_id: 'void-ledger-1',
+      request_id: 'approval-1',
+    })).rejects.toThrow('approve_receipt_void_atomic returned an invalid response contract');
   });
 });
