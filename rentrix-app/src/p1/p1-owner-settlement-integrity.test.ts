@@ -526,8 +526,8 @@ describe('P1 — create_owner_settlement_draft_atomic ignores ALL client-sent am
       const sid = created?.settlement_id as string;
       expect(num(created?.net_payable)).toBe(1230);
 
-      const approved = (await assumeIdentity(db, CHECKER_1, COMPANY_1);
-      await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
+      await assumeIdentity(db, CHECKER_1, COMPANY_1);
+      const approved = (await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid, request_id: '12000000-0000-4000-8000-000000000002' }),
       ])).rows[0]?.out as any;
       expect(approved?.status).toBe('APPROVED');
@@ -659,8 +659,8 @@ describe('P1 — settlement integrity guards (accounts, immutability, invalid at
       ])).rows[0]?.out as any;
       const sid2 = created?.settlement_id as string;
       expect(num(created?.net_payable)).toBe(90); // derived for company 2: 100 − 10
-      const approved = (await assumeIdentity(db, CHECKER_2, COMPANY_2);
-      await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
+      await assumeIdentity(db, CHECKER_2, COMPANY_2);
+      const approved = (await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid2, request_id: '13000000-0000-4000-8000-000000000002' }),
       ])).rows[0]?.out as any;
       expect(approved?.status).toBe('APPROVED');
@@ -825,8 +825,8 @@ describe('P1 — settlement integrity guards (accounts, immutability, invalid at
       for (const k of ['gross_collected', 'office_fee', 'owner_expenses', 'tax_amount', 'net_payable'] as const) {
         expect(num(stored[k]), k).toBe(num((july as any)[k]));
       }
-      const approved = (await assumeIdentity(db, CHECKER_1, COMPANY_1);
-      await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
+      await assumeIdentity(db, CHECKER_1, COMPANY_1);
+      const approved = (await db.query<{ out: any }>(`select public.approve_owner_settlement_atomic($1::jsonb) as out`, [
         JSON.stringify({ settlement_id: sid, request_id: '13000000-0000-4000-8000-000000000042' }),
       ])).rows[0]?.out as any;
       expect(num(approved?.net_payable)).toBe(num(july.net_payable)); // approve echoes the STORED tuple
