@@ -106,6 +106,16 @@ afterAll(async () => {
 });
 
 describe('WP-02 actual collection → RATE fee wiring', () => {
+  it('preserves the hardened 42501 contract for unauthenticated payment calls', async () => {
+    await assumeIdentity(db, null, null);
+
+    await expect(
+      db.query(`select public.record_invoice_payment_atomic('{}'::jsonb)`),
+    ).rejects.toMatchObject({ code: '42501' });
+
+    await assumeIdentity(db, MAKER, COMPANY);
+  });
+
   it('derives 10% from the frozen agreement and posts 1000/100/900 in one reversible receipt batch', async () => {
     const result = await rpc('record_invoice_payment_atomic', {
       invoice_id: INVOICE,
