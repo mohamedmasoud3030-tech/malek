@@ -1,18 +1,8 @@
 /**
- * Phase 5 – Maintenance Workspace Polish
- * Visual evidence spec: RTL in Light/Dark at 360×800, 390×844, 430×932, 768×1024, 1440×1000
- *
- * SKIP REASON (recorded 2026-07-15):
- *   npx playwright install chromium completes without error in the CI
- *   sandbox but no binary is written to ~/.cache/ms-playwright — the
- *   Playwright CDN download domain (playwright.azureedge.net) is blocked by
- *   the egress proxy (x-deny-reason: domain not in allowlist).
- *   The test spec is committed so it can be run locally or in a full CI
- *   environment that has Chromium access.
- *
- * To run locally:
- *   npx playwright install chromium
- *   pnpm exec playwright test e2e/maintenance-workspace-polish.spec.ts
+ * Maintenance workspace responsive acceptance.
+ * The fixture intentionally uses the current card-first maintenance contract;
+ * it does not render EntityTable on mobile, so assertions target the real
+ * interactive surface rather than the retired compact-table implementation.
  */
 
 import { expect, test } from '@playwright/test';
@@ -35,10 +25,9 @@ test.describe('Maintenance workspace RTL polish', () => {
         await page.setViewportSize(vp);
         await page.goto('/login?e2e-maintenance-workspace=1');
 
-        // Wait for the page structure to appear
-        await page.waitForSelector('[data-filter-bar]', { timeout: 10_000 }).catch(() => null);
+        await expect(page.locator('[data-e2e-maintenance-workspace]')).toBeVisible();
+        await expect(page.locator('[data-filter-bar]')).toBeVisible();
 
-        // Assert no horizontal overflow
         const overflow = await page.evaluate(() => ({
           scrollWidth: document.documentElement.scrollWidth,
           clientWidth: document.documentElement.clientWidth,
@@ -48,7 +37,6 @@ test.describe('Maintenance workspace RTL polish', () => {
           `horizontal overflow at ${vp.width}px [${scheme}]`,
         ).toBeLessThanOrEqual(overflow.clientWidth + 1);
 
-        // Capture evidence screenshot
         await page.screenshot({
           path: `e2e/evidence/maintenance-${scheme}-${vp.width}x${vp.height}.png`,
           fullPage: false,
@@ -62,27 +50,27 @@ test.describe('Maintenance workspace RTL polish', () => {
 
         const filterBar = page.locator('[data-filter-bar]');
         await expect(filterBar).toBeVisible({ timeout: 10_000 });
-
-        // Confirm all three selects exist
         await expect(page.getByLabel('تصفية حسب الحالة')).toBeVisible();
         await expect(page.getByLabel('تصفية حسب الأولوية')).toBeVisible();
         await expect(page.getByLabel('تصفية حسب العقار')).toBeVisible();
       });
 
-      test(`mobile compact table keeps keyboard scrolling and 44px actions at ${vp.width}px [${scheme}]`, async ({ page }) => {
+      test(`maintenance cards keep 44px actions at ${vp.width}px [${scheme}]`, async ({ page }) => {
         test.skip(vp.width >= 768, 'mobile-width assertion');
         await page.emulateMedia({ colorScheme: scheme });
         await page.setViewportSize(vp);
         await page.goto('/login?e2e-maintenance-workspace=1');
-        await expect(page.locator('[data-entity-card], .mobile-card')).toHaveCount(0);
-        const scroller = page.locator('[data-entity-table-scroll]').first();
-        await expect(scroller).toBeVisible();
-        await scroller.focus();
-        await expect(scroller).toBeFocused();
-        const firstButton = scroller.locator('button').first();
-        if (await firstButton.count()) {
-          const box = await firstButton.boundingBox();
-          if (box) expect(box.height, 'touch target must be ≥ 44px').toBeGreaterThanOrEqual(44);
+
+        const cards = page.locator('[data-entity-card]');
+        await expect(cards).toHaveCount(2);
+        await expect(cards.first()).toBeVisible();
+
+        const buttons = cards.locator('button');
+        const count = await buttons.count();
+        expect(count).toBeGreaterThan(0);
+        for (let index = 0; index < count; index += 1) {
+          const box = await buttons.nth(index).boundingBox();
+          expect(box?.height ?? 0, 'touch target must be ≥ 44px').toBeGreaterThanOrEqual(44);
         }
       });
     }
