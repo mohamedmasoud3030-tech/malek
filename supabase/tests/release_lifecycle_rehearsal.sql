@@ -21,7 +21,7 @@ $$;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(65);
+select plan(66);
 
 select has_table('public', 'tenant_deposits', 'tenant deposits table exists after a clean migration replay');
 select has_table('public', 'deposit_transactions', 'deposit transactions table exists after a clean migration replay');
@@ -166,25 +166,46 @@ select lives_ok(
 );
 
 select lives_ok(
-  $$
-    select public.void_receipt_atomic(jsonb_build_object(
+  $
+    select public.request_receipt_void_atomic(jsonb_build_object(
       'receipt_id', (select id::text from public.payments where reference_number = 'RL-PAYMENT-1'),
       'reason', 'release lifecycle reversal',
       'request_id', 'release-lifecycle-void-1'
     ))
-  $$,
-  'payment-backed identifier voids the linked receipt atomically'
+  $,
+  'maker creates a pending receipt VOID request without changing financial state'
+);
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
 );
 
 select lives_ok(
-  $$
-    select public.void_receipt_atomic(jsonb_build_object(
-      'receipt_id', (select id::text from public.payments where reference_number = 'RL-PAYMENT-1'),
-      'reason', 'release lifecycle reversal',
-      'request_id', 'release-lifecycle-void-1'
+  $
+    select public.approve_receipt_void_atomic(jsonb_build_object(
+      'void_request_id', (
+        select id::text from public.receipt_void_requests
+        where request_id = 'release-lifecycle-void-1'
+      ),
+      'request_id', 'release-lifecycle-void-approval-1'
     ))
-  $$,
-  'replaying the same void request is idempotent'
+  $,
+  'separate checker approves and executes the receipt reversal'
+);
+
+select lives_ok(
+  $
+    select public.approve_receipt_void_atomic(jsonb_build_object(
+      'void_request_id', (
+        select id::text from public.receipt_void_requests
+        where request_id = 'release-lifecycle-void-1'
+      ),
+      'request_id', 'release-lifecycle-void-approval-1'
+    ))
+  $,
+  'replaying the same checker approval is idempotent'
 );
 
 select is(
@@ -221,10 +242,10 @@ select is(
     from public.financial_operation_idempotency
     -- Phase 3A-1B: idempotency keys are company-namespaced (<op>:<company_uuid>).
     where operation_name = 'void_receipt_atomic:00000000-0000-4000-8000-000000000001'
-      and request_id = 'release-lifecycle-void-1'
+      and request_id = 'void-approved:release-lifecycle-void-approval-1'
   ),
   1,
-  'void replay stores one idempotency record'
+  'void approval replay stores one idempotency record'
 );
 select is(
   (
