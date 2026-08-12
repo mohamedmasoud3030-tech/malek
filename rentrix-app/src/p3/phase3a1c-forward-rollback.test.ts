@@ -9,6 +9,7 @@ import type { PGlite } from '@electric-sql/pglite';
 import { assumeIdentity, createFullReplayedDatabase, repoRoot } from '../p1/replay-bootstrap';
 import {
   ADMIN_A,
+  CHECKER_A,
   COMPANY_A,
   OWNER_A,
   PROPERTY_A,
@@ -80,6 +81,7 @@ async function lifecycle(tag: 'forward' | 'reapply', month: string, n: number) {
     notes: tag,
   });
   const sid = String(created.settlement_id);
+  await assumeIdentity(db, CHECKER_A, COMPANY_A);
   await rpcJsonb(db, 'approve_owner_settlement_atomic', {
     settlement_id: sid,
     request_id: base.replace(/.$/, '1'),

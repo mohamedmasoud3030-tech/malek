@@ -812,7 +812,7 @@ export type Database = {
           id: string;
           email: string;
           name: string;
-          role: 'ADMIN' | 'MANAGER' | 'USER' | null;
+          role: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER' | null;
           status: 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED' | null;
           full_name: string | null;
           is_active: boolean;
@@ -822,7 +822,7 @@ export type Database = {
           created_at: string | null;
           updated_at: string | null;
         };
-        Insert: { id: string; email: string; name: string; role?: 'ADMIN' | 'MANAGER' | 'USER' | null; status?: 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED' | null; full_name?: string | null; is_active?: boolean; password_hash?: string | null; last_login?: string | null; deleted_at?: string | null; created_at?: string | null; updated_at?: string | null };
+        Insert: { id: string; email: string; name: string; role?: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | 'OPERATIONS' | 'USER' | 'VIEWER' | null; status?: 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED' | null; full_name?: string | null; is_active?: boolean; password_hash?: string | null; last_login?: string | null; deleted_at?: string | null; created_at?: string | null; updated_at?: string | null };
         Update: Partial<Database['public']['Tables']['users']['Insert']>;
         Relationships: [];
       };

@@ -35,6 +35,7 @@ const COMPANY_1 = 'c1000000-0000-4000-8000-000000000001';
 const COMPANY_2 = 'c2000000-0000-4000-8000-000000000002';
 const ADMIN_1 = 'a1000000-0000-4000-8000-000000000001';
 const ADMIN_2 = 'a2000000-0000-4000-8000-000000000001';
+const ADMIN_3 = 'a1000000-0000-4000-8000-000000000009'; // independent COMPANY_1 checker
 const OWNER_R = 'b1000000-0000-4000-8000-000000000001';
 const OWNER_2 = 'b2000000-0000-4000-8000-000000000001';
 const OWNER_B = 'b1000000-0000-4000-8000-000000000099'; // dedicated backfill owner
@@ -66,9 +67,9 @@ const num = (v: unknown) => Number(v ?? NaN);
 async function seed() {
   await db.exec(`
 INSERT INTO public.companies (id, name, slug) VALUES ('${COMPANY_1}','شركة 1','c1'), ('${COMPANY_2}','شركة 2','c2');
-INSERT INTO auth.users (id, email) VALUES ('${ADMIN_1}','a1@t'), ('${ADMIN_2}','a2@t');
-INSERT INTO public.users (id,email,name,role,status) VALUES ('${ADMIN_1}','a1@t','A1','ADMIN','ACTIVE'), ('${ADMIN_2}','a2@t','A2','ADMIN','ACTIVE');
-INSERT INTO public.company_members (company_id,user_id,role) VALUES ('${COMPANY_1}','${ADMIN_1}','ADMIN'), ('${COMPANY_2}','${ADMIN_2}','ADMIN');
+INSERT INTO auth.users (id, email) VALUES ('${ADMIN_1}','a1@t'), ('${ADMIN_2}','a2@t'), ('${ADMIN_3}','a3@t');
+INSERT INTO public.users (id,email,name,role,status) VALUES ('${ADMIN_1}','a1@t','A1','ADMIN','ACTIVE'), ('${ADMIN_2}','a2@t','A2','ADMIN','ACTIVE'), ('${ADMIN_3}','a3@t','A3','ADMIN','ACTIVE');
+INSERT INTO public.company_members (company_id,user_id,role) VALUES ('${COMPANY_1}','${ADMIN_1}','ADMIN'), ('${COMPANY_1}','${ADMIN_3}','ADMIN'), ('${COMPANY_2}','${ADMIN_2}','ADMIN');
 INSERT INTO public.owners (id,full_name,name,company_id) VALUES ('${OWNER_R}','مالك ١','مالك ١','${COMPANY_1}'), ('${OWNER_2}','مالك ٢','مالك ٢','${COMPANY_2}');
 INSERT INTO public.properties (id,title,name,type,address,company_id) VALUES ('${P_R}','عقار ١','عقار ١','سكني','مسقط','${COMPANY_1}'), ('${P_2}','عقار ٢','عقار ٢','سكني','مسقط','${COMPANY_2}');
 INSERT INTO public.property_owners (property_id,owner_id,ownership_percentage,is_primary,starts_on,ends_on,company_id) VALUES
@@ -326,6 +327,7 @@ describe('FA-003 — cancel releases, PAID holds', () => {
       // approved then cancelled
       const a = await create(OWNER_R, P_R, '2026-05-01', '2026-05-31', 51);
       const aId = a.settlement_id as string;
+      await assumeIdentity(db, ADMIN_3, COMPANY_1);
       await db.query(`select public.approve_owner_settlement_atomic($1::jsonb)`, [
         JSON.stringify({ settlement_id: aId, request_id: mkReq(52) }),
       ]);
@@ -339,8 +341,10 @@ describe('FA-003 — cancel releases, PAID holds', () => {
       expect(num(aRel.n)).toBeGreaterThanOrEqual(0);
 
       // paid settlement holds its links and cannot be cancelled
+      await assumeIdentity(db, ADMIN_1, COMPANY_1);
       const p = await create(OWNER_R, P_R, JULY.from, JULY.to, 61);
       const pId = p.settlement_id as string;
+      await assumeIdentity(db, ADMIN_3, COMPANY_1);
       await db.query(`select public.approve_owner_settlement_atomic($1::jsonb)`, [
         JSON.stringify({ settlement_id: pId, request_id: mkReq(62) }),
       ]);
@@ -380,6 +384,7 @@ describe('FA-003 — cancel releases, PAID holds', () => {
     try {
       const p = await create(OWNER_R, P_R, JULY.from, JULY.to, 71);
       const pId = p.settlement_id as string;
+      await assumeIdentity(db, ADMIN_3, COMPANY_1);
       await db.query(`select public.approve_owner_settlement_atomic($1::jsonb)`, [
         JSON.stringify({ settlement_id: pId, request_id: mkReq(72) }),
       ]);
@@ -516,6 +521,8 @@ describe('FA-003 — historical backfill', () => {
     await assumeIdentity(db, ADMIN_1, COMPANY_1);
     await db.exec('BEGIN;');
     try {
+      // Historical rows are loaded by the migration/maintenance context, not an authenticated user action.
+      await assumeIdentity(db, null, null);
       // settlement A: PAID July for the dedicated backfill owner
       await db.query(`insert into public.owner_settlements
         (id,no,owner_id,property_id,date,period_start,period_end,gross_collected,office_fee,owner_expenses,tax_amount,net_payable,amount,status,

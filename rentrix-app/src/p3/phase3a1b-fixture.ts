@@ -16,6 +16,8 @@ export const COMPANY_A = 'c31b0000-0000-4000-8000-000000000001';
 export const COMPANY_B = 'c31b0000-0000-4000-8000-000000000002';
 export const ADMIN_A = 'a31b0000-0000-4000-8000-000000000001';
 export const ADMIN_B = 'a31b0000-0000-4000-8000-000000000002';
+export const CHECKER_A = 'a31b0000-0000-4000-8000-000000000009';
+export const CHECKER_B = 'b31b0000-0000-4000-8000-000000000009';
 export const OWNER_A = 'b31b0000-0000-4000-8000-000000000001';
 export const OWNER_B = 'b31b0000-0000-4000-8000-000000000002';
 export const PROPERTY_A = 'd31b0000-0000-4000-8000-000000000001';
@@ -43,15 +45,21 @@ export async function seedPhase3a1bFixture(db: PGlite, options?: { skipGenerated
 
     insert into auth.users (id, email) values
       ('${ADMIN_A}', 'admin-a@phase3a1b.test'),
-      ('${ADMIN_B}', 'admin-b@phase3a1b.test');
+      ('${ADMIN_B}', 'admin-b@phase3a1b.test'),
+      ('${CHECKER_A}', 'checker-a@phase3a1b.test'),
+      ('${CHECKER_B}', 'checker-b@phase3a1b.test');
 
     insert into public.users (id, email, name, role, status) values
       ('${ADMIN_A}', 'admin-a@phase3a1b.test', 'Admin A', 'ADMIN', 'ACTIVE'),
-      ('${ADMIN_B}', 'admin-b@phase3a1b.test', 'Admin B', 'ADMIN', 'ACTIVE');
+      ('${ADMIN_B}', 'admin-b@phase3a1b.test', 'Admin B', 'ADMIN', 'ACTIVE'),
+      ('${CHECKER_A}', 'checker-a@phase3a1b.test', 'Checker A', 'ADMIN', 'ACTIVE'),
+      ('${CHECKER_B}', 'checker-b@phase3a1b.test', 'Checker B', 'ADMIN', 'ACTIVE');
 
     insert into public.company_members (company_id, user_id, role) values
       ('${COMPANY_A}', '${ADMIN_A}', 'ADMIN'),
-      ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN');
+      ('${COMPANY_A}', '${CHECKER_A}', 'ADMIN'),
+      ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN'),
+      ('${COMPANY_B}', '${CHECKER_B}', 'ADMIN');
 
     insert into public.owners (id, full_name, name, company_id) values
       ('${OWNER_A}', 'Owner A', 'Owner A', '${COMPANY_A}'),

@@ -59,20 +59,28 @@ insert into auth.users (
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated', 'lifecycle-user@rentrix.test', 'not-used',
     now(), now(), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
+  ),
+  (
+    '00000000-0000-0000-0000-000000001103',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated', 'lifecycle-checker@rentrix.test', 'not-used',
+    now(), now(), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
   )
 on conflict (id) do nothing;
 
 insert into public.users (id, email, name, role, status, is_active)
 values
   ('00000000-0000-0000-0000-000000001101', 'lifecycle-admin@rentrix.test', 'Lifecycle Admin', 'ADMIN', 'ACTIVE', true),
-  ('00000000-0000-0000-0000-000000001102', 'lifecycle-user@rentrix.test', 'Lifecycle User', 'USER', 'ACTIVE', true)
+  ('00000000-0000-0000-0000-000000001102', 'lifecycle-user@rentrix.test', 'Lifecycle User', 'USER', 'ACTIVE', true),
+  ('00000000-0000-0000-0000-000000001103', 'lifecycle-checker@rentrix.test', 'Lifecycle Checker', 'ADMIN', 'ACTIVE', true)
 on conflict (id) do update
 set role = excluded.role, status = excluded.status, is_active = excluded.is_active;
 
 insert into public.company_members (company_id, user_id, role)
 values
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000001101', 'OWNER'),
-  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000001102', 'MEMBER')
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000001102', 'MEMBER'),
+  ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000001103', 'OWNER')
 on conflict (company_id, user_id) do update set role = excluded.role;
 
 insert into public.accounts (id, no, name, company_id)
@@ -628,6 +636,14 @@ select throws_ok(
   null,
   'duplicate active settlement period is rejected'
 );
+-- The checker is a different ADMIN from the settlement maker.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+set local role authenticated;
+
 select lives_ok(
   $$
     select public.approve_owner_settlement_atomic(jsonb_build_object(
@@ -666,7 +682,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;
@@ -779,7 +795,7 @@ select is(
 
 select set_config(
   'request.jwt.claims',
-  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
 set local role authenticated;

@@ -44,6 +44,11 @@ export async function fetchGovernedUsers(): Promise<GovernedUser[]> {
   }));
 }
 
+/**
+ * Updates a user's role and active status. The generated database types
+ * now include all six canonical roles (ADMIN, MANAGER, ACCOUNTANT,
+ * OPERATIONS, USER, VIEWER) matching the migration CHECK constraint.
+ */
 export async function updateGovernedUserAccess(input: Readonly<{
   id: string;
   role: UserRole;

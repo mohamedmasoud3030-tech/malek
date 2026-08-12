@@ -1,6 +1,6 @@
 import type { Session, User } from '@supabase/supabase-js';
 
-export const authorizationRoles = ['ADMIN', 'MANAGER', 'USER'] as const;
+export const authorizationRoles = ['ADMIN', 'MANAGER', 'ACCOUNTANT', 'OPERATIONS', 'USER', 'VIEWER'] as const;
 
 export type AuthorizationRole = (typeof authorizationRoles)[number];
 
@@ -190,7 +190,59 @@ const rolePermissions = {
     'financial.bank_reconciliation.match',
     'financial.owner_settlements.view',
   ]),
+  ACCOUNTANT: new Set<AppPermission>([
+    'app.dashboard.view',
+    'audit.view',
+    'expenses.view',
+    'arrears.view',
+    'financial.deposits.view',
+    'financial.invoices.generate',
+    'financial.invoices.export',
+    'financial.reports.export',
+    'financial.bank_reconciliation.view',
+    'financial.bank_reconciliation.match',
+    'financial.owner_settlements.view',
+    'auth.password.change',
+  ]),
+  OPERATIONS: new Set<AppPermission>([
+    'app.dashboard.view',
+    'maintenance.view',
+    'service_providers.view',
+    'service_providers.write',
+    'cost_centers.manage',
+    'documents.write',
+    'owners.hub.view',
+    'owners.detail.view',
+    'lands.view',
+    'leads.view',
+    'communication.view',
+    'automation.view',
+    'auth.password.change',
+    'properties.write',
+    'contracts.write',
+    'expenses.view',
+    'expenses.write',
+    'arrears.view',
+  ]),
   USER: new Set<AppPermission>(['app.dashboard.view', 'auth.password.change']),
+  VIEWER: new Set<AppPermission>([
+    'app.dashboard.view',
+    'maintenance.view',
+    'service_providers.view',
+    'owners.hub.view',
+    'owners.detail.view',
+    'lands.view',
+    'leads.view',
+    'commissions.view',
+    'communication.view',
+    'automation.view',
+    'expenses.view',
+    'arrears.view',
+    'financial.deposits.view',
+    'financial.owner_settlements.view',
+    'financial.bank_reconciliation.view',
+    'auth.password.change',
+  ]),
 } satisfies Record<AuthorizationRole, ReadonlySet<AppPermission>>;
 
 export function normalizeRole(role: unknown): AuthorizationRole | null {

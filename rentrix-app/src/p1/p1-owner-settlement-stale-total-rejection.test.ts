@@ -10,6 +10,7 @@ import { createFullReplayedDatabase, assumeIdentity } from './replay-bootstrap';
 
 const COMPANY = 'c3100000-0000-4000-8000-000000000001';
 const ADMIN = 'a3100000-0000-4000-8000-000000000001';
+const CHECKER = 'a3100000-0000-4000-8000-000000000009';
 const OWNER = 'b3100000-0000-4000-8000-000000000001';
 const PROPERTY = 'd3100000-0000-4000-8000-000000000001';
 const UNIT = 'e3100000-0000-4000-8000-000000000001';
@@ -34,13 +35,19 @@ beforeAll(async () => {
     values ('${COMPANY}', 'S02 stale total company', 's02-stale-total');
 
     insert into auth.users (id, email)
-    values ('${ADMIN}', 's02-stale-total@example.test');
+    values
+      ('${ADMIN}', 's02-stale-total@example.test'),
+      ('${CHECKER}', 's02-stale-total-checker@example.test');
 
     insert into public.users (id, email, name, role, status)
-    values ('${ADMIN}', 's02-stale-total@example.test', 'S02 Admin', 'ADMIN', 'ACTIVE');
+    values
+      ('${ADMIN}', 's02-stale-total@example.test', 'S02 Admin', 'ADMIN', 'ACTIVE'),
+      ('${CHECKER}', 's02-stale-total-checker@example.test', 'S02 Checker', 'ADMIN', 'ACTIVE');
 
     insert into public.company_members (company_id, user_id, role)
-    values ('${COMPANY}', '${ADMIN}', 'ADMIN');
+    values
+      ('${COMPANY}', '${ADMIN}', 'ADMIN'),
+      ('${COMPANY}', '${CHECKER}', 'ADMIN');
 
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'مالك اختبار D-002', 'مالك اختبار D-002', '${COMPANY}');
@@ -157,6 +164,7 @@ describe('S02-T05 — stale owner-settlement totals fail closed', () => {
     try {
       await db.exec(`update public.payments set amount = 1000 where id = '${PAYMENT}';`);
 
+      await assumeIdentity(db, CHECKER, COMPANY);
       const approved = await db.query<{ out: any }>(
         `select public.approve_owner_settlement_atomic($1::jsonb) as out`,
         [JSON.stringify({ settlement_id: settlementId, request_id: REQ_APPROVE })],

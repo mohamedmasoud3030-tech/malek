@@ -10,6 +10,8 @@ import { assumeIdentity, createFullReplayedDatabase, repoRoot } from '../p1/repl
 import {
   ADMIN_A,
   ADMIN_B,
+  CHECKER_A,
+  CHECKER_B,
   COMPANY_A,
   COMPANY_B,
   OWNER_A,
@@ -94,7 +96,7 @@ describe('Phase 3A-1C owner-settlement execution', () => {
       /IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/,
     );
 
-    await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    await assumeIdentity(db, CHECKER_A, COMPANY_A);
     const approved = await rpcJsonb(db, 'approve_owner_settlement_atomic', {
       settlement_id: sid, request_id: request(2),
     });
@@ -111,7 +113,7 @@ describe('Phase 3A-1C owner-settlement execution', () => {
       }),
     ).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
 
-    await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    await assumeIdentity(db, CHECKER_A, COMPANY_A);
     const paid = await rpcJsonb(db, 'pay_owner_settlement_atomic', {
       settlement_id: sid,
       request_id: request(4),
@@ -204,7 +206,7 @@ describe('Phase 3A-1C owner-settlement execution', () => {
 
     const bDraft = await createSettlement('B', '2026-07', request(10));
     const bSid = String(bDraft.settlement_id);
-    await assumeIdentity(db, ADMIN_B, COMPANY_B);
+    await assumeIdentity(db, CHECKER_B, COMPANY_B);
     await rpcJsonb(db, 'approve_owner_settlement_atomic', {
       settlement_id: bSid, request_id: request(11),
     });
@@ -216,7 +218,7 @@ describe('Phase 3A-1C owner-settlement execution', () => {
       }),
     ).rejects.toThrow(/not found/i);
 
-    await assumeIdentity(db, ADMIN_B, COMPANY_B);
+    await assumeIdentity(db, CHECKER_B, COMPANY_B);
     await expect(
       rpcJsonb(db, 'pay_owner_settlement_atomic', {
         settlement_id: bSid, request_id: request(12), method: 'cash',
@@ -298,6 +300,7 @@ describe('Phase 3A-1C owner-settlement execution', () => {
     // ledger (zero-value journal lines are invalid there).
     const rowCountDraft = await createSettlement('A', '2026-05', request(21));
     const rowCountSid = String(rowCountDraft.settlement_id);
+    await assumeIdentity(db, CHECKER_A, COMPANY_A);
     await rpcJsonb(db, 'approve_owner_settlement_atomic', {
       settlement_id: rowCountSid, request_id: request(22),
     });
