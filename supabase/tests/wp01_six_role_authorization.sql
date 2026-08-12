@@ -1,18 +1,15 @@
--- WP-01: Six-role authorization and maker-checker BEHAVIORAL test suite.
--- Tests SEC-004 (six roles), SEC-005 (capability-based), SEC-008 (maker-checker).
---
--- These are executable database journeys, not source-text inspections.
--- Each test uses actual authenticated claims/users/companies and asserts
--- SQLSTATE plus unchanged rows after denied attempts.
+-- WP-01: Six-role authorization and maker-checker database contract suite.
+-- Tests SEC-004/SEC-005 capability behavior plus SEC-008 database guard presence.
+-- Full end-to-end maker/checker identity journeys remain required before GAP-002
+-- can be closed, especially the receipt VOID request/approve lifecycle.
 --
 -- Run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/wp01_six_role_authorization.sql
 -- Requires all migrations through 20260811121000 applied.
 
 begin;
-select plan(30);
+select plan(32);
 
--- ── Test fixtures ───────────────────────────────────────────────────────────
--- Two companies, one user per role in company A, one cross-company user.
+-- ── Foundation functions ────────────────────────────────────────────────────
 select isnt(
   (select count(*) from pg_proc where proname = 'role_has_app_permission'),
   0::bigint,
@@ -37,9 +34,7 @@ select isnt(
   'is_viewer helper exists'
 );
 
--- ── 1. Six-role capability matrix: behavioral tests ────────────────────────
-
--- ADMIN gets all permissions
+-- ── 1. Six-role capability matrix ──────────────────────────────────────────
 select ok(
   public.role_has_app_permission('ADMIN', 'users.manage'),
   'ADMIN: has users.manage'
@@ -49,7 +44,6 @@ select ok(
   'ADMIN: has financial.owner_settlements.approve'
 );
 
--- MANAGER: operational permissions, no admin-only
 select ok(
   public.role_has_app_permission('MANAGER', 'properties.write'),
   'MANAGER: has properties.write'
@@ -63,7 +57,6 @@ select ok(
   'MANAGER: denied financial.owner_settlements.approve'
 );
 
--- ACCOUNTANT: financial review only
 select ok(
   public.role_has_app_permission('ACCOUNTANT', 'audit.view'),
   'ACCOUNTANT: has audit.view'
@@ -81,7 +74,6 @@ select ok(
   'ACCOUNTANT: denied financial.owner_settlements.approve'
 );
 
--- OPERATIONS: operational workflows without financial approval
 select ok(
   public.role_has_app_permission('OPERATIONS', 'properties.write'),
   'OPERATIONS: has properties.write'
@@ -95,7 +87,6 @@ select ok(
   'OPERATIONS: denied audit.view'
 );
 
--- USER: baseline only
 select ok(
   public.role_has_app_permission('USER', 'app.dashboard.view'),
   'USER: has app.dashboard.view'
@@ -105,7 +96,6 @@ select ok(
   'USER: denied properties.write'
 );
 
--- VIEWER: read-only
 select ok(
   public.role_has_app_permission('VIEWER', 'owners.hub.view'),
   'VIEWER: has owners.hub.view'
@@ -137,7 +127,7 @@ select ok(
   'Legacy SUPERADMIN fails closed'
 );
 
--- ── 3. Settlement maker-checker columns exist ──────────────────────────────
+-- ── 3. Settlement maker-checker authoritative DB boundary ──────────────────
 select ok(
   exists(
     select 1 from pg_constraint
@@ -145,6 +135,15 @@ select ok(
       and conrelid = 'public.owner_settlements'::regclass
   ),
   'settlements maker-checker distinct constraint exists'
+);
+
+select ok(
+  exists(
+    select 1 from pg_constraint
+    where conname = 'settlements_approved_identity_required_chk'
+      and conrelid = 'public.owner_settlements'::regclass
+  ),
+  'approved/paid settlements require maker and checker identities on governed writes'
 );
 
 select has_column(
@@ -161,18 +160,19 @@ select has_column(
   'owner_settlements.checker_user_id exists'
 );
 
+select has_trigger(
+  'public',
+  'owner_settlements',
+  'owner_settlement_maker_checker_guard',
+  'owner settlements have an authoritative maker-checker transition guard'
+);
+
 select has_column(
   'public',
   'receipts',
   'maker_user_id',
-  'receipts.maker_user_id exists (reserved for VOID lifecycle)'
+  'receipts.maker_user_id exists but VOID lifecycle remains open'
 );
-
--- Maker-checker enforcement is documented as PARTIAL.
--- Full trigger-based enforcement is deferred due to migration replay
--- environment constraints. The CHECK constraint and columns are in place.
--- Contract maker-checker (20260808010000) and permission-review self-denial
--- (20260810113000) remain the enforced paths on main.
 
 -- ── 4. CHECK constraint on users.role validates six roles ───────────────────
 select ok(
