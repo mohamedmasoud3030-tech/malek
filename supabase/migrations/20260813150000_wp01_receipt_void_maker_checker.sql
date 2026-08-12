@@ -434,7 +434,7 @@ $function$;
 revoke all on function public.void_receipt_atomic(jsonb)
   from public, anon, authenticated, service_role;
 grant execute on function public.void_receipt_atomic(jsonb)
-  to authenticated;
+  to authenticated, service_role;
 
 comment on function public.request_receipt_void_atomic(jsonb) is
   'WP-01 OPS-007/SEC-008: creates an idempotent company-scoped PENDING receipt VOID request with mandatory reason and immutable maker identity.';
