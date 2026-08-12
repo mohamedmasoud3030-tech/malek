@@ -33,7 +33,7 @@ async function expectNoHorizontalOverflow(page: Page) {
 test.describe('single-office isolated launch acceptance', () => {
   test.describe.configure({ retries: 0 });
 
-  test('runs the real browser invoice → payment → receipt → VOID journey once', async ({ page }, testInfo) => {
+  test('runs the real browser invoice → payment → receipt → VOID request journey once', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'The mutating journey runs once on desktop.');
 
     const serverErrors: string[] = [];
@@ -67,22 +67,23 @@ test.describe('single-office isolated launch acceptance', () => {
     const receiptRow = receiptTable.getByRole('row').filter({ hasText: 'مستأجر اختبار المكتب الواحد' }).first();
     await expect(receiptRow).toBeVisible({ timeout: 15000 });
     await expect(receiptRow).toContainText('مرحّل');
-    await receiptRow.getByRole('button', { name: 'إلغاء' }).click();
+    await receiptRow.getByRole('button', { name: 'طلب إلغاء' }).click();
 
-    const dialog = page.getByRole('dialog').filter({ hasText: 'إلغاء الإيصال' });
+    const dialog = page.getByRole('dialog').filter({ hasText: 'طلب إلغاء الإيصال' });
     await expect(dialog).toBeVisible({ timeout: 15000 });
     const reasonInput = dialog.getByPlaceholder('مثال: خطأ في المبلغ أو دفعة مكررة');
     await expect(reasonInput).toBeVisible({ timeout: 15000 });
     await reasonInput.fill('اختبار إلغاء معزول قبل إطلاق المكتب الأول');
 
     const voidResponsePromise = page.waitForResponse((response) => (
-      response.url().includes('/rest/v1/rpc/void_receipt_atomic')
+      response.url().includes('/rest/v1/rpc/request_receipt_void_atomic')
     ));
-    await dialog.getByRole('button', { name: 'تأكيد الإلغاء' }).click();
+    await dialog.getByRole('button', { name: 'إرسال طلب الإلغاء' }).click();
     const voidResponse = await voidResponsePromise;
     expect(voidResponse.ok()).toBe(true);
     await expect(dialog).toBeHidden();
-    await expect(receiptRow).toContainText('ملغي');
+    await expect(receiptRow).toContainText('مرحّل');
+    await expect(page.getByText('اختبار إلغاء معزول قبل إطلاق المكتب الأول')).toBeVisible();
     expect(serverErrors).toEqual([]);
   });
 
