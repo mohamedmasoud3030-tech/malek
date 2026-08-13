@@ -41,11 +41,16 @@ const AutomationBody = lazy(async () => {
   const { AutomationWorkspace } = await import('@/features/automation/components/automation-workspace');
   return { default: function AutomationEmbedded() { return <AutomationWorkspace mode="embedded" />; } };
 });
+const DocumentsVaultBody = lazy(async () => {
+  const { DocumentsVaultWorkspace } = await import('@/features/documents-vault/components/documents-vault-workspace');
+  return { default: function DocumentsVaultEmbedded() { return <DocumentsVaultWorkspace mode="embedded" />; } };
+});
 const sectionComponents: Record<OperationsHubSectionId, ComponentType> = {
   maintenance: MaintenanceBody,
   service_providers: ServiceProvidersBody,
   utilities: UtilitiesBody,
   automation: AutomationBody,
+  documents_vault: DocumentsVaultBody,
 };
 
 function SectionFallback() {

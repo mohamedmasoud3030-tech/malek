@@ -327,7 +327,18 @@ const aiAssistantRoute = createRoute({
 const automationRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/automation', beforeLoad: async () => { await requirePermission('automation.view')(); throw redirect({ to: '/settings', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'automation' }) }); }, staticData: { title: 'الأتمتة' } });
 const utilitiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/utilities', beforeLoad: () => { throw redirect({ to: '/maintenance', search: (previous: Record<string, unknown>) => ({ ...previous, section: 'utilities' }) }); }, staticData: { title: 'المرافق والعدادات' } });
 // Legacy compatibility only: retained for old bookmarks, never exposed in product navigation.
-const documentsVaultRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/documents-vault', component: lazyRouteComponent(() => import('@/routes/_protected.documents-vault'), 'DocumentsVaultRouteComponent'), staticData: { title: 'المستندات — توافق قديم' } });
+// Redirects to the single approved authority: the documents vault tab inside Operations Hub.
+const documentsVaultRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/documents-vault',
+  beforeLoad: () => {
+    throw redirect({
+      to: '/maintenance',
+      search: (previous: Record<string, unknown>) => ({ ...previous, section: 'documents_vault' }),
+    });
+  },
+  staticData: { title: 'المستندات — توافق قديم' },
+});
 
 const settingsLegacyRedirect = (permission: AppPermission, section: string) => async () => {
   await requirePermission(permission)();
