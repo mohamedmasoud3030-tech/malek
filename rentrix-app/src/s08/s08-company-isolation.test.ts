@@ -21,21 +21,26 @@ describe('S08 — company isolation & RLS (static proof, PGlite-free)', () => {
     expect(sql).toMatch(/current_company_id\(\)/);
   });
 
-  it('no anon/public grant on analysis views and EGP currency', () => {
-    const sql = readFileSync(resolve(REPO_ROOT, 'supabase/migrations/20260807020000_s08_read_only_historical_analysis.sql'), 'utf8');
-    expect(sql).toMatch(/revoke all on table public\.s08_analysis_scope from public, anon/i);
-    expect(sql).toMatch(/grant select on table public\.s08_analysis_scope to service_role/i);
+  it('no anon/public grant on analysis views and OMR currency (WP-05 GAP-013 supersedes EGP)', () => {
+    const sqlOld = readFileSync(resolve(REPO_ROOT, 'supabase/migrations/20260807020000_s08_read_only_historical_analysis.sql'), 'utf8');
+    expect(sqlOld).toMatch(/revoke all on table public\.s08_analysis_scope from public, anon/i);
+    expect(sqlOld).toMatch(/grant select on table public\.s08_analysis_scope to service_role/i);
     // authenticated should NOT get direct view select (only functions)
-    expect(sql).not.toMatch(/grant select on table public\.s08_analysis_scope to authenticated/i);
-    expect(sql).toContain("'EGP'");
-    expect(sql).not.toMatch(/'OMR'/);
+    expect(sqlOld).not.toMatch(/grant select on table public\.s08_analysis_scope to authenticated/i);
+    // Old migration historically used EGP 2dp — new canonical is OMR 3dp via WP-05 GAP-013 additive migration
+    const sqlNew = readFileSync(resolve(REPO_ROOT, 'supabase/migrations/20260814040000_wp05_gap013_reconciliation_engine.sql'), 'utf8');
+    expect(sqlNew).toContain("'OMR'");
+    expect(sqlNew).toMatch(/wp05_round_omr/);
+    expect(sqlNew).toMatch(/0\.001/);
   });
 
   it('search_path pinned where SECURITY DEFINER unavoidable', () => {
     const sql = readFileSync(resolve(REPO_ROOT, 'supabase/migrations/20260807020000_s08_read_only_historical_analysis.sql'), 'utf8');
     expect(sql).toMatch(/set search_path = public, pg_temp/i);
     expect(sql).toMatch(/with \(security_invoker = true\)/i);
-    expect(sql).toContain("'EGP'");
+    // New canonical supersedes to OMR 3dp
+    const sqlNew = readFileSync(resolve(REPO_ROOT, 'supabase/migrations/20260814040000_wp05_gap013_reconciliation_engine.sql'), 'utf8');
+    expect(sqlNew).toContain("'OMR'");
   });
 
   it('every S08 function is security invoker and company scoped with duplicate group by source_id', () => {

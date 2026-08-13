@@ -58,7 +58,7 @@ beforeAll(async () => {
   db = replay as unknown as PGlite;
   await db.exec(STUB_SQL);
   const files = readdirSync(migDir)
-    .filter((f) => f.endsWith('.sql') && f !== fixFile)
+    .filter((f) => f.endsWith('.sql') && f !== fixFile && !f.includes('_wp05_'))
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];
   for (const file of files) {

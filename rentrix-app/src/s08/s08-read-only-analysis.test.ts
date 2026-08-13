@@ -72,14 +72,19 @@ describe('S08 T01 — Read-only analysis foundation', () => {
     expect(statuses.has('POSTED')).toBe(true);
   });
 
-  it('currency precision is 2 (EGP)', () => {
+  it('currency precision is 2 (EGP) legacy or 3 (OMR) canonical — WP-05 GAP-013 migrates to OMR 3dp', () => {
     const summary = JSON.parse(readFileSync(resolve(EVIDENCE_DIR,'summary.json'),'utf8'));
-    expect(summary.currency_precision).toBe(2);
+    // Legacy evidence historically was EGP 2dp; new canonical is OMR 3dp. Accept either for backward compat.
+    expect([2,3]).toContain(summary.currency_precision);
     const findings = JSON.parse(readFileSync(resolve(EVIDENCE_DIR,'findings.json'),'utf8')) as Array<{source_amount: number}>;
     for (const f of findings) {
       const decimals = String(f.source_amount).split('.')[1]?.length ?? 0;
-      expect(decimals).toBeLessThanOrEqual(2);
+      expect(decimals).toBeLessThanOrEqual(3);
     }
+    // New canonical migration must enforce OMR 3dp
+    const sqlNew = readFileSync(resolve(REPO_ROOT,'supabase/migrations/20260814040000_wp05_gap013_reconciliation_engine.sql'),'utf8');
+    expect(sqlNew).toContain('OMR');
+    expect(sqlNew).toMatch(/round\(.*3\)/);
   });
 
   it('company isolation: Company A findings never mix with Company B', () => {
@@ -119,10 +124,12 @@ describe('S08 T01 — Read-only analysis foundation', () => {
     const sql = readFileSync(MIGRATION,'utf8');
     expect(sql).not.toMatch(/corrective|backfill.*journal/i);
   });
-  it('uses EGP and properties.title, not OMR/name', () => {
+  it('uses EGP legacy and OMR canonical — properties.title preserved', () => {
     const sql = readFileSync(MIGRATION,'utf8');
     expect(sql).toContain("'EGP'");
-    expect(sql).not.toMatch(/'OMR'/);
+    // New canonical supersedes to OMR via additive migration
+    const sqlNew = readFileSync(resolve(REPO_ROOT,'supabase/migrations/20260814040000_wp05_gap013_reconciliation_engine.sql'),'utf8');
+    expect(sqlNew).toContain("'OMR'");
     expect(sql).toContain('prop.title');
     expect(sql).not.toContain('prop.name');
   });

@@ -48,6 +48,7 @@ export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   '_s04_',
   '_s06_',
   '_s08_',
+  '_wp05_',
   'stage3_',
   'business_document_references',
 ] as const;

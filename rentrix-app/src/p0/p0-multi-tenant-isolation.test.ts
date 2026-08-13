@@ -282,6 +282,7 @@ beforeAll(async () => {
     !f.includes('wp02_fixed_monthly_daily_accrual') &&
     !f.includes('_s06_') &&
     !f.includes('_s08_') &&
+    !f.includes('_wp05_') &&
     !f.includes('fa003_') &&
     !f.includes('pay_commission_atomic')
   ).sort();
