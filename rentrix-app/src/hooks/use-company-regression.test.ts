@@ -50,6 +50,14 @@ describe('active company write guard', () => {
     expect(authHook).toContain('setSession(nextSession)');
   });
 
+  it('gives each effective-permissions subscription a distinct Realtime topic', () => {
+    expect(authHook).toContain('let effectivePermissionsChannelSequence = 0;');
+    expect(authHook).toContain('effectivePermissionsChannelSequence += 1;');
+    expect(authHook).toContain('`effective-permissions:${userId}:${effectivePermissionsChannelSequence}`');
+    expect(authHook).toContain('.channel(nextEffectivePermissionsChannelTopic(userId))');
+    expect(authHook).not.toContain('.channel(`effective-permissions:${userId}`)');
+  });
+
   it('clears tenant query data before exposing the newly selected company', () => {
     expect(companyHook).toContain('const queryClient = useQueryClient()');
     expect(companyHook).toContain('await queryClient.cancelQueries()');
