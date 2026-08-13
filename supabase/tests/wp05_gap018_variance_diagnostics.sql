@@ -14,7 +14,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(38);
+select plan(44);
 
 -- ---------------------------------------------------------------------------
 -- Fixture — two companies, two users each (maker + checker)
@@ -305,15 +305,29 @@ select isnt(
   '7b. proposal records its maker'
 );
 
+-- audit_log is admin-read-only under RLS, so the audit assertion runs
+-- unprivileged-role-free (the maker above is a MANAGER, not an ADMIN).
+reset role;
+
 select ok(
   (select count(*)::int from public.audit_log where action = 'WP05_PROPOSAL_CREATED') >= 3,
   '7c. proposal creation emits audit events'
 );
 
+-- Capture a company A proposal id outside RLS so the cross-company decide test
+-- below passes a REAL id (a NULL id would only prove argument validation).
+create temporary table if not exists wp05_gap018_test_ids (name text primary key, id uuid);
+grant select on wp05_gap018_test_ids to authenticated;
+insert into wp05_gap018_test_ids (name, id)
+select 'company_a_receivables_proposal', id
+from public.wp05_correction_proposals
+where company_id = 'a0000000-0000-4000-8000-000000000180'
+  and reconciliation_class = 'TENANT_RECEIVABLES'
+on conflict (name) do update set id = excluded.id;
+
 -- ---------------------------------------------------------------------------
 -- 3. Immutability and lifecycle
 -- ---------------------------------------------------------------------------
-reset role;
 
 select throws_ok(
   $$ delete from public.wp05_correction_proposals where reconciliation_class = 'OWNER_PAYABLES' $$,
@@ -401,10 +415,11 @@ select throws_ok(
 
 select throws_ok(
   $$ select public.wp05_approve_correction_proposal(
-       (select id from public.wp05_correction_proposals where reconciliation_class = 'TENANT_RECEIVABLES'), 'cross-company approval') $$,
+       (select id from wp05_gap018_test_ids where name = 'company_a_receivables_proposal'),
+       'cross-company approval') $$,
   'P0002',
   null,
-  '12b. company B cannot decide a company A proposal'
+  '12b. company B cannot decide a real company A proposal'
 );
 
 select is(
