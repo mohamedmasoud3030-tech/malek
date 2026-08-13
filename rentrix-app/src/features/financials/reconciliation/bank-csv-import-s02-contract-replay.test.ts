@@ -40,6 +40,7 @@ const BANK_B = '00000000-0000-0000-0000-00000000b401';
 const DOC_REF_MIGRATION = '20260805110000_s02_document_reference_trigger_resilience.sql';
 const IMPORT_MIGRATION = '20260805120000_s02_bank_csv_import_atomic_contract.sql';
 const SERVER_GUARDS_MIGRATION = '20260807160000_s02_bank_csv_import_server_guards.sql';
+const GAP017_MIGRATION = '20260814030000_wp05_gap017_bank_csv_preview_and_content_reuse.sql';
 
 const stripComments = (t: string) =>
   t.split('\n').filter((l) => !l.trimStart().startsWith('--')).join('\n');
@@ -52,6 +53,9 @@ const importSql = stripComments(
 );
 const serverGuardsSql = stripComments(
   readFileSync(join(repoRoot, 'supabase', 'migrations', SERVER_GUARDS_MIGRATION), 'utf8').toLowerCase(),
+);
+const gap017Sql = stripComments(
+  readFileSync(join(repoRoot, 'supabase', 'migrations', GAP017_MIGRATION), 'utf8').toLowerCase(),
 );
 
 let db: PGlite;
@@ -99,7 +103,8 @@ beforeAll(async () => {
   const relevantFailures = replayed.failed.filter((f) =>
     f.file.includes('20260805110000') ||
     f.file.includes('20260805120000') ||
-    f.file.includes('20260807160000'),
+    f.file.includes('20260807160000') ||
+    f.file.includes('20260814030000'),
   );
   expect(relevantFailures, `replay errors: ${JSON.stringify(relevantFailures)}`).toEqual([]);
 
@@ -192,11 +197,22 @@ describe('migration source contracts', () => {
     expect(serverGuardsSql).not.toContain('journal_batches');
   });
 
+  it('gap-017 migration adds no-write preview and content-reuse protection', () => {
+    expect(gap017Sql).toContain('create or replace function public.preview_bank_statement_batch_atomic(payload jsonb)');
+    expect(gap017Sql).toContain('payload_digest');
+    expect(gap017Sql).toContain('file_fingerprint was already used with different content.');
+    expect(gap017Sql).toContain('write_attempted');
+    expect(gap017Sql).not.toContain('journal_entries');
+    expect(gap017Sql).toContain('revoke all on function public.preview_bank_statement_batch_atomic(jsonb) from public, anon');
+    expect(gap017Sql).toContain('grant execute on function public.preview_bank_statement_batch_atomic(jsonb) to authenticated, service_role');
+  });
+
   it('both migrations have manual-rollback files referencing their forward migration', () => {
     const pairs: Array<[string, string]> = [
       ['20260805_rollback_s02_document_reference_trigger_resilience.sql', DOC_REF_MIGRATION],
       ['20260805_rollback_s02_bank_csv_import_atomic_contract.sql', IMPORT_MIGRATION],
       ['20260807_rollback_s02_bank_csv_import_server_guards.sql', SERVER_GUARDS_MIGRATION],
+      ['20260814030000_rollback_wp05_gap017_bank_csv_preview_and_content_reuse.sql', GAP017_MIGRATION],
     ];
     for (const [rollback, forward] of pairs) {
       const sql = readFileSync(join(repoRoot, 'supabase', 'rollback', rollback), 'utf8');
@@ -651,6 +667,47 @@ describe('import_bank_statement_batch_atomic — deterministic contract (behavio
     );
     expect((rows[0] as { imports: number; lines: number }).imports).toBe(0);
     expect((rows[0] as { imports: number; lines: number }).lines).toBe(0);
+  });
+
+  it('rejects reused fingerprint with different content and preview writes nothing', async () => {
+    await assumeUser(USER_A, COMPANY_A);
+    const first = await callImport({
+      bank_account_id: BANK_A,
+      file_name: 'reuse.csv',
+      file_fingerprint: 'fp-reuse-replay',
+      file_size: 10,
+      rows: [{ transaction_date: '2026-10-01', amount: '15.000', description: 'First', reference: 'RU1' }],
+    });
+    expect(first.accepted_rows).toBe(1);
+
+    const reuse = await callImportExpectError({
+      bank_account_id: BANK_A,
+      file_name: 'reuse.csv',
+      file_fingerprint: 'fp-reuse-replay',
+      file_size: 10,
+      rows: [{ transaction_date: '2026-10-01', amount: '99.000', description: 'Changed', reference: 'RU9' }],
+    });
+    expect(reuse.message).toContain('file_fingerprint was already used with different content.');
+
+    const { rows: previewRows } = await db.query(
+      `select public.preview_bank_statement_batch_atomic($1::jsonb) as result`,
+      [JSON.stringify({
+        bank_account_id: BANK_A,
+        file_name: 'preview.csv',
+        file_fingerprint: 'fp-preview-replay',
+        file_size: 10,
+        rows: [{ transaction_date: '2026-11-01', amount: '17.250', description: 'Preview', reference: 'PV1' }],
+      })],
+    );
+    const preview = (previewRows[0] as { result: Record<string, unknown> }).result;
+    expect(preview.write_attempted).toBe(false);
+    expect(preview.accepted_rows).toBe(1);
+    await resetRole();
+
+    const { rows } = await db.query<{ n: number }>(
+      `select count(*)::int as n from public.bank_statement_imports where file_fingerprint = 'fp-preview-replay'`,
+    );
+    expect(rows[0]?.n ?? 0).toBe(0);
   });
 
   it('keeps company B lines invisible to company A under the RLS boundary', async () => {

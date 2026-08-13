@@ -1,0 +1,14 @@
+pnpm --filter @workspace/rentrix exec vitest run --config vite.config.ts \
+  src/lib/bankCsvParser.test.ts \
+  src/features/financials/reconciliation/bankCsvImportService.test.ts \
+  src/features/financials/reconciliation/bank-csv-import-migration-contract.test.ts
+# 31 passed
+
+pnpm --filter @workspace/rentrix exec vitest run --config vite.config.ts \
+  src/features/financials/reconciliation/bank-csv-import-s02-contract-replay.test.ts
+# 18 passed (includes 20260814030000 replay + content-reuse + no-write preview)
+
+node scripts/check-migration-rollback-hygiene.mjs
+# OK
+
+Deferred: supabase test db / full pgTAP runner (Docker not used in this session). Isolated PGlite replay covers the same contract.

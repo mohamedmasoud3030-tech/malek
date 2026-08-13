@@ -82,6 +82,40 @@ describe('bankCsvImportService', () => {
     expect(result.accepted_rows).toBe(1);
   });
 
+  it('calls the no-write preview RPC without a company id', async () => {
+    const { supabase } = await import('@/lib/supabase');
+    const mockRpc = supabase.rpc as unknown as ReturnType<typeof vi.fn>;
+    mockRpc.mockResolvedValue({
+      data: {
+        bank_account_id: 'account-1',
+        file_name: 'test.csv',
+        file_fingerprint: 'abc123',
+        total_rows: 1,
+        accepted_rows: 1,
+        rejected_rows: 0,
+        duplicate_rows: 0,
+        possible_duplicate_rows: 0,
+        status: 'preview',
+        is_duplicate_file: false,
+        write_attempted: false,
+      },
+      error: null,
+    });
+
+    const { previewBankStatementBatch } = await import('./bankCsvImportService');
+    const result = await previewBankStatementBatch({
+      bank_account_id: 'account-1',
+      file_name: 'test.csv',
+      file_fingerprint: 'abc123',
+      file_size: 123,
+      rows: [{ transaction_date: '2026-01-01', amount: 100, description: 'Test' }],
+    });
+
+    expect(mockRpc).toHaveBeenCalledWith('preview_bank_statement_batch_atomic', expect.objectContaining({ payload: expect.any(Object) }));
+    expect(result.accepted_rows).toBe(1);
+    expect(result.status).toBe('preview');
+  });
+
   it('returns existing batch on duplicate file fingerprint (idempotent)', async () => {
     const { supabase } = await import('@/lib/supabase');
     const mockRpc = supabase.rpc as unknown as ReturnType<typeof vi.fn>;

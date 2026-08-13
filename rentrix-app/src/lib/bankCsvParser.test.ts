@@ -118,6 +118,13 @@ describe('bankCsvParser', () => {
     expect(result.validRows[1].amount).toBe(-200);
   });
 
+  it('rejects rows that supply amount together with debit or credit', () => {
+    const csv = 'date,description,amount,debit\n2026-01-01,Conflict,10.000,10.000';
+    const result = parseBankCsv(csv, baseFileName, baseFileSize);
+    expect(result.validRows.length).toBe(0);
+    expect(result.rejectedRows[0].reason).toContain('تمثيل واحد');
+  });
+
   it('rejects rows with both debit and credit populated', () => {
     const csv = 'date,description,debit,credit\n2026-01-01,Conflict,10.000,20.000';
     const result = parseBankCsv(csv, baseFileName, baseFileSize);

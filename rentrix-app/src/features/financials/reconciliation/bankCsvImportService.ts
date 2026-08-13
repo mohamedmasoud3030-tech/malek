@@ -47,14 +47,52 @@ export interface BankImportResult {
   is_duplicate_file: boolean;
 }
 
-export async function importBankStatementBatch(request: BankImportRequest): Promise<BankImportResult> {
-  const payload = {
+function toRpcPayload(request: BankImportRequest) {
+  return {
     bank_account_id: request.bank_account_id,
     file_name: request.file_name,
     file_fingerprint: request.file_fingerprint,
     file_size: request.file_size,
     rows: request.rows,
   };
+}
+
+function mapImportResult(result: any, request: BankImportRequest): BankImportResult {
+  if (!result || typeof result !== 'object') {
+    throw new Error('استجابة غير متوقعة من الخادم');
+  }
+
+  return {
+    id: result.id,
+    reference: result.reference ?? null,
+    bank_account_id: result.bank_account_id,
+    file_name: result.file_name ?? request.file_name,
+    file_fingerprint: result.file_fingerprint ?? request.file_fingerprint,
+    total_rows: Number(result.total_rows ?? 0),
+    accepted_rows: Number(result.accepted_rows ?? 0),
+    rejected_rows: Number(result.rejected_rows ?? 0),
+    duplicate_rows: Number(result.duplicate_rows ?? 0),
+    possible_duplicate_rows: Number(result.possible_duplicate_rows ?? 0),
+    status: result.status ?? 'completed',
+    is_duplicate_file: Boolean(result.is_duplicate_file),
+  };
+}
+
+export async function previewBankStatementBatch(request: BankImportRequest): Promise<BankImportResult> {
+  const { data, error } = await supabase.rpc('preview_bank_statement_batch_atomic', {
+    payload: toRpcPayload(request),
+  } as any);
+
+  if (error) {
+    handleSupabaseError(error, 'تعذر معاينة كشف البنك');
+    throw error;
+  }
+
+  return mapImportResult(data, request);
+}
+
+export async function importBankStatementBatch(request: BankImportRequest): Promise<BankImportResult> {
+  const payload = toRpcPayload(request);
 
   const { data, error } = await supabase.rpc('import_bank_statement_batch_atomic', {
     payload,
