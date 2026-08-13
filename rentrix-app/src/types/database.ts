@@ -5635,6 +5635,109 @@ export type Database = {
           },
         ];
       };
+      wp05_correction_proposals: {
+        Row: {
+          id: string;
+          company_id: string;
+          accounting_period_id: string | null;
+          as_of: string;
+          reconciliation_class: string;
+          account_no: string | null;
+          reason_code: string;
+          reason_detail: string;
+          proposal_type: 'MAPPING_FIX' | 'MISSING_GL_POSTING' | 'SUBLEDGER_DATA_FIX' | 'INVESTIGATE_ONLY';
+          recommended_action: string;
+          status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+          subledger_balance: number;
+          gl_balance: number;
+          variance_amount: number;
+          evidence: Json;
+          maker_user_id: string | null;
+          checker_user_id: string | null;
+          decided_at: string | null;
+          decision_note: string | null;
+          s09_correction_id: string | null;
+          request_id: string;
+          idempotency_key: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id?: string;
+          accounting_period_id?: string | null;
+          as_of: string;
+          reconciliation_class: string;
+          account_no?: string | null;
+          reason_code: string;
+          reason_detail: string;
+          proposal_type: 'MAPPING_FIX' | 'MISSING_GL_POSTING' | 'SUBLEDGER_DATA_FIX' | 'INVESTIGATE_ONLY';
+          recommended_action: string;
+          status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+          subledger_balance: number;
+          gl_balance: number;
+          variance_amount: number;
+          evidence?: Json;
+          maker_user_id?: string | null;
+          checker_user_id?: string | null;
+          decided_at?: string | null;
+          decision_note?: string | null;
+          s09_correction_id?: string | null;
+          request_id: string;
+          idempotency_key: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          accounting_period_id?: string | null;
+          as_of?: string;
+          reconciliation_class?: string;
+          account_no?: string | null;
+          reason_code?: string;
+          reason_detail?: string;
+          proposal_type?: 'MAPPING_FIX' | 'MISSING_GL_POSTING' | 'SUBLEDGER_DATA_FIX' | 'INVESTIGATE_ONLY';
+          recommended_action?: string;
+          status?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'SUPERSEDED';
+          subledger_balance?: number;
+          gl_balance?: number;
+          variance_amount?: number;
+          evidence?: Json;
+          maker_user_id?: string | null;
+          checker_user_id?: string | null;
+          decided_at?: string | null;
+          decision_note?: string | null;
+          s09_correction_id?: string | null;
+          request_id?: string;
+          idempotency_key?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'wp05_correction_proposals_accounting_period_id_fkey';
+            columns: ['accounting_period_id'];
+            isOneToOne: false;
+            referencedRelation: 'accounting_periods';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wp05_correction_proposals_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wp05_correction_proposals_s09_correction_id_fkey';
+            columns: ['s09_correction_id'];
+            isOneToOne: false;
+            referencedRelation: 's09_corrections';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       current_property_ownership: {
@@ -6978,11 +7081,24 @@ export type Database = {
             };
         Returns: Json;
       };
+      wp05_approve_correction_proposal: {
+        Args: {
+          p_proposal_id: string | null;
+          p_note?: string | null;
+        };
+        Returns: Json;
+      };
       wp05_assert_cash_flow: {
         Args: {
           p_from: string | null;
           p_to: string | null;
           p_allow_unclassified?: boolean | null;
+        };
+        Returns: Json;
+      };
+      wp05_assert_no_unapproved_correction_postings: {
+        Args: {
+          p_company_id?: string | null;
         };
         Returns: Json;
       };
@@ -7004,6 +7120,14 @@ export type Database = {
           p_classification?: string | null;
         };
         Returns: { classification: string | null; account_id: string | null; account_no: string | null; account_name: string | null; batch_id: string | null; source_type: string | null; source_id: string | null; event_id: string | null; effective_date: string | null; posted_at: string | null; debit: number | null; credit: number | null; amount: number | null; line_description: string | null; ref_source_id: string | null; ref_entity_type: string | null; ref_entity_id: string | null }[];
+      };
+      wp05_generate_correction_proposals: {
+        Args: {
+          p_as_of?: string | null;
+          p_request_id?: string | null;
+          p_accounting_period_id?: string | null;
+        };
+        Returns: Json;
       };
       wp05_gl_balance: {
         Args: {
@@ -7029,6 +7153,21 @@ export type Database = {
         };
         Returns: number;
       };
+      wp05_gl_side_totals: {
+        Args: {
+          p_company_id: string | null;
+          p_account_no: string | null;
+          p_as_of?: string | null;
+        };
+        Returns: { debits: number | null; credits: number | null; line_count: number | null; account_exists: boolean | null }[];
+      };
+      wp05_list_correction_proposals: {
+        Args: {
+          p_status?: string | null;
+          p_as_of?: string | null;
+        };
+        Returns: Json;
+      };
       wp05_provision_default_cashflow_classifications: {
         Args: {
           p_company_id: string | null;
@@ -7041,6 +7180,13 @@ export type Database = {
           p_as_of?: string | null;
         };
         Returns: { reconciliation_class: string | null; account_no: string | null; account_name: string | null; subledger_balance: number | null; gl_balance: number | null; variance: number | null; abs_variance: number | null; currency: string | null; reconciliation_status: string | null; subledger_count: number | null; gl_count: number | null }[];
+      };
+      wp05_reject_correction_proposal: {
+        Args: {
+          p_proposal_id: string | null;
+          p_reason: string | null;
+        };
+        Returns: Json;
       };
       wp05_round_omr: {
         Args: {
@@ -7116,6 +7262,13 @@ export type Database = {
           p_as_of?: string | null;
         };
         Returns: { balance: number | null; cnt: number | null }[];
+      };
+      wp05_variance_diagnostics: {
+        Args: {
+          p_company_id?: string | null;
+          p_as_of?: string | null;
+        };
+        Returns: { reconciliation_class: string | null; account_no: string | null; account_name: string | null; subledger_balance: number | null; gl_balance: number | null; variance: number | null; abs_variance: number | null; currency: string | null; reconciliation_status: string | null; reason_code: string | null; reason_detail: string | null; proposal_type: string | null; recommended_action: string | null; evidence: Json | null }[];
       };
     };
     Enums: {
