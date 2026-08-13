@@ -12,8 +12,10 @@ import {
   summarizeOwnerFinancials,
 } from './owner-service';
 import type { Owner, PropertyWithOwners } from './owner-service';
+import { ownerRowFixtureDefaults, propertyOwnerRowFixtureDefaults, propertyRowFixtureDefaults } from '@/test/ownerRowFixture';
 
 const owner: Owner = {
+  ...ownerRowFixtureDefaults,
   id: 'owner-1',
   full_name: 'مالك أساسي',
   display_name: null,
@@ -30,6 +32,7 @@ const owner: Owner = {
 
 function propertyWithOwner(ownerId: string, endsOn: string | null = null): PropertyWithOwners {
   return {
+    ...propertyRowFixtureDefaults,
     id: `property-${ownerId}-${endsOn ?? 'active'}`,
     title: 'عقار موثق',
     type: 'سكني',
@@ -43,6 +46,7 @@ function propertyWithOwner(ownerId: string, endsOn: string | null = null): Prope
     updated_at: '2026-06-04T00:00:00.000Z',
     deleted_at: null,
     property_owners: [{
+      ...propertyOwnerRowFixtureDefaults,
       id: `link-${ownerId}`,
       property_id: 'property-1',
       owner_id: ownerId,

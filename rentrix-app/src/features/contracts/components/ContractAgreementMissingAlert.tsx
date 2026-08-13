@@ -34,8 +34,8 @@ export function ContractAgreementMissingAlert({
   // Success state — agreement found
   if (hasAgreement) {
     return (
-      <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/40">
-        <CardContent className="flex items-center gap-3 p-4 text-sm text-emerald-800 dark:text-emerald-200">
+      <Card className="border-success/25 bg-success-bg">
+        <CardContent className="flex items-center gap-3 p-4 text-sm text-success-text">
           <FileCheck className="size-5 shrink-0" />
           <span className="font-semibold">
             تم تحديد اتفاقية تشغيل المالك تلقائياً. العقد مغطى طوال فترة السريان.
@@ -59,13 +59,13 @@ export function ContractAgreementMissingAlert({
   // Error state
   if (hasError) {
     return (
-      <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40" role="alert">
-        <CardContent className="flex items-center gap-3 p-4 text-sm text-amber-800 dark:text-amber-200">
+      <Card className="border-warning/25 bg-warning-bg" role="alert">
+        <CardContent className="flex items-center gap-3 p-4 text-sm text-warning-text">
           <AlertTriangle className="size-5 shrink-0" />
           <div className="flex-1">
             <p className="font-semibold">تعذر التحقق من اتفاقية المالك.</p>
             {onRetry && (
-                <Button variant="ghost" size="sm" className="h-auto p-0 text-amber-700 dark:text-amber-300" onClick={onRetry}>
+                <Button variant="ghost" size="sm" className="h-auto p-0 text-warning" onClick={onRetry}>
                 إعادة المحاولة
               </Button>
             )}

@@ -249,13 +249,13 @@ export async function getServiceProvider(providerId: string): Promise<ServicePro
 
 export async function getServiceProviderDossier(providerId: string): Promise<ServiceProviderDossier> {
   const provider = await getServiceProvider(providerId);
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('maintenance_records')
     .select(`
       id,reference,title,status,priority,scheduled_date,resolved_at,created_at,property_id,unit_id,
       properties:property_id(id,title),
       units:unit_id(id,unit_number),
-      category:service_provider_category_id(id,name)
+      category:service_provider_categories!maintenance_service_provider_category_company_fk(id,name)
     `)
     .eq('service_provider_id', providerId)
     .is('deleted_at', null)

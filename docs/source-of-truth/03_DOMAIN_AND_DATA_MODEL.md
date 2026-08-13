@@ -33,7 +33,7 @@ The database is multi-company and operational entities must remain company-scope
 | `people` | `owners` / tenant meaning | one person may acquire party roles without duplicating contact identity | party/profile services and RLS | legacy schema also exposes role-specific shapes; deduplication is an invariant, not proof of a finished migration |
 | `properties` | `units` | one property has zero-to-many units; a unit belongs to one property/company | property/unit constraints and atomic contract writes | schema/routes/tests exist |
 | `properties` ↔ `owners` | `property_owners` | many-to-many; share/primary-owner rules must be explicit and company-consistent | ownership view/constraints | `authoritative_property_ownership` work exists |
-| `owner_agreements` | `owner_agreement_versions` | one identity has ordered versions; at most one unsuperseded current version | `create_owner_agreement_version_atomic` | implemented in migrations/pgTAP; generated client types and management UI do not cover the new table |
+| `owner_agreements` | `owner_agreement_versions` | one identity has ordered versions; at most one unsuperseded current version | `create_owner_agreement_version_atomic` | implemented in migrations/pgTAP; generated client types cover the table, while the complete management UI remains GAP-004 |
 | `owner_agreement_versions` | `contracts` | many contracts may snapshot one applicable agreement version; snapshot is immutable after activation | contract approval/activation RPCs | columns/constraints/pgTAP exist; full React service wiring is open |
 | `contracts` | `invoices` | one contract creates many scheduled obligations; posted/void/cancel behavior is lifecycle-controlled | invoice generation/credit/reversal RPCs | legacy and canonical paths coexist |
 | `payments` ↔ `receipts` | shared identity + `receipt_allocations` | payment is cash event; receipt is evidence; allocations distribute amount to obligations | payment/receipt RPCs and identity triggers | shared identity and reversal work exists; do not collapse the records conceptually |
@@ -147,7 +147,7 @@ Names above describe canonical meaning; legacy lowercase/alternate database valu
 
 ## Repository evidence anchors
 
-- Generated database types: `rentrix-app/src/types/database.ts`. This file includes the Stage-3 GL tables but omits newer material tables such as `owner_agreement_versions`, settlement link tables and deposit transactions; it is therefore evidence of client typing, not a complete live-schema inventory.
+- Generated database types: `rentrix-app/src/types/database.ts`. WP-DB0 generates this file from a clean replay of the full migration chain (tables, views, enums, relationships and every RPC overload). It is the repository contract; live parity still requires the hosted migration-ledger and schema probes.
 - Core migrations and RLS/RPC history: `supabase/migrations/`.
 - Settlement reservations: `20260804010000_fa003_owner_settlement_input_reservation_foundation.sql`, `20260804010100_fa003_owner_settlement_atomic_reservation_rpcs.sql`.
 - GL domain types: `rentrix-app/src/features/accounting/accountingDomain.ts`.

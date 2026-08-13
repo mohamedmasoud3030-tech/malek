@@ -86,6 +86,58 @@ function parseRowFields(rowBody) {
   return fields;
 }
 
+/** Parse every object variant from a generated function's `Args` type. */
+function parseFunctionArgVariants(value) {
+  const marker = value.indexOf('Args:');
+  if (marker < 0) return [];
+  const start = marker + 'Args:'.length;
+  let depth = 0;
+  let inString = null;
+  let end = value.length;
+  for (let i = start; i < value.length; i += 1) {
+    const ch = value[i];
+    if (inString) {
+      if (ch === inString && value[i - 1] !== '\\') inString = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') {
+      inString = ch;
+      continue;
+    }
+    if (ch === '{' || ch === '[' || ch === '(') depth += 1;
+    else if (ch === '}' || ch === ']' || ch === ')') depth -= 1;
+    else if (ch === ';' && depth === 0) {
+      end = i;
+      break;
+    }
+  }
+
+  const expression = value.slice(start, end).trim();
+  if (/Record<PropertyKey,\s*never>/.test(expression)) return [[]];
+
+  const variants = [];
+  for (let offset = 0; offset < expression.length;) {
+    const open = expression.indexOf('{', offset);
+    if (open < 0) break;
+    let braceDepth = 0;
+    let close = -1;
+    for (let i = open; i < expression.length; i += 1) {
+      if (expression[i] === '{') braceDepth += 1;
+      else if (expression[i] === '}') {
+        braceDepth -= 1;
+        if (braceDepth === 0) {
+          close = i;
+          break;
+        }
+      }
+    }
+    if (close < 0) break;
+    variants.push(parseRowFields(expression.slice(open + 1, close)));
+    offset = close + 1;
+  }
+  return variants;
+}
+
 export async function parseDatabaseTypes(path = TYPES_PATH) {
   const src = await readFile(path, 'utf8');
 
@@ -125,11 +177,12 @@ export async function parseDatabaseTypes(path = TYPES_PATH) {
         continue;
       }
       if (key === 'functions') {
-        const argsBlock = blockBody(value, 'Args: {');
+        const argVariants = parseFunctionArgVariants(value);
         const returnsMatch = /Returns\s*:\s*([\s\S]+?)(?:;|$)/.exec(value);
         result.functions[name] = {
-          args: argsBlock ? parseRowFields(argsBlock.body).map((f) => f.name) : [],
-          argFields: argsBlock ? parseRowFields(argsBlock.body) : [],
+          args: (argVariants[0] ?? []).map((f) => f.name),
+          argFields: argVariants[0] ?? [],
+          argVariants,
           returns: returnsMatch ? returnsMatch[1].trim().replace(/\s+/g, ' ') : null,
           raw: value,
         };

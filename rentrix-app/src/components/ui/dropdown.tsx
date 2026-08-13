@@ -80,7 +80,7 @@ export function Dropdown({
         <div
           id={menuId}
           role="listbox"
-          className="absolute start-0 end-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-border bg-card p-1 shadow-lg"
+          className="absolute start-0 end-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-border bg-card p-1 shadow-elevated"
         >
           {options.map((option) => {
             const isSelected = option.id === value;

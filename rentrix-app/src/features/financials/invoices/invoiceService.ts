@@ -25,11 +25,13 @@ function applyStatusFilter<Q extends { in(column: 'status', values: string[]): Q
   return query.in('status', getInvoiceStatusVariants(status));
 }
 
-export function getInvoiceGrossAmount(invoice: Pick<Invoice, 'amount'> & Partial<Pick<Invoice, 'tax_amount'>>): number {
+type InvoiceGrossInput = Pick<Invoice, 'amount'> & { tax_amount?: Invoice['tax_amount'] | null };
+
+export function getInvoiceGrossAmount(invoice: InvoiceGrossInput): number {
   return toFinancialNumber(invoice.amount) + toFinancialNumber(invoice.tax_amount);
 }
 
-export function summarizeInvoices(invoices: Array<Pick<Invoice, 'amount' | 'paid_amount'> & Partial<Pick<Invoice, 'tax_amount'>>>): InvoiceSummary {
+export function summarizeInvoices(invoices: Array<Pick<Invoice, 'amount' | 'paid_amount'> & { tax_amount?: Invoice['tax_amount'] | null }>): InvoiceSummary {
   return invoices.reduce(
     (summary, invoice) => {
       const grossAmount = getInvoiceGrossAmount(invoice);

@@ -2,7 +2,7 @@
 //
 // Source of truth: the migration chain in `supabase/migrations`, replayed into
 // a clean PostgreSQL and introspected. Regenerate after any schema change;
-// `pnpm db0:check` fails the build when this file drifts from the migrations.
+// `pnpm db0:check-types` fails the build when this file drifts from the migrations.
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -778,7 +778,7 @@ export type Database = {
           {
             foreignKeyName: 'bank_reconciliation_matches_statement_line_id_fkey';
             columns: ['statement_line_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'bank_statement_lines';
             referencedColumns: ['id'];
           },
@@ -1380,7 +1380,7 @@ export type Database = {
           {
             foreignKeyName: 'contract_balances_contract_id_fkey';
             columns: ['contract_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'contracts';
             referencedColumns: ['id'];
           },
@@ -1987,14 +1987,14 @@ export type Database = {
           {
             foreignKeyName: 'fixed_monthly_daily_accrual_reve_reversal_journal_batch_id_fkey';
             columns: ['reversal_journal_batch_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'journal_batches';
             referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'fixed_monthly_daily_accrual_reversals_accrual_id_fkey';
             columns: ['accrual_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'fixed_monthly_daily_accruals';
             referencedColumns: ['id'];
           },
@@ -2104,7 +2104,7 @@ export type Database = {
           {
             foreignKeyName: 'fixed_monthly_daily_accruals_journal_batch_id_fkey';
             columns: ['journal_batch_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'journal_batches';
             referencedColumns: ['id'];
           },
@@ -2771,13 +2771,6 @@ export type Database = {
             columns: ['property_id'];
             isOneToOne: false;
             referencedRelation: 'properties';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'maintenance_records_service_provider_category_id_fkey';
-            columns: ['service_provider_category_id'];
-            isOneToOne: false;
-            referencedRelation: 'service_provider_categories';
             referencedColumns: ['id'];
           },
           {
@@ -3819,7 +3812,7 @@ export type Database = {
           {
             foreignKeyName: 'payments_receipt_id_fkey';
             columns: ['receipt_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'receipts';
             referencedColumns: ['id'];
           },
@@ -3987,7 +3980,7 @@ export type Database = {
           {
             foreignKeyName: 'profiles_id_fkey';
             columns: ['id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -4344,7 +4337,7 @@ export type Database = {
           {
             foreignKeyName: 'receipts_payment_id_fkey';
             columns: ['payment_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'payments';
             referencedColumns: ['id'];
           },
@@ -5031,7 +5024,7 @@ export type Database = {
           {
             foreignKeyName: 'tenant_balances_tenant_id_people_fkey';
             columns: ['tenant_id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'people';
             referencedColumns: ['id'];
           },
@@ -5376,7 +5369,7 @@ export type Database = {
           {
             foreignKeyName: 'users_id_fkey';
             columns: ['id'];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -5825,7 +5818,7 @@ export type Database = {
           p_from: string | null;
           p_to: string | null;
         };
-        Returns: { tx_date: string; details: string; tx_type: string; property_name: string; gross: number; deduction: number; sort_no: string }[];
+        Returns: { tx_date: string | null; details: string | null; tx_type: string | null; property_name: string | null; gross: number | null; deduction: number | null; sort_no: string | null }[];
       };
       _r3: {
         Args: {
@@ -5899,9 +5892,9 @@ export type Database = {
           p_owner_id: string | null;
           p_period_start: string | null;
           p_period_end: string | null;
-          p_property_id: string | null;
+          p_property_id?: string | null;
         };
-        Returns: { gross_collected: number; office_fee: number; owner_expenses: number; tax_amount: number; net_payable: number; breakdown: Json }[];
+        Returns: { gross_collected: number | null; office_fee: number | null; owner_expenses: number | null; tax_amount: number | null; net_payable: number | null; breakdown: Json | null }[];
       };
       cancel_commission_atomic: {
         Args: {
@@ -5978,17 +5971,17 @@ export type Database = {
       create_maintenance_atomic: {
         Args: {
           p_property_id: string | null;
-          p_unit_id: string | null;
-          p_title: string | null;
-          p_description: string | null;
-          p_priority: string | null;
-          p_assigned_to: string | null;
-          p_technician_name: string | null;
-          p_scheduled_date: string | null;
-          p_attachment_url: string | null;
-          p_request_id: string | null;
-          p_service_provider_category_id: string | null;
-          p_service_provider_id: string | null;
+          p_unit_id?: string | null;
+          p_title?: string | null;
+          p_description?: string | null;
+          p_priority?: string | null;
+          p_assigned_to?: string | null;
+          p_technician_name?: string | null;
+          p_scheduled_date?: string | null;
+          p_attachment_url?: string | null;
+          p_request_id?: string | null;
+          p_service_provider_category_id?: string | null;
+          p_service_provider_id?: string | null;
         };
         Returns: Json;
       };
@@ -6021,12 +6014,12 @@ export type Database = {
           p_commission_type: string | null;
           p_commission_value: number | null;
           p_agreement_starts_on: string | null;
-          p_agreement_ends_on: string | null;
-          p_owner_name: string | null;
-          p_purchase_value: number | null;
-          p_current_value: number | null;
-          p_status: string | null;
-          p_notes: string | null;
+          p_agreement_ends_on?: string | null;
+          p_owner_name?: string | null;
+          p_purchase_value?: number | null;
+          p_current_value?: number | null;
+          p_status?: string | null;
+          p_notes?: string | null;
         };
         Returns: Json;
       };
@@ -6060,7 +6053,7 @@ export type Database = {
         Args: {
           p_request_id: string | null;
           p_decision: string | null;
-          p_reason: string | null;
+          p_reason?: string | null;
         };
         Returns: Database['public']['Tables']['permission_requests']['Row'];
       };
@@ -6078,7 +6071,7 @@ export type Database = {
       };
       diagnose_owner_settlement_duplication: {
         Args: Record<PropertyKey, never>;
-        Returns: { company_id: string; finding_type: string; subject: string; detail: Json }[];
+        Returns: { company_id: string | null; finding_type: string | null; subject: string | null; detail: Json | null }[];
       };
       ensure_company_account: {
         Args: {
@@ -6148,7 +6141,7 @@ export type Database = {
           p_company_id: string | null;
           p_agreement_version_id: string | null;
           p_economic_date: string | null;
-          p_actor_id: string | null;
+          p_actor_id?: string | null;
         };
         Returns: Json;
       };
@@ -6160,7 +6153,7 @@ export type Database = {
       };
       gl_diagnose_historical_financial_integrity: {
         Args: Record<PropertyKey, never>;
-        Returns: { company_id: string; category: string; finding: string; entity_id: string; details: Json }[];
+        Returns: { company_id: string | null; category: string | null; finding: string | null; entity_id: string | null; details: Json | null }[];
       };
       gl_ensure_initial_open_period: {
         Args: {
@@ -6247,10 +6240,10 @@ export type Database = {
       };
       gl_pm_list_batches: {
         Args: {
-          p_limit: number | null;
-          p_offset: number | null;
+          p_limit?: number | null;
+          p_offset?: number | null;
         };
-        Returns: { batch_id: string; source_type: string; source_id: string; event_id: string; status: string; effective_date: string; posted_at: string; description: string }[];
+        Returns: { batch_id: string | null; source_type: string | null; source_id: string | null; event_id: string | null; status: string | null; effective_date: string | null; posted_at: string | null; description: string | null }[];
       };
       gl_pm_post_broker_commission_approval: {
         Args: {
@@ -6333,23 +6326,23 @@ export type Database = {
       };
       gl_reconcile_subledgers: {
         Args: {
-          p_as_of_date: string | null;
+          p_as_of_date?: string | null;
         };
-        Returns: { account_no: string; account_name: string; gl_balance: number; subledger_balance: number; mismatch: number; is_reconciled: boolean; details: Json }[];
+        Returns: { account_no: string | null; account_name: string | null; gl_balance: number | null; subledger_balance: number | null; mismatch: number | null; is_reconciled: boolean | null; details: Json | null }[];
       };
       gl_resolve_accounting_period: {
         Args: {
           p_company_id: string | null;
           p_effective_date: string | null;
         };
-        Returns: { period_id: string; reason: string }[];
+        Returns: { period_id: string | null; reason: string | null }[];
       };
       gl_reverse_fixed_monthly_accrual: {
         Args: {
           p_company_id: string | null;
           p_accrual_id: string | null;
           p_reason: string | null;
-          p_actor_id: string | null;
+          p_actor_id?: string | null;
         };
         Returns: Json;
       };
@@ -6358,8 +6351,8 @@ export type Database = {
           p_company_id: string | null;
           p_date_from: string | null;
           p_date_to: string | null;
-          p_agreement_version_id: string | null;
-          p_actor_id: string | null;
+          p_agreement_version_id?: string | null;
+          p_actor_id?: string | null;
         };
         Returns: Json;
       };
@@ -6417,13 +6410,13 @@ export type Database = {
       };
       list_fixed_monthly_accruals: {
         Args: {
-          p_payload: Json | null;
+          p_payload?: Json | null;
         };
         Returns: Json;
       };
       list_journal_batches: {
         Args: {
-          p_payload: Json | null;
+          p_payload?: Json | null;
         };
         Returns: Json;
       };
@@ -6435,9 +6428,9 @@ export type Database = {
       };
       list_permission_requests_for_review: {
         Args: {
-          p_status: string | null;
+          p_status?: string | null;
         };
-        Returns: { id: string; requester_user_id: string; requester_name: string; requester_email: string; permission: string; resource_route: string; reason: string; status: string; reviewer_user_id: string; decided_at: string; decision_reason: string; created_at: string; grant_active: boolean }[];
+        Returns: { id: string | null; requester_user_id: string | null; requester_name: string | null; requester_email: string | null; permission: string | null; resource_route: string | null; reason: string | null; status: string | null; reviewer_user_id: string | null; decided_at: string | null; decision_reason: string | null; created_at: string | null; grant_active: boolean | null }[];
       };
       next_document_reference: {
         Args: {
@@ -6463,7 +6456,7 @@ export type Database = {
           p_owner_id: string | null;
           p_period_start: string | null;
           p_period_end: string | null;
-          p_property_id: string | null;
+          p_property_id?: string | null;
         };
         Returns: string[];
       };
@@ -6473,7 +6466,7 @@ export type Database = {
           p_owner_id: string | null;
           p_period_start: string | null;
           p_period_end: string | null;
-          p_property_id: string | null;
+          p_property_id?: string | null;
         };
         Returns: string[];
       };
@@ -6497,7 +6490,7 @@ export type Database = {
       };
       payment_receipt_identity_preflight: {
         Args: Record<PropertyKey, never>;
-        Returns: { payments_without_receipt_id: number; payment_id_receipt_id_mismatches: number; receipts_with_multiple_payments: number; receipts_without_payment: number }[];
+        Returns: { payments_without_receipt_id: number | null; payment_id_receipt_id_mismatches: number | null; receipts_with_multiple_payments: number | null; receipts_without_payment: number | null }[];
       };
       post_journal_event: {
         Args: {
@@ -6591,8 +6584,8 @@ export type Database = {
       request_permission: {
         Args: {
           p_permission: string | null;
-          p_resource_route: string | null;
-          p_reason: string | null;
+          p_resource_route?: string | null;
+          p_reason?: string | null;
         };
         Returns: Database['public']['Tables']['permission_requests']['Row'];
       };
@@ -6617,14 +6610,14 @@ export type Database = {
         Args: {
           p_request_id: string | null;
           p_cost: number | null;
-          p_notes: string | null;
+          p_notes?: string | null;
         };
         Returns: Json;
       };
       resolve_unit_operational_status: {
         Args: {
           p_unit_id: string | null;
-          p_fallback_status: string | null;
+          p_fallback_status?: string | null;
         };
         Returns: string;
       };
@@ -6697,7 +6690,7 @@ export type Database = {
         Args: {
           p_from: string | null;
           p_to: string | null;
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
         Returns: Json;
       };
@@ -6706,7 +6699,7 @@ export type Database = {
           p_from: string | null;
           p_to: string | null;
         };
-        Returns: { collected: number; expenses: number; net: number; revenue: number; net_income: number; overdue_amount: number; overdue_count: number; active_contracts: number; total_units: number; occupied_units: number; occupancy_rate: number; pending_invoices: number; period_from: string; period_to: string }[];
+        Returns: { collected: number | null; expenses: number | null; net: number | null; revenue: number | null; net_income: number | null; overdue_amount: number | null; overdue_count: number | null; active_contracts: number | null; total_units: number | null; occupied_units: number | null; occupancy_rate: number | null; pending_invoices: number | null; period_from: string | null; period_to: string | null }[];
       };
       rpt_general_ledger: {
         Args: {
@@ -6724,7 +6717,7 @@ export type Database = {
       };
       rpt_overdue_invoices: {
         Args: {
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
         Returns: Json;
       };
@@ -6738,7 +6731,7 @@ export type Database = {
       };
       rpt_rent_roll: {
         Args: {
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
         Returns: Json;
       };
@@ -6770,21 +6763,21 @@ export type Database = {
           p_company_id: string | null;
           p_period_id: string | null;
         };
-        Returns: { company_id: string; tenant_id: string; contract_id: string; property_id: string; deposit_id: string; transaction_id: string; beneficiary: string; claim_reference: string; period: string; amount: number; available_balance: number; exception_code: string; severity: string; explanation: string }[];
+        Returns: { company_id: string | null; tenant_id: string | null; contract_id: string | null; property_id: string | null; deposit_id: string | null; transaction_id: string | null; beneficiary: string | null; claim_reference: string | null; period: string | null; amount: number | null; available_balance: number | null; exception_code: string | null; severity: string | null; explanation: string | null }[];
       };
       s08_analyze_expense_misclassification: {
         Args: {
           p_company_id: string | null;
           p_period_id: string | null;
         };
-        Returns: { company_id: string; expense_id: string; charged_to: string; beneficiary: string; account_no: string; account_name: string; amount: number; period: string; finding_code: string; severity: string; explanation: string }[];
+        Returns: { company_id: string | null; expense_id: string | null; charged_to: string | null; beneficiary: string | null; account_no: string | null; account_name: string | null; amount: number | null; period: string | null; finding_code: string | null; severity: string | null; explanation: string | null }[];
       };
       s08_analyze_frozen_review: {
         Args: {
           p_review_id: string | null;
-          p_analysis_results: Json | null;
-          p_reconciliation_evidence: Json | null;
-          p_exceptions: Json | null;
+          p_analysis_results?: Json | null;
+          p_reconciliation_evidence?: Json | null;
+          p_exceptions?: Json | null;
         };
         Returns: Json;
       };
@@ -6793,12 +6786,12 @@ export type Database = {
           p_company_id: string | null;
           p_period_id: string | null;
         };
-        Returns: { company_id: string; company_name: string; owner_id: string; owner_name: string; property_id: string; property_name: string; agreement_id: string; settlement_id: string; settlement_status: string; accounting_period: string; source_type: string; source_id: string; source_date: string; source_amount: number; currency: string; finding_code: string; severity: string; explanation: string }[];
+        Returns: { company_id: string | null; company_name: string | null; owner_id: string | null; owner_name: string | null; property_id: string | null; property_name: string | null; agreement_id: string | null; settlement_id: string | null; settlement_status: string | null; accounting_period: string | null; source_type: string | null; source_id: string | null; source_date: string | null; source_amount: number | null; currency: string | null; finding_code: string | null; severity: string | null; explanation: string | null }[];
       };
       s08_approve_frozen_review: {
         Args: {
           p_review_id: string | null;
-          p_notes: string | null;
+          p_notes?: string | null;
         };
         Returns: Json;
       };
@@ -6817,7 +6810,7 @@ export type Database = {
       };
       s08_list_frozen_reviews: {
         Args: {
-          p_period_id: string | null;
+          p_period_id?: string | null;
         };
         Returns: Json;
       };
@@ -6826,12 +6819,12 @@ export type Database = {
           p_company_id: string | null;
           p_period_id: string | null;
         };
-        Returns: { company_id: string; batch_id: string; source_type: string; source_id: string; status: string; finding_code: string; severity: string; explanation: string }[];
+        Returns: { company_id: string | null; batch_id: string | null; source_type: string | null; source_id: string | null; status: string | null; finding_code: string | null; severity: string | null; explanation: string | null }[];
       };
       s08_reject_frozen_review: {
         Args: {
           p_review_id: string | null;
-          p_reason: string | null;
+          p_reason?: string | null;
         };
         Returns: Json;
       };
@@ -6867,8 +6860,8 @@ export type Database = {
       };
       s09_list_corrections: {
         Args: {
-          p_period_id: string | null;
-          p_status: string | null;
+          p_period_id?: string | null;
+          p_status?: string | null;
         };
         Returns: Json;
       };
@@ -6895,7 +6888,7 @@ export type Database = {
         Args: {
           p_provider_id: string | null;
           p_payload: Json | null;
-          p_category_ids: (string)[] | null;
+          p_category_ids?: (string)[] | null;
         };
         Returns: Json;
       };
@@ -6969,30 +6962,34 @@ export type Database = {
         };
         Returns: Database['public']['Tables']['owner_agreements']['Row'];
       };
-      // 2 overloads in the database; PostgREST resolution is ambiguous.
-      //   void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)
+      // 2 overloads in the database; all callable signatures are preserved.
       //   void_receipt_atomic(payload jsonb)
+      //   void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)
       void_receipt_atomic: {
-        Args: {
-          p_receipt_id: string | null;
-          p_voided_at: string | null;
-          p_invoice_updates: Json | null;
-          p_reverse_entries: Json | null;
-        };
+        Args:
+          | {
+              payload: Json | null;
+            }
+          | {
+              p_receipt_id: string | null;
+              p_voided_at?: string | null;
+              p_invoice_updates?: Json | null;
+              p_reverse_entries?: Json | null;
+            };
         Returns: Json;
       };
       wp05_assert_cash_flow: {
         Args: {
           p_from: string | null;
           p_to: string | null;
-          p_allow_unclassified: boolean | null;
+          p_allow_unclassified?: boolean | null;
         };
         Returns: Json;
       };
       wp05_assert_reconciliation: {
         Args: {
-          p_company_id: string | null;
-          p_as_of: string | null;
+          p_company_id?: string | null;
+          p_as_of?: string | null;
         };
         Returns: Json;
       };
@@ -7004,15 +7001,15 @@ export type Database = {
         Args: {
           p_from: string | null;
           p_to: string | null;
-          p_classification: string | null;
+          p_classification?: string | null;
         };
-        Returns: { classification: string; account_id: string; account_no: string; account_name: string; batch_id: string; source_type: string; source_id: string; event_id: string; effective_date: string; posted_at: string; debit: number; credit: number; amount: number; line_description: string; ref_source_id: string; ref_entity_type: string; ref_entity_id: string }[];
+        Returns: { classification: string | null; account_id: string | null; account_no: string | null; account_name: string | null; batch_id: string | null; source_type: string | null; source_id: string | null; event_id: string | null; effective_date: string | null; posted_at: string | null; debit: number | null; credit: number | null; amount: number | null; line_description: string | null; ref_source_id: string | null; ref_entity_type: string | null; ref_entity_id: string | null }[];
       };
       wp05_gl_balance: {
         Args: {
           p_company_id: string | null;
           p_account_no: string | null;
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
         Returns: number;
       };
@@ -7020,15 +7017,15 @@ export type Database = {
         Args: {
           p_from: string | null;
           p_to: string | null;
-          p_account_no: string | null;
+          p_account_no?: string | null;
         };
-        Returns: { account_no: string; account_name: string; batch_id: string; source_type: string; source_id: string; event_id: string; effective_date: string; posted_at: string; status: string; debit: number; credit: number; line_description: string; ref_source_id: string; ref_entity_type: string; ref_entity_id: string }[];
+        Returns: { account_no: string | null; account_name: string | null; batch_id: string | null; source_type: string | null; source_id: string | null; event_id: string | null; effective_date: string | null; posted_at: string | null; status: string | null; debit: number | null; credit: number | null; line_description: string | null; ref_source_id: string | null; ref_entity_type: string | null; ref_entity_id: string | null }[];
       };
       wp05_gl_line_count: {
         Args: {
           p_company_id: string | null;
           p_account_no: string | null;
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
         Returns: number;
       };
@@ -7040,10 +7037,10 @@ export type Database = {
       };
       wp05_reconcile_all: {
         Args: {
-          p_company_id: string | null;
-          p_as_of: string | null;
+          p_company_id?: string | null;
+          p_as_of?: string | null;
         };
-        Returns: { reconciliation_class: string; account_no: string; account_name: string; subledger_balance: number; gl_balance: number; variance: number; abs_variance: number; currency: string; reconciliation_status: string; subledger_count: number; gl_count: number }[];
+        Returns: { reconciliation_class: string | null; account_no: string | null; account_name: string | null; subledger_balance: number | null; gl_balance: number | null; variance: number | null; abs_variance: number | null; currency: string | null; reconciliation_status: string | null; subledger_count: number | null; gl_count: number | null }[];
       };
       wp05_round_omr: {
         Args: {
@@ -7068,7 +7065,7 @@ export type Database = {
         Args: {
           p_from: string | null;
           p_to: string | null;
-          p_account_no: string | null;
+          p_account_no?: string | null;
         };
         Returns: Json;
       };
@@ -7088,37 +7085,37 @@ export type Database = {
       wp05_subledger_commission: {
         Args: {
           p_company_id: string | null;
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
-        Returns: { balance: number; cnt: number }[];
+        Returns: { balance: number | null; cnt: number | null }[];
       };
       wp05_subledger_due_from_owner: {
         Args: {
           p_company_id: string | null;
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
-        Returns: { balance: number; cnt: number }[];
+        Returns: { balance: number | null; cnt: number | null }[];
       };
       wp05_subledger_owner_payables: {
         Args: {
           p_company_id: string | null;
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
-        Returns: { balance: number; cnt: number }[];
+        Returns: { balance: number | null; cnt: number | null }[];
       };
       wp05_subledger_security_deposits: {
         Args: {
           p_company_id: string | null;
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
-        Returns: { balance: number; cnt: number }[];
+        Returns: { balance: number | null; cnt: number | null }[];
       };
       wp05_subledger_tenant_receivables: {
         Args: {
           p_company_id: string | null;
-          p_as_of: string | null;
+          p_as_of?: string | null;
         };
-        Returns: { balance: number; cnt: number }[];
+        Returns: { balance: number | null; cnt: number | null }[];
       };
     };
     Enums: {

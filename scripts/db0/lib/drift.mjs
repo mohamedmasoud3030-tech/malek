@@ -40,6 +40,26 @@ function pushFinding(findings, f) {
   findings.push({ severity: SEVERITY.MAJOR, ...f });
 }
 
+function functionArgumentNames(signature = '') {
+  const parts = [];
+  let token = '';
+  let depth = 0;
+  for (const char of signature) {
+    if (char === '(' || char === '[') depth += 1;
+    else if (char === ')' || char === ']') depth -= 1;
+    if (char === ',' && depth === 0) {
+      parts.push(token.trim());
+      token = '';
+    } else {
+      token += char;
+    }
+  }
+  if (token.trim()) parts.push(token.trim());
+  return parts
+    .map((arg) => arg.replace(/^(in|out|inout|variadic)\s+/i, '').split(/\s+/)[0])
+    .filter(Boolean);
+}
+
 export function buildDrift({ schema, types, frontend }) {
   const findings = [];
 
@@ -93,27 +113,23 @@ export function buildDrift({ schema, types, frontend }) {
   }
 
   // ---- embedded resources -------------------------------------------------
-  // `alias:target(...)` resolves either to a relation named `target`, or to an
-  // FK column on the parent whose referenced table is the real target.
-  // Only SINGLE-column foreign keys can be used as a PostgREST embed target
-  // hint. A composite FK such as `(unit_id, property_id) REFERENCES units`
-  // must not make `property_id` resolve to `units`.
-  const fkColumnTarget = new Map(); // `${table}.${column}` -> referenced table
-  const compositeFkColumnTarget = new Map();
+  // PostgREST infers joins from both single-column and composite foreign keys.
+  // An embed target may be the related relation, an FK column, or a constraint
+  // hint (`relation!constraint`). Composite keys must therefore remain first-
+  // class here; treating them as unresolvable creates false schema fixes and
+  // can introduce a second, genuinely ambiguous relationship.
+  const fksByColumn = new Map(); // `${table}.${column}` -> FK[]
+  const fksByName = new Map(); // `${table}.${constraint}` -> FK
   const fkPairCount = new Map(); // `${table}->${target}` -> number of FKs
   for (const fk of schema.foreign_keys) {
     const cols = /FOREIGN KEY \(([^)]+)\) REFERENCES ([\w".]+)/i.exec(fk.definition);
     if (!cols) continue;
     const columns = cols[1].split(',').map((s) => s.trim().replace(/"/g, ''));
-    if (columns.length === 1) {
-      fkColumnTarget.set(`${fk.table_name}.${columns[0]}`, fk.references_table);
-    } else {
-      // Composite FK: the leading column is still a usable embed hint, but
-      // PostgREST resolution is far more fragile — record it separately.
-      compositeFkColumnTarget.set(`${fk.table_name}.${columns[0]}`, {
-        target: fk.references_table,
-        columns,
-      });
+    fksByName.set(`${fk.table_name}.${fk.name}`, fk);
+    for (const column of columns) {
+      const columnKey = `${fk.table_name}.${column}`;
+      if (!fksByColumn.has(columnKey)) fksByColumn.set(columnKey, []);
+      fksByColumn.get(columnKey).push(fk);
     }
     const pair = `${fk.table_name}->${fk.references_table}`;
     fkPairCount.set(pair, (fkPairCount.get(pair) ?? 0) + 1);
@@ -122,30 +138,24 @@ export function buildDrift({ schema, types, frontend }) {
   for (const emb of frontend.embeds ?? []) {
     let resolved = null;
     let via = null;
+    let candidateRelationships = [];
 
-    if (dbRelations.has(emb.target)) {
+    const hintedFk = emb.hint ? fksByName.get(`${emb.parent}.${emb.hint}`) : null;
+    if (hintedFk) {
+      resolved = hintedFk.references_table;
+      via = `constraint:${emb.hint}`;
+      candidateRelationships = [hintedFk];
+    } else if (dbRelations.has(emb.target)) {
       resolved = emb.target;
       via = 'relation';
-    } else if (fkColumnTarget.has(`${emb.parent}.${emb.target}`)) {
-      resolved = fkColumnTarget.get(`${emb.parent}.${emb.target}`);
+      candidateRelationships = schema.foreign_keys.filter(
+        (fk) => fk.table_name === emb.parent && fk.references_table === resolved,
+      );
+    } else if (fksByColumn.has(`${emb.parent}.${emb.target}`)) {
+      candidateRelationships = fksByColumn.get(`${emb.parent}.${emb.target}`);
+      const targets = [...new Set(candidateRelationships.map((fk) => fk.references_table))];
+      if (targets.length === 1) resolved = targets[0];
       via = `fk:${emb.parent}.${emb.target}`;
-    } else if (emb.alias && dbRelations.has(emb.alias)) {
-      resolved = emb.alias;
-      via = 'alias';
-    } else if (compositeFkColumnTarget.has(`${emb.parent}.${emb.target}`)) {
-      const composite = compositeFkColumnTarget.get(`${emb.parent}.${emb.target}`);
-      resolved = composite.target;
-      via = `composite-fk:(${composite.columns.join(', ')})`;
-      findings.push({
-        id: 'DB0-09C',
-        severity: SEVERITY.MAJOR,
-        relation: emb.parent,
-        embed: emb.target,
-        target: composite.target,
-        fkColumns: composite.columns,
-        title: `Embed "${emb.parent} -> ${emb.target}(...)" resolves only through the composite foreign key (${composite.columns.join(', ')}); PostgREST cannot use a column hint for composite relationships, so the embed name must be the relation or the constraint`,
-        evidence: [emb.file],
-      });
     }
 
     if (!resolved) {
@@ -162,8 +172,10 @@ export function buildDrift({ schema, types, frontend }) {
 
     // PostgREST rejects an embed (PGRST201) when several relationships exist
     // between the two tables and the request does not disambiguate.
-    const relCount = fkPairCount.get(`${emb.parent}->${resolved}`) ?? 0;
-    if (relCount > 1 && via === 'relation' && !emb.hint) {
+    const relCount = via === 'relation'
+      ? (fkPairCount.get(`${emb.parent}->${resolved}`) ?? 0)
+      : candidateRelationships.filter((fk) => fk.references_table === resolved).length;
+    if (relCount > 1 && !hintedFk) {
       pushFinding(findings, {
         id: 'DB0-09A',
         severity: SEVERITY.BLOCKER,
@@ -361,40 +373,48 @@ export function buildDrift({ schema, types, frontend }) {
     const overloads = dbFunctions.get(name);
     if (!overloads) continue;
 
-    const declared = new Set(def.args);
-    const matches = overloads.some((o) => {
-      const dbArgs = new Set(
-        (o.args || '')
-          .split(',')
-          .map((a) => a.trim().split(/\s+/)[0])
-          .filter(Boolean),
-      );
-      if (dbArgs.size !== declared.size) return false;
-      for (const a of declared) if (!dbArgs.has(a)) return false;
-      return true;
-    });
+    const declaredVariants = (def.argVariants?.length ? def.argVariants : [def.argFields ?? []])
+      .map((variant) => new Set(variant.map((field) => field.name)));
+    const dbVariants = overloads.map((overload) => new Set(functionArgumentNames(overload.args)));
+    const sameSet = (left, right) =>
+      left.size === right.size && [...left].every((value) => right.has(value));
+    const matches = declaredVariants.every((declared) =>
+      dbVariants.some((dbArgs) => sameSet(declared, dbArgs)),
+    ) && dbVariants.every((dbArgs) =>
+      declaredVariants.some((declared) => sameSet(declared, dbArgs)),
+    );
 
     if (!matches) {
       findings.push({
         id: 'DB0-05',
         severity: frontendRpcNames.has(name) ? SEVERITY.BLOCKER : SEVERITY.MAJOR,
         rpc: name,
-        tsArgs: [...declared],
+        tsArgs: declaredVariants.map((variant) => [...variant]),
         dbOverloads: overloads.map((o) => o.args),
         title: `RPC signature drift on "${name}": generated types do not match any database overload`,
       });
     }
   }
 
-  // ---- DB0-05B: ambiguous overloads reachable from PostgREST --------------
+  // ---- DB0-05B: genuinely ambiguous overloads reachable from PostgREST ----
+  // Distinct named-argument sets are how PostgREST resolves overloads. Only
+  // overloads with the same names but different SQL types are ambiguous to a
+  // JSON caller and need to be blocked.
   for (const [name, overloads] of dbFunctions) {
-    if (overloads.length > 1 && frontendRpcNames.has(name)) {
+    const byArgumentSet = new Map();
+    for (const overload of overloads) {
+      const signature = functionArgumentNames(overload.args).sort().join(',');
+      if (!byArgumentSet.has(signature)) byArgumentSet.set(signature, []);
+      byArgumentSet.get(signature).push(overload);
+    }
+    const ambiguous = [...byArgumentSet.values()].filter((group) => group.length > 1).flat();
+    if (ambiguous.length && frontendRpcNames.has(name)) {
       findings.push({
         id: 'DB0-05B',
         severity: SEVERITY.MAJOR,
         rpc: name,
-        overloads: overloads.map((o) => o.args),
-        title: `RPC "${name}" has ${overloads.length} overloads and is called from the frontend — PostgREST resolution is ambiguous`,
+        overloads: ambiguous.map((o) => o.args),
+        title: `RPC "${name}" has overloads with the same named arguments but different SQL types — PostgREST resolution is ambiguous`,
       });
     }
   }

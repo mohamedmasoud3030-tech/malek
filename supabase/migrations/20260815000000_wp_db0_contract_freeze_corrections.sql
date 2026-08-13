@@ -23,9 +23,9 @@
 --                reference company_id — a cross-company read/write leak.
 --   C3  DB0-08   `document_reference_sequences` has RLS enabled and zero
 --                policies, and no FK to companies.
---   C4  DB0-09C  `maintenance_records.service_provider_category_id` is only
---                reachable through a composite FK, which PostgREST cannot use
---                as an embed hint; the frontend masked this with `as any`.
+--   C4  DB0-09A  The service-provider category relationship is already a
+--                valid composite FK; the frontend now names that constraint
+--                explicitly. No weaker/duplicate FK is added here.
 --   C5  DB0-XX   `vw_active_owner_agreements` is missing `security_invoker`,
 --                so it reads with the definer's privileges and bypasses RLS.
 --
@@ -151,6 +151,20 @@ begin
     return;
   end if;
 
+  -- Repair an early/manual application of this work package that created the
+  -- dependency as RESTRICT. Sequence counters have no independent lifecycle;
+  -- retaining them after their company is deleted breaks deterministic QA
+  -- cleanup and leaves tenant-owned residue.
+  if exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.document_reference_sequences'::regclass
+      and conname = 'document_reference_sequences_company_id_fkey'
+      and confdeltype <> 'c'
+  ) then
+    alter table public.document_reference_sequences
+      drop constraint document_reference_sequences_company_id_fkey;
+  end if;
+
   if not exists (
     select 1 from pg_constraint
     where conrelid = 'public.document_reference_sequences'::regclass
@@ -162,7 +176,7 @@ begin
   ) then
     alter table public.document_reference_sequences
       add constraint document_reference_sequences_company_id_fkey
-      foreign key (company_id) references public.companies(id) on delete restrict;
+      foreign key (company_id) references public.companies(id) on delete cascade;
   end if;
 
   -- Explicit deny-all for every client role. SECURITY DEFINER functions owned
@@ -180,48 +194,6 @@ begin
   -- Guarded with the rest of the block: a partial replay that never created
   -- this table must not fail on the REVOKE.
   execute 'revoke all on table public.document_reference_sequences from anon, authenticated';
-end
-$$;
-
--- ---------------------------------------------------------------------------
--- C4. Give maintenance_records.service_provider_category_id a single-column
---     FK so PostgREST can resolve the embed.
---
--- The only FK carrying this column is composite
--- `(service_provider_category_id, company_id) -> service_provider_categories`.
--- PostgREST cannot use a column name as an embed hint for a composite
--- relationship, so `category:service_provider_category_id(id,name)` was not
--- resolvable and the call site suppressed the error with `as any`.
---
--- The composite FK is KEPT: it is the constraint that makes a cross-company
--- category assignment unrepresentable. The added single-column FK is purely
--- the relationship PostgREST can name, and is strictly weaker, so it cannot
--- loosen the existing isolation guarantee.
--- ---------------------------------------------------------------------------
-do $$
-begin
-  if to_regclass('public.maintenance_records') is null
-     or to_regclass('public.service_provider_categories') is null then
-    return;
-  end if;
-
-  if not exists (
-    select 1 from pg_constraint
-    where conrelid = 'public.maintenance_records'::regclass
-      and conname = 'maintenance_records_service_provider_category_id_fkey'
-  ) and not exists (
-    select 1
-    from public.maintenance_records m
-    left join public.service_provider_categories c
-      on c.id = m.service_provider_category_id
-    where m.service_provider_category_id is not null and c.id is null
-  ) then
-    alter table public.maintenance_records
-      add constraint maintenance_records_service_provider_category_id_fkey
-      foreign key (service_provider_category_id)
-      references public.service_provider_categories(id)
-      on delete restrict;
-  end if;
 end
 $$;
 

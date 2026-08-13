@@ -40,7 +40,7 @@ type TenantInvoiceSummary = {
   hasArrears: boolean;
 };
 
-const tenantContractSelect = '*, properties:property_id(id,title), units:unit_id(id,unit_number)';
+const tenantContractSelect = '*, properties:properties!contracts_property_id_fkey(id,title), units:units!contracts_unit_id_fkey(id,unit_number)';
 const tenantInvoiceSelect = 'contract_id,status,amount,paid_amount,due_date';
 
 function escapeSearchTerm(value: string) {
@@ -158,7 +158,7 @@ export async function getTenantDossier(tenantId: string, options: { includeFinan
 
   const { data: contractsData, error: contractsError } = await (supabase as any)
     .from('contracts')
-    .select('*, properties:property_id(id,title), units:unit_id(id,unit_number)')
+    .select('*, properties:properties!contracts_property_id_fkey(id,title), units:units!contracts_unit_id_fkey(id,unit_number)')
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });

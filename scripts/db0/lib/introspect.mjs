@@ -83,8 +83,12 @@ const Q = {
   functions: `
     select p.proname as name,
            pg_get_function_identity_arguments(p.oid) as args,
+           pg_get_function_arguments(p.oid) as full_args,
+           p.pronargdefaults as arg_defaults,
            pg_get_function_result(p.oid) as returns,
            p.prosecdef as security_definer,
+           p.proisstrict as strict,
+           has_function_privilege('public', p.oid, 'execute') as public_execute,
            p.provolatile as volatility,
            l.lanname as language,
            coalesce(array_to_string(p.proconfig, ','), '') as config,

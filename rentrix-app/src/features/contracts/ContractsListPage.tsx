@@ -97,7 +97,7 @@ export function ContractsListPage({ embedded = false }: ContractsListPageProps) 
         description="إدارة دورة العقد من مسودة إلى نشط ثم منتهي أو ملغي."
         count={hasClientFilter ? filteredContracts.length : (contractsQuery.data?.count ?? filteredContracts.length)}
         primaryAction={
-          <Button onClick={openCreate} className="bg-[hsl(var(--sidebar))] hover:bg-[hsl(var(--sidebar)/0.92)]">
+          <Button onClick={openCreate}>
             <Plus className="me-2 size-4" />إنشاء عقد
           </Button>
         }

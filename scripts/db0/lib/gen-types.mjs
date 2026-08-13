@@ -149,7 +149,17 @@ function updateType(columns, enums, checkUnions) {
     .join('\n');
 }
 
-function relationships(tableName, foreignKeys) {
+function relationshipIsOneToOne(tableName, columns, constraints) {
+  return constraints.some((constraint) => {
+    if (constraint.table_name !== tableName || !['p', 'u'].includes(constraint.type)) return false;
+    const match = /(?:PRIMARY KEY|UNIQUE) \(([^)]+)\)/i.exec(constraint.definition);
+    if (!match) return false;
+    const uniqueColumns = match[1].split(',').map((value) => value.trim().replace(/"/g, ''));
+    return uniqueColumns.length === columns.length && columns.every((column) => uniqueColumns.includes(column));
+  });
+}
+
+function relationships(tableName, foreignKeys, constraints) {
   const fks = foreignKeys.filter((f) => f.table_name === tableName);
   if (!fks.length) return '        Relationships: [];';
   const items = fks
@@ -162,7 +172,7 @@ function relationships(tableName, foreignKeys) {
         `          {\n` +
         `            foreignKeyName: '${fk.name}';\n` +
         `            columns: [${cols.map((c) => `'${c}'`).join(', ')}];\n` +
-        `            isOneToOne: false;\n` +
+        `            isOneToOne: ${relationshipIsOneToOne(tableName, cols, constraints)};\n` +
         `            referencedRelation: '${fk.references_table}';\n` +
         `            referencedColumns: [${refCols.map((c) => `'${c}'`).join(', ')}];\n` +
         `          },`
@@ -196,6 +206,68 @@ function parseArgs(argString) {
     }
     return { name: null, type: cleaned };
   });
+}
+
+function functionReturnType(fn, enums, columnsByRel) {
+  const ret = fn.returns.replace(/^SETOF\s+/i, '');
+  const isSet = /^SETOF\s+/i.test(fn.returns);
+  if (/^TABLE\(/i.test(ret)) {
+    const inner = ret.slice(ret.indexOf('(') + 1, ret.lastIndexOf(')'));
+    const fields = parseArgs(inner)
+      .filter((field) => field.name)
+      .map((field) => `${key(field.name)}: ${pgSignatureToTs(field.type, enums)} | null`)
+      .join('; ');
+    return `{ ${fields} }[]`;
+  }
+  const relationName = ret.replace(/^public\./i, '').replace(/"/g, '');
+  if (columnsByRel.has(relationName)) {
+    return `Database['public']['Tables']['${relationName}']['Row']${isSet ? '[]' : ''}`;
+  }
+  return pgSignatureToTs(ret, enums) + (isSet ? '[]' : '');
+}
+
+function functionArgFields(fn, enums) {
+  const args = parseArgs(fn.args);
+  const defaults = Number(fn.arg_defaults ?? 0);
+  const firstOptional = Math.max(0, args.length - defaults);
+  return args
+    .filter((arg) => arg.name)
+    .map((arg, index) => ({
+      ...arg,
+      optional: defaults > 0 && index >= firstOptional,
+      ts: `${pgSignatureToTs(arg.type, enums)}${fn.strict ? '' : ' | null'}`,
+    }));
+}
+
+function emitFunctionArgs(out, overloads, enums) {
+  const variants = overloads.map((fn) => functionArgFields(fn, enums));
+  if (variants.every((variant) => variant.length === 0)) {
+    out.push('        Args: Record<PropertyKey, never>;');
+    return;
+  }
+
+  if (variants.length === 1) {
+    out.push('        Args: {');
+    for (const arg of variants[0]) {
+      out.push(`          ${key(arg.name)}${arg.optional ? '?' : ''}: ${arg.ts};`);
+    }
+    out.push('        };');
+    return;
+  }
+
+  out.push('        Args:');
+  for (const variant of variants) {
+    if (!variant.length) {
+      out.push('          | Record<PropertyKey, never>');
+      continue;
+    }
+    out.push('          | {');
+    for (const arg of variant) {
+      out.push(`              ${key(arg.name)}${arg.optional ? '?' : ''}: ${arg.ts};`);
+    }
+    out.push('            }');
+  }
+  out[out.length - 1] += ';';
 }
 
 /**
@@ -257,7 +329,7 @@ export function generateTypes({ schema }) {
 //
 // Source of truth: the migration chain in \`supabase/migrations\`, replayed into
 // a clean PostgreSQL and introspected. Regenerate after any schema change;
-// \`pnpm db0:check\` fails the build when this file drifts from the migrations.
+// \`pnpm db0:check-types\` fails the build when this file drifts from the migrations.
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 `);
@@ -278,7 +350,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
     out.push('        Update: {');
     out.push(updateType(cols, enums, checkUnions));
     out.push('        };');
-    out.push(relationships(t.name, schema.foreign_keys));
+    out.push(relationships(t.name, schema.foreign_keys, schema.constraints));
     out.push('      };');
   }
   out.push('    };');
@@ -315,52 +387,19 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
     out.push('      [_ in never]: never;');
   } else {
     for (const [name, overloads] of [...byName.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-      // Deterministic pick: the overload with the most named arguments, which
-      // is the one PostgREST clients target. Extra overloads are listed in a
-      // comment so ambiguity stays visible rather than silently dropped.
-      const sorted = [...overloads].sort(
-        (a, b) => parseArgs(b.args).length - parseArgs(a.args).length,
-      );
-      const chosen = sorted[0];
+      // PostgREST resolves overloads by named argument sets. Preserve every
+      // callable signature instead of silently selecting only one of them.
+      const sorted = [...overloads].sort((a, b) => b.args.localeCompare(a.args));
       if (overloads.length > 1) {
-        out.push(`      // ${overloads.length} overloads in the database; PostgREST resolution is ambiguous.`);
+        out.push(`      // ${overloads.length} overloads in the database; all callable signatures are preserved.`);
         for (const o of sorted) out.push(`      //   ${name}(${o.args})`);
       }
-      const args = parseArgs(chosen.args);
       out.push(`      ${key(name)}: {`);
-      if (!args.length || args.every((a) => !a.name)) {
-        out.push('        Args: Record<PropertyKey, never>;');
-      } else {
-        out.push('        Args: {');
-        for (const a of args) {
-          if (!a.name) continue;
-          // Every SQL argument accepts NULL unless the function body rejects
-          // it, and callers routinely pass `?? null`. Modelling arguments as
-          // non-nullable would force casts back into the services, which is
-          // precisely the workaround pattern WP-DB0 removes.
-          const hasDefault = / DEFAULT /i.test(a.type);
-          out.push(
-            `          ${key(a.name)}${hasDefault ? '?' : ''}: ${pgSignatureToTs(a.type, enums)} | null;`,
-          );
-        }
-        out.push('        };');
-      }
-      const ret = chosen.returns.replace(/^SETOF\s+/i, '');
-      const isSet = /^SETOF\s+/i.test(chosen.returns);
-      let retTs;
-      if (/^TABLE\(/i.test(ret)) {
-        const inner = ret.slice(ret.indexOf('(') + 1, ret.lastIndexOf(')'));
-        const fields = parseArgs(inner)
-          .filter((f) => f.name)
-          .map((f) => `${key(f.name)}: ${pgSignatureToTs(f.type, enums)}`)
-          .join('; ');
-        retTs = `{ ${fields} }[]`;
-      } else if (columnsByRel.has(ret)) {
-        retTs = `Database['public']['Tables']['${ret}']['Row']${isSet ? '[]' : ''}`;
-      } else {
-        retTs = pgSignatureToTs(ret, enums) + (isSet ? '[]' : '');
-      }
-      out.push(`        Returns: ${retTs};`);
+      emitFunctionArgs(out, sorted, enums);
+      const returnTypes = [...new Set(
+        sorted.map((fn) => functionReturnType(fn, enums, columnsByRel)),
+      )];
+      out.push(`        Returns: ${returnTypes.join(' | ')};`);
       out.push('      };');
     }
   }

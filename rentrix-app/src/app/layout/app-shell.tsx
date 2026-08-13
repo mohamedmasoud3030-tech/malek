@@ -158,7 +158,7 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-2xl sm:max-h-none md:w-[min(22rem,70vw)] sm:p-0 lg:hidden"
+        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-elevated sm:max-h-none md:w-[min(22rem,70vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/8 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
@@ -307,6 +307,8 @@ export function AppShell() {
               className="inline-flex size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
               onClick={() => setMobileNavOpen(true)}
               aria-label={sharedLabel('openMenu')}
+              aria-haspopup="dialog"
+              aria-expanded={mobileNavOpen}
             >
               <Menu className="size-[1.15rem]" aria-hidden="true" />
             </Button>
@@ -316,6 +318,7 @@ export function AppShell() {
               className="hidden size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
               onClick={toggleSidebar}
               aria-label={sharedLabel('collapseMenu')}
+              aria-expanded={isSidebarExpanded}
             >
               <Menu className="size-[1.15rem]" aria-hidden="true" />
             </Button>

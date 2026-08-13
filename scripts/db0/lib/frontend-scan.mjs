@@ -68,18 +68,22 @@ export function parseSelect(selectStr) {
     .map((c) => {
       // Embedded resource: `rel(...)`, `alias:rel(...)`, `rel!inner(...)`,
       // `rel!fk_name(...)`, `alias:rel!inner(...)`.
-      const embedded = /^(?:([\w]+):)?([\w]+)(?:!([\w]+))?\(([\s\S]*)\)$/.exec(c);
+      const embedded = /^(?:([\w]+):)?([\w]+)(?:!([\w]+))?(?:!([\w]+))?\(([\s\S]*)\)$/.exec(c);
       if (embedded) {
         // PostgREST allows `alias:target(...)` where `target` is either a
         // relation name or an FK **column** on the parent that resolves to one
         // (e.g. `contracts:contract_id(...)`). Which one it is can only be
         // decided against the schema, so carry both readings.
+        const modifiers = [embedded[3], embedded[4]].filter(Boolean);
+        const joinModifier = modifiers.find((value) => value === 'inner' || value === 'left') ?? null;
+        const hint = modifiers.find((value) => value !== 'inner' && value !== 'left') ?? null;
         return {
           kind: 'embed',
           alias: embedded[1] ?? null,
           name: embedded[2],
-          hint: embedded[3] ?? null,
-          inner: embedded[4] ?? '',
+          hint,
+          joinModifier,
+          inner: embedded[5] ?? '',
           raw: c,
         };
       }
@@ -127,6 +131,7 @@ export async function scanFrontend({ includeTests = false } = {}) {
               alias: col.alias,
               target: col.name,
               hint: col.hint,
+              joinModifier: col.joinModifier,
               columns: parseSelect(col.inner)
                 .filter((s) => s.kind === 'column' && s.name && s.name !== '*')
                 .map((s) => s.name),

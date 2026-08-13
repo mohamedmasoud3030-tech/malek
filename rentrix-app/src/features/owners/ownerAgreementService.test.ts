@@ -9,6 +9,7 @@ import {
   type OwnerAgreement,
 } from './ownerAgreementService';
 import type { PropertyOwnerWithOwner } from './services/owner-service';
+import { ownerRowFixtureDefaults, propertyOwnerRowFixtureDefaults } from '@/test/ownerRowFixture';
 
 function agreement(id: string, starts_on: string, ends_on: string | null): OwnerAgreement {
   return {
@@ -23,6 +24,9 @@ function agreement(id: string, starts_on: string, ends_on: string | null): Owner
     notes: null,
     created_at: '2026-01-01T00:00:00.000Z',
     updated_at: '2026-01-01T00:00:00.000Z',
+    company_id: 'company-1',
+    reference: `AGR-${id}`,
+    current_version_id: null,
   };
 }
 
@@ -33,6 +37,7 @@ function ownershipLink(
   id = `link-${ownerId}`,
 ): PropertyOwnerWithOwner {
   return {
+    ...propertyOwnerRowFixtureDefaults,
     id,
     property_id: 'property-1',
     owner_id: ownerId,
@@ -43,6 +48,7 @@ function ownershipLink(
     created_at: '2026-01-01T00:00:00.000Z',
     updated_at: '2026-01-01T00:00:00.000Z',
     owner: {
+      ...ownerRowFixtureDefaults,
       id: ownerId,
       full_name: `مالك ${ownerId}`,
       display_name: null,

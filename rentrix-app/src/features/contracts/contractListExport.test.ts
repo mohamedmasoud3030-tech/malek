@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { buildContractsCsv, buildContractsCsvFilename, escapeContractCsvCell, getContractNumber } from './contractListExport';
 import type { ContractListItem } from './services/contractService';
+import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
 
 const baseContract: ContractListItem = {
+  ...contractRowFixtureDefaults,
   id: 'contract-123456789',
   reference: 'CNT-2026-000001',
   property_id: 'property-1',

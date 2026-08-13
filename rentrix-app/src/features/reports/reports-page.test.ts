@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
 import { buildAgingBucketChartRows, buildExpiringContractsRows, buildOccupancyRows, buildPaymentsTrendRows, buildRentRollRows, createReceiptPrintHref } from './reports-page.helpers';
 import { buildReportCsvFilename, escapeCsvValue, toDateInputValue } from './reports-page';
 
 function createContract(overrides: Partial<ContractListItem>): ContractListItem {
   return {
+    ...contractRowFixtureDefaults,
     id: 'contract_a',
     property_id: 'property_a',
     unit_id: 'unit_a',

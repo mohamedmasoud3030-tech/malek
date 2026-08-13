@@ -144,7 +144,7 @@ export async function getPersonDossier(
   const person = await getPerson(personId);
   const { data: contractsData, error: contractsError } = await (supabase as any)
     .from('contracts')
-    .select('id,reference,status,start_date,end_date,property_id,unit_id,properties:property_id(id,title),units:unit_id(id,unit_number)')
+    .select('id,reference,status,start_date,end_date,property_id,unit_id,properties:properties!contracts_property_id_fkey(id,title),units:units!contracts_unit_id_fkey(id,unit_number)')
     .eq('tenant_id', personId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });

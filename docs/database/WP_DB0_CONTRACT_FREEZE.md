@@ -125,16 +125,19 @@ equivalents, and `costCenterService` now stamps the active company on writes
 
 RLS enabled, zero policies, and no FK to `companies`. The deny-all was
 intentional (only the SECURITY DEFINER writer touches it) but indistinguishable
-from an oversight. Now an explicit deny-all policy plus the missing FK.
+from an oversight. Now an explicit deny-all policy plus the missing FK. The FK
+uses `ON DELETE CASCADE` because sequence counters have no lifecycle outside
+their company; this also preserves deterministic hosted-QA cleanup.
 
-### C4 — Unresolvable PostgREST embed
+### C4 — PostgREST relationship ambiguity removed without weakening isolation
 
 `maintenance_records.service_provider_category_id` was reachable only through a
-composite FK, which PostgREST cannot use as an embed hint, so
-`category:service_provider_category_id(id,name)` could not resolve — the call
-site hid this with `as any`. A single-column FK is added; **the composite FK is
-kept**, because that is what makes a cross-company category assignment
-unrepresentable.
+composite company-scoped FK. PostgREST supports composite relationships; adding
+a second single-column FK would instead create an ambiguous relationship and
+weaken the model. The composite FK is therefore the only relationship, and the
+call site now uses its explicit constraint hint,
+`service_provider_categories!maintenance_service_provider_category_company_fk`,
+without `as any`.
 
 ### C5 — View bypassed RLS
 
@@ -146,8 +149,9 @@ it read with the definer's privileges.
 `database.ts` is now **generated from the migration chain**
 (`pnpm db0:gen-types`) and marked `DO NOT EDIT BY HAND`. It recovers full
 fidelity that a naive generator loses: literal unions from single-column CHECK
-constraints (58 of them), enum labels, FK `Relationships`, nullability, and
-correctly-nullable RPC arguments.
+constraints (58 of them), enum labels, composite FK `Relationships`, real
+one-to-one flags, function overloads, defaulted arguments, nullability, and RPC
+return shapes.
 
 Adopting it surfaced 85 real type errors. All are fixed at the source, with
 **no new casts or `as any`**; several removed existing ones:
@@ -186,7 +190,7 @@ single normalisation point, and the type system now enforces its use.
 
 | Check | Result |
 |---|---|
-| `pnpm db0:gate` (6 gates) | **6/6 PASS** |
+| `pnpm db0:gate` (7 gates) | **7/7 PASS** |
 | Migration chain, clean DB | 229/229 applied, 0 failures |
 | Idempotency (re-run) | Schema fingerprint identical |
 | Schema/type drift | `database.ts` matches migrations |
@@ -194,8 +198,9 @@ single normalisation point, and the type system now enforces its use.
 | RLS/company isolation | 76 tenant tables, 204 policies, 0 violations |
 | Six-role probe | 6/6 storable |
 | `pnpm typecheck` | PASS (0 errors) |
+| test TypeScript (`typecheck:test`) | PASS (0 errors) |
 | `pnpm lint` | PASS |
-| `pnpm test` | 2,534 passed |
+| `pnpm test` | 2,541 passed |
 | Gate negative-tests | Injected type drift and a bogus column were both caught |
 
 **Not performed — and not claimed:** nothing was applied to, or read from, the
@@ -208,10 +213,11 @@ repository is internally consistent, not that the live schema matches it.**
 ## 9. Applying to the live project
 
 The corrective migration is forward-safe, idempotent, and preserves demo data.
-It performs no destructive operation: no `DROP TABLE`, no `DELETE`, no reset.
-Every statement is guarded, and each data-dependent change (NOT NULL, new FK)
-is skipped if existing rows would violate it, so a partial live schema degrades
-gracefully instead of failing the deploy.
+It performs no row-destructive operation: no `DROP TABLE`, no `DELETE`, no
+reset. Every statement is guarded, and each data-dependent change is skipped
+if existing rows would violate it. A guarded FK replacement repairs an early
+manual RESTRICT variant to the intended CASCADE semantics without modifying
+business rows.
 
 ```bash
 supabase link --project-ref nnggcnpcuomwfuupupwg
@@ -224,21 +230,8 @@ Then confirm the live schema matches the frozen contract by running
 
 ## 10. Keeping the contract frozen
 
-> **Action required — one manual step.** The CI wiring could not be pushed from
-> this session: the GitHub App token lacks the `workflows` permission, so it is
-> refused from modifying `.github/workflows/`. The exact change is saved as
-> [`wp-db0-ci-gate.patch`](wp-db0-ci-gate.patch) and must be applied by a
-> maintainer for the freeze to be enforced automatically:
->
-> ```bash
-> git apply docs/database/wp-db0-ci-gate.patch
-> git commit -am "ci: run WP-DB0 database integrity gates"
-> ```
->
-> Until it is applied, `pnpm db0:gate` still passes locally but nothing blocks a
-> future PR from reintroducing drift.
-
-Once applied, CI (`.github/workflows/ci.yml`) runs `pnpm db0:gate` on every PR.
+CI (`.github/workflows/ci.yml`) runs `pnpm db0:gate` on every PR and uploads the
+gate log when a contract check fails.
 From now on:
 
 1. Change the schema **only** by adding a migration.
