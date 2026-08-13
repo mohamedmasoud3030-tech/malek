@@ -4,14 +4,16 @@ import { describe, expect, it } from 'vitest';
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('P2 — contextual documents contract', () => {
-  it('keeps the legacy vault route but removes it from operational surfaces', () => {
+  it('keeps the legacy vault route as a maintenance-authority redirect, not a standalone page', () => {
     const nav = read('../app/navigation/app-nav-items.ts');
     const operations = read('./operations-hub/operations-hub.sections.ts');
     const routeTree = read('../app/router/route-tree.ts');
     expect(nav).not.toContain("'/documents-vault'");
     expect(operations).not.toContain('documents_vault');
     expect(routeTree).toContain("path: '/documents-vault'");
-    expect(routeTree).toContain('_protected.documents-vault');
+    expect(routeTree).toContain("to: '/maintenance'");
+    expect(routeTree).toContain("section: 'documents_vault'");
+    expect(routeTree).not.toContain('_protected.documents-vault');
   });
 
   it('uses one shared foundation for contract, property, owner, unit, and maintenance contexts', () => {

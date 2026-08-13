@@ -69,7 +69,9 @@ describe('operations hub contract', () => {
 
     expect(routeDefinition('/maintenance')).not.toContain("requirePermission('maintenance.view')");
     expect(routeDefinition('/utilities')).toContain("section: 'utilities'");
-    expect(routeDefinition('/documents-vault')).toContain("_protected.documents-vault");
+    expect(routeDefinition('/documents-vault')).toContain("to: '/maintenance'");
+    expect(routeDefinition('/documents-vault')).toContain("section: 'documents_vault'");
+    expect(routeDefinition('/documents-vault')).not.toContain('_protected.documents-vault');
     expect(routeDefinition('/automation')).toContain("requirePermission('automation.view')");
   });
 });
