@@ -193,7 +193,7 @@ export function NotificationsMenu({
         {totalCount > 0 ? (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -end-0.5 grid min-w-4 place-items-center rounded-full bg-rose-600 px-1 py-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-background"
+            className="absolute -top-0.5 -end-0.5 grid min-w-4 place-items-center rounded-full bg-danger px-1 py-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-background"
           >
             {totalCount > 99 ? '99+' : totalCount}
           </span>

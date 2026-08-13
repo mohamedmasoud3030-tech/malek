@@ -84,4 +84,20 @@ describe('AppShell — fixed global MALEK header', () => {
     // Sidebar + mobile drawer + global header all carry the fixed brand.
     expect(host.querySelectorAll('[data-malek-brand-lockup]').length).toBeGreaterThanOrEqual(2);
   });
+
+  it('exposes the ARIA contract for the two menu controls (dialog + expanded state)', () => {
+    act(() => { root.render(<AppShell />); });
+
+    // Mobile/tablet hamburger opens the navigation as a dialog.
+    const mobileTrigger = host.querySelector<HTMLElement>('[data-mobile-menu-trigger]');
+    expect(mobileTrigger).not.toBeNull();
+    expect(mobileTrigger?.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(mobileTrigger?.getAttribute('aria-expanded')).toBe('false');
+
+    // Desktop collapse toggle reports the sidebar expansion state.
+    const collapseTrigger = Array.from(host.querySelectorAll<HTMLElement>('button[aria-expanded]')).find(
+      (button) => button.getAttribute('aria-expanded') === 'true',
+    );
+    expect(collapseTrigger).toBeDefined();
+  });
 });
