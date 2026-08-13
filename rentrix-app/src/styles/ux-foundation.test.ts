@@ -37,7 +37,7 @@ function mediaBlock(source: string, query: string): string {
 describe('ux foundation — mobile surface contracts', () => {
   it('derives the mobile bottom-nav clearance from one central height token', () => {
     expect(ux).toContain('--mobile-floating-control-height: 4.5rem');
-    const clearance = mediaBlock(ux, '(max-width: 1023px)');
+    const clearance = mediaBlock(ux, '(max-width: 767px)');
     expect(clearance).toContain('var(--mobile-floating-control-height)');
     expect(clearance).toContain('env(safe-area-inset-bottom');
     expect(clearance).not.toContain('calc(4.5rem');

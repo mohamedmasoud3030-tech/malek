@@ -40,8 +40,9 @@ export function PageHeader({
   return (
     <header
       data-page-header
+      data-unified-surface="page-header"
       className={cn(
-        'rounded-[1.5rem] border border-border/70 bg-card px-4 py-4 shadow-card sm:px-6 sm:py-5',
+        'rounded-2xl border border-border/70 bg-card px-3 py-3 shadow-card sm:px-5 sm:py-4 md:px-6 md:py-5',
         className,
       )}
     >

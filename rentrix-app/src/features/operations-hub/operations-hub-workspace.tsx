@@ -111,7 +111,7 @@ export function OperationsHubWorkspace({
     }
 
     return (
-      <PageLayout dir="rtl" lang="ar" size="wide">
+      <PageLayout dir="rtl" lang="ar" size="wide" visualVariant="malek-pro">
         <PageHeader title={title} description={description} />
         {children}
       </PageLayout>

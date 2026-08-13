@@ -84,11 +84,25 @@ function getErrorMessage(error: unknown): string | null {
   return error instanceof Error ? error.message : 'تعذر تشغيل مساعد الذكاء الاصطناعي.';
 }
 
+function AssistantCapabilities() {
+  return (
+    <div
+      data-ai-capabilities
+      className="rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-card"
+    >
+      <p className="text-sm font-bold">ماذا يمكنني أن أفعل؟</p>
+      <p className="mt-1 text-xs font-medium leading-5 text-muted-foreground">
+        تلخيص المتأخرات، تجديد العقود، صياغة تذكير دفع، وشرح اللقطة المالية — قراءة فقط دون تنفيذ أي عملية.
+      </p>
+    </div>
+  );
+}
+
 function ContextSnapshot({ context }: Readonly<{ context: AiAssistantContext | null }>) {
-  if (!context) return null;
+  if (!context) return <AssistantCapabilities />;
 
   return (
-    <div className="grid gap-3 md:grid-cols-3" aria-label="ملخص السياق المقروء">
+    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3" aria-label="ملخص السياق المقروء">
       <Card variant="muted">
         <CardContent className="space-y-1 pt-6">
           <p className="text-sm font-bold text-muted-foreground">المتأخرات</p>
@@ -177,7 +191,7 @@ export function AiAssistantPage() {
 
       <ContextSnapshot context={latestContext} />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_20rem] lg:grid-cols-[minmax(0,1fr)_22rem]">
         <Card className="min-w-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Bot className="size-5 text-primary" />المحادثة</CardTitle>
@@ -213,12 +227,21 @@ export function AiAssistantPage() {
               <Textarea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    submitPrompt(input);
+                  }
+                }}
                 placeholder={configurationMissing ? translateSharedLabel('aiUnavailable', getAppLanguageState().language) : 'مثال: ما أهم المتأخرات التي تحتاج متابعة هذا الأسبوع؟'}
                 disabled={pending || configurationMissing}
                 aria-label="رسالة مساعد الذكاء الاصطناعي"
-                aria-describedby={configurationMissing ? 'ai-assistant-disabled-hint' : undefined}
+                aria-describedby={configurationMissing ? 'ai-assistant-disabled-hint' : 'ai-assistant-send-hint'}
               />
-              <div className="flex flex-wrap justify-end gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p id="ai-assistant-send-hint" className="text-[11px] font-medium text-muted-foreground">
+                  Enter للإرسال · Shift+Enter لسطر جديد
+                </p>
                 <Button type="submit" disabled={pending || configurationMissing || !input.trim()}>
                   <Send className="me-2 size-4" />إرسال
                 </Button>

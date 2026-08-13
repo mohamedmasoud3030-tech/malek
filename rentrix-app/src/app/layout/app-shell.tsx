@@ -102,7 +102,7 @@ export function QuickAddMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
-        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-[0.85rem] bg-primary text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/35 motion-reduce:transition-none"
+        className="pressable inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/35 motion-reduce:transition-none"
       >
         <Plus className="size-[1.1rem]" aria-hidden="true" />
       </button>
@@ -158,7 +158,7 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-2xl sm:max-h-none sm:w-[min(20rem,88vw)] sm:p-0 lg:hidden"
+        className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-2xl sm:max-h-none md:w-[min(22rem,70vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
         <div className="flex min-h-24 items-center justify-between gap-3 border-b border-white/8 px-4 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))]">
@@ -303,7 +303,8 @@ export function AppShell() {
           <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center gap-1.5 px-2 py-1 sm:min-h-14 sm:gap-2 sm:px-4">
             <Button
               variant="ghost"
-              className="hidden size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              data-mobile-menu-trigger
+              className="inline-flex size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
               onClick={() => setMobileNavOpen(true)}
               aria-label={sharedLabel('openMenu')}
             >
@@ -366,7 +367,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main id="main-content" tabIndex={-1} className="safe-bottom-app min-w-0 overflow-x-hidden bg-[hsl(210_33%_97.5%)] p-3 outline-none sm:p-4 lg:p-5 lg:pb-6 dark:bg-background">
+        <main id="main-content" tabIndex={-1} className="min-w-0 overflow-x-hidden outline-none">
           {writeAccessNotice ? (
             <div
               role="status"

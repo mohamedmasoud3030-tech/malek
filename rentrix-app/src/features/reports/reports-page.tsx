@@ -5,6 +5,7 @@ import { AccessDenied } from '@/components/layout/access-denied';
 import { CrossRouteHint } from '@/components/layout/cross-route-hint';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { WorkspaceHint } from '@/components/layout/workspace-hint';
 import { canAccess, financialOperationPermissions } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { ReportsWorkspace } from './components/ReportsWorkspace';
@@ -85,9 +86,9 @@ export function ReportsPage() {
         </div>
 
         {pageHint ? (
-          <div className="text-[11px] text-muted-foreground bg-muted/30 rounded-xl px-3 py-1.5 border border-border/40 inline-block font-medium">
-            💡 {pageHint} (كشف {reportsLabel})
-          </div>
+          <WorkspaceHint>
+            {pageHint} (كشف {reportsLabel})
+          </WorkspaceHint>
         ) : null}
 
         <div data-finance-cluster>

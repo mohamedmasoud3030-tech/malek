@@ -831,6 +831,11 @@
 }
 
 @media (min-width: 768px) {
+  [data-visual-contract='v2'] .dashboard-ops-header {
+    grid-template-columns: minmax(0, 1fr) minmax(22rem, 0.9fr);
+    padding: 1.1rem 1.15rem;
+  }
+
   [data-visual-contract='v2'] .dashboard-queues-grid,
   [data-visual-contract='v2'] .dashboard-trends-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

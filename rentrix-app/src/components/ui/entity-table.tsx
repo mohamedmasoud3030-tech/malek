@@ -455,7 +455,7 @@ export function EntityTable<T>({
 
       {/* Desktop/tablet dense register table — widths >= 768px */}
       <div className="hidden md:block">
-        <Card data-entity-table-wrapper data-compact-responsive-table className="overflow-hidden rounded-[1.5rem] border-border/70 bg-card shadow-card">
+        <Card data-entity-table-wrapper data-compact-responsive-table className="overflow-hidden rounded-2xl border-border/70 bg-card shadow-card">
           <div
             data-entity-table-scroll
             tabIndex={0}

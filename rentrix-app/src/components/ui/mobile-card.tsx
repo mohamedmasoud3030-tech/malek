@@ -97,7 +97,7 @@ export function MobileCard({
 
   if (loading) {
     return (
-      <div data-mobile-card className={cn('rounded-3xl border bg-card p-4 shadow-sm', className)}>
+      <div data-mobile-card className={cn('rounded-2xl border bg-card p-4 shadow-sm', className)}>
         <div className="space-y-3">
           <div className="h-5 w-2/3 rounded bg-muted" />
           <div className="h-3 w-1/3 rounded bg-muted" />
@@ -111,7 +111,7 @@ export function MobileCard({
     <div
       data-mobile-card
       className={cn(
-        'relative overflow-hidden rounded-3xl p-4 transition-all duration-150 motion-reduce:transition-none',
+        'relative overflow-hidden rounded-2xl p-4 transition-all duration-150 motion-reduce:transition-none',
         variantStyles[variant],
         accent !== 'none' && 'border-s-4',
         accentColors[accent],

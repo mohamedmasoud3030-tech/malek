@@ -2,10 +2,25 @@
 
 :root {
   --visual-viewport-height: 100dvh;
-  --app-page-gutter-inline: clamp(0.75rem, 2.4vw, 1.5rem);
-  --app-page-gutter-block: clamp(0.75rem, 2vw, 1.5rem);
+  --app-page-gutter-inline: clamp(0.75rem, 2.4vw, 1.25rem);
+  --app-page-gutter-block: clamp(0.75rem, 2vw, 1.25rem);
   --entity-form-action-clearance: 6rem;
   --mobile-floating-control-height: 4.5rem;
+}
+
+/* iPad / tablet portrait — more air without wasting the 768–1023 band as a phone. */
+@media (min-width: 768px) {
+  :root {
+    --app-page-gutter-inline: clamp(1rem, 2.2vw, 1.75rem);
+    --app-page-gutter-block: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-page-gutter-inline: clamp(1.25rem, 1.6vw, 1.75rem);
+    --app-page-gutter-block: 1.5rem;
+  }
 }
 
 #main-content {
@@ -135,13 +150,25 @@
   }
 }
 
-/* ── Floating control clearance ───────────── */
-/* Ensures content is never hidden behind the mobile Menu + Search control. */
-@media (max-width: 1023px) {
+/* ── Floating control clearance (phone only) ─ */
+/* iPad/tablet use the header hamburger + search, so they keep full height. */
+@media (max-width: 767px) {
   [data-page-layout] {
     padding-block-end: calc(
       var(--mobile-floating-control-height) + 0.75rem + env(safe-area-inset-bottom, 0px)
     );
+  }
+
+  [data-app-shell] main#main-content {
+    padding-block-end: calc(
+      var(--mobile-floating-control-height) + 1rem + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+@media (min-width: 768px) {
+  [data-app-shell] main#main-content {
+    padding-block-end: 1.5rem;
   }
 }
 
