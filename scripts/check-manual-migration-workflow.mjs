@@ -11,12 +11,13 @@ function validate(t) {
   assert(/permissions:\n\s+contents: read\n\s+actions: read/.test(t), 'required read permissions missing');
   assert(/concurrency:\n\s+group: production-migrations\n\s+cancel-in-progress: false/.test(t), 'serialized production concurrency missing');
   assert(/options: \[local-preflight, production-inspect, deploy\]/.test(t), 'three explicit actions missing');
+  assert(!/^\s+(?:env|with|environment):\s*\{[^\n]*\$\{\{/m.test(t), 'GitHub expressions must not be embedded in YAML flow mappings');
   const inputs = t.slice(t.indexOf('    inputs:'), t.indexOf('permissions:'));
   for (const input of ['inspection_run_id', 'backup_reference', 'rollback_plan_reference']) {
     assert(new RegExp(`^\\s{6}${input}:`, 'm').test(inputs), `${input} deploy input missing`);
   }
   for (const job of ['local-preflight', 'production-inspect', 'deploy']) assert(t.includes(`  ${job}:`), `${job} job missing`);
-  assert((t.match(/environment: \{ name: production \}/g) || []).length === 2, 'only inspect and deploy may use production environment');
+  assert((t.match(/environment:\n\s+name: production/g) || []).length === 2, 'only inspect and deploy may use production environment');
 
   const local = section(t, 'local-preflight', 'production-inspect');
   const inspect = section(t, 'production-inspect', 'deploy');
@@ -41,6 +42,7 @@ for (const [label, mutate] of [
   ['missing inspection dependency', t => t.replaceAll('inputs.inspection_run_id', 'inputs.removed')],
   ['missing backup input', t => t.replace('backup_reference:', 'removed_backup_reference:')],
   ['missing concurrency', t => t.replace(/concurrency:[\s\S]*?\nenv:/, 'env:')],
+  ['expression in flow mapping', t => t.replace('env:\n          APPROVED_SHA: ${{ inputs.approved_sha }}', 'env: { APPROVED_SHA: ${{ inputs.approved_sha }} }')],
 ]) {
   let failed = false;
   try { validate(mutate(text)); } catch { failed = true; }
