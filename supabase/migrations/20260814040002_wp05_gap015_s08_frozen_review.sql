@@ -213,7 +213,7 @@ create or replace function public.s08_create_frozen_review(p_payload jsonb)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp, extensions
+set search_path = public, pg_temp
 as $$
 declare
   v_company_id uuid;
@@ -255,8 +255,6 @@ begin
   if btrim(p_payload->>'dataset_fingerprint') <> '' and v_fingerprint <> v_computed_fingerprint then
     raise exception 'S08_FINGERPRINT_MISMATCH: provided fingerprint % does not match computed % for company % period %', v_fingerprint, v_computed_fingerprint, v_company_id, v_period_id using errcode='22023';
   end if;
-
-  perform set_config('malik.s08_review_change_authorized', 'true', true);
 
   insert into public.s08_frozen_reviews (
     company_id, accounting_period_id, review_scope, dataset_fingerprint, dataset_lineage,
@@ -310,6 +308,8 @@ begin
       reviewer_decision = 'ANALYZED',
       updated_at = now()
   where id = p_review_id;
+
+  perform set_config('malik.s08_review_change_authorized', 'false', true);
 
   return jsonb_build_object('success', true, 'id', p_review_id, 'status', 'ANALYZED');
 end;
@@ -369,6 +369,8 @@ begin
       updated_at = now()
   where id = p_review_id;
 
+  perform set_config('malik.s08_review_change_authorized', 'false', true);
+
   return jsonb_build_object('success', true, 'id', p_review_id, 'status', 'APPROVED', 'fingerprint', v_review.dataset_fingerprint);
 end;
 $$;
@@ -414,6 +416,8 @@ begin
       review_notes = p_reason,
       updated_at = now()
   where id = p_review_id;
+
+  perform set_config('malik.s08_review_change_authorized', 'false', true);
 
   return jsonb_build_object('success', true, 'id', p_review_id, 'status', 'REJECTED');
 end;

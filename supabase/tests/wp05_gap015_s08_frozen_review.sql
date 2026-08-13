@@ -27,6 +27,29 @@ values
   ('b2b00000-0000-4000-8000-000000000021', 'b0000000-0000-4000-8000-000000000021', '2026-07', date '2026-07-01', date '2026-07-31', 'OPEN')
 on conflict (id) do update set status = 'OPEN';
 
+create temporary table wp05_gap015_test_ids (
+  name text primary key,
+  id uuid not null
+) on commit drop;
+
+-- Freeze the initial review after the baseline GL dataset exists.
+select lives_ok(
+  format($$
+    select public.post_journal_event(jsonb_build_object(
+      'company_id', '%s',
+      'source_type', 'test',
+      'source_id', 'gap15-gl-a-001',
+      'event_id', 'gap15-gl-a-001',
+      'effective_date', '2026-07-10',
+      'lines', jsonb_build_array(
+        jsonb_build_object('account_id', (select id from public.accounts where company_id = '%s'::uuid and no = '1111'), 'debit', 100.000, 'credit', 0),
+        jsonb_build_object('account_id', (select id from public.accounts where company_id = '%s'::uuid and no = '4100'), 'debit', 0, 'credit', 100.000)
+      )
+    ))
+  $$, 'a0000000-0000-4000-8000-000000000020', 'a0000000-0000-4000-8000-000000000020', 'a0000000-0000-4000-8000-000000000020'),
+  'post baseline GL before fingerprint freeze'
+);
+
 -- Need users for auth
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
 values
@@ -73,12 +96,24 @@ select ok(
   'review exists in CREATED state'
 );
 
+select ok(
+  (select dataset_fingerprint ~ '^[0-9a-f]{64}$' from public.s08_frozen_reviews where company_id = 'a0000000-0000-4000-8000-000000000020' limit 1),
+  'frozen review stores a SHA-256 dataset fingerprint'
+);
+
 -- Test immutable guard: direct update should fail
 select throws_ok(
   $$ update public.s08_frozen_reviews set reviewer_decision = 'APPROVED' where company_id = 'a0000000-0000-4000-8000-000000000020' $$,
   '42501',
   null,
   'direct update of frozen review blocked (immutable guard)'
+);
+
+select throws_ok(
+  $$ update public.s08_frozen_reviews set dataset_lineage = 'tampered' where company_id = 'a0000000-0000-4000-8000-000000000020' $$,
+  '42501',
+  null,
+  'direct update of immutable lineage is blocked'
 );
 
 -- Test direct delete blocked
@@ -110,28 +145,6 @@ select results_eq(
 -- Try APPROVED from ANALYZED should succeed if ACCOUNTANT role — but current user is ADMIN, is_accountant() check requires is_accountant() or is_admin()
 -- is_admin() should be true for ADMIN? Let's check function is_admin checks role ADMIN? We have is_admin() helper? Need to ensure it passes
 -- For test, we will attempt approval as ADMIN (should succeed because is_admin() true)
-
--- First, need a journal batch to give fingerprint some data, to test fingerprint replay
-reset role;
-select lives_ok(
-  format($$
-    select public.post_journal_event(jsonb_build_object(
-      'company_id', '%s',
-      'source_type', 'test',
-      'source_id', 'gap15-gl-a-001',
-      'event_id', 'gap15-gl-a-001',
-      'effective_date', '2026-07-10',
-      'lines', jsonb_build_array(
-        jsonb_build_object('account_id', (select id from public.accounts where company_id = '%s'::uuid and no = '1111'), 'debit', 100.000, 'credit', 0),
-        jsonb_build_object('account_id', (select id from public.accounts where company_id = '%s'::uuid and no = '4100'), 'debit', 0, 'credit', 100.000)
-      )
-    ))
-  $$, 'a0000000-0000-4000-8000-000000000020', 'a0000000-0000-4000-8000-000000000020', 'a0000000-0000-4000-8000-000000000020'),
-  'post GL for fingerprint test'
-);
-
-select set_config('request.jwt.claims', '{"sub":"a0a00000-0000-4000-8000-000000000020","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"a0000000-0000-4000-8000-000000000020"}}', true);
-set local role authenticated;
 
 -- Verify fingerprint matches currently (should match)
 select ok(
@@ -230,13 +243,20 @@ select is(
   'Company B sees exactly its own 1 review'
 );
 
+reset role;
+insert into wp05_gap015_test_ids (name, id)
+select 'company_b_review', id
+from public.s08_frozen_reviews
+where company_id = 'b0000000-0000-4000-8000-000000000021'
+limit 1;
+
 -- Test that Company A cannot approve Company B review (isolation)
 -- Try to approve B's review while claiming A company — should fail to find review
 select set_config('request.jwt.claims', '{"sub":"a0a00000-0000-4000-8000-000000000020","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"a0000000-0000-4000-8000-000000000020"}}', true);
 set local role authenticated;
 
 select throws_ok(
-  $$ select public.s08_approve_frozen_review((select id from public.s08_frozen_reviews where company_id = 'b0000000-0000-4000-8000-000000000021' limit 1), 'cross-company approve attempt') $$,
+  $$ select public.s08_approve_frozen_review((select id from wp05_gap015_test_ids where name = 'company_b_review'), 'cross-company approve attempt') $$,
   'P0002',
   null,
   'cross-company review IDs blocked (Company A cannot approve B review)'
@@ -267,6 +287,11 @@ select results_eq(
   $$ select reviewer_decision from public.s08_frozen_reviews where company_id = 'a0000000-0000-4000-8000-000000000020' and analysis_version = 'v2-test' $$,
   $$ values ('APPROVED'::text) $$,
   'review is now APPROVED'
+);
+
+select ok(
+  ((public.s08_verify_fingerprint((select id from public.s08_frozen_reviews where company_id = 'a0000000-0000-4000-8000-000000000020' and analysis_version = 'v2-test' limit 1))->>'matches')::boolean,
+  'approved review fingerprint still matches its frozen dataset'
 );
 
 reset role;

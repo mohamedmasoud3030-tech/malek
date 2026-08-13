@@ -3,7 +3,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(26);
 
 -- Setup companies
 insert into public.companies (id, name, slug, currency, is_active)

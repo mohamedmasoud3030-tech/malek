@@ -4,7 +4,7 @@
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(40);
+select plan(32);
 
 -- Setup companies
 insert into public.companies (id, name, slug, currency, is_active)
@@ -17,6 +17,18 @@ select lives_ok($$ select public.provision_company_chart_of_accounts('a0000000-0
 select lives_ok($$ select public.provision_company_chart_of_accounts('b0000000-0000-4000-8000-000000000031') $$, 'provision chart B');
 select lives_ok($$ select public.wp05_provision_default_cashflow_classifications('a0000000-0000-4000-8000-000000000030') $$, 'provision classifications A');
 select lives_ok($$ select public.wp05_provision_default_cashflow_classifications('b0000000-0000-4000-8000-000000000031') $$, 'provision classifications B');
+
+create temporary table wp05_gap016_test_ids (
+  name text primary key,
+  id text not null
+) on commit drop;
+grant select on wp05_gap016_test_ids to authenticated;
+
+insert into wp05_gap016_test_ids (name, id)
+select 'company_b_receivable', id
+from public.accounts
+where company_id = 'b0000000-0000-4000-8000-000000000031' and no = '1201'
+limit 1;
 
 -- Clean
 delete from public.s09_corrections where company_id in ('a0000000-0000-4000-8000-000000000030','b0000000-0000-4000-8000-000000000031');
@@ -114,11 +126,14 @@ select lives_ok(
 insert into public.properties (id, title, type, address, company_id, status)
 values ('a2000000-0000-4000-8000-000000000030', 'GAP16 Prop A', 'residential', 'Muscat', 'a0000000-0000-4000-8000-000000000030', 'active')
 on conflict (id) do nothing;
+insert into public.units (id, property_id, unit_number, company_id)
+values ('a2100000-0000-4000-8000-000000000030', 'a2000000-0000-4000-8000-000000000030', 'A-01', 'a0000000-0000-4000-8000-000000000030')
+on conflict (id) do nothing;
 insert into public.people (id, full_name, type, company_id)
 values ('a3000000-0000-4000-8000-000000000030', 'GAP16 Tenant', 'tenant', 'a0000000-0000-4000-8000-000000000030')
 on conflict (id) do nothing;
-insert into public.contracts (id, property_id, tenant_id, start_date, end_date, rent_amount, status, company_id)
-values ('a4000000-0000-4000-8000-000000000030', 'a2000000-0000-4000-8000-000000000030', 'a3000000-0000-4000-8000-000000000030', date '2026-07-01', date '2026-07-31', 100, 'active', 'a0000000-0000-4000-8000-000000000030')
+insert into public.contracts (id, property_id, unit_id, tenant_id, start_date, end_date, rent_amount, status, company_id)
+values ('a4000000-0000-4000-8000-000000000030', 'a2000000-0000-4000-8000-000000000030', 'a2100000-0000-4000-8000-000000000030', 'a3000000-0000-4000-8000-000000000030', date '2026-07-01', date '2026-07-31', 100, 'active', 'a0000000-0000-4000-8000-000000000030')
 on conflict (id) do nothing;
 insert into public.invoices (id, contract_id, amount, issue_date, due_date, status, company_id, paid_amount)
 values ('a5000000-0000-4000-8000-000000000030', 'a4000000-0000-4000-8000-000000000030', 100.000, date '2026-07-01', date '2026-07-15', 'UNPAID', 'a0000000-0000-4000-8000-000000000030', 0)
@@ -194,6 +209,13 @@ select lives_ok(
   'approve B review'
 );
 
+reset role;
+insert into wp05_gap016_test_ids (name, id)
+select 'company_b_review', id::text
+from public.s08_frozen_reviews
+where company_id = 'b0000000-0000-4000-8000-000000000031'
+limit 1;
+
 -- Try to create correction for Company A using Company B review id — should fail company mismatch
 select set_config('request.jwt.claims', '{"sub":"a0a00000-0000-4000-8000-000000000030","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"a0000000-0000-4000-8000-000000000030"}}', true);
 set local role authenticated;
@@ -201,7 +223,7 @@ set local role authenticated;
 select throws_ok(
   $$ select public.s09_create_correction_draft(jsonb_build_object(
         'accounting_period_id', 'a3a00000-0000-4000-8000-000000000030',
-        'review_id', (select id::text from public.s08_frozen_reviews where company_id = 'b0000000-0000-4000-8000-000000000031' limit 1),
+        'review_id', (select id from wp05_gap016_test_ids where name = 'company_b_review'),
         'source_type', 'invoice',
         'source_id', 'a5000000-0000-4000-8000-000000000030',
         'source_scope', '{"dataset_lineage":"test-lineage-gap16-b"}'::jsonb,
@@ -255,13 +277,12 @@ select throws_ok(
         'after_evidence', '{}'::jsonb,
         'request_id', 'gap16-bad-prec-001'
       )) $$,
+  '22023',
   null,
-  null,
-  'bad precision fails (rounded check) - may be caught at validate'
+  'bad precision fails closed before rounding'
 );
 
--- Actually our create rounds, so it will not fail on create; but validate checks rounded amount — we test that
--- We'll create with 4dp and see validate still works because we round, but our function rounds on create, so it will be rounded to 3dp — that's okay, we should instead test that amount 0 fails
+-- Zero is invalid independently of precision.
 select throws_ok(
   $$ select public.s09_create_correction_draft(jsonb_build_object(
         'accounting_period_id', 'a3a00000-0000-4000-8000-000000000030',
@@ -292,7 +313,7 @@ select throws_ok(
         'source_scope', '{}'::jsonb,
         'reason', 'cross-company account',
         'amount', 10.000,
-        'debit_account_id', (select id from public.accounts where company_id = 'b0000000-0000-4000-8000-000000000031' and no = '1201' limit 1),
+        'debit_account_id', (select id from wp05_gap016_test_ids where name = 'company_b_receivable'),
         'credit_account_id', (select id from public.accounts where company_id = 'a0000000-0000-4000-8000-000000000030' and no = '4000' limit 1),
         'before_evidence', '{}'::jsonb,
         'after_evidence', '{}'::jsonb,

@@ -305,7 +305,7 @@ $$;
 --    Returns explicit fields required by GAP-013
 -- ---------------------------------------------------------------------------
 create or replace function public.wp05_reconcile_all(
-  p_company_id uuid,
+  p_company_id uuid default public.current_company_id(),
   p_as_of date default current_date
 )
 returns table (
@@ -411,7 +411,7 @@ comment on function public.wp05_reconcile_all(uuid,date) is 'GAP-013 determinist
 
 -- Gate function that fails closed on any variance >0.001
 create or replace function public.wp05_assert_reconciliation(
-  p_company_id uuid,
+  p_company_id uuid default public.current_company_id(),
   p_as_of date default current_date
 )
 returns jsonb

@@ -336,6 +336,7 @@ declare
   v_source_id text;
   v_source_scope jsonb;
   v_reason text;
+  v_amount_raw numeric;
   v_amount numeric;
   v_debit_id text;
   v_credit_id text;
@@ -360,7 +361,7 @@ begin
   v_source_id := nullif(btrim(coalesce(p_payload->>'source_id','')), '');
   v_source_scope := coalesce(p_payload->'source_scope', '{}'::jsonb);
   v_reason := nullif(btrim(coalesce(p_payload->>'reason','')), '');
-  v_amount := public.wp05_round_omr((p_payload->>'amount')::numeric);
+  v_amount_raw := (p_payload->>'amount')::numeric;
   v_debit_id := nullif(p_payload->>'debit_account_id','');
   v_credit_id := nullif(p_payload->>'credit_account_id','');
   v_debit_no := nullif(p_payload->>'debit_account_no','');
@@ -381,12 +382,13 @@ begin
   if v_reason is null then
     raise exception 'S09_REASON_REQUIRED' using errcode='22023';
   end if;
-  if v_amount is null or v_amount <= 0 then
+  if v_amount_raw is null or v_amount_raw <= 0 then
     raise exception 'S09_AMOUNT_REQUIRED: positive amount required' using errcode='22023';
   end if;
-  if abs(v_amount - public.wp05_round_omr(v_amount)) > 0.0005 then
+  if abs(v_amount_raw - public.wp05_round_omr(v_amount_raw)) > 0.0005 then
     raise exception 'S09_AMOUNT_PRECISION_INVALID: amount must be 3dp' using errcode='22023';
   end if;
+  v_amount := public.wp05_round_omr(v_amount_raw);
 
   -- Resolve account_ids from nos if provided
   if v_debit_id is null and v_debit_no is not null then
@@ -420,8 +422,6 @@ begin
   if not exists (select 1 from public.s08_frozen_reviews where id = v_review_id and company_id = v_company_id) then
     raise exception 'S09_S08_REVIEW_COMPANY_MISMATCH: review % not found for company %', v_review_id, v_company_id using errcode='42501';
   end if;
-
-  perform set_config('malik.s09_correction_change_authorized', 'true', true);
 
   insert into public.s09_corrections (
     company_id, accounting_period_id, review_id, source_type, source_id, source_scope,
@@ -471,6 +471,8 @@ begin
     raise exception 'S09_VALIDATE_FAILED: correction % not in DRAFT status or not found', p_correction_id using errcode='P0002';
   end if;
 
+  perform set_config('malik.s09_correction_change_authorized', 'false', true);
+
   return jsonb_build_object('success', true, 'id', p_correction_id, 'status', 'VALIDATED', 'validation', v_result);
 end;
 $$;
@@ -480,7 +482,7 @@ create or replace function public.s09_apply_correction(p_correction_id uuid)
 returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp, extensions
+set search_path = public, pg_temp
 as $$
 declare
   v_company_id uuid := public.require_company_id();
@@ -561,6 +563,8 @@ begin
       updated_at = now()
   where id = p_correction_id and company_id = v_company_id;
 
+  perform set_config('malik.s09_correction_change_authorized', 'false', true);
+
   return jsonb_build_object('success', true, 'id', p_correction_id, 'status', 'APPLIED', 'batch_id', v_batch_id, 'batch_result', v_batch_result);
 end;
 $$;
@@ -619,6 +623,8 @@ begin
       actor_id = auth.uid(),
       updated_at = now()
   where id = p_correction_id and company_id = v_company_id;
+
+  perform set_config('malik.s09_correction_change_authorized', 'false', true);
 
   return jsonb_build_object('success', true, 'id', p_correction_id, 'status', 'REVERSED', 'reversal_batch_id', v_reverse_batch_id, 'result', v_reverse_result);
 end;

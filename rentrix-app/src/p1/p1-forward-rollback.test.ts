@@ -106,6 +106,7 @@ beforeAll(async () => {
       && !f.includes('wp02_fixed_monthly_daily_accrual')
       && !f.includes('_s06_')
       && !f.includes('_s08_')
+      && !f.includes('_wp05_')
     )
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];

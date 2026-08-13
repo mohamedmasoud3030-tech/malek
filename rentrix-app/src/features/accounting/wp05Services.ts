@@ -23,6 +23,14 @@ function asString(v: unknown): string {
   return typeof v === 'string' ? v : '';
 }
 
+function todayLocalDate(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // ---------------------------------------------------------------------------
 // GAP-013 — Reconciliation
 // ---------------------------------------------------------------------------
@@ -41,21 +49,11 @@ export type ReconciliationRow = {
 };
 
 export async function getReconciliation(asOf?: string): Promise<ReconciliationRow[]> {
-  const p_as_of = asOf ?? new Date().toISOString().slice(0, 10);
-  const { data, error } = await (supabase.rpc as any)('wp05_reconcile_all', {
-    p_company_id: undefined, // company is derived from JWT inside the function via require_company_id() for security; we pass explicit for service_role fallback
-    p_as_of,
-  });
+  const p_as_of = asOf ?? todayLocalDate();
+  const { data, error } = await (supabase.rpc as any)('wp05_reconcile_all', { p_as_of });
   if (error) {
-    // Fallback: call with p_as_of only if function is defined with default company from JWT
-    const { data: data2, error: error2 } = await (supabase.rpc as any)('wp05_reconcile_all', { p_as_of });
-    if (error2) {
-      handleSupabaseError(error2, 'تعذر تحميل مطابقة دفتر الأستاذ');
-      return [];
-    }
-    // data2 may be array directly
-    const rows = Array.isArray(data2) ? data2 : asArray((data2 as any)?.rows ?? data2);
-    return rows.map(normalizeReconciliationRow);
+    handleSupabaseError(error, 'تعذر تحميل مطابقة دفتر الأستاذ');
+    return [];
   }
   // data may be array directly (since function returns table)
   if (Array.isArray(data)) {
@@ -83,7 +81,7 @@ function normalizeReconciliationRow(v: unknown): ReconciliationRow {
 }
 
 export async function assertReconciliation(asOf?: string): Promise<{ success: boolean; details?: unknown }> {
-  const p_as_of = asOf ?? new Date().toISOString().slice(0, 10);
+  const p_as_of = asOf ?? todayLocalDate();
   const { data, error } = await (supabase.rpc as any)('wp05_assert_reconciliation', { p_as_of });
   if (error) throw error;
   return asRecord(data) as { success: boolean; details?: unknown };

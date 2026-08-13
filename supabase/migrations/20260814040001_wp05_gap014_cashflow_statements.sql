@@ -131,8 +131,16 @@ begin
       public.wp05_round_omr(coalesce(sum(jl.debit),0)) as debits,
       public.wp05_round_omr(coalesce(sum(jl.credit),0)) as credits
     from public.accounts a
-    left join public.journal_lines jl on jl.account_id = a.id and jl.company_id = v_company_id and jl.deleted_at is null
-    left join public.journal_batches jb on jb.id = jl.batch_id and jb.company_id = v_company_id and jb.status in ('POSTED','REVERSED') and jb.effective_date <= p_as_of
+    left join (
+      public.journal_lines jl
+      join public.journal_batches jb
+        on jb.id = jl.batch_id
+       and jb.company_id = v_company_id
+       and jb.status in ('POSTED','REVERSED')
+       and jb.effective_date <= p_as_of
+    ) on jl.account_id = a.id
+      and jl.company_id = v_company_id
+      and jl.deleted_at is null
     where a.company_id = v_company_id and a.is_active = true
     group by a.no, a.name, a.account_type, a.normal_balance
     having coalesce(sum(jl.debit),0) <> 0 or coalesce(sum(jl.credit),0) <> 0
@@ -194,34 +202,36 @@ begin
       a.account_type,
       public.wp05_round_omr(coalesce(sum(
         case
-          when a.account_type = 'asset' or a.account_type = 'expense' then jl.debit - jl.credit
+          when a.account_type = 'asset' then jl.debit - jl.credit
           else jl.credit - jl.debit
         end
       ),0)) as bal
     from public.accounts a
-    left join public.journal_lines jl on jl.account_id = a.id and jl.company_id = v_company_id and jl.deleted_at is null
-    left join public.journal_batches jb on jb.id = jl.batch_id and jb.company_id = v_company_id and jb.status in ('POSTED','REVERSED') and jb.effective_date <= p_as_of
+    left join (
+      public.journal_lines jl
+      join public.journal_batches jb
+        on jb.id = jl.batch_id
+       and jb.company_id = v_company_id
+       and jb.status in ('POSTED','REVERSED')
+       and jb.effective_date <= p_as_of
+    ) on jl.account_id = a.id
+      and jl.company_id = v_company_id
+      and jl.deleted_at is null
     where a.company_id = v_company_id and a.is_active = true
     group by a.no, a.name, a.account_type
   )
   select
     public.wp05_round_omr(coalesce(sum(case when no like '1%' then bal else 0 end),0)),
     public.wp05_round_omr(coalesce(sum(case when no like '2%' then bal else 0 end),0)),
-    public.wp05_round_omr(coalesce(sum(case when no like '3%' or no like '4%' or no like '5%' or no like '6%' then bal else 0 end),0))
-  into v_assets, v_liabilities, v_equity
+    public.wp05_round_omr(coalesce(sum(case when no like '3%' or no like '4%' or no like '5%' or no like '6%' then bal else 0 end),0)),
+    jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
+      filter (where no like '1%' and abs(bal) > 0.0005),
+    jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
+      filter (where no like '2%' and abs(bal) > 0.0005),
+    jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
+      filter (where (no like '3%' or no like '4%' or no like '5%' or no like '6%') and abs(bal) > 0.0005)
+  into v_assets, v_liabilities, v_equity, v_asset_rows, v_liability_rows, v_equity_rows
   from balances;
-
-  select jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
-  into v_asset_rows
-  from balances where no like '1%' and abs(bal) > 0.0005;
-
-  select jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
-  into v_liability_rows
-  from balances where no like '2%' and abs(bal) > 0.0005;
-
-  select jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
-  into v_equity_rows
-  from balances where (no like '3%' or no like '4%' or no like '5%' or no like '6%') and abs(bal) > 0.0005;
 
   return jsonb_build_object(
     'as_of', p_as_of,
@@ -284,17 +294,15 @@ begin
   )
   select
     public.wp05_round_omr(coalesce(sum(case when account_type = 'revenue' then amount else 0 end),0)),
-    public.wp05_round_omr(coalesce(sum(case when account_type = 'expense' then amount else 0 end),0))
-  into v_revenue, v_expenses
+    public.wp05_round_omr(coalesce(sum(case when account_type = 'expense' then amount else 0 end),0)),
+    jsonb_agg(jsonb_build_object('label', name, 'code', no, 'amount', amount) order by no)
+      filter (where account_type = 'revenue'),
+    jsonb_agg(jsonb_build_object('label', name, 'code', no, 'amount', amount) order by no)
+      filter (where account_type = 'expense')
+  into v_revenue, v_expenses, v_rev_rows, v_exp_rows
   from period_lines;
 
   v_net := public.wp05_round_omr(v_revenue - v_expenses);
-
-  select jsonb_agg(jsonb_build_object('label', name, 'code', no, 'amount', amount) order by no)
-  into v_rev_rows from period_lines where account_type = 'revenue';
-
-  select jsonb_agg(jsonb_build_object('label', name, 'code', no, 'amount', amount) order by no)
-  into v_exp_rows from period_lines where account_type = 'expense';
 
   return jsonb_build_object(
     'period', jsonb_build_object('from', p_from, 'to', p_to),
@@ -515,59 +523,21 @@ set search_path = public, pg_temp
 as $$
 declare
   v_gl jsonb;
-  v_company_id uuid;
 begin
-  -- Try GL version first; if company context missing, fall back to old logic? But we require company
-  begin
-    v_company_id := public.require_company_id();
-    v_gl := public.wp05_rpt_cash_flow_gl(p_from_date, p_to_date);
-    -- Return shape compatible with old service but with new fields
-    return jsonb_build_object(
-      'period', v_gl->'period',
-      'operating', jsonb_build_object('receipts', 0, 'expenses', 0, 'net_operating', v_gl->'operating'),
-      'investing', jsonb_build_object('amount', v_gl->'investing', 'note', null),
-      'financing', jsonb_build_object('amount', v_gl->'financing', 'note', null),
-      'unclassified', v_gl->'unclassified',
-      'opening_cash', v_gl->'opening_cash',
-      'closing_cash', v_gl->'closing_cash',
-      'variance', v_gl->'variance',
-      'is_balanced', v_gl->'is_balanced',
-      'net_change', v_gl->'total_change',
-      'detail', v_gl
-    );
-  exception when others then
-    -- Fallback to old logic if company context fails (for backward compat, but new logic is authoritative)
-    -- Old logic kept for compatibility but marked deprecated
-    declare
-      v_receipts numeric; v_expenses numeric;
-      v_operating jsonb; v_investing jsonb; v_financing jsonb;
-    begin
-      SELECT COALESCE(SUM(amount), 0) INTO v_receipts
-      FROM public.payments
-      WHERE payment_date BETWEEN p_from_date AND p_to_date
-        AND company_id = public.current_company_id()
-        AND deleted_at IS NULL
-        AND COALESCE(UPPER(status), 'POSTED') <> 'VOID';
-
-      SELECT COALESCE(SUM(amount), 0) INTO v_expenses
-      FROM public.expenses
-      WHERE expense_date BETWEEN p_from_date AND p_to_date
-        AND company_id = public.current_company_id()
-        AND deleted_at IS NULL;
-
-      v_operating := jsonb_build_object('receipts', v_receipts, 'expenses', v_expenses, 'net_operating', v_receipts - v_expenses);
-      v_investing := jsonb_build_object('note', 'not_applicable_single_office', 'amount', 0);
-      v_financing := jsonb_build_object('note', 'not_applicable_single_office', 'amount', 0);
-
-      RETURN jsonb_build_object(
-        'period', jsonb_build_object('from', p_from_date, 'to', p_to_date),
-        'operating', v_operating,
-        'investing', v_investing,
-        'financing', v_financing,
-        'net_change', v_receipts - v_expenses
-      );
-    end;
-  end;
+  v_gl := public.wp05_rpt_cash_flow_gl(p_from_date, p_to_date);
+  return jsonb_build_object(
+    'period', v_gl->'period',
+    'operating', jsonb_build_object('receipts', 0, 'expenses', 0, 'net_operating', v_gl->'operating'),
+    'investing', jsonb_build_object('amount', v_gl->'investing', 'note', null),
+    'financing', jsonb_build_object('amount', v_gl->'financing', 'note', null),
+    'unclassified', v_gl->'unclassified',
+    'opening_cash', v_gl->'opening_cash',
+    'closing_cash', v_gl->'closing_cash',
+    'variance', v_gl->'variance',
+    'is_balanced', v_gl->'is_balanced',
+    'net_change', v_gl->'total_change',
+    'detail', v_gl
+  );
 end;
 $$;
 

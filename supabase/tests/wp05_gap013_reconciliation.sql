@@ -8,7 +8,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(33);
 
 -- Setup two companies
 insert into public.companies (id, name, slug, currency, is_active)
@@ -49,6 +49,7 @@ delete from public.expenses where company_id in ('a0000000-0000-4000-8000-000000
 delete from public.invoices where company_id in ('a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002');
 delete from public.owner_balances where company_id in ('a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002');
 delete from public.contracts where company_id in ('a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002');
+delete from public.units where company_id in ('a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002');
 delete from public.properties where company_id in ('a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002');
 
 -- Create dummy property and contract for deposit FK
@@ -58,16 +59,22 @@ values
   ('b2000000-0000-4000-8000-000000000002', 'Test Prop B', 'residential', 'Muscat', 'b0000000-0000-4000-8000-000000000002', 'active')
 on conflict (id) do nothing;
 
+insert into public.units (id, property_id, unit_number, company_id)
+values
+  ('a2100000-0000-4000-8000-000000000001', 'a2000000-0000-4000-8000-000000000001', 'A-01', 'a0000000-0000-4000-8000-000000000001'),
+  ('b2100000-0000-4000-8000-000000000002', 'b2000000-0000-4000-8000-000000000002', 'B-01', 'b0000000-0000-4000-8000-000000000002')
+on conflict (id) do nothing;
+
 insert into public.people (id, full_name, type, company_id)
 values
   ('a3000000-0000-4000-8000-000000000001', 'Tenant A', 'tenant', 'a0000000-0000-4000-8000-000000000001'),
   ('b3000000-0000-4000-8000-000000000002', 'Tenant B', 'tenant', 'b0000000-0000-4000-8000-000000000002')
 on conflict (id) do nothing;
 
-insert into public.contracts (id, property_id, tenant_id, start_date, end_date, rent_amount, status, company_id)
+insert into public.contracts (id, property_id, unit_id, tenant_id, start_date, end_date, rent_amount, status, company_id)
 values
-  ('a4000000-0000-4000-8000-000000000001', 'a2000000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000001', date '2026-07-01', date '2026-07-31', 100, 'active', 'a0000000-0000-4000-8000-000000000001'),
-  ('b4000000-0000-4000-8000-000000000002', 'b2000000-0000-4000-8000-000000000002', 'b3000000-0000-4000-8000-000000000002', date '2026-07-01', date '2026-07-31', 100, 'active', 'b0000000-0000-4000-8000-000000000002')
+  ('a4000000-0000-4000-8000-000000000001', 'a2000000-0000-4000-8000-000000000001', 'a2100000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000001', date '2026-07-01', date '2026-07-31', 100, 'active', 'a0000000-0000-4000-8000-000000000001'),
+  ('b4000000-0000-4000-8000-000000000002', 'b2000000-0000-4000-8000-000000000002', 'b2100000-0000-4000-8000-000000000002', 'b3000000-0000-4000-8000-000000000002', date '2026-07-01', date '2026-07-31', 100, 'active', 'b0000000-0000-4000-8000-000000000002')
 on conflict (id) do nothing;
 
 -- Tenant deposits: A has 100.000 remaining, B has 200.000 remaining
