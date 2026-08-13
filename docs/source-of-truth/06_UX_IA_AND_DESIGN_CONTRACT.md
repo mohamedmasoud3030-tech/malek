@@ -54,7 +54,7 @@ Not every route above is equally release-critical. Presence in the route contrac
 | Services | `/maintenance`; `/utilities` redirects to maintenance view; Service Providers have first-class CRUD routes | Services | CANONICAL + COMPATIBILITY redirect |
 | Settings/admin | `/settings`; `/system`, `/audit-log`, `/data-integrity`, `/automation`, `/change-password` redirect to settings sections | Settings | CANONICAL HUB + COMPATIBILITY routes |
 | AI Assistant | `/ai-assistant` redirects to `/dashboard?globalAction=ai-assistant`; shell opens a global overlay | no primary nav item | CONFLICT with `PRD-008/UX-007`; `GAP-023` |
-| Documents Vault | `/documents-vault` remains a directly rendered legacy compatibility route while route contract says maintenance view binding | no primary nav item | CONFLICTING/legacy surface to review under `UX-008/GAP-020` |
+| Documents Vault | `/documents-vault` redirects to `/maintenance?section=documents_vault`; `documents_vault` is a real Operations Hub section (embedded DocumentsVaultWorkspace) acting as the aggregate documents authority, while contextual entity-level panels on properties/owners/units/contracts/maintenance remain complementary | no primary nav item | CANONICAL HUB + COMPATIBILITY redirect (was CONFLICTING/legacy surface under `UX-008/GAP-020`) |
 | Dev design system | `/dev/design-system`, DEV-only | none | HIDDEN development surface, not product IA |
 
 ### People domain
@@ -78,7 +78,7 @@ Owners and tenants remain dossiers/workspaces under the People navigation root r
 - `/maintenance`
 - `/service-providers`, create/detail/edit
 - `/utilities` as an operational section/view
-- document-vault surfaces under operations where the route contract maps them
+- `documents_vault` is an Operations Hub section (embedded `DocumentsVaultWorkspace`); `/documents-vault` redirects to `/maintenance?section=documents_vault`
 
 ### Financials
 
