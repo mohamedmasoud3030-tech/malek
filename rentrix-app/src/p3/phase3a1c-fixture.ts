@@ -24,10 +24,6 @@ export const PAYMENT_A_MAY = 'a31c0000-0000-4000-8000-000000000005';
 export async function seedPhase3a1cFixture(db: PGlite) {
   await seedPhase3a1bFixture(db);
   await db.exec(`
-    update public.accounts
-       set company_id = '${COMPANY_A}'
-     where no = '2000';
-
     insert into public.receipts (id, amount, status, company_id) values
       ('${RECEIPT_A}', 1000, 'POSTED', '${COMPANY_A}'),
       ('${RECEIPT_A_JUNE}', 300, 'POSTED', '${COMPANY_A}'),

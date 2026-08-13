@@ -74,9 +74,7 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
         ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN')
       on conflict do nothing;
 
-      update public.accounts
-         set company_id = '${COMPANY_A}'
-       where no in ('1111', '1201', '2000', '2100', '2200', '4000', '6100');
+      select public.provision_company_chart_of_accounts('${COMPANY_A}'::uuid);
     `);
   });
 

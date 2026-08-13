@@ -5,8 +5,8 @@
  * Layout: company → admin → accounts (company-scoped assignment) → owner →
  * property → agreement → unit → tenant → contract → invoices.
  *
- * Company A is fully provisioned (chart 1111/1201/4000/2100 assigned to A,
- * VAT 5% enabled). Company B is deliberately UNPROVISIONED (no accounts) — every
+ * Company A is fully provisioned (chart 1111/1201/2000/2100/4000/4100 assigned
+ * to A, VAT 5% enabled). Company B is deliberately UNPROVISIONED (no accounts) — every
  * cross-company/account-isolation path must fail loudly (require_company_account_id
  * P0001), never silently borrow A's chart.
  */
@@ -34,7 +34,7 @@ export const INVOICE_A1 = '1a31b000-0000-4000-8000-000000000001';
 export const INVOICE_A2 = '2a31b000-0000-4000-8000-000000000001';
 export const INVOICE_B1 = 'bb31b000-0000-4000-8000-000000000001';
 
-export const ACCOUNT_NOS_A = ['1111', '1201', '4000', '2100'] as const;
+export const ACCOUNT_NOS_A = ['1111', '1201', '2000', '2100', '4000', '4100'] as const;
 
 export async function seedPhase3a1bFixture(db: PGlite, options?: { skipGeneratedInvoiceGuard?: boolean }) {
   void options;
@@ -109,9 +109,21 @@ export async function seedPhase3a1bFixture(db: PGlite, options?: { skipGenerated
     insert into public.company_settings (singleton_key, company_id, vat_enabled, vat_rate) values
       (false, '${COMPANY_A}', true, 5.0);
 
-    -- Company A owns the canonical chart numbers; B is deliberately left without
-    -- accounts so account resolution must fail loudly for B, never fall back to A.
-    update public.accounts set company_id = '${COMPANY_A}' where no in ('1111', '1201', '4000', '2100');
+    -- Full-chain replays use the canonical Stage 3 provisioner (including RATE
+    -- accounts 2000/4100). Historical checkpoint suites that intentionally
+    -- exclude Stage 3 retain the original finite-row assignment fixture.
+    -- Company B stays unprovisioned in either case so lookup must fail loudly.
+    do $fixture$
+    begin
+      if to_regprocedure('public.provision_company_chart_of_accounts(uuid)') is not null then
+        perform public.provision_company_chart_of_accounts('${COMPANY_A}'::uuid);
+      else
+        update public.accounts
+           set company_id = '${COMPANY_A}'
+         where no in ('1111', '1201', '2000', '2100', '4000');
+      end if;
+    end
+    $fixture$;
   `);
 }
 

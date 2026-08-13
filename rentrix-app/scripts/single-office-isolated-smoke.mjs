@@ -6,7 +6,11 @@ const COMPANY_ID = '00000000-0000-4000-8000-000000000001';
 const ENVIRONMENT_KIND = process.env.E2E_ENVIRONMENT_KIND?.trim().toLowerCase();
 const EMAIL = process.env.E2E_SINGLE_OFFICE_EMAIL?.trim();
 const PASSWORD = process.env.E2E_SINGLE_OFFICE_PASSWORD?.trim();
+const CHECKER_EMAIL = process.env.E2E_SINGLE_OFFICE_CHECKER_EMAIL?.trim()
+  ?? 'single-office-checker@rentrix.test';
+const CHECKER_PASSWORD = process.env.E2E_SINGLE_OFFICE_CHECKER_PASSWORD?.trim() ?? PASSWORD;
 const PAYMENT_REFERENCE = 'SO-E2E-001';
+const REQUIRED_ACCOUNTS = ['1111', '1201', '2000', '2100', '4000', '4100'];
 const PAYMENT_DATE = '2026-07-25';
 const IDS = {
   owner: '00000000-0000-0000-0000-000000009201',
@@ -76,41 +80,43 @@ async function writeEvidence(payload) {
   await writeFile(evidencePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
-async function ensureIdentity() {
+async function ensureIdentity(email, password, name) {
   let user = null;
   for (let page = 1; !user; page += 1) {
     const usersResult = await serviceClient.auth.admin.listUsers({ page, perPage: 1000 });
     if (usersResult.error) throw usersResult.error;
-    user = usersResult.data.users.find((candidate) => candidate.email === EMAIL) ?? null;
+    user = usersResult.data.users.find((candidate) => candidate.email === email) ?? null;
     if (usersResult.data.users.length < 1000) break;
   }
 
   if (!user) {
     const created = await serviceClient.auth.admin.createUser({
-      email: EMAIL,
-      password: PASSWORD,
+      email,
+      password,
       email_confirm: true,
       app_metadata: { role: 'ADMIN', user_role: 'ADMIN', company_id: COMPANY_ID },
     });
     if (created.error || !created.data.user) {
-      throw created.error ?? new Error('Could not create the single-office smoke identity.');
+      throw created.error ?? new Error(`Could not create the ${name} smoke identity.`);
     }
     user = created.data.user;
   } else {
     const updated = await serviceClient.auth.admin.updateUserById(user.id, {
-      password: PASSWORD,
+      password,
       email_confirm: true,
       app_metadata: { role: 'ADMIN', user_role: 'ADMIN', company_id: COMPANY_ID },
     });
-    if (updated.error || !updated.data.user) throw updated.error ?? new Error('Could not refresh the smoke identity.');
+    if (updated.error || !updated.data.user) {
+      throw updated.error ?? new Error(`Could not refresh the ${name} smoke identity.`);
+    }
     user = updated.data.user;
   }
 
   await upsert('users', {
     id: user.id,
-    email: EMAIL,
-    name: 'Single Office Admin',
-    full_name: 'Single Office Admin',
+    email,
+    name,
+    full_name: name,
     role: 'ADMIN',
     status: 'ACTIVE',
     is_active: true,
@@ -127,18 +133,23 @@ async function ensureIdentity() {
 }
 
 async function seed() {
-  const user = await ensureIdentity();
+  const user = await ensureIdentity(EMAIL, PASSWORD, 'Single Office Admin');
+  const checker = await ensureIdentity(CHECKER_EMAIL, CHECKER_PASSWORD, 'Single Office Checker');
 
+  assertNoError(
+    'provision canonical chart of accounts',
+    await serviceClient.rpc('provision_company_chart_of_accounts', { p_company_id: COMPANY_ID }),
+  );
   const accounts = assertNoError(
     'load canonical accounts',
     await serviceClient.from('accounts').select('id,no,company_id').eq('company_id', COMPANY_ID)
-      .in('no', ['1111', '1201', '2000', '2100', '4000']),
+      .in('no', REQUIRED_ACCOUNTS),
   ) ?? [];
   const accountCounts = new Map();
   for (const account of accounts) {
     accountCounts.set(account.no, (accountCounts.get(account.no) ?? 0) + 1);
   }
-  for (const required of ['1111', '1201', '2000', '2100', '4000']) {
+  for (const required of REQUIRED_ACCOUNTS) {
     const count = accountCounts.get(required) ?? 0;
     if (count !== 1) {
       throw new Error(`Canonical account ${required} must exist exactly once for the launch company; found ${count}.`);
@@ -229,7 +240,9 @@ async function seed() {
     productionMutation: false,
     companyId: COMPANY_ID,
     userId: user.id,
+    checkerUserId: checker.id,
     email: EMAIL,
+    checkerEmail: CHECKER_EMAIL,
     canonicalAccounts: Object.fromEntries([...accountCounts.entries()].sort(([left], [right]) => left.localeCompare(right))),
     ids: IDS,
     paymentReference: PAYMENT_REFERENCE,
@@ -302,7 +315,9 @@ async function verify() {
     throw new Error('Payment and receipt were not both preserved as VOID audit history.');
   }
   if (allocations.length !== 1) throw new Error(`Expected one preserved allocation, found ${allocations.length}.`);
-  if (reversalEntries.length !== 2) throw new Error(`Expected two reversal journal entries, found ${reversalEntries.length}.`);
+  if (reversalEntries.length !== 4) {
+    throw new Error(`Expected four collection-and-RATE-fee reversal journal entries, found ${reversalEntries.length}.`);
+  }
   if (paymentKeys.length !== 1 || postReceiptKeys.length !== 1 || voidKeys.length !== 1) {
     throw new Error(
       `Expected one payment, post-receipt, and void key; found ${paymentKeys.length}/${postReceiptKeys.length}/${voidKeys.length}.`,
@@ -315,8 +330,8 @@ async function verify() {
   const credit = reversalEntries
     .filter((entry) => String(entry.type).toUpperCase() === 'CREDIT')
     .reduce((sum, entry) => sum + Number(entry.amount ?? 0), 0);
-  if (Math.abs(debit - credit) > 0.0001 || debit !== 1000) {
-    throw new Error(`Reversal journal is not balanced for 1000: debit=${debit} credit=${credit}.`);
+  if (Math.abs(debit - credit) > 0.0001 || debit !== 1100) {
+    throw new Error(`Collection-and-RATE-fee reversal is not balanced for 1100: debit=${debit} credit=${credit}.`);
   }
 
   const report = await authenticatedClient.rpc('rpt_daily_collection', {

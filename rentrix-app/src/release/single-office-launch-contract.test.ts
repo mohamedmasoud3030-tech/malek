@@ -15,6 +15,8 @@ describe('single-office launch gate contract', () => {
     expect(script).toContain('QA smoke requires QA_MUTATION_APPROVED=1');
     expect(script).toContain('productionMutation: false');
     expect(script).toContain('must exist exactly once for the launch company');
+    expect(script).toContain("serviceClient.rpc('provision_company_chart_of_accounts'");
+    expect(script).toContain("'4100'");
     expect(script).toContain("select('id,amount,type,entity_type,entity_id')");
     expect(script).toContain("String(entry.type).toUpperCase() === 'DEBIT'");
     expect(script).toContain("String(entry.type).toUpperCase() === 'CREDIT'");
@@ -32,8 +34,11 @@ describe('single-office launch gate contract', () => {
     expect(databaseGate).toContain('single-office-isolated.spec.ts');
     expect(databaseGate).toContain('single-office-isolated-smoke.mjs verify');
     expect(spec).toContain('/rest/v1/rpc/record_invoice_payment_atomic');
-    expect(spec).toContain('/rest/v1/rpc/void_receipt_atomic');
-    expect(spec).toContain('تأكيد الإلغاء');
+    expect(spec).toContain('/rest/v1/rpc/request_receipt_void_atomic');
+    expect(spec).toContain('/rest/v1/rpc/approve_receipt_void_atomic');
+    expect(spec).toContain('إرسال طلب الإلغاء');
+    expect(spec).toContain('اعتماد وتنفيذ الإلغاء');
+    expect(spec).toContain('CHECKER_EMAIL');
     expect(spec).toContain('test.describe.configure({ retries: 0 })');
   });
 

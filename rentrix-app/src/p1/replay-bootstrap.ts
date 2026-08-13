@@ -25,7 +25,16 @@ export type ReplayResult = {
   failed: { file: string; error: string }[];
 };
 
-const LATER_GOVERNED_STAGE_MARKERS = ['_s03_', '_s04_', '_s06_', '_s08_'] as const;
+const LATER_GOVERNED_STAGE_MARKERS = [
+  '_s03_',
+  '_s04_',
+  '_s06_',
+  '_s08_',
+  // GAP-007 has a strict foreign-key dependency on the S04 frozen agreement
+  // version table. Historical checkpoint suites intentionally omit S04, so
+  // they must omit this downstream migration as well.
+  'wp02_fixed_monthly_daily_accrual',
+] as const;
 
 export async function createFullReplayedDatabase(options?: {
   throughMigration?: string;
