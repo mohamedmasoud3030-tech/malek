@@ -370,15 +370,25 @@ export function parseBankCsv(fileContent: string, fileName: string, fileSize: nu
       continue;
     }
 
+    const amountSupplied = amountRaw !== undefined && amountRaw.trim() !== '';
+    const debitSupplied = Boolean(debitRaw?.trim());
+    const creditSupplied = Boolean(creditRaw?.trim());
+    if (Number(amountSupplied) + Number(debitSupplied) + Number(creditSupplied) !== 1) {
+      result.rejectedRows.push({
+        rawIndex: i,
+        rowNumber: pl.lineNumber,
+        raw: cells,
+        reason: 'يجب توفير تمثيل واحد فقط للمبلغ: amount أو debit أو credit',
+        field: 'amount',
+      });
+      continue;
+    }
+
     let amount: number | null = null;
-    if (amountRaw !== undefined && amountRaw.trim() !== '') {
+    if (amountSupplied) {
       amount = normalizeAmountString(amountRaw);
       if (amount === null) {
         result.rejectedRows.push({ rawIndex: i, rowNumber: pl.lineNumber, raw: cells, reason: `مبلغ غير صالح: "${amountRaw}"`, field: 'amount' });
-        continue;
-      }
-      if ((debitVal !== null || creditVal !== null) && Math.sign(amount) !== Math.sign(creditVal ?? -Math.abs(debitVal ?? 0))) {
-        result.rejectedRows.push({ rawIndex: i, rowNumber: pl.lineNumber, raw: cells, reason: 'تعارض بين عمود المبلغ وأعمدة مدين/دائن', field: 'amount' });
         continue;
       }
     } else if (debitVal !== null) {

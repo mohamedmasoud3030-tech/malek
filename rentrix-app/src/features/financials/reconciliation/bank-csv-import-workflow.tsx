@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useBankAccounts } from './useBankReconciliation';
-import { previewBankCsvFile, importBankStatementBatch, toImportPayloadRows, type BankImportPreview, type BankImportResult } from './bankCsvImportService';
+import { previewBankCsvFile, previewBankStatementBatch, importBankStatementBatch, toImportPayloadRows, type BankImportPreview, type BankImportResult } from './bankCsvImportService';
 import type { BankCsvParseResult } from '@/lib/bankCsvParser';
 import { toast } from 'sonner';
 
@@ -26,6 +26,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
   const [bankAccountId, setBankAccountId] = useState(defaultBankAccountId ?? '');
   const [preview, setPreview] = useState<BankImportPreview | null>(null);
   const [isParsing, setIsParsing] = useState(false);
+  const [serverPreview, setServerPreview] = useState<BankImportResult | null>(null);
   const [importResult, setImportResult] = useState<BankImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -37,6 +38,7 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
     setFile(null);
     setPreview(null);
     setImportResult(null);
+    setServerPreview(null);
     setError(null);
     setStep('select');
     setIsParsing(false);
@@ -70,9 +72,9 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
       const parsed = await previewBankCsvFile(selectedFile);
       setPreview(parsed);
 
-      if (parsed.missingMandatory.length > 0) {
+      if (parsed.missingMandatory.length > 0 || parsed.mappingAmbiguous) {
         setStep('mapping');
-      } else if (parsed.rejectedRows.length > 0 && parsed.validRows.length === 0) {
+      } else if (parsed.rejectedRows.length > 0) {
         setStep('review');
       } else {
         setStep('preview');
@@ -110,19 +112,30 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
     setError(null);
     try {
       const payloadRows = toImportPayloadRows(preview);
-      const result = await importBankStatementBatch({
+      const request = {
         bank_account_id: bankAccountId,
         file_name: file.name,
         file_fingerprint: preview.fileFingerprint,
         file_size: file.size,
         rows: payloadRows,
-      });
+      };
+      const authoritative = await previewBankStatementBatch(request);
+      setServerPreview(authoritative);
+      if (authoritative.total_rows !== payloadRows.length) {
+        throw new Error('أعداد المعاينة على الخادم لا تطابق الملف؛ تم إيقاف الاستيراد');
+      }
+      const result = await importBankStatementBatch(request);
+      if (result.total_rows !== authoritative.total_rows || result.accepted_rows !== authoritative.accepted_rows) {
+        throw new Error('أعداد النتيجة لا تطابق معاينة الخادم؛ لم يُعتبر الاستيراد ناجحًا بالكامل');
+      }
       setImportResult(result);
       setStep('completed');
       if (result.is_duplicate_file) {
         toast.success(`الملف مستورد مسبقاً — المرجع ${result.reference ?? 'استيراد بلا مرجع تجاري'}`);
+      } else if (result.accepted_rows === 0) {
+        toast.error('اكتملت العملية بدون حركات جديدة — راجع التكرارات');
       } else {
-        toast.success(`تم الاستيراد بنجاح — ${result.accepted_rows} حركة جديدة`);
+        toast.success(`تم الاستيراد — ${result.accepted_rows} حركة جديدة`);
       }
       onCompleted(result);
     } catch (e: any) {
@@ -218,6 +231,26 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
                 <span className="text-xs text-muted-foreground">مكرر داخل الملف</span>
                 <p className="font-black text-warning">{preview.duplicateWithinFile}</p>
               </div>
+              <div>
+                <span className="text-xs text-muted-foreground">مكرر محتمل (عميل)</span>
+                <p className="font-black">{preview.possibleDuplicateWithinFile ?? 0}</p>
+              </div>
+              {serverPreview ? (
+                <>
+                  <div>
+                    <span className="text-xs text-muted-foreground">معاينة الخادم — مقبول</span>
+                    <p className="font-black text-success">{serverPreview.accepted_rows}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">معاينة الخادم — مكرر</span>
+                    <p className="font-black text-warning">{serverPreview.duplicate_rows}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">معاينة الخادم — محتمل</span>
+                    <p className="font-black">{serverPreview.possible_duplicate_rows}</p>
+                  </div>
+                </>
+              ) : null}
               <div>
                 <span className="text-xs text-muted-foreground">بصمة الملف</span>
                 <p className="font-mono text-[10px] truncate" title={preview.fileFingerprint}>{preview.fileFingerprint.slice(0, 16)}...</p>
@@ -363,8 +396,13 @@ export function BankCsvImportWorkflow({ open, onOpenChange, defaultBankAccountId
     return (
       <EntityForm.Section title="اكتمل الاستيراد" description="ملخص الدفعة المستوردة.">
         <div className="grid gap-3 rounded-xl border bg-success/5 p-4 text-sm">
-          <div className="flex items-center gap-2 font-black text-success">
-            <CheckCircle2 className="size-5" /> {importResult.is_duplicate_file ? 'الملف مكرر — تم إرجاع الدفعة السابقة' : 'تم الاستيراد بنجاح'}
+          <div className={`flex items-center gap-2 font-black ${importResult.accepted_rows === 0 ? 'text-warning' : 'text-success'}`}>
+            <CheckCircle2 className="size-5" />{' '}
+            {importResult.is_duplicate_file
+              ? 'الملف مكرر — تم إرجاع الدفعة السابقة دون كتابة جديدة'
+              : importResult.accepted_rows === 0
+                ? 'اكتملت العملية دون حركات جديدة'
+                : 'تم الاستيراد بنجاح'}
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
