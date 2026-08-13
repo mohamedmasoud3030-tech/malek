@@ -13,12 +13,18 @@ export type CostCenterFormValues = Readonly<{
   is_active: boolean;
 }>;
 
-export function costCenterPayload(values: CostCenterFormValues): CostCenterInsert {
+export const ACTIVE_COMPANY_REQUIRED_ERROR = 'لا توجد شركة نشطة محددة.';
+
+// `cost_centers` is company-scoped and its RLS policies now require
+// `company_id = current_company_id()` (WP-DB0 correction C2). The tenant key
+// must therefore be part of every write payload, not left to a default.
+export function costCenterPayload(values: CostCenterFormValues, companyId: string): CostCenterInsert {
   return {
     name: values.name.trim(),
     property_id: values.property_id.trim() || null,
     parent_id: values.parent_id.trim() || null,
     is_active: values.is_active,
+    company_id: companyId,
   };
 }
 
@@ -33,13 +39,21 @@ export async function listCostCenters(): Promise<CostCenterRecord[]> {
   return data ?? [];
 }
 
-export async function saveCostCenter(values: CostCenterFormValues, id?: string): Promise<CostCenterRecord> {
-  const payload = costCenterPayload(values);
+export async function saveCostCenter(
+  values: CostCenterFormValues,
+  companyId: string,
+  id?: string,
+): Promise<CostCenterRecord> {
+  if (!companyId) throw new Error(ACTIVE_COMPANY_REQUIRED_ERROR);
+  const payload = costCenterPayload(values, companyId);
   if (!payload.name) throw new Error('اسم مركز التكلفة مطلوب.');
   if (payload.parent_id && payload.parent_id === id) throw new Error('لا يمكن جعل مركز التكلفة تابعاً لنفسه.');
 
   if (id) {
-    const updatePayload: CostCenterUpdate = { ...payload, updated_at: new Date().toISOString() };
+    // company_id is never reassigned on update: moving a cost centre between
+    // companies is not a supported operation.
+    const { company_id: _companyId, ...mutable } = payload;
+    const updatePayload: CostCenterUpdate = { ...mutable, updated_at: new Date().toISOString() };
     const { data, error } = await supabase
       .from('cost_centers')
       .update(updatePayload)

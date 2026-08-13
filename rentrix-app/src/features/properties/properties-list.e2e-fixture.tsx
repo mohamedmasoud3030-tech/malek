@@ -17,6 +17,10 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { propertyStatusTone } from './components/property-status';
 import type { Property } from '@/types/domain';
 
+// WP-DB0: fixtures must satisfy the frozen row contract, including the tenant
+// key and the columns the schema actually defines.
+const FIXTURE_COMPANY_ID = '00000000-0000-4000-8000-0000000000c1';
+
 const fixtureProperties: Property[] = [
   {
     id: 'p-000001',
@@ -31,6 +35,9 @@ const fixtureProperties: Property[] = [
     created_at: '2026-01-04T08:00:00Z',
     updated_at: '2026-07-10T08:00:00Z',
     deleted_at: null,
+    owner_id: null,
+    name: '',
+    company_id: FIXTURE_COMPANY_ID,
   },
   {
     id: 'p-000002',
@@ -45,6 +52,9 @@ const fixtureProperties: Property[] = [
     created_at: '2026-02-11T08:00:00Z',
     updated_at: '2026-07-08T08:00:00Z',
     deleted_at: null,
+    owner_id: null,
+    name: '',
+    company_id: FIXTURE_COMPANY_ID,
   },
   {
     id: 'p-000003',
@@ -59,6 +69,9 @@ const fixtureProperties: Property[] = [
     created_at: '2026-03-02T08:00:00Z',
     updated_at: '2026-07-12T08:00:00Z',
     deleted_at: null,
+    owner_id: null,
+    name: '',
+    company_id: FIXTURE_COMPANY_ID,
   },
   {
     id: 'p-000004',
@@ -73,6 +86,9 @@ const fixtureProperties: Property[] = [
     created_at: '2026-04-18T08:00:00Z',
     updated_at: '2026-07-14T08:00:00Z',
     deleted_at: null,
+    owner_id: null,
+    name: '',
+    company_id: FIXTURE_COMPANY_ID,
   },
   {
     id: 'p-000005',
@@ -87,6 +103,9 @@ const fixtureProperties: Property[] = [
     created_at: '2026-05-07T08:00:00Z',
     updated_at: '2026-07-11T08:00:00Z',
     deleted_at: null,
+    owner_id: null,
+    name: '',
+    company_id: FIXTURE_COMPANY_ID,
   },
   {
     id: 'p-000006',
@@ -101,6 +120,9 @@ const fixtureProperties: Property[] = [
     created_at: '2026-05-28T08:00:00Z',
     updated_at: '2026-07-01T08:00:00Z',
     deleted_at: null,
+    owner_id: null,
+    name: '',
+    company_id: FIXTURE_COMPANY_ID,
   },
 ];
 

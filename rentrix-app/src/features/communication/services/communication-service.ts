@@ -25,10 +25,30 @@ function buildInsertPayload(values: Parameters<typeof coerceCommunicationFormToP
   return communicationPayloadSchema.parse(coerced) as unknown as CommunicationInsert;
 }
 
+type CommunicationChannel = NonNullable<CommunicationRecord['channel']>;
+type CommunicationStatus = NonNullable<CommunicationRecord['status']>;
+
+const COMMUNICATION_CHANNELS = ['phone', 'whatsapp', 'email', 'meeting', 'note'] as const satisfies readonly CommunicationChannel[];
+const COMMUNICATION_STATUSES = ['logged', 'follow_up', 'resolved', 'archived'] as const satisfies readonly CommunicationStatus[];
+
+function asCommunicationChannel(value: string): CommunicationChannel | null {
+  return (COMMUNICATION_CHANNELS as readonly string[]).includes(value) ? (value as CommunicationChannel) : null;
+}
+
+function asCommunicationStatus(value: string): CommunicationStatus | null {
+  return (COMMUNICATION_STATUSES as readonly string[]).includes(value) ? (value as CommunicationStatus) : null;
+}
+
 export async function listCommunicationRecords(filters: CommunicationFilters) {
   let query = supabase.from('communication_records').select('*').is('deleted_at', null).order('created_at', { ascending: false }).order('id', { ascending: false });
-  if (filters.channel !== 'all') query = query.eq('channel', filters.channel);
-  if (filters.status !== 'all') query = query.eq('status', filters.status);
+  // Filters originate from <select> elements, so they are plain strings. The
+  // generated types narrow these columns to literal unions, so the value is
+  // validated against the schema's own domain before it reaches the query
+  // rather than being cast past the contract.
+  const channel = asCommunicationChannel(filters.channel);
+  const status = asCommunicationStatus(filters.status);
+  if (channel) query = query.eq('channel', channel);
+  if (status) query = query.eq('status', status);
   if (filters.query.trim()) {
     const term = `%${filters.query.trim()}%`;
     query = query.or(`contact_name.ilike.${term},contact_phone.ilike.${term},contact_email.ilike.${term},subject.ilike.${term},body.ilike.${term}`);

@@ -47,7 +47,10 @@ function escapeSearchTerm(value: string) {
   return value.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
 }
 
-function applyTenantSearch(query: ReturnType<typeof supabase.from>, search: string) {
+// `supabase.from(...)` is a query builder; `.or()` only exists on the filter
+// builder returned by `.select()`. Constrain to what the helper actually uses
+// so the call site keeps its fully-typed builder.
+function applyTenantSearch<Q extends { or(filters: string): Q }>(query: Q, search: string): Q {
   const trimmedSearch = search.trim();
   if (trimmedSearch.length === 0) {
     return query;

@@ -1,0 +1,34 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 0920794..92519f1 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -49,6 +49,29 @@ jobs:
+           bash -n scripts/run-agent-qa-lifecycle.sh
+           pnpm test:qa-runtime
+       - run: pnpm supabase:migration-evidence
++      # WP-DB0 Database Stabilization & Contract Freeze.
++      # Replays the migration chain into an ephemeral PostgreSQL (PGlite) and
++      # proves migrations <-> schema <-> generated types <-> frontend usage are
++      # still one contract. No hosted database or Supabase branching required.
++      - name: WP-DB0 database integrity gates
++        id: db0
++        shell: bash
++        run: |
++          set +e
++          pnpm db0:gate > /tmp/rentrix-db0-gate.log 2>&1
++          status=$?
++          echo "status=$status" >> "$GITHUB_OUTPUT"
++          tail -n 200 /tmp/rentrix-db0-gate.log
++          exit 0
++      - name: Upload WP-DB0 gate diagnostics
++        if: steps.db0.outputs.status != '0'
++        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
++        with:
++          name: rentrix-db0-gate-diagnostics
++          path: /tmp/rentrix-db0-gate.log
++      - name: Fail on WP-DB0 contract drift
++        if: steps.db0.outputs.status != '0'
++        run: exit 1
+       - name: Run documentation link check
+         id: docs-links
+         shell: bash

@@ -12,7 +12,14 @@ export type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid:
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
 const invoiceSelectWithContractFilter = '*, contracts:contract_id!inner(id,property_id,tenant_id)';
 
-function applyStatusFilter(query: ReturnType<typeof supabase.from>, status: InvoiceStatusFilter) {
+// `supabase.from(...)` returns a query builder (insert/update/delete); only
+// after `.select()` is it a filter builder exposing `.in()`/`.or()`. Typing the
+// parameter as the builder that is actually passed in keeps the filter helpers
+// type-safe against the generated schema instead of requiring a cast.
+function applyStatusFilter<Q extends { in(column: 'status', values: string[]): Q }>(
+  query: Q,
+  status: InvoiceStatusFilter,
+): Q {
   // Cover every casing present in live rows (legacy lowercase + modern UPPERCASE).
   if (status === 'all') return query;
   return query.in('status', getInvoiceStatusVariants(status));

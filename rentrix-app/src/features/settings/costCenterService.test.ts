@@ -8,6 +8,8 @@ vi.mock('@/lib/supabase', () => ({
   supabase: supabaseMock,
 }));
 
+const FIXTURE_COMPANY_ID = '00000000-0000-4000-8000-0000000000c1';
+
 describe('costCenterService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -21,11 +23,12 @@ describe('costCenterService', () => {
       property_id: '  ',
       parent_id: '',
       is_active: true,
-    })).toEqual({
+    }, FIXTURE_COMPANY_ID)).toEqual({
       name: 'صيانة برج النخيل',
       property_id: null,
       parent_id: null,
       is_active: true,
+      company_id: FIXTURE_COMPANY_ID,
     });
   });
 
@@ -49,8 +52,30 @@ describe('costCenterService', () => {
   it('rejects blank names and self-parenting before writing', async () => {
     const { saveCostCenter } = await import('./costCenterService');
 
-    await expect(saveCostCenter({ name: ' ', property_id: '', parent_id: '', is_active: true })).rejects.toThrow('اسم مركز التكلفة مطلوب.');
-    await expect(saveCostCenter({ name: 'تشغيل', property_id: '', parent_id: 'cost-1', is_active: true }, 'cost-1')).rejects.toThrow('لا يمكن جعل مركز التكلفة تابعاً لنفسه.');
+    await expect(saveCostCenter({ name: ' ', property_id: '', parent_id: '', is_active: true }, FIXTURE_COMPANY_ID)).rejects.toThrow('اسم مركز التكلفة مطلوب.');
+    await expect(saveCostCenter({ name: 'تشغيل', property_id: '', parent_id: 'cost-1', is_active: true }, FIXTURE_COMPANY_ID, 'cost-1')).rejects.toThrow('لا يمكن جعل مركز التكلفة تابعاً لنفسه.');
     expect(supabaseMock.from).not.toHaveBeenCalled();
+  });
+
+  // WP-DB0: cost_centers RLS requires company_id = current_company_id(), so a
+  // write without an active company must fail closed in the client rather than
+  // reaching the database and being rejected there.
+  it('refuses to write without an active company', async () => {
+    const { saveCostCenter, ACTIVE_COMPANY_REQUIRED_ERROR } = await import('./costCenterService');
+
+    await expect(saveCostCenter({ name: 'تشغيل', property_id: '', parent_id: '', is_active: true }, '')).rejects.toThrow(ACTIVE_COMPANY_REQUIRED_ERROR);
+    expect(supabaseMock.from).not.toHaveBeenCalled();
+  });
+
+  it('stamps the active company on insert payloads', async () => {
+    const { costCenterPayload } = await import('./costCenterService');
+
+    expect(costCenterPayload({ name: 'تشغيل', property_id: '', parent_id: '', is_active: true }, FIXTURE_COMPANY_ID)).toEqual({
+      name: 'تشغيل',
+      property_id: null,
+      parent_id: null,
+      is_active: true,
+      company_id: FIXTURE_COMPANY_ID,
+    });
   });
 });

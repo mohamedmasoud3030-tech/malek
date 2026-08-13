@@ -42,8 +42,14 @@ export const DEFAULT_COMPANY_SETTINGS_ID = '00000000-0000-4000-8000-000000000001
 
 const defaultTimestamps = '1970-01-01T00:00:00.000Z';
 
+// Local fallback used before any row has been read. `company_id` is NOT NULL in
+// the schema (defaulted server-side to current_company_id()), so the fallback
+// carries the same nil placeholder as `id` rather than omitting the field.
+const DEFAULT_COMPANY_ID = '00000000-0000-0000-0000-000000000000';
+
 const defaultCompanySettings: CompanySettingsRecord = {
   id: DEFAULT_COMPANY_SETTINGS_ID,
+  company_id: DEFAULT_COMPANY_ID,
   singleton_key: true,
   company_name: APP_BRAND_NAME,
   legal_name: null,

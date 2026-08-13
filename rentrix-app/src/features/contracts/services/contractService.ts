@@ -1,3 +1,4 @@
+import type { CanonicalContractStatus } from '@/lib/contractStatus';
 import { getContractStatusVariants } from '@/lib/contractStatus';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
@@ -5,7 +6,12 @@ import type { Database } from '@/types/database';
 import type { Contract, Person, Property, Unit } from '@/types/domain';
 import type { ContractPayload, RenewalPayload } from '../contractSchema';
 
-export type ContractStatusFilter = Contract['status'] | 'all';
+// The database CHECK still permits the legacy spellings 'ACTIVE'/'ENDED'
+// alongside the canonical lowercase set, so `Contract['status']` is wider than
+// the values the UI filters on. Filters are expressed in canonical terms and
+// `getContractStatusVariants` expands them to every stored spelling at query
+// time — see `@/lib/contractStatus`.
+export type ContractStatusFilter = CanonicalContractStatus | 'all';
 export type ContractListItem = Contract & {
   reference?: string | null;
   properties: Pick<Property, 'id' | 'title' | 'address'> | null;

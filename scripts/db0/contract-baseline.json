@@ -1,0 +1,35 @@
+{
+  "$comment": [
+    "WP-DB0 accepted contract-drift baseline.",
+    "",
+    "Every entry is a KNOWN, GOVERNED conflict that WP-DB0 deliberately does not",
+    "close, with the Work Package that owns it. The gate fails if any count goes",
+    "UP, and any newly introduced finding class fails immediately because its",
+    "default allowance is 0.",
+    "",
+    "Lowering a number here is always safe. Raising one requires an explicit",
+    "contract decision recorded in docs/database/WP_DB0_CONTRACT_FREEZE.md."
+  ],
+  "generatedAt": "2026-08-13",
+  "accepted": {
+    "DB0-07": 47
+  },
+  "rationale": {
+    "DB0-07": {
+      "title": "Financial columns not at 3 decimal places",
+      "rule": "PRD-004, FIN-013 — OMR authoritative precision is three decimals",
+      "gap": "GAP-009",
+      "owner": "WP-02",
+      "why_deferred": [
+        "Widening numeric(14,2) to numeric(14,3) is a data conversion on posted",
+        "financial history, not a schema tidy-up. It must run with accounting",
+        "sign-off and a reconciliation plan, which is exactly the kind of change",
+        "the WP-DB0 freeze exists to keep out of an unrelated migration.",
+        "",
+        "The GL core (journal_batches / journal_lines) is ALREADY numeric(18,3),",
+        "so the authoritative ledger is compliant. The 47 columns below are",
+        "subledger and snapshot columns that GAP-009 must reconcile."
+      ]
+    }
+  }
+}
