@@ -9,7 +9,9 @@ describe('P2 — contextual documents contract', () => {
     const operations = read('./operations-hub/operations-hub.sections.ts');
     const routeTree = read('../app/router/route-tree.ts');
     expect(nav).not.toContain("'/documents-vault'");
-    expect(operations).not.toContain('documents_vault');
+    // documents_vault is now a real Operations Hub section (aggregate authority),
+    // while contextual entity-level panels remain complementary.
+    expect(operations).toContain('documents_vault');
     expect(routeTree).toContain("path: '/documents-vault'");
     expect(routeTree).toContain("to: '/maintenance'");
     expect(routeTree).toContain("section: 'documents_vault'");

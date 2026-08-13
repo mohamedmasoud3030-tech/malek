@@ -38,13 +38,14 @@ vi.mock('@/features/maintenance/components/maintenance-workspace', () => ({ Main
 vi.mock('@/features/service-providers/service-providers-page', () => ({ ServiceProvidersWorkspace: makeProbe('service-providers') }));
 vi.mock('@/features/utilities/components/utilities-workspace', () => ({ UtilitiesWorkspace: makeProbe('utilities') }));
 vi.mock('@/features/automation/components/automation-workspace', () => ({ AutomationWorkspace: makeProbe('automation') }));
+vi.mock('@/features/documents-vault/components/documents-vault-workspace', () => ({ DocumentsVaultWorkspace: makeProbe('documents-vault') }));
 
 const { OperationsHubWorkspace } = await import('./operations-hub-workspace');
 
 type RenderOptions = Readonly<{
   initialUrl?: string;
   role?: AuthorizationRole | null;
-  defaultSection?: 'maintenance' | 'service_providers' | 'utilities' | 'automation';
+  defaultSection?: 'maintenance' | 'service_providers' | 'utilities' | 'automation' | 'documents_vault';
   mode?: 'standalone' | 'embedded';
 }>;
 
@@ -121,7 +122,7 @@ describe('operations hub — standalone rendering', () => {
   it('renders the tab bar with one tab per permitted section', async () => {
     renderHub();
     await screen.findByTestId('maintenance-body');
-    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    expect(screen.getAllByRole('tab')).toHaveLength(5);
   });
 
   it('embeds child workspaces in embedded mode', async () => {
@@ -144,6 +145,13 @@ describe('operations hub — URL synchronisation and deep linking', () => {
     expect(await screen.findByTestId('utilities-body')).toBeTruthy();
   });
 
+  it('renders documents_vault (not maintenance) for a documents-vault deep link', async () => {
+    renderHub({ initialUrl: '/maintenance?section=documents_vault' });
+    expect(await screen.findByTestId('documents-vault-body')).toBeTruthy();
+    expect(screen.queryByTestId('maintenance-body')).toBeNull();
+    expect((await screen.findByTestId('documents-vault-mode')).textContent).toBe('embedded');
+  });
+
   it('writes the active section into the URL when a tab is clicked', async () => {
     const user = userEvent.setup();
     const { router } = renderHub();
@@ -155,6 +163,28 @@ describe('operations hub — URL synchronisation and deep linking', () => {
       expect(router.state.location.search).toMatchObject({ section: 'utilities' });
     });
     expect(await screen.findByTestId('utilities-body')).toBeTruthy();
+  });
+
+  it('keeps URL and active tab in sync when switching between Documents Vault and Maintenance', async () => {
+    const user = userEvent.setup();
+    const { router } = renderHub({ initialUrl: '/maintenance?section=documents_vault' });
+    await screen.findByTestId('documents-vault-body');
+
+    // Documents Vault active; Maintenance not mounted.
+    expect(router.state.location.search).toMatchObject({ section: 'documents_vault' });
+    expect(screen.queryByTestId('maintenance-body')).toBeNull();
+
+    await user.click(screen.getByRole('tab', { name: /الصيانة/ }));
+    expect(await screen.findByTestId('maintenance-body')).toBeTruthy();
+    await waitFor(() => {
+      expect(router.state.location.search).toMatchObject({ section: 'maintenance' });
+    });
+
+    await user.click(screen.getByRole('tab', { name: /خزينة المستندات/ }));
+    expect(await screen.findByTestId('documents-vault-body')).toBeTruthy();
+    await waitFor(() => {
+      expect(router.state.location.search).toMatchObject({ section: 'documents_vault' });
+    });
   });
 
   it('replaces history when switching tabs so Back leaves the hub', async () => {
@@ -204,13 +234,13 @@ describe('operations hub — state preservation across tab switches', () => {
 });
 
 describe('operations hub — permission filtering', () => {
-  it('hides tabs a USER may not open', async () => {
+  it('hides tabs a USER may not open while keeping authenticated-only tabs', async () => {
     renderHub({ role: 'USER' });
     await screen.findByTestId('utilities-body');
 
     const tabNames = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
     expect(tabNames.join(' ')).toContain('المرافق');
-    expect(tabNames.join(' ')).not.toContain('خزينة');
+    expect(tabNames.join(' ')).toContain('خزينة');
     expect(tabNames.join(' ')).not.toContain('الصيانة');
     expect(tabNames.join(' ')).not.toContain('الأتمتة');
   });

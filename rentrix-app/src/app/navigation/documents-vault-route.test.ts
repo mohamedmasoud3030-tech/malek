@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ROUTE_CONTRACT, REDIRECT_ROUTES } from './route-contract';
 import { getNavRoot } from './route-nav-map';
+import { isOperationsHubSectionId } from '@/features/operations-hub/operations-hub-model';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 
@@ -44,5 +45,11 @@ describe('WP-06A — documents vault route consolidation', () => {
     expect(contract!.viewBinding).toEqual({ param: 'section', section: 'documents_vault' });
     expect(REDIRECT_ROUTES).toContain('/documents-vault');
     expect(getNavRoot('/documents-vault')).toBe('/maintenance');
+  });
+
+  it('redirects to a real Operations Hub section (no silent fallback to maintenance)', () => {
+    // The redirect target must be a registered section, otherwise the hub
+    // silently falls back to the default section while the URL looks correct.
+    expect(isOperationsHubSectionId('documents_vault')).toBe(true);
   });
 });

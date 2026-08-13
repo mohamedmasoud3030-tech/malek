@@ -8,6 +8,7 @@ import {
 } from './operations-hub.sections';
 import {
   getVisibleOperationsSections,
+  isOperationsHubSectionId,
   resolveOperationsHubState,
 } from './operations-hub-model';
 import type { AuthorizationContext } from '@/features/auth/permissions';
@@ -19,6 +20,7 @@ describe('operations hub contract', () => {
       'service_providers',
       'utilities',
       'automation',
+      'documents_vault',
     ]);
     expect(new Set(operationsHubSections.map((section) => section.id)).size).toBe(
       operationsHubSections.length,
@@ -27,13 +29,14 @@ describe('operations hub contract', () => {
 
   it('keeps authenticated-only tabs while filtering permission-gated tabs', () => {
     const denied = getVisibleOperationsHubSections(() => false);
-    expect(denied.map((section) => section.id)).toEqual(['utilities']);
+    expect(denied.map((section) => section.id)).toEqual(['utilities', 'documents_vault']);
 
     const granted = new Set<OperationsHubPermission>(['maintenance.view']);
     const visible = getVisibleOperationsHubSections((permission) => granted.has(permission));
     expect(visible.map((section) => section.id)).toEqual([
       'maintenance',
       'utilities',
+      'documents_vault',
     ]);
   });
 
@@ -94,7 +97,32 @@ describe('operations hub model', () => {
       'service_providers',
       'utilities',
       'automation',
+      'documents_vault',
     ]);
+  });
+
+  it('recognises documents_vault as a real operations hub section (no silent fallback)', () => {
+    expect(isOperationsHubSectionId('documents_vault')).toBe(true);
+    expect(isOperationsHubSectionId('not-a-real-section')).toBe(false);
+  });
+
+  it('activates documents_vault when the URL requests it (not maintenance)', () => {
+    const state = resolveOperationsHubState({
+      requestedSection: 'documents_vault',
+      defaultSection: 'maintenance',
+      authorization: admin,
+    });
+    expect(state.activeSection).toBe('documents_vault');
+    expect(state.isRequestedSectionForbidden).toBe(false);
+  });
+
+  it('exposes documents_vault to the same authenticated users as the legacy route (no new permission)', () => {
+    // Legacy /documents-vault was authenticated-only; documents_vault keeps permission: null.
+    expect(operationsHubSections.find((section) => section.id === 'documents_vault')?.permission).toBeNull();
+    const userVisible = getVisibleOperationsSections(user).map((s) => s.id);
+    expect(userVisible).toContain('documents_vault');
+    expect(userVisible).not.toContain('maintenance');
+    expect(userVisible).not.toContain('automation');
   });
 
   it('honours deep-link section when permitted', () => {
