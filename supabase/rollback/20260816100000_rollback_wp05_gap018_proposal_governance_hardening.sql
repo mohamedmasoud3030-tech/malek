@@ -1,5 +1,6 @@
 -- =============================================================================
--- Manual rollback — WP-05 GAP-018 proposal governance hardening
+-- Manual rollback for 20260816100000_wp05_gap018_proposal_governance_hardening.sql — not auto-applied; run by hand only.
+-- WP-05 GAP-018 proposal governance hardening rollback.
 --
 -- Safety note: the tenant-isolation fix in
 -- wp05_assert_no_unapproved_correction_postings is intentionally forward-only.
