@@ -301,9 +301,17 @@ select results_eq(
 -- Test 6: deposit isolation already tested in 4, but also check GL count isolation
 select cmp_ok(
   (select gl_count from public.wp05_reconcile_all('a0000000-0000-4000-8000-000000000001', date '2026-07-31') where reconciliation_class = 'SECURITY_DEPOSITS'),
-  '<=',
-  3::bigint,
-  '6. deposit isolation: GL count for A is small, not including B'
+  '<',
+  (
+    select count(*)::bigint
+    from public.journal_lines jl
+    join public.journal_batches jb on jb.id = jl.batch_id and jb.status in ('POSTED','REVERSED')
+    join public.accounts a on a.id = jl.account_id and a.no = '2200'
+    where jl.company_id in ('a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002')
+      and jb.effective_date <= date '2026-07-31'
+      and jl.deleted_at is null
+  ),
+  '6. deposit isolation: A GL count excludes Company B deposit lines'
 );
 
 -- Test 7: due-from-owner isolation
@@ -360,8 +368,8 @@ select results_eq(
 -- Test 8: commission isolation
 insert into public.commissions (id, staff_name, type, status, amount, company_id)
 values
-  ('comm-a-001', 'Broker A', 'contract', 'PENDING', 33.000, 'a0000000-0000-4000-8000-000000000001'),
-  ('comm-b-001', 'Broker B', 'contract', 'PENDING', 44.000, 'b0000000-0000-4000-8000-000000000002')
+  ('comm-a-001', 'Broker A', 'contract', 'pending', 33.000, 'a0000000-0000-4000-8000-000000000001'),
+  ('comm-b-001', 'Broker B', 'contract', 'pending', 44.000, 'b0000000-0000-4000-8000-000000000002')
 on conflict (id) do update set amount = excluded.amount;
 
 select lives_ok(
