@@ -2,6 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 const EMAIL = process.env.E2E_SINGLE_OFFICE_EMAIL ?? 'single-office-admin@rentrix.test';
 const PASSWORD = process.env.E2E_SINGLE_OFFICE_PASSWORD ?? 'SingleOffice-Aa1!';
+const CHECKER_EMAIL = process.env.E2E_SINGLE_OFFICE_CHECKER_EMAIL ?? 'single-office-checker@rentrix.test';
+const CHECKER_PASSWORD = process.env.E2E_SINGLE_OFFICE_CHECKER_PASSWORD ?? PASSWORD;
 const INVOICE_ID = '00000000-0000-0000-0000-000000009801';
 const PAYMENT_REFERENCE = 'SO-E2E-001';
 
@@ -12,10 +14,10 @@ test.skip(
   'The single-office lifecycle runs only against local or an explicitly approved disposable QA environment.',
 );
 
-async function login(page: Page) {
+async function login(page: Page, email = EMAIL, password = PASSWORD) {
   await page.goto('/login');
-  await page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true }).fill(EMAIL);
-  await page.getByPlaceholder('••••••••').fill(PASSWORD);
+  await page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true }).fill(email);
+  await page.getByPlaceholder('••••••••').fill(password);
   await page.getByRole('button', { name: /تسجيل الدخول/ }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: 'لوحة التحكم', level: 1 })).toBeVisible();
@@ -84,6 +86,33 @@ test.describe('single-office isolated launch acceptance', () => {
     await expect(dialog).toBeHidden();
     await expect(receiptRow).toContainText('مرحّل');
     await expect(page.getByText('اختبار إلغاء معزول قبل إطلاق المكتب الأول')).toBeVisible();
+
+    // Exercise the separate checker half of the maker-checker boundary through
+    // the real browser as well. Clearing browser storage signs out the maker;
+    // the checker identity was created by the isolated seed script.
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    await page.context().clearCookies();
+    await login(page, CHECKER_EMAIL, CHECKER_PASSWORD);
+    await page.goto('/receipts');
+
+    const pendingRequest = page.getByText('اختبار إلغاء معزول قبل إطلاق المكتب الأول').first();
+    await expect(pendingRequest).toBeVisible({ timeout: 15000 });
+    const approveResponsePromise = page.waitForResponse((response) => (
+      response.url().includes('/rest/v1/rpc/approve_receipt_void_atomic')
+    ));
+    await page.getByRole('button', { name: 'اعتماد وتنفيذ الإلغاء' }).click();
+    const approveResponse = await approveResponsePromise;
+    expect(approveResponse.ok()).toBe(true);
+    await expect(page.getByText('اختبار إلغاء معزول قبل إطلاق المكتب الأول')).toHaveCount(0);
+
+    const checkerSearchInput = page.getByPlaceholder('رقم الإيصال أو المرجع أو المستأجر أو العقار');
+    await checkerSearchInput.fill(PAYMENT_REFERENCE);
+    const voidedReceiptRow = page.getByRole('table', { name: 'جدول الإيصالات' })
+      .getByRole('row').filter({ hasText: 'مستأجر اختبار المكتب الواحد' }).first();
+    await expect(voidedReceiptRow).toContainText('ملغي');
     expect(serverErrors).toEqual([]);
   });
 

@@ -67,6 +67,28 @@ export function getActionableSupabaseErrorMessage(error: unknown, fallbackMessag
   if (normalized.includes('idempotency_key_reused_for_different_request')) {
     return withContext(fallbackMessage, 'تعذر إعادة نفس الطلب بعد تغيّر البيانات. أغلق النموذج وافتحه من جديد ثم حاول مرة أخرى.');
   }
+  if (normalized.includes('no_eligible_open_accounting_period')) {
+    return withContext(fallbackMessage, 'لا توجد فترة محاسبية مفتوحة تقبل هذا التاريخ. أنشئ فترة لاحقة أو أعد فتح فترة قابلة لإعادة الفتح ثم حاول مجددًا.');
+  }
+  if (normalized.includes('fixed_monthly_future_accrual_forbidden')) {
+    return withContext(fallbackMessage, 'لا يمكن إنشاء استحقاق ليوم اقتصادي مستقبلي. عدّل تاريخ النهاية إلى اليوم أو تاريخ سابق.');
+  }
+  if (normalized.includes('fixed_monthly_catch_up_limit_exceeded')) {
+    return withContext(fallbackMessage, 'النطاق أكبر من 92 يومًا. قسّم التنفيذ إلى نطاقات أقصر.');
+  }
+  if (
+    normalized.includes('fixed_monthly_terms_invalid')
+    || normalized.includes('fixed_monthly_version_interval_overlap')
+    || normalized.includes('fixed_monthly_date_outside_service_interval')
+  ) {
+    return withContext(fallbackMessage, 'بيانات النسخة المجمدة أو فترة سريان الاتفاقية لا تسمح بهذا الاستحقاق. راجع نوع العمولة وتواريخ السريان.');
+  }
+  if (normalized.includes('fixed_monthly_version_not_found_or_forbidden')) {
+    return withContext(fallbackMessage, 'تعذر العثور على نسخة اتفاقية مؤهلة داخل الشركة الحالية. حدّث البيانات وتحقق من الشركة وتواريخ السريان.');
+  }
+  if (normalized.includes('fixed_monthly_client_financial_input_forbidden')) {
+    return withContext(fallbackMessage, 'لا يجوز إدخال مبلغ أو ضريبة أو قيد يدويًا؛ الخادم يحسب القيم من نسخة الاتفاقية المجمدة.');
+  }
 
   // A missing company claim is more actionable than a generic permission error
   // and is a common cause of a form opening successfully but a trusted RPC being

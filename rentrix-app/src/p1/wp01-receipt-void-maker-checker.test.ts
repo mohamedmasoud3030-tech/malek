@@ -140,7 +140,9 @@ describe('WP-01 receipt VOID Maker-Checker', () => {
       requested_by: ADMIN_A,
       approved_by: CHECKER_A,
     });
-    expect(Number(approved.journal_reversal_entries)).toBe(2);
+    // WP-02 RATE collection adds owner-payable/fee-revenue lines to the same
+    // receipt batch, so the canonical VOID reverses all four economic lines.
+    expect(Number(approved.journal_reversal_entries)).toBe(4);
 
     const replay = await rpcJsonb(db, 'approve_receipt_void_atomic', {
       void_request_id: voidRequestId,
@@ -178,7 +180,7 @@ describe('WP-01 receipt VOID Maker-Checker', () => {
       reviewed_by: CHECKER_A,
       request_audits: 1,
       approval_audits: 1,
-      reversal_lines: 2,
+      reversal_lines: 4,
     });
     expect(String(evidence?.reversal_batch_id ?? '')).not.toBe('');
   });

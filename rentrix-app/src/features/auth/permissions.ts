@@ -42,6 +42,9 @@ export const appPermissions = [
   'financial.owner_settlements.view',
   'financial.owner_settlements.approve',
   'financial.owner_settlements.pay',
+  'financial.fixed_monthly_accruals.view',
+  'financial.fixed_monthly_accruals.execute',
+  'financial.fixed_monthly_accruals.reverse',
 ] as const;
 
 export type AppPermission = (typeof appPermissions)[number];
@@ -84,6 +87,9 @@ export const permissionLabelsAr: Readonly<Record<AppPermission, string>> = {
   'financial.owner_settlements.view': 'عرض تسويات الملاك',
   'financial.owner_settlements.approve': 'اعتماد تسويات الملاك',
   'financial.owner_settlements.pay': 'صرف تسويات الملاك',
+  'financial.fixed_monthly_accruals.view': 'عرض الاستحقاقات اليومية للعمولة الشهرية',
+  'financial.fixed_monthly_accruals.execute': 'تنفيذ الاستحقاقات اليومية للعمولة الشهرية',
+  'financial.fixed_monthly_accruals.reverse': 'عكس استحقاق يومي للعمولة الشهرية',
 };
 
 export function getPermissionLabel(permission: AppPermission): string {
@@ -99,6 +105,8 @@ export const financialOperationPermissions = {
   matchBankReconciliation: 'financial.bank_reconciliation.match',
   approveOwnerSettlement: 'financial.owner_settlements.approve',
   payOwnerSettlement: 'financial.owner_settlements.pay',
+  executeFixedMonthlyAccruals: 'financial.fixed_monthly_accruals.execute',
+  reverseFixedMonthlyAccrual: 'financial.fixed_monthly_accruals.reverse',
 } as const satisfies Record<string, AppPermission>;
 
 export type AuthorizationContext = Readonly<{
@@ -158,6 +166,9 @@ const rolePermissions = {
     'financial.owner_settlements.view',
     'financial.owner_settlements.approve',
     'financial.owner_settlements.pay',
+    'financial.fixed_monthly_accruals.view',
+    'financial.fixed_monthly_accruals.execute',
+    'financial.fixed_monthly_accruals.reverse',
   ]),
   MANAGER: new Set<AppPermission>([
     'app.dashboard.view',
@@ -189,6 +200,9 @@ const rolePermissions = {
     'financial.bank_reconciliation.view',
     'financial.bank_reconciliation.match',
     'financial.owner_settlements.view',
+    'financial.fixed_monthly_accruals.view',
+    'financial.fixed_monthly_accruals.execute',
+    'financial.fixed_monthly_accruals.reverse',
   ]),
   ACCOUNTANT: new Set<AppPermission>([
     'app.dashboard.view',
@@ -202,6 +216,9 @@ const rolePermissions = {
     'financial.bank_reconciliation.view',
     'financial.bank_reconciliation.match',
     'financial.owner_settlements.view',
+    'financial.fixed_monthly_accruals.view',
+    'financial.fixed_monthly_accruals.execute',
+    'financial.fixed_monthly_accruals.reverse',
     'auth.password.change',
   ]),
   OPERATIONS: new Set<AppPermission>([

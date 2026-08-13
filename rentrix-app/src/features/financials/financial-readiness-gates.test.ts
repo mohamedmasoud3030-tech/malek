@@ -16,7 +16,9 @@ describe('financial readiness gates', () => {
     expect(migration).toContain("upper(coalesce(p.status, 'posted')) <> 'void'");
     expect(migration).toContain('revoke all on function public.rpt_daily_collection');
     expect(receiptService).toContain(".from('payments')");
-    expect(receiptService).toContain(".rpc('void_receipt_atomic'");
+    expect(receiptService).toContain(".rpc('request_receipt_void_atomic'");
+    expect(receiptService).toContain(".rpc('approve_receipt_void_atomic'");
+    expect(receiptService).not.toContain(".rpc('void_receipt_atomic'");
   });
 
   it('filters deleted and voided payments before report totals are summarized', () => {

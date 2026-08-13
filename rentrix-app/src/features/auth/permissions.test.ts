@@ -210,6 +210,9 @@ describe('canonical authorization permissions', () => {
     expect(canAccess(ctx, 'financial.bank_reconciliation.view')).toBe(true);
     expect(canAccess(ctx, 'financial.bank_reconciliation.match')).toBe(true);
     expect(canAccess(ctx, 'financial.owner_settlements.view')).toBe(true);
+    expect(canAccess(ctx, 'financial.fixed_monthly_accruals.view')).toBe(true);
+    expect(canAccess(ctx, 'financial.fixed_monthly_accruals.execute')).toBe(true);
+    expect(canAccess(ctx, 'financial.fixed_monthly_accruals.reverse')).toBe(true);
     expect(canAccess(ctx, 'auth.password.change')).toBe(true);
 
     // Does NOT have operational/approval/admin permissions.

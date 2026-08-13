@@ -193,6 +193,6 @@ describe('p1 release rehearsal verification (full-chain replay: P0+P1 applied)',
 
     expect(topErrors, JSON.stringify(topErrors.slice(0, 5), null, 2)).toEqual([]);
     expect(failed, JSON.stringify(failed.slice(0, 10), null, 2)).toEqual([]);
-    expect(rows.length).toBe(65);
+    expect(rows.length).toBe(66);
   }, 420_000);
 });

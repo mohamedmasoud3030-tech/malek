@@ -34,6 +34,12 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const LOGIN_PATH = '/login';
 const AUTH_STORAGE_KEY = 'rentrix-auth-session';
+let effectivePermissionsChannelSequence = 0;
+
+function nextEffectivePermissionsChannelTopic(userId: string): string {
+  effectivePermissionsChannelSequence += 1;
+  return `effective-permissions:${userId}:${effectivePermissionsChannelSequence}`;
+}
 
 /**
  * Clears the local session storage entry so a corrupted/stale refresh token
@@ -159,9 +165,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     document.addEventListener('visibilitychange', handleVisibility);
 
     // Realtime provides immediate approval/revoke propagation where enabled;
-    // focus/visibility refresh above remains the deterministic fallback.
+    // focus/visibility refresh above remains the deterministic fallback. Each
+    // effect owns a distinct topic because supabase-js reuses matching topics;
+    // a rapid cleanup/remount could otherwise receive an already-subscribed
+    // channel and throw while registering the postgres_changes callback.
     const channel = (supabase as any)
-      .channel(`effective-permissions:${userId}`)
+      .channel(nextEffectivePermissionsChannelTopic(userId))
       .on('postgres_changes', {
         event: '*',
         schema: 'public',

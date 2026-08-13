@@ -99,7 +99,16 @@ beforeAll(async () => {
   expect(replay.failed, JSON.stringify(replay.failed).slice(0, 400)).toEqual([]);
   // Pre-remediation baseline: the same chain WITHOUT the Phase 3A-1B migration —
   // this is the on-disk §2 inventory of the active definitions as found.
-  const pre = await createFullReplayedDatabase({ excludeMigrations: [MIGRATION_KEY] });
+  const pre = await createFullReplayedDatabase({
+    // Preserve the true Phase 3A-1B pre-state. Later WP-01/WP-02 migrations
+    // deliberately redefine the same payment/VOID family.
+    excludeMigrations: [
+      MIGRATION_KEY,
+      'wp01_receipt_void_maker_checker',
+      'wp02_rate_fee_collection_wiring',
+      'wp02_rate_payment_auth_sqlstate_repair',
+    ],
+  });
   preDb = pre.db;
   expect(pre.failed, JSON.stringify(pre.failed).slice(0, 400)).toEqual([]);
 }, 420_000);
@@ -203,7 +212,9 @@ describe('Phase 3A-1B inventory (live replay catalog)', () => {
     const postBySig = new Map(functions.map((f) => [(f as { signature: string }).signature, f as Record<string, unknown>]));
     expect(postBySig.get('public.generate_invoices_from_active_contracts()')?.legacyNoLookupLimit1).toBe(false);
     expect(postBySig.get('public.find_payment_account_id(account_role text)')?.usesRequireHelper).toBe(true);
-    expect(postBySig.get('public.record_invoice_payment_atomic(payload jsonb)')?.usesRequireHelper).toBe(false); // via find_payment_account_id
+    // The later WP-02 RATE wiring resolves owner-payable and fee-revenue
+    // accounts directly through the canonical company-scoped helper.
+    expect(postBySig.get('public.record_invoice_payment_atomic(payload jsonb)')?.usesRequireHelper).toBe(true);
     expect(postBySig.get('public.void_receipt_atomic(payload jsonb)')?.companyFromJwt).toBe(true);
     // The legacy void overload is byte-identical between pre and post.
     const legacyKey = 'public.void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)';

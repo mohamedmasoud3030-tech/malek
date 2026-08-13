@@ -255,7 +255,9 @@ describe('Phase 3A-1C owner-settlement execution', () => {
         ('p3a1c-b-2000', '2000', 'Owner Payables B', '${COMPANY_B}'),
         ('p3a1c-b-1111', '1111', 'Cash B', '${COMPANY_B}');
     `);
-    await assumeIdentity(db, ADMIN_B, COMPANY_B);
+    // The ADMIN_B identity created this settlement. Payment is a governed
+    // financial transition, so execute it as the distinct active checker.
+    await assumeIdentity(db, CHECKER_B, COMPANY_B);
     const b = await queryOne(
       db,
       `select id::text from public.owner_settlements

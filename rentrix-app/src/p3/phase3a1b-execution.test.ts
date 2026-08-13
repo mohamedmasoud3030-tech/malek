@@ -482,7 +482,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
               (select count(*)::int from public.journal_entries where source_id::text = $1) as journals`,
       [receipt1],
     );
-    expect(replayCounts).toEqual({ receipts: 1, payments: 1, allocations: 1, journals: 2 });
+    expect(replayCounts).toEqual({ receipts: 1, payments: 1, allocations: 1, journals: 4 });
 
     const a2BeforeReuse = await invoiceState(INVOICE_A2);
     await expect(
@@ -550,22 +550,31 @@ describe('Phase 3A-1B execution lifecycle', () => {
       }),
     ).rejects.toThrow(/exceeds outstanding/);
 
-    // Canonical accounts: debit A's 1111, credit A's 1201, balanced, company-stamped.
+    // Canonical WP-02 RATE collection accounting: Dr cash 1111 / Cr owner
+    // payable 2000 for collection, then Dr 2000 / Cr fee revenue 4100 for the
+    // frozen 10% management fee. All four lines share the receipt source.
     const cashA = await accountId(db, '1111', COMPANY_A);
-    const arA = await accountId(db, '1201', COMPANY_A);
+    const ownerPayableA = await accountId(db, '2000', COMPANY_A);
+    const feeRevenueA = await accountId(db, '4100', COMPANY_A);
     for (const rid of [receipt1, receipt2]) {
       const { rows: lines } = await db.query(
         `select account_id, amount::numeric as amount, type, company_id::text as company_id
-           from public.journal_entries where source_id::text = $1 order by type`,
+           from public.journal_entries where source_id::text = $1 order by type, amount desc`,
         [rid],
       );
-      expect(lines).toHaveLength(2);
+      expect(lines).toHaveLength(4);
       const rl = lines as Record<string, unknown>[];
-      const debit = rl.find((l) => l.type === 'DEBIT') as Record<string, unknown>;
-      const credit = rl.find((l) => l.type === 'CREDIT') as Record<string, unknown>;
-      expect(String(debit.account_id)).toBe(String(cashA));
-      expect(String(credit.account_id)).toBe(String(arA));
-      expect(Number(debit.amount)).toBeCloseTo(Number(credit.amount), 3);
+      const hasLine = (account: string | null, type: string, amount: number) => rl.some((line) =>
+        String(line.account_id) === String(account)
+        && line.type === type
+        && Number(line.amount) === amount);
+      expect(hasLine(cashA, 'DEBIT', 400)).toBe(true);
+      expect(hasLine(ownerPayableA, 'CREDIT', 400)).toBe(true);
+      expect(hasLine(ownerPayableA, 'DEBIT', 40)).toBe(true);
+      expect(hasLine(feeRevenueA, 'CREDIT', 40)).toBe(true);
+      const debit = rl.filter((line) => line.type === 'DEBIT').reduce((sum, line) => sum + Number(line.amount), 0);
+      const credit = rl.filter((line) => line.type === 'CREDIT').reduce((sum, line) => sum + Number(line.amount), 0);
+      expect(debit).toBeCloseTo(credit, 3);
       for (const line of rl) expect(line.company_id).toBe(COMPANY_A);
     }
     const r1 = await receiptState(receipt1);
@@ -619,7 +628,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
               (select count(*)::int from public.journal_entries where source_id::text = $1) as journals`,
       [receipt2],
     );
-    expect(before).toEqual({ receipts: 1, payments: 1, allocations: 1, journals: 2 });
+    expect(before).toEqual({ receipts: 1, payments: 1, allocations: 1, journals: 4 });
 
     const voided = await requestAndApproveReceiptVoid(db, ADMIN_A, CHECKER_A, COMPANY_A, {
       receipt_id: receipt2,
@@ -628,7 +637,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     });
     expect(voided.success).toBe(true);
     expect(voided.idempotent).toBe(false);
-    expect(Number(voided.journal_reversal_entries)).toBe(2);
+    expect(Number(voided.journal_reversal_entries)).toBe(4);
 
     const r2 = await receiptState(receipt2);
     expect(r2!.status).toBe('VOID');
@@ -650,16 +659,16 @@ describe('Phase 3A-1B execution lifecycle', () => {
         order by 1`,
       [receipt2],
     );
-    expect(pairs).toHaveLength(2);
+    expect(pairs).toHaveLength(4);
     for (const pair of pairs as Record<string, unknown>[]) {
       expect(pair.rev_account).toBe(pair.orig_account);
       expect(Number(pair.rev_amount)).toBeCloseTo(Number(pair.orig_amount), 3);
       expect(pair.rev_type).not.toBe(pair.orig_type);
       expect(pair.rev_company).toBe(COMPANY_A);
     }
-    const allFour = await journalBalance(db, receipt2, COMPANY_A);
-    expect(allFour.count).toBe(4);
-    expect(allFour.debit).toBeCloseTo(allFour.credit, 3);
+    const allEight = await journalBalance(db, receipt2, COMPANY_A);
+    expect(allEight.count).toBe(8);
+    expect(allEight.debit).toBeCloseTo(allEight.credit, 3);
 
     // Same-request retry: replayed response, still exactly one reversal batch.
     const retried = await requestAndApproveReceiptVoid(db, ADMIN_A, CHECKER_A, COMPANY_A, {
@@ -675,7 +684,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
          from public.journal_entries where source_id::text = $1 and entity_type = 'receipt_void'`,
       [receipt2],
     );
-    expect(counts).toEqual({ reversals: 2, audits: 1 });
+    expect(counts).toEqual({ reversals: 4, audits: 1 });
 
     const receipt1BeforeReuse = await receiptState(ids.receipt1);
     await expect(
@@ -700,7 +709,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
          from public.journal_entries where source_id::text = $1 and entity_type = 'receipt_void'`,
       [receipt2],
     );
-    expect(counts).toEqual({ reversals: 2, audits: 1 });
+    expect(counts).toEqual({ reversals: 4, audits: 1 });
 
     // A different request cannot reopen an already executed VOID lifecycle.
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
@@ -718,7 +727,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
          from public.journal_entries where source_id::text = $1 and entity_type = 'receipt_void'`,
       [receipt2],
     );
-    expect(counts).toEqual({ reversals: 2, audits: 1 });
+    expect(counts).toEqual({ reversals: 4, audits: 1 });
 
     // Resolution by payment id resolves the same shared identity.
     const receipt1 = ids.receipt1;
@@ -728,7 +737,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
       request_id: 'p3a1b-void-3',
     });
     expect(voidByPayment.success).toBe(true);
-    expect(Number(voidByPayment.journal_reversal_entries)).toBe(2);
+    expect(Number(voidByPayment.journal_reversal_entries)).toBe(4);
     a1 = await invoiceState(INVOICE_A1);
     expect(Number(a1!.paid_amount)).toBeCloseTo(200, 3);
     expect(a1!.status).toBe('PARTIALLY_PAID');
@@ -745,7 +754,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
 
     evidence.void = {
       scenario: 'void → retry(same req) → retry(new req) → void-by-payment-id',
-      receipt2: { id: receipt2, status: r2!.status, paymentStatus: r2!.payment_status, reversalEntries: 2, balancedWithOriginals: true },
+      receipt2: { id: receipt2, status: r2!.status, paymentStatus: r2!.payment_status, reversalEntries: 4, balancedWithOriginals: true },
       invoiceRestored: { paid: Number(a1!.paid_amount), status: a1!.status },
       noDoubleReversal: true,
       noRecordDeletion: true,
@@ -937,9 +946,18 @@ describe('Phase 3A-1B execution lifecycle', () => {
         expect(o.endsWith(COMPANY_A) || o.endsWith(COMPANY_B)).toBe(true);
       }
     }
-    const voidShared = idemRows.filter((r) => (r as { request_id: string }).request_id === 'p3a1b-shared-void');
+    // WP-01 stores the browser-facing request identity in its immutable
+    // Maker-Checker ledger; the internal executor uses a separate derived key.
+    const { rows: voidShared } = await db.query(
+      `select company_id::text as company_id, request_id
+         from public.receipt_void_requests
+        where request_id = 'p3a1b-shared-void'
+        order by company_id`,
+    );
     expect(voidShared).toHaveLength(2);
-    expect(new Set(voidShared.map((r) => String((r as { operation_name: string }).operation_name))).size).toBe(2);
+    expect(new Set(voidShared.map((r) => String((r as { company_id: string }).company_id)))).toEqual(
+      new Set([COMPANY_A, COMPANY_B]),
+    );
     const recordShared = idemRows.filter((r) =>
       (r as { request_id: string }).request_id === 'p3a1b-shared-pay'
       && String((r as { operation_name: string }).operation_name).startsWith('record_invoice_payment_atomic:'),

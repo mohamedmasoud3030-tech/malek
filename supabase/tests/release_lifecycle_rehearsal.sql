@@ -87,6 +87,16 @@ insert into public.accounts (id, no, name, company_id)
 values ('1111', '1111', 'Cash', '00000000-0000-4000-8000-000000000001')
 on conflict (id) do nothing;
 
+-- RATE recognition requires the canonical owner-payable and management-fee
+-- accounts in addition to the legacy Cash fixture.
+do $$
+begin
+  perform public.provision_company_chart_of_accounts(
+    '00000000-0000-4000-8000-000000000001'
+  );
+end;
+$$;
+
 insert into public.owners (id, full_name, company_id)
 values ('00000000-0000-0000-0000-000000001201', 'Lifecycle Owner', '00000000-0000-4000-8000-000000000001');
 
@@ -166,13 +176,13 @@ select lives_ok(
 );
 
 select lives_ok(
-  $
+  $$
     select public.request_receipt_void_atomic(jsonb_build_object(
       'receipt_id', (select id::text from public.payments where reference_number = 'RL-PAYMENT-1'),
       'reason', 'release lifecycle reversal',
       'request_id', 'release-lifecycle-void-1'
     ))
-  $,
+  $$,
   'maker creates a pending receipt VOID request without changing financial state'
 );
 
@@ -183,7 +193,7 @@ select set_config(
 );
 
 select lives_ok(
-  $
+  $$
     select public.approve_receipt_void_atomic(jsonb_build_object(
       'void_request_id', (
         select id::text from public.receipt_void_requests
@@ -191,12 +201,12 @@ select lives_ok(
       ),
       'request_id', 'release-lifecycle-void-approval-1'
     ))
-  $,
+  $$,
   'separate checker approves and executes the receipt reversal'
 );
 
 select lives_ok(
-  $
+  $$
     select public.approve_receipt_void_atomic(jsonb_build_object(
       'void_request_id', (
         select id::text from public.receipt_void_requests
@@ -204,7 +214,7 @@ select lives_ok(
       ),
       'request_id', 'release-lifecycle-void-approval-1'
     ))
-  $,
+  $$,
   'replaying the same checker approval is idempotent'
 );
 
