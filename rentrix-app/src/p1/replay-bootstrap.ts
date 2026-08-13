@@ -30,6 +30,9 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   '_s04_',
   '_s06_',
   '_s08_',
+  // WP-05 depends on the current accounting-period and governed S08 schema.
+  // Historical checkpoint suites must not replay it into older baselines.
+  '_wp05_',
   // GAP-007 has a strict foreign-key dependency on the S04 frozen agreement
   // version table. Historical checkpoint suites intentionally omit S04, so
   // they must omit this downstream migration as well.

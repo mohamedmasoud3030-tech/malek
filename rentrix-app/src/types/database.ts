@@ -827,6 +827,84 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['users']['Insert']>;
         Relationships: [];
       };
+      gl_cash_flow_classifications: {
+        Row: {
+          id: string;
+          company_id: string;
+          account_id: string;
+          account_no: string;
+          classification: 'OPERATING' | 'INVESTING' | 'FINANCING';
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: Partial<Database['public']['Tables']['gl_cash_flow_classifications']['Row']> & Pick<Database['public']['Tables']['gl_cash_flow_classifications']['Row'], 'company_id' | 'account_id' | 'account_no' | 'classification'>;
+        Update: Partial<Database['public']['Tables']['gl_cash_flow_classifications']['Row']>;
+        Relationships: [];
+      };
+      s08_frozen_reviews: {
+        Row: {
+          id: string;
+          company_id: string;
+          accounting_period_id: string | null;
+          review_scope: Json;
+          dataset_fingerprint: string;
+          dataset_lineage: string;
+          creation_timestamp: string;
+          analysis_version: string;
+          analysis_results: Json | null;
+          reconciliation_evidence: Json | null;
+          exceptions: Json | null;
+          evidence_reference: string | null;
+          reviewer_decision: 'CREATED' | 'ANALYZED' | 'APPROVED' | 'REJECTED';
+          reviewer_id: string | null;
+          reviewed_at: string | null;
+          review_notes: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['s08_frozen_reviews']['Row']> & Pick<Database['public']['Tables']['s08_frozen_reviews']['Row'], 'company_id' | 'dataset_fingerprint' | 'dataset_lineage' | 'analysis_version'>;
+        Update: Partial<Database['public']['Tables']['s08_frozen_reviews']['Row']>;
+        Relationships: [];
+      };
+      s09_corrections: {
+        Row: {
+          id: string;
+          company_id: string;
+          accounting_period_id: string | null;
+          review_id: string;
+          source_type: string;
+          source_id: string;
+          source_scope: Json;
+          reason: string;
+          status: 'DRAFT' | 'VALIDATED' | 'APPLIED' | 'REVERSED';
+          before_evidence: Json | null;
+          after_evidence: Json | null;
+          original_journal_batch_id: string | null;
+          correction_journal_batch_id: string | null;
+          reversal_journal_batch_id: string | null;
+          amount: number;
+          debit_account_id: string | null;
+          credit_account_id: string | null;
+          debit_account_no: string | null;
+          credit_account_no: string | null;
+          lines: Json | null;
+          actor_id: string | null;
+          request_id: string;
+          idempotency_key: string | null;
+          validated_at: string | null;
+          applied_at: string | null;
+          reversed_at: string | null;
+          reversal_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['s09_corrections']['Row']> & Pick<Database['public']['Tables']['s09_corrections']['Row'], 'company_id' | 'review_id' | 'source_type' | 'source_id' | 'reason' | 'amount' | 'request_id'>;
+        Update: Partial<Database['public']['Tables']['s09_corrections']['Row']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1022,6 +1100,160 @@ export type Database = {
       };
       list_journal_lines: {
         Args: { p_batch_id: string };
+        Returns: Json;
+      };
+      wp05_round_omr: {
+        Args: { p_amount: number };
+        Returns: number;
+      };
+      wp05_gl_balance: {
+        Args: { p_company_id: string; p_account_no: string; p_as_of?: string };
+        Returns: number;
+      };
+      wp05_gl_line_count: {
+        Args: { p_company_id: string; p_account_no: string; p_as_of?: string };
+        Returns: number;
+      };
+      wp05_reconcile_all: {
+        Args: { p_company_id: string; p_as_of?: string };
+        Returns: {
+          reconciliation_class: string;
+          account_no: string;
+          account_name: string;
+          subledger_balance: number;
+          gl_balance: number;
+          variance: number;
+          abs_variance: number;
+          currency: string;
+          reconciliation_status: string;
+          subledger_count: number;
+          gl_count: number;
+        }[];
+      };
+      wp05_assert_reconciliation: {
+        Args: { p_company_id: string; p_as_of?: string };
+        Returns: Json;
+      };
+      wp05_provision_default_cashflow_classifications: {
+        Args: { p_company_id: string };
+        Returns: Json;
+      };
+      wp05_rpt_trial_balance_gl: {
+        Args: { p_as_of: string };
+        Returns: Json;
+      };
+      wp05_rpt_balance_sheet_gl: {
+        Args: { p_as_of: string };
+        Returns: Json;
+      };
+      wp05_rpt_profit_loss_gl: {
+        Args: { p_from: string; p_to: string };
+        Returns: Json;
+      };
+      wp05_rpt_general_ledger_gl: {
+        Args: { p_from: string; p_to: string; p_account_no?: string };
+        Returns: Json;
+      };
+      wp05_rpt_cash_flow_gl: {
+        Args: { p_from: string; p_to: string };
+        Returns: Json;
+      };
+      wp05_assert_cash_flow: {
+        Args: { p_from: string; p_to: string; p_allow_unclassified?: boolean };
+        Returns: Json;
+      };
+      wp05_cash_flow_drillthrough: {
+        Args: { p_from: string; p_to: string; p_classification?: string };
+        Returns: {
+          classification: string;
+          account_id: string;
+          account_no: string;
+          account_name: string;
+          batch_id: string;
+          source_type: string;
+          source_id: string;
+          event_id: string;
+          effective_date: string;
+          posted_at: string | null;
+          debit: number;
+          credit: number;
+          amount: number;
+          line_description: string | null;
+          ref_source_id: string | null;
+          ref_entity_type: string | null;
+          ref_entity_id: string | null;
+        }[];
+      };
+      wp05_gl_drillthrough: {
+        Args: { p_from: string; p_to: string; p_account_no?: string };
+        Returns: {
+          account_no: string;
+          account_name: string;
+          batch_id: string;
+          source_type: string;
+          source_id: string;
+          event_id: string;
+          effective_date: string;
+          posted_at: string | null;
+          status: string;
+          debit: number;
+          credit: number;
+          line_description: string | null;
+          ref_source_id: string | null;
+          ref_entity_type: string | null;
+          ref_entity_id: string | null;
+        }[];
+      };
+      s08_compute_dataset_fingerprint: {
+        Args: { p_company_id: string; p_period_id: string };
+        Returns: string;
+      };
+      s08_create_frozen_review: {
+        Args: { p_payload: Json };
+        Returns: Json;
+      };
+      s08_analyze_frozen_review: {
+        Args: { p_review_id: string; p_analysis_results?: Json; p_reconciliation_evidence?: Json; p_exceptions?: Json };
+        Returns: Json;
+      };
+      s08_approve_frozen_review: {
+        Args: { p_review_id: string; p_notes?: string };
+        Returns: Json;
+      };
+      s08_reject_frozen_review: {
+        Args: { p_review_id: string; p_reason?: string };
+        Returns: Json;
+      };
+      s08_verify_fingerprint: {
+        Args: { p_review_id: string };
+        Returns: Json;
+      };
+      s08_list_frozen_reviews: {
+        Args: { p_period_id?: string };
+        Returns: Json;
+      };
+      s09_create_correction_draft: {
+        Args: { p_payload: Json };
+        Returns: Json;
+      };
+      s09_validate_correction: {
+        Args: { p_correction_id: string };
+        Returns: Json;
+      };
+      s09_apply_correction: {
+        Args: { p_correction_id: string };
+        Returns: Json;
+      };
+      s09_reverse_correction: {
+        Args: { p_correction_id: string; p_reason: string };
+        Returns: Json;
+      };
+      s09_list_corrections: {
+        Args: { p_period_id?: string; p_status?: string };
+        Returns: Json;
+      };
+      s09_validate_correction_invariants: {
+        Args: { p_correction_id: string };
         Returns: Json;
       };
     };
