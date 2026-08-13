@@ -302,7 +302,7 @@ select results_eq(
 select cmp_ok(
   (select gl_count from public.wp05_reconcile_all('a0000000-0000-4000-8000-000000000001', date '2026-07-31') where reconciliation_class = 'SECURITY_DEPOSITS'),
   '<=',
-  3,
+  3::bigint,
   '6. deposit isolation: GL count for A is small, not including B'
 );
 

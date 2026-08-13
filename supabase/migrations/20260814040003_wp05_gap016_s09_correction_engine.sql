@@ -227,7 +227,7 @@ begin
 
   -- 6. debit = credit (amounts use 3dp) — check lines or debit/credit accounts
   v_amount_rounded := public.wp05_round_omr(v_corr.amount);
-  if abs(v_corr.amount - v_amount_rounded) > 0.0005 then
+  if v_corr.amount <> v_amount_rounded then
     raise exception 'S09_AMOUNT_PRECISION_INVALID: amount % must be OMR 3dp, rounded %', v_corr.amount, v_amount_rounded using errcode='22023';
   end if;
 
@@ -385,7 +385,7 @@ begin
   if v_amount_raw is null or v_amount_raw <= 0 then
     raise exception 'S09_AMOUNT_REQUIRED: positive amount required' using errcode='22023';
   end if;
-  if abs(v_amount_raw - public.wp05_round_omr(v_amount_raw)) > 0.0005 then
+  if v_amount_raw <> public.wp05_round_omr(v_amount_raw) then
     raise exception 'S09_AMOUNT_PRECISION_INVALID: amount must be 3dp' using errcode='22023';
   end if;
   v_amount := public.wp05_round_omr(v_amount_raw);
