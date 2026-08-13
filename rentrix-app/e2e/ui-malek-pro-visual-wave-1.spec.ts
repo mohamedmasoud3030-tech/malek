@@ -91,12 +91,15 @@ test('mobile cards and desktop table expose the same property register without p
   const mobileRegister = page.locator('[data-entity-table-mobile]').filter({ has: page.locator('[data-entity-table-mobile-card]') }).first();
   await expect(mobileRegister).toBeVisible();
   await expect(page.locator('table[aria-label="جدول العقارات"]')).toBeHidden();
-  await expect(page.locator('[data-row-disclosure]').first()).toBeVisible();
+  const firstMobileRecord = mobileRegister.locator('[data-entity-table-mobile-primary]').first();
+  await expect(firstMobileRecord).toBeVisible();
+  await expect(firstMobileRecord).toContainText('برج الواحة السكني');
   await expectNoApplicationOverflow(page, 'properties mobile card register');
 
   await page.setViewportSize({ width: 1024, height: 900 });
   const table = page.locator('table[aria-label="جدول العقارات"]');
   await expect(table).toBeVisible();
+  await expect(table.getByText('برج الواحة السكني', { exact: true })).toBeVisible();
   const scroller = page.locator('[data-entity-table-scroll]:visible').first();
   await expect(scroller).toBeVisible();
   await scroller.focus();

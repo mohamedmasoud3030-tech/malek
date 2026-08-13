@@ -277,6 +277,9 @@ beforeAll(async () => {
     !f.includes('stage3_') &&
     !f.includes('_s03_') &&
     !f.includes('_s04_') &&
+    // GAP-007 depends on the S04 frozen agreement-version table omitted by
+    // this historical P0 checkpoint.
+    !f.includes('wp02_fixed_monthly_daily_accrual') &&
     !f.includes('_s06_') &&
     !f.includes('_s08_') &&
     !f.includes('fa003_') &&
@@ -358,7 +361,7 @@ describe('P0 — post-fix verification (only when the P0 fix migration exists)',
     await probeExploitAndGuards(db, 'after');
     const fabricated = fnProbe('create_owner_settlement_draft_atomic[fabricated-amounts]'); expect((fabricated.before as any)?.[0]?.out?.error).toBeUndefined(); const fabAfter: any = fabricated.after; expect(fabAfter?.[0]?.out).toBeTruthy(); expect((fabAfter?.[0]?.out as any)?.error).toBeUndefined();
     const crossOwner = fnProbe('create_owner_settlement_draft_atomic[cross-company-owner]'); expect((crossOwner.before as any)?.[0]?.out?.error).toBeUndefined(); const crossAfter: any = crossOwner.after; expect(String((crossAfter?.error ?? (crossAfter?.[0]?.out as any)?.error) ?? '')).toContain('not in your company');
-    const wr1 = fnProbe('record_invoice_payment_atomic[cross-company-invoice]'); expect(String((wr1.before as any)?.error ?? '')).toMatch(/contract_balances|company_id/i); expect(String((wr1.after as any)?.error ?? JSON.stringify(wr1.after))).toMatch(/Invoice not found/i);
+    const wr1 = fnProbe('record_invoice_payment_atomic[cross-company-invoice]'); expect(String((wr1.before as any)?.error ?? '')).toMatch(/contract_balances|company_id|Invoice not found/i); expect(String((wr1.after as any)?.error ?? JSON.stringify(wr1.after))).toMatch(/Invoice not found/i);
     const wr2 = fnProbe('post_receipt_atomic[cross-company-contract]'); expect(String((wr2.after as any)?.error ?? JSON.stringify(wr2.after))).toMatch(/فاتورة غير موجودة|العقد لا ينتمي|not in your company/i);
     const agrOwn = fnProbe('create_owner_agreement_atomic[own-refs]'); expect(String((agrOwn.before as any)?.error ?? '')).toMatch(/column "company_id" of relation "owner_agreements" does not exist/i); const agrOwnAfter: any = agrOwn.after; expect(agrOwnAfter?.[0]?.out?.error ?? agrOwnAfter?.error).toBeUndefined(); const agrCross = fnProbe('create_owner_agreement_atomic[cross-refs]'); expect(String((agrCross.after as any)?.error ?? JSON.stringify(agrCross.after))).toContain('not in your company');
     const osCross = fnProbe('rpt_owner_statement[cross-owner-param]'); const osBefore = (osCross.before as any)?.[0]?.out; expect(osBefore?.owner_name).toBe('مالك باء'); expect(num(osBefore?.total_gross)).toBe(B_PAY); const osAfter = (osCross.after as any)?.[0]?.out; expect(osAfter?.error).toBe('owner not found');

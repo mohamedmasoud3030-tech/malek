@@ -95,6 +95,16 @@ values
   ('00000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000102', 'MEMBER')
 on conflict (company_id, user_id) do update set role = excluded.role;
 
+-- The RATE payment path posts through the canonical per-company chart. Keep
+-- this release fixture complete instead of relying on legacy bootstrap rows.
+do $$
+begin
+  perform public.provision_company_chart_of_accounts(
+    '00000000-0000-4000-8000-000000000001'
+  );
+end;
+$$;
+
 insert into public.owners (id, full_name, company_id)
 values ('00000000-0000-0000-0000-000000000201', 'Release Owner', '00000000-0000-4000-8000-000000000001');
 

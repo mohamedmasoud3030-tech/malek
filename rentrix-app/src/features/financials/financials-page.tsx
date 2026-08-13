@@ -9,7 +9,8 @@ import {
   ClipboardList,
   FileCheck,
   HandCoins,
-  Building2
+  Building2,
+  CalendarDays,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react';
@@ -64,6 +65,9 @@ const DepositsWorkspace = lazy(async () => ({
 const OwnerSettlementsWorkspace = lazy(async () => ({
   default: (await import('@/features/owners/owner-settlements-page')).OwnerSettlementsWorkspace,
 }));
+const FixedMonthlyAccrualWorkspace = lazy(async () => ({
+  default: (await import('@/features/financials/fixed-monthly-accruals/fixed-monthly-accrual-workspace')).FixedMonthlyAccrualWorkspace,
+}));
 const BankReconciliationWorkspace = lazy(async () => ({
   default: (await import('@/features/financials/reconciliation/bank-reconciliation-page')).BankReconciliationWorkspace,
 }));
@@ -85,6 +89,7 @@ export type FinanceViewId =
   | 'expenses'
   | 'deposits'
   | 'owner_settlements'
+  | 'fixed_monthly_accruals'
   | 'bank_reconciliation';
 
 export interface FinanceViewDefinition {
@@ -118,6 +123,7 @@ export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
   { id: 'expenses', sectionId: 'expenses', label: 'المصروفات', icon: WalletCards, permission: 'expenses.view' },
   { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
   { id: 'owner_settlements', sectionId: 'funds', label: 'تسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
+  { id: 'fixed_monthly_accruals', sectionId: 'funds', label: 'استحقاق العمولة الشهرية', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
   { id: 'bank_reconciliation', sectionId: 'banking', label: 'مطابقة كشف البنك', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
 ];
 
@@ -205,7 +211,7 @@ export function FinancialsPage() {
       // Legacy commissions — handled by redirect effect above; map to expenses fallback here so hardening doesn't crash
       sId = 'expenses';
       vId = 'expenses';
-    } else if (['funds', 'deposits', 'owner_settlements'].includes(sec)) {
+    } else if (['funds', 'deposits', 'owner_settlements', 'fixed_monthly_accruals'].includes(sec)) {
       sId = 'funds';
       const defaultView = sec === 'funds' ? 'deposits' : sec;
       vId = (vi || defaultView) as FinanceViewId;
@@ -472,6 +478,13 @@ export function FinancialsPage() {
                 <div id="section-panel-owner_settlements" role="tabpanel">
                   <Suspense fallback={<SectionFallback />}>
                     <OwnerSettlementsWorkspace embedded={true} />
+                  </Suspense>
+                </div>
+              )}
+              {activeSection === 'funds' && activeView === 'fixed_monthly_accruals' && (
+                <div id="section-panel-fixed_monthly_accruals" role="tabpanel">
+                  <Suspense fallback={<SectionFallback />}>
+                    <FixedMonthlyAccrualWorkspace />
                   </Suspense>
                 </div>
               )}

@@ -10,7 +10,12 @@ test.describe('Service Providers workspace', () => {
     await expect(page.getByRole('heading', { name: 'مزودو الخدمات' })).toBeVisible();
     await expect(page.getByText('شركة الأفق للتبريد', { exact: true }).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText('التكييف والتبريد', { exact: true }).filter({ visible: true }).first()).toBeVisible();
-    await expect(page.getByText('2 جارية').filter({ visible: true }).first()).toBeVisible();
+    const openJobsMetric = page
+      .getByRole('region', { name: 'ملخص مزودي الخدمات' })
+      .getByRole('article')
+      .filter({ hasText: 'أعمال جارية' });
+    await expect(openJobsMetric.getByText('2', { exact: true })).toBeVisible();
+    await expect(openJobsMetric).toContainText('مفتوحة أو قيد التنفيذ');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
 
     const overflow = await page.evaluate(() => ({
