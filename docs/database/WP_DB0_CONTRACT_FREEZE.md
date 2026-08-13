@@ -13,7 +13,7 @@ compared:
 
 | Layer | Where it lived | How it drifted |
 |---|---|---|
-| Migrations | `supabase/migrations/*.sql` | 230 files, many fixing symptoms of earlier files |
+| Migrations | `supabase/migrations/*.sql` | 231 files, many fixing symptoms of earlier files |
 | Actual schema | the live Supabase project | never inspected as an artifact |
 | Types | `rentrix-app/src/types/database.ts` | **hand-written**, not generated |
 | Usage | `.from()` / `.rpc()` call sites | discovered only when a page broke |
@@ -52,7 +52,7 @@ migration chain replays completely unmodified.
 
 ## 3. Database reality (measured, not assumed)
 
-Replaying all 230 migrations into an empty database produces:
+Replaying all 231 migrations into an empty database produces:
 
 | Object | Count |
 |---|---:|
@@ -191,7 +191,7 @@ single normalisation point, and the type system now enforces its use.
 | Check | Result |
 |---|---|
 | `pnpm db0:gate` (7 gates) | **7/7 PASS** |
-| Migration chain, clean DB | 230/230 applied, 0 failures |
+| Migration chain, clean DB | 231/231 applied, 0 failures |
 | Idempotency (re-run) | Schema fingerprint identical |
 | Schema/type drift | `database.ts` matches migrations |
 | Contract drift | 0 blockers; 47 accepted (GAP-009) |
