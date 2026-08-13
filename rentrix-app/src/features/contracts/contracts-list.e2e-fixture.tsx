@@ -16,8 +16,32 @@ import type { ContractListItem, ContractStatusFilter } from './services/contract
  * same header, KPI grid, filters and results components as production,
  * fed with showcase rows. Rendered only behind VITE_E2E.
  */
+// WP-DB0: the fixture rows below must satisfy the frozen `contracts` row
+// contract. Columns that every showcase row shares (tenant key, lifecycle and
+// maker-checker fields) live here so each row states only what differs.
+const FIXTURE_COMPANY_ID = '00000000-0000-4000-8000-0000000000c1';
+
+const fixtureContractDefaults = {
+  company_id: FIXTURE_COMPANY_ID,
+  reference: null,
+  agreement_version_id: null,
+  collection_role_snapshot: null,
+  operating_model_snapshot: null,
+  maker_user_id: null,
+  checker_user_id: null,
+  maker_signature: null,
+  checker_signature: null,
+  approval_status: null,
+  submitted_at: null,
+  approved_at: null,
+  rejected_at: null,
+  rejection_reason: null,
+  approval_evidence: null,
+} as const;
+
 const fixtureContracts: ContractListItem[] = [
   {
+    ...fixtureContractDefaults,
     id: 'c-000001', property_id: 'p-000001', unit_id: 'u-301', tenant_id: 't-001',
     start_date: '2026-01-01', end_date: '2026-12-31', rent_amount: 420,
     payment_cycle: 'monthly', payment_terms_id: null, status: 'active',
@@ -29,6 +53,7 @@ const fixtureContracts: ContractListItem[] = [
     people: { id: 't-001', full_name: 'أحمد الحارثي', phone: '96892110011', email: null, national_id: null },
   },
   {
+    ...fixtureContractDefaults,
     id: 'c-000002', property_id: 'p-000002', unit_id: 'u-v2', tenant_id: 't-002',
     start_date: '2025-09-01', end_date: '2026-08-31', rent_amount: 950,
     payment_cycle: 'quarterly', payment_terms_id: null, status: 'active',
@@ -40,6 +65,7 @@ const fixtureContracts: ContractListItem[] = [
     people: { id: 't-002', full_name: 'سارة القتبية', phone: '96894550022', email: null, national_id: null },
   },
   {
+    ...fixtureContractDefaults,
     id: 'c-000003', property_id: 'p-000003', unit_id: 'u-g04', tenant_id: 't-003',
     start_date: '2026-03-01', end_date: '2027-02-28', rent_amount: 600,
     payment_cycle: 'monthly', payment_terms_id: null, status: 'active',
@@ -51,6 +77,7 @@ const fixtureContracts: ContractListItem[] = [
     people: { id: 't-003', full_name: 'محفوظ التجارية ش.م.م', phone: '96826840033', email: null, national_id: null },
   },
   {
+    ...fixtureContractDefaults,
     id: 'c-000004', property_id: 'p-000005', unit_id: 'u-705', tenant_id: 't-004',
     start_date: '2026-06-01', end_date: '2027-05-31', rent_amount: 1200,
     payment_cycle: 'annual', payment_terms_id: null, status: 'active',
@@ -62,6 +89,7 @@ const fixtureContracts: ContractListItem[] = [
     people: { id: 't-004', full_name: 'شركة أفق الخليج', phone: '96824780044', email: null, national_id: null },
   },
   {
+    ...fixtureContractDefaults,
     id: 'c-000005', property_id: 'p-000001', unit_id: 'u-205', tenant_id: 't-005',
     start_date: '2025-08-15', end_date: '2026-08-14', rent_amount: 380,
     payment_cycle: 'monthly', payment_terms_id: null, status: 'active',
@@ -73,6 +101,7 @@ const fixtureContracts: ContractListItem[] = [
     people: { id: 't-005', full_name: 'ناصر الريامي', phone: '96891770055', email: null, national_id: null },
   },
   {
+    ...fixtureContractDefaults,
     id: 'c-000006', property_id: 'p-000004', unit_id: 'u-b12', tenant_id: 't-006',
     start_date: '2025-07-01', end_date: '2026-06-30', rent_amount: 700,
     payment_cycle: 'semi_annual', payment_terms_id: null, status: 'expired',
@@ -84,6 +113,7 @@ const fixtureContracts: ContractListItem[] = [
     people: { id: 't-006', full_name: 'خميس الحضرمي', phone: '96899330066', email: null, national_id: null },
   },
   {
+    ...fixtureContractDefaults,
     id: 'c-000007', property_id: 'p-000005', unit_id: 'u-302', tenant_id: 't-007',
     start_date: '2026-08-01', end_date: '2027-07-31', rent_amount: 880,
     payment_cycle: 'monthly', payment_terms_id: null, status: 'draft',

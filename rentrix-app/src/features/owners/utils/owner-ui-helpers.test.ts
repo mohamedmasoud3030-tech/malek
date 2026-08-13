@@ -12,8 +12,10 @@ import {
   validatePropertyOwnershipLinkForm,
 } from './owner-ui-helpers';
 import type { Owner, PropertyOwnerWithOwner, PropertyWithOwners } from '../services/owner-service';
+import { ownerRowFixtureDefaults, propertyOwnerRowFixtureDefaults, propertyRowFixtureDefaults } from '@/test/ownerRowFixture';
 
 const baseOwner: Owner = {
+  ...ownerRowFixtureDefaults,
   id: 'owner-1',
   full_name: 'مالك نشط',
   display_name: null,
@@ -30,6 +32,7 @@ const baseOwner: Owner = {
 
 function propertyOwnerLink(propertyId: string, ownerId: string, endsOn: string | null = null): PropertyOwnerWithOwner {
   return {
+    ...propertyOwnerRowFixtureDefaults,
     id: `${propertyId}-${ownerId}-${endsOn ?? 'active'}`,
     property_id: propertyId,
     owner_id: ownerId,
@@ -45,6 +48,7 @@ function propertyOwnerLink(propertyId: string, ownerId: string, endsOn: string |
 
 function property(id: string, ownerIds: string[]): PropertyWithOwners {
   return {
+    ...propertyRowFixtureDefaults,
     id,
     title: `عقار ${id}`,
     type: 'سكني',

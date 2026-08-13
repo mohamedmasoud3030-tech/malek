@@ -39,6 +39,7 @@ const validRecord = {
   notification_sms_enabled: false,
   created_at: '2026-05-18T00:00:00.000Z',
   updated_at: '2026-05-18T00:00:00.000Z',
+  company_id: 'company-1',
 } as const;
 
 const validDraft: CompanySettingsDraft = {

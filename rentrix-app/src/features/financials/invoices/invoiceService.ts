@@ -12,17 +12,26 @@ export type InvoiceSummary = { totalAmount: number; totalTax: number; totalPaid:
 const invoiceSelect = '*, contracts:contract_id(id,property_id,tenant_id)';
 const invoiceSelectWithContractFilter = '*, contracts:contract_id!inner(id,property_id,tenant_id)';
 
-function applyStatusFilter(query: ReturnType<typeof supabase.from>, status: InvoiceStatusFilter) {
+// `supabase.from(...)` returns a query builder (insert/update/delete); only
+// after `.select()` is it a filter builder exposing `.in()`/`.or()`. Typing the
+// parameter as the builder that is actually passed in keeps the filter helpers
+// type-safe against the generated schema instead of requiring a cast.
+function applyStatusFilter<Q extends { in(column: 'status', values: string[]): Q }>(
+  query: Q,
+  status: InvoiceStatusFilter,
+): Q {
   // Cover every casing present in live rows (legacy lowercase + modern UPPERCASE).
   if (status === 'all') return query;
   return query.in('status', getInvoiceStatusVariants(status));
 }
 
-export function getInvoiceGrossAmount(invoice: Pick<Invoice, 'amount'> & Partial<Pick<Invoice, 'tax_amount'>>): number {
+type InvoiceGrossInput = Pick<Invoice, 'amount'> & { tax_amount?: Invoice['tax_amount'] | null };
+
+export function getInvoiceGrossAmount(invoice: InvoiceGrossInput): number {
   return toFinancialNumber(invoice.amount) + toFinancialNumber(invoice.tax_amount);
 }
 
-export function summarizeInvoices(invoices: Array<Pick<Invoice, 'amount' | 'paid_amount'> & Partial<Pick<Invoice, 'tax_amount'>>>): InvoiceSummary {
+export function summarizeInvoices(invoices: Array<Pick<Invoice, 'amount' | 'paid_amount'> & { tax_amount?: Invoice['tax_amount'] | null }>): InvoiceSummary {
   return invoices.reduce(
     (summary, invoice) => {
       const grossAmount = getInvoiceGrossAmount(invoice);

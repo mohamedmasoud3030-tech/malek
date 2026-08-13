@@ -271,8 +271,8 @@ describe('Phase 6.1 — Nested Relation Contracts Search (PostgREST validation)'
     }
 
     // Verify correct selection of relations
-    expect(lastSelectArgs['contracts']).toContain('properties:property_id!inner(title)');
-    expect(lastSelectArgs['contracts']).toContain('people:tenant_id!inner(full_name)');
+    expect(lastSelectArgs['contracts']).toContain('properties:properties!contracts_property_id_fkey!inner(title)');
+    expect(lastSelectArgs['contracts']).toContain('people:people!contracts_tenant_id_fkey!inner(full_name)');
     // Verify the PostgREST nested or filtering argument is correct
     expect(lastOrArgs['contracts']).toContain('properties.title.ilike.%عقد%');
     expect(lastOrArgs['contracts']).toContain('people.full_name.ilike.%عقد%');

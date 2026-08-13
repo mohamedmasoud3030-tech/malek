@@ -49,7 +49,7 @@ function useContracts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contracts')
-        .select('id, tenant_id, property_id, unit_id, people:tenant_id(id,full_name), properties:property_id(id,title), units:unit_id(id,unit_number)')
+        .select('id, tenant_id, property_id, unit_id, people:people!contracts_tenant_id_fkey(id,full_name), properties:properties!contracts_property_id_fkey(id,title), units:units!contracts_unit_id_fkey(id,unit_number)')
         .is('deleted_at', null)
         .in('status', getContractStatusVariants('active') as Contract['status'][])
         .limit(100)

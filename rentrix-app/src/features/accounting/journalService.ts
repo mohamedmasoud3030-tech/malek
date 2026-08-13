@@ -69,6 +69,11 @@ export async function listJournalBatches(filters: JournalBatchFilters = {}): Pro
         posted_at: asNullableString(r.posted_at),
         posted_by: asNullableString(r.posted_by),
         description: asNullableString(r.description),
+        // Late-posting contract (20260807173000_s03_late_posting_contract.sql):
+        // posting_date is the date the batch hit the ledger, which differs
+        // from effective_date whenever a batch is posted into a later period.
+        posting_date: asString(r.posting_date) || asString(r.effective_date),
+        late_posting: r.late_posting === true,
         created_at: asString(r.created_at),
         created_by: asNullableString(r.created_by),
         updated_at: asString(r.updated_at),

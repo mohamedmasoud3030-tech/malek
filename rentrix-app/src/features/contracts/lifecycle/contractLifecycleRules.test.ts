@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { canRenewContract, canTerminateContract } from './contractLifecycleRules';
 import type { ContractDetail } from '../services/contractService';
+import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
 
 function createContract(status: ContractDetail['status']): ContractDetail {
   return {
+    ...contractRowFixtureDefaults,
     id: 'contract-1',
     property_id: 'property-1',
     unit_id: 'unit-1',

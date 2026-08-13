@@ -1,3 +1,4 @@
+import type { CanonicalContractStatus } from '@/lib/contractStatus';
 import { getContractStatusVariants } from '@/lib/contractStatus';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import { supabase } from '@/lib/supabase';
@@ -5,7 +6,12 @@ import type { Database } from '@/types/database';
 import type { Contract, Person, Property, Unit } from '@/types/domain';
 import type { ContractPayload, RenewalPayload } from '../contractSchema';
 
-export type ContractStatusFilter = Contract['status'] | 'all';
+// The database CHECK still permits the legacy spellings 'ACTIVE'/'ENDED'
+// alongside the canonical lowercase set, so `Contract['status']` is wider than
+// the values the UI filters on. Filters are expressed in canonical terms and
+// `getContractStatusVariants` expands them to every stored spelling at query
+// time — see `@/lib/contractStatus`.
+export type ContractStatusFilter = CanonicalContractStatus | 'all';
 export type ContractListItem = Contract & {
   reference?: string | null;
   properties: Pick<Property, 'id' | 'title' | 'address'> | null;
@@ -30,7 +36,7 @@ export type RenewalResult = { status: 'renewed'; old_contract_id: string; new_co
 
 // Shared select clauses - single source of truth for contract relations
 export const CONTRACT_BASE_SELECT =
-  '*, properties:property_id(id,title,address), units:unit_id(id,unit_number,floor,status,rent_amount), people:tenant_id(id,full_name,phone,email,national_id)';
+  '*, properties:properties!contracts_property_id_fkey(id,title,address), units:units!contracts_unit_id_fkey(id,unit_number,floor,status,rent_amount), people:people!contracts_tenant_id_fkey(id,full_name,phone,email,national_id)';
 export const CONTRACT_DETAIL_SELECT =
   CONTRACT_BASE_SELECT + ', renewed_from:renewed_from_id(id,start_date,end_date,rent_amount,status)';
 

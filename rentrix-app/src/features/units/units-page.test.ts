@@ -15,6 +15,7 @@ function makeUnit(overrides: Partial<Unit> = {}): Unit {
     created_at: '2026-06-03T00:00:00.000Z',
     updated_at: '2026-06-03T00:00:00.000Z',
     deleted_at: null,
+    company_id: 'company-1',
     ...overrides,
   };
 }

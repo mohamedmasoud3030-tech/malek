@@ -28,6 +28,7 @@ const basePayment: Payment = {
   created_at: '2026-05-14T10:30:00Z',
   updated_at: '2026-05-14T10:30:00Z',
   deleted_at: null,
+  company_id: 'company-1',
 };
 
 function createPaymentFixture(overrides: Partial<Payment> = {}): Payment {

@@ -118,7 +118,7 @@ export function useCommandSearch(query: string) {
           .abortSignal(signal),
         supabase
           .from('contracts')
-          .select('id, reference, status, start_date, end_date, properties:property_id!inner(title), people:tenant_id!inner(full_name)')
+          .select('id, reference, status, start_date, end_date, properties:properties!contracts_property_id_fkey!inner(title), people:people!contracts_tenant_id_fkey!inner(full_name)')
           .is('deleted_at', null)
           .or(`properties.title.ilike.${term},people.full_name.ilike.${term}`) // Server-side contract search!
           .limit(5)
@@ -142,7 +142,7 @@ export function useCommandSearch(query: string) {
           : Promise.resolve({ data: [], error: null }),
         (supabase as any)
           .from('invoices')
-          .select('id,reference,status,due_date,amount,contracts:contract_id(people:tenant_id(full_name),properties:property_id(title))')
+          .select('id,reference,status,due_date,amount,contracts:contract_id(people:people!contracts_tenant_id_fkey(full_name),properties:properties!contracts_property_id_fkey(title))')
           .ilike('reference', term)
           .limit(5)
           .abortSignal(signal),

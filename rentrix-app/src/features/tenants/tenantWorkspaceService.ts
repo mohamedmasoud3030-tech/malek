@@ -40,14 +40,17 @@ type TenantInvoiceSummary = {
   hasArrears: boolean;
 };
 
-const tenantContractSelect = '*, properties:property_id(id,title), units:unit_id(id,unit_number)';
+const tenantContractSelect = '*, properties:properties!contracts_property_id_fkey(id,title), units:units!contracts_unit_id_fkey(id,unit_number)';
 const tenantInvoiceSelect = 'contract_id,status,amount,paid_amount,due_date';
 
 function escapeSearchTerm(value: string) {
   return value.replaceAll('%', String.raw`\%`).replaceAll('_', String.raw`\_`);
 }
 
-function applyTenantSearch(query: ReturnType<typeof supabase.from>, search: string) {
+// `supabase.from(...)` is a query builder; `.or()` only exists on the filter
+// builder returned by `.select()`. Constrain to what the helper actually uses
+// so the call site keeps its fully-typed builder.
+function applyTenantSearch<Q extends { or(filters: string): Q }>(query: Q, search: string): Q {
   const trimmedSearch = search.trim();
   if (trimmedSearch.length === 0) {
     return query;
@@ -155,7 +158,7 @@ export async function getTenantDossier(tenantId: string, options: { includeFinan
 
   const { data: contractsData, error: contractsError } = await (supabase as any)
     .from('contracts')
-    .select('*, properties:property_id(id,title), units:unit_id(id,unit_number)')
+    .select('*, properties:properties!contracts_property_id_fkey(id,title), units:units!contracts_unit_id_fkey(id,unit_number)')
     .eq('tenant_id', tenantId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });

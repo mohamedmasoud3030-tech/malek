@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContractsListPage } from './ContractsListPage';
 import { normalizeSearchText } from './hooks/useContractFilters';
 import type { ContractListItem } from './services/contractService';
+import { contractRowFixtureDefaults } from '@/test/contractRowFixture';
 
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
@@ -31,6 +32,7 @@ const contractsMocks = vi.hoisted(() => ({
 }));
 
 const contractFixture: ContractListItem = {
+  ...contractRowFixtureDefaults,
   id: 'contract-123456789',
   property_id: 'property-1',
   unit_id: 'unit-1',

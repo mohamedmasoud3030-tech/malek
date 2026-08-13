@@ -1,4 +1,5 @@
 import type { ContractListItem } from '@/features/contracts/services/contractService';
+import type { CanonicalContractStatus } from '@/lib/contractStatus';
 import { isContractStatus, normalizeContractStatus } from '@/lib/contractStatus';
 import type {
   AgedReceivablesBucket,
@@ -42,7 +43,10 @@ export type RentRollReportRow = {
 export const latestReceiptLimit = 100;
 export const expiringContractWindowDays = 60;
 export const agingBucketKeys: Array<AgedReceivablesBucket['key']> = ['current', 'days_1_30', 'days_31_60', 'days_61_90', 'days_90_plus'];
-export const contractStatusLabels: Record<ContractListItem['status'], string> = {
+// Keyed by canonical status: rows are normalised with
+// `normalizeContractStatus` before lookup, so the legacy 'ACTIVE'/'ENDED'
+// spellings the database still permits never reach this map.
+export const contractStatusLabels: Record<CanonicalContractStatus, string> = {
   draft: 'مسودة',
   active: 'نشط',
   expired: 'منتهي',
@@ -260,7 +264,7 @@ export function buildAgingBucketChartRows(
 
 export function buildRentRollRows(
   contracts: ContractListItem[],
-  statusLabels: Record<ContractListItem['status'], string>,
+  statusLabels: Record<CanonicalContractStatus, string>,
 ): RentRollReportRow[] {
   return contracts
     .map((contract) => ({

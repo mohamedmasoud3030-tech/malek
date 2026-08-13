@@ -12,9 +12,9 @@ const options = readFileSync(resolve(import.meta.dirname, './deposit-contract-op
 
 describe('deposit contract options are human-readable', () => {
   it('fetches tenant, property, and unit display fields for the picker', () => {
-    expect(workspace).toContain('people:tenant_id(id,full_name)');
-    expect(workspace).toContain('properties:property_id(id,title)');
-    expect(workspace).toContain('units:unit_id(id,unit_number)');
+    expect(workspace).toContain('people:people!contracts_tenant_id_fkey(id,full_name)');
+    expect(workspace).toContain('properties:properties!contracts_property_id_fkey(id,title)');
+    expect(workspace).toContain('units:units!contracts_unit_id_fkey(id,unit_number)');
   });
 
   it('labels options with the readable formatter and keeps the UUID as the value', () => {

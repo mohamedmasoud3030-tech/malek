@@ -26,6 +26,7 @@ import type { Property } from '@/types/domain';
 import type { Person } from '@/types/domain';
 import type { PaginatedResult } from '@/features/properties/property-service';
 import type { PaginatedPeople } from '@/features/people/people-service';
+import { normalizeContractStatus } from '@/lib/contractStatus';
 
 interface UseContractFormOptions {
   contractId?: string;
@@ -120,7 +121,9 @@ export function useContractForm({
       rent_amount: contractQuery.data.rent_amount,
       payment_cycle: contractQuery.data.payment_cycle,
       payment_terms_id: contractQuery.data.payment_terms_id ?? '',
-      status: contractQuery.data.status,
+      // Stored rows may carry the legacy 'ACTIVE'/'ENDED' spellings the
+      // contracts CHECK still permits; the form works in canonical values.
+      status: normalizeContractStatus(contractQuery.data.status),
       cancellation_reason: contractQuery.data.cancellation_reason ?? '',
       notes: contractQuery.data.notes ?? '',
       attachment_url: contractQuery.data.attachment_url ?? null,

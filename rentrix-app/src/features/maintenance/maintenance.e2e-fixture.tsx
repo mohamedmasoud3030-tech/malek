@@ -9,20 +9,21 @@ import { MaintenanceList } from './components/maintenance-list';
 import type { Maintenance } from './maintenance-service';
 
 const fixtureProperties: Property[] = [
-  { id: 'p-000001', title: 'برج الواحة السكني', type: 'مبنى سكني', address: 'الخوير، مسقط', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-01-04T08:00:00Z', updated_at: '2026-07-10T08:00:00Z', deleted_at: null },
-  { id: 'p-000003', title: 'عمارة النور التجارية', type: 'عمارة تجارية', address: 'صحار، شمال الباطنة', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-03-02T08:00:00Z', updated_at: '2026-07-12T08:00:00Z', deleted_at: null },
-  { id: 'p-000004', title: 'مجمع السلام السكني', type: 'مجمع سكني', address: 'صلالة، ظفار', owner_name: null, purchase_value: null, current_value: null, status: 'maintenance', notes: null, created_at: '2026-04-18T08:00:00Z', updated_at: '2026-07-14T08:00:00Z', deleted_at: null },
-  { id: 'p-000005', title: 'برج مطرح التجاري', type: 'مبنى مكاتب', address: 'مطرح، مسقط', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-05-07T08:00:00Z', updated_at: '2026-07-11T08:00:00Z', deleted_at: null },
+  { id: 'p-000001', title: 'برج الواحة السكني', type: 'مبنى سكني', address: 'الخوير، مسقط', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-01-04T08:00:00Z', updated_at: '2026-07-10T08:00:00Z', deleted_at: null, owner_id: null, name: '', company_id: '00000000-0000-4000-8000-000000000001' },
+  { id: 'p-000003', title: 'عمارة النور التجارية', type: 'عمارة تجارية', address: 'صحار، شمال الباطنة', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-03-02T08:00:00Z', updated_at: '2026-07-12T08:00:00Z', deleted_at: null, owner_id: null, name: '', company_id: '00000000-0000-4000-8000-000000000001' },
+  { id: 'p-000004', title: 'مجمع السلام السكني', type: 'مجمع سكني', address: 'صلالة، ظفار', owner_name: null, purchase_value: null, current_value: null, status: 'maintenance', notes: null, created_at: '2026-04-18T08:00:00Z', updated_at: '2026-07-14T08:00:00Z', deleted_at: null, owner_id: null, name: '', company_id: '00000000-0000-4000-8000-000000000001' },
+  { id: 'p-000005', title: 'برج مطرح التجاري', type: 'مبنى مكاتب', address: 'مطرح، مسقط', owner_name: null, purchase_value: null, current_value: null, status: 'active', notes: null, created_at: '2026-05-07T08:00:00Z', updated_at: '2026-07-11T08:00:00Z', deleted_at: null, owner_id: null, name: '', company_id: '00000000-0000-4000-8000-000000000001' },
 ];
 
 const fixtureUnits: Unit[] = [
-  { id: 'u-302', name: null, property_id: 'p-000001', unit_number: '302', floor: '3', status: 'occupied', rent_amount: 420, notes: null, created_at: '2026-01-04T08:00:00Z', updated_at: '2026-07-10T08:00:00Z', deleted_at: null },
-  { id: 'u-g04', name: null, property_id: 'p-000003', unit_number: 'G-04', floor: 'G', status: 'occupied', rent_amount: 600, notes: null, created_at: '2026-03-02T08:00:00Z', updated_at: '2026-07-12T08:00:00Z', deleted_at: null },
+  { id: 'u-302', name: null, property_id: 'p-000001', unit_number: '302', floor: '3', status: 'occupied', rent_amount: 420, notes: null, created_at: '2026-01-04T08:00:00Z', updated_at: '2026-07-10T08:00:00Z', deleted_at: null, company_id: '00000000-0000-4000-8000-000000000001' },
+  { id: 'u-g04', name: null, property_id: 'p-000003', unit_number: 'G-04', floor: 'G', status: 'occupied', rent_amount: 600, notes: null, created_at: '2026-03-02T08:00:00Z', updated_at: '2026-07-12T08:00:00Z', deleted_at: null, company_id: '00000000-0000-4000-8000-000000000001' },
 ];
 
 const base = {
   company_id: '00000000-0000-4000-8000-000000000001',
   no: null,
+  reference: null,
   service_provider_id: null,
   service_provider_category_id: null,
   description: null,

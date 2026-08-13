@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OwnerDetailView } from './components/owner-detail-view';
 import type { Owner, OwnerDetailSnapshot, PropertyWithOwners } from './services/owner-service';
 import type { OwnerSettlementRecord } from './services/owner-settlements-service';
+import { ownerRowFixtureDefaults, propertyOwnerRowFixtureDefaults, propertyRowFixtureDefaults } from '@/test/ownerRowFixture';
 
 vi.mock('../settings/useCompanySettings', async () => {
   const { testCompanySettingsContract } = await import('../../test/companySettingsContractMock');
@@ -27,6 +28,7 @@ vi.mock('@/app/router/background-location', () => ({
 }));
 
 const owner: Owner = {
+  ...ownerRowFixtureDefaults,
   id: 'owner-1',
   full_name: 'مالك موثق',
   display_name: null,
@@ -42,6 +44,7 @@ const owner: Owner = {
 };
 
 const property: PropertyWithOwners = {
+  ...propertyRowFixtureDefaults,
   id: 'property-1',
   title: 'عقار موثق',
   type: 'سكني',
@@ -55,6 +58,7 @@ const property: PropertyWithOwners = {
   updated_at: '2026-06-04T00:00:00.000Z',
   deleted_at: null,
   property_owners: [{
+    ...propertyOwnerRowFixtureDefaults,
     id: 'link-1',
     property_id: 'property-1',
     owner_id: 'owner-1',
@@ -94,12 +98,13 @@ describe('Owner detail recovery states', () => {
       properties: [property],
       units: [{ id: 'unit-1', property_id: property.id, unit_number: '101', floor: null, status: 'occupied', rent_amount: 100 }],
       contracts: [
-        { id: 'contract-1', property_id: property.id, unit_id: 'unit-1', start_date: '2026-01-01', end_date: '2026-12-31', status: 'active' },
-        { id: 'contract-2', property_id: property.id, unit_id: 'unit-1', start_date: '2025-01-01', end_date: '2025-12-31', status: 'expired' },
+        { id: 'contract-1', reference: 'CNT-1', property_id: property.id, unit_id: 'unit-1', start_date: '2026-01-01', end_date: '2026-12-31', status: 'active' },
+        { id: 'contract-2', reference: 'CNT-2', property_id: property.id, unit_id: 'unit-1', start_date: '2025-01-01', end_date: '2025-12-31', status: 'expired' },
       ],
       invoices: [
         {
           id: 'invoice-1',
+          reference: 'INV-1',
           contract_id: 'contract-1',
           amount: 1000,
           paid_amount: 250,

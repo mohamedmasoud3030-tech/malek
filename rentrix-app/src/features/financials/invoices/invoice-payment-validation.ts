@@ -4,7 +4,9 @@ import { getInvoiceGrossAmount } from './invoiceService';
 
 import type { Invoice } from '@/types/domain';
 
-type InvoiceRemainingInput = Pick<Invoice, 'amount' | 'paid_amount'> & Partial<Pick<Invoice, 'tax_amount'>>;
+type InvoiceRemainingInput = Pick<Invoice, 'amount' | 'paid_amount'> & {
+  tax_amount?: Invoice['tax_amount'] | null;
+};
 
 /**
  * Remaining collectible amount for an invoice — ALWAYS gross-based
