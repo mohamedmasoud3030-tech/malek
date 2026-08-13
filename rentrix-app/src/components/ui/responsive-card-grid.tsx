@@ -18,8 +18,8 @@ const gapClasses = {
 
 /**
  * Shared metric/card grid for repeated KPI, summary, overview, and statistics cards.
- * Keeps every metric group on the same two-column rhythm. Four metrics therefore
- * render as a predictable 2×2 block at every supported breakpoint.
+ * Phone and iPad portrait stay on a readable 2×2 rhythm. Desktop (1024px+)
+ * opens four metrics into a single scan row without inventing a third column.
  */
 export function ResponsiveCardGrid({
   children,
@@ -30,7 +30,7 @@ export function ResponsiveCardGrid({
   return (
     <Component
       className={cn(
-        'grid min-w-0 grid-cols-2',
+        'grid min-w-0 grid-cols-2 lg:grid-cols-4',
         gapClasses[gap],
         '[&>*]:min-w-0',
         className,

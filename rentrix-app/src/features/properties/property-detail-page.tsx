@@ -127,35 +127,34 @@ export function PropertyDetailPage() {
             }
           />
 
-          {/* Mobile: compact select dropdown — solves 8-tab 320px maze, RTL, 44px, keyboard accessible */}
-          <div className="md:hidden" data-property-detail-mobile-nav>
-            <label htmlFor="property-detail-select" className="sr-only">
-              أقسام العقار
-            </label>
-            <select
-              id="property-detail-select"
-              aria-label="أقسام العقار"
-              value={activeSection}
-              onChange={(e) => handleSelectChange(e.target.value as PropertyDetailSectionId)}
-              className="min-h-11 w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-              dir="rtl"
-            >
-              {propertyDetailSections.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1.5 text-[11px] text-muted-foreground">
-              {categoryLabels[propertyDetailSections.find((s) => s.id === activeSection)?.category ?? 'basic']}
-            </p>
-          </div>
+          <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] md:items-start">
+            {/* Phone: compact select. iPad/desktop: grouped sidebar. Content renders once. */}
+            <div className="md:hidden" data-property-detail-mobile-nav>
+              <label htmlFor="property-detail-select" className="sr-only">
+                أقسام العقار
+              </label>
+              <select
+                id="property-detail-select"
+                aria-label="أقسام العقار"
+                value={activeSection}
+                onChange={(e) => handleSelectChange(e.target.value as PropertyDetailSectionId)}
+                className="min-h-11 w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                dir="rtl"
+              >
+                {propertyDetailSections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                {categoryLabels[propertyDetailSections.find((s) => s.id === activeSection)?.category ?? 'basic']}
+              </p>
+            </div>
 
-          {/* Desktop+Tablet: grouped vertical sidebar + content (no horizontal 8-tab strip) */}
-          <div className="hidden min-w-0 gap-4 md:grid md:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] md:items-start">
             <nav
               aria-label="أقسام العقار"
-              className="sticky top-[4.5rem] overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card"
+              className="sticky top-[4.5rem] hidden overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card md:block"
             >
               <div className="border-b border-border/60 bg-muted/30 px-4 py-3">
                 <p className="text-xs font-bold text-muted-foreground">تفاصيل العقار</p>
@@ -181,7 +180,6 @@ export function PropertyDetailPage() {
                               ? 'bg-primary text-primary-foreground shadow-sm'
                               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                           }`;
-                          // Render as Link for proper semantics + prefetch
                           if (section.id === 'units') {
                             return (
                               <Link
@@ -231,7 +229,7 @@ export function PropertyDetailPage() {
               </div>
             </nav>
 
-            <div className="min-w-0 space-y-6">
+            <div className="min-w-0 space-y-6" data-property-detail-body>
               {tab === 'ownership' ? (
                 <PropertyOwnerAgreementsSection propertyId={propertyId} />
               ) : tab === 'financials' ? (
@@ -248,25 +246,6 @@ export function PropertyDetailPage() {
                 <Outlet />
               )}
             </div>
-          </div>
-
-          {/* Mobile content (below select) — same conditional rendering, no sidebar */}
-          <div className="min-w-0 space-y-6 pt-2 md:hidden">
-            {tab === 'ownership' ? (
-              <PropertyOwnerAgreementsSection propertyId={propertyId} />
-            ) : tab === 'financials' ? (
-              <PropertyFinancialsTab propertyId={propertyId} />
-            ) : tab === 'contracts' ? (
-              <PropertyContractsTab propertyId={propertyId} />
-            ) : tab === 'maintenance' ? (
-              <PropertyMaintenanceTab propertyId={propertyId} />
-            ) : tab === 'documents' ? (
-              <PropertyDocumentsTab propertyId={propertyId} />
-            ) : tab === 'activity' ? (
-              <PropertyActivityTab propertyId={propertyId} />
-            ) : (
-              <Outlet />
-            )}
           </div>
         </PageLayout>
       )}

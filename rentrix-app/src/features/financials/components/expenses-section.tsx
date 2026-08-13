@@ -163,7 +163,7 @@ export function ExpensesSection({
     .find((message): message is string => typeof message === 'string' && message.length > 0);
 
   return (
-    <Card className="overflow-hidden rounded-[1.4rem] sm:rounded-3xl">
+    <Card className="overflow-hidden rounded-2xl">
       <CardHeader className="gap-4 border-b border-border/60 bg-muted/20 sm:flex sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle>المصاريف التشغيلية</CardTitle>

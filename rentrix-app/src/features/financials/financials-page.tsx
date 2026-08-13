@@ -16,6 +16,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
+import { WorkspaceHint } from '@/components/layout/workspace-hint';
 import { useAuth } from '@/hooks/use-auth';
 import { canAccess, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
@@ -334,9 +335,9 @@ export function FinancialsPage() {
         />
 
         {pageHint ? (
-          <div className="text-[11px] text-muted-foreground bg-muted/30 rounded-xl px-3 py-1.5 border border-border/40 inline-block font-medium">
-            💡 {pageHint} (سجل {summaryLabel})
-          </div>
+          <WorkspaceHint>
+            {pageHint} (سجل {summaryLabel})
+          </WorkspaceHint>
         ) : null}
 
         <div className="flex flex-col gap-6 md:flex-row-reverse md:items-start">

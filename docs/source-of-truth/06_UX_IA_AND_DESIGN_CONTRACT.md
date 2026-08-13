@@ -107,12 +107,14 @@ Permission requests that require action must be visibly actionable, with enough 
 
 ## Mobile/desktop behavior
 
-- Desktop uses a right-side collapsible sidebar generated from `navGroups`/workspace children.
-- Mobile has no legacy five-item bottom navigation. `mobileNavItems` is empty and `MobileFloatingControl` exposes Menu + Search; the drawer carries the full permitted navigation. Documentation must not claim a maintenance-priority bottom tab at this baseline.
-- Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer.
+- Desktop (≥ 1024px) uses a right-side collapsible sidebar generated from `navGroups`/workspace children.
+- Tablet / iPad (768–1023px) is a first-class class: header hamburger + header search, no floating bottom control, dense registers, and two-column composition. It must not be treated as a stretched phone.
+- Phone (< 768px) has no legacy five-item bottom navigation. `mobileNavItems` is empty. The header hamburger and `MobileFloatingControl` (Menu + Search) both open the full permitted drawer. Documentation must not claim a maintenance-priority bottom tab at this baseline.
+- Avoid oversized single-column card stacks where a compact 2-column mobile grid is clearer. Metric groups stay 2 columns below 1024px and may open to 4 columns on desktop.
 - Long contract/agreement forms may use mobile steppers while desktop retains an efficient single-scroll workflow.
 - Shared entity registers render a dense semantic table on desktop/tablet (≥ 768px) and, below 768px, a true mobile register presentation: each record shows identity, one meaningful primary/secondary datum (status/amount/date), and a compact accessible «إجراءات» menu containing only the record's existing actions. Mobile registers never use horizontal scrolling, clipped labels, overlapping RTL text, disclosure/expansion rows, sticky action columns, or bulk expand-all controls.
 - Safe-area/sticky actions must not hide validation or prevent access to submit/cancel.
+- Page headers, dossier headers, register cards and list controls share one elevated surface (`rounded-2xl` / token radius) so remaining workspaces do not invent a second chrome.
 
 ## Design system
 
