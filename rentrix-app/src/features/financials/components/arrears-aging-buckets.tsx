@@ -16,7 +16,7 @@ export function ArrearsAgingBuckets({ agedReceivablesReport }: ArrearsAgingBucke
   const totalOutstanding = agedReceivablesReport?.totalOutstanding ?? 0;
 
   return (
-    <div className="rounded-3xl border bg-muted/20 p-4">
+    <div className="rounded-2xl border bg-muted/20 p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-black">أعمار الذمم المدينة</h3>

@@ -110,15 +110,15 @@ export function FilterTabs<T extends string>({
           const isActive = value === option.value;
           const activeClasses = {
             primary: 'border-primary/25 bg-primary/10 text-primary shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.05)]',
-            contracts: 'border-[hsl(24_90%_42%/0.22)] bg-[hsl(32_95%_62%/0.14)] text-[hsl(24_90%_35%)]',
-            maintenance: 'border-[hsl(211_85%_40%/0.25)] bg-[hsl(211_90%_50%/0.1)] text-[hsl(211_85%_36%)]',
+            contracts: 'border-[hsl(var(--tone-amber)/0.25)] bg-[hsl(var(--tone-amber-soft))] text-[hsl(var(--tone-amber))]',
+            maintenance: 'border-[hsl(var(--tone-sky)/0.25)] bg-[hsl(var(--tone-sky-soft))] text-[hsl(var(--tone-sky))]',
             finance: 'border-success/25 bg-success/10 text-success',
             neutral: 'border-foreground/10 bg-foreground/[0.06] text-foreground',
           }[tone];
           const activeCountClasses = {
             primary: 'bg-primary/15 text-primary',
-            contracts: 'bg-[hsl(32_95%_62%/0.2)] text-[hsl(24_90%_35%)]',
-            maintenance: 'bg-[hsl(211_90%_50%/0.18)] text-[hsl(211_85%_36%)]',
+            contracts: 'bg-[hsl(var(--tone-amber)/0.16)] text-[hsl(var(--tone-amber))]',
+            maintenance: 'bg-[hsl(var(--tone-sky)/0.14)] text-[hsl(var(--tone-sky))]',
             finance: 'bg-success/15 text-success',
             neutral: 'bg-foreground/10 text-foreground',
           }[tone];

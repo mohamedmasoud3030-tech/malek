@@ -79,7 +79,7 @@ type SelectedOverdueInvoiceCardProps = Readonly<{
 export function SelectedOverdueInvoiceCard({ row, onShowInvoice, onCollectInvoice }: SelectedOverdueInvoiceCardProps) {
   if (!row) {
     return (
-      <div className="rounded-3xl border border-dashed bg-muted/20 p-5 text-sm text-muted-foreground">
+      <div className="rounded-2xl border border-dashed bg-muted/20 p-5 text-sm text-muted-foreground">
         اختر فاتورة متأخرة من القائمة لعرض تفاصيل التحصيل.
       </div>
     );
@@ -87,7 +87,7 @@ export function SelectedOverdueInvoiceCard({ row, onShowInvoice, onCollectInvoic
 
   const bucket = getOverdueRowBucketKey(row);
   return (
-    <div className="rounded-3xl border bg-background p-5 shadow-sm">
+    <div className="rounded-2xl border bg-background p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold text-muted-foreground">تفاصيل التحصيل</p>
