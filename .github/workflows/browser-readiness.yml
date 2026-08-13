@@ -68,8 +68,10 @@ jobs:
         run: pnpm --filter ./rentrix-app exec playwright install chromium
       - name: Verify Chromium installation
         run: pnpm --filter ./rentrix-app exec playwright install --dry-run chromium
+      - name: Verify browser shard command
+        run: node scripts/ci/check-browser-readiness-shard-command.mjs
       - name: Run browser readiness shard
-        run: pnpm e2e -- --project=${{ matrix.project }}
+        run: pnpm e2e --project=${{ matrix.project }}
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
