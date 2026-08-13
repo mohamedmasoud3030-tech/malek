@@ -221,15 +221,15 @@ begin
     group by a.no, a.name, a.account_type
   )
   select
-    public.wp05_round_omr(coalesce(sum(case when no like '1%' then bal else 0 end),0)),
-    public.wp05_round_omr(coalesce(sum(case when no like '2%' then bal else 0 end),0)),
-    public.wp05_round_omr(coalesce(sum(case when no like '3%' or no like '4%' or no like '5%' or no like '6%' then bal else 0 end),0)),
+    public.wp05_round_omr(coalesce(sum(case when account_type = 'asset' then bal else 0 end),0)),
+    public.wp05_round_omr(coalesce(sum(case when account_type = 'liability' then bal else 0 end),0)),
+    public.wp05_round_omr(coalesce(sum(case when account_type in ('equity','revenue','expense') then bal else 0 end),0)),
     jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
-      filter (where no like '1%' and abs(bal) > 0.0005),
+      filter (where account_type = 'asset' and abs(bal) > 0.0005),
     jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
-      filter (where no like '2%' and abs(bal) > 0.0005),
+      filter (where account_type = 'liability' and abs(bal) > 0.0005),
     jsonb_agg(jsonb_build_object('code', no, 'name', name, 'amount', bal) order by no)
-      filter (where (no like '3%' or no like '4%' or no like '5%' or no like '6%') and abs(bal) > 0.0005)
+      filter (where account_type in ('equity','revenue','expense') and abs(bal) > 0.0005)
   into v_assets, v_liabilities, v_equity, v_asset_rows, v_liability_rows, v_equity_rows
   from balances;
 

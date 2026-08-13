@@ -123,8 +123,18 @@ select lives_ok(
 );
 
 -- Need a real invoice for source evidence validation
+reset role;
 insert into public.properties (id, title, type, address, company_id, status)
 values ('a2000000-0000-4000-8000-000000000030', 'GAP16 Prop A', 'residential', 'Muscat', 'a0000000-0000-4000-8000-000000000030', 'active')
+on conflict (id) do nothing;
+insert into public.owners (id, full_name, company_id, is_active)
+values ('a2200000-0000-4000-8000-000000000030', 'GAP16 Owner A', 'a0000000-0000-4000-8000-000000000030', true)
+on conflict (id) do update set is_active = true;
+insert into public.property_owners (id, property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on, company_id)
+values ('a2300000-0000-4000-8000-000000000030', 'a2000000-0000-4000-8000-000000000030', 'a2200000-0000-4000-8000-000000000030', 100, true, date '2026-01-01', date '2026-12-31', 'a0000000-0000-4000-8000-000000000030')
+on conflict (id) do nothing;
+insert into public.owner_agreements (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on, company_id)
+values ('a2400000-0000-4000-8000-000000000030', 'a2200000-0000-4000-8000-000000000030', 'a2000000-0000-4000-8000-000000000030', 'property_management', 'RATE', 5, date '2026-01-01', date '2026-12-31', 'a0000000-0000-4000-8000-000000000030')
 on conflict (id) do nothing;
 insert into public.units (id, property_id, unit_number, company_id)
 values ('a2100000-0000-4000-8000-000000000030', 'a2000000-0000-4000-8000-000000000030', 'A-01', 'a0000000-0000-4000-8000-000000000030')
@@ -132,12 +142,14 @@ on conflict (id) do nothing;
 insert into public.people (id, full_name, type, company_id)
 values ('a3000000-0000-4000-8000-000000000030', 'GAP16 Tenant', 'tenant', 'a0000000-0000-4000-8000-000000000030')
 on conflict (id) do nothing;
-insert into public.contracts (id, property_id, unit_id, tenant_id, start_date, end_date, rent_amount, status, company_id)
-values ('a4000000-0000-4000-8000-000000000030', 'a2000000-0000-4000-8000-000000000030', 'a2100000-0000-4000-8000-000000000030', 'a3000000-0000-4000-8000-000000000030', date '2026-07-01', date '2026-07-31', 100, 'active', 'a0000000-0000-4000-8000-000000000030')
+insert into public.contracts (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date, rent_amount, status, company_id)
+values ('a4000000-0000-4000-8000-000000000030', 'a2000000-0000-4000-8000-000000000030', 'a2100000-0000-4000-8000-000000000030', 'a3000000-0000-4000-8000-000000000030', 'a2400000-0000-4000-8000-000000000030', date '2026-07-01', date '2026-07-31', 100, 'active', 'a0000000-0000-4000-8000-000000000030')
 on conflict (id) do nothing;
 insert into public.invoices (id, contract_id, amount, issue_date, due_date, status, company_id, paid_amount)
 values ('a5000000-0000-4000-8000-000000000030', 'a4000000-0000-4000-8000-000000000030', 100.000, date '2026-07-01', date '2026-07-15', 'UNPAID', 'a0000000-0000-4000-8000-000000000030', 0)
 on conflict (id) do update set amount = 100.000;
+
+set local role authenticated;
 
 -- Now create a valid correction draft with real source
 select lives_ok(

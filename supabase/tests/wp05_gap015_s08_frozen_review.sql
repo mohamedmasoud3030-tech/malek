@@ -31,6 +31,7 @@ create temporary table wp05_gap015_test_ids (
   name text primary key,
   id uuid not null
 ) on commit drop;
+grant select on wp05_gap015_test_ids to authenticated;
 
 -- Freeze the initial review after the baseline GL dataset exists.
 select lives_ok(
@@ -102,6 +103,9 @@ select ok(
 );
 
 -- Test immutable guard: direct update should fail
+-- Run as the migration owner so RLS cannot turn these writes into no-ops; the
+-- trigger itself must reject them.
+reset role;
 select throws_ok(
   $$ update public.s08_frozen_reviews set reviewer_decision = 'APPROVED' where company_id = 'a0000000-0000-4000-8000-000000000020' $$,
   '42501',
@@ -123,6 +127,8 @@ select throws_ok(
   null,
   'direct delete of frozen review blocked'
 );
+
+set local role authenticated;
 
 -- Test lifecycle: CREATED → ANALYZED
 select lives_ok(
@@ -290,7 +296,7 @@ select results_eq(
 );
 
 select ok(
-  ((public.s08_verify_fingerprint((select id from public.s08_frozen_reviews where company_id = 'a0000000-0000-4000-8000-000000000020' and analysis_version = 'v2-test' limit 1))->>'matches')::boolean,
+  (public.s08_verify_fingerprint((select id from public.s08_frozen_reviews where company_id = 'a0000000-0000-4000-8000-000000000020' and analysis_version = 'v2-test' limit 1))->>'matches')::boolean,
   'approved review fingerprint still matches its frozen dataset'
 );
 
