@@ -22,7 +22,7 @@
 --   * idempotent retry by fingerprint    -> same batch, no silent partial success
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(50);
+select plan(55);
 
 -- Two independent tenants and one admin user per tenant.
 insert into public.companies (id, name, slug)
@@ -54,6 +54,17 @@ insert into public.bank_accounts (id, account_name, currency, company_id)
 values
   ('00000000-0000-0000-0000-00000000a401', 'CSV A Bank', 'OMR', '00000000-0000-4000-8000-0000000000a1'),
   ('00000000-0000-0000-0000-00000000b401', 'CSV B Bank', 'OMR', '00000000-0000-4000-8000-0000000000b1');
+
+select is(
+  (select company_id from public.bank_accounts where id = '00000000-0000-0000-0000-00000000a401'),
+  '00000000-0000-4000-8000-0000000000a1'::uuid,
+  'bank account a401 is bound to company A'
+);
+select is(
+  (select company_id from public.bank_accounts where id = '00000000-0000-0000-0000-00000000b401'),
+  '00000000-0000-4000-8000-0000000000b1'::uuid,
+  'bank account b401 is bound to company B'
+);
 
 -- Act as Company A admin.
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000a001","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-0000000000a1"}}', true);
@@ -235,6 +246,11 @@ select lives_ok(
   'server preview accepts a valid payload without writing'
 );
 select is((select count(*) from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-preview-only'), 0::bigint, 'preview RPC writes no import row');
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1' and reference = 'pv1'), 0::bigint, 'preview RPC writes no statement lines');
+select is((
+  select (public.preview_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_name":"preview.csv","file_fingerprint":"fp-preview-only","file_size":10,"rows":[{"transaction_date":"2026-11-01","amount":"17.250","description":"Preview","reference":"PV1"}]}'::jsonb)->>'write_attempted')::boolean
+), false, 'preview reports write_attempted=false');
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 8::bigint, 'company A has eight persisted lines after reuse import and no-write preview');
 
 -- 10. Tenant isolation of written lines: Company A cannot read Company B's
 --    lines through the RLS boundary (B has no lines yet).
@@ -251,27 +267,11 @@ select lives_ok(
 );
 select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000b1'), 1::bigint, 'company B wrote exactly one line');
 
--- GAP-017: reused fingerprint with different content fails closed and writes nothing.
-select lives_ok(
-  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_name":"reuse.csv","file_fingerprint":"fp-reuse","file_size":10,"rows":[{"transaction_date":"2026-10-01","amount":"15.000","description":"First","reference":"RU1"}]}'::jsonb)$$,
-  'first fingerprint use accepted'
-);
-select throws_ok(
-  $$select public.import_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_name":"reuse.csv","file_fingerprint":"fp-reuse","file_size":10,"rows":[{"transaction_date":"2026-10-01","amount":"99.000","description":"Changed","reference":"RU9"}]}'::jsonb)$$,
-  '22023', 'file_fingerprint was already used with different content.', 'reused fingerprint with different content is rejected'
-);
-select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1' and reference = 'ru9'), 0::bigint, 'content-reuse attempt wrote no extra line');
-select lives_ok(
-  $$select public.preview_bank_statement_batch_atomic('{"bank_account_id":"00000000-0000-0000-0000-00000000a401","file_name":"preview.csv","file_fingerprint":"fp-preview-only","file_size":10,"rows":[{"transaction_date":"2026-11-01","amount":"17.250","description":"Preview","reference":"PV1"}]}'::jsonb)$$,
-  'server preview accepts a valid payload without writing'
-);
-select is((select count(*) from public.bank_statement_imports where company_id = '00000000-0000-4000-8000-0000000000a1' and file_fingerprint = 'fp-preview-only'), 0::bigint, 'preview RPC writes no import row');
-
 -- Restore the test-runner role before checking Company A. Under Company B's
 -- authenticated RLS context the correct visible count for Company A is zero,
--- which cannot prove that B's import left A's seven persisted lines unchanged.
+-- which cannot prove that B's import left A's eight persisted lines unchanged.
 reset role;
-select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 7::bigint, 'company A lines are untouched');
+select is((select count(*) from public.bank_statement_lines where company_id = '00000000-0000-4000-8000-0000000000a1'), 8::bigint, 'company A lines are untouched');
 
 select * from finish();
 rollback;

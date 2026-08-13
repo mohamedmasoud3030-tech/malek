@@ -170,6 +170,7 @@ export type Database = {
           status: string;
           error_summary: Json;
           processed_at: string | null;
+          payload_digest: string | null;
         };
         Insert: Partial<Database['public']['Tables']['bank_statement_imports']['Row']> & Pick<Database['public']['Tables']['bank_statement_imports']['Row'], 'bank_account_id' | 'statement_name'>;
         Update: Partial<Database['public']['Tables']['bank_statement_imports']['Row']>;
@@ -918,6 +919,10 @@ export type Database = {
         Returns: Database['public']['Tables']['bank_reconciliation_matches']['Row'];
       };
       import_bank_statement_batch_atomic: {
+        Args: { payload: Json };
+        Returns: Json;
+      };
+      preview_bank_statement_batch_atomic: {
         Args: { payload: Json };
         Returns: Json;
       };

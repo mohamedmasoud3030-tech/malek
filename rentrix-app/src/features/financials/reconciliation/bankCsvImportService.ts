@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { parseBankCsv, computeFileFingerprint, type BankCsvParseResult } from '@/lib/bankCsvParser';
+import type { Json } from '@/types/database';
 
 export type { BankCsvParseResult } from '@/lib/bankCsvParser';
 
@@ -47,41 +48,64 @@ export interface BankImportResult {
   is_duplicate_file: boolean;
 }
 
-function toRpcPayload(request: BankImportRequest) {
+function toRpcPayload(request: BankImportRequest): Json {
   return {
     bank_account_id: request.bank_account_id,
     file_name: request.file_name,
     file_fingerprint: request.file_fingerprint,
     file_size: request.file_size,
-    rows: request.rows,
+    rows: request.rows.map((row) => ({
+      transaction_date: row.transaction_date,
+      amount: row.amount,
+      description: row.description,
+      ...(row.reference === undefined ? {} : { reference: row.reference }),
+      ...(row.balance === undefined ? {} : { balance: row.balance }),
+      ...(row.currency === undefined ? {} : { currency: row.currency }),
+    })),
   };
 }
 
-function mapImportResult(result: any, request: BankImportRequest): BankImportResult {
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function asNullableString(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function asNumber(value: unknown): number {
+  const parsed = typeof value === 'number' ? value : Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function mapImportResult(result: unknown, request: BankImportRequest): BankImportResult {
   if (!result || typeof result !== 'object') {
     throw new Error('استجابة غير متوقعة من الخادم');
   }
 
+  const row = asRecord(result);
   return {
-    id: result.id,
-    reference: result.reference ?? null,
-    bank_account_id: result.bank_account_id,
-    file_name: result.file_name ?? request.file_name,
-    file_fingerprint: result.file_fingerprint ?? request.file_fingerprint,
-    total_rows: Number(result.total_rows ?? 0),
-    accepted_rows: Number(result.accepted_rows ?? 0),
-    rejected_rows: Number(result.rejected_rows ?? 0),
-    duplicate_rows: Number(result.duplicate_rows ?? 0),
-    possible_duplicate_rows: Number(result.possible_duplicate_rows ?? 0),
-    status: result.status ?? 'completed',
-    is_duplicate_file: Boolean(result.is_duplicate_file),
+    id: asNullableString(row.id) ?? '',
+    reference: asNullableString(row.reference),
+    bank_account_id: asNullableString(row.bank_account_id) ?? request.bank_account_id,
+    file_name: asNullableString(row.file_name) ?? request.file_name,
+    file_fingerprint: asNullableString(row.file_fingerprint) ?? request.file_fingerprint,
+    total_rows: asNumber(row.total_rows),
+    accepted_rows: asNumber(row.accepted_rows),
+    rejected_rows: asNumber(row.rejected_rows),
+    duplicate_rows: asNumber(row.duplicate_rows),
+    possible_duplicate_rows: asNumber(row.possible_duplicate_rows),
+    status: asNullableString(row.status) ?? 'completed',
+    is_duplicate_file: row.is_duplicate_file === true,
   };
 }
 
 export async function previewBankStatementBatch(request: BankImportRequest): Promise<BankImportResult> {
   const { data, error } = await supabase.rpc('preview_bank_statement_batch_atomic', {
     payload: toRpcPayload(request),
-  } as any);
+  });
 
   if (error) {
     handleSupabaseError(error, 'تعذر معاينة كشف البنك');
@@ -92,36 +116,16 @@ export async function previewBankStatementBatch(request: BankImportRequest): Pro
 }
 
 export async function importBankStatementBatch(request: BankImportRequest): Promise<BankImportResult> {
-  const payload = toRpcPayload(request);
-
   const { data, error } = await supabase.rpc('import_bank_statement_batch_atomic', {
-    payload,
-  } as any);
+    payload: toRpcPayload(request),
+  });
 
   if (error) {
     handleSupabaseError(error, 'تعذر استيراد كشف البنك');
     throw error;
   }
 
-  const result = data as any;
-  if (!result || typeof result !== 'object') {
-    throw new Error('استجابة غير متوقعة من الخادم');
-  }
-
-  return {
-    id: result.id,
-    reference: result.reference ?? null,
-    bank_account_id: result.bank_account_id,
-    file_name: result.file_name ?? request.file_name,
-    file_fingerprint: result.file_fingerprint ?? request.file_fingerprint,
-    total_rows: Number(result.total_rows ?? 0),
-    accepted_rows: Number(result.accepted_rows ?? 0),
-    rejected_rows: Number(result.rejected_rows ?? 0),
-    duplicate_rows: Number(result.duplicate_rows ?? 0),
-    possible_duplicate_rows: Number(result.possible_duplicate_rows ?? 0),
-    status: result.status ?? 'completed',
-    is_duplicate_file: Boolean(result.is_duplicate_file),
-  };
+  return mapImportResult(data, request);
 }
 
 export function toImportPayloadRows(parsed: BankCsvParseResult): BankImportPayloadRow[] {
