@@ -4,6 +4,22 @@
 
 do $reconcile$
 begin
+  if to_regclass('public.accounts') is null
+     or not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public'
+         and table_name = 'accounts'
+         and column_name = 'account_type'
+     )
+     or not exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public'
+         and table_name = 'accounts'
+         and column_name = 'normal_balance'
+     ) then
+    return;
+  end if;
+
   if not exists (
     select 1 from public.accounts
     where account_type <> lower(account_type)
