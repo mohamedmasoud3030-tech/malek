@@ -24,7 +24,9 @@ describe('S08 proof-of-correctness', () => {
     expect(sql).toMatch(/with \(security_invoker = true\)/i);
     // No trigger that writes on s08 views
     expect(sql).not.toMatch(/create trigger.*on public\.s08_/i);
-    expect(sql).toContain('EGP');
+    // Legacy was EGP, new canonical superseded to OMR 3dp via WP-05
+    const sqlNew = readFileSync(resolve(REPO_ROOT,'supabase/migrations/20260814040000_wp05_gap013_reconciliation_engine.sql'),'utf8');
+    expect(sqlNew).toContain('OMR');
   });
 
   it('transaction does not change checksums or row counts (before/after equal)', () => {
@@ -61,12 +63,16 @@ describe('S08 proof-of-correctness', () => {
     expect(orphan).toContain('SOURCE_WITHOUT_POSTING');
   });
 
-  it('currency precision enforced (2 dp EGP)', () => {
+  it('currency precision enforced (2 dp EGP legacy or 3 dp OMR canonical)', () => {
     const csv = readFileSync(resolve(EVIDENCE,'liability-balances-by-period.csv'),'utf8');
     const lines = csv.split('\n').slice(1).filter(Boolean);
     for (const l of lines.slice(0,5)) {
-      expect(l).toMatch(/\d+\.\d{2}/);
+      expect(l).toMatch(/\d+\.\d{2,3}/);
     }
+    // New canonical enforces OMR 3dp
+    const sqlNew = readFileSync(resolve(REPO_ROOT,'supabase/migrations/20260814040000_wp05_gap013_reconciliation_engine.sql'),'utf8');
+    expect(sqlNew).toMatch(/OMR/);
+    expect(sqlNew).toMatch(/3/);
   });
 
   it('determinism: re-hash of findings.json matches manifest', () => {
