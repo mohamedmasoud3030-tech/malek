@@ -36,42 +36,42 @@ export function RoleSimulatorSection() {
         <Button
           variant={currentRole === 'ADMIN' ? 'danger' : 'secondary'}
           onClick={() => setSimulatedRole('ADMIN')}
-          className="min-h-9 px-3 text-xs"
+          className="min-h-11 px-3 text-xs"
         >
           ADMIN (مسؤول)
         </Button>
         <Button
           variant={currentRole === 'MANAGER' ? 'primary' : 'secondary'}
           onClick={() => setSimulatedRole('MANAGER')}
-          className="min-h-9 px-3 text-xs"
+          className="min-h-11 px-3 text-xs"
         >
           MANAGER (مدير)
         </Button>
         <Button
           variant={currentRole === 'ACCOUNTANT' ? 'primary' : 'secondary'}
           onClick={() => setSimulatedRole('ACCOUNTANT')}
-          className="min-h-9 px-3 text-xs"
+          className="min-h-11 px-3 text-xs"
         >
           ACCOUNTANT (محاسب)
         </Button>
         <Button
           variant={currentRole === 'OPERATIONS' ? 'primary' : 'secondary'}
           onClick={() => setSimulatedRole('OPERATIONS')}
-          className="min-h-9 px-3 text-xs"
+          className="min-h-11 px-3 text-xs"
         >
           OPERATIONS (عمليات)
         </Button>
         <Button
           variant={currentRole === 'USER' ? 'outline' : 'secondary'}
           onClick={() => setSimulatedRole('USER')}
-          className="min-h-9 px-3 text-xs"
+          className="min-h-11 px-3 text-xs"
         >
           USER (موظف)
         </Button>
         <Button
           variant={currentRole === 'VIEWER' ? 'outline' : 'secondary'}
           onClick={() => setSimulatedRole('VIEWER')}
-          className="min-h-9 px-3 text-xs"
+          className="min-h-11 px-3 text-xs"
         >
           VIEWER (مشاهد)
         </Button>

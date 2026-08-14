@@ -169,11 +169,11 @@ export function CostCentersSettingsSection() {
                   <StatusBadge tone={costCenter.is_active === false ? 'neutral' : 'success'}>{costCenter.is_active === false ? 'غير نشط' : 'نشط'}</StatusBadge>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button type="button" variant="secondary" className="min-h-9 px-3 py-1.5 text-xs" onClick={() => handleEdit(costCenter)} disabled={isBusy}>
+                  <Button type="button" variant="secondary" className="min-h-11 px-3 py-1.5 text-xs" onClick={() => handleEdit(costCenter)} disabled={isBusy}>
                     <Pencil className="me-2 size-3.5" />
                     تعديل
                   </Button>
-                  <Button type="button" variant="secondary" className="min-h-9 px-3 py-1.5 text-xs" onClick={() => archiveMutation.mutate(costCenter.id)} disabled={isBusy}>
+                  <Button type="button" variant="secondary" className="min-h-11 px-3 py-1.5 text-xs" onClick={() => archiveMutation.mutate(costCenter.id)} disabled={isBusy}>
                     <Archive className="me-2 size-3.5" />
                     أرشفة
                   </Button>

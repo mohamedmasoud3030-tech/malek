@@ -52,7 +52,7 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
           <button
             type="button"
             onClick={toggle}
-            className="flex min-h-10 items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground transition hover:bg-muted"
+            className="flex min-h-11 items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground transition hover:bg-muted"
             aria-label="Switch language"
           >
             <Languages className="size-4" />
@@ -60,7 +60,7 @@ export function NavBar({ anchoredToHome = false }: { anchoredToHome?: boolean })
           </button>
           <Link
             to="/login"
-            className="hidden min-h-10 items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 sm:inline-flex"
+            className="hidden min-h-11 items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 sm:inline-flex"
           >
             {t.nav.start}
             <ArrowIcon className="size-4" />

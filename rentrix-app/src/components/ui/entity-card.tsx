@@ -130,15 +130,15 @@ export function EntityCard({
           <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl shadow-sm sm:size-10 sm:rounded-2xl', tone.bg)}>
             <AvatarIcon className={cn('size-4 sm:size-4.5', tone.text)} aria-hidden="true" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-sm font-bold leading-5 sm:leading-6">{name}</p>
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <p className="line-clamp-2 break-words text-sm font-bold leading-5 [overflow-wrap:anywhere] sm:leading-6">{name}</p>
             {subtitle ? (
-              <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-4.5 text-muted-foreground sm:leading-5">
+              <p className="mt-0.5 line-clamp-2 break-words text-[11px] font-medium leading-4.5 text-muted-foreground [overflow-wrap:anywhere] sm:leading-5">
                 {subtitle}
               </p>
             ) : null}
             {supportingText ? (
-              <p className="mt-0.5 text-[10px] font-bold leading-4 text-muted-foreground sm:mt-1">{supportingText}</p>
+              <p className="mt-0.5 break-words text-[10px] font-bold leading-4 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1">{supportingText}</p>
             ) : null}
           </div>
         </div>
@@ -160,10 +160,10 @@ export function EntityCard({
           {meta.map((item, index) => {
             const MetaIcon = item.icon;
             return (
-              <div key={index} className={cn('flex min-w-0 items-center gap-2', item.className)}>
+              <div key={index} className={cn('flex min-w-0 items-center gap-2 overflow-hidden', item.className)}>
                 {MetaIcon ? <MetaIcon className="size-3.5 shrink-0 text-muted-foreground/80" aria-hidden="true" /> : null}
                 {item.label ? <span className="shrink-0 font-bold text-foreground/80">{item.label}</span> : null}
-                <span dir={item.dir} className="min-w-0 flex-1 truncate">
+                <span dir={item.dir} className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">
                   {item.value}
                 </span>
               </div>

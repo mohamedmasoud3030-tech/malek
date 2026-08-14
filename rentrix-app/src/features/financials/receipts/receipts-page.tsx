@@ -218,10 +218,10 @@ function ReceiptsHistoryContent({ embedded, initialSelectedReceiptId = '' }: Rea
     { key: 'status', header: 'الحالة', render: (receipt) => <StatusBadge tone={receiptStatusTone(receipt.status)}>{receiptStatusLabels[receipt.status] ?? receipt.status}</StatusBadge> },
     { key: 'actions', header: 'الإجراءات', render: (receipt) => (
       <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-        <Button variant="secondary" className="min-h-10 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
-        <Button variant="secondary" className="min-h-10 px-3" onClick={() => openReceiptPrintView(receipt.id)}><Printer className="me-2 size-4" />طباعة</Button>
+        <Button variant="secondary" className="min-h-11 px-3" onClick={() => setSelectedReceiptId(receipt.id)}>عرض</Button>
+        <Button variant="secondary" className="min-h-11 px-3" onClick={() => openReceiptPrintView(receipt.id)}><Printer className="me-2 size-4" />طباعة</Button>
         {canVoidReceipt && receipt.status === 'posted' ? (
-          <Button variant="danger" className="min-h-10 px-3" onClick={() => openVoidDialog(receipt)} disabled={requestVoidMutation.isPending}>
+          <Button variant="danger" className="min-h-11 px-3" onClick={() => openVoidDialog(receipt)} disabled={requestVoidMutation.isPending}>
             <Ban className="me-2 size-4" />طلب إلغاء
           </Button>
         ) : null}

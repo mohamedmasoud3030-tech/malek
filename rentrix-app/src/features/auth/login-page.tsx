@@ -71,7 +71,7 @@ export function LoginPage() {
             <div className="relative">
               <LockKeyhole className="pointer-events-none absolute inset-y-0 right-3.5 my-auto size-4 text-muted-foreground" aria-hidden="true" />
               <Input id="login-password" className="h-12 rounded-xl bg-card ps-11 pe-10 text-base focus-visible:ring-2 focus-visible:ring-primary/20 md:text-sm" type={isPasswordVisible ? 'text' : 'password'} value={password} onChange={(event) => { setPassword(event.target.value); setFormError(null); }} onKeyDown={handlePasswordKeyDown} onKeyUp={handleCapsLockDetect} required autoComplete="current-password" dir="ltr" placeholder="••••••••" disabled={isSubmitting || Boolean(runtimeError)} aria-invalid={hasFieldError || undefined} aria-describedby={isCapsLock ? 'caps-lock-warning' : undefined} />
-              <button type="button" className="absolute inset-y-0 left-1 my-auto grid size-10 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" onClick={() => setIsPasswordVisible((visible) => !visible)} aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} disabled={isSubmitting || Boolean(runtimeError)}>
+              <button type="button" className="absolute inset-y-0 left-1 my-auto grid size-11 min-h-11 min-w-11 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20" onClick={() => setIsPasswordVisible((visible) => !visible)} aria-label={isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'} disabled={isSubmitting || Boolean(runtimeError)}>
                 {isPasswordVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
@@ -93,10 +93,10 @@ export function LoginPage() {
           {showSupport ? (
             <div className="mt-3 rounded-2xl border border-border/70 bg-card p-3 shadow-sm" data-support-panel>
               <div className="flex flex-wrap justify-center gap-2">
-                {[SUPPORT_CONTACTS.oman, SUPPORT_CONTACTS.egypt, SUPPORT_CONTACTS.saudi].map((contact) => <a key={contact.number} href={`tel:${contact.number.replace(/\s+/g, '')}`} className="inline-flex min-h-10 items-center rounded-full border border-border px-3 text-xs font-semibold text-foreground hover:text-primary"><span dir="ltr">{contact.number}</span></a>)}
+                {[SUPPORT_CONTACTS.oman, SUPPORT_CONTACTS.egypt, SUPPORT_CONTACTS.saudi].map((contact) => <a key={contact.number} href={`tel:${contact.number.replace(/\s+/g, '')}`} className="inline-flex min-h-11 items-center rounded-full border border-border px-3 text-xs font-semibold text-foreground hover:text-primary"><span dir="ltr">{contact.number}</span></a>)}
               </div>
               <div className="mt-2 grid gap-1">
-                {SUPPORT_CONTACTS.emails.map((contact) => <a key={contact.address} href={`mailto:${contact.address}`} className="inline-flex min-h-9 items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary"><Mail className="size-3.5" aria-hidden="true" /><span dir="ltr">{contact.address}</span></a>)}
+                {SUPPORT_CONTACTS.emails.map((contact) => <a key={contact.address} href={`mailto:${contact.address}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary"><Mail className="size-3.5" aria-hidden="true" /><span dir="ltr">{contact.address}</span></a>)}
               </div>
             </div>
           ) : null}

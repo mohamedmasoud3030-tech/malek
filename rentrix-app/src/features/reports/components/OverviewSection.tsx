@@ -93,7 +93,7 @@ export function OverviewSection({
             type="button"
             variant="outline"
             size="sm"
-            className="min-h-10 shrink-0 gap-2 text-xs"
+            className="min-h-11 shrink-0 gap-2 text-xs"
             onClick={() => downloadCsv(buildReportCsvFilename('financial-summary'), toFinancialSummaryCsv(report))}
           >
             <FileSpreadsheet className="size-4" aria-hidden="true" />

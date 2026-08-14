@@ -107,6 +107,13 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
         <DialogOverlay />
         <DialogPrimitive.Content
           ref={setContentRef}
+          // Radix renders role="dialog" and hides the rest of the tree with
+          // aria-hidden, but it never emits aria-modal. WAI-ARIA APG requires
+          // aria-modal="true" on a modal dialog so assistive tech announces the
+          // boundary; without it screen readers can still walk out of the
+          // drawer. Every Dialog in this app is modal (Radix default), and the
+          // value stays overridable through the props spread below.
+          aria-modal="true"
           data-dialog-content
           data-dialog-form={containsDataEntryControls ? 'true' : undefined}
           className={cn(

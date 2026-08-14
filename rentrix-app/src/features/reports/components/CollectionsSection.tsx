@@ -105,15 +105,15 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
 
   const dailyActions = canExportReports ? (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrintCollectionsReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="outline" size="sm" onClick={handlePrintCollectionsReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
         <Printer className="size-3.5" aria-hidden="true" />
         طباعة A4
       </Button>
-      <Button variant="outline" size="sm" onClick={handleDownloadCollectionsReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="outline" size="sm" onClick={handleDownloadCollectionsReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
         <Download className="size-3.5" aria-hidden="true" />
         تنزيل PDF
       </Button>
-      <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('daily-collection'), toDailyCollectionCsv(rows))} className="min-h-11 gap-1.5 text-xs">
         <FileSpreadsheet className="size-3.5" aria-hidden="true" />
         CSV
       </Button>
@@ -121,7 +121,7 @@ export function CollectionsSection({ summary, rows, receiptRows, rentRollRows, c
   ) : undefined;
 
   const rentRollAction = canExportReports ? (
-    <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)} className="min-h-10 gap-1.5 text-xs">
+    <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('rent-roll'), rentRollRows)} className="min-h-11 gap-1.5 text-xs">
       <FileSpreadsheet className="size-3.5" aria-hidden="true" />
       CSV
     </Button>

@@ -1,5 +1,5 @@
 import { Link, Outlet, useMatches, useRouter } from '@tanstack/react-router';
-import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
 import { LogOut, Menu, Moon, Plus, ShieldAlert, Sun, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { MalikBrand } from '@/components/brand/malik-brand';
@@ -142,12 +142,38 @@ function MobileNavigationDrawer({
   sharedLabel,
   onClose,
   onLogout,
+  triggerRef,
 }: Readonly<{
   authorization: AuthorizationContext | null;
   sharedLabel: SharedLabel;
   onClose: () => void;
   onLogout: () => void;
+  triggerRef: RefObject<HTMLButtonElement | null>;
 }>) {
+  // Lock body scroll while the mobile drawer is open — prevents background
+  // content from scrolling behind the overlay, a common mobile UX defect.
+  //
+  // The same effect owns focus restoration. AppShell unmounts this component
+  // outright when `mobileNavOpen` flips to false, so Radix's own
+  // `onCloseAutoFocus` handler is not guaranteed to run; and because the
+  // drawer is opened from a plain header button rather than a
+  // <DialogTrigger>, Radix's internal triggerRef is null and its default
+  // restoration would land on <body>. Returning focus to the opening control
+  // on unmount satisfies WCAG 2.4.3 (focus order) in every close path:
+  // Escape, the close button, overlay dismiss, and navigation.
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      const trigger = triggerRef.current;
+      if (trigger && trigger.isConnected) trigger.focus();
+    };
+  }, [triggerRef]);
+
   return (
     <Dialog
       open
@@ -158,6 +184,18 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
+        // The drawer is opened from a header button rather than a Radix
+        // <DialogTrigger>, so Radix's internal triggerRef is null and its
+        // default close-autofocus lands on <body>. Restore focus to the real
+        // trigger ourselves (WCAG 2.4.3 — focus order must return to the
+        // control that opened the overlay).
+        onCloseAutoFocus={(event) => {
+          const trigger = triggerRef.current;
+          if (!trigger) return;
+          event.preventDefault();
+          trigger.focus();
+        }}
+        data-mobile-drawer
         className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-elevated sm:max-h-none md:w-[min(22rem,70vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
@@ -205,6 +243,7 @@ export function AppShell() {
   const { authorization, logout, user } = useAuth();
   const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const mobileNavTriggerRef = useRef<HTMLButtonElement | null>(null);
   const appLanguage = getAppLanguageState();
   const isSidebarExpanded = sidebarCollapsed === false;
   const sharedLabel = (key: string) => translateSharedLabel(key, appLanguage.language);
@@ -257,6 +296,7 @@ export function AppShell() {
           sharedLabel={sharedLabel}
           onClose={() => setMobileNavOpen(false)}
           onLogout={handleLogout}
+          triggerRef={mobileNavTriggerRef}
         />
       ) : null}
 
@@ -302,6 +342,7 @@ export function AppShell() {
         >
           <div className="mx-auto flex min-h-14 w-full max-w-[110rem] items-center gap-1.5 px-2 py-1 sm:min-h-14 sm:gap-2 sm:px-4">
             <Button
+              ref={mobileNavTriggerRef}
               variant="ghost"
               data-mobile-menu-trigger
               className="inline-flex size-11 shrink-0 rounded-xl px-0 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
