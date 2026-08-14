@@ -45,9 +45,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with: { fetch-depth: 0, ref: main }
+        with:
+          fetch-depth: 0
+          ref: main
       - name: Verify reviewed main SHA
-        env: { APPROVED_SHA: ${{ inputs.approved_sha }} }
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
         run: |
           set -euo pipefail
           [[ "$APPROVED_SHA" =~ ^[0-9a-f]{40}$ ]]
@@ -57,9 +60,13 @@ jobs:
           git merge-base --is-ancestor "$APPROVED_SHA" origin/main
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: { node-version: 24, cache: pnpm }
+        with:
+          node-version: 24
+          cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Build local migration evidence
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
         run: |
           set -euo pipefail
           mkdir -p migration-evidence
@@ -69,21 +76,27 @@ jobs:
           sha256sum supabase/migrations/*.sql > migration-evidence/local-migration-sha256.txt
           pnpm exec supabase migration list --local | tee migration-evidence/local-migration-status.txt
           printf 'action=local-preflight\napproved_sha=%s\nrun_id=%s\ntimestamp=%s\n' "$APPROVED_SHA" "$GITHUB_RUN_ID" "$(date -u +%FT%TZ)" > migration-evidence/summary.txt
-        env: { APPROVED_SHA: ${{ inputs.approved_sha }} }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with: { name: production-local-preflight-${{ github.run_id }}, path: migration-evidence, retention-days: 30 }
+        with:
+          name: production-local-preflight-${{ github.run_id }}
+          path: migration-evidence
+          retention-days: 30
 
   production-inspect:
     name: production inspect / read-only
     if: ${{ inputs.action == 'production-inspect' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: { name: production }
+    environment:
+      name: production
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with: { fetch-depth: 0, ref: main }
+        with:
+          fetch-depth: 0
+          ref: main
       - name: Verify reviewed main SHA
-        env: { APPROVED_SHA: ${{ inputs.approved_sha }} }
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
         run: |
           set -euo pipefail
           [[ "$APPROVED_SHA" =~ ^[0-9a-f]{40}$ ]]
@@ -93,7 +106,9 @@ jobs:
           git merge-base --is-ancestor "$APPROVED_SHA" origin/main
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: { node-version: 24, cache: pnpm }
+        with:
+          node-version: 24
+          cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Inspect Production migration state without writes
         env:
@@ -111,14 +126,18 @@ jobs:
           grep -E '^[[:space:]]*[0-9]{14}' migration-evidence/production-dry-run.txt > migration-evidence/missing-migrations.txt || true
           printf 'action=production-inspect\napproved_sha=%s\nrun_id=%s\ntimestamp=%s\n' "$APPROVED_SHA" "$GITHUB_RUN_ID" "$(date -u +%FT%TZ)" > migration-evidence/summary.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with: { name: production-inspect-${{ github.run_id }}, path: migration-evidence, retention-days: 90 }
+        with:
+          name: production-inspect-${{ github.run_id }}
+          path: migration-evidence
+          retention-days: 90
 
   deploy:
     name: approved production migration deploy
     if: ${{ inputs.action == 'deploy' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: { name: production }
+    environment:
+      name: production
     steps:
       - name: Require inspection and recovery evidence
         env:
@@ -130,7 +149,9 @@ jobs:
           test -n "$INSPECTION_RUN_ID" && test -n "$BACKUP_REFERENCE" && test -n "$ROLLBACK_PLAN_REFERENCE"
           [[ "$INSPECTION_RUN_ID" =~ ^[0-9]+$ ]]
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with: { fetch-depth: 0, ref: main }
+        with:
+          fetch-depth: 0
+          ref: main
       - name: Download successful production inspection evidence
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -139,7 +160,8 @@ jobs:
           run-id: ${{ inputs.inspection_run_id }}
           github-token: ${{ github.token }}
       - name: Verify inspection evidence and current main SHA
-        env: { APPROVED_SHA: ${{ inputs.approved_sha }} }
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
         run: |
           set -euo pipefail
           [[ "$APPROVED_SHA" =~ ^[0-9a-f]{40}$ ]]
@@ -151,7 +173,9 @@ jobs:
           git merge-base --is-ancestor "$APPROVED_SHA" origin/main
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with: { node-version: 24, cache: pnpm }
+        with:
+          node-version: 24
+          cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Re-inspect Production and reject changed migration plan
         env:
@@ -166,7 +190,8 @@ jobs:
           diff -u inspection-evidence/remote-migration-status.txt current-remote-migration-status.txt
           diff -u inspection-evidence/production-dry-run.txt current-production-dry-run.txt
       - name: Re-verify exact SHA immediately before apply
-        env: { APPROVED_SHA: ${{ inputs.approved_sha }} }
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin main
@@ -185,4 +210,7 @@ jobs:
           printf 'approved_sha=%s\ninspection_run_id=%s\nbackup_reference=%s\nrollback_plan_reference=%s\nrun_id=%s\ntimestamp=%s\n' "${{ inputs.approved_sha }}" "${{ inputs.inspection_run_id }}" "${{ inputs.backup_reference }}" "${{ inputs.rollback_plan_reference }}" "$GITHUB_RUN_ID" "$(date -u +%FT%TZ)" > migration-evidence/deployment-summary.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
-        with: { name: production-migration-deployment-${{ github.run_id }}, path: migration-evidence, retention-days: 90 }
+        with:
+          name: production-migration-deployment-${{ github.run_id }}
+          path: migration-evidence
+          retention-days: 90
