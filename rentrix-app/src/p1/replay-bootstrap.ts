@@ -42,6 +42,11 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   // intentionally omit (same rule as GAP-007 above).
   'wp02_gap009_deposit_precision',
   'wp02_gap009_deposit_lifecycle',
+  // GAP-008 references public.journal_batches and posts through the S03
+  // canonical posting engine plus the S04 gl_pm_* kernels; historical
+  // checkpoint baselines that omit S03/S04 must omit it too (same narrow
+  // rationale as GAP-007/GAP-009 above).
+  'wp02_gap008_due_from_owner_lifecycle',
 ] as const;
 
 export async function createFullReplayedDatabase(options?: {

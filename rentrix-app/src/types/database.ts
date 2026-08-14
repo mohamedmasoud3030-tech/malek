@@ -2064,6 +2064,313 @@ export type Database = {
           },
         ];
       };
+      due_from_owner_offsets: {
+        Row: {
+          id: string;
+          company_id: string;
+          due_from_owner_id: string;
+          owner_id: string;
+          owner_settlement_id: string;
+          amount: number;
+          effective_date: string;
+          request_id: string;
+          source_fingerprint: string;
+          journal_batch_id: string;
+          lawful_offset_evidence: string;
+          status: 'POSTED' | 'REVERSED';
+          posted_by: string;
+          reversed_request_id: string | null;
+          reversal_journal_batch_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          due_from_owner_id: string;
+          owner_id: string;
+          owner_settlement_id: string;
+          amount: number;
+          effective_date: string;
+          request_id: string;
+          source_fingerprint: string;
+          journal_batch_id: string;
+          lawful_offset_evidence: string;
+          status?: 'POSTED' | 'REVERSED';
+          posted_by: string;
+          reversed_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          due_from_owner_id?: string;
+          owner_id?: string;
+          owner_settlement_id?: string;
+          amount?: number;
+          effective_date?: string;
+          request_id?: string;
+          source_fingerprint?: string;
+          journal_batch_id?: string;
+          lawful_offset_evidence?: string;
+          status?: 'POSTED' | 'REVERSED';
+          posted_by?: string;
+          reversed_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'due_from_owner_offsets_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_offsets_due_from_owner_id_fkey';
+            columns: ['due_from_owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'due_from_owners';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_offsets_journal_batch_id_fkey';
+            columns: ['journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_offsets_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'owners';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_offsets_owner_settlement_id_fkey';
+            columns: ['owner_settlement_id'];
+            isOneToOne: false;
+            referencedRelation: 'owner_settlements';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_offsets_reversal_journal_batch_id_fkey';
+            columns: ['reversal_journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      due_from_owner_recoveries: {
+        Row: {
+          id: string;
+          company_id: string;
+          due_from_owner_id: string;
+          owner_id: string;
+          amount: number;
+          cash_account_no: '1111' | '1120';
+          effective_date: string;
+          request_id: string;
+          source_fingerprint: string;
+          journal_batch_id: string;
+          status: 'POSTED' | 'REVERSED';
+          posted_by: string;
+          reversed_request_id: string | null;
+          reversal_journal_batch_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          due_from_owner_id: string;
+          owner_id: string;
+          amount: number;
+          cash_account_no: '1111' | '1120';
+          effective_date: string;
+          request_id: string;
+          source_fingerprint: string;
+          journal_batch_id: string;
+          status?: 'POSTED' | 'REVERSED';
+          posted_by: string;
+          reversed_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          due_from_owner_id?: string;
+          owner_id?: string;
+          amount?: number;
+          cash_account_no?: '1111' | '1120';
+          effective_date?: string;
+          request_id?: string;
+          source_fingerprint?: string;
+          journal_batch_id?: string;
+          status?: 'POSTED' | 'REVERSED';
+          posted_by?: string;
+          reversed_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'due_from_owner_recoveries_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_recoveries_due_from_owner_id_fkey';
+            columns: ['due_from_owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'due_from_owners';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_recoveries_journal_batch_id_fkey';
+            columns: ['journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_recoveries_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'owners';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owner_recoveries_reversal_journal_batch_id_fkey';
+            columns: ['reversal_journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      due_from_owners: {
+        Row: {
+          id: string;
+          company_id: string;
+          owner_id: string;
+          owner_agreement_id: string | null;
+          property_id: string | null;
+          source_type: 'OWNER_EXPENSE' | 'RECOVERY' | 'OFFSET' | 'ADJUSTMENT';
+          source_id: string | null;
+          amount: number;
+          recovered_amount: number;
+          offset_amount: number;
+          waived_amount: number;
+          outstanding: number;
+          lawful_offset_right: boolean;
+          status: 'OPEN' | 'PARTIALLY_RECOVERED' | 'RECOVERED' | 'OFFSET' | 'CLOSED' | 'REVERSED';
+          request_id: string;
+          source_fingerprint: string;
+          created_by: string;
+          journal_batch_id: string | null;
+          reversed_request_id: string | null;
+          reversal_journal_batch_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          owner_id: string;
+          owner_agreement_id?: string | null;
+          property_id?: string | null;
+          source_type: 'OWNER_EXPENSE' | 'RECOVERY' | 'OFFSET' | 'ADJUSTMENT';
+          source_id?: string | null;
+          amount: number;
+          recovered_amount?: number;
+          offset_amount?: number;
+          waived_amount?: number;
+          outstanding: number;
+          lawful_offset_right?: boolean;
+          status?: 'OPEN' | 'PARTIALLY_RECOVERED' | 'RECOVERED' | 'OFFSET' | 'CLOSED' | 'REVERSED';
+          request_id: string;
+          source_fingerprint: string;
+          created_by: string;
+          journal_batch_id?: string | null;
+          reversed_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          owner_id?: string;
+          owner_agreement_id?: string | null;
+          property_id?: string | null;
+          source_type?: 'OWNER_EXPENSE' | 'RECOVERY' | 'OFFSET' | 'ADJUSTMENT';
+          source_id?: string | null;
+          amount?: number;
+          recovered_amount?: number;
+          offset_amount?: number;
+          waived_amount?: number;
+          outstanding?: number;
+          lawful_offset_right?: boolean;
+          status?: 'OPEN' | 'PARTIALLY_RECOVERED' | 'RECOVERED' | 'OFFSET' | 'CLOSED' | 'REVERSED';
+          request_id?: string;
+          source_fingerprint?: string;
+          created_by?: string;
+          journal_batch_id?: string | null;
+          reversed_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'due_from_owners_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owners_journal_batch_id_fkey';
+            columns: ['journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owners_owner_agreement_id_fkey';
+            columns: ['owner_agreement_id'];
+            isOneToOne: false;
+            referencedRelation: 'owner_agreements';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owners_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'owners';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'due_from_owners_reversal_journal_batch_id_fkey';
+            columns: ['reversal_journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       expenses: {
         Row: {
           id: string;
@@ -3770,6 +4077,7 @@ export type Database = {
           reference: string | null;
           maker_user_id: string | null;
           checker_user_id: string | null;
+          offset_applied: number;
         };
         Insert: {
           id: string;
@@ -3804,6 +4112,7 @@ export type Database = {
           reference?: string | null;
           maker_user_id?: string | null;
           checker_user_id?: string | null;
+          offset_applied?: number;
         };
         Update: {
           id?: string;
@@ -3838,6 +4147,7 @@ export type Database = {
           reference?: string | null;
           maker_user_id?: string | null;
           checker_user_id?: string | null;
+          offset_applied?: number;
         };
         Relationships: [
           {
@@ -6347,6 +6657,12 @@ export type Database = {
         };
         Returns: Database['public']['Tables']['owner_agreement_versions']['Row'];
       };
+      create_owner_receivable_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       create_owner_settlement_draft_atomic: {
         Args: {
           p_payload: Json | null;
@@ -6790,6 +7106,12 @@ export type Database = {
         };
         Returns: string;
       };
+      offset_owner_receivable_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       owner_agreement_version_for_contract_internal: {
         Args: {
           p_owner_agreement_id: string | null;
@@ -6894,6 +7216,12 @@ export type Database = {
       record_invoice_payment_atomic: {
         Args: {
           payload: Json | null;
+        };
+        Returns: Json;
+      };
+      recover_owner_receivable_atomic: {
+        Args: {
+          p_payload: Json | null;
         };
         Returns: Json;
       };
@@ -7015,6 +7343,24 @@ export type Database = {
       reverse_journal_batch: {
         Args: {
           p_batch_id: string | null;
+        };
+        Returns: Json;
+      };
+      reverse_owner_receivable_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
+      reverse_owner_receivable_offset_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
+      reverse_owner_receivable_recovery_atomic: {
+        Args: {
+          p_payload: Json | null;
         };
         Returns: Json;
       };
@@ -7350,6 +7696,12 @@ export type Database = {
               p_reverse_entries?: Json | null;
             };
         Returns: Json;
+      };
+      wp02_gap008_round_omr: {
+        Args: {
+          p_amount: number | null;
+        };
+        Returns: number;
       };
       wp05_approve_correction_proposal: {
         Args: {

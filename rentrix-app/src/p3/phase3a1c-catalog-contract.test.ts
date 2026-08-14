@@ -33,11 +33,11 @@ describe('Phase 3A-1C catalog contract', () => {
   beforeAll(async () => {
     // FA-003 (20260804) and the later S02 stale-total rejection migration
     // (20260807163000) both redefine the same four settlement RPCs; exclude
-    // them so this suite asserts the phase3a1c catalog posture in isolation
-    // (same convention used for the follow-up compatibility migration).
+    // them so this suite asserts the phase3a1c catalog posture in isolation.
+    // GAP-008 depends on the excluded canonical GL schema, so it is excluded too.
     const replay = await createFullReplayedDatabase({
       writeEvidence: false,
-      excludeMigrations: ['20260804', '20260807163000'],
+      excludeMigrations: ['20260804', '20260807163000', '20260817100000'],
     });
     expect(replay.failed).toEqual([]);
     db = replay.db;

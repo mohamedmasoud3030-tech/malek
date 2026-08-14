@@ -128,7 +128,8 @@ describe('Phase 3A-1C forward / rollback / reapply', () => {
       // (20260807163000) both redefine the settlement RPCs this suite verifies
       // in isolation; exclude them so forward→rollback restores the phase3a1c
       // baseline exactly (same convention as the catalog-contract suite).
-      excludeMigrations: [MIGRATION_KEY, FOLLOW_UP_COMPATIBILITY_KEY, '20260804', '20260807163000'],
+      // GAP-008 relies on the deliberately excluded canonical GL tables.
+      excludeMigrations: [MIGRATION_KEY, FOLLOW_UP_COMPATIBILITY_KEY, '20260804', '20260807163000', '20260817100000'],
       writeEvidence: false,
     });
     expect(replay.failed).toEqual([]);

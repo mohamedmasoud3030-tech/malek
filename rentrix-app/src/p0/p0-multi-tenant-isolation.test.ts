@@ -277,9 +277,11 @@ beforeAll(async () => {
     !f.includes('stage3_') &&
     !f.includes('_s03_') &&
     !f.includes('_s04_') &&
-    // GAP-007 depends on the S04 frozen agreement-version table omitted by
-    // this historical P0 checkpoint.
+    // GAP-007/GAP-008/GAP-009 depend on the S03/S04 GL provider tables
+    // (public.journal_batches, canonical posting engine, frozen agreement
+    // versions) omitted by this historical P0 checkpoint.
     !f.includes('wp02_fixed_monthly_daily_accrual') &&
+    !f.includes('wp02_gap008_due_from_owner_lifecycle') &&
     !f.includes('wp02_gap009_deposit_precision') &&
     !f.includes('wp02_gap009_deposit_lifecycle') &&
     !f.includes('_s06_') &&

@@ -75,6 +75,15 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
       on conflict do nothing;
 
       select public.provision_company_chart_of_accounts('${COMPANY_A}'::uuid);
+
+      -- Canonical S03 posting (receipts, deposits, and — since GAP-008 — the
+      -- owner settlement payout) resolves a server-side OPEN accounting period
+      -- and fails closed without one. Provide one governed OPEN period wide
+      -- enough for every fixture date AND the harness run date, exactly like
+      -- the property-management/master-lease GL suites do.
+      insert into public.accounting_periods (company_id, name, start_date, end_date, status)
+      values ('${COMPANY_A}', 'WORKFLOW-2026-27', date '2026-01-01', date '2027-12-31', 'OPEN')
+      on conflict do nothing;
     `);
   });
 
