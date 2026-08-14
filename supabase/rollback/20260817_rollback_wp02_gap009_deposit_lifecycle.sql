@@ -46,6 +46,11 @@ grant execute on function public.gl_pm_post_deposit_refund(jsonb) to service_rol
 grant execute on function public.deduct_deposit_atomic(jsonb) to authenticated, service_role;
 grant execute on function public.refund_deposit_atomic(jsonb) to authenticated, service_role;
 
+-- Restore legacy authenticated table-write grants (safe only while the
+-- governed ledgers are empty, which the guard above enforces).
+grant insert, update on table public.tenant_deposits to authenticated;
+grant insert on table public.deposit_transactions to authenticated;
+
 -- Restore the legacy transaction check domain; no GAP-009 rows can exist here.
 alter table public.deposit_transactions drop constraint if exists deposit_transactions_type_gap009_chk;
 alter table public.deposit_transactions drop constraint if exists deposit_transactions_reason_gap009_chk;
