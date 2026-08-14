@@ -503,8 +503,9 @@ export function DepositsWorkspace() {
         <div className="max-w-3xl">
           <h2 className="text-base font-bold tracking-tight">دفتر أمانات وتأمينات المستأجرين</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            مسار مالي حقيقي: التخصيصات تتطلب طلباً مدعوماً بإثبات واعتماد مدقق (maker-checker)، والاستردادات
-            تُرحَّل عبر قيود معيارية قابلة للإلغاء التعويضي. لا يسمح النظام بكتابة محاسبية مباشرة من المتصفح.
+            مسار مالي حقيقي مع سجل غير قابل للتلاعب، منع تجاوز الرصيد، وقيود محاسبية. التخصيصات تتطلب طلباً
+            مدعوماً بإثبات واعتماد مدقق (maker-checker)، والاستردادات تُرحَّل عبر قيود معيارية قابلة للإلغاء التعويضي،
+            ولا يسمح النظام بكتابة محاسبية مباشرة من المتصفح.
           </p>
         </div>
         <Button onClick={() => setActionType('create')} className="min-h-11 gap-2 sm:shrink-0">
