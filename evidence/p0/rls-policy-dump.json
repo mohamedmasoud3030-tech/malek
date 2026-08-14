@@ -1,6 +1,17 @@
 [
   {
     "tablename": "accounts",
+    "policyname": "admin_write_accounts",
+    "permissive": "PERMISSIVE",
+    "roles": [
+      "authenticated"
+    ],
+    "cmd": "ALL",
+    "qual": "is_admin()",
+    "with_check": "is_admin()"
+  },
+  {
+    "tablename": "accounts",
     "policyname": "app_read_accounts",
     "permissive": "PERMISSIVE",
     "roles": [
@@ -9,17 +20,6 @@
     "cmd": "SELECT",
     "qual": "is_app_user()",
     "with_check": ""
-  },
-  {
-    "tablename": "accounts",
-    "policyname": "no_browser_write_accounts",
-    "permissive": "PERMISSIVE",
-    "roles": [
-      "authenticated"
-    ],
-    "cmd": "ALL",
-    "qual": "false",
-    "with_check": "false"
   },
   {
     "tablename": "contracts",

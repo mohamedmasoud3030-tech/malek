@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-09T12:52:12.501Z",
+  "generatedAt": "2026-08-14T08:22:50.514Z",
   "scenario": "generate → retry → B-require-failure",
-  "generatedInvoiceId": "66716fbc-d7b1-4eae-93a0-340b97fc219a",
+  "generatedInvoiceId": "f170a2ad-6231-4f70-8db9-3a16e54b4042",
   "totals": {
     "amount": 1000,
     "tax": 50,
@@ -9,7 +9,7 @@
   },
   "journalLines": [
     {
-      "account_id": "1201",
+      "account_id": "coa:c31b0000-0000-4000-8000-000000000001:1201",
       "account_no": "1201",
       "account_company": "c31b0000-0000-4000-8000-000000000001",
       "amount": "1050.000",
@@ -17,7 +17,7 @@
       "company_id": "c31b0000-0000-4000-8000-000000000001"
     },
     {
-      "account_id": "2100",
+      "account_id": "coa:c31b0000-0000-4000-8000-000000000001:2100",
       "account_no": "2100",
       "account_company": "c31b0000-0000-4000-8000-000000000001",
       "amount": "50.000",
@@ -25,7 +25,7 @@
       "company_id": "c31b0000-0000-4000-8000-000000000001"
     },
     {
-      "account_id": "4000",
+      "account_id": "coa:c31b0000-0000-4000-8000-000000000001:4000",
       "account_no": "4000",
       "account_company": "c31b0000-0000-4000-8000-000000000001",
       "amount": "1000.000",

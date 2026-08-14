@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T15:51:03.299Z",
+  "generatedAt": "2026-08-14T08:23:34.665Z",
   "posture": "post-3a1b",
   "controls": {
     "immutableRequestBinding": true,
@@ -25,7 +25,7 @@
       "args": "p_company_id uuid, p_account_no text, p_account_name text",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "30611a38be631b2536f6e3d3bd400c12"
+      "md5": "4ac8e4f8c0ab437a19d259524040c17a"
     },
     {
       "name": "find_payment_account_id",
@@ -46,14 +46,14 @@
       "args": "payload jsonb",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "36b3061a071389f72d96102bceefa39d"
+      "md5": "90a4061a018d4af206cd145edec37258"
     },
     {
       "name": "record_invoice_payment_atomic",
       "args": "payload jsonb",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "512523d0d61c2ce80d2e05793d132264"
+      "md5": "c37e4714431ee2549679b617dace5f6e"
     },
     {
       "name": "require_company_account_id",
@@ -74,7 +74,7 @@
       "args": "payload jsonb",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "42187196410f32dc15498193f2ca20f6"
+      "md5": "fab0c7b3a898b88538be7c47d83cffa2"
     }
   ]
 }
