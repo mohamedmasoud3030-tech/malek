@@ -45,15 +45,6 @@
     "svc": true
   },
   {
-    "name": "void_receipt_atomic",
-    "args": "payload jsonb",
-    "cfg": "{\"search_path=public, pg_temp\"}",
-    "pub": false,
-    "anon": false,
-    "auth": true,
-    "svc": true
-  },
-  {
     "name": "require_company_account_id",
     "args": "p_company_id uuid, p_account_no text",
     "cfg": "{\"search_path=public, pg_temp\"}",
@@ -69,6 +60,15 @@
     "pub": false,
     "anon": false,
     "auth": false,
+    "svc": true
+  },
+  {
+    "name": "void_receipt_atomic",
+    "args": "payload jsonb",
+    "cfg": "{\"search_path=public, pg_temp\"}",
+    "pub": false,
+    "anon": false,
+    "auth": true,
     "svc": true
   }
 ]

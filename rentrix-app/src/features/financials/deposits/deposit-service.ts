@@ -1,7 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-import { fetchAllRows } from '@/lib/paginatedRead';
-import { depositDeductionBalanceSchema, depositPayloadSchema, depositDeductionPayloadSchema } from './deposit-schema';
+import { depositPayloadSchema } from './deposit-schema';
 
 export type DepositStatus = 'held' | 'partially_refunded' | 'refunded' | 'forfeited_damage' | 'forfeited_arrears' | 'partially_deducted';
 
@@ -37,16 +36,6 @@ export type DepositCreatePayload = {
   request_id?: string;
 };
 
-export type DepositDeductionPayload = {
-  deposit_id: string;
-  deduction_amount: number;
-  reason: 'maintenance_damage' | 'unpaid_arrears' | 'cleaning_fee' | 'other';
-  description: string;
-  charged_date: string;
-  property_id?: string | null;
-  request_id?: string;
-};
-
 export type DepositRefundPayload = {
   deposit_id: string;
   refund_amount: number;
@@ -56,115 +45,182 @@ export type DepositRefundPayload = {
   request_id?: string;
 };
 
+/** GAP-009 governed deposit claim (evidence-backed, maker-checker approved). */
+export type DepositClaimKind = 'INVOICE_ARREARS' | 'DAMAGE';
+export type DepositClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'REVERSED';
+
+export type DepositClaimRecord = {
+  id: string;
+  deposit_id: string;
+  contract_id: string;
+  claim_kind: DepositClaimKind;
+  invoice_id?: string | null;
+  allocation_amount: number;
+  evidence_uri: string;
+  claim_note?: string | null;
+  target_type?: string | null;
+  target_account_no?: string | null;
+  status: DepositClaimStatus;
+  created_by: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejected_by?: string | null;
+  rejected_at?: string | null;
+  rejection_reason?: string | null;
+  application_request_id?: string | null;
+  application_effective_date?: string | null;
+  application_journal_batch_id?: string | null;
+  applied_at?: string | null;
+  reversal_request_id?: string | null;
+  reversal_reason?: string | null;
+  reversed_at?: string | null;
+  created_at: string;
+};
+
+export type DepositClaimCreatePayload = {
+  deposit_id: string;
+  claim_kind: DepositClaimKind;
+  invoice_id?: string | null;
+  allocation_amount: number;
+  evidence_uri: string;
+  claim_note?: string | null;
+  request_id?: string;
+};
+
+export type DepositRefundEventRecord = {
+  id: string;
+  deposit_id: string;
+  amount: number;
+  cash_account_no: string;
+  effective_date: string;
+  request_id: string;
+  journal_batch_id: string;
+  status: 'POSTED' | 'REVERSED';
+  posted_at: string;
+  reversal_request_id?: string | null;
+  reversal_reason?: string | null;
+  reversed_at?: string | null;
+  created_at: string;
+};
+
 export const depositStatusLabels: Record<DepositStatus, string> = {
   held: 'محتجز في الأمانات',
   partially_refunded: 'مسترد جزئياً',
   refunded: 'مسترد بالكامل',
-  forfeited_damage: 'مخصوم لصالح أضرار الشقة',
-  forfeited_arrears: 'مصادر لسداد المتأخرات',
-  partially_deducted: 'مخصوم جزئياً لأضرار',
+  forfeited_damage: 'مصادرة للتعويض عن الأضرار',
+  forfeited_arrears: 'مصادرة لتسوية المتأخرات',
+  partially_deducted: 'مخصوم جزئياً',
 };
 
-export const deductionReasonLabels: Record<DepositDeductionPayload['reason'], string> = {
-  maintenance_damage: 'أضرار وصيانة العين المؤجرة',
-  unpaid_arrears: 'سداد فواتير ومتأخرات إيجارية',
-  cleaning_fee: 'رسوم تنظيف وإعادة تسليم',
-  other: 'خصومات أخرى معتمدة',
+export const depositClaimStatusLabels: Record<DepositClaimStatus, string> = {
+  PENDING: 'بانتظار الاعتماد',
+  APPROVED: 'معتمد',
+  REJECTED: 'مرفوض',
+  APPLIED: 'تم التطبيق',
+  REVERSED: 'تم الإلغاء (تعويضي)',
 };
 
-type DepositRow = {
-  id: string;
-  contract_id: string;
-  tenant_id?: string | null;
-  property_id?: string | null;
-  unit_id?: string | null;
-  // Read-only display joins (never written back):
-  // - properties/units hang off real FKs on tenant_deposits.
-  // - tenant_deposits.tenant_id is a plain text column with no FK, so the
-  //   tenant name is resolved through the contract -> people relationship.
-  properties?: { id: string; title: string | null } | null;
-  units?: { id: string; unit_number: string | null } | null;
-  contracts?: { people?: { id: string; full_name: string | null } | null } | null;
-  people?: { id: string; full_name: string | null } | null;
-  deposit_amount: number;
-  deducted_amount: number;
-  refunded_amount: number;
-  remaining_amount: number;
-  status: DepositStatus;
-  received_date: string;
-  settled_date?: string | null;
-  notes?: string | null;
-  created_at: string;
-  request_id?: string | null;
+export const depositClaimKindLabels: Record<DepositClaimKind, string> = {
+  INVOICE_ARREARS: 'تسوية متأخرات فاتورة',
+  DAMAGE: 'تعويض عن أضرار',
 };
 
-function mapRow(row: any): DepositRecord {
+/** Legacy reason vocabulary retained for display compatibility. */
+export const deductionReasonLabels: Record<string, string> = {
+  maintenance_damage: 'أضرار',
+  unpaid_arrears: 'متأخرات إيجار',
+  cleaning_fee: 'رسوم تنظيف',
+  other: 'أخرى',
+};
+
+function getLocalDateString(date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+type DepositRow = Record<string, unknown> & {
+  contracts?: { people?: { full_name?: string } | null } | null;
+  properties?: { title?: string } | null;
+  units?: { unit_number?: string } | null;
+  people?: { full_name?: string } | null;
+};
+
+function mapRow(row: DepositRow): DepositRecord {
   return {
-    id: row.id,
-    contract_id: row.contract_id,
-    tenant_id: row.tenant_id ?? null,
-    // Display fields only ever carry human-readable values. Raw UUIDs
-    // (tenant_id/property_id/unit_id) must never surface as names in the UI
-    // or in printed documents — missing relations become Arabic fallbacks.
+    id: String(row.id),
+    contract_id: String(row.contract_id ?? ''),
+    tenant_id: row.tenant_id ? String(row.tenant_id) : null,
     tenant_name: row.contracts?.people?.full_name ?? row.people?.full_name ?? null,
-    property_id: row.property_id ?? null,
+    property_id: row.property_id ? String(row.property_id) : null,
     property_title: row.properties?.title ?? null,
-    unit_id: row.unit_id ?? null,
+    unit_id: row.unit_id ? String(row.unit_id) : null,
     unit_number: row.units?.unit_number ?? null,
     deposit_amount: Number(row.deposit_amount ?? 0),
     deducted_amount: Number(row.deducted_amount ?? 0),
     refunded_amount: Number(row.refunded_amount ?? 0),
     remaining_amount: Number(row.remaining_amount ?? 0),
     status: row.status as DepositStatus,
-    received_date: row.received_date,
-    settled_date: row.settled_date ?? null,
-    notes: row.notes ?? null,
-    created_at: row.created_at,
-    request_id: row.request_id ?? null,
+    received_date: String(row.received_date ?? ''),
+    settled_date: row.settled_date ? String(row.settled_date) : null,
+    notes: row.notes ? String(row.notes) : null,
+    created_at: String(row.created_at ?? ''),
+    request_id: row.request_id ? String(row.request_id) : null,
+  };
+}
+
+function mapClaimRow(row: Record<string, unknown>): DepositClaimRecord {
+  return {
+    id: String(row.id),
+    deposit_id: String(row.deposit_id),
+    contract_id: String(row.contract_id),
+    claim_kind: row.claim_kind as DepositClaimKind,
+    invoice_id: row.invoice_id ? String(row.invoice_id) : null,
+    allocation_amount: Number(row.allocation_amount ?? 0),
+    evidence_uri: String(row.evidence_uri ?? ''),
+    claim_note: row.claim_note ? String(row.claim_note) : null,
+    target_type: row.target_type ? String(row.target_type) : null,
+    target_account_no: row.target_account_no ? String(row.target_account_no) : null,
+    status: row.status as DepositClaimStatus,
+    created_by: String(row.created_by ?? ''),
+    approved_by: row.approved_by ? String(row.approved_by) : null,
+    approved_at: row.approved_at ? String(row.approved_at) : null,
+    rejected_by: row.rejected_by ? String(row.rejected_by) : null,
+    rejected_at: row.rejected_at ? String(row.rejected_at) : null,
+    rejection_reason: row.rejection_reason ? String(row.rejection_reason) : null,
+    application_request_id: row.application_request_id ? String(row.application_request_id) : null,
+    application_effective_date: row.application_effective_date ? String(row.application_effective_date) : null,
+    application_journal_batch_id: row.application_journal_batch_id ? String(row.application_journal_batch_id) : null,
+    applied_at: row.applied_at ? String(row.applied_at) : null,
+    reversal_request_id: row.reversal_request_id ? String(row.reversal_request_id) : null,
+    reversal_reason: row.reversal_reason ? String(row.reversal_reason) : null,
+    reversed_at: row.reversed_at ? String(row.reversed_at) : null,
+    created_at: String(row.created_at ?? ''),
   };
 }
 
 export async function listTenantDeposits(): Promise<DepositRecord[]> {
-  try {
-    // A `.limit(200)` here used to silently hide older held deposits. Deposits
-    // remain a liability until settled, so every row must participate in this view.
-    // `.range()`-based pagination needs a fully deterministic order — created_at
-    // alone can tie across rows, which could otherwise skip or duplicate a row
-    // at a page boundary. `id` breaks every tie.
-    const { rows } = await fetchAllRows<DepositRow>(() => supabase
-      .from('tenant_deposits')
-      // Display joins only. tenant_deposits.tenant_id carries no FK, so the
-      // tenant name is read through the contract -> people relationship to
-      // keep raw UUIDs out of the deposits list and printed documents.
-      .select(`
-        *,
-        properties:property_id(id,title),
-        units:unit_id(id,unit_number),
-        contracts:contract_id(people:tenant_id(id,full_name))
-      `)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .returns<DepositRow>() as any);
-    return rows.map(mapRow);
-  } catch (error) {
-    if ((error as any)?.code === '42P01') return [];
-    handleSupabaseError(error, 'تعذر تحميل ودائع التأمين');
-    throw error;
-  }
+  const { data, error } = await supabase
+    .from('tenant_deposits')
+    .select(`
+      *,
+      contracts:contract_id(people:tenant_id(id,full_name)),
+      properties:property_id(id,title),
+      units:unit_id(id,unit_number)
+    `)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(200)
+    .returns<Record<string, unknown>[]>();
+  if (error) handleSupabaseError(error, 'تعذر تحميل الودائع');
+  return (data ?? []).map((row) => mapRow(row as DepositRow));
 }
 
 export async function createTenantDeposit(payload: DepositCreatePayload): Promise<DepositRecord> {
   // Re-parse at the service boundary. UI validation is not a trust boundary.
   const validated = depositPayloadSchema.parse(payload);
   const requestId = validated.request_id || crypto.randomUUID();
-
-  function getLocalDateString(date = new Date()): string {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
 
   const rpcPayload = {
     contract_id: validated.contract_id,
@@ -187,6 +243,7 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
     .from('tenant_deposits')
     .select(`
       *,
+      contracts:contract_id(people:tenant_id(id,full_name)),
       properties:property_id(id,title),
       units:unit_id(id,unit_number)
     `)
@@ -194,102 +251,149 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
     .single();
 
   if (fetchError) handleSupabaseError(fetchError, 'تم إنشاء الوديعة لكن تعذر تحميلها');
-  return mapRow(row);
+  return mapRow(row as DepositRow);
 }
 
-export async function recordDepositDeduction(payload: DepositDeductionPayload): Promise<DepositRecord> {
-  const validated = depositDeductionPayloadSchema.parse(payload);
+// ─────────────────────────────────────────────────────────────────────────────
+// GAP-009 governed deposit claim lifecycle (evidence-backed, maker-checker)
+// ─────────────────────────────────────────────────────────────────────────────
 
-  // The RPC remains authoritative (and locks the row), but validating the
-  // current state here gives callers a deterministic domain error before a
-  // write is attempted. `deleted_at` is intentionally selected so archived
-  // deposits cannot be charged from an old form.
-  const { data: current, error: currentError } = await supabase
-    .from('tenant_deposits')
-    .select('remaining_amount, deleted_at')
-    .eq('id', validated.deposit_id)
-    .single();
-  if (currentError) handleSupabaseError(currentError, 'تعذر التحقق من رصيد الوديعة');
-  const checked = depositDeductionBalanceSchema.parse({
-    ...validated,
-    remaining_amount: Number((current as any)?.remaining_amount),
-    archived: Boolean((current as any)?.deleted_at),
-  });
+export async function createDepositClaim(payload: DepositClaimCreatePayload): Promise<DepositClaimRecord> {
+  if (!payload.deposit_id) throw new Error('معرف الوديعة مطلوب');
+  if (!Number.isFinite(payload.allocation_amount) || payload.allocation_amount <= 0) {
+    throw new Error('مبلغ التخصيص يجب أن يكون أكبر من صفر');
+  }
+  if (!payload.evidence_uri || payload.evidence_uri.trim().length < 3) {
+    throw new Error('دليل الإثبات مطلوب (رابط أو مرجع مستند)');
+  }
+  if (payload.claim_kind === 'INVOICE_ARREARS' && !payload.invoice_id) {
+    throw new Error('فاتورة المتأخرات مطلوبة');
+  }
 
-  const requestId = checked.request_id || crypto.randomUUID();
   const rpcPayload = {
-    deposit_id: checked.deposit_id,
-    amount: checked.deduction_amount,
-    reason: checked.reason,
-    description: checked.description,
-    charged_date: checked.charged_date,
-    property_id: checked.property_id || null,
-    request_id: requestId,
+    request_id: payload.request_id || crypto.randomUUID(),
+    deposit_id: payload.deposit_id,
+    claim_kind: payload.claim_kind,
+    invoice_id: payload.invoice_id || null,
+    allocation_amount: payload.allocation_amount,
+    evidence_uri: payload.evidence_uri.trim(),
+    claim_note: payload.claim_note || null,
   };
 
-  const { error } = await supabase.rpc('deduct_deposit_atomic' as any, { p_payload: rpcPayload });
-  if (error) handleSupabaseError(error, 'فشل خصم مبلغ التأمين - تحقق من الرصيد المتبقي');
-
-  const { data: row, error: fetchError } = await supabase
-    .from('tenant_deposits')
-    .select(`
-      *,
-      properties:property_id(id,title),
-      units:unit_id(id,unit_number)
-    `)
-    .eq('id', checked.deposit_id)
-    .single();
-
-  if (fetchError) handleSupabaseError(fetchError, 'تم الخصم لكن تعذر تحديث السجل');
-  return mapRow(row);
+  const { data, error } = await supabase.rpc('create_deposit_application_claim_atomic' as any, { p_payload: rpcPayload });
+  if (error) handleSupabaseError(error, 'فشل إنشاء طلب تخصيص الوديعة');
+  const claimId = (data as any)?.claim_id as string | undefined;
+  if (!claimId) throw new Error('لم يتم إرجاع معرف الطلب من الخادم');
+  return (await getDepositClaim(claimId))!;
 }
 
-export async function recordDepositRefund(payload: DepositRefundPayload): Promise<DepositRecord> {
+export async function getDepositClaim(claimId: string): Promise<DepositClaimRecord | null> {
+  const { data, error } = await supabase
+    .from('deposit_application_claims')
+    .select('*')
+    .eq('id', claimId)
+    .maybeSingle();
+  if (error) handleSupabaseError(error, 'تعذر تحميل الطلب');
+  return data ? mapClaimRow(data as Record<string, unknown>) : null;
+}
+
+export async function listDepositClaims(depositId?: string): Promise<DepositClaimRecord[]> {
+  let query = supabase.from('deposit_application_claims').select('*').order('created_at', { ascending: false }).limit(200);
+  if (depositId) query = query.eq('deposit_id', depositId);
+  const { data, error } = await query;
+  if (error) handleSupabaseError(error, 'تعذر تحميل طلبات التخصيص');
+  return (data ?? []).map(mapClaimRow);
+}
+
+export async function approveDepositClaim(claimId: string): Promise<void> {
+  const { error } = await supabase.rpc('approve_deposit_application_claim_atomic' as any, { p_payload: { claim_id: claimId } });
+  if (error) handleSupabaseError(error, 'فشل اعتماد الطلب - لا يمكن اعتماد طلب أنشأته بنفسك');
+}
+
+export async function rejectDepositClaim(claimId: string, reason: string): Promise<void> {
+  if (!reason || reason.trim().length < 3) throw new Error('سبب الرفض مطلوب');
+  const { error } = await supabase.rpc('reject_deposit_application_claim_atomic' as any, {
+    p_payload: { claim_id: claimId, reason: reason.trim() },
+  });
+  if (error) handleSupabaseError(error, 'فشل رفض الطلب');
+}
+
+export async function applyDepositClaim(claimId: string, effectiveDate?: string): Promise<{ batch_id: string }> {
+  const { data, error } = await supabase.rpc('apply_deposit_claim_atomic' as any, {
+    p_payload: {
+      claim_id: claimId,
+      request_id: crypto.randomUUID(),
+      effective_date: effectiveDate || getLocalDateString(),
+    },
+  });
+  if (error) handleSupabaseError(error, 'فشل تطبيق التخصيص - تحقق من الرصيد وحالة الفاتورة');
+  return { batch_id: String((data as any)?.batch_id ?? '') };
+}
+
+export async function reverseDepositClaim(claimId: string, reason: string): Promise<void> {
+  if (!reason || reason.trim().length < 3) throw new Error('سبب الإلغاء مطلوب');
+  const { error } = await supabase.rpc('reverse_deposit_claim_atomic' as any, {
+    p_payload: { claim_id: claimId, request_id: crypto.randomUUID(), reason: reason.trim() },
+  });
+  if (error) handleSupabaseError(error, 'فشل إلغاء التخصيص');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GAP-009 governed deposit refunds (server-derived cash account, reversible)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function refundDepositGoverned(payload: DepositRefundPayload): Promise<{ refund_event_id: string; remaining: number; refunded: number }> {
   if (!payload.deposit_id) throw new Error('معرف الوديعة مطلوب');
   if (!Number.isFinite(payload.refund_amount) || payload.refund_amount <= 0) throw new Error('مبلغ الاسترداد يجب أن يكون أكبر من صفر');
   if (!payload.refund_date) throw new Error('تاريخ الاسترداد مطلوب');
 
-  const requestId = payload.request_id || crypto.randomUUID();
   const rpcPayload = {
     deposit_id: payload.deposit_id,
     amount: payload.refund_amount,
-    payment_method: payload.payment_method,
     refund_date: payload.refund_date,
+    payment_method: payload.payment_method,
     notes: payload.notes || null,
-    request_id: requestId,
+    request_id: payload.request_id || crypto.randomUUID(),
   };
 
-  const { error } = await supabase.rpc('refund_deposit_atomic' as any, { p_payload: rpcPayload });
+  const { data, error } = await supabase.rpc('refund_deposit_governed_atomic' as any, { p_payload: rpcPayload });
   if (error) handleSupabaseError(error, 'فشل رد مبلغ التأمين - تحقق من الرصيد المتبقي');
-
-  const { data: row, error: fetchError } = await supabase
-    .from('tenant_deposits')
-    .select(`
-      *,
-      properties:property_id(id,title),
-      units:unit_id(id,unit_number)
-    `)
-    .eq('id', payload.deposit_id)
-    .single();
-
-  if (fetchError) handleSupabaseError(fetchError, 'تم الاسترداد لكن تعذر تحديث السجل');
-  return mapRow(row);
+  return {
+    refund_event_id: String((data as any)?.refund_event_id ?? ''),
+    remaining: Number((data as any)?.remaining ?? 0),
+    refunded: Number((data as any)?.refunded ?? 0),
+  };
 }
 
-export async function listDepositTransactions(depositId: string) {
-  try {
-    // `.range()`-based pagination needs a fully deterministic order — created_at
-    // alone can tie across rows, which could otherwise skip or duplicate a row
-    // at a page boundary. `id` breaks every tie.
-    const { rows } = await fetchAllRows<any>(() => supabase
-      .from('deposit_transactions')
-      .select('*')
-      .eq('deposit_id', depositId)
-      .order('created_at', { ascending: true })
-      .order('id', { ascending: true }) as any);
-    return rows;
-  } catch (error) {
-    handleSupabaseError(error, 'تعذر تحميل سجل حركات الوديعة');
-    throw error;
-  }
+export async function listDepositRefundEvents(depositId?: string): Promise<DepositRefundEventRecord[]> {
+  let query = supabase.from('deposit_refund_events').select('*').order('effective_date', { ascending: false }).limit(200);
+  if (depositId) query = query.eq('deposit_id', depositId);
+  const { data, error } = await query;
+  if (error) handleSupabaseError(error, 'تعذر تحميل أحداث الاسترداد');
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    deposit_id: String(row.deposit_id),
+    amount: Number(row.amount ?? 0),
+    cash_account_no: String(row.cash_account_no ?? ''),
+    effective_date: String(row.effective_date ?? ''),
+    request_id: String(row.request_id ?? ''),
+    journal_batch_id: String(row.journal_batch_id ?? ''),
+    status: row.status as 'POSTED' | 'REVERSED',
+    posted_at: String(row.posted_at ?? ''),
+    reversal_request_id: row.reversal_request_id ? String(row.reversal_request_id) : null,
+    reversal_reason: row.reversal_reason ? String(row.reversal_reason) : null,
+    reversed_at: row.reversed_at ? String(row.reversed_at) : null,
+    created_at: String(row.created_at ?? ''),
+  }));
 }
+
+export async function reverseDepositRefund(refundEventId: string, reason: string): Promise<void> {
+  if (!reason || reason.trim().length < 3) throw new Error('سبب إلغاء الاسترداد مطلوب');
+  const { error } = await supabase.rpc('reverse_deposit_refund_atomic' as any, {
+    p_payload: { refund_event_id: refundEventId, request_id: crypto.randomUUID(), reason: reason.trim() },
+  });
+  if (error) handleSupabaseError(error, 'فشل إلغاء الاسترداد');
+}
+
+/** Legacy deduction/refund helpers are intentionally absent: deduction/refund
+ * writes are governed (evidence-backed claims + maker-checker) and RPC-only. */

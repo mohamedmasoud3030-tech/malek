@@ -1687,13 +1687,231 @@ export type Database = {
           },
         ];
       };
+      deposit_application_claims: {
+        Row: {
+          id: string;
+          company_id: string;
+          deposit_id: string;
+          contract_id: string;
+          claim_kind: 'INVOICE_ARREARS' | 'DAMAGE';
+          invoice_id: string | null;
+          allocation_amount: number;
+          evidence_uri: string;
+          claim_note: string | null;
+          target_type: 'rent_arrears' | 'owner_arrears' | 'damage';
+          target_account_no: '1201' | '2000' | '4300';
+          collection_role_snapshot: string | null;
+          deposit_beneficiary_snapshot: string | null;
+          request_id: string;
+          source_fingerprint: string;
+          status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'REVERSED';
+          created_by: string;
+          approved_by: string | null;
+          approved_at: string | null;
+          rejected_by: string | null;
+          rejected_at: string | null;
+          rejection_reason: string | null;
+          application_request_id: string | null;
+          application_effective_date: string | null;
+          application_journal_batch_id: string | null;
+          applied_by: string | null;
+          applied_at: string | null;
+          reversal_request_id: string | null;
+          reversal_journal_batch_id: string | null;
+          reversal_reason: string | null;
+          reversed_by: string | null;
+          reversed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          deposit_id: string;
+          contract_id: string;
+          claim_kind: 'INVOICE_ARREARS' | 'DAMAGE';
+          invoice_id?: string | null;
+          allocation_amount: number;
+          evidence_uri: string;
+          claim_note?: string | null;
+          target_type: 'rent_arrears' | 'owner_arrears' | 'damage';
+          target_account_no: '1201' | '2000' | '4300';
+          collection_role_snapshot?: string | null;
+          deposit_beneficiary_snapshot?: string | null;
+          request_id: string;
+          source_fingerprint: string;
+          status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'REVERSED';
+          created_by: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          rejected_by?: string | null;
+          rejected_at?: string | null;
+          rejection_reason?: string | null;
+          application_request_id?: string | null;
+          application_effective_date?: string | null;
+          application_journal_batch_id?: string | null;
+          applied_by?: string | null;
+          applied_at?: string | null;
+          reversal_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          reversal_reason?: string | null;
+          reversed_by?: string | null;
+          reversed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          deposit_id?: string;
+          contract_id?: string;
+          claim_kind?: 'INVOICE_ARREARS' | 'DAMAGE';
+          invoice_id?: string | null;
+          allocation_amount?: number;
+          evidence_uri?: string;
+          claim_note?: string | null;
+          target_type?: 'rent_arrears' | 'owner_arrears' | 'damage';
+          target_account_no?: '1201' | '2000' | '4300';
+          collection_role_snapshot?: string | null;
+          deposit_beneficiary_snapshot?: string | null;
+          request_id?: string;
+          source_fingerprint?: string;
+          status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'APPLIED' | 'REVERSED';
+          created_by?: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          rejected_by?: string | null;
+          rejected_at?: string | null;
+          rejection_reason?: string | null;
+          application_request_id?: string | null;
+          application_effective_date?: string | null;
+          application_journal_batch_id?: string | null;
+          applied_by?: string | null;
+          applied_at?: string | null;
+          reversal_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          reversal_reason?: string | null;
+          reversed_by?: string | null;
+          reversed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'deposit_application_claims_application_journal_batch_id_fkey';
+            columns: ['application_journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_application_claims_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_application_claims_reversal_journal_batch_id_fkey';
+            columns: ['reversal_journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      deposit_refund_events: {
+        Row: {
+          id: string;
+          company_id: string;
+          deposit_id: string;
+          amount: number;
+          cash_account_no: '1111' | '1120';
+          effective_date: string;
+          request_id: string;
+          source_fingerprint: string;
+          journal_batch_id: string;
+          status: 'POSTED' | 'REVERSED';
+          posted_by: string;
+          posted_at: string;
+          reversal_request_id: string | null;
+          reversal_journal_batch_id: string | null;
+          reversal_reason: string | null;
+          reversed_by: string | null;
+          reversed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          deposit_id: string;
+          amount: number;
+          cash_account_no: '1111' | '1120';
+          effective_date: string;
+          request_id: string;
+          source_fingerprint: string;
+          journal_batch_id: string;
+          status?: 'POSTED' | 'REVERSED';
+          posted_by: string;
+          posted_at?: string;
+          reversal_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          reversal_reason?: string | null;
+          reversed_by?: string | null;
+          reversed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          deposit_id?: string;
+          amount?: number;
+          cash_account_no?: '1111' | '1120';
+          effective_date?: string;
+          request_id?: string;
+          source_fingerprint?: string;
+          journal_batch_id?: string;
+          status?: 'POSTED' | 'REVERSED';
+          posted_by?: string;
+          posted_at?: string;
+          reversal_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          reversal_reason?: string | null;
+          reversed_by?: string | null;
+          reversed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'deposit_refund_events_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_refund_events_journal_batch_id_fkey';
+            columns: ['journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_refund_events_reversal_journal_batch_id_fkey';
+            columns: ['reversal_journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       deposit_transactions: {
         Row: {
           id: string;
           deposit_id: string;
-          type: 'held' | 'deduction' | 'refund';
+          type: 'held' | 'deduction' | 'refund' | 'reversal';
           amount: number;
-          reason: 'maintenance_damage' | 'unpaid_arrears' | 'cleaning_fee' | 'other' | 'initial_deposit' | 'refund_full' | 'refund_partial' | null;
+          reason: string | null;
           description: string | null;
           payment_method: 'cash' | 'bank_transfer' | 'check' | null;
           created_at: string;
@@ -1701,13 +1919,14 @@ export type Database = {
           request_id: string;
           journal_batch_id: string | null;
           company_id: string;
+          reversal_of_id: string | null;
         };
         Insert: {
           id?: string;
           deposit_id: string;
-          type: 'held' | 'deduction' | 'refund';
+          type: 'held' | 'deduction' | 'refund' | 'reversal';
           amount: number;
-          reason?: 'maintenance_damage' | 'unpaid_arrears' | 'cleaning_fee' | 'other' | 'initial_deposit' | 'refund_full' | 'refund_partial' | null;
+          reason?: string | null;
           description?: string | null;
           payment_method?: 'cash' | 'bank_transfer' | 'check' | null;
           created_at?: string;
@@ -1715,13 +1934,14 @@ export type Database = {
           request_id: string;
           journal_batch_id?: string | null;
           company_id?: string;
+          reversal_of_id?: string | null;
         };
         Update: {
           id?: string;
           deposit_id?: string;
-          type?: 'held' | 'deduction' | 'refund';
+          type?: 'held' | 'deduction' | 'refund' | 'reversal';
           amount?: number;
-          reason?: 'maintenance_damage' | 'unpaid_arrears' | 'cleaning_fee' | 'other' | 'initial_deposit' | 'refund_full' | 'refund_partial' | null;
+          reason?: string | null;
           description?: string | null;
           payment_method?: 'cash' | 'bank_transfer' | 'check' | null;
           created_at?: string;
@@ -1729,6 +1949,7 @@ export type Database = {
           request_id?: string;
           journal_batch_id?: string | null;
           company_id?: string;
+          reversal_of_id?: string | null;
         };
         Relationships: [
           {
@@ -1743,6 +1964,13 @@ export type Database = {
             columns: ['deposit_id'];
             isOneToOne: false;
             referencedRelation: 'tenant_deposits';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_transactions_reversal_of_id_fkey';
+            columns: ['reversal_of_id'];
+            isOneToOne: false;
+            referencedRelation: 'deposit_transactions';
             referencedColumns: ['id'];
           },
         ];
@@ -5941,10 +6169,22 @@ export type Database = {
         };
         Returns: Json;
       };
+      apply_deposit_claim_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       approve_contract_atomic: {
         Args: {
           p_contract_id: string | null;
           p_checker_signature: string | null;
+        };
+        Returns: Json;
+      };
+      approve_deposit_application_claim_atomic: {
+        Args: {
+          p_payload: Json | null;
         };
         Returns: Json;
       };
@@ -6050,6 +6290,12 @@ export type Database = {
           p_cancellation_reason: string | null;
           p_notes: string | null;
           p_attachment_url: string | null;
+        };
+        Returns: Json;
+      };
+      create_deposit_application_claim_atomic: {
+        Args: {
+          p_payload: Json | null;
         };
         Returns: Json;
       };
@@ -6669,11 +6915,23 @@ export type Database = {
         };
         Returns: Json;
       };
+      refund_deposit_governed_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       reject_contract_atomic: {
         Args: {
           p_contract_id: string | null;
           p_checker_signature: string | null;
           p_reason: string | null;
+        };
+        Returns: Json;
+      };
+      reject_deposit_application_claim_atomic: {
+        Args: {
+          p_payload: Json | null;
         };
         Returns: Json;
       };
@@ -6731,6 +6989,18 @@ export type Database = {
         Returns: Json;
       };
       reverse_commission_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
+      reverse_deposit_claim_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
+      reverse_deposit_refund_atomic: {
         Args: {
           p_payload: Json | null;
         };

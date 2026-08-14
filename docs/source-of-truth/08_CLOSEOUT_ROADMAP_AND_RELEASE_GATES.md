@@ -87,7 +87,7 @@ Repository implementation for portions of S02/S04/S06/S07/S08 is acknowledged in
 - Example 1,000.000 OMR collection with 10% RATE produces 100.000 fee before configured tax, correct 2000 owner position and correct payout.
 - FIXED_MONTHLY daily accrual/catch-up/reversal is idempotent and period-correct.
 - Owner obligations hit 1300 rather than 6100 and never force 2000 negative.
-- Deposit transactions are RPC-only, immutable/compensating, 3dp and reconciled to 2200 by beneficiary.
+- Deposit transactions are RPC-only, immutable/compensating, 3dp and reconciled to 2200 by beneficiary (GAP-009 ENGINEERING COMPLETE: evidence-backed claims with maker-checker, server-derived 1201/2000/4300 targets, invoice-subledger parity on OFFICE arrears apply/reverse, governed refunds and compensating reversals, legacy deduct/refund revoked; PGlite matrix + db0 gates pass; hosted/live proof remains).
 - Taxable posting blocks incomplete profiles and snapshots configured code/rate/amount.
 - VOID/credit/refund/termination paths preserve history and reconcile subledger/GL/report totals.
 

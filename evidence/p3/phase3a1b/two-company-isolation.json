@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-08-09T12:52:12.501Z",
+  "generatedAt": "2026-08-14T08:22:50.514Z",
   "scenario": "record-on-foreign-invoice · post-on-foreign-contract · foreign allocation · foreign journal account · foreign VOID",
   "vectorsRejected": 5,
   "failureBeforeAnyWrite": {
     "a_receipts": 3,
-    "a_journals": 13,
+    "a_journals": 21,
     "b_receipts": 0
   },
   "unchanged": true

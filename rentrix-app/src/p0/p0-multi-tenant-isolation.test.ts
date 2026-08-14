@@ -280,6 +280,8 @@ beforeAll(async () => {
     // GAP-007 depends on the S04 frozen agreement-version table omitted by
     // this historical P0 checkpoint.
     !f.includes('wp02_fixed_monthly_daily_accrual') &&
+    !f.includes('wp02_gap009_deposit_precision') &&
+    !f.includes('wp02_gap009_deposit_lifecycle') &&
     !f.includes('_s06_') &&
     !f.includes('_s08_') &&
     !f.includes('_wp05_') &&

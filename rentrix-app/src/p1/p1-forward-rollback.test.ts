@@ -101,9 +101,11 @@ beforeAll(async () => {
       && !f.includes('20260804') // FA-003 owner-settlement input reservation
       && !f.includes('_s03_')
       && !f.includes('_s04_')
-      // GAP-007 depends on the S04 frozen agreement-version table omitted by
-      // this historical P1 checkpoint.
+      // GAP-007/GAP-009 depend on the S03/S04 tables omitted by this
+      // historical P1 checkpoint.
       && !f.includes('wp02_fixed_monthly_daily_accrual')
+      && !f.includes('wp02_gap009_deposit_precision')
+      && !f.includes('wp02_gap009_deposit_lifecycle')
       && !f.includes('_s06_')
       && !f.includes('_s08_')
       && !f.includes('_wp05_')

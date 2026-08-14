@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T15:52:02.566Z",
+  "generatedAt": "2026-08-14T08:25:12.398Z",
   "migration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
   "rollback": "20260728_rollback_phase3a1b_invoice_payment_receipt_void.sql",
   "signatures": {
@@ -34,15 +34,15 @@
     "invoices_paid_sum": "0.00"
   },
   "lifecycle": {
-    "forwardReceipt": "12e2a616-e91a-44c2-81b9-7a38f664ab8d",
-    "reappliedReceipt": "63ac1ed9-b8e9-492d-bb18-f528d8aa66d7",
+    "forwardReceipt": "59100421-75b3-4cc2-b8b7-f3fc92267e0b",
+    "reappliedReceipt": "5f688188-d13c-453d-83d6-9e7e3d12f149",
     "immutableRequestBindingPassed": true,
     "voidSingleReversalReplayPassed": true
   },
   "fingerprintBaseline": [
     {
       "signature": "public.ensure_company_account(p_company_id uuid, p_account_no text, p_account_name text)",
-      "body_md5": "30611a38be631b2536f6e3d3bd400c12",
+      "body_md5": "4ac8e4f8c0ab437a19d259524040c17a",
       "security_definer": true,
       "search_path_config": "{\"search_path=public, pg_temp\"}",
       "owner": "postgres",

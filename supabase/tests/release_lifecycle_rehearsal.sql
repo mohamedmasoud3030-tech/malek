@@ -21,7 +21,7 @@ $$;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(66);
+select plan(70); -- 66 baseline + 4 GAP-009 governed deposit-flow assertions
 
 select has_table('public', 'tenant_deposits', 'tenant deposits table exists after a clean migration replay');
 select has_table('public', 'deposit_transactions', 'deposit transactions table exists after a clean migration replay');
@@ -331,11 +331,22 @@ select throws_ok(
   'USER cannot create a tenant deposit'
 );
 
+-- GAP-009: beneficiary-aware deposit application requires the frozen agreement
+-- snapshot to fix the damage beneficiary (D05). Set as schema owner; the
+-- authenticated role cannot UPDATE version rows (RLS read-only).
+reset role;
+update public.owner_agreement_versions
+   set deposit_beneficiary = 'OFFICE'
+ where owner_agreement_id = (
+   select agreement_id from public.contracts where notes = 'release-lifecycle-contract'
+ );
+
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
   true
 );
+set local role authenticated;
 
 select lives_ok(
   $$
@@ -377,43 +388,98 @@ select is(
   200::numeric,
   'new deposit starts with the full remaining amount'
 );
+-- GAP-009 governed flow: overdraw is rejected at APPLY time (claim creation is
+-- server-validated; the balance guard is authoritative).
+select lives_ok(
+  $$
+    select public.create_deposit_application_claim_atomic(jsonb_build_object(
+      'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
+      'claim_kind', 'DAMAGE',
+      'allocation_amount', 250,
+      'evidence_uri', 'evidence://release-lifecycle/overdraw',
+      'request_id', 'release-lifecycle-deposit-overdraw-claim'
+    ))
+  $$,
+  'overdraw claim is created'
+);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+select lives_ok(
+  $$
+    select public.approve_deposit_application_claim_atomic(jsonb_build_object(
+      'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-overdraw-claim')
+    ))
+  $$,
+  'overdraw claim is approved by a distinct checker'
+);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
 select throws_ok(
   $$
-    select public.deduct_deposit_atomic(jsonb_build_object(
-      'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
-      'amount', 250,
-      'reason', 'maintenance_damage',
-      'description', 'overdraw must fail',
-      'charged_date', '2026-09-06',
-      'request_id', 'release-lifecycle-deposit-overdraw'
+    select public.apply_deposit_claim_atomic(jsonb_build_object(
+      'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-overdraw-claim'),
+      'request_id', 'release-lifecycle-deposit-overdraw-apply',
+      'effective_date', '2026-09-06'
     ))
   $$,
   null,
   null,
   'deposit overdraw is rejected before mutation'
 );
+
+-- Governed 50 OMR damage claim: create (maker) -> approve (checker) -> apply.
 select lives_ok(
   $$
-    select public.deduct_deposit_atomic(jsonb_build_object(
+    select public.create_deposit_application_claim_atomic(jsonb_build_object(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
-      'amount', 50,
-      'reason', 'maintenance_damage',
-      'description', 'release lifecycle deduction',
-      'charged_date', '2026-09-06',
-      'request_id', 'release-lifecycle-deposit-deduct-1'
+      'claim_kind', 'DAMAGE',
+      'allocation_amount', 50,
+      'evidence_uri', 'evidence://release-lifecycle/deduct',
+      'request_id', 'release-lifecycle-deposit-deduct-claim'
+    ))
+  $$,
+  'governed deduction claim is created with evidence'
+);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+select lives_ok(
+  $$
+    select public.approve_deposit_application_claim_atomic(jsonb_build_object(
+      'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-deduct-claim')
+    ))
+  $$,
+  'deduction claim is approved by a distinct checker'
+);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+select lives_ok(
+  $$
+    select public.apply_deposit_claim_atomic(jsonb_build_object(
+      'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-deduct-claim'),
+      'request_id', 'release-lifecycle-deposit-deduct-1',
+      'effective_date', '2026-09-06'
     ))
   $$,
   'deposit deduction succeeds'
 );
 select lives_ok(
   $$
-    select public.deduct_deposit_atomic(jsonb_build_object(
-      'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
-      'amount', 50,
-      'reason', 'maintenance_damage',
-      'description', 'release lifecycle deduction',
-      'charged_date', '2026-09-06',
-      'request_id', 'release-lifecycle-deposit-deduct-1'
+    select public.apply_deposit_claim_atomic(jsonb_build_object(
+      'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-deduct-claim'),
+      'request_id', 'release-lifecycle-deposit-deduct-1',
+      'effective_date', '2026-09-06'
     ))
   $$,
   'deposit deduction replay is idempotent'
@@ -435,7 +501,7 @@ select is(
 );
 select lives_ok(
   $$
-    select public.refund_deposit_atomic(jsonb_build_object(
+    select public.refund_deposit_governed_atomic(jsonb_build_object(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
       'amount', 150,
       'payment_method', 'bank_transfer',
@@ -448,7 +514,7 @@ select lives_ok(
 );
 select lives_ok(
   $$
-    select public.refund_deposit_atomic(jsonb_build_object(
+    select public.refund_deposit_governed_atomic(jsonb_build_object(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
       'amount', 150,
       'payment_method', 'bank_transfer',
@@ -491,6 +557,12 @@ select is(
     select coalesce(sum(amount) filter (where upper(type) = 'DEBIT'), 0)::numeric
     from public.journal_entries
     where source_id::text = (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1')
+       or (entity_type = 'deposit_claim' and source_id::text in (
+             select id::text from public.deposit_application_claims
+             where deposit_id = (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1')))
+       or (entity_type = 'deposit_refund' and source_id::text in (
+             select id::text from public.deposit_refund_events
+             where deposit_id = (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1')))
   ),
   400::numeric,
   'deposit lifecycle posts the expected total debits'
@@ -500,6 +572,12 @@ select is(
     select coalesce(sum(amount) filter (where upper(type) = 'CREDIT'), 0)::numeric
     from public.journal_entries
     where source_id::text = (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1')
+       or (entity_type = 'deposit_claim' and source_id::text in (
+             select id::text from public.deposit_application_claims
+             where deposit_id = (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1')))
+       or (entity_type = 'deposit_refund' and source_id::text in (
+             select id::text from public.deposit_refund_events
+             where deposit_id = (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1')))
   ),
   400::numeric,
   'deposit lifecycle posts equal credits'

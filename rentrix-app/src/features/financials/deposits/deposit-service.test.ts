@@ -15,8 +15,15 @@ describe('deposits real implementation - no false success', () => {
     const servicePath = resolve(import.meta.dirname, './deposit-service.ts');
     const content = readFileSync(servicePath, 'utf8');
     expect(content).toContain('create_deposit_atomic');
-    expect(content).toContain('deduct_deposit_atomic');
-    expect(content).toContain('refund_deposit_atomic');
+    // GAP-009: deduction/refund writes are governed (evidence-backed claims +
+    // maker-checker approval + reversible governed refunds).
+    expect(content).toContain('create_deposit_application_claim_atomic');
+    expect(content).toContain('approve_deposit_application_claim_atomic');
+    expect(content).toContain('apply_deposit_claim_atomic');
+    expect(content).toContain('refund_deposit_governed_atomic');
+    expect(content).toContain('reverse_deposit_refund_atomic');
+    expect(content).not.toContain("rpc('deduct_deposit_atomic'");
+    expect(content).not.toContain("rpc('refund_deposit_atomic'");
     expect(content).toContain('tenant_deposits');
     expect(content).toContain('handleSupabaseError');
     expect(content).toContain('request_id');

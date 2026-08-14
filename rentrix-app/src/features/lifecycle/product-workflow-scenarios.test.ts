@@ -268,17 +268,18 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     expect(depBal.debit).toBeCloseTo(depBal.credit, 3);
     expect(depBal.debit).toBe(500);
 
-    // 3-4. Refund deposit atomically via refund_deposit_atomic
-    const refRes = await db.query<{ refund_deposit_atomic: any }>(`
-      select public.refund_deposit_atomic(jsonb_build_object(
+    // 3-4. Refund deposit through the GAP-009 governed refund RPC
+    const refRes = await db.query<{ refund_deposit_governed_atomic: any }>(`
+      select public.refund_deposit_governed_atomic(jsonb_build_object(
         'deposit_id', '${depId}',
         'amount', 300,
         'refund_date', '2026-01-10',
+        'payment_method', 'bank_transfer',
         'request_id', 'dep-ref-e2e-001'
-      )) as refund_deposit_atomic;
+      )) as refund_deposit_governed_atomic;
     `);
-    expect(refRes.rows[0].refund_deposit_atomic.refunded).toBe(300);
-    expect(Number(refRes.rows[0].refund_deposit_atomic.remaining)).toBe(200);
+    expect(refRes.rows[0].refund_deposit_governed_atomic.refunded).toBe(300);
+    expect(Number(refRes.rows[0].refund_deposit_governed_atomic.remaining)).toBe(200);
   });
 
   it('Scenario 4 — Owner settlement lifecycle: draft, approve, pay, verify balances, and controlled cancellation', async () => {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-09T12:53:11.894Z",
+  "generatedAt": "2026-08-14T08:23:49.740Z",
   "rows": [
     {
       "operation_name": "create_deposit_atomic:c3000000-0000-4000-8000-000000000001",
@@ -12,14 +12,6 @@
     {
       "operation_name": "create_expense_with_journal_atomic:c3000000-0000-4000-8000-000000000001",
       "request_id": "phase3a1a:c3000000-0000-4000-8000-000000000001:phase3a-expense-shared"
-    },
-    {
-      "operation_name": "deduct_deposit_atomic:c3000000-0000-4000-8000-000000000001",
-      "request_id": "phase3a-deposit-deduct"
-    },
-    {
-      "operation_name": "refund_deposit_atomic:c3000000-0000-4000-8000-000000000001",
-      "request_id": "phase3a-deposit-refund"
     },
     {
       "operation_name": "update_expense_with_journal_atomic:c3000000-0000-4000-8000-000000000001",
