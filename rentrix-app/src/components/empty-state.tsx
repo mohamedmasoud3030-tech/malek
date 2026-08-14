@@ -18,16 +18,16 @@ export function EmptyState({
   ariaLive = 'polite',
 }: EmptyStateProps) {
   return (
-    <Card data-empty-state className="border-dashed" role={role} aria-live={ariaLive}>
+    <Card data-empty-state className="min-w-0 overflow-hidden border-dashed" role={role} aria-live={ariaLive} dir="rtl">
       <CardContent className="flex min-h-56 flex-col items-center justify-center gap-4 text-center">
         <div data-empty-state-icon className="grid size-14 place-items-center rounded-xl bg-muted text-muted-foreground/40">
           <Inbox className="size-7" />
         </div>
-        <div>
-          <h3 className="text-base font-semibold">{title}</h3>
-          <p className="mt-1 max-w-md text-[0.8125rem] leading-6 text-muted-foreground">{description}</p>
+        <div className="min-w-0 max-w-full overflow-hidden">
+          <h3 className="break-words text-base font-semibold [overflow-wrap:anywhere]">{title}</h3>
+          <p className="mt-1 max-w-md break-words text-[0.8125rem] leading-6 text-muted-foreground [overflow-wrap:anywhere]">{description}</p>
         </div>
-        {action}
+        {action ? <div className="min-w-0 max-w-full">{action}</div> : null}
       </CardContent>
     </Card>
   );

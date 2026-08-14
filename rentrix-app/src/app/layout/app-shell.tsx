@@ -148,6 +148,19 @@ function MobileNavigationDrawer({
   onClose: () => void;
   onLogout: () => void;
 }>) {
+  // Lock body scroll while the mobile drawer is open — prevents background
+  // content from scrolling behind the overlay, a common mobile UX defect.
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
+
   return (
     <Dialog
       open
@@ -158,6 +171,7 @@ function MobileNavigationDrawer({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
+        data-mobile-drawer
         className="fixed bottom-0 left-auto right-0 top-0 z-[101] flex h-dvh w-[min(20rem,88vw)] max-h-none max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 border-l border-sidebar-border bg-sidebar text-sidebar-foreground shadow-elevated sm:max-h-none md:w-[min(22rem,70vw)] sm:p-0 lg:hidden"
       >
         <DialogTitle className="sr-only">القائمة الرئيسية</DialogTitle>
