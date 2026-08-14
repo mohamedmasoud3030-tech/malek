@@ -1,3 +1,7 @@
+-- Rollback for: 20260817090000_wp02_gap009_deposit_lifecycle.sql
+-- Also restores the reversible constraint/privilege portion introduced around
+-- 20260817085000_wp02_gap009_deposit_precision_and_reversal_contract.sql;
+-- the OMR precision widening is intentionally retained because narrowing is destructive.
 -- Manual rollback for WP-02 / GAP-009.
 -- Financial-history rule: once a governed application/refund source event exists,
 -- rollback is blocked. Never erase posted economic history to downgrade schema.
