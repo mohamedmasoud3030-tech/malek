@@ -7691,6 +7691,12 @@ export type Database = {
             };
         Returns: Json;
       };
+      wp02_gap008_round_omr: {
+        Args: {
+          p_amount: number | null;
+        };
+        Returns: number;
+      };
       wp05_approve_correction_proposal: {
         Args: {
           p_proposal_id: string | null;

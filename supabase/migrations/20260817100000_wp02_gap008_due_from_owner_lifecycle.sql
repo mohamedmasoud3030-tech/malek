@@ -194,6 +194,7 @@ declare
   v_request_id text := nullif(btrim(coalesce(p_payload->>'request_id','')), '');
   v_owner_id uuid := nullif(p_payload->>'owner_id','')::uuid;
   v_agreement_id uuid := nullif(p_payload->>'owner_agreement_id','')::uuid;
+  v_agreement_version_id uuid;
   v_property_id text := nullif(btrim(coalesce(p_payload->>'property_id','')), '');
   v_amount numeric := public.wp02_gap008_round_omr(nullif(p_payload->>'amount','')::numeric);
   v_cash_no text := coalesce(nullif(p_payload->>'cash_account_no',''), '1120');
@@ -233,13 +234,20 @@ begin
   end if;
 
   if v_agreement_id is not null then
-    select coalesce(av.offset_allowed, false)
-      into v_offset_right
+    -- The browser names an agreement; the server resolves the authoritative
+    -- effective version at the economic date and snapshots its offset authority.
+    select av.id, coalesce(av.offset_allowed, false)
+      into v_agreement_version_id, v_offset_right
       from public.owner_agreement_versions av
       join public.owner_agreements oa on oa.id = av.owner_agreement_id and oa.company_id = v_company_id
-     where av.id = v_agreement_id and av.company_id = v_company_id;
+     where av.owner_agreement_id = v_agreement_id
+       and av.company_id = v_company_id
+       and av.effective_from <= v_date
+       and (av.effective_to is null or av.effective_to >= v_date)
+     order by av.effective_from desc, av.version_no desc
+     limit 1;
     if not found then
-      raise exception 'DUE_FROM_OWNER_AGREEMENT_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
+      raise exception 'DUE_FROM_OWNER_AGREEMENT_VERSION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
     end if;
   end if;
 
@@ -342,6 +350,9 @@ begin
    where operation_name = 'recover_owner_receivable_atomic:' || v_company_id::text
      and request_id = v_request_id for update;
   if v_cached is not null then
+    if v_cached->>'_request_fingerprint' is distinct from v_fp or not (v_cached ? 'response') then
+      raise exception 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST' using errcode = '22023';
+    end if;
     return v_cached->'response';
   end if;
 
@@ -377,7 +388,7 @@ begin
     request_id, source_fingerprint, journal_batch_id, posted_by
   ) values (
     v_id, v_company_id, v_dfo_id, v_dfo.owner_id, v_amount, v_cash_no, v_date,
-    v_request_id, encode(sha256(convert_to(v_amount::text,'UTF8')),'hex'), v_batch_id, v_actor
+    v_request_id, v_fp, v_batch_id, v_actor
   );
 
   update public.due_from_owners
@@ -451,6 +462,9 @@ begin
    where operation_name = 'offset_owner_receivable_atomic:' || v_company_id::text
      and request_id = v_request_id for update;
   if v_cached is not null then
+    if v_cached->>'_request_fingerprint' is distinct from v_fp or not (v_cached ? 'response') then
+      raise exception 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST' using errcode = '22023';
+    end if;
     return v_cached->'response';
   end if;
 
@@ -571,6 +585,12 @@ begin
     return jsonb_build_object('success', true, 'idempotent', true, 'due_from_owner_id', v_dfo_id, 'status', 'REVERSED', 'reversal_batch_id', v_dfo.reversal_journal_batch_id);
   end if;
   if v_dfo.journal_batch_id is null then raise exception 'DUE_FROM_OWNER_REVERSE_NO_BATCH' using errcode = '22023'; end if;
+  if exists (select 1 from public.due_from_owner_recoveries r
+              where r.due_from_owner_id = v_dfo_id and r.company_id = v_company_id and r.status = 'POSTED')
+     or exists (select 1 from public.due_from_owner_offsets o
+                 where o.due_from_owner_id = v_dfo_id and o.company_id = v_company_id and o.status = 'POSTED') then
+    raise exception 'DUE_FROM_OWNER_REVERSE_HAS_DOWNSTREAM_SETTLEMENT: reverse recovery/offset first.' using errcode = '22023';
+  end if;
 
   v_rev := public.reverse_journal_batch(v_dfo.journal_batch_id);
   v_rev_batch := (v_rev->>'reversal_batch_id')::uuid;
@@ -787,5 +807,227 @@ grant execute on function public.gl_reconcile_subledgers(date) to authenticated,
 comment on table public.due_from_owners is 'GAP-008 operational Due-from-Owner (1300) subledger; reconciled to GL 1300. Owner obligations never post to 6100.';
 comment on table public.due_from_owner_recoveries is 'GAP-008 append-only cash-recovery events (Dr Cash/Bank / Cr 1300).';
 comment on table public.due_from_owner_offsets is 'GAP-008 append-only lawful settlement offset events (Dr 2000 / Cr 1300); require enforceable offset right and never force 2000 negative.';
+
+
+-- GAP-008: preserve FA-003/S02 reservation, idempotency and audit semantics;
+-- its payment amount is the authoritative payable after an approved lawful offset.
+create or replace function public.pay_owner_settlement_atomic_s02_base(p_payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  v_company_id uuid;
+  v_request_id text := nullif(p_payload->>'request_id', '');
+  v_id text := nullif(p_payload->>'settlement_id', '');
+  v_method text := nullif(btrim(p_payload->>'method'), '');
+  v_reference text := nullif(btrim(p_payload->>'payment_reference'), '');
+  v_row public.owner_settlements%rowtype;
+  v_owner_payable_account text;
+  v_cash_account text;
+  v_batch_id uuid;
+  v_entry_no text;
+  v_cached jsonb;
+  v_result jsonb;
+  v_operation_name text;
+  v_request_fingerprint text;
+  v_cached_fingerprint text;
+  v_cached_target_id text;
+  v_journal_count integer;
+  v_updated_count integer;
+  v_effective_payable numeric;
+begin
+  if auth.uid() is null or not public.is_admin_or_manager() then
+    raise exception 'ADMIN or MANAGER role is required to pay owner settlements.'
+      using errcode = '42501';
+  end if;
+
+  v_company_id := (auth.jwt() -> 'app_metadata' ->> 'company_id')::uuid;
+  if v_company_id is null then
+    raise exception 'Company context is required (no company_id claim in JWT).'
+      using errcode = '42501';
+  end if;
+  if v_id is null or v_request_id is null or v_method is null then
+    raise exception 'settlement_id, request_id, and method are required.'
+      using errcode = '22023';
+  end if;
+
+  v_operation_name := 'pay_owner_settlement_atomic:' || v_company_id::text;
+  v_request_fingerprint := encode(sha256(convert_to(jsonb_build_object(
+    'settlement_id', v_id,
+    'method', v_method,
+    'payment_reference', v_reference
+  )::text, 'UTF8')), 'hex');
+
+  perform pg_advisory_xact_lock(
+    hashtextextended(v_operation_name || ':' || v_request_id, 0)
+  );
+
+  select *
+    into v_row
+  from public.owner_settlements s
+  where s.id::text = v_id
+    and s.company_id = v_company_id
+  for update;
+
+  if not found then
+    raise exception 'Owner settlement not found.'
+      using errcode = 'P0002';
+  end if;
+
+  select response_payload
+    into v_cached
+  from public.financial_operation_idempotency
+  where operation_name = v_operation_name
+    and request_id = v_request_id
+  for update;
+
+  if v_cached is not null then
+    v_cached_fingerprint := v_cached->>'_request_fingerprint';
+    v_cached_target_id := v_cached->>'_target_id';
+    if v_cached_fingerprint is null
+       or v_cached_target_id is null
+       or not (v_cached ? 'response') then
+      raise exception 'IDEMPOTENCY_CACHED_RESPONSE_UNVERIFIED'
+        using errcode = '22023';
+    end if;
+    if v_cached_fingerprint <> v_request_fingerprint
+       or v_cached_target_id <> v_id then
+      raise exception 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST'
+        using errcode = '22023';
+    end if;
+    return (v_cached->'response') || jsonb_build_object('idempotent', true);
+  end if;
+
+  if v_row.status <> 'APPROVED' then
+    raise exception 'Only APPROVED settlements can be paid.'
+      using errcode = '22023';
+  end if;
+
+  -- GAP-008: the lawful offset already debited 2000 / credited 1300.
+  v_effective_payable := public.wp02_gap008_round_omr(v_row.net_payable - coalesce(v_row.offset_applied, 0));
+  if v_effective_payable < 0 then
+    raise exception 'OWNER_SETTLEMENT_EFFECTIVE_PAYABLE_NEGATIVE' using errcode = '22023';
+  end if;
+
+  -- ── FA-003: the paid settlement must own exactly its fully-reserved items and
+  -- no released link. No new links are created here; the reserved set is the
+  -- final set. PAID links stay released_at = NULL forever.
+  if exists (
+    select 1
+      from public.owner_settlement_reservable_payments(
+        v_company_id, v_row.owner_id::uuid, v_row.period_start, v_row.period_end, v_row.property_id::text) p
+      left join public.owner_settlement_payment_links l
+        on l.payment_id = p and l.settlement_id = v_row.id::text
+       and l.company_id = v_company_id and l.released_at is null
+     where l.id is null
+  ) or exists (
+    select 1
+      from public.owner_settlement_reservable_expenses(
+        v_company_id, v_row.owner_id::uuid, v_row.period_start, v_row.period_end, v_row.property_id::text) e
+      left join public.owner_settlement_expense_links l
+        on l.expense_id = e and l.settlement_id = v_row.id::text
+       and l.company_id = v_company_id and l.released_at is null
+     where l.id is null
+  ) then
+    raise exception 'OWNER_SETTLEMENT_INCOMPLETE_RESERVATION: settlement is not fully reserved by its derived items.'
+      using errcode = 'P0001';
+  end if;
+  if exists (
+    select 1 from public.owner_settlement_payment_links l
+     where l.settlement_id = v_row.id::text and l.company_id = v_company_id and l.released_at is not null
+  ) or exists (
+    select 1 from public.owner_settlement_expense_links l
+     where l.settlement_id = v_row.id::text and l.company_id = v_company_id and l.released_at is not null
+  ) then
+    raise exception 'OWNER_SETTLEMENT_HAS_RELEASED_LINKS: released items cannot be paid.'
+      using errcode = 'P0001';
+  end if;
+
+  v_owner_payable_account := public.require_company_account_id(v_company_id, '2000');
+  v_cash_account := public.require_company_account_id(v_company_id, '1111');
+
+  v_batch_id := gen_random_uuid();
+  v_entry_no := 'OST-PAY-' || upper(substr(replace(v_id, '-', ''), 1, 10));
+
+  insert into public.journal_entries (
+    id, no, date, account_id, amount, type, source_id,
+    entity_type, entity_id, batch_id, created_at, company_id
+  ) values
+    (
+      gen_random_uuid(), v_entry_no || '-D', current_date,
+      v_owner_payable_account, v_effective_payable, 'DEBIT', v_id::uuid,
+      'owner_settlement_payment', v_id, v_batch_id, now(), v_company_id
+    ),
+    (
+      gen_random_uuid(), v_entry_no || '-C', current_date,
+      v_cash_account, v_effective_payable, 'CREDIT', v_id::uuid,
+      'owner_settlement_payment', v_id, v_batch_id, now(), v_company_id
+    );
+  get diagnostics v_journal_count = row_count;
+  if v_journal_count <> 2 then
+    raise exception 'OWNER_SETTLEMENT_JOURNAL_COUNT_MISMATCH'
+      using errcode = 'P0001';
+  end if;
+
+  update public.owner_settlements
+     set status = 'PAID',
+         method = v_method,
+         payment_reference = v_reference,
+         paid_at = now(),
+         paid_by = auth.uid(),
+         updated_at = now()
+   where id::text = v_id
+     and company_id = v_company_id;
+  get diagnostics v_updated_count = row_count;
+  if v_updated_count <> 1 then
+    raise exception 'OWNER_SETTLEMENT_UPDATE_COUNT_MISMATCH'
+      using errcode = 'P0001';
+  end if;
+
+  insert into public.audit_log (
+    id, ts, user_id, username, action, entity, entity_id, note, "table", details, created_at
+  ) values (
+    gen_random_uuid(), extract(epoch from now())::bigint, auth.uid(),
+    (select email from auth.users where id = auth.uid()),
+    'PAY', 'owner_settlements', v_id,
+    'Owner settlement paid with balanced owner-payable/cash journal batch',
+    'owner_settlements', left(p_payload::text, 4000), now()
+  );
+
+  v_result := jsonb_build_object(
+    'success', true,
+    'idempotent', false,
+    'settlement_id', v_id,
+    'status', 'PAID',
+    'net_payable', v_row.net_payable,
+    'offset_applied', coalesce(v_row.offset_applied, 0),
+    'effective_payable', v_effective_payable,
+    'journal_batch_id', v_batch_id,
+    'request_id', v_request_id
+  );
+
+  insert into public.financial_operation_idempotency (
+    operation_name, request_id, response_payload
+  ) values (
+    v_operation_name,
+    v_request_id,
+    jsonb_build_object(
+      '_request_fingerprint', v_request_fingerprint,
+      '_target_id', v_id,
+      'response', v_result
+    )
+  )
+  on conflict (operation_name, request_id) do nothing;
+
+  return v_result;
+end;
+$function$;
+
+
+alter function public.pay_owner_settlement_atomic_s02_base(jsonb) owner to postgres;
+revoke all on function public.pay_owner_settlement_atomic_s02_base(jsonb) from public, anon, authenticated;
+grant execute on function public.pay_owner_settlement_atomic_s02_base(jsonb) to service_role;
 
 commit;

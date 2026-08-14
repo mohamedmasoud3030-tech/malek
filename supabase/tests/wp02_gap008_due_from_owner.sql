@@ -9,7 +9,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(20);
+select plan(23);
 
 -- ── Two companies
 insert into public.companies (id, name, slug, currency, is_active) values
@@ -142,6 +142,14 @@ select is(
   (select outstanding from public.due_from_owners where request_id = 'gap008-create-1'),
   60.000::numeric, '3b. outstanding reduced to 60.000'
 );
+select throws_ok(
+  $$ select public.recover_owner_receivable_atomic(jsonb_build_object(
+       'due_from_owner_id', (select id::text from public.due_from_owners where request_id = 'gap008-create-1'),
+       'amount', 41.000, 'cash_account_no', '1120', 'effective_date', '2026-08-15',
+       'request_id', 'gap008-recover-1') ) $$,
+  '22023', 'IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST',
+  '3c. recovery request key cannot be reused with a different payload'
+);
 
 -- ── Test 4: lawful settlement offset (Dr 2000 / Cr 1300), reduces payable
 select lives_ok(
@@ -164,6 +172,17 @@ select is(
 select is(
   (select net_payable from public.owner_settlements where id = '0a400000-0000-4000-8000-0000000000a1'),
   200.000::numeric, '4d. server-derived net_payable preserved (immutable)'
+);
+select lives_ok(
+  $$ select public.pay_owner_settlement_atomic(jsonb_build_object(
+       'settlement_id', '0a400000-0000-4000-8000-0000000000a1', 'method', 'bank_transfer',
+       'request_id', 'gap008-pay-offset-1')) $$,
+  '4e. payout uses the post-offset effective payable'
+);
+select is(
+  (select amount from public.journal_entries where entity_type = 'owner_settlement_payment'
+     and entity_id = '0a400000-0000-4000-8000-0000000000a1' and type = 'CREDIT'),
+  140.000::numeric, '4f. cash payout is net payable less lawful offset'
 );
 
 -- ── Test 5: 1300 subledger reconciles to GL 1300 (GAP-008 fix)
