@@ -13,6 +13,7 @@ drop function if exists public.reverse_owner_receivable_atomic(jsonb);
 drop function if exists public.offset_owner_receivable_atomic(jsonb);
 drop function if exists public.recover_owner_receivable_atomic(jsonb);
 drop function if exists public.create_owner_receivable_atomic(jsonb);
+drop function if exists public.wp02_gap008_round_omr(numeric);
 
 drop table if exists public.due_from_owner_offsets;
 drop table if exists public.due_from_owner_recoveries;

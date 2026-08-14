@@ -45,8 +45,17 @@ insert into public.owners (id, full_name, company_id, is_active) values
   ('0b200000-0000-4000-8000-0000000000b1', 'GAP008 Owner B', '0b000000-0000-4000-8000-0000000000b1', true)
 on conflict (id) do update set is_active = true;
 
+-- Agreement ownership is an authoritative prerequisite, not a fixture bypass.
+insert into public.properties (id, title, type, address, status, company_id) values
+  ('0a250000-0000-4000-8000-0000000000a1', 'GAP008 Property A', 'residential', 'Muscat', 'active', '0a000000-0000-4000-8000-0000000000a1')
+on conflict (id) do nothing;
+
+insert into public.property_owners (id, property_id, owner_id, ownership_percentage, is_primary, starts_on, ends_on, company_id) values
+  ('0a260000-0000-4000-8000-0000000000a1', '0a250000-0000-4000-8000-0000000000a1', '0a200000-0000-4000-8000-0000000000a1', 100, true, date '2026-01-01', null, '0a000000-0000-4000-8000-0000000000a1')
+on conflict (id) do nothing;
+
 insert into public.owner_agreements (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on, company_id) values
-  ('0a300000-0000-4000-8000-0000000000a1', '0a200000-0000-4000-8000-0000000000a1', null, 'property_management', 'RATE', 5, date '2026-01-01', date '2027-12-31', '0a000000-0000-4000-8000-0000000000a1')
+  ('0a300000-0000-4000-8000-0000000000a1', '0a200000-0000-4000-8000-0000000000a1', '0a250000-0000-4000-8000-0000000000a1', 'property_management', 'RATE', 5, date '2026-01-01', date '2027-12-31', '0a000000-0000-4000-8000-0000000000a1')
 on conflict (id) do nothing;
 
 -- Version with an enforceable offset right (offset_allowed = true) for Company A.

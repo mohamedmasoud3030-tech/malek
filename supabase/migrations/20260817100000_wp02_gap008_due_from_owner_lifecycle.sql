@@ -20,6 +20,20 @@
 
 begin;
 
+-- Local, immutable OMR authority helper.  GAP-008 must not depend on the
+-- optional/isolated S04 helper in replay harnesses; every persisted amount is
+-- rounded server-side to the canonical three decimals.
+create or replace function public.wp02_gap008_round_omr(p_amount numeric)
+returns numeric
+language sql
+immutable
+parallel safe
+set search_path = public, pg_temp
+as $$ select round(p_amount, 3) $$;
+
+revoke all on function public.wp02_gap008_round_omr(numeric) from public, anon, authenticated;
+grant execute on function public.wp02_gap008_round_omr(numeric) to service_role;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 1. Operational Due-from-Owner subledger (asset 1300)
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -48,7 +62,7 @@ create table if not exists public.due_from_owners (
   updated_at timestamptz not null default now(),
   constraint due_from_owners_request_uq unique (company_id, request_id),
   constraint due_from_owners_outstanding_chk
-    check (outstanding = public.gl_pm_round_omr(amount - recovered_amount - offset_amount - waived_amount)
+    check (outstanding = public.wp02_gap008_round_omr(amount - recovered_amount - offset_amount - waived_amount)
            and outstanding >= 0),
   constraint due_from_owners_components_nn_chk
     check (recovered_amount >= 0 and offset_amount >= 0 and waived_amount >= 0),
@@ -90,6 +104,8 @@ create table if not exists public.due_from_owner_recoveries (
 
 create index if not exists due_from_owner_recoveries_dfo_idx
   on public.due_from_owner_recoveries (company_id, due_from_owner_id, created_at desc);
+create index if not exists due_from_owner_recoveries_owner_idx
+  on public.due_from_owner_recoveries (owner_id, company_id, created_at desc);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. Append-only lawful-offset events (Dr 2000 / Cr 1300)
@@ -119,6 +135,8 @@ create table if not exists public.due_from_owner_offsets (
 
 create index if not exists due_from_owner_offsets_dfo_idx
   on public.due_from_owner_offsets (company_id, due_from_owner_id, created_at desc);
+create index if not exists due_from_owner_offsets_owner_idx
+  on public.due_from_owner_offsets (owner_id, company_id, created_at desc);
 create index if not exists due_from_owner_offsets_settlement_idx
   on public.due_from_owner_offsets (company_id, owner_settlement_id);
 
@@ -177,7 +195,7 @@ declare
   v_owner_id uuid := nullif(p_payload->>'owner_id','')::uuid;
   v_agreement_id uuid := nullif(p_payload->>'owner_agreement_id','')::uuid;
   v_property_id text := nullif(btrim(coalesce(p_payload->>'property_id','')), '');
-  v_amount numeric := public.gl_pm_round_omr(nullif(p_payload->>'amount','')::numeric);
+  v_amount numeric := public.wp02_gap008_round_omr(nullif(p_payload->>'amount','')::numeric);
   v_cash_no text := coalesce(nullif(p_payload->>'cash_account_no',''), '1120');
   v_date date := nullif(p_payload->>'effective_date','')::date;
   v_source_id text := nullif(btrim(coalesce(p_payload->>'source_id','')), '');
@@ -294,7 +312,7 @@ declare
   v_company_id uuid;
   v_dfo_id uuid := nullif(p_payload->>'due_from_owner_id','')::uuid;
   v_request_id text := nullif(btrim(coalesce(p_payload->>'request_id','')), '');
-  v_amount numeric := public.gl_pm_round_omr(nullif(p_payload->>'amount','')::numeric);
+  v_amount numeric := public.wp02_gap008_round_omr(nullif(p_payload->>'amount','')::numeric);
   v_cash_no text := coalesce(nullif(p_payload->>'cash_account_no',''), '1120');
   v_date date := nullif(p_payload->>'effective_date','')::date;
   v_dfo public.due_from_owners%rowtype;
@@ -363,10 +381,10 @@ begin
   );
 
   update public.due_from_owners
-     set recovered_amount = public.gl_pm_round_omr(recovered_amount + v_amount),
-         outstanding = public.gl_pm_round_omr(outstanding - v_amount),
+     set recovered_amount = public.wp02_gap008_round_omr(recovered_amount + v_amount),
+         outstanding = public.wp02_gap008_round_omr(outstanding - v_amount),
          status = case
-           when public.gl_pm_round_omr(outstanding - v_amount) = 0 then 'RECOVERED'
+           when public.wp02_gap008_round_omr(outstanding - v_amount) = 0 then 'RECOVERED'
            when recovered_amount > 0 then 'PARTIALLY_RECOVERED'
            else 'OPEN' end,
          updated_at = now()
@@ -374,8 +392,8 @@ begin
 
   v_result := jsonb_build_object(
     'success', true, 'idempotent', false, 'due_from_owner_id', v_dfo_id, 'amount', v_amount,
-    'outstanding', public.gl_pm_round_omr(v_dfo.outstanding - v_amount), 'journal_batch_id', v_batch_id,
-    'status', case when public.gl_pm_round_omr(v_dfo.outstanding - v_amount) = 0 then 'RECOVERED' else 'PARTIALLY_RECOVERED' end,
+    'outstanding', public.wp02_gap008_round_omr(v_dfo.outstanding - v_amount), 'journal_batch_id', v_batch_id,
+    'status', case when public.wp02_gap008_round_omr(v_dfo.outstanding - v_amount) = 0 then 'RECOVERED' else 'PARTIALLY_RECOVERED' end,
     'request_id', v_request_id
   );
   insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
@@ -404,7 +422,7 @@ declare
   v_dfo_id uuid := nullif(p_payload->>'due_from_owner_id','')::uuid;
   v_settlement_id text := nullif(btrim(coalesce(p_payload->>'owner_settlement_id','')), '');
   v_request_id text := nullif(btrim(coalesce(p_payload->>'request_id','')), '');
-  v_amount numeric := public.gl_pm_round_omr(nullif(p_payload->>'amount','')::numeric);
+  v_amount numeric := public.wp02_gap008_round_omr(nullif(p_payload->>'amount','')::numeric);
   v_date date := nullif(p_payload->>'effective_date','')::date;
   v_evidence text := nullif(btrim(coalesce(p_payload->>'lawful_offset_evidence','')), '');
   v_dfo public.due_from_owners%rowtype;
@@ -462,7 +480,7 @@ begin
   if v_settlement.status <> 'APPROVED' then
     raise exception 'DUE_FROM_OWNER_OFFSET_SETTLEMENT_NOT_APPROVED: offset is only permitted against an APPROVED (unpaid) owner payable.' using errcode = '22023';
   end if;
-  if v_amount > public.gl_pm_round_omr(v_settlement.net_payable - v_settlement.offset_applied) + 0.001 then
+  if v_amount > public.wp02_gap008_round_omr(v_settlement.net_payable - v_settlement.offset_applied) + 0.001 then
     raise exception 'DUE_FROM_OWNER_OFFSET_EXCEEDS_PAYABLE: would force Owner Funds Payable negative.' using errcode = '22023';
   end if;
 
@@ -492,22 +510,22 @@ begin
   -- Reduce the effective office payable by the offset (keeps 2000 GL and subledger
   -- in lockstep). net_payable itself stays server-derived/immutable.
   update public.owner_settlements
-     set offset_applied = public.gl_pm_round_omr(offset_applied + v_amount), updated_at = now()
+     set offset_applied = public.wp02_gap008_round_omr(offset_applied + v_amount), updated_at = now()
    where id = v_settlement_id;
 
   update public.due_from_owners
-     set offset_amount = public.gl_pm_round_omr(offset_amount + v_amount),
-         outstanding = public.gl_pm_round_omr(outstanding - v_amount),
+     set offset_amount = public.wp02_gap008_round_omr(offset_amount + v_amount),
+         outstanding = public.wp02_gap008_round_omr(outstanding - v_amount),
          status = case
-           when public.gl_pm_round_omr(outstanding - v_amount) = 0 then 'CLOSED'
+           when public.wp02_gap008_round_omr(outstanding - v_amount) = 0 then 'CLOSED'
            else 'OFFSET' end,
          updated_at = now()
    where id = v_dfo_id;
 
   v_result := jsonb_build_object(
     'success', true, 'idempotent', false, 'due_from_owner_id', v_dfo_id, 'owner_settlement_id', v_settlement_id,
-    'amount', v_amount, 'outstanding', public.gl_pm_round_omr(v_dfo.outstanding - v_amount),
-    'journal_batch_id', v_batch_id, 'status', case when public.gl_pm_round_omr(v_dfo.outstanding - v_amount) = 0 then 'CLOSED' else 'OFFSET' end,
+    'amount', v_amount, 'outstanding', public.wp02_gap008_round_omr(v_dfo.outstanding - v_amount),
+    'journal_batch_id', v_batch_id, 'status', case when public.wp02_gap008_round_omr(v_dfo.outstanding - v_amount) = 0 then 'CLOSED' else 'OFFSET' end,
     'request_id', v_request_id
   );
   insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
@@ -605,11 +623,11 @@ begin
   v_rev_batch := (v_rev->>'reversal_batch_id')::uuid;
 
   update public.due_from_owners
-     set recovered_amount = public.gl_pm_round_omr(recovered_amount - v_event.amount),
-         outstanding = public.gl_pm_round_omr(outstanding + v_event.amount),
+     set recovered_amount = public.wp02_gap008_round_omr(recovered_amount - v_event.amount),
+         outstanding = public.wp02_gap008_round_omr(outstanding + v_event.amount),
          status = case
-           when public.gl_pm_round_omr(recovered_amount - v_event.amount) <= 0 then 'OPEN'
-           when public.gl_pm_round_omr(outstanding + v_event.amount) = 0 then 'RECOVERED'
+           when public.wp02_gap008_round_omr(recovered_amount - v_event.amount) <= 0 then 'OPEN'
+           when public.wp02_gap008_round_omr(outstanding + v_event.amount) = 0 then 'RECOVERED'
            else 'PARTIALLY_RECOVERED' end,
          updated_at = now()
    where id = v_event.due_from_owner_id;
@@ -662,15 +680,15 @@ begin
 
   -- Restore the effective office payable reduced by the original offset.
   update public.owner_settlements
-     set offset_applied = greatest(public.gl_pm_round_omr(offset_applied - v_event.amount), 0), updated_at = now()
+     set offset_applied = greatest(public.wp02_gap008_round_omr(offset_applied - v_event.amount), 0), updated_at = now()
    where id = v_event.owner_settlement_id;
 
   update public.due_from_owners
-     set offset_amount = public.gl_pm_round_omr(offset_amount - v_event.amount),
-         outstanding = public.gl_pm_round_omr(outstanding + v_event.amount),
+     set offset_amount = public.wp02_gap008_round_omr(offset_amount - v_event.amount),
+         outstanding = public.wp02_gap008_round_omr(outstanding + v_event.amount),
          status = case
-           when public.gl_pm_round_omr(offset_amount - v_event.amount) <= 0 then 'OPEN'
-           when public.gl_pm_round_omr(outstanding + v_event.amount) = 0 then 'CLOSED'
+           when public.wp02_gap008_round_omr(offset_amount - v_event.amount) <= 0 then 'OPEN'
+           when public.wp02_gap008_round_omr(outstanding + v_event.amount) = 0 then 'CLOSED'
            else 'OFFSET' end,
          updated_at = now()
    where id = v_event.due_from_owner_id;
