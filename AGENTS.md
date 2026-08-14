@@ -7,10 +7,11 @@ This file is the contributor/agent entry point. Product truth lives in the MALEK
 ## Before you start
 
 1. Read this file.
-2. Read `.agents/skills/README.md` and apply every repo skill whose trigger matches the task.
-3. Read the MALEK Canonical Pack starting at `docs/source-of-truth/00_INDEX.md`.
-4. Read the affected Rule IDs in `07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md` before changing product, accounting, permissions, security, IA or data behavior.
-5. Then inspect current code and, for database-sensitive work, the live schema/deployed configuration when authorized before making a runtime claim.
+2. Read `.agents/EXECUTION_ORCHESTRATION.md` and follow its mandatory task-start, dependency-order, root-cause, parallel-work and verification protocol. It is an execution runbook, not a source of product truth.
+3. Read `.agents/skills/README.md` and apply every repo skill whose trigger matches the task.
+4. Read the MALEK Canonical Pack starting at `docs/source-of-truth/00_INDEX.md`.
+5. Read the affected Rule IDs in `07_IMPLEMENTATION_TRACEABILITY_AND_REALITY.md` before changing product, accounting, permissions, security, IA or data behavior.
+6. Then inspect current code and, for database-sensitive work, the live schema/deployed configuration when authorized before making a runtime claim.
 
 The Canonical Pack contains eight documents covering product scope, operating models, domain model, accounting, architecture, UX, implementation traceability, and release gates.
 
