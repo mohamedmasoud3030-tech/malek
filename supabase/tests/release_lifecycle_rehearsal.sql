@@ -21,7 +21,7 @@ $$;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(66);
+select plan(70); -- 66 baseline + 4 GAP-009 governed deposit-flow assertions
 
 select has_table('public', 'tenant_deposits', 'tenant deposits table exists after a clean migration replay');
 select has_table('public', 'deposit_transactions', 'deposit transactions table exists after a clean migration replay');
