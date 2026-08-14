@@ -96,6 +96,7 @@ create table if not exists public.due_from_owner_recoveries (
   reversed_request_id text,
   reversal_journal_batch_id uuid references public.journal_batches(id) on delete restrict,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   constraint due_from_owner_recoveries_request_uq unique (company_id, request_id),
   constraint due_from_owner_recoveries_reversal_shape_chk
     check (status <> 'REVERSED'
@@ -127,6 +128,7 @@ create table if not exists public.due_from_owner_offsets (
   reversed_request_id text,
   reversal_journal_batch_id uuid references public.journal_batches(id) on delete restrict,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   constraint due_from_owner_offsets_request_uq unique (company_id, request_id),
   constraint due_from_owner_offsets_reversal_shape_chk
     check (status <> 'REVERSED'
@@ -488,7 +490,7 @@ begin
   if not found then
     raise exception 'DUE_FROM_OWNER_OFFSET_SETTLEMENT_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
   end if;
-  if v_settlement.owner_id <> v_dfo.owner_id then
+  if v_settlement.owner_id::uuid is distinct from v_dfo.owner_id then
     raise exception 'DUE_FROM_OWNER_OFFSET_OWNER_MISMATCH' using errcode = '42501';
   end if;
   if v_settlement.status <> 'APPROVED' then
@@ -811,6 +813,10 @@ comment on table public.due_from_owner_offsets is 'GAP-008 append-only lawful se
 
 -- GAP-008: preserve FA-003/S02 reservation, idempotency and audit semantics;
 -- its payment amount is the authoritative payable after an approved lawful offset.
+-- S03 GL write boundary: the payout posts through the canonical engine
+-- post_journal_event() — never through the legacy journal_entries surface.
+-- When the lawful offset fully cleared the payable (effective payable = 0) the
+-- settlement is closed as PAID without creating a zero-value journal event.
 create or replace function public.pay_owner_settlement_atomic_s02_base(p_payload jsonb)
 returns jsonb
 language plpgsql
@@ -827,14 +833,13 @@ declare
   v_owner_payable_account text;
   v_cash_account text;
   v_batch_id uuid;
-  v_entry_no text;
+  v_post jsonb;
   v_cached jsonb;
   v_result jsonb;
   v_operation_name text;
   v_request_fingerprint text;
   v_cached_fingerprint text;
   v_cached_target_id text;
-  v_journal_count integer;
   v_updated_count integer;
   v_effective_payable numeric;
 begin
@@ -945,30 +950,47 @@ begin
       using errcode = 'P0001';
   end if;
 
-  v_owner_payable_account := public.require_company_account_id(v_company_id, '2000');
-  v_cash_account := public.require_company_account_id(v_company_id, '1111');
+  -- GAP-008 + S03 GL write boundary: the residual owner payout posts through
+  -- the canonical posting engine (Dr 2000 Owner Funds Payable / Cr 1111 Cash),
+  -- never through a new legacy journal_entries writer. When the lawful offset
+  -- already cleared the full payable (effective payable = 0) the settlement is
+  -- closed without creating a zero-value journal event: the offset itself was
+  -- the final economic event (Dr 2000 / Cr 1300) and a 0/0 batch would be
+  -- rejected by the engine's positive-side line contract anyway.
+  if v_effective_payable > 0 then
+    v_owner_payable_account := public.require_company_account_id(v_company_id, '2000');
+    v_cash_account := public.require_company_account_id(v_company_id, '1111');
 
-  v_batch_id := gen_random_uuid();
-  v_entry_no := 'OST-PAY-' || upper(substr(replace(v_id, '-', ''), 1, 10));
+    -- Bootstrap only a company's very first accounting period (same rule as the
+    -- S03 receipt path). Once any period exists, the fail-closed OPEN/SOFT_CLOSED/
+    -- HARD_CLOSED resolver inside the engine remains authoritative.
+    perform public.gl_ensure_initial_open_period(v_company_id, current_date);
 
-  insert into public.journal_entries (
-    id, no, date, account_id, amount, type, source_id,
-    entity_type, entity_id, batch_id, created_at, company_id
-  ) values
-    (
-      gen_random_uuid(), v_entry_no || '-D', current_date,
-      v_owner_payable_account, v_effective_payable, 'DEBIT', v_id::uuid,
-      'owner_settlement_payment', v_id, v_batch_id, now(), v_company_id
-    ),
-    (
-      gen_random_uuid(), v_entry_no || '-C', current_date,
-      v_cash_account, v_effective_payable, 'CREDIT', v_id::uuid,
-      'owner_settlement_payment', v_id, v_batch_id, now(), v_company_id
-    );
-  get diagnostics v_journal_count = row_count;
-  if v_journal_count <> 2 then
-    raise exception 'OWNER_SETTLEMENT_JOURNAL_COUNT_MISMATCH'
-      using errcode = 'P0001';
+    v_post := public.post_journal_event(jsonb_build_object(
+      'company_id', v_company_id,
+      'source_type', 'owner_settlement_payment',
+      'source_id', v_id,
+      'event_id', 'pay',
+      'effective_date', current_date,
+      'description', 'Owner settlement payout: Owner Funds Payable vs Cash (net of lawful offset)',
+      'lines', jsonb_build_array(
+        jsonb_build_object(
+          'account_id', v_owner_payable_account, 'debit', v_effective_payable, 'credit', 0,
+          'ref_source_id', v_id, 'ref_entity_type', 'owner_settlement_payment', 'ref_entity_id', v_id
+        ),
+        jsonb_build_object(
+          'account_id', v_cash_account, 'debit', 0, 'credit', v_effective_payable,
+          'ref_source_id', v_id, 'ref_entity_type', 'owner_settlement_payment', 'ref_entity_id', v_id
+        )
+      )
+    ));
+    v_batch_id := (v_post->>'batch_id')::uuid;
+    if v_batch_id is null then
+      raise exception 'OWNER_SETTLEMENT_JOURNAL_BATCH_MISSING'
+        using errcode = 'P0001';
+    end if;
+  else
+    v_batch_id := null;
   end if;
 
   update public.owner_settlements
@@ -992,7 +1014,11 @@ begin
     gen_random_uuid(), extract(epoch from now())::bigint, auth.uid(),
     (select email from auth.users where id = auth.uid()),
     'PAY', 'owner_settlements', v_id,
-    'Owner settlement paid with balanced owner-payable/cash journal batch',
+    case
+      when v_effective_payable > 0
+        then 'Owner settlement paid with balanced owner-payable/cash journal batch (canonical GL engine)'
+      else 'Owner settlement closed as PAID: lawful offset fully cleared the payable; no zero-value journal event created'
+    end,
     'owner_settlements', left(p_payload::text, 4000), now()
   );
 
@@ -1026,8 +1052,12 @@ end;
 $function$;
 
 
+-- D-002 private ACL contract (S02-T10): the preserved base implementation is a
+-- private implementation detail. It must NOT be externally executable by
+-- authenticated OR service_role; the governed public wrapper
+-- pay_owner_settlement_atomic(jsonb) remains the only external entry point.
 alter function public.pay_owner_settlement_atomic_s02_base(jsonb) owner to postgres;
-revoke all on function public.pay_owner_settlement_atomic_s02_base(jsonb) from public, anon, authenticated;
-grant execute on function public.pay_owner_settlement_atomic_s02_base(jsonb) to service_role;
+revoke all on function public.pay_owner_settlement_atomic_s02_base(jsonb)
+  from public, anon, authenticated, service_role;
 
 commit;

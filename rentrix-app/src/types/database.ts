@@ -2082,6 +2082,7 @@ export type Database = {
           reversed_request_id: string | null;
           reversal_journal_batch_id: string | null;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -2100,6 +2101,7 @@ export type Database = {
           reversed_request_id?: string | null;
           reversal_journal_batch_id?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -2118,6 +2120,7 @@ export type Database = {
           reversed_request_id?: string | null;
           reversal_journal_batch_id?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -2181,6 +2184,7 @@ export type Database = {
           reversed_request_id: string | null;
           reversal_journal_batch_id: string | null;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -2198,6 +2202,7 @@ export type Database = {
           reversed_request_id?: string | null;
           reversal_journal_batch_id?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -2215,6 +2220,7 @@ export type Database = {
           reversed_request_id?: string | null;
           reversal_journal_batch_id?: string | null;
           created_at?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
