@@ -37,6 +37,11 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   // version table. Historical checkpoint suites intentionally omit S04, so
   // they must omit this downstream migration as well.
   'wp02_fixed_monthly_daily_accrual',
+  // GAP-009 structurally depends on the S03 GL engine, the S08 frozen views
+  // and the S04 deposit kernels that historical checkpoint baselines
+  // intentionally omit (same rule as GAP-007 above).
+  'wp02_gap009_deposit_precision',
+  'wp02_gap009_deposit_lifecycle',
 ] as const;
 
 export async function createFullReplayedDatabase(options?: {

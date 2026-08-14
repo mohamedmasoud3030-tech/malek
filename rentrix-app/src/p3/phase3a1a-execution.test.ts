@@ -8,6 +8,7 @@ const COMPANY_A = 'c3000000-0000-4000-8000-000000000001';
 const COMPANY_B = 'c3000000-0000-4000-8000-000000000002';
 const ADMIN_A = 'a3000000-0000-4000-8000-000000000001';
 const ADMIN_B = 'a3000000-0000-4000-8000-000000000002';
+const CHECKER_A = 'a3000000-0000-4000-8000-000000000003';
 const OWNER_A = 'b3000000-0000-4000-8000-000000000001';
 const OWNER_B = 'b3000000-0000-4000-8000-000000000002';
 const PROPERTY_A = 'd3000000-0000-4000-8000-000000000001';
@@ -42,14 +43,17 @@ async function seedFixture() {
 
     insert into auth.users (id, email) values
       ('${ADMIN_A}', 'admin-a@phase3a.test'),
-      ('${ADMIN_B}', 'admin-b@phase3a.test');
+      ('${ADMIN_B}', 'admin-b@phase3a.test'),
+      ('${CHECKER_A}', 'checker-a@phase3a.test');
 
     insert into public.users (id, email, name, role, status) values
       ('${ADMIN_A}', 'admin-a@phase3a.test', 'Admin A', 'ADMIN', 'ACTIVE'),
-      ('${ADMIN_B}', 'admin-b@phase3a.test', 'Admin B', 'ADMIN', 'ACTIVE');
+      ('${ADMIN_B}', 'admin-b@phase3a.test', 'Admin B', 'ADMIN', 'ACTIVE'),
+      ('${CHECKER_A}', 'checker-a@phase3a.test', 'Checker A', 'ADMIN', 'ACTIVE');
 
     insert into public.company_members (company_id, user_id, role) values
       ('${COMPANY_A}', '${ADMIN_A}', 'ADMIN'),
+      ('${COMPANY_A}', '${CHECKER_A}', 'ADMIN'),
       ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN');
 
     insert into public.owners (id, full_name, name, company_id) values
@@ -83,9 +87,18 @@ async function seedFixture() {
       ('${CONTRACT_A}', '${PROPERTY_A}', '${UNIT_A}', '${TENANT_A}', date '2026-01-01', date '2026-12-31', 12000, 'active', '${AGREEMENT_A}', '${COMPANY_A}'),
       ('${CONTRACT_B}', '${PROPERTY_B}', '${UNIT_B}', '${TENANT_B}', date '2026-01-01', date '2026-12-31', 12000, 'active', '${AGREEMENT_B}', '${COMPANY_B}');
 
-    update public.accounts
-       set company_id = '${COMPANY_A}'
-     where no in ('1111', '2200', '6100');
+    select public.provision_company_chart_of_accounts('${COMPANY_A}');
+    select public.provision_company_chart_of_accounts('${COMPANY_B}');
+
+    insert into public.accounting_periods (company_id, name, start_date, end_date, status, closed_at) values
+      ('${COMPANY_A}', '2026 Jul', date '2026-07-01', date '2026-07-31', 'OPEN', null),
+      ('${COMPANY_B}', '2026 Jul', date '2026-07-01', date '2026-07-31', 'OPEN', null);
+
+    -- GAP-009: the beneficiary-aware application kernel derives the damage
+    -- beneficiary from the frozen agreement snapshot (D05).
+    update public.owner_agreement_versions
+       set deposit_beneficiary = 'OFFICE'
+     where owner_agreement_id in ('${AGREEMENT_A}', '${AGREEMENT_B}');
   `);
 }
 
@@ -213,7 +226,7 @@ describe('Phase 3A-1A execution hardening', () => {
     };
   });
 
-  it('executes canonical deposit receive/deduct/refund and rejects property mismatch', async () => {
+  it('executes the governed deposit lifecycle: receive → evidence-backed claim → maker-checker approve → apply → governed refund', async () => {
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
     const created = await rpc('create_deposit_atomic', {
       request_id: 'phase3a-deposit-create',
@@ -233,41 +246,66 @@ describe('Phase 3A-1A execution hardening', () => {
     expect(retried.idempotent).toBe(true);
     expect(retried.deposit_id).toBe(created.deposit_id);
 
+    // Cross-company: another company's admin cannot claim or touch the deposit.
+    await assumeIdentity(db, ADMIN_B, COMPANY_B);
     await expect(
-      rpc('deduct_deposit_atomic', {
-        request_id: 'phase3a-deposit-mismatch',
+      rpc('create_deposit_application_claim_atomic', {
+        request_id: 'phase3a-deposit-foreign-claim',
         deposit_id: created.deposit_id,
-        property_id: PROPERTY_B,
-        amount: 10,
-        charged_date: '2026-07-25',
+        claim_kind: 'DAMAGE',
+        allocation_amount: 10,
+        evidence_uri: 'evidence://phase3a/foreign',
       }),
-    ).rejects.toThrow(/canonical deposit property/);
+    ).rejects.toMatchObject({ code: '42501' });
 
-    const deducted = await rpc('deduct_deposit_atomic', {
-      request_id: 'phase3a-deposit-deduct',
+    // Maker creates the evidence-backed claim; the maker cannot approve it.
+    await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    const claim = await rpc('create_deposit_application_claim_atomic', {
+      request_id: 'phase3a-deposit-claim',
       deposit_id: created.deposit_id,
-      property_id: PROPERTY_A,
-      amount: 25,
-      charged_date: '2026-07-25',
-      reason: 'damage',
+      claim_kind: 'DAMAGE',
+      allocation_amount: 25,
+      evidence_uri: 'evidence://phase3a/damage',
+      claim_note: 'governed deduction',
     });
-    const refunded = await rpc('refund_deposit_atomic', {
-      request_id: 'phase3a-deposit-refund',
+    const claimId = String(claim.claim_id);
+    await expect(
+      rpc('approve_deposit_application_claim_atomic', { claim_id: claimId }),
+    ).rejects.toThrow(/MAKER_CHECKER_REQUIRED/);
+
+    // Distinct checker approves, then the maker applies.
+    await assumeIdentity(db, CHECKER_A, COMPANY_A);
+    const approved = await rpc('approve_deposit_application_claim_atomic', { claim_id: claimId });
+    expect(approved.status).toBe('APPROVED');
+
+    await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    const applied = await rpc('apply_deposit_claim_atomic', {
+      claim_id: claimId,
+      request_id: 'phase3a-deposit-deduct',
+      effective_date: '2026-07-25',
+    });
+    expect(applied.status).toBe('APPLIED');
+
+    // Governed refund: 30 OMR, remaining 45.
+    const refunded = await rpc('refund_deposit_governed_atomic', {
       deposit_id: created.deposit_id,
       amount: 30,
       refund_date: '2026-07-26',
+      payment_method: 'bank_transfer',
+      request_id: 'phase3a-deposit-refund',
     });
-    expect(Number(deducted.remaining)).toBeCloseTo(75, 3);
     expect(Number(refunded.remaining)).toBeCloseTo(45, 3);
+    expect(Number(refunded.refunded)).toBeCloseTo(30, 3);
 
     await expect(
-      rpc('refund_deposit_atomic', {
-        request_id: 'phase3a-deposit-over-refund',
+      rpc('refund_deposit_governed_atomic', {
         deposit_id: created.deposit_id,
         amount: 46,
         refund_date: '2026-07-26',
+        payment_method: 'bank_transfer',
+        request_id: 'phase3a-deposit-over-refund',
       }),
-    ).rejects.toThrow(/Insufficient remaining balance/);
+    ).rejects.toThrow(/EXCEEDS_REMAINING/);
 
     const balance = await journalBalance(String(created.deposit_id));
     expect(balance.debit).toBeCloseTo(balance.credit, 3);
@@ -282,7 +320,7 @@ describe('Phase 3A-1A execution hardening', () => {
     expect(Number(deposit.remaining)).toBeCloseTo(45, 3);
     expect(deposit.company_id).toBe(COMPANY_A);
     expect(deposit.property_id).toBe(PROPERTY_A);
-    evidence.deposit = { created, retried, deducted, refunded, balance, deposit };
+    evidence.deposit = { created, retried, claim, approved, applied, refunded, balance, deposit };
   });
 
   it('uses company-namespaced idempotency keys for all five Phase 3A-1A operations', async () => {
@@ -297,11 +335,13 @@ describe('Phase 3A-1A execution hardening', () => {
       'create_expense_with_journal_atomic',
       'update_expense_with_journal_atomic',
       'create_deposit_atomic',
-      'deduct_deposit_atomic',
-      'refund_deposit_atomic',
     ]) {
       expect(names.some((name) => name === `${operation}:${COMPANY_A}`)).toBe(true);
     }
+    // GAP-009: legacy deduct/refund idempotency surfaces are closed; the
+    // governed claim/refund lifecycle keeps its own append-only request keys.
+    expect(names.some((name) => name === `deduct_deposit_atomic:${COMPANY_A}`)).toBe(false);
+    expect(names.some((name) => name === `refund_deposit_atomic:${COMPANY_A}`)).toBe(false);
     evidence.idempotency = rows;
   });
 
