@@ -65,7 +65,7 @@ insert into public.owner_agreement_versions (id,owner_agreement_id,company_id,ve
 values ('00000000-0000-0000-0000-000000005d42','00000000-0000-0000-0000-000000005d41','00000000-0000-4000-8000-0000000005d1',1,'OWNER_AGENCY','OWNER_IS_CREDITOR','RATE',5,'ON_COLLECTION','2026-01-01','2028-12-31');
 update public.owner_agreements set current_version_id='00000000-0000-0000-0000-000000005d42' where id='00000000-0000-0000-0000-000000005d41';
 
-select plan(27);
+select plan(30);
 
 -- Company A maker context.
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000004d01","role":"authenticated","app_metadata":{"company_id":"00000000-0000-4000-8000-0000000004d1"}}',true);
@@ -289,6 +289,38 @@ select is(
   (select count(*)::int from public.invoices where contract_id = (select id from public.contracts where notes='gap004-r-b' limit 1)),
   0,
   '27. cross-company termination did not touch company B invoices'
+);
+
+reset role;
+select * from finish();
+rollback;
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 7. Direct-write revocation: the API cannot bypass the lifecycle by writing
+--    public.contracts directly. Any authenticated direct INSERT/UPDATE that
+--    would set status='active' (or write the contract at all) must fail closed
+--    because write privileges are revoked (SEC-009 / GAP-018). The only
+--    contract writes are the SECURITY DEFINER lifecycle RPCs.
+-- ─────────────────────────────────────────────────────────────────────────────
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000004d01","role":"authenticated","app_metadata":{"company_id":"00000000-0000-4000-8000-0000000004d1"}}',true);
+set local role authenticated;
+select throws_ok(
+  $$ insert into public.contracts (property_id, unit_id, tenant_id, start_date, end_date, rent_amount, status, company_id)
+     values ('00000000-0000-0000-0000-000000004d21','00000000-0000-0000-0000-000000004d22',
+             '00000000-0000-0000-0000-000000004d31', date '2026-10-01', date '2027-09-30', 1000, 'active',
+             '00000000-0000-4000-8000-0000000004d1') $$,
+  '42501', null,
+  '28. authenticated direct INSERT into contracts is rejected (write privileges revoked)'
+);
+select throws_ok(
+  $$ update public.contracts set status = 'active'
+     where id = (select id from public.contracts where notes='gap004-r-d1' limit 1) $$,
+  '42501', null,
+  '29. authenticated direct UPDATE of contracts is rejected (write privileges revoked)'
+);
+select throws_ok(
+  $$ delete from public.contracts where notes='gap004-r-d1' $$,
+  '42501', null,
+  '30. authenticated direct DELETE of contracts is rejected (write privileges revoked)'
 );
 
 reset role;

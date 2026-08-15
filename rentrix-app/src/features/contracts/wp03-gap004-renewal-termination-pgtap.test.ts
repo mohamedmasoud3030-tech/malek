@@ -123,6 +123,11 @@ describe('WP-03 GAP-004 renewal/termination/cross-company pgTAP gate (faithful s
     await db.exec(SHIM);
     await db.exec(`
       grant select, insert, update, delete on all tables in schema public to anon, authenticated;
+      -- Match production: GAP-004 part 3 revokes direct contract writes so the
+      -- API cannot bypass the lifecycle RPCs. The broad grant above exists only
+      -- to let the shim run the RPC fixtures; re-apply the contracts write
+      -- revocation so the direct-write negatives reflect the real boundary.
+      revoke insert, update, delete, truncate, references on table public.contracts from authenticated, anon;
       grant usage, select on all sequences in schema public to anon, authenticated;
       grant usage on schema extensions to anon, authenticated;
     `);
@@ -154,6 +159,6 @@ describe('WP-03 GAP-004 renewal/termination/cross-company pgTAP gate (faithful s
 
     expect(topErrors).toEqual([]);
     expect(failed).toEqual([]);
-    expect(rows.length).toBeGreaterThanOrEqual(27);
+    expect(rows.length).toBeGreaterThanOrEqual(30);
   }, 420_000);
 });
