@@ -22,8 +22,9 @@
 begin;
 
 -- Every REQUIRED requirement must have a concrete server-side validator.
--- This makes the existing completion RPC's fallback branch unreachable for
--- required rows and prevents future catalog additions from failing open.
+-- PostgreSQL CHECK constraints accept UNKNOWN/NULL, so the IS NOT NULL clause
+-- is intentional: without it a required row with NULL completion_source would
+-- still pass the constraint and recreate the fail-open path.
 alter table public.onboarding_requirement_templates
   drop constraint if exists onboarding_required_completion_source_guard;
 
@@ -31,12 +32,15 @@ alter table public.onboarding_requirement_templates
   add constraint onboarding_required_completion_source_guard
   check (
     not required
-    or completion_source in (
-      'OWNER_EXISTS',
-      'PROPERTY_EXISTS',
-      'UNIT_EXISTS',
-      'CONTRACT_EXISTS',
-      'INVOICE_EXISTS'
+    or (
+      completion_source is not null
+      and completion_source in (
+        'OWNER_EXISTS',
+        'PROPERTY_EXISTS',
+        'UNIT_EXISTS',
+        'CONTRACT_EXISTS',
+        'INVOICE_EXISTS'
+      )
     )
   );
 
