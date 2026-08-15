@@ -14,6 +14,7 @@ import { exportContractPdf, openContractWhatsApp, printContractView, shareContra
 import { ContractDocumentsShell } from '../contractDocumentsShell';
 import { ContractPaymentsTab } from '../contractPaymentsTab';
 import { ContractFinancialTimelineSection, ContractLifecycleSection, ContractOverviewSection, ContractTimelineSection } from '../components/ContractDetailSections';
+import { ContractApprovalSection } from '../lifecycle/contract-approval-workflow';
 import { ContractRenewalDialog } from '../lifecycle/ContractRenewalDialog';
 import { ContractTerminationDialog } from '../lifecycle/ContractTerminationDialog';
 import { canRenewContract, canTerminateContract } from '../lifecycle/contractLifecycleRules';
@@ -68,6 +69,7 @@ export function ContractDetailPage() {
 
   return <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">{!documentSettings.isReady && !documentSettings.isLoading ? <DocumentReadinessNotice /> : null}<EntityDetailHeader title="تفاصيل العقد" subtitle={`${contract.reference ?? 'عقد بلا مرجع تجاري'} — عرض كامل للعقد وسجل مراحله.`} backTo="/contracts" actions={<><Button variant="secondary" className="hidden sm:inline-flex" disabled={!renewalAllowed} onClick={openRenewal}><RefreshCw className="me-2 size-4" />تجديد</Button>{terminationAllowed && <Button variant="destructive" className="hidden sm:inline-flex" onClick={openTermination}><ShieldAlert className="me-2 size-4" />إنهاء العقد</Button>}<Button variant="secondary" className="hidden md:inline-flex" disabled={!documentSettings.isReady} onClick={() => printContractView(contract, documentSettings.companySettings)}><Printer className="me-2 size-4" />طباعة</Button><Button variant="secondary" className="hidden md:inline-flex" disabled={!documentSettings.isReady} onClick={() => exportContractPdf(contract, documentSettings.companySettings)}>تصدير PDF</Button><Button variant="secondary" className="hidden lg:inline-flex" onClick={() => openContractWhatsApp(contract)}><MessageCircle className="me-2 size-4" />واتساب</Button><Button variant="secondary" className="hidden lg:inline-flex" onClick={handleShare}><Share2 className="me-2 size-4" />مشاركة</Button><ActionMenu items={contractMenuActions} label="إجراءات العقد" /><Button asChild className="min-h-11"><Link to="/contracts/$contractId/edit" params={{ contractId }}><Edit className="me-2 size-4" />تعديل</Link></Button></>} />
     <ContractOverviewSection contract={contract} settings={companySettings} />
+    <ContractApprovalSection contract={contract} />
     <ContractLifecycleSection contract={contract} settings={companySettings} renewalAllowed={renewalAllowed} onRenew={openRenewal} canTerminate={terminationAllowed} onTerminate={openTermination} />
     <ContractPaymentsTab contractId={contract.id} />
     <ContractFinancialTimelineSection contract={contract} settings={companySettings} />

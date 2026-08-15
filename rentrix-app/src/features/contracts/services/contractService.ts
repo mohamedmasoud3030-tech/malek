@@ -214,3 +214,60 @@ export async function renewContract(contractId: string, payload: RenewalPayload)
   if (error) throw error;
   return parseRenewalResult(data);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Canonical contract approval/activation chain (S04-T03 / DOM-005).
+// The browser never flips `status` to 'active' itself: activation is the only
+// path that freezes the owner-agreement snapshot (collection role, operating
+// model, version) onto the contract and it fails closed unless the DB has a
+// complete maker→checker approval with signature evidence.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function toApprovalResult(data: unknown): Contract {
+  if (!data || typeof data !== 'object') throw new Error('استجابة غير صالحة من خادم الاعتماد');
+  const result = data as Contract;
+  if (typeof result.status !== 'string' || typeof result.approval_status !== 'string') {
+    throw new Error('استجابة الاعتماد ناقصة الحقول المطلوبة');
+  }
+  return result;
+}
+
+/** Maker submits a draft contract for approval, recording their signature. */
+export async function submitContractForApproval(contractId: string, makerSignature: string): Promise<Contract> {
+  const { data, error } = await supabase.rpc('submit_contract_for_approval_atomic', {
+    p_contract_id: contractId,
+    p_maker_signature: makerSignature,
+  });
+  if (error) throw error;
+  return toApprovalResult(data);
+}
+
+/** Checker (a different user than the maker) approves the pending contract. */
+export async function approveContract(contractId: string, checkerSignature: string): Promise<Contract> {
+  const { data, error } = await supabase.rpc('approve_contract_atomic', {
+    p_contract_id: contractId,
+    p_checker_signature: checkerSignature,
+  });
+  if (error) throw error;
+  return toApprovalResult(data);
+}
+
+/** Checker rejects the pending contract with a mandatory reason. */
+export async function rejectContract(contractId: string, checkerSignature: string, reason: string): Promise<Contract> {
+  const { data, error } = await supabase.rpc('reject_contract_atomic', {
+    p_contract_id: contractId,
+    p_checker_signature: checkerSignature,
+    p_reason: reason,
+  });
+  if (error) throw error;
+  return toApprovalResult(data);
+}
+
+/** Activate an approved contract, freezing the authoritative agreement snapshot. */
+export async function activateContract(contractId: string): Promise<Contract> {
+  const { data, error } = await supabase.rpc('activate_contract_with_agreement_snapshot_atomic', {
+    p_contract_id: contractId,
+  });
+  if (error) throw error;
+  return toApprovalResult(data);
+}

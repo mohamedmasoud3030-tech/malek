@@ -276,7 +276,7 @@ granting governed stage credit:
 - **GAP-018** sensitive-write boundary: 0 direct writes to the 12 sensitive tables in production src + regression guard. Engineering complete; deployed grants/RLS verification pending.
 - **GAP-020** browser/UX: hermetic desktop/tablet/mobile Browser Readiness passes on the integrated head; print/PDF artifacts exist. Hosted authenticated/seeded staging remains external.
 - **GAP-011** remains the primary open WP-02 engineering item (credit note, late fee, general cash refund, non-cash adjustment governed RPCs).
-- **GAP-004/005** WP-03 engineering remains open (contract approval UI wiring; seven-step backend onboarding).
+- **GAP-004/005** WP-03 engineering remains open. GAP-004 advanced: the canonical submit→approve→activate chain (maker-checker + frozen agreement snapshot) is now wired through the contracts service, React Query mutations and the contract detail UI; remaining items are the direct-`status='active'` bypass hardening on `create/update_contract_atomic`, blocking silent edits of signed commercial terms, and legal template content (GAP-019). GAP-005 (backend seven-step onboarding) remains open.
 - **GAP-012** MASTER_LEASE inclusion and **GAP-023** AI Assistant IA require Product Owner decisions (see `../decisions/0016-closeout-external-decision-packets.md`).
 - **GAP-003/019/021/022** remain EXTERNAL (live credentials, legal review, backup/restore rehearsal, one-office pilot).
 
