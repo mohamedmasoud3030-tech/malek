@@ -130,11 +130,11 @@ export function AccountingReportsSection({
 
     return (
       <div className="flex flex-wrap gap-1.5">
-        <Button type="button" size="sm" variant="outline" onClick={runPrint} disabled={disabled || !isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+        <Button type="button" size="sm" variant="outline" onClick={runPrint} disabled={disabled || !isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
           <Printer className="size-3.5" aria-hidden="true" />
           {label}
         </Button>
-        <Button type="button" size="sm" variant="outline" onClick={runPdf} disabled={disabled || !isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+        <Button type="button" size="sm" variant="outline" onClick={runPdf} disabled={disabled || !isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
           <Download className="size-3.5" aria-hidden="true" />
           PDF
         </Button>

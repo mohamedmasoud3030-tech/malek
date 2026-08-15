@@ -96,15 +96,15 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
 
   const invoiceActions = canExportReports ? (
     <div className="flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" onClick={handlePrintOverdueReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="outline" size="sm" onClick={handlePrintOverdueReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
         <Printer className="size-3.5" aria-hidden="true" />
         طباعة A4
       </Button>
-      <Button variant="outline" size="sm" onClick={handleDownloadOverdueReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="outline" size="sm" onClick={handleDownloadOverdueReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
         <Download className="size-3.5" aria-hidden="true" />
         تنزيل PDF
       </Button>
-      <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)} className="min-h-10 gap-1.5 text-xs">
+      <Button variant="secondary" size="sm" onClick={() => downloadCsv(buildReportCsvFilename('overdue-invoices'), rows)} className="min-h-11 gap-1.5 text-xs">
         <FileSpreadsheet className="size-3.5" aria-hidden="true" />
         CSV
       </Button>
@@ -116,7 +116,7 @@ export function OverdueSection({ rows, agedReport, summary, canExportReports, is
       variant="secondary"
       size="sm"
       onClick={() => downloadCsv(buildReportCsvFilename('aged-receivables'), bucketRows.map((row) => ({ bucket: row.bucket, total: row.total, invoiceCount: row.invoiceCount })))}
-      className="min-h-10 gap-1.5 text-xs"
+      className="min-h-11 gap-1.5 text-xs"
     >
       <FileSpreadsheet className="size-3.5" aria-hidden="true" />
       CSV

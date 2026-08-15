@@ -139,7 +139,7 @@ export function InvoiceDetailSection({
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="rounded-lg bg-background px-2 py-1 text-xs font-bold tabular-nums text-muted-foreground" dir="ltr">{binding.receiptNumber}</span>
                       {binding.isVoid ? <span className="text-xs font-bold text-danger">{binding.statusLabel}</span> : null}
-                      <Button type="button" variant="outline" className="h-8 px-2.5 text-xs" onClick={() => openReceiptPrintTab(payment.id)} title={`طباعة إيصال ${binding.receiptNumber}`}>
+                      <Button type="button" variant="outline" className="min-h-11 px-2.5 text-xs" onClick={() => openReceiptPrintTab(payment.id)} title={`طباعة إيصال ${binding.receiptNumber}`}>
                         <Printer className="me-1 size-4" />إيصال
                       </Button>
                     </div>
@@ -165,17 +165,17 @@ export function InvoiceDetailSection({
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {onPrintCollectionReceipt ? (
-                    <Button type="button" variant="outline" className="min-h-10" onClick={onPrintCollectionReceipt}>
+                    <Button type="button" variant="outline" className="min-h-11" onClick={onPrintCollectionReceipt}>
                       <Printer className="me-1 size-4" />طباعة الإيصال
                     </Button>
                   ) : null}
                   {hasNextCollectibleInvoice && onCollectNextInvoice ? (
-                    <Button type="button" className="min-h-10" onClick={onCollectNextInvoice}>
+                    <Button type="button" className="min-h-11" onClick={onCollectNextInvoice}>
                       <HandCoins className="me-1 size-4" />تحصيل الفاتورة التالية
                     </Button>
                   ) : null}
                   {onDismissCollection ? (
-                    <Button type="button" variant="ghost" className="min-h-10 px-2" onClick={onDismissCollection} aria-label="إغلاق تنبيه النجاح">
+                    <Button type="button" variant="ghost" className="min-h-11 px-2" onClick={onDismissCollection} aria-label="إغلاق تنبيه النجاح">
                       <X className="size-4" />
                     </Button>
                   ) : null}

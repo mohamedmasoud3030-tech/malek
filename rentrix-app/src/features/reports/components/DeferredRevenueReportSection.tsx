@@ -95,11 +95,11 @@ export function DeferredRevenueReportSection({
 
   const actions = canExportReports ? (
     <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" size="sm" className="min-h-10 gap-1.5 text-xs" onClick={handlePrint} disabled={!isDocumentSettingsReady}>
+      <Button type="button" variant="outline" size="sm" className="min-h-11 gap-1.5 text-xs" onClick={handlePrint} disabled={!isDocumentSettingsReady}>
         <Printer className="size-3.5" aria-hidden="true" />
         طباعة A4
       </Button>
-      <Button type="button" variant="outline" size="sm" className="min-h-10 gap-1.5 text-xs" onClick={handleDownload} disabled={!isDocumentSettingsReady}>
+      <Button type="button" variant="outline" size="sm" className="min-h-11 gap-1.5 text-xs" onClick={handleDownload} disabled={!isDocumentSettingsReady}>
         <Download className="size-3.5" aria-hidden="true" />
         تنزيل PDF
       </Button>
@@ -107,7 +107,7 @@ export function DeferredRevenueReportSection({
         type="button"
         variant="secondary"
         size="sm"
-        className="min-h-10 gap-1.5 text-xs"
+        className="min-h-11 gap-1.5 text-xs"
         onClick={() => downloadCsv(
           buildReportCsvFilename('deferred-revenue'),
           schedule.schedules.map((row) => ({

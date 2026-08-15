@@ -29,7 +29,7 @@ export function ActiveFilterBar({ filters, onClearAll, className }: ActiveFilter
               key={filter.key}
               type="button"
               onClick={filter.onRemove}
-              className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs font-bold text-foreground transition hover:border-primary/50 hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+              className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs font-bold text-foreground transition hover:border-primary/50 hover:text-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
               aria-label={`إزالة فلتر ${filter.label}`}
             >
               <span className="text-muted-foreground">{filter.label}</span>
@@ -39,7 +39,7 @@ export function ActiveFilterBar({ filters, onClearAll, className }: ActiveFilter
           ))}
         </div>
         {onClearAll ? (
-          <Button variant="ghost" className="min-h-9 px-3 text-xs sm:shrink-0" onClick={onClearAll}>
+          <Button variant="ghost" className="min-h-11 px-3 text-xs sm:shrink-0" onClick={onClearAll}>
             مسح الكل
           </Button>
         ) : null}

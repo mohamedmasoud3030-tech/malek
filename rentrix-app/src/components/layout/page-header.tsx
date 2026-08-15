@@ -48,12 +48,12 @@ export function PageHeader({
     >
       <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-5">
         {/* Title + description */}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h1 className="min-w-0 text-balance text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
+            <h1 className="min-w-0 break-words text-balance text-xl font-bold tracking-tight [overflow-wrap:anywhere] sm:text-2xl">{title}</h1>
             {count !== undefined ? (
               <span
-                className="inline-flex min-h-5 items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground"
+                className="inline-flex min-h-5 shrink-0 items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground"
                 aria-label={`عدد السجلات ${count}`}
               >
                 {count}
@@ -61,7 +61,7 @@ export function PageHeader({
             ) : null}
           </div>
           {description ? (
-            <p className="mt-0.5 max-w-3xl text-[0.8125rem] leading-5 text-muted-foreground sm:mt-1 sm:text-sm sm:leading-6">
+            <p className="mt-0.5 max-w-3xl break-words text-[0.8125rem] leading-5 text-muted-foreground [overflow-wrap:anywhere] sm:mt-1 sm:text-sm sm:leading-6">
               {description}
             </p>
           ) : null}

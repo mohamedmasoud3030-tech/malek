@@ -57,11 +57,11 @@ export function TenantStatementPanel({
       icon={UserRound}
       action={statement ? (
         <div className="flex items-center gap-1.5">
-          <Button type="button" size="sm" variant="outline" onClick={onPrint} disabled={actionsDisabled} className="min-h-10 gap-1.5 text-xs">
+          <Button type="button" size="sm" variant="outline" onClick={onPrint} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
             <Printer className="size-3.5" aria-hidden="true" />
             طباعة الكشف
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-10 gap-1.5 text-xs">
+          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
             <Download className="size-3.5" aria-hidden="true" />
             تنزيل PDF
           </Button>
@@ -151,11 +151,11 @@ export function OwnerStatementPanel({
       icon={UsersRound}
       action={statement ? (
         <div className="flex items-center gap-1.5">
-          <Button type="button" size="sm" variant="outline" onClick={onPrint} disabled={actionsDisabled} className="min-h-10 gap-1.5 text-xs">
+          <Button type="button" size="sm" variant="outline" onClick={onPrint} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
             <Printer className="size-3.5" aria-hidden="true" />
             طباعة الكشف
           </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-10 gap-1.5 text-xs">
+          <Button type="button" size="sm" variant="outline" onClick={onDownloadPdf} disabled={actionsDisabled} className="min-h-11 gap-1.5 text-xs">
             <Download className="size-3.5" aria-hidden="true" />
             تنزيل PDF
           </Button>

@@ -1,7 +1,7 @@
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Loader2 } from 'lucide-react';
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, Ref } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -59,6 +59,12 @@ export const buttonVariants = cva(
 type ButtonVariantProps = VariantProps<typeof buttonVariants>;
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  /**
+   * React 19 passes `ref` as an ordinary prop to function components, so it is
+   * forwarded through the props spread. Declared explicitly because
+   * `ButtonHTMLAttributes` does not include it.
+   */
+  ref?: Ref<HTMLButtonElement>;
   asChild?: boolean;
   variant?: ButtonVariantProps['variant'];
   size?: ButtonVariantProps['size'];

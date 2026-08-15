@@ -120,4 +120,29 @@ describe('LoginPage — interaction behaviour', () => {
     fireEvent(password, event);
     expect(screen.getByRole('status')).toHaveTextContent('Caps Lock مفعّل');
   });
+
+  /**
+   * WP-06 / GAP-020 regression.
+   *
+   * The password visibility toggle rendered as a 40x40 box, which failed the
+   * hardened >=44x44 touch-target gate in the Browser Readiness desktop shard
+   * (the login surface is exercised at 320/375/430/768 widths). Both
+   * dimensions are asserted so a partial regression cannot slip through.
+   */
+  it('gives the password visibility toggle a >=44px touch target on both axes', () => {
+    setup();
+    const toggle = screen.getByRole('button', { name: /إظهار كلمة المرور/i });
+    expect(toggle.className).toContain('size-11');
+    expect(toggle.className).toContain('min-h-11');
+    expect(toggle.className).toContain('min-w-11');
+    expect(toggle.className).not.toContain('size-10');
+  });
+
+  it('keeps every interactive login control on the 44px touch grid', () => {
+    const { container } = render(<LoginPage />);
+    const undersized = Array.from(container.querySelectorAll<HTMLElement>('button, a[href]'))
+      .filter((el) => /(^|\s)(size|h|w)-(?:[0-9]|10)(\s|$)/.test(el.className))
+      .map((el) => el.getAttribute('aria-label') ?? el.textContent?.trim() ?? el.tagName);
+    expect(undersized).toEqual([]);
+  });
 });

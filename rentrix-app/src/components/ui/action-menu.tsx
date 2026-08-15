@@ -60,7 +60,7 @@ export function ActionMenu({ items, label = 'الإجراءات', className }: A
         variant="ghost"
         size="sm"
         onClick={() => selectItem(item)}
-        className={cn('h-9 min-w-9 px-2', className)}
+        className={cn('h-11 min-h-11 min-w-11 px-2', className)}
         aria-label={item.label}
         title={item.label}
       >

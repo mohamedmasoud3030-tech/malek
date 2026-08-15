@@ -34,9 +34,9 @@ export function PageHeaderActions({ primaryAction, secondaryActions, title }: Pa
     <>
       <div
         className={cn(
-          'flex min-w-0 items-center justify-end gap-1.5 sm:gap-2',
+          'flex min-w-0 max-w-[min(62vw,18rem)] items-center justify-end gap-1.5 overflow-hidden sm:gap-2',
           // Mobile: prevent horizontal overflow, allow wrap only on desktop
-          'max-w-[62vw] sm:max-w-none',
+          'sm:max-w-none',
           'shrink-0',
         )}
         data-page-actions
@@ -44,7 +44,7 @@ export function PageHeaderActions({ primaryAction, secondaryActions, title }: Pa
         {/* Secondary actions — desktop inline, mobile hidden */}
         {hasSecondary ? (
           <div
-            className="hidden sm:flex items-center gap-1.5 sm:gap-2"
+            className="hidden min-w-0 sm:flex items-center gap-1.5 overflow-hidden sm:gap-2"
             aria-label="إجراءات ثانوية"
             data-secondary-actions-desktop
           >

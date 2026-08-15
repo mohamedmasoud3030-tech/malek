@@ -45,7 +45,7 @@ export function PropertyUnitDetailPage() {
               </StatusBadge>
             }
             actions={
-              <Button variant="secondary" className="min-h-10" onClick={() => setEditOpen(true)}>
+              <Button variant="secondary" className="min-h-11" onClick={() => setEditOpen(true)}>
                 <Edit className="me-1 size-4" aria-hidden="true" />
                 تعديل الوحدة
               </Button>

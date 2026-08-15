@@ -157,11 +157,11 @@ export function MaintenanceReportSection({ rows, summary, isLoading }: Maintenan
           icon={Wrench}
           action={(
             <div className="flex items-center gap-1.5">
-              <Button variant="outline" size="sm" onClick={handlePrintMaintenanceReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+              <Button variant="outline" size="sm" onClick={handlePrintMaintenanceReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
                 <Printer className="size-3.5" aria-hidden="true" />
                 طباعة A4
               </Button>
-              <Button variant="outline" size="sm" onClick={handleDownloadMaintenanceReport} disabled={!isDocumentSettingsReady} className="min-h-10 gap-1.5 text-xs">
+              <Button variant="outline" size="sm" onClick={handleDownloadMaintenanceReport} disabled={!isDocumentSettingsReady} className="min-h-11 gap-1.5 text-xs">
                 <Download className="size-3.5" aria-hidden="true" />
                 تنزيل PDF
               </Button>
