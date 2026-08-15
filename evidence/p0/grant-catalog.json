@@ -25,6 +25,11 @@
     "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
   },
   {
+    "name": "complete_company_onboarding_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
     "name": "create_commission_atomic",
     "security": "DEFINER",
     "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
@@ -103,6 +108,16 @@
     "name": "request_receipt_void_atomic",
     "security": "DEFINER",
     "acl": "{postgres=X/postgres,authenticated=X/postgres}"
+  },
+  {
+    "name": "reset_company_onboarding_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "revoke_onboarding_waiver_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "rpt_aged_receivables",
@@ -207,11 +222,6 @@
   {
     "name": "void_receipt_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
-  },
-  {
-    "name": "void_receipt_atomic",
-    "security": "DEFINER",
     "acl": "{postgres=X/postgres}"
   },
   {
@@ -223,5 +233,15 @@
     "name": "void_receipt_atomic",
     "security": "DEFINER",
     "acl": "{postgres=X/postgres}"
+  },
+  {
+    "name": "void_receipt_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
+    "name": "waive_onboarding_requirement_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   }
 ]

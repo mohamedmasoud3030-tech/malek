@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-14T08:22:50.514Z",
+  "generatedAt": "2026-08-15T17:06:59.915Z",
   "scenario": "generate → retry → B-require-failure",
-  "generatedInvoiceId": "f170a2ad-6231-4f70-8db9-3a16e54b4042",
+  "generatedInvoiceId": "a9baecab-f5f4-4041-8d6d-790cb7b0e014",
   "totals": {
     "amount": 1000,
     "tax": 50,

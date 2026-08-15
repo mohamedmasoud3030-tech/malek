@@ -133,18 +133,28 @@ select set_config(
 );
 set local role authenticated;
 
+-- GAP-004: create_contract_atomic is now draft-only (activation is the only
+-- path to 'active'). This financial rehearsal seeds its active contract as a
+-- fixture so downstream collections/deposits/settlements run against the same
+-- active-contract shape; the canonical draft→approve→activate chain is proven
+-- by wp03_gap004_contract_activation_authority.sql.
 select lives_ok(
   $$
-    select public.create_contract_atomic(
+    insert into public.contracts (
+      property_id, unit_id, tenant_id, agreement_id, start_date, end_date,
+      rent_amount, payment_cycle, payment_terms_id, status,
+      cancellation_reason, notes, attachment_url, company_id
+    ) values (
       '00000000-0000-0000-0000-000000001301',
       '00000000-0000-0000-0000-000000001401',
       '00000000-0000-0000-0000-000000001501',
       '00000000-0000-0000-0000-000000001601',
       date '2026-09-01', date '2027-08-31', 1000, 'monthly', null,
-      'active', null, 'release-lifecycle-contract', null
+      'active', null, 'release-lifecycle-contract', null,
+      '00000000-0000-4000-8000-000000000001'
     )
   $$,
-  'authenticated ADMIN creates the lifecycle contract'
+  'lifecycle contract seeded as an active fixture'
 );
 
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)

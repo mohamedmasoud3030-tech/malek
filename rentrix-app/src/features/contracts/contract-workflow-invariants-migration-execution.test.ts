@@ -79,12 +79,21 @@ describe('contract workflow invariants migration execution', () => {
        where id = $1::uuid`,
       [PROPERTY_A],
     );
+    // GAP-004: activation is the only path to 'active'; a commercial edit on an
+    // active contract is now rejected. Move the fixture to draft to prove the
+    // company-scoped, contract-only return shape of a legitimate edit.
+    await db.query(
+      `update public.contracts
+       set status = 'draft'
+       where id = $1`,
+      [CONTRACT_A],
+    );
 
     const { rows } = await db.query<{ result: { id: string; company_id: string; rent_amount: number } }>(
       `select public.update_contract_atomic(
         $1, $2, $3::uuid, $4::uuid, $5::uuid,
         date '2026-01-01', date '2026-12-31', 1100,
-        'monthly', null, 'active', null, 'validated', null
+        'monthly', null, 'draft', null, 'validated', null
       ) as result`,
       [CONTRACT_A, PROPERTY_A, UNIT_A, TENANT_A, AGREEMENT_A],
     );
