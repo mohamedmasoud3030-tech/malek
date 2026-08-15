@@ -119,10 +119,6 @@ const DISPLAY_NAME_ALLOWLIST = new Map<string, string>([
     'src/services/mock-role-simulator.ts',
     'Persisted localStorage key rentrix_simulated_role.',
   ],
-  [
-    'src/features/onboarding/useOnboarding.ts',
-    'Persisted localStorage keys rentrix_onboarding_* — renaming would reset onboarding for existing users.',
-  ],
 
   [
     'src/hooks/use-auth.tsx',
