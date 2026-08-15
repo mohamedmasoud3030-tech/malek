@@ -1,8 +1,8 @@
 # MALEK Canonical Pack — Document 8: Closeout Roadmap and Release Gates
 
 > **Status:** CANONICAL
-> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
-> **Open gaps:** 23
+> **Baseline:** `main@edf57aae5003d536afb7eb0b212790bb57172751`
+> **Open gaps:** 23 (engineering-closed set expanded — see per-gap status in Document 7)
 > **Work packages:** 7
 
 ## Purpose
@@ -245,19 +245,40 @@ Repository implementation for portions of S02/S04/S06/S07/S08 is acknowledged in
 
 | Gate | Required evidence | Baseline state |
 |---|---|---|
-| G1 — Canonical decisions approved | no unresolved owner/accounting/legal ambiguity for release scope | PARTIAL; AI IA conflict and external legal/tax decisions remain |
-| G2 — No release-blocking conflict | all `CONFLICT` rows resolved explicitly | FAIL: roles, AI IA and deposit precision conflict remain |
-| G3 — Company isolation | repository + exact deployed negative tests | PARTIAL: repository/ephemeral pass; live absent |
-| G4 — Posting and reversal | owner-agency/master-lease included scope passes event/retry/reversal tests | PARTIAL |
-| G5 — GL/subledger reconciliation | 1201/2000/1300/2200/2300 and included lease controls tie within 0.001 | FAIL/open |
-| G6 — Permissions/Maker-Checker | six roles/effective grants/designated approvals verified | FAIL/open: six-role model and settlement maker-checker trigger implemented in repository; migration replay pending; receipt VOID lifecycle incomplete; live verification not performed |
-| G7 — Financial reports | GL statements and cash flow complete/reconciled | PARTIAL/open |
-| G8 — Mobile/desktop/RTL/browser | completed hosted Browser Readiness and acceptance evidence | FAIL: run cancelled; staging skipped |
-| G9 — Main CI/release checks | mandatory code/database/governance/browser checks green on candidate | PARTIAL: PR #1430 code/database/governance passed; browser did not |
-| G10 — Printable documents | representative legal/financial documents visually and numerically accepted | NOT PROVEN |
-| G11 — Live environment/restore | deployed SHA, schema, Auth, RLS, secrets, Storage, monitoring and restore proof | NOT PROVEN |
-| G12 — One-office pilot | complete operating/accounting period reconciled | NOT STARTED/evidenced |
-| G13 — Release Candidate decision | explicit accountant/product-owner approval after prior gates | NOT STARTED/evidenced |
+| G1 — Canonical decisions approved | no unresolved owner/accounting/legal ambiguity for release scope | PARTIAL; AI IA (GAP-023), MASTER_LEASE inclusion (GAP-012) and external legal/tax decisions remain — see `../decisions/0016-closeout-external-decision-packets.md` |
+| G2 — No release-blocking conflict | all `CONFLICT` rows resolved explicitly | PARTIAL: roles (GAP-001) and deposit-precision conflicts RESOLVED on main; AI IA conflict (GAP-023) remains |
+| G3 — Company isolation | repository + exact deployed negative tests | PARTIAL: repository/ephemeral pass (db0 isolation gate); live absent |
+| G4 — Posting and reversal | owner-agency/master-lease included scope passes event/retry/reversal tests | PARTIAL: owner-agency event/retry/reversal suites green (RATE/FIXED/deposit/Due-from-Owner/VOID); master-lease inclusion undecided |
+| G5 — GL/subledger reconciliation | 1201/2000/1300/2200/2300 and included lease controls tie within 0.001 | PARTIAL: reconciliation engine green (pgTAP 33, tolerance 0.001); 1300 parity added (GAP-008); live cycle pending |
+| G6 — Permissions/Maker-Checker | six roles/effective grants/designated approvals verified | PARTIAL: six-role + all six designated maker-checker actions implemented and replay clean; audited sole-admin exception unimplemented; live verification pending |
+| G7 — Financial reports | GL statements and cash flow complete/reconciled | PARTIAL: GL-backed TB/P&L/BS/GL/Cash Flow green (pgTAP 26 + 393 financials); hosted cycle pending |
+| G8 — Mobile/desktop/RTL/browser | completed hosted Browser Readiness and acceptance evidence | PARTIAL: Hermetic Browser Readiness desktop/tablet/mobile PASS on integrated head (PR #1458 run 1420); hosted authenticated/seeded staging pending |
+| G9 — Main CI/release checks | mandatory code/database/governance/browser checks green on candidate | PARTIAL: current-main local ladder + PR #1458 CI all green incl. Browser Readiness; hosted jobs pending |
+| G10 — Printable documents | representative legal/financial documents visually and numerically accepted | PARTIAL: print/PDF evidence artifacts exist (`evidence/wp06-document-output/`); hosted visual/numeric acceptance pending |
+| G11 — Live environment/restore | deployed SHA, schema, Auth, RLS, secrets, Storage, monitoring and restore proof | NOT PROVEN (external: live credentials/restore rehearsal) |
+| G12 — One-office pilot | complete operating/accounting period reconciled | NOT STARTED/evidenced (external: one-office pilot) |
+| G13 — Release Candidate decision | explicit accountant/product-owner approval after prior gates | NOT STARTED/evidenced (external: sign-offs) |
+
+## Engineering status reconciliation (2026-08-15)
+
+Repository evidence at `main@edf57aae` (verified locally; see Document 7
+evidence ledger) moves the engineering state of several gaps forward without
+granting governed stage credit:
+
+- **GAP-001** six-role model: replay clean (249/249), db0 role-model 6/6, pgTAP 31. Engineering complete; live migration pending.
+- **GAP-002** maker-checker: contract, permission, settlement, receipt VOID, deposit claim and tax-profile approvals all enforce maker≠checker. Engineering complete; audited sole-admin exception (OPS-007/D11) not yet implemented; live verification pending.
+- **GAP-006** RATE collection wiring: golden 1000.000→100.000→900.000 single reversible batch + governed VOID reversal. Engineering complete; taxable-collection integration + hosted evidence pending.
+- **GAP-007** FIXED_MONTHLY daily accrual: 31/29-day, mid-month, catch-up, period resolution, idempotent balanced reversal. Engineering complete; hosted evidence pending.
+- **GAP-008** Due-from-Owner: 1300 lifecycle with gated offset and post-payout recovery, pgTAP 23. Engineering complete; hosted evidence pending.
+- **GAP-010** versioned tax authority: fail-closed resolver, maker-checker activation, per-line snapshots, 3dp, pgTAP 19. Engineering complete; statutory-code legal confirmation + hosted evidence pending.
+- **GAP-013/014/015/016** deterministic reconciliation, GL-backed statements, S08 freeze, S09 engine: engineering complete (unchanged); Accounting approval for S08/S09 remains external.
+- **GAP-017** bank CSV preview-first fail-closed import: DB/service/UI complete, pgTAP 55. Engineering complete; hosted import journey pending.
+- **GAP-018** sensitive-write boundary: 0 direct writes to the 12 sensitive tables in production src + regression guard. Engineering complete; deployed grants/RLS verification pending.
+- **GAP-020** browser/UX: hermetic desktop/tablet/mobile Browser Readiness passes on the integrated head; print/PDF artifacts exist. Hosted authenticated/seeded staging remains external.
+- **GAP-011** remains the primary open WP-02 engineering item (credit note, late fee, general cash refund, non-cash adjustment governed RPCs).
+- **GAP-004/005** WP-03 engineering remains open (contract approval UI wiring; seven-step backend onboarding).
+- **GAP-012** MASTER_LEASE inclusion and **GAP-023** AI Assistant IA require Product Owner decisions (see `../decisions/0016-closeout-external-decision-packets.md`).
+- **GAP-003/019/021/022** remain EXTERNAL (live credentials, legal review, backup/restore rehearsal, one-office pilot).
 
 ## PR and change strategy
 
