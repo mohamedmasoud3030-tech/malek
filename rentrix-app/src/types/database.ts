@@ -1338,6 +1338,72 @@ export type Database = {
           },
         ];
       };
+      company_tax_profiles: {
+        Row: {
+          id: string;
+          company_id: string;
+          version_no: number;
+          tax_code: string;
+          tax_rate: number;
+          effective_from: string;
+          effective_to: string | null;
+          status: 'DRAFT' | 'APPROVED' | 'ACTIVE' | 'SUPERSEDED' | 'VOID';
+          description: string | null;
+          created_by: string;
+          approved_by: string | null;
+          approved_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          version_no: number;
+          tax_code: string;
+          tax_rate: number;
+          effective_from: string;
+          effective_to?: string | null;
+          status?: 'DRAFT' | 'APPROVED' | 'ACTIVE' | 'SUPERSEDED' | 'VOID';
+          description?: string | null;
+          created_by: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          version_no?: number;
+          tax_code?: string;
+          tax_rate?: number;
+          effective_from?: string;
+          effective_to?: string | null;
+          status?: 'DRAFT' | 'APPROVED' | 'ACTIVE' | 'SUPERSEDED' | 'VOID';
+          description?: string | null;
+          created_by?: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'company_tax_profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'company_tax_profiles_tax_code_fkey';
+            columns: ['tax_code'];
+            isOneToOne: false;
+            referencedRelation: 'tax_code_catalog';
+            referencedColumns: ['code'];
+          },
+        ];
+      };
       contract_balances: {
         Row: {
           contract_id: string;
@@ -5532,6 +5598,93 @@ export type Database = {
           },
         ];
       };
+      tax_code_catalog: {
+        Row: {
+          code: string;
+          name_ar: string;
+          name_en: string;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          code: string;
+          name_ar: string;
+          name_en: string;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          code?: string;
+          name_ar?: string;
+          name_en?: string;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      taxable_line_tax_snapshots: {
+        Row: {
+          id: string;
+          company_id: string;
+          source_type: string;
+          source_id: string;
+          journal_batch_id: string | null;
+          account_no: string;
+          tax_code: string;
+          tax_rate: number;
+          net_amount: number;
+          tax_amount: number;
+          effective_date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          source_type: string;
+          source_id: string;
+          journal_batch_id?: string | null;
+          account_no: string;
+          tax_code: string;
+          tax_rate: number;
+          net_amount: number;
+          tax_amount: number;
+          effective_date: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          source_type?: string;
+          source_id?: string;
+          journal_batch_id?: string | null;
+          account_no?: string;
+          tax_code?: string;
+          tax_rate?: number;
+          net_amount?: number;
+          tax_amount?: number;
+          effective_date?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'taxable_line_tax_snapshots_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'taxable_line_tax_snapshots_journal_batch_id_fkey';
+            columns: ['journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tenant_balances: {
         Row: {
           tenant_id: string;
@@ -6516,6 +6669,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      approve_tax_profile_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       archive_service_provider_atomic: {
         Args: {
           p_provider_id: string | null;
@@ -6572,6 +6731,13 @@ export type Database = {
           p_batch_id: string | null;
         };
         Returns: Json;
+      };
+      compute_tax_amount: {
+        Args: {
+          p_net: number | null;
+          p_rate: number | null;
+        };
+        Returns: number;
       };
       create_accounting_period: {
         Args: {
@@ -6685,6 +6851,12 @@ export type Database = {
           p_current_value?: number | null;
           p_status?: string | null;
           p_notes?: string | null;
+        };
+        Returns: Json;
+      };
+      create_tax_profile_atomic: {
+        Args: {
+          p_payload: Json | null;
         };
         Returns: Json;
       };
@@ -7175,6 +7347,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      post_taxable_collection_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       preview_bank_statement_batch_atomic: {
         Args: {
           payload: Json | null;
@@ -7294,6 +7472,13 @@ export type Database = {
       require_company_id: {
         Args: Record<PropertyKey, never>;
         Returns: string;
+      };
+      resolve_active_tax_profile: {
+        Args: {
+          p_company_id: string | null;
+          p_effective_date: string | null;
+        };
+        Returns: { profile_id: string | null; tax_code: string | null; tax_rate: number | null; effective_from: string | null; effective_to: string | null }[];
       };
       resolve_maintenance_with_expense: {
         Args: {
