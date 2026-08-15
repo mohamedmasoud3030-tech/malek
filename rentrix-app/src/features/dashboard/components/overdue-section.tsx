@@ -47,31 +47,34 @@ export function OverdueSection({ rows, isLoading, settings }: OverdueSectionProp
       )}
 
       {!isLoading && rows.length > 0 && (
-        <div className="dashboard-queue-list" role="list">
+        /* role="listitem" is invalid on <a> (axe aria-allowed-role): the list
+           is a real <ul> and each row is wrapped in the <li> that owns the
+           listitem semantics. */
+        <ul className="dashboard-queue-list" role="list">
           {rows.map((row) => {
             const isHighRisk = row.daysOverdue > 90;
             return (
-              <Link
-                key={row.invoiceId}
-                to="/arrears"
-                className={cn('dashboard-queue-row', isHighRisk ? 'dashboard-queue-row--danger' : 'dashboard-queue-row--warning')}
-                data-dashboard-queue-link
-                role="listitem"
-                aria-label={`${row.tenantName} — ${row.daysOverdue} يوم تأخير — ${money(row.remainingAmount)}`}
-              >
-                <span className="dashboard-queue-row__main">
-                  <span className="dashboard-queue-row__title">{row.tenantName}</span>
-                  <span className="dashboard-queue-row__meta">{row.location}</span>
-                </span>
-                <span className="dashboard-queue-row__side">
-                  <StatusBadge tone={isHighRisk ? 'danger' : 'warning'}>{row.daysOverdue} يوم</StatusBadge>
-                  <span className="dashboard-queue-row__amount" dir="ltr">{money(row.remainingAmount)}</span>
-                  <span className="dashboard-queue-row__date">استحقاق: {date(row.dueDate)}</span>
-                </span>
-              </Link>
+              <li key={row.invoiceId} role="listitem" className="min-w-0">
+                <Link
+                  to="/arrears"
+                  className={cn('dashboard-queue-row', isHighRisk ? 'dashboard-queue-row--danger' : 'dashboard-queue-row--warning')}
+                  data-dashboard-queue-link
+                  aria-label={`${row.tenantName} — ${row.daysOverdue} يوم تأخير — ${money(row.remainingAmount)}`}
+                >
+                  <span className="dashboard-queue-row__main">
+                    <span className="dashboard-queue-row__title">{row.tenantName}</span>
+                    <span className="dashboard-queue-row__meta">{row.location}</span>
+                  </span>
+                  <span className="dashboard-queue-row__side">
+                    <StatusBadge tone={isHighRisk ? 'danger' : 'warning'}>{row.daysOverdue} يوم</StatusBadge>
+                    <span className="dashboard-queue-row__amount" dir="ltr">{money(row.remainingAmount)}</span>
+                    <span className="dashboard-queue-row__date">استحقاق: {date(row.dueDate)}</span>
+                  </span>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </section>
   );

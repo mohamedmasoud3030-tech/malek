@@ -180,13 +180,13 @@ const overdueRows: OverdueTenantRow[] = [
  */
 export function DashboardWorkspaceE2EFixture() {
   return (
-    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-dashboard-workspace>
+    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-dashboard-workspace>
       <div className="px-3 py-4 sm:px-6 lg:px-8">
         <PageLayout className="dashboard-page-shell">
           <DashboardVisualScope>
             <HeroBanner snapshot={fixtureSnapshot} isLoading={false} settings={defaultCompanySettingsContract} today="2026-07-15" />
 
-            <section data-dashboard-section="priorities" aria-label="الأولوية الآن">
+            <section data-dashboard-section="priorities" aria-label="متابعة الأولويات">
               <AlertCenter
                 expiringContracts={fixtureSnapshot.activeContracts}
                 overdueInvoices={[

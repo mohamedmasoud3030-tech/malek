@@ -114,20 +114,22 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
 
   return (
     <div data-dashboard-kpi-grid>
-      <div className="dashboard-kpi-grid" role="list" aria-label="مؤشرات الأداء الأساسية">
+      {/* role="list" needs real <li> children: an <a role="listitem"> is invalid
+          ARIA (axe aria-allowed-role). The <li> is the grid item; the link fills it. */}
+      <ul className="dashboard-kpi-grid" role="list" aria-label="مؤشرات الأداء الأساسية">
         {items.map((item) => (
-          <Link
-            key={item.label}
-            to={item.to}
-            data-dashboard-kpi-link
-            className={cn('dashboard-kpi-link')}
-            aria-label={`${item.label} — انتقل إلى ${item.destinationLabel}`}
-            role="listitem"
-          >
-            <DashboardKpiCard item={item} />
-          </Link>
+          <li key={item.label} role="listitem" className="min-w-0">
+            <Link
+              to={item.to}
+              data-dashboard-kpi-link
+              className={cn('dashboard-kpi-link')}
+              aria-label={`${item.label} — انتقل إلى ${item.destinationLabel}`}
+            >
+              <DashboardKpiCard item={item} />
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

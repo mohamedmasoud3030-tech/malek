@@ -131,7 +131,9 @@ export function DashboardPage() {
 
         {snapshotUnavailable ? null : (
           <>
-            <section data-dashboard-section="priorities" aria-label="الأولوية الآن">
+            {/* Distinct label from the inner AlertCenter section («الأولوية الآن»)
+                so the two nested landmarks do not collide (axe landmark-unique). */}
+            <section data-dashboard-section="priorities" aria-label="متابعة الأولويات">
               <AlertCenter
                 expiringContracts={snapshot?.activeContracts ?? []}
                 overdueInvoices={(snapshot?.arrears.overdueInvoices ?? []).map((invoice) => ({

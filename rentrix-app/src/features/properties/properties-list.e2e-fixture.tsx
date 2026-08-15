@@ -167,7 +167,7 @@ export function PropertiesListE2EFixture() {
   const readinessRate = Math.round((readyCount / fixtureProperties.length) * 100);
 
   return (
-    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-properties-workspace>
+    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-properties-workspace>
       <ListPage
         visualVariant="malek-pro"
         title="العقارات"

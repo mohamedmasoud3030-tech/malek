@@ -140,7 +140,7 @@ export function ContractsListE2EFixture() {
   });
 
   return (
-    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-contracts-workspace>
+    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-contracts-workspace>
       <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
         <PageHeader
           title="العقود"

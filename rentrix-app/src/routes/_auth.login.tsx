@@ -17,6 +17,7 @@ import { DepositsWorkspaceE2EFixture } from '@/features/financials/deposits/depo
 import { AutomationWorkspaceE2EFixture } from '@/features/automation/automation-workspace.e2e-fixture';
 import { ServiceProvidersWorkspaceE2EFixture } from '@/features/service-providers/service-providers-workspace.e2e-fixture';
 import { StateSurfacesE2EFixture } from '@/features/browser-ux/state-surfaces.e2e-fixture';
+import { DialogFocusE2EFixture } from '@/features/browser-ux/dialog-focus.e2e-fixture';
 
 export function LoginRouteComponent() {
   if (import.meta.env.VITE_E2E && typeof window !== 'undefined') {
@@ -88,6 +89,10 @@ export function LoginRouteComponent() {
 
     if (search.get('e2e-showcase-automation') === '1') {
       return <AutomationE2EFixture />;
+    }
+
+    if (search.get('e2e-dialog-focus') === '1') {
+      return <DialogFocusE2EFixture />;
     }
 
     if (search.get('e2e-state-surfaces') === '1') {

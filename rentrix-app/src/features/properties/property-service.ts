@@ -183,7 +183,7 @@ export async function listProperties(params: PropertyListParams): Promise<Pagina
   };
 }
 
-export async function getProperty(propertyId: string): Promise<Property> {
+export async function getProperty(propertyId: string): Promise<Property | null> {
   const { data, error } = await supabase
     .from('properties')
     .select('*')
@@ -192,6 +192,14 @@ export async function getProperty(propertyId: string): Promise<Property> {
     .single()
     .returns<Property>();
   if (error) throw error;
+  // `.single()` only negotiates the object Accept header; it does NOT normalize
+  // an empty result like `.maybeSingle()` does. Against a strict PostgREST the
+  // zero-row case is a 406 error (handled above), but a lenient server/proxy or
+  // a 200+[] response resolves data to `[]` — a truthy array. Returning that
+  // made the UI render a phantom property (blank fields, default «عقار» title)
+  // instead of the not-found state. Normalize to null so callers' truthiness
+  // checks always mean "a real record".
+  if (Array.isArray(data)) return data[0] ?? null;
   return data;
 }
 

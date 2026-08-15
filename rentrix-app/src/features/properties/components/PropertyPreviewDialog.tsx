@@ -56,6 +56,11 @@ export function PropertyPreviewDialog({
         />
       ) : null}
       {property ? <PropertyDossierContent propertyId={property.id} /> : null}
+      {!property && !propertyQuery.isLoading && !propertyQuery.isError ? (
+        // data=null without an error (e.g. a 200-empty response): never show a
+        // blank dialog body pretending the record exists.
+        <ErrorState title="العقار غير موجود" description="ربما تم حذف العقار أو لا تملك صلاحية الوصول إليه." />
+      ) : null}
     </EntityPreviewDialog>
   );
 }

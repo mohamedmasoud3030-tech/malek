@@ -37,18 +37,29 @@ export function Dropdown({
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const selected = options.find((option) => option.id === value);
+
+  const closeAndRestoreFocus = () => {
+    setOpen(false);
+    // WCAG 2.4.3: closing via Escape/selection must return focus to the
+    // control that opened the menu; otherwise the focused option unmounts and
+    // focus drops to <body>.
+    triggerRef.current?.focus();
+  };
 
   useEffect(() => {
     if (!open) return;
 
     function onPointerDown(event: PointerEvent) {
       if (rootRef.current?.contains(event.target as Node)) return;
+      // Outside dismissal: the user is moving to another control — do not
+      // steal focus back to the trigger.
       setOpen(false);
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key === 'Escape') closeAndRestoreFocus();
     }
 
     document.addEventListener('pointerdown', onPointerDown);
@@ -63,6 +74,7 @@ export function Dropdown({
     <div ref={rootRef} className={cn('relative min-w-0', className)}>
       {label ? <p className="mb-1.5 text-xs font-bold text-muted-foreground">{label}</p> : null}
       <Button
+        ref={triggerRef}
         type="button"
         variant="outline"
         disabled={disabled}
@@ -100,7 +112,7 @@ export function Dropdown({
                 onClick={() => {
                   if (option.disabled) return;
                   onChange(option.id);
-                  setOpen(false);
+                  closeAndRestoreFocus();
                 }}
               >
                 {option.icon ? <span className="mt-0.5 shrink-0">{option.icon}</span> : null}
