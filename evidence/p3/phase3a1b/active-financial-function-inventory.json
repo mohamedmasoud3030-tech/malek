@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T08:23:25.398Z",
+  "generatedAt": "2026-08-15T17:07:34.149Z",
   "scope": "phase3a1b",
   "preRemediation": {
     "note": "replayed full chain EXCLUDING the Phase 3A-1B migration — the active definitions as found on origin/main",

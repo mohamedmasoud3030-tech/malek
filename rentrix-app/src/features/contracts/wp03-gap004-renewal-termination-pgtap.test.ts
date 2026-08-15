@@ -1,35 +1,12 @@
 /**
- * P1 — Docker-free verification of the evolved release-lifecycle pgTAP suite.
- *
- * The authoritative gate (release-blocker-database CI job) runs supabase/tests/
- * release_lifecycle_rehearsal.sql via `supabase test db` after applying every
- * migration. Locally we cannot run Docker, so this suite executes the REAL
- * suite file through the P1 full-chain replay (migrations incl. P0+P1) with a
- * pgTAP shim, mirroring the P0 release-gate repro harness semantics:
- * per-statement autocommit, session-scoped JWT/role, numeric-typed `is` compare.
- *
- * It asserts the evolved fixture yields ZERO failing assertions and ZERO
- * top-level statement errors — i.e. the server-derived settlement tuple
- * (750 / 75 / 50 / 0 / 625) holds on the exact code CI will run.
+ * Runs supabase/tests/wp03_gap004_renewal_termination_authority.sql against a
+ * full PGlite replay using a faithful pgTAP shim, so the renewal/termination /
+ * cross-company authority suite is proven locally (not only in Docker CI).
  */
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { createFullReplayedDatabase, repoRoot } from './replay-bootstrap';
-import type { PGlite } from '@electric-sql/pglite';
-
-const SUITE = 'release_lifecycle_rehearsal.sql';
-
-const ENRICH_AUTH = `
-alter table auth.users add column if not exists instance_id uuid;
-alter table auth.users add column if not exists aud text;
-alter table auth.users add column if not exists role text;
-alter table auth.users add column if not exists encrypted_password text;
-alter table auth.users add column if not exists email_confirmed_at timestamptz;
-alter table auth.users add column if not exists created_at timestamptz;
-alter table auth.users add column if not exists updated_at timestamptz;
-alter table auth.users add column if not exists raw_user_meta_data jsonb;
-`;
+import { describe, expect, it } from 'vitest';
+import { createFullReplayedDatabase, repoRoot } from '@/p1/replay-bootstrap';
 
 const SHIM = `
 create schema if not exists pgtap;
@@ -44,14 +21,12 @@ begin
   return (case when p_ok then 'ok' else 'not ok' end) || ' - ' || coalesce(p_name,'');
 end $$;
 create or replace function pgtap.plan(n integer) returns text language sql as $f$ select '1..'||n $f$;
-create or replace function pgtap.diag(msg text) returns text language sql as $f$ select msg $f$;
 create or replace function pgtap.ok(cond boolean, name text default null) returns text
 language plpgsql as $f$ begin return pgtap._rec(coalesce(cond,false), name); end $f$;
 create or replace function pgtap.is(a anyelement, b anyelement, name text default null) returns text
 language plpgsql as $f$
 declare pass boolean;
 begin
-  -- numeric-aware compare so 25.00 == 25 (pgTAP compares by type, not text)
   if a is null or b is null then
     pass := (a is null and b is null);
   elsif a::text ~ '^-?\\d+(\\.\\d+)?$' and b::text ~ '^-?\\d+(\\.\\d+)?$' then
@@ -64,6 +39,8 @@ begin
 end $f$;
 create or replace function pgtap.has_table(s text, t text, name text default null) returns text
 language plpgsql as $f$ begin return pgtap._rec( to_regclass(quote_ident(s)||'.'||quote_ident(t)) is not null, name ); end $f$;
+create or replace function pgtap.has_view(s text, t text, name text default null) returns text
+language plpgsql as $f$ begin return pgtap._rec( exists (select 1 from pg_views where schemaname = s and viewname = t), name ); end $f$;
 create or replace function pgtap.lives_ok(q text, name text default null) returns text
 language plpgsql as $f$
 begin
@@ -80,10 +57,13 @@ begin
     return pgtap._rec( ( (errcode is null or st = errcode) and (errmsg is null or msg ilike '%'||errmsg||'%') ), name || ' [threw '||st||']' );
   end;
 end $f$;
+create or replace function pgtap.pass(name text default null) returns text
+language plpgsql as $f$ begin return pgtap._rec(true, name); end $f$;
+create or replace function pgtap.fail(name text default null) returns text
+language plpgsql as $f$ begin return pgtap._rec(false, name); end $f$;
 create or replace function pgtap.finish() returns setof text language plpgsql as $f$ begin return; end $f$;
 `;
 
-/** Dollar-quote / quote / comment aware split on top-level semicolons. */
 function splitStatements(sql: string): string[] {
   const out: string[] = [];
   let cur = '';
@@ -135,64 +115,50 @@ function transformSuite(sql: string): string {
   return s;
 }
 
-async function closeQuietly(db: PGlite) { try { await (db as any).close?.(); } catch { /* noop */ } }
-
-describe('p1 release rehearsal verification (full-chain replay: P0+P1 applied)', () => {
-  it(`produces ZERO failing assertions in ${SUITE} with server-derived settlement amounts`, async () => {
-    const { db, failed: migFailures } = await createFullReplayedDatabase();
-    expect(migFailures, JSON.stringify(migFailures).slice(0, 500)).toEqual([]);
-
+describe('WP-03 GAP-004 renewal/termination/cross-company pgTAP gate (faithful shim)', () => {
+  it('runs wp03_gap004_renewal_termination_authority.sql with zero failures', async () => {
+    const replay = await createFullReplayedDatabase({ writeEvidence: false });
+    expect(replay.failed).toEqual([]);
+    const { db } = replay;
     await db.exec(SHIM);
-    await db.exec(ENRICH_AUTH);
-    // Supabase-local-dev default privilege parity (harness-only, this gate
-    // only): the Docker `supabase test db` image grants broad table/sequence/
-    // function privileges to `authenticated` and enforces access with RLS
-    // (see security_drift_checks.sql: "Supabase grants broad table privileges
-    // and relies on RLS as the enforcement layer"). The raw migration replay
-    // alone never GRANTs `owner_settlements` to authenticated, so the suite's
-    // own payload subselects (e.g. jsonb_build_object('settlement_id',
-    //   (select id from public.owner_settlements ...)))
-    // fail with plain 42501 ACL errors HERE but not in the Docker gate
-    // (proven on #1276: the same assertions pass there). Probe evidence:
-    // src/p1 probes — approve/pay RPCs themselves work perfectly as
-    // `authenticated` (SECURITY DEFINER); identical posture pre/post P1.
-    // RLS (incl. the P0 RESTRICTIVE policies) remains the enforcement layer.
     await db.exec(`
-      grant select, insert, update, delete on all tables in schema public to authenticated;
-      grant usage, select on all sequences in schema public to authenticated;
-      grant execute on all functions in schema public to authenticated;
+      grant select, insert, update, delete on all tables in schema public to anon, authenticated;
+      -- Match production: GAP-004 part 3 revokes direct contract writes so the
+      -- API cannot bypass the lifecycle RPCs. The broad grant above exists only
+      -- to let the shim run the RPC fixtures; re-apply the contracts write
+      -- revocation so the direct-write negatives reflect the real boundary.
+      revoke insert, update, delete, truncate, references on table public.contracts from authenticated, anon;
+      grant usage, select on all sequences in schema public to anon, authenticated;
+      grant usage on schema extensions to anon, authenticated;
     `);
-    await db.exec('truncate pgtap.results;');
     await db.exec('set search_path = public, pgtap, extensions;');
 
-    const stmts = splitStatements(transformSuite(readFileSync(join(repoRoot, 'supabase', 'tests', SUITE), 'utf8')));
+    const stmts = splitStatements(
+      transformSuite(readFileSync(join(repoRoot, 'supabase', 'tests', 'wp03_gap004_renewal_termination_authority.sql'), 'utf8')),
+    );
     const topErrors: { idx: number; snippet: string; error: string }[] = [];
     for (let idx = 0; idx < stmts.length; idx++) {
       const st = stmts[idx];
-      if (/^(begin|commit|rollback)\s*$/i.test(st)) continue; // autocommit harness
+      if (/^(begin|commit|rollback)\s*$/i.test(st)) continue;
       try {
         await db.exec(st);
       } catch (e) {
-        topErrors.push({ idx, snippet: st.replace(/\s+/g, ' ').slice(0, 170), error: String(e).slice(0, 260) });
+        topErrors.push({ idx, snippet: st.replace(/\s+/g, ' ').slice(0, 200), error: String(e).slice(0, 300) });
         try { await db.exec('rollback;'); } catch { /* noop */ }
         try { await db.exec('reset role;'); await db.exec("select set_config('request.jwt.claims','',false);"); } catch { /* noop */ }
       }
     }
+    if (topErrors.length > 0) console.error('topErrors:', topErrors);
 
-    const { rows } = await db.query<{ num: number; ok: boolean; name: string }>('select num, ok, name from pgtap.results order by num');
-    const failed = rows.filter((r) => !r.ok).map((r) => `#${r.num} ${r.name}`);
-    console.error(
-      [
-        `=== ${SUITE} on full-chain replay (P0+P1) ===`,
-        `assertions: ${rows.length} | failed: ${failed.length} | top-level errors: ${topErrors.length}`,
-        ...failed.slice(0, 20),
-        ...topErrors.slice(0, 10).map((t) => `stmt#${t.idx} ${t.snippet} → ${t.error}`),
-      ].join('\n'),
-    );
-    await closeQuietly(db);
+    const { rows } = await db.query<{ ok: boolean; name: string }>('select ok, name from pgtap.results order by num');
+    const failed = rows.filter((r) => !r.ok).map((r) => `${r.name}`);
+    console.log('pgTAP results:', rows.length, 'failed:', failed.length);
+    if (failed.length) console.error('FAILED ASSERTIONS:', failed);
 
-    expect(topErrors, JSON.stringify(topErrors.slice(0, 5), null, 2)).toEqual([]);
-    expect(failed, JSON.stringify(failed.slice(0, 10), null, 2)).toEqual([]);
-    expect(rows.length).toBe(73); // 66 baseline + 4 GAP-009 governed deposit-flow + 3 GAP-004 lifecycle-chain steps
+    await replay.db.close();
+
+    expect(topErrors).toEqual([]);
+    expect(failed).toEqual([]);
+    expect(rows.length).toBeGreaterThanOrEqual(30);
   }, 420_000);
 });

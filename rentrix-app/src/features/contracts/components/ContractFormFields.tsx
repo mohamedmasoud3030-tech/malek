@@ -15,7 +15,6 @@ import {
   buildContractUnitOptionLabel,
   contractSchema,
   contractStatusLabels,
-  contractStatusValues,
   isUnitSelectableForContract,
   paymentCycleLabels,
   paymentCycleValues,
@@ -81,6 +80,7 @@ export function ContractFormFields({
 }: ContractFormFieldsProps) {
   const {
     form,
+    isEdit,
     submitting,
     propertiesQuery,
     peopleQuery,
@@ -93,6 +93,7 @@ export function ContractFormFields({
     currentLinkedUnitId,
   } = controller;
   const [step, setStep] = useState(0);
+  const status = form.watch('status');
   const propertyId = form.watch('property_id');
   const unitId = form.watch('unit_id');
   const tenantId = form.watch('tenant_id');
@@ -252,15 +253,25 @@ export function ContractFormFields({
             </Select>
           </EntityForm.Field>
 
-          <EntityForm.Field label="الحالة" error={form.formState.errors.status?.message}>
-            <Select {...form.register('status')}>
-              {contractStatusValues.map((status) => (
-                <option key={status} value={status}>
-                  {contractStatusLabels[status]}
-                </option>
-              ))}
-            </Select>
-          </EntityForm.Field>
+          {!isEdit ? (
+            <EntityForm.Field
+              label="الحالة"
+              description="يُنشأ العقد كمسودة، ثم يمر بدورة الاعتماد (إرسال → اعتماد → تفعيل) قبل أن يصبح نشطاً."
+            >
+              <Select {...form.register('status')} disabled>
+                <option value="draft">مسودة</option>
+              </Select>
+            </EntityForm.Field>
+          ) : (
+            <EntityForm.Field
+              label="الحالة"
+              description="لا يمكن تغيير حالة العقد من نموذج التعديل العام؛ تنتقل الحالة فقط عبر إجراءات دورة الحياة المخصصة (الاعتماد/التفعيل/الإنهاء/التجديد)."
+            >
+              <Select {...form.register('status')} disabled>
+                <option value={status}>{contractStatusLabels[status as keyof typeof contractStatusLabels] ?? status}</option>
+              </Select>
+            </EntityForm.Field>
+          )}
         </div>
 
         {selectedProperty ? (

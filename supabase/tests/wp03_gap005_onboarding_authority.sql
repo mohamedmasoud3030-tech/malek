@@ -1,24 +1,27 @@
 -- =============================================================================
 -- WP-03 / GAP-005 — Authoritative, backend-driven company onboarding state.
--- Canonical rules: OPS-004, DOM-002, DOM-003; locked decision D12.
+-- Canonical rules: OPS-004, DOM-002, DOM-003, DOM-010; locked decision D12.
 -- Proves: templates exist; state is company-scoped; NON_WAIVABLE identity/
 -- authority gates fail closed; ADMIN_WAIVABLE steps require an admin + reason;
--- completion is a single audited company fact; cross-company isolation.
+-- completion is server-validated (incomplete onboarding cannot be marked
+-- complete); waiver revoke/reset preserve durable audit history
+-- (company_onboarding_events) instead of destroying it; cross-company isolation
+-- including the audit ledger; completion requires an authorized role.
 -- =============================================================================
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(38);
 
 insert into public.companies (id, name, slug, currency, is_active) values
   ('0a000000-0000-4000-8000-0000000000d1', 'GAP005 Company A', 'gap005-a', 'OMR', true),
   ('0b000000-0000-4000-8000-0000000000d1', 'GAP005 Company B', 'gap005-b', 'OMR', true)
 on conflict (id) do update set is_active = true;
 
-insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data) values
-  ('0a000000-0000-0000-0000-000000000dd1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'gap005-admin@test.invalid', 'x', now(), now(), now(), '{}', '{}'),
-  ('0a000000-0000-0000-0000-000000000dd2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'gap005-manager@test.invalid', 'x', now(), now(), now(), '{}', '{}'),
-  ('0b000000-0000-0000-0000-000000000dd1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'gap005-b@test.invalid', 'x', now(), now(), now(), '{}', '{}')
+insert into auth.users (id, email, raw_app_meta_data) values
+  ('0a000000-0000-0000-0000-000000000dd1', 'gap005-admin@test.invalid', '{}'),
+  ('0a000000-0000-0000-0000-000000000dd2', 'gap005-manager@test.invalid', '{}'),
+  ('0b000000-0000-0000-0000-000000000dd1', 'gap005-b@test.invalid', '{}')
 on conflict (id) do nothing;
 
 insert into public.users (id, email, name, role, status, is_active) values
@@ -37,9 +40,11 @@ on conflict (company_id, user_id) do update set role='ADMIN';
 select has_table('public', 'onboarding_requirement_templates', 'templates table');
 select has_table('public', 'company_onboarding_waivers', 'waivers table');
 select has_table('public', 'company_onboarding_completion', 'completion table');
+select has_table('public', 'company_onboarding_events', 'append-only audit events table');
 select has_function('public', 'get_company_onboarding_state', array[]::text[]);
 select has_function('public', 'waive_onboarding_requirement_atomic', array['text','text','text']);
 select has_function('public', 'complete_company_onboarding_atomic', array[]::text[]);
+select has_function('public', 'reset_company_onboarding_atomic', array[]::text[]);
 
 -- ── Admin context for company A ──────────────────────────────────────────────
 select set_config('request.jwt.claims', '{"sub":"0a000000-0000-0000-0000-000000000dd1","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"0a000000-0000-4000-8000-0000000000d1"}}', true);
@@ -91,61 +96,158 @@ select is(
 );
 
 -- ── 4. Non-admin cannot waive
+reset role;
 select set_config('request.jwt.claims', '{"sub":"0a000000-0000-0000-0000-000000000dd2","role":"authenticated","app_metadata":{"user_role":"MANAGER","company_id":"0a000000-0000-4000-8000-0000000000d1"}}', true);
+set local role authenticated;
 select throws_ok(
   $$ select public.waive_onboarding_requirement_atomic('contract', 'تخطي') $$,
   '42501', null,
   '9. non-admin waiver is rejected'
 );
 
--- ── 5. Completion is a single audited company fact
+-- ── 5. Completion is server-validated: incomplete onboarding cannot complete
+reset role;
 select set_config('request.jwt.claims', '{"sub":"0a000000-0000-0000-0000-000000000dd1","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"0a000000-0000-4000-8000-0000000000d1"}}', true);
+set local role authenticated;
+select throws_ok(
+  $$ select public.complete_company_onboarding_atomic() $$,
+  '23514', 'ONBOARDING_INCOMPLETE_REQUIREMENT',
+  '10. completion fails while NON_WAIVABLE owner/property evidence is missing'
+);
+-- Provide the NON_WAIVABLE data (owner + property) plus a unit as the table
+-- owner (RLS writes are RPC-only). Contract lifecycle is not the subject of
+-- this onboarding test, so a direct data fixture is acceptable; the contract
+-- gate is satisfied via an ADMIN_WAIVABLE waiver below.
+reset role;
+insert into public.owners (id, full_name, company_id) values
+  ('0a000000-0000-0000-0000-000000000ee1', 'Company A Owner', '0a000000-0000-4000-8000-0000000000d1');
+insert into public.properties (id, title, type, address, status, company_id) values
+  ('0a000000-0000-0000-0000-000000000ee2', 'Company A Property', 'residential', 'C', 'active', '0a000000-0000-4000-8000-0000000000d1');
+insert into public.units (id, name, property_id, unit_number, status, company_id) values
+  ('0a000000-0000-0000-0000-000000000ee3', 'U1', '0a000000-0000-0000-0000-000000000ee2', 'U-1', 'available', '0a000000-0000-4000-8000-0000000000d1');
+select set_config('request.jwt.claims', '{"sub":"0a000000-0000-0000-0000-000000000dd1","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"0a000000-0000-4000-8000-0000000000d1"}}', true);
+set local role authenticated;
+select lives_ok(
+  $$ select public.waive_onboarding_requirement_atomic('contract', 'العقد الأول يصدر لاحقاً', 'ref-contract') $$,
+  '11. admin waives the ADMIN_WAIVABLE contract gate'
+);
 select lives_ok(
   $$ select public.complete_company_onboarding_atomic() $$,
-  '10. admin records onboarding completion'
+  '12. completion succeeds once all required gates are satisfied'
 );
 select is(
   (public.get_company_onboarding_state()->'completed')::boolean,
   true,
-  '11. completion is visible as a company-scoped fact'
+  '13. completion is visible as a company-scoped fact'
+);
+select is(
+  (select count(*)::int from public.company_onboarding_events where company_id = '0a000000-0000-4000-8000-0000000000d1' and action = 'COMPLETE'),
+  1,
+  '14. completion leaves an audit event'
+);
+select is(
+  (select count(*)::int from public.company_onboarding_events where company_id = '0a000000-0000-4000-8000-0000000000d1' and action = 'WAIVE'),
+  2,
+  '15. waiver grants leave audit events (unit + contract)'
 );
 
--- ── 6. Waiver revoke restores a step; reset clears both
+-- ── 6. Waiver revoke preserves history (no destructive delete) ───────────────
 select lives_ok(
   $$ select public.revoke_onboarding_waiver_atomic('unit') $$,
-  '12. admin revokes a waiver'
+  '16. admin revokes a waiver'
 );
 select is(
   (public.get_company_onboarding_state()->'requirements'->2->>'waived'),
   'false',
-  '13. revoked waiver is cleared'
+  '17. revoked waiver is reported as not effective'
 );
+select is(
+  (select count(*)::int from public.company_onboarding_waivers
+    where company_id = '0a000000-0000-4000-8000-0000000000d1' and requirement_code = 'unit' and revoked_at is not null),
+  1,
+  '18. revoked waiver row is retained (history preserved, not deleted)'
+);
+select is(
+  (select count(*)::int from public.company_onboarding_events
+    where company_id = '0a000000-0000-4000-8000-0000000000d1' and action = 'REVOKE'),
+  1,
+  '19. revoke leaves an audit event'
+);
+
+-- ── 7. Reset preserves history and clears completion ─────────────────────────
 select lives_ok(
   $$ select public.reset_company_onboarding_atomic() $$,
-  '14. admin resets onboarding state'
+  '20. admin resets onboarding state'
 );
 select is(
   (public.get_company_onboarding_state()->'completed')::boolean,
   false,
-  '15. reset clears completion'
+  '21. reset clears completion'
+);
+select is(
+  (select count(*)::int from public.company_onboarding_events
+    where company_id = '0a000000-0000-4000-8000-0000000000d1' and action = 'RESET'),
+  1,
+  '22. reset leaves an audit event'
+);
+select is(
+  (select count(*)::int from public.company_onboarding_waivers
+    where company_id = '0a000000-0000-4000-8000-0000000000d1' and revoked_at is not null),
+  2,
+  '23. reset revokes (retains) all waiver grant history'
 );
 
--- ── 7. Cross-company isolation
+-- ── 8. Cross-company isolation (state, waivers, completion and audit) ────────
+reset role;
 select set_config('request.jwt.claims', '{"sub":"0b000000-0000-0000-0000-000000000dd1","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"0b000000-0000-4000-8000-0000000000d1"}}', true);
+set local role authenticated;
 select is(
   (public.get_company_onboarding_state()->>'company_id'),
   '0b000000-0000-4000-8000-0000000000d1',
-  '16. company B state resolves to company B'
+  '24. company B state resolves to company B'
 );
 select is(
   (public.get_company_onboarding_state()->'completed')::boolean,
   false,
-  '17. company B does not inherit company A completion'
+  '25. company B does not inherit company A completion'
 );
 select is(
   (public.get_company_onboarding_state()->'requirements'->2->>'waived'),
   'false',
-  '18. company B does not inherit company A waivers'
+  '26. company B does not inherit company A waivers'
+);
+select is(
+  (select count(*)::int from public.company_onboarding_events where company_id = '0b000000-0000-4000-8000-0000000000d1'),
+  0,
+  '27. company B does not see company A audit events (RLS)'
+);
+
+-- ── 9. Completion remains impossible for an empty company (company B) ────────
+select throws_ok(
+  $$ select public.complete_company_onboarding_atomic() $$,
+  '23514', 'ONBOARDING_INCOMPLETE_REQUIREMENT',
+  '28. company B (no evidence) cannot complete onboarding'
+);
+select is(
+  (select count(*)::int from public.company_onboarding_completion where company_id = '0b000000-0000-4000-8000-0000000000d1'),
+  0,
+  '29. no completion fact is recorded for company B'
+);
+-- Add company B owner/property/unit as the table owner; the contract gate
+-- still has no data or waiver, so completion must keep failing.
+reset role;
+insert into public.owners (id, full_name, company_id) values
+  ('0b000000-0000-0000-0000-000000000ee1', 'Company B Owner', '0b000000-0000-4000-8000-0000000000d1');
+insert into public.properties (id, title, type, address, status, company_id) values
+  ('0b000000-0000-0000-0000-000000000ee2', 'Company B Property', 'residential', 'D', 'active', '0b000000-0000-4000-8000-0000000000d1');
+insert into public.units (id, name, property_id, unit_number, status, company_id) values
+  ('0b000000-0000-0000-0000-000000000ee3', 'UB1', '0b000000-0000-0000-0000-000000000ee2', 'UB-1', 'available', '0b000000-0000-4000-8000-0000000000d1');
+select set_config('request.jwt.claims', '{"sub":"0b000000-0000-0000-0000-000000000dd1","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"0b000000-0000-4000-8000-0000000000d1"}}', true);
+set local role authenticated;
+select throws_ok(
+  $$ select public.complete_company_onboarding_atomic() $$,
+  '23514', 'ONBOARDING_INCOMPLETE_REQUIREMENT',
+  '30. company B still cannot complete: contract gate has no data or waiver'
 );
 
 reset role;
