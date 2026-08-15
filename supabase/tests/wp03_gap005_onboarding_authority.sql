@@ -8,7 +8,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(18);
+select plan(24);
 
 insert into public.companies (id, name, slug, currency, is_active) values
   ('0a000000-0000-4000-8000-0000000000d1', 'GAP005 Company A', 'gap005-a', 'OMR', true),
@@ -29,7 +29,7 @@ on conflict (id) do update set role='ADMIN', status='ACTIVE', is_active=true;
 
 insert into public.company_members (company_id, user_id, role) values
   ('0a000000-0000-4000-8000-0000000000d1', '0a000000-0000-0000-0000-000000000dd1', 'ADMIN'),
-  ('0a000000-0000-4000-8000-0000000000d1', '0a000000-0000-0000-0000-000000000dd2', 'MANAGER'),
+  ('0a000000-0000-4000-8000-0000000000d1', '0a000000-0000-0000-0000-000000000dd2', 'MEMBER'),
   ('0b000000-0000-4000-8000-0000000000d1', '0b000000-0000-0000-0000-000000000dd1', 'ADMIN')
 on conflict (company_id, user_id) do update set role='ADMIN';
 
@@ -148,5 +148,6 @@ select is(
   '18. company B does not inherit company A waivers'
 );
 
+reset role;
 select * from finish();
 rollback;
