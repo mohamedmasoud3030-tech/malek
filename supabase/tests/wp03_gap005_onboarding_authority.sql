@@ -133,7 +133,7 @@ select is(
 -- ── 7. Cross-company isolation
 select set_config('request.jwt.claims', '{"sub":"0b000000-0000-0000-0000-000000000dd1","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"0b000000-0000-4000-8000-0000000000d1"}}', true);
 select is(
-  (public.get_company_onboarding_state()->'company_id')::text,
+  (public.get_company_onboarding_state()->>'company_id'),
   '0b000000-0000-4000-8000-0000000000d1',
   '16. company B state resolves to company B'
 );
