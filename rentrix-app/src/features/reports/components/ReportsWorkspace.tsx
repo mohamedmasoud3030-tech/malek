@@ -270,7 +270,10 @@ export function ReportsWorkspace({
         </div>
       </section>
 
-      {/* Internal Sub-navigation Tabs */}
+      {/* Internal Sub-navigation Tabs — these are view switchers: every tab
+          controls the single section panel rendered below (id `section-panel-accounting`
+          / `section-panel-analytics`), so aria-controls must reference that real
+          panel instead of a per-view id that does not exist (axe aria-valid-attr-value). */}
       {activeSection === 'accounting' && (
         <div className="border-b border-border/50 pb-2">
           <SectionTabs
@@ -278,6 +281,7 @@ export function ReportsWorkspace({
             activeId={activeView}
             onChange={handleAccountingViewChange}
             ariaLabel="أقسام فرعية للمحاسبة"
+            panelId="section-panel-accounting"
           />
         </div>
       )}
@@ -288,6 +292,7 @@ export function ReportsWorkspace({
             activeId={activeView}
             onChange={handleAnalyticsViewChange}
             ariaLabel="أقسام فرعية للتحليلات"
+            panelId="section-panel-analytics"
           />
         </div>
       )}

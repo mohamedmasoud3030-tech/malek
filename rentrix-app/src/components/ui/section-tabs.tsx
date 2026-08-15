@@ -12,6 +12,14 @@ type SectionTabsProps<TId extends string> = Readonly<{
   activeId: TId;
   onChange: (id: NoInfer<TId>) => void;
   ariaLabel: string;
+  /**
+   * ID of the tabpanel this tab list controls. When unset each tab's
+   * aria-controls is `section-panel-${item.id}` (one panel per tab). View
+   * switchers that share a single panel (e.g. report sub-views rendered inside
+   * one SectionTabPanel) must pass the real panel id so aria-controls never
+   * points at an element that does not exist (axe aria-valid-attr-value).
+   */
+  panelId?: string;
 }>;
 
 /**
@@ -21,7 +29,7 @@ type SectionTabsProps<TId extends string> = Readonly<{
  * arrows/Home/End move focus and activate another section. RTL swaps the
  * physical left/right direction so arrow movement remains visually natural.
  */
-export function SectionTabs<TId extends string>({ items, activeId, onChange, ariaLabel }: SectionTabsProps<TId>) {
+export function SectionTabs<TId extends string>({ items, activeId, onChange, ariaLabel, panelId }: SectionTabsProps<TId>) {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const focusAndSelect = (index: number) => {
@@ -75,7 +83,7 @@ export function SectionTabs<TId extends string>({ items, activeId, onChange, ari
               role="tab"
               tabIndex={isActive ? 0 : -1}
               aria-selected={isActive}
-              aria-controls={`section-panel-${item.id}`}
+              aria-controls={panelId ?? `section-panel-${item.id}`}
               id={`section-tab-${item.id}`}
               className={cn(
                 'flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-2.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 motion-reduce:transition-none',

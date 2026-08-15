@@ -49,39 +49,42 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
       )}
 
       {!isLoading && rows.length > 0 && (
-        <div className="dashboard-queue-list" role="list">
+        /* role="listitem" is invalid on <button>/<a> (axe aria-allowed-role):
+           the list is a real <ul> and each row is wrapped in the <li> that
+           owns the listitem semantics. */
+        <ul className="dashboard-queue-list" role="list">
           {rows.map((row) => {
             const tone = row.daysRemaining <= 7 ? 'danger' : row.daysRemaining <= 14 ? 'warning' : 'success';
             return (
-              <button
-                key={row.id}
-                type="button"
-                onClick={() =>
-                  (navigate as unknown as (opts: unknown) => void)({
-                    to: '/contracts/$contractId',
-                    params: { contractId: row.id },
-                    state: { backgroundLocation: location } as unknown as Record<string, unknown>,
-                  })
-                }
-                className={cn('dashboard-queue-row w-full text-start', row.daysRemaining <= 7 && 'dashboard-queue-row--danger', row.daysRemaining > 7 && row.daysRemaining <= 14 && 'dashboard-queue-row--warning')}
-                data-dashboard-queue-link
-                role="listitem"
-              >
-                <span className="dashboard-queue-row__main">
-                  <span className="dashboard-queue-row__title">{row.tenantName}</span>
-                  <span className="dashboard-queue-row__meta">{row.location}</span>
-                </span>
-                <span className="dashboard-queue-row__side">
-                  <StatusBadge tone={tone}>
-                    <Clock className="size-3" aria-hidden="true" />
-                    {row.daysRemaining} يوم
-                  </StatusBadge>
-                  <span className="dashboard-queue-row__date">ينتهي: {date(row.endDate)}</span>
-                </span>
-              </button>
+              <li key={row.id} role="listitem" className="min-w-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    (navigate as unknown as (opts: unknown) => void)({
+                      to: '/contracts/$contractId',
+                      params: { contractId: row.id },
+                      state: { backgroundLocation: location } as unknown as Record<string, unknown>,
+                    })
+                  }
+                  className={cn('dashboard-queue-row w-full text-start', row.daysRemaining <= 7 && 'dashboard-queue-row--danger', row.daysRemaining > 7 && row.daysRemaining <= 14 && 'dashboard-queue-row--warning')}
+                  data-dashboard-queue-link
+                >
+                  <span className="dashboard-queue-row__main">
+                    <span className="dashboard-queue-row__title">{row.tenantName}</span>
+                    <span className="dashboard-queue-row__meta">{row.location}</span>
+                  </span>
+                  <span className="dashboard-queue-row__side">
+                    <StatusBadge tone={tone}>
+                      <Clock className="size-3" aria-hidden="true" />
+                      {row.daysRemaining} يوم
+                    </StatusBadge>
+                    <span className="dashboard-queue-row__date">ينتهي: {date(row.endDate)}</span>
+                  </span>
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </section>
   );

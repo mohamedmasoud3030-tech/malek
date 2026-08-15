@@ -87,7 +87,7 @@ export function MaintenanceE2EFixture() {
   const urgentCount = fixtureRows.filter((row) => row.priority === 'urgent').length;
 
   return (
-    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-maintenance-workspace>
+    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-maintenance-workspace>
       <PageLayout dir="rtl" size="wide" visualVariant="malek-pro">
         <PageHeader
           title="طلبات الصيانة"

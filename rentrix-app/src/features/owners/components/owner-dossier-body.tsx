@@ -117,7 +117,9 @@ export function OwnerDossierBody({
                 <UserRoundCog className="size-6" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <CardTitle className="text-lg sm:text-xl">{getOwnerDisplayName(owner)}</CardTitle>
+                {/* h2: the owner's name is the page-level identity, directly under
+                    the page h1 (CardTitle is h3 and would skip a level — axe heading-order). */}
+                <h2 className="text-lg font-semibold leading-6 sm:text-xl">{getOwnerDisplayName(owner)}</h2>
                 <CardDescription className="mt-1">بيانات التواصل والهوية الأساسية للمالك.</CardDescription>
               </div>
             </div>
@@ -161,7 +163,12 @@ export function OwnerDossierBody({
             rows={properties}
             mobileVisibleSecondaryKey="status"
             columns={[
-              { key: 'title', header: 'العقار', render: (property) => <Link to="/properties/$propertyId" params={{ propertyId: property.id }} className="font-semibold text-primary hover:underline">{property.title}</Link> },
+              // The register itself is the navigation affordance (row click on desktop,
+              // the primary button on the mobile card). Rendering an inner <Link> here
+              // would nest interactive controls inside the mobile card's button
+              // (invalid HTML, duplicate focus stops) and shrink the target below the
+              // 44px floor, so the identity cell is plain text like every other register.
+              { key: 'title', header: 'العقار', render: (property) => <span className="font-semibold text-primary">{property.title}</span> },
               { key: 'address', header: 'العنوان', render: (property) => property.address ?? '—' },
               { key: 'ownership', header: 'نسبة الملكية', render: (property) => {
                 const pct = property.property_owners.find((link) => link.owner_id === owner.id && !link.ends_on)?.ownership_percentage ?? 100;

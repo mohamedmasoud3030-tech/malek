@@ -435,6 +435,18 @@
   gap: var(--dashboard-cluster-gap);
 }
 
+/* The KPI grid is a real <ul role="list"> — each <li> is the grid item and
+   stretches so every card keeps equal height; the link fills the item. */
+[data-visual-contract='v2'] .dashboard-kpi-grid > li {
+  min-width: 0;
+  display: flex;
+}
+
+[data-visual-contract='v2'] .dashboard-kpi-grid > li > a[data-dashboard-kpi-link] {
+  width: 100%;
+  display: flex;
+}
+
 [data-visual-contract='v2'] .dashboard-kpi-card {
   min-block-size: 138px;
   height: 100%;
@@ -624,6 +636,17 @@
   display: grid;
   gap: 0.5rem;
   margin-block-start: 0.75rem;
+}
+
+/* The queue list is a real <ul role="list"> — each <li> is the grid item and
+   the interactive row (button/link) fills it. */
+[data-visual-contract='v2'] .dashboard-queue-list > li {
+  min-width: 0;
+  display: flex;
+}
+
+[data-visual-contract='v2'] .dashboard-queue-list > li > .dashboard-queue-row {
+  width: 100%;
 }
 
 [data-visual-contract='v2'] .dashboard-queue-row {

@@ -33,6 +33,11 @@ const SURFACES = [
   { name: 'maintenance', url: '/login?e2e-maintenance-workspace=1', ready: 'main[data-e2e-maintenance-workspace]', rtlSelector: '[data-e2e-maintenance-workspace]' },
   { name: 'settings', url: '/login?e2e-settings-workspace=1', ready: 'main[data-e2e-settings-workspace]', rtlSelector: 'main[data-e2e-settings-workspace]' },
   { name: 'reports', url: '/login?e2e-reports-workspace=1', ready: 'main[data-e2e-reports-workspace]', rtlSelector: 'main[data-e2e-reports-workspace]' },
+  // Owner detail dossier: the mobile register card with per-row actions. Added
+  // after the ≥44px touch matrix missed a 30px property-title <Link> nested
+  // inside the mobile card's primary button (invalid interactive nesting +
+  // sub-floor target) on this surface.
+  { name: 'owners', url: '/login?e2e-owner-detail-workspace=1', ready: 'main[data-e2e-owner-detail-workspace]', rtlSelector: 'main[data-e2e-owner-detail-workspace]' },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -373,6 +378,121 @@ test('WP-06 PageHeaderActions — mandatory overflow trigger and bottom sheet be
   await expect(sheet).toHaveCount(0, { timeout: 10_000 });
 
   await expectNoHorizontalOverflow(page, 'page-header-actions-320-after');
+});
+
+test('WP-06 shared Dialog — aria-modal, focus trap, Escape close, focus returns to opener (no DialogTrigger anywhere)', async ({ page }) => {
+  // Every dialog in the app is opened from a plain button via state — there is
+  // no <DialogTrigger> in the codebase — so Radix's close-autofocus has a null
+  // triggerRef and used to drop focus to <body>. The shared DialogContent now
+  // captures the opening element (onOpenAutoFocus) and restores it on close.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/login?e2e-form-contract=1', { waitUntil: 'domcontentloaded' });
+  const dialog = page.locator('[data-dialog-content]').first();
+  await expect(dialog, 'entity form dialog must open').toBeVisible({ timeout: 15_000 });
+
+  await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  await expect(dialog).toHaveAttribute('role', 'dialog');
+
+  // Initial focus must be inside the dialog
+  await expect
+    .poll(() => dialog.evaluate((el) => el.contains(document.activeElement)), { timeout: 5_000 })
+    .toBe(true);
+
+  // Focus must not escape the dialog while open
+  for (let i = 0; i < 8; i++) {
+    await page.keyboard.press('Tab');
+    const inside = await dialog.evaluate((el) => el.contains(document.activeElement));
+    expect(inside, `focus escaped dialog on Tab #${i}`).toBe(true);
+  }
+
+  // Escape closes (programmatic initial open has no opener — body focus is fine here)
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0, { timeout: 5_000 });
+
+  // Reopen through the real button — this is the trigger-opened flow
+  const reopen = page.getByRole('button', { name: 'فتح النموذج' });
+  await reopen.click();
+  await expect(dialog).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0, { timeout: 5_000 });
+
+  // WCAG 2.4.3: focus must return to the control that opened the dialog
+  await expect(reopen).toBeFocused({ timeout: 5_000 });
+});
+
+test('WP-06 shared Dialog — edge cases: two launchers, nested dialogs, unmounted launcher, rapid cycles', async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto('/login?e2e-dialog-focus=1', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-e2e-dialog-focus]')).toBeVisible({ timeout: 15_000 });
+
+  const launcherA = page.locator('[data-e2e-launcher-a]');
+  const launcherB = page.locator('[data-e2e-launcher-b]');
+  const dialogA = page.locator('[data-e2e-dialog-a]');
+  const dialogB = page.locator('[data-e2e-dialog-b]');
+  const nested = page.locator('[data-e2e-dialog-nested]');
+
+  // 1. Independent launchers: each close restores to its own opener.
+  await launcherA.click();
+  await expect(dialogA).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press('Escape');
+  await expect(dialogA).toHaveCount(0, { timeout: 5_000 });
+  await expect(launcherA).toBeFocused({ timeout: 5_000 });
+
+  await launcherB.click();
+  await expect(dialogB).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press('Escape');
+  await expect(dialogB).toHaveCount(0, { timeout: 5_000 });
+  await expect(launcherB).toBeFocused({ timeout: 5_000 });
+
+  // 2. Nested dialog: closing the inner dialog returns focus to its trigger
+  //    inside the still-open outer dialog; closing the outer dialog returns
+  //    focus to the original launcher.
+  await launcherA.click();
+  await expect(dialogA).toBeVisible({ timeout: 10_000 });
+  const nestedTrigger = page.locator('[data-e2e-nested-trigger]');
+  await nestedTrigger.click();
+  await expect(nested).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press('Escape');
+  await expect(nested).toHaveCount(0, { timeout: 5_000 });
+  await expect(nestedTrigger).toBeFocused({ timeout: 5_000 });
+  await page.keyboard.press('Escape');
+  await expect(dialogA).toHaveCount(0, { timeout: 5_000 });
+  await expect(launcherA).toBeFocused({ timeout: 5_000 });
+
+  // 3. Launcher unmounts while its dialog is open (e.g. the row holding the
+  //    action is removed/refreshed): close must not throw and must not leave
+  //    focus inside a detached subtree. The unmount is React-state-driven
+  //    (the launcher's parent toggles it off from inside the dialog), exactly
+  //    like a list refresh removing the row behind an open dialog.
+  await launcherA.click();
+  await expect(dialogA).toBeVisible({ timeout: 10_000 });
+  await page.locator('[data-e2e-hide-launcher-inside]').click();
+  await expect(launcherA).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(dialogA).toHaveCount(0, { timeout: 5_000 });
+  const activeTag = await page.evaluate(() => document.activeElement?.tagName ?? 'none');
+  expect(pageErrors, `page errors: ${pageErrors.join(' | ')}`).toEqual([]);
+  expect(activeTag).not.toBe('none');
+
+  // 4. Rapid open/close cycles from the same launcher keep restoring focus.
+  //    Restore the launcher removed in step 3 (the dialog is closed now, so the
+  //    fixture toggle is reachable again).
+  await page.locator('button', { hasText: 'إظهار/إخفاء زر أ' }).click();
+  await expect(launcherA).toBeVisible({ timeout: 5_000 });
+  await launcherA.click();
+  await expect(dialogA).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press('Escape');
+  await expect(dialogA).toHaveCount(0, { timeout: 5_000 });
+  await launcherA.click();
+  await expect(dialogA).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press('Escape');
+  await expect(dialogA).toHaveCount(0, { timeout: 5_000 });
+  await expect(launcherA).toBeFocused({ timeout: 5_000 });
+
+  expect(pageErrors, `page errors: ${pageErrors.join(' | ')}`).toEqual([]);
 });
 
 test('WP-06 Loading / Empty / Error / Permission surfaces — RTL strict and overflow-safe', async ({ page }) => {

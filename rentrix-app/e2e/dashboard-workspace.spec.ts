@@ -387,7 +387,10 @@ for (const viewport of viewportMatrix) {
       const actionColumns = await page.locator('[data-dashboard-action-grid]').evaluate((node) =>
         getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
       );
-      const kpiColumns = await page.locator('[data-dashboard-kpi-grid] > div').evaluate((node) =>
+      // The KPI grid is now a semantic <ul class="dashboard-kpi-grid"> (axe
+      // aria-allowed-role: role="listitem" is invalid on <a>), so the column
+      // count is read from the ul element, not the old div child.
+      const kpiColumns = await page.locator('[data-dashboard-kpi-grid] .dashboard-kpi-grid').evaluate((node) =>
         getComputedStyle(node).gridTemplateColumns.split(' ').filter(Boolean).length,
       );
       expect(actionColumns).toBe(viewport.width >= 1024 ? 4 : 2);

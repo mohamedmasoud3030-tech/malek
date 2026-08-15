@@ -1,7 +1,8 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { composeEventHandlers } from '@radix-ui/primitive';
 import { X } from 'lucide-react';
 import type { ComponentPropsWithoutRef, CSSProperties, ElementRef } from 'react';
-import { forwardRef, useCallback, useEffect, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export const Dialog = DialogPrimitive.Root;
@@ -74,8 +75,20 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
   function DialogContent({ className, children, showCloseButton = true, style, ...props }, forwardedRef) {
     const [contentNode, setContentNode] = useState<DialogContentElement | null>(null);
     const [containsDataEntryControls, setContainsDataEntryControls] = useState(false);
+    // Focus restoration (WCAG 2.4.3). This app opens every dialog from plain
+    // buttons via state — there is no <DialogTrigger> anywhere — so Radix's
+    // internal triggerRef is always null and its close-autofocus
+    // (event.preventDefault() + triggerRef.focus()) drops focus to <body> on
+    // close. Capture the element that opened the dialog (onOpenAutoFocus
+    // fires before Radix moves focus inside) and restore it on close.
+    //
+    // Refs (not state) are used throughout so handlers and the unmount
+    // fallback never read a stale closure.
+    const contentNodeRef = useRef<DialogContentElement | null>(null);
+    const lastOutsideFocusRef = useRef<HTMLElement | null>(null);
 
     const setContentRef = useCallback((node: DialogContentElement | null) => {
+      contentNodeRef.current = node;
       setContentNode((current) => (current === node ? current : node));
       if (typeof forwardedRef === 'function') {
         forwardedRef(node);
@@ -83,6 +96,45 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
         (forwardedRef as { current: DialogContentElement | null }).current = node;
       }
     }, [forwardedRef]);
+
+    const focusWouldBeLost = () => {
+      const current = document.activeElement;
+      const node = contentNodeRef.current;
+      if (!(current instanceof HTMLElement) || current === document.body) return true;
+      return node ? node.contains(current) : true;
+    };
+
+    const handleOpenAutoFocus = () => {
+      const current = document.activeElement;
+      if (current instanceof HTMLElement && current !== document.body) {
+        lastOutsideFocusRef.current = current;
+      }
+    };
+
+    const handleCloseAutoFocus = (event: Event) => {
+      if (!focusWouldBeLost()) return;
+      const previous = lastOutsideFocusRef.current;
+      if (!previous || !previous.isConnected) return;
+      const node = contentNodeRef.current;
+      if (node?.contains(previous)) return;
+      event.preventDefault();
+      previous.focus();
+    };
+
+    useEffect(() => {
+      // Fallback for closes where onCloseAutoFocus is never dispatched — the
+      // whole tree unmounts (e.g. navigation away) while the dialog is open.
+      // Runs in cleanup so it fires on unmount, not at mount (when focus is
+      // already inside the dialog). Restores only when focus would otherwise
+      // land on <body>, the dialog is gone, and the origin still exists.
+      return () => {
+        const previous = lastOutsideFocusRef.current;
+        if (!previous || !previous.isConnected) return;
+        if (!focusWouldBeLost()) return;
+        previous.focus();
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
       if (!contentNode) {
@@ -116,6 +168,8 @@ export const DialogContent = forwardRef<DialogContentElement, DialogContentProps
           aria-modal="true"
           data-dialog-content
           data-dialog-form={containsDataEntryControls ? 'true' : undefined}
+          onOpenAutoFocus={composeEventHandlers(props.onOpenAutoFocus, handleOpenAutoFocus)}
+          onCloseAutoFocus={composeEventHandlers(props.onCloseAutoFocus, handleCloseAutoFocus)}
           className={cn(
             'fixed left-1/2 top-[var(--visual-viewport-center-y,50%)] z-[101] grid max-h-[calc(var(--visual-viewport-height,100dvh)-1rem)] min-h-0 w-[calc(100vw-1rem)] max-w-[42rem] gap-4 overflow-y-auto overscroll-contain rounded-2xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-[calc(1rem+env(safe-area-inset-top,0px))] text-card-foreground shadow-elevated [scrollbar-gutter:stable] sm:max-h-[min(calc(var(--visual-viewport-height,100dvh)-3rem),54rem)] sm:w-[min(92vw,42rem)] sm:p-6 sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(1.5rem+env(safe-area-inset-top,0px))]',
             className,

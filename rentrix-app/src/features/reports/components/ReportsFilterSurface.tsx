@@ -52,9 +52,11 @@ export function ReportsFilterSurface({
 
   return (
     <>
+      {/* No aria-label here: the wrapping FinanceSection in ReportsWorkspace
+          already labels this cluster «نطاق التقرير». Repeating the label on
+          this nested <section> creates a duplicate landmark (axe landmark-unique). */}
       <section
         className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-card"
-        aria-label="نطاق التقرير"
       >
         <div className="flex min-w-0 flex-col gap-3 border-b border-border/60 p-3.5 sm:flex-row sm:items-center sm:justify-between sm:p-4">
           <div className="flex min-w-0 items-center gap-3">

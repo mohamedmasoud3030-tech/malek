@@ -141,3 +141,47 @@ describe('property workflow health', () => {
     });
   });
 });
+
+describe('getProperty zero-row normalization', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function getPropertyQueryMock(result: { data: unknown; error: unknown }) {
+    const chain = {
+      eq: vi.fn(() => chain),
+      is: vi.fn(() => chain),
+      select: vi.fn(() => chain),
+      single: vi.fn(() => chain),
+      returns: vi.fn(() => Promise.resolve(result)),
+    };
+    return chain;
+  }
+
+  it('returns null for a 200-empty response instead of a phantom truthy array', async () => {
+    // `.single()` does not normalize an empty result (only `.maybeSingle()`
+    // does). A lenient server/proxy resolving 200 + [] used to reach the UI as
+    // a truthy array, rendering a phantom property. Regression: the service
+    // must return null so callers' truthiness checks mean "a real record".
+    supabaseMock.from.mockReturnValue(getPropertyQueryMock({ data: [], error: null }));
+
+    const { getProperty } = await import('./property-service');
+    await expect(getProperty('not-a-real-id')).resolves.toBeNull();
+  });
+
+  it('returns the single row when exactly one exists', async () => {
+    const row = { id: 'property-1', title: 'مجمع الخوير التجاري' };
+    supabaseMock.from.mockReturnValue(getPropertyQueryMock({ data: [row], error: null }));
+
+    const { getProperty } = await import('./property-service');
+    await expect(getProperty('property-1')).resolves.toMatchObject(row);
+  });
+
+  it('propagates a real PostgREST single() error (406 zero-row)', async () => {
+    const err = new Error('JSON object requested, multiple (or no) rows returned');
+    supabaseMock.from.mockReturnValue(getPropertyQueryMock({ data: null, error: err }));
+
+    const { getProperty } = await import('./property-service');
+    await expect(getProperty('not-a-real-id')).rejects.toThrow();
+  });
+});

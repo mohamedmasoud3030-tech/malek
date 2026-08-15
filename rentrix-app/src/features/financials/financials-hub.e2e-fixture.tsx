@@ -52,7 +52,7 @@ const fmt = (value: number) => `${value.toLocaleString('en-US', { minimumFractio
 
 export function FinancialsHubE2EFixture() {
   return (
-    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-financials-workspace>
+    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-financials-workspace>
       <PageLayout dir="rtl" size="wide">
         <PageHeader
           title="الملخص المالي"

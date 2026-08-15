@@ -23,7 +23,7 @@ export function AiAssistantE2EFixture() {
   const [input, setInput] = useState('');
 
   return (
-    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground" dir="rtl" data-e2e-ai-assistant-workspace>
+    <main className="fixed inset-0 z-[200] overflow-y-auto bg-background text-foreground outline-none" dir="rtl" tabIndex={-1} data-e2e-ai-assistant-workspace>
       <PageLayout size="wide" dir="rtl" lang="ar">
         <PageHeader
           title="مساعد الذكاء الاصطناعي"
