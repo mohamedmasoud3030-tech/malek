@@ -116,6 +116,26 @@ describe('WP-03 GAP-004 contract activation authority (PGlite behavioral)', () =
     expect(row.rows[0].version).toBe(VERSION);
   });
 
+  it('rejects self-approval: the maker cannot approve their own submission', async () => {
+    await assumeIdentity(db, MAKER, COMPANY);
+    // Non-overlapping period on UNIT1 (existing contracts cover 2026-10-01+).
+    await rpc(`select public.create_contract_atomic(
+      '${PROPERTY}', '${UNIT1}', '${TENANT2}', '${AGREEMENT}',
+      date '2026-01-15', date '2026-09-15', 900, 'monthly', null,
+      'draft', null, 'gap004-self-approval', null) as r`);
+    const id = await contractId('gap004-self-approval');
+    await rpc(`select public.submit_contract_for_approval_atomic('${id}', 'maker-sig-self') as r`);
+
+    await expect(
+      rpc(`select public.approve_contract_atomic('${id}', 'maker-tries-checker-sig') as r`),
+    ).rejects.toThrow(/MAKER_CHECKER_MUST_BE_DISTINCT/i);
+
+    const row = await db.query<{ approval_status: string | null }>(
+      `select approval_status from public.contracts where id = '${id}'`,
+    );
+    expect(row.rows[0].approval_status).toBe('PENDING');
+  });
+
   it('rejects commercial edits and status changes on an active contract', async () => {
     await assumeIdentity(db, CHECKER, COMPANY);
     await expect(updateContract('gap004-c1', 1500, 'active', 'gap004-c1')).rejects.toThrow(/CONTRACT_SIGNED_TERMS_IMMUTABLE/i);

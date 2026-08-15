@@ -1260,6 +1260,57 @@ export type Database = {
           },
         ];
       };
+      company_onboarding_events: {
+        Row: {
+          id: string;
+          company_id: string;
+          requirement_code: string | null;
+          action: 'WAIVE' | 'REVOKE' | 'COMPLETE' | 'RESET';
+          actor: string;
+          acted_at: string;
+          authority: string | null;
+          reason: string | null;
+          evidence_reference: string | null;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          requirement_code?: string | null;
+          action: 'WAIVE' | 'REVOKE' | 'COMPLETE' | 'RESET';
+          actor: string;
+          acted_at?: string;
+          authority?: string | null;
+          reason?: string | null;
+          evidence_reference?: string | null;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          requirement_code?: string | null;
+          action?: 'WAIVE' | 'REVOKE' | 'COMPLETE' | 'RESET';
+          actor?: string;
+          acted_at?: string;
+          authority?: string | null;
+          reason?: string | null;
+          evidence_reference?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'company_onboarding_events_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'company_onboarding_events_requirement_code_fkey';
+            columns: ['requirement_code'];
+            isOneToOne: false;
+            referencedRelation: 'onboarding_requirement_templates';
+            referencedColumns: ['code'];
+          },
+        ];
+      };
       company_onboarding_waivers: {
         Row: {
           id: string;
@@ -1270,6 +1321,8 @@ export type Database = {
           waiver_reason: string;
           waiver_authority: string;
           evidence_reference: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
         };
         Insert: {
           id?: string;
@@ -1280,6 +1333,8 @@ export type Database = {
           waiver_reason: string;
           waiver_authority: string;
           evidence_reference?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
         };
         Update: {
           id?: string;
@@ -1290,6 +1345,8 @@ export type Database = {
           waiver_reason?: string;
           waiver_authority?: string;
           evidence_reference?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
         };
         Relationships: [
           {
@@ -3812,6 +3869,7 @@ export type Database = {
           required: boolean;
           waiver_policy: 'NON_WAIVABLE' | 'ADMIN_WAIVABLE';
           sort_order: number;
+          completion_source: string | null;
         };
         Insert: {
           code: string;
@@ -3819,6 +3877,7 @@ export type Database = {
           required?: boolean;
           waiver_policy?: 'NON_WAIVABLE' | 'ADMIN_WAIVABLE';
           sort_order?: number;
+          completion_source?: string | null;
         };
         Update: {
           code?: string;
@@ -3826,6 +3885,7 @@ export type Database = {
           required?: boolean;
           waiver_policy?: 'NON_WAIVABLE' | 'ADMIN_WAIVABLE';
           sort_order?: number;
+          completion_source?: string | null;
         };
         Relationships: [];
       };

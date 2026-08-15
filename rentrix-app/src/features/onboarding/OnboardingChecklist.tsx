@@ -28,16 +28,6 @@ const ROUTES: Readonly<Record<string, string>> = {
   invoice: '/invoices',
 };
 
-// Static fallback mirrors the server templates exactly (same Arabic labels and
-// waiver policy). Used only when the server list is empty (e.g. SSR/loading).
-const FALLBACK_REQUIREMENTS: ReadonlyArray<OnboardingRequirementState> = [
-  { code: 'owner', label_ar: 'إضافة أول مالك', required: true, waiver_policy: 'NON_WAIVABLE', sort_order: 1, waived: false, waiver_reason: null, waived_at: null, waiver_authority: null, evidence_reference: null },
-  { code: 'property', label_ar: 'إنشاء أول عقار', required: true, waiver_policy: 'NON_WAIVABLE', sort_order: 2, waived: false, waiver_reason: null, waived_at: null, waiver_authority: null, evidence_reference: null },
-  { code: 'unit', label_ar: 'إنشاء أول وحدة', required: true, waiver_policy: 'ADMIN_WAIVABLE', sort_order: 3, waived: false, waiver_reason: null, waived_at: null, waiver_authority: null, evidence_reference: null },
-  { code: 'contract', label_ar: 'إنشاء أول عقد', required: true, waiver_policy: 'ADMIN_WAIVABLE', sort_order: 4, waived: false, waiver_reason: null, waived_at: null, waiver_authority: null, evidence_reference: null },
-  { code: 'invoice', label_ar: 'إصدار أول فاتورة', required: false, waiver_policy: 'ADMIN_WAIVABLE', sort_order: 5, waived: false, waiver_reason: null, waived_at: null, waiver_authority: null, evidence_reference: null },
-];
-
 /**
  * First-run onboarding checklist shown at the top of the dashboard until the
  * core setup steps are completed or individually waived by an admin (with a
@@ -63,7 +53,10 @@ export function OnboardingChecklist({
   const [waiverReason, setWaiverReason] = useState('');
   const [waiverEvidence, setWaiverEvidence] = useState('');
 
-  const requirements = onboarding.requirements.length > 0 ? onboarding.requirements : FALLBACK_REQUIREMENTS;
+  // The requirement catalog is authoritative from Postgres (never hard-coded in
+  // the browser); if the server returns none, render a neutral empty state
+  // rather than inventing a canonical catalog client-side.
+  const requirements = onboarding.requirements;
 
   const doneByCode = useMemo<Record<string, boolean>>(
     () => ({
@@ -114,6 +107,20 @@ export function OnboardingChecklist({
   };
 
   if (!isVisible) return null;
+  // No hard-coded fallback catalog: if the backend returned no requirements,
+  // render a neutral empty state instead of inventing canonical steps client-side.
+  if (requirements.length === 0) {
+    return (
+      <Card variant="default" className="border-border/60">
+        <CardContent className="space-y-2">
+          <CardTitle className="text-base">إعداد حسابك</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            خطوات الإعداد غير متاحة حالياً — حاول مرة أخرى لاحقاً.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>

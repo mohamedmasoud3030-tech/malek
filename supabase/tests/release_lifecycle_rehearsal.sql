@@ -21,7 +21,7 @@ $$;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(70); -- 66 baseline + 4 GAP-009 governed deposit-flow assertions
+select plan(73); -- 66 baseline + 4 GAP-009 governed deposit-flow assertions + 3 GAP-004 lifecycle-chain steps
 
 select has_table('public', 'tenant_deposits', 'tenant deposits table exists after a clean migration replay');
 select has_table('public', 'deposit_transactions', 'deposit transactions table exists after a clean migration replay');
@@ -126,6 +126,20 @@ insert into public.owner_agreements (
   'property_management', 'RATE', 10, date '2026-01-01', date '2027-12-31', '00000000-0000-4000-8000-000000000001'
 );
 
+-- The covering agreement version is seeded as the table owner (RPC-only writes);
+-- activation below freezes this snapshot onto the active contract.
+insert into public.owner_agreement_versions (
+  id, owner_agreement_id, company_id, version_no, operating_model,
+  collection_role, commission_type, commission_value, commission_recognition_basis,
+  effective_from, effective_to
+) values (
+  '00000000-0000-0000-0000-000000001602',
+  '00000000-0000-0000-0000-000000001601',
+  '00000000-0000-4000-8000-000000000001', 1, 'OWNER_AGENCY',
+  'OWNER_IS_CREDITOR', 'RATE', 10, 'ON_COLLECTION',
+  date '2026-01-01', date '2027-12-31'
+);
+
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
@@ -133,28 +147,69 @@ select set_config(
 );
 set local role authenticated;
 
--- GAP-004: create_contract_atomic is now draft-only (activation is the only
--- path to 'active'). This financial rehearsal seeds its active contract as a
--- fixture so downstream collections/deposits/settlements run against the same
--- active-contract shape; the canonical draft→approve→activate chain is proven
--- by wp03_gap004_contract_activation_authority.sql.
+-- GAP-004: create_contract_atomic is draft-only; activation is the only path
+-- to 'active' and it freezes the authoritative agreement snapshot. This
+-- financial rehearsal therefore drives its active contract through the REAL
+-- canonical chain (draft -> maker submit -> distinct checker approve ->
+-- activate) so the collection/deposit/settlement flows run against a genuine
+-- activated contract with a frozen agreement version/collection-role snapshot.
+-- No direct status='active' INSERT is used; the contract lifecycle is proven by
+-- wp03_gap004_contract_activation_authority.sql and this test only exercises
+-- the authoritative activation path.
 select lives_ok(
   $$
-    insert into public.contracts (
-      property_id, unit_id, tenant_id, agreement_id, start_date, end_date,
-      rent_amount, payment_cycle, payment_terms_id, status,
-      cancellation_reason, notes, attachment_url, company_id
-    ) values (
+    select public.create_contract_atomic(
       '00000000-0000-0000-0000-000000001301',
       '00000000-0000-0000-0000-000000001401',
       '00000000-0000-0000-0000-000000001501',
       '00000000-0000-0000-0000-000000001601',
       date '2026-09-01', date '2027-08-31', 1000, 'monthly', null,
-      'active', null, 'release-lifecycle-contract', null,
-      '00000000-0000-4000-8000-000000000001'
+      'draft', null, 'release-lifecycle-contract', null
     )
   $$,
-  'lifecycle contract seeded as an active fixture'
+  'admin creates the lifecycle contract as a draft'
+);
+
+-- Maker (admin 1101) submits.
+select lives_ok(
+  $$
+    select public.submit_contract_for_approval_atomic(
+      (select id::text from public.contracts where notes = 'release-lifecycle-contract' limit 1),
+      'lifecycle-maker-sig'
+    )
+  $$,
+  'maker submits the lifecycle contract for approval'
+);
+
+-- Distinct checker (1103) approves, then the contract is activated.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+select lives_ok(
+  $$
+    select public.approve_contract_atomic(
+      (select id::text from public.contracts where notes = 'release-lifecycle-contract' limit 1),
+      'lifecycle-checker-sig'
+    )
+  $$,
+  'distinct checker approves the lifecycle contract'
+);
+select lives_ok(
+  $$
+    select public.activate_contract_with_agreement_snapshot_atomic(
+      (select id::text from public.contracts where notes = 'release-lifecycle-contract' limit 1)
+    )
+  $$,
+  'activation freezes the agreement snapshot and makes the contract active'
+);
+
+-- Return to the admin (1101) context used by the rest of the financial flow.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
 );
 
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)

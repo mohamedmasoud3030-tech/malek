@@ -98,22 +98,59 @@ describe('WP-03 GAP-005 onboarding authority (PGlite behavioral)', () => {
 
   it('persists completion as a single company-scoped fact and supports revoke/reset', async () => {
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    // Completion is server-validated: without owner/property (NON_WAIVABLE)
+    // evidence and a satisfied contract gate, it must fail closed.
+    await expect(complete()).rejects.toThrow(/INCOMPLETE_REQUIREMENT/i);
+
+    // Provide the NON_WAIVABLE data (as the table owner) and waive the
+    // ADMIN_WAIVABLE contract gate. Contract lifecycle is not the subject here.
+    await db.exec(`
+      insert into public.owners (id, full_name, company_id) values
+        ('0a000000-0000-0000-0000-000000000ee1', 'Owner A', '${COMPANY_A}');
+      insert into public.properties (id, title, type, address, status, company_id) values
+        ('0a000000-0000-0000-0000-000000000ee2', 'Property A', 'residential', 'C', 'active', '${COMPANY_A}');
+      insert into public.units (id, name, property_id, unit_number, status, company_id) values
+        ('0a000000-0000-0000-0000-000000000ee3', 'U1', '0a000000-0000-0000-0000-000000000ee2', 'U-1', 'available', '${COMPANY_A}');
+    `);
+    await waive('contract', 'العقد الأول يصدر لاحقاً', 'ref-contract');
     await complete();
     expect((await state()).completed).toBe(true);
+    // Durable audit: a COMPLETE event and a WAIVE event exist.
+    const completeEvents = await db.query<{ c: string }>(
+      `select count(*)::text as c from public.company_onboarding_events where company_id = '${COMPANY_A}' and action = 'COMPLETE'`,
+    );
+    expect(Number(completeEvents.rows[0].c)).toBeGreaterThanOrEqual(1);
 
     await revoke('unit');
     const s = await state();
     const unit = (s.requirements as Array<Record<string, unknown>>).find((r) => r.code === 'unit')!;
     expect(unit.waived).toBe(false);
+    // Revoke preserves the grant record (marked revoked, not deleted).
+    const retained = await db.query<{ c: string }>(
+      `select count(*)::text as c from public.company_onboarding_waivers where company_id = '${COMPANY_A}' and requirement_code = 'unit' and revoked_at is not null`,
+    );
+    expect(Number(retained.rows[0].c)).toBe(1);
+    const revokeEvents = await db.query<{ c: string }>(
+      `select count(*)::text as c from public.company_onboarding_events where company_id = '${COMPANY_A}' and action = 'REVOKE'`,
+    );
+    expect(Number(revokeEvents.rows[0].c)).toBeGreaterThanOrEqual(1);
 
     await reset();
     expect((await state()).completed).toBe(false);
+    const resetEvents = await db.query<{ c: string }>(
+      `select count(*)::text as c from public.company_onboarding_events where company_id = '${COMPANY_A}' and action = 'RESET'`,
+    );
+    expect(Number(resetEvents.rows[0].c)).toBeGreaterThanOrEqual(1);
   });
 
   it('isolates company B from company A waivers and completion', async () => {
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    // Company A has owner/property/unit data (persisted above); re-satisfy the
+    // ADMIN_WAIVABLE contract gate (reset revoked it) and complete.
+    await waive('contract', 'العقد الأول يصدر لاحقاً', 'ref-contract');
     await waive('invoice', 'تخطي مؤقت');
     await complete();
+    expect((await state()).completed).toBe(true);
 
     await assumeIdentity(db, ADMIN_B, COMPANY_B);
     const s = await state();
@@ -121,5 +158,12 @@ describe('WP-03 GAP-005 onboarding authority (PGlite behavioral)', () => {
     expect(s.completed).toBe(false);
     const invoice = (s.requirements as Array<Record<string, unknown>>).find((r) => r.code === 'invoice')!;
     expect(invoice.waived).toBe(false);
+    // Company B does not inherit company A's audit events (RLS isolation).
+    const bEvents = await db.query<{ c: string }>(
+      `select count(*)::text as c from public.company_onboarding_events where company_id = '${COMPANY_B}'`,
+    );
+    expect(Number(bEvents.rows[0].c)).toBe(0);
+    // Company B (no evidence) still cannot complete.
+    await expect(complete()).rejects.toThrow(/INCOMPLETE_REQUIREMENT/i);
   });
 });

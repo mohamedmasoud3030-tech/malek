@@ -15,7 +15,6 @@ import {
   buildContractUnitOptionLabel,
   contractSchema,
   contractStatusLabels,
-  contractStatusValues,
   isUnitSelectableForContract,
   paymentCycleLabels,
   paymentCycleValues,
@@ -95,7 +94,6 @@ export function ContractFormFields({
   } = controller;
   const [step, setStep] = useState(0);
   const status = form.watch('status');
-  const isActiveContract = isEdit && status === 'active';
   const propertyId = form.watch('property_id');
   const unitId = form.watch('unit_id');
   const tenantId = form.watch('tenant_id');
@@ -264,25 +262,13 @@ export function ContractFormFields({
                 <option value="draft">مسودة</option>
               </Select>
             </EntityForm.Field>
-          ) : isActiveContract ? (
+          ) : (
             <EntityForm.Field
               label="الحالة"
-              description="لا يمكن تغيير حالة عقد نشط من هنا؛ استخدم التجديد أو الإنهاء، وأي تعديل للبنود التجارية الموقّعة يخضع لدورة اعتماد جديدة."
+              description="لا يمكن تغيير حالة العقد من نموذج التعديل العام؛ تنتقل الحالة فقط عبر إجراءات دورة الحياة المخصصة (الاعتماد/التفعيل/الإنهاء/التجديد)."
             >
               <Select {...form.register('status')} disabled>
-                <option value="active">نشط</option>
-              </Select>
-            </EntityForm.Field>
-          ) : (
-            <EntityForm.Field label="الحالة" error={form.formState.errors.status?.message}>
-              <Select {...form.register('status')}>
-                {contractStatusValues
-                  .filter((statusValue) => statusValue !== 'active')
-                  .map((statusValue) => (
-                    <option key={statusValue} value={statusValue}>
-                      {contractStatusLabels[statusValue]}
-                    </option>
-                  ))}
+                <option value={status}>{contractStatusLabels[status as keyof typeof contractStatusLabels] ?? status}</option>
               </Select>
             </EntityForm.Field>
           )}
