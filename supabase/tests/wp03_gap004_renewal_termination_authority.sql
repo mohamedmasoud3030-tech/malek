@@ -291,9 +291,6 @@ select is(
   '27. cross-company termination did not touch company B invoices'
 );
 
-reset role;
-select * from finish();
-rollback;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 7. Direct-write revocation: the API cannot bypass the lifecycle by writing
 --    public.contracts directly. Any authenticated direct INSERT/UPDATE that
@@ -301,6 +298,7 @@ rollback;
 --    because write privileges are revoked (SEC-009 / GAP-018). The only
 --    contract writes are the SECURITY DEFINER lifecycle RPCs.
 -- ─────────────────────────────────────────────────────────────────────────────
+reset role;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000004d01","role":"authenticated","app_metadata":{"company_id":"00000000-0000-4000-8000-0000000004d1"}}',true);
 set local role authenticated;
 select throws_ok(
