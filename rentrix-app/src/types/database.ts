@@ -1234,6 +1234,80 @@ export type Database = {
           },
         ];
       };
+      company_onboarding_completion: {
+        Row: {
+          company_id: string;
+          completed_by: string;
+          completed_at: string;
+        };
+        Insert: {
+          company_id: string;
+          completed_by: string;
+          completed_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          completed_by?: string;
+          completed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'company_onboarding_completion_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: true;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      company_onboarding_waivers: {
+        Row: {
+          id: string;
+          company_id: string;
+          requirement_code: string;
+          waived_by: string;
+          waived_at: string;
+          waiver_reason: string;
+          waiver_authority: string;
+          evidence_reference: string | null;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          requirement_code: string;
+          waived_by: string;
+          waived_at?: string;
+          waiver_reason: string;
+          waiver_authority: string;
+          evidence_reference?: string | null;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          requirement_code?: string;
+          waived_by?: string;
+          waived_at?: string;
+          waiver_reason?: string;
+          waiver_authority?: string;
+          evidence_reference?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'company_onboarding_waivers_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'company_onboarding_waivers_requirement_code_fkey';
+            columns: ['requirement_code'];
+            isOneToOne: false;
+            referencedRelation: 'onboarding_requirement_templates';
+            referencedColumns: ['code'];
+          },
+        ];
+      };
       company_settings: {
         Row: {
           id: string;
@@ -3730,6 +3804,30 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      onboarding_requirement_templates: {
+        Row: {
+          code: string;
+          label_ar: string;
+          required: boolean;
+          waiver_policy: 'NON_WAIVABLE' | 'ADMIN_WAIVABLE';
+          sort_order: number;
+        };
+        Insert: {
+          code: string;
+          label_ar: string;
+          required?: boolean;
+          waiver_policy?: 'NON_WAIVABLE' | 'ADMIN_WAIVABLE';
+          sort_order?: number;
+        };
+        Update: {
+          code?: string;
+          label_ar?: string;
+          required?: boolean;
+          waiver_policy?: 'NON_WAIVABLE' | 'ADMIN_WAIVABLE';
+          sort_order?: number;
+        };
+        Relationships: [];
       };
       outgoing_notifications: {
         Row: {
@@ -6732,6 +6830,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      complete_company_onboarding_atomic: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
       compute_tax_amount: {
         Args: {
           p_net: number | null;
@@ -6972,6 +7074,10 @@ export type Database = {
       generate_invoices_from_active_contracts: {
         Args: Record<PropertyKey, never>;
         Returns: number;
+      };
+      get_company_onboarding_state: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
       };
       gl_accrue_fixed_monthly_day: {
         Args: {
@@ -7473,6 +7579,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
+      reset_company_onboarding_atomic: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
       resolve_active_tax_profile: {
         Args: {
           p_company_id: string | null;
@@ -7546,6 +7656,12 @@ export type Database = {
       reverse_owner_receivable_recovery_atomic: {
         Args: {
           p_payload: Json | null;
+        };
+        Returns: Json;
+      };
+      revoke_onboarding_waiver_atomic: {
+        Args: {
+          p_code: string | null;
         };
         Returns: Json;
       };
@@ -7880,6 +7996,14 @@ export type Database = {
               p_invoice_updates?: Json | null;
               p_reverse_entries?: Json | null;
             };
+        Returns: Json;
+      };
+      waive_onboarding_requirement_atomic: {
+        Args: {
+          p_code: string | null;
+          p_reason: string | null;
+          p_evidence_reference?: string | null;
+        };
         Returns: Json;
       };
       wp02_gap008_round_omr: {

@@ -191,3 +191,54 @@ against accountant-approved accounts.
 
 **Work that continues independently.** All WP-02/03/05/06/07 work that does
 not require the new accounts.
+
+---
+
+## DP-5 — Canonical seven-step onboarding enumeration (GAP-005)
+
+**Authority:** Product Owner (with Accountant if any step carries accounting
+effect — none currently does).
+
+**Exact question.** What are the exact seven onboarding steps/requirements for
+property onboarding, and which of them are non-waivable identity/safety gates
+versus admin-waivable operational evidence?
+
+**Why it blocks release.** Locked D12 requires a "core seven-step workflow with
+property-type templates", and OPS-004 requires non-waivable identity/safety
+gates plus audited admin waivers. The Canonical Pack does **not** enumerate the
+seven steps or define the property-level safety evidence. The engineering
+framework (below) is in place; the content of the seven-step catalog must come
+from the product owner, not be invented by an implementation agent.
+
+**Existing evidence.**
+- Locked D12, OPS-004 (Document 2), DOM-002/DOM-003.
+- GAP-005 framework implemented on main (see Document 7): company-scoped
+  `onboarding_requirement_templates` / `company_onboarding_waivers` /
+  `company_onboarding_completion` + RPCs
+  (`get_company_onboarding_state`, `waive_onboarding_requirement_atomic`,
+  `revoke_onboarding_waiver_atomic`, `complete_company_onboarding_atomic`,
+  `reset_company_onboarding_atomic`); audited waivers (actor/time/reason/
+  authority/evidence); NON_WAIVABLE identity/authority gates; backend-driven
+  checklist replacing localStorage.
+- The seeded template uses the current repository operating order (owner →
+  property → unit → contract → invoice) as a defensible starting catalog.
+
+**Options.**
+1. Confirm the current 5-step operating order and authorize the
+   owner/property = NON_WAIVABLE classification (identity/authority), unit/
+   contract/invoice = ADMIN_WAIVABLE.
+2. Provide the canonical seven-step enumeration (with property-type templates
+   and per-step waiver classification), which the framework then seeds
+   additively — no schema change required.
+3. Define the property-level safety evidence requirement (if any) that should
+   become a NON_WAIVABLE gate, plus its evidence type and retention rule.
+
+**Consequences.** Without this decision, GAP-005 cannot be closed as "seven-step"
+because the seven steps are undefined; the framework itself is complete and
+extensible.
+
+**Recommended technical default.** Adopt option 1 now (it matches repository
+reality and the canonical identity/authority rules), and treat options 2–3 as
+the authoritative seven-step content when the product owner enumerates it.
+
+**Work that continues independently.** All other WP-03/05/06/07 work.

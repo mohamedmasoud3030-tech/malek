@@ -1,19 +1,15 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useUiStore } from '@/store/ui-store';
-
-const KEY_PREFIX = 'rentrix_onboarding_';
-
-function readFlag(userId: string | undefined, suffix: string): boolean {
-  if (typeof window === 'undefined' || !userId) return false;
-  return window.localStorage.getItem(`${KEY_PREFIX}${userId}_${suffix}`) === 'true';
-}
-
-function writeFlag(userId: string | undefined, suffix: string, value: boolean): void {
-  if (typeof window === 'undefined' || !userId) return;
-  if (value) window.localStorage.setItem(`${KEY_PREFIX}${userId}_${suffix}`, 'true');
-  else window.localStorage.removeItem(`${KEY_PREFIX}${userId}_${suffix}`);
-}
+import {
+  completeCompanyOnboarding,
+  getCompanyOnboardingState,
+  resetCompanyOnboarding,
+  waiveOnboardingRequirement,
+  type OnboardingRequirementState,
+} from './onboardingService';
 
 export type OnboardingProgress = Readonly<{
   hasProperty: boolean;
@@ -25,49 +21,46 @@ export type OnboardingProgress = Readonly<{
 export type OnboardingControls = Readonly<{
   /** Whether the checklist should be rendered at all. */
   isVisible: boolean;
-  /** All required steps are finished — persist completion. */
+  /** Server state is still loading (avoid a flash of stale/local state). */
+  isLoading: boolean;
+  /** Authoritative requirement templates + waiver flags from Postgres. */
+  requirements: OnboardingRequirementState[];
+  /** Company-scoped completion fact (no longer a per-user localStorage flag). */
+  completed: boolean;
+  /** All required steps are finished — persists completion server-side. */
   complete: () => void;
-  /** User opts out permanently (persisted per user). */
-  skip: () => void;
+  /** Admin-authorized waiver for an ADMIN_WAIVABLE step (reason required). */
+  waive: (code: string, reason: string, evidenceReference?: string) => void;
+  /** Admin-only settings reset (clears waivers + completion). */
+  reset: () => void;
   /** Snooze for this session only (reappears next load) via the ui-store. */
   dismissLater: () => void;
-  /** Clear every flag (e.g. from a settings reset). */
-  reset: () => void;
 }>;
 
 /**
- * Onboarding visibility + persistence.
+ * GAP-005: backend-driven onboarding state.
  *
- * The signed-in user id is resolved from the Supabase session (no auth-router
- * context required) so the checklist can be mounted anywhere. Completion/skip
- * live in `localStorage` keyed per user (`rentrix_onboarding_{userId}_{completed|skipped}`)
- * and survive reloads; the "إكمال لاحقاً"/collapse action is a transient,
- * per-session flag held in the existing zustand `ui-store`.
+ * Completion/waiver state lives in company-scoped Postgres tables with an
+ * audited waiver record (actor, time, reason, authority, evidence). The
+ * transient per-session collapse stays in the zustand `ui-store`, which is
+ * presentation state, not a source of truth.
  */
 export function useOnboarding(): OnboardingControls {
+  const queryClient = useQueryClient();
   const dismissedSession = useUiStore((s) => s.onboardingDismissed);
   const setDismissedSession = useUiStore((s) => s.setOnboardingDismissed);
 
-  const [userId, setUserId] = useState<string | undefined>(undefined);
-  const [completed, setCompleted] = useState(false);
-  const [skipped, setSkipped] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     let active = true;
 
     void supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      const id = data.session?.user?.id;
-      setUserId(id);
-      setCompleted(readFlag(id, 'completed'));
-      setSkipped(readFlag(id, 'skipped'));
+      if (active) setIsAuthenticated(Boolean(data.session?.user?.id));
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const id = session?.user?.id;
-      setUserId(id);
-      setCompleted(readFlag(id, 'completed'));
-      setSkipped(readFlag(id, 'skipped'));
+      setIsAuthenticated(Boolean(session?.user?.id));
     });
 
     return () => {
@@ -76,29 +69,72 @@ export function useOnboarding(): OnboardingControls {
     };
   }, []);
 
-  const complete = useCallback(() => {
-    writeFlag(userId, 'completed', true);
-    setCompleted(true);
-  }, [userId]);
+  const stateQuery = useQuery({
+    queryKey: ['onboarding', 'state'],
+    queryFn: getCompanyOnboardingState,
+    enabled: isAuthenticated,
+    retry: 1,
+  });
 
-  const skip = useCallback(() => {
-    writeFlag(userId, 'skipped', true);
-    setSkipped(true);
-  }, [userId]);
+  const completeMutation = useMutation({
+    mutationFn: completeCompanyOnboarding,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['onboarding', 'state'] });
+      toast.success('تم إنهاء الإعداد');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إنهاء الإعداد'),
+  });
+
+  const waiveMutation = useMutation({
+    mutationFn: (input: { code: string; reason: string; evidenceReference?: string }) =>
+      waiveOnboardingRequirement(input.code, input.reason, input.evidenceReference),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['onboarding', 'state'] });
+      toast.success('تم تسجيل التنازل المصرّح به');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تسجيل التنازل'),
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: resetCompanyOnboarding,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['onboarding', 'state'] });
+      toast.success('تمت إعادة ضبط حالة الإعداد');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذرت إعادة الضبط'),
+  });
+
+  const complete = useCallback(() => {
+    void completeMutation.mutateAsync().catch(() => undefined);
+  }, [completeMutation]);
+
+  const waive = useCallback(
+    (code: string, reason: string, evidenceReference?: string) => {
+      void waiveMutation.mutateAsync({ code, reason, evidenceReference }).catch(() => undefined);
+    },
+    [waiveMutation],
+  );
+
+  const reset = useCallback(() => {
+    void resetMutation.mutateAsync().catch(() => undefined);
+  }, [resetMutation]);
 
   const dismissLater = useCallback(() => {
     setDismissedSession(true);
   }, [setDismissedSession]);
 
-  const reset = useCallback(() => {
-    writeFlag(userId, 'completed', false);
-    writeFlag(userId, 'skipped', false);
-    setCompleted(false);
-    setSkipped(false);
-    setDismissedSession(false);
-  }, [userId, setDismissedSession]);
+  const completed = stateQuery.data?.completed ?? false;
+  const requirements = stateQuery.data?.requirements ?? [];
+  const isVisible = isAuthenticated && !stateQuery.isLoading && !completed && !dismissedSession;
 
-  const isVisible = Boolean(userId) && !completed && !skipped && !dismissedSession;
-
-  return { isVisible, complete, skip, dismissLater, reset };
+  return {
+    isVisible,
+    isLoading: stateQuery.isLoading,
+    requirements,
+    completed,
+    complete,
+    waive,
+    reset,
+    dismissLater,
+  };
 }
