@@ -47,6 +47,12 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   // checkpoint baselines that omit S03/S04 must omit it too (same narrow
   // rationale as GAP-007/GAP-009 above).
   'wp02_gap008_due_from_owner_lifecycle',
+  // GAP-010 depends on the governed S03/S04 GL posting stack (journal_batches,
+  // gl_pm_round_omr, post_journal_event). Historical checkpoint suites that
+  // intentionally omit S03/S04 must therefore omit the whole downstream
+  // GAP-010 migration family, including its effective-history correction.
+  'wp02_gap010_tax_authority',
+  'wp02_gap010_effective_history_resolution',
 ] as const;
 
 export async function createFullReplayedDatabase(options?: {

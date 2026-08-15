@@ -277,13 +277,15 @@ beforeAll(async () => {
     !f.includes('stage3_') &&
     !f.includes('_s03_') &&
     !f.includes('_s04_') &&
-    // GAP-007/GAP-008/GAP-009 depend on the S03/S04 GL provider tables
-    // (public.journal_batches, canonical posting engine, frozen agreement
-    // versions) omitted by this historical P0 checkpoint.
+    // GAP-007/GAP-008/GAP-009/GAP-010 depend on the S03/S04 GL provider
+    // tables omitted by this historical P0 checkpoint. Keep downstream
+    // migrations out instead of weakening production dependency checks.
     !f.includes('wp02_fixed_monthly_daily_accrual') &&
     !f.includes('wp02_gap008_due_from_owner_lifecycle') &&
     !f.includes('wp02_gap009_deposit_precision') &&
     !f.includes('wp02_gap009_deposit_lifecycle') &&
+    !f.includes('wp02_gap010_tax_authority') &&
+    !f.includes('wp02_gap010_effective_history_resolution') &&
     !f.includes('_s06_') &&
     !f.includes('_s08_') &&
     !f.includes('_wp05_') &&
