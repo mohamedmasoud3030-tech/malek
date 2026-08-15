@@ -14,3 +14,29 @@ export const getRenewalDefaults = (contract: ContractDetail): RenewalPayload => 
   const nextStart = addDays(contract.end_date, 1);
   return { new_start: toDateInputValue(nextStart), new_end: toDateInputValue(addYear(nextStart)), new_amount: contract.rent_amount, agreement_id: contract.agreement_id };
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Canonical approval sub-state on draft contracts (S04-T03 / DOM-005 / D11).
+// The DB stores approval_status as 'PENDING' | 'APPROVED' | 'REJECTED' | NULL.
+// Approval is a sub-state of `draft`: activation is the only path to 'active'.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ContractApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export function normalizeApprovalStatus(approvalStatus: string | null | undefined): ContractApprovalStatus | null {
+  const value = (approvalStatus ?? '').trim().toUpperCase();
+  return value === 'PENDING' || value === 'APPROVED' || value === 'REJECTED' ? value : null;
+}
+
+export const isDraftContract = (contract: ContractDetail) => isContractStatus(contract.status, 'draft');
+export const isContractApprovalPending = (contract: ContractDetail) => isDraftContract(contract) && normalizeApprovalStatus(contract.approval_status) === 'PENDING';
+export const isContractApproved = (contract: ContractDetail) => isDraftContract(contract) && normalizeApprovalStatus(contract.approval_status) === 'APPROVED';
+export const isContractRejected = (contract: ContractDetail) => isDraftContract(contract) && normalizeApprovalStatus(contract.approval_status) === 'REJECTED';
+
+/** A draft can be submitted when it has never been approved (fresh or rejected). */
+export const canSubmitContractForApproval = (contract: ContractDetail) =>
+  isDraftContract(contract) && !isContractApprovalPending(contract) && !isContractApproved(contract);
+
+export const canApproveContract = (contract: ContractDetail) => isContractApprovalPending(contract);
+export const canRejectContract = (contract: ContractDetail) => isContractApprovalPending(contract);
+export const canActivateContract = (contract: ContractDetail) => isContractApproved(contract);

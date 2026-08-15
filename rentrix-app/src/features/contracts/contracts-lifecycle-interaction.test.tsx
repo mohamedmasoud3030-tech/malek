@@ -44,6 +44,10 @@ vi.mock('./useContracts', () => ({
   useSoftDeleteContract: () => ({ isPending: false, mutate: deleteContractMock }),
   useRenewContract: () => ({ isPending: false, mutateAsync: renewContractMock }),
   useTerminateContract: () => ({ isPending: false, mutateAsync: terminateContractMock }),
+  useSubmitContractForApproval: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useApproveContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useRejectContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useActivateContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 vi.mock('./useContractPayments', () => ({
   useContractPayments: () => ({ data: { invoices: [], payments: [], summary: { invoiceCount: 0, paymentCount: 0, totalInvoiced: 0, totalPaid: 0, totalRemaining: 0 } }, error: null, isError: false, isLoading: false, refetch: vi.fn() }),

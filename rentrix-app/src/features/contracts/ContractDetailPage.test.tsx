@@ -32,6 +32,10 @@ vi.mock('./useContracts', () => ({
   useContract: () => contractsMocks.contractQuery,
   useRenewContract: () => contractsMocks.renewMutation,
   useTerminateContract: () => contractsMocks.terminateMutation,
+  useSubmitContractForApproval: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useApproveContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useRejectContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
+  useActivateContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
 vi.mock('./useContractPayments', () => ({

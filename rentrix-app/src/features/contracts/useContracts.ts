@@ -1,7 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { ContractPayload, RenewalPayload } from './contractSchema';
-import { createContract, getContract, listAllContracts, listContracts, renewContract, softDeleteContract, terminateContract, updateContract, type ContractListParams, type ContractStatusFilter } from './services/contractService';
+import { activateContract, approveContract, createContract, getContract, listAllContracts, listContracts, rejectContract, renewContract, softDeleteContract, submitContractForApproval, terminateContract, updateContract, type ContractListParams, type ContractStatusFilter } from './services/contractService';
 
 export const contractKeys = {
   all: ['contracts'] as const,
@@ -84,5 +84,52 @@ export function useRenewContract(contractId: string) {
       toast.success('تم تجديد العقد وإنشاء عقد جديد');
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تجديد العقد'),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Canonical contract approval/activation chain (S04-T03). The maker records a
+// signature on submit; a different checker signs on approve/reject; activation
+// freezes the authoritative agreement snapshot server-side.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function invalidateContractDetail(queryClient: QueryClient, contractId: string): Promise<void> {
+  await queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
+  await queryClient.invalidateQueries({ queryKey: contractKeys.detail(contractId) });
+}
+
+export function useSubmitContractForApproval(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (makerSignature: string) => submitContractForApproval(contractId, makerSignature),
+    onSuccess: async () => { await invalidateContractDetail(queryClient, contractId); toast.success('تم إرسال العقد للاعتماد'); },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر إرسال العقد للاعتماد'),
+  });
+}
+
+export function useApproveContract(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (checkerSignature: string) => approveContract(contractId, checkerSignature),
+    onSuccess: async () => { await invalidateContractDetail(queryClient, contractId); toast.success('تم اعتماد العقد'); },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر اعتماد العقد'),
+  });
+}
+
+export function useRejectContract(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { checkerSignature: string; reason: string }) => rejectContract(contractId, input.checkerSignature, input.reason),
+    onSuccess: async () => { await invalidateContractDetail(queryClient, contractId); toast.success('تم رفض العقد'); },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر رفض العقد'),
+  });
+}
+
+export function useActivateContract(contractId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => activateContract(contractId),
+    onSuccess: async () => { await invalidateContractDetail(queryClient, contractId); toast.success('تم تفعيل العقد وتجميد لقطة الاتفاقية'); },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تفعيل العقد'),
   });
 }

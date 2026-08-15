@@ -190,3 +190,82 @@ describe('softDeleteContract', () => {
     await expect(softDeleteContract('contract-1')).rejects.toThrow('غير مصرح');
   });
 });
+
+describe('contract approval/activation chain (S04-T03)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('submits a draft for approval with the maker signature', async () => {
+    const row = { status: 'draft', approval_status: 'PENDING', maker_signature: 'محمد' };
+    supabaseMock.rpc.mockResolvedValue({ data: row, error: null });
+    const { submitContractForApproval } = await import('./contractService');
+
+    await expect(submitContractForApproval('contract-1', 'محمد')).resolves.toEqual(row);
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('submit_contract_for_approval_atomic', {
+      p_contract_id: 'contract-1',
+      p_maker_signature: 'محمد',
+    });
+  });
+
+  it('approves a pending contract with the checker signature', async () => {
+    const row = { status: 'draft', approval_status: 'APPROVED', maker_signature: 'محمد', checker_signature: 'خالد' };
+    supabaseMock.rpc.mockResolvedValue({ data: row, error: null });
+    const { approveContract } = await import('./contractService');
+
+    await expect(approveContract('contract-1', 'خالد')).resolves.toEqual(row);
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('approve_contract_atomic', {
+      p_contract_id: 'contract-1',
+      p_checker_signature: 'خالد',
+    });
+  });
+
+  it('rejects a pending contract with checker signature and a mandatory reason', async () => {
+    const row = { status: 'draft', approval_status: 'REJECTED', rejection_reason: 'بيانات ناقصة' };
+    supabaseMock.rpc.mockResolvedValue({ data: row, error: null });
+    const { rejectContract } = await import('./contractService');
+
+    await expect(rejectContract('contract-1', 'خالد', 'بيانات ناقصة')).resolves.toEqual(row);
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('reject_contract_atomic', {
+      p_contract_id: 'contract-1',
+      p_checker_signature: 'خالد',
+      p_reason: 'بيانات ناقصة',
+    });
+  });
+
+  it('activates an approved contract so the agreement snapshot is frozen server-side', async () => {
+    const row = {
+      status: 'active',
+      approval_status: 'APPROVED',
+      collection_role_snapshot: 'OWNER_IS_CREDITOR',
+      operating_model_snapshot: 'OWNER_AGENCY',
+      agreement_version_id: '00000000-0000-4000-9000-000000000001',
+    };
+    supabaseMock.rpc.mockResolvedValue({ data: row, error: null });
+    const { activateContract } = await import('./contractService');
+
+    await expect(activateContract('contract-1')).resolves.toEqual(row);
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('activate_contract_with_agreement_snapshot_atomic', {
+      p_contract_id: 'contract-1',
+    });
+  });
+
+  it('propagates backend approval-gate errors unchanged', async () => {
+    const error = new Error('MAKER_CHECKER_MUST_BE_DISTINCT');
+    supabaseMock.rpc.mockResolvedValue({ data: null, error });
+    const { approveContract } = await import('./contractService');
+
+    await expect(approveContract('contract-1', 'محمد')).rejects.toThrow('MAKER_CHECKER_MUST_BE_DISTINCT');
+  });
+
+  it('rejects malformed approval responses that omit the lifecycle fields', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { status: 'active' }, error: null });
+    const { activateContract } = await import('./contractService');
+
+    await expect(activateContract('contract-1')).rejects.toThrow('ناقصة الحقول');
+  });
+});
