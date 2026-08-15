@@ -184,7 +184,7 @@ select throws_ok(
       '00000000-0000-0000-0000-000000000501',
       '00000000-0000-0000-0000-000000000601',
       date '2026-08-01', date '2027-07-31', 100, 'monthly', null,
-      'active', null, 'release-blocker-user-denied', null
+      'draft', null, 'release-blocker-user-denied', null
     )
   $$,
   null,
@@ -207,7 +207,7 @@ select lives_ok(
       '00000000-0000-0000-0000-000000000501',
       '00000000-0000-0000-0000-000000000601',
       date '2026-08-01', date '2027-07-31', 100, 'monthly', null,
-      'active', null, 'release-blocker-contract', null
+      'draft', null, 'release-blocker-contract', null
     )
   $$,
   'ADMIN can create a valid contract'
@@ -225,7 +225,7 @@ select throws_ok(
       '00000000-0000-0000-0000-000000000501',
       '00000000-0000-0000-0000-000000000601',
       date '2026-09-01', date '2027-01-31', 100, 'monthly', null,
-      'active', null, 'release-blocker-overlap', null
+      'draft', null, 'release-blocker-overlap', null
     )
   $$,
   null,
@@ -241,7 +241,7 @@ select lives_ok(
       '00000000-0000-0000-0000-000000000501',
       '00000000-0000-0000-0000-000000000602',
       date '2026-08-01', date '2027-07-31', 100, 'monthly', null,
-      'active', null, 'release-blocker-fixed-contract', null
+      'draft', null, 'release-blocker-fixed-contract', null
     )
   $$,
   'the same owner can use a different fee agreement on another property'
