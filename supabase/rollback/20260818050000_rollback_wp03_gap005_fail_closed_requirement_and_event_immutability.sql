@@ -1,4 +1,4 @@
--- Rollback for 20260818050000_wp03_gap005_fail_closed_requirement_and_event_immutability.sql
+-- Manual rollback for 20260818050000_wp03_gap005_fail_closed_requirement_and_event_immutability.sql — not auto-applied, run by hand only.
 
 begin;
 
