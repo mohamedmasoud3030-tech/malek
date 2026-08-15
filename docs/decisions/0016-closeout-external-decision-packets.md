@@ -139,3 +139,55 @@ engineering that does not assert legal validity.
 - They do **not** authorize production mutation, S09 historical correction, or
   pilot sign-off (those remain governed by D17/D18 and the Reviewer/Accounting
   ledgers).
+
+---
+
+## DP-4 — GAP-011 adjustment-event accounting mapping
+
+**Authority:** Accountant (with Product Owner for chart-of-accounts change).
+
+**Exact question.** What GL accounts and tax treatment apply to the remaining
+governed adjustment events in GAP-011 — late fees / other charges, credit
+notes, general (non-deposit) cash refunds, and non-cash adjustments?
+
+**Why it blocks release.** `FIN-014` fixes exactly 18 required accounts per
+company, and none of them is a late-fee / other-charge revenue account
+(revenue accounts are 4100 management fee, 4200 brokerage, 4300 damage; 4400
+is reserved for MASTER_LEASE termination gain). Locked D09 requires a late fee
+to be "a separate Charge with a separate account and separate Tax Code", and
+D15 requires credit notes/cash refunds to reverse or compensate posted history
+without deletion. The agent cannot pick these accounts: the mission and
+canonical rules forbid inventing accounting policy and browser/agent-side GL
+account selection.
+
+**Existing evidence.**
+- Canonical chart: `docs/source-of-truth/04_FINANCE_AND_ACCOUNTING_MODEL.md`
+  (18 accounts), `accountingDomain.ts`,
+  `20260804030000_stage3_gl_core_chart_of_accounts_and_periods.sql`.
+- D09 (late fees), D15 (invoice refund/void), D16 (bank import), FIN-014
+  (18-account invariant), FIN-012/GAP-010 (versioned tax codes; statutory code
+  contents remain a legal confirmation).
+- Already-governed adjustments (receipt VOID, deposit refund/reverse, accrual
+  reversal, owner-receivable reversal, commission reversal, contract
+  termination) all post to canonical accounts and need no new account.
+
+**Options.**
+1. **Extend the chart** with a late-fee/other-charge revenue account (and any
+   credit-note contra-revenue mapping), updating FIN-014 through the
+   governance process, then implement the remaining RPCs.
+2. **Explicitly exclude** late fees / other charges from this RC; fail closed
+   on any attempt to post them; implement only events whose accounts are
+   already canonical.
+3. Map late fees to an existing revenue account (e.g. 4100) — **not
+   recommended** without accountant approval (misclassification risk).
+
+**Consequences.** Option 1 unlocks full GAP-011 but requires a governed
+FIN-014 change. Option 2 keeps the RC honest with a documented exclusion.
+Option 3 risks misstated revenue.
+
+**Recommended technical default.** Fail closed today; prepare exact
+account/code proposals for accountant sign-off; implement GAP-011 events only
+against accountant-approved accounts.
+
+**Work that continues independently.** All WP-02/03/05/06/07 work that does
+not require the new accounts.
