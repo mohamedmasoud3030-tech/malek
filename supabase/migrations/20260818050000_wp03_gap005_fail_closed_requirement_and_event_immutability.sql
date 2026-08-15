@@ -12,6 +12,13 @@
 --      at the database boundary for every normal SQL role, including
 --      service_role paths.
 --
+-- Historical replay compatibility: migration 20260818000000 upserts the five
+-- pre-existing onboarding codes without completion_source. The authoritative
+-- mappings for those codes were already established in 20260818030000. A
+-- BEFORE trigger below restores exactly those existing mappings before CHECK
+-- evaluation, so historical idempotency stays valid without weakening the
+-- fail-closed rule for any new/unknown required code.
+--
 -- DP-5 remains open: this migration does not invent the canonical seven-step
 -- catalog or property-level safety evidence. It only guarantees that any future
 -- required step cannot silently become satisfied without an explicit validator.
@@ -20,6 +27,42 @@
 -- supabase/rollback/20260818050000_rollback_wp03_gap005_fail_closed_requirement_and_event_immutability.sql
 
 begin;
+
+-- Preserve the already-authorized code->validator mappings when old migrations
+-- are replayed/idempotency-tested. Unknown required codes are deliberately left
+-- untouched and will be rejected by the CHECK constraint below.
+create or replace function public.normalize_onboarding_requirement_completion_source()
+returns trigger
+language plpgsql
+set search_path to 'public', 'pg_temp'
+as $function$
+begin
+  if new.required
+     and (new.completion_source is null or new.completion_source = 'NONE') then
+    new.completion_source := case new.code
+      when 'owner'    then 'OWNER_EXISTS'
+      when 'property' then 'PROPERTY_EXISTS'
+      when 'unit'     then 'UNIT_EXISTS'
+      when 'contract' then 'CONTRACT_EXISTS'
+      when 'invoice'  then 'INVOICE_EXISTS'
+      else new.completion_source
+    end;
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function public.normalize_onboarding_requirement_completion_source()
+  from public, anon, authenticated;
+
+drop trigger if exists onboarding_requirement_completion_source_normalize
+  on public.onboarding_requirement_templates;
+
+create trigger onboarding_requirement_completion_source_normalize
+before insert or update of code, required, completion_source
+on public.onboarding_requirement_templates
+for each row execute function public.normalize_onboarding_requirement_completion_source();
 
 -- Every REQUIRED requirement must have a concrete server-side validator.
 -- PostgreSQL CHECK constraints accept UNKNOWN/NULL, so the IS NOT NULL clause
