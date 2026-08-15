@@ -8,7 +8,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select plan(20);
+select plan(19);
 
 insert into public.companies (id, name, slug, currency, is_active) values
   ('0a000000-0000-4000-8000-0000000000c1', 'GAP010 Company A', 'gap010-a', 'OMR', true),
