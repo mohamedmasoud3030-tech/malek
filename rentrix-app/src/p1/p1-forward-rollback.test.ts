@@ -101,14 +101,15 @@ beforeAll(async () => {
       && !f.includes('20260804') // FA-003 owner-settlement input reservation
       && !f.includes('_s03_')
       && !f.includes('_s04_')
-      // GAP-007/GAP-008/GAP-009 depend on the S03/S04 tables omitted by this
-      // historical P1 checkpoint (GAP-008 references public.journal_batches
-      // and the canonical posting engine, provided by the excluded S03/S04
-      // chain — same narrow rationale as the Phase 3A-1C exclusions).
+      // GAP-007/GAP-008/GAP-009/GAP-010 depend on the S03/S04 tables omitted
+      // by this historical P1 checkpoint; keep the downstream migrations out
+      // rather than weakening their real production dependencies.
       && !f.includes('wp02_fixed_monthly_daily_accrual')
       && !f.includes('wp02_gap008_due_from_owner_lifecycle')
       && !f.includes('wp02_gap009_deposit_precision')
       && !f.includes('wp02_gap009_deposit_lifecycle')
+      && !f.includes('wp02_gap010_tax_authority')
+      && !f.includes('wp02_gap010_effective_history_resolution')
       && !f.includes('_s06_')
       && !f.includes('_s08_')
       && !f.includes('_wp05_')
