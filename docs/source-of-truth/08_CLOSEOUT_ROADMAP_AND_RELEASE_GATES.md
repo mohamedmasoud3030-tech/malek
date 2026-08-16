@@ -250,7 +250,7 @@ Repository implementation for portions of S02/S04/S06/S07/S08 is acknowledged in
 | G3 — Company isolation | repository + exact deployed negative tests | PARTIAL: repository/ephemeral pass (db0 isolation gate); live absent |
 | G4 — Posting and reversal | owner-agency/master-lease included scope passes event/retry/reversal tests | PARTIAL: owner-agency event/retry/reversal suites green (RATE/FIXED/deposit/Due-from-Owner/VOID); master-lease inclusion undecided |
 | G5 — GL/subledger reconciliation | 1201/2000/1300/2200/2300 and included lease controls tie within 0.001 | PARTIAL: reconciliation engine green (pgTAP 33, tolerance 0.001); 1300 parity added (GAP-008); live cycle pending |
-| G6 — Permissions/Maker-Checker | six roles/effective grants/designated approvals verified | PARTIAL: six-role + all six designated maker-checker actions implemented and replay clean; audited sole-admin exception unimplemented; live verification pending |
+| G6 — Permissions/Maker-Checker | six roles/effective grants/designated approvals verified | PARTIAL: six-role + all six designated maker-checker actions and the audited sole-admin exception (D11/OPS-007) are fully implemented and verified locally; live verification pending |
 | G7 — Financial reports | GL statements and cash flow complete/reconciled | PARTIAL: GL-backed TB/P&L/BS/GL/Cash Flow green (pgTAP 26 + 393 financials); hosted cycle pending |
 | G8 — Mobile/desktop/RTL/browser | completed hosted Browser Readiness and acceptance evidence | PARTIAL: Hermetic Browser Readiness desktop/tablet/mobile PASS on integrated head (PR #1458 run 1420); hosted authenticated/seeded staging pending |
 | G9 — Main CI/release checks | mandatory code/database/governance/browser checks green on candidate | PARTIAL: current-main local ladder + PR #1458 CI all green incl. Browser Readiness; hosted jobs pending |
@@ -266,7 +266,7 @@ evidence ledger) moves the engineering state of several gaps forward without
 granting governed stage credit:
 
 - **GAP-001** six-role model: replay clean (249/249), db0 role-model 6/6, pgTAP 31. Engineering complete; live migration pending.
-- **GAP-002** maker-checker: contract, permission, settlement, receipt VOID, deposit claim and tax-profile approvals all enforce maker≠checker. Engineering complete; audited sole-admin exception (OPS-007/D11) not yet implemented; live verification pending.
+- **GAP-002** maker-checker: contract, permission, settlement, receipt VOID, deposit claim, tax-profile approvals, and the audited sole-admin exception (D11/OPS-007) are fully implemented and verified locally; live verification pending.
 - **GAP-006** RATE collection wiring: golden 1000.000→100.000→900.000 single reversible batch + governed VOID reversal. Engineering complete; taxable-collection integration + hosted evidence pending.
 - **GAP-007** FIXED_MONTHLY daily accrual: 31/29-day, mid-month, catch-up, period resolution, idempotent balanced reversal. Engineering complete; hosted evidence pending.
 - **GAP-008** Due-from-Owner: 1300 lifecycle with gated offset and post-payout recovery, pgTAP 23. Engineering complete; hosted evidence pending.

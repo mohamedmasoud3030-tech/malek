@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import { execSync } from 'node:child_process';
 import { createDatabase, replay } from '../db0/lib/replay.mjs';
 
 const COMPANY_ID = '00000000-0000-4000-a000-000000000002';
@@ -7,13 +8,20 @@ const AS_OF = '2026-08-16';
 async function main() {
   console.log('Starting PGlite DB0 migration replay for WP-07 financial close...');
   const db = await createDatabase();
-  const { failures } = await replay(db, { stopOnError: false });
+  const { applied, failures } = await replay(db, { stopOnError: false });
   if (failures.length) {
     console.error('Migration replay failed:');
     for (const f of failures) console.error(`  ${f.file}: ${f.error}`);
     process.exit(1);
   }
-  console.log('Migration replay clean. Replayed 259 migrations successfully.');
+  const migrationCount = applied.length;
+  console.log(`Migration replay clean. Replayed ${migrationCount} migrations successfully.`);
+
+  // Get exact current git commit SHA
+  let gitSha = 'unknown';
+  try {
+    gitSha = execSync('git rev-parse HEAD').toString().trim();
+  } catch (err) {}
 
   // Create Company B
   await db.query(
@@ -217,9 +225,9 @@ async function main() {
     dataset_type: "synthetic_controlled_rehearsal",
     generator_script: "scripts/wp07/run-reconciliation-pglite.mjs",
     reconciliation_rpc: "public.wp05_reconcile_all(uuid, date)",
-    code_under_test_sha: "0f07bc604557207b06d6eb438856371a2ebca6f5",
+    rc_sha: gitSha,
     branch: "agent/malek-final-release-candidate",
-    migration_count: 260,
+    migration_count: migrationCount,
     company_id: COMPANY_ID,
     company_name: "Demo Malek Co B",
     as_of_date: AS_OF,

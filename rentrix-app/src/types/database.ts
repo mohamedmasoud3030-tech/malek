@@ -8125,6 +8125,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      set_sole_admin_self_approval_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       soft_delete_contract_atomic: {
         Args: {
           p_contract_id: string | null;

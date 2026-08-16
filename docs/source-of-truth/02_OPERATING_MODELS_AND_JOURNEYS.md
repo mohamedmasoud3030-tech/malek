@@ -63,7 +63,7 @@ This matrix is the operational acceptance contract. “Repository layer” ident
 
 **Flow:** draft → review → approval → signed artifact → active schedule → invoices/collections → renewal/termination.  
 **Required controls:** Maker-Checker for material approval, immutable signed version, explicit termination record, future schedule cancellation rather than deletion.  
-**Current reality:** `20260808010000_s04_contract_lifecycle_maker_checker_v2.sql` and its pgTAP tests enforce distinct maker/checker identities and signature evidence in the database. The current React contract flow is not evidenced as invoking that complete lifecycle, and Maker-Checker is not yet proven for every designated VOID/settlement/financial approval; see `GAP-004` and `GAP-002`.
+**Current reality:** `20260808010000_s04_contract_lifecycle_maker_checker_v2.sql` and its pgTAP tests enforce distinct maker/checker identities and signature evidence in the database. Under the current Release Candidate, the React contract flow has been fully wired to invoke that complete lifecycle through atomic RPCs, and Maker-Checker (including the audited sole-admin exception setting) has been fully implemented and verified locally across all designated approvals (unblocking `GAP-002` and `GAP-004`).
 
 ## Journey C — OWNER_IS_CREDITOR collection
 

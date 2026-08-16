@@ -1,11 +1,12 @@
 -- WP-01 / GAP-002: End-to-end implementation of the audited sole-admin exception (OPS-007/D11).
 --
 -- This migration:
---   1. Adds 'allow_sole_admin_self_approval' company-level setting.
---   2. Adds 'is_sole_admin_exception' audit columns to contracts, settlements, voids, deposits, and tax-profiles.
+--   1. Adds 'allow_sole_admin_self_approval' company-level setting (not null default false).
+--   2. Adds 'is_sole_admin_exception' audit columns to contracts, settlements, voids, deposits, and tax-profiles (not null default false).
 --   3. Recreates distinct maker-checker check constraints to permit same-actor approval only when the sole-admin exception flag is set.
---   4. Creates the audit trigger on company_settings changes.
---   5. Overrides the 5 affected approval RPCs and triggers to support same-actor approvals with audited exception flags.
+--   4. Creates the audit trigger on company_settings changes and enforces the direct-write boundary.
+--   5. Implements the set_sole_admin_self_approval_atomic RPC with strict reason and authority checks.
+--   6. Overrides the 5 affected approval RPCs and triggers to support same-actor approvals with audited exception flags.
 
 begin;
 
@@ -67,7 +68,7 @@ begin
 end;
 $$;
 
--- 5. Audit activation/deactivation of the sole-admin setting
+-- 5. Audit activation/deactivation of the sole-admin setting and enforce RPC write boundary
 create or replace function public.wp01_audit_sole_admin_setting_change()
 returns trigger
 language plpgsql
@@ -76,8 +77,20 @@ set search_path = public, pg_temp
 as $$
 declare
   v_actor uuid := auth.uid();
+  v_old_val boolean := false;
+  v_reason text := nullif(current_setting('public.set_sole_admin_rpc_reason', true), '');
 begin
-  if old.allow_sole_admin_self_approval is distinct from new.allow_sole_admin_self_approval then
+  if tg_op = 'UPDATE' then
+    v_old_val := coalesce(old.allow_sole_admin_self_approval, false);
+  end if;
+
+  if tg_op = 'INSERT' or v_old_val is distinct from coalesce(new.allow_sole_admin_self_approval, false) then
+    -- Enforce direct-write boundary: browser must invoke set_sole_admin_self_approval_atomic
+    if nullif(current_setting('public.set_sole_admin_rpc_context', true), '') is distinct from 'active' then
+      raise exception 'SOLE_ADMIN_SETTING_DIRECT_WRITE_PROHIBITED: allow_sole_admin_self_approval cannot be mutated directly; must use set_sole_admin_self_approval_atomic RPC.'
+        using errcode = '42501';
+    end if;
+
     insert into public.audit_log (
       user_id,
       action,
@@ -91,12 +104,13 @@ begin
       'COMPANY_SETTING_CHANGE',
       'company_settings',
       new.company_id::text,
-      'Sole Admin Self Approval setting changed from ' || old.allow_sole_admin_self_approval::text || ' to ' || new.allow_sole_admin_self_approval::text,
+      'Sole Admin Self Approval setting ' || case when tg_op = 'INSERT' then 'initialized to ' else 'changed from ' || v_old_val::text || ' to ' end || coalesce(new.allow_sole_admin_self_approval::text, 'false') || ' with reason: ' || coalesce(v_reason, 'No reason provided'),
       'company_settings',
       jsonb_build_object(
         'field', 'allow_sole_admin_self_approval',
-        'old_value', old.allow_sole_admin_self_approval,
+        'old_value', case when tg_op = 'INSERT' then null else v_old_val end,
         'new_value', new.allow_sole_admin_self_approval,
+        'reason', v_reason,
         'actor', v_actor,
         'timestamp', now()
       )::text
@@ -108,7 +122,7 @@ $$;
 
 drop trigger if exists wp01_audit_sole_admin_setting_change on public.company_settings;
 create trigger wp01_audit_sole_admin_setting_change
-after update on public.company_settings
+after insert or update on public.company_settings
 for each row execute function public.wp01_audit_sole_admin_setting_change();
 
 revoke all on function public.wp01_audit_sole_admin_setting_change() from public, anon, authenticated;
@@ -117,7 +131,124 @@ grant execute on function public.wp01_audit_sole_admin_setting_change() to servi
 revoke all on function public.wp01_is_sole_admin_allowed(uuid) from public, anon;
 grant execute on function public.wp01_is_sole_admin_allowed(uuid) to authenticated, service_role;
 
--- 6. Override affected approval RPCs and triggers
+
+-- 6. Implement set_sole_admin_self_approval_atomic RPC
+create or replace function public.set_sole_admin_self_approval_atomic(p_payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_actor uuid := auth.uid();
+  v_company_id uuid := public.current_company_id();
+  v_enabled boolean := (p_payload->>'enabled')::boolean;
+  v_reason text := nullif(btrim(p_payload->>'reason'), '');
+  v_request_id text := nullif(btrim(p_payload->>'request_id'), '');
+  v_result jsonb;
+begin
+  -- 1. Restricted Authority: Only ACTIVE users with ADMIN role in company_members can manage settings
+  if v_actor is null or not exists (
+    select 1 from public.company_members cm
+    where cm.user_id = v_actor
+      and cm.company_id = v_company_id
+      and cm.role = 'ADMIN'
+      and cm.is_active = true
+  ) then
+    raise exception 'SOLE_ADMIN_SETTING_FORBIDDEN: only users with an active ADMIN role in this company can manage company settings.'
+      using errcode = '42501';
+  end if;
+
+  if v_company_id is null then
+    raise exception 'Company context is required to configure sole admin self approval.'
+      using errcode = '42501';
+  end if;
+
+  -- 2. Mandatory inputs
+  if v_enabled is null or v_request_id is null then
+    raise exception 'enabled and request_id are required fields.'
+      using errcode = '22023';
+  end if;
+
+  if v_reason is null or length(v_reason) < 4 then
+    raise exception 'SOLE_ADMIN_REASON_REQUIRED: a non-empty reason of at least 4 characters is required to change this setting.'
+      using errcode = '22023';
+  end if;
+
+  -- 3. Check Sole Admin constraint (D11): Can only enable if exactly ONE active ADMIN exists in the company
+  if v_enabled = true then
+    declare
+      v_admin_count bigint;
+    begin
+      select count(*) into v_admin_count
+      from public.company_members
+      where company_id = v_company_id
+        and role = 'ADMIN'
+        and is_active = true;
+
+      if v_admin_count is null or v_admin_count <> 1 then
+        raise exception 'SOLE_ADMIN_SETTING_FORBIDDEN: allow_sole_admin_self_approval can only be enabled if there is exactly one active ADMIN in the company (currently found: %).', v_admin_count
+          using errcode = '42501';
+      end if;
+    end;
+  end if;
+
+  -- 4. Idempotency Check
+  select response_payload into v_result
+  from public.financial_operation_idempotency
+  where operation_name = 'set_sole_admin_self_approval_atomic:' || v_company_id::text
+    and request_id = v_request_id;
+
+  if found then
+    return v_result || jsonb_build_object('idempotent', true);
+  end if;
+
+  -- 5. Lock company settings
+  perform pg_advisory_xact_lock(
+    hashtextextended('company_settings_lock:' || v_company_id::text, 0)
+  );
+
+  -- Set RPC context and reason so audit trigger captures it cleanly
+  perform set_config('public.set_sole_admin_rpc_context', 'active', true);
+  perform set_config('public.set_sole_admin_rpc_reason', v_reason, true);
+
+  -- 6. Update settings
+  update public.company_settings
+  set allow_sole_admin_self_approval = v_enabled,
+      updated_at = now()
+  where company_id = v_company_id;
+
+  if not found then
+    insert into public.company_settings (company_id, allow_sole_admin_self_approval, company_name)
+    values (v_company_id, v_enabled, 'Demo Company');
+  end if;
+
+  -- Reset RPC context and reason
+  perform set_config('public.set_sole_admin_rpc_context', '', true);
+  perform set_config('public.set_sole_admin_rpc_reason', '', true);
+
+  v_result := jsonb_build_object(
+    'success', true,
+    'company_id', v_company_id,
+    'allow_sole_admin_self_approval', v_enabled,
+    'reason', v_reason,
+    'actor_id', v_actor,
+    'request_id', v_request_id
+  );
+
+  insert into public.financial_operation_idempotency (operation_name, request_id, response_payload)
+  values ('set_sole_admin_self_approval_atomic:' || v_company_id::text, v_request_id, v_result)
+  on conflict (operation_name, request_id) do nothing;
+
+  return v_result || jsonb_build_object('idempotent', false);
+end;
+$$;
+
+revoke all on function public.set_sole_admin_self_approval_atomic(jsonb) from public, anon;
+grant execute on function public.set_sole_admin_self_approval_atomic(jsonb) to authenticated, service_role;
+
+
+-- 7. Override affected approval RPCs and triggers
 
 -- Case A: Contract Approval RPC
 create or replace function public.approve_contract_atomic(
