@@ -40,53 +40,41 @@ describe('app route and task-centric navigation parity', () => {
   it('exposes exactly seven global destinations in two lightweight groups', () => {
     const primaryItems = navGroups.flatMap(([, items]) => items);
     expect(primaryItems.map(([to]) => to)).toEqual([
-      '/dashboard',
-      '/properties',
-      '/contracts',
-      '/financials',
-      '/maintenance',
-      '/reports',
-      '/settings',
+      '/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings',
     ]);
     expect(primaryItems.map(([, labelKey]) => navigationLabels[labelKey])).toEqual([
-      'اليوم',
-      'المحفظة',
-      'التأجير',
-      'المال',
-      'الخدمات',
-      'التقارير والكشوف',
-      'الإعدادات',
+      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير والكشوف', 'الإعدادات',
     ]);
     expect(navGroups.map(([title]) => title)).toEqual(['العمل', 'التحليل والإدارة']);
   });
 
   it('keeps Portfolio child links inside Portfolio with explicit section state', () => {
-    const portfolioChildren = workspaceChildNavItems['/properties'];
-    expect(portfolioChildren.map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
-    expect(portfolioChildren.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
+    const children = workspaceChildNavItems['/properties'];
+    expect(children.map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
+    expect(children.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
       { labelKey: 'units', permission: undefined, search: { section: 'units' } },
       { labelKey: 'lands', permission: 'lands.view', search: { section: 'lands' } },
       { labelKey: 'owners', permission: 'owners.hub.view', search: { section: 'owners' } },
     ]);
   });
 
-  it('moves the remaining entity registers into the workspace that owns the user task', () => {
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/tenants', '/people', '/leads', '/communication']);
+  it('keeps Leasing child links inside Leasing with explicit workspace state', () => {
+    const children = workspaceChildNavItems['/contracts'];
+    expect(children.map(([to]) => to)).toEqual(['/contracts', '/contracts', '/contracts', '/contracts']);
+    expect(children.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
+      { labelKey: 'tenants', permission: undefined, search: { workspace: 'tenants' } },
+      { labelKey: 'peopleDirectory', permission: undefined, search: { workspace: 'people' } },
+      { labelKey: 'leads', permission: 'leads.view', search: { workspace: 'leads' } },
+      { labelKey: 'communication', permission: 'communication.view', search: { workspace: 'communication' } },
+    ]);
+  });
+
+  it('keeps Money and Services capabilities owned by their primary workspaces', () => {
     expect(workspaceChildNavItems['/financials'].map(([to]) => to)).toEqual([
-      '/invoices',
-      '/receipts',
-      '/arrears',
-      '/expenses',
-      '/deposits',
-      '/owner-settlements',
-      '/bank-reconciliation',
-      '/commissions',
+      '/invoices', '/receipts', '/arrears', '/expenses', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions',
     ]);
     expect(workspaceChildNavItems['/maintenance'].map(([to]) => to)).toEqual([
-      '/maintenance',
-      '/service-providers',
-      '/utilities',
-      '/documents-vault',
+      '/maintenance', '/service-providers', '/utilities', '/documents-vault',
     ]);
   });
 
@@ -100,7 +88,7 @@ describe('app route and task-centric navigation parity', () => {
     }
   });
 
-  it('maps every visible navigation, mobile and quick-create item to a registered route without duplicate keys', () => {
+  it('maps every visible navigation, mobile and quick-create item to a registered route without duplicate semantic keys', () => {
     const navPaths = navItems.map(([to]) => to);
     const navKeys = navItems.map(([to, labelKey]) => `${to}:${labelKey}`);
     const mobilePaths = mobileNavItems.map(([to]) => to);
@@ -119,8 +107,10 @@ describe('app route and task-centric navigation parity', () => {
     }
   });
 
-  it('keeps owners permission-gated and tenants authenticated without widening roles', () => {
+  it('keeps standalone owners/leads/communication routes permission-gated after in-workspace navigation', () => {
     expect(getRouteDefinition('/owners')).toContain("requirePermission('owners.hub.view')");
+    expect(getRouteDefinition('/leads')).toContain("requirePermission('leads.view')");
+    expect(getRouteDefinition('/communication')).toContain("requirePermission('communication.view')");
     expect(getRouteDefinition('/tenants')).not.toContain('requirePermission(');
   });
 

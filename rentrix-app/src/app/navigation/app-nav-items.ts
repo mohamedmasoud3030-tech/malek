@@ -70,10 +70,10 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRoundCog, 'owners.hub.view', { section: 'owners' }],
   ],
   '/contracts': [
-    ['/tenants', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck],
-    ['/people', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users],
-    ['/leads', 'leads', 'العملاء المحتملون والتحويلات', ContactRound, 'leads.view'],
-    ['/communication', 'communication', 'التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
+    ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck, undefined, { workspace: 'tenants' }],
+    ['/contracts', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users, undefined, { workspace: 'people' }],
+    ['/contracts', 'leads', 'العملاء المحتملون والتحويلات', ContactRound, 'leads.view', { workspace: 'leads' }],
+    ['/contracts', 'communication', 'التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view', { workspace: 'communication' }],
   ],
   '/financials': [
     ['/invoices', 'invoices', 'المستحقات والفواتير', FileText],

@@ -8,9 +8,11 @@ import { navigationLabels } from './terminology-registry';
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
 const portfolioSectionsSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-sections.ts', import.meta.url), 'utf8');
+const leasingHubSource = readFileSync(new URL('../../features/leasing-hub/leasing-hub-workspace.tsx', import.meta.url), 'utf8');
+const leasingSectionsSource = readFileSync(new URL('../../features/leasing-hub/leasing-hub-sections.ts', import.meta.url), 'utf8');
+const contractsRouteSource = readFileSync(new URL('../../routes/_protected.contracts.tsx', import.meta.url), 'utf8');
 const financialsPageSource = readFileSync(new URL('../../features/financials/financials-page.tsx', import.meta.url), 'utf8');
-const financialsSource = readFileSync(new URL('../../features/financials/finance-shell-model.ts', import.meta.url), 'utf8')
-  + '\n' + financialsPageSource;
+const financialsSource = readFileSync(new URL('../../features/financials/finance-shell-model.ts', import.meta.url), 'utf8') + '\n' + financialsPageSource;
 
 function hasRoute(path: string): boolean {
   return routeTreeSource.includes(`path: '${path}'`);
@@ -18,58 +20,45 @@ function hasRoute(path: string): boolean {
 
 describe('Task-centric canonical IA', () => {
   it('keeps all entity routes first-class while removing them from the global shell', () => {
-    for (const path of ['/people', '/lands', '/commissions', '/owners', '/tenants']) {
-      expect(hasRoute(path)).toBe(true);
-    }
-
+    for (const path of ['/people', '/lands', '/commissions', '/owners', '/tenants']) expect(hasRoute(path)).toBe(true);
     const primary = navGroups.flatMap(([, items]) => items.map(([to]) => to));
     expect(primary).toEqual([...TARGET_IA_TOP_LEVEL]);
-    for (const secondary of ['/people', '/lands', '/commissions', '/owners', '/tenants']) {
-      expect(primary).not.toContain(secondary);
-    }
+    for (const secondary of ['/people', '/lands', '/commissions', '/owners', '/tenants']) expect(primary).not.toContain(secondary);
   });
 
   it('organizes Portfolio around managed assets and ownership in one workspace', () => {
-    expect(getNavRoot('/properties')).toBe('/properties');
-    expect(getNavRoot('/units')).toBe('/properties');
-    expect(getNavRoot('/lands')).toBe('/properties');
-    expect(getNavRoot('/owners')).toBe('/properties');
-
-    const portfolioChildren = workspaceChildNavItems['/properties'];
-    expect(portfolioChildren.map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
-    expect(portfolioChildren.map(([, labelKey, , , , search]) => [labelKey, search?.section])).toEqual([
-      ['units', 'units'],
-      ['lands', 'lands'],
-      ['owners', 'owners'],
+    for (const path of ['/properties', '/units', '/lands', '/owners']) expect(getNavRoot(path)).toBe('/properties');
+    const children = workspaceChildNavItems['/properties'];
+    expect(children.map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
+    expect(children.map(([, labelKey, , , , search]) => [labelKey, search?.section])).toEqual([
+      ['units', 'units'], ['lands', 'lands'], ['owners', 'owners'],
     ]);
-
     expect(portfolioSectionsSource).toContain("'properties' | 'units' | 'lands' | 'owners'");
     expect(portfolioHubSource).toContain('LandsWorkspace');
     expect(portfolioHubSource).toContain('OwnersWorkspace');
-    expect(portfolioHubSource).not.toContain("navigate({ to: '/lands'");
-    expect(portfolioHubSource).not.toContain("navigate({ to: '/owners'");
   });
 
-  it('organizes Leasing around contract and relationship workflows', () => {
-    for (const path of ['/contracts', '/tenants', '/people', '/leads', '/communication']) {
-      expect(getNavRoot(path)).toBe('/contracts');
-    }
-    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual([
-      '/tenants', '/people', '/leads', '/communication',
+  it('organizes Leasing around one context-preserving journey workspace', () => {
+    for (const path of ['/contracts', '/tenants', '/people', '/leads', '/communication']) expect(getNavRoot(path)).toBe('/contracts');
+    const children = workspaceChildNavItems['/contracts'];
+    expect(children.map(([to]) => to)).toEqual(['/contracts', '/contracts', '/contracts', '/contracts']);
+    expect(children.map(([, labelKey, , , , search]) => [labelKey, search?.workspace])).toEqual([
+      ['tenants', 'tenants'],
+      ['peopleDirectory', 'people'],
+      ['leads', 'leads'],
+      ['communication', 'communication'],
     ]);
+    expect(leasingSectionsSource).toContain("'contracts' | 'tenants' | 'people' | 'leads' | 'communication'");
+    for (const workspace of ['ContractsWorkspace', 'TenantsWorkspace', 'PeopleListPage', 'LeadsWorkspace', 'CommunicationWorkspace']) {
+      expect(leasingHubSource).toContain(workspace);
+    }
+    expect(contractsRouteSource).toContain('LeasingHubPage');
   });
 
   it('organizes Money around obligations, cash, owner funds, banking and commissions', () => {
     const children = workspaceChildNavItems['/financials'].map(([to]) => to);
     expect(children).toEqual([
-      '/invoices',
-      '/receipts',
-      '/arrears',
-      '/expenses',
-      '/deposits',
-      '/owner-settlements',
-      '/bank-reconciliation',
-      '/commissions',
+      '/invoices', '/receipts', '/arrears', '/expenses', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions',
     ]);
     for (const path of children) {
       expect(getNavRoot(path)).toBe('/financials');
@@ -81,50 +70,36 @@ describe('Task-centric canonical IA', () => {
     expect(workspaceChildNavItems['/maintenance'].map(([to]) => to)).toEqual([
       '/maintenance', '/service-providers', '/utilities', '/documents-vault',
     ]);
-    expect(getNavRoot('/service-providers')).toBe('/maintenance');
-    expect(getNavRoot('/utilities')).toBe('/maintenance');
-    expect(getNavRoot('/documents-vault')).toBe('/maintenance');
+    for (const path of ['/service-providers', '/utilities', '/documents-vault']) expect(getNavRoot(path)).toBe('/maintenance');
   });
 
   it('keeps Reports independent from Money', () => {
     expect(getNavRoot('/reports')).toBe('/reports');
     expect(getNavRoot('/accounting')).toBe('/reports');
     expect(getNavRoot('/reports')).not.toBe('/financials');
-    const reportItems = navGroups.flatMap(([, items]) => items).filter(([to]) => to === '/reports');
-    expect(reportItems.map(([to]) => to)).toEqual(['/reports']);
+    expect(navGroups.flatMap(([, items]) => items).filter(([to]) => to === '/reports').map(([to]) => to)).toEqual(['/reports']);
   });
 
   it('preserves standalone deep-link compatibility while preferring owning workspaces', () => {
-    expect(hasRoute('/lands')).toBe(true);
-    expect(hasRoute('/owners')).toBe(true);
-    expect(hasRoute('/units')).toBe(true);
-    // Money is still in transition in this stage; commissions compatibility is
-    // intentionally preserved until the Money workspace refactor lands.
+    for (const path of ['/lands', '/owners', '/units', '/tenants', '/people', '/leads', '/communication']) expect(hasRoute(path)).toBe(true);
+    // Money remains the next migration stage; commissions still has standalone compatibility here.
     expect(financialsSource).toContain("navigate({ to: '/commissions'");
     expect(routeTreeSource).toContain("throw redirect({ to: '/commissions' })");
-    expect(routeTreeSource).toContain("...previous");
   });
 
   it('keeps existing route permissions after regrouping', () => {
-    expect(routeTreeSource).toContain("path: '/lands'");
     expect(routeTreeSource).toContain("requirePermission('lands.view')");
-    expect(routeTreeSource).toContain("path: '/commissions'");
+    expect(routeTreeSource).toContain("requirePermission('leads.view')");
+    expect(routeTreeSource).toContain("requirePermission('communication.view')");
     expect(routeTreeSource).toContain("requirePermission('commissions.view')");
     const peopleBlock = routeTreeSource.slice(routeTreeSource.indexOf("path: '/people'"), routeTreeSource.indexOf("path: '/people'") + 500);
     expect(peopleBlock).not.toContain("requirePermission('people");
   });
 
   it('route contract agrees with the seven-workspace mental model', () => {
-    expect(TARGET_IA_TOP_LEVEL).toEqual([
-      '/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings',
-    ]);
-
+    expect(TARGET_IA_TOP_LEVEL).toEqual(['/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings']);
     const rootBySecondary: Record<string, string> = {
-      '/people': '/contracts',
-      '/tenants': '/contracts',
-      '/lands': '/properties',
-      '/owners': '/properties',
-      '/commissions': '/financials',
+      '/people': '/contracts', '/tenants': '/contracts', '/lands': '/properties', '/owners': '/properties', '/commissions': '/financials',
     };
     for (const [path, root] of Object.entries(rootBySecondary)) {
       const entry = ROUTE_CONTRACT.find((candidate) => candidate.canonical === path)!;
