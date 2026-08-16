@@ -47,6 +47,13 @@ export const financialReportKeys = {
   balanceSheet: (asOf: string) => [...financialReportKeys.all, 'balanceSheet', asOf] as const,
 };
 
+/**
+ * R6 — Reports Read Models: every hook accepts { enabled } so the workspace
+ * fetches ONLY the open report (Open tab → fetch report), never the whole
+ * catalog up-front. `enabled` composes with input-completeness gates.
+ */
+export type ReportQueryOptions = Readonly<{ enabled?: boolean }>;
+
 function hasRequiredDateRange(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
   return Boolean(filters.dateFrom && filters.dateTo);
 }
@@ -55,155 +62,155 @@ function hasRequiredAsOf(filters: Pick<ArrearsReportFilters, 'asOf'>) {
   return Boolean(filters.asOf);
 }
 
-export function useCollectionSummaryReport(filters: FinancialReportFilters) {
+export function useCollectionSummaryReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.collectionSummary(filters),
     queryFn: () => getCollectionSummaryReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useDailyCollectionReport(filters: FinancialReportFilters) {
+export function useDailyCollectionReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.dailyCollection(filters),
     queryFn: () => getDailyCollectionReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useFinancialPeriodSummaryReport(filters: FinancialReportFilters) {
+export function useFinancialPeriodSummaryReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.financialPeriodSummary(filters),
     queryFn: () => getFinancialPeriodSummaryReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useFinancialCashflowReport(filters: FinancialReportFilters) {
+export function useFinancialCashflowReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.financialCashflow(filters),
     queryFn: () => getFinancialCashflowReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useCashFlowStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
+export function useCashFlowStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.cashFlowStatement(filters),
     queryFn: () => getCashFlowStatementReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useVatReturnReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
+export function useVatReturnReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.vatReturn(filters),
     queryFn: () => getVatReturnReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useInvoiceTotalsReport(filters: FinancialReportFilters) {
+export function useInvoiceTotalsReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.invoiceTotals(filters),
     queryFn: () => getInvoiceTotalsReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function usePaymentTotalsReport(filters: FinancialReportFilters) {
+export function usePaymentTotalsReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.paymentTotals(filters),
     queryFn: () => getPaymentTotalsReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useExpenseTotalsReport(filters: FinancialReportFilters) {
+export function useExpenseTotalsReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.expenseTotals(filters),
     queryFn: () => getExpenseTotalsReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters) {
+export function useExpenseBreakdownReport(filters: ExpenseBreakdownReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.expenseBreakdown(filters),
     queryFn: () => getExpenseBreakdownReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useOutstandingBalanceReport(filters: FinancialReportFilters) {
+export function useOutstandingBalanceReport(filters: FinancialReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.outstandingBalance(filters),
     queryFn: () => getOutstandingBalanceReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useOverdueInvoicesReport(filters: ArrearsReportFilters) {
+export function useOverdueInvoicesReport(filters: ArrearsReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.overdueInvoices(filters),
     queryFn: () => getOverdueInvoicesReport(filters),
-    enabled: hasRequiredAsOf(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredAsOf(filters)),
   });
 }
 
-export function useAgedReceivablesReport(filters: ArrearsReportFilters) {
+export function useAgedReceivablesReport(filters: ArrearsReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.agedReceivables(filters),
     queryFn: () => getAgedReceivablesReport(filters),
-    enabled: hasRequiredAsOf(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredAsOf(filters)),
   });
 }
 
-export function useArrearsSummaryReport(filters: ArrearsReportFilters) {
+export function useArrearsSummaryReport(filters: ArrearsReportFilters, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.arrearsSummary(filters),
     queryFn: () => getArrearsSummaryReport(filters),
-    enabled: hasRequiredAsOf(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredAsOf(filters)),
   });
 }
 
 
-export function useTenantStatementReport(contractId: string | undefined) {
+export function useTenantStatementReport(contractId: string | undefined, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.tenantStatement(contractId ?? ''),
     queryFn: () => getTenantStatementReport(contractId!),
-    enabled: Boolean(contractId),
+    enabled: (options.enabled ?? true) && (Boolean(contractId)),
   });
 }
 
-export function useOwnerStatementReport(ownerId: string | undefined, filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
+export function useOwnerStatementReport(ownerId: string | undefined, filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.ownerStatement(ownerId ?? '', filters),
     queryFn: () => getOwnerStatementReport({ ownerId: ownerId!, ...filters }),
-    enabled: Boolean(ownerId) && hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (Boolean(ownerId) && hasRequiredDateRange(filters)),
   });
 }
 
-export function useTrialBalanceReport(asOf: string | undefined) {
+export function useTrialBalanceReport(asOf: string | undefined, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.trialBalance(asOf ?? ''),
     queryFn: () => getTrialBalanceReport(asOf!),
-    enabled: Boolean(asOf),
+    enabled: (options.enabled ?? true) && (Boolean(asOf)),
   });
 }
 
-export function useIncomeStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>) {
+export function useIncomeStatementReport(filters: Pick<FinancialReportFilters, 'dateFrom' | 'dateTo'>, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.incomeStatement(filters),
     queryFn: () => getIncomeStatementReport(filters),
-    enabled: hasRequiredDateRange(filters),
+    enabled: (options.enabled ?? true) && (hasRequiredDateRange(filters)),
   });
 }
 
-export function useBalanceSheetReport(asOf: string | undefined) {
+export function useBalanceSheetReport(asOf: string | undefined, options: ReportQueryOptions = {}) {
   return useQuery({
     queryKey: financialReportKeys.balanceSheet(asOf ?? ''),
     queryFn: () => getBalanceSheetReport(asOf!),
-    enabled: Boolean(asOf),
+    enabled: (options.enabled ?? true) && (Boolean(asOf)),
   });
 }

@@ -310,10 +310,11 @@ const reportsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/reports',
   // Route-level guard matching the nav item permission and the page's own
-  // AccessDenied gate: roles without financial.reports.export are redirected
+  // AccessDenied gate: viewing reports requires financial.reports.view; the
+  // export capability remains a separate action permission (R5).
   // to the dashboard instead of being shown a permission-denied page from a
   // nav entry they can see.
-  beforeLoad: requirePermission('financial.reports.export'),
+  beforeLoad: requirePermission('financial.reports.view'),
   component: lazyRouteComponent(() => import('@/routes/_protected.reports'), 'ReportsRouteComponent'),
   staticData: { title: 'المحاسبة والتقارير' }
 });

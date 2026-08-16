@@ -217,10 +217,31 @@ async function installMinimalAppShellHarness(page: Page) {
       await fulfillJson(route, sessionPayload());
       return;
     }
-    if (url.pathname.endsWith('/rest/v1/rpc/rpt_dashboard_overview')) {
+    if (url.pathname.endsWith('/rest/v1/rpc/rpt_dashboard_snapshot')) {
       await fulfillJson(route, {
-        financial: { total_collected: 0, total_overdue_invoices: 0, total_expenses: 0, net_revenue: 0 },
-        operational: { properties: 0, units: 0, activeContracts: 0, expiringContracts30Days: 0, vacantUnits: 0, overdueInvoices: 0 },
+        meta: { source: 'rpt_dashboard_snapshot' },
+        portfolio: { properties: 0, units: 0 },
+        occupancy: { occupied_units: 0, vacant_units: 0, occupancy_rate: 0 },
+        contracts: { active: 0, expiring_30: 0, expiring_60: 0, expiring_90: 0 },
+        billing: { invoiced_amount: 0, invoices_count: 0, invoices_total_count: 0 },
+        collections: { collected_amount: 0, payments_count: 0, outstanding_amount: 0, collection_rate: 0 },
+        expenses: { total_amount: 0, count: 0 },
+        net_cash: 0,
+        arrears: {
+          total_overdue: 0, overdue_count: 0, average_days_overdue: 0,
+          over_90_amount: 0, over_90_count: 0, total_outstanding: 0,
+          buckets: {
+            current: { total: 0, count: 0 },
+            days_1_30: { total: 0, count: 0 },
+            days_31_60: { total: 0, count: 0 },
+            days_61_90: { total: 0, count: 0 },
+            days_90_plus: { total: 0, count: 0 },
+          },
+        },
+        owner_funds: { net_payable: 0, settlements_draft: 0, settlements_approved: 0 },
+        maintenance: { open: 0, in_progress: 0, urgent_open: 0 },
+        exceptions: { unmatched_bank_lines: 0, pending_settlements: 0 },
+        queues: { expiring_contracts: [], overdue_invoices: [], urgent_maintenance: [] },
       });
       return;
     }

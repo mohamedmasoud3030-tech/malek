@@ -1,30 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { buildNotificationItems } from './notifications-menu';
 
-const today = new Date('2026-07-22T12:00:00');
-
 describe('buildNotificationItems', () => {
   it('returns an empty feed when there is nothing to alert about', () => {
-    expect(buildNotificationItems(null, today)).toEqual([]);
+    expect(buildNotificationItems(null)).toEqual([]);
     expect(buildNotificationItems({
-      arrears: { overdueInvoices: [] },
-      maintenance: { urgentRequests: [] },
-      activeContracts: [{ end_date: '2026-12-31' }],
-    }, today)).toEqual([]);
+      arrears: { overdueCount: 0 },
+      contracts: { expiring30: 0 },
+      maintenance: { urgentOpen: 0 },
+    })).toEqual([]);
   });
 
-  it('counts overdue invoices, contracts expiring within 30 days, and urgent maintenance', () => {
+  it('uses the server-authoritative snapshot counts without client-side derivation', () => {
     const items = buildNotificationItems({
-      arrears: { overdueInvoices: [{ id: '1' }, { id: '2' }, { id: '3' }] },
-      maintenance: { urgentRequests: [{ id: 'm1' }] },
-      activeContracts: [
-        { end_date: '2026-08-01' }, // within 30 days
-        { end_date: '2026-07-22' }, // ends today — still counts
-        { end_date: '2026-09-30' }, // too far out
-        { end_date: '2026-07-10' }, // already ended
-        { end_date: null },
-      ],
-    }, today);
+      arrears: { overdueCount: 3 },
+      contracts: { expiring30: 2 },
+      maintenance: { urgentOpen: 1 },
+    });
 
     expect(items.map((item) => [item.to, item.count])).toEqual([
       ['/arrears', 3],
@@ -35,10 +27,10 @@ describe('buildNotificationItems', () => {
 
   it('attaches the route-guard permissions so the menu can mirror navigation visibility', () => {
     const items = buildNotificationItems({
-      arrears: { overdueInvoices: [{ id: '1' }] },
-      maintenance: { urgentRequests: [{ id: 'm1' }] },
-      activeContracts: [{ end_date: '2026-07-25' }],
-    }, today);
+      arrears: { overdueCount: 1 },
+      contracts: { expiring30: 1 },
+      maintenance: { urgentOpen: 1 },
+    });
 
     const permissionByRoute = Object.fromEntries(items.map((item) => [item.to, item.permission]));
     expect(permissionByRoute['/arrears']).toBe('arrears.view');

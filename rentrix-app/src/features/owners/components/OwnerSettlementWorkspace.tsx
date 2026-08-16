@@ -178,7 +178,7 @@ export function OwnerSettlementWorkspace() {
     periodTo: settlement.period_end,
     propertyTitle: settlement.property_title,
     totalRent: settlement.gross_rent_collected,
-    totalExpenses: settlement.maintenance_deductions + settlement.utility_deductions,
+    totalExpenses: settlement.owner_expenses + settlement.fee_vat_amount,
     totalCommission: settlement.management_fee_amount,
     netAmount: settlement.net_payable_amount,
     transactions: [
@@ -194,20 +194,20 @@ export function OwnerSettlementWorkspace() {
         description: 'أتعاب المكتب المعتمدة في التسوية',
         amount: -settlement.management_fee_amount,
       },
-      ...(settlement.maintenance_deductions > 0
+      ...(settlement.owner_expenses > 0
         ? [{
             date: settlement.period_end,
             type: 'مصروفات على المالك',
             description: 'مصروفات مخصومة من مستحق المالك',
-            amount: -settlement.maintenance_deductions,
+            amount: -settlement.owner_expenses,
           }]
         : []),
-      ...(settlement.utility_deductions > 0
+      ...(settlement.fee_vat_amount > 0
         ? [{
             date: settlement.period_end,
-            type: 'ضريبة التسوية',
-            description: 'ضريبة مسجلة مستقلة داخل التسوية',
-            amount: -settlement.utility_deductions,
+            type: 'ضريبة القيمة المضافة على الأتعاب',
+            description: 'ضريبة محتسبة من الخادم على أتعاب الإدارة',
+            amount: -settlement.fee_vat_amount,
           }]
         : []),
     ],
@@ -320,9 +320,14 @@ export function OwnerSettlementWorkspace() {
     { key: 'gross', header: 'المحصّل', render: (settlement) => <strong dir="ltr">{formatMoney(settlement.gross_rent_collected)}</strong> },
     { key: 'fees', header: 'أتعاب المكتب', render: (settlement) => <strong dir="ltr" className="text-primary">{formatMoney(settlement.management_fee_amount)}</strong> },
     {
-      key: 'deductions',
-      header: 'الخصومات',
-      render: (settlement) => <strong dir="ltr" className="text-destructive">{formatMoney(settlement.maintenance_deductions + settlement.utility_deductions)}</strong>,
+      key: 'expenses',
+      header: 'مصروفات المالك',
+      render: (settlement) => <strong dir="ltr" className="text-destructive">{formatMoney(settlement.owner_expenses)}</strong>,
+    },
+    {
+      key: 'feeVat',
+      header: 'ضريبة الأتعاب',
+      render: (settlement) => <strong dir="ltr" className="text-destructive">{formatMoney(settlement.fee_vat_amount)}</strong>,
     },
     { key: 'net', header: 'الصافي', render: (settlement) => <strong dir="ltr" className="text-success">{formatMoney(settlement.net_payable_amount)}</strong> },
     { key: 'status', header: 'الحالة', render: (settlement) => <StatusBadge tone={settlementTone(settlement.status)}>{settlementStatusLabels[settlement.status]}</StatusBadge> },
@@ -353,7 +358,7 @@ export function OwnerSettlementWorkspace() {
       <ResponsiveCardGrid desktopColumns={4}>
         <KpiCard label="إجمالي المقبوضات" value={formatMoney(totals.gross)} icon={Wallet} accent="emerald" sub="تحصيلات مثبتة داخل التسويات" />
         <KpiCard label="أتعاب المكتب" value={formatMoney(totals.fees)} icon={Landmark} accent="primary" sub="أتعاب كل تسوية حسب اتفاقها" />
-        <KpiCard label="المصروفات والضرائب" value={formatMoney(totals.deductions)} icon={DollarSign} accent="rose" sub="خصومات مسجلة على التسويات" />
+        <KpiCard label="المصروفات والضرائب" value={formatMoney(totals.expenses + totals.feeVat)} icon={DollarSign} accent="rose" sub="مصروفات المالك وضريبة الأتعاب من الخادم" />
         <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totals.net)} icon={BadgeCheck} accent="sky" sub="صافي جميع حالات التسوية" />
       </ResponsiveCardGrid>
 
@@ -433,7 +438,7 @@ export function OwnerSettlementWorkspace() {
                 <Metric label="صافي المستحق" value={selectedSettlement.net_payable_amount} tone="success" />
                 <Metric label="المحصل" value={selectedSettlement.gross_rent_collected} />
                 <Metric label="أتعاب المكتب" value={selectedSettlement.management_fee_amount} tone="primary" />
-                <Metric label="المصروفات والضريبة" value={selectedSettlement.maintenance_deductions + selectedSettlement.utility_deductions} tone="danger" />
+                <Metric label="المصروفات والضريبة" value={selectedSettlement.owner_expenses + selectedSettlement.fee_vat_amount} tone="danger" />
               </div>
               <p className="rounded-xl bg-muted/35 p-3 text-xs font-medium leading-5 text-muted-foreground">
                 سيُصرف مبلغ <strong className="tabular-nums" dir="ltr">{formatMoney(selectedSettlement.net_payable_amount)}</strong> إلى {selectedSettlement.owner_name} عن {selectedSettlement.property_title}

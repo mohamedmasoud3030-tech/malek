@@ -22,6 +22,7 @@ import {
 } from './ownerAgreementService';
 import { useCreateOwnerAgreement, useOwnerAgreements, useUpdateOwnerAgreement } from './useOwnerAgreements';
 import { useQuery } from '@tanstack/react-query';
+import { MONEY_STEP } from '@/lib/money';
 
 type AgreementFormState = {
   owner_id: string;
@@ -284,7 +285,7 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
             </Select>
           </EntityForm.Field>
           <EntityForm.Field label="قيمة العمولة" className={stepVisibility(1)}>
-            <Input type="number" step="0.01" min="0" value={form.commission_value} onChange={(e) => setForm((v) => ({ ...v, commission_value: e.target.value }))} required />
+            <Input type="number" step={MONEY_STEP} min="0" value={form.commission_value} onChange={(e) => setForm((v) => ({ ...v, commission_value: e.target.value }))} required />
           </EntityForm.Field>
 
           <EntityForm.Field label="تاريخ البداية" className={stepVisibility(2)}>

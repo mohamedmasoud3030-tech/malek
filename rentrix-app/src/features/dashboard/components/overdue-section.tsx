@@ -7,12 +7,19 @@ import type { OverdueTenantRow } from '../dashboard-utils';
 
 interface OverdueSectionProps {
   rows: OverdueTenantRow[];
+  /**
+   * Server-authoritative overdue invoice count (arrears.overdue_count). The
+   * queue rows are a bounded top-5 slice, so rows.length must never be shown
+   * as the operational number.
+   */
+  totalCount?: number;
   isLoading: boolean;
   settings: ReturnType<typeof import('@/hooks/useCompanyFormatters').useCompanyFormatters>;
 }
 
-export function OverdueSection({ rows, isLoading, settings }: OverdueSectionProps) {
+export function OverdueSection({ rows, totalCount, isLoading, settings }: OverdueSectionProps) {
   const { date, money } = settings;
+  const badgeCount = totalCount ?? rows.length;
   return (
     <section className="dashboard-queue-card" aria-labelledby="overdue-title">
       <div className="dashboard-queue-card__header">
@@ -26,7 +33,7 @@ export function OverdueSection({ rows, isLoading, settings }: OverdueSectionProp
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!isLoading ? <StatusBadge tone={rows.length > 0 ? 'danger' : 'success'}>{rows.length}</StatusBadge> : null}
+          {!isLoading ? <StatusBadge tone={badgeCount > 0 ? 'danger' : 'success'}>{badgeCount}</StatusBadge> : null}
           <Link to="/arrears" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
         </div>
       </div>

@@ -3,33 +3,20 @@ import type { LucideIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { cn } from '@/lib/utils';
-import type { ContractListItem } from '@/features/contracts/services/contractService';
 
+/**
+ * R1 — Dashboard Truth: the alert center consumes server-authoritative COUNTS
+ * only. It never receives row datasets and never derives a count by filtering
+ * rows in the browser (partial datasets would silently understate priorities).
+ *
+ * `undefined` means the source failed to load: the Dashboard must say so
+ * honestly instead of converting a failed query into a fake zero.
+ */
 export interface AlertCenterProps {
-  expiringContracts: ContractListItem[];
-  overdueInvoices: Array<{
-    id: string;
-    amount: number;
-    paid_amount?: number;
-    due_date: string;
-    tenant_name?: string | null;
-    invoice_number?: string | null;
-  }>;
-  urgentMaintenance: Array<{
-    id: string;
-    title: string | null;
-    priority: string | null;
-    property_id?: string | null;
-    unit_id?: string | null;
-    property_title?: string;
-    unit_number?: string;
-  }>;
+  expiringContractsCount?: number;
+  overdueInvoicesCount?: number;
+  urgentMaintenanceCount?: number;
   vacantUnitsCount?: number;
-  /**
-   * Auxiliary counts come from independent queries. `undefined` means the
-   * source failed to load: the Dashboard must say so honestly instead of
-   * converting a failed query into a fake zero.
-   */
   unmatchedBankTxCount?: number;
   pendingSettlementsCount?: number;
   integrityWarningsCount?: number;
@@ -50,13 +37,6 @@ type PriorityItem = Readonly<{
   critical: boolean;
   rank: number;
 }>;
-
-function getDaysUntil(date: string): number {
-  const target = new Date(`${date}T00:00:00`);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
 
 function priorityStatusLabel(priority: Pick<PriorityItem, 'unavailable' | 'count'>) {
   return priority.unavailable ? 'غير متاح' : priority.count;
@@ -89,33 +69,28 @@ function PriorityRow({ priority, secondary = false }: { priority: PriorityItem; 
 }
 
 export function AlertCenter({
-  expiringContracts,
-  overdueInvoices,
-  urgentMaintenance,
-  vacantUnitsCount = 0,
+  expiringContractsCount,
+  overdueInvoicesCount,
+  urgentMaintenanceCount,
+  vacantUnitsCount,
   unmatchedBankTxCount,
   pendingSettlementsCount,
   integrityWarningsCount,
   className = '',
 }: AlertCenterProps) {
-  const contractCount = expiringContracts.filter((c) => {
-    const days = getDaysUntil(c.end_date);
-    return days >= 0 && days <= 30;
-  }).length;
-  const overdueCount = overdueInvoices.length;
-  const maintenanceCount = urgentMaintenance.filter(
-    (r) => r.priority === 'urgent' || r.priority === 'high',
-  ).length;
   const knownTotal =
-    contractCount +
-    overdueCount +
-    maintenanceCount +
-    vacantUnitsCount +
+    (expiringContractsCount ?? 0) +
+    (overdueInvoicesCount ?? 0) +
+    (urgentMaintenanceCount ?? 0) +
+    (vacantUnitsCount ?? 0) +
     (unmatchedBankTxCount ?? 0) +
     (pendingSettlementsCount ?? 0) +
     (integrityWarningsCount ?? 0);
 
   const unavailableSources: Array<{ label: string; to: string }> = [];
+  if (overdueInvoicesCount === undefined) unavailableSources.push({ label: 'فواتير متأخرة', to: '/arrears' });
+  if (expiringContractsCount === undefined) unavailableSources.push({ label: 'عقود تنتهي قريباً', to: '/contracts' });
+  if (urgentMaintenanceCount === undefined) unavailableSources.push({ label: 'صيانة عاجلة', to: '/maintenance' });
   if (unmatchedBankTxCount === undefined) unavailableSources.push({ label: 'حركات بنكية معلقة', to: '/bank-reconciliation' });
   if (pendingSettlementsCount === undefined) unavailableSources.push({ label: 'تسويات ملاك جاهزة', to: '/owner-settlements' });
   if (integrityWarningsCount === undefined) unavailableSources.push({ label: 'تنبيهات سلامة البيانات', to: '/data-integrity' });
@@ -143,9 +118,9 @@ export function AlertCenter({
       label: 'فواتير متأخرة',
       description: 'متأخرات تحصيل مفتوحة',
       actionHint: 'ابدأ متابعة التحصيل',
-      count: overdueCount,
+      count: overdueInvoicesCount ?? 0,
       to: '/arrears',
-      unavailable: false,
+      unavailable: overdueInvoicesCount === undefined,
       icon: CreditCard,
       tone: 'danger',
       critical: true,
@@ -167,9 +142,9 @@ export function AlertCenter({
       label: 'عقود تنتهي قريباً',
       description: 'نافذة الثلاثين يوماً',
       actionHint: 'راجع التجديد أو الإخلاء',
-      count: contractCount,
+      count: expiringContractsCount ?? 0,
       to: '/contracts',
-      unavailable: false,
+      unavailable: expiringContractsCount === undefined,
       icon: CalendarClock,
       tone: 'warning',
       critical: true,
@@ -177,11 +152,11 @@ export function AlertCenter({
     },
     {
       label: 'صيانة عاجلة',
-      description: 'طلبات عالية أو عاجلة',
+      description: 'طلبات عاجلة مفتوحة',
       actionHint: 'راجع الطلبات ذات الأولوية',
-      count: maintenanceCount,
+      count: urgentMaintenanceCount ?? 0,
       to: '/maintenance',
-      unavailable: false,
+      unavailable: urgentMaintenanceCount === undefined,
       icon: Wrench,
       tone: 'warning',
       critical: true,
@@ -215,9 +190,9 @@ export function AlertCenter({
       label: 'وحدات شاغرة',
       description: 'فرص إعادة التأجير',
       actionHint: 'راجع جاهزية التأجير',
-      count: vacantUnitsCount,
+      count: vacantUnitsCount ?? 0,
       to: '/units',
-      unavailable: false,
+      unavailable: vacantUnitsCount === undefined,
       icon: Building2,
       tone: 'info',
       critical: false,

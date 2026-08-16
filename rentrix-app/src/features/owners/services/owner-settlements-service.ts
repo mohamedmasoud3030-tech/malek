@@ -4,6 +4,14 @@ import { fetchAllRows } from '@/lib/paginatedRead';
 export type SettlementStatus = 'pending' | 'approved' | 'paid' | 'cancelled';
 export type CommissionType = 'percentage' | 'fixed';
 
+/**
+ * R2 — Owner Financial Position: the record mirrors the server settlement
+ * document 1:1. Legacy aliases are GONE:
+ *   - tax_amount is the VAT charged on the office fee (fee_vat_amount), it is
+ *     never presented as "utility deductions";
+ *   - there is no fabricated management_fee_rate=0/management_fee_type='fixed'
+ *     — fee basis lives in the server derivation breakdown, not in this row.
+ */
 export type OwnerSettlementRecord = {
   id: string;
   owner_id: string;
@@ -13,11 +21,10 @@ export type OwnerSettlementRecord = {
   period_start: string;
   period_end: string;
   gross_rent_collected: number;
-  management_fee_rate: number;
-  management_fee_type: CommissionType;
   management_fee_amount: number;
-  maintenance_deductions: number;
-  utility_deductions: number;
+  owner_expenses: number;
+  /** VAT charged on the office management fee (server column tax_amount). */
+  fee_vat_amount: number;
   net_payable_amount: number;
   status: SettlementStatus;
   approved_by?: string | null;
@@ -40,7 +47,8 @@ export type OwnerSettlementTarget = {
 export type OwnerSettlementTotals = {
   gross: number;
   fees: number;
-  deductions: number;
+  expenses: number;
+  feeVat: number;
   net: number;
 };
 
@@ -56,10 +64,11 @@ export function summarizeLiveOwnerSettlements(settlements: readonly OwnerSettlem
       (summary, settlement) => ({
         gross: summary.gross + settlement.gross_rent_collected,
         fees: summary.fees + settlement.management_fee_amount,
-        deductions: summary.deductions + settlement.maintenance_deductions + settlement.utility_deductions,
+        expenses: summary.expenses + settlement.owner_expenses,
+        feeVat: summary.feeVat + settlement.fee_vat_amount,
         net: summary.net + settlement.net_payable_amount,
       }),
-      { gross: 0, fees: 0, deductions: 0, net: 0 },
+      { gross: 0, fees: 0, expenses: 0, feeVat: 0, net: 0 },
     );
 }
 
@@ -229,11 +238,9 @@ export async function listOwnerSettlements(): Promise<OwnerSettlementRecord[]> {
     period_start: String(row.period_start ?? ''),
     period_end: String(row.period_end ?? ''),
     gross_rent_collected: Number(row.gross_collected ?? 0),
-    management_fee_rate: 0,
-    management_fee_type: 'fixed',
     management_fee_amount: Number(row.office_fee ?? 0),
-    maintenance_deductions: Number(row.owner_expenses ?? 0),
-    utility_deductions: Number(row.tax_amount ?? 0),
+    owner_expenses: Number(row.owner_expenses ?? 0),
+    fee_vat_amount: Number(row.tax_amount ?? 0),
     net_payable_amount: Number(row.net_payable ?? 0),
     status: normalizeStatus(row.status),
     approved_by: row.approved_by ? String(row.approved_by) : null,
@@ -294,7 +301,7 @@ export async function listOwnerSettlementTargets(): Promise<OwnerSettlementTarge
  * what gets stored — never a client-side re-computation.
  */
 export async function previewOwnerSettlement(payload: PreviewSettlementPayload): Promise<OwnerSettlementPreview> {
-  const { data, error } = await (supabase as any).rpc('calculate_owner_net_payout', {
+  const { data, error } = await supabase.rpc('calculate_owner_net_payout', {
     p_owner_id: payload.owner_id,
     p_period_start: payload.period_start,
     p_period_end: payload.period_end,
@@ -317,7 +324,7 @@ export async function previewOwnerSettlement(payload: PreviewSettlementPayload):
 }
 
 export async function createOwnerSettlementDraft(payload: CreateSettlementDraftPayload): Promise<string> {
-  const { data, error } = await (supabase as any).rpc('create_owner_settlement_draft_atomic', {
+  const { data, error } = await supabase.rpc('create_owner_settlement_draft_atomic', {
     // Spread only; request_id stays exactly the attempt key the caller holds —
     // retrying with the same key replays the cached server response instead of
     // creating a second draft.
@@ -327,13 +334,14 @@ export async function createOwnerSettlementDraft(payload: CreateSettlementDraftP
   if (error) {
     throw new Error(messageFromError(error, 'تعذر إنشاء مسودة تسوية المالك.'));
   }
-  const settlementId = data?.settlement_id;
+  const responsePayload = (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Record<string, unknown>;
+  const settlementId = responsePayload.settlement_id;
   if (!settlementId) throw new Error('لم تُرجع قاعدة البيانات رقم التسوية الجديدة.');
   return String(settlementId);
 }
 
 export async function approveOwnerSettlement(payload: ApproveSettlementPayload): Promise<void> {
-  const { error } = await (supabase as any).rpc('approve_owner_settlement_atomic', {
+  const { error } = await supabase.rpc('approve_owner_settlement_atomic', {
     p_payload: { settlement_id: payload.settlement_id, request_id: crypto.randomUUID() },
   });
 
@@ -343,7 +351,7 @@ export async function approveOwnerSettlement(payload: ApproveSettlementPayload):
 }
 
 export async function processOwnerPayout(payload: ProcessPayoutPayload): Promise<void> {
-  const { error } = await (supabase as any).rpc('pay_owner_settlement_atomic', {
+  const { error } = await supabase.rpc('pay_owner_settlement_atomic', {
     p_payload: {
       settlement_id: payload.settlement_id,
       request_id: crypto.randomUUID(),
@@ -355,4 +363,149 @@ export async function processOwnerPayout(payload: ProcessPayoutPayload): Promise
   if (error) {
     throw new Error(messageFromError(error, 'تعذر تسجيل صرف تسوية المالك.'));
   }
+}
+
+/* ── R2: Owner Financial Position (server-derived, never reinterpreted) ── */
+
+export type OwnerFinancialPosition = {
+  meta: { ownerId: string; from: string; to: string; source: string };
+  period: {
+    tenantCollections: number;
+    managementFees: { amount: number; breakdown: Record<string, unknown> };
+    ownerExpenses: number;
+    feeVat: number;
+    authorizedAdjustments: number;
+    netPayable: number;
+  };
+  lifecycle: {
+    settledPendingNet: number;
+    paidNet: number;
+    remainingPayable: number;
+    draftCount: number;
+    approvedCount: number;
+    paidCount: number;
+    cancelledCount: number;
+  };
+  ownerFunds: {
+    held: number;
+    events: Array<{
+      id: string;
+      sourceType: string;
+      sourceId: string;
+      amountDelta: number;
+      effectiveDate: string;
+      journalBatchId: string | null;
+    }>;
+  };
+  settlements: Array<{
+    id: string;
+    reference: string | null;
+    propertyId: string | null;
+    periodStart: string | null;
+    periodEnd: string | null;
+    grossCollected: number;
+    managementFee: number;
+    ownerExpenses: number;
+    feeVat: number;
+    netPayable: number;
+    status: string;
+    approvedAt: string | null;
+    paidAt: string | null;
+    paymentReference: string | null;
+    cancelledAt: string | null;
+    cancellationReason: string | null;
+  }>;
+};
+
+function positionNumber(value: unknown): number {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function normalizeOwnerFinancialPosition(data: unknown): OwnerFinancialPosition {
+  const raw = (data && typeof data === 'object' ? data : {}) as Record<string, any>;
+  const meta = raw.meta ?? {};
+  const period = raw.period ?? {};
+  const lifecycle = raw.lifecycle ?? {};
+  const ownerFunds = raw.owner_funds ?? {};
+  const fees = period.management_fees ?? {};
+
+  return {
+    meta: {
+      ownerId: String(meta.owner_id ?? ''),
+      from: String(meta.from ?? ''),
+      to: String(meta.to ?? ''),
+      source: String(meta.source ?? ''),
+    },
+    period: {
+      tenantCollections: positionNumber(period.tenant_collections),
+      managementFees: {
+        amount: positionNumber(fees.amount),
+        breakdown: (fees.breakdown && typeof fees.breakdown === 'object' ? fees.breakdown : {}) as Record<string, unknown>,
+      },
+      ownerExpenses: positionNumber(period.owner_expenses),
+      feeVat: positionNumber(period.fee_vat),
+      authorizedAdjustments: positionNumber(period.authorized_adjustments),
+      netPayable: positionNumber(period.net_payable),
+    },
+    lifecycle: {
+      settledPendingNet: positionNumber(lifecycle.settled_pending_net),
+      paidNet: positionNumber(lifecycle.paid_net),
+      remainingPayable: positionNumber(lifecycle.remaining_payable),
+      draftCount: positionNumber(lifecycle.draft_count),
+      approvedCount: positionNumber(lifecycle.approved_count),
+      paidCount: positionNumber(lifecycle.paid_count),
+      cancelledCount: positionNumber(lifecycle.cancelled_count),
+    },
+    ownerFunds: {
+      held: positionNumber(ownerFunds.held),
+      events: (Array.isArray(ownerFunds.events) ? ownerFunds.events : []).map((event: any) => ({
+        id: String(event?.id ?? ''),
+        sourceType: String(event?.source_type ?? ''),
+        sourceId: String(event?.source_id ?? ''),
+        amountDelta: positionNumber(event?.amount_delta),
+        effectiveDate: String(event?.effective_date ?? ''),
+        journalBatchId: event?.journal_batch_id ? String(event.journal_batch_id) : null,
+      })),
+    },
+    settlements: (Array.isArray(raw.settlements) ? raw.settlements : []).map((row: any) => ({
+      id: String(row?.id ?? ''),
+      reference: row?.reference ? String(row.reference) : null,
+      propertyId: row?.property_id ? String(row.property_id) : null,
+      periodStart: row?.period_start ? String(row.period_start) : null,
+      periodEnd: row?.period_end ? String(row.period_end) : null,
+      grossCollected: positionNumber(row?.gross_collected),
+      managementFee: positionNumber(row?.management_fee),
+      ownerExpenses: positionNumber(row?.owner_expenses),
+      feeVat: positionNumber(row?.fee_vat),
+      netPayable: positionNumber(row?.net_payable),
+      status: String(row?.status ?? 'DRAFT'),
+      approvedAt: row?.approved_at ? String(row.approved_at) : null,
+      paidAt: row?.paid_at ? String(row.paid_at) : null,
+      paymentReference: row?.payment_reference ? String(row.payment_reference) : null,
+      cancelledAt: row?.cancelled_at ? String(row.cancelled_at) : null,
+      cancellationReason: row?.cancellation_reason ? String(row.cancellation_reason) : null,
+    })),
+  };
+}
+
+/**
+ * Server-derived Owner Financial Position. One RPC composes the canonical
+ * derivation authority (calculate_owner_net_payout), the settlement lifecycle
+ * and the RC1 owner-funds control — the UI renders it verbatim.
+ */
+export async function getOwnerFinancialPosition(payload: {
+  owner_id: string;
+  from: string;
+  to: string;
+}): Promise<OwnerFinancialPosition> {
+  const { data, error } = await supabase.rpc('rpt_owner_financial_position', {
+    p_owner_id: payload.owner_id,
+    p_from: payload.from,
+    p_to: payload.to,
+  });
+  if (error) {
+    throw new Error(messageFromError(error, 'تعذر تحميل المركز المالي للمالك.'));
+  }
+  return normalizeOwnerFinancialPosition(data);
 }

@@ -17,6 +17,7 @@ import { propertyStatusLabels, propertyStatusValues } from './property-schema';
 import { applyPropertyOwnershipSplit } from './property-service';
 import { useProperty, useUpdateProperty } from './use-properties';
 import { PropertyFormCoreFields } from './components/property-form-core-fields';
+import { MONEY_STEP } from '@/lib/money';
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -406,7 +407,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
                 <EntityForm.Field label={`قيمة العمولة ${commissionType === 'RATE' ? '(%)' : '(ريال)'}`} error={form.formState.errors.commission_value?.message}>
                   <Input
                     type="number"
-                    step="0.01"
+                    step={MONEY_STEP}
                     inputMode="decimal"
                     min="0.01"
                     max={commissionType === 'RATE' ? 100 : undefined}

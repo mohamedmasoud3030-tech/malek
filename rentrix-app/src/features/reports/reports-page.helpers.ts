@@ -173,11 +173,12 @@ export function buildExpiringContractsRows(contracts: ContractListItem[], fromDa
     }));
 }
 
-export function usePropertyTitles() {
+export function usePropertyTitles(options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({
     queryKey: ['reports', 'propertyTitles'],
     queryFn: async (): Promise<PropertyTitleRow[]> => listPropertyTitles(),
     staleTime: 60_000,
+    enabled: options?.enabled ?? true,
   });
 }
 

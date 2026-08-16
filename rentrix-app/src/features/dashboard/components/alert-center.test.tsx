@@ -16,17 +16,14 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   };
 });
 
-function futureTag(days: number): string {
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
-
 const baseProps = {
-  expiringContracts: [] as any[],
-  overdueInvoices: [] as any[],
-  urgentMaintenance: [] as any[],
+  expiringContractsCount: 0,
+  overdueInvoicesCount: 0,
+  urgentMaintenanceCount: 0,
+  vacantUnitsCount: 0,
 };
 
-describe('AlertCenter honest partial-data states', () => {
+describe('AlertCenter honest partial-data states (R1 server counts)', () => {
   let container: HTMLDivElement | null = null;
   let root: any = null;
 
@@ -66,14 +63,12 @@ describe('AlertCenter honest partial-data states', () => {
     expect(text).toContain('2 حالة تحتاج قراراً أو متابعة');
   });
 
-  it('renders real counts as priority links with valid destinations', async () => {
+  it('renders server-authoritative counts as priority links with valid destinations', async () => {
     await render({
       unmatchedBankTxCount: 5,
       pendingSettlementsCount: 2,
       integrityWarningsCount: 0,
-      expiringContracts: [
-        { id: 'c1', end_date: futureTag(5) } as any,
-      ],
+      expiringContractsCount: 1,
     });
 
     const text = container?.textContent ?? '';
@@ -86,6 +81,19 @@ describe('AlertCenter honest partial-data states', () => {
     expect(hrefs).toContain('/contracts');
     // The retired /finance/banking path must never come back.
     expect(hrefs).not.toContain('/finance/banking');
+  });
+
+  it('shows the count exactly as the server reports it — no client rederivation', async () => {
+    // 137 overdue invoices: a partial 5-row queue must never shrink this KPI.
+    await render({
+      overdueInvoicesCount: 137,
+      unmatchedBankTxCount: 0,
+      pendingSettlementsCount: 0,
+      integrityWarningsCount: 0,
+    });
+
+    const text = container?.textContent ?? '';
+    expect(text).toContain('137 حالة تحتاج قراراً أو متابعة');
   });
 
   it('shows the all-clear card only when every source is loaded and empty', async () => {

@@ -44,8 +44,8 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
         ? `آخر تحديث ${formatUpdatedTime(lastUpdatedAt)}`
         : `حتى ${formatCompanyDate(settings, `${periodEnd}T00:00:00`)}`;
   const isSnapshotReady = Boolean(snapshot);
-  const activeContracts = compactNumber(snapshot?.operational.activeContracts, isLoading ? '…' : 'غير متاح');
-  const occupancyRate = compactNumber(snapshot?.operational.occupancyRate, isLoading ? '…' : 'غير متاح');
+  const activeContracts = compactNumber(snapshot?.contracts.active, isLoading ? '…' : 'غير متاح');
+  const occupancyRate = compactNumber(snapshot?.occupancy.occupancyRate, isLoading ? '…' : 'غير متاح');
 
   return (
     <header

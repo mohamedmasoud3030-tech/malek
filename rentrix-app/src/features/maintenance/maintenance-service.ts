@@ -19,7 +19,6 @@ export type MaintenanceUpdate = Pick<Database['public']['Tables']['maintenance_r
   | 'technician_name'
   | 'scheduled_date'
   | 'attachment_url'>;
-type MaintenanceStatusUpdate = Pick<Database['public']['Tables']['maintenance_records']['Update'], 'status' | 'resolved_at'>;
 export async function listMaintenance(status: MaintenanceStatus, propertyId: string): Promise<Maintenance[]> {
   try {
     // Maintenance queues and report KPIs must not silently stop at PostgREST's
@@ -118,24 +117,28 @@ export async function updateMaintenance(requestId: string, payload: MaintenanceU
   return data;
 }
 
-export async function updateMaintenanceStatus(requestId: string, status: Exclude<MaintenanceStatus, 'all'>) {
+/**
+ * R8: every status transition is a SERVER COMMAND
+ * (transition_maintenance_status_atomic) — never a raw table update. The
+ * server enforces the legal matrix (open→in_progress/cancelled,
+ * in_progress→open/cancelled, resolved→closed, terminal states immutable),
+ * requires a cancellation reason, and audits the transition.
+ */
+export async function updateMaintenanceStatus(
+  requestId: string,
+  status: Exclude<MaintenanceStatus, 'all'>,
+  reason?: string,
+) {
   if (status === 'resolved') {
     throw new Error('استخدم resolveMaintenanceWithExpense لإغلاق طلب الصيانة مع تسجيل التكلفة');
   }
-  const updatePayload: MaintenanceStatusUpdate = {
-    status,
-    resolved_at: status === 'closed' ? new Date().toISOString() : null,
-  };
-  const { data, error } = await supabase
-    .from('maintenance_records')
-    .update(updatePayload)
-    .eq('id', requestId)
-    .is('deleted_at', null)
-    .select('*')
-    .single()
-    .returns<Maintenance>();
+  const { data, error } = await supabase.rpc('transition_maintenance_status_atomic', {
+    p_request_id: requestId,
+    p_next_status: status,
+    p_reason: reason ?? null,
+  });
   if (error) handleSupabaseError(error, 'تعذر تحديث حالة طلب الصيانة');
-  return data;
+  return data as Maintenance;
 }
 
 export type ResolveMaintenanceResult = { maintenance: Maintenance; expense_id: string | null };

@@ -11,12 +11,13 @@ export const contractKeys = {
   detail: (contractId: string) => [...contractKeys.all, 'detail', contractId] as const,
 };
 
-export function useAllContracts(status: ContractStatusFilter = 'all') {
+export function useAllContracts(status: ContractStatusFilter = 'all', options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({
     queryKey: contractKeys.allPages(status),
     queryFn: () => listAllContracts(status),
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    enabled: options?.enabled ?? true,
   });
 }
 

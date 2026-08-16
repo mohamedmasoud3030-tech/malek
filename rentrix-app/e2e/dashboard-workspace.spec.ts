@@ -1,6 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
-type DashboardHarnessMode = 'normal' | 'empty' | 'partial-bank-error' | 'snapshot-error' | 'stale-refetch-error';
+type DashboardHarnessMode = 'normal' | 'empty' | 'partial-integrity-error' | 'snapshot-error' | 'stale-refetch-error';
 
 // Contract width matrix (MALEK Visual Contract V2 / ADR 0012 phase 2-3):
 // 320 / 375 / 414 mobile, 768 tablet, 1024 small desktop, 1440 desktop.
@@ -139,10 +139,72 @@ const maintenanceRecords = [
   { id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent', status: 'open', property_id: 'property-1', unit_id: 'unit-5', property_title: 'برج الخليج', unit_number: '5', deleted_at: null, created_at: nowIso },
 ];
 
-const baseOverview = {
-  financial: { total_collected: 12_000, total_overdue_invoices: 3_000, total_expenses: 1_500, net_revenue: 10_500 },
-  operational: { properties: 2, units: 2, activeContracts: 2, expiringContracts30Days: 2, vacantUnits: 0, overdueInvoices: 2 },
-};
+function buildSnapshot(empty: boolean) {
+  if (empty) {
+    return {
+      meta: { source: 'rpt_dashboard_snapshot' },
+      portfolio: { properties: 0, units: 0 },
+      occupancy: { occupied_units: 0, vacant_units: 0, occupancy_rate: 0 },
+      contracts: { active: 0, expiring_30: 0, expiring_60: 0, expiring_90: 0 },
+      billing: { invoiced_amount: 0, invoices_count: 0, invoices_total_count: 0 },
+      collections: { collected_amount: 0, payments_count: 0, outstanding_amount: 0, collection_rate: 0 },
+      expenses: { total_amount: 0, count: 0 },
+      net_cash: 0,
+      arrears: {
+        total_overdue: 0, overdue_count: 0, average_days_overdue: 0,
+        over_90_amount: 0, over_90_count: 0, total_outstanding: 0,
+        buckets: {
+          current: { total: 0, count: 0 },
+          days_1_30: { total: 0, count: 0 },
+          days_31_60: { total: 0, count: 0 },
+          days_61_90: { total: 0, count: 0 },
+          days_90_plus: { total: 0, count: 0 },
+        },
+      },
+      owner_funds: { net_payable: 0, settlements_draft: 0, settlements_approved: 0 },
+      maintenance: { open: 0, in_progress: 0, urgent_open: 0 },
+      exceptions: { unmatched_bank_lines: 0, pending_settlements: 0 },
+      queues: { expiring_contracts: [], overdue_invoices: [], urgent_maintenance: [] },
+    };
+  }
+  return {
+    meta: { source: 'rpt_dashboard_snapshot' },
+    portfolio: { properties: 2, units: 2 },
+    occupancy: { occupied_units: 2, vacant_units: 0, occupancy_rate: 100 },
+    contracts: { active: 2, expiring_30: 2, expiring_60: 2, expiring_90: 2 },
+    billing: { invoiced_amount: 15_000, invoices_count: 3, invoices_total_count: 3 },
+    collections: { collected_amount: 12_000, payments_count: 1, outstanding_amount: 3_000, collection_rate: 80 },
+    expenses: { total_amount: 1_500, count: 1 },
+    net_cash: 10_500,
+    arrears: {
+      total_overdue: 3_000, overdue_count: 2, average_days_overdue: 30,
+      over_90_amount: 0, over_90_count: 0, total_outstanding: 3_000,
+      buckets: {
+        current: { total: 0, count: 0 },
+        days_1_30: { total: 1_500, count: 1 },
+        days_31_60: { total: 1_500, count: 1 },
+        days_61_90: { total: 0, count: 0 },
+        days_90_plus: { total: 0, count: 0 },
+      },
+    },
+    owner_funds: { net_payable: 0, settlements_draft: 0, settlements_approved: 0 },
+    maintenance: { open: 1, in_progress: 0, urgent_open: 1 },
+    exceptions: { unmatched_bank_lines: 0, pending_settlements: 0 },
+    queues: {
+      expiring_contracts: [
+        { id: 'contract-1', reference: 'CON-1001', end_date: soonDate, days_remaining: 9, tenant_name: 'أحمد الفارسي', property_title: 'برج الخليج', unit_number: '5' },
+        { id: 'contract-2', reference: 'CON-1002', end_date: laterDate, days_remaining: 18, tenant_name: 'سالم الكعبي', property_title: 'واحة مسقط', unit_number: '12' },
+      ],
+      overdue_invoices: [
+        { invoice_id: 'invoice-1', reference: 'INV-2001', due_date: '2026-07-10', days_overdue: 26, remaining_amount: 1_500, tenant_name: 'أحمد الفارسي', property_title: 'برج الخليج', unit_number: '5' },
+        { invoice_id: 'invoice-2', reference: 'INV-2002', due_date: '2026-07-14', days_overdue: 22, remaining_amount: 1_500, tenant_name: 'سالم الكعبي', property_title: 'واحة مسقط', unit_number: '12' },
+      ],
+      urgent_maintenance: [
+        { id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent', property_title: 'برج الخليج', unit_number: '5' },
+      ],
+    },
+  };
+}
 
 function encodeJwtPart(value: unknown) {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -262,23 +324,24 @@ async function installDashboardHarness(page: Page, mode: DashboardHarnessMode) {
       return;
     }
 
-    if (url.pathname.endsWith('/rest/v1/rpc/rpt_dashboard_overview')) {
+    if (url.pathname.endsWith('/rest/v1/rpc/rpt_dashboard_snapshot')) {
       overviewRequests += 1;
       if (mode === 'snapshot-error' || (mode === 'stale-refetch-error' && overviewRequests > 1)) {
-        await fulfillJson(route, { message: 'dashboard overview unavailable in harness' }, 500);
+        await fulfillJson(route, { message: 'dashboard snapshot unavailable in harness' }, 500);
         return;
       }
-      await fulfillJson(route, mode === 'empty'
-        ? { financial: { total_collected: 0, total_overdue_invoices: 0, total_expenses: 0, net_revenue: 0 }, operational: { properties: 0, units: 0, activeContracts: 0, expiringContracts30Days: 0, vacantUnits: 0, overdueInvoices: 0 } }
-        : baseOverview);
+      await fulfillJson(route, buildSnapshot(mode === 'empty'));
       return;
     }
 
     const tableMatch = url.pathname.match(/\/rest\/v1\/([^/?]+)/);
     if (tableMatch) {
       const table = tableMatch[1] ?? '';
-      if (mode === 'partial-bank-error' && table === 'bank_statement_lines') {
-        await fulfillJson(route, { message: 'bank statement count unavailable in harness' }, 500);
+      // R1: bank/settlement counts now come from the snapshot RPC itself.
+      // The only remaining auxiliary source is the data-integrity audit —
+      // failing one of its inputs proves the honest «غير متاح» state.
+      if (mode === 'partial-integrity-error' && table === 'owners') {
+        await fulfillJson(route, { message: 'integrity audit input unavailable in harness' }, 500);
         return;
       }
       await fulfillJson(route, tableRows(table, mode));
@@ -460,7 +523,7 @@ test('real dashboard route exposes loading, empty, error, partial and stale stat
 
   await page.setViewportSize({ width: 375, height: 812 });
 
-  await openDashboardRoute(page, 'light', 'partial-bank-error');
+  await openDashboardRoute(page, 'light', 'partial-integrity-error');
   await expect(page.locator('[data-status-badge]', { hasText: 'غير متاح' }).first()).toBeVisible();
   await expect(page.getByText('تعذر تحميل العدد الآن')).toBeVisible();
   await expect(page.getByText('لا توجد أعمال عاجلة')).toHaveCount(0);

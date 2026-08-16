@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { propertyStatusLabels, propertyStatusValues } from '../property-schema';
+import { MONEY_STEP } from '@/lib/money';
 
 /**
  * Core property fields that both create (with agreement) and edit schemas share.
@@ -39,10 +40,10 @@ export function PropertyFormCoreFields<T extends FieldValues>({
         </Select>
       </EntityForm.Field>
       <EntityForm.Field label="قيمة الشراء" error={errors.purchase_value?.message as string | undefined}>
-        <Input type="number" step="0.01" inputMode="decimal" min="0" {...register('purchase_value' as Path<T>)} />
+        <Input type="number" step={MONEY_STEP} inputMode="decimal" min="0" {...register('purchase_value' as Path<T>)} />
       </EntityForm.Field>
       <EntityForm.Field label="القيمة الحالية" error={errors.current_value?.message as string | undefined}>
-        <Input type="number" step="0.01" inputMode="decimal" min="0" {...register('current_value' as Path<T>)} />
+        <Input type="number" step={MONEY_STEP} inputMode="decimal" min="0" {...register('current_value' as Path<T>)} />
       </EntityForm.Field>
       <EntityForm.Field label="ملاحظات" className="md:col-span-2">
         <Textarea {...register('notes' as Path<T>)} placeholder="أي تفاصيل إضافية" />

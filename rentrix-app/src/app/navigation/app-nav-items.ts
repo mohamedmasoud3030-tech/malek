@@ -43,11 +43,11 @@ export const navGroups: readonly NavGroup[] = [
   ['الأراضي', [['/lands', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view']]],
   ['العقود', [['/contracts', 'contracts', 'العقود والتجديدات ودورة الحياة', FileText]]],
   ['المالية', [['/financials', 'financials', 'الفواتير والتحصيل والمصروفات والتسويات والبنوك', PieChart]]],
-  // /reports denies every role without financial.reports.export at the page
+  // /reports requires the view capability; export stays an action permission
   // gate (ReportsPage → AccessDenied). Showing the entry to roles that always
   // get denied is a misleading navigation affordance, so the nav item carries
   // the same permission the page enforces.
-  ['التقارير', [['/reports', 'accountingReports', 'التقارير والتحليلات والكشوف', BarChart3, 'financial.reports.export']]],
+  ['التقارير', [['/reports', 'accountingReports', 'التقارير والتحليلات والكشوف', BarChart3, 'financial.reports.view']]],
   ['الخدمات', [['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench]]],
   ['العمولات', [['/commissions', 'commissions', 'عمولات التحصيل والمبيعات المرتبطة بالمصادر', BadgeDollarSign, 'commissions.view']]],
   ['الإعدادات', [['/settings', 'settings', 'إعدادات الشركة والصلاحيات والأتمتة والنظام', Settings]]],

@@ -110,9 +110,9 @@ describe('Visual Wave 1 — app-shell notification states', () => {
 
   it('keeps focus management and trigger toggling reliable for a real notification link', () => {
     queryState.data = {
-      arrears: { overdueInvoices: [{ id: 'invoice-1' }] },
-      maintenance: { urgentRequests: [] },
-      activeContracts: [],
+      arrears: { overdueCount: 1 },
+      maintenance: { urgentOpen: 0 },
+      contracts: { expiring30: 0 },
     };
     act(() => {
       root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />);
@@ -145,7 +145,7 @@ describe('Visual Wave 1 — app-shell notification states', () => {
       decided_at: null, decision_reason: null, created_at: '2026-08-09T00:00:00Z',
     }];
     persistedState.data = [];
-    queryState.data = { arrears: { overdueInvoices: [] }, maintenance: { urgentRequests: [] }, activeContracts: [] };
+    queryState.data = { arrears: { overdueCount: 0 }, maintenance: { urgentOpen: 0 }, contracts: { expiring30: 0 } };
     act(() => { root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />); });
     // The pending request must be reflected in the bell count.
     expect(host.querySelector('button[aria-label="التنبيهات (1)"]')).toBeTruthy();
@@ -168,7 +168,7 @@ describe('Visual Wave 1 — app-shell notification states', () => {
       createdAt: '2026-08-09T00:00:00Z', type: 'permission_decision',
     }];
     requestsState.data = [];
-    queryState.data = { arrears: { overdueInvoices: [] }, maintenance: { urgentRequests: [] }, activeContracts: [] };
+    queryState.data = { arrears: { overdueCount: 0 }, maintenance: { urgentOpen: 0 }, contracts: { expiring30: 0 } };
     act(() => { root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />); });
     open(host);
     expect(host.textContent).toContain('تم اعتماد طلب الصلاحية');
@@ -179,9 +179,9 @@ describe('Visual Wave 1 — app-shell notification states', () => {
 
   it('keeps notification controls at the 44px touch-target contract', () => {
     queryState.data = {
-      arrears: { overdueInvoices: [{ id: 'invoice-1' }] },
-      maintenance: { urgentRequests: [] },
-      activeContracts: [],
+      arrears: { overdueCount: 1 },
+      maintenance: { urgentOpen: 0 },
+      contracts: { expiring30: 0 },
     };
     act(() => {
       root.render(<NotificationsMenu authorization={authorization} sharedLabel={sharedLabel} />);

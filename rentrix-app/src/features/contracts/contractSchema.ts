@@ -50,6 +50,22 @@ export const paymentCycleLabels: Record<(typeof paymentCycleValues)[number], str
   annual: 'سنوي',
 };
 
+const billingDay = z.preprocess(
+  (value) => (value === '' || value === null || value === undefined ? 1 : Number(value)),
+  z.number({ invalid_type_error: 'يوم الفوترة مطلوب' })
+    .int('يوم الفوترة يجب أن يكون عدداً صحيحاً')
+    .min(1, 'يوم الفوترة يجب أن يكون بين 1 و28')
+    .max(28, 'يوم الفوترة يجب أن يكون بين 1 و28'),
+);
+
+const graceDays = z.preprocess(
+  (value) => (value === '' || value === null || value === undefined ? 0 : Number(value)),
+  z.number({ invalid_type_error: 'أيام السماح مطلوبة' })
+    .int('أيام السماح يجب أن تكون عدداً صحيحاً')
+    .min(0, 'أيام السماح لا يمكن أن تكون سالبة')
+    .max(90, 'أيام السماح يجب ألا تتجاوز 90 يوماً'),
+);
+
 export const contractSchema = z.object({
   // Live properties use text ids; validate selection without narrowing the id format to UUID.
   property_id: z.string().trim().min(1, 'اختر العقار'),
@@ -60,6 +76,11 @@ export const contractSchema = z.object({
   end_date: isoDate,
   rent_amount: money,
   payment_cycle: z.enum(paymentCycleValues, { required_error: 'دورة السداد مطلوبة' }),
+  // R4 — Billing Authority: the billing policy is an explicit contract term,
+  // never a hidden default. billing_day anchors invoice issue dates inside
+  // each period; due date = period end + grace_days (server declaration).
+  billing_day: billingDay,
+  grace_days: graceDays,
   payment_terms_id: z.string().uuid('اختر شرط سداد صحيح').or(z.literal('')).optional().transform((value) => value || null),
   status: z.enum(contractStatusValues, { required_error: 'الحالة مطلوبة' }),
   cancellation_reason: z.string().trim().optional().transform((value) => value || null),

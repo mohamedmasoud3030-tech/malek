@@ -17,6 +17,7 @@ import {
   type UnitFormValues,
 } from './unit-schema';
 import { useCreateUnit, useUpdateUnit } from './use-units';
+import { MONEY_STEP } from '@/lib/money';
 
 type UnitFormModalProps = {
   propertyId: string;
@@ -164,7 +165,7 @@ export function UnitFormModal({ propertyId, unit, open, onOpenChange }: UnitForm
         <EntityForm.Field label="قيمة الإيجار الافتراضية" error={form.formState.errors.rent_amount?.message}>
           <Input
             type="number"
-            step="0.01"
+            step={MONEY_STEP}
             inputMode="decimal"
             min="0"
             {...form.register('rent_amount')}

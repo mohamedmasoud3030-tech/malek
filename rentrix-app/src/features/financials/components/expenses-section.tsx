@@ -24,6 +24,7 @@ import { formatDate, formatMoney } from './financials-formatters';
 import { EXPENSE_CHARGED_TO_LABELS, EXPENSE_CHARGED_TO_VALUES, buildExpenseCategoryOptions, buildExpensePropertyLabel, getExpenseChargedTo, getExpenseChargedToLabel, normalizeExpenseChargedTo, summarizeOperationalExpenses, OPERATIONAL_EXPENSE_CATEGORIES, type ExpenseChargedTo, type OperationalExpenseCategory, type OperationalExpenseFilterValues } from '../expenses/operational-expenses';
 import { downloadExpenseCsv, exportExpenseVoucher as exportExpenseVoucherPdf, printExpenseVoucher as printExpenseVoucherDocument } from '../expenses/expense-actions';
 import { getTodayLocalDateString } from '../financials-date-utils';
+import { MONEY_MIN_POSITIVE, MONEY_STEP } from '@/lib/money';
 
 export type ExpenseFormValues = {
   property_id: string;
@@ -307,7 +308,7 @@ export function ExpensesSection({
 
               <label className="space-y-1.5 text-sm font-bold">
                 <span>المبلغ</span>
-                <Input type="number" min="0.01" inputMode="decimal" step="0.01" placeholder="0.000" {...expenseForm.register('amount')} aria-invalid={Boolean(expenseForm.formState.errors.amount)} />
+                <Input type="number" min={MONEY_MIN_POSITIVE} inputMode="decimal" step={MONEY_STEP} placeholder="0.000" {...expenseForm.register('amount')} aria-invalid={Boolean(expenseForm.formState.errors.amount)} />
                 {expenseForm.formState.errors.amount?.message ? <span className="text-xs text-destructive">{expenseForm.formState.errors.amount.message}</span> : null}
               </label>
 

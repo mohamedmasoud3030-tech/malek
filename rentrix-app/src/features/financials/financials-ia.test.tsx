@@ -29,13 +29,16 @@ describe('/financials consolidated operational entry', () => {
     expect(source).toContain('SectionTabs');
   });
 
-  it('contains the five final finance sections', () => {
-    const source = readPage();
-    expect(source).toContain("id: 'overview'");
-    expect(source).toContain("id: 'collections'");
-    expect(source).toContain("id: 'expenses'");
-    expect(source).toContain("id: 'funds'");
-    expect(source).toContain("id: 'banking'");
+  it('contains the five final finance sections (R9: model lives in finance-shell-model)', () => {
+    // R9 extracted the section model into finance-shell-model.ts; the page
+    // re-exports it. The IA contract now asserts against the single model.
+    const model = readFileSync(new URL('./finance-shell-model.ts', import.meta.url), 'utf8');
+    expect(model).toContain("id: 'overview'");
+    expect(model).toContain("id: 'collections'");
+    expect(model).toContain("id: 'expenses'");
+    expect(model).toContain("id: 'funds'");
+    expect(model).toContain("id: 'banking'");
+    expect(readPage()).toContain("from './finance-shell-model'");
   });
 
   it('links accounting and formal reporting as the second finance/accounting destination', () => {

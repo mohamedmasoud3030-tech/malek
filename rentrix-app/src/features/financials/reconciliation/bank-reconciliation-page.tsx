@@ -1,3 +1,4 @@
+import { MONEY_STEP } from '@/lib/money';
 import {
   Banknote,
   CheckCircle2,
@@ -222,7 +223,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
                 <Input value={ctrl.lineDraft.reference} onChange={(event) => ctrl.setLineDraft({ ...ctrl.lineDraft, reference: event.target.value })} placeholder="رقم المرجع" />
               </EntityForm.Field>
               <EntityForm.Field label={`المبلغ (${companySettings.defaultCurrency}) *`}>
-                <Input required type="number" step="0.01" inputMode="decimal" dir="ltr" value={ctrl.lineDraft.amount} onChange={(event) => ctrl.setLineDraft({ ...ctrl.lineDraft, amount: event.target.value })} placeholder="المبلغ +/-" />
+                <Input required type="number" step={MONEY_STEP} inputMode="decimal" dir="ltr" value={ctrl.lineDraft.amount} onChange={(event) => ctrl.setLineDraft({ ...ctrl.lineDraft, amount: event.target.value })} placeholder="المبلغ +/-" />
               </EntityForm.Field>
             </div>
           </EntityForm.Section>
@@ -290,7 +291,7 @@ export function BankReconciliationWorkspace({ embedded = false }: BankReconcilia
                 <Input required value={ctrl.matchDraft.matched_entity_id} onChange={(event) => ctrl.setMatchDraft({ ...ctrl.matchDraft, matched_entity_id: event.target.value })} placeholder="معرف السجل" />
               </EntityForm.Field>
               <EntityForm.Field label={`مبلغ المطابقة (${companySettings.defaultCurrency}) *`}>
-                <Input required type="number" step="0.01" inputMode="decimal" dir="ltr" value={ctrl.matchDraft.matched_amount} onChange={(event) => ctrl.setMatchDraft({ ...ctrl.matchDraft, matched_amount: event.target.value })} placeholder="مبلغ المطابقة" />
+                <Input required type="number" step={MONEY_STEP} inputMode="decimal" dir="ltr" value={ctrl.matchDraft.matched_amount} onChange={(event) => ctrl.setMatchDraft({ ...ctrl.matchDraft, matched_amount: event.target.value })} placeholder="مبلغ المطابقة" />
               </EntityForm.Field>
               <EntityForm.Field label="ملاحظات">
                 <Input value={ctrl.matchDraft.notes} onChange={(event) => ctrl.setMatchDraft({ ...ctrl.matchDraft, notes: event.target.value })} placeholder="اختياري" />

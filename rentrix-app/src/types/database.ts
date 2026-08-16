@@ -3806,6 +3806,9 @@ export type Database = {
           reference: string | null;
           service_provider_id: string | null;
           service_provider_category_id: string | null;
+          cancelled_at: string | null;
+          cancellation_reason: string | null;
+          request_id: string | null;
         };
         Insert: {
           id?: string;
@@ -3838,6 +3841,9 @@ export type Database = {
           reference?: string | null;
           service_provider_id?: string | null;
           service_provider_category_id?: string | null;
+          cancelled_at?: string | null;
+          cancellation_reason?: string | null;
+          request_id?: string | null;
         };
         Update: {
           id?: string;
@@ -3870,6 +3876,9 @@ export type Database = {
           reference?: string | null;
           service_provider_id?: string | null;
           service_provider_category_id?: string | null;
+          cancelled_at?: string | null;
+          cancellation_reason?: string | null;
+          request_id?: string | null;
         };
         Relationships: [
           {
@@ -7269,6 +7278,23 @@ export type Database = {
         };
         Relationships: [];
       };
+      party_directory: {
+        Row: {
+          party_key: string | null;
+          source_id: string | null;
+          source_table: string | null;
+          role: string | null;
+          display_name: string | null;
+          full_name: string | null;
+          phone: string | null;
+          email: string | null;
+          national_id: string | null;
+          company_id: string | null;
+          active: boolean | null;
+          live: boolean | null;
+        };
+        Relationships: [];
+      };
       s08_analysis_scope: {
         Row: {
           company_id: string | null;
@@ -7587,6 +7613,8 @@ export type Database = {
           p_cancellation_reason: string | null;
           p_notes: string | null;
           p_attachment_url: string | null;
+          p_billing_day?: number | null;
+          p_grace_days?: number | null;
         };
         Returns: Json;
       };
@@ -8472,6 +8500,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpt_dashboard_snapshot: {
+        Args: {
+          p_from: string | null;
+          p_to: string | null;
+          p_as_of?: string | null;
+        };
+        Returns: Json;
+      };
       rpt_financial_summary: {
         Args: {
           p_from: string | null;
@@ -8496,6 +8532,14 @@ export type Database = {
       rpt_overdue_invoices: {
         Args: {
           p_as_of?: string | null;
+        };
+        Returns: Json;
+      };
+      rpt_owner_financial_position: {
+        Args: {
+          p_owner_id: string | null;
+          p_from: string | null;
+          p_to: string | null;
         };
         Returns: Json;
       };
@@ -8703,6 +8747,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      transition_maintenance_status_atomic: {
+        Args: {
+          p_request_id: string | null;
+          p_next_status: string | null;
+          p_reason?: string | null;
+        };
+        Returns: Json;
+      };
       update_accounting_period_status: {
         Args: {
           p_payload: Json | null;
@@ -8731,6 +8783,14 @@ export type Database = {
           p_cancellation_reason: string | null;
           p_notes: string | null;
           p_attachment_url: string | null;
+        };
+        Returns: Json;
+      };
+      update_contract_billing_policy_atomic: {
+        Args: {
+          p_contract_id: string | null;
+          p_billing_day: number | null;
+          p_grace_days: number | null;
         };
         Returns: Json;
       };

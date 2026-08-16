@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState } from '@/components/ui/error-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { PageLayout } from '@/components/layout/page-layout';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
 import { useAuth } from '@/hooks/use-auth';
 import { OnboardingChecklist } from '@/features/onboarding/OnboardingChecklist';
 import type { OnboardingProgress } from '@/features/onboarding/useOnboarding';
-import { listBankStatementLines } from '@/features/financials/reconciliation/bankReconciliationService';
-import { fetchIntegrityWarningsCount, fetchPendingSettlementsCount } from '@/services/action-center-counts';
+import { fetchIntegrityWarningsCount } from '@/services/action-center-counts';
 import { getDashboardSnapshot } from './dashboard-snapshot';
 import { DashboardVisualScope } from './dashboard-visual-scope';
 import { HeroBanner } from './components/hero-banner';
@@ -21,6 +21,15 @@ import { DashboardCharts } from './components/dashboard-charts';
 import { AlertCenter } from './components/alert-center';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 
+/**
+ * R1 — Dashboard Truth.
+ *
+ * Every KPI on this page comes from the authoritative server read model
+ * (rpt_dashboard_snapshot). The page never counts, filters, or sums datasets
+ * to produce an operational or financial number; the only remaining auxiliary
+ * query is the data-integrity audit count, which is a diagnostics feature
+ * with its own service boundary.
+ */
 export function DashboardPage() {
   const { authorization, canAccess } = useAuth();
   const canManageSetup = authorization?.role === 'ADMIN' || authorization?.role === 'MANAGER';
@@ -58,34 +67,22 @@ export function DashboardPage() {
 
   const progress = useMemo<OnboardingProgress>(
     () => ({
-      hasProperty: (snapshot?.operational.properties ?? 0) > 0,
-      hasUnit: (snapshot?.operational.units ?? 0) > 0,
-      hasContract: (snapshot?.operational.activeContracts ?? 0) > 0,
-      hasInvoice: (snapshot?.financial.invoicesCount ?? 0) > 0,
+      hasProperty: (snapshot?.portfolio.properties ?? 0) > 0,
+      hasUnit: (snapshot?.portfolio.units ?? 0) > 0,
+      hasContract: (snapshot?.contracts.active ?? 0) > 0,
+      hasInvoice: (snapshot?.billing.invoicesTotalCount ?? 0) > 0,
     }),
     [snapshot],
   );
 
   const expiringContracts = useMemo(
-    () => buildExpiringContracts(snapshot?.activeContracts, now),
-    [snapshot?.activeContracts, now],
+    () => buildExpiringContracts(snapshot?.queues.expiringContracts),
+    [snapshot?.queues.expiringContracts],
   );
   const overdueRows = useMemo(
-    () => buildOverdueTenantRows(snapshot?.arrears.overdueInvoices),
-    [snapshot?.arrears.overdueInvoices],
+    () => buildOverdueTenantRows(snapshot?.queues.overdueInvoices),
+    [snapshot?.queues.overdueInvoices],
   );
-
-  const unmatchedLinesQuery = useQuery({
-    queryKey: ['bank-reconciliation', 'unmatched-count'],
-    queryFn: () => listBankStatementLines({ bankAccountId: 'all', status: 'unmatched', from: '', to: '' }),
-    retry: false,
-  });
-
-  const pendingSettlementsQuery = useQuery({
-    queryKey: ['owner-settlements', 'ready-count'],
-    queryFn: () => fetchPendingSettlementsCount(),
-    retry: false,
-  });
 
   const integrityWarningsQuery = useQuery({
     queryKey: ['data-integrity', 'audit-count'],
@@ -95,8 +92,6 @@ export function DashboardPage() {
 
   // Honest partial data: a failed auxiliary query is reported as unavailable
   // (undefined), never silently converted into a fake zero count.
-  const unmatchedBankTxCount = unmatchedLinesQuery.isError ? undefined : (unmatchedLinesQuery.data?.length ?? 0);
-  const pendingSettlementsCount = pendingSettlementsQuery.isError ? undefined : (pendingSettlementsQuery.data ?? 0);
   const integrityWarningsCount = integrityWarningsQuery.isError ? undefined : (integrityWarningsQuery.data ?? 0);
 
   const hasQuickActions = filterQuickActionsByPermission(canAccess).length > 0;
@@ -134,21 +129,22 @@ export function DashboardPage() {
             {/* Distinct label from the inner AlertCenter section («الأولوية الآن»)
                 so the two nested landmarks do not collide (axe landmark-unique). */}
             <section data-dashboard-section="priorities" aria-label="متابعة الأولويات">
+              {isLoading ? (
+                /* While the snapshot is loading, counts are UNKNOWN — a
+                   loading state is honest; rows of «غير متاح» would misread
+                   as failed sources and pre-R1 zeros were fake. */
+                <LoadingState variant="section" label="جارٍ تحميل أولويات المتابعة" />
+              ) : (
               <AlertCenter
-                expiringContracts={snapshot?.activeContracts ?? []}
-                overdueInvoices={(snapshot?.arrears.overdueInvoices ?? []).map((invoice) => ({
-                  id: invoice.invoiceId,
-                  amount: invoice.remainingAmount,
-                  paid_amount: 0,
-                  due_date: invoice.dueDate,
-                  tenant_name: invoice.tenantName,
-                }))}
-                urgentMaintenance={snapshot?.maintenance?.urgentRequests ?? []}
-                vacantUnitsCount={snapshot?.operational.vacantUnits ?? 0}
-                unmatchedBankTxCount={unmatchedBankTxCount}
-                pendingSettlementsCount={pendingSettlementsCount}
+                expiringContractsCount={snapshot?.contracts.expiring30}
+                overdueInvoicesCount={snapshot?.arrears.overdueCount}
+                urgentMaintenanceCount={snapshot?.maintenance.urgentOpen}
+                vacantUnitsCount={snapshot?.occupancy.vacantUnits}
+                unmatchedBankTxCount={snapshot?.exceptions.unmatchedBankLines}
+                pendingSettlementsCount={snapshot?.exceptions.pendingSettlements}
                 integrityWarningsCount={integrityWarningsCount}
               />
+              )}
             </section>
 
             <section className="dashboard-section" aria-label="صورة الأداء" data-dashboard-section="kpis">
@@ -165,8 +161,18 @@ export function DashboardPage() {
             <section className="dashboard-section" aria-label="قوائم العمل" data-dashboard-section="work-queues">
               <SectionHeader title="قوائم العمل" description="متابعة مركزة للحالات الأعلى أولوية بعد قراءة المؤشرات" />
               <div className="dashboard-queues-grid">
-                <ExpiringContractsSection rows={expiringContracts} isLoading={isLoading} settings={settings} />
-                <OverdueSection rows={overdueRows} isLoading={isLoading} settings={settings} />
+                <ExpiringContractsSection
+                  rows={expiringContracts}
+                  totalCount={snapshot?.contracts.expiring30}
+                  isLoading={isLoading}
+                  settings={settings}
+                />
+                <OverdueSection
+                  rows={overdueRows}
+                  totalCount={snapshot?.arrears.overdueCount}
+                  isLoading={isLoading}
+                  settings={settings}
+                />
               </div>
             </section>
 

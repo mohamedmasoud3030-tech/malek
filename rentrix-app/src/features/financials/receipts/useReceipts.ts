@@ -17,12 +17,13 @@ export const receiptKeys = {
   pendingVoidRequests: () => [...receiptKeys.all, 'void-requests', 'pending'] as const,
 };
 
-export function useReceipts(params: ReceiptListParams = {}) {
+export function useReceipts(params: ReceiptListParams = {}, options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({
     queryKey: receiptKeys.list(params),
     queryFn: () => listReceipts(params),
     // Keep the current window visible while a larger one («عرض المزيد») loads.
     placeholderData: (previousData) => previousData,
+    enabled: options?.enabled ?? true,
   });
 }
 

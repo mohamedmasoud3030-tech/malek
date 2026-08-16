@@ -1,24 +1,20 @@
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import {
-  LayoutDashboard,
-  ReceiptText,
-  WalletCards,
-  ShieldCheck,
-  Landmark,
-  FileSpreadsheet,
-  ClipboardList,
-  FileCheck,
-  HandCoins,
-  Building2,
-  CalendarDays,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, lazy, Suspense, useCallback } from 'react';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
 import { WorkspaceHint } from '@/components/layout/workspace-hint';
 import { useAuth } from '@/hooks/use-auth';
-import { canAccess, type AppPermission, type AuthorizationContext } from '@/features/auth/permissions';
+import {
+  FINANCE_SECTIONS,
+  FINANCE_VIEWS,
+  getPermittedSections,
+  getPermittedViews,
+  isViewPermitted,
+  resolveFinanceLocation,
+  type FinanceSectionId,
+  type FinancialsSearch,
+} from './finance-shell-model';
 import { FinancialReportsPreviewSection } from './components/financial-reports-preview-section';
 import { getTodayLocalDateString } from './financials-date-utils';
 import { useCollectionSummaryReport } from './reports/useFinancialReports';
@@ -76,84 +72,21 @@ const BankReconciliationWorkspace = lazy(async () => ({
 // Legacy deep-links (?view=commissions, /finance/banking?section=commissions) redirect
 // to /commissions via effect below and via route-tree redirects.
 
-// ==================================================
-// APPROVED TYPED FINANCE VIEW MODEL (Points 3, 4)
-// ==================================================
-
-export type FinanceSectionId = 'overview' | 'collections' | 'expenses' | 'funds' | 'banking';
-
-export type FinanceViewId =
-  | 'overview'
-  | 'invoices'
-  | 'receipts'
-  | 'arrears'
-  | 'expenses'
-  | 'deposits'
-  | 'owner_settlements'
-  | 'fixed_monthly_accruals'
-  | 'bank_reconciliation';
-
-export interface FinanceViewDefinition {
-  id: FinanceViewId;
-  sectionId: FinanceSectionId;
-  label: string;
-  icon: LucideIcon;
-  permission: AppPermission | null;
-}
-
-export interface FinanceSectionDefinition {
-  id: FinanceSectionId;
-  label: string;
-  icon: LucideIcon;
-  defaultViewId: FinanceViewId | null;
-}
-
-export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
-  { id: 'overview', label: 'نظرة عامة', icon: LayoutDashboard, defaultViewId: 'overview' },
-  { id: 'collections', label: 'التحصيل والذمم', icon: ReceiptText, defaultViewId: 'invoices' },
-  { id: 'expenses', label: 'المصروفات والمستحقات', icon: WalletCards, defaultViewId: 'expenses' },
-  { id: 'funds', label: 'الأمانات والملاك', icon: ShieldCheck, defaultViewId: 'deposits' },
-  { id: 'banking', label: 'البنوك والمطابقة', icon: Landmark, defaultViewId: 'bank_reconciliation' },
-];
-
-export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
-  { id: 'overview', sectionId: 'overview', label: 'نظرة عامة', icon: LayoutDashboard, permission: null },
-  { id: 'invoices', sectionId: 'collections', label: 'الفواتير والتحصيل', icon: FileSpreadsheet, permission: null },
-  { id: 'receipts', sectionId: 'collections', label: 'سجل الإيصالات', icon: ReceiptText, permission: null },
-  { id: 'arrears', sectionId: 'collections', label: 'المتأخرات والديون', icon: ClipboardList, permission: 'arrears.view' },
-  { id: 'expenses', sectionId: 'expenses', label: 'المصروفات', icon: WalletCards, permission: 'expenses.view' },
-  { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
-  { id: 'owner_settlements', sectionId: 'funds', label: 'تسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
-  { id: 'fixed_monthly_accruals', sectionId: 'funds', label: 'استحقاق العمولة الشهرية', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
-  { id: 'bank_reconciliation', sectionId: 'banking', label: 'مطابقة كشف البنك', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
-];
-
-export function isViewPermitted(
-  authorization: AuthorizationContext | null | undefined,
-  view: FinanceViewDefinition
-): boolean {
-  if (!authorization) return false;
-  return view.permission === null ? true : canAccess(authorization, view.permission);
-}
-
-export function getPermittedViews(
-  authorization: AuthorizationContext | null | undefined
-): FinanceViewDefinition[] {
-  return FINANCE_VIEWS.filter((view) => isViewPermitted(authorization, view));
-}
-
-export function getPermittedSections(
-  authorization: AuthorizationContext | null | undefined
-): FinanceSectionDefinition[] {
-  const permittedViews = getPermittedViews(authorization);
-  const permittedSectionIds = new Set(permittedViews.map(v => v.sectionId));
-  return FINANCE_SECTIONS.filter(s => permittedSectionIds.has(s.id));
-}
-
-export interface FinancialsSearch {
-  section?: string;
-  view?: string;
-}
+// R9 — Finance Shell: the route model (sections/views/permissions/URL
+// resolution) lives in finance-shell-model.ts. Re-exported so existing
+// imports keep working (zero duplicated finance navigation models).
+export {
+  FINANCE_SECTIONS,
+  FINANCE_VIEWS,
+  getPermittedSections,
+  getPermittedViews,
+  isViewPermitted,
+  type FinanceSectionDefinition,
+  type FinanceSectionId,
+  type FinanceViewDefinition,
+  type FinanceViewId,
+  type FinancialsSearch,
+} from './finance-shell-model';
 
 /**
  * Rebuilt financials-page.tsx
@@ -190,55 +123,10 @@ export function FinancialsPage() {
     }
   }, [rawSection, rawView, navigate]);
 
-  const { resolvedSectionId, resolvedViewId } = useMemo(() => {
-    let sId: FinanceSectionId = 'overview';
-    let vId: FinanceViewId = 'overview';
-
-    const sec = rawSection.toLowerCase().trim();
-    const vi = rawView.toLowerCase().trim();
-
-    // Map legacy section values to sectionId and viewId
-    if (sec === 'overview' || !sec) {
-      sId = 'overview';
-      vId = 'overview';
-    } else if (['collections', 'invoices', 'receipts', 'arrears'].includes(sec)) {
-      sId = 'collections';
-      const defaultView = sec === 'collections' ? 'invoices' : sec;
-      vId = (vi || defaultView) as FinanceViewId;
-    } else if (['expenses'].includes(sec)) {
-      sId = 'expenses';
-      vId = 'expenses';
-    } else if (sec === 'commissions' || vi === 'commissions') {
-      // Legacy commissions — handled by redirect effect above; map to expenses fallback here so hardening doesn't crash
-      sId = 'expenses';
-      vId = 'expenses';
-    } else if (['funds', 'deposits', 'owner_settlements', 'fixed_monthly_accruals'].includes(sec)) {
-      sId = 'funds';
-      const defaultView = sec === 'funds' ? 'deposits' : sec;
-      vId = (vi || defaultView) as FinanceViewId;
-    } else if (['banking', 'bank_reconciliation'].includes(sec)) {
-      sId = 'banking';
-      vId = 'bank_reconciliation';
-    }
-
-    // ==================================================
-    // STRUCTURAL COHERENCE HARDENING (Point 3)
-    // ==================================================
-    const viewMeta = FINANCE_VIEWS.find(v => v.id === vId);
-    if (viewMeta && viewMeta.sectionId !== sId) {
-      // Mismatch detected! Normalize safely to the requested section's first permitted valid view.
-      const permittedSectionViews = FINANCE_VIEWS.filter(v => v.sectionId === sId && isViewPermitted(authorization, v));
-      if (permittedSectionViews[0]) {
-        vId = permittedSectionViews[0].id;
-      } else {
-        // Fallback safely to overview
-        sId = 'overview';
-        vId = 'overview';
-      }
-    }
-
-    return { resolvedSectionId: sId, resolvedViewId: vId };
-  }, [rawSection, rawView, authorization]);
+  const { resolvedSectionId, resolvedViewId } = useMemo(
+    () => resolveFinanceLocation(rawSection, rawView, authorization),
+    [rawSection, rawView, authorization],
+  );
 
   const { activeSection, activeView, isRequestedViewForbidden } = useMemo(() => {
     // If no permitted sections at all

@@ -6,7 +6,12 @@ import { ROUTE_CONTRACT } from './route-contract';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
-const financialsSource = readFileSync(new URL('../../features/financials/financials-page.tsx', import.meta.url), 'utf8');
+// R9: the finance section model moved to finance-shell-model.ts (the page
+// re-exports it). The IA assertions read BOTH: the model owns the section
+// definitions; the page still owns the redirect wiring.
+const financialsPageSource = readFileSync(new URL('../../features/financials/financials-page.tsx', import.meta.url), 'utf8');
+const financialsSource = readFileSync(new URL('../../features/financials/finance-shell-model.ts', import.meta.url), 'utf8')
+  + '\n' + financialsPageSource;
 
 function hasRoute(path: string): boolean {
   return routeTreeSource.includes(`path: '${path}'`);

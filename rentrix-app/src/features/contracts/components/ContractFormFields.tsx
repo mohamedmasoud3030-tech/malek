@@ -1,3 +1,4 @@
+import { MONEY_STEP } from '@/lib/money';
 import { useEffect, useMemo, useState, type FormEventHandler } from 'react';
 import { Controller } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -305,12 +306,22 @@ export function ContractFormFields({
           <EntityForm.Field label="قيمة الإيجار" error={form.formState.errors.rent_amount?.message}>
             <Input
               type="number"
-              step="0.01"
+              step={MONEY_STEP}
               inputMode="decimal"
               min="0.01"
               {...form.register('rent_amount')}
             />
             <p className="mt-1 text-xs text-muted-foreground">تُملأ تلقائياً من الإيجار الافتراضي للوحدة ويمكن تعديلها حسب الاتفاق.</p>
+          </EntityForm.Field>
+
+          <EntityForm.Field label="يوم الفوترة (1–28)" error={form.formState.errors.billing_day?.message}>
+            <Input type="number" min="1" max="28" step="1" inputMode="numeric" {...form.register('billing_day')} />
+            <p className="mt-1 text-xs text-muted-foreground">اليوم الذي تصدر فيه فاتورة كل دورة — سياسة معلنة وليست افتراضاً خفياً.</p>
+          </EntityForm.Field>
+
+          <EntityForm.Field label="أيام السماح" error={form.formState.errors.grace_days?.message}>
+            <Input type="number" min="0" max="90" step="1" inputMode="numeric" {...form.register('grace_days')} />
+            <p className="mt-1 text-xs text-muted-foreground">مهلة بعد نهاية الفترة قبل اعتبار الفاتورة متأخرة.</p>
           </EntityForm.Field>
 
           <EntityForm.Field label="دورة السداد" error={form.formState.errors.payment_cycle?.message}>

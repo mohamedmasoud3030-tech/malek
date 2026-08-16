@@ -2,6 +2,14 @@ import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { depositPayloadSchema } from './deposit-schema';
 
+/** Narrow a Json RPC response to a plain object (never `as any`). */
+function asJsonObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+
 export type DepositStatus = 'held' | 'partially_refunded' | 'refunded' | 'forfeited_damage' | 'forfeited_arrears' | 'partially_deducted';
 
 export type DepositRecord = {
@@ -233,10 +241,10 @@ export async function createTenantDeposit(payload: DepositCreatePayload): Promis
     request_id: requestId,
   };
 
-  const { data, error } = await supabase.rpc('create_deposit_atomic' as any, { p_payload: rpcPayload });
+  const { data, error } = await supabase.rpc('create_deposit_atomic', { p_payload: rpcPayload });
   if (error) handleSupabaseError(error, 'فشل إنشاء وديعة التأمين');
 
-  const depositId = (data as any)?.deposit_id as string | undefined;
+  const depositId = asJsonObject(data).deposit_id as string | undefined;
   if (!depositId) throw new Error('لم يتم إرجاع معرف الوديعة من الخادم');
 
   const { data: row, error: fetchError } = await supabase
@@ -280,9 +288,9 @@ export async function createDepositClaim(payload: DepositClaimCreatePayload): Pr
     claim_note: payload.claim_note || null,
   };
 
-  const { data, error } = await supabase.rpc('create_deposit_application_claim_atomic' as any, { p_payload: rpcPayload });
+  const { data, error } = await supabase.rpc('create_deposit_application_claim_atomic', { p_payload: rpcPayload });
   if (error) handleSupabaseError(error, 'فشل إنشاء طلب تخصيص الوديعة');
-  const claimId = (data as any)?.claim_id as string | undefined;
+  const claimId = asJsonObject(data).claim_id as string | undefined;
   if (!claimId) throw new Error('لم يتم إرجاع معرف الطلب من الخادم');
   return (await getDepositClaim(claimId))!;
 }
@@ -306,20 +314,20 @@ export async function listDepositClaims(depositId?: string): Promise<DepositClai
 }
 
 export async function approveDepositClaim(claimId: string): Promise<void> {
-  const { error } = await supabase.rpc('approve_deposit_application_claim_atomic' as any, { p_payload: { claim_id: claimId } });
+  const { error } = await supabase.rpc('approve_deposit_application_claim_atomic', { p_payload: { claim_id: claimId } });
   if (error) handleSupabaseError(error, 'فشل اعتماد الطلب - لا يمكن اعتماد طلب أنشأته بنفسك');
 }
 
 export async function rejectDepositClaim(claimId: string, reason: string): Promise<void> {
   if (!reason || reason.trim().length < 3) throw new Error('سبب الرفض مطلوب');
-  const { error } = await supabase.rpc('reject_deposit_application_claim_atomic' as any, {
+  const { error } = await supabase.rpc('reject_deposit_application_claim_atomic', {
     p_payload: { claim_id: claimId, reason: reason.trim() },
   });
   if (error) handleSupabaseError(error, 'فشل رفض الطلب');
 }
 
 export async function applyDepositClaim(claimId: string, effectiveDate?: string): Promise<{ batch_id: string }> {
-  const { data, error } = await supabase.rpc('apply_deposit_claim_atomic' as any, {
+  const { data, error } = await supabase.rpc('apply_deposit_claim_atomic', {
     p_payload: {
       claim_id: claimId,
       request_id: crypto.randomUUID(),
@@ -327,12 +335,12 @@ export async function applyDepositClaim(claimId: string, effectiveDate?: string)
     },
   });
   if (error) handleSupabaseError(error, 'فشل تطبيق التخصيص - تحقق من الرصيد وحالة الفاتورة');
-  return { batch_id: String((data as any)?.batch_id ?? '') };
+  return { batch_id: String(asJsonObject(data).batch_id ?? '') };
 }
 
 export async function reverseDepositClaim(claimId: string, reason: string): Promise<void> {
   if (!reason || reason.trim().length < 3) throw new Error('سبب الإلغاء مطلوب');
-  const { error } = await supabase.rpc('reverse_deposit_claim_atomic' as any, {
+  const { error } = await supabase.rpc('reverse_deposit_claim_atomic', {
     p_payload: { claim_id: claimId, request_id: crypto.randomUUID(), reason: reason.trim() },
   });
   if (error) handleSupabaseError(error, 'فشل إلغاء التخصيص');
@@ -356,12 +364,12 @@ export async function refundDepositGoverned(payload: DepositRefundPayload): Prom
     request_id: payload.request_id || crypto.randomUUID(),
   };
 
-  const { data, error } = await supabase.rpc('refund_deposit_governed_atomic' as any, { p_payload: rpcPayload });
+  const { data, error } = await supabase.rpc('refund_deposit_governed_atomic', { p_payload: rpcPayload });
   if (error) handleSupabaseError(error, 'فشل رد مبلغ التأمين - تحقق من الرصيد المتبقي');
   return {
-    refund_event_id: String((data as any)?.refund_event_id ?? ''),
-    remaining: Number((data as any)?.remaining ?? 0),
-    refunded: Number((data as any)?.refunded ?? 0),
+    refund_event_id: String(asJsonObject(data).refund_event_id ?? ''),
+    remaining: Number(asJsonObject(data).remaining ?? 0),
+    refunded: Number(asJsonObject(data).refunded ?? 0),
   };
 }
 
@@ -389,7 +397,7 @@ export async function listDepositRefundEvents(depositId?: string): Promise<Depos
 
 export async function reverseDepositRefund(refundEventId: string, reason: string): Promise<void> {
   if (!reason || reason.trim().length < 3) throw new Error('سبب إلغاء الاسترداد مطلوب');
-  const { error } = await supabase.rpc('reverse_deposit_refund_atomic' as any, {
+  const { error } = await supabase.rpc('reverse_deposit_refund_atomic', {
     p_payload: { refund_event_id: refundEventId, request_id: crypto.randomUUID(), reason: reason.trim() },
   });
   if (error) handleSupabaseError(error, 'فشل إلغاء الاسترداد');

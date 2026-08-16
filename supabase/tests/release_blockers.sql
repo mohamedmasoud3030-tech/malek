@@ -29,8 +29,10 @@ select has_table('public', 'payments', 'payments table exists after a clean migr
 select has_table('public', 'receipts', 'receipts table exists after a clean migration replay');
 
 select ok(
-  to_regprocedure('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text)') is not null,
-  'create_contract_atomic is present with the browser contract signature'
+  -- R4 Contract → Billing Authority: the browser contract now carries the
+  -- explicit billing policy (p_billing_day, p_grace_days with defaults).
+  to_regprocedure('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text,integer,integer)') is not null,
+  'create_contract_atomic is present with the browser contract signature (R4: explicit billing policy)'
 );
 select ok(
   to_regprocedure('public.record_invoice_payment_atomic(jsonb)') is not null,

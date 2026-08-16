@@ -12,6 +12,7 @@ import { renewalSchema, type RenewalPayload } from '../contractSchema';
 import type { ContractDetail, RenewalResult } from '../services/contractService';
 import { useRenewContract } from '../useContracts';
 import { getRenewalDefaults } from './contractLifecycleRules';
+import { MONEY_STEP } from '@/lib/money';
 
 export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed }: Readonly<{ contract: ContractDetail; open: boolean; onOpenChange: (open: boolean) => void; onRenewed: (result: RenewalResult) => Promise<void> | void }>) {
   const renewMutation = useRenewContract(contract.id);
@@ -85,7 +86,7 @@ export function ContractRenewalDialog({ contract, open, onOpenChange, onRenewed 
           </Select>
         </EntityForm.Field>
         <EntityForm.Field label="قيمة الإيجار" error={form.formState.errors.new_amount?.message}>
-          <Input type="number" step="0.01" inputMode="decimal" min="0" {...form.register('new_amount')} />
+          <Input type="number" step={MONEY_STEP} inputMode="decimal" min="0" {...form.register('new_amount')} />
         </EntityForm.Field>
         <EntityForm.Actions
           onCancel={() => onOpenChange(false)}
