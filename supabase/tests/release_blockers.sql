@@ -252,11 +252,16 @@ select is(
   'the fixed-fee contract is linked and persisted independently'
 );
 
+-- Invoice creation is a server-only financial write (Phase 2 hardening):
+-- direct invoice INSERT is revoked from authenticated, so seed financial
+-- fixtures as the superuser session role and return to authenticated.
+reset role;
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
   '00000000-0000-0000-0000-000000000701', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
 from public.contracts
 where notes = 'release-blocker-contract';
+set local role authenticated;
 
 select lives_ok(
   $$
@@ -346,11 +351,13 @@ select throws_ok(
   'negative payments are rejected'
 );
 
+reset role;
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
   '00000000-0000-0000-0000-000000000702', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
 from public.contracts
 where notes = 'release-blocker-fixed-contract';
+set local role authenticated;
 
 select lives_ok(
   $$
