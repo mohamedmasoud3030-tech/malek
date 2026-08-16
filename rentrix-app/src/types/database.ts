@@ -3806,6 +3806,8 @@ export type Database = {
           reference: string | null;
           service_provider_id: string | null;
           service_provider_category_id: string | null;
+          cancelled_at: string | null;
+          cancellation_reason: string | null;
         };
         Insert: {
           id?: string;
@@ -3838,6 +3840,8 @@ export type Database = {
           reference?: string | null;
           service_provider_id?: string | null;
           service_provider_category_id?: string | null;
+          cancelled_at?: string | null;
+          cancellation_reason?: string | null;
         };
         Update: {
           id?: string;
@@ -3870,6 +3874,8 @@ export type Database = {
           reference?: string | null;
           service_provider_id?: string | null;
           service_provider_category_id?: string | null;
+          cancelled_at?: string | null;
+          cancellation_reason?: string | null;
         };
         Relationships: [
           {
@@ -8735,6 +8741,14 @@ export type Database = {
         Args: {
           p_contract_id: string | null;
           p_reason: string | null;
+        };
+        Returns: Json;
+      };
+      transition_maintenance_status_atomic: {
+        Args: {
+          p_request_id: string | null;
+          p_next_status: string | null;
+          p_reason?: string | null;
         };
         Returns: Json;
       };

@@ -1,4 +1,4 @@
-export type CanonicalMaintenanceStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+export type CanonicalMaintenanceStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'cancelled';
 export type CanonicalMaintenancePriority = 'low' | 'medium' | 'high' | 'urgent';
 
 /**
@@ -11,8 +11,9 @@ export function normalizeMaintenanceStatus(status: unknown): CanonicalMaintenanc
     case 'in_progress': return 'in_progress';
     case 'resolved':
     case 'completed': return 'resolved';
-    case 'closed':
-    case 'cancelled': return 'closed';
+    case 'closed': return 'closed';
+    // R8: Cancelled ≠ Closed — called-off work is never presented as done.
+    case 'cancelled': return 'cancelled';
     case 'open':
     case 'new':
     case 'reported':

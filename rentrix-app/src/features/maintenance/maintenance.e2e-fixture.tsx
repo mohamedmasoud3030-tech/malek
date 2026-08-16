@@ -40,6 +40,8 @@ const base = {
   technician_name: null,
   completed_at: null,
   resolved_at: null,
+  cancelled_at: null,
+  cancellation_reason: null,
   attachment_url: null,
   created_at: '2026-07-14T08:00:00Z',
   updated_at: '2026-07-15T08:00:00Z',

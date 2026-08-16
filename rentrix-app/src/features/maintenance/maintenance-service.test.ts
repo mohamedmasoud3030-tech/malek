@@ -109,16 +109,25 @@ describe('maintenance service failure and mutation boundaries', () => {
     await expect(updateMaintenanceStatus('maintenance-1', 'resolved')).rejects.toThrow('resolveMaintenanceWithExpense');
   });
 
-  it('sets resolved_at only for the closed status, not in_progress', async () => {
-    const chain = createQueryMock({ data: { id: 'maintenance-1' }, error: null });
-    supabaseMock.from.mockReturnValue(chain);
+  it('routes every status transition through the R8 server command (no raw updates)', async () => {
+    supabaseMock.rpc.mockResolvedValue({ data: { id: 'maintenance-1', status: 'closed' }, error: null });
     const { updateMaintenanceStatus } = await import('./maintenance-service');
 
     await updateMaintenanceStatus('maintenance-1', 'closed');
-    expect(chain.update).toHaveBeenCalledWith({ status: 'closed', resolved_at: expect.any(String) });
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('transition_maintenance_status_atomic', {
+      p_request_id: 'maintenance-1',
+      p_next_status: 'closed',
+      p_reason: null,
+    });
 
-    await updateMaintenanceStatus('maintenance-1', 'in_progress');
-    expect(chain.update).toHaveBeenLastCalledWith({ status: 'in_progress', resolved_at: null });
+    await updateMaintenanceStatus('maintenance-1', 'cancelled', 'سبب الإلغاء');
+    expect(supabaseMock.rpc).toHaveBeenLastCalledWith('transition_maintenance_status_atomic', {
+      p_request_id: 'maintenance-1',
+      p_next_status: 'cancelled',
+      p_reason: 'سبب الإلغاء',
+    });
+    // Never a raw table update for status.
+    expect(supabaseMock.from).not.toHaveBeenCalledWith('maintenance_records');
   });
 
   it('resolves a maintenance request and records the linked expense via the atomic RPC', async () => {

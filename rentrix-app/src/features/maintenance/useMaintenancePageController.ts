@@ -70,9 +70,11 @@ const emptyFormValues: MaintenanceFormValues = {
   attachment_url: null,
 };
 
-export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 'resolved' | 'closed'): MaintenanceAction[] {
-  if (status === 'open') return [{ label: 'بدء التنفيذ', status: 'in_progress' }];
-  if (status === 'in_progress') return [{ label: 'تم الحل', status: 'resolved' }];
+export function getMaintenanceStatusActions(status: 'open' | 'in_progress' | 'resolved' | 'closed' | 'cancelled'): MaintenanceAction[] {
+  // R8 legal matrix. Cancelled ≠ Closed: cancellation is available while work
+  // is not yet resolved and is terminal afterwards.
+  if (status === 'open') return [{ label: 'بدء التنفيذ', status: 'in_progress' }, { label: 'إلغاء الطلب', status: 'cancelled' }];
+  if (status === 'in_progress') return [{ label: 'تم الحل', status: 'resolved' }, { label: 'إلغاء الطلب', status: 'cancelled' }];
   if (status === 'resolved') return [{ label: 'إغلاق', status: 'closed' }];
   return [];
 }
@@ -224,6 +226,14 @@ export function useMaintenancePageController() {
     if (status === 'resolved') {
       resolveForm.reset({ cost: 0, notes: '' });
       setResolveTarget(row);
+      return;
+    }
+    // R8: cancellation is a distinct terminal state and legally requires a
+    // reason — collected here, enforced again server-side.
+    if (status === 'cancelled') {
+      const reason = window.prompt('سبب إلغاء طلب الصيانة (إلزامي):')?.trim();
+      if (!reason) return;
+      updateStatusMutation.mutate({ requestId: row.id, status, reason });
       return;
     }
     updateStatusMutation.mutate({ requestId: row.id, status });

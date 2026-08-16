@@ -28,7 +28,7 @@ export function useCreateMaintenance() {
 
 export function useUpdateMaintenance() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ requestId, payload }: { requestId: string; payload: MaintenanceUpdate }) => updateMaintenance(requestId, payload), onSuccess: async () => { await qc.invalidateQueries({ queryKey: maintenanceKeys.all }); toast.success('تم تعديل طلب الصيانة'); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تعديل طلب الصيانة') }); }
 
-export function useUpdateMaintenanceStatus() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ requestId, status }: { requestId: string; status: Exclude<MaintenanceStatus, 'all'> }) => updateMaintenanceStatus(requestId, status), onSuccess: async () => { await qc.invalidateQueries({ queryKey: maintenanceKeys.all }); toast.success('تم تحديث حالة طلب الصيانة'); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث حالة طلب الصيانة') }); }
+export function useUpdateMaintenanceStatus() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ requestId, status, reason }: { requestId: string; status: Exclude<MaintenanceStatus, 'all'>; reason?: string }) => updateMaintenanceStatus(requestId, status, reason), onSuccess: async () => { await qc.invalidateQueries({ queryKey: maintenanceKeys.all }); toast.success('تم تحديث حالة طلب الصيانة'); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'تعذر تحديث حالة طلب الصيانة') }); }
 
 export function useResolveMaintenanceWithExpense() {
   const qc = useQueryClient();
