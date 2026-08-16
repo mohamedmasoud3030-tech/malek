@@ -45,31 +45,51 @@ export type OwnerSettlementTarget = {
 };
 
 export type OwnerSettlementTotals = {
+  /** Historical settlement volume across every live (non-cancelled) settlement. */
   gross: number;
   fees: number;
   expenses: number;
   feeVat: number;
   net: number;
+  /** Outstanding owner payable: DRAFT + APPROVED net only (PAID and CANCELLED excluded). */
+  outstandingNet: number;
 };
 
 /**
- * Cancelled drafts never create a payable or collection, so they must be
- * excluded from control totals — otherwise the totals look larger than the
- * ledger-backed live settlements they're meant to summarize.
+ * Control totals for the owner settlement workspace KPIs.
+ *
+ * Two distinct economic truths must never be collapsed:
+ *   - gross / fees / expenses / feeVat / net are HISTORICAL settlement volume
+ *     across every live (non-cancelled) settlement, including PAID ones — a
+ *     paid settlement still collected, earned fees and incurred expenses.
+ *   - outstandingNet is the OUTSTANDING owner payable: only DRAFT + APPROVED
+ *     net that has not yet been paid out. PAID (already settled) and
+ *     CANCELLED (never became a payable) settlements are excluded, so a
+ *     historical paid value is never presented as a current liability. This
+ *     aligns with the dashboard authority rpt_dashboard_snapshot.owner_funds
+ *     .net_payable (DRAFT + APPROVED).
  */
 export function summarizeLiveOwnerSettlements(settlements: readonly OwnerSettlementRecord[]): OwnerSettlementTotals {
-  return settlements
-    .filter((settlement) => settlement.status !== 'cancelled')
-    .reduce<OwnerSettlementTotals>(
-      (summary, settlement) => ({
-        gross: summary.gross + settlement.gross_rent_collected,
-        fees: summary.fees + settlement.management_fee_amount,
-        expenses: summary.expenses + settlement.owner_expenses,
-        feeVat: summary.feeVat + settlement.fee_vat_amount,
-        net: summary.net + settlement.net_payable_amount,
-      }),
-      { gross: 0, fees: 0, expenses: 0, feeVat: 0, net: 0 },
-    );
+  const live = settlements.filter((settlement) => settlement.status !== 'cancelled');
+  const totals = live.reduce<OwnerSettlementTotals>(
+    (summary, settlement) => ({
+      gross: summary.gross + settlement.gross_rent_collected,
+      fees: summary.fees + settlement.management_fee_amount,
+      expenses: summary.expenses + settlement.owner_expenses,
+      feeVat: summary.feeVat + settlement.fee_vat_amount,
+      net: summary.net + settlement.net_payable_amount,
+      outstandingNet: summary.outstandingNet,
+    }),
+    { gross: 0, fees: 0, expenses: 0, feeVat: 0, net: 0, outstandingNet: 0 },
+  );
+
+  // Outstanding owner payable = unsettled lifecycle value still requiring
+  // payment: DRAFT + APPROVED only (PAID and CANCELLED do not inflate it).
+  const outstandingNet = live
+    .filter((settlement) => settlement.status === 'pending' || settlement.status === 'approved')
+    .reduce((sum, settlement) => sum + settlement.net_payable_amount, 0);
+
+  return { ...totals, outstandingNet };
 }
 
 export type CreateSettlementDraftPayload = {
@@ -377,7 +397,8 @@ export type OwnerFinancialPosition = {
     authorizedAdjustments: number;
     netPayable: number;
   };
-  lifecycle: {
+  /** ALL-TIME settlement lifecycle position (never scoped to p_from/p_to). */
+  lifecycleAllTime: {
     settledPendingNet: number;
     paidNet: number;
     remainingPayable: number;
@@ -426,7 +447,7 @@ export function normalizeOwnerFinancialPosition(data: unknown): OwnerFinancialPo
   const raw = (data && typeof data === 'object' ? data : {}) as Record<string, any>;
   const meta = raw.meta ?? {};
   const period = raw.period ?? {};
-  const lifecycle = raw.lifecycle ?? {};
+  const lifecycle = raw.lifecycle_all_time ?? {};
   const ownerFunds = raw.owner_funds ?? {};
   const fees = period.management_fees ?? {};
 
@@ -448,7 +469,7 @@ export function normalizeOwnerFinancialPosition(data: unknown): OwnerFinancialPo
       authorizedAdjustments: positionNumber(period.authorized_adjustments),
       netPayable: positionNumber(period.net_payable),
     },
-    lifecycle: {
+    lifecycleAllTime: {
       settledPendingNet: positionNumber(lifecycle.settled_pending_net),
       paidNet: positionNumber(lifecycle.paid_net),
       remainingPayable: positionNumber(lifecycle.remaining_payable),

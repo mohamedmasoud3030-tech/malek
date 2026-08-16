@@ -124,6 +124,7 @@ describe('OwnerSettlementWorkspace full coverage tests', () => {
     expect(totals.expenses).toBe(100);
     expect(totals.feeVat).toBe(0);
     expect(totals.net).toBe(1700);
+    expect(totals.outstandingNet).toBe(1700);
   });
 });
 

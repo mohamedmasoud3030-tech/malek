@@ -359,7 +359,7 @@ export function OwnerSettlementWorkspace() {
         <KpiCard label="إجمالي المقبوضات" value={formatMoney(totals.gross)} icon={Wallet} accent="emerald" sub="تحصيلات مثبتة داخل التسويات" />
         <KpiCard label="أتعاب المكتب" value={formatMoney(totals.fees)} icon={Landmark} accent="primary" sub="أتعاب كل تسوية حسب اتفاقها" />
         <KpiCard label="المصروفات والضرائب" value={formatMoney(totals.expenses + totals.feeVat)} icon={DollarSign} accent="rose" sub="مصروفات المالك وضريبة الأتعاب من الخادم" />
-        <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totals.net)} icon={BadgeCheck} accent="sky" sub="صافي جميع حالات التسوية" />
+        <KpiCard label="صافي مستحقات الملاك" value={formatMoney(totals.outstandingNet)} icon={BadgeCheck} accent="sky" sub="مسودات ومعتمدة لم تُصرف بعد — تُستبعد المدفوعة والملغاة" />
       </ResponsiveCardGrid>
 
       <SettlementSupervisionBanner

@@ -232,8 +232,8 @@ describe('R2 — rpt_owner_financial_position authoritative read model', () => {
 
   it('settlement lifecycle moves value from remaining_payable to paid_net truthfully', async () => {
     const before = await position();
-    expect(num(before.lifecycle.settled_pending_net)).toBe(0);
-    expect(num(before.lifecycle.paid_net)).toBe(0);
+    expect(num(before.lifecycle_all_time.settled_pending_net)).toBe(0);
+    expect(num(before.lifecycle_all_time.paid_net)).toBe(0);
 
     // Create a draft — remaining_payable must now carry the derived net.
     const created = (await db.query<{ out: any }>(
@@ -244,9 +244,9 @@ describe('R2 — rpt_owner_financial_position authoritative read model', () => {
     expect(num(created?.net_payable)).toBe(EXPECTED.net);
 
     const drafted = await position();
-    expect(num(drafted.lifecycle.settled_pending_net)).toBe(EXPECTED.net);
-    expect(num(drafted.lifecycle.remaining_payable)).toBe(EXPECTED.net);
-    expect(num(drafted.lifecycle.draft_count)).toBe(1);
+    expect(num(drafted.lifecycle_all_time.settled_pending_net)).toBe(EXPECTED.net);
+    expect(num(drafted.lifecycle_all_time.remaining_payable)).toBe(EXPECTED.net);
+    expect(num(drafted.lifecycle_all_time.draft_count)).toBe(1);
     // Drill-down: the settlement row is present with its identifiers.
     const row = drafted.settlements.find((s: any) => s.id === sid);
     expect(row).toBeTruthy();
@@ -259,15 +259,15 @@ describe('R2 — rpt_owner_financial_position authoritative read model', () => {
     await db.query(`select public.approve_owner_settlement_atomic($1::jsonb)`,
       [JSON.stringify({ settlement_id: sid, request_id: 'e2000000-0000-4000-8000-00000000aa02' })]);
     const approved = await position();
-    expect(num(approved.lifecycle.approved_count)).toBe(1);
-    expect(num(approved.lifecycle.remaining_payable)).toBe(EXPECTED.net);
+    expect(num(approved.lifecycle_all_time.approved_count)).toBe(1);
+    expect(num(approved.lifecycle_all_time.remaining_payable)).toBe(EXPECTED.net);
 
     await db.query(`select public.pay_owner_settlement_atomic($1::jsonb)`,
       [JSON.stringify({ settlement_id: sid, request_id: 'e2000000-0000-4000-8000-00000000aa03', method: 'bank_transfer', payment_reference: 'R2-PAYOUT-1' })]);
     const paid = await position();
-    expect(num(paid.lifecycle.paid_net)).toBe(EXPECTED.net);
-    expect(num(paid.lifecycle.remaining_payable)).toBe(0);
-    expect(num(paid.lifecycle.paid_count)).toBe(1);
+    expect(num(paid.lifecycle_all_time.paid_net)).toBe(EXPECTED.net);
+    expect(num(paid.lifecycle_all_time.remaining_payable)).toBe(0);
+    expect(num(paid.lifecycle_all_time.paid_count)).toBe(1);
     const paidRow = paid.settlements.find((s: any) => s.id === sid);
     expect(paidRow.status).toBe('PAID');
     expect(paidRow.payment_reference).toBe('R2-PAYOUT-1');
@@ -289,5 +289,37 @@ describe('R2 — rpt_owner_financial_position authoritative read model', () => {
       'e2000000-0000-4000-8000-000000000201',
       'e2000000-0000-4000-8000-000000000202',
     ]);
+  });
+
+  // Boundary proof: "period" is period-scoped economics, "lifecycle_all_time"
+  // is the lifetime settlement position. A settlement from a PREVIOUS period
+  // must appear in lifecycle_all_time but never inside period.*.
+  it('period vs all-time boundary: a prior-period settlement is all-time lifecycle, not period economics', async () => {
+    // A June (previous-period) DRAFT settlement for the owner. Net is
+    // non-zero so a naive period mix-in would be observable in period.*.
+    await db.query(
+      `insert into public.owner_settlements
+         (id, owner_id, property_id, status, gross_collected, office_fee, owner_expenses, tax_amount, net_payable,
+          period_start, period_end, company_id, created_at)
+       values
+         ('e2000000-0000-4000-8000-00000000bb01', $1, $3, 'DRAFT', 268.5, 0, 0, 0, 268.5,
+          date '2026-06-01', date '2026-06-30', $2, now())`,
+      [OWNER, COMPANY, PROPERTY],
+    );
+
+    const p = await position(OWNER, JULY.from, JULY.to);
+
+    // period.* remains July-scoped: no June collection, fee, expense or net.
+    expect(num(p.period.tenant_collections)).toBe(EXPECTED.gross); // 1500
+    expect(num(p.period.net_payable)).toBe(EXPECTED.net);          // 1222.5
+    expect(num(p.period.owner_expenses)).toBe(EXPECTED.expenses);  // 120
+
+    // lifecycle_all_time.* is all-time: the June DRAFT is present, and the
+    // July settlement paid earlier is lifetime paid history.
+    expect(num(p.lifecycle_all_time.settled_pending_net)).toBe(268.5);
+    expect(num(p.lifecycle_all_time.draft_count)).toBe(1);
+    expect(num(p.lifecycle_all_time.paid_count)).toBe(1);
+    expect(num(p.lifecycle_all_time.paid_net)).toBe(EXPECTED.net);
+    expect(num(p.lifecycle_all_time.cancelled_count)).toBe(0);
   });
 });

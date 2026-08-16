@@ -327,8 +327,8 @@ describe('R12 — full acceptance journey (canonical commands only)', () => {
 
     // 4. Owner truth: position == settlement == statement.
     const expectedNet = RENT - (RENT * FEE_RATE) / 100;
-    expect(num(position.lifecycle.paid_net)).toBe(expectedNet);
-    expect(num(position.lifecycle.remaining_payable)).toBe(0);
+    expect(num(position.lifecycle_all_time.paid_net)).toBe(expectedNet);
+    expect(num(position.lifecycle_all_time.remaining_payable)).toBe(0);
     const settlementRow = position.settlements.find((s: any) => s.id === settlementId);
     expect(settlementRow.status).toBe('PAID');
     expect(num(settlementRow.net_payable)).toBe(expectedNet);
