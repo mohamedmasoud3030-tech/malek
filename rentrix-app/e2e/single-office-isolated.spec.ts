@@ -6,6 +6,11 @@ const CHECKER_EMAIL = process.env.E2E_SINGLE_OFFICE_CHECKER_EMAIL ?? 'single-off
 const CHECKER_PASSWORD = process.env.E2E_SINGLE_OFFICE_CHECKER_PASSWORD ?? PASSWORD;
 const INVOICE_ID = '00000000-0000-0000-0000-000000009801';
 const PAYMENT_REFERENCE = 'SO-E2E-001';
+// Deterministic, date-rot-safe payment date inside the current OPEN fixture
+// period (matches the single-office seed).
+function iso(d: Date) { return d.toISOString().slice(0, 10); }
+const now = new Date();
+const PAYMENT_DATE = iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), Math.min(5, now.getUTCDate()))));
 
 test.skip(
   !['local', 'qa'].includes(process.env.E2E_ENVIRONMENT_KIND ?? '')
@@ -50,7 +55,7 @@ test.describe('single-office isolated launch acceptance', () => {
     await expect(paymentForm).toBeVisible({ timeout: 15000 });
     const amount = paymentForm.locator('#quick-payment-amount');
     await expect(amount).toHaveValue('1000', { timeout: 15000 });
-    await paymentForm.locator('#quick-payment-date').fill('2026-07-25');
+    await paymentForm.locator('#quick-payment-date').fill(PAYMENT_DATE);
     await paymentForm.locator('#quick-payment-reference').fill(PAYMENT_REFERENCE);
     const paymentResponsePromise = page.waitForResponse((response) => (
       response.url().includes('/rest/v1/rpc/record_invoice_payment_atomic')

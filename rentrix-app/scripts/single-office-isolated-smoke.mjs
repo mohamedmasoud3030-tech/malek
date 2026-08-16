@@ -11,7 +11,16 @@ const CHECKER_EMAIL = process.env.E2E_SINGLE_OFFICE_CHECKER_EMAIL?.trim()
 const CHECKER_PASSWORD = process.env.E2E_SINGLE_OFFICE_CHECKER_PASSWORD?.trim() ?? PASSWORD;
 const PAYMENT_REFERENCE = 'SO-E2E-001';
 const REQUIRED_ACCOUNTS = ['1111', '1201', '2000', '2100', '4000', '4100'];
-const PAYMENT_DATE = '2026-07-25';
+
+// Date-rot-safe fixture timeline: the RC1 invoice is issued on the 1st of the
+// CURRENT month and collected on a deterministic day inside the same OPEN
+// accounting period. Both the browser seed and the verify path derive the same
+// dates from the current date, so this never rots into a past/future month.
+function iso(d) { return d.toISOString().slice(0, 10); }
+const now = new Date();
+const PERIOD_START = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-01`;
+const PERIOD_END = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+const PAYMENT_DATE = iso(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), Math.min(5, now.getUTCDate()))));
 const IDS = {
   owner: '00000000-0000-0000-0000-000000009201',
   property: '00000000-0000-0000-0000-000000009301',
@@ -19,8 +28,13 @@ const IDS = {
   tenant: '00000000-0000-0000-0000-000000009501',
   propertyOwner: '00000000-0000-0000-0000-000000009551',
   agreement: '00000000-0000-0000-0000-000000009601',
+  agreementVersion: '00000000-0000-0000-0000-000000009602',
   contract: '00000000-0000-0000-0000-000000009701',
   invoice: '00000000-0000-0000-0000-000000009801',
+  taxProfile: '00000000-0000-0000-0000-000000009901',
+  taxSnapshot: '00000000-0000-0000-0000-000000009902',
+  feeTaxTreatment: '00000000-0000-0000-0000-000000009903',
+  accountingPeriod: '00000000-0000-0000-0000-000000009904',
 };
 
 const requiredEnvironment = [
@@ -207,13 +221,81 @@ async function seed() {
     notes: 'single-office-isolated-smoke',
     company_id: COMPANY_ID,
   });
+  // RC1 Owner-Agency fixture lineage: explicit versioned agreement snapshot.
+  // The initial-agreement trigger creates v1 as OWNER_IS_CREDITOR, but this
+  // seed pins a deterministic version row so the contract snapshot and the
+  // POSTED invoice lineage share one immutable agreement-version id.
+  await upsert('owner_agreement_versions', {
+    id: IDS.agreementVersion,
+    owner_agreement_id: IDS.agreement,
+    company_id: COMPANY_ID,
+    version_no: 1,
+    operating_model: 'OWNER_AGENCY',
+    collection_role: 'OWNER_IS_CREDITOR',
+    commission_type: 'RATE',
+    commission_value: 10,
+    commission_recognition_basis: 'ON_COLLECTION',
+    offset_allowed: false,
+    reserve_amount: 0,
+    effective_from: '2026-01-01',
+    effective_to: '2027-12-31',
+    created_by: user.id,
+  });
+  await upsert('owner_agreements', {
+    id: IDS.agreement,
+    current_version_id: IDS.agreementVersion,
+    company_id: COMPANY_ID,
+  }, 'id');
+  // Versioned, approved NON_TAXABLE rent tax authority and RATE management-fee
+  // tax treatment (explicit NON_TAXABLE / 0.000, not a fallback).
+  await upsert('company_tax_profiles', {
+    id: IDS.taxProfile,
+    company_id: COMPANY_ID,
+    version_no: 1,
+    tax_code: 'NON_TAXABLE',
+    tax_rate: 0,
+    effective_from: '2026-01-01',
+    effective_to: '2027-12-31',
+    status: 'ACTIVE',
+    description: 'single-office NON_TAXABLE rent authority',
+    created_by: user.id,
+    approved_by: checker.id,
+    approved_at: new Date().toISOString(),
+  });
+  await upsert('company_fee_tax_treatments', {
+    id: IDS.feeTaxTreatment,
+    company_id: COMPANY_ID,
+    fee_kind: 'RATE_MANAGEMENT_FEE',
+    version_no: 1,
+    tax_code: 'NON_TAXABLE',
+    tax_rate: 0,
+    effective_from: '2026-01-01',
+    effective_to: '2027-12-31',
+    status: 'ACTIVE',
+    created_by: user.id,
+    approved_by: checker.id,
+    approved_at: new Date().toISOString(),
+  });
+  // An OPEN accounting period covering the whole current fixture period, so the
+  // RC1 collection and its VOID reversal can post on the server-derived dates.
+  await upsert('accounting_periods', {
+    id: IDS.accountingPeriod,
+    company_id: COMPANY_ID,
+    name: `single-office ${PERIOD_START}..${PERIOD_END}`,
+    start_date: PERIOD_START,
+    end_date: PERIOD_END,
+    status: 'OPEN',
+  });
   await upsert('contracts', {
     id: IDS.contract,
     property_id: IDS.property,
     unit_id: IDS.unit,
     tenant_id: IDS.tenant,
     agreement_id: IDS.agreement,
-    start_date: '2026-07-01',
+    agreement_version_id: IDS.agreementVersion,
+    operating_model_snapshot: 'OWNER_AGENCY',
+    collection_role_snapshot: 'OWNER_IS_CREDITOR',
+    start_date: '2026-01-01',
     end_date: '2027-06-30',
     rent_amount: 1000,
     payment_cycle: 'monthly',
@@ -221,15 +303,46 @@ async function seed() {
     notes: 'single-office-isolated-smoke',
     company_id: COMPANY_ID,
   });
+  // RC1 POSTED invoice with immutable agreement-version and tax lineage.
+  // The RATE collection is OWNER_IS_CREDITOR, so rent stays an operational
+  // tenant obligation at issue and the 2000 owner-funds payable is credited on
+  // collection (never 4000, never 1201 at issue).
+  await upsert('taxable_line_tax_snapshots', {
+    id: IDS.taxSnapshot,
+    company_id: COMPANY_ID,
+    source_type: 'invoice',
+    source_id: IDS.invoice,
+    journal_batch_id: null,
+    account_no: '2100',
+    tax_code: 'NON_TAXABLE',
+    tax_rate: 0,
+    net_amount: 1000,
+    tax_amount: 0,
+    effective_date: PERIOD_START,
+  });
   await upsert('invoices', {
     id: IDS.invoice,
     contract_id: IDS.contract,
-    issue_date: '2026-07-01',
-    due_date: '2026-07-25',
+    issue_date: PERIOD_START,
+    due_date: PAYMENT_DATE,
     amount: 1000,
     paid_amount: 0,
     tax_amount: 0,
+    tax_rate: 0,
     status: 'UNPAID',
+    document_status: 'POSTED',
+    charge_type: 'RENT',
+    billing_period_start: PERIOD_START,
+    billing_period_end: PERIOD_END,
+    invoice_agreement_version_id: IDS.agreementVersion,
+    invoice_operating_model: 'OWNER_AGENCY',
+    invoice_collection_role: 'OWNER_IS_CREDITOR',
+    invoice_accounting_classification: 'OWNER_AGENCY_OWNER_CREDITOR_OPERATIONAL',
+    tax_treatment: 'NON_TAXABLE',
+    tax_profile_id: IDS.taxProfile,
+    tax_code: 'NON_TAXABLE',
+    tax_basis: 'NON_TAXABLE',
+    tax_snapshot_id: IDS.taxSnapshot,
     notes: 'single-office-isolated-smoke',
     company_id: COMPANY_ID,
   });

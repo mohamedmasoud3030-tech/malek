@@ -14,7 +14,7 @@
     "cfg": "{\"search_path=public, pg_temp\"}",
     "pub": false,
     "anon": false,
-    "auth": true,
+    "auth": false,
     "svc": true
   },
   {

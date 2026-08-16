@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T10:32:59.359Z",
+  "generatedAt": "2026-08-16T11:08:49.633Z",
   "posture": "post-3a1b",
   "controls": {
     "immutableRequestBinding": true,
@@ -39,7 +39,7 @@
       "args": "",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "8a87bb88081c04961f82643617369ba9"
+      "md5": "592e3781b23fe960db175b7796935bfa"
     },
     {
       "name": "post_receipt_atomic",
@@ -53,7 +53,7 @@
       "args": "payload jsonb",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "c37e4714431ee2549679b617dace5f6e"
+      "md5": "af730c6aeb89b4b7154b5aac3a0bd150"
     },
     {
       "name": "require_company_account_id",
