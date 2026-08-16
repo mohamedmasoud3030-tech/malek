@@ -1396,6 +1396,7 @@ export type Database = {
           vat_rate: number | null;
           vat_registration_number: string | null;
           company_id: string;
+          allow_sole_admin_self_approval: boolean;
         };
         Insert: {
           id?: string;
@@ -1427,6 +1428,7 @@ export type Database = {
           vat_rate?: number | null;
           vat_registration_number?: string | null;
           company_id?: string;
+          allow_sole_admin_self_approval?: boolean;
         };
         Update: {
           id?: string;
@@ -1458,6 +1460,7 @@ export type Database = {
           vat_rate?: number | null;
           vat_registration_number?: string | null;
           company_id?: string;
+          allow_sole_admin_self_approval?: boolean;
         };
         Relationships: [
           {
@@ -1485,6 +1488,7 @@ export type Database = {
           approved_at: string | null;
           created_at: string;
           updated_at: string;
+          is_sole_admin_exception: boolean;
         };
         Insert: {
           id?: string;
@@ -1501,6 +1505,7 @@ export type Database = {
           approved_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          is_sole_admin_exception?: boolean;
         };
         Update: {
           id?: string;
@@ -1517,6 +1522,7 @@ export type Database = {
           approved_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          is_sole_admin_exception?: boolean;
         };
         Relationships: [
           {
@@ -1691,6 +1697,7 @@ export type Database = {
           approval_evidence: Json | null;
           billing_day: number;
           grace_days: number;
+          is_sole_admin_exception: boolean;
         };
         Insert: {
           id?: string;
@@ -1728,6 +1735,7 @@ export type Database = {
           approval_evidence?: Json | null;
           billing_day?: number;
           grace_days?: number;
+          is_sole_admin_exception?: boolean;
         };
         Update: {
           id?: string;
@@ -1765,6 +1773,7 @@ export type Database = {
           approval_evidence?: Json | null;
           billing_day?: number;
           grace_days?: number;
+          is_sole_admin_exception?: boolean;
         };
         Relationships: [
           {
@@ -1926,6 +1935,7 @@ export type Database = {
           reversed_at: string | null;
           created_at: string;
           updated_at: string;
+          is_sole_admin_exception: boolean;
         };
         Insert: {
           id?: string;
@@ -1962,6 +1972,7 @@ export type Database = {
           reversed_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          is_sole_admin_exception?: boolean;
         };
         Update: {
           id?: string;
@@ -1998,6 +2009,7 @@ export type Database = {
           reversed_at?: string | null;
           created_at?: string;
           updated_at?: string;
+          is_sole_admin_exception?: boolean;
         };
         Relationships: [
           {
@@ -4425,6 +4437,7 @@ export type Database = {
           maker_user_id: string | null;
           checker_user_id: string | null;
           offset_applied: number;
+          is_sole_admin_exception: boolean;
         };
         Insert: {
           id: string;
@@ -4460,6 +4473,7 @@ export type Database = {
           maker_user_id?: string | null;
           checker_user_id?: string | null;
           offset_applied?: number;
+          is_sole_admin_exception?: boolean;
         };
         Update: {
           id?: string;
@@ -4495,6 +4509,7 @@ export type Database = {
           maker_user_id?: string | null;
           checker_user_id?: string | null;
           offset_applied?: number;
+          is_sole_admin_exception?: boolean;
         };
         Relationships: [
           {
@@ -5083,6 +5098,7 @@ export type Database = {
           result_payload: Json | null;
           created_at: string;
           updated_at: string;
+          is_sole_admin_exception: boolean;
         };
         Insert: {
           id?: string;
@@ -5100,6 +5116,7 @@ export type Database = {
           result_payload?: Json | null;
           created_at?: string;
           updated_at?: string;
+          is_sole_admin_exception?: boolean;
         };
         Update: {
           id?: string;
@@ -5117,6 +5134,7 @@ export type Database = {
           result_payload?: Json | null;
           created_at?: string;
           updated_at?: string;
+          is_sole_admin_exception?: boolean;
         };
         Relationships: [
           {
@@ -8200,6 +8218,12 @@ export type Database = {
           p_evidence_reference?: string | null;
         };
         Returns: Json;
+      };
+      wp01_is_sole_admin_allowed: {
+        Args: {
+          p_company_id: string | null;
+        };
+        Returns: boolean;
       };
       wp02_gap008_round_omr: {
         Args: {

@@ -38,7 +38,7 @@ The database is multi-company and operational entities must remain company-scope
 | `contracts` | `invoices` | one contract creates many scheduled obligations; posted/void/cancel behavior is lifecycle-controlled | invoice generation/credit/reversal RPCs | legacy and canonical paths coexist |
 | `payments` ↔ `receipts` | shared identity + `receipt_allocations` | payment is cash event; receipt is evidence; allocations distribute amount to obligations | payment/receipt RPCs and identity triggers | shared identity and reversal work exists; do not collapse the records conceptually |
 | `owner_settlements` | payment/expense links | one settlement has many reserved sources; a source has at most one active reservation | create/approve/pay/cancel RPCs + partial unique indexes | implemented and concurrency-tested |
-| `tenant_deposits` | `deposit_transactions` | one deposit has append-oriented held/deduction/refund events | deposit RPCs/application posting | legacy schema uses 2dp and direct authenticated writes in part; `GAP-009` |
+| `tenant_deposits` | `deposit_transactions` | one deposit has append-oriented held/deduction/refund events | deposit RPCs/application posting | *Engineering Complete:* OMR 3dp, RPC-owned, append-only/compensating, `GAP-009` fully closed |
 | `journal_batches` | `journal_lines` | one batch has two-or-more lines; each line belongs to one same-company batch/account; posted batch must balance | GL engine, deferred balance/lifecycle triggers | canonical Stage-3 model implemented/tested |
 | `bank_*` | import/match records | one import batch owns rows; rows retain source identity and company | preview/finalize/match RPCs | repository fail-closed contracts exist; hosted proof open |
 | entity/company | audit/documents | records retain actor/company/entity and immutable or archived history | audit triggers/RPCs; private Storage policies | repository controls exist; deployed Storage/legal proof open |
@@ -92,7 +92,7 @@ Owner settlements are not the origin of owner liability. They collect/reconcile 
 
 Deposits remain liabilities until refunded or applied under an approved claim/invoice. Deposit transactions must identify source deposit, beneficiary/economic destination, evidence and reversal relationship where relevant.
 
-At the baseline this target is not represented by one clean schema. `20260718100928_real_deposits_ledger.sql` defines `deposit_transactions.amount` as `numeric(14,2)`, grants authenticated insert/update paths on deposit tables, and writes through the legacy `journal_entries` compatibility surface. Later S04 GL functions add beneficiary-aware posting kernels. Until those paths are unified behind 3dp atomic RPCs, the deposit aggregate is `PARTIAL` rather than a completed canonical subledger.
+*Engineering Complete:* Under the current Release Candidate, the deposit subledger has been fully hardened to OMR 3dp with direct writes revoked, and unified behind atomic server-authoritative RPCs (`GAP-009` fully closed).
 
 ### Banking model
 

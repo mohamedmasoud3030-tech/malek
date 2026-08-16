@@ -41,7 +41,7 @@ The route layer is TanStack Router, the query/cache layer is TanStack Query, and
 | Routing/IA | route contract/tree and navigation tests | screenshots/old IA docs | hosted redirects and protected states | `/ai-assistant` standalone separate route implemented and verified (`GAP-023`) |
 | Active company | Auth Hook SQL, CompanyProvider claim validation, membership tests | migration comments | hook enabled for deployed project; issued-token claim; membership drift | live gate `GAP-003/021` |
 | RLS/company isolation | hardening migrations, pgTAP/PGlite/ephemeral release database gate | blanket “all tables isolated” claims | deployed policies/grants/schema | generated types do not enumerate all newer tables |
-| Roles/permissions | three roles, typed capabilities, effective grants and request lifecycle tests | six-role target in ADR0015 | migrated live role data and JWT semantics | three-vs-six-role conflict (`GAP-001`) |
+| Roles/permissions | six roles, typed capabilities, effective grants and request lifecycle tests | six-role model implemented and verified | migrated live role data and JWT semantics | *Reconciled:* `GAP-001` fully closed and verified |
 | Maker-Checker | contract maker/checker RPCs, constraint and pgTAP; permission-review self-approval denial | coverage of every sensitive approval | deployed behavior and audited exceptions | VOID/settlement/other designated actions not proven uniformly (`GAP-002`) |
 | GL write boundary | canonical batches/lines, lifecycle triggers, write-boundary guard/tests | “all financial paths use GL engine” | deployed grants/functions | legacy deposit/report and remaining sensitive-write inventory (`GAP-009/018`) |
 | Storage/documents | private bucket policy migrations, file validation, signed URLs, ephemeral Storage release job | legal sufficiency of templates | deployed bucket/policies/object isolation | legal/template approval external (`GAP-019/021`) |
@@ -50,15 +50,14 @@ The route layer is TanStack Router, the query/cache layer is TanStack Query, and
 
 ## Current authorization reality
 
-`rentrix-app/src/features/auth/permissions.ts` currently implements:
+`rentrix-app/src/features/auth/permissions.ts` implements the complete six-role model:
 
-- roles: `ADMIN`, `MANAGER`, `USER`;
+- roles: `ADMIN`, `MANAGER`, `ACCOUNTANT`, `OPERATIONS`, `USER`, `VIEWER` (unblocking `GAP-001`);
 - a typed `AppPermission` catalog;
 - role-derived permissions plus `grantedPermissions` effective grants;
-- `getWriteAccessState()` based on any effective write capability;
 - action-specific financial permissions.
 
-ADR `docs/decisions/0015-owner-decisions-roles-void-due-from-owner-contract-governance.md` accepts six roles. Therefore the target-vs-current mismatch is a real implementation conflict (`GAP-001`), not an undocumented preference.
+The six roles are fully storable, representable, and verified by `permissions.test.ts` and the `db0:gate` role-model check.
 
 ## Multi-company isolation
 

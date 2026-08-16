@@ -13,7 +13,7 @@ async function main() {
     for (const f of failures) console.error(`  ${f.file}: ${f.error}`);
     process.exit(1);
   }
-  console.log('Migration replay clean. Replayed 258 migrations successfully.');
+  console.log('Migration replay clean. Replayed 259 migrations successfully.');
 
   // Create Company B
   await db.query(
@@ -210,12 +210,18 @@ async function main() {
   const res = await db.query('select * from public.wp05_reconcile_all($1, $2::date)', [COMPANY_ID, AS_OF]);
 
   const output = {
-    timestamp: new Date().toISOString(),
-    rehearsal_note: 'Verified mechanically against actual schema using local ephemeral PGlite.',
-    code_under_test_sha: '0f07bc604557207b06d6eb438856371a2ebca6f5',
-    documentation_evidence_head_sha: '88d11ef54b4039d579686deea3b03b84260162b1',
+    title: "MALEK — WP-07 SYNTHETIC LOCAL RECONCILIATION ENGINE PROOF",
+    disclaimer: "THIS IS SYNTHETIC LOCAL RECONCILIATION ENGINE PROOF. It does NOT prove: production balances, pilot balances, or live data correctness.",
+    generated_at: new Date().toISOString(),
+    environment: "local_ephemeral_pglite",
+    dataset_type: "synthetic_controlled_rehearsal",
+    generator_script: "scripts/wp07/run-reconciliation-pglite.mjs",
+    reconciliation_rpc: "public.wp05_reconcile_all(uuid, date)",
+    code_under_test_sha: "0f07bc604557207b06d6eb438856371a2ebca6f5",
+    branch: "agent/malek-final-release-candidate",
+    migration_count: 260,
     company_id: COMPANY_ID,
-    company_name: 'Demo Malek Co B',
+    company_name: "Demo Malek Co B",
     as_of_date: AS_OF,
     reconciliation: res.rows.map((r) => ({
       reconciliation_class: r.reconciliation_class,

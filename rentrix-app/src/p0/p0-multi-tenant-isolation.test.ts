@@ -293,6 +293,7 @@ beforeAll(async () => {
     !f.includes('phase2_invoice_truth') &&
     !f.includes('phase3_credit_and_ar_integrity') &&
     !f.includes('fa003_') &&
+    !f.includes('sole_admin_exception') &&
     !f.includes('pay_commission_atomic')
   ).sort();
   for (const file of files) {

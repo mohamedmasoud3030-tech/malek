@@ -1,23 +1,23 @@
 {
-  "generatedAt": "2026-08-16T02:09:05.385Z",
+  "generatedAt": "2026-08-16T03:07:54.822Z",
   "expense": {
     "created": {
       "success": true,
-      "expense_id": "93b5d962-58e4-40f5-ab4e-ea60ab4b7f61",
+      "expense_id": "88f62d32-bff0-473a-81db-196b6e68a1e3",
       "expense_no": "EXP-20260816-phase3",
       "idempotent": false,
       "request_id": "phase3a-expense-shared"
     },
     "retried": {
       "success": true,
-      "expense_id": "93b5d962-58e4-40f5-ab4e-ea60ab4b7f61",
+      "expense_id": "88f62d32-bff0-473a-81db-196b6e68a1e3",
       "expense_no": "EXP-20260816-phase3",
       "idempotent": true,
       "request_id": "phase3a-expense-shared"
     },
     "updated": {
       "success": true,
-      "expense_id": "93b5d962-58e4-40f5-ab4e-ea60ab4b7f61",
+      "expense_id": "88f62d32-bff0-473a-81db-196b6e68a1e3",
       "idempotent": false,
       "new_amount": 15.125,
       "old_amount": 12.345,
@@ -35,39 +35,39 @@
     "created": {
       "amount": 100,
       "success": true,
-      "deposit_id": "dac657a8-83a1-4469-bd82-6fc7a5b9bd1f",
+      "deposit_id": "ac2aac86-29f6-41cb-94d1-eaaeb1daf86f",
       "idempotent": false,
       "request_id": "phase3a-deposit-create",
-      "journal_batch_id": "fdbd124d-8d9c-4b59-89b7-da6cb4a2fa70"
+      "journal_batch_id": "813b89aa-daa9-4374-97c2-13daa440ff1a"
     },
     "retried": {
       "amount": 100,
       "success": true,
-      "deposit_id": "dac657a8-83a1-4469-bd82-6fc7a5b9bd1f",
+      "deposit_id": "ac2aac86-29f6-41cb-94d1-eaaeb1daf86f",
       "idempotent": true,
       "request_id": "phase3a-deposit-create",
-      "journal_batch_id": "fdbd124d-8d9c-4b59-89b7-da6cb4a2fa70"
+      "journal_batch_id": "813b89aa-daa9-4374-97c2-13daa440ff1a"
     },
     "claim": {
       "status": "PENDING",
       "success": true,
-      "claim_id": "979af02e-dd00-4be7-bbf8-c6e0b112fe82",
+      "claim_id": "5e981299-8b8e-4e79-b96e-b4d3ed68581e",
       "idempotent": false,
       "target_type": "damage"
     },
     "approved": {
       "status": "APPROVED",
       "success": true,
-      "claim_id": "979af02e-dd00-4be7-bbf8-c6e0b112fe82",
+      "claim_id": "5e981299-8b8e-4e79-b96e-b4d3ed68581e",
       "idempotent": false
     },
     "applied": {
       "amount": 25,
       "status": "APPLIED",
       "success": true,
-      "batch_id": "65962b04-00b8-41b4-b1f8-e336453d4df0",
-      "claim_id": "979af02e-dd00-4be7-bbf8-c6e0b112fe82",
-      "deposit_id": "dac657a8-83a1-4469-bd82-6fc7a5b9bd1f",
+      "batch_id": "bb0fd93c-d43c-4bba-8636-8197f682e2df",
+      "claim_id": "5e981299-8b8e-4e79-b96e-b4d3ed68581e",
+      "deposit_id": "ac2aac86-29f6-41cb-94d1-eaaeb1daf86f",
       "idempotent": false,
       "invoice_id": null,
       "target_account_no": "4300"
@@ -76,11 +76,11 @@
       "amount": 30,
       "status": "POSTED",
       "success": true,
-      "batch_id": "509cb115-ed62-4a63-a321-4fc2c9d4c37f",
+      "batch_id": "f8af12fe-da9c-4ec0-9923-6685779532c5",
       "refunded": 30,
       "remaining": 45,
       "idempotent": false,
-      "refund_event_id": "93a1ed48-1a1c-45a0-b284-1fc4d9024b39"
+      "refund_event_id": "dc109e7e-6efb-4d30-858e-73d1ce33c472"
     },
     "balance": {
       "debit": 100,
