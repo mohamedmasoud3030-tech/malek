@@ -124,7 +124,8 @@ export function ReportsWorkspace({
     };
   }, [model.sections.occupancy.occupancyRows]);
 
-  const collectionRate = (summary?.invoiced ?? 0) > 0 ? Math.round(((summary?.paid ?? 0) / (summary?.invoiced ?? 1)) * 100) : 0;
+  // Same server-derived, credit-aware invoice-cohort metric as Dashboard Truth.
+  const collectionRate = model.hero.collectionRate;
 
   return (
     <div className="space-y-5">
@@ -154,10 +155,10 @@ export function ReportsWorkspace({
             icon={Receipt}
             sub={`${summary?.paymentsCount ?? 0} مدفوعات مسجلة`}
             trend={collectionRate >= 85 ? 'up' : collectionRate >= 65 ? 'neutral' : 'down'}
-            trendValue={`${collectionRate}%`}
+            trendValue={`كفاءة ${Math.round(collectionRate)}%`}
             accent="primary"
             onDrill={() => onSectionViewChange('analytics', 'collections')}
-            drillAriaLabel={`المحصّل للفترة ${money(summary?.paid ?? 0)} — عرض تقرير التحصيل`}
+            drillAriaLabel={`المحصّل للفترة ${money(summary?.paid ?? 0)} — كفاءة التحصيل ${Math.round(collectionRate)}% — عرض تقرير التحصيل`}
             unit={companySettings.defaultCurrency}
           />
           <FinanceKpiCard
