@@ -37,7 +37,7 @@ describe('Phase 3A-1C catalog contract', () => {
     // GAP-008 depends on the excluded canonical GL schema, so it is excluded too.
     const replay = await createFullReplayedDatabase({
       writeEvidence: false,
-      excludeMigrations: ['20260804', '20260807163000', '20260817100000', 'phase1_omr_precision_convergence', 'phase2_invoice_truth', 'phase3_credit_and_ar_integrity'],
+      excludeMigrations: ['20260804', '20260807163000', '20260817100000', 'phase1_omr_precision_convergence', 'phase2_invoice_truth', 'phase3_credit_and_ar_integrity', 'sole_admin_exception'],
     });
     expect(replay.failed).toEqual([]);
     db = replay.db;

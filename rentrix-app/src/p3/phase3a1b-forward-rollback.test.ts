@@ -159,8 +159,9 @@ describe('Phase 3A-1B forward / rollback / reapply chain', () => {
         // (OMR 3dp rounding); it is a later, independent change and must not
         // contaminate this historical Phase 3A-1B rollback-equivalence baseline.
         'phase1_omr_precision_convergence',
-      // Phase 2 redefines generate_invoices_from_active_contracts (deterministic billing/due dates).
-      'phase2_invoice_truth',
+        'phase2_invoice_truth',
+        'phase3_credit_and_ar_integrity',
+        'sole_admin_exception',
       ],
     });
     expect(replay.failed).toEqual([]);

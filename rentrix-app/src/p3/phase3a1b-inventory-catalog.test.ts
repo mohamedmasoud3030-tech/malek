@@ -113,6 +113,8 @@ beforeAll(async () => {
       'phase1_omr_precision_convergence',
       // Phase 2 redefines generate_invoices_from_active_contracts (deterministic billing/due dates).
       'phase2_invoice_truth',
+      'phase3_credit_and_ar_integrity',
+      'sole_admin_exception',
     ],
   });
   preDb = pre.db;

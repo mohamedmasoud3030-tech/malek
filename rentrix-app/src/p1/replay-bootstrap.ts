@@ -53,6 +53,10 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   // GAP-010 migration family, including its effective-history correction.
   'wp02_gap010_tax_authority',
   'wp02_gap010_effective_history_resolution',
+  'phase1_omr_precision_convergence',
+  'phase2_invoice_truth',
+  'phase3_credit_and_ar_integrity',
+  'sole_admin_exception',
 ] as const;
 
 export async function createFullReplayedDatabase(options?: {

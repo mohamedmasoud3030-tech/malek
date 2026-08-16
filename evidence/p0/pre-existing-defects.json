@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T03:07:01.867Z",
+  "generatedAt": "2026-08-16T03:53:09.468Z",
   "functions": {
     "rpt_trial_balance": {
       "error_authenticated_before": "error: operator does not exist: text <= date",
