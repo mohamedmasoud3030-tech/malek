@@ -35,10 +35,7 @@ export type NavItem = readonly [
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
-/**
- * Task-centric product IA.
- * Today → Portfolio → Leasing → Money → Services → Reports → Settings.
- */
+/** Task-centric product IA: Today → Portfolio → Leasing → Money → Services → Reports → Settings. */
 export const navGroups: readonly NavGroup[] = [
   ['العمل', [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
@@ -54,9 +51,8 @@ export const navGroups: readonly NavGroup[] = [
 ];
 
 /**
- * Progressive disclosure inside each primary workspace. Existing standalone
- * entity URLs stay routable for deep links, while child navigation prefers the
- * owning workspace so users keep context instead of bouncing between modules.
+ * Workspace children preserve context instead of sending the user to another
+ * feature module. Standalone entity URLs stay available for bookmarks/deep links.
  */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
@@ -82,9 +78,9 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   ],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, undefined, { section: 'maintenance' }],
-    ['/service-providers', 'serviceProviders', 'مزودو الخدمات وتخصصاتهم', BriefcaseBusiness, 'service_providers.view'],
-    ['/utilities', 'utilities', 'المرافق والعدادات', Zap],
-    ['/documents-vault', 'documentsVault', 'المستندات التشغيلية المرتبطة بالعمل', FolderKanban],
+    ['/maintenance', 'serviceProviders', 'مزودو الخدمات وتخصصاتهم', BriefcaseBusiness, 'service_providers.view', { section: 'service_providers' }],
+    ['/maintenance', 'utilities', 'المرافق والعدادات', Zap, undefined, { section: 'utilities' }],
+    ['/maintenance', 'documentsVault', 'المستندات التشغيلية المرتبطة بالعمل', FolderKanban, undefined, { section: 'documents_vault' }],
   ],
   '/reports': [],
   '/settings': [
