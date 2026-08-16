@@ -13,10 +13,11 @@ export const unitKeys = {
 
 const contractQueries = ['contracts'] as const;
 
-export function useAllUnits() {
+export function useAllUnits(options?: Readonly<{ enabled?: boolean }>) {
   return useQuery({
     queryKey: unitKeys.list(),
     queryFn: listUnits,
+    enabled: options?.enabled ?? true,
   });
 }
 

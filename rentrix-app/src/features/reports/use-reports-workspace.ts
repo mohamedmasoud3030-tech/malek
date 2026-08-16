@@ -35,6 +35,7 @@ import {
   usePropertyTitles,
   type FilterState,
 } from './reports-page.helpers';
+import type { ReportLocation, ReportViewId } from './reports-section-model';
 
 function firstErrorOf(...errors: ReadonlyArray<unknown>): unknown {
   for (const error of errors) {
@@ -47,7 +48,21 @@ function isLoadingAny(...flags: ReadonlyArray<boolean | undefined>): boolean {
   return flags.some(Boolean);
 }
 
-export function useReportsWorkspace(filters: FilterState) {
+/**
+ * R6 — Reports Read Models: which report views need which data sources.
+ *
+ * The workspace previously fetched EVERY report dataset on mount
+ * («Load everything → maybe user opens tab»). Now the active location decides
+ * which queries are enabled («Open tab → fetch report»); switching a tab
+ * enables its queries on demand and react-query caches previously opened
+ * reports for the same filters.
+ */
+function viewNeeds(view: ReportViewId, location: ReportLocation) {
+  const active = (views: ReportViewId[]) => views.includes(view) && views.includes(location.view);
+  return active;
+}
+
+export function useReportsWorkspace(filters: FilterState, location: ReportLocation) {
   const financialFilters = useMemo(
     () => ({
       dateFrom: filters.from,
@@ -58,30 +73,50 @@ export function useReportsWorkspace(filters: FilterState) {
   );
   const arrearsFilters = useMemo(() => ({ asOf: filters.asOf }), [filters.asOf]);
 
+  const view = location.view;
+  const isAccounting = location.section === 'accounting';
+  const isAnalytics = location.section === 'analytics';
+
+  // ── Per-view activation map (Open tab → fetch report) ─────────────────────
+  const needsOverview = isAnalytics && view === 'overview';
+  const needsCollections = isAnalytics && view === 'collections';
+  const needsOverdue = isAnalytics && view === 'overdue';
+  const needsExpenses = isAnalytics && view === 'expenses';
+  const needsOccupancy = isAnalytics && (view === 'occupancy' || view === 'property_analytics');
+  const needsMaintenance = isAnalytics && view === 'maintenance_analytics';
+  const needsAccountingReports = isAccounting && view === 'accounting_reports';
+  const needsDeferredRevenue = isAccounting && view === 'deferred_revenue';
+  // Statements live inside the accounting reports view (statement pickers).
+  const needsStatements = needsAccountingReports;
+
+  // The hero summary is the workspace header — always on (single cheap query).
   const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
-  const collectionSummaryQuery = useCollectionSummaryReport(financialFilters);
-  const financialCashflowQuery = useFinancialCashflowReport(financialFilters);
-  const cashFlowStatementQuery = useCashFlowStatementReport(financialFilters);
-  const vatReturnQuery = useVatReturnReport(financialFilters);
-  const dailyCollectionQuery = useDailyCollectionReport(financialFilters);
-  const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters);
-  const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters);
-  const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters);
-  const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters);
-  // Full paged read — the 1000-row single-shot cap used to truncate the rent roll,
-  // renewals forecast, deferred-revenue audit, and the contract filter dropdown.
-  const contractsQuery = useAllContracts('all');
-  const ownersQuery = useOwners();
-  const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined);
-  const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters);
-  const unitsQuery = useAllUnits();
-  const maintenanceQuery = useMaintenance('all', '');
-  const trialBalanceQuery = useTrialBalanceReport(filters.asOf);
-  const incomeStatementQuery = useIncomeStatementReport(financialFilters);
-  const balanceSheetQuery = useBalanceSheetReport(filters.asOf);
-  const receiptsQuery = useReceipts({ limit: latestReceiptLimit });
+
+  const collectionSummaryQuery = useCollectionSummaryReport(financialFilters, { enabled: needsOverview || needsCollections });
+  const financialCashflowQuery = useFinancialCashflowReport(financialFilters, { enabled: needsOverview });
+  const cashFlowStatementQuery = useCashFlowStatementReport(financialFilters, { enabled: needsStatements });
+  const vatReturnQuery = useVatReturnReport(financialFilters, { enabled: needsStatements });
+  const dailyCollectionQuery = useDailyCollectionReport(financialFilters, { enabled: needsCollections || needsStatements });
+  const expenseBreakdownQuery = useExpenseBreakdownReport(financialFilters, { enabled: needsExpenses || needsStatements });
+  const overdueInvoicesQuery = useOverdueInvoicesReport(arrearsFilters, { enabled: needsOverdue });
+  const agedReceivablesQuery = useAgedReceivablesReport(arrearsFilters, { enabled: needsOverdue || needsStatements });
+  const arrearsSummaryQuery = useArrearsSummaryReport(arrearsFilters, { enabled: needsOverdue });
+  // Full paged read — used by rent roll (collections view), occupancy/expiry
+  // and the deferred-revenue audit, plus the contract filter dropdown when the
+  // statements view is open.
+  const contractsEnabled = needsCollections || needsOccupancy || needsDeferredRevenue || needsStatements;
+  const contractsQuery = useAllContracts('all', { enabled: contractsEnabled });
+  const ownersQuery = useOwners({ enabled: needsStatements });
+  const tenantStatementQuery = useTenantStatementReport(filters.contractId || undefined, { enabled: needsStatements });
+  const ownerStatementQuery = useOwnerStatementReport(filters.ownerId || undefined, financialFilters, { enabled: needsStatements });
+  const unitsQuery = useAllUnits({ enabled: needsOccupancy });
+  const maintenanceQuery = useMaintenance('all', '', { enabled: needsMaintenance });
+  const trialBalanceQuery = useTrialBalanceReport(filters.asOf, { enabled: needsAccountingReports });
+  const incomeStatementQuery = useIncomeStatementReport(financialFilters, { enabled: needsAccountingReports });
+  const balanceSheetQuery = useBalanceSheetReport(filters.asOf, { enabled: needsAccountingReports });
+  const receiptsQuery = useReceipts({ limit: latestReceiptLimit }, { enabled: needsCollections || needsDeferredRevenue || needsStatements });
   const costCentersQuery = useCostCenters();
-  const propertyTitlesQuery = usePropertyTitles();
+  const propertyTitlesQuery = usePropertyTitles({ enabled: needsOccupancy });
 
   const contracts = contractsQuery.data?.rows ?? [];
   const allReceipts = receiptsQuery.data ?? [];
@@ -262,3 +297,4 @@ export function useReportsWorkspace(filters: FilterState) {
 }
 
 export type ReportsWorkspaceModel = ReturnType<typeof useReportsWorkspace>;
+export { viewNeeds };

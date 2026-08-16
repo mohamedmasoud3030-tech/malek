@@ -26,7 +26,6 @@ export function ReportsPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const { authorization } = useAuth();
-  const workspace = useReportsWorkspace(filters);
   // R5: view and export are separate capabilities — viewing a report never
   // implies the right to export it, and export never gates viewing.
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
@@ -36,6 +35,8 @@ export function ReportsPage() {
     search[REPORTS_SECTION_SEARCH_KEY],
     search.view
   );
+  // R6: the workspace fetches ONLY the open report (Open tab → fetch report).
+  const workspace = useReportsWorkspace(filters, { section: activeSection, view: activeView });
 
   const reportsLabel = translateSharedLabel('financialsSectionReports');
   const pageDescription = translateSharedLabel('reportsPageDescription');
