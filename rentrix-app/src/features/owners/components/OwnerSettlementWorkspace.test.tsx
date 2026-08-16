@@ -18,11 +18,9 @@ vi.mock('@tanstack/react-query', () => ({
             period_start: '2026-07-01',
             period_end: '2026-07-31',
             gross_rent_collected: 1500,
-            management_fee_rate: 10,
-            management_fee_type: 'percentage',
             management_fee_amount: 150,
-            maintenance_deductions: 50,
-            utility_deductions: 0,
+            owner_expenses: 50,
+            fee_vat_amount: 0,
             net_payable_amount: 1300,
             status: 'pending',
             created_at: '2026-07-20T00:00:00.000Z',
@@ -113,11 +111,9 @@ describe('OwnerSettlementWorkspace full coverage tests', () => {
         period_start: '2026-07-01',
         period_end: '2026-07-31',
         gross_rent_collected: 2000,
-        management_fee_rate: 10,
-        management_fee_type: 'percentage',
         management_fee_amount: 200,
-        maintenance_deductions: 100,
-        utility_deductions: 0,
+        owner_expenses: 100,
+        fee_vat_amount: 0,
         net_payable_amount: 1700,
         status: 'pending',
         created_at: '2026-07-01T00:00:00Z',
@@ -125,7 +121,8 @@ describe('OwnerSettlementWorkspace full coverage tests', () => {
     ]);
     expect(totals.gross).toBe(2000);
     expect(totals.fees).toBe(200);
-    expect(totals.deductions).toBe(100);
+    expect(totals.expenses).toBe(100);
+    expect(totals.feeVat).toBe(0);
     expect(totals.net).toBe(1700);
   });
 });
@@ -140,11 +137,9 @@ describe('SettlementSupervisionBanner — first-run ADMIN supervision UX (Wave D
     period_start: '2026-07-01',
     period_end: '2026-07-31',
     gross_rent_collected: 2000,
-    management_fee_rate: 10,
-    management_fee_type: 'percentage' as const,
     management_fee_amount: 200,
-    maintenance_deductions: 100,
-    utility_deductions: 0,
+    owner_expenses: 100,
+    fee_vat_amount: 0,
     net_payable_amount: 1700,
     status: 'pending' as const,
     created_at: '2026-07-01T00:00:00Z',

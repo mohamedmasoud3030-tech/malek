@@ -8507,6 +8507,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpt_owner_financial_position: {
+        Args: {
+          p_owner_id: string | null;
+          p_from: string | null;
+          p_to: string | null;
+        };
+        Returns: Json;
+      };
       rpt_owner_statement: {
         Args: {
           p_owner_id: string | null;
