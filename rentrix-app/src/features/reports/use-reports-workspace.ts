@@ -23,6 +23,7 @@ import { summarizeMaintenanceRequests } from '@/features/maintenance/maintenance
 import { useMaintenance } from '@/features/maintenance/use-maintenance';
 import { useCostCenters } from '@/features/settings/useCostCenters';
 import { useAllUnits } from '@/features/units/use-units';
+import { useAuthoritativeReportsCollectionRate } from './reports-collection-efficiency';
 import { buildDeferredRevenueAudit } from './reports-insights';
 import {
   buildExpiringContractsRows,
@@ -91,8 +92,14 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
   // statement pickers inside the accounting reports view.
   const needsStatements = isStatements || needsAccountingReports;
 
-  // The hero summary is the workspace header — always on (single cheap query).
+  // The hero summary and its collection-efficiency signal are always visible.
+  // The rate comes from the same server authority as Dashboard Truth; Reports
+  // must never derive period cash / period invoice issue in the browser.
   const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
+  const collectionRateQuery = useAuthoritativeReportsCollectionRate({
+    from: filters.from,
+    to: filters.to,
+  });
 
   const collectionSummaryQuery = useCollectionSummaryReport(financialFilters, { enabled: needsOverview || needsCollections });
   const financialCashflowQuery = useFinancialCashflowReport(financialFilters, { enabled: needsOverview });
@@ -166,6 +173,7 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
 
   const firstError = firstErrorOf(
     financialSummaryQuery.error,
+    collectionRateQuery.error,
     collectionSummaryQuery.error,
     financialCashflowQuery.error,
     cashFlowStatementQuery.error,
@@ -199,15 +207,18 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
     },
     hero: {
       summary: financialSummaryQuery.data,
-      isLoading: financialSummaryQuery.isLoading,
+      collectionRate: collectionRateQuery.data ?? 0,
+      isLoading: isLoadingAny(financialSummaryQuery.isLoading, collectionRateQuery.isLoading),
     },
     sections: {
       overview: {
         summary: financialSummaryQuery.data,
         collectionSummary: collectionSummaryQuery.data,
+        collectionRate: collectionRateQuery.data ?? 0,
         cashflowRows: financialCashflowQuery.data?.rows ?? [],
         isLoading: isLoadingAny(
           financialSummaryQuery.isLoading,
+          collectionRateQuery.isLoading,
           collectionSummaryQuery.isLoading,
           financialCashflowQuery.isLoading,
         ),
