@@ -4,7 +4,6 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// React 19 requires an explicit act-capable test environment.
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 import type { AuthorizationContext } from '@/features/auth/permissions';
 
@@ -14,7 +13,7 @@ vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, to, activeOptions: _activeOptions, ...props }: { children: ReactNode; to: string; activeOptions?: unknown } & Record<string, unknown>) => (
     <a href={to} {...props}>{children}</a>
   ),
-  useLocation: () => ({ pathname: '/properties' }),
+  useLocation: () => ({ pathname: '/properties', search: {} }),
 }));
 
 import { NavigationLinks } from './layout-navigation-view';
@@ -42,11 +41,11 @@ describe('Visual Wave 1 — drawer navigation interaction', () => {
     host.remove();
   });
 
-  it('exposes real collapsible groups with native keyboard buttons and aria-expanded', () => {
+  it('exposes real collapsible task workspaces with native keyboard buttons and aria-expanded', () => {
     act(() => {
       root.render(<NavigationLinks authorization={authorization} expanded sharedLabel={sharedLabel} />);
     });
-    const toggle = host.querySelector<HTMLButtonElement>('button[aria-label="طي العقارات"]');
+    const toggle = host.querySelector<HTMLButtonElement>('button[aria-label="طي المحفظة"]');
     expect(toggle?.tagName).toBe('BUTTON');
     expect(toggle?.getAttribute('aria-expanded')).toBe('true');
     const controlledId = toggle?.getAttribute('aria-controls');
