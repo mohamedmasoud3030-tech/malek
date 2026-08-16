@@ -7269,6 +7269,23 @@ export type Database = {
         };
         Relationships: [];
       };
+      party_directory: {
+        Row: {
+          party_key: string | null;
+          source_id: string | null;
+          source_table: string | null;
+          role: string | null;
+          display_name: string | null;
+          full_name: string | null;
+          phone: string | null;
+          email: string | null;
+          national_id: string | null;
+          company_id: string | null;
+          active: boolean | null;
+          live: boolean | null;
+        };
+        Relationships: [];
+      };
       s08_analysis_scope: {
         Row: {
           company_id: string | null;
