@@ -17,10 +17,9 @@ describe('route-contract — single source of truth', () => {
     }
   });
 
-  it('every REDIRECT_ROUTES entry is registered and has a redirect beforeLoad', () => {
+  it('every REDIRECT_ROUTES entry is registered and has redirect behavior', () => {
     for (const path of REDIRECT_ROUTES) {
       expect(hasRoutePath(path), `redirect route ${path} not in route-tree`).toBe(true);
-      // receipt is special: conditional redirect (has receiptId branch). Others are unconditional.
       const token = `path: '${path}'`;
       const idx = routeTreeSource.indexOf(token);
       const snippet = routeTreeSource.slice(Math.max(0, idx - 400), idx + 800);
@@ -33,19 +32,17 @@ describe('route-contract — single source of truth', () => {
     expect(new Set(canonicals).size).toBe(canonicals.length);
   });
 
-  it('all sidebarRoot values exist in routeNavRoot values (or are known roots)', () => {
+  it('all sidebarRoot values exist in routeNavRoot values', () => {
     const knownRoots = new Set(routeNavRoot.values());
     for (const entry of ROUTE_CONTRACT) {
       if (['/', '/login', '/privacy', '/terms', '/dev/design-system'].includes(entry.canonical)) continue;
-      // phrasing: sidebarRoot must be a valid primary nav root
-      expect(knownRoots.has(entry.sidebarRoot) || entry.sidebarRoot === '/dashboard', `unknown sidebarRoot ${entry.sidebarRoot} for ${entry.canonical}`).toBe(true);
+      expect(knownRoots.has(entry.sidebarRoot), `unknown sidebarRoot ${entry.sidebarRoot} for ${entry.canonical}`).toBe(true);
     }
   });
 
   it('every non-public canonical maps correctly via getNavRoot', () => {
     for (const entry of ROUTE_CONTRACT) {
       if (['/', '/login', '/privacy', '/terms'].includes(entry.canonical)) continue;
-      // dynamic segments like $propertyId need to test without params: getNavRoot handles prefix
       const testPath = entry.canonical.replace(/\/\$[^/]+/g, '/_id');
       expect(getNavRoot(testPath)).toBe(entry.sidebarRoot);
     }
@@ -60,39 +57,51 @@ describe('route-contract — single source of truth', () => {
     expect(new Set(aliases).size).toBe(aliases.length);
   });
 
-  it('target IA top-level is a subset of canonicals or documented future routes', () => {
+  it('pins exactly seven target IA roots', () => {
+    expect(TARGET_IA_TOP_LEVEL).toEqual([
+      '/dashboard',
+      '/properties',
+      '/contracts',
+      '/financials',
+      '/maintenance',
+      '/reports',
+      '/settings',
+    ]);
     const canonicals = new Set(ROUTE_CONTRACT.map((e) => e.canonical));
     for (const path of TARGET_IA_TOP_LEVEL) {
-      // /lands and /people are currently aliases, not top-level — document explicitly
-      // They are in canonical set but marked as redirect today.
       expect(canonicals.has(path), `target IA path ${path} missing from contract`).toBe(true);
+      expect(ROUTE_CONTRACT.find((entry) => entry.canonical === path)?.isPrimaryNav).toBe(true);
     }
   });
 
-  it('all visible nav items have a contract entry (no orphan nav)', () => {
+  it('all visible nav items have a contract entry', () => {
     const navPaths = new Set(getAllNavItems().map(([to]) => to));
     for (const path of navPaths) {
       expect(ROUTE_CONTRACT.some((e) => e.canonical === path), `nav path ${path} missing in contract`).toBe(true);
     }
   });
 
-  it('every contract entry has an Arabic title containing Arabic script', () => {
+  it('every contract entry has an Arabic title', () => {
     for (const entry of ROUTE_CONTRACT) {
       expect(entry.titleAr).toMatch(/[\u0600-\u06FF]/);
     }
   });
 
-  it('pins final People ownership and standalone domain roots', () => {
-    const people = ROUTE_CONTRACT.find((e) => e.canonical === '/people')!;
-    expect(people.isPrimaryNav).toBe(true);
-    expect(people.sidebarRoot).toBe('/people');
-    for (const path of ['/people/$personId', '/tenants/$tenantId', '/leads', '/communication']) {
-      expect(ROUTE_CONTRACT.find((entry) => entry.canonical === path)?.sidebarRoot).toBe('/people');
-    }
-    for (const path of ['/lands', '/commissions']) {
+  it('keeps secondary entities canonical but not global', () => {
+    const expectedRoots: Record<string, string> = {
+      '/owners': '/properties',
+      '/lands': '/properties',
+      '/tenants': '/contracts',
+      '/people': '/contracts',
+      '/leads': '/contracts',
+      '/communication': '/contracts',
+      '/commissions': '/financials',
+    };
+
+    for (const [path, root] of Object.entries(expectedRoots)) {
       const entry = ROUTE_CONTRACT.find((candidate) => candidate.canonical === path)!;
-      expect(entry.isPrimaryNav).toBe(true);
-      expect(entry.sidebarRoot).toBe(path);
+      expect(entry.isPrimaryNav).toBe(false);
+      expect(entry.sidebarRoot).toBe(root);
     }
   });
 });
