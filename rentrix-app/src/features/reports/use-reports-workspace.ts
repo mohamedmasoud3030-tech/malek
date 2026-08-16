@@ -76,6 +76,7 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
   const view = location.view;
   const isAccounting = location.section === 'accounting';
   const isAnalytics = location.section === 'analytics';
+  const isStatements = location.section === 'statements';
 
   // ── Per-view activation map (Open tab → fetch report) ─────────────────────
   const needsOverview = isAnalytics && view === 'overview';
@@ -86,8 +87,9 @@ export function useReportsWorkspace(filters: FilterState, location: ReportLocati
   const needsMaintenance = isAnalytics && view === 'maintenance_analytics';
   const needsAccountingReports = isAccounting && view === 'accounting_reports';
   const needsDeferredRevenue = isAccounting && view === 'deferred_revenue';
-  // Statements live inside the accounting reports view (statement pickers).
-  const needsStatements = needsAccountingReports;
+  // Statements: their own top-level section (?section=statements) AND the
+  // statement pickers inside the accounting reports view.
+  const needsStatements = isStatements || needsAccountingReports;
 
   // The hero summary is the workspace header — always on (single cheap query).
   const financialSummaryQuery = useFinancialPeriodSummaryReport(financialFilters);
