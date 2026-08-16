@@ -1689,6 +1689,8 @@ export type Database = {
           rejected_at: string | null;
           rejection_reason: string | null;
           approval_evidence: Json | null;
+          billing_day: number;
+          grace_days: number;
         };
         Insert: {
           id?: string;
@@ -1724,6 +1726,8 @@ export type Database = {
           rejected_at?: string | null;
           rejection_reason?: string | null;
           approval_evidence?: Json | null;
+          billing_day?: number;
+          grace_days?: number;
         };
         Update: {
           id?: string;
@@ -1759,6 +1763,8 @@ export type Database = {
           rejected_at?: string | null;
           rejection_reason?: string | null;
           approval_evidence?: Json | null;
+          billing_day?: number;
+          grace_days?: number;
         };
         Relationships: [
           {
@@ -2929,6 +2935,10 @@ export type Database = {
           no: string | null;
           company_id: string;
           reference: string | null;
+          document_status: 'DRAFT' | 'POSTED' | 'VOIDED' | 'REVERSED';
+          charge_type: string;
+          billing_period_start: string | null;
+          billing_period_end: string | null;
         };
         Insert: {
           id?: string;
@@ -2947,6 +2957,10 @@ export type Database = {
           no?: string | null;
           company_id?: string;
           reference?: string | null;
+          document_status?: 'DRAFT' | 'POSTED' | 'VOIDED' | 'REVERSED';
+          charge_type?: string;
+          billing_period_start?: string | null;
+          billing_period_end?: string | null;
         };
         Update: {
           id?: string;
@@ -2965,6 +2979,10 @@ export type Database = {
           no?: string | null;
           company_id?: string;
           reference?: string | null;
+          document_status?: 'DRAFT' | 'POSTED' | 'VOIDED' | 'REVERSED';
+          charge_type?: string;
+          billing_period_start?: string | null;
+          billing_period_end?: string | null;
         };
         Relationships: [
           {

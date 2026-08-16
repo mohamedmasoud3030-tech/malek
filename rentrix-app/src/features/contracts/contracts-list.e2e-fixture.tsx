@@ -24,6 +24,8 @@ const FIXTURE_COMPANY_ID = '00000000-0000-4000-8000-0000000000c1';
 const fixtureContractDefaults = {
   company_id: FIXTURE_COMPANY_ID,
   reference: null,
+  billing_day: 1,
+  grace_days: 0,
   agreement_version_id: null,
   collection_role_snapshot: null,
   operating_model_snapshot: null,

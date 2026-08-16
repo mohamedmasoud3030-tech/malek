@@ -126,11 +126,16 @@ describe('Phase 3A-1B execution lifecycle', () => {
               i.tax_rate::numeric as tax_rate, i.status, i.issue_date::text, i.company_id::text as company_id
          from public.invoices i
         where i.contract_id::text = $1
-          and i.issue_date = current_date
+          and i.billing_period_start = date_trunc('month', current_date)::date
           and i.deleted_at is null`,
       [CONTRACT_A],
     );
     expect(generated).toBeDefined();
+    // Phase 2: issue_date is deterministic from billing_day (default 1) of the
+    // current billing period, not current_date.
+    expect(generated!.issue_date).toBe(
+      (await queryOne(db, `select date_trunc('month', current_date)::date::text as d`))!.d,
+    );
     expect(generated!.company_id).toBe(COMPANY_A);
     expect(Number(generated!.amount)).toBeCloseTo(1000, 3);
     expect(Number(generated!.tax_rate)).toBeCloseTo(5, 3);
@@ -168,7 +173,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
       db,
       `select count(*)::int as invoices,
               (select count(*)::int from public.journal_entries je where je.source_id::text = $1) as journals
-         from public.invoices i where i.contract_id::text = $2 and i.issue_date = current_date`,
+         from public.invoices i where i.contract_id::text = $2 and i.billing_period_start = date_trunc('month', current_date)::date`,
       [generated!.id, CONTRACT_A],
     );
     expect(dup!.invoices).toBe(1);
@@ -184,7 +189,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
       `select count(*)::int as n from public.invoices i
         join public.contracts c on c.id = i.contract_id
        where c.company_id = $1::uuid and i.deleted_at is null
-         and i.issue_date = current_date`,
+         and i.billing_period_start = date_trunc('month', current_date)::date`,
       [COMPANY_B],
     );
     expect(bCount!.n).toBe(0);
