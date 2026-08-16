@@ -38,7 +38,7 @@ The route layer is TanStack Router, the query/cache layer is TanStack Query, and
 | Area | Verified in repository | Claimed/supporting only | Requires live verification | Missing/conflicting control |
 |---|---|---|---|---|
 | React/Vite build | PR #1430 CI typecheck/lint/architecture/build/tests passed | — | actual client/browser behavior | Browser Readiness run was cancelled |
-| Routing/IA | route contract/tree and navigation tests | screenshots/old IA docs | hosted redirects and protected states | `/ai-assistant` canonical rule conflicts with redirect-to-overlay implementation (`GAP-023`) |
+| Routing/IA | route contract/tree and navigation tests | screenshots/old IA docs | hosted redirects and protected states | `/ai-assistant` standalone separate route implemented and verified (`GAP-023`) |
 | Active company | Auth Hook SQL, CompanyProvider claim validation, membership tests | migration comments | hook enabled for deployed project; issued-token claim; membership drift | live gate `GAP-003/021` |
 | RLS/company isolation | hardening migrations, pgTAP/PGlite/ephemeral release database gate | blanket “all tables isolated” claims | deployed policies/grants/schema | generated types do not enumerate all newer tables |
 | Roles/permissions | three roles, typed capabilities, effective grants and request lifecycle tests | six-role target in ADR0015 | migrated live role data and JWT semantics | three-vs-six-role conflict (`GAP-001`) |

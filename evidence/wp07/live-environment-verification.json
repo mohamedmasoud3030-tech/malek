@@ -1,50 +1,51 @@
 {
   "checked_at": "2026-08-16T02:25:00Z",
-  "candidate_sha": "da9a98a38e61e9547df1e328ad91084e79b78410",
-  "target_project": "rentrix-production",
-  "environment": "READY_FOR_PILOT",
+  "candidate_sha": "0f07bc604557207b06d6eb438856371a2ebca6f5",
+  "target_project": "local-pglite-simulation (Staging Rehearsal)",
+  "environment": "BLOCKED_EXTERNAL",
+  "status_comment": "This verification is run in a local hermetic PGlite/Docker-free environment because live Supabase project credentials are owned externally and were not provided. No live production or staging database has been mutated.",
   "secret_inventory": [
     {
       "name": "VITE_SUPABASE_URL",
       "required_by": "Frontend Client Bundle",
-      "status": "CONFIGURED_IN_STAGING",
+      "status": "UNVERIFIED_LIVE (LOCAL_FALLBACK)",
       "secured": "Yes (public value)"
     },
     {
       "name": "VITE_SUPABASE_ANON_KEY",
       "required_by": "Frontend Client Bundle",
-      "status": "CONFIGURED_IN_STAGING",
+      "status": "UNVERIFIED_LIVE (LOCAL_FALLBACK)",
       "secured": "Yes (public value)"
     },
     {
       "name": "SUPABASE_SERVICE_ROLE_KEY",
       "required_by": "Privileged Backend Scripts (QA/Lifecycle)",
-      "status": "STORED_SECRTLY",
+      "status": "MISSING_EXTERNAL",
       "secured": "Yes (never exposed to browser)"
     },
     {
       "name": "SUPABASE_DB_URL",
       "required_by": "Database Migration Tools",
-      "status": "STORED_SECRTLY",
+      "status": "MISSING_EXTERNAL",
       "secured": "Yes (private connection string)"
     },
     {
       "name": "AI_PROVIDER_API_KEY",
       "required_by": "Supabase Edge Functions (ai-assistant)",
-      "status": "STORED_SECRTLY",
-      "secured": "Yes (stored securely in Supabase vault)"
+      "status": "MISSING_EXTERNAL",
+      "secured": "Yes"
     }
   ],
-  "rls_policy_state": "ACTIVE_FAIL_CLOSED",
+  "rls_policy_state": "ACTIVE_FAIL_CLOSED (LOCAL_VERIFIED)",
   "company_isolation_proof": {
-    "select_test": "PASS (Company A cannot select Company B rows)",
-    "insert_test": "PASS (Company A cannot insert into Company B scope)",
-    "update_test": "PASS (Company A cannot update Company B rows)",
-    "delete_test": "PASS (Company A cannot delete Company B rows)",
-    "rpc_isolation_test": "PASS (Company A cannot execute RPCs against Company B target data)",
-    "storage_isolation_test": "PASS (Company A cannot access Company B private documents)"
+    "select_test": "PASS (Local replica: Company A cannot select Company B rows)",
+    "insert_test": "PASS (Local replica: Company A cannot insert into Company B scope)",
+    "update_test": "PASS (Local replica: Company A cannot update Company B rows)",
+    "delete_test": "PASS (Local replica: Company A cannot delete Company B rows)",
+    "rpc_isolation_test": "PASS (Local replica: Company A cannot execute RPCs against Company B target data)",
+    "storage_isolation_test": "PENDING_LIVE_ACCESS (Staging/Production bucket policies require live verification)"
   },
-  "roles_tested": [
+  "roles_tested_locally": [
     "ADMIN",
     "MANAGER",
     "ACCOUNTANT",
@@ -59,5 +60,5 @@
     "deposit_refund",
     "owner_settlement_payout"
   ],
-  "monitoring_setup": "Supabase standard observability + telemetry"
+  "monitoring_setup": "PENDING_LIVE_ACCESS"
 }

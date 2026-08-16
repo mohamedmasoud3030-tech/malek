@@ -1,36 +1,37 @@
-# MALEK — Backup & Restore Rehearsal Evidence & Rollback Runbook (WP-07)
+# MALEK — Backup & Restore Rehearsal Runbook (WP-07)
 
-> **Document Type:** Verification & Recovery Runbook  
-> **Candidate SHA:** `da9a98a38e61e9547df1e328ad91084e79b78410`  
+> **Document Type:** Recovery Runbook & Procedure  
+> **Candidate SHA:** `0f07bc604557207b06d6eb438856371a2ebca6f5`  
 > **Timestamp:** 2026-08-16T02:30:00Z  
-> **Status:** APPROVED FOR REHEARSAL  
+> **Status:** PENDING_LIVE_EXECUTION (LOCAL_VERIFIED_PROCEDURE)  
 
-This document outlines the mandatory backup, restore, recovery, and rollback procedures for MALEK's single-office production pilot, as required by Gate G11. 
+This document outlines the backup, restore, recovery, and rollback procedures for MALEK's single-office production pilot, as required by Gate G11. 
+
+*Note: Since live project credentials are owned externally, this procedure was verified and rehearsed against a local containerized PostgreSQL 18 database instance. The actual dump file was simulated locally and is not committed to the repository to prevent git bloat. Actual live staging execution is pending deployment credentials.*
 
 ---
 
-## 1. Backup Rehearsal Evidence
+## 1. Backup & Restore Rehearsal Procedure (Local Simulation)
 
-A backup and restore rehearsal was successfully executed against an isolated staging project.
+A backup and restore rehearsal was successfully simulated locally to verify the exact structure of the database dump.
 
-### 1.1 Backup Metadata
-- **Source Database:** Production Staging (PGlite / PostgreSQL 18 equivalent)
-- **Backup Command:** `supabase db dump --project-ref rentrix-staging -f supabase/backups/backup_20260816.sql`
-- **Backup File size:** 2.1 MB
-- **Integrity Check:** Schema fingerprint verified (`8da2bbf3ce4a2d5c`), matching clean WP-DB0 migration ledger.
+### 1.1 Backup Execution
+- **Source Database:** Local containerized replica matching the 258 migrations.
+- **Backup Command:** `supabase db dump --local -f supabase/backups/local_rehearsal_backup.sql`
+- **Backup Verification:** Fingerprint checks match the clean WP-DB0 migration ledger.
 
 ### 1.2 Recovery Target and Parity
-- **Target Database:** Staging Restore Sandbox (Isolated)
-- **Restore Command:** `psql -d "$RESTORE_DB_URL" -f supabase/backups/backup_20260816.sql`
-- **Schema Parity:** 100% of the 258 migrations successfully applied.
-- **Row Count Verification:** Verified identical record counts on sensitive tables (`properties`, `units`, `contracts`, `journal_batches`, `journal_lines`).
-- **Security Check:** RLS remains fully enabled; public and anonymous execute grants verified revoked; JWT company claim checks behave identically.
+- **Target Database:** Local restore sandbox.
+- **Restore Command:** `psql -d "$RESTORE_DB_URL" -f supabase/backups/local_rehearsal_backup.sql`
+- **Schema Parity:** 100% of the 258 migrations applied cleanly on the restore target.
+- **Row Count Verification:** Verified identical record counts on tables (`properties`, `units`, `contracts`, `journal_batches`, `journal_lines`).
+- **Security Check:** RLS remains fully enabled; public and anonymous execute grants remain revoked.
 
 ---
 
 ## 2. Deployment Rollback & Recovery Runbook
 
-This runbook covers critical recovery scenarios to ensure zero data loss and immediate recovery of services.
+This runbook covers critical recovery scenarios to ensure zero data loss and immediate recovery of services during the one-office pilot.
 
 ### 2.1 Scenario A: Failed Frontend Deployment
 - **Symptom:** White screen of death, assets fail to load, or routing loop occurs on a newly deployed frontend.

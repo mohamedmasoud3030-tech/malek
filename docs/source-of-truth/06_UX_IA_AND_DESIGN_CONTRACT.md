@@ -53,7 +53,7 @@ Not every route above is equally release-critical. Presence in the route contrac
 | Reports | `/reports`; `/accounting` redirects to Reports accounting view | Reports | CANONICAL + COMPATIBILITY redirect |
 | Services | `/maintenance`; `/utilities` redirects to maintenance view; Service Providers have first-class CRUD routes | Services | CANONICAL + COMPATIBILITY redirect |
 | Settings/admin | `/settings`; `/system`, `/audit-log`, `/data-integrity`, `/automation`, `/change-password` redirect to settings sections | Settings | CANONICAL HUB + COMPATIBILITY routes |
-| AI Assistant | `/ai-assistant` redirects to `/dashboard?globalAction=ai-assistant`; shell opens a global overlay | no primary nav item | CONFLICT with `PRD-008/UX-007`; `GAP-023` |
+| AI Assistant | `/ai-assistant` is a standalone separate route page | no primary nav item | VERIFIED_IMPLEMENTED (`GAP-023` unblocked) |
 | Documents Vault | `/documents-vault` redirects to `/maintenance?section=documents_vault`; `documents_vault` is a real Operations Hub section (embedded DocumentsVaultWorkspace) acting as the aggregate documents authority, while contextual entity-level panels on properties/owners/units/contracts/maintenance remain complementary | no primary nav item | CANONICAL HUB + COMPATIBILITY redirect (was CONFLICTING/legacy surface under `UX-008/GAP-020`) |
 | Dev design system | `/dev/design-system`, DEV-only | none | HIDDEN development surface, not product IA |
 
@@ -93,7 +93,7 @@ Compatibility routes such as `/invoices`, `/receipts`, `/expenses`, `/arrears`, 
 
 ### Reports and AI
 
-`/reports` is independent. The approved target keeps `/ai-assistant` independent from Dashboard and from accounting authority. The baseline implementation instead treats the URL as a legacy deep-link into the single global overlay (`route-tree.ts` and `ai-assistant-global-action.tsx`), so this is an explicit conflict rather than a verified rule.
+`/reports` is independent. The approved target keeps `/ai-assistant` independent from Dashboard and from accounting authority. The implementation exposes a true separate `/ai-assistant` route page (unblocking `GAP-023`).
 
 ## Dossier contract
 

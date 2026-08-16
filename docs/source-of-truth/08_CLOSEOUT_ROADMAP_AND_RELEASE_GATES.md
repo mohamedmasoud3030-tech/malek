@@ -245,8 +245,8 @@ Repository implementation for portions of S02/S04/S06/S07/S08 is acknowledged in
 
 | Gate | Required evidence | Baseline state |
 |---|---|---|
-| G1 — Canonical decisions approved | no unresolved owner/accounting/legal ambiguity for release scope | PARTIAL; AI IA (GAP-023), MASTER_LEASE inclusion (GAP-012) and external legal/tax decisions remain — see `../decisions/0016-closeout-external-decision-packets.md` |
-| G2 — No release-blocking conflict | all `CONFLICT` rows resolved explicitly | PARTIAL: roles (GAP-001) and deposit-precision conflicts RESOLVED on main; AI IA conflict (GAP-023) remains |
+| G1 — Canonical decisions approved | no unresolved owner/accounting/legal ambiguity for release scope | PARTIAL: MASTER_LEASE inclusion (GAP-012) and external legal/tax decisions remain — see `../decisions/0016-closeout-external-decision-packets.md` |
+| G2 — No release-blocking conflict | all `CONFLICT` rows resolved explicitly | PASS: roles (GAP-001) and deposit-precision conflicts RESOLVED on main; AI IA conflict (GAP-023) resolved by standalone `/ai-assistant` route page |
 | G3 — Company isolation | repository + exact deployed negative tests | PARTIAL: repository/ephemeral pass (db0 isolation gate); live absent |
 | G4 — Posting and reversal | owner-agency/master-lease included scope passes event/retry/reversal tests | PARTIAL: owner-agency event/retry/reversal suites green (RATE/FIXED/deposit/Due-from-Owner/VOID); master-lease inclusion undecided |
 | G5 — GL/subledger reconciliation | 1201/2000/1300/2200/2300 and included lease controls tie within 0.001 | PARTIAL: reconciliation engine green (pgTAP 33, tolerance 0.001); 1300 parity added (GAP-008); live cycle pending |

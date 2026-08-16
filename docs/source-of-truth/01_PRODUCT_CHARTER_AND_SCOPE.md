@@ -48,7 +48,7 @@ The product value is operational control with accounting traceability: the offic
 
 Legacy leads, communication, commissions, automation and lands remain real repository surfaces, but their existence does not make them independent product pillars or authorize new scope. They are retained where they support property operations or compatibility.
 
-The AI Assistant is read-only decision support. It cannot post, approve, reinterpret accounting policy, or become a report source. At the baseline the product exposes it as a global overlay reached through a legacy `/ai-assistant` deep-link, which conflicts with the canonical separate-route rule and is tracked as `GAP-023`.
+The AI Assistant is read-only decision support. It cannot post, approve, reinterpret accounting policy, or become a report source. The product exposes it as a true separate, standalone `/ai-assistant` route (unblocking `GAP-023` in this Release Candidate).
 
 ### Explicit non-goals for this closeout
 
