@@ -45,13 +45,17 @@ export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]
  * Today → Portfolio → Leasing → Money → Services → Reports → Settings
  */
 export const navGroups: readonly NavGroup[] = [
-  ['اليوم', [['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard]]],
-  ['المحفظة', [['/properties', 'portfolio', 'العقارات والوحدات والملاك والأصول المدارة', Building2]]],
-  ['التأجير', [['/contracts', 'leasing', 'دورة التأجير من الجاهزية حتى التجديد أو الإخلاء', FileText]]],
-  ['المال', [['/financials', 'money', 'المستحقات والتحصيل والمصروفات وأموال الملاك والبنوك', PieChart]]],
-  ['الخدمات', [['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench]]],
-  ['التقارير', [['/reports', 'reportsAndStatements', 'التقارير والتحليلات والكشوف', BarChart3, 'financial.reports.view']]],
-  ['الإعدادات', [['/settings', 'settings', 'الشركة والمستخدمون والصلاحيات والأتمتة والنظام', Settings]]],
+  ['العمل', [
+    ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
+    ['/properties', 'portfolio', 'العقارات والوحدات والملاك والأصول المدارة', Building2],
+    ['/contracts', 'leasing', 'دورة التأجير من الجاهزية حتى التجديد أو الإخلاء', FileText],
+    ['/financials', 'money', 'المستحقات والتحصيل والمصروفات وأموال الملاك والبنوك', PieChart],
+    ['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench],
+  ]],
+  ['التحليل والإدارة', [
+    ['/reports', 'reportsAndStatements', 'التقارير والتحليلات والكشوف', BarChart3, 'financial.reports.view'],
+    ['/settings', 'settings', 'الشركة والمستخدمون والصلاحيات والأتمتة والنظام', Settings],
+  ]],
 ];
 
 /**
