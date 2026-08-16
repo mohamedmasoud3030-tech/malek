@@ -71,10 +71,12 @@ Owner/tenant dossier screens are views over these records and related financial/
 
 ### Billing and collection model
 
-- `invoices` represent tenant obligations/schedule outputs.
-- `payments` represent actual collected payment events and are the operational source for collections.
+- `invoices` represent tenant obligations/schedule outputs. RC1 owner-agency invoices carry immutable server-derived agreement-version, operating-model, collection-role, accounting-classification, source-batch and tax-profile/snapshot lineage once posted.
+- `payments` represent actual collected payment events and are the operational source for collections; RC1 supports controlled `cash` → 1111 and `bank_transfer` → 1120 only until another clearing-account policy is approved.
 - `receipts` represent receipt/audit documents.
-- `receipt_allocations` connect receipt/payment value to obligations where applicable.
+- `receipt_allocations` connect receipt/payment value to obligations where applicable; `invoice_payment_tax_allocations` retains the original invoice tax component for controlled collection allocation.
+- `invoice_credits` are append-only credit/reversal records with immutable net/tax/source-economic components; callers do not choose GL accounts.
+- `owner_funds_events` is the append-only forward operational control for 2000 Owner Funds Payable; legacy `owner_balances` is not rewritten to manufacture historical lineage.
 - `arrears` is derived from obligations versus satisfied amounts; it is not an independent cash ledger.
 
 ### Expense and maintenance model
