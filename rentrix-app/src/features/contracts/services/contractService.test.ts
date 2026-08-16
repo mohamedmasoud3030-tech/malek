@@ -98,6 +98,8 @@ describe('updateContract', () => {
     end_date: '2027-06-30',
     rent_amount: 12000,
     payment_cycle: 'monthly',
+    billing_day: 1,
+    grace_days: 0,
     payment_terms_id: null,
     status: 'active',
     cancellation_reason: null,

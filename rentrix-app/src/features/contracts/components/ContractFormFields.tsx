@@ -314,6 +314,16 @@ export function ContractFormFields({
             <p className="mt-1 text-xs text-muted-foreground">تُملأ تلقائياً من الإيجار الافتراضي للوحدة ويمكن تعديلها حسب الاتفاق.</p>
           </EntityForm.Field>
 
+          <EntityForm.Field label="يوم الفوترة (1–28)" error={form.formState.errors.billing_day?.message}>
+            <Input type="number" min="1" max="28" step="1" inputMode="numeric" {...form.register('billing_day')} />
+            <p className="mt-1 text-xs text-muted-foreground">اليوم الذي تصدر فيه فاتورة كل دورة — سياسة معلنة وليست افتراضاً خفياً.</p>
+          </EntityForm.Field>
+
+          <EntityForm.Field label="أيام السماح" error={form.formState.errors.grace_days?.message}>
+            <Input type="number" min="0" max="90" step="1" inputMode="numeric" {...form.register('grace_days')} />
+            <p className="mt-1 text-xs text-muted-foreground">مهلة بعد نهاية الفترة قبل اعتبار الفاتورة متأخرة.</p>
+          </EntityForm.Field>
+
           <EntityForm.Field label="دورة السداد" error={form.formState.errors.payment_cycle?.message}>
             <Select {...form.register('payment_cycle')}>
               {paymentCycleValues.map((cycle) => (

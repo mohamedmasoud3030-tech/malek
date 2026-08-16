@@ -7587,6 +7587,8 @@ export type Database = {
           p_cancellation_reason: string | null;
           p_notes: string | null;
           p_attachment_url: string | null;
+          p_billing_day?: number | null;
+          p_grace_days?: number | null;
         };
         Returns: Json;
       };
@@ -8747,6 +8749,14 @@ export type Database = {
           p_cancellation_reason: string | null;
           p_notes: string | null;
           p_attachment_url: string | null;
+        };
+        Returns: Json;
+      };
+      update_contract_billing_policy_atomic: {
+        Args: {
+          p_contract_id: string | null;
+          p_billing_day: number | null;
+          p_grace_days: number | null;
         };
         Returns: Json;
       };

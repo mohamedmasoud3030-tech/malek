@@ -145,6 +145,8 @@ export async function createContract(payload: ContractPayload): Promise<Contract
     p_cancellation_reason: payload.cancellation_reason ?? null,
     p_notes: payload.notes ?? null,
     p_attachment_url: payload.attachment_url ?? null,
+    p_billing_day: payload.billing_day,
+    p_grace_days: payload.grace_days,
   });
   if (error) throw error;
   return data as Contract;
@@ -156,6 +158,17 @@ export async function updateContract(contractId: string, payload: ContractPayloa
   // re-validated on edit, matching create_contract_atomic's checks. See
   // supabase/migrations/20260708044657_contract_lifecycle_atomic_rpcs.sql.
   await assertContractPropertyIsOperational(payload.property_id, payload.status);
+  // R4: billing policy is DRAFT-only editable and lives behind its own
+  // server command; run it BEFORE the general update so a rejected policy
+  // change fails the whole edit atomically from the user's perspective.
+  {
+    const { error: policyError } = await supabase.rpc('update_contract_billing_policy_atomic', {
+      p_contract_id: contractId,
+      p_billing_day: payload.billing_day,
+      p_grace_days: payload.grace_days,
+    });
+    if (policyError) throw policyError;
+  }
   const { data, error } = await supabase.rpc('update_contract_atomic', {
     p_contract_id: contractId,
     p_property_id: payload.property_id,
