@@ -32,14 +32,12 @@ describe('getAuthoritativeReportsCollectionRate', () => {
     });
   });
 
-  it('fails closed when the authoritative value is missing or invalid', async () => {
-    rpcMock.mockResolvedValueOnce({ data: { collections: {} }, error: null });
-    await expect(getAuthoritativeReportsCollectionRate({ from: '2026-08-01', to: '2026-08-31' }))
-      .rejects.toThrow(/كفاءة التحصيل المعتمدة/);
-
-    rpcMock.mockResolvedValueOnce({ data: { collections: { collection_rate: 101 } }, error: null });
-    await expect(getAuthoritativeReportsCollectionRate({ from: '2026-08-01', to: '2026-08-31' }))
-      .rejects.toThrow(/كفاءة التحصيل المعتمدة/);
+  it('fails closed when the authoritative value is missing, null, or invalid', async () => {
+    for (const value of [undefined, null, 101]) {
+      rpcMock.mockResolvedValueOnce({ data: { collections: { collection_rate: value } }, error: null });
+      await expect(getAuthoritativeReportsCollectionRate({ from: '2026-08-01', to: '2026-08-31' }))
+        .rejects.toThrow(/كفاءة التحصيل المعتمدة/);
+    }
   });
 
   it('propagates the RPC failure instead of fabricating a zero', async () => {
