@@ -65,7 +65,8 @@ export async function uploadContractDocument(contractId: string, file: File) {
 
   if (error) {
     // Roll back the orphaned storage object if the DB insert failed.
-    await supabase.storage.from('attachments').remove([storagePath]);
+    // Best-effort: a cleanup failure must never mask the original error.
+    await supabase.storage.from('attachments').remove([storagePath]).catch(() => undefined);
     handleSupabaseError(error, 'تعذر حفظ مستند العقد');
   }
   return data;

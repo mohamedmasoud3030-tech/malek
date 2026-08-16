@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { ContextualDocumentsPanel } from './contextual-documents-panel';
 import { ATTACHMENTS_ACCEPT } from '@/lib/attachments-contract';
+import { getActionableSupabaseErrorMessage } from '@/lib/supabase-error';
 import { useOptionalAuth } from '@/hooks/use-auth';
 import {
   archiveContextualDocument,
@@ -58,13 +60,30 @@ export function ContextualDocumentsSection({
       relatedEntityId: entityId,
     }),
     onSuccess: invalidate,
+    onError: (error) => toast.error(getActionableSupabaseErrorMessage(error, 'تعذر رفع المستند')),
   });
-  const replaceMutation = useMutation({ mutationFn: ({ id, file }: { id: string; file: File }) => replaceContextualDocument(id, file), onSuccess: invalidate });
-  const archiveMutation = useMutation({ mutationFn: (id: string) => archiveContextualDocument(id), onSuccess: invalidate });
+  const replaceMutation = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => replaceContextualDocument(id, file),
+    onSuccess: invalidate,
+    onError: (error) => toast.error(getActionableSupabaseErrorMessage(error, 'تعذر استبدال المستند')),
+  });
+  const archiveMutation = useMutation({
+    mutationFn: (id: string) => archiveContextualDocument(id),
+    onSuccess: invalidate,
+    onError: (error) => toast.error(getActionableSupabaseErrorMessage(error, 'تعذر أرشفة المستند')),
+  });
   const documents = documentsQuery.data ?? [];
   const resolveUrl = async (documentId: string) => {
     const source = documents.find((candidate) => candidate.id === documentId);
-    return source ? getContextualDocumentSignedUrl(source.storage_path) : null;
+    if (!source) return null;
+    try {
+      return await getContextualDocumentSignedUrl(source.storage_path);
+    } catch (error) {
+      // Surface the failure instead of an unhandled rejection: the panel
+      // renders its "link unavailable" state for a null URL.
+      toast.error(getActionableSupabaseErrorMessage(error, 'تعذر إنشاء رابط المستند'));
+      return null;
+    }
   };
 
   return (

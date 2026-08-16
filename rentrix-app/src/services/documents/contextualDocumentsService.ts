@@ -120,7 +120,9 @@ export async function uploadContextualDocument(params: {
     if (error) throw error;
     return data as ContextualDocumentRow;
   } catch (error) {
-    await supabase.storage.from('attachments').remove([storagePath]);
+    // Best-effort rollback of the orphaned storage object; a cleanup failure
+    // must never mask the original metadata error.
+    await supabase.storage.from('attachments').remove([storagePath]).catch(() => undefined);
     throw error;
   }
 }
@@ -145,7 +147,8 @@ export async function replaceContextualDocument(documentId: string, file: File) 
     updated_at: replacedAt,
   }).eq('id', documentId).is('deleted_at', null).select('*').single();
   if (error) {
-    await supabase.storage.from('attachments').remove([newStoragePath]);
+    // Best-effort rollback; never mask the original update error.
+    await supabase.storage.from('attachments').remove([newStoragePath]).catch(() => undefined);
     throw error;
   }
   if (existing.storage_path && existing.storage_path !== newStoragePath) {

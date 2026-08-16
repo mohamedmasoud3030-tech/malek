@@ -75,7 +75,9 @@ export function ContextualDocumentsPanel({
 
   const pickFile = (file: File | undefined, handler?: (file: File) => void | Promise<void>) => {
     if (!file || !handler) return;
-    void handler(file);
+    // The handler owns user-facing error reporting (mutation onError toast);
+    // catching here only prevents an unhandled promise rejection.
+    void Promise.resolve(handler(file)).catch(() => undefined);
   };
 
   const resolveDocumentUrl = async (document: ContextualDocument) => document.url ?? (resolveUrl ? await resolveUrl(document) : null);
@@ -155,7 +157,7 @@ export function ContextualDocumentsPanel({
       </EntityPreviewDialog>
 
       <input id="contextual-document-replace" type="file" className="hidden" tabIndex={-1} accept={accept} aria-hidden="true" onChange={(event) => { if (replaceTarget) pickFile(event.target.files?.[0], (file) => onReplace?.(replaceTarget, file)); event.target.value = ''; setReplaceTarget(null); }} />
-      <ConfirmDialog open={Boolean(archiveTarget)} onOpenChange={(open) => { if (!open && !archivingId) setArchiveTarget(null); }} title="أرشفة المستند؟" description={`سيتم إخفاء المستند "${archiveTarget?.title ?? ''}" من سياق ${entityLabel} مع الاحتفاظ بسجله.`} confirmLabel="تأكيد الأرشفة" isLoading={Boolean(archiveTarget && archivingId === archiveTarget.id)} onConfirm={() => { if (archiveTarget) void Promise.resolve(onArchive?.(archiveTarget)).then(() => setArchiveTarget(null)); }} />
+      <ConfirmDialog open={Boolean(archiveTarget)} onOpenChange={(open) => { if (!open && !archivingId) setArchiveTarget(null); }} title="أرشفة المستند؟" description={`سيتم إخفاء المستند "${archiveTarget?.title ?? ''}" من سياق ${entityLabel} مع الاحتفاظ بسجله.`} confirmLabel="تأكيد الأرشفة" isLoading={Boolean(archiveTarget && archivingId === archiveTarget.id)} onConfirm={() => { if (archiveTarget) void Promise.resolve(onArchive?.(archiveTarget)).then(() => setArchiveTarget(null)).catch(() => undefined); }} />
     </section>
   );
 }

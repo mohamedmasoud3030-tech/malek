@@ -57,6 +57,10 @@ export function useOnboarding(): OnboardingControls {
 
     void supabase.auth.getSession().then(({ data }) => {
       if (active) setIsAuthenticated(Boolean(data.session?.user?.id));
+    }).catch(() => {
+      // Session lookup failure means "not authenticated" here; the auth
+      // provider owns real error handling for the session itself.
+      if (active) setIsAuthenticated(false);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
