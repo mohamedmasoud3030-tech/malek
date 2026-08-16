@@ -27,19 +27,26 @@ const UNIT = 'a8000000-0000-4000-8000-000000000041';
 let db: PGlite;
 
 /**
- * Seed a request directly. create_maintenance_atomic has a PRE-EXISTING
- * uuid=text comparison incompatibility on the clean replay chain (live
- * schemas carry text ids) — that defect predates R8 and is out of its scope;
- * the authorities under test here are transition/resolve.
+ * Create through the CANONICAL production RPC (create_maintenance_atomic).
+ * The clean-chain uuid=text defect was fixed forward in
+ * 20260826000000_r8_fix_create_maintenance_atomic_clean_chain.sql — the
+ * journey below therefore exercises the exact path production uses.
  */
 async function createRequest(title: string): Promise<string> {
-  const { rows } = await db.query<{ id: string }>(
-    `insert into public.maintenance_records (property_id, unit_id, title, priority, status, technician_name, company_id)
-     values ($1::uuid, $2::uuid, $3, 'high', 'open', 'فني الاختبار', $4::uuid)
-     returning id::text as id`,
-    [PROPERTY, UNIT, title, COMPANY],
+  const { rows } = await db.query<{ out: any }>(
+    `select public.create_maintenance_atomic(
+       p_property_id := $1::text,
+       p_unit_id := $2::text,
+       p_title := $3::text,
+       p_priority := 'high',
+       p_technician_name := 'فني الاختبار',
+       p_request_id := gen_random_uuid()::text
+     ) as out`,
+    [PROPERTY, UNIT, title],
   );
-  return rows[0].id;
+  const payload = rows[0]?.out as any;
+  expect(payload.idempotent).toBe(false);
+  return String(payload.maintenance.id);
 }
 
 async function transition(id: string, status: string, reason: string | null = null) {
@@ -82,6 +89,38 @@ afterAll(async () => {
 });
 
 describe('R8 — maintenance lifecycle authority', () => {
+  it('creates through the canonical RPC on a clean replayed chain (fix-forward proof) with idempotent retry', async () => {
+    const requestKey = 'r8-canonical-create-1';
+    const first = (await db.query<{ out: any }>(
+      `select public.create_maintenance_atomic(
+         p_property_id := $1::text, p_unit_id := $2::text, p_title := 'إنشاء عبر المسار الرسمي',
+         p_priority := 'medium', p_request_id := $3::text) as out`,
+      [PROPERTY, UNIT, requestKey],
+    )).rows[0]?.out as any;
+    expect(first.idempotent).toBe(false);
+    expect(first.maintenance.status).toBe('open');
+    expect(String(first.maintenance.property_id)).toBe(PROPERTY);
+    expect(String(first.maintenance.unit_id)).toBe(UNIT);
+
+    // Idempotent replay of the SAME request key returns the same record.
+    const again = (await db.query<{ out: any }>(
+      `select public.create_maintenance_atomic(
+         p_property_id := $1::text, p_unit_id := $2::text, p_title := 'إنشاء عبر المسار الرسمي',
+         p_priority := 'medium', p_request_id := $3::text) as out`,
+      [PROPERTY, UNIT, requestKey],
+    )).rows[0]?.out as any;
+    expect(again.idempotent).toBe(true);
+    expect(String(again.maintenance.id)).toBe(String(first.maintenance.id));
+
+    // The audit row exists for the real creation.
+    const { rows: audit } = await db.query<{ n: string }>(
+      `select count(*)::text as n from public.audit_log
+        where entity = 'maintenance_record' and entity_id = $1 and action = 'create'`,
+      [String(first.maintenance.id)],
+    );
+    expect(Number(audit[0].n)).toBe(1);
+  });
+
   it('cancellation is a DISTINCT terminal state with a mandatory reason', async () => {
     const id = await createRequest('طلب سيُلغى');
 
@@ -137,7 +176,20 @@ describe('R8 — maintenance lifecycle authority', () => {
   it('runs the FULL journey: request → assignment → work → cost → expense → close', async () => {
     const id = await createRequest('تسريب مياه رئيسي');
 
-    // Assignment/work starts.
+    // Assignment: permitted operational data updates freely (non-status).
+    await db.query(
+      `update public.maintenance_records
+          set assigned_to = 'فريق السباكة', scheduled_date = current_date + 1
+        where id::text = $1`,
+      [id],
+    );
+    const { rows: assigned } = await db.query<{ assigned_to: string; status: string }>(
+      `select assigned_to, status from public.maintenance_records where id::text = $1`, [id],
+    );
+    expect(assigned[0].assigned_to).toBe('فريق السباكة');
+    expect(assigned[0].status).toBe('open');
+
+    // Work starts.
     expect((await transition(id, 'in_progress')).status).toBe('in_progress');
 
     // Work done with a cost → resolve couples the expense atomically.

@@ -3808,6 +3808,7 @@ export type Database = {
           service_provider_category_id: string | null;
           cancelled_at: string | null;
           cancellation_reason: string | null;
+          request_id: string | null;
         };
         Insert: {
           id?: string;
@@ -3842,6 +3843,7 @@ export type Database = {
           service_provider_category_id?: string | null;
           cancelled_at?: string | null;
           cancellation_reason?: string | null;
+          request_id?: string | null;
         };
         Update: {
           id?: string;
@@ -3876,6 +3878,7 @@ export type Database = {
           service_provider_category_id?: string | null;
           cancelled_at?: string | null;
           cancellation_reason?: string | null;
+          request_id?: string | null;
         };
         Relationships: [
           {
