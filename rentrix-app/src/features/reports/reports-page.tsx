@@ -27,8 +27,10 @@ export function ReportsPage() {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const { authorization } = useAuth();
   const workspace = useReportsWorkspace(filters);
+  // R5: view and export are separate capabilities — viewing a report never
+  // implies the right to export it, and export never gates viewing.
   const canExportReports = canAccess(authorization, financialOperationPermissions.exportReports);
-  const canViewReports = canAccess(authorization, financialOperationPermissions.exportReports);
+  const canViewReports = canAccess(authorization, financialOperationPermissions.viewReports);
 
   const { section: activeSection, view: activeView } = resolveReportLocation(
     search[REPORTS_SECTION_SEARCH_KEY],
