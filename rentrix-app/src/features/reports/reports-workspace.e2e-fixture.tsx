@@ -29,6 +29,7 @@ const fixtureModel: ReportsWorkspaceModel = {
       paymentsCount: 22,
       expensesCount: 9,
     },
+    collectionRate: 82,
     isLoading: false,
   },
   sections: {
@@ -51,6 +52,7 @@ const fixtureModel: ReportsWorkspaceModel = {
         invoicesCount: 18,
         expensesTotal: 1875,
       },
+      collectionRate: 82,
       cashflowRows: [
         { month: '2026-05', revenue: 8500, expenses: 1400 },
         { month: '2026-06', revenue: 9400, expenses: 1700 },
