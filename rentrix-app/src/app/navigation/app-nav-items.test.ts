@@ -31,42 +31,63 @@ function getRouteDefinition(path: string) {
   return routeTreeSource.slice(routeStart, routeEnd + 3);
 }
 
-describe('app route and navigation parity', () => {
+describe('app route and task-centric navigation parity', () => {
   it('keeps the full operational route matrix registered while simplifying visible navigation', () => {
     expect(routePathList).toEqual(expect.arrayContaining([...requiredOperationalRoutes]));
     expect(routeTreeSource).toContain('notFoundComponent: NotFoundPage');
   });
 
-  it('keeps the approved domain roots primary and nests people records beneath People', () => {
+  it('exposes exactly seven global destinations', () => {
     const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    expect(primaryPaths).toEqual(expect.arrayContaining(['/people', '/properties', '/lands', '/contracts', '/financials', '/reports', '/maintenance', '/settings']));
-    expect(primaryPaths).not.toContain('/owners');
-    expect(primaryPaths).not.toContain('/tenants');
-    expect(workspaceChildNavItems['/people'].map(([to]) => to)).toEqual(['/leads', '/owners', '/tenants', '/communication']);
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units']);
+    expect(primaryPaths).toEqual([
+      '/dashboard',
+      '/properties',
+      '/contracts',
+      '/financials',
+      '/maintenance',
+      '/reports',
+      '/settings',
+    ]);
+    expect(navGroups.map(([title]) => title)).toEqual([
+      'اليوم',
+      'المحفظة',
+      'التأجير',
+      'المال',
+      'الخدمات',
+      'التقارير',
+      'الإعدادات',
+    ]);
   });
 
-  it('keeps finance, commissions, and reports as three distinct primary entries (Phase 2)', () => {
-    const financeGroup = navGroups.find(([title]) => title === 'المالية');
-    expect(financeGroup?.[1].map(([to]) => to)).toEqual(['/financials']);
-    const commissionsGroup = navGroups.find(([title]) => title === 'العمولات');
-    expect(commissionsGroup?.[1].map(([to]) => to)).toEqual(['/commissions']);
-    const reportsGroup = navGroups.find(([title]) => title === 'التقارير');
-    expect(reportsGroup?.[1].map(([to]) => to)).toEqual(['/reports']);
+  it('moves entity registers into the workspace that owns the user task', () => {
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units', '/lands', '/owners']);
+    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/tenants', '/people', '/leads', '/communication']);
+    expect(workspaceChildNavItems['/financials'].map(([to]) => to)).toEqual([
+      '/invoices',
+      '/receipts',
+      '/arrears',
+      '/expenses',
+      '/deposits',
+      '/owner-settlements',
+      '/bank-reconciliation',
+      '/commissions',
+    ]);
+    expect(workspaceChildNavItems['/maintenance'].map(([to]) => to)).toEqual([
+      '/maintenance',
+      '/service-providers',
+      '/utilities',
+      '/documents-vault',
+    ]);
+  });
 
-    const allPrimary = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    for (const internalRoute of ['/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking']) {
-      expect(allPrimary).not.toContain(internalRoute);
-      expect(routePaths).toContain(internalRoute);
+  it('does not let feature registers leak back into global navigation', () => {
+    const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
+    for (const secondary of [
+      '/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts',
+      '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/service-providers', '/utilities',
+    ]) {
+      expect(primaryPaths).not.toContain(secondary);
     }
-  });
-
-  it('keeps secondary tools inside their natural workspaces', () => {
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units']);
-    expect(workspaceChildNavItems['/people'].map(([to]) => to)).toEqual(['/leads', '/owners', '/tenants', '/communication']);
-    expect(workspaceChildNavItems['/maintenance'].map(([, labelKey]) => labelKey)).toEqual(['maintenance', 'serviceProviders', 'utilities']);
-    expect(workspaceChildNavItems['/settings'].map(([, labelKey]) => labelKey)).toEqual(['companySettings', 'usersPermissions', 'costCenters', 'automation', 'systemSettings']);
-    expect(workspaceChildNavItems['/lands']).toEqual([]);
   });
 
   it('maps every visible navigation, mobile and quick-create item to a registered route without duplicate keys', () => {
@@ -93,7 +114,7 @@ describe('app route and navigation parity', () => {
     expect(getRouteDefinition('/tenants')).not.toContain('requirePermission(');
   });
 
-  it('removes the legacy five-item mobile navigation', () => {
+  it('keeps mobile global navigation to Menu + Search only', () => {
     expect(mobileNavItems).toHaveLength(0);
   });
 
@@ -106,7 +127,7 @@ describe('app route and navigation parity', () => {
     expect(routePathList).toEqual(expect.arrayContaining(['/settings', '/audit-log', '/data-integrity', '/system', '/change-password']));
   });
 
-  it('pins every visible navigation label to Arabic terminology', () => {
+  it('pins every global navigation label to Arabic terminology', () => {
     const labelKeys = [
       ...navGroups.flatMap(([, items]) => items.map(([, labelKey]) => labelKey)),
       ...mobileNavItems.map(([, labelKey]) => labelKey),
