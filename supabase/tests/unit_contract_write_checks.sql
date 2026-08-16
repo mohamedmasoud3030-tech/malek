@@ -69,7 +69,7 @@ select ok(
 
 select ok(
   pg_get_functiondef('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text,integer,integer)'::regprocedure)
-    like '%unit_record.status in (''maintenance'', ''reserved'')%'
+    like '%lower(unit_record.status) in (''maintenance'', ''reserved'')%'
   and pg_get_functiondef('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text,integer,integer)'::regprocedure)
     like '%btrim(contract_record.start_date::text)::date <= p_end_date%'
   and pg_get_functiondef('public.create_contract_atomic(text,uuid,uuid,uuid,date,date,numeric,text,uuid,text,text,text,text,integer,integer)'::regprocedure)
