@@ -45,6 +45,8 @@ export function getRatioTone(value: number, goodThreshold: number, warningThresh
 }
 
 export function buildExecutiveHealthInsights(params: Readonly<{
+  /** Server-authoritative, credit-aware invoice-cohort realization rate. */
+  collectionRate: number;
   invoiced: number;
   paid: number;
   outstanding: number;
@@ -52,7 +54,10 @@ export function buildExecutiveHealthInsights(params: Readonly<{
   occupiedUnits: number;
   totalUnits: number;
 }>): ReportHealthInsight[] {
-  const collectionRate = safeRatio(params.paid, params.invoiced);
+  // Collection efficiency is NOT derived here. R13 made the database snapshot
+  // the authority; Reports receives that exact rate so period cash can never be
+  // compared with a different invoice-issue cohort again.
+  const collectionRate = Number.isFinite(params.collectionRate) ? params.collectionRate : 0;
   const expenseRatio = safeRatio(params.expenses, params.paid);
   const occupancyRate = safeRatio(params.occupiedUnits, params.totalUnits);
   const receivablesRatio = safeRatio(params.outstanding, params.invoiced);
@@ -62,7 +67,7 @@ export function buildExecutiveHealthInsights(params: Readonly<{
       label: 'كفاءة التحصيل',
       value: collectionRate,
       formattedValue: formatPercent(collectionRate),
-      helper: 'المحصّل مقارنة بإجمالي الفواتير',
+      helper: 'تحقق الالتزامات القابلة للتحصيل لفواتير الفترة بعد الإشعارات الدائنة',
       tone: getRatioTone(collectionRate, 85, 65),
     },
     {

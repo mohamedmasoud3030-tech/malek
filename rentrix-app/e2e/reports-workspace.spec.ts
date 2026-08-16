@@ -55,6 +55,10 @@ async function openFixture(page: Page, theme: (typeof themes)[number]) {
   await expect(page.locator('main[data-e2e-reports-workspace]')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'مركز التقارير والكشوف', exact: true })).toBeVisible();
   await expect(page.getByText('لوحة القرار', { exact: true })).toBeVisible();
+  // The fixture's authoritative server-model rate is 82%. Assert through the
+  // KPI's accessible name so the proof survives the presentational trend glyph
+  // (`– كفاءة 82%`) while still verifying the user-facing financial semantic.
+  await expect(page.getByRole('button', { name: /كفاءة التحصيل 82%/ })).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {

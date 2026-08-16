@@ -35,6 +35,7 @@ type OccupancyRow = Readonly<{
 export function OverviewSection({
   summary,
   collectionSummary,
+  collectionRate,
   cashflowRows,
   receiptRows,
   occupancyRows,
@@ -43,6 +44,7 @@ export function OverviewSection({
 }: Readonly<{
   summary: NonNullable<ReturnType<typeof useFinancialPeriodSummaryReport>['data']> | undefined;
   collectionSummary: NonNullable<ReturnType<typeof useCollectionSummaryReport>['data']> | undefined;
+  collectionRate: number;
   cashflowRows: NonNullable<ReturnType<typeof useFinancialCashflowReport>['data']>['rows'];
   receiptRows: readonly ReceiptRow[];
   occupancyRows: readonly OccupancyRow[];
@@ -70,6 +72,7 @@ export function OverviewSection({
   const totalUnits = occupancy.occupied + occupancy.vacant;
   const latestReceipts = receiptRows.slice(0, 4);
   const insights = buildExecutiveHealthInsights({
+    collectionRate,
     invoiced: collectionSummary?.invoiced ?? report.invoiced,
     paid: collectionSummary?.paid ?? report.paid,
     outstanding: collectionSummary?.outstanding ?? report.outstanding,
