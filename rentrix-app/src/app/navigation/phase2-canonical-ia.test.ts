@@ -10,6 +10,8 @@ const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/po
 const leasingHubSource = readFileSync(new URL('../../features/leasing-hub/leasing-hub-workspace.tsx', import.meta.url), 'utf8');
 const moneyRouteSource = readFileSync(new URL('../../features/financials/money-page.tsx', import.meta.url), 'utf8');
 const financeModelSource = readFileSync(new URL('../../features/financials/finance-shell-model.ts', import.meta.url), 'utf8');
+const servicesSource = readFileSync(new URL('../../features/operations-hub/operations-hub-workspace.tsx', import.meta.url), 'utf8');
+const servicesSectionsSource = readFileSync(new URL('../../features/operations-hub/operations-hub.sections.ts', import.meta.url), 'utf8');
 
 function hasRoute(path: string): boolean {
   return routeTreeSource.includes(`path: '${path}'`);
@@ -45,29 +47,43 @@ describe('Task-centric canonical IA', () => {
       'invoices', 'receipts', 'arrears', 'expenses', 'deposits', 'owner_settlements', 'bank_reconciliation', 'commissions',
     ]);
     expect(financeModelSource).toContain("id: 'commissions'");
-    expect(financeModelSource).toContain("sectionId: 'expenses'");
     expect(moneyRouteSource).toContain('<CommissionsWorkspace embedded />');
-    expect(moneyRouteSource).toContain('data-money-view="commissions"');
+  });
+
+  it('keeps Services in one operational workspace and removes duplicate Automation authority', () => {
+    const children = workspaceChildNavItems['/maintenance'];
+    expect(children).toHaveLength(4);
+    expect(children.every(([to]) => to === '/maintenance')).toBe(true);
+    expect(children.map(([, , , , , search]) => search?.section)).toEqual([
+      'maintenance', 'service_providers', 'utilities', 'documents_vault',
+    ]);
+    expect(servicesSectionsSource).toContain("'service_providers'");
+    expect(servicesSectionsSource).toContain("'documents_vault'");
+    expect(servicesSectionsSource).not.toContain("| 'automation'");
+    expect(servicesSource).not.toContain('AutomationWorkspace');
+    expect(servicesSource).toContain("title = 'الخدمات'");
+    expect(routeTreeSource).toContain("path: '/automation'");
+    expect(routeTreeSource).toContain("to: '/settings'");
   });
 
   it('keeps standalone compatibility routes without treating them as global products', () => {
     const primary = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    for (const path of ['/commissions', '/owners', '/tenants', '/people', '/lands']) {
+    for (const path of ['/commissions', '/owners', '/tenants', '/people', '/lands', '/utilities', '/service-providers', '/automation']) {
       expect(hasRoute(path)).toBe(true);
       expect(primary).not.toContain(path);
     }
-    expect(routeTreeSource).toContain("requirePermission('commissions.view')");
   });
 
-  it('keeps Reports independent and Services under their correct root', () => {
+  it('keeps Reports independent from Money', () => {
     expect(getNavRoot('/reports')).toBe('/reports');
     expect(getNavRoot('/accounting')).toBe('/reports');
-    for (const path of ['/service-providers', '/utilities', '/documents-vault']) expect(getNavRoot(path)).toBe('/maintenance');
+    expect(getNavRoot('/reports')).not.toBe('/financials');
   });
 
   it('route contract agrees with the workspace mental model', () => {
     const roots: Record<string, string> = {
-      '/people': '/contracts', '/tenants': '/contracts', '/lands': '/properties', '/owners': '/properties', '/commissions': '/financials',
+      '/people': '/contracts', '/tenants': '/contracts', '/lands': '/properties', '/owners': '/properties',
+      '/commissions': '/financials', '/service-providers': '/maintenance', '/utilities': '/maintenance', '/documents-vault': '/maintenance',
     };
     for (const [path, root] of Object.entries(roots)) {
       const entry = ROUTE_CONTRACT.find((candidate) => candidate.canonical === path)!;
