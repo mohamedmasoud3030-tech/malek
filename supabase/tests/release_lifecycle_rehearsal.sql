@@ -212,6 +212,12 @@ select set_config(
   true
 );
 
+-- Invoice creation is a server-only financial write (Phase 2 hardening):
+-- direct invoice INSERT is revoked from authenticated, so seed this financial
+-- fixture as the superuser session role (privileged seed) and return to the
+-- authenticated role used by the rest of the financial flow.
+reset role;
+
 insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
 select
   '00000000-0000-0000-0000-000000001701',
@@ -225,6 +231,8 @@ select
   '00000000-0000-4000-8000-000000000001'
 from public.contracts
 where notes = 'release-lifecycle-contract';
+
+set local role authenticated;
 
 select lives_ok(
   $$

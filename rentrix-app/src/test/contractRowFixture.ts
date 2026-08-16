@@ -6,6 +6,9 @@ type ContractRow = Database['public']['Tables']['contracts']['Row'];
 export const contractRowFixtureDefaults = {
   company_id: '00000000-0000-4000-8000-0000000000c1',
   reference: null,
+  // Deterministic billing policy fields (Phase 2 financial hardening).
+  billing_day: 1,
+  grace_days: 0,
   agreement_version_id: null,
   collection_role_snapshot: null,
   operating_model_snapshot: null,
@@ -23,6 +26,8 @@ export const contractRowFixtureDefaults = {
   ContractRow,
   | 'company_id'
   | 'reference'
+  | 'billing_day'
+  | 'grace_days'
   | 'agreement_version_id'
   | 'collection_role_snapshot'
   | 'operating_model_snapshot'

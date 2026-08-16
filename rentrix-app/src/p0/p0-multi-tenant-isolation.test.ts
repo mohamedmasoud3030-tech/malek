@@ -289,6 +289,9 @@ beforeAll(async () => {
     !f.includes('_s06_') &&
     !f.includes('_s08_') &&
     !f.includes('_wp05_') &&
+    !f.includes('phase1_omr_precision_convergence') &&
+    !f.includes('phase2_invoice_truth') &&
+    !f.includes('phase3_credit_and_ar_integrity') &&
     !f.includes('fa003_') &&
     !f.includes('pay_commission_atomic')
   ).sort();

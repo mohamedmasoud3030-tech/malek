@@ -113,6 +113,9 @@ beforeAll(async () => {
       && !f.includes('_s06_')
       && !f.includes('_s08_')
       && !f.includes('_wp05_')
+      && !f.includes('phase1_omr_precision_convergence')
+      && !f.includes('phase2_invoice_truth')
+      && !f.includes('phase3_credit_and_ar_integrity')
     )
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];

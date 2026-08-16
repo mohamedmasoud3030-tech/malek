@@ -107,6 +107,12 @@ beforeAll(async () => {
       'wp01_receipt_void_maker_checker',
       'wp02_rate_fee_collection_wiring',
       'wp02_rate_payment_auth_sqlstate_repair',
+      // Phase 1 financial hardening redefines generate_invoices_from_active_contracts
+      // (OMR 3dp rounding); it is a later, independent change and must not
+      // contaminate this historical Phase 3A-1B pre-remediation baseline.
+      'phase1_omr_precision_convergence',
+      // Phase 2 redefines generate_invoices_from_active_contracts (deterministic billing/due dates).
+      'phase2_invoice_truth',
     ],
   });
   preDb = pre.db;
