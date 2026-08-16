@@ -25,6 +25,15 @@ export type ReplayResult = {
   failed: { file: string; error: string }[];
 };
 
+const RC1_ACCOUNTING_MARKERS = [
+  'rc1_owner_agency_invoice_accounting_model',
+  'rc1_invoice_credit_original_economics',
+  'rc1_payment_tax_and_write_boundary',
+  'rc1_cutover_fee_tax_and_legacy_fail_closed',
+  'rc1_accounting_closeout_hardening',
+  'rc1_inline_owner_funds_solvency_type_closeout',
+] as const;
+
 const LATER_GOVERNED_STAGE_MARKERS = [
   '_s03_',
   '_s04_',
@@ -58,11 +67,8 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   'phase3_credit_and_ar_integrity',
   // RC1 owner-agency accounting correction depends on Phase 1–3, versioned
   // tax and canonical GL objects omitted by historical checkpoint replays.
-  // Full current suites pass no explicit exclusion and still replay it.
-  'rc1_owner_agency_invoice_accounting_model',
-  'rc1_invoice_credit_original_economics',
-  'rc1_payment_tax_and_write_boundary',
-  'rc1_cutover_fee_tax_and_legacy_fail_closed',
+  // Full current suites outside this historical harness replay it separately.
+  ...RC1_ACCOUNTING_MARKERS,
   'sole_admin_exception',
   // This forward-only audit-contract repair depends on the receipt VOID
   // request ledger introduced after historical Phase 3A-1B checkpoints.
@@ -91,6 +97,12 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
+  // This helper is the historical P1/P3 replay harness. With no explicit
+  // options it keeps the pre-RC1 accounting surface so old checkpoint tests do
+  // not accidentally execute later RC1 cutover/tax guards against synthetic
+  // legacy rows. Dedicated RC1/current-chain suites own the modern path.
+  const defaultHistoricalExcludes = options ? [] : [...RC1_ACCOUNTING_MARKERS];
+
   // Historical checkpoint callers use explicit exclusions and (by default)
   // omit later governed S03/S04/S06/S08 migrations. A replay can explicitly
   // retain those later migrations when it needs a full modern schema but only
@@ -98,7 +110,11 @@ export async function createFullReplayedDatabase(options?: {
   const checkpointExcludes = options?.excludeMigrations && !options.includeLaterGoverned
     ? [...LATER_GOVERNED_STAGE_MARKERS]
     : [];
-  const excludes = [...checkpointExcludes, ...(options?.excludeMigrations ?? [])];
+  const excludes = [
+    ...defaultHistoricalExcludes,
+    ...checkpointExcludes,
+    ...(options?.excludeMigrations ?? []),
+  ];
   if (excludes.length > 0) {
     files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
   }
