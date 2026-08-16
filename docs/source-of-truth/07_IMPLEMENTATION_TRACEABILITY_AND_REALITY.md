@@ -51,6 +51,23 @@ All GitHub run identifiers above refer to PR #1430. The merge commit is the audi
 | Current-main local verification ladder | `main@edf57aae` | SUCCESS | guards (docs 144 files, business-rules v2.0.0, execution-plan, migration-hygiene, enterprise-freeze, gl-write-boundary); db0:gate 7/7 (replay 249/249, idempotency, schema-type-drift, contract, isolation, role-model 6/6); typecheck; lint; architecture; build; full app tests 2593/2593; financials 393/393 | `supabase:migration-evidence` live reconciliation BLOCKED (no Supabase access token) |
 | PR #1458 CI (GAP-010 integrated head) | head `e648f743`, runs 4094/1420/376/1243/671/669 | SUCCESS | CI Typecheck/Lint/Build; Browser Readiness desktop/tablet/mobile; Isolated Supabase Replay; Release Blocker Gate; Canonical Business Rules Guard; Execution Plan Guard | SonarCloud skipped; hosted authenticated/seeded staging not in scope |
 
+## Financial hardening phases (audit `docs/audits/FINANCIAL_HARDENING_AUDIT_20260815.md`)
+
+Repository reality after the sequential financial-hardening execution (base
+`main@656131da`, branch `arena/01a007aa-malik`):
+
+| Migration | Phase | Canonical rules touched | Evidence |
+|---|---|---|---|
+| `20260819000000_phase1_omr_precision_convergence.sql` | Phase 1 — Canonical Posting Convergence | FIN-013, FIN-019, DOM-009 | Live AR/collection/expense money columns widened to `numeric(18,3)` (contracts.rent_amount, invoices.amount/paid_amount/tax_amount, payments.amount, receipts.amount, receipt_allocations.amount, expenses.amount); OMR 3dp checks; `generate_invoices_from_active_contracts` tax rounding to 3dp; invoice journal posted via `post_journal_event` (canonical `journal_batches`). Confirmed `journal_entries` is a compatibility VIEW over `journal_batches`/`journal_lines` (no separate legacy storage). Test: `phase1-omr-precision-reconciliation.test.ts`. |
+| `20260819010000_phase2_invoice_truth.sql` | Phase 2 — Invoice Truth & Billing Integrity | FIN-016, FIN-018, DOM-005, DOM-006, OPS-007 | `billing_day`/`grace_days` on contracts (deterministic dates); invoices `document_status` (DRAFT/POSTED/VOIDED/REVERSED) separated from derived payment `status`; `charge_type` + `billing_period_start/end` billing-obligation identity with unique index `ux_invoices_billing_obligation`; `invoice_lineage_guard` (company coherence) and `invoice_document_integrity` (posted immutability + no hard delete) triggers; invoice INSERT/UPDATE/DELETE revoked from authenticated (server-only writes). Test: `phase2-invoice-truth.test.ts`. |
+| `20260819020000_phase3_credit_and_ar_integrity.sql` | Phase 3 — Credit/Reversal/AR Allocation Integrity | FIN-016, FIN-018, DOM-006, DOM-010 | `invoice_credits` append-only ledger (reason/actor/timestamp/type/idempotent request/canonical journal/reversal); invoices `credited_amount`; derived outstanding = amount+tax−paid−credited; `create_invoice_credit_atomic` (credit ceiling, canonical `post_journal_event`: CR 1201 / DR 4000 / DR 2100) and `reverse_invoice_credit_atomic` (compensating `reverse_journal_batch`); derived status + wp05 AR subledger + `rpt_overdue_invoices` account for credits. Test: `phase3-credit-reversal.test.ts`. |
+
+**Status:** all three phases are `VERIFIED_IMPLEMENTED` at repository level with
+focused replay tests (see Phase 1/2/3 test files and db0:gate). This is repository
+reality only; it does not grant governed stage credit or live/hosted deployment proof.
+Historical checkpoint baselines (p0/p1/p2/phase3a1b/phase3a1c) were updated to exclude
+these later phase migrations.
+
 ## Status counts
 
 | Status | Count |
