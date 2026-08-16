@@ -97,6 +97,28 @@ begin
 end;
 $$;
 
+-- The lifecycle exercises September 2026 economic events. Give the hermetic
+-- rehearsal one explicit OPEN period instead of relying on a later failed
+-- posting to bootstrap period state.
+do $$
+begin
+  if not exists (
+    select 1 from public.accounting_periods
+    where company_id = '00000000-0000-4000-8000-000000000001'
+      and start_date <= date '2026-09-01'
+      and end_date >= date '2026-09-30'
+  ) then
+    insert into public.accounting_periods (
+      id, company_id, name, start_date, end_date, status
+    ) values (
+      '00000000-0000-0000-0000-000000001901',
+      '00000000-0000-4000-8000-000000000001',
+      'Release Lifecycle 2026-09', date '2026-09-01', date '2026-09-30', 'OPEN'
+    );
+  end if;
+end;
+$$;
+
 insert into public.owners (id, full_name, company_id)
 values ('00000000-0000-0000-0000-000000001201', 'Lifecycle Owner', '00000000-0000-4000-8000-000000000001');
 
@@ -139,6 +161,32 @@ insert into public.owner_agreement_versions (
   'OWNER_IS_CREDITOR', 'RATE', 10, 'ON_COLLECTION',
   date '2026-01-01', date '2027-12-31'
 );
+
+-- RC1 rent tax and management-fee tax are separate versioned authorities.
+-- The release rehearsal is explicitly NON_TAXABLE at 0.000 rather than relying
+-- on the removed company_settings VAT fallback.
+insert into public.company_tax_profiles (
+  id, company_id, version_no, tax_code, tax_rate, effective_from, effective_to,
+  status, description, created_by, approved_by, approved_at
+) values (
+  '00000000-0000-0000-0000-000000001801',
+  '00000000-0000-4000-8000-000000000001', 9001, 'NON_TAXABLE', 0,
+  date '2026-01-01', date '2027-12-31', 'ACTIVE',
+  'Release lifecycle explicit non-taxable rent',
+  '00000000-0000-0000-0000-000000001101',
+  '00000000-0000-0000-0000-000000001103', now()
+) on conflict (id) do nothing;
+
+insert into public.company_fee_tax_treatments (
+  id, company_id, fee_kind, version_no, tax_code, tax_rate,
+  effective_from, effective_to, status, created_by, approved_by, approved_at
+) values (
+  '00000000-0000-0000-0000-000000001811',
+  '00000000-0000-4000-8000-000000000001', 'RATE_MANAGEMENT_FEE', 9001,
+  'NON_TAXABLE', 0, date '2026-01-01', date '2027-12-31', 'ACTIVE',
+  '00000000-0000-0000-0000-000000001101',
+  '00000000-0000-0000-0000-000000001103', now()
+) on conflict (id) do nothing;
 
 select set_config(
   'request.jwt.claims',
@@ -212,25 +260,42 @@ select set_config(
   true
 );
 
--- Invoice creation is a server-only financial write (Phase 2 hardening):
--- direct invoice INSERT is revoked from authenticated, so seed this financial
--- fixture as the superuser session role (privileged seed) and return to the
--- authenticated role used by the rest of the financial flow.
+-- Invoice creation is server-only. Seed the immutable RC1 sequence as the
+-- privileged fixture role: classified DRAFT -> tax snapshot -> POSTED.
 reset role;
 
-insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
+insert into public.invoices (
+  id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, tax_rate,
+  status, company_id, document_status, charge_type, billing_period_start,
+  billing_period_end, invoice_agreement_version_id, invoice_operating_model,
+  invoice_collection_role, invoice_accounting_classification, tax_treatment,
+  tax_profile_id, tax_code, tax_basis
+)
 select
   '00000000-0000-0000-0000-000000001701',
-  id::uuid,
-  date '2026-09-01',
-  date '2026-09-05',
-  1000,
-  0,
-  0,
-  'UNPAID',
-  '00000000-0000-4000-8000-000000000001'
-from public.contracts
-where notes = 'release-lifecycle-contract';
+  c.id::uuid,
+  date '2026-09-01', date '2026-09-05', 1000, 0, 0, 0,
+  'UNPAID', c.company_id, 'DRAFT', 'RENT', date '2026-09-01', date '2026-09-30',
+  c.agreement_version_id, c.operating_model_snapshot, c.collection_role_snapshot,
+  'OWNER_AGENCY_OWNER_CREDITOR_OPERATIONAL', 'NON_TAXABLE',
+  '00000000-0000-0000-0000-000000001801', 'NON_TAXABLE', 'NON_TAXABLE'
+from public.contracts c
+where c.notes = 'release-lifecycle-contract';
+
+insert into public.taxable_line_tax_snapshots (
+  id, company_id, source_type, source_id, journal_batch_id, account_no,
+  tax_code, tax_rate, net_amount, tax_amount, effective_date
+) values (
+  '00000000-0000-0000-0000-000000001802',
+  '00000000-0000-4000-8000-000000000001', 'invoice',
+  '00000000-0000-0000-0000-000000001701', null, '2100',
+  'NON_TAXABLE', 0, 1000, 0, date '2026-09-01'
+);
+
+update public.invoices
+set tax_snapshot_id = '00000000-0000-0000-0000-000000001802',
+    document_status = 'POSTED'
+where id = '00000000-0000-0000-0000-000000001701';
 
 set local role authenticated;
 
@@ -323,7 +388,6 @@ select is(
   (
     select count(*)::integer
     from public.financial_operation_idempotency
-    -- Phase 3A-1B: idempotency keys are company-namespaced (<op>:<company_uuid>).
     where operation_name = 'void_receipt_atomic:00000000-0000-4000-8000-000000000001'
       and request_id = 'void-approved:release-lifecycle-void-approval-1'
   ),
@@ -656,13 +720,10 @@ select is(
   'deposit lifecycle posts equal credits'
 );
 
--- P1 fixture evolution (failure category: incomplete fixture/harness — the old
--- assertions pinned the client-trusted-amounts behavior itself). The settlement
--- block below now proves SERVER-side derivation: a second, non-voided payment
--- of 750 on 2026-09-10 (the 250 payment from the void lifecycle stays VOID and
--- must be excluded) and one POSTED OWNER-charged expense of 50 on 2026-09-12.
--- Derived tuple for 2026-09-01..2026-09-30 under the RATE 10% agreement:
--- gross 750, fee 75, expenses 50, tax 0 (company VAT disabled) ⇒ net 625.
+-- P1 fixture evolution: the settlement block below proves SERVER-side
+-- derivation from a second, non-voided payment of 750 and one POSTED
+-- OWNER-charged expense of 50. The 250 payment above stays VOID.
+-- Derived tuple under RATE 10%: gross 750, fee 75, expenses 50, tax 0 => net 625.
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
@@ -781,7 +842,7 @@ select is(
     where request_id = '10000000-0000-0000-0000-000000000001'::uuid
   ),
   0::numeric,
-  'settlement tax stays zero while company VAT is disabled (ADR 0001: disabled by default)'
+  'settlement tax is zero under the explicit NON_TAXABLE fixture policy'
 );
 select is(
   (
@@ -818,7 +879,6 @@ select throws_ok(
   null,
   'duplicate active settlement period is rejected'
 );
--- The checker is a different ADMIN from the settlement maker.
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
