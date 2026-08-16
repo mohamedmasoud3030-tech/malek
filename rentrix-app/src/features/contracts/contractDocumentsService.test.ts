@@ -109,6 +109,10 @@ describe('contractDocumentsService', () => {
 
   it('rolls back the uploaded storage object if the DB insert fails', async () => {
     storageMock.upload.mockResolvedValue({ error: null });
+    // The production rollback path calls .remove(...).catch(...): the mock
+    // must return a Promise or the service crashes before reaching the
+    // Arabic business error (pre-existing baseline defect, fixed here).
+    storageMock.remove.mockResolvedValue({ error: null });
     const chain = createQueryMock({ data: null, error: new Error('insert rejected') });
     supabaseMock.from.mockReturnValue(chain);
     const { uploadContractDocument } = await import('./contractDocumentsService');
