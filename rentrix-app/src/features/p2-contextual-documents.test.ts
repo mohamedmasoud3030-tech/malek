@@ -1,15 +1,19 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { navGroups, workspaceChildNavItems } from '../app/navigation/app-nav-items';
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 describe('P2 — contextual documents contract', () => {
-  it('keeps the legacy vault route as a maintenance-authority redirect, not a standalone page', () => {
-    const nav = read('../app/navigation/app-nav-items.ts');
+  it('keeps the legacy vault route under Services authority, never as a global product', () => {
     const operations = read('./operations-hub/operations-hub.sections.ts');
     const routeTree = read('../app/router/route-tree.ts');
-    expect(nav).not.toContain("'/documents-vault'");
-    // documents_vault is now a real Operations Hub section (aggregate authority),
+    const globalPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
+    const servicesChildren = workspaceChildNavItems['/maintenance'];
+
+    expect(globalPaths).not.toContain('/documents-vault');
+    expect(servicesChildren.some(([to]) => to === '/documents-vault')).toBe(true);
+    // documents_vault remains a real Operations Hub section (aggregate authority),
     // while contextual entity-level panels remain complementary.
     expect(operations).toContain('documents_vault');
     expect(routeTree).toContain("path: '/documents-vault'");
