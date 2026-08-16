@@ -65,6 +65,14 @@ export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   // RC1 accounting family.
   'rc1_release_integration_fk_indexes',
   'rc1_owner_offset_2000_control',
+  // Roadmap V2 read models/authorities are downstream of the phase3/RC1
+  // layers this historical checkpoint omits (credited_amount,
+  // owner_funds_events, billing_day). Same rule as the RC1 family above;
+  // the current full replay does not use this list.
+  'r1_dashboard_truth_read_model',
+  'r2_owner_financial_position',
+  'r4_contract_billing_policy_authority',
+  'r4_fix_renewal_payload_contract',
 ] as const;
 
 export async function createReplayedDatabase(options?: {

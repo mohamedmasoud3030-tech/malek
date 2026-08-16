@@ -238,7 +238,7 @@ describe('R4 — contract → billing authority journey', () => {
     await assumeIdentity(db, MAKER, COMPANY);
     const renewed = (await db.query<{ out: any }>(
       `select public.renew_contract_atomic($1::text, $2::jsonb) as out`,
-      [contractId, JSON.stringify({ start_date: '2027-01-01', end_date: '2027-12-31', rent_amount: 520 })],
+      [contractId, JSON.stringify({ new_start: '2027-01-01', new_end: '2027-12-31', new_amount: 520 })],
     )).rows[0]?.out as any;
     expect(renewed.status).toBe('renewed');
     expect(num(renewed.billing_day)).toBe(BILLING_DAY);
@@ -255,7 +255,7 @@ describe('R4 — contract → billing authority journey', () => {
     // Explicit override is honored (still validated).
     const renewed2 = (await db.query<{ out: any }>(
       `select public.renew_contract_atomic($1::text, $2::jsonb) as out`,
-      [contractId, JSON.stringify({ start_date: '2028-01-01', end_date: '2028-12-31', rent_amount: 540, billing_day: 15, grace_days: 3 })],
+      [contractId, JSON.stringify({ new_start: '2028-01-01', new_end: '2028-12-31', new_amount: 540, billing_day: 15, grace_days: 3 })],
     )).rows[0]?.out as any;
     expect(num(renewed2.billing_day)).toBe(15);
     expect(num(renewed2.grace_days)).toBe(3);

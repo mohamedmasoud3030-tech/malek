@@ -300,6 +300,13 @@ beforeAll(async () => {
     !f.includes('rc1_inline_owner_funds_solvency_type_closeout') &&
     !f.includes('rc1_release_integration_fk_indexes') &&
     !f.includes('rc1_owner_offset_2000_control') &&
+    // Roadmap V2 migrations are downstream of the phase3/RC1 layers this
+    // historical P0 checkpoint omits (credited_amount, owner_funds_events,
+    // billing_day). Same rule as the RC1 family above.
+    !f.includes('r1_dashboard_truth_read_model') &&
+    !f.includes('r2_owner_financial_position') &&
+    !f.includes('r4_contract_billing_policy_authority') &&
+    !f.includes('r4_fix_renewal_payload_contract') &&
     !f.includes('fa003_') &&
     !f.includes('sole_admin_exception') &&
     !f.includes('pay_commission_atomic')

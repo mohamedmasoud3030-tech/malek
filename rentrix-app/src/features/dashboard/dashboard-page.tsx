@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState } from '@/components/ui/error-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { PageLayout } from '@/components/layout/page-layout';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useCompanyFormatters } from '@/hooks/useCompanyFormatters';
@@ -128,6 +129,12 @@ export function DashboardPage() {
             {/* Distinct label from the inner AlertCenter section («الأولوية الآن»)
                 so the two nested landmarks do not collide (axe landmark-unique). */}
             <section data-dashboard-section="priorities" aria-label="متابعة الأولويات">
+              {isLoading ? (
+                /* While the snapshot is loading, counts are UNKNOWN — a
+                   loading state is honest; rows of «غير متاح» would misread
+                   as failed sources and pre-R1 zeros were fake. */
+                <LoadingState variant="section" label="جارٍ تحميل أولويات المتابعة" />
+              ) : (
               <AlertCenter
                 expiringContractsCount={snapshot?.contracts.expiring30}
                 overdueInvoicesCount={snapshot?.arrears.overdueCount}
@@ -137,6 +144,7 @@ export function DashboardPage() {
                 pendingSettlementsCount={snapshot?.exceptions.pendingSettlements}
                 integrityWarningsCount={integrityWarningsCount}
               />
+              )}
             </section>
 
             <section className="dashboard-section" aria-label="صورة الأداء" data-dashboard-section="kpis">
