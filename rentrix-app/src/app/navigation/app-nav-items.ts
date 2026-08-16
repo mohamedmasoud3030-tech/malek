@@ -37,12 +37,7 @@ export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[]
 
 /**
  * Task-centric product IA.
- *
- * The shell exposes only the seven questions a property-office user needs to
- * answer. Entity registers remain fully routable, but they are capabilities of
- * a workspace rather than independent products in the sidebar.
- *
- * Today → Portfolio → Leasing → Money → Services → Reports → Settings
+ * Today → Portfolio → Leasing → Money → Services → Reports → Settings.
  */
 export const navGroups: readonly NavGroup[] = [
   ['العمل', [
@@ -76,14 +71,14 @@ export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
     ['/contracts', 'communication', 'التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view', { workspace: 'communication' }],
   ],
   '/financials': [
-    ['/invoices', 'invoices', 'المستحقات والفواتير', FileText],
-    ['/receipts', 'receipts', 'الإيصالات والتحصيلات', BadgeDollarSign],
-    ['/arrears', 'arrears', 'المتأخرات التي تحتاج متابعة', BarChart3, 'arrears.view'],
-    ['/expenses', 'expenses', 'المصروفات', PieChart, 'expenses.view'],
-    ['/deposits', 'deposits', 'التأمينات والودائع', FolderKanban, 'financial.deposits.view'],
-    ['/owner-settlements', 'ownerSettlements', 'مستحقات وتسويات الملاك', UserRoundCog, 'financial.owner_settlements.view'],
-    ['/bank-reconciliation', 'bankReconciliation', 'البنوك والمطابقة البنكية', BarChart3, 'financial.bank_reconciliation.view'],
-    ['/commissions', 'commissions', 'العمولات المرتبطة بالمصادر المالية', BadgeDollarSign, 'commissions.view'],
+    ['/financials', 'invoices', 'المستحقات والفواتير', FileText, undefined, { section: 'collections', view: 'invoices' }],
+    ['/financials', 'receipts', 'التحصيل والإيصالات', BadgeDollarSign, undefined, { section: 'collections', view: 'receipts' }],
+    ['/financials', 'arrears', 'المتأخرات التي تحتاج متابعة', BarChart3, 'arrears.view', { section: 'collections', view: 'arrears' }],
+    ['/financials', 'expenses', 'المصروفات', PieChart, 'expenses.view', { section: 'expenses', view: 'expenses' }],
+    ['/financials', 'deposits', 'التأمينات والودائع', FolderKanban, 'financial.deposits.view', { section: 'funds', view: 'deposits' }],
+    ['/financials', 'ownerSettlements', 'مستحقات وتسويات الملاك', UserRoundCog, 'financial.owner_settlements.view', { section: 'funds', view: 'owner_settlements' }],
+    ['/financials', 'bankReconciliation', 'البنوك والمطابقة البنكية', BarChart3, 'financial.bank_reconciliation.view', { section: 'banking', view: 'bank_reconciliation' }],
+    ['/financials', 'commissions', 'العمولات المرتبطة بالمصادر المالية', BadgeDollarSign, 'commissions.view', { section: 'expenses', view: 'commissions' }],
   ],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, undefined, { section: 'maintenance' }],
@@ -105,7 +100,6 @@ export function getAllNavItems(): readonly NavItem[] {
   return [...navGroups.flatMap((group) => group[1]), ...Object.values(workspaceChildNavItems).flat()];
 }
 
-/** Mobile navigation is exclusively the floating Menu + Search control. */
 export const mobileNavItems: readonly MobileNavItem[] = [];
 
 export const quickCreateItems: readonly MobileNavItem[] = [
