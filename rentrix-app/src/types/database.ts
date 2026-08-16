@@ -2917,6 +2917,108 @@ export type Database = {
         };
         Relationships: [];
       };
+      invoice_credits: {
+        Row: {
+          id: string;
+          company_id: string;
+          invoice_id: string;
+          amount: number;
+          credit_type: 'PARTIAL' | 'FULL';
+          reason: string;
+          reason_code: string | null;
+          effective_date: string;
+          created_by: string;
+          created_at: string;
+          request_id: string;
+          status: 'POSTED' | 'REVERSED';
+          journal_batch_id: string | null;
+          reversal_of_id: string | null;
+          reversal_request_id: string | null;
+          reversal_journal_batch_id: string | null;
+          reversal_reason: string | null;
+          reversed_by: string | null;
+          reversed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          invoice_id: string;
+          amount: number;
+          credit_type: 'PARTIAL' | 'FULL';
+          reason: string;
+          reason_code?: string | null;
+          effective_date: string;
+          created_by: string;
+          created_at?: string;
+          request_id: string;
+          status?: 'POSTED' | 'REVERSED';
+          journal_batch_id?: string | null;
+          reversal_of_id?: string | null;
+          reversal_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          reversal_reason?: string | null;
+          reversed_by?: string | null;
+          reversed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          invoice_id?: string;
+          amount?: number;
+          credit_type?: 'PARTIAL' | 'FULL';
+          reason?: string;
+          reason_code?: string | null;
+          effective_date?: string;
+          created_by?: string;
+          created_at?: string;
+          request_id?: string;
+          status?: 'POSTED' | 'REVERSED';
+          journal_batch_id?: string | null;
+          reversal_of_id?: string | null;
+          reversal_request_id?: string | null;
+          reversal_journal_batch_id?: string | null;
+          reversal_reason?: string | null;
+          reversed_by?: string | null;
+          reversed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_credits_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_credits_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_credits_journal_batch_id_fkey';
+            columns: ['journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_credits_reversal_journal_batch_id_fkey';
+            columns: ['reversal_journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_credits_reversal_of_id_fkey';
+            columns: ['reversal_of_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoice_credits';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       invoices: {
         Row: {
           id: string;
@@ -2939,6 +3041,7 @@ export type Database = {
           charge_type: string;
           billing_period_start: string | null;
           billing_period_end: string | null;
+          credited_amount: number;
         };
         Insert: {
           id?: string;
@@ -2961,6 +3064,7 @@ export type Database = {
           charge_type?: string;
           billing_period_start?: string | null;
           billing_period_end?: string | null;
+          credited_amount?: number;
         };
         Update: {
           id?: string;
@@ -2983,6 +3087,7 @@ export type Database = {
           charge_type?: string;
           billing_period_start?: string | null;
           billing_period_end?: string | null;
+          credited_amount?: number;
         };
         Relationships: [
           {
@@ -6973,6 +7078,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_invoice_credit_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       create_maintenance_atomic: {
         Args: {
           p_property_id: string | null;
@@ -7708,6 +7819,12 @@ export type Database = {
         Returns: Json;
       };
       reverse_fixed_monthly_accrual_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
+      reverse_invoice_credit_atomic: {
         Args: {
           p_payload: Json | null;
         };
