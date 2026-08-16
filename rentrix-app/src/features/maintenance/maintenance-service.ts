@@ -132,7 +132,7 @@ export async function updateMaintenanceStatus(
   if (status === 'resolved') {
     throw new Error('استخدم resolveMaintenanceWithExpense لإغلاق طلب الصيانة مع تسجيل التكلفة');
   }
-  const { data, error } = await (supabase as any).rpc('transition_maintenance_status_atomic', {
+  const { data, error } = await supabase.rpc('transition_maintenance_status_atomic', {
     p_request_id: requestId,
     p_next_status: status,
     p_reason: reason ?? null,

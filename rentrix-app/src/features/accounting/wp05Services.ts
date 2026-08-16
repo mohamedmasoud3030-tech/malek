@@ -7,8 +7,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
-
-type Json = Record<string, unknown>;
+import type { Json } from '@/types/database';
 
 function asRecord(v: unknown): Record<string, unknown> {
   return (v && typeof v === 'object' && !Array.isArray(v) ? v : {}) as Record<string, unknown>;
@@ -50,7 +49,7 @@ export type ReconciliationRow = {
 
 export async function getReconciliation(asOf?: string): Promise<ReconciliationRow[]> {
   const p_as_of = asOf ?? todayLocalDate();
-  const { data, error } = await (supabase.rpc as any)('wp05_reconcile_all', { p_as_of });
+  const { data, error } = await supabase.rpc('wp05_reconcile_all', { p_as_of });
   if (error) {
     handleSupabaseError(error, 'تعذر تحميل مطابقة دفتر الأستاذ');
     return [];
@@ -82,7 +81,7 @@ function normalizeReconciliationRow(v: unknown): ReconciliationRow {
 
 export async function assertReconciliation(asOf?: string): Promise<{ success: boolean; details?: unknown }> {
   const p_as_of = asOf ?? todayLocalDate();
-  const { data, error } = await (supabase.rpc as any)('wp05_assert_reconciliation', { p_as_of });
+  const { data, error } = await supabase.rpc('wp05_assert_reconciliation', { p_as_of });
   if (error) throw error;
   return asRecord(data) as { success: boolean; details?: unknown };
 }
@@ -105,7 +104,7 @@ export type CashFlowReport = {
 };
 
 export async function getCashFlowReport(from: string, to: string): Promise<CashFlowReport> {
-  const { data, error } = await (supabase.rpc as any)('wp05_rpt_cash_flow_gl', { p_from: from, p_to: to });
+  const { data, error } = await supabase.rpc('wp05_rpt_cash_flow_gl', { p_from: from, p_to: to });
   if (error) throw error;
   const r = asRecord(data);
   const period = asRecord(r.period);
@@ -145,7 +144,7 @@ export type CashFlowDrillthroughRow = {
 };
 
 export async function getCashFlowDrillthrough(from: string, to: string, classification?: string): Promise<CashFlowDrillthroughRow[]> {
-  const { data, error } = await (supabase.rpc as any)('wp05_cash_flow_drillthrough', {
+  const { data, error } = await supabase.rpc('wp05_cash_flow_drillthrough', {
     p_from: from,
     p_to: to,
     p_classification: classification ?? null,
@@ -194,7 +193,7 @@ export type FrozenReview = {
 };
 
 export async function listFrozenReviews(periodId?: string): Promise<FrozenReview[]> {
-  const { data, error } = await (supabase.rpc as any)('s08_list_frozen_reviews', {
+  const { data, error } = await supabase.rpc('s08_list_frozen_reviews', {
     p_period_id: periodId ?? null,
   });
   if (error) throw error;
@@ -223,29 +222,29 @@ export async function createFrozenReview(payload: {
   analysis_version?: string;
   dataset_lineage?: string;
   evidence_reference?: string;
-  analysis_results?: unknown;
-  reconciliation_evidence?: unknown;
-  exceptions?: unknown;
-  review_scope?: unknown;
+  analysis_results?: Json;
+  reconciliation_evidence?: Json;
+  exceptions?: Json;
+  review_scope?: Json;
 }): Promise<{ id: string; status: string; fingerprint: string }> {
-  const { data, error } = await (supabase.rpc as any)('s08_create_frozen_review', {
-    p_payload: payload,
+  const { data, error } = await supabase.rpc('s08_create_frozen_review', {
+    p_payload: JSON.parse(JSON.stringify(payload)) as Json,
   });
   if (error) throw error;
   const r = asRecord(data);
   return { id: asString(r.id), status: asString(r.status), fingerprint: asString(r.fingerprint) };
 }
 
-export async function analyzeFrozenReview(reviewId: string, results?: unknown): Promise<void> {
-  const { error } = await (supabase.rpc as any)('s08_analyze_frozen_review', {
+export async function analyzeFrozenReview(reviewId: string, results?: Json): Promise<void> {
+  const { error } = await supabase.rpc('s08_analyze_frozen_review', {
     p_review_id: reviewId,
-    p_analysis_results: results ?? null,
+    p_analysis_results: results ?? undefined,
   });
   if (error) throw error;
 }
 
 export async function approveFrozenReview(reviewId: string, notes?: string): Promise<void> {
-  const { error } = await (supabase.rpc as any)('s08_approve_frozen_review', {
+  const { error } = await supabase.rpc('s08_approve_frozen_review', {
     p_review_id: reviewId,
     p_notes: notes ?? null,
   });
@@ -271,7 +270,7 @@ export type Correction = {
 };
 
 export async function listCorrections(periodId?: string, status?: string): Promise<Correction[]> {
-  const { data, error } = await (supabase.rpc as any)('s09_list_corrections', {
+  const { data, error } = await supabase.rpc('s09_list_corrections', {
     p_period_id: periodId ?? null,
     p_status: status ?? null,
   });
@@ -306,12 +305,12 @@ export async function createCorrectionDraft(payload: {
   amount: number;
   debit_account_no?: string;
   credit_account_no?: string;
-  before_evidence?: unknown;
-  after_evidence?: unknown;
+  before_evidence?: Json;
+  after_evidence?: Json;
   request_id?: string;
 }): Promise<{ id: string; status: string }> {
-  const { data, error } = await (supabase.rpc as any)('s09_create_correction_draft', {
-    p_payload: payload,
+  const { data, error } = await supabase.rpc('s09_create_correction_draft', {
+    p_payload: JSON.parse(JSON.stringify(payload)) as Json,
   });
   if (error) throw error;
   const r = asRecord(data);
@@ -319,14 +318,14 @@ export async function createCorrectionDraft(payload: {
 }
 
 export async function validateCorrection(correctionId: string): Promise<void> {
-  const { error } = await (supabase.rpc as any)('s09_validate_correction', {
+  const { error } = await supabase.rpc('s09_validate_correction', {
     p_correction_id: correctionId,
   });
   if (error) throw error;
 }
 
 export async function applyCorrection(correctionId: string): Promise<{ batch_id: string }> {
-  const { data, error } = await (supabase.rpc as any)('s09_apply_correction', {
+  const { data, error } = await supabase.rpc('s09_apply_correction', {
     p_correction_id: correctionId,
   });
   if (error) throw error;
@@ -335,7 +334,7 @@ export async function applyCorrection(correctionId: string): Promise<{ batch_id:
 }
 
 export async function reverseCorrection(correctionId: string, reason: string): Promise<{ reversal_batch_id: string }> {
-  const { data, error } = await (supabase.rpc as any)('s09_reverse_correction', {
+  const { data, error } = await supabase.rpc('s09_reverse_correction', {
     p_correction_id: correctionId,
     p_reason: reason,
   });
@@ -376,7 +375,7 @@ export type VarianceDiagnosticRow = ReconciliationRow & {
 
 export async function getVarianceDiagnostics(asOf?: string): Promise<VarianceDiagnosticRow[]> {
   const p_as_of = asOf ?? todayLocalDate();
-  const { data, error } = await (supabase.rpc as any)('wp05_variance_diagnostics', { p_as_of });
+  const { data, error } = await supabase.rpc('wp05_variance_diagnostics', { p_as_of });
   if (error) {
     handleSupabaseError(error, 'تعذر تحميل تشخيص فروقات المطابقة');
     return [];
@@ -448,7 +447,7 @@ export async function listCorrectionProposals(
   status?: ProposalStatus,
   asOf?: string,
 ): Promise<CorrectionProposal[]> {
-  const { data, error } = await (supabase.rpc as any)('wp05_list_correction_proposals', {
+  const { data, error } = await supabase.rpc('wp05_list_correction_proposals', {
     p_status: status ?? null,
     p_as_of: asOf ?? null,
   });
@@ -468,7 +467,7 @@ export async function generateCorrectionProposals(payload?: {
   reconciled_classes: number;
   posted_to_gl: boolean;
 }> {
-  const { data, error } = await (supabase.rpc as any)('wp05_generate_correction_proposals', {
+  const { data, error } = await supabase.rpc('wp05_generate_correction_proposals', {
     p_as_of: payload?.as_of ?? todayLocalDate(),
     p_request_id: payload?.request_id ?? null,
     p_accounting_period_id: payload?.accounting_period_id ?? null,
@@ -489,7 +488,7 @@ export async function approveCorrectionProposal(
   proposalId: string,
   note?: string,
 ): Promise<{ status: ProposalStatus; posted_to_gl: boolean }> {
-  const { data, error } = await (supabase.rpc as any)('wp05_approve_correction_proposal', {
+  const { data, error } = await supabase.rpc('wp05_approve_correction_proposal', {
     p_proposal_id: proposalId,
     p_note: note ?? null,
   });
@@ -502,7 +501,7 @@ export async function rejectCorrectionProposal(
   proposalId: string,
   reason: string,
 ): Promise<{ status: ProposalStatus }> {
-  const { data, error } = await (supabase.rpc as any)('wp05_reject_correction_proposal', {
+  const { data, error } = await supabase.rpc('wp05_reject_correction_proposal', {
     p_proposal_id: proposalId,
     p_reason: reason,
   });
@@ -519,7 +518,7 @@ export async function assertNoUnapprovedCorrectionPostings(): Promise<{
   proposals_approved: number;
   proposals_rejected: number;
 }> {
-  const { data, error } = await (supabase.rpc as any)('wp05_assert_no_unapproved_correction_postings', {});
+  const { data, error } = await supabase.rpc('wp05_assert_no_unapproved_correction_postings', {});
   if (error) throw error;
   const r = asRecord(data);
   return {

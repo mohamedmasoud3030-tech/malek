@@ -310,7 +310,7 @@ export async function listPendingReceiptVoidRequests(): Promise<ReceiptVoidReque
 }
 
 export async function requestReceiptVoid(payload: RequestReceiptVoidPayload): Promise<RequestReceiptVoidResult> {
-  const { data, error } = await supabase.rpc('request_receipt_void_atomic' as any, { payload } as any);
+  const { data, error } = await supabase.rpc('request_receipt_void_atomic', { payload });
   if (error) throw error;
   if (data == null) throw new Error('request_receipt_void_atomic returned no data');
   if (!isRequestReceiptVoidResult(data)) {
@@ -320,7 +320,7 @@ export async function requestReceiptVoid(payload: RequestReceiptVoidPayload): Pr
 }
 
 export async function approveReceiptVoid(payload: ApproveReceiptVoidPayload): Promise<ApproveReceiptVoidResult> {
-  const { data, error } = await supabase.rpc('approve_receipt_void_atomic' as any, { payload } as any);
+  const { data, error } = await supabase.rpc('approve_receipt_void_atomic', { payload });
   if (error) throw error;
   if (data == null) throw new Error('approve_receipt_void_atomic returned no data');
   if (!isApproveReceiptVoidResult(data)) {

@@ -301,7 +301,7 @@ export async function listOwnerSettlementTargets(): Promise<OwnerSettlementTarge
  * what gets stored — never a client-side re-computation.
  */
 export async function previewOwnerSettlement(payload: PreviewSettlementPayload): Promise<OwnerSettlementPreview> {
-  const { data, error } = await (supabase as any).rpc('calculate_owner_net_payout', {
+  const { data, error } = await supabase.rpc('calculate_owner_net_payout', {
     p_owner_id: payload.owner_id,
     p_period_start: payload.period_start,
     p_period_end: payload.period_end,
@@ -324,7 +324,7 @@ export async function previewOwnerSettlement(payload: PreviewSettlementPayload):
 }
 
 export async function createOwnerSettlementDraft(payload: CreateSettlementDraftPayload): Promise<string> {
-  const { data, error } = await (supabase as any).rpc('create_owner_settlement_draft_atomic', {
+  const { data, error } = await supabase.rpc('create_owner_settlement_draft_atomic', {
     // Spread only; request_id stays exactly the attempt key the caller holds —
     // retrying with the same key replays the cached server response instead of
     // creating a second draft.
@@ -334,13 +334,14 @@ export async function createOwnerSettlementDraft(payload: CreateSettlementDraftP
   if (error) {
     throw new Error(messageFromError(error, 'تعذر إنشاء مسودة تسوية المالك.'));
   }
-  const settlementId = data?.settlement_id;
+  const responsePayload = (data && typeof data === 'object' && !Array.isArray(data) ? data : {}) as Record<string, unknown>;
+  const settlementId = responsePayload.settlement_id;
   if (!settlementId) throw new Error('لم تُرجع قاعدة البيانات رقم التسوية الجديدة.');
   return String(settlementId);
 }
 
 export async function approveOwnerSettlement(payload: ApproveSettlementPayload): Promise<void> {
-  const { error } = await (supabase as any).rpc('approve_owner_settlement_atomic', {
+  const { error } = await supabase.rpc('approve_owner_settlement_atomic', {
     p_payload: { settlement_id: payload.settlement_id, request_id: crypto.randomUUID() },
   });
 
@@ -350,7 +351,7 @@ export async function approveOwnerSettlement(payload: ApproveSettlementPayload):
 }
 
 export async function processOwnerPayout(payload: ProcessPayoutPayload): Promise<void> {
-  const { error } = await (supabase as any).rpc('pay_owner_settlement_atomic', {
+  const { error } = await supabase.rpc('pay_owner_settlement_atomic', {
     p_payload: {
       settlement_id: payload.settlement_id,
       request_id: crypto.randomUUID(),
@@ -498,7 +499,7 @@ export async function getOwnerFinancialPosition(payload: {
   from: string;
   to: string;
 }): Promise<OwnerFinancialPosition> {
-  const { data, error } = await (supabase as any).rpc('rpt_owner_financial_position', {
+  const { data, error } = await supabase.rpc('rpt_owner_financial_position', {
     p_owner_id: payload.owner_id,
     p_from: payload.from,
     p_to: payload.to,

@@ -35,6 +35,7 @@ const baseRequest: Maintenance = {
   deleted_at: null,
   cancelled_at: null,
   cancellation_reason: null,
+  request_id: null,
 };
 
 const secondRequest: Maintenance = {

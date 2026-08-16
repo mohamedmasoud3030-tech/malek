@@ -89,6 +89,31 @@ describe('R6 — reports workspace fetches only the open report', () => {
     expect(pageSource).toContain('useReportsWorkspace(filters, { section: activeSection, view: activeView })');
   });
 
+  it('documents the bounded-read limitation honestly (no silent truncation)', () => {
+    // R6 REMAINING LIMITATION (explicit, not silently deferred): rent roll /
+    // occupancy / deferred-revenue still consume COMPLETE paged reads
+    // (listAllContracts / fetchCompleteReportRows), not server pagination.
+    // The bounded-read contract is honest:
+    //   - fetchCompleteReportRows THROWS instead of presenting partial totals,
+    //   - listAllContracts exposes an explicit `truncated` flag,
+    //   - receipts are hard-capped (latestReceiptLimit = 100).
+    // Server-side pagination for these registers is a follow-up read-model
+    // task; the R6 scale defect named by the roadmap (load-everything
+    // fan-out) is eliminated by the per-view activation gates above.
+    const helpers = readFileSync(resolve(import.meta.dirname, 'reports-page.helpers.ts'), 'utf8');
+    expect(helpers).toContain('latestReceiptLimit = 100');
+    const paginatedRead = readFileSync(
+      resolve(import.meta.dirname, '../financials/reports/report-paginated-read.ts'),
+      'utf8',
+    );
+    expect(paginatedRead).toContain('تعذر تحميل كامل بيانات'); // throws, never partial totals
+    const contractService = readFileSync(
+      resolve(import.meta.dirname, '../contracts/services/contractService.ts'),
+      'utf8',
+    );
+    expect(contractService).toContain('truncated: boolean');
+  });
+
   it('export uses the same workspace model the screen renders (single source)', () => {
     // The workspace model is the only data prop handed to ReportsWorkspace —
     // exports read from `model`, never from a separate fetch path.
