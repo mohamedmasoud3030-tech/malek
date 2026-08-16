@@ -56,6 +56,13 @@ beforeAll(async () => {
       (id, singleton_key, company_name, currency, company_id)
     values (gen_random_uuid(), false, 'Phase2 Co', 'OMR', '${COMPANY}');
 
+    -- Explicit zero/non-taxable configuration replaces the historical implicit
+    -- vat_enabled=false fallback in recurring invoice generation.
+    insert into public.company_tax_profiles
+      (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+    values
+      ('b1000000-0000-4000-8000-000000000081', '${COMPANY}', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${MAKER}', '${OTHER}', now());
+
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'P2 Owner', 'P2 Owner', '${COMPANY}');
 

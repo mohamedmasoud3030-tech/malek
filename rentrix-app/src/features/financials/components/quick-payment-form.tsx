@@ -7,7 +7,10 @@ import { QUICK_PAYMENT_AMOUNT_INPUT_ID, QUICK_PAYMENT_FORM_ID } from '../invoice
 import { formatMoney } from './financials-formatters';
 import { toFinancialNumber } from '../financialMath';
 
-const methods: Payment['payment_method'][] = ['cash', 'bank_transfer', 'card', 'check', 'other'];
+// RC1 has authoritative control accounts only for physical cash (1111) and
+// bank transfer (1120). Do not present card/check/other until a controlled
+// clearing-account policy exists; the server rejects those methods too.
+const methods: Payment['payment_method'][] = ['cash', 'bank_transfer'];
 
 const methodDetails: Record<Payment['payment_method'], { label: string; desc: string }> = {
   cash: { label: 'نقدي', desc: 'دفع مباشر نقداً' },
@@ -77,7 +80,7 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
       <form id={QUICK_PAYMENT_FORM_ID} className="space-y-4" onSubmit={onSubmit}>
         <div className="space-y-2">
           <label className="block text-xs font-bold text-muted-foreground">اختر طريقة الدفع</label>
-          <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid gap-2 grid-cols-2">
             {methods.map((item) => (
               <SelectionCard
                 key={item}
@@ -116,7 +119,7 @@ export function QuickPaymentForm({ remainingAmount, amount, method, paymentDate,
 
           <div>
             <label className="mb-1 block text-xs font-bold text-muted-foreground" htmlFor="quick-payment-reference">المرجع (اختياري)</label>
-            <Input id="quick-payment-reference" placeholder="رقم الشيك أو التحويل" value={reference} onChange={(event) => onReferenceChange(event.target.value)} />
+            <Input id="quick-payment-reference" placeholder="رقم التحويل أو الإيداع" value={reference} onChange={(event) => onReferenceChange(event.target.value)} />
           </div>
         </div>
 

@@ -11,10 +11,10 @@ const AGREEMENT = '04020000-0000-4000-8000-000000000003';
 const UNIT = '04020000-0000-4000-8000-000000000004';
 const TENANT = '04020000-0000-4000-8000-000000000005';
 const CONTRACT = '04020000-0000-4000-8000-000000000006';
-const INVOICE = '04020000-0000-4000-8000-000000000007';
 
 let db: PGlite;
 let receiptId = '';
+let invoiceId = '';
 
 async function rpc(name: string, payload: Record<string, unknown>) {
   const { rows } = await db.query<{ value: string }>(
@@ -62,6 +62,11 @@ beforeAll(async () => {
       ('${COMPANY}', '${MAKER}', 'ADMIN'),
       ('${COMPANY}', '${CHECKER}', 'ADMIN');
 
+    insert into public.company_tax_profiles
+      (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+    values
+      ('c4020000-0000-4000-8000-000000000081', '${COMPANY}', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${MAKER}', '${CHECKER}', now());
+
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'WP02 Owner', 'WP02 Owner', '${COMPANY}');
 
@@ -89,16 +94,17 @@ beforeAll(async () => {
       date '2026-01-01', date '2026-12-31', 1000, 'active', '${COMPANY}'
     );
 
-    insert into public.invoices
-      (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, tax_rate, status, company_id)
-    values (
-      '${INVOICE}', '${CONTRACT}', date '2026-08-01', date '2026-08-31',
-      1000, 0, 0, 0, 'UNPAID', '${COMPANY}'
-    );
   `);
 
   await assumeIdentity(db, MAKER, COMPANY);
   await db.query('select public.provision_company_chart_of_accounts($1::uuid)', [COMPANY]);
+  const generated = await db.query<{ count: string }>('select public.generate_invoices_from_active_contracts()::text as count');
+  expect(Number(generated.rows[0]?.count)).toBe(1);
+  const { rows: generatedInvoices } = await db.query<{ id: string }>(
+    `select id::text from public.invoices where contract_id = $1::uuid and document_status = 'POSTED'`,
+    [CONTRACT],
+  );
+  invoiceId = generatedInvoices[0]?.id ?? '';
 }, 420_000);
 
 afterAll(async () => {
@@ -118,9 +124,9 @@ describe('WP-02 actual collection → RATE fee wiring', () => {
 
   it('derives 10% from the frozen agreement and posts 1000/100/900 in one reversible receipt batch', async () => {
     const result = await rpc('record_invoice_payment_atomic', {
-      invoice_id: INVOICE,
+      invoice_id: invoiceId,
       amount: 1000,
-      method: 'bank',
+      method: 'bank_transfer',
       date: '2026-08-13',
       reference: 'WP02-RATE-1000',
       request_id: 'wp02-rate-collection-1',
@@ -131,7 +137,7 @@ describe('WP-02 actual collection → RATE fee wiring', () => {
     expect(result.collection_role).toBe('OWNER_IS_CREDITOR');
     expect(result.management_fee_net).toBe(100);
 
-    expect(await balance('1111')).toBe(1000);
+    expect(await balance('1120')).toBe(1000);
     expect(await balance('1201')).toBe(0);
     expect(await balance('2000')).toBe(-900);
     expect(await balance('4100')).toBe(-100);
@@ -162,7 +168,7 @@ describe('WP-02 actual collection → RATE fee wiring', () => {
       request_id: 'wp02-rate-void-approval-1',
     });
 
-    expect(await balance('1111')).toBe(0);
+    expect(await balance('1120')).toBe(0);
     expect(await balance('2000')).toBe(0);
     expect(await balance('4100')).toBe(0);
   });

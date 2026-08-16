@@ -10,8 +10,8 @@
  *   evidence/p3/phase3a1b/two-company-isolation.json
  *   evidence/p3/phase3a1b/idempotency-isolation.json
  *
- * Company A is provisioned (1111/1201/4000/2100 + VAT 5%); company B is
- * deliberately unprovisioned — account resolution must fail loudly for B.
+ * Company A is provisioned (1111/1201/2000/2100 + effective VAT 5%); company B
+ * deliberately has no effective tax profile, so recurring billing fails closed.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -142,7 +142,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     expect(Number(generated!.tax_amount)).toBeCloseTo(50, 3);
     expect(generated!.status).toBe('UNPAID');
 
-    // Canonical company-owned AR / revenue / VAT lines, balanced journal.
+    // Canonical company-owned AR / owner-funds / VAT lines, balanced journal.
     const { rows: lines } = await db.query(
       `select je.account_id, a.no as account_no, a.company_id::text as account_company,
               je.amount::numeric as amount, je.type, je.company_id::text as company_id
@@ -158,7 +158,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     const credits = jl.filter((l) => l.type === 'CREDIT') as Record<string, unknown>[];
     expect(String(debit.account_no)).toBe('1201');
     expect(Number(debit.amount)).toBeCloseTo(1050, 3);
-    expect(credits.map((c) => String(c.account_no)).sort()).toEqual(['2100', '4000']);
+    expect(credits.map((c) => String(c.account_no)).sort()).toEqual(['2000', '2100']);
     for (const line of jl) {
       expect(line.account_company).toBe(COMPANY_A);
       expect(line.company_id).toBe(COMPANY_A);
@@ -179,10 +179,11 @@ describe('Phase 3A-1B execution lifecycle', () => {
     expect(dup!.invoices).toBe(1);
     expect(dup!.journals).toBe(3);
 
-    // Company B: no canonical chart → loud require error, zero side effects.
+    // Company B: no effective tax profile → fail closed before any invoice or
+    // journal side effect (and before account-resolution could be attempted).
     await assumeIdentity(db, ADMIN_B, COMPANY_B);
     await expect(db.query(`select public.generate_invoices_from_active_contracts() as n`)).rejects.toThrow(
-      /1201 is not configured for company/,
+      /TAX_PROFILE_MISSING/,
     );
     const bCount = await queryOne(
       db,
@@ -208,7 +209,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
       totals: { amount: Number(generated!.amount), tax: Number(generated!.tax_amount), due: 1050 },
       journalLines: lines,
       retryCreatedDuplicates: false,
-      companyBRequireError: '1201 is not configured for company',
+      companyBRequireError: 'TAX_PROFILE_MISSING',
       crossCompanyWrites: 0,
     };
   }, 120_000);
@@ -553,15 +554,17 @@ describe('Phase 3A-1B execution lifecycle', () => {
         amount: 0.5,
         method: 'CASH',
       }),
-    ).rejects.toThrow(/exceeds outstanding/);
+    ).rejects.toThrow(/PAYMENT_EXCEEDS_OUTSTANDING|exceeds outstanding/);
 
-    // Canonical WP-02 RATE collection accounting: Dr cash 1111 / Cr owner
-    // payable 2000 for collection, then Dr 2000 / Cr fee revenue 4100 for the
-    // frozen 10% management fee. All four lines share the receipt source.
+    // These legacy fixture invoices sit under the frozen OFFICE_IS_CREDITOR
+    // contract: collection clears 1201, while the RATE fee reduces 2000.
+    // BANK_TRANSFER is server-derived to 1120 and CASH to 1111.
     const cashA = await accountId(db, '1111', COMPANY_A);
+    const bankA = await accountId(db, '1120', COMPANY_A);
+    const receivableA = await accountId(db, '1201', COMPANY_A);
     const ownerPayableA = await accountId(db, '2000', COMPANY_A);
     const feeRevenueA = await accountId(db, '4100', COMPANY_A);
-    for (const rid of [receipt1, receipt2]) {
+    for (const [index, rid] of [receipt1, receipt2].entries()) {
       const { rows: lines } = await db.query(
         `select account_id, amount::numeric as amount, type, company_id::text as company_id
            from public.journal_entries where source_id::text = $1 order by type, amount desc`,
@@ -573,8 +576,8 @@ describe('Phase 3A-1B execution lifecycle', () => {
         String(line.account_id) === String(account)
         && line.type === type
         && Number(line.amount) === amount);
-      expect(hasLine(cashA, 'DEBIT', 400)).toBe(true);
-      expect(hasLine(ownerPayableA, 'CREDIT', 400)).toBe(true);
+      expect(hasLine(index === 0 ? bankA : cashA, 'DEBIT', 400)).toBe(true);
+      expect(hasLine(receivableA, 'CREDIT', 400)).toBe(true);
       expect(hasLine(ownerPayableA, 'DEBIT', 40)).toBe(true);
       expect(hasLine(feeRevenueA, 'CREDIT', 40)).toBe(true);
       const debit = rl.filter((line) => line.type === 'DEBIT').reduce((sum, line) => sum + Number(line.amount), 0);
@@ -792,7 +795,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
         amount: 10,
         method: 'CASH',
       }),
-    ).rejects.toThrow(/Invoice not found/);
+    ).rejects.toThrow(/PAYMENT_INVOICE_NOT_FOUND_OR_FORBIDDEN|Invoice not found/);
 
     // B posts a receipt on A's contract → 42501 before any insert.
     await expect(
@@ -859,9 +862,10 @@ describe('Phase 3A-1B execution lifecycle', () => {
   it('namespaces idempotency by company: the same request_id never replays across companies', async () => {
     // record_invoice_payment_atomic — shared request id
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    const freshGeneratedInvoiceId = String(evidence.invoicePosting.generatedInvoiceId);
     const shared = await rpcJsonb(db, 'record_invoice_payment_atomic', {
       request_id: 'p3a1b-shared-pay',
-      invoice_id: INVOICE_A1,
+      invoice_id: freshGeneratedInvoiceId,
       amount: 200,
       method: 'CASH',
       date: '2026-07-24',
@@ -876,7 +880,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
         amount: 50,
         method: 'CASH',
       }),
-    ).rejects.toThrow(/1111 is not configured for company/); // B fails loudly, never replays A
+    ).rejects.toThrow(/TAX_PROFILE_MISSING|1111 is not configured for company/); // B fails loudly, never replays A
 
     // post_receipt_atomic — shared request id
     await assumeIdentity(db, ADMIN_A, COMPANY_A);

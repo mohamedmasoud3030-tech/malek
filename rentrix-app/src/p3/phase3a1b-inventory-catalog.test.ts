@@ -114,6 +114,9 @@ beforeAll(async () => {
       // Phase 2 redefines generate_invoices_from_active_contracts (deterministic billing/due dates).
       'phase2_invoice_truth',
       'phase3_credit_and_ar_integrity',
+      'rc1_owner_agency_invoice_accounting_model',
+      'rc1_invoice_credit_original_economics',
+      'rc1_payment_tax_and_write_boundary',
       'sole_admin_exception',
     ],
   });
@@ -298,7 +301,7 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
     const problems: string[] = [];
     for (const row of rows as any[]) {
       if (isLegacyVoid(row)) continue;
-      if (!/app_metadata[^;]{0,60}company_id|current_company_id\s*\(\)/.test(row.def)) {
+      if (!/app_metadata[^;]{0,60}company_id|current_company_id\s*\(\)|require_company_id\s*\(\)/.test(row.def)) {
         problems.push(`${row.name}(${row.args}): no JWT company derivation`);
       }
     }
@@ -363,7 +366,9 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
       'find_payment_account_id(account_role text)': { auth: false, svc: false },
       'generate_invoices_from_active_contracts()': { auth: true, svc: true },
       'record_invoice_payment_atomic(payload jsonb)': { auth: true, svc: true },
-      'post_receipt_atomic(payload jsonb)': { auth: true, svc: true },
+      // RC1: this engine accepts journal lines and is service-only. Browser
+      // collection remains record_invoice_payment_atomic, which derives lines.
+      'post_receipt_atomic(payload jsonb)': { auth: false, svc: true },
       'void_receipt_atomic(payload jsonb)': { auth: true, svc: true },
       'void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)':
         { auth: false, svc: false },

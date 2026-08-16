@@ -2950,6 +2950,15 @@ export type Database = {
           reversal_reason: string | null;
           reversed_by: string | null;
           reversed_at: string | null;
+          net_amount: number | null;
+          tax_amount: number | null;
+          tax_profile_id: string | null;
+          tax_snapshot_id: string | null;
+          tax_code: string | null;
+          tax_rate: number | null;
+          tax_basis: string | null;
+          accounting_classification: string | null;
+          original_invoice_posting_batch_id: string | null;
         };
         Insert: {
           id?: string;
@@ -2971,6 +2980,15 @@ export type Database = {
           reversal_reason?: string | null;
           reversed_by?: string | null;
           reversed_at?: string | null;
+          net_amount?: number | null;
+          tax_amount?: number | null;
+          tax_profile_id?: string | null;
+          tax_snapshot_id?: string | null;
+          tax_code?: string | null;
+          tax_rate?: number | null;
+          tax_basis?: string | null;
+          accounting_classification?: string | null;
+          original_invoice_posting_batch_id?: string | null;
         };
         Update: {
           id?: string;
@@ -2992,6 +3010,15 @@ export type Database = {
           reversal_reason?: string | null;
           reversed_by?: string | null;
           reversed_at?: string | null;
+          net_amount?: number | null;
+          tax_amount?: number | null;
+          tax_profile_id?: string | null;
+          tax_snapshot_id?: string | null;
+          tax_code?: string | null;
+          tax_rate?: number | null;
+          tax_basis?: string | null;
+          accounting_classification?: string | null;
+          original_invoice_posting_batch_id?: string | null;
         };
         Relationships: [
           {
@@ -3016,6 +3043,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'invoice_credits_original_invoice_posting_batch_id_fkey';
+            columns: ['original_invoice_posting_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'invoice_credits_reversal_journal_batch_id_fkey';
             columns: ['reversal_journal_batch_id'];
             isOneToOne: false;
@@ -3027,6 +3061,82 @@ export type Database = {
             columns: ['reversal_of_id'];
             isOneToOne: false;
             referencedRelation: 'invoice_credits';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_credits_tax_profile_id_fkey';
+            columns: ['tax_profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_tax_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_credits_tax_snapshot_id_fkey';
+            columns: ['tax_snapshot_id'];
+            isOneToOne: false;
+            referencedRelation: 'taxable_line_tax_snapshots';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      invoice_payment_tax_allocations: {
+        Row: {
+          id: string;
+          company_id: string;
+          receipt_id: string;
+          invoice_id: string;
+          tax_snapshot_id: string;
+          net_amount: number;
+          tax_amount: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          receipt_id: string;
+          invoice_id: string;
+          tax_snapshot_id: string;
+          net_amount: number;
+          tax_amount: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          receipt_id?: string;
+          invoice_id?: string;
+          tax_snapshot_id?: string;
+          net_amount?: number;
+          tax_amount?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'invoice_payment_tax_allocations_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_payment_tax_allocations_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_payment_tax_allocations_receipt_id_fkey';
+            columns: ['receipt_id'];
+            isOneToOne: false;
+            referencedRelation: 'receipts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoice_payment_tax_allocations_tax_snapshot_id_fkey';
+            columns: ['tax_snapshot_id'];
+            isOneToOne: false;
+            referencedRelation: 'taxable_line_tax_snapshots';
             referencedColumns: ['id'];
           },
         ];
@@ -3054,6 +3164,16 @@ export type Database = {
           billing_period_start: string | null;
           billing_period_end: string | null;
           credited_amount: number;
+          invoice_agreement_version_id: string | null;
+          invoice_operating_model: string | null;
+          invoice_collection_role: string | null;
+          invoice_accounting_classification: string | null;
+          invoice_posting_batch_id: string | null;
+          tax_treatment: string | null;
+          tax_profile_id: string | null;
+          tax_snapshot_id: string | null;
+          tax_code: string | null;
+          tax_basis: string | null;
         };
         Insert: {
           id?: string;
@@ -3077,6 +3197,16 @@ export type Database = {
           billing_period_start?: string | null;
           billing_period_end?: string | null;
           credited_amount?: number;
+          invoice_agreement_version_id?: string | null;
+          invoice_operating_model?: string | null;
+          invoice_collection_role?: string | null;
+          invoice_accounting_classification?: string | null;
+          invoice_posting_batch_id?: string | null;
+          tax_treatment?: string | null;
+          tax_profile_id?: string | null;
+          tax_snapshot_id?: string | null;
+          tax_code?: string | null;
+          tax_basis?: string | null;
         };
         Update: {
           id?: string;
@@ -3100,6 +3230,16 @@ export type Database = {
           billing_period_start?: string | null;
           billing_period_end?: string | null;
           credited_amount?: number;
+          invoice_agreement_version_id?: string | null;
+          invoice_operating_model?: string | null;
+          invoice_collection_role?: string | null;
+          invoice_accounting_classification?: string | null;
+          invoice_posting_batch_id?: string | null;
+          tax_treatment?: string | null;
+          tax_profile_id?: string | null;
+          tax_snapshot_id?: string | null;
+          tax_code?: string | null;
+          tax_basis?: string | null;
         };
         Relationships: [
           {
@@ -3114,6 +3254,34 @@ export type Database = {
             columns: ['contract_id'];
             isOneToOne: false;
             referencedRelation: 'contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoices_invoice_agreement_version_id_fkey';
+            columns: ['invoice_agreement_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'owner_agreement_versions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoices_invoice_posting_batch_id_fkey';
+            columns: ['invoice_posting_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoices_tax_profile_id_fkey';
+            columns: ['tax_profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_tax_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'invoices_tax_snapshot_id_fkey';
+            columns: ['tax_snapshot_id'];
+            isOneToOne: false;
+            referencedRelation: 'taxable_line_tax_snapshots';
             referencedColumns: ['id'];
           },
         ];
@@ -4284,6 +4452,87 @@ export type Database = {
             columns: ['company_id'];
             isOneToOne: false;
             referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      owner_funds_events: {
+        Row: {
+          id: string;
+          company_id: string;
+          owner_id: string;
+          contract_id: string | null;
+          invoice_id: string | null;
+          source_type: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT';
+          source_id: string;
+          event_id: string;
+          amount_delta: number;
+          effective_date: string;
+          journal_batch_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          owner_id: string;
+          contract_id?: string | null;
+          invoice_id?: string | null;
+          source_type: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT';
+          source_id: string;
+          event_id: string;
+          amount_delta: number;
+          effective_date: string;
+          journal_batch_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          owner_id?: string;
+          contract_id?: string | null;
+          invoice_id?: string | null;
+          source_type?: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT';
+          source_id?: string;
+          event_id?: string;
+          amount_delta?: number;
+          effective_date?: string;
+          journal_batch_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'owner_funds_events_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_funds_events_contract_id_fkey';
+            columns: ['contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_funds_events_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_funds_events_journal_batch_id_fkey';
+            columns: ['journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_funds_events_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'owners';
             referencedColumns: ['id'];
           },
         ];
@@ -7684,6 +7933,13 @@ export type Database = {
         };
         Returns: Json;
       };
+      rc1_owner_agency_vat_payable_balance: {
+        Args: {
+          p_company_id: string | null;
+          p_as_of?: string | null;
+        };
+        Returns: { balance: number | null; cnt: number | null }[];
+      };
       recalculate_all_balances: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -7961,6 +8217,13 @@ export type Database = {
           p_to: string | null;
         };
         Returns: Json;
+      };
+      rpt_rc1_owner_agency_invoice_mapping_diagnostics: {
+        Args: {
+          p_from?: string | null;
+          p_to?: string | null;
+        };
+        Returns: { company_id: string | null; invoice_id: string | null; contract_id: string | null; issue_date: string | null; collection_role: string | null; invoice_accounting_classification: string | null; source_batch_id: string | null; source_type: string | null; source_account_numbers: (string)[] | null; affected_reason: string | null }[];
       };
       rpt_rent_roll: {
         Args: {
