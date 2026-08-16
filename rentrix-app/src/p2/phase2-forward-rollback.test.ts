@@ -65,6 +65,7 @@ beforeAll(async () => {
       && !f.includes('rc1_owner_agency_invoice_accounting_model')
       && !f.includes('rc1_invoice_credit_original_economics')
       && !f.includes('rc1_payment_tax_and_write_boundary')
+      && !f.includes('rc1_cutover_fee_tax_and_legacy_fail_closed')
       && !f.includes('sole_admin_exception'))
     .sort((a, b) => a.localeCompare(b));
   const failed: { file: string; error: string }[] = [];

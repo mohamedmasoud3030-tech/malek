@@ -147,6 +147,15 @@ beforeAll(async () => {
       ('${PROFILE_A}', '${COMPANY}', 1, 'VAT', 5.000, date '2020-01-01',
        'ACTIVE', '${MAKER}', '${CHECKER}', now());
 
+    -- Fee tax is independently versioned from rent tax. This explicit
+    -- NON_TAXABLE / 0.000 treatment is deliberate fixture configuration, not a fallback.
+    insert into public.company_fee_tax_treatments
+      (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from,
+       status, created_by, approved_by, approved_at)
+    values
+      ('d1000000-0000-4000-8000-000000000034', '${COMPANY}', 'RATE_MANAGEMENT_FEE', 1, 'NON_TAXABLE', 0.000, date '2020-01-01',
+       'ACTIVE', '${MAKER}', '${CHECKER}', now());
+
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'RC1 Owner', 'RC1 Owner', '${COMPANY}');
 
@@ -771,5 +780,180 @@ describe('RC1 collections, credits and historical tax basis', () => {
     expect(await netCredit('2300')).toBe(0);
     expect(await netCredit('4100')).toBe(300);
     expect(await netCredit('4000')).toBe(0);
+  });
+});
+
+describe('RC1 fail-closed and cutover regressions', () => {
+  it('rejects a legacy/null-classified invoice payment and reports snapshot-missing property-management candidates', async () => {
+    const legacyContract = 'd1000000-0000-4000-8000-000000000981';
+    const legacyInvoice = 'd1000000-0000-4000-8000-000000000982';
+    await db.exec(`
+      insert into public.contracts
+        (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date, rent_amount, status, company_id)
+      values ('${legacyContract}', 'd1000000-0000-4000-8000-000000000301', 'd1000000-0000-4000-8000-000000000401', 'd1000000-0000-4000-8000-000000000501', '${OFFICE_AGREEMENT}', date '2020-01-01', date '2030-12-31', 10, 'draft', '${COMPANY}');
+      insert into public.invoices
+        (id, contract_id, issue_date, due_date, amount, tax_amount, status, company_id,
+         document_status, charge_type, billing_period_start, billing_period_end)
+      values ('${legacyInvoice}', '${legacyContract}', current_date, current_date + 1, 10, 0, 'UNPAID', '${COMPANY}',
+         'DRAFT', 'LEGACY_REVIEW', date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date);
+      update public.invoices set document_status = 'POSTED' where id = '${legacyInvoice}'::uuid;
+    `);
+    await expect(rpc('record_invoice_payment_atomic', {
+      invoice_id: legacyInvoice,
+      amount: 10,
+      method: 'cash',
+      date: firstDayOfCurrentMonth(),
+      request_id: 'rc1-legacy-payment-denial-001',
+    })).rejects.toThrow(/HISTORICAL_INVOICE_ACCOUNTING_REVIEW_REQUIRED/);
+
+    const { rows } = await db.query<{ affected_reason: string }>(
+      `select affected_reason from public.rpt_rc1_owner_agency_invoice_mapping_diagnostics(null, null)
+        where invoice_id = $1::uuid`,
+      [legacyInvoice],
+    );
+    expect(rows[0]?.affected_reason).toBe('PRE_RC1_OWNER_AGENCY_SNAPSHOT_MISSING_REVIEW_REQUIRED');
+    await expect(db.query(
+      `select * from public.resolve_active_fee_tax_treatment($1::uuid, 'RATE_MANAGEMENT_FEE', current_date)`,
+      [OTHER_COMPANY],
+    )).rejects.toThrow(/FEE_TAX_TREATMENT_MISSING/);
+  });
+
+  it('binds credit-reversal idempotency to the target credit and rejects a same-key different-credit replay', async () => {
+    const { rows } = await db.query<{ id: string }>(
+      `select id::text from public.invoice_credits
+        where company_id = $1::uuid and status = 'REVERSED'
+        order by created_at`,
+      [COMPANY],
+    );
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    await expect(rpc('reverse_invoice_credit_atomic', {
+      credit_id: rows[0]?.id,
+      reason: 'different credit must not replay another reversal',
+      request_id: 'rc1-owner-operational-credit-reversal-001',
+    })).rejects.toThrow(/CREDIT_REVERSAL_IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
+  });
+
+  it('requires an explicit versioned management-fee tax treatment and snapshots a taxable fee without changing rent-tax policy', async () => {
+    await db.exec(`
+      insert into public.company_fee_tax_treatments
+        (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+      values ('d1000000-0000-4000-8000-000000000983', '${COMPANY}', 'RATE_MANAGEMENT_FEE', 2, 'VAT', 5, date '${firstDayOfCurrentMonth()}', 'ACTIVE', '${CHECKER}', '${MAKER}', now());
+
+      insert into public.properties (id, title, name, type, address, company_id)
+      values ('d1000000-0000-4000-8000-000000000984', 'Fee Tax Property', 'Fee Tax Property', 'residential', 'Muscat', '${COMPANY}');
+      insert into public.property_owners (property_id, owner_id, ownership_percentage, is_primary, starts_on, company_id)
+      values ('d1000000-0000-4000-8000-000000000984', '${OWNER}', 100, true, date '2020-01-01', '${COMPANY}');
+      insert into public.owner_agreements
+        (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, company_id)
+      values ('d1000000-0000-4000-8000-000000000985', '${OWNER}', 'd1000000-0000-4000-8000-000000000984', 'property_management', 'RATE', 10, date '2020-01-01', '${COMPANY}');
+      update public.owner_agreement_versions set effective_to = date '2019-12-31', superseded_at = now()
+       where owner_agreement_id = 'd1000000-0000-4000-8000-000000000985'::uuid and superseded_at is null;
+      insert into public.owner_agreement_versions
+        (id, owner_agreement_id, company_id, version_no, operating_model, collection_role,
+         commission_type, commission_value, commission_recognition_basis, offset_allowed,
+         reserve_amount, effective_from, created_by)
+      values ('d1000000-0000-4000-8000-000000000986', 'd1000000-0000-4000-8000-000000000985', '${COMPANY}', 2,
+        'OWNER_AGENCY', 'OFFICE_IS_CREDITOR', 'RATE', 10, 'ON_COLLECTION', false, 0, date '2020-01-01', '${MAKER}');
+      update public.owner_agreements set current_version_id = 'd1000000-0000-4000-8000-000000000986'::uuid
+       where id = 'd1000000-0000-4000-8000-000000000985'::uuid;
+      insert into public.units (id, property_id, name, unit_number, company_id)
+      values ('d1000000-0000-4000-8000-000000000987', 'd1000000-0000-4000-8000-000000000984', 'Fee Tax Unit', 'FEE-1', '${COMPANY}');
+      insert into public.people (id, full_name, type, company_id)
+      values ('d1000000-0000-4000-8000-000000000988', 'Fee Tax Tenant', 'tenant', '${COMPANY}');
+      insert into public.contracts
+        (id, property_id, unit_id, tenant_id, agreement_id, start_date, end_date, rent_amount, status, company_id)
+      values ('d1000000-0000-4000-8000-000000000989', 'd1000000-0000-4000-8000-000000000984', 'd1000000-0000-4000-8000-000000000987', 'd1000000-0000-4000-8000-000000000988', 'd1000000-0000-4000-8000-000000000985', date '2020-01-01', date '2030-12-31', 1000, 'active', '${COMPANY}');
+    `);
+    const generated = await db.query<{ value: string }>('select public.generate_invoices_from_active_contracts()::text as value');
+    expect(Number(generated.rows[0]?.value)).toBe(1);
+    const { rows: invoices } = await db.query<{ id: string }>(
+      `select id::text from public.invoices where contract_id = 'd1000000-0000-4000-8000-000000000989'::uuid`,
+    );
+    const result = await rpc('record_invoice_payment_atomic', {
+      invoice_id: invoices[0]?.id ?? '',
+      amount: 1070,
+      method: 'bank_transfer',
+      date: firstDayOfCurrentMonth(),
+      reference: 'RC1-FEE-TAX-001',
+      request_id: 'rc1-fee-tax-001',
+    });
+    expect(Number(result.management_fee_net)).toBe(100);
+    expect(Number(result.management_fee_tax)).toBe(5);
+    expect(Number(result.management_fee_gross)).toBe(105);
+    const { rows: snapshots } = await db.query<{ tax_code: string; tax_rate: string; tax_amount: string }>(
+      `select tax_code, tax_rate::text, tax_amount::text from public.management_fee_tax_snapshots
+        where receipt_id = $1::uuid`,
+      [result.receipt_id],
+    );
+    expect(snapshots[0]).toMatchObject({ tax_code: 'VAT', tax_rate: '5.000', tax_amount: '5.000' });
+  });
+
+  it('fails closed for a historical 2000 position until an S08-backed cutover exists', async () => {
+    const cash = await db.query<{ id: string }>(`select id from public.accounts where company_id = $1::uuid and no = '1111'`, [COMPANY]);
+    const ownerFunds = await db.query<{ id: string }>(`select id from public.accounts where company_id = $1::uuid and no = '2000'`, [COMPANY]);
+    await db.query(
+      `select public.post_journal_event($1::jsonb)`,
+      [JSON.stringify({
+        company_id: COMPANY,
+        source_type: 'historical_cutover_probe',
+        source_id: 'rc1-cutover-probe',
+        event_id: 'opening',
+        effective_date: firstDayOfCurrentMonth(),
+        description: 'Synthetic pre-cutover 2000 probe',
+        lines: [
+          { account_id: cash.rows[0]?.id, debit: 1, credit: 0 },
+          { account_id: ownerFunds.rows[0]?.id, debit: 0, credit: 1 },
+        ],
+      })],
+    );
+    await expect(db.query(
+      `select public.assert_owner_funds_event_cutover($1::uuid, current_date, null)`,
+      [COMPANY],
+    )).rejects.toThrow(/OWNER_FUNDS_CUTOVER_REVIEW_REQUIRED/);
+    await expect(rpc('create_owner_funds_cutover_atomic', {
+      cutover_date: new Date().toISOString().slice(0, 10),
+      s08_review_id: 'd1000000-0000-4000-8000-000000000990',
+      reason: 'missing S08 must fail closed',
+      request_id: 'rc1-cutover-missing-s08',
+    })).rejects.toThrow(/OWNER_FUNDS_CUTOVER_S08_APPROVAL_REQUIRED/);
+
+    const { rows: periodRows } = await db.query<{ id: string }>(
+      `select id::text from public.accounting_periods
+        where company_id = $1::uuid order by end_date desc limit 1`,
+      [COMPANY],
+    );
+    const review = await rpc('s08_create_frozen_review', {
+      accounting_period_id: periodRows[0]?.id,
+      dataset_lineage: 'synthetic-cutover-review',
+      analysis_version: 'rc1-cutover-v1',
+      evidence_reference: 'PGlite cutover regression',
+    });
+    await db.query(`select public.s08_analyze_frozen_review($1::uuid, '{}'::jsonb, '{}'::jsonb, '[]'::jsonb)`, [review.id]);
+    await assumeIdentity(db, CHECKER, COMPANY);
+    await db.query(`select public.s08_approve_frozen_review($1::uuid, 'Synthetic test approval only')`, [review.id]);
+    await assumeIdentity(db, MAKER, COMPANY);
+    const created = await rpc('create_owner_funds_cutover_atomic', {
+      cutover_date: new Date().toISOString().slice(0, 10),
+      s08_review_id: review.id,
+      reason: 'Approved synthetic opening baseline',
+      request_id: 'rc1-cutover-create-001',
+    });
+    expect(created.status).toBe('DRAFT');
+    await assumeIdentity(db, CHECKER, COMPANY);
+    const approved = await rpc('approve_owner_funds_cutover_atomic', { request_id: 'rc1-cutover-approve-001' });
+    expect(approved.status).toBe('APPROVED');
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    await expect(db.query(
+      `select public.assert_owner_funds_event_cutover($1::uuid, $2::date, null)`,
+      [COMPANY, tomorrow.toISOString().slice(0, 10)],
+    )).resolves.toBeDefined();
+    const { rows: cutoverBalance } = await db.query<{ subledger: string; gl: string }>(
+      `select (select balance::text from public.wp05_subledger_owner_payables($1::uuid, current_date)) as subledger,
+              public.wp05_gl_balance($1::uuid, '2000', current_date)::text as gl`,
+      [COMPANY],
+    );
+    expect(Number(cutoverBalance[0]?.subledger)).toBe(Number(cutoverBalance[0]?.gl));
+    await assumeIdentity(db, MAKER, COMPANY);
   });
 });

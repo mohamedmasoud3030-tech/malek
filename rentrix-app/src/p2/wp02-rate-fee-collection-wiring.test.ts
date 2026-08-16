@@ -66,6 +66,10 @@ beforeAll(async () => {
       (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
     values
       ('c4020000-0000-4000-8000-000000000081', '${COMPANY}', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${MAKER}', '${CHECKER}', now());
+    insert into public.company_fee_tax_treatments
+      (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+    values
+      ('c4020000-0000-4000-8000-000000000082', '${COMPANY}', 'RATE_MANAGEMENT_FEE', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${MAKER}', '${CHECKER}', now());
 
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'WP02 Owner', 'WP02 Owner', '${COMPANY}');

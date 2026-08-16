@@ -71,6 +71,12 @@ export async function seedPhase3a1bFixture(db: PGlite, options?: { skipGenerated
         values
           ('c31b0000-0000-4000-8000-000000000081', '${COMPANY_A}', 1, 'VAT', 5, date '2020-01-01', 'ACTIVE', '${ADMIN_A}', '${CHECKER_A}', now());
       end if;
+      if to_regclass('public.company_fee_tax_treatments') is not null then
+        insert into public.company_fee_tax_treatments
+          (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+        values
+          ('c31b0000-0000-4000-8000-000000000083', '${COMPANY_A}', 'RATE_MANAGEMENT_FEE', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${ADMIN_A}', '${CHECKER_A}', now());
+      end if;
     end
     $tax_fixture$;
 

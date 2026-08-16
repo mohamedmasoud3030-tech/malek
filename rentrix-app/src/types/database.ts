@@ -1189,6 +1189,72 @@ export type Database = {
           },
         ];
       };
+      company_fee_tax_treatments: {
+        Row: {
+          id: string;
+          company_id: string;
+          fee_kind: 'RATE_MANAGEMENT_FEE' | 'FIXED_MONTHLY';
+          version_no: number;
+          tax_code: string;
+          tax_rate: number;
+          effective_from: string;
+          effective_to: string | null;
+          status: 'DRAFT' | 'ACTIVE' | 'SUPERSEDED' | 'VOID';
+          created_by: string;
+          approved_by: string | null;
+          approved_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          fee_kind: 'RATE_MANAGEMENT_FEE' | 'FIXED_MONTHLY';
+          version_no: number;
+          tax_code: string;
+          tax_rate: number;
+          effective_from: string;
+          effective_to?: string | null;
+          status?: 'DRAFT' | 'ACTIVE' | 'SUPERSEDED' | 'VOID';
+          created_by: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          fee_kind?: 'RATE_MANAGEMENT_FEE' | 'FIXED_MONTHLY';
+          version_no?: number;
+          tax_code?: string;
+          tax_rate?: number;
+          effective_from?: string;
+          effective_to?: string | null;
+          status?: 'DRAFT' | 'ACTIVE' | 'SUPERSEDED' | 'VOID';
+          created_by?: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'company_fee_tax_treatments_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'company_fee_tax_treatments_tax_code_fkey';
+            columns: ['tax_code'];
+            isOneToOne: false;
+            referencedRelation: 'tax_code_catalog';
+            referencedColumns: ['code'];
+          },
+        ];
+      };
       company_members: {
         Row: {
           id: string;
@@ -2778,11 +2844,15 @@ export type Database = {
           net_amount: number;
           tax_amount: number;
           gross_amount: number;
-          tax_authority_status: string;
+          tax_authority_status: 'OUT_OF_SCOPE_NO_VERSIONED_AUTHORITY' | 'VERSIONED_FEE_TREATMENT';
           journal_batch_id: string | null;
           source_fingerprint: string;
           executed_by: string | null;
           created_at: string;
+          fee_tax_treatment_id: string | null;
+          fee_tax_profile_id: string | null;
+          fee_tax_code: string | null;
+          fee_tax_rate: number | null;
         };
         Insert: {
           id?: string;
@@ -2804,11 +2874,15 @@ export type Database = {
           net_amount: number;
           tax_amount: number;
           gross_amount: number;
-          tax_authority_status: string;
+          tax_authority_status: 'OUT_OF_SCOPE_NO_VERSIONED_AUTHORITY' | 'VERSIONED_FEE_TREATMENT';
           journal_batch_id?: string | null;
           source_fingerprint: string;
           executed_by?: string | null;
           created_at?: string;
+          fee_tax_treatment_id?: string | null;
+          fee_tax_profile_id?: string | null;
+          fee_tax_code?: string | null;
+          fee_tax_rate?: number | null;
         };
         Update: {
           id?: string;
@@ -2830,11 +2904,15 @@ export type Database = {
           net_amount?: number;
           tax_amount?: number;
           gross_amount?: number;
-          tax_authority_status?: string;
+          tax_authority_status?: 'OUT_OF_SCOPE_NO_VERSIONED_AUTHORITY' | 'VERSIONED_FEE_TREATMENT';
           journal_batch_id?: string | null;
           source_fingerprint?: string;
           executed_by?: string | null;
           created_at?: string;
+          fee_tax_treatment_id?: string | null;
+          fee_tax_profile_id?: string | null;
+          fee_tax_code?: string | null;
+          fee_tax_rate?: number | null;
         };
         Relationships: [
           {
@@ -2849,6 +2927,20 @@ export type Database = {
             columns: ['company_id'];
             isOneToOne: false;
             referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fixed_monthly_daily_accruals_fee_tax_profile_id_fkey';
+            columns: ['fee_tax_profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_tax_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fixed_monthly_daily_accruals_fee_tax_treatment_id_fkey';
+            columns: ['fee_tax_treatment_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_fee_tax_treatments';
             referencedColumns: ['id'];
           },
           {
@@ -3831,6 +3923,100 @@ export type Database = {
           },
         ];
       };
+      management_fee_tax_snapshots: {
+        Row: {
+          id: string;
+          company_id: string;
+          receipt_id: string;
+          invoice_id: string;
+          fee_kind: string;
+          treatment_id: string;
+          tax_profile_id: string | null;
+          tax_code: string;
+          tax_rate: number;
+          net_amount: number;
+          tax_amount: number;
+          effective_date: string;
+          journal_batch_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          receipt_id: string;
+          invoice_id: string;
+          fee_kind: string;
+          treatment_id: string;
+          tax_profile_id?: string | null;
+          tax_code: string;
+          tax_rate: number;
+          net_amount: number;
+          tax_amount: number;
+          effective_date: string;
+          journal_batch_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          receipt_id?: string;
+          invoice_id?: string;
+          fee_kind?: string;
+          treatment_id?: string;
+          tax_profile_id?: string | null;
+          tax_code?: string;
+          tax_rate?: number;
+          net_amount?: number;
+          tax_amount?: number;
+          effective_date?: string;
+          journal_batch_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'management_fee_tax_snapshots_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'management_fee_tax_snapshots_invoice_id_fkey';
+            columns: ['invoice_id'];
+            isOneToOne: false;
+            referencedRelation: 'invoices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'management_fee_tax_snapshots_journal_batch_id_fkey';
+            columns: ['journal_batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'journal_batches';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'management_fee_tax_snapshots_receipt_id_fkey';
+            columns: ['receipt_id'];
+            isOneToOne: false;
+            referencedRelation: 'receipts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'management_fee_tax_snapshots_tax_profile_id_fkey';
+            columns: ['tax_profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_tax_profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'management_fee_tax_snapshots_treatment_id_fkey';
+            columns: ['treatment_id'];
+            isOneToOne: false;
+            referencedRelation: 'company_fee_tax_treatments';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       master_lease_measurements: {
         Row: {
           id: string;
@@ -4452,6 +4638,69 @@ export type Database = {
             columns: ['company_id'];
             isOneToOne: false;
             referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      owner_funds_event_cutovers: {
+        Row: {
+          company_id: string;
+          cutover_date: string;
+          opening_balance: number;
+          gl_line_count: number;
+          source_fingerprint: string;
+          s08_review_id: string;
+          status: 'DRAFT' | 'APPROVED' | 'REJECTED';
+          created_by: string;
+          created_at: string;
+          approved_by: string | null;
+          approved_at: string | null;
+          approval_request_id: string | null;
+          reason: string;
+        };
+        Insert: {
+          company_id: string;
+          cutover_date: string;
+          opening_balance: number;
+          gl_line_count: number;
+          source_fingerprint: string;
+          s08_review_id: string;
+          status?: 'DRAFT' | 'APPROVED' | 'REJECTED';
+          created_by: string;
+          created_at?: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          approval_request_id?: string | null;
+          reason: string;
+        };
+        Update: {
+          company_id?: string;
+          cutover_date?: string;
+          opening_balance?: number;
+          gl_line_count?: number;
+          source_fingerprint?: string;
+          s08_review_id?: string;
+          status?: 'DRAFT' | 'APPROVED' | 'REJECTED';
+          created_by?: string;
+          created_at?: string;
+          approved_by?: string | null;
+          approved_at?: string | null;
+          approval_request_id?: string | null;
+          reason?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'owner_funds_event_cutovers_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: true;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_funds_event_cutovers_s08_review_id_fkey';
+            columns: ['s08_review_id'];
+            isOneToOne: false;
+            referencedRelation: 's08_frozen_reviews';
             referencedColumns: ['id'];
           },
         ];
@@ -7199,6 +7448,18 @@ export type Database = {
         };
         Returns: Json;
       };
+      approve_fee_tax_treatment_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
+      approve_owner_funds_cutover_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       approve_owner_settlement_atomic: {
         Args: {
           p_payload: Json | null;
@@ -7228,6 +7489,14 @@ export type Database = {
           p_provider_id: string | null;
         };
         Returns: Json;
+      };
+      assert_owner_funds_event_cutover: {
+        Args: {
+          p_company_id: string | null;
+          p_effective_date: string | null;
+          p_current_batch_id?: string | null;
+        };
+        Returns: undefined;
       };
       assert_owner_settlement_links_backfillable: {
         Args: Record<PropertyKey, never>;
@@ -7345,6 +7614,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_fee_tax_treatment_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       create_invoice_credit_atomic: {
         Args: {
           p_payload: Json | null;
@@ -7380,6 +7655,12 @@ export type Database = {
           p_terms: Json | null;
         };
         Returns: Database['public']['Tables']['owner_agreement_versions']['Row'];
+      };
+      create_owner_funds_cutover_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
       };
       create_owner_receivable_atomic: {
         Args: {
@@ -8045,6 +8326,14 @@ export type Database = {
       reset_company_onboarding_atomic: {
         Args: Record<PropertyKey, never>;
         Returns: Json;
+      };
+      resolve_active_fee_tax_treatment: {
+        Args: {
+          p_company_id: string | null;
+          p_fee_kind: string | null;
+          p_effective_date: string | null;
+        };
+        Returns: { treatment_id: string | null; tax_profile_id: string | null; tax_code: string | null; tax_rate: number | null; effective_from: string | null; effective_to: string | null }[];
       };
       resolve_active_tax_profile: {
         Args: {

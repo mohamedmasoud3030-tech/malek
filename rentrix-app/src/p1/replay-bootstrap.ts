@@ -62,6 +62,7 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   'rc1_owner_agency_invoice_accounting_model',
   'rc1_invoice_credit_original_economics',
   'rc1_payment_tax_and_write_boundary',
+  'rc1_cutover_fee_tax_and_legacy_fail_closed',
   'sole_admin_exception',
   // This forward-only audit-contract repair depends on the receipt VOID
   // request ledger introduced after historical Phase 3A-1B checkpoints.

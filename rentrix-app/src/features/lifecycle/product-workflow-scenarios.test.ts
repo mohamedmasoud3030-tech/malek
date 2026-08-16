@@ -79,6 +79,11 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
       values
         ('ca000000-0000-4000-8000-000000000081', '${COMPANY_A}', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${ADMIN_A}', '${CHECKER_A}', now())
       on conflict do nothing;
+      insert into public.company_fee_tax_treatments
+        (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+      values
+        ('ca000000-0000-4000-8000-000000000083', '${COMPANY_A}', 'RATE_MANAGEMENT_FEE', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${ADMIN_A}', '${CHECKER_A}', now())
+      on conflict do nothing;
 
       select public.provision_company_chart_of_accounts('${COMPANY_A}'::uuid);
 
