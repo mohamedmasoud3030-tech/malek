@@ -55,6 +55,9 @@ async function openFixture(page: Page, theme: (typeof themes)[number]) {
   await expect(page.locator('main[data-e2e-reports-workspace]')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'مركز التقارير والكشوف', exact: true })).toBeVisible();
   await expect(page.getByText('لوحة القرار', { exact: true })).toBeVisible();
+  // The fixture's authoritative server-model rate is 82%. The hero must render
+  // that exact signal, not recompute paid/invoiced in the browser.
+  await expect(page.getByText('كفاءة 82%', { exact: true })).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
