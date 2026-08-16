@@ -33,6 +33,7 @@ const validRecord = {
   receipt_prefix: 'REC',
   default_vat_rate: 5,
   vat_enabled: true,
+  allow_sole_admin_self_approval: false,
   vat_rate: 5,
   vat_registration_number: 'VAT-123',
   notification_email_enabled: true,

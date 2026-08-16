@@ -89,6 +89,29 @@
 - **Legacy report RPCs** (`rpt_trial_balance`, `rpt_income_statement`, `rpt_balance_sheet`) still round to 2dp; they are superseded by the wp05 3dp GL reports but remain present.
 - **Live/hosted proof** (authenticated deployment, real bank data) is external; repository-level verification only.
 
+## RC1 accounting correction note (2026-08-16)
+
+This delivery report is a historical record of the Phase 1–3 checkpoint. Its
+Phase 3 statement that a generic credit posts `Cr 1201 / Dr 4000 / Dr 2100`,
+and its implicit assumption that recurring invoices belong at 4000, were later
+re-tested against the canonical OWNER_AGENCY agent-net model and found
+incorrect for reachable owner-agency contracts. They are **not** the final RC1
+mapping.
+
+The forward-only RC1 correction is documented in:
+
+- `20260820030000_rc1_owner_agency_invoice_accounting_model.sql`;
+- `20260820040000_rc1_invoice_credit_original_economics.sql`;
+- `20260820050000_rc1_payment_tax_and_write_boundary.sql`;
+- `20260820060000_rc1_cutover_fee_tax_and_legacy_fail_closed.sql`;
+- Documents 4, 7, 8 and 8A.
+
+No historical journal is rewritten. The correction derives immutable role/tax
+lineage for new invoices, reverses original credit economics, and supplies a
+read-only diagnostic for historical 4000 source batches pending S08/S09
+approval. This note preserves the original checkpoint rather than changing its
+claimed historical evidence.
+
 ## Final Decision
 
 **READY FOR FINANCIAL HARDENING MERGE REVIEW** (implementation-wise) **with an external push blocker.**

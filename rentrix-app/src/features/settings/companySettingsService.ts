@@ -68,6 +68,7 @@ const defaultCompanySettings: CompanySettingsRecord = {
   logo_url: null,
   invoice_prefix: 'INV',
   contract_prefix: 'CON',
+  allow_sole_admin_self_approval: false,
   receipt_prefix: 'REC',
   default_vat_rate: 0,
   vat_enabled: false,

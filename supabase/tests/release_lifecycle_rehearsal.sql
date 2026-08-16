@@ -97,6 +97,28 @@ begin
 end;
 $$;
 
+-- The lifecycle exercises September 2026 economic events. Give the hermetic
+-- rehearsal one explicit OPEN period instead of relying on a later failed
+-- posting to bootstrap period state.
+do $$
+begin
+  if not exists (
+    select 1 from public.accounting_periods
+    where company_id = '00000000-0000-4000-8000-000000000001'
+      and start_date <= date '2026-06-01'
+      and end_date >= date '2026-06-30'
+  ) then
+    insert into public.accounting_periods (
+      id, company_id, name, start_date, end_date, status
+    ) values (
+      '00000000-0000-0000-0000-000000001901',
+      '00000000-0000-4000-8000-000000000001',
+      'Release Lifecycle 2026-06', date '2026-06-01', date '2026-12-31', 'OPEN'
+    );
+  end if;
+end;
+$$;
+
 insert into public.owners (id, full_name, company_id)
 values ('00000000-0000-0000-0000-000000001201', 'Lifecycle Owner', '00000000-0000-4000-8000-000000000001');
 
@@ -140,6 +162,32 @@ insert into public.owner_agreement_versions (
   date '2026-01-01', date '2027-12-31'
 );
 
+-- RC1 rent tax and management-fee tax are separate versioned authorities.
+-- The release rehearsal is explicitly NON_TAXABLE at 0.000 rather than relying
+-- on the removed company_settings VAT fallback.
+insert into public.company_tax_profiles (
+  id, company_id, version_no, tax_code, tax_rate, effective_from, effective_to,
+  status, description, created_by, approved_by, approved_at
+) values (
+  '00000000-0000-0000-0000-000000001801',
+  '00000000-0000-4000-8000-000000000001', 9001, 'NON_TAXABLE', 0,
+  date '2026-01-01', date '2027-12-31', 'ACTIVE',
+  'Release lifecycle explicit non-taxable rent',
+  '00000000-0000-0000-0000-000000001101',
+  '00000000-0000-0000-0000-000000001103', now()
+) on conflict (id) do nothing;
+
+insert into public.company_fee_tax_treatments (
+  id, company_id, fee_kind, version_no, tax_code, tax_rate,
+  effective_from, effective_to, status, created_by, approved_by, approved_at
+) values (
+  '00000000-0000-0000-0000-000000001811',
+  '00000000-0000-4000-8000-000000000001', 'RATE_MANAGEMENT_FEE', 9001,
+  'NON_TAXABLE', 0, date '2026-01-01', date '2027-12-31', 'ACTIVE',
+  '00000000-0000-0000-0000-000000001101',
+  '00000000-0000-0000-0000-000000001103', now()
+) on conflict (id) do nothing;
+
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
@@ -163,7 +211,7 @@ select lives_ok(
       '00000000-0000-0000-0000-000000001401',
       '00000000-0000-0000-0000-000000001501',
       '00000000-0000-0000-0000-000000001601',
-      date '2026-09-01', date '2027-08-31', 1000, 'monthly', null,
+      date '2026-06-01', date '2027-08-31', 1000, 'monthly', null,
       'draft', null, 'release-lifecycle-contract', null
     )
   $$,
@@ -212,25 +260,42 @@ select set_config(
   true
 );
 
--- Invoice creation is a server-only financial write (Phase 2 hardening):
--- direct invoice INSERT is revoked from authenticated, so seed this financial
--- fixture as the superuser session role (privileged seed) and return to the
--- authenticated role used by the rest of the financial flow.
+-- Invoice creation is server-only. Seed the immutable RC1 sequence as the
+-- privileged fixture role: classified DRAFT -> tax snapshot -> POSTED.
 reset role;
 
-insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
+insert into public.invoices (
+  id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, tax_rate,
+  status, company_id, document_status, charge_type, billing_period_start,
+  billing_period_end, invoice_agreement_version_id, invoice_operating_model,
+  invoice_collection_role, invoice_accounting_classification, tax_treatment,
+  tax_profile_id, tax_code, tax_basis
+)
 select
   '00000000-0000-0000-0000-000000001701',
-  id::uuid,
-  date '2026-09-01',
-  date '2026-09-05',
-  1000,
-  0,
-  0,
-  'UNPAID',
-  '00000000-0000-4000-8000-000000000001'
-from public.contracts
-where notes = 'release-lifecycle-contract';
+  c.id::uuid,
+  date '2026-06-01', date '2026-06-05', 1000, 0, 0, 0,
+  'UNPAID', c.company_id, 'DRAFT', 'RENT', date '2026-06-01', date '2026-06-30',
+  c.agreement_version_id, c.operating_model_snapshot, c.collection_role_snapshot,
+  'OWNER_AGENCY_OWNER_CREDITOR_OPERATIONAL', 'NON_TAXABLE',
+  '00000000-0000-0000-0000-000000001801', 'NON_TAXABLE', 'NON_TAXABLE'
+from public.contracts c
+where c.notes = 'release-lifecycle-contract';
+
+insert into public.taxable_line_tax_snapshots (
+  id, company_id, source_type, source_id, journal_batch_id, account_no,
+  tax_code, tax_rate, net_amount, tax_amount, effective_date
+) values (
+  '00000000-0000-0000-0000-000000001802',
+  '00000000-0000-4000-8000-000000000001', 'invoice',
+  '00000000-0000-0000-0000-000000001701', null, '2100',
+  'NON_TAXABLE', 0, 1000, 0, date '2026-06-01'
+);
+
+update public.invoices
+set tax_snapshot_id = '00000000-0000-0000-0000-000000001802',
+    document_status = 'POSTED'
+where id = '00000000-0000-0000-0000-000000001701';
 
 set local role authenticated;
 
@@ -240,7 +305,7 @@ select lives_ok(
       'invoice_id', '00000000-0000-0000-0000-000000001701',
       'amount', 250,
       'method', 'cash',
-      'date', '2026-09-05',
+      'date', '2026-06-05',
       'reference', 'RL-PAYMENT-1',
       'request_id', 'release-lifecycle-payment-1'
     ))
@@ -312,7 +377,7 @@ select is(
   'void restores the invoice paid amount'
 );
 select is(
-  (public.rpt_daily_collection(date '2026-09-05', date '2026-09-05')->>'total')::numeric,
+  (public.rpt_daily_collection(date '2026-06-05', date '2026-06-05')->>'total')::numeric,
   0::numeric,
   'voided payments are excluded from daily collection reporting'
 );
@@ -323,7 +388,6 @@ select is(
   (
     select count(*)::integer
     from public.financial_operation_idempotency
-    -- Phase 3A-1B: idempotency keys are company-namespaced (<op>:<company_uuid>).
     where operation_name = 'void_receipt_atomic:00000000-0000-4000-8000-000000000001'
       and request_id = 'void-approved:release-lifecycle-void-approval-1'
   ),
@@ -395,7 +459,7 @@ select throws_ok(
       'property_id', '00000000-0000-0000-0000-000000001301',
       'unit_id', '00000000-0000-0000-0000-000000001401',
       'amount', 200,
-      'received_date', '2026-09-05',
+      'received_date', '2026-06-05',
       'request_id', 'release-lifecycle-deposit-denied'
     ))
   $$,
@@ -429,7 +493,7 @@ select lives_ok(
       'property_id', '00000000-0000-0000-0000-000000001301',
       'unit_id', '00000000-0000-0000-0000-000000001401',
       'amount', 200,
-      'received_date', '2026-09-05',
+      'received_date', '2026-06-05',
       'notes', 'release lifecycle deposit',
       'request_id', 'release-lifecycle-deposit-1'
     ))
@@ -444,7 +508,7 @@ select lives_ok(
       'property_id', '00000000-0000-0000-0000-000000001301',
       'unit_id', '00000000-0000-0000-0000-000000001401',
       'amount', 200,
-      'received_date', '2026-09-05',
+      'received_date', '2026-06-05',
       'notes', 'release lifecycle deposit',
       'request_id', 'release-lifecycle-deposit-1'
     ))
@@ -498,7 +562,7 @@ select throws_ok(
     select public.apply_deposit_claim_atomic(jsonb_build_object(
       'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-overdraw-claim'),
       'request_id', 'release-lifecycle-deposit-overdraw-apply',
-      'effective_date', '2026-09-06'
+      'effective_date', '2026-06-06'
     ))
   $$,
   null,
@@ -542,7 +606,7 @@ select lives_ok(
     select public.apply_deposit_claim_atomic(jsonb_build_object(
       'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-deduct-claim'),
       'request_id', 'release-lifecycle-deposit-deduct-1',
-      'effective_date', '2026-09-06'
+      'effective_date', '2026-06-06'
     ))
   $$,
   'deposit deduction succeeds'
@@ -552,7 +616,7 @@ select lives_ok(
     select public.apply_deposit_claim_atomic(jsonb_build_object(
       'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-deduct-claim'),
       'request_id', 'release-lifecycle-deposit-deduct-1',
-      'effective_date', '2026-09-06'
+      'effective_date', '2026-06-06'
     ))
   $$,
   'deposit deduction replay is idempotent'
@@ -578,7 +642,7 @@ select lives_ok(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
       'amount', 150,
       'payment_method', 'bank_transfer',
-      'refund_date', '2026-09-07',
+      'refund_date', '2026-06-07',
       'notes', 'release lifecycle refund',
       'request_id', 'release-lifecycle-deposit-refund-1'
     ))
@@ -591,7 +655,7 @@ select lives_ok(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
       'amount', 150,
       'payment_method', 'bank_transfer',
-      'refund_date', '2026-09-07',
+      'refund_date', '2026-06-07',
       'notes', 'release lifecycle refund',
       'request_id', 'release-lifecycle-deposit-refund-1'
     ))
@@ -656,13 +720,10 @@ select is(
   'deposit lifecycle posts equal credits'
 );
 
--- P1 fixture evolution (failure category: incomplete fixture/harness — the old
--- assertions pinned the client-trusted-amounts behavior itself). The settlement
--- block below now proves SERVER-side derivation: a second, non-voided payment
--- of 750 on 2026-09-10 (the 250 payment from the void lifecycle stays VOID and
--- must be excluded) and one POSTED OWNER-charged expense of 50 on 2026-09-12.
--- Derived tuple for 2026-09-01..2026-09-30 under the RATE 10% agreement:
--- gross 750, fee 75, expenses 50, tax 0 (company VAT disabled) ⇒ net 625.
+-- P1 fixture evolution: the settlement block below proves SERVER-side
+-- derivation from a second, non-voided payment of 750 and one POSTED
+-- OWNER-charged expense of 50. The 250 payment above stays VOID.
+-- Derived tuple under RATE 10%: gross 750, fee 75, expenses 50, tax 0 => net 625.
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
@@ -676,7 +737,7 @@ select lives_ok(
       'invoice_id', '00000000-0000-0000-0000-000000001701',
       'amount', 750,
       'method', 'bank_transfer',
-      'date', '2026-09-10',
+      'date', '2026-06-10',
       'reference', 'RL-PAYMENT-2',
       'request_id', 'release-lifecycle-payment-2'
     ))
@@ -688,7 +749,7 @@ reset role;
 
 insert into public.expenses (property_id, category, amount, expense_date, date_time, status, charged_to, description, company_id)
 values (
-  '00000000-0000-0000-0000-000000001301', 'maintenance', 50, date '2026-09-12', '2026-09-12',
+  '00000000-0000-0000-0000-000000001301', 'maintenance', 50, date '2026-06-12', '2026-06-12',
   'POSTED', 'OWNER', 'release lifecycle owner expense', '00000000-0000-4000-8000-000000000001'
 );
 
@@ -706,8 +767,8 @@ select lives_ok(
     select public.create_owner_settlement_draft_atomic(jsonb_build_object(
       'owner_id', '00000000-0000-0000-0000-000000001201',
       'property_id', '00000000-0000-0000-0000-000000001301',
-      'period_start', '2026-09-01',
-      'period_end', '2026-09-30',
+      'period_start', '2026-06-01',
+      'period_end', '2026-06-30',
       'gross_collected', 9999,
       'office_fee', 1,
       'owner_expenses', 1,
@@ -723,8 +784,8 @@ select lives_ok(
     select public.create_owner_settlement_draft_atomic(jsonb_build_object(
       'owner_id', '00000000-0000-0000-0000-000000001201',
       'property_id', '00000000-0000-0000-0000-000000001301',
-      'period_start', '2026-09-01',
-      'period_end', '2026-09-30',
+      'period_start', '2026-06-01',
+      'period_end', '2026-06-30',
       'gross_collected', 9999,
       'office_fee', 1,
       'owner_expenses', 1,
@@ -781,7 +842,7 @@ select is(
     where request_id = '10000000-0000-0000-0000-000000000001'::uuid
   ),
   0::numeric,
-  'settlement tax stays zero while company VAT is disabled (ADR 0001: disabled by default)'
+  'settlement tax is zero under the explicit NON_TAXABLE fixture policy'
 );
 select is(
   (
@@ -805,8 +866,8 @@ select throws_ok(
     select public.create_owner_settlement_draft_atomic(jsonb_build_object(
       'owner_id', '00000000-0000-0000-0000-000000001201',
       'property_id', '00000000-0000-0000-0000-000000001301',
-      'period_start', '2026-09-01',
-      'period_end', '2026-09-30',
+      'period_start', '2026-06-01',
+      'period_end', '2026-06-30',
       'gross_collected', 9999,
       'office_fee', 1,
       'owner_expenses', 1,
@@ -818,7 +879,6 @@ select throws_ok(
   null,
   'duplicate active settlement period is rejected'
 );
--- The checker is a different ADMIN from the settlement maker.
 select set_config(
   'request.jwt.claims',
   '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',

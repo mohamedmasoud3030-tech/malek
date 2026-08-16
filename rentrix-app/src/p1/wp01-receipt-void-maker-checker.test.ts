@@ -7,7 +7,6 @@ import {
   CHECKER_A,
   COMPANY_A,
   COMPANY_B,
-  INVOICE_A1,
   queryOne,
   rpcJsonb,
   seedPhase3a1bFixture,
@@ -16,6 +15,7 @@ import {
 describe('WP-01 receipt VOID Maker-Checker', () => {
   let db: PGlite;
   let receiptId: string;
+  let invoiceId: string;
   let voidRequestId: string;
 
   beforeAll(async () => {
@@ -24,10 +24,19 @@ describe('WP-01 receipt VOID Maker-Checker', () => {
     db = replay.db;
     await seedPhase3a1bFixture(db);
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    const generated = await db.query<{ value: string }>('select public.generate_invoices_from_active_contracts()::text as value');
+    expect(Number(generated.rows[0]?.value)).toBe(1);
+    const { rows: invoices } = await db.query<{ id: string }>(
+      `select id::text from public.invoices
+        where company_id = $1::uuid and contract_id = $2::uuid and document_status = 'POSTED'
+        order by created_at desc limit 1`,
+      [COMPANY_A, 'cc31b000-0000-4000-8000-000000000001'],
+    );
+    invoiceId = invoices[0]?.id ?? '';
 
     const payment = await rpcJsonb(db, 'record_invoice_payment_atomic', {
       request_id: 'wp01-void-source-payment',
-      invoice_id: INVOICE_A1,
+      invoice_id: invoiceId,
       amount: 125,
       method: 'CASH',
       date: '2026-08-13',

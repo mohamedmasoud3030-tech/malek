@@ -2,7 +2,7 @@
 
 > **Status:** CANONICAL  
 > **Effective date:** 2026-08-11  
-> **Repository reality baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
+> **Repository reality baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)
 > **Audit cut-off:** 2026-08-11
 > **Purpose:** one authoritative entry point for product, domain, accounting, architecture, UX, implementation reality, and release closeout.
 
@@ -137,7 +137,7 @@ A module is not complete because a PR merged. Applicable completion evidence fol
 
 ## 10. Brownfield audit baseline and verification record
 
-The pack describes `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`, the merge of PR #1430. Evidence is deliberately split:
+The pack describes `main@da9a98a38e61e9547df1e328ad91084e79b78410` (the sequential financial hardening and WP-07 closeout). Evidence is deliberately split:
 
 - **Repository tests from the original audit:** 177/177 focused tests passed for navigation/permissions, Stage 3 GL, S04, S06, S08, company isolation and permission-request lifecycle.
 - **PR #1430 CI on head `a6aaa8648b21945c0b92a9da851cdd4f5e2c7f96`:** documentation links, typecheck, lint, architecture, production build, full application tests and financial tests passed.

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15T17:06:59.915Z",
+  "generatedAt": "2026-08-16T11:08:06.303Z",
   "scenario": "same request_id executed by A and B for record / post / void",
   "namespacing": "<operation_name>:<company_uuid>",
   "immutableLogicalRequestRule": "request_id identifies one immutable logical financial request inside one company",
@@ -40,10 +40,6 @@
     },
     {
       "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
-      "request_id": "p3a1b-shared-pay"
-    },
-    {
-      "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
       "request_id": "p3a1b-shared-post"
     },
     {
@@ -61,10 +57,6 @@
     {
       "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
       "request_id": "p3a1b-pay-legacy-envelope"
-    },
-    {
-      "operation_name": "record_invoice_payment_atomic:c31b0000-0000-4000-8000-000000000001",
-      "request_id": "p3a1b-shared-pay"
     }
   ]
 }

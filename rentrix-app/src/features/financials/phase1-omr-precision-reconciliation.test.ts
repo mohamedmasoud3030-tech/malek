@@ -91,6 +91,12 @@ beforeAll(async () => {
     values
       (gen_random_uuid(), false, 'Phase1 Co', 'OMR', 'INV', 'CON', 'REC', ${VAT_RATE}, true, ${VAT_RATE}, '${COMPANY}');
 
+    -- Rate authority is the effective versioned profile, not company_settings.vat_rate.
+    insert into public.company_tax_profiles
+      (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+    values
+      ('a1000000-0000-4000-8000-000000000081', '${COMPANY}', 1, 'VAT', ${VAT_RATE}, date '2020-01-01', 'ACTIVE', '${MAKER}', '${OTHER}', now());
+
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'P1 Owner', 'P1 Owner', '${COMPANY}');
 
@@ -105,6 +111,23 @@ beforeAll(async () => {
     insert into public.owner_agreements
       (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, company_id)
     values ('${AGREEMENT}', '${OWNER}', '${PROPERTY}', 'property_management', 'RATE', 0, date '2026-01-01', '${COMPANY}');
+
+    -- This phase proves the OFFICE_IS_CREDITOR AR path. Replace the initial
+    -- default version before the contract freezes its immutable snapshot.
+    update public.owner_agreement_versions
+       set effective_to = date '2025-12-31', superseded_at = now()
+     where owner_agreement_id = '${AGREEMENT}'::uuid and superseded_at is null;
+    insert into public.owner_agreement_versions
+      (id, owner_agreement_id, company_id, version_no, operating_model, collection_role,
+       commission_type, commission_value, commission_recognition_basis, offset_allowed,
+       reserve_amount, effective_from, created_by)
+    values
+      ('a1000000-0000-4000-8000-000000000082', '${AGREEMENT}', '${COMPANY}', 2,
+       'OWNER_AGENCY', 'OFFICE_IS_CREDITOR', 'RATE', 0, 'ON_COLLECTION', false, 0,
+       date '2026-01-01', '${MAKER}');
+    update public.owner_agreements
+       set current_version_id = 'a1000000-0000-4000-8000-000000000082'::uuid
+     where id = '${AGREEMENT}'::uuid;
 
     insert into public.units (id, property_id, name, unit_number, company_id)
     values ('${UNIT}', '${PROPERTY}', 'P1 Unit', 'P1-1', '${COMPANY}');
@@ -163,7 +186,7 @@ describe('PHASE 1 — OMR 3dp precision and live-path canonical convergence', ()
     await rpc('record_invoice_payment_atomic', {
       invoice_id: invoiceId,
       amount: tiny,
-      method: 'bank',
+      method: 'bank_transfer',
       date: '2026-08-13',
       reference: 'P1-3DP-0125',
       request_id: 'phase1-3dp-payment-1',
@@ -176,8 +199,8 @@ describe('PHASE 1 — OMR 3dp precision and live-path canonical convergence', ()
     );
     expect(Number(rows[0].paid_amount)).toBe(tiny);
 
-    // The collection landed in bank/cash exactly (commission 0 -> clean amount).
-    expect(await glBalance('1111')).toBe(tiny);
+    // The bank-transfer collection lands in Bank exactly (no fee in this fixture).
+    expect(await glBalance('1120')).toBe(tiny);
 
     // The collection created a canonical receipt batch in journal_batches.
     const { rows: batches } = await db.query<{ count: number }>(

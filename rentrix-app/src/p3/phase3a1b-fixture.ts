@@ -61,6 +61,25 @@ export async function seedPhase3a1bFixture(db: PGlite, options?: { skipGenerated
       ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN'),
       ('${COMPANY_B}', '${CHECKER_B}', 'ADMIN');
 
+    -- Full current replays have versioned tax; old Phase-3 checkpoint replays
+    -- intentionally do not. Keep the shared fixture structurally compatible.
+    do $tax_fixture$
+    begin
+      if to_regclass('public.company_tax_profiles') is not null then
+        insert into public.company_tax_profiles
+          (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+        values
+          ('c31b0000-0000-4000-8000-000000000081', '${COMPANY_A}', 1, 'VAT', 5, date '2020-01-01', 'ACTIVE', '${ADMIN_A}', '${CHECKER_A}', now());
+      end if;
+      if to_regclass('public.company_fee_tax_treatments') is not null then
+        insert into public.company_fee_tax_treatments
+          (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+        values
+          ('c31b0000-0000-4000-8000-000000000083', '${COMPANY_A}', 'RATE_MANAGEMENT_FEE', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${ADMIN_A}', '${CHECKER_A}', now());
+      end if;
+    end
+    $tax_fixture$;
+
     insert into public.owners (id, full_name, name, company_id) values
       ('${OWNER_A}', 'Owner A', 'Owner A', '${COMPANY_A}'),
       ('${OWNER_B}', 'Owner B', 'Owner B', '${COMPANY_B}');
@@ -78,6 +97,29 @@ export async function seedPhase3a1bFixture(db: PGlite, options?: { skipGenerated
       (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, ends_on, company_id) values
       ('${AGREEMENT_A}', '${OWNER_A}', '${PROPERTY_A}', 'property_management', 'RATE', 10, date '2026-01-01', date '2027-12-31', '${COMPANY_A}'),
       ('${AGREEMENT_B}', '${OWNER_B}', '${PROPERTY_B}', 'property_management', 'RATE', 10, date '2026-01-01', date '2027-12-31', '${COMPANY_B}');
+
+    -- Current RC1 replay uses OFFICE_IS_CREDITOR for Company A. The old
+    -- Phase-3 checkpoint intentionally lacks agreement-version tables.
+    do $version_fixture$
+    begin
+      if to_regclass('public.owner_agreement_versions') is not null then
+        update public.owner_agreement_versions
+           set effective_to = date '2025-12-31', superseded_at = now()
+         where owner_agreement_id = '${AGREEMENT_A}'::uuid and superseded_at is null;
+        insert into public.owner_agreement_versions
+          (id, owner_agreement_id, company_id, version_no, operating_model, collection_role,
+           commission_type, commission_value, commission_recognition_basis, offset_allowed,
+           reserve_amount, effective_from, effective_to, created_by)
+        values
+          ('c31b0000-0000-4000-8000-000000000082', '${AGREEMENT_A}', '${COMPANY_A}', 2,
+           'OWNER_AGENCY', 'OFFICE_IS_CREDITOR', 'RATE', 10, 'ON_COLLECTION', false, 0,
+           date '2026-01-01', date '2027-12-31', '${ADMIN_A}');
+        update public.owner_agreements
+           set current_version_id = 'c31b0000-0000-4000-8000-000000000082'::uuid
+         where id = '${AGREEMENT_A}'::uuid;
+      end if;
+    end
+    $version_fixture$;
 
     insert into public.units (id, property_id, name, unit_number, company_id) values
       ('${UNIT_A}', '${PROPERTY_A}', 'Unit A', 'A-1', '${COMPANY_A}'),
@@ -101,6 +143,23 @@ export async function seedPhase3a1bFixture(db: PGlite, options?: { skipGenerated
       ('${INVOICE_A1}', '${CONTRACT_A}', date '2026-06-01', date '2026-06-30', 1000, 0, 0, 0, 'UNPAID', '${COMPANY_A}'),
       ('${INVOICE_A2}', '${CONTRACT_A}', date '2026-06-15', date '2026-07-15', 500, 0, 0, 0, 'UNPAID', '${COMPANY_A}'),
       ('${INVOICE_B1}', '${CONTRACT_B}', date '2026-06-15', date '2026-07-15', 800, 0, 0, 0, 'UNPAID', '${COMPANY_B}');
+
+    do $invoice_fixture$
+    begin
+      if exists (
+        select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'invoices' and column_name = 'document_status'
+      ) then
+        execute $sql$
+          update public.invoices
+             set document_status = 'POSTED',
+                 charge_type = case when id = '${INVOICE_A2}'::uuid then 'LEGACY_FIXTURE_2' else 'LEGACY_FIXTURE' end,
+                 billing_period_start = date '2026-06-01',
+                 billing_period_end = date '2026-06-30'
+        $sql$;
+      end if;
+    end
+    $invoice_fixture$;
 
     -- Company A: VAT enabled @5% (scoped row; singleton_key is NOT NULL UNIQUE so
     -- exactly one non-singleton row is possible — that models company A's row).

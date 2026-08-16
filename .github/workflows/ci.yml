@@ -69,6 +69,15 @@ jobs:
         with:
           name: rentrix-db0-gate-diagnostics
           path: /tmp/rentrix-db0-gate.log
+      - name: Regenerate expected DB0 types for drift diagnostics
+        if: steps.db0.outputs.status != '0'
+        run: pnpm db0:gen-types
+      - name: Upload expected DB0 generated types
+        if: steps.db0.outputs.status != '0'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rentrix-db0-generated-types
+          path: rentrix-app/src/types/database.ts
       - name: Fail on WP-DB0 contract drift
         if: steps.db0.outputs.status != '0'
         run: exit 1

@@ -22,6 +22,7 @@ export const contractRowFixtureDefaults = {
   rejected_at: null,
   rejection_reason: null,
   approval_evidence: null,
+  is_sole_admin_exception: false,
 } satisfies Pick<
   ContractRow,
   | 'company_id'
@@ -41,4 +42,5 @@ export const contractRowFixtureDefaults = {
   | 'rejected_at'
   | 'rejection_reason'
   | 'approval_evidence'
+  | 'is_sole_admin_exception'
 >;

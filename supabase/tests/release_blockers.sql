@@ -162,6 +162,62 @@ insert into public.owner_agreements (
     'property_management', 'FIXED_MONTHLY', 50, date '2026-01-01', date '2027-12-31', '00000000-0000-4000-8000-000000000001'
   );
 
+-- RC1 payment fixtures use explicit versioned owner-agency terms. They do not
+-- depend on legacy agreement inference.
+insert into public.owner_agreement_versions (
+  id, owner_agreement_id, company_id, version_no, operating_model,
+  collection_role, commission_type, commission_value,
+  commission_recognition_basis, effective_from, effective_to, created_by
+) values
+  (
+    '00000000-0000-0000-0000-000000000611',
+    '00000000-0000-0000-0000-000000000601',
+    '00000000-0000-4000-8000-000000000001', 1, 'OWNER_AGENCY',
+    'OWNER_IS_CREDITOR', 'RATE', 5, 'ON_COLLECTION',
+    date '2026-01-01', date '2027-12-31', '00000000-0000-0000-0000-000000000101'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000612',
+    '00000000-0000-0000-0000-000000000602',
+    '00000000-0000-4000-8000-000000000001', 1, 'OWNER_AGENCY',
+    'OWNER_IS_CREDITOR', 'FIXED_MONTHLY', 50, 'DAILY_ACCRUAL',
+    date '2026-01-01', date '2027-12-31', '00000000-0000-0000-0000-000000000101'
+  );
+
+update public.owner_agreements
+set current_version_id = case id
+  when '00000000-0000-0000-0000-000000000601' then '00000000-0000-0000-0000-000000000611'::uuid
+  when '00000000-0000-0000-0000-000000000602' then '00000000-0000-0000-0000-000000000612'::uuid
+end
+where id in (
+  '00000000-0000-0000-0000-000000000601',
+  '00000000-0000-0000-0000-000000000602'
+);
+
+-- Explicit non-taxable rent and RATE-fee policies keep the fixture independent
+-- from any assumed statutory rate while satisfying the fail-closed RC1 model.
+insert into public.company_tax_profiles (
+  id, company_id, version_no, tax_code, tax_rate, effective_from, effective_to,
+  status, description, created_by, approved_by, approved_at
+) values (
+  '00000000-0000-0000-0000-000000000801',
+  '00000000-0000-4000-8000-000000000001', 1, 'NON_TAXABLE', 0,
+  date '2026-01-01', date '2027-12-31', 'ACTIVE', 'Release gate explicit non-taxable rent',
+  '00000000-0000-0000-0000-000000000101',
+  '00000000-0000-0000-0000-000000000102', now()
+);
+
+insert into public.company_fee_tax_treatments (
+  id, company_id, fee_kind, version_no, tax_code, tax_rate,
+  effective_from, effective_to, status, created_by, approved_by, approved_at
+) values (
+  '00000000-0000-0000-0000-000000000811',
+  '00000000-0000-4000-8000-000000000001', 'RATE_MANAGEMENT_FEE', 1,
+  'NON_TAXABLE', 0, date '2026-01-01', date '2027-12-31', 'ACTIVE',
+  '00000000-0000-0000-0000-000000000101',
+  '00000000-0000-0000-0000-000000000102', now()
+);
+
 set local role anon;
 select is(
   (select count(*)::integer from public.contracts),
@@ -252,15 +308,51 @@ select is(
   'the fixed-fee contract is linked and persisted independently'
 );
 
--- Invoice creation is a server-only financial write (Phase 2 hardening):
--- direct invoice INSERT is revoked from authenticated, so seed financial
--- fixtures as the superuser session role and return to authenticated.
+-- Freeze the exact owner-agency version/role on these synthetic DRAFT contracts
+-- before creating posted RC1 invoice fixtures. Production activation owns this
+-- transition; the release test seeds it directly as the privileged fixture role.
 reset role;
-insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
+update public.contracts c
+set agreement_version_id = oa.current_version_id,
+    operating_model_snapshot = 'OWNER_AGENCY',
+    collection_role_snapshot = 'OWNER_IS_CREDITOR'
+from public.owner_agreements oa
+where oa.id = c.agreement_id
+  and c.notes in ('release-blocker-contract', 'release-blocker-fixed-contract');
+
+-- Invoice creation is server-only. Seed the same immutable sequence used by the
+-- generator: DRAFT with RC1 lineage -> tax snapshot -> POSTED.
+insert into public.invoices (
+  id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, tax_rate,
+  status, company_id, document_status, charge_type, billing_period_start,
+  billing_period_end, invoice_agreement_version_id, invoice_operating_model,
+  invoice_collection_role, invoice_accounting_classification, tax_treatment,
+  tax_profile_id, tax_code, tax_basis
+)
 select
-  '00000000-0000-0000-0000-000000000701', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
-from public.contracts
-where notes = 'release-blocker-contract';
+  '00000000-0000-0000-0000-000000000701', c.id::uuid,
+  date '2026-08-01', date '2026-08-05', 100, 0, 0, 0,
+  'UNPAID', c.company_id, 'DRAFT', 'RENT', date '2026-08-01', date '2026-08-31',
+  c.agreement_version_id, c.operating_model_snapshot, c.collection_role_snapshot,
+  'OWNER_AGENCY_OWNER_CREDITOR_OPERATIONAL', 'NON_TAXABLE',
+  '00000000-0000-0000-0000-000000000801', 'NON_TAXABLE', 'NON_TAXABLE'
+from public.contracts c
+where c.notes = 'release-blocker-contract';
+
+insert into public.taxable_line_tax_snapshots (
+  id, company_id, source_type, source_id, journal_batch_id, account_no,
+  tax_code, tax_rate, net_amount, tax_amount, effective_date
+) values (
+  '00000000-0000-0000-0000-000000000901',
+  '00000000-0000-4000-8000-000000000001', 'invoice',
+  '00000000-0000-0000-0000-000000000701', null, '2100',
+  'NON_TAXABLE', 0, 100, 0, date '2026-08-01'
+);
+
+update public.invoices
+set tax_snapshot_id = '00000000-0000-0000-0000-000000000901',
+    document_status = 'POSTED'
+where id = '00000000-0000-0000-0000-000000000701';
 set local role authenticated;
 
 select lives_ok(
@@ -352,11 +444,37 @@ select throws_ok(
 );
 
 reset role;
-insert into public.invoices (id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, status, company_id)
+insert into public.invoices (
+  id, contract_id, issue_date, due_date, amount, paid_amount, tax_amount, tax_rate,
+  status, company_id, document_status, charge_type, billing_period_start,
+  billing_period_end, invoice_agreement_version_id, invoice_operating_model,
+  invoice_collection_role, invoice_accounting_classification, tax_treatment,
+  tax_profile_id, tax_code, tax_basis
+)
 select
-  '00000000-0000-0000-0000-000000000702', id::uuid, date '2026-08-01', date '2026-08-05', 100, 0, 0, 'UNPAID', '00000000-0000-4000-8000-000000000001'
-from public.contracts
-where notes = 'release-blocker-fixed-contract';
+  '00000000-0000-0000-0000-000000000702', c.id::uuid,
+  date '2026-08-01', date '2026-08-05', 100, 0, 0, 0,
+  'UNPAID', c.company_id, 'DRAFT', 'RENT', date '2026-08-01', date '2026-08-31',
+  c.agreement_version_id, c.operating_model_snapshot, c.collection_role_snapshot,
+  'OWNER_AGENCY_OWNER_CREDITOR_OPERATIONAL', 'NON_TAXABLE',
+  '00000000-0000-0000-0000-000000000801', 'NON_TAXABLE', 'NON_TAXABLE'
+from public.contracts c
+where c.notes = 'release-blocker-fixed-contract';
+
+insert into public.taxable_line_tax_snapshots (
+  id, company_id, source_type, source_id, journal_batch_id, account_no,
+  tax_code, tax_rate, net_amount, tax_amount, effective_date
+) values (
+  '00000000-0000-0000-0000-000000000902',
+  '00000000-0000-4000-8000-000000000001', 'invoice',
+  '00000000-0000-0000-0000-000000000702', null, '2100',
+  'NON_TAXABLE', 0, 100, 0, date '2026-08-01'
+);
+
+update public.invoices
+set tax_snapshot_id = '00000000-0000-0000-0000-000000000902',
+    document_status = 'POSTED'
+where id = '00000000-0000-0000-0000-000000000702';
 set local role authenticated;
 
 select lives_ok(

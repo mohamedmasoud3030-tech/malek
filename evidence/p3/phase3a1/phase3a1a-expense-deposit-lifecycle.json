@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2026-08-15T17:07:57.834Z",
+  "generatedAt": "2026-08-16T11:09:09.944Z",
   "expense": {
     "created": {
       "success": true,
-      "expense_id": "692aed11-8122-4dba-a146-8e1ffe4863d9",
-      "expense_no": "EXP-20260815-phase3",
+      "expense_id": "cd4d669c-4a16-4b2a-8a1c-2dca0c2bb72d",
+      "expense_no": "EXP-20260816-phase3",
       "idempotent": false,
       "request_id": "phase3a-expense-shared"
     },
     "retried": {
       "success": true,
-      "expense_id": "692aed11-8122-4dba-a146-8e1ffe4863d9",
-      "expense_no": "EXP-20260815-phase3",
+      "expense_id": "cd4d669c-4a16-4b2a-8a1c-2dca0c2bb72d",
+      "expense_no": "EXP-20260816-phase3",
       "idempotent": true,
       "request_id": "phase3a-expense-shared"
     },
     "updated": {
       "success": true,
-      "expense_id": "692aed11-8122-4dba-a146-8e1ffe4863d9",
+      "expense_id": "cd4d669c-4a16-4b2a-8a1c-2dca0c2bb72d",
       "idempotent": false,
       "new_amount": 15.125,
-      "old_amount": 12.35,
+      "old_amount": 12.345,
       "request_id": "phase3a-expense-update",
       "date_changed": true,
       "amount_changed": true
     },
     "balance": {
-      "debit": 39.82,
-      "credit": 39.82,
+      "debit": 39.815,
+      "credit": 39.815,
       "companyOk": true
     }
   },
@@ -35,39 +35,39 @@
     "created": {
       "amount": 100,
       "success": true,
-      "deposit_id": "e3094069-44ce-41ea-b9db-d4b324db03df",
+      "deposit_id": "2688379c-b496-423e-98a9-dcd686192222",
       "idempotent": false,
       "request_id": "phase3a-deposit-create",
-      "journal_batch_id": "b1b92e75-d294-4dee-a90e-0b8d2250a6f2"
+      "journal_batch_id": "77a5a4bc-3719-4e00-bd93-a4fe520df279"
     },
     "retried": {
       "amount": 100,
       "success": true,
-      "deposit_id": "e3094069-44ce-41ea-b9db-d4b324db03df",
+      "deposit_id": "2688379c-b496-423e-98a9-dcd686192222",
       "idempotent": true,
       "request_id": "phase3a-deposit-create",
-      "journal_batch_id": "b1b92e75-d294-4dee-a90e-0b8d2250a6f2"
+      "journal_batch_id": "77a5a4bc-3719-4e00-bd93-a4fe520df279"
     },
     "claim": {
       "status": "PENDING",
       "success": true,
-      "claim_id": "b31a1b44-ed2f-4fa8-a740-68c6f6563ec2",
+      "claim_id": "75b88dd0-cc20-41d0-82db-e595e2e4d2a9",
       "idempotent": false,
       "target_type": "damage"
     },
     "approved": {
       "status": "APPROVED",
       "success": true,
-      "claim_id": "b31a1b44-ed2f-4fa8-a740-68c6f6563ec2",
+      "claim_id": "75b88dd0-cc20-41d0-82db-e595e2e4d2a9",
       "idempotent": false
     },
     "applied": {
       "amount": 25,
       "status": "APPLIED",
       "success": true,
-      "batch_id": "18e76e9f-8668-4d9f-99b8-bbfbf94cd86a",
-      "claim_id": "b31a1b44-ed2f-4fa8-a740-68c6f6563ec2",
-      "deposit_id": "e3094069-44ce-41ea-b9db-d4b324db03df",
+      "batch_id": "7cd22d8b-8e06-45ee-9d8d-b2a40fca5166",
+      "claim_id": "75b88dd0-cc20-41d0-82db-e595e2e4d2a9",
+      "deposit_id": "2688379c-b496-423e-98a9-dcd686192222",
       "idempotent": false,
       "invoice_id": null,
       "target_account_no": "4300"
@@ -76,11 +76,11 @@
       "amount": 30,
       "status": "POSTED",
       "success": true,
-      "batch_id": "fb79d2bd-6743-4e47-bb4b-d1be95d2dd50",
+      "batch_id": "e84b023c-fda7-4b05-ab49-e42f225f8f99",
       "refunded": 30,
       "remaining": 45,
       "idempotent": false,
-      "refund_event_id": "6ff08b34-8bbc-4d09-8071-3264ff7e3907"
+      "refund_event_id": "d4058b01-33bf-4348-b033-1988be3eac1a"
     },
     "balance": {
       "debit": 100,

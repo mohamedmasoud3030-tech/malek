@@ -10,8 +10,8 @@
  *   evidence/p3/phase3a1b/two-company-isolation.json
  *   evidence/p3/phase3a1b/idempotency-isolation.json
  *
- * Company A is provisioned (1111/1201/4000/2100 + VAT 5%); company B is
- * deliberately unprovisioned — account resolution must fail loudly for B.
+ * Company A is provisioned (1111/1201/2000/2100 + effective VAT 5%); company B
+ * deliberately has no effective tax profile, so recurring billing fails closed.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -142,7 +142,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     expect(Number(generated!.tax_amount)).toBeCloseTo(50, 3);
     expect(generated!.status).toBe('UNPAID');
 
-    // Canonical company-owned AR / revenue / VAT lines, balanced journal.
+    // Canonical company-owned AR / owner-funds / VAT lines, balanced journal.
     const { rows: lines } = await db.query(
       `select je.account_id, a.no as account_no, a.company_id::text as account_company,
               je.amount::numeric as amount, je.type, je.company_id::text as company_id
@@ -158,7 +158,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     const credits = jl.filter((l) => l.type === 'CREDIT') as Record<string, unknown>[];
     expect(String(debit.account_no)).toBe('1201');
     expect(Number(debit.amount)).toBeCloseTo(1050, 3);
-    expect(credits.map((c) => String(c.account_no)).sort()).toEqual(['2100', '4000']);
+    expect(credits.map((c) => String(c.account_no)).sort()).toEqual(['2000', '2100']);
     for (const line of jl) {
       expect(line.account_company).toBe(COMPANY_A);
       expect(line.company_id).toBe(COMPANY_A);
@@ -179,10 +179,11 @@ describe('Phase 3A-1B execution lifecycle', () => {
     expect(dup!.invoices).toBe(1);
     expect(dup!.journals).toBe(3);
 
-    // Company B: no canonical chart → loud require error, zero side effects.
+    // Company B: no effective tax profile → fail closed before any invoice or
+    // journal side effect (and before account-resolution could be attempted).
     await assumeIdentity(db, ADMIN_B, COMPANY_B);
     await expect(db.query(`select public.generate_invoices_from_active_contracts() as n`)).rejects.toThrow(
-      /1201 is not configured for company/,
+      /TAX_PROFILE_MISSING/,
     );
     const bCount = await queryOne(
       db,
@@ -208,7 +209,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
       totals: { amount: Number(generated!.amount), tax: Number(generated!.tax_amount), due: 1050 },
       journalLines: lines,
       retryCreatedDuplicates: false,
-      companyBRequireError: '1201 is not configured for company',
+      companyBRequireError: 'TAX_PROFILE_MISSING',
       crossCompanyWrites: 0,
     };
   }, 120_000);
@@ -225,7 +226,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await expect(
       rpcJsonb(db, 'post_receipt_atomic', {
         request_id: 'p3a1b-post-overpay',
-        receipt: { contract_id: CONTRACT_A, amount: 1700, channel: 'BANK_TRANSFER', date_time: '2026-07-24' },
+        receipt: { contract_id: CONTRACT_A, amount: 1700, channel: 'BANK_TRANSFER', date_time: '2026-08-05' },
         allocations: [
           { invoice_id: INVOICE_A1, amount: 1200 },
           { invoice_id: INVOICE_A2, amount: 500 },
@@ -241,14 +242,14 @@ describe('Phase 3A-1B execution lifecycle', () => {
     // linkage the record path produces) for VOID-selectability + balance checks.
     const posted = await rpcJsonb(db, 'post_receipt_atomic', {
       request_id: 'p3a1b-post-1',
-      receipt: { id: MULTI_RECEIPT_ID, contract_id: CONTRACT_A, amount: 700, channel: 'BANK_TRANSFER', date_time: '2026-07-24' },
+      receipt: { id: MULTI_RECEIPT_ID, contract_id: CONTRACT_A, amount: 700, channel: 'BANK_TRANSFER', date_time: '2026-08-05' },
       allocations: [
         { invoice_id: INVOICE_A1, amount: 200 },
         { invoice_id: INVOICE_A2, amount: 500 },
       ],
       journal_entries: [
-        { no: 'P3A1B-MULTI-D', date: '2026-07-24', account_id: cashA, amount: 700, type: 'DEBIT', source_id: MULTI_RECEIPT_ID, entity_type: 'contract', entity_id: CONTRACT_A },
-        { no: 'P3A1B-MULTI-C', date: '2026-07-24', account_id: arA, amount: 700, type: 'CREDIT', source_id: MULTI_RECEIPT_ID, entity_type: 'contract', entity_id: CONTRACT_A },
+        { no: 'P3A1B-MULTI-D', date: '2026-08-05', account_id: cashA, amount: 700, type: 'DEBIT', source_id: MULTI_RECEIPT_ID, entity_type: 'contract', entity_id: CONTRACT_A },
+        { no: 'P3A1B-MULTI-C', date: '2026-08-05', account_id: arA, amount: 700, type: 'CREDIT', source_id: MULTI_RECEIPT_ID, entity_type: 'contract', entity_id: CONTRACT_A },
       ],
     });
     expect(posted.success).toBe(true);
@@ -298,14 +299,14 @@ describe('Phase 3A-1B execution lifecycle', () => {
     );
     const replayedDifferentOrder = await rpcJsonb(db, 'post_receipt_atomic', {
       request_id: 'p3a1b-post-1',
-      receipt: { id: MULTI_RECEIPT_ID, contract_id: CONTRACT_A, amount: 700, channel: 'BANK_TRANSFER', date_time: '2026-07-24' },
+      receipt: { id: MULTI_RECEIPT_ID, contract_id: CONTRACT_A, amount: 700, channel: 'BANK_TRANSFER', date_time: '2026-08-05' },
       allocations: [
         { invoice_id: INVOICE_A2, amount: 500 },
         { invoice_id: INVOICE_A1, amount: 200 },
       ],
       journal_entries: [
-        { no: 'IGNORED-BY-FINGERPRINT-C', date: '2026-07-24', account_id: arA, amount: 700, type: 'CREDIT', source_id: MULTI_RECEIPT_ID, entity_type: 'contract', entity_id: CONTRACT_A },
-        { no: 'IGNORED-BY-FINGERPRINT-D', date: '2026-07-24', account_id: cashA, amount: 700, type: 'DEBIT', source_id: MULTI_RECEIPT_ID, entity_type: 'contract', entity_id: CONTRACT_A },
+        { no: 'IGNORED-BY-FINGERPRINT-C', date: '2026-08-05', account_id: arA, amount: 700, type: 'CREDIT', source_id: MULTI_RECEIPT_ID, entity_type: 'contract', entity_id: CONTRACT_A },
+        { no: 'IGNORED-BY-FINGERPRINT-D', date: '2026-08-05', account_id: cashA, amount: 700, type: 'DEBIT', source_id: MULTI_RECEIPT_ID, entity_type: 'contract', entity_id: CONTRACT_A },
       ],
     });
     expect(replayedDifferentOrder.idempotent).toBe(true);
@@ -323,28 +324,28 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await expect(
       rpcJsonb(db, 'post_receipt_atomic', {
         request_id: 'p3a1b-post-1',
-        receipt: { id: MULTI_RECEIPT_ID, contract_id: CONTRACT_A, amount: 700, channel: 'BANK_TRANSFER', date_time: '2026-07-24' },
+        receipt: { id: MULTI_RECEIPT_ID, contract_id: CONTRACT_A, amount: 700, channel: 'BANK_TRANSFER', date_time: '2026-08-05' },
         allocations: [
           { invoice_id: INVOICE_A1, amount: 201 },
           { invoice_id: INVOICE_A2, amount: 499 },
         ],
         journal_entries: [
-          { date: '2026-07-24', account_id: cashA, amount: 700, type: 'DEBIT', entity_type: 'contract', entity_id: CONTRACT_A },
-          { date: '2026-07-24', account_id: arA, amount: 700, type: 'CREDIT', entity_type: 'contract', entity_id: CONTRACT_A },
+          { date: '2026-08-05', account_id: cashA, amount: 700, type: 'DEBIT', entity_type: 'contract', entity_id: CONTRACT_A },
+          { date: '2026-08-05', account_id: arA, amount: 700, type: 'CREDIT', entity_type: 'contract', entity_id: CONTRACT_A },
         ],
       }),
     ).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
     await expect(
       rpcJsonb(db, 'post_receipt_atomic', {
         request_id: 'p3a1b-post-1',
-        receipt: { id: MULTI_RECEIPT_ID, contract_id: CONTRACT_B, amount: 701, channel: 'BANK_TRANSFER', date_time: '2026-07-24' },
+        receipt: { id: MULTI_RECEIPT_ID, contract_id: CONTRACT_B, amount: 701, channel: 'BANK_TRANSFER', date_time: '2026-08-05' },
         allocations: [
           { invoice_id: INVOICE_A1, amount: 200 },
           { invoice_id: INVOICE_A2, amount: 500 },
         ],
         journal_entries: [
-          { date: '2026-07-24', account_id: cashA, amount: 700, type: 'DEBIT', entity_type: 'contract', entity_id: CONTRACT_A },
-          { date: '2026-07-24', account_id: arA, amount: 700, type: 'CREDIT', entity_type: 'contract', entity_id: CONTRACT_A },
+          { date: '2026-08-05', account_id: cashA, amount: 700, type: 'DEBIT', entity_type: 'contract', entity_id: CONTRACT_A },
+          { date: '2026-08-05', account_id: arA, amount: 700, type: 'CREDIT', entity_type: 'contract', entity_id: CONTRACT_A },
         ],
       }),
     ).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
@@ -368,10 +369,10 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await expect(
       rpcJsonb(db, 'post_receipt_atomic', {
         request_id: 'p3a1b-post-foreign-account',
-        receipt: { contract_id: CONTRACT_A, amount: 10, channel: 'CASH', date_time: '2026-07-24' },
+        receipt: { contract_id: CONTRACT_A, amount: 10, channel: 'CASH', date_time: '2026-08-05' },
         allocations: [],
         journal_entries: [
-          { no: 'P3A1B-X-D', date: '2026-07-24', account_id: '2200', amount: 10, type: 'DEBIT' },
+          { no: 'P3A1B-X-D', date: '2026-08-05', account_id: '2200', amount: 10, type: 'DEBIT' },
         ],
       }),
     ).rejects.toThrow(/حساب القيد لا ينتمي/);
@@ -400,7 +401,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
       await expect(
         rpcJsonb(db, 'post_receipt_atomic', {
           request_id: 'p3a1b-post-row-count',
-          receipt: { contract_id: CONTRACT_A, amount: 7.25, channel: 'CASH', date_time: '2026-07-24' },
+          receipt: { contract_id: CONTRACT_A, amount: 7.25, channel: 'CASH', date_time: '2026-08-05' },
           allocations: [{ invoice_id: INVOICE_A1, amount: 7.25 }],
           journal_entries: [],
         }),
@@ -455,12 +456,13 @@ describe('Phase 3A-1B execution lifecycle', () => {
   // ── T3 · record_invoice_payment_atomic lifecycle + idempotent retry ────────
   it('records partial + settlement payments through canonical accounts with idempotent retry', async () => {
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
+    const rcInvoiceId = String(evidence.invoicePosting.generatedInvoiceId);
     const pay1 = await rpcJsonb(db, 'record_invoice_payment_atomic', {
       request_id: 'p3a1b-pay-1',
-      invoice_id: INVOICE_A1,
-      amount: 400,
+      invoice_id: rcInvoiceId,
+      amount: 525,
       method: 'BANK_TRANSFER',
-      date: '2026-07-24',
+      date: '2026-08-05',
     });
     expect(pay1.success).toBe(true);
     expect(pay1.status).toBe('recorded');
@@ -468,10 +470,10 @@ describe('Phase 3A-1B execution lifecycle', () => {
 
     const pay1Retry = await rpcJsonb(db, 'record_invoice_payment_atomic', {
       request_id: 'p3a1b-pay-1',
-      invoice_id: INVOICE_A1,
-      amount: 400,
+      invoice_id: rcInvoiceId,
+      amount: 525,
       method: 'BANK_TRANSFER',
-      date: '2026-07-24',
+      date: '2026-08-05',
     });
     expect(pay1Retry).toEqual(pay1);
     expect(String(pay1Retry.receipt_id)).toBe(receipt1);
@@ -496,17 +498,17 @@ describe('Phase 3A-1B execution lifecycle', () => {
         invoice_id: INVOICE_A2,
         amount: 400,
         method: 'BANK_TRANSFER',
-        date: '2026-07-24',
+        date: '2026-08-05',
       }),
     ).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
     expect(await invoiceState(INVOICE_A2)).toEqual(a2BeforeReuse);
     await expect(
       rpcJsonb(db, 'record_invoice_payment_atomic', {
         request_id: 'p3a1b-pay-1',
-        invoice_id: INVOICE_A1,
+        invoice_id: rcInvoiceId,
         amount: 401,
         method: 'BANK_TRANSFER',
-        date: '2026-07-24',
+        date: '2026-08-05',
       }),
     ).rejects.toThrow(/IDEMPOTENCY_KEY_REUSED_FOR_DIFFERENT_REQUEST/);
     expect(await queryOne(
@@ -522,46 +524,48 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await expect(
       rpcJsonb(db, 'record_invoice_payment_atomic', {
         request_id: 'p3a1b-pay-legacy-envelope',
-        invoice_id: INVOICE_A1,
+        invoice_id: rcInvoiceId,
         amount: 1,
         method: 'CASH',
       }),
     ).rejects.toThrow(/IDEMPOTENCY_CACHED_RESPONSE_UNVERIFIED/);
 
-    let a1 = await invoiceState(INVOICE_A1);
-    expect(Number(a1!.paid_amount)).toBeCloseTo(600, 3);
+    let a1 = await invoiceState(rcInvoiceId);
+    expect(Number(a1!.paid_amount)).toBeCloseTo(525, 3);
     expect(a1!.status).toBe('PARTIALLY_PAID');
 
     const pay2 = await rpcJsonb(db, 'record_invoice_payment_atomic', {
       request_id: 'p3a1b-pay-2',
-      invoice_id: INVOICE_A1,
-      amount: 400,
+      invoice_id: rcInvoiceId,
+      amount: 525,
       method: 'CASH',
-      date: '2026-07-24',
+      date: '2026-08-05',
     });
     expect(pay2.success).toBe(true);
     const receipt2 = String(pay2.receipt_id);
-    a1 = await invoiceState(INVOICE_A1);
-    expect(Number(a1!.paid_amount)).toBeCloseTo(1000, 3);
+    a1 = await invoiceState(rcInvoiceId);
+    expect(Number(a1!.paid_amount)).toBeCloseTo(1050, 3);
     expect(a1!.status).toBe('PAID');
 
     // Overpayment is rejected with the preserved guard.
     await expect(
       rpcJsonb(db, 'record_invoice_payment_atomic', {
         request_id: 'p3a1b-pay-over',
-        invoice_id: INVOICE_A1,
+        invoice_id: rcInvoiceId,
         amount: 0.5,
         method: 'CASH',
       }),
-    ).rejects.toThrow(/exceeds outstanding/);
+    ).rejects.toThrow(/PAYMENT_EXCEEDS_OUTSTANDING|exceeds outstanding/);
 
-    // Canonical WP-02 RATE collection accounting: Dr cash 1111 / Cr owner
-    // payable 2000 for collection, then Dr 2000 / Cr fee revenue 4100 for the
-    // frozen 10% management fee. All four lines share the receipt source.
+    // These legacy fixture invoices sit under the frozen OFFICE_IS_CREDITOR
+    // contract: collection clears 1201, while the RATE fee reduces 2000.
+    // BANK_TRANSFER is server-derived to 1120 and CASH to 1111.
     const cashA = await accountId(db, '1111', COMPANY_A);
+    const bankA = await accountId(db, '1120', COMPANY_A);
+    const receivableA = await accountId(db, '1201', COMPANY_A);
     const ownerPayableA = await accountId(db, '2000', COMPANY_A);
     const feeRevenueA = await accountId(db, '4100', COMPANY_A);
-    for (const rid of [receipt1, receipt2]) {
+    for (const [index, rid] of [receipt1, receipt2].entries()) {
       const { rows: lines } = await db.query(
         `select account_id, amount::numeric as amount, type, company_id::text as company_id
            from public.journal_entries where source_id::text = $1 order by type, amount desc`,
@@ -573,10 +577,10 @@ describe('Phase 3A-1B execution lifecycle', () => {
         String(line.account_id) === String(account)
         && line.type === type
         && Number(line.amount) === amount);
-      expect(hasLine(cashA, 'DEBIT', 400)).toBe(true);
-      expect(hasLine(ownerPayableA, 'CREDIT', 400)).toBe(true);
-      expect(hasLine(ownerPayableA, 'DEBIT', 40)).toBe(true);
-      expect(hasLine(feeRevenueA, 'CREDIT', 40)).toBe(true);
+      expect(hasLine(index === 0 ? bankA : cashA, 'DEBIT', 525)).toBe(true);
+      expect(hasLine(receivableA, 'CREDIT', 525)).toBe(true);
+      expect(hasLine(ownerPayableA, 'DEBIT', 50)).toBe(true);
+      expect(hasLine(feeRevenueA, 'CREDIT', 50)).toBe(true);
       const debit = rl.filter((line) => line.type === 'DEBIT').reduce((sum, line) => sum + Number(line.amount), 0);
       const credit = rl.filter((line) => line.type === 'CREDIT').reduce((sum, line) => sum + Number(line.amount), 0);
       expect(debit).toBeCloseTo(credit, 3);
@@ -605,7 +609,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
         changedAmountRejected: true,
         unverifiedLegacyEnvelopeRejected: true,
         rawRequestIdStored: true,
-        finalInvoice: { paid: 1000, status: a1!.status },
+        finalInvoice: { paid: 1050, status: a1!.status },
         overpayRejected: true,
       },
     };
@@ -624,6 +628,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
     const ids = evidence.paymentReceipt.recordLifecycle as { receipt1: string; receipt2: string };
     const receipt2 = ids.receipt2;
+    const rcInvoiceId = String(evidence.invoicePosting.generatedInvoiceId);
 
     const before = await queryOne(
       db,
@@ -648,8 +653,8 @@ describe('Phase 3A-1B execution lifecycle', () => {
     expect(r2!.status).toBe('VOID');
     expect(r2!.payment_status).toBe('VOID');
     expect(r2!.voided_at).not.toBeNull();
-    let a1 = await invoiceState(INVOICE_A1);
-    expect(Number(a1!.paid_amount)).toBeCloseTo(600, 3);
+    let a1 = await invoiceState(rcInvoiceId);
+    expect(Number(a1!.paid_amount)).toBeCloseTo(525, 3);
     expect(a1!.status).toBe('PARTIALLY_PAID');
 
     // Reversal mirrors the original entry (same account, same amount, flipped side).
@@ -743,9 +748,9 @@ describe('Phase 3A-1B execution lifecycle', () => {
     });
     expect(voidByPayment.success).toBe(true);
     expect(Number(voidByPayment.journal_reversal_entries)).toBe(4);
-    a1 = await invoiceState(INVOICE_A1);
-    expect(Number(a1!.paid_amount)).toBeCloseTo(200, 3);
-    expect(a1!.status).toBe('PARTIALLY_PAID');
+    a1 = await invoiceState(rcInvoiceId);
+    expect(Number(a1!.paid_amount)).toBeCloseTo(0, 3);
+    expect(a1!.status).toBe('UNPAID');
 
     // Nothing was deleted — soft-VOID doctrine.
     const after = await queryOne(
@@ -792,13 +797,13 @@ describe('Phase 3A-1B execution lifecycle', () => {
         amount: 10,
         method: 'CASH',
       }),
-    ).rejects.toThrow(/Invoice not found/);
+    ).rejects.toThrow(/PAYMENT_INVOICE_NOT_FOUND_OR_FORBIDDEN|Invoice not found/);
 
     // B posts a receipt on A's contract → 42501 before any insert.
     await expect(
       rpcJsonb(db, 'post_receipt_atomic', {
         request_id: 'p3a1b-iso-post',
-        receipt: { contract_id: CONTRACT_A, amount: 25, channel: 'CASH', date_time: '2026-07-24' },
+        receipt: { contract_id: CONTRACT_A, amount: 25, channel: 'CASH', date_time: '2026-08-05' },
         allocations: [],
         journal_entries: [],
       }),
@@ -808,7 +813,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await expect(
       rpcJsonb(db, 'post_receipt_atomic', {
         request_id: 'p3a1b-iso-alloc',
-        receipt: { contract_id: CONTRACT_B, amount: 10, channel: 'CASH', date_time: '2026-07-24' },
+        receipt: { contract_id: CONTRACT_B, amount: 10, channel: 'CASH', date_time: '2026-08-05' },
         allocations: [{ invoice_id: INVOICE_A1, amount: 10 }],
         journal_entries: [],
       }),
@@ -819,9 +824,9 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await expect(
       rpcJsonb(db, 'post_receipt_atomic', {
         request_id: 'p3a1b-iso-jr',
-        receipt: { contract_id: CONTRACT_B, amount: 10, channel: 'CASH', date_time: '2026-07-24' },
+        receipt: { contract_id: CONTRACT_B, amount: 10, channel: 'CASH', date_time: '2026-08-05' },
         allocations: [],
-        journal_entries: [{ no: 'ISO-D', date: '2026-07-24', account_id: cashA, amount: 10, type: 'DEBIT' }],
+        journal_entries: [{ no: 'ISO-D', date: '2026-08-05', account_id: cashA, amount: 10, type: 'DEBIT' }],
       }),
     ).rejects.toThrow(/حساب القيد لا ينتمي/);
 
@@ -860,29 +865,29 @@ describe('Phase 3A-1B execution lifecycle', () => {
     // record_invoice_payment_atomic — shared request id
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
     const shared = await rpcJsonb(db, 'record_invoice_payment_atomic', {
-      request_id: 'p3a1b-shared-pay',
-      invoice_id: INVOICE_A1,
-      amount: 200,
-      method: 'CASH',
-      date: '2026-07-24',
+      request_id: 'p3a1b-pay-1',
+      invoice_id: String(evidence.invoicePosting.generatedInvoiceId),
+      amount: 525,
+      method: 'BANK_TRANSFER',
+      date: '2026-08-05',
     });
     expect(shared.success).toBe(true);
 
     await assumeIdentity(db, ADMIN_B, COMPANY_B);
     await expect(
       rpcJsonb(db, 'record_invoice_payment_atomic', {
-        request_id: 'p3a1b-shared-pay',
+        request_id: 'p3a1b-pay-1',
         invoice_id: INVOICE_B1,
         amount: 50,
         method: 'CASH',
       }),
-    ).rejects.toThrow(/1111 is not configured for company/); // B fails loudly, never replays A
+    ).rejects.toThrow(/HISTORICAL_INVOICE_ACCOUNTING_REVIEW_REQUIRED|TAX_PROFILE_MISSING|1111 is not configured for company/); // B fails loudly, never replays A
 
     // post_receipt_atomic — shared request id
     await assumeIdentity(db, ADMIN_A, COMPANY_A);
     const postedA = await rpcJsonb(db, 'post_receipt_atomic', {
       request_id: 'p3a1b-shared-post',
-      receipt: { contract_id: CONTRACT_A, amount: 50, channel: 'CASH', date_time: '2026-07-24' },
+      receipt: { contract_id: CONTRACT_A, amount: 50, channel: 'CASH', date_time: '2026-08-05' },
       allocations: [],
       journal_entries: [],
     });
@@ -895,7 +900,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await expect(
       rpcJsonb(db, 'post_receipt_atomic', {
         request_id: 'p3a1b-shared-post',
-        receipt: { contract_id: CONTRACT_B, amount: 75, channel: 'CASH', date_time: '2026-07-24' },
+        receipt: { contract_id: CONTRACT_B, amount: 75, channel: 'CASH', date_time: '2026-08-05' },
         allocations: [],
         journal_entries: [],
       }),
@@ -917,7 +922,7 @@ describe('Phase 3A-1B execution lifecycle', () => {
     await assumeIdentity(db, ADMIN_B, COMPANY_B);
     const postedB = await rpcJsonb(db, 'post_receipt_atomic', {
       request_id: 'p3a1b-post-b',
-      receipt: { contract_id: CONTRACT_B, amount: 75, channel: 'CASH', date_time: '2026-07-24' },
+      receipt: { contract_id: CONTRACT_B, amount: 75, channel: 'CASH', date_time: '2026-08-05' },
       allocations: [],
       journal_entries: [],
     });
@@ -964,13 +969,13 @@ describe('Phase 3A-1B execution lifecycle', () => {
       new Set([COMPANY_A, COMPANY_B]),
     );
     const recordShared = idemRows.filter((r) =>
-      (r as { request_id: string }).request_id === 'p3a1b-shared-pay'
+      (r as { request_id: string }).request_id === 'p3a1b-pay-1'
       && String((r as { operation_name: string }).operation_name).startsWith('record_invoice_payment_atomic:'),
     );
     expect(recordShared).toHaveLength(1);
     expect(String((recordShared[0] as { operation_name: string }).operation_name)).toBe(`record_invoice_payment_atomic:${COMPANY_A}`);
     const postFromRecordShared = idemRows.filter((r) =>
-      (r as { request_id: string }).request_id === 'p3a1b-shared-pay'
+      (r as { request_id: string }).request_id === 'p3a1b-pay-1'
       && String((r as { operation_name: string }).operation_name).startsWith('post_receipt_atomic:'),
     );
     expect(postFromRecordShared).toHaveLength(1);

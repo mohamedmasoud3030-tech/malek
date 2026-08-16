@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15T17:07:34.149Z",
+  "generatedAt": "2026-08-16T11:08:40.018Z",
   "scope": "phase3a1b",
   "preRemediation": {
     "note": "replayed full chain EXCLUDING the Phase 3A-1B migration — the active definitions as found on origin/main",
@@ -80,7 +80,7 @@
       },
       {
         "signature": "public.generate_invoices_from_active_contracts()",
-        "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+        "lastDefiningMigration": "20260820030000_rc1_owner_agency_invoice_accounting_model.sql",
         "securityDefiner": true,
         "searchPathConfig": "{\"search_path=public, pg_temp\"}",
         "owner": "postgres",
@@ -93,7 +93,7 @@
         },
         "bodyMd5": "74d29d191b6fd13a8f2c3207c9c65a7a",
         "appCallSites": [
-          "/home/user/malik/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+          "/home/user/repo/rentrix-app/src/features/financials/invoices/invoiceService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -150,7 +150,7 @@
       },
       {
         "signature": "public.record_invoice_payment_atomic(payload jsonb)",
-        "lastDefiningMigration": "20260813170000_wp02_rate_fee_collection_wiring.sql",
+        "lastDefiningMigration": "20260820060000_rc1_cutover_fee_tax_and_legacy_fail_closed.sql",
         "securityDefiner": true,
         "searchPathConfig": "{\"search_path=public, pg_temp\"}",
         "owner": "postgres",
@@ -163,7 +163,7 @@
         },
         "bodyMd5": "74f8d6c4cc40a303a8e91d03f471ad96",
         "appCallSites": [
-          "/home/user/malik/rentrix-app/src/features/financials/payments/paymentService.ts"
+          "/home/user/repo/rentrix-app/src/features/financials/payments/paymentService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -332,10 +332,8 @@
       },
       "bodyMd5": "d3a6e8aa73ef4b0db2f0698cdeed5f06",
       "appCallSites": [],
-      "internalCallers": [
-        "record_invoice_payment_atomic"
-      ],
-      "classification": "active (internal)",
+      "internalCallers": [],
+      "classification": "internal-only (no direct callers)",
       "legacyNoLookupLimit1": false,
       "hardcodedAccountIds": false,
       "onConflictIdDoNothing": false,
@@ -355,7 +353,7 @@
     },
     {
       "signature": "public.generate_invoices_from_active_contracts()",
-      "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+      "lastDefiningMigration": "20260820030000_rc1_owner_agency_invoice_accounting_model.sql",
       "securityDefiner": true,
       "searchPathConfig": "{\"search_path=public, pg_temp\"}",
       "owner": "postgres",
@@ -366,9 +364,9 @@
         "authenticated": true,
         "serviceRole": true
       },
-      "bodyMd5": "e6ca8897425c194140ddfb2079c5af01",
+      "bodyMd5": "592e3781b23fe960db175b7796935bfa",
       "appCallSites": [
-        "/home/user/malik/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+        "/home/user/repo/rentrix-app/src/features/financials/invoices/invoiceService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",
@@ -377,18 +375,17 @@
       "onConflictIdDoNothing": false,
       "accountNumbersReferenced": [
         "1201",
-        "2100",
-        "4000"
+        "2100"
       ],
       "usesFindPaymentAccountId": false,
       "usesRequireHelper": true,
       "usesEnsureHelper": false,
-      "writesJournal": true,
+      "writesJournal": false,
       "usesIdempotencyTable": false,
       "usesReceiptsRequestId": false,
       "advisoryLock": true,
       "rowLocks": false,
-      "companyFromJwt": true
+      "companyFromJwt": false
     },
     {
       "signature": "public.post_receipt_atomic(payload jsonb)",
@@ -396,11 +393,11 @@
       "securityDefiner": true,
       "searchPathConfig": "{\"search_path=public, pg_temp\"}",
       "owner": "postgres",
-      "aclRaw": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}",
+      "aclRaw": "{postgres=X/postgres,service_role=X/postgres}",
       "effectiveExecute": {
         "public": false,
         "anon": false,
-        "authenticated": true,
+        "authenticated": false,
         "serviceRole": true
       },
       "bodyMd5": "90a4061a018d4af206cd145edec37258",
@@ -425,7 +422,7 @@
     },
     {
       "signature": "public.record_invoice_payment_atomic(payload jsonb)",
-      "lastDefiningMigration": "20260813170000_wp02_rate_fee_collection_wiring.sql",
+      "lastDefiningMigration": "20260820060000_rc1_cutover_fee_tax_and_legacy_fail_closed.sql",
       "securityDefiner": true,
       "searchPathConfig": "{\"search_path=public, pg_temp\"}",
       "owner": "postgres",
@@ -436,17 +433,21 @@
         "authenticated": true,
         "serviceRole": true
       },
-      "bodyMd5": "c37e4714431ee2549679b617dace5f6e",
+      "bodyMd5": "af730c6aeb89b4b7154b5aac3a0bd150",
       "appCallSites": [
-        "/home/user/malik/rentrix-app/src/features/financials/payments/paymentService.ts"
+        "/home/user/repo/rentrix-app/src/features/financials/payments/paymentService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",
       "legacyNoLookupLimit1": false,
       "hardcodedAccountIds": false,
       "onConflictIdDoNothing": false,
-      "accountNumbersReferenced": [],
-      "usesFindPaymentAccountId": true,
+      "accountNumbersReferenced": [
+        "1111",
+        "1201",
+        "2100"
+      ],
+      "usesFindPaymentAccountId": false,
       "usesRequireHelper": true,
       "usesEnsureHelper": false,
       "writesJournal": false,
@@ -454,7 +455,7 @@
       "usesReceiptsRequestId": false,
       "advisoryLock": true,
       "rowLocks": true,
-      "companyFromJwt": true
+      "companyFromJwt": false
     },
     {
       "signature": "public.require_company_account_id(p_company_id uuid, p_account_no text)",
@@ -621,6 +622,34 @@
     },
     {
       "table_name": "public.invoices",
+      "trigger_name": "trg_invoice_document_integrity",
+      "function_name": "invoice_document_integrity",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.invoices",
+      "trigger_name": "trg_invoice_lineage_guard",
+      "function_name": "invoice_lineage_guard",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.invoices",
+      "trigger_name": "trg_invoice_payment_status_with_credits",
+      "function_name": "project_invoice_payment_status_with_credits",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.invoices",
+      "trigger_name": "trg_invoice_rc1_accounting_lineage",
+      "function_name": "guard_invoice_rc1_accounting_lineage",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.invoices",
       "trigger_name": "trg_invoices_reference",
       "function_name": "assign_document_reference",
       "tgenabled": "O",
@@ -693,6 +722,13 @@
       "table_name": "public.receipt_allocations",
       "trigger_name": "set_receipt_allocations_updated_at",
       "function_name": "touch_updated_at",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.receipt_allocations",
+      "trigger_name": "trg_receipt_allocation_invoice_credit_ceiling",
+      "function_name": "guard_receipt_allocation_invoice_credit_ceiling",
       "tgenabled": "O",
       "search_path_config": "{\"search_path=public, pg_temp\"}"
     },

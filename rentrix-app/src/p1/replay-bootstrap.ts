@@ -25,6 +25,22 @@ export type ReplayResult = {
   failed: { file: string; error: string }[];
 };
 
+const RC1_ACCOUNTING_MARKERS = [
+  'rc1_owner_agency_invoice_accounting_model',
+  'rc1_invoice_credit_original_economics',
+  'rc1_payment_tax_and_write_boundary',
+  'rc1_cutover_fee_tax_and_legacy_fail_closed',
+  'rc1_accounting_closeout_hardening',
+  'rc1_inline_owner_funds_solvency_type_closeout',
+  // These two downstream RC1 migrations structurally depend on tables
+  // created by the excluded RC1 migrations above (owner_funds_events comes
+  // from rc1_owner_agency_invoice_accounting_model). Historical checkpoint
+  // replays that intentionally stop before RC1 must omit them too, otherwise
+  // they abort with "relation ... does not exist".
+  'rc1_release_integration_fk_indexes',
+  'rc1_owner_offset_2000_control',
+] as const;
+
 const LATER_GOVERNED_STAGE_MARKERS = [
   '_s03_',
   '_s04_',
@@ -53,11 +69,24 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   // GAP-010 migration family, including its effective-history correction.
   'wp02_gap010_tax_authority',
   'wp02_gap010_effective_history_resolution',
+  'phase1_omr_precision_convergence',
+  'phase2_invoice_truth',
+  'phase3_credit_and_ar_integrity',
+  // RC1 owner-agency accounting correction depends on Phase 1–3, versioned
+  // tax and canonical GL objects omitted by historical checkpoint replays.
+  // Full current suites outside this historical harness replay it separately.
+  ...RC1_ACCOUNTING_MARKERS,
+  'sole_admin_exception',
+  // This forward-only audit-contract repair depends on the receipt VOID
+  // request ledger introduced after historical Phase 3A-1B checkpoints.
+  'wp01_receipt_void_audit_contract_restore',
 ] as const;
 
 export async function createFullReplayedDatabase(options?: {
   throughMigration?: string;
   excludeMigrations?: string[];
+  /** Keep downstream governed migrations while omitting only explicit markers. */
+  includeLaterGoverned?: boolean;
   writeEvidence?: boolean;
 }): Promise<ReplayResult> {
   const db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
@@ -75,12 +104,24 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  // Callers that provide explicit exclusions are checkpoint/isolation suites.
-  // Keep later governed S03/S04/S06/S08 migrations out of those historical
-  // baselines. Current stage suites call with writeEvidence:false and no
-  // explicit exclusions, so they still receive the complete migration chain.
-  const checkpointExcludes = options?.excludeMigrations ? [...LATER_GOVERNED_STAGE_MARKERS] : [];
-  const excludes = [...checkpointExcludes, ...(options?.excludeMigrations ?? [])];
+  // This helper is the historical P1/P3 replay harness. With no explicit
+  // options it keeps the pre-RC1 accounting surface so old checkpoint tests do
+  // not accidentally execute later RC1 cutover/tax guards against synthetic
+  // legacy rows. Dedicated RC1/current-chain suites own the modern path.
+  const defaultHistoricalExcludes = options ? [] : [...RC1_ACCOUNTING_MARKERS];
+
+  // Historical checkpoint callers use explicit exclusions and (by default)
+  // omit later governed S03/S04/S06/S08 migrations. A replay can explicitly
+  // retain those later migrations when it needs a full modern schema but only
+  // wants to omit one newer correction family.
+  const checkpointExcludes = options?.excludeMigrations && !options.includeLaterGoverned
+    ? [...LATER_GOVERNED_STAGE_MARKERS]
+    : [];
+  const excludes = [
+    ...defaultHistoricalExcludes,
+    ...checkpointExcludes,
+    ...(options?.excludeMigrations ?? []),
+  ];
   if (excludes.length > 0) {
     files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));
   }

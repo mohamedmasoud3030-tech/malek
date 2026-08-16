@@ -167,7 +167,10 @@ describe('Stage 3 — receipt VOID uses engine-managed reversal', () => {
       [INVOICE_A1],
     );
     expect(Number(invoiceAfter?.paid_amount)).toBe(0);
-    expect(invoiceAfter?.status).toBe('UNPAID');
+    // Status is a derived projection. This historical invoice is past due, so
+    // the compensating receipt VOID correctly restores OVERDUE rather than a
+    // stale hard-coded UNPAID label.
+    expect(invoiceAfter?.status).toBe('OVERDUE');
 
     const statuses = await queryOne(
       db,

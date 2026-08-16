@@ -137,9 +137,14 @@ function transformSuite(sql: string): string {
 
 async function closeQuietly(db: PGlite) { try { await (db as any).close?.(); } catch { /* noop */ } }
 
-describe('p1 release rehearsal verification (full-chain replay: P0+P1 applied)', () => {
+describe('p1 release rehearsal verification (full RC1 chain)', () => {
   it(`produces ZERO failing assertions in ${SUITE} with server-derived settlement amounts`, async () => {
-    const { db, failed: migFailures } = await createFullReplayedDatabase();
+    // The rehearsal fixture exercises the full current RC1 schema surface
+    // (immutable agreement-version snapshot columns, versioned tax profiles,
+    // fee-tax treatments, and the owner-funds subledger control). It must
+    // therefore be replayed against the complete forward migration chain from
+    // zero, not a pre-RC1 checkpoint.
+    const { db, failed: migFailures } = await createFullReplayedDatabase({});
     expect(migFailures, JSON.stringify(migFailures).slice(0, 500)).toEqual([]);
 
     await db.exec(SHIM);

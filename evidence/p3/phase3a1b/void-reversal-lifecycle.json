@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-08-15T17:06:59.915Z",
+  "generatedAt": "2026-08-16T11:08:06.303Z",
   "scenario": "void → retry(same req) → retry(new req) → void-by-payment-id",
   "receipt2": {
-    "id": "0e706bee-eee8-4343-bfa1-a4dbcd68cda6",
+    "id": "c68f994f-7922-42af-b173-9e5bad79902e",
     "status": "VOID",
     "paymentStatus": "VOID",
     "reversalEntries": 4,
     "balancedWithOriginals": true
   },
   "invoiceRestored": {
-    "paid": 200,
-    "status": "PARTIALLY_PAID"
+    "paid": 0,
+    "status": "UNPAID"
   },
   "noDoubleReversal": true,
   "noRecordDeletion": true,

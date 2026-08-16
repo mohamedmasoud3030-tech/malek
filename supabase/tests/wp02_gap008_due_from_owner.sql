@@ -115,6 +115,71 @@ on conflict (id) do nothing;
 update public.receipts set payment_id = id
 where id in ('0a2b0000-0000-4000-8000-0000000000a1', '0a2b0000-0000-4000-8000-0000000000a2');
 
+-- These payment rows are intentionally compact settlement fixtures, but RC1's
+-- 2000 control must still see their actual economic effect. Post the matching
+-- owner-collection journals and append the corresponding owner_funds_events so
+-- the later lawful offset/payout tests operate against real Owner Funds Payable
+-- rather than synthetic negative 2000 balances.
+select public.post_journal_event(jsonb_build_object(
+  'company_id', '0a000000-0000-4000-8000-0000000000a1',
+  'source_type', 'gap008_owner_collection_fixture',
+  'source_id', '0a2b0000-0000-4000-8000-0000000000a1',
+  'event_id', 'gap008-collection-aug',
+  'effective_date', '2026-08-05',
+  'description', 'GAP008 compact owner collection fixture August',
+  'lines', jsonb_build_array(
+    jsonb_build_object('account_id', public.require_company_account_id('0a000000-0000-4000-8000-0000000000a1','1111'), 'debit', 200.000, 'credit', 0),
+    jsonb_build_object('account_id', public.require_company_account_id('0a000000-0000-4000-8000-0000000000a1','2000'), 'debit', 0, 'credit', 200.000)
+  )
+));
+
+insert into public.owner_funds_events (
+  company_id, owner_id, contract_id, invoice_id, source_type, source_id,
+  event_id, amount_delta, effective_date, journal_batch_id
+)
+select
+  '0a000000-0000-4000-8000-0000000000a1',
+  '0a200000-0000-4000-8000-0000000000a1',
+  '0a290000-0000-4000-8000-0000000000a1',
+  '0a2a0000-0000-4000-8000-0000000000a1',
+  'OWNER_COLLECTION', '0a2b0000-0000-4000-8000-0000000000a1',
+  'gap008-collection-aug', 200.000, date '2026-08-05', b.id
+from public.journal_batches b
+where b.company_id = '0a000000-0000-4000-8000-0000000000a1'
+  and b.source_type = 'gap008_owner_collection_fixture'
+  and b.source_id = '0a2b0000-0000-4000-8000-0000000000a1'
+  and b.event_id = 'gap008-collection-aug';
+
+select public.post_journal_event(jsonb_build_object(
+  'company_id', '0a000000-0000-4000-8000-0000000000a1',
+  'source_type', 'gap008_owner_collection_fixture',
+  'source_id', '0a2b0000-0000-4000-8000-0000000000a2',
+  'event_id', 'gap008-collection-sep',
+  'effective_date', '2026-09-05',
+  'description', 'GAP008 compact owner collection fixture September',
+  'lines', jsonb_build_array(
+    jsonb_build_object('account_id', public.require_company_account_id('0a000000-0000-4000-8000-0000000000a1','1111'), 'debit', 50.000, 'credit', 0),
+    jsonb_build_object('account_id', public.require_company_account_id('0a000000-0000-4000-8000-0000000000a1','2000'), 'debit', 0, 'credit', 50.000)
+  )
+));
+
+insert into public.owner_funds_events (
+  company_id, owner_id, contract_id, invoice_id, source_type, source_id,
+  event_id, amount_delta, effective_date, journal_batch_id
+)
+select
+  '0a000000-0000-4000-8000-0000000000a1',
+  '0a200000-0000-4000-8000-0000000000a1',
+  '0a290000-0000-4000-8000-0000000000a1',
+  '0a2a0000-0000-4000-8000-0000000000a2',
+  'OWNER_COLLECTION', '0a2b0000-0000-4000-8000-0000000000a2',
+  'gap008-collection-sep', 50.000, date '2026-09-05', b.id
+from public.journal_batches b
+where b.company_id = '0a000000-0000-4000-8000-0000000000a1'
+  and b.source_type = 'gap008_owner_collection_fixture'
+  and b.source_id = '0a2b0000-0000-4000-8000-0000000000a2'
+  and b.event_id = 'gap008-collection-sep';
+
 -- ── S1: governed lifecycle DRAFT (maker A1) -> APPROVED (checker A2), net 200.000
 select set_config('request.jwt.claims', '{"sub":"0a000000-0000-0000-0000-000000000aa1","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"0a000000-0000-4000-8000-0000000000a1"}}', true);
 set local role authenticated;

@@ -39,6 +39,7 @@ const fixtureContractDefaults = {
   rejected_at: null,
   rejection_reason: null,
   approval_evidence: null,
+  is_sole_admin_exception: false,
 } as const;
 
 const fixtureContracts: ContractListItem[] = [

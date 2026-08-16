@@ -136,7 +136,7 @@ export const ROUTE_CONTRACT: readonly RouteContractEntry[] = [
   { canonical: '/accounting', titleAr: 'المحاسبة والتقارير', sidebarRoot: '/reports', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: { param: 'section', section: 'accounting', view: 'general_ledger' } },
 
   // ── الأدوات
-  { canonical: '/ai-assistant', titleAr: 'المساعد الذكي', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Legacy deep-link only; the assistant is now a global overlay action.' },
+  { canonical: '/ai-assistant', titleAr: 'المساعد الذكي', sidebarRoot: '/dashboard', isPrimaryNav: false, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null, targetIANote: 'Verified separate route (Option 1 canonical design)' },
 
   // ── الإدارة
   { canonical: '/settings', titleAr: 'الإعدادات', sidebarRoot: '/settings', isPrimaryNav: true, inMobileNav: false, permission: null, legacyAliases: [], viewBinding: null },
@@ -175,7 +175,6 @@ export const REDIRECT_ROUTES = [
   '/owner-settlements',
   '/bank-reconciliation',
   '/accounting',
-  '/ai-assistant',
   '/change-password',
   '/audit-log',
   '/data-integrity',

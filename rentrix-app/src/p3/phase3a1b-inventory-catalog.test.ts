@@ -94,7 +94,12 @@ const inventory: Record<string, unknown> = { generatedAt: new Date().toISOString
 const MIGRATION_KEY = 'phase3a1b_canonical_accounts_invoice_payment_receipt_void';
 
 beforeAll(async () => {
-  const replay = await createFullReplayedDatabase();
+  // The live `db` here is the CURRENT full chain (including the RC1 owner-funds
+  // security hardening that makes post_receipt_atomic service-only). We pass an
+  // explicit options object with includeLaterGoverned so the harness does not
+  // apply its historical-default RC1 exclusions; the ACL posture assertions
+  // below must verify the real, final-chain security posture.
+  const replay = await createFullReplayedDatabase({ includeLaterGoverned: true });
   db = replay.db;
   expect(replay.failed, JSON.stringify(replay.failed).slice(0, 400)).toEqual([]);
   // Pre-remediation baseline: the same chain WITHOUT the Phase 3A-1B migration —
@@ -113,6 +118,12 @@ beforeAll(async () => {
       'phase1_omr_precision_convergence',
       // Phase 2 redefines generate_invoices_from_active_contracts (deterministic billing/due dates).
       'phase2_invoice_truth',
+      'phase3_credit_and_ar_integrity',
+      'rc1_owner_agency_invoice_accounting_model',
+      'rc1_invoice_credit_original_economics',
+      'rc1_payment_tax_and_write_boundary',
+        'rc1_cutover_fee_tax_and_legacy_fail_closed',
+      'sole_admin_exception',
     ],
   });
   preDb = pre.db;
@@ -296,7 +307,7 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
     const problems: string[] = [];
     for (const row of rows as any[]) {
       if (isLegacyVoid(row)) continue;
-      if (!/app_metadata[^;]{0,60}company_id|current_company_id\s*\(\)/.test(row.def)) {
+      if (!/app_metadata[^;]{0,60}company_id|current_company_id\s*\(\)|require_company_id\s*\(\)/.test(row.def)) {
         problems.push(`${row.name}(${row.args}): no JWT company derivation`);
       }
     }
@@ -361,7 +372,9 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
       'find_payment_account_id(account_role text)': { auth: false, svc: false },
       'generate_invoices_from_active_contracts()': { auth: true, svc: true },
       'record_invoice_payment_atomic(payload jsonb)': { auth: true, svc: true },
-      'post_receipt_atomic(payload jsonb)': { auth: true, svc: true },
+      // RC1: this engine accepts journal lines and is service-only. Browser
+      // collection remains record_invoice_payment_atomic, which derives lines.
+      'post_receipt_atomic(payload jsonb)': { auth: false, svc: true },
       'void_receipt_atomic(payload jsonb)': { auth: true, svc: true },
       'void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)':
         { auth: false, svc: false },

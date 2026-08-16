@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-15T17:06:59.915Z",
+  "generatedAt": "2026-08-16T11:08:06.303Z",
   "scenario": "generate → retry → B-require-failure",
-  "generatedInvoiceId": "a9baecab-f5f4-4041-8d6d-790cb7b0e014",
+  "generatedInvoiceId": "0516f343-25b9-489b-bee1-a7f8954f3eae",
   "totals": {
     "amount": 1000,
     "tax": 50,
@@ -17,23 +17,23 @@
       "company_id": "c31b0000-0000-4000-8000-000000000001"
     },
     {
+      "account_id": "coa:c31b0000-0000-4000-8000-000000000001:2000",
+      "account_no": "2000",
+      "account_company": "c31b0000-0000-4000-8000-000000000001",
+      "amount": "1000.000",
+      "type": "CREDIT",
+      "company_id": "c31b0000-0000-4000-8000-000000000001"
+    },
+    {
       "account_id": "coa:c31b0000-0000-4000-8000-000000000001:2100",
       "account_no": "2100",
       "account_company": "c31b0000-0000-4000-8000-000000000001",
       "amount": "50.000",
       "type": "CREDIT",
       "company_id": "c31b0000-0000-4000-8000-000000000001"
-    },
-    {
-      "account_id": "coa:c31b0000-0000-4000-8000-000000000001:4000",
-      "account_no": "4000",
-      "account_company": "c31b0000-0000-4000-8000-000000000001",
-      "amount": "1000.000",
-      "type": "CREDIT",
-      "company_id": "c31b0000-0000-4000-8000-000000000001"
     }
   ],
   "retryCreatedDuplicates": false,
-  "companyBRequireError": "1201 is not configured for company",
+  "companyBRequireError": "TAX_PROFILE_MISSING",
   "crossCompanyWrites": 0
 }
