@@ -38,7 +38,13 @@ export async function getAuthoritativeReportsCollectionRate(
   if (error) throw error;
 
   const collections = asRecord(asRecord(data).collections);
-  const rate = Number(collections.collection_rate);
+  const rawRate = collections.collection_rate;
+  // Number(null) === 0, so absence must be rejected before numeric coercion;
+  // otherwise an unavailable authoritative metric would be presented as 0%.
+  if (rawRate === null || rawRate === undefined || rawRate === '') {
+    throw new Error('تعذر قراءة كفاءة التحصيل المعتمدة من الخادم.');
+  }
+  const rate = Number(rawRate);
   if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
     throw new Error('تعذر قراءة كفاءة التحصيل المعتمدة من الخادم.');
   }
