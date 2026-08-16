@@ -241,11 +241,16 @@ async function seed() {
     effective_to: '2027-12-31',
     created_by: user.id,
   });
-  await upsert('owner_agreements', {
-    id: IDS.agreement,
-    current_version_id: IDS.agreementVersion,
-    company_id: COMPANY_ID,
-  }, 'id');
+  // Point the agreement at its immutable current version. A plain UPDATE (not
+  // an upsert) so no INSERT branch is attempted: an upsert would run the
+  // BEFORE INSERT ownership trigger with NULL owner/property/period columns.
+  {
+    const updated = await serviceClient
+      .from('owner_agreements')
+      .update({ current_version_id: IDS.agreementVersion })
+      .eq('id', IDS.agreement);
+    assertNoError('update owner_agreements current_version_id', updated);
+  }
   // Versioned, approved NON_TAXABLE rent tax authority and RATE management-fee
   // tax treatment (explicit NON_TAXABLE / 0.000, not a fallback).
   await upsert('company_tax_profiles', {
