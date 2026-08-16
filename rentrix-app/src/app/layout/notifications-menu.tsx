@@ -109,6 +109,10 @@ export function NotificationsMenu({
   const markReadMutation = useMutation({
     mutationFn: markAppNotificationRead,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['app-notifications'] }),
+    // Marking a notification as read is a background nicety: a toast would be
+    // noisier than the failure itself, but the unread state must not silently
+    // desync — refetch so the UI reflects the server truth.
+    onError: () => queryClient.invalidateQueries({ queryKey: ['app-notifications'] }),
   });
   const isInitialLoading = (snapshotQuery.isLoading && snapshotQuery.data === undefined)
     || (persistedQuery.isLoading && persistedQuery.data === undefined);
