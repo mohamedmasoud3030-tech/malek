@@ -11,11 +11,10 @@ function routeHasPermission(path: string, perm: string): boolean {
   const start = routeTreeSource.lastIndexOf('createRoute({', idx);
   const end = routeTreeSource.indexOf('});', idx);
   const block = routeTreeSource.slice(start, end + 3);
-  // handles both `beforeLoad: requirePermission('x')` and `await requirePermission('x')()`
   return block.includes(`'${perm}'`);
 }
 
-describe('permission visibility — nav item permission must match route guard', () => {
+describe('permission visibility — task-centric IA must not widen access', () => {
   it('every nav item with a permission has that permission on its route guard', () => {
     for (const [to, , , , perm, search] of [...getAllNavItems(), ...quickCreateItems]) {
       if (!perm || search) continue;
@@ -23,20 +22,19 @@ describe('permission visibility — nav item permission must match route guard',
     }
   });
 
-  it('permission-less nav items either have auth-only guard or none (no phantom lock)', () => {
-    // tenants is auth-only (no permission param) — explicitly allowed
+  it('permission-less tenant navigation remains auth-only', () => {
     const token = `path: '/tenants'`;
     const idx = routeTreeSource.indexOf(token);
     const block = routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
     expect(block).not.toMatch(/requirePermission\(/);
   });
 
-  it('owners hub and detail both permission-gated (hub.view + detail.view separate)', () => {
+  it('owners hub and detail both remain permission-gated', () => {
     expect(routeHasPermission('/owners', 'owners.hub.view')).toBe(true);
     expect(routeHasPermission('/owners/$ownerId', 'owners.detail.view')).toBe(true);
   });
 
-  it('lands, leads, communication, and service providers are gated as declared in nav', () => {
+  it('secondary portfolio/leasing/service capabilities keep their existing guards', () => {
     expect(routeHasPermission('/lands', 'lands.view')).toBe(true);
     expect(routeHasPermission('/leads', 'leads.view')).toBe(true);
     expect(routeHasPermission('/communication', 'communication.view')).toBe(true);
@@ -46,7 +44,7 @@ describe('permission visibility — nav item permission must match route guard',
     expect(routeHasPermission('/service-providers/$providerId/edit', 'service_providers.write')).toBe(true);
   });
 
-  it('finance subroutes gate correctly (commissions/expenses/arreas/deposits etc)', () => {
+  it('Money children keep their financial permissions', () => {
     expect(routeHasPermission('/commissions', 'commissions.view')).toBe(true);
     expect(routeHasPermission('/expenses', 'expenses.view')).toBe(true);
     expect(routeHasPermission('/arrears', 'arrears.view')).toBe(true);
@@ -55,7 +53,7 @@ describe('permission visibility — nav item permission must match route guard',
     expect(routeHasPermission('/bank-reconciliation', 'financial.bank_reconciliation.view')).toBe(true);
   });
 
-  it('settings children gate vs /settings itself', () => {
+  it('settings children keep their governed permissions', () => {
     expect(routeHasPermission('/settings', 'settings.manage')).toBe(false);
     expect(routeHasPermission('/audit-log', 'audit.view')).toBe(true);
     expect(routeHasPermission('/data-integrity', 'integrity.view')).toBe(true);
@@ -63,32 +61,27 @@ describe('permission visibility — nav item permission must match route guard',
     expect(routeHasPermission('/change-password', 'auth.password.change')).toBe(true);
   });
 
-  it('does NOT gate people list without permission, but add/edit remain reachable', () => {
-    // /people list is alias redirect without gate by design (Phase 1)
+  it('does not invent a people.view permission', () => {
     expect(routeHasPermission('/people', 'people.view')).toBe(false);
-    // /people/new is direct route — no permission string today (allowed)
     const token = `path: '/people/new'`;
     const idx = routeTreeSource.indexOf(token);
     const block = routeTreeSource.slice(routeTreeSource.lastIndexOf('createRoute({', idx), routeTreeSource.indexOf('});', idx) + 3);
     expect(block).not.toMatch(/requirePermission\(/);
   });
 
-  it('no nav group adminOnly bypasses per-item permission (excess hidden items stay hidden)', () => {
-    // Ensure navGroups adminOnly handling does not create orphan visible items
-    const groupsWithAdminOnly = navGroups.filter(([, , adminOnly]) => adminOnly);
-    // Currently none flagged adminOnly with special handling — test stays as future-proof
-    expect(groupsWithAdminOnly.length).toBe(0);
-    // If any appear later, they must still satisfy per-item permission above
+  it('does not use adminOnly groups to bypass item permissions', () => {
+    expect(navGroups.filter(([, , adminOnly]) => adminOnly)).toHaveLength(0);
   });
 
-  it('workspace child count matches actual operational needs (no shadow nav)', () => {
-    // P0 canonical IA: People owns relationship registers; settings hides admin-only
-    // legacy routes from primary navigation while keeping their routes reachable.
-    expect(workspaceChildNavItems['/people'].length).toBe(4);
-    expect(workspaceChildNavItems['/properties'].length).toBe(1);
-    expect(workspaceChildNavItems['/lands'].length).toBe(0);
-    expect(workspaceChildNavItems['/contracts'].length).toBe(0);
-    expect(workspaceChildNavItems['/maintenance'].length).toBe(3);
+  it('pins progressive-disclosure workspace membership', () => {
+    expect(workspaceChildNavItems['/properties'].length).toBe(3);
+    expect(workspaceChildNavItems['/contracts'].length).toBe(4);
+    expect(workspaceChildNavItems['/financials'].length).toBe(8);
+    expect(workspaceChildNavItems['/maintenance'].length).toBe(4);
+    expect(workspaceChildNavItems['/reports'].length).toBe(0);
     expect(workspaceChildNavItems['/settings'].length).toBe(5);
+    expect(workspaceChildNavItems['/people']).toBeUndefined();
+    expect(workspaceChildNavItems['/lands']).toBeUndefined();
+    expect(workspaceChildNavItems['/commissions']).toBeUndefined();
   });
 });
