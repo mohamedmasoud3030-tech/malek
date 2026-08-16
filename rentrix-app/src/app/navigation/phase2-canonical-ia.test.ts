@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { getNavRoot } from './route-nav-map';
 import { getAllNavItems, mobileNavItems, navGroups, workspaceChildNavItems } from './app-nav-items';
 import { ROUTE_CONTRACT, TARGET_IA_TOP_LEVEL } from './route-contract';
+import { navigationLabels } from './terminology-registry';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
@@ -75,7 +76,8 @@ describe('Task-centric canonical IA', () => {
     expect(getNavRoot('/reports')).toBe('/reports');
     expect(getNavRoot('/accounting')).toBe('/reports');
     expect(getNavRoot('/reports')).not.toBe('/financials');
-    expect(navGroups.find(([title]) => title === 'التقارير')?.[1].map(([to]) => to)).toEqual(['/reports']);
+    const reportItems = navGroups.flatMap(([, items]) => items).filter(([to]) => to === '/reports');
+    expect(reportItems.map(([to]) => to)).toEqual(['/reports']);
   });
 
   it('preserves legacy hub/deep-link compatibility instead of breaking routes', () => {
@@ -114,12 +116,15 @@ describe('Task-centric canonical IA', () => {
     }
   });
 
-  it('global shell contains seven primary items and no hidden feature roots', () => {
-    expect(navGroups).toHaveLength(7);
-    expect(getAllNavItems().length).toBeGreaterThan(7);
-    expect(navGroups.map(([title]) => title)).toEqual([
-      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير', 'الإعدادات',
+  it('global shell contains seven primary items without seven duplicate section headings', () => {
+    const primaryItems = navGroups.flatMap(([, items]) => items);
+    expect(primaryItems).toHaveLength(7);
+    expect(navGroups).toHaveLength(2);
+    expect(navGroups.map(([title]) => title)).toEqual(['العمل', 'التحليل والإدارة']);
+    expect(primaryItems.map(([, labelKey]) => navigationLabels[labelKey])).toEqual([
+      'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير والكشوف', 'الإعدادات',
     ]);
+    expect(getAllNavItems().length).toBeGreaterThan(7);
   });
 
   it('mobile navigation remains Menu + Search only', () => {
