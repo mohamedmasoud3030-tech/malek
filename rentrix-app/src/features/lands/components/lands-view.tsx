@@ -21,6 +21,7 @@ import { useOwnerOptions } from '@/hooks/use-owner-options';
 import { formatMoney, formatNumber } from '@/hooks/useCompanyFormatters';
 import type { LandFilters, LandRecord } from '../types';
 import type { LandFormValues } from '../land-schema';
+import { MONEY_STEP } from '@/lib/money';
 
 const statusLabels: Record<string, string> = {
   available: 'متاحة',
@@ -246,9 +247,9 @@ export function LandsView({
             </EntityForm.Field>
             {ownersQuery.isError ? <p className="text-xs font-medium text-destructive">تعذر تحميل قائمة الملاك. يمكنك حفظ الأرض بدون مالك ثم ربطه لاحقاً من ملف المالك.</p> : null}
             <div className="grid gap-4 sm:grid-cols-3">
-              <EntityForm.Field label="سعر المالك"><Input type="number" min="0" step="0.01" inputMode="decimal" dir="ltr" value={draft.owner_price} onChange={(event) => onDraftChange({ ...draft, owner_price: event.target.value })} /></EntityForm.Field>
-              <EntityForm.Field label="سعر الشراء"><Input type="number" min="0" step="0.01" inputMode="decimal" dir="ltr" value={draft.purchase_price} onChange={(event) => onDraftChange({ ...draft, purchase_price: event.target.value })} /></EntityForm.Field>
-              <EntityForm.Field label="عمولة تقديرية"><Input type="number" min="0" step="0.01" inputMode="decimal" dir="ltr" value={draft.commission} onChange={(event) => onDraftChange({ ...draft, commission: event.target.value })} /></EntityForm.Field>
+              <EntityForm.Field label="سعر المالك"><Input type="number" min="0" step={MONEY_STEP} inputMode="decimal" dir="ltr" value={draft.owner_price} onChange={(event) => onDraftChange({ ...draft, owner_price: event.target.value })} /></EntityForm.Field>
+              <EntityForm.Field label="سعر الشراء"><Input type="number" min="0" step={MONEY_STEP} inputMode="decimal" dir="ltr" value={draft.purchase_price} onChange={(event) => onDraftChange({ ...draft, purchase_price: event.target.value })} /></EntityForm.Field>
+              <EntityForm.Field label="عمولة تقديرية"><Input type="number" min="0" step={MONEY_STEP} inputMode="decimal" dir="ltr" value={draft.commission} onChange={(event) => onDraftChange({ ...draft, commission: event.target.value })} /></EntityForm.Field>
             </div>
             <EntityForm.Field label="ملاحظات"><Textarea value={draft.notes} onChange={(event) => onDraftChange({ ...draft, notes: event.target.value })} /></EntityForm.Field>
           </EntityForm.Section>

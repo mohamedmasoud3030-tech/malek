@@ -1,3 +1,4 @@
+import { MONEY_STEP } from '@/lib/money';
 import { useEffect, useMemo, useState, type FormEventHandler } from 'react';
 import { Controller } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -305,7 +306,7 @@ export function ContractFormFields({
           <EntityForm.Field label="قيمة الإيجار" error={form.formState.errors.rent_amount?.message}>
             <Input
               type="number"
-              step="0.01"
+              step={MONEY_STEP}
               inputMode="decimal"
               min="0.01"
               {...form.register('rent_amount')}

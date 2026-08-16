@@ -1,3 +1,4 @@
+import { MONEY_STEP } from '@/lib/money';
 import {
   Archive,
   BadgeDollarSign,
@@ -280,13 +281,13 @@ export function CommissionsView(props: Props) {
             <CommissionSourceSelector type={draft.type} value={draft.source_id} onChange={(sourceId) => onDraftChange({ ...draft, source_id: sourceId })} />
           </EntityForm.Field>
           <EntityForm.Field label="قيمة الصفقة">
-            <Input type="number" min="0" step="0.01" inputMode="decimal" dir="ltr" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} />
+            <Input type="number" min="0" step={MONEY_STEP} inputMode="decimal" dir="ltr" value={draft.deal_value} onChange={(event) => onDraftChange({ ...draft, deal_value: event.target.value })} />
           </EntityForm.Field>
           <EntityForm.Field label="النسبة %">
             <Input type="number" min="0" inputMode="decimal" step="0.01" dir="ltr" value={draft.percentage} onChange={(event) => onDraftChange({ ...draft, percentage: event.target.value })} />
           </EntityForm.Field>
           <EntityForm.Field label="مبلغ مباشر" description="مطلوب إذا لم تدخل قيمة صفقة ونسبة.">
-            <Input type="number" min="0" step="0.01" inputMode="decimal" dir="ltr" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} />
+            <Input type="number" min="0" step={MONEY_STEP} inputMode="decimal" dir="ltr" value={draft.amount} onChange={(event) => onDraftChange({ ...draft, amount: event.target.value })} />
           </EntityForm.Field>
           <EntityForm.Actions
             className="md:col-span-2"

@@ -1,3 +1,4 @@
+import { MONEY_STEP } from '@/lib/money';
 import { useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -143,7 +144,7 @@ export function MaintenanceResolveOverlay({ target, form, isSubmitting, firstErr
         <EntityForm.ErrorSummary message={firstError} />
         <EntityForm.Section title="التكلفة وتوزيع المسؤولية" description={target ? target.title : undefined}>
           <EntityForm.Field label="التكلفة الفعلية للأعمال" error={form.formState.errors.cost?.message}>
-            <Input dir="ltr" type="number" min="0" step="0.01" inputMode="decimal" {...form.register('cost')} aria-invalid={Boolean(form.formState.errors.cost)} />
+            <Input dir="ltr" type="number" min="0" step={MONEY_STEP} inputMode="decimal" {...form.register('cost')} aria-invalid={Boolean(form.formState.errors.cost)} />
           </EntityForm.Field>
 
           <div className="space-y-2">

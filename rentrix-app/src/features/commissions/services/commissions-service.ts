@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { handleSupabaseError } from '@/lib/supabase-error';
 import { fetchAllRows } from '@/lib/paginatedRead';
 import type { CommissionFilters, CommissionFormValues, CommissionRecord } from '../types';
+import { roundMoney } from '@/lib/money';
 
 const commissionTypeValues = new Set(['contract', 'payment', 'owner', 'lead', 'land']);
 const commissionEditableStatusValues = new Set(['pending', 'approved']);
@@ -25,7 +26,9 @@ function deriveAmount(values: CommissionFormValues) {
   if (amount !== null) return amount;
   const dealValue = numberOrNull(values.deal_value, 'قيمة الصفقة');
   const percentage = percentageOrNull(values.percentage);
-  if (dealValue !== null && percentage !== null) return Number((dealValue * (percentage / 100)).toFixed(2));
+  // R3 Money Contract: commission amounts are OMR money — derive at 3dp
+  // (roundMoney == server _r3), never 2dp.
+  if (dealValue !== null && percentage !== null) return roundMoney(dealValue * (percentage / 100));
   return null;
 }
 

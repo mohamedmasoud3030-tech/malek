@@ -34,6 +34,7 @@ import {
   useDeleteUtilityMeter,
   useDeleteUtilityBill,
 } from '../use-utilities';
+import { MONEY_MIN_POSITIVE, MONEY_STEP } from '@/lib/money';
 import {
   responsiblePartyLabels,
   utilityBillStatusLabels,
@@ -427,7 +428,7 @@ export function UtilitiesWorkspace({ mode = 'standalone' }: UtilitiesWorkspacePr
             <div className="grid gap-4 sm:grid-cols-2">
               <EntityForm.Field label="العقار *"><Select required value={billForm.property_id} onChange={(event) => setBillForm((form) => ({ ...form, property_id: event.target.value }))}><option value="">اختر العقار</option>{properties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}</Select></EntityForm.Field>
               <EntityForm.Field label="العداد"><Select value={billForm.meter_id || ''} onChange={(event) => setBillForm((form) => ({ ...form, meter_id: event.target.value || null }))}><option value="">بدون عداد محدد</option>{meters.map((meter) => <option key={meter.id} value={meter.id}>{utilityTypeLabels[meter.utility_type]} · {meter.meter_number}</option>)}</Select></EntityForm.Field>
-              <EntityForm.Field label="المبلغ *"><Input required type="number" min="0.01" step="0.01" inputMode="decimal" dir="ltr" value={billForm.amount} onChange={(event) => setBillForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} /></EntityForm.Field>
+              <EntityForm.Field label="المبلغ *"><Input required type="number" min={MONEY_MIN_POSITIVE} step={MONEY_STEP} inputMode="decimal" dir="ltr" value={billForm.amount} onChange={(event) => setBillForm((form) => ({ ...form, amount: Number(event.target.value) || 0 }))} /></EntityForm.Field>
               <EntityForm.Field label="تاريخ الاستحقاق *"><Input required type="date" value={billForm.due_date} onChange={(event) => setBillForm((form) => ({ ...form, due_date: event.target.value }))} /></EntityForm.Field>
               <EntityForm.Field label="القراءة السابقة"><Input type="number" inputMode="decimal" value={billForm.previous_reading ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, previous_reading: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
               <EntityForm.Field label="القراءة الحالية"><Input type="number" inputMode="decimal" value={billForm.current_reading ?? ''} onChange={(event) => setBillForm((form) => ({ ...form, current_reading: event.target.value ? Number(event.target.value) : null }))} /></EntityForm.Field>
