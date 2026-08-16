@@ -13,7 +13,7 @@ const requiredOperationalRoutes = [
   '/units', '/lands', '/lands/$landId', '/owners', '/owners/$ownerId', '/tenants', '/tenants/$tenantId',
   '/people', '/people/$personId', '/people/new', '/people/$personId/edit', '/leads', '/communication',
   '/contracts', '/contracts/new', '/contracts/$contractId', '/contracts/$contractId/edit', '/maintenance',
-  '/service-providers', '/utilities', '/documents-vault', '/financials', '/invoices', '/receipts', '/expenses',
+  '/service-providers', '/utilities', '/documents-vault', '/automation', '/financials', '/invoices', '/receipts', '/expenses',
   '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions', '/reports', '/accounting',
   '/settings', '/change-password', '/audit-log', '/data-integrity', '/system',
 ] as const;
@@ -58,9 +58,23 @@ describe('task-centric app navigation', () => {
     ]);
   });
 
+  it('keeps every Services child inside /maintenance and leaves Automation only in Settings', () => {
+    const services = workspaceChildNavItems['/maintenance'];
+    expect(services.map(([to]) => to)).toEqual(Array(4).fill('/maintenance'));
+    expect(services.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
+      { labelKey: 'maintenance', permission: undefined, search: { section: 'maintenance' } },
+      { labelKey: 'serviceProviders', permission: 'service_providers.view', search: { section: 'service_providers' } },
+      { labelKey: 'utilities', permission: undefined, search: { section: 'utilities' } },
+      { labelKey: 'documentsVault', permission: undefined, search: { section: 'documents_vault' } },
+    ]);
+    expect(services.some(([, labelKey]) => labelKey === 'automation')).toBe(false);
+    expect(workspaceChildNavItems['/settings'].some(([, labelKey, , , permission, search]) =>
+      labelKey === 'automation' && permission === 'automation.view' && search?.section === 'automation')).toBe(true);
+  });
+
   it('does not leak feature registers back into global navigation', () => {
     const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    for (const secondary of ['/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts', '/expenses', '/arrears']) {
+    for (const secondary of ['/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts', '/expenses', '/arrears', '/utilities', '/service-providers']) {
       expect(primaryPaths).not.toContain(secondary);
     }
   });
@@ -72,11 +86,12 @@ describe('task-centric app navigation', () => {
     expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...quickCreateItems.map(([to]) => to)]));
   });
 
-  it('keeps standalone compatibility routes permission-gated even when primary navigation stays in workspaces', () => {
+  it('keeps standalone compatibility routes guarded or redirected to their owner', () => {
     expect(getRouteDefinition('/owners')).toContain("requirePermission('owners.hub.view')");
     expect(getRouteDefinition('/leads')).toContain("requirePermission('leads.view')");
     expect(getRouteDefinition('/communication')).toContain("requirePermission('communication.view')");
     expect(getRouteDefinition('/commissions')).toContain("requirePermission('commissions.view')");
+    expect(getRouteDefinition('/automation')).toContain("to: '/settings'");
   });
 
   it('keeps mobile navigation to Menu + Search only', () => {
