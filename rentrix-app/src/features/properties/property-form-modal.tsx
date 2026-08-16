@@ -4,7 +4,6 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
@@ -15,6 +14,7 @@ import { useCreatePropertyWithAgreement } from '@/features/owners/useOwnerAgreem
 import { useOperationalOwners } from '@/features/owners/useOwners';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import { propertyStatusLabels, propertyStatusValues } from './property-schema';
+import { applyPropertyOwnershipSplit } from './property-service';
 import { useProperty, useUpdateProperty } from './use-properties';
 import { PropertyFormCoreFields } from './components/property-form-core-fields';
 
@@ -186,20 +186,12 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       const created = await createMutation.mutateAsync(payload);
       const propertyId = created?.property_id;
       if (propertyId) {
-        if (primaryPercentage !== 100) {
-          await supabase.from('property_owners').update({ ownership_percentage: primaryPercentage }).eq('property_id', propertyId).eq('is_primary', true);
-        }
-        for (const co of extraOwners) {
-          if (co.owner_id && Number(co.percentage) > 0) {
-            await supabase.from('property_owners').insert({
-              property_id: propertyId,
-              owner_id: co.owner_id,
-              ownership_percentage: Number(co.percentage),
-              is_primary: false,
-              starts_on: values.agreement_starts_on,
-            });
-          }
-        }
+        await applyPropertyOwnershipSplit({
+          propertyId,
+          primaryPercentage,
+          extraOwners,
+          startsOn: values.agreement_starts_on,
+        });
       }
       onClose();
     } catch (error) {

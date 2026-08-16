@@ -71,6 +71,17 @@ const presentationServiceDebtAllowList = new Set([
   'features/reports/components/StatementsSection.tsx',
 ]);
 
+// Presentation modules outside components/ are checked for direct data-plane
+// access (supabase.from / supabase.rpc) instead of the bare import, because
+// supabase.auth.* session wiring in page-level shells is an accepted pattern.
+// Known offenders are frozen here so the guard blocks new violations while
+// these are migrated to feature services in bounded PRs — same policy as
+// presentationServiceDebtAllowList.
+const presentationDataPlaneDebtAllowList = new Set([
+  'app/router/legacy-preview-redirect.tsx',
+  'features/financials/deposits/deposits-workspace.tsx',
+]);
+
 const allowedAppDirectories = new Set(['layout', 'navigation', 'providers', 'router']);
 const allowedAppFiles = new Set(['not-found-page.tsx']);
 
@@ -85,12 +96,20 @@ for (const file of sourceFiles) {
   const appBoundaryViolation = getAppBoundaryViolation(file);
   if (appBoundaryViolation) violations.push(`${displayPath}: ${appBoundaryViolation}`);
 
-  if (isPresentationComponent(file) && imports.some((specifier) => specifier === '@/lib/supabase')) {
+  if (isComponentsDirectoryModule(file) && imports.some((specifier) => specifier === '@/lib/supabase')) {
     violations.push(`${displayPath}: presentation components must not import Supabase directly`);
   }
 
   if (
     isPresentationComponent(file)
+    && hasDirectSupabaseDataPlaneAccess(content)
+    && !presentationDataPlaneDebtAllowList.has(relative(sourceRoot, file).split(sep).join('/'))
+  ) {
+    violations.push(`${displayPath}: presentation components must not call supabase.from()/supabase.rpc() directly; move data access to a feature service or hook`);
+  }
+
+  if (
+    isComponentsDirectoryModule(file)
     && runtimeImports.some((specifier) => isCrossFeatureServiceImport(file, specifier))
     && !presentationServiceDebtAllowList.has(relative(sourceRoot, file).split(sep).join('/'))
   ) {
@@ -138,7 +157,37 @@ function getRuntimeImportSpecifiers(content) {
     .concat([...content.matchAll(/import\s+['"]([^'"]+)['"]/g)].map((match) => match[1]));
 }
 
-function isPresentationComponent(file) { return file.split(sep).includes('components'); }
+// Legacy scope: everything under a components/ directory (including .ts
+// helpers co-located with components). The strict "no Supabase import at
+// all" and cross-feature-service rules keep this exact scope so existing
+// clean code sees no behavior change.
+function isComponentsDirectoryModule(file) {
+  return relative(sourceRoot, file).split(sep).includes('components');
+}
+
+// Widened scope: a presentation component is any component-bearing module
+// (.tsx by project convention — JSX only compiles in .tsx here), not just
+// files under a "components/" directory. The old path-only heuristic let
+// feature-root modals/pages (e.g. features/properties/property-form-modal.tsx)
+// reach the Supabase data plane directly without being caught. Hooks
+// (use-*.tsx / hooks/) and service modules (services/ / *-service.tsx /
+// *Service.tsx) are the data layer and stay exempt; e2e fixtures are test
+// scaffolding.
+function isPresentationComponent(file) {
+  if (isComponentsDirectoryModule(file)) return true;
+  if (!file.endsWith('.tsx')) return false;
+  const parts = relative(sourceRoot, file).split(sep);
+  if (parts.some((part) => part === 'hooks' || part === 'services')) return false;
+  const fileName = parts[parts.length - 1];
+  if (/^use[-A-Z]/.test(fileName)) return false;
+  if (/(?:[-.]service|Service)\.tsx$/.test(fileName)) return false;
+  if (/\.e2e-fixture\.tsx$/.test(fileName)) return false;
+  return true;
+}
+
+function hasDirectSupabaseDataPlaneAccess(content) {
+  return /\bsupabase\s*(?:\n\s*)?\.\s*(?:from|rpc)\s*\(/.test(content);
+}
 function isPage(file) { return /(?:page|Page)\.tsx$/.test(file); }
 function lineCount(content) { return content.split('\n').length; }
 
