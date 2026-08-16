@@ -57,6 +57,9 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   'phase2_invoice_truth',
   'phase3_credit_and_ar_integrity',
   'sole_admin_exception',
+  // This forward-only audit-contract repair depends on the receipt VOID
+  // request ledger introduced after historical Phase 3A-1B checkpoints.
+  'wp01_receipt_void_audit_contract_restore',
 ] as const;
 
 export async function createFullReplayedDatabase(options?: {
