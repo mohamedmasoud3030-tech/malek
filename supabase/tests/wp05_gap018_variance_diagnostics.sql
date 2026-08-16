@@ -134,17 +134,49 @@ values
   ('a5000000-0000-4000-8000-000000000183', 'a4000000-0000-4000-8000-000000000180',  400.000, 0, 0, date '2026-07-09', date '2026-07-23', 'UNPAID', 'a0000000-0000-4000-8000-000000000180')
 on conflict (id) do update set amount = excluded.amount;
 
-select lives_ok(
-  format($$
-    select public.post_journal_event(jsonb_build_object(
-      'company_id', '%1$s', 'source_type', 'gap18_fixture', 'source_id', 'gap18-inv-debits',
-      'event_id', 'gap18-inv-debits', 'effective_date', '2026-07-09',
-      'lines', jsonb_build_array(
-        jsonb_build_object('account_id', (select id from public.accounts where company_id = '%1$s'::uuid and no = '1201'), 'debit', 3100.000, 'credit', 0),
-        jsonb_build_object('account_id', (select id from public.accounts where company_id = '%1$s'::uuid and no = '4100'), 'debit', 0, 'credit', 3100.000)
-      )))
-  $$, 'a0000000-0000-4000-8000-000000000180'),
-  'post invoice debits 3100.000 to 1201'
+-- RC1 deliberately excludes unclassified obligations from 1201 unless their
+-- historical invoice source batch proves that they actually created AR. Keep
+-- this variance fixture in that explicit legacy-compatibility lane: one source
+-- batch per invoice, each containing its real 1201 debit.
+select public.post_journal_event(jsonb_build_object(
+  'company_id', 'a0000000-0000-4000-8000-000000000180',
+  'source_type', 'invoice', 'source_id', 'a5000000-0000-4000-8000-000000000181',
+  'event_id', 'issue', 'effective_date', '2026-07-03',
+  'lines', jsonb_build_array(
+    jsonb_build_object('account_id', (select id from public.accounts where company_id = 'a0000000-0000-4000-8000-000000000180' and no = '1201'), 'debit', 1200.000, 'credit', 0),
+    jsonb_build_object('account_id', (select id from public.accounts where company_id = 'a0000000-0000-4000-8000-000000000180' and no = '4100'), 'debit', 0, 'credit', 1200.000)
+  )
+));
+select public.post_journal_event(jsonb_build_object(
+  'company_id', 'a0000000-0000-4000-8000-000000000180',
+  'source_type', 'invoice', 'source_id', 'a5000000-0000-4000-8000-000000000182',
+  'event_id', 'issue', 'effective_date', '2026-07-05',
+  'lines', jsonb_build_array(
+    jsonb_build_object('account_id', (select id from public.accounts where company_id = 'a0000000-0000-4000-8000-000000000180' and no = '1201'), 'debit', 1500.000, 'credit', 0),
+    jsonb_build_object('account_id', (select id from public.accounts where company_id = 'a0000000-0000-4000-8000-000000000180' and no = '4100'), 'debit', 0, 'credit', 1500.000)
+  )
+));
+select public.post_journal_event(jsonb_build_object(
+  'company_id', 'a0000000-0000-4000-8000-000000000180',
+  'source_type', 'invoice', 'source_id', 'a5000000-0000-4000-8000-000000000183',
+  'event_id', 'issue', 'effective_date', '2026-07-09',
+  'lines', jsonb_build_array(
+    jsonb_build_object('account_id', (select id from public.accounts where company_id = 'a0000000-0000-4000-8000-000000000180' and no = '1201'), 'debit', 400.000, 'credit', 0),
+    jsonb_build_object('account_id', (select id from public.accounts where company_id = 'a0000000-0000-4000-8000-000000000180' and no = '4100'), 'debit', 0, 'credit', 400.000)
+  )
+));
+
+select is(
+  (select count(*)::int from public.journal_batches
+   where company_id = 'a0000000-0000-4000-8000-000000000180'
+     and source_type = 'invoice'
+     and source_id in (
+       'a5000000-0000-4000-8000-000000000181',
+       'a5000000-0000-4000-8000-000000000182',
+       'a5000000-0000-4000-8000-000000000183'
+     ) and status = 'POSTED'),
+  3,
+  'post three legacy invoice source batches totalling 3100.000 to 1201'
 );
 
 select lives_ok(
@@ -462,9 +494,9 @@ reset role;
 select is(
   (select count(*)::int from public.journal_batches
     where company_id = 'a0000000-0000-4000-8000-000000000180'
-      and source_type <> 'gap18_fixture'),
+      and source_type not in ('gap18_fixture', 'invoice')),
   0,
-  '13c. the only GL batches for company A are the explicit test fixtures'
+  '13c. the only GL batches for company A are the explicit variance fixtures'
 );
 
 select is(
