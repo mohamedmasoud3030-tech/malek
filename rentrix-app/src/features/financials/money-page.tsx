@@ -17,6 +17,8 @@ import {
   type FinancialsSearch,
 } from './finance-shell-model';
 
+const COMMISSIONS_PANEL_ID = 'money-commissions-panel';
+
 /**
  * Task-centric Money route.
  *
@@ -59,11 +61,7 @@ export function MoneyPage() {
     if (!preferred) return;
     void navigate({
       to: '/financials',
-      search: (previous: Record<string, unknown>) => ({
-        ...previous,
-        section: sectionId,
-        view: preferred.id,
-      }),
+      search: (previous: Record<string, unknown>) => ({ ...previous, section: sectionId, view: preferred.id }),
       replace: true,
     });
   };
@@ -73,11 +71,7 @@ export function MoneyPage() {
     if (!view) return;
     void navigate({
       to: '/financials',
-      search: (previous: Record<string, unknown>) => ({
-        ...previous,
-        section: view.sectionId,
-        view: view.id,
-      }),
+      search: (previous: Record<string, unknown>) => ({ ...previous, section: view.sectionId, view: view.id }),
       replace: true,
     });
   };
@@ -95,6 +89,7 @@ export function MoneyPage() {
           activeId="expenses"
           onChange={navigateToSection}
           ariaLabel="أقسام المال"
+          panelId={COMMISSIONS_PANEL_ID}
         />
 
         {expenseViews.length > 1 ? (
@@ -103,10 +98,11 @@ export function MoneyPage() {
             activeId="commissions"
             onChange={navigateToView}
             ariaLabel="المصروفات والعمولات"
+            panelId={COMMISSIONS_PANEL_ID}
           />
         ) : null}
 
-        <section role="tabpanel" aria-label="العمولات" data-money-view="commissions">
+        <section id={COMMISSIONS_PANEL_ID} role="tabpanel" aria-label="العمولات" data-money-view="commissions">
           <CommissionsWorkspace embedded />
         </section>
       </div>
