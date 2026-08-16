@@ -75,10 +75,10 @@ The status column describes the complete product path at the baseline, not merel
 | OWNER creditor collection | posted operational obligation; stable request; cash or bank method; original invoice tax snapshot | 1111/1120 gross | 2000 net; 2100 original tax where non-zero | `record_invoice_payment_atomic` → receipt/payment/allocation + `owner_funds_events` | governed receipt VOID compensates the original receipt-owned event | VERIFIED_IMPLEMENTED in repository/PGlite |
 | OFFICE creditor invoice (`OFFICE_IS_CREDITOR`) | active OWNER_AGENCY contract with immutable snapshot; effective configured tax profile; open/late-resolved period | 1201 gross | 2000 net; 2100 original tax where non-zero | canonical `post_journal_event`; immutable invoice source batch + tax snapshot | model-aware credit/reversal, never delete | VERIFIED_IMPLEMENTED in repository/PGlite — 4000 is prohibited for this event |
 | OFFICE creditor collection | posted 1201 obligation; stable request; server-derived cash/bank account | 1111/1120 | 1201 gross | `record_invoice_payment_atomic` → internal receipt engine | governed receipt VOID; original AR reopens | VERIFIED_IMPLEMENTED in repository/PGlite |
-| RATE management fee | qualifying actual collection; frozen RATE/ON_COLLECTION agreement; collection **net of original rent tax** | 2000 | 4100 | same receipt-owned batch + `owner_funds_events` | receipt VOID compensates fee with the collection | VERIFIED_IMPLEMENTED in repository/PGlite; no separate service-fee VAT is inferred without an approved service-fee tax basis |
+| RATE management fee | qualifying actual collection; frozen RATE/ON_COLLECTION agreement; collection **net of original rent tax**; active versioned `RATE_MANAGEMENT_FEE` treatment | 2000 gross fee | 4100 net + 2100 fee tax where configured | same receipt-owned batch + immutable management-fee tax snapshot + `owner_funds_events` | receipt VOID compensates fee with the collection | VERIFIED_IMPLEMENTED in repository/PGlite; missing fee treatment fails closed |
 | Invoice credit — OFFICE creditor | posted invoice with immutable source batch/tax snapshot; ceiling; resolved period | 2000 net + 2100 original tax | 1201 gross | `create_invoice_credit_atomic` derives source accounts/amounts; `invoice_credits` components | `reverse_invoice_credit_atomic` reverses its own credit batch | VERIFIED_IMPLEMENTED in repository/PGlite |
 | Invoice credit — OWNER creditor | posted operational obligation with immutable tax snapshot; ceiling; resolved period | — | — | append-only operational `invoice_credits`; no invented GL entry | append-only operational compensating reversal | VERIFIED_IMPLEMENTED in repository/PGlite |
-| FIXED_MONTHLY fee accrual | active service dates; DAILY_ACCRUAL terms; open period; idempotent day/source key | 1300 | 4100 and 2100 when configured | daily accrual event | catch-up or reversal batch | NOT_IMPLEMENTED end-to-end; policy/version fields exist |
+| FIXED_MONTHLY fee accrual | active service dates; DAILY_ACCRUAL terms; active versioned `FIXED_MONTHLY` fee-tax treatment; open period; idempotent day/source key | 1300 gross | 4100 net + 2100 fee tax where configured | immutable daily accrual source row | catch-up or reversal batch | VERIFIED_IMPLEMENTED in repository/PGlite; missing fee treatment fails closed |
 | Company operating expense | approved company obligation and payment basis | 6100 | 1111/1120 or payable where implemented | `expenses`; expense atomic RPCs | expense reversal/adjustment | IMPLEMENTED_UNVERIFIED across all UI variants |
 | Owner expense paid by office | approved owner obligation; owner/property/agreement scope | 1300 | 1111/1120 | owner expense/payment; S04 Due-from-Owner surface | reversal or recovery adjustment | PARTIAL — posting support exists; full recovery path open |
 | Lawful owner offset | enforceable agreement `offset_allowed`; approved settlement order; sufficient 2000 | 2000 | 1300 | settlement and reserved sources | compensating settlement adjustment | PARTIAL — decision/data fields exist; end-to-end offset proof open |
@@ -114,22 +114,34 @@ The RC1 forward migrations are:
 - `20260820040000_rc1_invoice_credit_original_economics.sql` — source-derived,
   partial/full credit components and compensating reversal;
 - `20260820050000_rc1_payment_tax_and_write_boundary.sql` — controlled
-  cash/bank collection, tax allocation lineage, owner-funds event compensation,
-  settlement payout capture and service-only receipt journal engine.
+  cash/bank collection, rent-tax allocation lineage, owner-funds event compensation,
+  settlement payout capture and service-only receipt journal engine;
+- `20260820060000_rc1_cutover_fee_tax_and_legacy_fail_closed.sql` — strict
+  legacy-payment denial, target-bound credit-reversal idempotency, S08-backed
+  owner-funds opening/cutover baseline, independent versioned RATE/FIXED fee-tax
+  treatment and snapshotting, and snapshot-missing historical diagnostics.
 
-`resolve_active_tax_profile(company, issue_date)` is now required for every
-recurring invoice. `VAT`, `VAT_ZERO`, or explicitly configured
+`resolve_active_tax_profile(company, issue_date)` is required for every
+recurring rent invoice. `VAT`, `VAT_ZERO`, or explicitly configured
 `NON_TAXABLE` treatment is snapshotted with code/rate/net/tax/effective date;
-there is no rate fallback to `company_settings`. A missing effective profile
-fails closed. Credits reuse the source invoice snapshot and do not recalculate
-under a later profile.
+there is no rate fallback to `company_settings`. Credits reuse the source
+invoice snapshot and do not recalculate under a later profile.
+
+Management fees have a **separate** effective-dated authority:
+`company_fee_tax_treatments` resolves `RATE_MANAGEMENT_FEE` and
+`FIXED_MONTHLY` independently of rent. RATE collections and daily fixed-fee
+accruals fail closed with `FEE_TAX_TREATMENT_MISSING` when that policy is
+absent. Where configured, they snapshot fee code/rate/net/tax and post 2100;
+the implementation never assumes service-fee VAT is zero.
 
 `owner_funds_events` is the forward append-only 2000 operational control:
 OFFICE creditor issue increases it; OWNER creditor collection increases it;
 fees, credits, receipt VOID compensation and settlement payout decrease or
-restore it as their controlled source event requires. Pre-RC1 rows are not
-backfilled; where historical operational lineage cannot be safely reconstructed,
-S08 review is required before any S09 correction.
+restore it as their controlled source event requires. A company with historical
+2000 sources cannot silently switch to this ledger: it must have an
+S08-approved immutable `owner_funds_event_cutovers` opening balance and
+fingerprint, or new owner-funds events fail closed. Pre-RC1 rows are never
+backfilled; S09 remains required for any historical correction.
 
 Historical detection is read-only through
 `rpt_rc1_owner_agency_invoice_mapping_diagnostics(from, to)`. It identifies
@@ -166,7 +178,7 @@ Their presence proves repository implementation surfaces, not complete end-to-en
 ## Subledger reconciliation contract
 
 - OFFICE_IS_CREDITOR tenant subledger ↔ 1201 Tenant Receivable.
-- Owner funds subledger (`owner_funds_events` for RC1 forward events; historical variance remains visible for S08) ↔ 2000 Owner Funds Payable.
+- Owner funds subledger (`owner_funds_event_cutovers.opening_balance` + post-cutover `owner_funds_events`; fail closed where historic 2000 has no approved cutover) ↔ 2000 Owner Funds Payable.
 - Owner receivable subledger ↔ 1300 Due from Owners.
 - Deposit subledger ↔ 2200 Tenant Deposits Payable.
 - Broker commission payable subledger ↔ 2300 Broker Commissions Payable.

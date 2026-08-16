@@ -103,6 +103,7 @@ The forward-only RC1 correction is documented in:
 - `20260820030000_rc1_owner_agency_invoice_accounting_model.sql`;
 - `20260820040000_rc1_invoice_credit_original_economics.sql`;
 - `20260820050000_rc1_payment_tax_and_write_boundary.sql`;
+- `20260820060000_rc1_cutover_fee_tax_and_legacy_fail_closed.sql`;
 - Documents 4, 7, 8 and 8A.
 
 No historical journal is rewritten. The correction derives immutable role/tax

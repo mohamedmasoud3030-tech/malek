@@ -76,7 +76,8 @@ Owner/tenant dossier screens are views over these records and related financial/
 - `receipts` represent receipt/audit documents.
 - `receipt_allocations` connect receipt/payment value to obligations where applicable; `invoice_payment_tax_allocations` retains the original invoice tax component for controlled collection allocation.
 - `invoice_credits` are append-only credit/reversal records with immutable net/tax/source-economic components; callers do not choose GL accounts.
-- `owner_funds_events` is the append-only forward operational control for 2000 Owner Funds Payable; legacy `owner_balances` is not rewritten to manufacture historical lineage.
+- `owner_funds_event_cutovers` records an S08-approved immutable opening balance/fingerprint for a company with historical 2000 sources; `owner_funds_events` then forms the append-only post-cutover operational control. Legacy `owner_balances` is not rewritten to manufacture historical lineage.
+- `company_fee_tax_treatments` and `management_fee_tax_snapshots` keep RATE/FIXED service-tax policy separate from rent-tax policy and fail closed when the applicable fee treatment is absent.
 - `arrears` is derived from obligations versus satisfied amounts; it is not an independent cash ledger.
 
 ### Expense and maintenance model
