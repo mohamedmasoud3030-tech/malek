@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-15T17:08:19.300Z",
+  "generatedAt": "2026-08-16T02:09:27.700Z",
   "replayCoverage": {
-    "total": 251,
-    "applied": 251,
+    "total": 258,
+    "applied": 258,
     "failed": []
   },
   "anonViolations": [],
@@ -93,6 +93,7 @@
       {
         "paid": 0,
         "amount": 250,
+        "credited": 0,
         "due_date": "2026-07-20",
         "remaining": 250,
         "unit_name": "R-1",

@@ -320,12 +320,7 @@ const reportsRoute = createRoute({
 const aiAssistantRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/ai-assistant',
-  beforeLoad: () => {
-    throw redirect({
-      to: '/dashboard',
-      search: (previous: Record<string, unknown>) => ({ ...previous, globalAction: 'ai-assistant' }),
-    });
-  },
+  component: lazyRouteComponent(() => import('@/routes/_protected.ai-assistant'), 'AiAssistantRouteComponent'),
   staticData: { title: 'المساعد الذكي' },
 });
 

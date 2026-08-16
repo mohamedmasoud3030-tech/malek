@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-08-16T02:20:00Z",
+  "candidate_sha": "da9a98a38e61e9547df1e328ad91084e79b78410",
+  "currency": "OMR",
+  "precision_dp": 3,
+  "reconciliation": [
+    {
+      "account": "1201 (Tenant Receivables)",
+      "gl_balance": "128.040",
+      "subledger_balance": "128.040",
+      "delta": "0.000",
+      "tolerance": "0.001",
+      "status": "PASS"
+    },
+    {
+      "account": "1300 (Due from Owners)",
+      "gl_balance": "112.520",
+      "subledger_balance": "112.520",
+      "delta": "0.000",
+      "tolerance": "0.001",
+      "status": "PASS"
+    },
+    {
+      "account": "2000 (Owner Funds Payable)",
+      "gl_balance": "123.190",
+      "subledger_balance": "123.190",
+      "delta": "0.000",
+      "tolerance": "0.001",
+      "status": "PASS"
+    },
+    {
+      "account": "2200 (Tenant Deposits Payable)",
+      "gl_balance": "128.040",
+      "subledger_balance": "128.040",
+      "delta": "0.000",
+      "tolerance": "0.001",
+      "status": "PASS"
+    },
+    {
+      "account": "2300 (Broker Commissions Payable)",
+      "gl_balance": "110.580",
+      "subledger_balance": "110.580",
+      "delta": "0.000",
+      "tolerance": "0.001",
+      "status": "PASS"
+    },
+    {
+      "account": "1111 (Cash/Bank)",
+      "gl_balance": "350.000",
+      "subledger_balance": "350.000",
+      "delta": "0.000",
+      "tolerance": "0.001",
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,5 +1,10 @@
 [
   {
+    "name": "activate_contract_with_agreement_snapshot_atomic",
+    "security": "DEFINER",
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+  },
+  {
     "name": "approve_owner_settlement_atomic",
     "security": "DEFINER",
     "acl": "{postgres=X/postgres,service_role=X/postgres,authenticated=X/postgres}"
@@ -222,12 +227,12 @@
   {
     "name": "void_receipt_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres}"
+    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
   },
   {
     "name": "void_receipt_atomic",
     "security": "DEFINER",
-    "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    "acl": "{postgres=X/postgres}"
   },
   {
     "name": "void_receipt_atomic",

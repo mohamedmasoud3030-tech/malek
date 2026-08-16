@@ -1,7 +1,7 @@
 # MALEK Canonical Pack — Document 8: Closeout Roadmap and Release Gates
 
 > **Status:** CANONICAL
-> **Baseline:** `main@edf57aae5003d536afb7eb0b212790bb57172751`
+> **Baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)
 > **Open gaps:** 23 (engineering-closed set expanded — see per-gap status in Document 7)
 > **Work packages:** 7
 
@@ -261,7 +261,7 @@ Repository implementation for portions of S02/S04/S06/S07/S08 is acknowledged in
 
 ## Engineering status reconciliation (2026-08-15)
 
-Repository evidence at `main@edf57aae` (verified locally; see Document 7
+Repository evidence at `main@da9a98a3` (verified locally; see Document 7
 evidence ledger) moves the engineering state of several gaps forward without
 granting governed stage credit:
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15T17:07:34.149Z",
+  "generatedAt": "2026-08-16T02:08:30.401Z",
   "scope": "phase3a1b",
   "preRemediation": {
     "note": "replayed full chain EXCLUDING the Phase 3A-1B migration — the active definitions as found on origin/main",
@@ -80,7 +80,7 @@
       },
       {
         "signature": "public.generate_invoices_from_active_contracts()",
-        "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+        "lastDefiningMigration": "20260819010000_phase2_invoice_truth.sql",
         "securityDefiner": true,
         "searchPathConfig": "{\"search_path=public, pg_temp\"}",
         "owner": "postgres",
@@ -93,7 +93,7 @@
         },
         "bodyMd5": "74d29d191b6fd13a8f2c3207c9c65a7a",
         "appCallSites": [
-          "/home/user/malik/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+          "/home/user/rentrix-app/src/features/financials/invoices/invoiceService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -163,7 +163,7 @@
         },
         "bodyMd5": "74f8d6c4cc40a303a8e91d03f471ad96",
         "appCallSites": [
-          "/home/user/malik/rentrix-app/src/features/financials/payments/paymentService.ts"
+          "/home/user/rentrix-app/src/features/financials/payments/paymentService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -198,7 +198,8 @@
         "appCallSites": [],
         "internalCallers": [
           "pay_owner_settlement_atomic_s02_base",
-          "pay_commission_atomic"
+          "pay_commission_atomic",
+          "create_invoice_credit_atomic"
         ],
         "classification": "active (internal)",
         "legacyNoLookupLimit1": false,
@@ -355,7 +356,7 @@
     },
     {
       "signature": "public.generate_invoices_from_active_contracts()",
-      "lastDefiningMigration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
+      "lastDefiningMigration": "20260819010000_phase2_invoice_truth.sql",
       "securityDefiner": true,
       "searchPathConfig": "{\"search_path=public, pg_temp\"}",
       "owner": "postgres",
@@ -366,9 +367,9 @@
         "authenticated": true,
         "serviceRole": true
       },
-      "bodyMd5": "e6ca8897425c194140ddfb2079c5af01",
+      "bodyMd5": "8a87bb88081c04961f82643617369ba9",
       "appCallSites": [
-        "/home/user/malik/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+        "/home/user/rentrix-app/src/features/financials/invoices/invoiceService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",
@@ -383,7 +384,7 @@
       "usesFindPaymentAccountId": false,
       "usesRequireHelper": true,
       "usesEnsureHelper": false,
-      "writesJournal": true,
+      "writesJournal": false,
       "usesIdempotencyTable": false,
       "usesReceiptsRequestId": false,
       "advisoryLock": true,
@@ -438,7 +439,7 @@
       },
       "bodyMd5": "c37e4714431ee2549679b617dace5f6e",
       "appCallSites": [
-        "/home/user/malik/rentrix-app/src/features/financials/payments/paymentService.ts"
+        "/home/user/rentrix-app/src/features/financials/payments/paymentService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",
@@ -480,7 +481,8 @@
         "gl_ml_post_initial_recognition",
         "gl_ml_post_period",
         "gl_ml_post_remeasurement",
-        "gl_ml_post_sublease_receipt"
+        "gl_ml_post_sublease_receipt",
+        "create_invoice_credit_atomic"
       ],
       "classification": "active (internal)",
       "legacyNoLookupLimit1": false,
@@ -616,6 +618,20 @@
       "table_name": "public.invoices",
       "trigger_name": "set_invoices_updated_at",
       "function_name": "touch_updated_at",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.invoices",
+      "trigger_name": "trg_invoice_document_integrity",
+      "function_name": "invoice_document_integrity",
+      "tgenabled": "O",
+      "search_path_config": "{\"search_path=public, pg_temp\"}"
+    },
+    {
+      "table_name": "public.invoices",
+      "trigger_name": "trg_invoice_lineage_guard",
+      "function_name": "invoice_lineage_guard",
       "tgenabled": "O",
       "search_path_config": "{\"search_path=public, pg_temp\"}"
     },

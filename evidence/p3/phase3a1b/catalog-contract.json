@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15T17:07:42.656Z",
+  "generatedAt": "2026-08-16T02:08:39.842Z",
   "posture": "post-3a1b",
   "controls": {
     "immutableRequestBinding": true,
@@ -39,7 +39,7 @@
       "args": "",
       "definer": true,
       "cfg": "{\"search_path=public, pg_temp\"}",
-      "md5": "e6ca8897425c194140ddfb2079c5af01"
+      "md5": "8a87bb88081c04961f82643617369ba9"
     },
     {
       "name": "post_receipt_atomic",
