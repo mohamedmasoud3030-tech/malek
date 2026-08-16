@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, type ComponentType } from 'react';
+import { Suspense, lazy, useCallback, useMemo, useRef, type ComponentType } from 'react';
 import { AccessDenied } from '@/components/layout/access-denied';
 import { PageHeader } from '@/components/layout/page-header';
 import { PageLayout } from '@/components/layout/page-layout';
@@ -19,15 +19,25 @@ const UnitsBody = lazy(async () => {
   const { UnitsWorkspace } = await import('@/features/units/units-page');
   return { default: function UnitsEmbedded() { return <UnitsWorkspace embedded />; } };
 });
+const LandsBody = lazy(async () => {
+  const { LandsWorkspace } = await import('@/features/lands/lands-page');
+  return { default: function LandsEmbedded() { return <LandsWorkspace embedded />; } };
+});
+const OwnersBody = lazy(async () => {
+  const { OwnersWorkspace } = await import('@/features/owners/OwnersPage');
+  return { default: function OwnersEmbedded() { return <OwnersWorkspace embedded />; } };
+});
 
 const sectionComponents: Record<PortfolioHubSectionId, ComponentType> = {
   properties: PropertiesBody,
   units: UnitsBody,
+  lands: LandsBody,
+  owners: OwnersBody,
 };
 
 function SectionFallback() {
   return (
-    <div className="space-y-3" role="status" aria-label="جارٍ تحميل القسم">
+    <div className="space-y-3" role="status" aria-label="جارٍ تحميل قسم المحفظة">
       <Skeleton className="h-24" />
       <Skeleton className="h-64" />
     </div>
@@ -43,8 +53,8 @@ export type PortfolioHubWorkspaceProps = Readonly<{
 
 export function PortfolioHubWorkspace({
   defaultSection = 'properties',
-  title = 'العقارات',
-  description = 'العقارات والوحدات والأراضي في مساحة تشغيل واحدة.',
+  title = 'المحفظة',
+  description = 'كل ما يديره المكتب: العقارات والوحدات والأراضي وعلاقات الملكية في سياق واحد.',
   mode = 'standalone',
 }: PortfolioHubWorkspaceProps) {
   const { authorization } = useAuth();
@@ -59,17 +69,6 @@ export function PortfolioHubWorkspace({
 
   const mountedSections = useRef(new Set<PortfolioHubSectionId>());
   if (activeSection) mountedSections.current.add(activeSection);
-
-  useEffect(() => {
-    if (requestedSection === 'owners') {
-      void navigate({ to: '/owners', replace: true });
-      return;
-    }
-    if (requestedSection === 'lands') {
-      void navigate({ to: '/lands', replace: true });
-      return;
-    }
-  }, [navigate, requestedSection]);
 
   const handleSectionChange = useCallback(
     (nextSection: PortfolioHubSectionId) => {
@@ -98,22 +97,17 @@ export function PortfolioHubWorkspace({
     );
   };
 
-  // Backward compatibility: owners and lands are now first-class routes (Phase 2).
-  if (requestedSection === 'owners' || requestedSection === 'lands') {
-    return shell(<SectionFallback />);
-  }
-
   if (hasNoVisibleSections) {
-    return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام العقارات." />);
+    return shell(<AccessDenied message="ليس لديك صلاحية لعرض أي من أقسام المحفظة." />);
   }
 
   if (isRequestedSectionForbidden || !activeSection) {
-    return shell(<AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من العقارات." />);
+    return shell(<AccessDenied message="ليس لديك صلاحية لعرض هذا القسم من المحفظة." />);
   }
 
   return shell(
     <>
-      <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام العقارات" />
+      <SectionTabs items={visibleSections} activeId={activeSection} onChange={handleSectionChange} ariaLabel="أقسام المحفظة" />
       {portfolioHubSections
         .filter((section) => mountedSections.current.has(section.id) && visibleSections.some((visible) => visible.id === section.id))
         .map((section) => {

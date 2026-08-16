@@ -60,8 +60,17 @@ describe('app route and task-centric navigation parity', () => {
     expect(navGroups.map(([title]) => title)).toEqual(['العمل', 'التحليل والإدارة']);
   });
 
-  it('moves entity registers into the workspace that owns the user task', () => {
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units', '/lands', '/owners']);
+  it('keeps Portfolio child links inside Portfolio with explicit section state', () => {
+    const portfolioChildren = workspaceChildNavItems['/properties'];
+    expect(portfolioChildren.map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
+    expect(portfolioChildren.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
+      { labelKey: 'units', permission: undefined, search: { section: 'units' } },
+      { labelKey: 'lands', permission: 'lands.view', search: { section: 'lands' } },
+      { labelKey: 'owners', permission: 'owners.hub.view', search: { section: 'owners' } },
+    ]);
+  });
+
+  it('moves the remaining entity registers into the workspace that owns the user task', () => {
     expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/tenants', '/people', '/leads', '/communication']);
     expect(workspaceChildNavItems['/financials'].map(([to]) => to)).toEqual([
       '/invoices',
@@ -103,7 +112,7 @@ describe('app route and task-centric navigation parity', () => {
     expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobilePaths, ...quickCreatePaths]));
   });
 
-  it('keeps permissioned navigation links aligned with route guards', () => {
+  it('keeps permissioned direct navigation links aligned with route guards', () => {
     for (const [to, , , , permission, search] of [...navItems, ...quickCreateItems]) {
       if (!permission || search) continue;
       expect(getRouteDefinition(to)).toContain(`requirePermission('${permission}')`);

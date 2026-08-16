@@ -7,6 +7,7 @@ import { navigationLabels } from './terminology-registry';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
+const portfolioSectionsSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-sections.ts', import.meta.url), 'utf8');
 const financialsPageSource = readFileSync(new URL('../../features/financials/financials-page.tsx', import.meta.url), 'utf8');
 const financialsSource = readFileSync(new URL('../../features/financials/finance-shell-model.ts', import.meta.url), 'utf8')
   + '\n' + financialsPageSource;
@@ -28,12 +29,25 @@ describe('Task-centric canonical IA', () => {
     }
   });
 
-  it('organizes Portfolio around managed assets and ownership', () => {
+  it('organizes Portfolio around managed assets and ownership in one workspace', () => {
     expect(getNavRoot('/properties')).toBe('/properties');
     expect(getNavRoot('/units')).toBe('/properties');
     expect(getNavRoot('/lands')).toBe('/properties');
     expect(getNavRoot('/owners')).toBe('/properties');
-    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/units', '/lands', '/owners']);
+
+    const portfolioChildren = workspaceChildNavItems['/properties'];
+    expect(portfolioChildren.map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
+    expect(portfolioChildren.map(([, labelKey, , , , search]) => [labelKey, search?.section])).toEqual([
+      ['units', 'units'],
+      ['lands', 'lands'],
+      ['owners', 'owners'],
+    ]);
+
+    expect(portfolioSectionsSource).toContain("'properties' | 'units' | 'lands' | 'owners'");
+    expect(portfolioHubSource).toContain('LandsWorkspace');
+    expect(portfolioHubSource).toContain('OwnersWorkspace');
+    expect(portfolioHubSource).not.toContain("navigate({ to: '/lands'");
+    expect(portfolioHubSource).not.toContain("navigate({ to: '/owners'");
   });
 
   it('organizes Leasing around contract and relationship workflows', () => {
@@ -80,9 +94,12 @@ describe('Task-centric canonical IA', () => {
     expect(reportItems.map(([to]) => to)).toEqual(['/reports']);
   });
 
-  it('preserves legacy hub/deep-link compatibility instead of breaking routes', () => {
-    expect(portfolioHubSource).toContain("requestedSection === 'lands'");
-    expect(portfolioHubSource).toContain("navigate({ to: '/lands'");
+  it('preserves standalone deep-link compatibility while preferring owning workspaces', () => {
+    expect(hasRoute('/lands')).toBe(true);
+    expect(hasRoute('/owners')).toBe(true);
+    expect(hasRoute('/units')).toBe(true);
+    // Money is still in transition in this stage; commissions compatibility is
+    // intentionally preserved until the Money workspace refactor lands.
     expect(financialsSource).toContain("navigate({ to: '/commissions'");
     expect(routeTreeSource).toContain("throw redirect({ to: '/commissions' })");
     expect(routeTreeSource).toContain("...previous");

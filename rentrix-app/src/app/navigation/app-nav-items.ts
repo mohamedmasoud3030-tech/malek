@@ -59,15 +59,15 @@ export const navGroups: readonly NavGroup[] = [
 ];
 
 /**
- * Progressive disclosure inside each primary workspace. These links keep the
- * existing routes and permissions intact while removing feature-by-feature
- * navigation from the global shell.
+ * Progressive disclosure inside each primary workspace. Existing standalone
+ * entity URLs stay routable for deep links, while child navigation prefers the
+ * owning workspace so users keep context instead of bouncing between modules.
  */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
-    ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
-    ['/lands', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view'],
-    ['/owners', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRoundCog, 'owners.hub.view'],
+    ['/properties', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, undefined, { section: 'units' }],
+    ['/properties', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view', { section: 'lands' }],
+    ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRoundCog, 'owners.hub.view', { section: 'owners' }],
   ],
   '/contracts': [
     ['/tenants', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck],
