@@ -1,7 +1,7 @@
 # MALEK Canonical Pack — Document 1: Product Charter and Scope
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
+> **Baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)
 
 ## Product definition
 

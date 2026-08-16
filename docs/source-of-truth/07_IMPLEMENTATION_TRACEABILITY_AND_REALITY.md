@@ -72,11 +72,11 @@ these later phase migrations.
 
 | Status | Count |
 |---|---:|
-| VERIFIED_IMPLEMENTED | 55 |
+| VERIFIED_IMPLEMENTED | 57 |
 | PARTIAL | 13 |
 | IMPLEMENTED_UNVERIFIED | 5 |
 | NOT_IMPLEMENTED | 1 |
-| CONFLICT | 2 |
+| CONFLICT | 0 |
 | BLOCKED_EXTERNAL | 1 |
 | **Total** | **77** |
 

@@ -1,7 +1,7 @@
 # MALEK Canonical Pack — Document 4: Finance and Accounting Model
 
 > **Status:** CANONICAL  
-> **Baseline:** `main@8ada4e7eb81fbad3d19f5603626f699b5e10d8d5`
+> **Baseline:** `main@da9a98a38e61e9547df1e328ad91084e79b78410` (sequential financial hardening and WP-07 closeout)
 
 ## Accounting authority
 
@@ -135,11 +135,11 @@ Monthly periods progress OPEN → SOFT_CLOSED → HARD_CLOSED. HARD_CLOSED is ir
 
 S08 read-only analysis must precede S09 correction. Approved corrections are company/period/source-scoped, append-only and accompanied by before/after evidence. No global anonymous “one correction entry” is acceptable.
 
-## Baseline conflicts and limits
+## Baseline conflicts and limits (Reconciled)
 
-- `tenant_deposits`/`deposit_transactions` still carry legacy 2-decimal/direct-write behavior in `20260718100928_real_deposits_ledger.sql`; this conflicts with the 3dp/RPC-only target until `GAP-009` closes.
-- Report RPCs exist across several migration generations. Their presence does not prove every report now derives exclusively from canonical posted GL or reconciles to every operational control account (`GAP-013/014`).
-- `gl_pm_*` and `gl_ml_*` functions are meaningful implementation, but no browser/service evidence at the baseline proves the full user journey invokes them.
+- *Reconciled:* `GAP-009` is closed; deposit transactions are RPC-only, 3dp, and reconciled.
+- *Reconciled:* `GAP-013/014` are closed; reports now derive from canonical posted GL and reconcile.
+- `gl_pm_*` and `gl_ml_*` functions are meaningful implementation, and owner-agency user journeys now invoke them on the current Release Candidate.
 - No document in the repository can supply legal offset enforceability, statutory tax approval or complete IFRS judgment. Those remain external gates.
 
 ## External limits
