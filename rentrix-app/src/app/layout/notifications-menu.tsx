@@ -12,17 +12,18 @@ import { cn } from '@/lib/utils';
 import type { SharedLabel } from './layout-navigation-view';
 import { listAppNotifications, markAppNotificationRead } from './app-notifications-service';
 
-/** Contracts expiring within this window are surfaced as notifications. */
-const EXPIRING_CONTRACT_WINDOW_DAYS = 30;
-
 /**
+ * R1 — Dashboard Truth: notification counts come from the authoritative
+ * server snapshot KPIs (arrears.overdueCount, contracts.expiring30,
+ * maintenance.urgentOpen). The feed never counts row datasets in the browser.
+ *
  * Narrow structural input so the builder stays pure and unit-testable without
  * constructing the full dashboard snapshot type.
  */
 export type NotificationSnapshotInput = {
-  arrears?: { overdueInvoices?: readonly unknown[] } | null;
-  maintenance?: { urgentRequests?: readonly unknown[] } | null;
-  activeContracts?: readonly { end_date?: string | null }[] | null;
+  arrears?: { overdueCount?: number } | null;
+  contracts?: { expiring30?: number } | null;
+  maintenance?: { urgentOpen?: number } | null;
 } | null | undefined;
 
 export type NotificationFeedItem = Readonly<{
@@ -33,28 +34,14 @@ export type NotificationFeedItem = Readonly<{
   permission?: AppPermission;
 }>;
 
-function isExpiringWithin(endDate: string | null | undefined, today: Date): boolean {
-  if (!endDate) return false;
-  const end = new Date(`${endDate}T00:00:00`);
-  if (Number.isNaN(end.getTime())) return false;
-  const start = new Date(today);
-  start.setHours(0, 0, 0, 0);
-  const cutoff = new Date(start);
-  cutoff.setDate(cutoff.getDate() + EXPIRING_CONTRACT_WINDOW_DAYS);
-  cutoff.setHours(23, 59, 59, 999);
-  return end.getTime() >= start.getTime() && end.getTime() <= cutoff.getTime();
-}
-
 /**
  * Builds the notification feed from the shared dashboard snapshot.
  * Pure: no hooks, no providers — easy to assert in unit tests.
  */
-export function buildNotificationItems(snapshot: NotificationSnapshotInput, today: Date): NotificationFeedItem[] {
-  const overdueCount = snapshot?.arrears?.overdueInvoices?.length ?? 0;
-  const expiringCount = (snapshot?.activeContracts ?? []).filter((contract) =>
-    isExpiringWithin(contract.end_date, today),
-  ).length;
-  const urgentMaintenanceCount = snapshot?.maintenance?.urgentRequests?.length ?? 0;
+export function buildNotificationItems(snapshot: NotificationSnapshotInput): NotificationFeedItem[] {
+  const overdueCount = snapshot?.arrears?.overdueCount ?? 0;
+  const expiringCount = snapshot?.contracts?.expiring30 ?? 0;
+  const urgentMaintenanceCount = snapshot?.maintenance?.urgentOpen ?? 0;
 
   const items: NotificationFeedItem[] = [
     { to: '/arrears', labelKey: 'notifOverdueInvoices', count: overdueCount, Icon: CreditCard, permission: 'arrears.view' },
@@ -119,7 +106,7 @@ export function NotificationsMenu({
   const hasBlockingError = (snapshotQuery.isError && snapshotQuery.data === undefined)
     || (persistedQuery.isError && persistedQuery.data === undefined);
 
-  const operationalItems = buildNotificationItems(snapshotQuery.data, today)
+  const operationalItems = buildNotificationItems(snapshotQuery.data)
     .filter((item) => canShowNavigationItem(authorization, item.permission))
     .map((item) => ({ ...item, id: `operational:${item.to}`, title: sharedLabel(item.labelKey), message: '', isRead: false }));
   const persistedItems = (persistedQuery.data ?? [])

@@ -65,73 +65,72 @@ vi.mock('./dashboard-snapshot', () => ({
   getDashboardSnapshot: vi.fn(),
 }));
 
-vi.mock('@/features/financials/reconciliation/bankReconciliationService', () => ({
-  listBankStatementLines: vi.fn().mockResolvedValue([]),
-}));
-
-vi.mock('@/features/owners/services/owner-settlements-service', () => ({
-  listOwnerSettlements: vi.fn().mockResolvedValue([]),
-}));
-
-vi.mock('@/features/system/services/data-integrity-service', () => ({
-  runDataIntegrityAudit: vi.fn().mockResolvedValue({ checks: [] }),
+vi.mock('@/services/action-center-counts', () => ({
+  fetchIntegrityWarningsCount: vi.fn().mockResolvedValue(0),
 }));
 
 const mockSnapshot = {
   period: {
     dateFrom: '2026-06-01',
     dateTo: '2026-06-28',
+    asOf: '2026-06-28',
+    month: 6,
+    year: 2026,
   },
-  operational: {
-    properties: 4,
-    units: 15,
-    activeContracts: 8,
-    expiringContracts30Days: 2,
-    vacantUnits: 3,
-    occupiedUnits: 12,
-    occupancyRate: 80,
-  },
-  financial: {
-    rentDue: 15000,
-    collectedRent: 12000,
-    outstandingRent: 3000,
-    expenses: 1500,
-    netPosition: 10500,
-  },
-  activeContracts: [
-    {
-      id: 'contract-1',
-      // Relative date: the dashboard only lists contracts expiring within the
-      // next 30 days — a hardcoded date silently filters the fixture out over time.
-      end_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      properties: { title: 'برج الياسمين' },
-      units: { unit_number: '101' },
-      people: { full_name: 'سالم الكعبي' },
-    }
-  ],
+  portfolio: { properties: 4, units: 15 },
+  occupancy: { occupiedUnits: 12, vacantUnits: 3, occupancyRate: 80 },
+  contracts: { active: 8, expiring30: 2, expiring60: 3, expiring90: 4 },
+  billing: { invoicedAmount: 15000, invoicesCount: 10, invoicesTotalCount: 42 },
+  collections: { collectedAmount: 12000, paymentsCount: 8, outstandingAmount: 3000, collectionRate: 80 },
+  expenses: { totalAmount: 1500, count: 3 },
+  netCash: 10500,
   arrears: {
     totalOverdue: 3000,
-    overdueInvoiceCount: 2,
+    overdueCount: 2,
+    averageDaysOverdue: 18,
+    over90Amount: 0,
+    over90Count: 0,
+    totalOutstanding: 3000,
+    buckets: {
+      current: { total: 0, count: 0 },
+      days_1_30: { total: 1500, count: 1 },
+      days_31_60: { total: 1500, count: 1 },
+      days_61_90: { total: 0, count: 0 },
+      days_90_plus: { total: 0, count: 0 },
+    },
+  },
+  ownerFunds: { netPayable: 0, settlementsDraft: 0, settlementsApproved: 0 },
+  maintenance: { open: 2, inProgress: 1, urgentOpen: 1 },
+  exceptions: { unmatchedBankLines: 0, pendingSettlements: 0 },
+  queues: {
+    expiringContracts: [
+      {
+        id: 'contract-1',
+        reference: 'CON-1',
+        // Relative date keeps the fixture honest with the 30-day window copy.
+        endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        daysRemaining: 10,
+        tenantName: 'سالم الكعبي',
+        propertyTitle: 'برج الياسمين',
+        unitNumber: '101',
+      },
+    ],
     overdueInvoices: [
       {
         invoiceId: 'invoice-1',
-        tenantName: 'أحمد الفارسي',
-        propertyTitle: 'برج الخليج',
-        unitNumber: '5',
+        reference: 'INV-1',
         dueDate: '2026-06-10',
         daysOverdue: 18,
         remainingAmount: 1500,
-      }
+        tenantName: 'أحمد الفارسي',
+        propertyTitle: 'برج الخليج',
+        unitNumber: '5',
+      },
     ],
-    agedReceivables: {
-      buckets: {
-        days_1_30: { total: 1500, invoiceCount: 1 },
-        days_31_60: { total: 1500, invoiceCount: 1 },
-        days_61_90: { total: 0, invoiceCount: 0 },
-        days_90_plus: { total: 0, invoiceCount: 0 },
-      }
-    }
-  }
+    urgentMaintenance: [
+      { id: 'maintenance-1', title: 'تسرب مياه', priority: 'urgent', propertyTitle: 'برج الخليج', unitNumber: '5' },
+    ],
+  },
 };
 
 describe('Modular DashboardPage Query Boundary Tests', () => {

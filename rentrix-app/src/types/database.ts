@@ -8472,6 +8472,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpt_dashboard_snapshot: {
+        Args: {
+          p_from: string | null;
+          p_to: string | null;
+          p_as_of?: string | null;
+        };
+        Returns: Json;
+      };
       rpt_financial_summary: {
         Args: {
           p_from: string | null;

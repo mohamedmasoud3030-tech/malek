@@ -54,8 +54,8 @@ export function ArrearsBreakdown({ snapshot, settings }: ArrearsBreakdownProps) 
         </div>
         <div className="dashboard-aging-grid">
           {BUCKET_CONFIG.map(({ key, label, borderClass, textClass }) => {
-            const total = snapshot?.arrears.agedReceivables.buckets[key]?.total ?? 0;
-            const count = snapshot?.arrears.agedReceivables.buckets[key]?.invoiceCount ?? 0;
+            const total = snapshot?.arrears.buckets[key]?.total ?? 0;
+            const count = snapshot?.arrears.buckets[key]?.count ?? 0;
             return (
               <div key={key} className={`dashboard-aging-bucket ${borderClass}`}>
                 <p className="dashboard-aging-bucket__label">{label}</p>

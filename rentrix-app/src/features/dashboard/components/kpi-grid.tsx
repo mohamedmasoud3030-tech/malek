@@ -60,14 +60,14 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
     typeof value === 'number' && Number.isFinite(value) ? formatCompanyMoney(settings, value) : 'غير متاح'
   );
   const overdue = snapshot?.arrears.totalOverdue;
-  const net = snapshot?.financial.netPosition;
-  const collected = snapshot?.financial.collectedRent;
-  const rentDue = snapshot?.financial.rentDue;
-  const outstanding = snapshot?.financial.outstandingRent;
-  const invoiceCount = snapshot?.financial.invoicesCount;
-  const paymentsCount = snapshot?.financial.paymentsCount;
-  const expensesCount = snapshot?.financial.expensesCount;
-  const overdueInvoiceCount = snapshot?.arrears.overdueInvoiceCount;
+  const net = snapshot?.netCash;
+  const collected = snapshot?.collections.collectedAmount;
+  const rentDue = snapshot?.billing.invoicedAmount;
+  const outstanding = snapshot?.collections.outstandingAmount;
+  const invoiceCount = snapshot?.billing.invoicesCount;
+  const paymentsCount = snapshot?.collections.paymentsCount;
+  const expensesCount = snapshot?.expenses.count;
+  const overdueInvoiceCount = snapshot?.arrears.overdueCount;
 
   const items: DashboardKpi[] = [
     {
@@ -102,7 +102,7 @@ export function KpiGrid({ snapshot, isLoading, settings }: KpiGridProps) {
     },
     {
       label: 'المصروفات',
-      value: money(snapshot?.financial.expenses),
+      value: money(snapshot?.expenses.totalAmount),
       icon: Receipt,
       support: `${expensesCount ?? 'غير متاح'} قيود مصروفات خلال الفترة`,
       stateTone: 'neutral',

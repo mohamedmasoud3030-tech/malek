@@ -77,20 +77,20 @@ export function DashboardCharts({ snapshot, isLoading, settings }: DashboardChar
 
   const money = (value: number) => formatCompanyMoney(settings, value);
   const collectionItems: BarItem[] = [
-    { label: 'المستحق', value: snapshot?.financial.rentDue ?? 0, tone: 'bg-info' },
-    { label: 'المحصّل', value: snapshot?.financial.collectedRent ?? 0, tone: 'bg-success' },
-    { label: 'المتبقي', value: snapshot?.financial.outstandingRent ?? 0, tone: 'bg-warning' },
+    { label: 'المستحق', value: snapshot?.billing.invoicedAmount ?? 0, tone: 'bg-info' },
+    { label: 'المحصّل', value: snapshot?.collections.collectedAmount ?? 0, tone: 'bg-success' },
+    { label: 'المتبقي', value: snapshot?.collections.outstandingAmount ?? 0, tone: 'bg-warning' },
     { label: 'المتأخر', value: snapshot?.arrears.totalOverdue ?? 0, tone: 'bg-danger' },
   ];
-  const totalUnits = snapshot?.operational.units ?? 0;
+  const totalUnits = snapshot?.portfolio.units ?? 0;
   const occupancyItems: BarItem[] = [
     { label: 'إجمالي الوحدات', value: totalUnits, tone: 'bg-info' },
-    { label: 'مشغولة', value: snapshot?.operational.occupiedUnits ?? 0, tone: 'bg-success' },
-    { label: 'شاغرة', value: snapshot?.operational.vacantUnits ?? 0, tone: 'bg-warning' },
+    { label: 'مشغولة', value: snapshot?.occupancy.occupiedUnits ?? 0, tone: 'bg-success' },
+    { label: 'شاغرة', value: snapshot?.occupancy.vacantUnits ?? 0, tone: 'bg-warning' },
     {
       label: 'نسبة الإشغال',
-      value: totalUnits > 0 ? (snapshot?.operational.occupancyRate ?? 0) * totalUnits / 100 : 0,
-      displayValue: `${snapshot?.operational.occupancyRate ?? 0}%`,
+      value: totalUnits > 0 ? (snapshot?.occupancy.occupancyRate ?? 0) * totalUnits / 100 : 0,
+      displayValue: `${snapshot?.occupancy.occupancyRate ?? 0}%`,
       tone: 'bg-primary',
     },
   ];

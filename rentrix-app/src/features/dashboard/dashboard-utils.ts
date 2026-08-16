@@ -1,9 +1,14 @@
-import type { ContractListItem } from '@/features/contracts/services/contractService';
-import type { OverdueInvoiceReportRow } from '@/features/financials/reports/financialReportsService';
+/**
+ * R1 — Dashboard Truth: presentation adapters only.
+ *
+ * The authoritative KPI numbers and the bounded work-queue rows both come from
+ * the server read model (rpt_dashboard_snapshot). These helpers translate the
+ * server queue rows into the display shapes the queue cards render — they
+ * never filter, count, or derive an authoritative number.
+ */
+import type { DashboardQueueContractRow, DashboardQueueInvoiceRow } from './dashboard-snapshot';
 
 export const DASHBOARD_WINDOW_DAYS = 30;
-export const MAX_EXPIRING_ROWS = 5;
-export const MAX_OVERDUE_ROWS = 5;
 
 export function toDateInputValue(date: Date) {
   const y = date.getFullYear();
@@ -18,16 +23,9 @@ export function addDays(date: Date, days: number) {
   return d;
 }
 
-export function calculateDaysRemaining(endDate: string, today: Date) {
-  const t = Date.parse(`${toDateInputValue(today)}T00:00:00.000Z`);
-  const e = Date.parse(`${endDate}T00:00:00.000Z`);
-  if (!Number.isFinite(t) || !Number.isFinite(e)) return 0;
-  return Math.max(0, Math.ceil((e - t) / 86_400_000));
-}
-
-function getContractLocation(c: ContractListItem) {
-  const prop = c.properties?.title ?? 'عقار غير محدد';
-  return c.units?.unit_number ? `${prop} / وحدة ${c.units.unit_number}` : prop;
+function formatQueueLocation(propertyTitle: string | null, unitNumber: string | null) {
+  const property = propertyTitle ?? 'عقار غير محدد';
+  return unitNumber ? `${property} / وحدة ${unitNumber}` : property;
 }
 
 export type ExpiringContractRow = {
@@ -35,28 +33,15 @@ export type ExpiringContractRow = {
   location: string; endDate: string; daysRemaining: number;
 };
 
-export function buildExpiringContracts(
-  contracts: ContractListItem[] | undefined,
-  today: Date,
-): ExpiringContractRow[] {
-  const cutoff = addDays(today, DASHBOARD_WINDOW_DAYS);
-  const todayStart = Date.parse(`${toDateInputValue(today)}T00:00:00.000Z`);
-  const cutoffEnd = Date.parse(`${toDateInputValue(cutoff)}T23:59:59.999Z`);
-  return (contracts ?? [])
-    .filter((c) => {
-      if (!c.end_date) return false;
-      const endDate = Date.parse(`${c.end_date}T00:00:00.000Z`);
-      return Number.isFinite(endDate) && endDate >= todayStart && endDate <= cutoffEnd;
-    })
-    .slice(0, MAX_EXPIRING_ROWS)
-    .map((c) => ({
-      id: c.id,
-      contractNumber: c.reference ?? 'عقد بلا مرجع تجاري',
-      tenantName: c.people?.full_name ?? 'مستأجر',
-      location: getContractLocation(c),
-      endDate: c.end_date ?? '',
-      daysRemaining: calculateDaysRemaining(c.end_date ?? '', today),
-    }));
+export function buildExpiringContracts(rows: DashboardQueueContractRow[] | undefined): ExpiringContractRow[] {
+  return (rows ?? []).map((row) => ({
+    id: row.id,
+    contractNumber: row.reference ?? 'عقد بلا مرجع تجاري',
+    tenantName: row.tenantName ?? 'مستأجر',
+    location: formatQueueLocation(row.propertyTitle, row.unitNumber),
+    endDate: row.endDate,
+    daysRemaining: row.daysRemaining,
+  }));
 }
 
 export type OverdueTenantRow = {
@@ -64,21 +49,13 @@ export type OverdueTenantRow = {
   dueDate: string; daysOverdue: number; remainingAmount: number;
 };
 
-export function buildOverdueTenantRows(
-  rows: OverdueInvoiceReportRow[] | undefined,
-): OverdueTenantRow[] {
-  return (rows ?? [])
-    .slice()
-    .sort((a, b) => b.daysOverdue - a.daysOverdue)
-    .slice(0, MAX_OVERDUE_ROWS)
-    .map((row) => ({
-      invoiceId: row.invoiceId,
-      tenantName: row.tenantName ?? 'مستأجر غير محدد',
-      location: row.unitNumber
-        ? `${row.propertyTitle ?? 'عقار'} / وحدة ${row.unitNumber}`
-        : (row.propertyTitle ?? 'عقار غير محدد'),
-      dueDate: row.dueDate,
-      daysOverdue: row.daysOverdue,
-      remainingAmount: row.remainingAmount,
-    }));
+export function buildOverdueTenantRows(rows: DashboardQueueInvoiceRow[] | undefined): OverdueTenantRow[] {
+  return (rows ?? []).map((row) => ({
+    invoiceId: row.invoiceId,
+    tenantName: row.tenantName ?? 'مستأجر غير محدد',
+    location: formatQueueLocation(row.propertyTitle, row.unitNumber),
+    dueDate: row.dueDate,
+    daysOverdue: row.daysOverdue,
+    remainingAmount: row.remainingAmount,
+  }));
 }

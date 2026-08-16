@@ -7,11 +7,18 @@ import { DASHBOARD_WINDOW_DAYS, type ExpiringContractRow } from '../dashboard-ut
 
 interface ExpiringContractsSectionProps {
   rows: ExpiringContractRow[];
+  /**
+   * Server-authoritative 30-day expiring contract count (contracts.expiring_30).
+   * The queue rows are a bounded top-5 slice, so rows.length must never be
+   * shown as the operational number.
+   */
+  totalCount?: number;
   isLoading: boolean;
   settings: ReturnType<typeof import('@/hooks/useCompanyFormatters').useCompanyFormatters>;
 }
 
-export function ExpiringContractsSection({ rows, isLoading, settings }: ExpiringContractsSectionProps) {
+export function ExpiringContractsSection({ rows, totalCount, isLoading, settings }: ExpiringContractsSectionProps) {
+  const badgeCount = totalCount ?? rows.length;
   const { date } = settings;
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,7 +35,7 @@ export function ExpiringContractsSection({ rows, isLoading, settings }: Expiring
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!isLoading ? <StatusBadge tone={rows.length > 0 ? 'warning' : 'success'}>{rows.length}</StatusBadge> : null}
+          {!isLoading ? <StatusBadge tone={badgeCount > 0 ? 'warning' : 'success'}>{badgeCount}</StatusBadge> : null}
           <Link to="/contracts" data-dashboard-section-action className="dashboard-section-link">عرض الكل</Link>
         </div>
       </div>
