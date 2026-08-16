@@ -71,8 +71,11 @@ describe('buildDeferredRevenueAudit', () => {
 });
 
 describe('buildExecutiveHealthInsights', () => {
-  it('returns bounded operational ratios', () => {
+  it('uses the authoritative cohort collection rate even when period cash implies a different ratio', () => {
     const insights = buildExecutiveHealthInsights({
+      // paid / invoiced would be 85%. The server cohort metric is deliberately
+      // 76%, proving the browser no longer derives collection efficiency.
+      collectionRate: 76,
       invoiced: 1000,
       paid: 850,
       outstanding: 150,
@@ -81,11 +84,12 @@ describe('buildExecutiveHealthInsights', () => {
       totalUnits: 10,
     });
 
-    expect(insights[0]?.value).toBe(85);
+    expect(insights[0]?.value).toBe(76);
+    expect(insights[0]?.formattedValue).toContain('76');
+    expect(insights[0]?.tone).toBe('warning');
     expect(insights[1]?.value).toBeCloseTo(23.5294117647, 10);
     expect(insights[2]?.value).toBe(90);
     expect(insights[3]?.value).toBe(15);
-    expect(insights[0]?.tone).toBe('good');
     expect(insights[2]?.tone).toBe('good');
   });
 });
