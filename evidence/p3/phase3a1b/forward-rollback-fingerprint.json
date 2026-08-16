@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T03:55:30.673Z",
+  "generatedAt": "2026-08-16T10:34:55.159Z",
   "migration": "20260728090000_phase3a1b_canonical_accounts_invoice_payment_receipt_void.sql",
   "rollback": "20260728_rollback_phase3a1b_invoice_payment_receipt_void.sql",
   "signatures": {
@@ -34,8 +34,8 @@
     "invoices_paid_sum": "0.00"
   },
   "lifecycle": {
-    "forwardReceipt": "7ef5cdf3-5888-438b-b791-1d8464365650",
-    "reappliedReceipt": "cf21bac3-8aa9-4614-ae86-4efa309abee5",
+    "forwardReceipt": "09a597b7-815d-4657-9bdc-57506d0cd2d8",
+    "reappliedReceipt": "4b5c349e-99aa-4b99-9e2f-d6ffbf971bbf",
     "immutableRequestBindingPassed": true,
     "voidSingleReversalReplayPassed": true
   },

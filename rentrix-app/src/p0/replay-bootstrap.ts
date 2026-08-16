@@ -59,6 +59,12 @@ export const P0_CHECKPOINT_EXCLUDED_MIGRATIONS = [
   'rc1_cutover_fee_tax_and_legacy_fail_closed',
   'rc1_accounting_closeout_hardening',
   'rc1_inline_owner_funds_solvency_type_closeout',
+  // Downstream RC1 migrations that structurally depend on the owner-funds
+  // subledger created by rc1_owner_agency_invoice_accounting_model. This
+  // historical P0 checkpoint must omit them together with the rest of the
+  // RC1 accounting family.
+  'rc1_release_integration_fk_indexes',
+  'rc1_owner_offset_2000_control',
 ] as const;
 
 export async function createReplayedDatabase(options?: {

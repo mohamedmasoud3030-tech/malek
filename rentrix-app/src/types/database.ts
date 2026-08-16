@@ -4712,7 +4712,7 @@ export type Database = {
           owner_id: string;
           contract_id: string | null;
           invoice_id: string | null;
-          source_type: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT';
+          source_type: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT' | 'OWNER_OFFSET' | 'OWNER_OFFSET_REVERSAL';
           source_id: string;
           event_id: string;
           amount_delta: number;
@@ -4726,7 +4726,7 @@ export type Database = {
           owner_id: string;
           contract_id?: string | null;
           invoice_id?: string | null;
-          source_type: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT';
+          source_type: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT' | 'OWNER_OFFSET' | 'OWNER_OFFSET_REVERSAL';
           source_id: string;
           event_id: string;
           amount_delta: number;
@@ -4740,7 +4740,7 @@ export type Database = {
           owner_id?: string;
           contract_id?: string | null;
           invoice_id?: string | null;
-          source_type?: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT';
+          source_type?: 'OFFICE_INVOICE' | 'OWNER_COLLECTION' | 'MANAGEMENT_FEE' | 'INVOICE_CREDIT' | 'INVOICE_CREDIT_REVERSAL' | 'RECEIPT_VOID_REVERSAL' | 'OWNER_SETTLEMENT_PAYOUT' | 'OWNER_OFFSET' | 'OWNER_OFFSET_REVERSAL';
           source_id?: string;
           event_id?: string;
           amount_delta?: number;

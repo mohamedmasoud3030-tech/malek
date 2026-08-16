@@ -1,3 +1,62 @@
 {
-  "generatedAt": "2026-08-16T03:52:57.714Z"
+  "generatedAt": "2026-08-16T10:32:16.545Z",
+  "scenario": "multi-invoice allocation + immutable request replay + row-count/overpay/foreign-account rejections (atomic)",
+  "receiptId": "77cc31b0-0000-4000-8000-000000000001",
+  "allocationTotal": 700,
+  "invoiceStates": {
+    "a1": {
+      "paid": 200,
+      "status": "PARTIALLY_PAID"
+    },
+    "a2": {
+      "paid": 500,
+      "status": "PAID"
+    }
+  },
+  "journal": {
+    "debit": 700,
+    "credit": 700,
+    "companyOk": true,
+    "count": 2
+  },
+  "contractBalanceMatchesInvoices": true,
+  "requestBinding": {
+    "reorderedAllocationsReplaySameReceipt": true,
+    "changedAllocationRejected": true,
+    "changedContractOrAmountRejected": true,
+    "noReplaySideEffects": {
+      "receipts": 1,
+      "payments": 1,
+      "allocations": 2,
+      "journals": 2
+    }
+  },
+  "invoiceUpdateScope": {
+    "companyPredicate": true,
+    "expectedDistinctInvoiceIds": 2,
+    "updatedRows": 2,
+    "deletedBetweenValidationAndUpdateRejected": true,
+    "noPartialState": true
+  },
+  "recordLifecycle": {
+    "receipt1": "cc9dbb81-1067-441b-a409-d6f78c3bef07",
+    "receipt2": "64875b9b-6a0e-4d4c-9db8-3ac60e2ea92b",
+    "retrySameReceipt": true,
+    "replayResponseExact": true,
+    "replaySideEffects": {
+      "receipts": 1,
+      "payments": 1,
+      "allocations": 1,
+      "journals": 4
+    },
+    "differentTargetRejected": true,
+    "changedAmountRejected": true,
+    "unverifiedLegacyEnvelopeRejected": true,
+    "rawRequestIdStored": true,
+    "finalInvoice": {
+      "paid": 1050,
+      "status": "PAID"
+    },
+    "overpayRejected": true
+  }
 }

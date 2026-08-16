@@ -105,15 +105,15 @@ begin
   if not exists (
     select 1 from public.accounting_periods
     where company_id = '00000000-0000-4000-8000-000000000001'
-      and start_date <= date '2026-09-01'
-      and end_date >= date '2026-09-30'
+      and start_date <= date '2026-06-01'
+      and end_date >= date '2026-06-30'
   ) then
     insert into public.accounting_periods (
       id, company_id, name, start_date, end_date, status
     ) values (
       '00000000-0000-0000-0000-000000001901',
       '00000000-0000-4000-8000-000000000001',
-      'Release Lifecycle 2026-09', date '2026-09-01', date '2026-09-30', 'OPEN'
+      'Release Lifecycle 2026-06', date '2026-06-01', date '2026-12-31', 'OPEN'
     );
   end if;
 end;
@@ -211,7 +211,7 @@ select lives_ok(
       '00000000-0000-0000-0000-000000001401',
       '00000000-0000-0000-0000-000000001501',
       '00000000-0000-0000-0000-000000001601',
-      date '2026-09-01', date '2027-08-31', 1000, 'monthly', null,
+      date '2026-06-01', date '2027-08-31', 1000, 'monthly', null,
       'draft', null, 'release-lifecycle-contract', null
     )
   $$,
@@ -274,8 +274,8 @@ insert into public.invoices (
 select
   '00000000-0000-0000-0000-000000001701',
   c.id::uuid,
-  date '2026-09-01', date '2026-09-05', 1000, 0, 0, 0,
-  'UNPAID', c.company_id, 'DRAFT', 'RENT', date '2026-09-01', date '2026-09-30',
+  date '2026-06-01', date '2026-06-05', 1000, 0, 0, 0,
+  'UNPAID', c.company_id, 'DRAFT', 'RENT', date '2026-06-01', date '2026-06-30',
   c.agreement_version_id, c.operating_model_snapshot, c.collection_role_snapshot,
   'OWNER_AGENCY_OWNER_CREDITOR_OPERATIONAL', 'NON_TAXABLE',
   '00000000-0000-0000-0000-000000001801', 'NON_TAXABLE', 'NON_TAXABLE'
@@ -289,7 +289,7 @@ insert into public.taxable_line_tax_snapshots (
   '00000000-0000-0000-0000-000000001802',
   '00000000-0000-4000-8000-000000000001', 'invoice',
   '00000000-0000-0000-0000-000000001701', null, '2100',
-  'NON_TAXABLE', 0, 1000, 0, date '2026-09-01'
+  'NON_TAXABLE', 0, 1000, 0, date '2026-06-01'
 );
 
 update public.invoices
@@ -305,7 +305,7 @@ select lives_ok(
       'invoice_id', '00000000-0000-0000-0000-000000001701',
       'amount', 250,
       'method', 'cash',
-      'date', '2026-09-05',
+      'date', '2026-06-05',
       'reference', 'RL-PAYMENT-1',
       'request_id', 'release-lifecycle-payment-1'
     ))
@@ -377,7 +377,7 @@ select is(
   'void restores the invoice paid amount'
 );
 select is(
-  (public.rpt_daily_collection(date '2026-09-05', date '2026-09-05')->>'total')::numeric,
+  (public.rpt_daily_collection(date '2026-06-05', date '2026-06-05')->>'total')::numeric,
   0::numeric,
   'voided payments are excluded from daily collection reporting'
 );
@@ -459,7 +459,7 @@ select throws_ok(
       'property_id', '00000000-0000-0000-0000-000000001301',
       'unit_id', '00000000-0000-0000-0000-000000001401',
       'amount', 200,
-      'received_date', '2026-09-05',
+      'received_date', '2026-06-05',
       'request_id', 'release-lifecycle-deposit-denied'
     ))
   $$,
@@ -493,7 +493,7 @@ select lives_ok(
       'property_id', '00000000-0000-0000-0000-000000001301',
       'unit_id', '00000000-0000-0000-0000-000000001401',
       'amount', 200,
-      'received_date', '2026-09-05',
+      'received_date', '2026-06-05',
       'notes', 'release lifecycle deposit',
       'request_id', 'release-lifecycle-deposit-1'
     ))
@@ -508,7 +508,7 @@ select lives_ok(
       'property_id', '00000000-0000-0000-0000-000000001301',
       'unit_id', '00000000-0000-0000-0000-000000001401',
       'amount', 200,
-      'received_date', '2026-09-05',
+      'received_date', '2026-06-05',
       'notes', 'release lifecycle deposit',
       'request_id', 'release-lifecycle-deposit-1'
     ))
@@ -562,7 +562,7 @@ select throws_ok(
     select public.apply_deposit_claim_atomic(jsonb_build_object(
       'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-overdraw-claim'),
       'request_id', 'release-lifecycle-deposit-overdraw-apply',
-      'effective_date', '2026-09-06'
+      'effective_date', '2026-06-06'
     ))
   $$,
   null,
@@ -606,7 +606,7 @@ select lives_ok(
     select public.apply_deposit_claim_atomic(jsonb_build_object(
       'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-deduct-claim'),
       'request_id', 'release-lifecycle-deposit-deduct-1',
-      'effective_date', '2026-09-06'
+      'effective_date', '2026-06-06'
     ))
   $$,
   'deposit deduction succeeds'
@@ -616,7 +616,7 @@ select lives_ok(
     select public.apply_deposit_claim_atomic(jsonb_build_object(
       'claim_id', (select id from public.deposit_application_claims where request_id = 'release-lifecycle-deposit-deduct-claim'),
       'request_id', 'release-lifecycle-deposit-deduct-1',
-      'effective_date', '2026-09-06'
+      'effective_date', '2026-06-06'
     ))
   $$,
   'deposit deduction replay is idempotent'
@@ -642,7 +642,7 @@ select lives_ok(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
       'amount', 150,
       'payment_method', 'bank_transfer',
-      'refund_date', '2026-09-07',
+      'refund_date', '2026-06-07',
       'notes', 'release lifecycle refund',
       'request_id', 'release-lifecycle-deposit-refund-1'
     ))
@@ -655,7 +655,7 @@ select lives_ok(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
       'amount', 150,
       'payment_method', 'bank_transfer',
-      'refund_date', '2026-09-07',
+      'refund_date', '2026-06-07',
       'notes', 'release lifecycle refund',
       'request_id', 'release-lifecycle-deposit-refund-1'
     ))
@@ -737,7 +737,7 @@ select lives_ok(
       'invoice_id', '00000000-0000-0000-0000-000000001701',
       'amount', 750,
       'method', 'bank_transfer',
-      'date', '2026-09-10',
+      'date', '2026-06-10',
       'reference', 'RL-PAYMENT-2',
       'request_id', 'release-lifecycle-payment-2'
     ))
@@ -749,7 +749,7 @@ reset role;
 
 insert into public.expenses (property_id, category, amount, expense_date, date_time, status, charged_to, description, company_id)
 values (
-  '00000000-0000-0000-0000-000000001301', 'maintenance', 50, date '2026-09-12', '2026-09-12',
+  '00000000-0000-0000-0000-000000001301', 'maintenance', 50, date '2026-06-12', '2026-06-12',
   'POSTED', 'OWNER', 'release lifecycle owner expense', '00000000-0000-4000-8000-000000000001'
 );
 
@@ -767,8 +767,8 @@ select lives_ok(
     select public.create_owner_settlement_draft_atomic(jsonb_build_object(
       'owner_id', '00000000-0000-0000-0000-000000001201',
       'property_id', '00000000-0000-0000-0000-000000001301',
-      'period_start', '2026-09-01',
-      'period_end', '2026-09-30',
+      'period_start', '2026-06-01',
+      'period_end', '2026-06-30',
       'gross_collected', 9999,
       'office_fee', 1,
       'owner_expenses', 1,
@@ -784,8 +784,8 @@ select lives_ok(
     select public.create_owner_settlement_draft_atomic(jsonb_build_object(
       'owner_id', '00000000-0000-0000-0000-000000001201',
       'property_id', '00000000-0000-0000-0000-000000001301',
-      'period_start', '2026-09-01',
-      'period_end', '2026-09-30',
+      'period_start', '2026-06-01',
+      'period_end', '2026-06-30',
       'gross_collected', 9999,
       'office_fee', 1,
       'owner_expenses', 1,
@@ -866,8 +866,8 @@ select throws_ok(
     select public.create_owner_settlement_draft_atomic(jsonb_build_object(
       'owner_id', '00000000-0000-0000-0000-000000001201',
       'property_id', '00000000-0000-0000-0000-000000001301',
-      'period_start', '2026-09-01',
-      'period_end', '2026-09-30',
+      'period_start', '2026-06-01',
+      'period_end', '2026-06-30',
       'gross_collected', 9999,
       'office_fee', 1,
       'owner_expenses', 1,

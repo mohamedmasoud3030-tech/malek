@@ -120,6 +120,10 @@ beforeAll(async () => {
       && !f.includes('rc1_invoice_credit_original_economics')
       && !f.includes('rc1_payment_tax_and_write_boundary')
       && !f.includes('rc1_cutover_fee_tax_and_legacy_fail_closed')
+      && !f.includes('rc1_accounting_closeout_hardening')
+      && !f.includes('rc1_inline_owner_funds_solvency_type_closeout')
+      && !f.includes('rc1_release_integration_fk_indexes')
+      && !f.includes('rc1_owner_offset_2000_control')
       && !f.includes('sole_admin_exception')
     )
     .sort((a, b) => a.localeCompare(b));

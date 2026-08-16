@@ -1,3 +1,39 @@
 {
-  "generatedAt": "2026-08-16T03:52:57.714Z"
+  "generatedAt": "2026-08-16T10:32:16.545Z",
+  "scenario": "generate → retry → B-require-failure",
+  "generatedInvoiceId": "13704cd9-cb87-4cf7-823d-dde2881f3aeb",
+  "totals": {
+    "amount": 1000,
+    "tax": 50,
+    "due": 1050
+  },
+  "journalLines": [
+    {
+      "account_id": "coa:c31b0000-0000-4000-8000-000000000001:1201",
+      "account_no": "1201",
+      "account_company": "c31b0000-0000-4000-8000-000000000001",
+      "amount": "1050.000",
+      "type": "DEBIT",
+      "company_id": "c31b0000-0000-4000-8000-000000000001"
+    },
+    {
+      "account_id": "coa:c31b0000-0000-4000-8000-000000000001:2000",
+      "account_no": "2000",
+      "account_company": "c31b0000-0000-4000-8000-000000000001",
+      "amount": "1000.000",
+      "type": "CREDIT",
+      "company_id": "c31b0000-0000-4000-8000-000000000001"
+    },
+    {
+      "account_id": "coa:c31b0000-0000-4000-8000-000000000001:2100",
+      "account_no": "2100",
+      "account_company": "c31b0000-0000-4000-8000-000000000001",
+      "amount": "50.000",
+      "type": "CREDIT",
+      "company_id": "c31b0000-0000-4000-8000-000000000001"
+    }
+  ],
+  "retryCreatedDuplicates": false,
+  "companyBRequireError": "TAX_PROFILE_MISSING",
+  "crossCompanyWrites": 0
 }

@@ -14,6 +14,8 @@ import {
   CHECKER_B,
   COMPANY_A,
   COMPANY_B,
+  CONTRACT_B,
+  INVOICE_B1,
   OWNER_A,
   OWNER_B,
   PROPERTY_A,
@@ -255,6 +257,38 @@ describe('Phase 3A-1C owner-settlement execution', () => {
         ('p3a1c-b-2000', '2000', 'Owner Payables B', '${COMPANY_B}'),
         ('p3a1c-b-1111', '1111', 'Cash B', '${COMPANY_B}');
     `);
+    // Seed Company B's lawful prior owner-funds obligation (its July 2026
+    // gross collection of 700) so the settlement payout below does not drive
+    // the RC1 2000 control negative. GL credit to 2000 with a linked
+    // owner_funds_events row.
+    await db.query(`insert into public.accounting_periods (company_id, name, start_date, end_date, status)
+      values ('${COMPANY_B}', 'Phase3A1C Replay B', date '2026-07-01', date '2026-12-31', 'OPEN')
+      on conflict do nothing;`);
+    const { rows: bBatch } = await db.query<{ batch_id: string }>(
+      `select public.post_journal_event($1::jsonb)::jsonb ->> 'batch_id' as batch_id`,
+      [
+        JSON.stringify({
+          company_id: COMPANY_B,
+          source_type: 'owner_funds_seed',
+          source_id: 'phase3a1c-owner-funds-seed-b',
+          event_id: 'opening',
+          effective_date: '2026-07-01',
+          description: 'Phase 3A-1C owner-funds opening payable for collected rent (B)',
+          lines: [
+            { account_id: 'p3a1c-b-1111', debit: 700, credit: 0 },
+            { account_id: 'p3a1c-b-2000', debit: 0, credit: 700 },
+          ],
+        }),
+      ],
+    );
+    await db.query(
+      `insert into public.owner_funds_events (
+         company_id, owner_id, contract_id, invoice_id, source_type, source_id, event_id,
+         amount_delta, effective_date, journal_batch_id
+       ) values ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'OFFICE_INVOICE', 'phase3a1c-owner-funds-seed-b',
+         'opening', 700, date '2026-07-01', $5::uuid)`,
+      [COMPANY_B, OWNER_B, CONTRACT_B, INVOICE_B1, bBatch[0].batch_id],
+    );
     // The ADMIN_B identity created this settlement. Payment is a governed
     // financial transition, so execute it as the distinct active checker.
     await assumeIdentity(db, CHECKER_B, COMPANY_B);

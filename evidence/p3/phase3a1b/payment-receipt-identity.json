@@ -1,3 +1,24 @@
 {
-  "generatedAt": "2026-08-16T03:52:57.714Z"
+  "generatedAt": "2026-08-16T10:32:16.545Z",
+  "multiReceipt": {
+    "receiptId": "77cc31b0-0000-4000-8000-000000000001",
+    "paymentId": "77cc31b0-0000-4000-8000-000000000001",
+    "sharedIdentity": true
+  },
+  "recordedReceipts": [
+    {
+      "receiptId": "cc9dbb81-1067-441b-a409-d6f78c3bef07",
+      "paymentId": "cc9dbb81-1067-441b-a409-d6f78c3bef07",
+      "shared": true
+    },
+    {
+      "receiptId": "64875b9b-6a0e-4d4c-9db8-3ac60e2ea92b",
+      "paymentId": "64875b9b-6a0e-4d4c-9db8-3ac60e2ea92b",
+      "shared": true
+    }
+  ],
+  "idempotencyRows": {
+    "operation_name": "post_receipt_atomic:c31b0000-0000-4000-8000-000000000001",
+    "request_id": "p3a1b-pay-1"
+  }
 }

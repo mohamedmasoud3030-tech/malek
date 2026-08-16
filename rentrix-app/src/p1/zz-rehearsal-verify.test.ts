@@ -137,21 +137,14 @@ function transformSuite(sql: string): string {
 
 async function closeQuietly(db: PGlite) { try { await (db as any).close?.(); } catch { /* noop */ } }
 
-describe('p1 release rehearsal verification (historical P0+P1 checkpoint)', () => {
+describe('p1 release rehearsal verification (full RC1 chain)', () => {
   it(`produces ZERO failing assertions in ${SUITE} with server-derived settlement amounts`, async () => {
-    // This fixture is an immutable P0/P1 rehearsal, not the current RC1
-    // financial suite. Exclude the later owner-agency correction family so it
-    // does not falsely fail on documents that predate Phase-2 posting lineage.
-    // Full current behavior is covered by db0:gate and the RC1 financial tests.
-    const { db, failed: migFailures } = await createFullReplayedDatabase({
-      includeLaterGoverned: true,
-      excludeMigrations: [
-        'rc1_owner_agency_invoice_accounting_model',
-        'rc1_invoice_credit_original_economics',
-        'rc1_payment_tax_and_write_boundary',
-        'rc1_cutover_fee_tax_and_legacy_fail_closed',
-      ],
-    });
+    // The rehearsal fixture exercises the full current RC1 schema surface
+    // (immutable agreement-version snapshot columns, versioned tax profiles,
+    // fee-tax treatments, and the owner-funds subledger control). It must
+    // therefore be replayed against the complete forward migration chain from
+    // zero, not a pre-RC1 checkpoint.
+    const { db, failed: migFailures } = await createFullReplayedDatabase({});
     expect(migFailures, JSON.stringify(migFailures).slice(0, 500)).toEqual([]);
 
     await db.exec(SHIM);

@@ -206,7 +206,7 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
         'invoice_id', '${invoiceId}',
         'amount', 400,
         'method', 'cash',
-        'date', '2026-01-03',
+        'date', '2026-08-03',
         'request_id', 'pay-req-001'
       ));
     `);
@@ -215,7 +215,7 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
         'invoice_id', '${invoiceId}',
         'amount', 600,
         'method', 'cash',
-        'date', '2026-01-04',
+        'date', '2026-08-04',
         'request_id', 'pay-req-002'
       ));
     `);
@@ -328,8 +328,8 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     const draftRes = await db.query<{ create_owner_settlement_draft_atomic: any }>(`
       select public.create_owner_settlement_draft_atomic(jsonb_build_object(
         'owner_id', 'a1000000-0000-4000-8000-000000000001',
-        'period_start', '2026-01-01',
-        'period_end', '2026-01-31',
+        'period_start', '2026-08-01',
+        'period_end', '2026-08-31',
         'request_id', 'a0000000-0000-4000-8000-000000000001'
       )) as create_owner_settlement_draft_atomic;
     `);
@@ -378,8 +378,8 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     const draft2 = await db.query<{ create_owner_settlement_draft_atomic: any }>(`
       select public.create_owner_settlement_draft_atomic(jsonb_build_object(
         'owner_id', 'a1000000-0000-4000-8000-000000000001',
-        'period_start', '2026-02-01',
-        'period_end', '2026-02-28',
+        'period_start', '2026-09-01',
+        'period_end', '2026-09-30',
         'request_id', 'a0000000-0000-4000-8000-000000000010'
       )) as create_owner_settlement_draft_atomic;
     `);

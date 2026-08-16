@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T03:53:26.219Z",
+  "generatedAt": "2026-08-16T10:32:50.085Z",
   "scope": "phase3a1b",
   "preRemediation": {
     "note": "replayed full chain EXCLUDING the Phase 3A-1B migration — the active definitions as found on origin/main",
@@ -80,7 +80,7 @@
       },
       {
         "signature": "public.generate_invoices_from_active_contracts()",
-        "lastDefiningMigration": "20260819010000_phase2_invoice_truth.sql",
+        "lastDefiningMigration": "20260820030000_rc1_owner_agency_invoice_accounting_model.sql",
         "securityDefiner": true,
         "searchPathConfig": "{\"search_path=public, pg_temp\"}",
         "owner": "postgres",
@@ -93,7 +93,7 @@
         },
         "bodyMd5": "74d29d191b6fd13a8f2c3207c9c65a7a",
         "appCallSites": [
-          "/home/user/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+          "/home/user/repo/rentrix-app/src/features/financials/invoices/invoiceService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -150,7 +150,7 @@
       },
       {
         "signature": "public.record_invoice_payment_atomic(payload jsonb)",
-        "lastDefiningMigration": "20260813170000_wp02_rate_fee_collection_wiring.sql",
+        "lastDefiningMigration": "20260820060000_rc1_cutover_fee_tax_and_legacy_fail_closed.sql",
         "securityDefiner": true,
         "searchPathConfig": "{\"search_path=public, pg_temp\"}",
         "owner": "postgres",
@@ -163,7 +163,7 @@
         },
         "bodyMd5": "74f8d6c4cc40a303a8e91d03f471ad96",
         "appCallSites": [
-          "/home/user/rentrix-app/src/features/financials/payments/paymentService.ts"
+          "/home/user/repo/rentrix-app/src/features/financials/payments/paymentService.ts"
         ],
         "internalCallers": [],
         "classification": "active (app)",
@@ -355,7 +355,7 @@
     },
     {
       "signature": "public.generate_invoices_from_active_contracts()",
-      "lastDefiningMigration": "20260819010000_phase2_invoice_truth.sql",
+      "lastDefiningMigration": "20260820030000_rc1_owner_agency_invoice_accounting_model.sql",
       "securityDefiner": true,
       "searchPathConfig": "{\"search_path=public, pg_temp\"}",
       "owner": "postgres",
@@ -368,7 +368,7 @@
       },
       "bodyMd5": "8a87bb88081c04961f82643617369ba9",
       "appCallSites": [
-        "/home/user/rentrix-app/src/features/financials/invoices/invoiceService.ts"
+        "/home/user/repo/rentrix-app/src/features/financials/invoices/invoiceService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",
@@ -425,7 +425,7 @@
     },
     {
       "signature": "public.record_invoice_payment_atomic(payload jsonb)",
-      "lastDefiningMigration": "20260813170000_wp02_rate_fee_collection_wiring.sql",
+      "lastDefiningMigration": "20260820060000_rc1_cutover_fee_tax_and_legacy_fail_closed.sql",
       "securityDefiner": true,
       "searchPathConfig": "{\"search_path=public, pg_temp\"}",
       "owner": "postgres",
@@ -438,7 +438,7 @@
       },
       "bodyMd5": "c37e4714431ee2549679b617dace5f6e",
       "appCallSites": [
-        "/home/user/rentrix-app/src/features/financials/payments/paymentService.ts"
+        "/home/user/repo/rentrix-app/src/features/financials/payments/paymentService.ts"
       ],
       "internalCallers": [],
       "classification": "active (app)",

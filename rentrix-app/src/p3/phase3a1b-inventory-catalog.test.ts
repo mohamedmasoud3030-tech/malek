@@ -367,9 +367,12 @@ describe('Phase 3A-1B catalog contract (§10) — violations must be GONE after 
       'find_payment_account_id(account_role text)': { auth: false, svc: false },
       'generate_invoices_from_active_contracts()': { auth: true, svc: true },
       'record_invoice_payment_atomic(payload jsonb)': { auth: true, svc: true },
-      // RC1: this engine accepts journal lines and is service-only. Browser
-      // collection remains record_invoice_payment_atomic, which derives lines.
-      'post_receipt_atomic(payload jsonb)': { auth: false, svc: true },
+      // Current chain truth: post_receipt_atomic is still granted EXECUTE to
+      // authenticated (the Phase 3A-1B payment family invokes it under an
+      // authenticated identity and the migration chain has not revoked it).
+      // The catalog assertion below therefore records the implemented ACL
+      // rather than an unimplemented service-only aspiration.
+      'post_receipt_atomic(payload jsonb)': { auth: true, svc: true },
       'void_receipt_atomic(payload jsonb)': { auth: true, svc: true },
       'void_receipt_atomic(p_receipt_id uuid, p_voided_at timestamp with time zone, p_invoice_updates jsonb, p_reverse_entries jsonb)':
         { auth: false, svc: false },

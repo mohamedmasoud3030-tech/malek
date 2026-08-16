@@ -32,6 +32,13 @@ const RC1_ACCOUNTING_MARKERS = [
   'rc1_cutover_fee_tax_and_legacy_fail_closed',
   'rc1_accounting_closeout_hardening',
   'rc1_inline_owner_funds_solvency_type_closeout',
+  // These two downstream RC1 migrations structurally depend on tables
+  // created by the excluded RC1 migrations above (owner_funds_events comes
+  // from rc1_owner_agency_invoice_accounting_model). Historical checkpoint
+  // replays that intentionally stop before RC1 must omit them too, otherwise
+  // they abort with "relation ... does not exist".
+  'rc1_release_integration_fk_indexes',
+  'rc1_owner_offset_2000_control',
 ] as const;
 
 const LATER_GOVERNED_STAGE_MARKERS = [

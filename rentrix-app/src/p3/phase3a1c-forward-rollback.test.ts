@@ -130,7 +130,7 @@ describe('Phase 3A-1C forward / rollback / reapply', () => {
       // baseline exactly (same convention as the catalog-contract suite).
       // GAP-008 relies on the deliberately excluded canonical GL tables.
       excludeMigrations: [MIGRATION_KEY, FOLLOW_UP_COMPATIBILITY_KEY, '20260804', '20260807163000', '20260817100000', 'phase1_omr_precision_convergence', 'phase2_invoice_truth', 'phase3_credit_and_ar_integrity', 'rc1_owner_agency_invoice_accounting_model', 'rc1_invoice_credit_original_economics', 'rc1_payment_tax_and_write_boundary',
-        'rc1_cutover_fee_tax_and_legacy_fail_closed', 'sole_admin_exception'],
+        'rc1_cutover_fee_tax_and_legacy_fail_closed', 'rc1_accounting_closeout_hardening', 'rc1_inline_owner_funds_solvency_type_closeout', 'rc1_release_integration_fk_indexes', 'rc1_owner_offset_2000_control', 'sole_admin_exception'],
       writeEvidence: false,
     });
     expect(replay.failed).toEqual([]);
