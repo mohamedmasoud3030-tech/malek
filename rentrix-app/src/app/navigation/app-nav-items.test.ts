@@ -37,9 +37,9 @@ describe('app route and task-centric navigation parity', () => {
     expect(routeTreeSource).toContain('notFoundComponent: NotFoundPage');
   });
 
-  it('exposes exactly seven global destinations', () => {
-    const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    expect(primaryPaths).toEqual([
+  it('exposes exactly seven global destinations in two lightweight groups', () => {
+    const primaryItems = navGroups.flatMap(([, items]) => items);
+    expect(primaryItems.map(([to]) => to)).toEqual([
       '/dashboard',
       '/properties',
       '/contracts',
@@ -48,15 +48,16 @@ describe('app route and task-centric navigation parity', () => {
       '/reports',
       '/settings',
     ]);
-    expect(navGroups.map(([title]) => title)).toEqual([
+    expect(primaryItems.map(([, labelKey]) => navigationLabels[labelKey])).toEqual([
       'اليوم',
       'المحفظة',
       'التأجير',
       'المال',
       'الخدمات',
-      'التقارير',
+      'التقارير والكشوف',
       'الإعدادات',
     ]);
+    expect(navGroups.map(([title]) => title)).toEqual(['العمل', 'التحليل والإدارة']);
   });
 
   it('moves entity registers into the workspace that owns the user task', () => {
