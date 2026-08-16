@@ -49,15 +49,15 @@ function anchor(html: string, href: string) {
 }
 
 describe('Visual Wave 1 — route-derived app navigation', () => {
-  it('marks the People root as current on an owner detail route', () => {
+  it('keeps owner detail work inside the Portfolio root', () => {
     pathname = '/owners/owner-42';
 
     const html = renderToStaticMarkup(
       <NavigationLinks authorization={admin} expanded sharedLabel={sharedLabel} />,
     );
 
-    expect(anchor(html, '/people')?.getAttribute('aria-current')).toBe('page');
-    expect(anchor(html, '/properties')?.getAttribute('aria-current')).toBeNull();
+    expect(anchor(html, '/properties')?.getAttribute('aria-current')).toBe('page');
+    expect(anchor(html, '/contracts')?.getAttribute('aria-current')).toBeNull();
   });
 
   it('renders only Menu and Search in the mobile floating control', () => {

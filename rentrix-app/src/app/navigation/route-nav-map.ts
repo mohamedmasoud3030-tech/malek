@@ -3,6 +3,7 @@ export const routeNavRoot = new Map<string, string>([
   ['/dashboard', '/dashboard'],
   ['/', '/dashboard'],
 
+  // Portfolio owns managed assets and ownership context.
   ['/properties', '/properties'],
   ['/properties/new', '/properties'],
   ['/properties/$propertyId', '/properties'],
@@ -10,37 +11,39 @@ export const routeNavRoot = new Map<string, string>([
   ['/properties/$propertyId/units', '/properties'],
   ['/properties/$propertyId/units/$unitId', '/properties'],
   ['/units', '/properties'],
-  ['/lands', '/lands'],
-  ['/lands/$landId', '/lands'],
+  ['/lands', '/properties'],
+  ['/lands/$landId', '/properties'],
+  ['/owners', '/properties'],
+  ['/owners/$ownerId', '/properties'],
+  ['/owners/$ownerId/edit', '/properties'],
 
-  ['/owners', '/people'],
-  ['/owners/$ownerId', '/people'],
-
-  ['/tenants', '/people'],
-  ['/tenants/$tenantId', '/people'],
-
+  // Leasing owns tenant/party relationship workflows around contracts.
   ['/contracts', '/contracts'],
   ['/contracts/new', '/contracts'],
   ['/contracts/$contractId', '/contracts'],
   ['/contracts/$contractId/edit', '/contracts'],
-  ['/people', '/people'],
-  ['/people/$personId', '/people'],
-  ['/people/new', '/people'],
-  ['/people/$personId/edit', '/people'],
-  ['/leads', '/people'],
-  ['/communication', '/people'],
+  ['/tenants', '/contracts'],
+  ['/tenants/$tenantId', '/contracts'],
+  ['/people', '/contracts'],
+  ['/people/$personId', '/contracts'],
+  ['/people/new', '/contracts'],
+  ['/people/$personId/edit', '/contracts'],
+  ['/leads', '/contracts'],
+  ['/communication', '/contracts'],
 
+  // Services owns operational work and its supporting records.
   ['/maintenance', '/maintenance'],
   ['/service-providers', '/maintenance'],
   ['/service-providers/new', '/maintenance'],
   ['/service-providers/$providerId', '/maintenance'],
   ['/service-providers/$providerId/edit', '/maintenance'],
   ['/utilities', '/maintenance'],
-  ['/automation', '/settings'],
   ['/documents-vault', '/maintenance'],
 
-  // Finance has one primary destination. The operational subroutes stay valid
-  // but must keep the single Finance item highlighted.
+  ['/automation', '/settings'],
+
+  // Money is one operational financial destination. Detailed registers remain
+  // addressable, but they never become competing global navigation roots.
   ['/financials', '/financials'],
   ['/finance/collections', '/financials'],
   ['/finance/expenses', '/financials'],
@@ -53,10 +56,9 @@ export const routeNavRoot = new Map<string, string>([
   ['/deposits', '/financials'],
   ['/owner-settlements', '/financials'],
   ['/bank-reconciliation', '/financials'],
-  ['/commissions', '/commissions'],
+  ['/commissions', '/financials'],
 
-  // Accounting and reports are one primary destination. /accounting remains a
-  // compatibility deep-link into the general-ledger report section.
+  // Reports stays independent from day-to-day money operations.
   ['/reports', '/reports'],
   ['/accounting', '/reports'],
   ['/ai-assistant', '/dashboard'],
@@ -69,17 +71,12 @@ export const routeNavRoot = new Map<string, string>([
 ]);
 
 export const navRootTitle: Record<string, string> = {
-  '/dashboard': 'لوحة التحكم',
-  '/people': 'جهات التعامل',
-  '/properties': 'العقارات',
-  '/lands': 'الأراضي',
-  '/owners': 'الملاك',
-  '/tenants': 'المستأجرون',
-  '/contracts': 'العقود',
-  '/maintenance': 'التشغيل والصيانة',
-  '/financials': 'المالية',
-  '/commissions': 'العمولات',
-  '/reports': 'المحاسبة والتقارير',
+  '/dashboard': 'اليوم',
+  '/properties': 'المحفظة',
+  '/contracts': 'التأجير',
+  '/financials': 'المال',
+  '/maintenance': 'الخدمات',
+  '/reports': 'التقارير',
   '/settings': 'الإعدادات',
 };
 

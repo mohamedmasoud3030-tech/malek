@@ -6,6 +6,13 @@
 
 /** Canonical Arabic label for every primary/mobile navigation labelKey. */
 export const navigationLabels: Readonly<Record<string, string>> = {
+  // Task-centric primary IA
+  today: 'اليوم',
+  portfolio: 'المحفظة',
+  leasing: 'التأجير',
+  money: 'المال',
+
+  // Route/entity terminology kept for secondary workspaces and compatibility
   dashboard: 'لوحة التحكم',
   properties: 'العقارات',
   owners: 'الملاك',
@@ -18,7 +25,7 @@ export const navigationLabels: Readonly<Record<string, string>> = {
   financialOverview: 'المالية',
   accountingReports: 'المحاسبة والتقارير',
   reports: 'المحاسبة والتقارير',
-  reportsAndStatements: 'المحاسبة والتقارير',
+  reportsAndStatements: 'التقارير والكشوف',
   aiAssistant: 'المساعد الذكي',
   settings: 'الإعدادات',
   companySettings: 'الشركة',
@@ -91,7 +98,7 @@ export const hubPageTitles: Record<string, string> = {
   '/service-providers': 'مزودو الخدمات',
   '/service-providers/new': 'إضافة مزود خدمة',
   '/service-providers/$providerId': 'ملف مزود الخدمة',
-  '/service-providers/$providerId/edit': 'تعديل مزود الخدمة',
+  '/service-providers/$providerId/edit': 'تعديل مزود خدمة',
   '/financials': 'المالية',
   '/finance/collections': 'التحصيل والفواتير',
   '/finance/expenses': 'المصروفات والمتأخرات',

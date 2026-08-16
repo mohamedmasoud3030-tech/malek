@@ -35,51 +35,63 @@ export type NavItem = readonly [
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
-/** Final P6 IA. Children are owned by their visible parent domain. */
+/**
+ * Task-centric product IA.
+ *
+ * The shell exposes only the seven questions a property-office user needs to
+ * answer. Entity registers remain fully routable, but they are capabilities of
+ * a workspace rather than independent products in the sidebar.
+ *
+ * Today → Portfolio → Leasing → Money → Services → Reports → Settings
+ */
 export const navGroups: readonly NavGroup[] = [
-  ['الرئيسية', [['/dashboard', 'dashboard', 'ملخص الأداء اليومي وما يحتاج متابعة', LayoutDashboard]]],
-  ['الأشخاص', [['/people', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users]]],
-  ['العقارات', [['/properties', 'properties', 'العقارات والوحدات', Building2]]],
-  ['الأراضي', [['/lands', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view']]],
-  ['العقود', [['/contracts', 'contracts', 'العقود والتجديدات ودورة الحياة', FileText]]],
-  ['المالية', [['/financials', 'financials', 'الفواتير والتحصيل والمصروفات والتسويات والبنوك', PieChart]]],
-  // /reports requires the view capability; export stays an action permission
-  // gate (ReportsPage → AccessDenied). Showing the entry to roles that always
-  // get denied is a misleading navigation affordance, so the nav item carries
-  // the same permission the page enforces.
-  ['التقارير', [['/reports', 'accountingReports', 'التقارير والتحليلات والكشوف', BarChart3, 'financial.reports.view']]],
-  ['الخدمات', [['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench]]],
-  ['العمولات', [['/commissions', 'commissions', 'عمولات التحصيل والمبيعات المرتبطة بالمصادر', BadgeDollarSign, 'commissions.view']]],
-  ['الإعدادات', [['/settings', 'settings', 'إعدادات الشركة والصلاحيات والأتمتة والنظام', Settings]]],
+  ['العمل', [
+    ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
+    ['/properties', 'portfolio', 'العقارات والوحدات والملاك والأصول المدارة', Building2],
+    ['/contracts', 'leasing', 'دورة التأجير من الجاهزية حتى التجديد أو الإخلاء', FileText],
+    ['/financials', 'money', 'المستحقات والتحصيل والمصروفات وأموال الملاك والبنوك', PieChart],
+    ['/maintenance', 'services', 'الصيانة والمرافق والخدمات التشغيلية', Wrench],
+  ]],
+  ['التحليل والإدارة', [
+    ['/reports', 'reportsAndStatements', 'التقارير والتحليلات والكشوف', BarChart3, 'financial.reports.view'],
+    ['/settings', 'settings', 'الشركة والمستخدمون والصلاحيات والأتمتة والنظام', Settings],
+  ]],
 ];
 
+/**
+ * Progressive disclosure inside each primary workspace. These links keep the
+ * existing routes and permissions intact while removing feature-by-feature
+ * navigation from the global shell.
+ */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
-  '/people': [
-    ['/leads', 'leads', 'مصادر العملاء المحتملين والتحويلات', ContactRound, 'leads.view'],
-    ['/owners', 'owners', 'ملفات الملاك وعلاقات الملكية', UserRoundCog, 'owners.hub.view'],
-    ['/tenants', 'tenants', 'ملفات المستأجرين والعقود المرتبطة', UserCheck],
-    ['/communication', 'communication', 'سجل التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
-  ],
   '/properties': [
     ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
+    ['/lands', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view'],
+    ['/owners', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRoundCog, 'owners.hub.view'],
   ],
-  '/lands': [],
-  '/contracts': [],
+  '/contracts': [
+    ['/tenants', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck],
+    ['/people', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users],
+    ['/leads', 'leads', 'العملاء المحتملون والتحويلات', ContactRound, 'leads.view'],
+    ['/communication', 'communication', 'التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
+  ],
   '/financials': [
-    ['/invoices', 'invoices', 'الفواتير ومتابعة الاستحقاق', FileText],
+    ['/invoices', 'invoices', 'المستحقات والفواتير', FileText],
     ['/receipts', 'receipts', 'الإيصالات والتحصيلات', BadgeDollarSign],
+    ['/arrears', 'arrears', 'المتأخرات التي تحتاج متابعة', BarChart3, 'arrears.view'],
     ['/expenses', 'expenses', 'المصروفات', PieChart, 'expenses.view'],
-    ['/deposits', 'deposits', 'الودائع والتأمينات', FolderKanban, 'financial.deposits.view'],
-    ['/owner-settlements', 'ownerSettlements', 'تسويات الملاك', UserRoundCog, 'financial.owner_settlements.view'],
-    ['/bank-reconciliation', 'bankReconciliation', 'التسوية البنكية', BarChart3, 'financial.bank_reconciliation.view'],
+    ['/deposits', 'deposits', 'التأمينات والودائع', FolderKanban, 'financial.deposits.view'],
+    ['/owner-settlements', 'ownerSettlements', 'مستحقات وتسويات الملاك', UserRoundCog, 'financial.owner_settlements.view'],
+    ['/bank-reconciliation', 'bankReconciliation', 'البنوك والمطابقة البنكية', BarChart3, 'financial.bank_reconciliation.view'],
+    ['/commissions', 'commissions', 'العمولات المرتبطة بالمصادر المالية', BadgeDollarSign, 'commissions.view'],
   ],
-  '/reports': [],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, undefined, { section: 'maintenance' }],
-    ['/service-providers', 'serviceProviders', 'ملفات مزودي الخدمات وتخصصاتهم', BriefcaseBusiness, 'service_providers.view'],
+    ['/service-providers', 'serviceProviders', 'مزودو الخدمات وتخصصاتهم', BriefcaseBusiness, 'service_providers.view'],
     ['/utilities', 'utilities', 'المرافق والعدادات', Zap],
+    ['/documents-vault', 'documentsVault', 'المستندات التشغيلية المرتبطة بالعمل', FolderKanban],
   ],
-  '/commissions': [],
+  '/reports': [],
   '/settings': [
     ['/settings', 'companySettings', 'بيانات الشركة وإعداداتها', Building2, 'company.settings.manage', { section: 'company' }],
     ['/settings', 'usersPermissions', 'المستخدمون وطلبات الصلاحيات', ShieldCheck, 'permission_requests.review', { section: 'users-permissions' }],
