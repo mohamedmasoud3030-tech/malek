@@ -91,6 +91,10 @@ beforeAll(async () => {
     insert into public.company_settings
       (id, singleton_key, company_name, currency, default_vat_rate, vat_enabled, vat_rate, company_id)
     values (gen_random_uuid(), false, 'Phase3 Co', 'OMR', 0, false, 0, '${COMPANY}');
+    insert into public.company_tax_profiles
+      (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+    values
+      ('c2000000-0000-4000-8000-000000000082', '${COMPANY}', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${MAKER}', '${OTHER}', now());
 
     insert into public.owners (id, full_name, name, company_id)
     values ('${OWNER}', 'P3 Owner', 'P3 Owner', '${COMPANY}');
@@ -100,6 +104,22 @@ beforeAll(async () => {
     values ('${PROPERTY}', '${OWNER}', 100, true, date '2026-01-01', '${COMPANY}');
     insert into public.owner_agreements (id, owner_id, property_id, agreement_type, commission_type, commission_value, starts_on, company_id)
     values ('${AGREEMENT}', '${OWNER}', '${PROPERTY}', 'property_management', 'RATE', 0, date '2026-01-01', '${COMPANY}');
+    -- This credit/reversal suite is the OFFICE_IS_CREDITOR AR model; create a
+    -- successor version before the contract freezes its source terms.
+    update public.owner_agreement_versions
+       set effective_to = date '2025-12-31', superseded_at = now()
+     where owner_agreement_id = '${AGREEMENT}'::uuid and superseded_at is null;
+    insert into public.owner_agreement_versions
+      (id, owner_agreement_id, company_id, version_no, operating_model, collection_role,
+       commission_type, commission_value, commission_recognition_basis, offset_allowed,
+       reserve_amount, effective_from, created_by)
+    values
+      ('c2000000-0000-4000-8000-000000000081', '${AGREEMENT}', '${COMPANY}', 2,
+       'OWNER_AGENCY', 'OFFICE_IS_CREDITOR', 'RATE', 0, 'ON_COLLECTION', false, 0,
+       date '2026-01-01', '${MAKER}');
+    update public.owner_agreements
+       set current_version_id = 'c2000000-0000-4000-8000-000000000081'::uuid
+     where id = '${AGREEMENT}'::uuid;
     insert into public.units (id, property_id, name, unit_number, company_id)
     values ('${UNIT}', '${PROPERTY}', 'P3 Unit', 'P3-1', '${COMPANY}');
     insert into public.people (id, full_name, type, company_id)

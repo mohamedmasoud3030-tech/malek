@@ -56,6 +56,13 @@ const LATER_GOVERNED_STAGE_MARKERS = [
   'phase1_omr_precision_convergence',
   'phase2_invoice_truth',
   'phase3_credit_and_ar_integrity',
+  // RC1 owner-agency accounting correction depends on Phase 1–3, versioned
+  // tax and canonical GL objects omitted by historical checkpoint replays.
+  // Full current suites pass no explicit exclusion and still replay it.
+  'rc1_owner_agency_invoice_accounting_model',
+  'rc1_invoice_credit_original_economics',
+  'rc1_payment_tax_and_write_boundary',
+  'rc1_cutover_fee_tax_and_legacy_fail_closed',
   'sole_admin_exception',
   // This forward-only audit-contract repair depends on the receipt VOID
   // request ledger introduced after historical Phase 3A-1B checkpoints.
@@ -65,6 +72,8 @@ const LATER_GOVERNED_STAGE_MARKERS = [
 export async function createFullReplayedDatabase(options?: {
   throughMigration?: string;
   excludeMigrations?: string[];
+  /** Keep downstream governed migrations while omitting only explicit markers. */
+  includeLaterGoverned?: boolean;
   writeEvidence?: boolean;
 }): Promise<ReplayResult> {
   const db = new PGlite({ extensions: { btree_gist, pgcrypto, uuid_ossp } });
@@ -82,11 +91,13 @@ export async function createFullReplayedDatabase(options?: {
     }
   }
 
-  // Callers that provide explicit exclusions are checkpoint/isolation suites.
-  // Keep later governed S03/S04/S06/S08 migrations out of those historical
-  // baselines. Current stage suites call with writeEvidence:false and no
-  // explicit exclusions, so they still receive the complete migration chain.
-  const checkpointExcludes = options?.excludeMigrations ? [...LATER_GOVERNED_STAGE_MARKERS] : [];
+  // Historical checkpoint callers use explicit exclusions and (by default)
+  // omit later governed S03/S04/S06/S08 migrations. A replay can explicitly
+  // retain those later migrations when it needs a full modern schema but only
+  // wants to omit one newer correction family.
+  const checkpointExcludes = options?.excludeMigrations && !options.includeLaterGoverned
+    ? [...LATER_GOVERNED_STAGE_MARKERS]
+    : [];
   const excludes = [...checkpointExcludes, ...(options?.excludeMigrations ?? [])];
   if (excludes.length > 0) {
     files = files.filter((f) => !excludes.some((ex) => f.includes(ex)));

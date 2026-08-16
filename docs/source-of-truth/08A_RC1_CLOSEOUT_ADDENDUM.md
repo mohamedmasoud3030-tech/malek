@@ -76,7 +76,9 @@ including:
   `company_settings` creation;
 - canonical receipt-VOID audit action/entity semantics preserved after the
   sole-admin override;
-- owner-agency posting/reversal controls for the included RC1 scope;
+- corrected owner-agency recurring invoice/credit mapping: OWNER operational issuance, OFFICE 1201→2000, source-economic credit reversal, and no ordinary owner rent at 4000;
+- versioned rent-profile/tax snapshot lineage across invoice, collection and credit, plus independent versioned RATE/FIXED fee-tax treatment with fail-closed absence;
+- append-only `owner_funds_events` 2000 control, receipt-VOID compensation and settlement payout capture, protected by an S08-approved opening/cutover baseline whenever historical 2000 sources exist;
 - OMR 3dp deposit lifecycle and reconciliations;
 - GL-backed financial reporting and deterministic reconciliation engine;
 - standalone read-only `/ai-assistant` route;
@@ -102,6 +104,37 @@ financial tests and release gates. Later non-financial/security closeout
 migrations can therefore make the repository migration count greater than the
 historical synthetic artifact's count without invalidating its provenance. The
 artifact must never be presented as live, pilot or production balance proof.
+
+## Corrected RC1 owner-agency synthetic accounting proof
+
+The corrected proof is the deterministic PGlite integration test
+`rentrix-app/src/features/financials/owner-agency-invoice-accounting.test.ts`,
+using the forward migrations `20260820030000`, `20260820040000`,
+`20260820050000` and `20260820060000`. It creates both collection roles,
+applies 5.000% rent profile A, activates 7.000% profile B after old invoices
+exist, proves credits retain A, proves explicit zero and taxable fee-tax
+treatments, and runs payment, governed VOID, compensating credit reversal,
+legacy-payment denial, S08-backed 2000 cutover and period resolution. It is
+**synthetic/local only**.
+
+| Account | Meaning | GL (OMR) | Operational / subledger basis (OMR) | Delta | Status |
+|---|---|---:|---:|---:|---|
+| 1111 | Cash | 1,050.000 | Posted `payments` with `cash` channel: 1,050.000 | 0.000 | PASS — receipt channel basis; not a physical cash-count proof |
+| 1120 | Bank | 2,100.000 | Posted `payments` with `bank_transfer` channel: 2,100.000 | 0.000 | PASS — receipt channel basis; no imported bank-statement match is claimed |
+| 1201 | Tenant Receivable | 0.000 | OFFICE creditor invoice outstanding: 0.000 | 0.000 | PASS |
+| 1300 | Due from Owners | 0.000 | Due-from-Owner operational basis: 0.000 | 0.000 | PASS |
+| 2000 | Owner Funds Payable | 2,700.000 | Fresh-company append-only `owner_funds_events`: 2,700.000; existing companies require approved opening cutover + post-cutover events | 0.000 | PASS |
+| 2100 | VAT Payable | 150.000 | `rc1_owner_agency_vat_payable_balance`: 150.000 | 0.000 | PASS — original profile/snapshot lineage |
+| 2200 | Tenant Deposits Payable | 0.000 | Deposit subledger: 0.000 | 0.000 | PASS |
+| 2300 | Broker Commissions Payable | 0.000 | Commission subledger: 0.000 | 0.000 | PASS |
+| 4100 | Management Fee Revenue | 300.000 credit | `MANAGEMENT_FEE` events: 300.000 under explicit non-tax fee treatment; a separate taxable-fee proof posts 2100 | 0.000 | PASS |
+| 4000 | Sublease Rental Revenue | 0.000 credit | No RC1 OWNER_AGENCY principal/sublease event | 0.000 | PASS — direct proof gross managed rent is not office revenue |
+
+Tolerance is **0.001 OMR**. `wp05_reconcile_all` is asserted for 1201, 1300,
+2000, 2200 and 2300; 2100 uses the explicit RC1 tax operational basis above.
+Bank reconciliation remains operationally represented by imported statement
+rows and `bank_reconciliation_matches`; no synthetic payment channel total is
+mislabelled as a bank-statement reconciliation.
 
 ## Live-environment boundary
 

@@ -74,6 +74,17 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
         ('${COMPANY_B}', '${ADMIN_B}', 'ADMIN')
       on conflict do nothing;
 
+      insert into public.company_tax_profiles
+        (id, company_id, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+      values
+        ('ca000000-0000-4000-8000-000000000081', '${COMPANY_A}', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${ADMIN_A}', '${CHECKER_A}', now())
+      on conflict do nothing;
+      insert into public.company_fee_tax_treatments
+        (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+      values
+        ('ca000000-0000-4000-8000-000000000083', '${COMPANY_A}', 'RATE_MANAGEMENT_FEE', 1, 'NON_TAXABLE', 0, date '2020-01-01', 'ACTIVE', '${ADMIN_A}', '${CHECKER_A}', now())
+      on conflict do nothing;
+
       select public.provision_company_chart_of_accounts('${COMPANY_A}'::uuid);
 
       -- Canonical S03 posting (receipts, deposits, and — since GAP-008 — the
@@ -119,6 +130,25 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     `);
     const propData = propRes.rows[0].create_property_with_agreement;
     expect(propData.property_id).toBeDefined();
+
+    // This scenario proves the OFFICE_IS_CREDITOR invoice/AR lifecycle. The
+    // owner-agreement default is owner-creditor, so create an explicit future
+    // snapshot before the contract activates instead of inferring by account.
+    await db.exec(`
+      update public.owner_agreement_versions
+         set effective_to = date '2025-12-31', superseded_at = now()
+       where owner_agreement_id = '${propData.agreement_id}'::uuid and superseded_at is null;
+      insert into public.owner_agreement_versions
+        (id, owner_agreement_id, company_id, version_no, operating_model, collection_role,
+         commission_type, commission_value, commission_recognition_basis, offset_allowed,
+         reserve_amount, effective_from, created_by)
+      values ('ca000000-0000-4000-8000-000000000082', '${propData.agreement_id}', '${COMPANY_A}', 2,
+        'OWNER_AGENCY', 'OFFICE_IS_CREDITOR', 'RATE', 5, 'ON_COLLECTION', false, 0,
+        date '2026-01-01', '${ADMIN_A}');
+      update public.owner_agreements
+         set current_version_id = 'ca000000-0000-4000-8000-000000000082'::uuid
+       where id = '${propData.agreement_id}'::uuid;
+    `);
 
     // 5. Create unit
     const unitRes = await db.query<{ id: string }>(`
@@ -331,6 +361,18 @@ describe('MALIK Product Workflow Consolidation Database Integration Scenarios', 
     const stlBal = await getJournalBalance(db, stlId);
     expect(stlBal.debit).toBeCloseTo(stlBal.credit, 3);
     expect(stlBal.debit).toBeGreaterThan(0);
+
+    // RC1 owner-funds subledger records the actual governed payout as a
+    // compensating decrease to 2000 rather than mutating owner balances.
+    const ownerFundsEvent = await db.query<{ amount_delta: number; source_type: string }>(`
+      select amount_delta, source_type from public.owner_funds_events
+       where company_id = '${COMPANY_A}'
+         and source_type = 'OWNER_SETTLEMENT_PAYOUT'
+         and source_id = '${stlId}'
+    `);
+    expect(ownerFundsEvent.rows).toHaveLength(1);
+    expect(ownerFundsEvent.rows[0].source_type).toBe('OWNER_SETTLEMENT_PAYOUT');
+    expect(Number(ownerFundsEvent.rows[0].amount_delta)).toBeLessThanOrEqual(0);
 
     // 5. Controlled reversal via cancel_owner_settlement_atomic on a draft/approved settlement
     const draft2 = await db.query<{ create_owner_settlement_draft_atomic: any }>(`

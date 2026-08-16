@@ -30,6 +30,7 @@ const RATE_VERSION = '14070000-0000-4000-8000-000000000008';
 const OTHER_VERSION = '14070000-0000-4000-8000-000000000009';
 const OVERLAP_VERSION = '14070000-0000-4000-8000-000000000010';
 const OVERLAP_VERSION_2 = '14070000-0000-4000-8000-000000000011';
+const TAXED_FIXED_VERSION = '14070000-0000-4000-8000-000000000012';
 
 let db: PGlite;
 
@@ -105,6 +106,17 @@ beforeAll(async () => {
   await db.query('select public.provision_company_chart_of_accounts($1::uuid)', [COMPANY]);
   await db.query('select public.provision_company_chart_of_accounts($1::uuid)', [OTHER_COMPANY]);
 
+  // Explicit versioned fee-tax configuration preserves the historical 0-tax
+  // numerical matrix without silently treating an absent policy as zero.
+  await db.exec(`
+    insert into public.company_fee_tax_treatments
+      (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from,
+       status, created_by, approved_by, approved_at)
+    values
+      ('a4070000-0000-4000-8000-000000000101', '${COMPANY}', 'FIXED_MONTHLY', 1, 'NON_TAXABLE', 0, date '2020-01-01',
+       'ACTIVE', '${ACCOUNTANT}', '${OUTSIDER}', now());
+  `);
+
   const agreementRows = [
     ['24070000-0000-4000-8000-000000000001', JAN_VERSION, 'FIXED_MONTHLY', 100, '2024-01-01', '2024-01-31', COMPANY, OWNER, PROPERTY],
     ['24070000-0000-4000-8000-000000000002', FEB_VERSION, 'FIXED_MONTHLY', 100, '2024-02-01', '2024-02-29', COMPANY, OWNER, PROPERTY],
@@ -115,6 +127,7 @@ beforeAll(async () => {
     ['24070000-0000-4000-8000-000000000007', AUG_VERSION, 'FIXED_MONTHLY', 31, '2024-08-01', '2024-08-01', COMPANY, OWNER, PROPERTY],
     ['24070000-0000-4000-8000-000000000008', RATE_VERSION, 'RATE', 10, '2024-03-01', '2024-03-31', COMPANY, OWNER, RATE_PROPERTY],
     ['24070000-0000-4000-8000-000000000009', OTHER_VERSION, 'FIXED_MONTHLY', 31, '2024-03-01', '2024-03-01', OTHER_COMPANY, OTHER_OWNER, OTHER_PROPERTY],
+    ['24070000-0000-4000-8000-000000000012', TAXED_FIXED_VERSION, 'FIXED_MONTHLY', 31, '2024-05-01', '2024-05-01', COMPANY, OWNER, PROPERTY],
   ] as const;
 
   for (const [agreementId, versionId, commissionType, amount, startsOn, endsOn, companyId, ownerId, propertyId] of agreementRows) {
@@ -155,6 +168,13 @@ afterAll(async () => {
 });
 
 describe('WP-02 GAP-007 FIXED_MONTHLY daily accrual lifecycle', () => {
+  it('fails closed before posting when the independently versioned FIXED_MONTHLY fee-tax treatment is absent', async () => {
+    await expect(db.query(
+      `select public.gl_run_fixed_monthly_accruals($1::uuid, date '2024-03-01', date '2024-03-01', $2::uuid, null)`,
+      [OTHER_COMPANY, OTHER_VERSION],
+    )).rejects.toThrow(/FEE_TAX_TREATMENT_MISSING/);
+  });
+
   it('allocates full 31-day and leap-February months exactly at OMR 3dp', async () => {
     const jan = await publicRpc('execute_fixed_monthly_accruals_atomic', {
       request_id: 'gap007-jan-full',
@@ -188,6 +208,30 @@ describe('WP-02 GAP-007 FIXED_MONTHLY daily accrual lifecycle', () => {
          and b.source_type = 'pm_fixed_monthly_daily_accrual'`,
       [COMPANY],
     )).toBe(0);
+  });
+
+  it('uses a separately versioned FIXED_MONTHLY fee treatment and posts explicit 2100 tax when configured', async () => {
+    await db.exec(`
+      insert into public.company_fee_tax_treatments
+        (id, company_id, fee_kind, version_no, tax_code, tax_rate, effective_from, status, created_by, approved_by, approved_at)
+      values ('a4070000-0000-4000-8000-000000000102', '${COMPANY}', 'FIXED_MONTHLY', 2, 'VAT', 5, date '2024-05-01',
+        'ACTIVE', '${OUTSIDER}', '${ACCOUNTANT}', now());
+    `);
+    const taxed = await internalRun(TAXED_FIXED_VERSION, '2024-05-01');
+    expect(taxed.net_amount).toBe(1);
+    expect(taxed.tax_amount).toBe(0.05);
+    expect(taxed.gross_amount).toBe(1.05);
+    const { rows } = await db.query<{ tax_authority_status: string; fee_tax_code: string; fee_tax_rate: string }>(
+      `select tax_authority_status, fee_tax_code, fee_tax_rate::text
+         from public.fixed_monthly_daily_accruals where agreement_version_id = $1::uuid`,
+      [TAXED_FIXED_VERSION],
+    );
+    expect(rows[0]).toMatchObject({ tax_authority_status: 'VERSIONED_FEE_TREATMENT', fee_tax_code: 'VAT', fee_tax_rate: '5.000' });
+    expect(await scalarNumber(
+      `select coalesce(sum(credit),0)::text as value from public.journal_lines jl
+        join public.accounts a on a.id=jl.account_id where a.company_id=$1::uuid and a.no='2100'`,
+      [COMPANY],
+    )).toBeGreaterThanOrEqual(0.05);
   });
 
   it('uses only eligible calendar shares for a mid-month start and end', async () => {
@@ -393,7 +437,7 @@ describe('WP-02 GAP-007 FIXED_MONTHLY daily accrual lifecycle', () => {
     expect(result.reversed_count).toBe(1);
     const rows = result.accruals as Array<Record<string, unknown>>;
     expect(rows.some((row) => row.status === 'REVERSED')).toBe(true);
-    expect(rows.every((row) => row.tax_authority_status === 'OUT_OF_SCOPE_NO_VERSIONED_AUTHORITY')).toBe(true);
+    expect(rows.every((row) => row.tax_authority_status === 'VERSIONED_FEE_TREATMENT')).toBe(true);
   });
 
   it('rolls back cleanly only while the GAP-007 ledgers are empty', async () => {

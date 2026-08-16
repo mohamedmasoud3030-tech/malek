@@ -67,19 +67,19 @@ This matrix is the operational acceptance contract. “Repository layer” ident
 
 ## Journey C — OWNER_IS_CREDITOR collection
 
-1. Invoice exists in the operational subledger.
-2. Tenant collection to office-controlled cash/bank: `Dr Cash/Bank / Cr Owner Funds Payable`.
-3. RATE management fee when collection occurs: reduce owner payable and recognize office fee/tax.
+1. Invoice exists in the operational subledger with immutable agreement/version, role and tax-profile lineage; it does **not** create 1201, 2000 or 4000 at issuance.
+2. Tenant collection to server-derived 1111/1120 posts `Dr Cash/Bank gross / Cr Owner Funds Payable net / Cr 2100 original tax` where the original configured profile has tax.
+3. RATE management fee when collection occurs reduces owner payable and recognizes 4100 from collected rent net of original rent tax; no separate fee VAT is inferred without an approved service-fee basis.
 4. Fixed monthly fee accrues independently according to service time.
 5. Owner expenses appear as Due from Owner, not office operating expense.
 6. Settlement aggregates eligible/reserved items and documents any lawful offset.
-7. Owner payout reduces Owner Funds Payable.
+7. Owner payout reduces Owner Funds Payable through an append-only owner-funds event.
 
 ## Journey D — OFFICE_IS_CREDITOR collection
 
-1. Invoice may post `Dr Tenant Receivable / Cr Owner Funds Payable`.
+1. Invoice posts `Dr Tenant Receivable gross / Cr Owner Funds Payable net / Cr 2100 original tax` where applicable; it never uses 4000 for ordinary owner-agency rent.
 2. Collection posts `Dr Cash/Bank / Cr Tenant Receivable`.
-3. Office consideration is then separated from owner funds under the same fee/tax rules.
+3. Office consideration is then separated from owner funds under the same server-derived fee rules; a credit reverses the original invoice economics and tax snapshot.
 4. OFFICE_IS_CREDITOR does not turn the relationship into MASTER_LEASE.
 
 ## Journey E — Expenses and maintenance

@@ -51,10 +51,11 @@ remains external.
 
 **Decision:** RC1 includes only adjustment/reversal events with an already
 approved canonical accounting mapping and working governed implementation.
-Included examples are receipt VOID, invoice credit note where already mapped,
-deposit refund/reversal, commission reversal, owner-receivable recovery/offset
-reversal, and contract termination behavior already covered by canonical
-accounts.
+Included examples are receipt VOID, the controlled invoice credit note whose
+mapping is derived from the original posted invoice economics/tax snapshot
+(never a caller-selected account), deposit refund/reversal, commission
+reversal, owner-receivable recovery/offset reversal, and contract termination
+behavior already covered by canonical accounts.
 
 The following remain explicitly unavailable/fail-closed in RC1 until an
 Accountant approves their chart-of-accounts and tax treatment:
