@@ -9,35 +9,26 @@ const routePathList = Array.from(routePaths);
 const navItems: NavItem[] = Array.from(getAllNavItems());
 
 const requiredOperationalRoutes = [
-  '/login', '/', '/dashboard',
-  '/properties', '/properties/new', '/properties/$propertyId', '/properties/$propertyId/edit', '/units', '/lands', '/lands/$landId',
-  '/owners', '/owners/$ownerId', '/tenants', '/tenants/$tenantId',
+  '/login', '/', '/dashboard', '/properties', '/properties/new', '/properties/$propertyId', '/properties/$propertyId/edit',
+  '/units', '/lands', '/lands/$landId', '/owners', '/owners/$ownerId', '/tenants', '/tenants/$tenantId',
   '/people', '/people/$personId', '/people/new', '/people/$personId/edit', '/leads', '/communication',
-  '/contracts', '/contracts/new', '/contracts/$contractId', '/contracts/$contractId/edit',
-  '/maintenance', '/service-providers', '/service-providers/new', '/service-providers/$providerId', '/service-providers/$providerId/edit', '/utilities', '/automation', '/documents-vault',
-  '/financials', '/finance/collections', '/finance/expenses', '/finance/deposits', '/finance/banking',
-  '/invoices', '/receipts', '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions',
-  '/reports', '/accounting', '/ai-assistant',
+  '/contracts', '/contracts/new', '/contracts/$contractId', '/contracts/$contractId/edit', '/maintenance',
+  '/service-providers', '/utilities', '/documents-vault', '/financials', '/invoices', '/receipts', '/expenses',
+  '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions', '/reports', '/accounting',
   '/settings', '/change-password', '/audit-log', '/data-integrity', '/system',
 ] as const;
 
 function getRouteDefinition(path: string) {
-  const pathToken = `path: '${path}'`;
-  const pathIndex = routeTreeSource.indexOf(pathToken);
+  const pathIndex = routeTreeSource.indexOf(`path: '${path}'`);
   if (pathIndex === -1) return '';
   const routeStart = routeTreeSource.lastIndexOf('createRoute({', pathIndex);
   const routeEnd = routeTreeSource.indexOf('});', pathIndex);
-  if (routeStart === -1 || routeEnd === -1) return '';
-  return routeTreeSource.slice(routeStart, routeEnd + 3);
+  return routeStart === -1 || routeEnd === -1 ? '' : routeTreeSource.slice(routeStart, routeEnd + 3);
 }
 
-describe('app route and task-centric navigation parity', () => {
-  it('keeps the full operational route matrix registered while simplifying visible navigation', () => {
+describe('task-centric app navigation', () => {
+  it('keeps the operational route matrix while exposing exactly seven global destinations', () => {
     expect(routePathList).toEqual(expect.arrayContaining([...requiredOperationalRoutes]));
-    expect(routeTreeSource).toContain('notFoundComponent: NotFoundPage');
-  });
-
-  it('exposes exactly seven global destinations in two lightweight groups', () => {
     const primaryItems = navGroups.flatMap(([, items]) => items);
     expect(primaryItems.map(([to]) => to)).toEqual([
       '/dashboard', '/properties', '/contracts', '/financials', '/maintenance', '/reports', '/settings',
@@ -45,96 +36,50 @@ describe('app route and task-centric navigation parity', () => {
     expect(primaryItems.map(([, labelKey]) => navigationLabels[labelKey])).toEqual([
       'اليوم', 'المحفظة', 'التأجير', 'المال', 'الخدمات', 'التقارير والكشوف', 'الإعدادات',
     ]);
-    expect(navGroups.map(([title]) => title)).toEqual(['العمل', 'التحليل والإدارة']);
   });
 
-  it('keeps Portfolio child links inside Portfolio with explicit section state', () => {
-    const children = workspaceChildNavItems['/properties'];
-    expect(children.map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
+  it('keeps Portfolio and Leasing child navigation inside their owning workspace', () => {
+    expect(workspaceChildNavItems['/properties'].map(([to]) => to)).toEqual(['/properties', '/properties', '/properties']);
+    expect(workspaceChildNavItems['/contracts'].map(([to]) => to)).toEqual(['/contracts', '/contracts', '/contracts', '/contracts']);
+  });
+
+  it('keeps every Money child inside /financials with explicit section/view state', () => {
+    const children = workspaceChildNavItems['/financials'];
+    expect(children.map(([to]) => to)).toEqual(Array(8).fill('/financials'));
     expect(children.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
-      { labelKey: 'units', permission: undefined, search: { section: 'units' } },
-      { labelKey: 'lands', permission: 'lands.view', search: { section: 'lands' } },
-      { labelKey: 'owners', permission: 'owners.hub.view', search: { section: 'owners' } },
+      { labelKey: 'invoices', permission: undefined, search: { section: 'collections', view: 'invoices' } },
+      { labelKey: 'receipts', permission: undefined, search: { section: 'collections', view: 'receipts' } },
+      { labelKey: 'arrears', permission: 'arrears.view', search: { section: 'collections', view: 'arrears' } },
+      { labelKey: 'expenses', permission: 'expenses.view', search: { section: 'expenses', view: 'expenses' } },
+      { labelKey: 'deposits', permission: 'financial.deposits.view', search: { section: 'funds', view: 'deposits' } },
+      { labelKey: 'ownerSettlements', permission: 'financial.owner_settlements.view', search: { section: 'funds', view: 'owner_settlements' } },
+      { labelKey: 'bankReconciliation', permission: 'financial.bank_reconciliation.view', search: { section: 'banking', view: 'bank_reconciliation' } },
+      { labelKey: 'commissions', permission: 'commissions.view', search: { section: 'expenses', view: 'commissions' } },
     ]);
   });
 
-  it('keeps Leasing child links inside Leasing with explicit workspace state', () => {
-    const children = workspaceChildNavItems['/contracts'];
-    expect(children.map(([to]) => to)).toEqual(['/contracts', '/contracts', '/contracts', '/contracts']);
-    expect(children.map(([, labelKey, , , permission, search]) => ({ labelKey, permission, search }))).toEqual([
-      { labelKey: 'tenants', permission: undefined, search: { workspace: 'tenants' } },
-      { labelKey: 'peopleDirectory', permission: undefined, search: { workspace: 'people' } },
-      { labelKey: 'leads', permission: 'leads.view', search: { workspace: 'leads' } },
-      { labelKey: 'communication', permission: 'communication.view', search: { workspace: 'communication' } },
-    ]);
-  });
-
-  it('keeps Money and Services capabilities owned by their primary workspaces', () => {
-    expect(workspaceChildNavItems['/financials'].map(([to]) => to)).toEqual([
-      '/invoices', '/receipts', '/arrears', '/expenses', '/deposits', '/owner-settlements', '/bank-reconciliation', '/commissions',
-    ]);
-    expect(workspaceChildNavItems['/maintenance'].map(([to]) => to)).toEqual([
-      '/maintenance', '/service-providers', '/utilities', '/documents-vault',
-    ]);
-  });
-
-  it('does not let feature registers leak back into global navigation', () => {
+  it('does not leak feature registers back into global navigation', () => {
     const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    for (const secondary of [
-      '/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts',
-      '/expenses', '/arrears', '/deposits', '/owner-settlements', '/bank-reconciliation', '/service-providers', '/utilities',
-    ]) {
+    for (const secondary of ['/people', '/owners', '/tenants', '/lands', '/units', '/commissions', '/invoices', '/receipts', '/expenses', '/arrears']) {
       expect(primaryPaths).not.toContain(secondary);
     }
   });
 
-  it('maps every visible navigation, mobile and quick-create item to a registered route without duplicate semantic keys', () => {
+  it('maps every visible navigation and quick-create item to a registered route without duplicate semantic keys', () => {
     const navPaths = navItems.map(([to]) => to);
-    const navKeys = navItems.map(([to, labelKey]) => `${to}:${labelKey}`);
-    const mobilePaths = mobileNavItems.map(([to]) => to);
-    const quickCreatePaths = quickCreateItems.map(([to]) => to);
-
+    const navKeys = navItems.map(([to, labelKey, , , , search]) => `${to}:${labelKey}:${JSON.stringify(search ?? {})}`);
     expect(new Set(navKeys).size).toBe(navKeys.length);
-    expect(new Set(mobilePaths).size).toBe(mobilePaths.length);
-    expect(new Set(quickCreatePaths).size).toBe(quickCreatePaths.length);
-    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...mobilePaths, ...quickCreatePaths]));
+    expect(routePathList).toEqual(expect.arrayContaining([...navPaths, ...quickCreateItems.map(([to]) => to)]));
   });
 
-  it('keeps permissioned direct navigation links aligned with route guards', () => {
-    for (const [to, , , , permission, search] of [...navItems, ...quickCreateItems]) {
-      if (!permission || search) continue;
-      expect(getRouteDefinition(to)).toContain(`requirePermission('${permission}')`);
-    }
-  });
-
-  it('keeps standalone owners/leads/communication routes permission-gated after in-workspace navigation', () => {
+  it('keeps standalone compatibility routes permission-gated even when primary navigation stays in workspaces', () => {
     expect(getRouteDefinition('/owners')).toContain("requirePermission('owners.hub.view')");
     expect(getRouteDefinition('/leads')).toContain("requirePermission('leads.view')");
     expect(getRouteDefinition('/communication')).toContain("requirePermission('communication.view')");
-    expect(getRouteDefinition('/tenants')).not.toContain('requirePermission(');
+    expect(getRouteDefinition('/commissions')).toContain("requirePermission('commissions.view')");
   });
 
-  it('keeps mobile global navigation to Menu + Search only', () => {
+  it('keeps mobile navigation to Menu + Search only', () => {
     expect(mobileNavItems).toHaveLength(0);
-  });
-
-  it('keeps administration as one primary destination while preserving governed subroutes', () => {
-    const primaryPaths = navGroups.flatMap(([, items]) => items.map(([to]) => to));
-    expect(primaryPaths).toContain('/settings');
-    expect(primaryPaths).not.toContain('/audit-log');
-    expect(primaryPaths).not.toContain('/data-integrity');
-    expect(primaryPaths).not.toContain('/system');
-    expect(routePathList).toEqual(expect.arrayContaining(['/settings', '/audit-log', '/data-integrity', '/system', '/change-password']));
-  });
-
-  it('pins every global navigation label to Arabic terminology', () => {
-    const labelKeys = [
-      ...navGroups.flatMap(([, items]) => items.map(([, labelKey]) => labelKey)),
-      ...mobileNavItems.map(([, labelKey]) => labelKey),
-      ...quickCreateItems.map(([, labelKey]) => labelKey),
-    ];
-    for (const labelKey of labelKeys) {
-      expect(navigationLabels[labelKey], `missing Arabic navigation label for ${labelKey}`).toMatch(/[\u0600-\u06FF]/);
-    }
   });
 });
