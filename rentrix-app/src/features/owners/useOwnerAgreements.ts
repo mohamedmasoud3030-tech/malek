@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createOwnerAgreement,
+  createOwnerAgreementVersion,
   createPropertyWithAgreement,
   getAgreementCoveringRange,
   listOwnerAgreementsForProperty,
-  updateOwnerAgreement,
+  listOwnerAgreementVersions,
   type CreatePropertyWithAgreementPayload,
   type OwnerAgreementFormPayload,
+  type OwnerAgreementVersionTerms,
 } from './ownerAgreementService';
 
 export function useOwnerAgreements(propertyId: string) {
@@ -17,6 +19,15 @@ export function useAgreementCoverage(propertyId: string, startDate: string, endD
   return useQuery({ queryKey: ['owner_agreements', 'coverage', propertyId, startDate, endDate], queryFn: () => getAgreementCoveringRange(propertyId, startDate, endDate), enabled: Boolean(propertyId) && Boolean(startDate) && Boolean(endDate), staleTime: 10_000 });
 }
 
+export function useOwnerAgreementVersions(agreementIds: readonly string[]) {
+  const stableIds = [...agreementIds].sort();
+  return useQuery({
+    queryKey: ['owner_agreement_versions', stableIds],
+    queryFn: () => listOwnerAgreementVersions(stableIds),
+    enabled: stableIds.length > 0,
+  });
+}
+
 export function useCreatePropertyWithAgreement() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (payload: CreatePropertyWithAgreementPayload) => createPropertyWithAgreement(payload), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['properties'] }); void qc.invalidateQueries({ queryKey: ['owner_agreements'] }); } });
@@ -24,10 +35,17 @@ export function useCreatePropertyWithAgreement() {
 
 export function useCreateOwnerAgreement(propertyId: string) {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (payload: OwnerAgreementFormPayload) => createOwnerAgreement(payload), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['owner_agreements', propertyId] }); void qc.invalidateQueries({ queryKey: ['owner_agreements', 'coverage'] }); } });
+  return useMutation({ mutationFn: (payload: OwnerAgreementFormPayload) => createOwnerAgreement(payload), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['owner_agreements', propertyId] }); void qc.invalidateQueries({ queryKey: ['owner_agreement_versions'] }); void qc.invalidateQueries({ queryKey: ['owner_agreements', 'coverage'] }); } });
 }
 
-export function useUpdateOwnerAgreement(propertyId: string) {
+export function useCreateOwnerAgreementVersion(propertyId: string) {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ agreementId, payload }: { agreementId: string; payload: OwnerAgreementFormPayload }) => updateOwnerAgreement(agreementId, payload), onSuccess: () => { void qc.invalidateQueries({ queryKey: ['owner_agreements', propertyId] }); void qc.invalidateQueries({ queryKey: ['owner_agreements', 'coverage'] }); } });
+  return useMutation({
+    mutationFn: ({ agreementId, terms }: { agreementId: string; terms: OwnerAgreementVersionTerms }) => createOwnerAgreementVersion(agreementId, terms),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['owner_agreement_versions'] });
+      void qc.invalidateQueries({ queryKey: ['owner_agreements', propertyId] });
+      void qc.invalidateQueries({ queryKey: ['owner_agreements', 'coverage'] });
+    },
+  });
 }

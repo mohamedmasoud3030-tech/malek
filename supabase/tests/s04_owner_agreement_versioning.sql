@@ -45,7 +45,7 @@ select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000
 set local role authenticated;
 
 select lives_ok(
- $$select public.create_owner_agreement_version_atomic('00000000-0000-0000-0000-000000004a31','{"effective_from":"2026-08-08"}'::jsonb)$$,
+ $$select public.create_future_owner_agreement_version_atomic('00000000-0000-0000-0000-000000004a31','{"effective_from":"2026-08-08"}'::jsonb)$$,
  'first explicit version can be created'
 );
 select is((select version_no from public.owner_agreement_versions where owner_agreement_id='00000000-0000-0000-0000-000000004a31'::uuid and superseded_at is null),1,'first version number is 1');
@@ -54,7 +54,7 @@ select is((select collection_role from public.owner_agreement_versions where own
 select is((select commission_recognition_basis from public.owner_agreement_versions where owner_agreement_id='00000000-0000-0000-0000-000000004a31'::uuid and superseded_at is null),'ON_COLLECTION','RATE derives ON_COLLECTION');
 
 select lives_ok(
- $$select public.create_owner_agreement_version_atomic('00000000-0000-0000-0000-000000004a31','{"effective_from":"2026-09-01","collection_role":"OFFICE_IS_CREDITOR","commission_type":"FIXED_MONTHLY","commission_value":30,"offset_allowed":true,"reserve_amount":100}'::jsonb)$$,
+ $$select public.create_future_owner_agreement_version_atomic('00000000-0000-0000-0000-000000004a31', jsonb_build_object('effective_from',(current_date + 30)::text,'collection_role','OFFICE_IS_CREDITOR','commission_type','FIXED_MONTHLY','commission_value',30,'offset_allowed',true,'reserve_amount',100))$$,
  'second future version can be created'
 );
 select is((select count(*)::int from public.owner_agreement_versions where owner_agreement_id='00000000-0000-0000-0000-000000004a31'::uuid),2,'history contains two versions');
@@ -62,11 +62,11 @@ select is((select commission_recognition_basis from public.owner_agreement_versi
 select ok((select offset_allowed and reserve_amount=100 from public.owner_agreement_versions where owner_agreement_id='00000000-0000-0000-0000-000000004a31'::uuid and superseded_at is null),'offset right and reserve are versioned terms');
 
 select throws_ok(
- $$select public.create_owner_agreement_version_atomic('00000000-0000-0000-0000-000000004a31','{"effective_from":"2026-08-01"}'::jsonb)$$,
- '22023','OWNER_AGREEMENT_VERSION_RETROACTIVE_CHANGE_FORBIDDEN','retroactive replacement is rejected'
+ $$select public.create_future_owner_agreement_version_atomic('00000000-0000-0000-0000-000000004a31', jsonb_build_object('effective_from',(current_date - 1)::text))$$,
+ '22023','OWNER_AGREEMENT_VERSION_MUST_BE_FUTURE','retroactive replacement is rejected'
 );
 select throws_ok(
- $$select public.create_owner_agreement_version_atomic('00000000-0000-0000-0000-000000004b31','{"effective_from":"2026-09-01"}'::jsonb)$$,
+ $$select public.create_future_owner_agreement_version_atomic('00000000-0000-0000-0000-000000004b31', jsonb_build_object('effective_from',(current_date + 30)::text))$$,
  '42501','OWNER_AGREEMENT_NOT_FOUND_OR_NOT_AGENCY','cross-company versioning is denied'
 );
 select throws_ok(

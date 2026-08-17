@@ -7648,6 +7648,13 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_future_owner_agreement_version_atomic: {
+        Args: {
+          p_owner_agreement_id: string | null;
+          p_terms: Json | null;
+        };
+        Returns: Json;
+      };
       create_invoice_credit_atomic: {
         Args: {
           p_payload: Json | null;
@@ -7684,6 +7691,12 @@ export type Database = {
         };
         Returns: Database['public']['Tables']['owner_agreement_versions']['Row'];
       };
+      create_owner_agreement_with_version_atomic: {
+        Args: {
+          payload: Json | null;
+        };
+        Returns: Json;
+      };
       create_owner_funds_cutover_atomic: {
         Args: {
           p_payload: Json | null;
@@ -7718,6 +7731,26 @@ export type Database = {
           p_current_value?: number | null;
           p_status?: string | null;
           p_notes?: string | null;
+        };
+        Returns: Json;
+      };
+      create_property_with_versioned_agreement_atomic: {
+        Args: {
+          p_title: string | null;
+          p_type: string | null;
+          p_address: string | null;
+          p_owner_id: string | null;
+          p_agreement_type: string | null;
+          p_commission_type: string | null;
+          p_commission_value: number | null;
+          p_agreement_starts_on: string | null;
+          p_agreement_ends_on?: string | null;
+          p_owner_name?: string | null;
+          p_purchase_value?: number | null;
+          p_current_value?: number | null;
+          p_status?: string | null;
+          p_notes?: string | null;
+          p_collection_role?: string | null;
         };
         Returns: Json;
       };

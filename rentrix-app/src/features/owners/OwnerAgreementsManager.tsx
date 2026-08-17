@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import { addDays, format } from 'date-fns';
 import { Link } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { History, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,14 +20,17 @@ import {
   groupAgreementsByTemporalStatus,
   type OwnerAgreement,
   type OwnerAgreementFormPayload,
+  type OwnerAgreementVersion,
+  type OwnerAgreementVersionTerms,
 } from './ownerAgreementService';
-import { useCreateOwnerAgreement, useOwnerAgreements, useUpdateOwnerAgreement } from './useOwnerAgreements';
+import { useCreateOwnerAgreement, useCreateOwnerAgreementVersion, useOwnerAgreements, useOwnerAgreementVersions } from './useOwnerAgreements';
 import { useQuery } from '@tanstack/react-query';
 import { MONEY_STEP } from '@/lib/money';
 
 type AgreementFormState = {
   owner_id: string;
-  agreement_type: 'property_management' | 'master_lease';
+  agreement_type: 'property_management';
+  collection_role: 'OWNER_IS_CREDITOR' | 'OFFICE_IS_CREDITOR';
   commission_type: 'RATE' | 'FIXED_MONTHLY';
   commission_value: string;
   starts_on: string;
@@ -34,9 +38,23 @@ type AgreementFormState = {
   notes: string;
 };
 
-const emptyForm: AgreementFormState = { owner_id: '', agreement_type: 'property_management', commission_type: 'RATE', commission_value: '10', starts_on: '', ends_on: '', notes: '' };
-const agreementTypeLabels = { property_management: 'إدارة عقار', master_lease: 'استئجار رئيسي' } as const;
+type VersionFormState = {
+  collection_role: 'OWNER_IS_CREDITOR' | 'OFFICE_IS_CREDITOR';
+  commission_type: 'RATE' | 'FIXED_MONTHLY';
+  commission_value: string;
+  effective_from: string;
+  effective_to: string;
+  offset_allowed: boolean;
+  reserve_amount: string;
+  deposit_beneficiary: '' | 'OWNER' | 'OFFICE';
+  deposit_custodian: '' | 'OWNER' | 'OFFICE';
+  notes: string;
+};
+
+const emptyForm: AgreementFormState = { owner_id: '', agreement_type: 'property_management', collection_role: 'OWNER_IS_CREDITOR', commission_type: 'RATE', commission_value: '10', starts_on: '', ends_on: '', notes: '' };
+const agreementTypeLabels = { property_management: 'إدارة عقار' } as const;
 const commissionTypeLabels = { RATE: 'نسبة', FIXED_MONTHLY: 'مبلغ شهري ثابت' } as const;
+const earliestAmendmentDate = format(addDays(new Date(), 1), 'yyyy-MM-dd');
 
 /** Mobile stepper steps for the owner agreement overlay (actual domain fields only). */
 const agreementFormSteps = [
@@ -46,12 +64,8 @@ const agreementFormSteps = [
   { id: 'review', label: 'المراجعة والتأكيد' },
 ] as const;
 
-function agreementToForm(agreement: OwnerAgreement): AgreementFormState {
-  return { owner_id: agreement.owner_id, agreement_type: agreement.agreement_type, commission_type: agreement.commission_type, commission_value: String(agreement.commission_value), starts_on: agreement.starts_on, ends_on: agreement.ends_on ?? '', notes: agreement.notes ?? '' };
-}
-
 function toPayload(propertyId: string, values: AgreementFormState): OwnerAgreementFormPayload {
-  return { property_id: propertyId, owner_id: values.owner_id, agreement_type: values.agreement_type, commission_type: values.commission_type, commission_value: Number(values.commission_value), starts_on: values.starts_on, ends_on: values.ends_on || null, notes: values.notes || null };
+  return { property_id: propertyId, owner_id: values.owner_id, agreement_type: values.agreement_type, collection_role: values.collection_role, commission_type: values.commission_type, commission_value: Number(values.commission_value), starts_on: values.starts_on, ends_on: values.ends_on || null, notes: values.notes || null };
 }
 
 function getOwnerName(owners: readonly Owner[], ownerId: string) {
@@ -59,7 +73,10 @@ function getOwnerName(owners: readonly Owner[], ownerId: string) {
   return owner?.display_name || owner?.full_name || 'مالك غير معروف';
 }
 
-function AgreementRow({ agreement, owners, onEdit, tone }: { agreement: OwnerAgreement; owners: readonly Owner[]; onEdit: (agreement: OwnerAgreement) => void; tone: 'success' | 'info' | 'neutral' }) {
+function AgreementRow({ agreement, versions, owners, onAmend, tone }: { agreement: OwnerAgreement; versions: readonly OwnerAgreementVersion[]; owners: readonly Owner[]; onAmend: (agreement: OwnerAgreement, current: OwnerAgreementVersion | null) => void; tone: 'success' | 'info' | 'neutral' }) {
+  const current = versions.find((version) => version.superseded_at === null) ?? null;
+  const displayedCommissionType = current?.commission_type ?? agreement.commission_type;
+  const displayedCommissionValue = current?.commission_value ?? agreement.commission_value;
   return (
     <div className="rounded-2xl border border-border bg-background p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -67,14 +84,26 @@ function AgreementRow({ agreement, owners, onEdit, tone }: { agreement: OwnerAgr
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge tone={tone}>{agreement.ends_on ? 'محددة المدة' : 'مفتوحة'}</StatusBadge>
             <span className="font-semibold">{getOwnerName(owners, agreement.owner_id)}</span>
-            <span className="text-sm text-muted-foreground">{agreementTypeLabels[agreement.agreement_type]}</span>
+            <span className="text-sm text-muted-foreground">{agreementTypeLabels.property_management}</span>
           </div>
           <p className="text-sm text-muted-foreground">الفترة: {formatDate(agreement.starts_on)} — {agreement.ends_on ? formatDate(agreement.ends_on) : 'مفتوحة'}</p>
-          <p className="text-sm text-muted-foreground">العمولة: {commissionTypeLabels[agreement.commission_type]} · {agreement.commission_type === 'RATE' ? `${formatNumber(agreement.commission_value)}%` : formatMoney(agreement.commission_value)}</p>
+          <p className="text-sm text-muted-foreground">التحصيل: {current?.collection_role === 'OFFICE_IS_CREDITOR' ? 'المكتب هو الدائن' : 'المالك هو الدائن'}</p>
+          <p className="text-sm text-muted-foreground">العمولة: {commissionTypeLabels[displayedCommissionType]} · {displayedCommissionType === 'RATE' ? `${formatNumber(displayedCommissionValue)}%` : formatMoney(displayedCommissionValue)}</p>
           {agreement.notes ? <p className="text-sm leading-7">{agreement.notes}</p> : null}
         </div>
-        <Button variant="outline" size="sm" onClick={() => onEdit(agreement)}>تعديل آمن</Button>
+        <Button variant="outline" size="sm" onClick={() => onAmend(agreement, current)}><Plus className="me-2 size-4" />تعديل مستقبلي</Button>
       </div>
+      <details className="mt-3 border-t pt-3 text-sm">
+        <summary className="cursor-pointer font-semibold text-muted-foreground"><History className="me-2 inline size-4" />سجل النسخ ({versions.length})</summary>
+        <div className="mt-3 space-y-2">
+          {versions.length ? versions.map((version) => (
+            <div key={version.id} className="rounded-xl bg-muted/40 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2"><strong>النسخة {version.version_no}</strong><StatusBadge tone={version.superseded_at ? 'neutral' : 'success'}>{version.superseded_at ? 'محفوظة تاريخياً' : 'الحالية'}</StatusBadge></div>
+              <p className="mt-1 text-muted-foreground">السريان: {formatDate(version.effective_from)} — {version.effective_to ? formatDate(version.effective_to) : 'مفتوح'} · {version.collection_role === 'OFFICE_IS_CREDITOR' ? 'المكتب هو الدائن' : 'المالك هو الدائن'}</p>
+            </div>
+          )) : <p className="text-muted-foreground">لا توجد نسخة تجارية صريحة بعد. أنشئ تعديلاً قبل استخدام الاتفاقية في عقد جديد.</p>}
+        </div>
+      </details>
     </div>
   );
 }
@@ -90,13 +119,17 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
     queryKey: ['owners', 'agreement-display'],
     queryFn: listOwners,
   });
+  const agreementIds = (agreementsQuery.data ?? []).map((agreement) => agreement.id);
+  const versionsQuery = useOwnerAgreementVersions(agreementIds);
   const createMutation = useCreateOwnerAgreement(propertyId);
-  const updateMutation = useUpdateOwnerAgreement(propertyId);
-  const [editing, setEditing] = useState<OwnerAgreement | null>(null);
+  const versionMutation = useCreateOwnerAgreementVersion(propertyId);
   const [form, setForm] = useState<AgreementFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [agreementStep, setAgreementStep] = useState(0);
+  const [amendingAgreement, setAmendingAgreement] = useState<OwnerAgreement | null>(null);
+  const [versionForm, setVersionForm] = useState<VersionFormState | null>(null);
+  const [versionError, setVersionError] = useState<string | null>(null);
 
   const goNextAgreementStep = () => {
     if (agreementStep === 0 && !form.owner_id) {
@@ -148,25 +181,58 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
       ? getEligibleAgreementOwners(ownershipLinks, form.starts_on, form.ends_on || null)
       : propertyOwners;
 
-    if (!editing) return base;
-
-    const currentOwner = owners.find((owner) => owner.id === editing.owner_id);
-    if (currentOwner && !base.some((owner) => owner.id === currentOwner.id)) {
-      return [currentOwner, ...base];
-    }
-
     return base;
-  }, [editing, form.ends_on, form.starts_on, owners, ownershipLinks, propertyOwners]);
+  }, [form.ends_on, form.starts_on, ownershipLinks, propertyOwners]);
 
   const startCreate = () => {
-    setEditing(null);
     setForm({ ...emptyForm, owner_id: propertyOwners.length === 1 ? propertyOwners[0].id : '' });
     setFormError(null);
     setAgreementStep(0);
     setFormOpen(true);
   };
-  const startEdit = (agreement: OwnerAgreement) => { setEditing(agreement); setForm(agreementToForm(agreement)); setFormError(null); setAgreementStep(0); setFormOpen(true); };
-  const closeForm = () => { setFormOpen(false); setEditing(null); setForm(emptyForm); setFormError(null); setAgreementStep(0); };
+  const closeForm = () => { setFormOpen(false); setForm(emptyForm); setFormError(null); setAgreementStep(0); };
+  const startAmendment = (agreement: OwnerAgreement, current: OwnerAgreementVersion | null) => {
+    setAmendingAgreement(agreement);
+    setVersionError(null);
+    setVersionForm({
+      collection_role: current?.collection_role ?? 'OWNER_IS_CREDITOR',
+      commission_type: current?.commission_type ?? agreement.commission_type,
+      commission_value: String(current?.commission_value ?? agreement.commission_value),
+      effective_from: earliestAmendmentDate,
+      effective_to: agreement.ends_on ?? '',
+      offset_allowed: current?.offset_allowed ?? false,
+      reserve_amount: String(current?.reserve_amount ?? 0),
+      deposit_beneficiary: current?.deposit_beneficiary ?? '',
+      deposit_custodian: current?.deposit_custodian ?? '',
+      notes: current?.notes ?? agreement.notes ?? '',
+    });
+  };
+  const closeAmendment = () => { setAmendingAgreement(null); setVersionForm(null); setVersionError(null); };
+
+  async function submitVersion(event: FormEvent) {
+    event.preventDefault();
+    if (!amendingAgreement || !versionForm) return;
+    setVersionError(null);
+    try {
+      const terms: OwnerAgreementVersionTerms = {
+        collection_role: versionForm.collection_role,
+        commission_type: versionForm.commission_type,
+        commission_value: Number(versionForm.commission_value),
+        effective_from: versionForm.effective_from,
+        effective_to: versionForm.effective_to || null,
+        offset_allowed: versionForm.offset_allowed,
+        reserve_amount: Number(versionForm.reserve_amount || 0),
+        deposit_beneficiary: versionForm.deposit_beneficiary || null,
+        deposit_custodian: versionForm.deposit_custodian || null,
+        notes: versionForm.notes || null,
+      };
+      await versionMutation.mutateAsync({ agreementId: amendingAgreement.id, terms });
+      toast.success('تم حفظ نسخة جديدة دون تغيير النسخ أو العقود السابقة.');
+      closeAmendment();
+    } catch (error) {
+      setVersionError(error instanceof Error ? error.message : 'تعذر حفظ تعديل الاتفاقية.');
+    }
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -174,17 +240,22 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
     try {
       const payload = toPayload(propertyId, form);
       assertAgreementOwnerHasOwnership(ownershipLinks, payload);
-      if (editing) await updateMutation.mutateAsync({ agreementId: editing.id, payload });
-      else await createMutation.mutateAsync(payload);
-      toast.success(editing ? 'تم تحديث الاتفاقية ضمن قيود العقود والملكية المرتبطة.' : 'تم إنشاء الاتفاقية.');
+      await createMutation.mutateAsync(payload);
+      toast.success('تم إنشاء الاتفاقية ونسختها التجارية الأولى.');
       closeForm();
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'تعذر حفظ اتفاقية المالك.');
     }
   }
 
-  const saving = createMutation.isPending || updateMutation.isPending;
-  const loading = agreementsQuery.isLoading || ownershipQuery.isLoading;
+  const saving = createMutation.isPending;
+  const loading = agreementsQuery.isLoading || ownershipQuery.isLoading || versionsQuery.isLoading;
+  const versionsByAgreement = new Map<string, OwnerAgreementVersion[]>();
+  for (const version of versionsQuery.data ?? []) {
+    const existing = versionsByAgreement.get(version.owner_agreement_id) ?? [];
+    existing.push(version);
+    versionsByAgreement.set(version.owner_agreement_id, existing);
+  }
   const hasOwnershipLinks = ownershipLinks.length > 0;
   const hasOperationalOwner = propertyOwners.length > 0;
   const hasCurrentAgreement = grouped.current.length > 0;
@@ -238,15 +309,15 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
           </div>
         ) : null}
         <div className="grid gap-4 lg:grid-cols-3">
-          <section className="space-y-3"><h3 className="text-sm font-bold">السارية</h3>{grouped.current.length ? grouped.current.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="success" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقية سارية اليوم.</p>}</section>
-          <section className="space-y-3"><h3 className="text-sm font-bold">المجدولة</h3>{grouped.scheduled.length ? grouped.scheduled.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="info" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات مستقبلية.</p>}</section>
-          <section className="space-y-3"><h3 className="text-sm font-bold">المنتهية</h3>{grouped.ended.length ? grouped.ended.map((a) => <AgreementRow key={a.id} agreement={a} owners={owners} tone="neutral" onEdit={startEdit} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات منتهية.</p>}</section>
+          <section className="space-y-3"><h3 className="text-sm font-bold">السارية</h3>{grouped.current.length ? grouped.current.map((a) => <AgreementRow key={a.id} agreement={a} versions={versionsByAgreement.get(a.id) ?? []} owners={owners} tone="success" onAmend={startAmendment} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقية سارية اليوم.</p>}</section>
+          <section className="space-y-3"><h3 className="text-sm font-bold">المجدولة</h3>{grouped.scheduled.length ? grouped.scheduled.map((a) => <AgreementRow key={a.id} agreement={a} versions={versionsByAgreement.get(a.id) ?? []} owners={owners} tone="info" onAmend={startAmendment} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات مستقبلية.</p>}</section>
+          <section className="space-y-3"><h3 className="text-sm font-bold">المنتهية</h3>{grouped.ended.length ? grouped.ended.map((a) => <AgreementRow key={a.id} agreement={a} versions={versionsByAgreement.get(a.id) ?? []} owners={owners} tone="neutral" onAmend={startAmendment} />) : <p className="text-sm text-muted-foreground">لا توجد اتفاقيات منتهية.</p>}</section>
         </div>
       </CardContent>
       <EntityForm.Overlay
         open={formOpen}
         onOpenChange={(open) => { if (!open) closeForm(); else setFormOpen(true); }}
-        title={editing ? 'تعديل اتفاقية ضمن القيود' : 'إنشاء اتفاقية مكتب ومالك'}
+        title="إنشاء اتفاقية مكتب ومالك"
         description="تظهر فقط علاقات الملكية التي تغطي كامل فترة الاتفاقية، وأي تعديل يخرج عقداً قائماً من الفترة سيُرفض."
         className="max-w-2xl"
       >
@@ -273,9 +344,15 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
           </EntityForm.Field>
 
           <EntityForm.Field label="نوع الاتفاقية" className={stepVisibility(1)}>
-            <Select value={form.agreement_type} onChange={(e) => setForm((v) => ({ ...v, agreement_type: e.target.value as AgreementFormState['agreement_type'] }))}>
+            <Select value="property_management" disabled>
               <option value="property_management">إدارة عقار</option>
-              <option value="master_lease">استئجار رئيسي</option>
+            </Select>
+            <p className="mt-2 text-xs text-muted-foreground">الاستئجار الرئيسي غير متاح في الإصدار الحالي حتى اكتمال مراجعته المحاسبية.</p>
+          </EntityForm.Field>
+          <EntityForm.Field label="من يطالب المستأجر بالإيجار؟" className={stepVisibility(1)}>
+            <Select value={form.collection_role} onChange={(e) => setForm((v) => ({ ...v, collection_role: e.target.value as AgreementFormState['collection_role'] }))}>
+              <option value="OWNER_IS_CREDITOR">المالك هو الدائن</option>
+              <option value="OFFICE_IS_CREDITOR">المكتب هو الدائن</option>
             </Select>
           </EntityForm.Field>
           <EntityForm.Field label="نوع العمولة" className={stepVisibility(1)}>
@@ -303,6 +380,7 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
             <dl className="grid gap-2 text-sm sm:grid-cols-2">
               <div><dt className="text-xs text-muted-foreground">المالك</dt><dd className="font-semibold">{getOwnerName(owners, form.owner_id)}</dd></div>
               <div><dt className="text-xs text-muted-foreground">نوع الاتفاقية</dt><dd className="font-semibold">{agreementTypeLabels[form.agreement_type]}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">جهة التحصيل</dt><dd className="font-semibold">{form.collection_role === 'OFFICE_IS_CREDITOR' ? 'المكتب هو الدائن' : 'المالك هو الدائن'}</dd></div>
               <div><dt className="text-xs text-muted-foreground">العمولة</dt><dd className="font-semibold">{commissionTypeLabels[form.commission_type]} · {form.commission_type === 'RATE' ? `${formatNumber(Number(form.commission_value) || 0)}%` : formatMoney(Number(form.commission_value) || 0)}</dd></div>
               <div><dt className="text-xs text-muted-foreground">الفترة</dt><dd className="font-semibold">{form.starts_on ? formatDate(form.starts_on) : '—'} — {form.ends_on ? formatDate(form.ends_on) : 'مفتوحة'}</dd></div>
             </dl>
@@ -323,6 +401,62 @@ export function OwnerAgreementsManager({ propertyId }: { propertyId: string }) {
           />
           <EntityForm.Actions className="max-md:hidden md:col-span-2" onCancel={closeForm} isSubmitting={saving} submitLabel={saving ? 'جار الحفظ...' : 'حفظ الاتفاقية'} />
         </EntityForm.Root>
+      </EntityForm.Overlay>
+
+      <EntityForm.Overlay
+        open={Boolean(amendingAgreement && versionForm)}
+        onOpenChange={(open) => { if (!open) closeAmendment(); }}
+        title="إضافة تعديل مستقبلي للاتفاقية"
+        description="ينشئ النظام نسخة جديدة ويحتفظ بكل النسخ والعقود السابقة دون تغيير. لا يسمح بالتعديل بأثر رجعي."
+        className="max-w-2xl"
+      >
+        {versionForm ? (
+          <EntityForm.Root className="md:grid-cols-2" onSubmit={submitVersion}>
+            <EntityForm.ErrorSummary message={versionError} className="md:col-span-2" />
+            <EntityForm.Field label="تاريخ سريان النسخة الجديدة">
+              <Input type="date" min={earliestAmendmentDate} value={versionForm.effective_from} onChange={(event) => setVersionForm((value) => value ? ({ ...value, effective_from: event.target.value }) : value)} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="تاريخ النهاية">
+              <Input type="date" value={versionForm.effective_to} onChange={(event) => setVersionForm((value) => value ? ({ ...value, effective_to: event.target.value }) : value)} />
+            </EntityForm.Field>
+            <EntityForm.Field label="جهة التحصيل">
+              <Select value={versionForm.collection_role} onChange={(event) => setVersionForm((value) => value ? ({ ...value, collection_role: event.target.value as VersionFormState['collection_role'] }) : value)}>
+                <option value="OWNER_IS_CREDITOR">المالك هو الدائن</option>
+                <option value="OFFICE_IS_CREDITOR">المكتب هو الدائن</option>
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="نوع العمولة">
+              <Select value={versionForm.commission_type} onChange={(event) => setVersionForm((value) => value ? ({ ...value, commission_type: event.target.value as VersionFormState['commission_type'] }) : value)}>
+                <option value="RATE">نسبة من التحصيل</option>
+                <option value="FIXED_MONTHLY">مبلغ شهري ثابت</option>
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="قيمة العمولة">
+              <Input type="number" step={MONEY_STEP} min="0" max={versionForm.commission_type === 'RATE' ? 100 : undefined} value={versionForm.commission_value} onChange={(event) => setVersionForm((value) => value ? ({ ...value, commission_value: event.target.value }) : value)} required />
+            </EntityForm.Field>
+            <EntityForm.Field label="الاحتياطي المحتفظ به">
+              <Input type="number" step={MONEY_STEP} min="0" value={versionForm.reserve_amount} onChange={(event) => setVersionForm((value) => value ? ({ ...value, reserve_amount: event.target.value }) : value)} />
+            </EntityForm.Field>
+            <EntityForm.Field label="مستفيد مبلغ التأمين">
+              <Select value={versionForm.deposit_beneficiary} onChange={(event) => setVersionForm((value) => value ? ({ ...value, deposit_beneficiary: event.target.value as VersionFormState['deposit_beneficiary'] }) : value)}>
+                <option value="">غير محدد</option><option value="OWNER">المالك</option><option value="OFFICE">المكتب</option>
+              </Select>
+            </EntityForm.Field>
+            <EntityForm.Field label="حافظ مبلغ التأمين">
+              <Select value={versionForm.deposit_custodian} onChange={(event) => setVersionForm((value) => value ? ({ ...value, deposit_custodian: event.target.value as VersionFormState['deposit_custodian'] }) : value)}>
+                <option value="">غير محدد</option><option value="OWNER">المالك</option><option value="OFFICE">المكتب</option>
+              </Select>
+            </EntityForm.Field>
+            <label className="flex min-h-11 items-center gap-3 rounded-xl border p-3 text-sm md:col-span-2">
+              <input type="checkbox" checked={versionForm.offset_allowed} onChange={(event) => setVersionForm((value) => value ? ({ ...value, offset_allowed: event.target.checked }) : value)} />
+              تسمح الاتفاقية نظامياً بخصم المبالغ المستحقة على المالك من تسوية معتمدة
+            </label>
+            <EntityForm.Field label="سبب التعديل وملاحظاته" className="md:col-span-2">
+              <Textarea value={versionForm.notes} onChange={(event) => setVersionForm((value) => value ? ({ ...value, notes: event.target.value }) : value)} />
+            </EntityForm.Field>
+            <EntityForm.Actions className="md:col-span-2" onCancel={closeAmendment} isSubmitting={versionMutation.isPending} submitLabel={versionMutation.isPending ? 'جار حفظ النسخة...' : 'حفظ النسخة الجديدة'} />
+          </EntityForm.Root>
+        ) : null}
       </EntityForm.Overlay>
     </Card>
   );

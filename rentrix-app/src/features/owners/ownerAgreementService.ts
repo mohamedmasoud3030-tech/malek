@@ -4,23 +4,39 @@ import type { Database } from '@/types/database';
 import type { Owner, PropertyOwnerWithOwner } from './services/owner-service';
 
 export type OwnerAgreement = Database['public']['Tables']['owner_agreements']['Row'];
+export type OwnerAgreementVersion = Database['public']['Tables']['owner_agreement_versions']['Row'];
 export type OwnerAgreementInsert = Database['public']['Tables']['owner_agreements']['Insert'];
 export type AgreementType = 'property_management' | 'master_lease';
 export type CommissionType = 'FIXED_MONTHLY' | 'RATE';
+export type CollectionRole = 'OWNER_IS_CREDITOR' | 'OFFICE_IS_CREDITOR';
+export type DepositParty = 'OWNER' | 'OFFICE';
+
+export type OwnerAgreementVersionTerms = Pick<OwnerAgreementVersion,
+  'collection_role' | 'commission_type' | 'commission_value' | 'effective_from'
+> & Partial<Pick<OwnerAgreementVersion,
+  'operating_model' | 'effective_to' | 'offset_allowed' | 'reserve_amount' | 'deposit_beneficiary' | 'deposit_custodian' | 'notes'
+>>;
 
 export type OwnerAgreementFormPayload = Pick<OwnerAgreementInsert,
   'owner_id' | 'property_id' | 'agreement_type' | 'commission_type' | 'commission_value' | 'starts_on'
-> & Partial<Pick<OwnerAgreementInsert, 'ends_on' | 'notes'>>;
+> & Partial<Pick<OwnerAgreementInsert, 'ends_on' | 'notes'>> & {
+  collection_role?: CollectionRole;
+  offset_allowed?: boolean;
+  reserve_amount?: number;
+  deposit_beneficiary?: DepositParty | null;
+  deposit_custodian?: DepositParty | null;
+};
 
 export interface CreatePropertyWithAgreementPayload {
   title: string; type: string; address: string; owner_id: string; owner_name?: string | null; purchase_value?: number | null; current_value?: number | null; status?: string; notes?: string | null;
-  agreement_type: AgreementType; commission_type: CommissionType; commission_value: number; agreement_starts_on: string; agreement_ends_on?: string | null;
+  agreement_type: AgreementType; collection_role?: CollectionRole; commission_type: CommissionType; commission_value: number; agreement_starts_on: string; agreement_ends_on?: string | null;
 }
 export interface CreatePropertyWithAgreementResult { property_id: string; agreement_id: string; }
 
 function normalizeAgreementPayload(payload: OwnerAgreementFormPayload): OwnerAgreementFormPayload {
   if (!payload.owner_id) throw new Error('اختر المالك للاتفاقية.');
   if (!payload.property_id) throw new Error('العقار مطلوب للاتفاقية.');
+  if (payload.agreement_type !== 'property_management') throw new Error('الاستئجار الرئيسي غير متاح في الإصدار الحالي.');
   if (!payload.starts_on) throw new Error('تاريخ بداية الاتفاقية مطلوب.');
   if (payload.ends_on && payload.ends_on < payload.starts_on) throw new Error('تاريخ نهاية الاتفاقية يجب ألا يسبق البداية.');
   if (payload.commission_type === 'RATE' && (payload.commission_value < 0 || payload.commission_value > 100)) {
@@ -74,9 +90,10 @@ export function assertAgreementOwnerHasOwnership(
 }
 
 export async function createPropertyWithAgreement(payload: CreatePropertyWithAgreementPayload): Promise<CreatePropertyWithAgreementResult> {
-  const { data, error } = await supabase.rpc('create_property_with_agreement', {
+  if (payload.agreement_type !== 'property_management') throw new Error('الاستئجار الرئيسي غير متاح في الإصدار الحالي.');
+  const { data, error } = await supabase.rpc('create_property_with_versioned_agreement_atomic', {
     p_title: payload.title, p_type: payload.type, p_address: payload.address, p_owner_id: payload.owner_id,
-    p_agreement_type: payload.agreement_type, p_commission_type: payload.commission_type, p_commission_value: payload.commission_value,
+    p_agreement_type: payload.agreement_type, p_collection_role: payload.collection_role ?? 'OWNER_IS_CREDITOR', p_commission_type: payload.commission_type, p_commission_value: payload.commission_value,
     p_agreement_starts_on: payload.agreement_starts_on, p_agreement_ends_on: payload.agreement_ends_on ?? null,
     p_owner_name: payload.owner_name ?? null, p_purchase_value: payload.purchase_value ?? null, p_current_value: payload.current_value ?? null,
     p_status: payload.status ?? 'active', p_notes: payload.notes ?? null,
@@ -114,21 +131,53 @@ export async function getAgreementCoveringRange(propertyId: string, contractStar
   return (data ?? [])[0] ?? null;
 }
 
+export async function listOwnerAgreementVersions(agreementIds: readonly string[]): Promise<OwnerAgreementVersion[]> {
+  if (agreementIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('owner_agreement_versions')
+    .select('*')
+    .in('owner_agreement_id', [...agreementIds])
+    .order('version_no', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function createOwnerAgreement(payload: OwnerAgreementFormPayload): Promise<OwnerAgreement> {
-  const { data, error } = await supabase.rpc('create_owner_agreement_atomic', { payload: normalizeAgreementPayload(payload) });
+  const { data, error } = await supabase.rpc('create_owner_agreement_with_version_atomic', { payload: normalizeAgreementPayload(payload) });
   if (error) throw new Error(formatAgreementError(error.message));
   return data as OwnerAgreement;
 }
 
-export async function updateOwnerAgreement(agreementId: string, payload: OwnerAgreementFormPayload): Promise<OwnerAgreement> {
-  const { data, error } = await supabase.rpc('update_owner_agreement_atomic', { p_agreement_id: agreementId, payload: normalizeAgreementPayload(payload) });
+export async function createOwnerAgreementVersion(
+  agreementId: string,
+  terms: OwnerAgreementVersionTerms,
+): Promise<OwnerAgreementVersion> {
+  if (!terms.effective_from) throw new Error('تاريخ سريان التعديل مطلوب.');
+  if (terms.effective_from <= getTodayLocalDateString()) throw new Error('لا يمكن تطبيق تعديل بأثر رجعي. اختر تاريخ سريان مستقبلي.');
+  if (terms.effective_to && terms.effective_to < terms.effective_from) throw new Error('تاريخ نهاية التعديل يجب ألا يسبق بداية سريانه.');
+  if (!Number.isFinite(terms.commission_value) || terms.commission_value < 0) throw new Error('قيمة العمولة غير صحيحة.');
+  if (terms.commission_type === 'RATE' && terms.commission_value > 100) throw new Error('نسبة العمولة يجب أن تكون بين 0 و100.');
+  if (!Number.isFinite(terms.reserve_amount ?? 0) || (terms.reserve_amount ?? 0) < 0) throw new Error('قيمة الاحتياطي لا يمكن أن تكون سالبة.');
+
+  const { data, error } = await supabase.rpc('create_future_owner_agreement_version_atomic', {
+    p_owner_agreement_id: agreementId,
+    p_terms: {
+      ...terms,
+      operating_model: terms.operating_model ?? 'OWNER_AGENCY',
+      effective_to: terms.effective_to || null,
+      notes: terms.notes?.trim() || null,
+    },
+  });
   if (error) throw new Error(formatAgreementError(error.message));
-  return data as OwnerAgreement;
+  return data as OwnerAgreementVersion;
 }
 
 export function formatAgreementError(message: string): string {
   const lower = message.toLowerCase();
   if (lower.includes('غير مصرح') || lower.includes('not authorized') || lower.includes('permission denied')) return 'غير مصرح: يحتاج هذا الإجراء صلاحية مدير أو مشرف.';
+  if (lower.includes('master_lease_excluded_from_rc1')) return 'الاستئجار الرئيسي غير متاح في الإصدار الحالي.';
+  if (lower.includes('retroactive_change_forbidden') || lower.includes('version_must_be_future')) return 'لا يمكن تطبيق تعديل بأثر رجعي. اختر تاريخ سريان مستقبلي.';
+  if (lower.includes('version_terms_invalid')) return 'شروط التعديل غير صحيحة. راجع تاريخ السريان والعمولة والاحتياطي.';
   if (lower.includes('owner_agreements_no_overlap') || lower.includes('exclusion constraint')) return 'يوجد اتفاقية مالك لهذا العقار في نفس الفترة الزمنية. عدّل التواريخ أو أنهِ الاتفاقية الحالية أولاً.';
   if (lower.includes('لا يملك العقار طوال فترة الاتفاقية') || lower.includes('requires ownership')) return 'المالك المحدد لا يملك العقار طوال فترة الاتفاقية. راجع تواريخ الملكية أو اختر مالكاً آخر.';
   if (lower.includes('outside') || lower.includes('خارج الفترة') || lower.includes('linked')) return 'لا يمكن تعديل الاتفاقية لأن هناك عقداً محفوظاً سيصبح خارج فترة الاتفاقية.';

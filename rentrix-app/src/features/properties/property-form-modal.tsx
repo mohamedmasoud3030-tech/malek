@@ -37,9 +37,10 @@ const propertyWithAgreementSchema = z
     type: z.string().trim().min(2, 'نوع العقار مطلوب'),
     address: z.string().trim().min(3, 'العنوان مطلوب'),
     owner_id: z.string().uuid('اختر المالك'),
-    agreement_type: z.enum(['property_management', 'master_lease'], {
-      required_error: 'نوع الاتفاقية مطلوب',
+    agreement_type: z.literal('property_management', {
+      errorMap: () => ({ message: 'الاستئجار الرئيسي غير متاح في الإصدار الحالي' }),
     }),
+    collection_role: z.enum(['OWNER_IS_CREDITOR', 'OFFICE_IS_CREDITOR']),
     commission_type: z.enum(['FIXED_MONTHLY', 'RATE'], { required_error: 'نوع العمولة مطلوب' }),
     commission_value: z.preprocess(
       (value) => (value === '' || value === null || value === undefined ? Number.NaN : Number(value)),
@@ -119,6 +120,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
       address: '',
       owner_id: '',
       agreement_type: 'property_management',
+      collection_role: 'OWNER_IS_CREDITOR',
       commission_type: 'FIXED_MONTHLY',
       commission_value: undefined,
       agreement_starts_on: '',
@@ -174,6 +176,7 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
         address: parsed.address.trim(),
         owner_id: parsed.owner_id,
         agreement_type: parsed.agreement_type,
+        collection_role: parsed.collection_role,
         commission_type: parsed.commission_type,
         commission_value: Number(parsed.commission_value),
         agreement_starts_on: parsed.agreement_starts_on,
@@ -393,9 +396,15 @@ function PropertyCreateModal({ open, onClose }: { open: boolean; onClose: () => 
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <EntityForm.Field label="نوع الاتفاقية" error={form.formState.errors.agreement_type?.message}>
-                  <Select {...form.register('agreement_type')}>
+                  <Select {...form.register('agreement_type')} disabled>
                     <option value="property_management">إدارة عقارية</option>
-                    <option value="master_lease">إيجار رئيسي</option>
+                  </Select>
+                  <p className="mt-2 text-xs text-muted-foreground">الاستئجار الرئيسي مؤجل حتى اكتمال رحلته ومراجعته المحاسبية.</p>
+                </EntityForm.Field>
+                <EntityForm.Field label="من يطالب المستأجر بالإيجار؟" error={form.formState.errors.collection_role?.message}>
+                  <Select {...form.register('collection_role')}>
+                    <option value="OWNER_IS_CREDITOR">المالك هو الدائن</option>
+                    <option value="OFFICE_IS_CREDITOR">المكتب هو الدائن</option>
                   </Select>
                 </EntityForm.Field>
                 <EntityForm.Field label="نوع العمولة" error={form.formState.errors.commission_type?.message}>
