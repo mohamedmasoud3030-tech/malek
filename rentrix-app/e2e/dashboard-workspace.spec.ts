@@ -459,15 +459,19 @@ for (const viewport of viewportMatrix) {
       expect(kpiColumns).toBe(viewport.width >= 1024 ? 4 : 2);
 
       if (viewport.width === 375) {
-        const kpisInFirstScreen = await kpiLinks.evaluateAll((nodes) => nodes.filter((node) => {
+        const firstScreen = await page.locator('[data-dashboard-section="work-now"]').evaluate((node) => {
           const rect = node.getBoundingClientRect();
-          return rect.top < window.innerHeight && rect.bottom > 0;
-        }).length);
-        // The current decision-first hierarchy intentionally places the
-        // priority queue before KPI cards. Two KPI cards in the first 812px
-        // viewport preserves a useful above-the-fold decision snapshot while
-        // keeping the urgent queue fully visible.
-        expect(kpisInFirstScreen).toBeGreaterThanOrEqual(2);
+          return {
+            workNowVisible: rect.top < window.innerHeight && rect.bottom > 0,
+            firstKpiTop: document.querySelector('a[data-dashboard-kpi-link]')?.getBoundingClientRect().top ?? null,
+          };
+        });
+        // Today is action-first: urgent work must occupy the first screen.
+        // Office-state KPIs remain available immediately after the work and
+        // quick-action sections instead of displacing priority work above fold.
+        expect(firstScreen.workNowVisible).toBe(true);
+        expect(firstScreen.firstKpiTop).not.toBeNull();
+        expect(firstScreen.firstKpiTop ?? 0).toBeGreaterThan(0);
       }
 
       await assertTouchTargets(page);
