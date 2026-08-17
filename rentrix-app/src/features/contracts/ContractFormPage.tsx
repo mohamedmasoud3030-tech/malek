@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { ContractFormModal } from './contract-form-modal';
 import { ContractsListPage } from './ContractsListPage';
 import { ContractDetailPage } from './pages/ContractDetailPage';
@@ -9,6 +9,9 @@ import { ContractDetailPage } from './pages/ContractDetailPage';
  * - /contracts/new: renders the contracts workspace with the compact centered
  *   create modal (ContractFormModal) on top — the same modal used by the
  *   workspace "إنشاء عقد" action; closing returns to the contracts list.
+ *   A leasing journey may provide propertyId/unitId/tenantId search context;
+ *   those values prefill the draft instead of forcing the user to reselect the
+ *   asset and party they just came from.
  * - /contracts/$contractId/edit: renders the contract detail workspace with
  *   the compact centered edit modal on top, so editing never leaves the
  *   contract context.
@@ -24,6 +27,10 @@ export function ContractFormPage() {
 
 function ContractCreateRoute() {
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const initialPropertyId = typeof search.propertyId === 'string' ? search.propertyId : undefined;
+  const initialUnitId = typeof search.unitId === 'string' ? search.unitId : undefined;
+  const initialTenantId = typeof search.tenantId === 'string' ? search.tenantId : undefined;
   const closeToContracts = () => {
     void navigate({ to: '/contracts' });
   };
@@ -31,7 +38,16 @@ function ContractCreateRoute() {
   return (
     <>
       <ContractsListPage />
-      <ContractFormModal open onClose={closeToContracts} />
+      <ContractFormModal
+        open
+        onClose={closeToContracts}
+        initialPropertyId={initialPropertyId}
+        initialUnitId={initialUnitId}
+        initialTenantId={initialTenantId}
+        onCreated={(contract) => {
+          void navigate({ to: '/contracts/$contractId', params: { contractId: contract.id } });
+        }}
+      />
     </>
   );
 }

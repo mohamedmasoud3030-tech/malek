@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { useForm, useWatch, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,10 +19,11 @@ import {
 } from './contractSchema';
 import {
   buildContractUnitOptionLabel,
+  getContractUnitDefaultRent,
   getContractUnitSelectionIssue,
   isUnitSelectableForContract,
 } from './contract-unit-options';
-import type { Property } from '@/types/domain';
+import type { Contract, Property } from '@/types/domain';
 import type { Person } from '@/types/domain';
 import type { PaginatedResult } from '@/features/properties/property-service';
 import type { PaginatedPeople } from '@/features/people/people-service';
@@ -31,7 +32,10 @@ import { normalizeContractStatus } from '@/lib/contractStatus';
 interface UseContractFormOptions {
   contractId?: string;
   onClose?: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (contract: Contract) => void;
+  initialPropertyId?: string;
+  initialUnitId?: string;
+  initialTenantId?: string;
 }
 
 interface UseContractFormReturn {
@@ -59,18 +63,22 @@ export function useContractForm({
   contractId,
   onClose,
   onSuccess,
+  initialPropertyId = '',
+  initialUnitId = '',
+  initialTenantId = '',
 }: UseContractFormOptions = {}): UseContractFormReturn {
   const isEdit = Boolean(contractId);
   const contractQuery = useContract(contractId ?? '');
   const createMutation = useCreateContract();
   const updateMutation = useUpdateContract(contractId ?? '');
+  const initialUnitRentApplied = useRef(false);
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractSchema, undefined, { raw: true }),
     defaultValues: {
-      property_id: '',
-      unit_id: '',
-      tenant_id: '',
+      property_id: isEdit ? '' : initialPropertyId,
+      unit_id: isEdit ? '' : initialUnitId,
+      tenant_id: isEdit ? '' : initialTenantId,
       start_date: '',
       end_date: '',
       rent_amount: 0,
@@ -136,6 +144,24 @@ export function useContractForm({
     });
   }, [contractQuery.data, form]);
 
+  // When contract creation starts from an available unit, preserve that context
+  // and hydrate the recorded unit rent once the unit options arrive. This runs
+  // only once and never overwrites a user's later unit/rent edits.
+  useEffect(() => {
+    if (isEdit || initialUnitRentApplied.current || !initialPropertyId || !initialUnitId || !unitsQuery.data) return;
+    if (form.getValues('property_id') !== initialPropertyId || form.getValues('unit_id') !== initialUnitId) return;
+    const selectedInitialUnit = unitsQuery.data.find((unit) => unit.id === initialUnitId);
+    if (!selectedInitialUnit) return;
+    if (Number(form.getValues('rent_amount') || 0) === 0) {
+      form.setValue(
+        'rent_amount',
+        getContractUnitDefaultRent(unitsQuery.data, initialUnitId),
+        { shouldDirty: false, shouldValidate: true },
+      );
+    }
+    initialUnitRentApplied.current = true;
+  }, [form, initialPropertyId, initialUnitId, isEdit, unitsQuery.data]);
+
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = async (values: ContractFormValues) => {
@@ -154,13 +180,11 @@ export function useContractForm({
       }
       const agreementId = agreementCoverageQuery.data?.id ?? null;
       const finalPayload = { ...payload, agreement_id: agreementId };
-      if (isEdit && contractId) {
-        await updateMutation.mutateAsync(finalPayload);
-      } else {
-        await createMutation.mutateAsync(finalPayload);
-      }
-      onSuccess?.();
-      onClose?.();
+      const savedContract = isEdit && contractId
+        ? await updateMutation.mutateAsync(finalPayload)
+        : await createMutation.mutateAsync(finalPayload);
+      if (onSuccess) onSuccess(savedContract);
+      else onClose?.();
     } catch (err) {
       form.setError('root', { type: 'server', message: err instanceof Error ? err.message : 'تعذر حفظ العقد، حاول مرة أخرى.' });
     }
