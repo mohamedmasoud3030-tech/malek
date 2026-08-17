@@ -4,7 +4,7 @@ import type { AuthorizationContext } from '@/features/auth/permissions';
 import { FINANCE_VIEWS, isViewPermitted } from './financials-page';
 
 const readFinancialsPage = () => readFileSync(new URL('./financials-page.tsx', import.meta.url), 'utf8');
-const readMoneyPage = () => readFileSync(new URL('./money-page.tsx', import.meta.url), 'utf8');
+const readMoneyPage = () => readFileSync(new URL('../finance-hub/money-page.tsx', import.meta.url), 'utf8');
 const routeSource = readFileSync(new URL('../../routes/_protected.financials.tsx', import.meta.url), 'utf8');
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
 

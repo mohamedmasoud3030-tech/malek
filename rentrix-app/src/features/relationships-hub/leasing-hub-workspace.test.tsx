@@ -8,9 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let allowedPermissions = new Set<string>(['leads.view', 'communication.view']);
 
-vi.mock('@/hooks/use-auth', () => ({
-  useAuth: () => ({ canAccess: (permission: string) => allowedPermissions.has(permission) }),
-}));
+vi.mock('@/hooks/use-auth', () => ({ useAuth: () => ({ canAccess: (permission: string) => allowedPermissions.has(permission) }) }));
 
 function makeProbe(name: string) {
   return function Probe({ embedded }: { embedded?: boolean }) {
@@ -37,16 +35,8 @@ const { LeasingHubWorkspace } = await import('./leasing-hub-workspace');
 function renderHub({ initialUrl = '/contracts', permissions = ['leads.view', 'communication.view'] } = {}) {
   allowedPermissions = new Set(permissions);
   const rootRoute = createRootRoute();
-  const hubRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: '/contracts',
-    component: LeasingHubWorkspace,
-    validateSearch: (search: Record<string, unknown>) => search,
-  });
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([hubRoute]),
-    history: createMemoryHistory({ initialEntries: [initialUrl] }),
-  });
+  const hubRoute = createRoute({ getParentRoute: () => rootRoute, path: '/contracts', component: LeasingHubWorkspace, validateSearch: (search: Record<string, unknown>) => search });
+  const router = createRouter({ routeTree: rootRoute.addChildren([hubRoute]), history: createMemoryHistory({ initialEntries: [initialUrl] }) });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const utils = render(
     <QueryClientProvider client={queryClient}>
@@ -63,7 +53,7 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 describe('Leasing workspace', () => {
   it('renders one shell titled التأجير with contracts as the default journey', async () => {
     const { container } = renderHub();
-    expect(await screen.findByTestId('contracts-embedded')).toHaveTextContent('yes');
+    expect((await screen.findByTestId('contracts-embedded')).textContent).toBe('yes');
     expect(screen.getByText('التأجير')).toBeTruthy();
     expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
     expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
@@ -73,7 +63,6 @@ describe('Leasing workspace', () => {
     const user = userEvent.setup();
     const { router } = renderHub();
     await screen.findByTestId('contracts-body');
-
     for (const [name, workspace, probe] of [
       [/المستأجرون/, 'tenants', 'tenants'],
       [/جهات التعامل/, 'people', 'people'],
@@ -83,13 +72,13 @@ describe('Leasing workspace', () => {
       await user.click(screen.getByRole('tab', { name }));
       await waitFor(() => expect(router.state.location.pathname).toBe('/contracts'));
       await waitFor(() => expect(router.state.location.search).toMatchObject({ workspace }));
-      expect(await screen.findByTestId(`${probe}-embedded`)).toHaveTextContent('yes');
+      expect((await screen.findByTestId(`${probe}-embedded`)).textContent).toBe('yes');
     }
   });
 
   it('opens a Leasing deep link without leaving /contracts', async () => {
     const { router } = renderHub({ initialUrl: '/contracts?workspace=people' });
-    expect(await screen.findByTestId('people-embedded')).toHaveTextContent('yes');
+    expect((await screen.findByTestId('people-embedded')).textContent).toBe('yes');
     expect(router.state.location.pathname).toBe('/contracts');
     expect(router.state.location.search).toMatchObject({ workspace: 'people' });
   });
@@ -116,10 +105,10 @@ describe('Leasing workspace', () => {
     renderHub();
     await screen.findByTestId('contracts-body');
     await user.click(screen.getByTestId('contracts-increment'));
-    expect(screen.getByTestId('contracts-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('contracts-count').textContent).toBe('1');
     await user.click(screen.getByRole('tab', { name: /المستأجرون/ }));
     await screen.findByTestId('tenants-body');
     await user.click(screen.getByRole('tab', { name: /العقود/ }));
-    expect(await screen.findByTestId('contracts-count')).toHaveTextContent('1');
+    expect((await screen.findByTestId('contracts-count')).textContent).toBe('1');
   });
 });

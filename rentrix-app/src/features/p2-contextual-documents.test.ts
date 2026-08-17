@@ -12,9 +12,9 @@ describe('P2 — contextual documents contract', () => {
     const servicesChildren = workspaceChildNavItems['/maintenance'];
 
     expect(globalPaths).not.toContain('/documents-vault');
-    expect(servicesChildren.some(([to]) => to === '/documents-vault')).toBe(true);
-    // documents_vault remains a real Operations Hub section (aggregate authority),
-    // while contextual entity-level panels remain complementary.
+    expect(servicesChildren.some(([to, , , , , search]) => to === '/maintenance' && search?.section === 'documents_vault')).toBe(true);
+    // documents_vault remains a real Services section (aggregate authority),
+    // while the standalone route is only a compatibility deep link.
     expect(operations).toContain('documents_vault');
     expect(routeTree).toContain("path: '/documents-vault'");
     expect(routeTree).toContain("to: '/maintenance'");
@@ -28,8 +28,6 @@ describe('P2 — contextual documents contract', () => {
     for (const path of [
       '../features/contracts/contractDocumentsShell.tsx',
       '../features/properties/components/property-workspace-tabs.tsx',
-      // Owner documents live in the shared owner dossier body used by both the
-      // preview dialog and the full detail page.
       '../features/owners/components/owner-dossier-body.tsx',
       '../features/units/components/UnitPreviewDialog.tsx',
       '../features/maintenance/components/maintenance-detail-resolve-overlays.tsx',

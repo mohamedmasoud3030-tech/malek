@@ -29,16 +29,8 @@ describe('Money workspace route model', () => {
   it('makes commissions a first-class Money view under expenses', () => {
     const commissions = FINANCE_VIEWS.find((view) => view.id === 'commissions');
     expect(commissions).toMatchObject({ sectionId: 'expenses', permission: 'commissions.view', label: 'العمولات' });
-    expect(resolveFinanceLocation('commissions', '', admin)).toMatchObject({
-      resolvedSectionId: 'expenses',
-      resolvedViewId: 'commissions',
-      isLegacyCommissionsLink: false,
-    });
-    expect(resolveFinanceLocation('expenses', 'commissions', admin)).toMatchObject({
-      resolvedSectionId: 'expenses',
-      resolvedViewId: 'commissions',
-      isLegacyCommissionsLink: false,
-    });
+    expect(resolveFinanceLocation('commissions', '', admin)).toMatchObject({ resolvedSectionId: 'expenses', resolvedViewId: 'commissions', isLegacyCommissionsLink: false });
+    expect(resolveFinanceLocation('expenses', 'commissions', admin)).toMatchObject({ resolvedSectionId: 'expenses', resolvedViewId: 'commissions', isLegacyCommissionsLink: false });
   });
 
   it('keeps all legacy finance spellings stable inside Money', () => {
@@ -52,10 +44,7 @@ describe('Money workspace route model', () => {
   });
 
   it('normalizes structurally incoherent section/view pairs safely', () => {
-    expect(resolveFinanceLocation('banking', 'invoices', admin)).toMatchObject({
-      resolvedSectionId: 'banking',
-      resolvedViewId: 'bank_reconciliation',
-    });
+    expect(resolveFinanceLocation('banking', 'invoices', admin)).toMatchObject({ resolvedSectionId: 'banking', resolvedViewId: 'bank_reconciliation' });
   });
 
   it('keeps permissionless read views available without widening protected Money views', () => {
@@ -69,9 +58,9 @@ describe('Money workspace route model', () => {
 
   it('keeps one navigation model shared by both the legacy renderer and Money route wrapper', () => {
     const financialsSource = readFileSync(resolve(import.meta.dirname, 'financials-page.tsx'), 'utf8');
-    const moneySource = readFileSync(resolve(import.meta.dirname, 'money-page.tsx'), 'utf8');
+    const moneySource = readFileSync(resolve(import.meta.dirname, '../finance-hub/money-page.tsx'), 'utf8');
     expect(financialsSource).toContain("from './finance-shell-model'");
-    expect(moneySource).toContain("from './finance-shell-model'");
+    expect(moneySource).toContain("from '../financials/finance-shell-model'");
     expect(financialsSource).not.toContain('export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[]');
     expect(moneySource).not.toContain('export const FINANCE_SECTIONS');
   });

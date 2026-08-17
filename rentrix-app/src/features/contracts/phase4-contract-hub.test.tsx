@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ContractsListPage } from '@/features/contracts/ContractsListPage';
+import { LeasingHubPage } from '@/features/relationships-hub/leasing-hub-workspace';
 import { ContractsRouteComponent } from '@/routes/_protected.contracts';
 
 describe('contracts route ownership', () => {
-  it('renders only the contracts workspace; People owns leads and communication', () => {
-    expect(ContractsRouteComponent).toBe(ContractsListPage);
+  it('routes the primary contracts entry through the unified Leasing workspace', () => {
+    expect(ContractsRouteComponent).toBe(LeasingHubPage);
   });
 });

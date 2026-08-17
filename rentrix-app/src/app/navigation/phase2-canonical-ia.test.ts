@@ -7,8 +7,8 @@ import { navigationLabels } from './terminology-registry';
 
 const routeTreeSource = readFileSync(new URL('../router/route-tree.ts', import.meta.url), 'utf8');
 const portfolioHubSource = readFileSync(new URL('../../features/portfolio-hub/portfolio-hub-workspace.tsx', import.meta.url), 'utf8');
-const leasingHubSource = readFileSync(new URL('../../features/leasing-hub/leasing-hub-workspace.tsx', import.meta.url), 'utf8');
-const moneyRouteSource = readFileSync(new URL('../../features/financials/money-page.tsx', import.meta.url), 'utf8');
+const leasingHubSource = readFileSync(new URL('../../features/relationships-hub/leasing-hub-workspace.tsx', import.meta.url), 'utf8');
+const moneyRouteSource = readFileSync(new URL('../../features/finance-hub/money-page.tsx', import.meta.url), 'utf8');
 const financeModelSource = readFileSync(new URL('../../features/financials/finance-shell-model.ts', import.meta.url), 'utf8');
 const servicesSource = readFileSync(new URL('../../features/operations-hub/operations-hub-workspace.tsx', import.meta.url), 'utf8');
 const servicesSectionsSource = readFileSync(new URL('../../features/operations-hub/operations-hub.sections.ts', import.meta.url), 'utf8');
