@@ -1,4 +1,6 @@
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { EmbeddableWorkspace } from '@/components/layout/embeddable-workspace';
+import { Button } from '@/components/ui/button';
 import { OwnerSettlementWorkspace } from './components/OwnerSettlementWorkspace';
 
 export type OwnerSettlementsWorkspaceProps = Readonly<{
@@ -16,6 +18,24 @@ export type OwnerSettlementsWorkspaceProps = Readonly<{
  * business logic, queries, and mutations are never duplicated.
  */
 export function OwnerSettlementsWorkspace({ embedded = false }: OwnerSettlementsWorkspaceProps) {
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const navigate = useNavigate();
+  const ownerId = typeof search.ownerId === 'string' && search.ownerId.trim()
+    ? search.ownerId.trim()
+    : undefined;
+
+  const clearOwnerScope = () => {
+    void navigate({
+      to: '.',
+      search: (previous: Record<string, unknown>) => {
+        const next = { ...previous };
+        delete next.ownerId;
+        return next;
+      },
+      replace: true,
+    });
+  };
+
   return (
     <EmbeddableWorkspace
       visualVariant="malek-pro"
@@ -23,7 +43,24 @@ export function OwnerSettlementsWorkspace({ embedded = false }: OwnerSettlements
       title="تسويات الملاك"
       description="إعداد تسويات كل مالك عن الفترة، اعتمادها للصرف، وتنفيذ دفعات الصافي المستحق مع مستندات الطباعة."
     >
-      <OwnerSettlementWorkspace />
+      {ownerId ? (
+        <div
+          role="status"
+          data-owner-settlement-scope={ownerId}
+          className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3"
+        >
+          <div>
+            <p className="text-sm font-black">تسويات المالك المحدد</p>
+            <p className="mt-1 text-xs font-medium text-muted-foreground">
+              السجل وخيارات إنشاء التسوية مقيدة بالمالك القادم من ملفه؛ لا تظهر تسويات ملاك آخرين داخل هذه الرحلة.
+            </p>
+          </div>
+          <Button type="button" variant="secondary" className="min-h-11" onClick={clearOwnerScope}>
+            عرض كل الملاك
+          </Button>
+        </div>
+      ) : null}
+      <OwnerSettlementWorkspace ownerId={ownerId} />
     </EmbeddableWorkspace>
   );
 }
