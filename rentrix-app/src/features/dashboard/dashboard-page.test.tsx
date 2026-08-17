@@ -42,6 +42,9 @@ vi.mock('@/features/settings/useCompanySettings', () => ({
 
 vi.mock('./dashboard-snapshot', () => ({ getDashboardSnapshot: vi.fn() }));
 vi.mock('@/services/action-center-counts', () => ({ fetchIntegrityWarningsCount: vi.fn().mockResolvedValue(0) }));
+vi.mock('@/features/onboarding/OnboardingChecklist', () => ({
+  OnboardingChecklist: () => <div data-onboarding-checklist>مسار الإعداد الأول</div>,
+}));
 
 const mockSnapshot = {
   period: { dateFrom: '2026-06-01', dateTo: '2026-06-28', asOf: '2026-06-28', month: 6, year: 2026 },
@@ -167,6 +170,12 @@ describe('Today workspace query boundary tests', () => {
     expect(text).toContain('ابدأ إجراء');
     expect(text).toContain('إنشاء عقد');
     expect(container?.querySelectorAll('[data-dashboard-action-grid] > *')).toHaveLength(4);
+    const onboardingSlot = container?.querySelector('[data-dashboard-onboarding-slot]');
+    const workNow = container?.querySelector('[data-dashboard-section="work-now"]');
+    expect(onboardingSlot).not.toBeNull();
+    expect(workNow).not.toBeNull();
+    if (!onboardingSlot || !workNow) throw new Error('Dashboard setup/work slots are required');
+    expect(onboardingSlot.compareDocumentPosition(workNow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
     expect(sectionOrder).toEqual(['work-now', 'actions', 'office-state', 'analytics']);

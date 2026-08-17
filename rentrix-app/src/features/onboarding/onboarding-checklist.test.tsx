@@ -46,7 +46,7 @@ describe('OnboardingChecklist unnecessary query gating (#1168)', () => {
   beforeEach(() => {
     useOwnersSpy.mockClear();
     useOwnersSpy.mockReturnValue({ data: [] });
-    onboardingControls.current = { ...onboardingControls.current, isVisible: true };
+    onboardingControls.current = { ...onboardingControls.current, isVisible: true, requirements };
   });
 
   it('does not enable the owners query when the checklist is hidden', () => {
@@ -65,7 +65,7 @@ describe('OnboardingChecklist unnecessary query gating (#1168)', () => {
       <OnboardingChecklist progress={emptyProgress} canManageSetup />,
     );
 
-    expect(html).toContain('إعداد حسابك');
+    expect(html).toContain('جهّز مكتبك لأول عملية إيجار');
     expect(useOwnersSpy).toHaveBeenCalledWith({ enabled: true });
   });
 
@@ -101,7 +101,7 @@ describe('OnboardingChecklist canonical gates (GAP-005)', () => {
   beforeEach(() => {
     useOwnersSpy.mockClear();
     useOwnersSpy.mockReturnValue({ data: [] });
-    onboardingControls.current = { ...onboardingControls.current, isVisible: true };
+    onboardingControls.current = { ...onboardingControls.current, isVisible: true, requirements };
   });
 
   it('marks identity/authority steps as mandatory (no waiver action) and operational steps as admin-waivable', () => {
@@ -120,7 +120,21 @@ describe('OnboardingChecklist canonical gates (GAP-005)', () => {
     );
 
     expect(html).toContain('أكمل الخطوات المطلوبة أولاً');
-    expect(html).not.toContain('تم، إنهاء');
+    expect(html).not.toContain('اعتماد اكتمال الإعداد');
+  });
+
+  it('keeps progress valid when a configured catalog has optional steps only', () => {
+    onboardingControls.current = {
+      ...onboardingControls.current,
+      requirements: requirements.filter((requirement) => !requirement.required),
+    };
+
+    const html = renderToStaticMarkup(
+      <OnboardingChecklist progress={emptyProgress} canManageSetup />,
+    );
+
+    expect(html).toContain('aria-valuenow="100"');
+    expect(html).not.toContain('NaN');
   });
 
   it('enables completion once every required step is satisfied', () => {
@@ -131,6 +145,6 @@ describe('OnboardingChecklist canonical gates (GAP-005)', () => {
       <OnboardingChecklist progress={progress} canManageSetup />,
     );
 
-    expect(html).toContain('تم، إنهاء');
+    expect(html).toContain('اعتماد اكتمال الإعداد');
   });
 });

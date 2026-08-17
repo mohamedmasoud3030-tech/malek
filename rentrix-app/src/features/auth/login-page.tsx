@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, type FormEvent, type KeyboardEvent } from 'react';
+import { Link } from '@tanstack/react-router';
 import { AlertTriangle, ArrowLeft, Eye, EyeOff, LockKeyhole, Mail, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,9 @@ export function LoginPage() {
               </button>
             </div>
             {isCapsLock ? <p id="caps-lock-warning" className="flex items-center gap-1.5 text-xs text-warning" role="status"><AlertTriangle className="size-3.5" />مفتاح Caps Lock مفعّل</p> : null}
+            <div className="flex justify-end">
+              <Link to="/forgot-password" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-primary outline-none hover:underline focus-visible:ring-4 focus-visible:ring-primary/20">نسيت كلمة المرور؟</Link>
+            </div>
           </div>
 
           {hasFieldError ? <div id="login-error" className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/5 p-3 text-danger" role="alert"><AlertTriangle className="mt-0.5 size-4 shrink-0" /><div className="text-xs leading-relaxed">{runtimeError ?? formError}</div></div> : null}

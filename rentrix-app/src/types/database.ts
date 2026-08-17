@@ -138,6 +138,38 @@ export type Database = {
           },
         ];
       };
+      ai_assistant_rate_limits: {
+        Row: {
+          company_id: string;
+          user_id: string;
+          window_started_at: string;
+          request_count: number;
+          updated_at: string;
+        };
+        Insert: {
+          company_id: string;
+          user_id: string;
+          window_started_at: string;
+          request_count: number;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          user_id?: string;
+          window_started_at?: string;
+          request_count?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_assistant_rate_limits_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       app_notifications: {
         Row: {
           id: string;
@@ -1726,6 +1758,411 @@ export type Database = {
           },
         ];
       };
+      contract_evidence_events: {
+        Row: {
+          id: string;
+          company_id: string;
+          contract_id: string;
+          entity_type: 'REGISTRATION' | 'INSPECTION';
+          entity_id: string;
+          event_type: string;
+          from_status: string | null;
+          to_status: string;
+          reason: string | null;
+          payload: Json;
+          actor_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          contract_id: string;
+          entity_type: 'REGISTRATION' | 'INSPECTION';
+          entity_id: string;
+          event_type: string;
+          from_status?: string | null;
+          to_status: string;
+          reason?: string | null;
+          payload?: Json;
+          actor_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          contract_id?: string;
+          entity_type?: 'REGISTRATION' | 'INSPECTION';
+          entity_id?: string;
+          event_type?: string;
+          from_status?: string | null;
+          to_status?: string;
+          reason?: string | null;
+          payload?: Json;
+          actor_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'contract_evidence_events_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contract_evidence_events_contract_id_fkey';
+            columns: ['contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'contracts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      contract_inspection_templates: {
+        Row: {
+          id: string;
+          company_id: string | null;
+          code: string;
+          kind: 'MOVE_IN' | 'MOVE_OUT';
+          title_ar: string;
+          version_no: number;
+          checklist_definition: Json;
+          is_system_default: boolean;
+          active: boolean;
+          effective_from: string;
+          effective_to: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id?: string | null;
+          code: string;
+          kind: 'MOVE_IN' | 'MOVE_OUT';
+          title_ar: string;
+          version_no: number;
+          checklist_definition: Json;
+          is_system_default?: boolean;
+          active?: boolean;
+          effective_from: string;
+          effective_to?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string | null;
+          code?: string;
+          kind?: 'MOVE_IN' | 'MOVE_OUT';
+          title_ar?: string;
+          version_no?: number;
+          checklist_definition?: Json;
+          is_system_default?: boolean;
+          active?: boolean;
+          effective_from?: string;
+          effective_to?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'contract_inspection_templates_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      contract_inspections: {
+        Row: {
+          id: string;
+          company_id: string;
+          contract_id: string;
+          template_id: string;
+          template_snapshot: Json;
+          kind: 'MOVE_IN' | 'MOVE_OUT';
+          status: 'DRAFT' | 'COMPLETED' | 'REVIEWED' | 'CHANGES_REQUESTED';
+          inspected_on: string;
+          checklist: Json;
+          meter_readings: Json;
+          keys_and_access: Json;
+          summary: string | null;
+          evidence_document_ids: string[];
+          tenant_signature: string | null;
+          office_signature: string | null;
+          completion_request_id: string | null;
+          review_request_id: string | null;
+          review_reason: string | null;
+          created_by: string;
+          completed_by: string | null;
+          reviewed_by: string | null;
+          completed_at: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+          request_id: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          contract_id: string;
+          template_id: string;
+          template_snapshot: Json;
+          kind: 'MOVE_IN' | 'MOVE_OUT';
+          status?: 'DRAFT' | 'COMPLETED' | 'REVIEWED' | 'CHANGES_REQUESTED';
+          inspected_on: string;
+          checklist: Json;
+          meter_readings?: Json;
+          keys_and_access?: Json;
+          summary?: string | null;
+          evidence_document_ids?: string[];
+          tenant_signature?: string | null;
+          office_signature?: string | null;
+          completion_request_id?: string | null;
+          review_request_id?: string | null;
+          review_reason?: string | null;
+          created_by: string;
+          completed_by?: string | null;
+          reviewed_by?: string | null;
+          completed_at?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          request_id: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          contract_id?: string;
+          template_id?: string;
+          template_snapshot?: Json;
+          kind?: 'MOVE_IN' | 'MOVE_OUT';
+          status?: 'DRAFT' | 'COMPLETED' | 'REVIEWED' | 'CHANGES_REQUESTED';
+          inspected_on?: string;
+          checklist?: Json;
+          meter_readings?: Json;
+          keys_and_access?: Json;
+          summary?: string | null;
+          evidence_document_ids?: string[];
+          tenant_signature?: string | null;
+          office_signature?: string | null;
+          completion_request_id?: string | null;
+          review_request_id?: string | null;
+          review_reason?: string | null;
+          created_by?: string;
+          completed_by?: string | null;
+          reviewed_by?: string | null;
+          completed_at?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          request_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'contract_inspections_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contract_inspections_contract_id_fkey';
+            columns: ['contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contract_inspections_template_id_fkey';
+            columns: ['template_id'];
+            isOneToOne: false;
+            referencedRelation: 'contract_inspection_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      contract_registration_records: {
+        Row: {
+          id: string;
+          company_id: string;
+          contract_id: string;
+          requirement_profile_id: string;
+          jurisdiction_code_snapshot: string;
+          authority_name_snapshot: string;
+          legal_reference_snapshot: string;
+          deadline_days_snapshot: number | null;
+          fee_mode_snapshot: string;
+          fee_value_snapshot: number | null;
+          currency_snapshot: string | null;
+          status: 'SUBMITTED' | 'REGISTERED' | 'REJECTED' | 'CANCELLED';
+          submitted_on: string;
+          external_request_reference: string | null;
+          registration_reference: string | null;
+          registered_on: string | null;
+          expires_on: string | null;
+          fee_paid: number | null;
+          evidence_document_id: string | null;
+          decision_reason: string | null;
+          submission_request_id: string;
+          decision_request_id: string | null;
+          submitted_by: string;
+          decided_by: string | null;
+          submitted_at: string;
+          decided_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          contract_id: string;
+          requirement_profile_id: string;
+          jurisdiction_code_snapshot: string;
+          authority_name_snapshot: string;
+          legal_reference_snapshot: string;
+          deadline_days_snapshot?: number | null;
+          fee_mode_snapshot: string;
+          fee_value_snapshot?: number | null;
+          currency_snapshot?: string | null;
+          status: 'SUBMITTED' | 'REGISTERED' | 'REJECTED' | 'CANCELLED';
+          submitted_on: string;
+          external_request_reference?: string | null;
+          registration_reference?: string | null;
+          registered_on?: string | null;
+          expires_on?: string | null;
+          fee_paid?: number | null;
+          evidence_document_id?: string | null;
+          decision_reason?: string | null;
+          submission_request_id: string;
+          decision_request_id?: string | null;
+          submitted_by: string;
+          decided_by?: string | null;
+          submitted_at?: string;
+          decided_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          contract_id?: string;
+          requirement_profile_id?: string;
+          jurisdiction_code_snapshot?: string;
+          authority_name_snapshot?: string;
+          legal_reference_snapshot?: string;
+          deadline_days_snapshot?: number | null;
+          fee_mode_snapshot?: string;
+          fee_value_snapshot?: number | null;
+          currency_snapshot?: string | null;
+          status?: 'SUBMITTED' | 'REGISTERED' | 'REJECTED' | 'CANCELLED';
+          submitted_on?: string;
+          external_request_reference?: string | null;
+          registration_reference?: string | null;
+          registered_on?: string | null;
+          expires_on?: string | null;
+          fee_paid?: number | null;
+          evidence_document_id?: string | null;
+          decision_reason?: string | null;
+          submission_request_id?: string;
+          decision_request_id?: string | null;
+          submitted_by?: string;
+          decided_by?: string | null;
+          submitted_at?: string;
+          decided_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'contract_registration_records_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contract_registration_records_contract_id_fkey';
+            columns: ['contract_id'];
+            isOneToOne: false;
+            referencedRelation: 'contracts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contract_registration_records_requirement_profile_id_fkey';
+            columns: ['requirement_profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'contract_registration_requirement_profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      contract_registration_requirement_profiles: {
+        Row: {
+          id: string;
+          company_id: string;
+          jurisdiction_code: string;
+          authority_name: string;
+          registration_required: boolean;
+          deadline_days: number | null;
+          fee_mode: 'UNCONFIGURED' | 'FIXED' | 'PERCENTAGE' | 'EXTERNAL';
+          fee_value: number | null;
+          currency: string | null;
+          legal_reference: string;
+          effective_from: string;
+          effective_to: string | null;
+          approved_by_label: string;
+          approved_at: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          jurisdiction_code: string;
+          authority_name: string;
+          registration_required: boolean;
+          deadline_days?: number | null;
+          fee_mode?: 'UNCONFIGURED' | 'FIXED' | 'PERCENTAGE' | 'EXTERNAL';
+          fee_value?: number | null;
+          currency?: string | null;
+          legal_reference: string;
+          effective_from: string;
+          effective_to?: string | null;
+          approved_by_label: string;
+          approved_at: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company_id?: string;
+          jurisdiction_code?: string;
+          authority_name?: string;
+          registration_required?: boolean;
+          deadline_days?: number | null;
+          fee_mode?: 'UNCONFIGURED' | 'FIXED' | 'PERCENTAGE' | 'EXTERNAL';
+          fee_value?: number | null;
+          currency?: string | null;
+          legal_reference?: string;
+          effective_from?: string;
+          effective_to?: string | null;
+          approved_by_label?: string;
+          approved_at?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'contract_registration_requirement_profiles_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       contracts: {
         Row: {
           id: string;
@@ -2002,6 +2439,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           is_sole_admin_exception: boolean;
+          inspection_id: string | null;
         };
         Insert: {
           id?: string;
@@ -2039,6 +2477,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           is_sole_admin_exception?: boolean;
+          inspection_id?: string | null;
         };
         Update: {
           id?: string;
@@ -2076,6 +2515,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           is_sole_admin_exception?: boolean;
+          inspection_id?: string | null;
         };
         Relationships: [
           {
@@ -2090,6 +2530,13 @@ export type Database = {
             columns: ['company_id'];
             isOneToOne: false;
             referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'deposit_application_claims_inspection_id_fkey';
+            columns: ['inspection_id'];
+            isOneToOne: false;
+            referencedRelation: 'contract_inspections';
             referencedColumns: ['id'];
           },
           {
@@ -7579,12 +8026,49 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Json;
       };
+      complete_contract_inspection_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       compute_tax_amount: {
         Args: {
           p_net: number | null;
           p_rate: number | null;
         };
         Returns: number;
+      };
+      consume_ai_assistant_quota_atomic: {
+        Args: {
+          p_window_seconds?: number | null;
+          p_max_requests?: number | null;
+        };
+        Returns: Json;
+      };
+      contract_evidence_actor_can_operate: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      contract_evidence_actor_can_verify: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      contract_evidence_assert_documents: {
+        Args: {
+          p_company: string | null;
+          p_contract: string | null;
+          p_document_ids: (string)[] | null;
+        };
+        Returns: undefined;
+      };
+      contract_inspection_validate_checklist: {
+        Args: {
+          p_template: Json | null;
+          p_checklist: Json | null;
+          p_require_complete: boolean | null;
+        };
+        Returns: undefined;
       };
       create_accounting_period: {
         Args: {
@@ -7624,6 +8108,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_deposit_application_claim_with_inspection_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       create_deposit_atomic: {
         Args: {
           p_payload: Json | null;
@@ -7645,6 +8135,13 @@ export type Database = {
       create_fee_tax_treatment_atomic: {
         Args: {
           p_payload: Json | null;
+        };
+        Returns: Json;
+      };
+      create_future_owner_agreement_version_atomic: {
+        Args: {
+          p_owner_agreement_id: string | null;
+          p_terms: Json | null;
         };
         Returns: Json;
       };
@@ -7684,6 +8181,12 @@ export type Database = {
         };
         Returns: Database['public']['Tables']['owner_agreement_versions']['Row'];
       };
+      create_owner_agreement_with_version_atomic: {
+        Args: {
+          payload: Json | null;
+        };
+        Returns: Json;
+      };
       create_owner_funds_cutover_atomic: {
         Args: {
           p_payload: Json | null;
@@ -7721,6 +8224,26 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_property_with_versioned_agreement_atomic: {
+        Args: {
+          p_title: string | null;
+          p_type: string | null;
+          p_address: string | null;
+          p_owner_id: string | null;
+          p_agreement_type: string | null;
+          p_commission_type: string | null;
+          p_commission_value: number | null;
+          p_agreement_starts_on: string | null;
+          p_agreement_ends_on?: string | null;
+          p_owner_name?: string | null;
+          p_purchase_value?: number | null;
+          p_current_value?: number | null;
+          p_status?: string | null;
+          p_notes?: string | null;
+          p_collection_role?: string | null;
+        };
+        Returns: Json;
+      };
       create_tax_profile_atomic: {
         Args: {
           p_payload: Json | null;
@@ -7750,6 +8273,12 @@ export type Database = {
       custom_access_token_hook: {
         Args: {
           event: Json | null;
+        };
+        Returns: Json;
+      };
+      decide_contract_registration_atomic: {
+        Args: {
+          p_payload: Json | null;
         };
         Returns: Json;
       };
@@ -7842,6 +8371,12 @@ export type Database = {
       };
       get_company_onboarding_state: {
         Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      get_contract_evidence_state: {
+        Args: {
+          p_contract_id: string | null;
+        };
         Returns: Json;
       };
       gl_accrue_fixed_monthly_day: {
@@ -8445,6 +8980,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      review_contract_inspection_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       revoke_onboarding_waiver_atomic: {
         Args: {
           p_code: string | null;
@@ -8713,6 +9254,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      save_contract_inspection_draft_atomic: {
+        Args: {
+          p_payload: Json | null;
+        };
+        Returns: Json;
+      };
       save_service_provider_atomic: {
         Args: {
           p_provider_id: string | null;
@@ -8737,6 +9284,12 @@ export type Database = {
         Args: {
           p_contract_id: string | null;
           p_maker_signature: string | null;
+        };
+        Returns: Json;
+      };
+      submit_contract_registration_atomic: {
+        Args: {
+          p_payload: Json | null;
         };
         Returns: Json;
       };

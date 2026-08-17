@@ -29,6 +29,7 @@ vi.mock('@/store/ui-store', () => ({
     setTheme: vi.fn(),
     syncStatus: 'idle',
     lastSyncedAt: null,
+    setSyncStatus: vi.fn(),
   }),
 }));
 vi.mock('./layout-navigation-view', () => ({

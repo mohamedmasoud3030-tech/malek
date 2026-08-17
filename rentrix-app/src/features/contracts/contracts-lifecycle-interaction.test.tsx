@@ -49,6 +49,7 @@ vi.mock('./useContracts', () => ({
   useRejectContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useActivateContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
+vi.mock('./evidence/ContractEvidenceSection', () => ({ ContractEvidenceSection: () => <div data-contract-evidence /> }));
 vi.mock('./useContractPayments', () => ({
   useContractPayments: () => ({ data: { invoices: [], payments: [], summary: { invoiceCount: 0, paymentCount: 0, totalInvoiced: 0, totalPaid: 0, totalRemaining: 0 } }, error: null, isError: false, isLoading: false, refetch: vi.fn() }),
 }));

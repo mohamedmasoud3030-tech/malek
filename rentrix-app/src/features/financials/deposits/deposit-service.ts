@@ -66,6 +66,7 @@ export type DepositClaimRecord = {
   allocation_amount: number;
   evidence_uri: string;
   claim_note?: string | null;
+  inspection_id?: string | null;
   target_type?: string | null;
   target_account_no?: string | null;
   status: DepositClaimStatus;
@@ -92,6 +93,7 @@ export type DepositClaimCreatePayload = {
   allocation_amount: number;
   evidence_uri: string;
   claim_note?: string | null;
+  inspection_id?: string | null;
   request_id?: string;
 };
 
@@ -188,6 +190,7 @@ function mapClaimRow(row: Record<string, unknown>): DepositClaimRecord {
     allocation_amount: Number(row.allocation_amount ?? 0),
     evidence_uri: String(row.evidence_uri ?? ''),
     claim_note: row.claim_note ? String(row.claim_note) : null,
+    inspection_id: row.inspection_id ? String(row.inspection_id) : null,
     target_type: row.target_type ? String(row.target_type) : null,
     target_account_no: row.target_account_no ? String(row.target_account_no) : null,
     status: row.status as DepositClaimStatus,
@@ -277,6 +280,9 @@ export async function createDepositClaim(payload: DepositClaimCreatePayload): Pr
   if (payload.claim_kind === 'INVOICE_ARREARS' && !payload.invoice_id) {
     throw new Error('فاتورة المتأخرات مطلوبة');
   }
+  if (payload.claim_kind === 'DAMAGE' && !payload.inspection_id) {
+    throw new Error('فحص إخلاء مراجع مطلوب لطلب خصم الأضرار');
+  }
 
   const rpcPayload = {
     request_id: payload.request_id || crypto.randomUUID(),
@@ -286,9 +292,10 @@ export async function createDepositClaim(payload: DepositClaimCreatePayload): Pr
     allocation_amount: payload.allocation_amount,
     evidence_uri: payload.evidence_uri.trim(),
     claim_note: payload.claim_note || null,
+    inspection_id: payload.inspection_id || null,
   };
 
-  const { data, error } = await supabase.rpc('create_deposit_application_claim_atomic', { p_payload: rpcPayload });
+  const { data, error } = await supabase.rpc('create_deposit_application_claim_with_inspection_atomic', { p_payload: rpcPayload });
   if (error) handleSupabaseError(error, 'فشل إنشاء طلب تخصيص الوديعة');
   const claimId = asJsonObject(data).claim_id as string | undefined;
   if (!claimId) throw new Error('لم يتم إرجاع معرف الطلب من الخادم');

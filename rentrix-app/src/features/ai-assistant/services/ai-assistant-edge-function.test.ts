@@ -59,7 +59,9 @@ describe('AI assistant edge function', () => {
     expect(authCallIndex).toBeGreaterThan(-1);
     expect(rateLimitCallIndex).toBeGreaterThan(authCallIndex);
 
-    expect(content).toContain('shared Supabase/Redis store');
+    expect(content).toContain('consumeDistributedQuota');
+    expect(content).toContain('consume_ai_assistant_quota_atomic');
+    expect(content).toContain('fetchWithTimeout');
   });
 
   it('rate limiting keys the complete authenticated user id, not a partial JWT', () => {

@@ -17,7 +17,7 @@ describe('deposits real implementation - no false success', () => {
     expect(content).toContain('create_deposit_atomic');
     // GAP-009: deduction/refund writes are governed (evidence-backed claims +
     // maker-checker approval + reversible governed refunds).
-    expect(content).toContain('create_deposit_application_claim_atomic');
+    expect(content).toContain('create_deposit_application_claim_with_inspection_atomic');
     expect(content).toContain('approve_deposit_application_claim_atomic');
     expect(content).toContain('apply_deposit_claim_atomic');
     expect(content).toContain('refund_deposit_governed_atomic');

@@ -235,15 +235,26 @@ async function invokeAiAssistant(prompt: string, action: AiAssistantAction | und
   if (!env.isConfigured) throw new AiAssistantConfigurationError();
 
   const accessToken = await getAccessToken();
-  const response = await fetch(`${env.supabaseUrl}/functions/v1/ai-assistant`, {
-    method: 'POST',
-    headers: {
-      apikey: env.supabaseAnonKey,
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ prompt, action, history: history.slice(-6), context }),
-  });
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), 30_000);
+  let response: Response;
+  try {
+    response = await fetch(`${env.supabaseUrl}/functions/v1/ai-assistant`, {
+      method: 'POST',
+      headers: {
+        apikey: env.supabaseAnonKey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt, action, history: history.slice(-6), context }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw new Error('استغرق المساعد وقتاً أطول من المتوقع. حاول مرة أخرى.');
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeout);
+  }
 
   const body = await readJson(response);
   if (!response.ok) {

@@ -36,8 +36,9 @@ vi.mock('@tanstack/react-query', () => ({
 
 vi.mock('@/features/owners/useOwnerAgreements', () => ({
   useOwnerAgreements: () => ({ data: [], isLoading: false }),
+  useOwnerAgreementVersions: () => ({ data: [], isLoading: false }),
   useCreateOwnerAgreement: () => ({ mutateAsync: agreementMutation.spy, isPending: false }),
-  useUpdateOwnerAgreement: () => ({ mutateAsync: vi.fn(async () => ({})), isPending: false }),
+  useCreateOwnerAgreementVersion: () => ({ mutateAsync: vi.fn(async () => ({})), isPending: false }),
 }));
 
 vi.mock('@tanstack/react-router', () => ({

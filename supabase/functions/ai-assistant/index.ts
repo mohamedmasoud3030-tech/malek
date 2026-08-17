@@ -41,8 +41,8 @@ const sqlStatementPattern = /\b(select|insert|update|delete|drop|alter|truncate|
 const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 const secretSeekingTerms = ['api_key', 'secret', 'password', 'env'];
 
-// In-memory limiting is a defensive fallback only. Production distributed
-// enforcement should use a shared Supabase/Redis store.
+// In-memory limiting sheds bursts inside one warm worker. The authoritative
+// cross-worker quota is enforced by consume_ai_assistant_quota_atomic().
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -64,6 +64,16 @@ function checkRateLimitForUser(userId: string): { allowed: boolean; retryAfter?:
   entry.count += 1;
   rateLimiter.set(key, entry);
   return { allowed: true };
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function jsonResponse(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
@@ -205,9 +215,14 @@ async function assertAuthenticated(request: Request): Promise<{ error: Response 
     return { error: errorResponse('SUPABASE_CONFIG_MISSING', 'إعدادات Supabase غير مكتملة للدالة الخلفية.', 500) };
   }
 
-  const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-    headers: { apikey: supabaseAnonKey, Authorization: authHeader },
-  });
+  let userResponse: Response;
+  try {
+    userResponse = await fetchWithTimeout(`${supabaseUrl}/auth/v1/user`, {
+      headers: { apikey: supabaseAnonKey, Authorization: authHeader },
+    }, 5_000);
+  } catch {
+    return { error: errorResponse('AUTH_SERVICE_UNAVAILABLE', 'تعذر التحقق من الجلسة الآن. حاول مرة أخرى.', 503) };
+  }
   if (!userResponse.ok) {
     return { error: errorResponse('AUTH_REQUIRED', 'انتهت الجلسة أو لا تملك صلاحية استخدام المساعد.', 401) };
   }
@@ -219,6 +234,35 @@ async function assertAuthenticated(request: Request): Promise<{ error: Response 
 
   const email = typeof userData.email === 'string' ? userData.email : undefined;
   return { user: { userId: userData.id, email } };
+}
+
+async function consumeDistributedQuota(request: Request): Promise<{ error: Response } | { allowed: true }> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')?.trim();
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')?.trim();
+  const authHeader = request.headers.get('Authorization') ?? '';
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return { error: errorResponse('SUPABASE_CONFIG_MISSING', 'إعدادات Supabase غير مكتملة للدالة الخلفية.', 500) };
+  }
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(`${supabaseUrl}/rest/v1/rpc/consume_ai_assistant_quota_atomic`, {
+      method: 'POST',
+      headers: { apikey: supabaseAnonKey, Authorization: authHeader, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_window_seconds: 60, p_max_requests: RATE_LIMIT_MAX }),
+    }, 5_000);
+  } catch {
+    return { error: errorResponse('AI_QUOTA_UNAVAILABLE', 'تعذر التحقق من حد الاستخدام الآن. حاول مرة أخرى.', 503) };
+  }
+  if (!response.ok) {
+    return { error: errorResponse('AI_ACCESS_DENIED', 'الحساب غير نشط أو لا ينتمي إلى الشركة الحالية.', response.status === 401 || response.status === 403 ? 403 : 503) };
+  }
+  const body = await response.json().catch(() => null) as JsonObject | null;
+  if (!body || body.allowed !== true) {
+    const retryAfter = typeof body?.retry_after === 'number' ? Math.max(1, Math.ceil(body.retry_after)) : 60;
+    return { error: errorResponse('RATE_LIMIT_EXCEEDED', `تم تجاوز الحد المسموح للطلبات. حاول مرة أخرى بعد ${retryAfter} ثانية.`, 429, { 'Retry-After': String(retryAfter) }) };
+  }
+  return { allowed: true };
 }
 
 function validateAssistantRequest(body: unknown): { error: Response } | { value: ValidatedAssistantRequest } {
@@ -285,14 +329,14 @@ async function requestProvider(
   let providerResponse: Response;
 
   try {
-    providerResponse = await fetch(providerUrl, {
+    providerResponse = await fetchWithTimeout(providerUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ model, messages, temperature: 0.2, max_tokens: 900 }),
-    });
+    }, 25_000);
   } catch (error) {
     console.error('AI provider network error', {
       error: error instanceof Error ? error.message : String(error),
@@ -338,6 +382,9 @@ async function handlePostRequest(request: Request): Promise<Response> {
       { 'Retry-After': String(retryAfter) },
     );
   }
+
+  const distributedQuota = await consumeDistributedQuota(request);
+  if ('error' in distributedQuota) return distributedQuota.error;
 
   const apiKey = Deno.env.get('AI_PROVIDER_API_KEY')?.trim();
   if (!apiKey) {

@@ -525,13 +525,51 @@ select is(
   200::numeric,
   'new deposit starts with the full remaining amount'
 );
+-- Contract evidence authority: DAMAGE claims require a reviewed MOVE_OUT
+-- inspection. Create, sign and independently review that evidence first.
+select public.save_contract_inspection_draft_atomic(jsonb_build_object(
+  'contract_id', (select id::text from public.contracts where notes = 'release-lifecycle-contract'),
+  'template_id', (select id::text from public.contract_inspection_templates where code = 'SYSTEM_MOVE_OUT' limit 1),
+  'kind', 'MOVE_OUT',
+  'inspected_on', '2026-06-05',
+  'checklist', (
+    select jsonb_agg(jsonb_build_object('code', item->>'code', 'condition', 'GOOD', 'note', 'release evidence'))
+    from public.contract_inspection_templates t
+    cross join lateral jsonb_array_elements(t.checklist_definition) item
+    where t.code = 'SYSTEM_MOVE_OUT'
+  ),
+  'meter_readings', jsonb_build_object('electricity','100','water','20'),
+  'keys_and_access', jsonb_build_object('key_count',2),
+  'request_id', 'release-lifecycle-moveout-draft'
+));
+select public.complete_contract_inspection_atomic(jsonb_build_object(
+  'inspection_id', (select id::text from public.contract_inspections where request_id='release-lifecycle-moveout-draft'),
+  'tenant_signature', 'Release Tenant', 'office_signature', 'Release Office',
+  'request_id', 'release-lifecycle-moveout-complete'
+));
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001103","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+select public.review_contract_inspection_atomic(jsonb_build_object(
+  'inspection_id', (select id::text from public.contract_inspections where request_id='release-lifecycle-moveout-draft'),
+  'action', 'APPROVE', 'request_id', 'release-lifecycle-moveout-review'
+));
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"00000000-0000-0000-0000-000000001101","role":"authenticated","app_metadata":{"user_role":"ADMIN","company_id":"00000000-0000-4000-8000-000000000001"}}',
+  true
+);
+
 -- GAP-009 governed flow: overdraw is rejected at APPLY time (claim creation is
 -- server-validated; the balance guard is authoritative).
 select lives_ok(
   $$
-    select public.create_deposit_application_claim_atomic(jsonb_build_object(
+    select public.create_deposit_application_claim_with_inspection_atomic(jsonb_build_object(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
       'claim_kind', 'DAMAGE',
+      'inspection_id', (select id::text from public.contract_inspections where request_id='release-lifecycle-moveout-draft'),
       'allocation_amount', 250,
       'evidence_uri', 'evidence://release-lifecycle/overdraw',
       'request_id', 'release-lifecycle-deposit-overdraw-claim'
@@ -573,9 +611,10 @@ select throws_ok(
 -- Governed 50 OMR damage claim: create (maker) -> approve (checker) -> apply.
 select lives_ok(
   $$
-    select public.create_deposit_application_claim_atomic(jsonb_build_object(
+    select public.create_deposit_application_claim_with_inspection_atomic(jsonb_build_object(
       'deposit_id', (select id from public.tenant_deposits where request_id = 'release-lifecycle-deposit-1'),
       'claim_kind', 'DAMAGE',
+      'inspection_id', (select id::text from public.contract_inspections where request_id='release-lifecycle-moveout-draft'),
       'allocation_amount', 50,
       'evidence_uri', 'evidence://release-lifecycle/deduct',
       'request_id', 'release-lifecycle-deposit-deduct-claim'

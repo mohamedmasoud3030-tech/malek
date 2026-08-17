@@ -38,6 +38,19 @@ vi.mock('./useContracts', () => ({
   useActivateContract: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({ authorization: { role: 'MANAGER' } }),
+  useOptionalAuth: () => ({ canAccess: () => true }),
+}));
+vi.mock('./evidence/use-contract-evidence', () => ({
+  useContractEvidenceState: () => ({ data: { registration_configuration_status: 'NOT_CONFIGURED', registration_profile: null, registration: null, inspections: [], inspection_templates: [] }, isLoading: false, isError: false, refetch: vi.fn() }),
+  useContractEvidenceDocuments: () => ({ data: [], isLoading: false }),
+  useContractEvidenceMutations: () => ({
+    submitRegistration: { isPending: false, mutateAsync: vi.fn() }, decideRegistration: { isPending: false, mutateAsync: vi.fn() },
+    saveInspection: { isPending: false, mutateAsync: vi.fn() }, completeInspection: { isPending: false, mutateAsync: vi.fn() }, reviewInspection: { isPending: false, mutateAsync: vi.fn() },
+  }),
+}));
+
 vi.mock('./useContractPayments', () => ({
   useContractPayments: () => contractsMocks.paymentsQuery,
 }));
@@ -159,6 +172,10 @@ describe('ContractDetailPage load and money states', () => {
       'REC-payment-',
       'BANK-REF-1',
       'تحويل بنكي',
+      'التسجيل والتسليم',
+      'غير مهيأ قانونياً',
+      'فحص الدخول',
+      'فحص الإخلاء',
     ]);
   });
 
