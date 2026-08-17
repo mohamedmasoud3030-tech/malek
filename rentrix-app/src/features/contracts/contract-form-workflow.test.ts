@@ -18,6 +18,31 @@ describe('contract creation workflow order and agreement resolution contract', (
     'utf8',
   );
 
+  const formPageSource = readFileSync(
+    resolve(import.meta.dirname, './ContractFormPage.tsx'),
+    'utf8',
+  );
+
+  const detailPageSource = readFileSync(
+    resolve(import.meta.dirname, './pages/ContractDetailPage.tsx'),
+    'utf8',
+  );
+
+  const unitDetailSource = readFileSync(
+    resolve(import.meta.dirname, '../properties/units/property-unit-detail-page.tsx'),
+    'utf8',
+  );
+
+  const unitsListSource = readFileSync(
+    resolve(import.meta.dirname, '../units/units-list.tsx'),
+    'utf8',
+  );
+
+  const personModalSource = readFileSync(
+    resolve(import.meta.dirname, '../people/person-form-modal.tsx'),
+    'utf8',
+  );
+
   const alertSource = readFileSync(
     resolve(import.meta.dirname, './components/ContractAgreementMissingAlert.tsx'),
     'utf8',
@@ -33,6 +58,37 @@ describe('contract creation workflow order and agreement resolution contract', (
     expect(fieldsSource).toContain('label="الوحدة"');
     expect(fieldsSource).toContain('label="المستأجر"');
     expect(fieldsSource).toContain('isUnitSelectableForContract');
+    expect(modalSource).toContain('إضافة مستأجر');
+    expect(modalSource).toContain('defaultType="tenant"');
+  });
+
+  it('starts the leasing task from an available unit without asking the user to reselect the asset', () => {
+    expect(unitDetailSource).toContain("unit.status === 'available'");
+    expect(unitDetailSource).toContain('to="/contracts/new"');
+    expect(unitDetailSource).toContain('search={{ propertyId, unitId: unit.id }}');
+    expect(unitsListSource).toContain('unit.status === "available"');
+    expect(unitsListSource).toContain('search: { propertyId, unitId: unit.id }');
+    expect(formPageSource).toContain("typeof search.propertyId === 'string'");
+    expect(formPageSource).toContain("typeof search.unitId === 'string'");
+    expect(modalSource).toContain('initialPropertyId={initialPropertyId}');
+    expect(modalSource).toContain('initialUnitId={initialUnitId}');
+    expect(hookSource).toContain("property_id: isEdit ? '' : initialPropertyId");
+    expect(hookSource).toContain("unit_id: isEdit ? '' : initialUnitId");
+    expect(hookSource).toContain('getContractUnitDefaultRent');
+  });
+
+  it('creates a missing tenant inside the contract task and selects the created record automatically', () => {
+    expect(modalSource).toContain('PersonFormModal');
+    expect(modalSource).toContain("form.setValue('tenant_id', person.id");
+    expect(personModalSource).toContain('onCreated?: (person: Person) => void');
+    expect(personModalSource).toContain('onCreated?.(person)');
+  });
+
+  it('lands a newly saved draft on its detail lifecycle instead of dropping the user back on the list', () => {
+    expect(formPageSource).toContain('onCreated={(contract) =>');
+    expect(formPageSource).toContain("to: '/contracts/$contractId'");
+    expect(formPageSource).toContain('contractId: contract.id');
+    expect(detailPageSource).toContain('<ContractApprovalSection contract={contract} />');
   });
 
   it('4. Automatically resolves active owner-management agreement when unambiguous', () => {
