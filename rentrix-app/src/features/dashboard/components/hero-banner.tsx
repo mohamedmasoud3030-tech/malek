@@ -51,20 +51,20 @@ export function HeroBanner({ snapshot, isLoading, settings, today, isRefreshing 
     <header
       className="dashboard-ops-header"
       data-dashboard-hero
-      data-dashboard-context="compact"
+      data-dashboard-context="today"
       aria-labelledby="dashboard-title"
     >
       <div className="dashboard-ops-header__main">
         <div className="dashboard-ops-header__eyebrow">
           <Activity className="size-4" aria-hidden="true" />
-          <span>{getGreeting()} — متابعة تشغيلية مختصرة</span>
+          <span>{getGreeting()} — ابدأ بما يحتاج قرارك</span>
         </div>
-        <h1 id="dashboard-title" className="dashboard-ops-header__title">لوحة التحكم</h1>
-        <p className="dashboard-ops-header__support">الأعمال العاجلة، مؤشرات التحصيل، وحالة المحفظة في لقطة واحدة.</p>
+        <h1 id="dashboard-title" className="dashboard-ops-header__title">اليوم</h1>
+        <p className="dashboard-ops-header__support">ما يحتاج تنفيذًا الآن، ثم وضع المكتب، ثم التفاصيل عند الحاجة.</p>
       </div>
 
-      <dl className="dashboard-ops-header__meta" aria-label="سياق لوحة التحكم">
-        <div className="dashboard-ops-header__pill" aria-label="تاريخ تحديث لوحة التحكم">
+      <dl className="dashboard-ops-header__meta" aria-label="سياق العمل اليومي">
+        <div className="dashboard-ops-header__pill" aria-label="تاريخ تحديث بيانات اليوم">
           {isRefreshing ? (
             <RefreshCw className="size-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
           ) : (

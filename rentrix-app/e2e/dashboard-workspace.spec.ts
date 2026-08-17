@@ -371,7 +371,7 @@ async function openDashboardRoute(page: Page, theme: (typeof themes)[number], mo
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('[data-visual-contract="v2"]')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'لوحة التحكم', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -438,8 +438,7 @@ for (const viewport of viewportMatrix) {
       const sectionNames = await page.locator('[data-dashboard-section]').evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-dashboard-section')),
       );
-      expect(sectionNames.slice(0, 5)).toEqual(['priorities', 'kpis', 'actions', 'work-queues', 'trends']);
-      if (sectionNames.length > 5) expect(sectionNames[5]).toBe('analytics');
+      expect(sectionNames).toEqual(['work-now', 'actions', 'office-state', 'analytics']);
 
       await expect(page.locator('[data-dashboard-action-grid] > a')).toHaveCount(4);
       const kpiLinks = page.locator('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]');
@@ -460,15 +459,19 @@ for (const viewport of viewportMatrix) {
       expect(kpiColumns).toBe(viewport.width >= 1024 ? 4 : 2);
 
       if (viewport.width === 375) {
-        const kpisInFirstScreen = await kpiLinks.evaluateAll((nodes) => nodes.filter((node) => {
+        const firstScreen = await page.locator('[data-dashboard-section="work-now"]').evaluate((node) => {
           const rect = node.getBoundingClientRect();
-          return rect.top < window.innerHeight && rect.bottom > 0;
-        }).length);
-        // The current decision-first hierarchy intentionally places the
-        // priority queue before KPI cards. Two KPI cards in the first 812px
-        // viewport preserves a useful above-the-fold decision snapshot while
-        // keeping the urgent queue fully visible.
-        expect(kpisInFirstScreen).toBeGreaterThanOrEqual(2);
+          return {
+            workNowVisible: rect.top < window.innerHeight && rect.bottom > 0,
+            firstKpiTop: document.querySelector('a[data-dashboard-kpi-link]')?.getBoundingClientRect().top ?? null,
+          };
+        });
+        // Today is action-first: urgent work must occupy the first screen.
+        // Office-state KPIs remain available immediately after the work and
+        // quick-action sections instead of displacing priority work above fold.
+        expect(firstScreen.workNowVisible).toBe(true);
+        expect(firstScreen.firstKpiTop).not.toBeNull();
+        expect(firstScreen.firstKpiTop ?? 0).toBeGreaterThan(0);
       }
 
       await assertTouchTargets(page);
@@ -537,7 +540,7 @@ test('real dashboard route exposes loading, empty, error, partial and stale stat
   await page.context().clearCookies();
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'snapshot-error');
-  await expect(page.getByText('تعذر تحميل لوحة التحكم')).toBeVisible();
+  await expect(page.getByText('تعذر تحميل بيانات اليوم')).toBeVisible();
   await expect(page.locator('[data-dashboard-kpi-grid]')).toHaveCount(0);
 
   await page.context().clearCookies();
@@ -545,7 +548,7 @@ test('real dashboard route exposes loading, empty, error, partial and stale stat
   await openDashboardRoute(page, 'light', 'stale-refetch-error');
   await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('malek-dashboard-e2e-refetch')));
-  await expect(page.getByText('تعذر تحديث لوحة التحكم')).toBeVisible();
+  await expect(page.getByText('تعذر تحديث بيانات اليوم')).toBeVisible();
   await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
 
   await page.screenshot({ path: testInfo.outputPath('dashboard-real-states.png'), fullPage: true });

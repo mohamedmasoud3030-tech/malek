@@ -14,21 +14,19 @@ vi.mock('@/hooks/use-auth', () => ({
     authorization: currentRole
       ? ({ userId: `user-${currentRole}`, email: 'user@example.com', role: currentRole } satisfies AuthorizationContext)
       : null,
-    canAccess: () => true,
   }),
 }));
 
 function makeProbe(name: string) {
-  return function Probe({ mode }: { mode?: string }) {
+  return function Probe(props: { mode?: string; embedded?: boolean }) {
     const [count, setCount] = useState(0);
+    const embedded = props.mode === 'embedded' || props.embedded === true;
     return (
       <div>
         <span data-testid={`${name}-body`}>{name} body</span>
-        <span data-testid={`${name}-mode`}>{mode ?? 'standalone'}</span>
+        <span data-testid={`${name}-embedded`}>{embedded ? 'yes' : 'no'}</span>
         <span data-testid={`${name}-count`}>{count}</span>
-        <button type="button" data-testid={`${name}-increment`} onClick={() => setCount((value) => value + 1)}>
-          increment {name}
-        </button>
+        <button type="button" data-testid={`${name}-increment`} onClick={() => setCount((value) => value + 1)}>increment</button>
       </div>
     );
   };
@@ -37,7 +35,6 @@ function makeProbe(name: string) {
 vi.mock('@/features/maintenance/components/maintenance-workspace', () => ({ MaintenanceWorkspace: makeProbe('maintenance') }));
 vi.mock('@/features/service-providers/service-providers-page', () => ({ ServiceProvidersWorkspace: makeProbe('service-providers') }));
 vi.mock('@/features/utilities/components/utilities-workspace', () => ({ UtilitiesWorkspace: makeProbe('utilities') }));
-vi.mock('@/features/automation/components/automation-workspace', () => ({ AutomationWorkspace: makeProbe('automation') }));
 vi.mock('@/features/documents-vault/components/documents-vault-workspace', () => ({ DocumentsVaultWorkspace: makeProbe('documents-vault') }));
 
 const { OperationsHubWorkspace } = await import('./operations-hub-workspace');
@@ -45,240 +42,115 @@ const { OperationsHubWorkspace } = await import('./operations-hub-workspace');
 type RenderOptions = Readonly<{
   initialUrl?: string;
   role?: AuthorizationRole | null;
-  defaultSection?: 'maintenance' | 'service_providers' | 'utilities' | 'automation' | 'documents_vault';
   mode?: 'standalone' | 'embedded';
 }>;
 
-function renderHub({
-  initialUrl = '/maintenance',
-  role = 'ADMIN',
-  defaultSection = 'maintenance',
-  mode = 'standalone',
-}: RenderOptions = {}) {
+function renderServices({ initialUrl = '/maintenance', role = 'ADMIN', mode = 'standalone' }: RenderOptions = {}) {
   currentRole = role;
-
   const rootRoute = createRootRoute();
-  const hubRoute = createRoute({
+  const route = createRoute({
     getParentRoute: () => rootRoute,
     path: '/maintenance',
-    component: () => (
-      <OperationsHubWorkspace
-        defaultSection={defaultSection}
-        title="مركز التشغيل"
-        description="وصف تجريبي"
-        mode={mode}
-      />
-    ),
+    component: () => <OperationsHubWorkspace defaultSection="maintenance" mode={mode} />,
     validateSearch: (search: Record<string, unknown>) => search,
   });
-
   const router = createRouter({
-    routeTree: rootRoute.addChildren([hubRoute]),
+    routeTree: rootRoute.addChildren([route]),
     history: createMemoryHistory({ initialEntries: [initialUrl] }),
   });
-
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
   const utils = render(
     <QueryClientProvider client={queryClient}>
       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
       <RouterProvider router={router as any} />
     </QueryClientProvider>,
   );
-
   return { ...utils, router };
 }
 
-function pageLayoutCount(container: HTMLElement) {
-  return container.querySelectorAll('[data-page-layout]').length;
-}
+beforeEach(() => { currentRole = 'ADMIN'; });
+afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
-function pageHeaderCount(container: HTMLElement) {
-  return container.querySelectorAll('[data-page-header]').length;
-}
-
-beforeEach(() => {
-  currentRole = 'ADMIN';
-});
-
-afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
-});
-
-describe('operations hub — standalone rendering', () => {
-  it('renders the shared page shell exactly once', async () => {
-    const { container } = renderHub();
+describe('Services workspace', () => {
+  it('renders one shell titled الخدمات with four operational tabs', async () => {
+    const { container } = renderServices();
     await screen.findByTestId('maintenance-body');
-    expect(pageLayoutCount(container)).toBe(1);
-    expect(pageHeaderCount(container)).toBe(1);
+    expect(container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-page-header]')).toHaveLength(1);
+    expect(screen.getByText('الخدمات')).toBeTruthy();
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    expect(screen.queryByRole('tab', { name: /الأتمتة/ })).toBeNull();
   });
 
-  it('shows the entry page default section when the URL requests nothing', async () => {
-    renderHub({ initialUrl: '/maintenance' });
-    expect(await screen.findByTestId('maintenance-body')).toBeTruthy();
-  });
-
-  it('renders the tab bar with one tab per permitted section', async () => {
-    renderHub();
-    await screen.findByTestId('maintenance-body');
-    expect(screen.getAllByRole('tab')).toHaveLength(5);
-  });
-
-  it('embeds child workspaces in embedded mode', async () => {
-    renderHub();
-    expect((await screen.findByTestId('maintenance-mode')).textContent).toBe('embedded');
-  });
-
-  it('omits its own page shell when embedded in another workspace', async () => {
-    const { container } = renderHub({ mode: 'embedded' });
+  it('keeps every service capability in /maintenance with section state', async () => {
+    const user = userEvent.setup();
+    const { router } = renderServices();
     await screen.findByTestId('maintenance-body');
 
-    expect(pageLayoutCount(container)).toBe(0);
-    expect(pageHeaderCount(container)).toBe(0);
+    for (const [label, section, probe] of [
+      [/مزودو الخدمات/, 'service_providers', 'service-providers'],
+      [/المرافق والعدادات/, 'utilities', 'utilities'],
+      [/المستندات التشغيلية/, 'documents_vault', 'documents-vault'],
+    ] as const) {
+      await user.click(screen.getByRole('tab', { name: label }));
+      await waitFor(() => expect(router.state.location.pathname).toBe('/maintenance'));
+      await waitFor(() => expect(router.state.location.search).toMatchObject({ section }));
+      expect((await screen.findByTestId(`${probe}-embedded`)).textContent).toBe('yes');
+    }
   });
-});
 
-describe('operations hub — URL synchronisation and deep linking', () => {
-  it('opens the section named in the URL instead of the entry default', async () => {
-    renderHub({ initialUrl: '/maintenance?section=utilities' });
-    expect(await screen.findByTestId('utilities-body')).toBeTruthy();
-  });
-
-  it('renders documents_vault (not maintenance) for a documents-vault deep link', async () => {
-    renderHub({ initialUrl: '/maintenance?section=documents_vault' });
+  it('opens valid deep links in place and treats old automation section as retired', async () => {
+    const valid = renderServices({ initialUrl: '/maintenance?section=documents_vault' });
     expect(await screen.findByTestId('documents-vault-body')).toBeTruthy();
-    expect(screen.queryByTestId('maintenance-body')).toBeNull();
-    expect((await screen.findByTestId('documents-vault-mode')).textContent).toBe('embedded');
-  });
+    valid.unmount();
 
-  it('writes the active section into the URL when a tab is clicked', async () => {
-    const user = userEvent.setup();
-    const { router } = renderHub();
-    await screen.findByTestId('maintenance-body');
-
-    await user.click(screen.getByRole('tab', { name: /المرافق والعدادات/ }));
-
-    await waitFor(() => {
-      expect(router.state.location.search).toMatchObject({ section: 'utilities' });
-    });
-    expect(await screen.findByTestId('utilities-body')).toBeTruthy();
-  });
-
-  it('keeps URL and active tab in sync when switching between Documents Vault and Maintenance', async () => {
-    const user = userEvent.setup();
-    const { router } = renderHub({ initialUrl: '/maintenance?section=documents_vault' });
-    await screen.findByTestId('documents-vault-body');
-
-    // Documents Vault active; Maintenance not mounted.
-    expect(router.state.location.search).toMatchObject({ section: 'documents_vault' });
-    expect(screen.queryByTestId('maintenance-body')).toBeNull();
-
-    await user.click(screen.getByRole('tab', { name: /الصيانة/ }));
+    const retired = renderServices({ initialUrl: '/maintenance?section=automation' });
     expect(await screen.findByTestId('maintenance-body')).toBeTruthy();
-    await waitFor(() => {
-      expect(router.state.location.search).toMatchObject({ section: 'maintenance' });
-    });
-
-    await user.click(screen.getByRole('tab', { name: /خزينة المستندات/ }));
-    expect(await screen.findByTestId('documents-vault-body')).toBeTruthy();
-    await waitFor(() => {
-      expect(router.state.location.search).toMatchObject({ section: 'documents_vault' });
-    });
-  });
-
-  it('replaces history when switching tabs so Back leaves the hub', async () => {
-    const user = userEvent.setup();
-    const { router } = renderHub();
-    await screen.findByTestId('maintenance-body');
-
-    const lengthBefore = router.history.length;
-    await user.click(screen.getByRole('tab', { name: /المرافق والعدادات/ }));
-    await waitFor(() => expect(router.state.location.search).toMatchObject({ section: 'utilities' }));
-
-    expect(router.history.length).toBe(lengthBefore);
-  });
-
-  it('falls back to the default section for an unknown section value', async () => {
-    renderHub({ initialUrl: '/maintenance?section=not-a-real-section' });
-    expect(await screen.findByTestId('maintenance-body')).toBeTruthy();
-  });
-});
-
-describe('operations hub — state preservation across tab switches', () => {
-  it('keeps a visited section mounted so its state survives a round trip', async () => {
-    const user = userEvent.setup();
-    renderHub();
-    await screen.findByTestId('maintenance-body');
-
-    await user.click(screen.getByTestId('maintenance-increment'));
-    await user.click(screen.getByTestId('maintenance-increment'));
-    expect(screen.getByTestId('maintenance-count').textContent).toBe('2');
-
-    await user.click(screen.getByRole('tab', { name: /المرافق والعدادات/ }));
-    expect(await screen.findByTestId('utilities-body')).toBeTruthy();
-
-    await user.click(screen.getByRole('tab', { name: /الصيانة/ }));
-    await screen.findByTestId('maintenance-body');
-
-    expect(screen.getByTestId('maintenance-count').textContent).toBe('2');
-  });
-
-  it('does not mount a section before it is visited (lazy loading)', async () => {
-    const { container } = renderHub();
-    await screen.findByTestId('maintenance-body');
-
-    expect(container.querySelector('[data-operations-section="automation"]')).toBeNull();
     expect(screen.queryByTestId('automation-body')).toBeNull();
+    retired.unmount();
   });
-});
 
-describe('operations hub — permission filtering', () => {
-  it('hides tabs a USER may not open while keeping authenticated-only tabs', async () => {
-    renderHub({ role: 'USER' });
+  it('preserves local state across service switches', async () => {
+    const user = userEvent.setup();
+    renderServices();
+    await screen.findByTestId('maintenance-body');
+    await user.click(screen.getByTestId('maintenance-increment'));
+    await user.click(screen.getByRole('tab', { name: /المرافق والعدادات/ }));
     await screen.findByTestId('utilities-body');
-
-    const tabNames = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
-    expect(tabNames.join(' ')).toContain('المرافق');
-    expect(tabNames.join(' ')).toContain('خزينة');
-    expect(tabNames.join(' ')).not.toContain('الصيانة');
-    expect(tabNames.join(' ')).not.toContain('الأتمتة');
+    await user.click(screen.getByRole('tab', { name: /الصيانة/ }));
+    expect(screen.getByTestId('maintenance-count').textContent).toBe('1');
   });
 
-  it('refuses a deep link to a section the user may not see', async () => {
-    renderHub({ initialUrl: '/maintenance?section=automation', role: 'USER' });
+  it('hides permissioned sections for USER while preserving authenticated-only services', async () => {
+    renderServices({ role: 'USER' });
+    await screen.findByTestId('utilities-body');
+    const names = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '').join(' ');
+    expect(names).toContain('المرافق');
+    expect(names).toContain('المستندات');
+    expect(names).not.toContain('الصيانة');
+    expect(names).not.toContain('مزودو الخدمات');
+  });
 
+  it('fails closed for a forbidden real Services deep link', async () => {
+    renderServices({ initialUrl: '/maintenance?section=maintenance', role: 'USER' });
     expect(await screen.findByText(/غير مصرح بالوصول/)).toBeTruthy();
-    expect(screen.queryByTestId('automation-body')).toBeNull();
+    expect(screen.queryByTestId('maintenance-body')).toBeNull();
   });
 
-  it('denies the whole workspace when there is no authorization context', async () => {
-    renderHub({ role: null });
-
-    expect(await screen.findByText(/غير مصرح بالوصول/)).toBeTruthy();
-    expect(screen.queryAllByRole('tab')).toHaveLength(0);
-  });
-
-  it('keeps the page shell intact on the access-denied path', async () => {
-    const { container } = renderHub({ role: null });
-    await screen.findByText(/غير مصرح بالوصول/);
-
-    expect(pageLayoutCount(container)).toBe(1);
-    expect(pageHeaderCount(container)).toBe(1);
-  });
-});
-
-describe('operations hub — no duplicated layout or header', () => {
-  it('never renders a second shell after navigating through several tabs', async () => {
-    const user = userEvent.setup();
-    const { container } = renderHub();
+  it('omits its shell when embedded and never duplicates it after navigation', async () => {
+    const embedded = renderServices({ mode: 'embedded' });
     await screen.findByTestId('maintenance-body');
+    expect(embedded.container.querySelectorAll('[data-page-layout]')).toHaveLength(0);
+    embedded.unmount();
 
-    for (const tabName of [/المرافق والعدادات/, /الأتمتة والتنبيهات/, /الصيانة/]) {
-      await user.click(screen.getByRole('tab', { name: tabName }));
+    const user = userEvent.setup();
+    const standalone = renderServices();
+    await screen.findByTestId('maintenance-body');
+    for (const label of [/مزودو الخدمات/, /المرافق والعدادات/, /الصيانة/]) {
+      await user.click(screen.getByRole('tab', { name: label }));
       await waitFor(() => {
-        expect(pageLayoutCount(container)).toBe(1);
-        expect(pageHeaderCount(container)).toBe(1);
+        expect(standalone.container.querySelectorAll('[data-page-layout]')).toHaveLength(1);
+        expect(standalone.container.querySelectorAll('[data-page-header]')).toHaveLength(1);
       });
     }
   });

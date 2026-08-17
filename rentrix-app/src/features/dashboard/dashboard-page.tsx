@@ -22,13 +22,11 @@ import { AlertCenter } from './components/alert-center';
 import { buildExpiringContracts, buildOverdueTenantRows, toDateInputValue } from './dashboard-utils';
 
 /**
- * R1 — Dashboard Truth.
+ * Today workspace.
  *
- * Every KPI on this page comes from the authoritative server read model
- * (rpt_dashboard_snapshot). The page never counts, filters, or sums datasets
- * to produce an operational or financial number; the only remaining auxiliary
- * query is the data-integrity audit count, which is a diagnostics feature
- * with its own service boundary.
+ * Financial and operational truth remains server-authoritative through
+ * rpt_dashboard_snapshot. This component only changes decision hierarchy:
+ * work requiring action first, current office position second, analysis last.
  */
 export function DashboardPage() {
   const { authorization, canAccess } = useAuth();
@@ -90,8 +88,8 @@ export function DashboardPage() {
     retry: false,
   });
 
-  // Honest partial data: a failed auxiliary query is reported as unavailable
-  // (undefined), never silently converted into a fake zero count.
+  // A failed auxiliary source stays unknown. Never turn an unavailable count
+  // into a reassuring fake zero on the user's action list.
   const integrityWarningsCount = integrityWarningsQuery.isError ? undefined : (integrityWarningsQuery.data ?? 0);
 
   const hasQuickActions = filterQuickActionsByPermission(canAccess).length > 0;
@@ -113,10 +111,10 @@ export function DashboardPage() {
 
         {hasDashboardError ? (
           <ErrorState
-            title={snapshotUnavailable ? 'تعذر تحميل لوحة التحكم' : 'تعذر تحديث لوحة التحكم'}
+            title={snapshotUnavailable ? 'تعذر تحميل بيانات اليوم' : 'تعذر تحديث بيانات اليوم'}
             description={
               snapshotUnavailable
-                ? 'لم نتمكن من جلب مؤشرات الأداء الحالية. تحقق من الاتصال ثم أعد المحاولة.'
+                ? 'لم نتمكن من جلب حالة العمل الحالية. تحقق من الاتصال ثم أعد المحاولة.'
                 : 'المعروض أدناه آخر نسخة ناجحة من البيانات. تحقق من الاتصال ثم أعد المحاولة للتحديث.'
             }
             error={error}
@@ -126,41 +124,27 @@ export function DashboardPage() {
 
         {snapshotUnavailable ? null : (
           <>
-            {/* Distinct label from the inner AlertCenter section («الأولوية الآن»)
-                so the two nested landmarks do not collide (axe landmark-unique). */}
-            <section data-dashboard-section="priorities" aria-label="متابعة الأولويات">
-              {isLoading ? (
-                /* While the snapshot is loading, counts are UNKNOWN — a
-                   loading state is honest; rows of «غير متاح» would misread
-                   as failed sources and pre-R1 zeros were fake. */
-                <LoadingState variant="section" label="جارٍ تحميل أولويات المتابعة" />
-              ) : (
-              <AlertCenter
-                expiringContractsCount={snapshot?.contracts.expiring30}
-                overdueInvoicesCount={snapshot?.arrears.overdueCount}
-                urgentMaintenanceCount={snapshot?.maintenance.urgentOpen}
-                vacantUnitsCount={snapshot?.occupancy.vacantUnits}
-                unmatchedBankTxCount={snapshot?.exceptions.unmatchedBankLines}
-                pendingSettlementsCount={snapshot?.exceptions.pendingSettlements}
-                integrityWarningsCount={integrityWarningsCount}
+            <section className="dashboard-section" aria-label="مطلوب منك الآن" data-dashboard-section="work-now">
+              <SectionHeader
+                title="مطلوب منك الآن"
+                description="ابدأ بالحالات التي تحتاج قراراً أو متابعة؛ التفاصيل الأقل إلحاحاً تأتي بعدها."
               />
+
+              {isLoading ? (
+                <LoadingState variant="section" label="جارٍ تحميل الأعمال المطلوبة" />
+              ) : (
+                <AlertCenter
+                  expiringContractsCount={snapshot?.contracts.expiring30}
+                  overdueInvoicesCount={snapshot?.arrears.overdueCount}
+                  urgentMaintenanceCount={snapshot?.maintenance.urgentOpen}
+                  vacantUnitsCount={snapshot?.occupancy.vacantUnits}
+                  unmatchedBankTxCount={snapshot?.exceptions.unmatchedBankLines}
+                  pendingSettlementsCount={snapshot?.exceptions.pendingSettlements}
+                  integrityWarningsCount={integrityWarningsCount}
+                />
               )}
-            </section>
 
-            <section className="dashboard-section" aria-label="صورة الأداء" data-dashboard-section="kpis">
-              <SectionHeader title="صورة الأداء" description="أربع مؤشرات قرار مرتبطة بمصادرها التفصيلية" />
-              <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
-            </section>
-
-            {hasQuickActions ? (
-              <div data-dashboard-section="actions">
-                <QuickActions />
-              </div>
-            ) : null}
-
-            <section className="dashboard-section" aria-label="قوائم العمل" data-dashboard-section="work-queues">
-              <SectionHeader title="قوائم العمل" description="متابعة مركزة للحالات الأعلى أولوية بعد قراءة المؤشرات" />
-              <div className="dashboard-queues-grid">
+              <div className="dashboard-queues-grid" data-dashboard-work-queues>
                 <ExpiringContractsSection
                   rows={expiringContracts}
                   totalCount={snapshot?.contracts.expiring30}
@@ -176,14 +160,28 @@ export function DashboardPage() {
               </div>
             </section>
 
-            <section className="dashboard-section" aria-label="المحفظة والتحصيل" data-dashboard-section="trends">
-              <SectionHeader title="المحفظة والتحصيل" description="ملخصات ثانوية للانتقال إلى التفاصيل، وليست جدولاً محاسبياً كثيفاً" />
+            {hasQuickActions ? (
+              <section className="dashboard-section" aria-label="ابدأ إجراء" data-dashboard-section="actions">
+                <SectionHeader title="ابدأ إجراء" description="اختصارات للأعمال الجديدة؛ المتابعات القائمة تظل في أعلى الصفحة." />
+                <QuickActions />
+              </section>
+            ) : null}
+
+            <section className="dashboard-section" aria-label="وضع المكتب" data-dashboard-section="office-state">
+              <SectionHeader
+                title="وضع المكتب"
+                description="المؤشرات التي تكفي للحكم على التحصيل والالتزامات وحالة المحفظة بدون تحويل الصفحة إلى تقرير."
+              />
+              <KpiGrid snapshot={snapshot} isLoading={isLoading} settings={settings} />
               <DashboardCharts snapshot={snapshot} isLoading={isLoading} settings={settings} />
             </section>
 
             {showAnalytics ? (
-              <section className="dashboard-section" aria-label="تحليلات مساندة" data-dashboard-section="analytics">
-                <SectionHeader title="تحليلات مساندة" description="تفاصيل أعمار الذمم بعد ترتيب الأعمال العاجلة" />
+              <section className="dashboard-section" aria-label="تفاصيل عند الحاجة" data-dashboard-section="analytics">
+                <SectionHeader
+                  title="تفاصيل عند الحاجة"
+                  description="تفصيل أعمار الذمم يظهر فقط عندما توجد متأخرات تستحق التحليل."
+                />
                 <ArrearsBreakdown snapshot={snapshot} settings={settings} />
               </section>
             ) : null}

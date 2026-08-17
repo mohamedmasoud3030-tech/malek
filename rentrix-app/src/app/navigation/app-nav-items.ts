@@ -35,15 +35,7 @@ export type NavItem = readonly [
 export type MobileNavItem = readonly [to: string, labelKey: string, Icon: LucideIcon, permission?: AppPermission];
 export type NavGroup = readonly [sectionTitle: string, items: readonly NavItem[], adminOnly?: boolean];
 
-/**
- * Task-centric product IA.
- *
- * The shell exposes only the seven questions a property-office user needs to
- * answer. Entity registers remain fully routable, but they are capabilities of
- * a workspace rather than independent products in the sidebar.
- *
- * Today → Portfolio → Leasing → Money → Services → Reports → Settings
- */
+/** Task-centric product IA: Today → Portfolio → Leasing → Money → Services → Reports → Settings. */
 export const navGroups: readonly NavGroup[] = [
   ['العمل', [
     ['/dashboard', 'today', 'ما يحتاج انتباهك وتنفيذك الآن', LayoutDashboard],
@@ -59,37 +51,36 @@ export const navGroups: readonly NavGroup[] = [
 ];
 
 /**
- * Progressive disclosure inside each primary workspace. These links keep the
- * existing routes and permissions intact while removing feature-by-feature
- * navigation from the global shell.
+ * Workspace children preserve context instead of sending the user to another
+ * feature module. Standalone entity URLs stay available for bookmarks/deep links.
  */
 export const workspaceChildNavItems: Record<string, readonly NavItem[]> = {
   '/properties': [
-    ['/units', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen],
-    ['/lands', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view'],
-    ['/owners', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRoundCog, 'owners.hub.view'],
+    ['/properties', 'units', 'كل الوحدات وحالات الإشغال', DoorOpen, undefined, { section: 'units' }],
+    ['/properties', 'lands', 'الأراضي وقطع الأراضي', MapPinned, 'lands.view', { section: 'lands' }],
+    ['/properties', 'owners', 'الملاك وعلاقات الملكية والإدارة', UserRoundCog, 'owners.hub.view', { section: 'owners' }],
   ],
   '/contracts': [
-    ['/tenants', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck],
-    ['/people', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users],
-    ['/leads', 'leads', 'العملاء المحتملون والتحويلات', ContactRound, 'leads.view'],
-    ['/communication', 'communication', 'التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view'],
+    ['/contracts', 'tenants', 'المستأجرون وعلاقات الإيجار', UserCheck, undefined, { workspace: 'tenants' }],
+    ['/contracts', 'peopleDirectory', 'دليل الأشخاص وجهات التعامل', Users, undefined, { workspace: 'people' }],
+    ['/contracts', 'leads', 'العملاء المحتملون والتحويلات', ContactRound, 'leads.view', { workspace: 'leads' }],
+    ['/contracts', 'communication', 'التواصل والمتابعات التشغيلية', MessageSquareText, 'communication.view', { workspace: 'communication' }],
   ],
   '/financials': [
-    ['/invoices', 'invoices', 'المستحقات والفواتير', FileText],
-    ['/receipts', 'receipts', 'الإيصالات والتحصيلات', BadgeDollarSign],
-    ['/arrears', 'arrears', 'المتأخرات التي تحتاج متابعة', BarChart3, 'arrears.view'],
-    ['/expenses', 'expenses', 'المصروفات', PieChart, 'expenses.view'],
-    ['/deposits', 'deposits', 'التأمينات والودائع', FolderKanban, 'financial.deposits.view'],
-    ['/owner-settlements', 'ownerSettlements', 'مستحقات وتسويات الملاك', UserRoundCog, 'financial.owner_settlements.view'],
-    ['/bank-reconciliation', 'bankReconciliation', 'البنوك والمطابقة البنكية', BarChart3, 'financial.bank_reconciliation.view'],
-    ['/commissions', 'commissions', 'العمولات المرتبطة بالمصادر المالية', BadgeDollarSign, 'commissions.view'],
+    ['/financials', 'invoices', 'المستحقات والفواتير', FileText, undefined, { section: 'collections', view: 'invoices' }],
+    ['/financials', 'receipts', 'التحصيل والإيصالات', BadgeDollarSign, undefined, { section: 'collections', view: 'receipts' }],
+    ['/financials', 'arrears', 'المتأخرات التي تحتاج متابعة', BarChart3, 'arrears.view', { section: 'collections', view: 'arrears' }],
+    ['/financials', 'expenses', 'المصروفات', PieChart, 'expenses.view', { section: 'expenses', view: 'expenses' }],
+    ['/financials', 'deposits', 'التأمينات والودائع', FolderKanban, 'financial.deposits.view', { section: 'funds', view: 'deposits' }],
+    ['/financials', 'ownerSettlements', 'مستحقات وتسويات الملاك', UserRoundCog, 'financial.owner_settlements.view', { section: 'funds', view: 'owner_settlements' }],
+    ['/financials', 'bankReconciliation', 'البنوك والمطابقة البنكية', BarChart3, 'financial.bank_reconciliation.view', { section: 'banking', view: 'bank_reconciliation' }],
+    ['/financials', 'commissions', 'العمولات المرتبطة بالمصادر المالية', BadgeDollarSign, 'commissions.view', { section: 'expenses', view: 'commissions' }],
   ],
   '/maintenance': [
     ['/maintenance', 'maintenance', 'طلبات الصيانة والمتابعة', Wrench, undefined, { section: 'maintenance' }],
-    ['/service-providers', 'serviceProviders', 'مزودو الخدمات وتخصصاتهم', BriefcaseBusiness, 'service_providers.view'],
-    ['/utilities', 'utilities', 'المرافق والعدادات', Zap],
-    ['/documents-vault', 'documentsVault', 'المستندات التشغيلية المرتبطة بالعمل', FolderKanban],
+    ['/maintenance', 'serviceProviders', 'مزودو الخدمات وتخصصاتهم', BriefcaseBusiness, 'service_providers.view', { section: 'service_providers' }],
+    ['/maintenance', 'utilities', 'المرافق والعدادات', Zap, undefined, { section: 'utilities' }],
+    ['/maintenance', 'documentsVault', 'المستندات التشغيلية المرتبطة بالعمل', FolderKanban, undefined, { section: 'documents_vault' }],
   ],
   '/reports': [],
   '/settings': [
@@ -105,7 +96,6 @@ export function getAllNavItems(): readonly NavItem[] {
   return [...navGroups.flatMap((group) => group[1]), ...Object.values(workspaceChildNavItems).flat()];
 }
 
-/** Mobile navigation is exclusively the floating Menu + Search control. */
 export const mobileNavItems: readonly MobileNavItem[] = [];
 
 export const quickCreateItems: readonly MobileNavItem[] = [

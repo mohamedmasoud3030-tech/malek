@@ -1,17 +1,11 @@
 /**
- * R9 — Finance Shell / Information Architecture.
+ * Money workspace information architecture.
  *
- * ONE route model for the finance shell, extracted from financials-page.tsx so
- * the page renders workspaces while THIS module owns:
- *   - the section model (FinanceShell → Collections/Expenses/Owner Funds/Banking),
- *   - permission logic (view/section visibility),
- *   - URL compatibility + legacy deep-link resolution,
- *   - the structural coherence rules (section/view mismatch normalization).
- *
- * No business logic moved: workspaces stay in their features; the shell only
- * decides WHICH workspace mounts for a URL and a user.
+ * This module owns navigation/permission/deep-link resolution only. Financial
+ * calculations and mutations stay in their existing authoritative workspaces.
  */
 import {
+  BadgeDollarSign,
   CalendarDays,
   ClipboardList,
   FileCheck,
@@ -33,6 +27,7 @@ export type FinanceViewId =
   | 'receipts'
   | 'arrears'
   | 'expenses'
+  | 'commissions'
   | 'deposits'
   | 'owner_settlements'
   | 'fixed_monthly_accruals'
@@ -54,21 +49,22 @@ export interface FinanceSectionDefinition {
 }
 
 export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[] = [
-  { id: 'overview', label: 'نظرة عامة', icon: LayoutDashboard, defaultViewId: 'overview' },
-  { id: 'collections', label: 'التحصيل والذمم', icon: ReceiptText, defaultViewId: 'invoices' },
-  { id: 'expenses', label: 'المصروفات والمستحقات', icon: WalletCards, defaultViewId: 'expenses' },
-  { id: 'funds', label: 'الأمانات والملاك', icon: FileCheck, defaultViewId: 'deposits' },
+  { id: 'overview', label: 'وضع المال', icon: LayoutDashboard, defaultViewId: 'overview' },
+  { id: 'collections', label: 'المستحقات والتحصيل', icon: ReceiptText, defaultViewId: 'invoices' },
+  { id: 'expenses', label: 'المصروفات والعمولات', icon: WalletCards, defaultViewId: 'expenses' },
+  { id: 'funds', label: 'التأمينات والملاك', icon: FileCheck, defaultViewId: 'deposits' },
   { id: 'banking', label: 'البنوك والمطابقة', icon: Landmark, defaultViewId: 'bank_reconciliation' },
 ];
 
 export const FINANCE_VIEWS: readonly FinanceViewDefinition[] = [
-  { id: 'overview', sectionId: 'overview', label: 'نظرة عامة', icon: LayoutDashboard, permission: null },
-  { id: 'invoices', sectionId: 'collections', label: 'الفواتير والتحصيل', icon: FileSpreadsheet, permission: null },
-  { id: 'receipts', sectionId: 'collections', label: 'سجل الإيصالات', icon: ReceiptText, permission: null },
-  { id: 'arrears', sectionId: 'collections', label: 'المتأخرات والديون', icon: ClipboardList, permission: 'arrears.view' },
+  { id: 'overview', sectionId: 'overview', label: 'وضع المال', icon: LayoutDashboard, permission: null },
+  { id: 'invoices', sectionId: 'collections', label: 'المستحقات والفواتير', icon: FileSpreadsheet, permission: null },
+  { id: 'receipts', sectionId: 'collections', label: 'التحصيل والإيصالات', icon: ReceiptText, permission: null },
+  { id: 'arrears', sectionId: 'collections', label: 'المتأخرات', icon: ClipboardList, permission: 'arrears.view' },
   { id: 'expenses', sectionId: 'expenses', label: 'المصروفات', icon: WalletCards, permission: 'expenses.view' },
+  { id: 'commissions', sectionId: 'expenses', label: 'العمولات', icon: BadgeDollarSign, permission: 'commissions.view' },
   { id: 'deposits', sectionId: 'funds', label: 'تأمينات المستأجرين', icon: FileCheck, permission: 'financial.deposits.view' },
-  { id: 'owner_settlements', sectionId: 'funds', label: 'تسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
+  { id: 'owner_settlements', sectionId: 'funds', label: 'مستحقات وتسويات الملاك', icon: HandCoins, permission: 'financial.owner_settlements.view' },
   { id: 'fixed_monthly_accruals', sectionId: 'funds', label: 'استحقاق العمولة الشهرية', icon: CalendarDays, permission: 'financial.fixed_monthly_accruals.view' },
   { id: 'bank_reconciliation', sectionId: 'banking', label: 'مطابقة كشف البنك', icon: Landmark, permission: 'financial.bank_reconciliation.view' },
 ];
@@ -91,8 +87,8 @@ export function getPermittedSections(
   authorization: AuthorizationContext | null | undefined,
 ): FinanceSectionDefinition[] {
   const permittedViews = getPermittedViews(authorization);
-  const permittedSectionIds = new Set(permittedViews.map((v) => v.sectionId));
-  return FINANCE_SECTIONS.filter((s) => permittedSectionIds.has(s.id));
+  const permittedSectionIds = new Set(permittedViews.map((view) => view.sectionId));
+  return FINANCE_SECTIONS.filter((section) => permittedSectionIds.has(section.id));
 }
 
 export interface FinancialsSearch {
@@ -103,14 +99,11 @@ export interface FinancialsSearch {
 export type ResolvedFinanceLocation = Readonly<{
   resolvedSectionId: FinanceSectionId;
   resolvedViewId: FinanceViewId;
-  /** True when the URL carries a retired commissions deep link. */
+  /** @deprecated Commissions is now a first-class Money view. Always false. */
   isLegacyCommissionsLink: boolean;
 }>;
 
-/**
- * Deep-link contract: resolves raw ?section=&view= (including every legacy
- * spelling) to a coherent section/view pair. Pure — trivially testable.
- */
+/** Resolve raw ?section=&view= to one coherent, permitted Money location. */
 export function resolveFinanceLocation(
   rawSection: string,
   rawView: string,
@@ -121,7 +114,6 @@ export function resolveFinanceLocation(
 
   const sec = rawSection.toLowerCase().trim();
   const vi = rawView.toLowerCase().trim();
-  const isLegacyCommissionsLink = sec === 'commissions' || vi === 'commissions';
 
   if (sec === 'overview' || !sec) {
     sId = 'overview';
@@ -132,12 +124,10 @@ export function resolveFinanceLocation(
     vId = (vi || defaultView) as FinanceViewId;
   } else if (sec === 'expenses') {
     sId = 'expenses';
-    vId = 'expenses';
-  } else if (isLegacyCommissionsLink) {
-    // Redirect handled by the shell; map to a safe fallback so resolution
-    // never crashes while the redirect is in flight.
+    vId = vi === 'commissions' ? 'commissions' : 'expenses';
+  } else if (sec === 'commissions' || vi === 'commissions') {
     sId = 'expenses';
-    vId = 'expenses';
+    vId = 'commissions';
   } else if (['funds', 'deposits', 'owner_settlements', 'fixed_monthly_accruals'].includes(sec)) {
     sId = 'funds';
     const defaultView = sec === 'funds' ? 'deposits' : sec;
@@ -147,12 +137,10 @@ export function resolveFinanceLocation(
     vId = 'bank_reconciliation';
   }
 
-  // Structural coherence: a view that does not belong to the resolved section
-  // normalizes to the section's first permitted view (or overview).
-  const viewMeta = FINANCE_VIEWS.find((v) => v.id === vId);
+  const viewMeta = FINANCE_VIEWS.find((view) => view.id === vId);
   if (viewMeta && viewMeta.sectionId !== sId) {
     const permittedSectionViews = FINANCE_VIEWS.filter(
-      (v) => v.sectionId === sId && isViewPermitted(authorization, v),
+      (view) => view.sectionId === sId && isViewPermitted(authorization, view),
     );
     if (permittedSectionViews[0]) {
       vId = permittedSectionViews[0].id;
@@ -162,5 +150,5 @@ export function resolveFinanceLocation(
     }
   }
 
-  return { resolvedSectionId: sId, resolvedViewId: vId, isLegacyCommissionsLink };
+  return { resolvedSectionId: sId, resolvedViewId: vId, isLegacyCommissionsLink: false };
 }

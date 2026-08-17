@@ -1,42 +1,37 @@
-import { BriefcaseBusiness, FolderKanban, Settings2, Wrench, Zap } from 'lucide-react';
+import { BriefcaseBusiness, FolderKanban, Wrench, Zap } from 'lucide-react';
 import type { SectionTabItem } from '@/components/ui/section-tabs';
 
 export type OperationsHubSectionId =
   | 'maintenance'
   | 'service_providers'
   | 'utilities'
-  | 'automation'
   | 'documents_vault';
 
 export type OperationsHubSection = SectionTabItem<OperationsHubSectionId> & Readonly<{
   description: string;
-  /** null means no extra permission is required beyond being an authenticated user. */
-  permission: 'maintenance.view' | 'service_providers.view' | 'automation.view' | null;
+  /** null means no extra permission is required beyond being authenticated. */
+  permission: 'maintenance.view' | 'service_providers.view' | null;
 }>;
 
 /**
- * Single source of truth for the operations hub tabs. Mirrors the standalone
- * routes it embeds: /maintenance, /utilities, /automation. Documents Vault is
- * the aggregate documents authority for the hub (embedded DocumentsVaultWorkspace)
- * while contextual document panels on properties/owners/units/contracts/maintenance
- * remain complementary entity-level workflows. Permissions here must stay
- * identical to the route-level guards in app/router/route-tree.ts — this file
- * does not grant or widen access, it only decides which already-permitted tab
- * to render/hide.
+ * Services owns day-to-day property operations only: maintenance, providers,
+ * utilities and operational documents. Automation is an administrative
+ * capability and belongs to Settings; keeping it here as well created two
+ * competing authorities for the same task.
  */
 export const operationsHubSections: readonly OperationsHubSection[] = [
   {
     id: 'maintenance',
     label: 'الصيانة',
     icon: Wrench,
-    description: 'تتبع طلبات الصيانة حسب الحالة والأولوية والعقار.',
+    description: 'طلبات الصيانة والمتابعة حسب الحالة والأولوية والعقار.',
     permission: 'maintenance.view',
   },
   {
     id: 'service_providers',
     label: 'مزودو الخدمات',
     icon: BriefcaseBusiness,
-    description: 'ملفات المزودين وتخصصاتهم وبيانات التواصل وأعمال الصيانة المرتبطة.',
+    description: 'المزودون وتخصصاتهم وبيانات التواصل والأعمال المرتبطة.',
     permission: 'service_providers.view',
   },
   {
@@ -47,24 +42,16 @@ export const operationsHubSections: readonly OperationsHubSection[] = [
     permission: null,
   },
   {
-    id: 'automation',
-    label: 'الأتمتة والتنبيهات',
-    icon: Settings2,
-    description: 'قواعد الأتمتة وتذكيرات العقود والإيجار وسجل التشغيل.',
-    permission: 'automation.view',
-  },
-  {
     id: 'documents_vault',
-    label: 'خزينة المستندات',
+    label: 'المستندات التشغيلية',
     icon: FolderKanban,
-    description: 'أرشيف المستندات والمرفقات في تخزين خاص، مع رفع ومعاينة وتنزيل آمن.',
+    description: 'المستندات والمرفقات المرتبطة بالتشغيل في تخزين خاص وآمن.',
     permission: null,
   },
 ] as const;
 
 export type OperationsHubPermission = Exclude<OperationsHubSection['permission'], null>;
 
-/** Returns only tabs accepted by the shared authorization seam. */
 export function getVisibleOperationsHubSections(
   canAccess: (permission: OperationsHubPermission) => boolean,
 ) {
