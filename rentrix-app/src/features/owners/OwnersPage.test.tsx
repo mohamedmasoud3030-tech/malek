@@ -157,7 +157,8 @@ describe('Owner detail recovery states', () => {
 
     expect(html).toContain('تسويات المالك');
     expect(html).toContain('مسودة بانتظار الاعتماد');
-    expect(html).toContain('/owner-settlements');
+    expect(html).toContain('الموقف المالي للمالك');
+    expect(html).not.toContain('/owner-settlements');
     expect(html).toContain('عقار موثق');
   });
 
