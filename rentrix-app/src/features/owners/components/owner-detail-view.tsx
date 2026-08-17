@@ -7,9 +7,11 @@ import { canAccess } from '@/features/auth/permissions';
 import { useAuth } from '@/hooks/use-auth';
 import { useDialogNavigate } from '@/app/router/background-location';
 import type { OwnerSettlementRecord } from '../services/owner-settlements-service';
+import { getOwnerDisplayName } from '../services/owner-service';
 import type { OwnerActivityRecord } from '@/services/owner-workspace-service';
 import type { OwnerDetailState } from '../types';
 import { OwnerDossierBody } from './owner-dossier-body';
+import { OwnerFinancialAuthoritySection } from './owner-financial-authority-section';
 
 export function OwnerDetailView({
   state,
@@ -72,10 +74,15 @@ export function OwnerDetailView({
           ) : undefined
         }
       />
+      <OwnerFinancialAuthoritySection
+        ownerId={owner.id}
+        ownerName={getOwnerDisplayName(owner)}
+        canOpenOwnerSettlements={canOpenOwnerSettlements}
+      />
       <OwnerDossierBody
         snapshot={state.snapshot}
         settlements={settlements}
-        canOpenOwnerSettlements={canOpenOwnerSettlements}
+        canOpenOwnerSettlements={false}
         activity={activity}
       />
     </PageLayout>

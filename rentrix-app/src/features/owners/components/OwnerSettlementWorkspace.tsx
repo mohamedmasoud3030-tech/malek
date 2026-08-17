@@ -53,6 +53,7 @@ import {
   type OwnerSettlementTarget,
   type ProcessPayoutPayload,
 } from '../services/owner-settlements-service';
+import { scopeOwnerRows } from '../owner-settlement-scope';
 
 const settlementsQueryKey = ['owner-settlements'] as const;
 const settlementTargetsQueryKey = ['owner-settlement-targets'] as const;
@@ -90,7 +91,7 @@ function settlementTone(status: OwnerSettlementRecord['status']) {
   return 'warning' as const;
 }
 
-export function OwnerSettlementWorkspace() {
+export function OwnerSettlementWorkspace({ ownerId }: Readonly<{ ownerId?: string }>) {
   const queryClient = useQueryClient();
   const { authorization } = useAuth();
   const canApproveSettlement = canAccess(authorization, 'financial.owner_settlements.approve');
@@ -130,8 +131,14 @@ export function OwnerSettlementWorkspace() {
     },
   });
 
-  const settlements = settlementsQuery.data ?? [];
-  const targets = targetsQuery.data ?? [];
+  const settlements = useMemo(
+    () => scopeOwnerRows(settlementsQuery.data ?? [], ownerId),
+    [settlementsQuery.data, ownerId],
+  );
+  const targets = useMemo(
+    () => scopeOwnerRows(targetsQuery.data ?? [], ownerId),
+    [targetsQuery.data, ownerId],
+  );
   const selectedTarget = targets.find((target) => targetKey(target) === draftForm.targetKey) ?? null;
 
   const previewScopeValid = Boolean(selectedTarget)
