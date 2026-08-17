@@ -91,6 +91,26 @@ function useDepositInvoices(contractId?: string | null) {
   });
 }
 
+type ReviewedMoveOutInspection = { id: string; inspected_on: string; summary: string | null };
+
+function useReviewedMoveOutInspections(contractId?: string | null) {
+  return useQuery({
+    queryKey: ['reviewed-move-out-inspections', contractId],
+    enabled: Boolean(contractId),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('contract_inspections')
+        .select('id,inspected_on,summary')
+        .eq('contract_id', contractId!)
+        .eq('kind', 'MOVE_OUT')
+        .eq('status', 'REVIEWED')
+        .order('inspected_on', { ascending: false })
+        .returns<ReviewedMoveOutInspection[]>();
+      if (error) handleSupabaseError(error, 'تعذر تحميل فحوص الإخلاء المراجعة');
+      return data ?? [];
+    },
+  });
+}
+
 function getDepositTone(status: DepositStatus): 'success' | 'info' | 'warning' {
   if (status === 'refunded') return 'success';
   if (status === 'held') return 'info';
@@ -123,6 +143,7 @@ export function DepositsWorkspace() {
   const [claimKindInput, setClaimKindInput] = useState<DepositClaimCreatePayload['claim_kind']>('DAMAGE');
   const [invoiceInput, setInvoiceInput] = useState('');
   const [evidenceInput, setEvidenceInput] = useState('');
+  const [inspectionInput, setInspectionInput] = useState('');
   const [claimNoteInput, setClaimNoteInput] = useState('');
   const [reasonInput, setReasonInput] = useState('');
   const [paymentMethodInput, setPaymentMethodInput] = useState<DepositRefundPayload['payment_method']>('bank_transfer');
@@ -142,6 +163,7 @@ export function DepositsWorkspace() {
   });
   const contractsQuery = useContracts();
   const invoicesQuery = useDepositInvoices(selectedDeposit?.contract_id);
+  const moveOutInspectionsQuery = useReviewedMoveOutInspections(selectedDeposit?.contract_id);
   const documentSettings = useDocumentSettings();
   const deposits = depositsQuery.data ?? [];
   const claims = claimsQuery.data ?? [];
@@ -184,6 +206,7 @@ export function DepositsWorkspace() {
         invoice_id: claimKindInput === 'INVOICE_ARREARS' ? invoiceInput || null : null,
         allocation_amount: amountInput,
         evidence_uri: evidenceInput,
+        inspection_id: claimKindInput === 'DAMAGE' ? inspectionInput || null : null,
         claim_note: claimNoteInput || null,
         request_id: crypto.randomUUID(),
       });
@@ -194,6 +217,7 @@ export function DepositsWorkspace() {
       setActionType(null);
       setAmountInput(0);
       setEvidenceInput('');
+      setInspectionInput('');
       setClaimNoteInput('');
       setInvoiceInput('');
       void queryClient.invalidateQueries({ queryKey: ['deposit-claims'] });
@@ -647,6 +671,7 @@ export function DepositsWorkspace() {
             if (amountInput <= 0 || !selectedDeposit || amountInput > selectedDeposit.remaining_amount) return;
             if (!evidenceInput.trim()) return;
             if (claimKindInput === 'INVOICE_ARREARS' && !invoiceInput) return;
+            if (claimKindInput === 'DAMAGE' && !inspectionInput) return;
             claimMut.mutate();
           }}
         >
@@ -656,10 +681,23 @@ export function DepositsWorkspace() {
               <Input required type="number" min="0.001" step="0.001" inputMode="decimal" dir="ltr" value={amountInput} onChange={(event) => setAmountInput(Number(event.target.value) || 0)} max={selectedDeposit?.remaining_amount} />
             </EntityForm.Field>
             <EntityForm.Field label="نوع الطلب *">
-              <Select required value={claimKindInput} onChange={(event) => setClaimKindInput(event.target.value as DepositClaimCreatePayload['claim_kind'])}>
+              <Select required value={claimKindInput} onChange={(event) => { const kind = event.target.value as DepositClaimCreatePayload['claim_kind']; setClaimKindInput(kind); if (kind === 'DAMAGE') setInvoiceInput(''); else setInspectionInput(''); }}>
                 {Object.entries(depositClaimKindLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </Select>
             </EntityForm.Field>
+            {claimKindInput === 'DAMAGE' ? (
+              <EntityForm.Field label="فحص الإخلاء المراجع *" error={!inspectionInput ? 'لا يمكن طلب خصم أضرار دون فحص إخلاء مراجع.' : undefined}>
+                <Select required value={inspectionInput} onChange={(event) => setInspectionInput(event.target.value)}>
+                  <option value="">اختر فحص الإخلاء</option>
+                  {moveOutInspectionsQuery.data?.map((inspection) => (
+                    <option key={inspection.id} value={inspection.id}>{inspection.inspected_on} — {inspection.summary || 'فحص إخلاء معتمد'}</option>
+                  ))}
+                </Select>
+                {!moveOutInspectionsQuery.isLoading && (moveOutInspectionsQuery.data?.length ?? 0) === 0 ? (
+                  <p className="mt-2 text-xs text-muted-foreground">أكمل فحص الإخلاء واعتمده من ملف العقد أولاً.</p>
+                ) : null}
+              </EntityForm.Field>
+            ) : null}
             {claimKindInput === 'INVOICE_ARREARS' ? (
               <EntityForm.Field label="الفاتورة المفتوحة *">
                 <Select required value={invoiceInput} onChange={(event) => setInvoiceInput(event.target.value)}>
@@ -691,6 +729,7 @@ export function DepositsWorkspace() {
               || amountInput > selectedDeposit.remaining_amount
               || !evidenceInput.trim()
               || (claimKindInput === 'INVOICE_ARREARS' && !invoiceInput)
+              || (claimKindInput === 'DAMAGE' && !inspectionInput)
             }
           />
         </EntityForm.Root>

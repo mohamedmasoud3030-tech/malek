@@ -14,6 +14,7 @@ import { exportContractPdf, openContractWhatsApp, printContractView, shareContra
 import { ContractDocumentsShell } from '../contractDocumentsShell';
 import { ContractPaymentsTab } from '../contractPaymentsTab';
 import { ContractFinancialTimelineSection, ContractLifecycleSection, ContractOverviewSection, ContractTimelineSection } from '../components/ContractDetailSections';
+import { ContractEvidenceSection } from '../evidence/ContractEvidenceSection';
 import { ContractApprovalSection } from '../lifecycle/contract-approval-workflow';
 import { ContractRenewalDialog } from '../lifecycle/ContractRenewalDialog';
 import { ContractTerminationDialog } from '../lifecycle/ContractTerminationDialog';
@@ -74,6 +75,7 @@ export function ContractDetailPage() {
     <ContractPaymentsTab contractId={contract.id} />
     <ContractFinancialTimelineSection contract={contract} settings={companySettings} />
     <ContractTimelineSection contract={contract} settings={companySettings} />
+    <ContractEvidenceSection contractId={contract.id} />
     <ContractDocumentsShell contractId={contract.id} />
     <ContractRenewalDialog contract={contract} open={renewOpen} onOpenChange={setRenewOpen} onRenewed={async (result) => navigate({ to: '/contracts/$contractId', params: { contractId: result.new_contract_id } })} />
     <ContractTerminationDialog contractId={contract.id} open={terminateOpen} onOpenChange={setTerminateOpen} />

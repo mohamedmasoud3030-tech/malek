@@ -23,8 +23,8 @@
 | PD-06 | الحفاظ على six-role + maker-checker وعدم توسيع صلاحية لتسهيل UX | CONFIRMED | أخطر خطأ هو تنفيذ مالي غير مصرح | permissions تغيّر فقط بمسار governance |
 | PD-07 | MASTER_LEASE يبقى خارج RC1 | CONFIRMED ADR 0017 | لا رحلة/reporting/professional review كاملة | يمكن إعادته في release لاحق |
 | PD-08 | portals للمالك/المستأجر خارج RC1 | CONFIRMED SCOPE | تزيد auth/privacy/support قبل إثبات office core | outputs الحالية لا تُحذف |
-| PD-09 | contract registration evidence يصبح capability configurable | PROPOSED — approval required | متوقع في عُمان، لكن authority/deadline/fee تختلف وتحتاج legal | additive schema؛ disabled افتراضياً حتى config |
-| PD-10 | move-in/out inspection يصبح evidence workflow مشتركة | PROPOSED — approval required | يحمي deposit/maintenance disputes | additive templates/records؛ لا يغير التاريخ |
+| PD-09 | contract registration evidence يصبح capability configurable | IMPLEMENTED — disabled until legal profile | متوقع في عُمان، لكن authority/deadline/fee تختلف وتحتاج legal | additive schema؛ disabled افتراضياً حتى config |
+| PD-10 | move-in/out inspection يصبح evidence workflow مشتركة | IMPLEMENTED — runtime proof pending | يحمي deposit/maintenance disputes | additive templates/records؛ لا يغير التاريخ |
 | PD-11 | password recovery قبل pilot | IMPLEMENTED — hosted proof pending | login بلا recovery يخلق lockout ودعماً يدوياً | route/email config قابلة للرجوع |
 | PD-12 | لا إعادة تصميم بصري واسع قبل current-SHA browser/AT test | CONFIRMED | الأدلة تظهر hierarchy متماسكة؛ الخطر الآن وظيفي/خارجي | polish لاحقاً بعد قياس |
 | PD-13 | reconciliation mismatch يمنع payout/close وفق السلطة الحالية | CONFIRMED | حماية أموال الغير أهم من سرعة الإجراء | لا bypass؛ resolution auditable |
@@ -80,6 +80,6 @@
 - تحسين copy، ترتيب onboarding، offline notice، focus/touch/RTL، توحيد states، إزالة التكرار البصري الواضح.
 - implementation details/libraries/testing.
 
-## القرارات التي تحتاج yes/no قبل التنفيذ
+## قرار المالك المسجل
 
-الحزمة المقترحة الوحيدة الآن: **PD-09 + PD-10 كـ“Evidence & Compliance Journey” additive**. السبب: تغيّر workflow/schema وتلمس متطلبات قانونية، لذلك يلزم اعتماد النطاق ثم legal validation قبل migration.
+وافق المالك على **PD-09 + PD-10 كـEvidence & Compliance Journey**. نُفذ الإطار additive دون تفعيل أي ادعاء أو رسم أو مهلة قانونية. لا يزال إدخال `contract_registration_requirement_profiles` الفعلي يحتاج محامياً مخولاً، ولا يُعامل وجود الجداول كاعتماد قانوني.

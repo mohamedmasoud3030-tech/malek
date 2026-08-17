@@ -122,7 +122,7 @@ Every protected/loaded surface must have intentional loading, empty, error and p
 
 ## Printing and documents
 
-Print/PDF controls require real company/document readiness. Guard the action handler as well as the visible button; hiding/disabling a button is not sufficient if the handler can still run through another path. Signed versions and generated financial/legal documents must preserve the correct company, party, currency and data snapshot.
+Print/PDF controls require real company/document readiness. Guard the action handler as well as the visible button; hiding/disabling a button is not sufficient if the handler can still run through another path. Signed versions and generated financial/legal documents must preserve the correct company, party, currency and data snapshot. Contract detail keeps operational status separate from official-registration status, shows `NOT_CONFIGURED` rather than inventing a legal rule, and exposes move-in/out evidence as draft → signed completion → distinct review. A damage-deposit request must select reviewed move-out evidence rather than rely on an unstructured note alone.
 
 Repository evidence includes `pdfService.ts`, report/document generators and targeted tests. It does not prove Arabic font rendering, pagination, signatures, totals or legal layout in the deployed browser; the cancelled Browser Readiness run leaves this under `GAP-020`.
 

@@ -20,10 +20,10 @@
 | أول قيمة لمستخدم جديد | 8 | backend onboarding + التحسين الحالي | المسار الصحيح ظاهر أولاً الآن؛ التسجيل/الفحص ليسا structured |
 | IA والتنقل | 9 | `route-contract.ts`, `app-nav-items.ts` | 7 وجهات task-centric مع children قابلة للاكتشاف وdeep links محفوظة |
 | دورة العقار/الوحدة/المالك | 8 | dossiers + agreement versions | source terms قوية؛ evidence القانوني/الميداني ناقص |
-| دورة العقد | 8 | maker-checker + renewal/termination + snapshots | صحيحة تشغيلياً؛ municipal registration وhandover غير مكتملين |
+| دورة العقد | 9 repository / 5 hosted | maker-checker + renewal/termination + snapshots + registration/handover evidence | الرحلة مكتملة repository؛ legal profile وhosted proof متبقيان |
 | التحصيل وأموال الملاك | 9 repository / 4 live | RPC/GL/reconciliation tests | authority قوية؛ لا live/pilot proof |
 | التأمينات والاسترداد | 9 repository / 4 live | governed claims/refunds/reversals | immutable و3dp؛ legal return policy خارجية |
-| الصيانة والخدمات | 8 | command center + statuses + providers | واضحة ومحمولة؛ condition inspections ليست workflow كاملة |
+| الصيانة والخدمات | 9 repository / 5 hosted | command center + providers + move-in/out inspections | evidence structured ومراجع؛ browser/live proof متبقٍ |
 | التقارير والمطابقة | 9 repository / 4 live | GL statements + DB0 + PDF evidence | drill-through قوي؛ hosted acceptance/sign-off مفقود |
 | الأدوار والصلاحيات | 9 repository / 5 live | six roles + request UX + maker-checker | fail-closed محلياً؛ deployed Auth/RLS proof مفقود |
 | حالات loading/empty/error | 8 | shared states + dashboard stale/error handling | جيدة؛ بعض الصفحات ما زالت تستخدم primitives مختلفة |
@@ -46,7 +46,7 @@
 | One-office pilot | pilot office + accountant | دورة تشغيل ومحاسبة كاملة، فروق غير مفسرة = صفر |
 | Oman legal templates | محامٍ عُماني مخول | wording, signatures, retention, registration responsibilities |
 | Tax/statutory codes | محاسب/مستشار ضريبي | approved catalog/effective dates؛ لا defaults مخترعة |
-| Contract registration evidence | Product + legal + engineering | specification معتمد وتنفيذ auditable/configurable |
+| Contract registration legal activation | Omani legal reviewer | framework موجود وNOT_CONFIGURED افتراضياً؛ يلزم effective profile معتمد |
 | Password recovery hosted proof | deployed email config | repository flow موجود؛ يلزم email delivery + redirect allowlist + expired-link proof على exact SHA |
 
 ## أهم ما يعمل جيداً

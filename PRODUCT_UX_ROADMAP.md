@@ -50,9 +50,9 @@
 - session expired، invalid credentials، network error، email delivery delayed.
 - لا رسائل تقنية ولا account enumeration.
 
-## Milestone 2 — Evidence & compliance journey (يتطلب yes/no + legal input)
+## Milestone 2 — Evidence & compliance journey (نُفذ في repository بعد موافقة المالك)
 
-### M2.1 Contract registration evidence — P0 Oman launch
+### M2.1 Contract registration evidence — repository COMPLETE / legal activation PENDING
 
 المواصفة في `PRODUCT_DECISIONS.md/PD-09`.
 
@@ -65,7 +65,9 @@
 - migration forward-safe + rollback/mitigation.
 - legal approval للنسخة الفعلية قبل enabled.
 
-### M2.2 Move-in/move-out inspection — P1
+**المنفذ:** profile فارغ افتراضياً، NOT_CONFIGURED UI، submission، distinct verification، evidence document، events، company isolation.
+
+### M2.2 Move-in/move-out inspection — repository COMPLETE / browser-runtime PENDING
 
 المواصفة في `PD-10`.
 
@@ -76,6 +78,8 @@
 - deposit deduction references evidence.
 - الهاتف يدعم camera/files/failure/retry بدون فقد draft.
 - no legal wording claim before template approval.
+
+**المنفذ:** system checklist templates، draft/complete/review/change-request، meters/keys/docs/signatures، وربط DAMAGE claim بفحص MOVE_OUT مراجع.
 
 ## Milestone 3 — Exact environment acceptance
 
@@ -132,8 +136,11 @@
 | Existing visual evidence desktop/mobile/RTL | INSPECTED |
 | Focused AppShell/Dashboard/Onboarding tests | 24/24 PASS |
 | Focused Login/Recovery/Route tests | 27/27 PASS |
+| Focused Registration/Handover/Contract/Deposit tests | 21/21 PASS |
+| Database replay/integrity | 280/280 replay PASS; DB0 gate 7/7 PASS |
+| Financial regression suite | 449/449 PASS |
 | TypeScript | PASS |
 | Browser automation current change | BLOCKED: Chromium CDN download failed |
-| Full application tests | 449 files / 2908 tests PASS بعد إصلاح replay compatibility |
+| Full application tests | 453 files / 2923 tests PASS |
 | Typecheck / lint / architecture / production build | PASS |
 | Live/production | NOT RUN / not authorized |
