@@ -371,7 +371,7 @@ async function openDashboardRoute(page: Page, theme: (typeof themes)[number], mo
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('[data-visual-contract="v2"]')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'لوحة التحكم', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
