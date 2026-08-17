@@ -371,7 +371,7 @@ async function openDashboardRoute(page: Page, theme: (typeof themes)[number], mo
   await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('[data-visual-contract="v2"]')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'لوحة التحكم', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toBeVisible();
 }
 
 async function assertNoHorizontalOverflow(page: Page) {
@@ -438,8 +438,7 @@ for (const viewport of viewportMatrix) {
       const sectionNames = await page.locator('[data-dashboard-section]').evaluateAll((nodes) =>
         nodes.map((node) => node.getAttribute('data-dashboard-section')),
       );
-      expect(sectionNames.slice(0, 5)).toEqual(['priorities', 'kpis', 'actions', 'work-queues', 'trends']);
-      if (sectionNames.length > 5) expect(sectionNames[5]).toBe('analytics');
+      expect(sectionNames).toEqual(['work-now', 'actions', 'office-state', 'analytics']);
 
       await expect(page.locator('[data-dashboard-action-grid] > a')).toHaveCount(4);
       const kpiLinks = page.locator('[data-dashboard-kpi-grid] a[data-dashboard-kpi-link]');
@@ -537,7 +536,7 @@ test('real dashboard route exposes loading, empty, error, partial and stale stat
   await page.context().clearCookies();
   await page.evaluate(() => window.localStorage.clear());
   await openDashboardRoute(page, 'light', 'snapshot-error');
-  await expect(page.getByText('تعذر تحميل لوحة التحكم')).toBeVisible();
+  await expect(page.getByText('تعذر تحميل بيانات اليوم')).toBeVisible();
   await expect(page.locator('[data-dashboard-kpi-grid]')).toHaveCount(0);
 
   await page.context().clearCookies();
@@ -545,7 +544,7 @@ test('real dashboard route exposes loading, empty, error, partial and stale stat
   await openDashboardRoute(page, 'light', 'stale-refetch-error');
   await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('malek-dashboard-e2e-refetch')));
-  await expect(page.getByText('تعذر تحديث لوحة التحكم')).toBeVisible();
+  await expect(page.getByText('تعذر تحديث بيانات اليوم')).toBeVisible();
   await expect(page.locator('[data-dashboard-kpi-grid]')).toBeVisible();
 
   await page.screenshot({ path: testInfo.outputPath('dashboard-real-states.png'), fullPage: true });
