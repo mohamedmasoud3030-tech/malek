@@ -32,3 +32,16 @@ describe('architecture guard v2 contract', () => {
     expect(guard).toContain('findCycles');
   });
 });
+
+describe('production metadata source contract', () => {
+  const html = readFileSync(resolve(import.meta.dirname, '../index.html'), 'utf8');
+  const productionUrl = 'https://malek-plus.vercel.app/';
+
+  it('publishes only the Malek production host in canonical and social metadata', () => {
+    expect(html).toContain(`<meta property="og:url" content="${productionUrl}" />`);
+    expect(html).toContain(`<link rel="canonical" href="${productionUrl}" />`);
+    expect(html).toContain(`<meta property="og:image" content="${productionUrl}opengraph.jpg" />`);
+    expect(html).toContain(`<meta name="twitter:image" content="${productionUrl}opengraph.jpg" />`);
+    expect(html).not.toContain('rentrixapp.vercel.app');
+  });
+});
