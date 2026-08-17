@@ -46,7 +46,7 @@ test.describe('Documents Vault route consolidation', () => {
     await expect(page.getByText('رفع مستند جديد')).toBeVisible();
 
     // 3. Maintenance is not the active section.
-    await expect(page.getByRole('tab', { name: 'خزينة المستندات' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveAttribute('aria-selected', 'false');
     await expect(page.locator('[data-operations-section="maintenance"]')).toHaveCount(0);
 
@@ -69,10 +69,10 @@ test.describe('Documents Vault route consolidation', () => {
     await expect(page.locator('[data-operations-section="maintenance"]')).toBeVisible();
     await expect(page.getByRole('tab', { name: 'الصيانة' })).toHaveAttribute('aria-selected', 'true');
 
-    // Switch back to Documents Vault.
-    await page.getByRole('tab', { name: 'خزينة المستندات' }).click();
+    // Switch back to operational documents.
+    await page.getByRole('tab', { name: 'المستندات التشغيلية' }).click();
     await expect(page).toHaveURL(/\/maintenance\?section=documents_vault(?:&|$)/);
     await expect(page.locator('[data-operations-section="documents_vault"]')).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'خزينة المستندات' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'المستندات التشغيلية' })).toHaveAttribute('aria-selected', 'true');
   });
 });
