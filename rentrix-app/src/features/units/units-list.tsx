@@ -1,4 +1,4 @@
-import { Archive, DoorOpen, Edit, Plus } from "lucide-react";
+import { Archive, DoorOpen, Edit, FilePlus2, Plus } from "lucide-react";
 import { useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -43,6 +43,12 @@ export function UnitsList({
   const openForEdit = (unit: Unit) => {
     setEditingUnit(unit);
     setModalOpen(true);
+  };
+  const startLeasing = (unit: Unit) => {
+    void navigate({
+      to: "/contracts/new",
+      search: { propertyId, unitId: unit.id },
+    });
   };
   const confirmArchive = async () => {
     if (!archiveCandidate || deleteMutation.isPending) return;
@@ -113,10 +119,20 @@ export function UnitsList({
               header: "إجراءات",
               render: (unit) => (
                 <div
-                  className="flex gap-2"
+                  className="flex flex-wrap gap-2"
                   onClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => e.stopPropagation()}
                 >
+                  {unit.status === "available" ? (
+                    <Button
+                      className="min-h-11 px-3"
+                      aria-label={`بدء تأجير وحدة ${unit.unit_number}`}
+                      onClick={() => startLeasing(unit)}
+                    >
+                      <FilePlus2 className="me-1 size-4" aria-hidden="true" />
+                      تأجير
+                    </Button>
+                  ) : null}
                   <Button
                     variant="secondary"
                     className="min-h-11 px-3"
