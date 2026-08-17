@@ -25,7 +25,7 @@ async function login(page: Page, email = EMAIL, password = PASSWORD) {
   await page.getByPlaceholder('••••••••').fill(password);
   await page.getByRole('button', { name: /تسجيل الدخول/ }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole('heading', { name: 'لوحة التحكم', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'اليوم', level: 1 })).toBeVisible();
   await expect(page.getByText('تعذر تحديد الشركة النشطة')).toHaveCount(0);
 }
 
