@@ -7,6 +7,9 @@ const readFinancialsPage = () => readFileSync(new URL('./financials-page.tsx', i
 const readMoneyPage = () => readFileSync(new URL('../finance-hub/money-page.tsx', import.meta.url), 'utf8');
 const routeSource = readFileSync(new URL('../../routes/_protected.financials.tsx', import.meta.url), 'utf8');
 const routeTreeSource = readFileSync(new URL('../../app/router/route-tree.ts', import.meta.url), 'utf8');
+const invoiceControllerSource = readFileSync(new URL('./invoices/useInvoiceWorkspaceController.ts', import.meta.url), 'utf8');
+const invoiceWorkspaceSource = readFileSync(new URL('./components/invoice-workspace-section.tsx', import.meta.url), 'utf8');
+const invoiceDetailSource = readFileSync(new URL('./components/invoice-detail-section.tsx', import.meta.url), 'utf8');
 
 vi.mock('@/features/auth/permissions', async (importOriginal) => {
   const actual = await importOriginal() as Record<string, unknown>;
@@ -48,6 +51,17 @@ describe('/financials Money workspace IA', () => {
     const model = readFileSync(new URL('./finance-shell-model.ts', import.meta.url), 'utf8');
     for (const id of ['overview', 'collections', 'expenses', 'funds', 'banking']) expect(model).toContain(`id: '${id}'`);
     expect(model).toContain("id: 'commissions'");
+  });
+
+  it('keeps a posted receipt confirmation inside the invoice collection journey without opening the receipt-register dialog', () => {
+    expect(invoiceControllerSource).toContain("const collectionReceiptQuery = useReceipt(collectionSuccess?.receiptId ?? '')");
+    expect(invoiceControllerSource).toContain('receiptNumber: result.receipt_no ?? null');
+    expect(invoiceControllerSource).not.toContain('setSelectedReceiptId(result.receipt_id)');
+    expect(invoiceWorkspaceSource).toContain('collectionReceiptDetail={ctrl.collectionReceiptQuery.data}');
+    expect(invoiceDetailSource).toContain('data-collection-receipt-confirmation');
+    expect(invoiceDetailSource).toContain('collectionReceiptDetail?.receipt_number ?? collectionSuccess?.receiptNumber ?? null');
+    expect(invoiceDetailSource).toContain('رقم الإيصال المعتمد');
+    expect(invoiceDetailSource).toContain('تحصيل الفاتورة التالية');
   });
 });
 

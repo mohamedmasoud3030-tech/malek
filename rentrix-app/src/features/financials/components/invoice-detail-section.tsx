@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Payment } from '@/types/domain';
 import { getInvoiceGrossAmount, type InvoiceDetail } from '../invoices/invoiceService';
 import { openReceiptPrintTab } from '../receipts/receipt-print';
-import { formatDate, formatMoney, getErrorMessage } from './financials-formatters';
+import type { ReceiptRecord } from '../receipts/receiptService';
+import { formatDate, formatMoney, formatShortId, getErrorMessage } from './financials-formatters';
 import { QuickPaymentForm } from './quick-payment-form';
-import { formatReceiptNumber, getPaymentReceiptBinding, paymentMethodLabels } from './receipt-formatters';
+import { formatReceiptContext, getPaymentReceiptBinding, paymentMethodLabels } from './receipt-formatters';
 
 export type CollectionSuccess = {
   receiptId: string;
+  receiptNumber: string | null;
   amount: number;
   method: Payment['payment_method'];
 };
@@ -30,10 +32,13 @@ type InvoiceDetailSectionProps = {
   isPaymentDisabled: boolean;
   /**
    * Last successfully posted payment within this workspace. Drives the
-   * inline success panel (print receipt / collect next invoice) so the
-   * collector keeps flow without hunting for the receipt list.
+   * inline success panel (receipt confirmation / print / collect next) so the
+   * collector keeps flow without opening a second receipt dialog.
    */
   collectionSuccess?: CollectionSuccess | null;
+  collectionReceiptDetail?: ReceiptRecord;
+  isCollectionReceiptLoading?: boolean;
+  isCollectionReceiptError?: boolean;
   hasNextCollectibleInvoice?: boolean;
   collectionFocusKey?: number;
   onCollectNextInvoice?: () => void;
@@ -62,6 +67,9 @@ export function InvoiceDetailSection({
   isPaymentPending,
   isPaymentDisabled,
   collectionSuccess = null,
+  collectionReceiptDetail,
+  isCollectionReceiptLoading = false,
+  isCollectionReceiptError = false,
   hasNextCollectibleInvoice = false,
   collectionFocusKey = 0,
   onCollectNextInvoice,
@@ -75,6 +83,7 @@ export function InvoiceDetailSection({
   onExportPdf,
 }: InvoiceDetailSectionProps) {
   const grossAmount = invoiceDetail ? getInvoiceGrossAmount(invoiceDetail) : 0;
+  const collectionReceiptNumber = collectionReceiptDetail?.receipt_number ?? collectionSuccess?.receiptNumber ?? null;
 
   return (
     <Card>
@@ -150,7 +159,7 @@ export function InvoiceDetailSection({
           </div>
 
           {collectionSuccess ? (
-            <div className="rounded-2xl border border-success/40 bg-success/10 p-4" role="status">
+            <div className="rounded-2xl border border-success/40 bg-success/10 p-4" role="status" data-collection-receipt-confirmation>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-success/15 text-success">
@@ -159,14 +168,15 @@ export function InvoiceDetailSection({
                   <div className="min-w-0">
                     <p className="font-black text-success">تم تسجيل الدفعة بنجاح</p>
                     <p className="mt-1 text-sm font-bold text-muted-foreground">
-                      تم تحصيل {formatMoney(collectionSuccess.amount)} ({paymentMethodLabels[collectionSuccess.method] ?? collectionSuccess.method}) — إيصال القبض <span className="tabular-nums" dir="ltr">{formatReceiptNumber(collectionSuccess.receiptId)}</span> جاهز للطباعة أو يمكنك متابعة التحصيل مباشرة.
+                      تم تحصيل {formatMoney(collectionSuccess.amount)} ({paymentMethodLabels[collectionSuccess.method] ?? collectionSuccess.method})
+                      {collectionReceiptNumber ? <> — إيصال القبض <span className="tabular-nums" dir="ltr">{collectionReceiptNumber}</span></> : null}.
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {onPrintCollectionReceipt ? (
                     <Button type="button" variant="outline" className="min-h-11" onClick={onPrintCollectionReceipt}>
-                      <Printer className="me-1 size-4" />طباعة الإيصال
+                      <Printer className="me-1 size-4" />عرض/طباعة الإيصال
                     </Button>
                   ) : null}
                   {hasNextCollectibleInvoice && onCollectNextInvoice ? (
@@ -181,6 +191,35 @@ export function InvoiceDetailSection({
                   ) : null}
                 </div>
               </div>
+
+              {isCollectionReceiptLoading && !collectionReceiptDetail ? (
+                <p className="mt-3 rounded-xl border border-success/20 bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground" aria-live="polite">
+                  جارٍ تأكيد بيانات إيصال القبض من السجل...
+                </p>
+              ) : null}
+
+              {collectionReceiptDetail ? (
+                <div className="mt-3 grid gap-2 rounded-xl border border-success/20 bg-background/75 p-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <p className="text-[11px] font-bold text-muted-foreground">رقم الإيصال المعتمد</p>
+                    <p className="mt-1 font-black tabular-nums" dir="ltr">{collectionReceiptDetail.receipt_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-muted-foreground">الفاتورة</p>
+                    <p className="mt-1 font-black">{collectionReceiptDetail.invoice_reference ?? formatShortId(collectionReceiptDetail.invoice_id)}</p>
+                  </div>
+                  <div className="sm:col-span-2 lg:col-span-1">
+                    <p className="text-[11px] font-bold text-muted-foreground">السياق</p>
+                    <p className="mt-1 font-black">{formatReceiptContext(collectionReceiptDetail)}</p>
+                  </div>
+                </div>
+              ) : null}
+
+              {isCollectionReceiptError && !collectionReceiptDetail ? (
+                <p className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs font-bold text-warning">
+                  تم تسجيل الدفعة، لكن تعذر تحميل تفاصيل الإيصال الآن. يمكنك فتح الإيصال من زر العرض/الطباعة دون إعادة تسجيل الدفع.
+                </p>
+              ) : null}
             </div>
           ) : null}
 

@@ -131,6 +131,9 @@ export function InvoiceWorkspaceSection() {
           isPaymentPending={ctrl.postPayment.isPending}
           isPaymentDisabled={ctrl.isPaymentDisabled}
           collectionSuccess={ctrl.collectionSuccess}
+          collectionReceiptDetail={ctrl.collectionReceiptQuery.data}
+          isCollectionReceiptLoading={ctrl.collectionReceiptQuery.isLoading}
+          isCollectionReceiptError={ctrl.collectionReceiptQuery.isError}
           hasNextCollectibleInvoice={Boolean(ctrl.nextCollectibleInvoiceId)}
           collectionFocusKey={ctrl.collectionFocusKey}
           onCollectNextInvoice={ctrl.onCollectNextInvoice}

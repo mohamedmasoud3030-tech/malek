@@ -61,7 +61,12 @@ export function useInvoiceWorkspaceController() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [selectedReceiptId, setSelectedReceiptId] = useState('');
   const [amount, setAmount] = useState('');
-  const [collectionSuccess, setCollectionSuccess] = useState<{ receiptId: string; amount: number; method: Payment['payment_method'] } | null>(null);
+  const [collectionSuccess, setCollectionSuccess] = useState<{
+    receiptId: string;
+    receiptNumber: string | null;
+    amount: number;
+    method: Payment['payment_method'];
+  } | null>(null);
   const [collectionFocusKey, setCollectionFocusKey] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Payment['payment_method']>('cash');
   const [paymentDate, setPaymentDate] = useState(() => getTodayLocalDateString());
@@ -85,6 +90,10 @@ export function useInvoiceWorkspaceController() {
   const postPayment = usePostPayment();
   const receiptsQuery = useReceipts({ limit: 10 });
   const receiptQuery = useReceipt(selectedReceiptId);
+  // A freshly posted receipt is payment-backed in the UI. Keep its lookup
+  // separate from the receipt selected in the register so posting a payment
+  // never opens a second preview dialog on top of the invoice preview.
+  const collectionReceiptQuery = useReceipt(collectionSuccess?.receiptId ?? '');
   const contractsQuery = useContracts({ status: 'all', page: 1, pageSize: 1000 });
   const documentSettings = useDocumentSettings();
   const { authorization } = useAuth();
@@ -206,8 +215,12 @@ export function useInvoiceWorkspaceController() {
       },
       {
         onSuccess: (result) => {
-          setSelectedReceiptId(result.receipt_id);
-          setCollectionSuccess({ receiptId: result.receipt_id, amount: currentAmount, method: paymentMethod });
+          setCollectionSuccess({
+            receiptId: result.receipt_id,
+            receiptNumber: result.receipt_no ?? null,
+            amount: currentAmount,
+            method: paymentMethod,
+          });
           setAmount('');
           setPaymentReference('');
           resetPaymentRequestId(quickPayRequestIdRef);
@@ -326,6 +339,7 @@ export function useInvoiceWorkspaceController() {
     postPayment,
     receiptsQuery,
     receiptQuery,
+    collectionReceiptQuery,
     tenantOptions,
     propertyOptions,
     invoices,
