@@ -1,5 +1,5 @@
 import { Link, useParams } from '@tanstack/react-router';
-import { Edit } from 'lucide-react';
+import { Edit, FilePlus2 } from 'lucide-react';
 import { useState } from 'react';
 import { AsyncContentState } from '@/components/async-content-state';
 import { EntityDetailHeader } from '@/components/layout/entity-detail-header';
@@ -45,10 +45,23 @@ export function PropertyUnitDetailPage() {
               </StatusBadge>
             }
             actions={
-              <Button variant="secondary" className="min-h-11" onClick={() => setEditOpen(true)}>
-                <Edit className="me-1 size-4" aria-hidden="true" />
-                تعديل الوحدة
-              </Button>
+              <>
+                {unit.status === 'available' ? (
+                  <Button asChild className="min-h-11">
+                    <Link
+                      to="/contracts/new"
+                      search={{ propertyId, unitId: unit.id }}
+                    >
+                      <FilePlus2 className="me-1 size-4" aria-hidden="true" />
+                      ابدأ التأجير
+                    </Link>
+                  </Button>
+                ) : null}
+                <Button variant="secondary" className="min-h-11" onClick={() => setEditOpen(true)}>
+                  <Edit className="me-1 size-4" aria-hidden="true" />
+                  تعديل الوحدة
+                </Button>
+              </>
             }
           />
 
