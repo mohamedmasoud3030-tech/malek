@@ -1,1 +1,1 @@
-export { LeasingHubPage as ContractsRouteComponent } from '@/features/leasing-hub/leasing-hub-workspace';
+export { LeasingHubPage as ContractsRouteComponent } from '@/features/relationships-hub/leasing-hub-workspace';
