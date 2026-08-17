@@ -7,6 +7,7 @@ import { EntityForm } from '@/components/ui/entity-form';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useBeforeUnloadGuard, useSubmitGuard } from '@/hooks/use-unsaved-changes-guard';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
+import type { Person } from '@/types/domain';
 import { PersonFormFields } from './components/PersonFormFields';
 import { personSchema, type PersonFormValues } from './person-schema';
 import { useCreatePerson, usePerson, useUpdatePerson } from './use-people';
@@ -16,9 +17,10 @@ interface PersonFormModalProps {
   onClose: () => void;
   personId?: string;
   defaultType?: 'tenant' | 'owner' | 'contact';
+  onCreated?: (person: Person) => void;
 }
 
-export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant' }: PersonFormModalProps) {
+export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant', onCreated }: PersonFormModalProps) {
   const isEdit = Boolean(personId);
   const personQuery = usePerson(personId ?? '');
   const createMutation = useCreatePerson();
@@ -71,7 +73,8 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         if (isEdit && personId) {
           await updateMutation.mutateAsync(payload);
         } else {
-          await createMutation.mutateAsync(payload);
+          const person = await createMutation.mutateAsync(payload);
+          onCreated?.(person);
         }
         form.reset(undefined, { keepValues: true });
         onClose();
