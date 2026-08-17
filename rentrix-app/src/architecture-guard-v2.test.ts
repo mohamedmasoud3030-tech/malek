@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { LEGACY_TECHNICAL_BRAND_PREFIX } from './lib/brand';
 
 describe('architecture guard v2 contract', () => {
   const guard = readFileSync(
@@ -30,5 +31,19 @@ describe('architecture guard v2 contract', () => {
     expect(guard).toContain('presentation components must not import Supabase directly');
     expect(guard).toContain('pages must stay below 650 lines');
     expect(guard).toContain('findCycles');
+  });
+});
+
+describe('production metadata source contract', () => {
+  const html = readFileSync(resolve(import.meta.dirname, '../index.html'), 'utf8');
+  const productionUrl = 'https://malek-plus.vercel.app/';
+  const retiredProductionHost = `${LEGACY_TECHNICAL_BRAND_PREFIX}app.vercel.app`;
+
+  it('publishes only the Malek production host in canonical and social metadata', () => {
+    expect(html).toContain(`<meta property="og:url" content="${productionUrl}" />`);
+    expect(html).toContain(`<link rel="canonical" href="${productionUrl}" />`);
+    expect(html).toContain(`<meta property="og:image" content="${productionUrl}opengraph.jpg" />`);
+    expect(html).toContain(`<meta name="twitter:image" content="${productionUrl}opengraph.jpg" />`);
+    expect(html).not.toContain(retiredProductionHost);
   });
 });
