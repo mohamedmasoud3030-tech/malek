@@ -70,8 +70,8 @@ describe('contract creation workflow order and agreement resolution contract', (
     expect(unitsListSource).toContain('search: { propertyId, unitId: unit.id }');
     expect(formPageSource).toContain("typeof search.propertyId === 'string'");
     expect(formPageSource).toContain("typeof search.unitId === 'string'");
-    expect(modalSource).toContain('initialPropertyId={initialPropertyId}');
-    expect(modalSource).toContain('initialUnitId={initialUnitId}');
+    expect(formPageSource).toContain('initialPropertyId={initialPropertyId}');
+    expect(formPageSource).toContain('initialUnitId={initialUnitId}');
     expect(hookSource).toContain("property_id: isEdit ? '' : initialPropertyId");
     expect(hookSource).toContain("unit_id: isEdit ? '' : initialUnitId");
     expect(hookSource).toContain('getContractUnitDefaultRent');
