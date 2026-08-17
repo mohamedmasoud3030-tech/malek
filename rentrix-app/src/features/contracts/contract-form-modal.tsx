@@ -73,6 +73,8 @@ export function ContractFormModal({
         end_date: contractQuery.data.end_date,
         rent_amount: contractQuery.data.rent_amount,
         payment_cycle: contractQuery.data.payment_cycle,
+        billing_day: contractQuery.data.billing_day ?? 1,
+        grace_days: contractQuery.data.grace_days ?? 0,
         payment_terms_id: contractQuery.data.payment_terms_id ?? '',
         // Stored rows may carry the legacy 'ACTIVE'/'ENDED' spellings the
         // contracts CHECK still permits; the form works in canonical values.
