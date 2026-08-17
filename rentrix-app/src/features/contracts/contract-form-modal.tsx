@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { UserPlus } from 'lucide-react';
 import { RouteLoadingState } from '@/components/loading-state';
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { PersonFormModal } from '@/features/people/person-form-modal';
+import type { PaginatedPeople } from '@/features/people/people-service';
 import { getAppLanguageState, translateSharedLabel } from '@/lib/i18n';
 import type { Contract, Person } from '@/types/domain';
 import { ContractAgreementMissingAlert } from './components/ContractAgreementMissingAlert';
@@ -31,6 +33,7 @@ export function ContractFormModal({
   initialTenantId,
   onCreated,
 }: ContractFormModalProps) {
+  const queryClient = useQueryClient();
   const [tenantFormOpen, setTenantFormOpen] = useState(false);
   const controller = useContractForm({
     contractId,
@@ -106,9 +109,13 @@ export function ContractFormModal({
   }
 
   const selectCreatedTenant = (person: Person) => {
+    queryClient.setQueryData<PaginatedPeople>(['contracts', 'tenant-options'], (current) => {
+      if (!current) return { rows: [person], count: 1 };
+      if (current.rows.some((row) => row.id === person.id)) return current;
+      return { ...current, rows: [person, ...current.rows], count: current.count + 1 };
+    });
     form.setValue('tenant_id', person.id, { shouldDirty: true, shouldValidate: true });
     setTenantFormOpen(false);
-    void peopleQuery.refetch();
   };
 
   return (
