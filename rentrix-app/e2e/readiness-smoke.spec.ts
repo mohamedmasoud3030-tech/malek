@@ -74,6 +74,7 @@ test.describe('release readiness browser smoke', () => {
     const emailInput = page.getByRole('textbox', { name: 'البريد الإلكتروني', exact: true });
     const passwordInput = page.getByPlaceholder('••••••••');
     const passwordToggle = page.getByRole('button', { name: 'إظهار كلمة المرور' });
+    const forgotPasswordLink = page.getByRole('link', { name: 'نسيت كلمة المرور؟' });
     const submitButton = page.getByRole('button', { name: /تسجيل الدخول/ });
 
     await emailInput.focus();
@@ -82,6 +83,8 @@ test.describe('release readiness browser smoke', () => {
     await expect(passwordInput).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(passwordToggle).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(forgotPasswordLink).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(submitButton).toBeFocused();
   });
