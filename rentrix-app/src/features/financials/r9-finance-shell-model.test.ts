@@ -60,7 +60,7 @@ describe('Money workspace route model', () => {
     const financialsSource = readFileSync(resolve(import.meta.dirname, 'financials-page.tsx'), 'utf8');
     const moneySource = readFileSync(resolve(import.meta.dirname, '../finance-hub/money-page.tsx'), 'utf8');
     expect(financialsSource).toContain("from './finance-shell-model'");
-    expect(moneySource).toContain("from '../financials/finance-shell-model'");
+    expect(moneySource).toContain("from '@/features/financials/finance-shell-model'");
     expect(financialsSource).not.toContain('export const FINANCE_SECTIONS: readonly FinanceSectionDefinition[]');
     expect(moneySource).not.toContain('export const FINANCE_SECTIONS');
   });
