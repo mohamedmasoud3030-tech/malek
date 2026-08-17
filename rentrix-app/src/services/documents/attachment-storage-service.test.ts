@@ -29,10 +29,24 @@ describe('uploadAttachment', () => {
     expect(storage.upload).toHaveBeenCalledWith(expect.stringMatching(/\.pdf$/), expect.any(File), { upsert: false });
   });
 
+  it('rejects empty, oversized and unsupported files before any storage request', async () => {
+    await expect(uploadAttachment(new File([], 'empty.pdf', { type: 'application/pdf' }))).rejects.toThrow('فارغ');
+    await expect(uploadAttachment(new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.pdf', { type: 'application/pdf' }))).rejects.toThrow('5 ميغابايت');
+    await expect(uploadAttachment(new File(['<script>'], 'attack.html', { type: 'text/html' }))).rejects.toThrow('غير مدعوم');
+    expect(storage.upload).not.toHaveBeenCalled();
+  });
+
+  it('derives the stored extension from verified MIME rather than an attacker-controlled filename', async () => {
+    storage.upload.mockResolvedValue({ error: null });
+    const path = await uploadAttachment(new File(['content'], 'report.pdf.exe', { type: 'application/pdf' }));
+    expect(path).toMatch(/\.pdf$/);
+    expect(path).not.toContain('.exe');
+  });
+
   it('normalizes storage failures as errors', async () => {
     storage.upload.mockResolvedValue({ error: { message: 'bucket unavailable' } });
 
-    await expect(uploadAttachment(new File(['content'], 'agreement.pdf')))
+    await expect(uploadAttachment(new File(['content'], 'agreement.pdf', { type: 'application/pdf' })))
       .rejects.toThrow('bucket unavailable');
   });
 });

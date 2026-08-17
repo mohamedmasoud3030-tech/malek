@@ -141,6 +141,6 @@
 | Financial regression suite | 449/449 PASS |
 | TypeScript | PASS |
 | Browser automation current change | BLOCKED: Chromium CDN download failed |
-| Full application tests | 453 files / 2923 tests PASS |
+| Full application tests | 456 files / 2933 tests PASS |
 | Typecheck / lint / architecture / production build | PASS |
 | Live/production | NOT RUN / not authorized |

@@ -51,7 +51,7 @@
   },
   "pnpm": {
     "overrides": {
-      "dompurify": ">=3.4.12",
+      "dompurify": ">=3.4.13",
       "ws": ">=8.21.0"
     }
   }

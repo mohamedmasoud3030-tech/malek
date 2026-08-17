@@ -1,4 +1,4 @@
-import { ATTACHMENTS_BUCKET_ID } from '@/lib/attachments-contract';
+import { ATTACHMENTS_ALLOWED_MIME_TYPES, ATTACHMENTS_BUCKET_ID, ATTACHMENTS_MAX_FILE_SIZE } from '@/lib/attachments-contract';
 import { supabase } from '@/lib/supabase';
 
 const attachmentBucket = ATTACHMENTS_BUCKET_ID;
@@ -11,7 +11,16 @@ const attachmentBucket = ATTACHMENTS_BUCKET_ID;
  * are still rendered as-is by the field component.
  */
 export async function uploadAttachment(file: File): Promise<string> {
-  const extension = file.name.split('.').pop() ?? 'bin';
+  if (file.size <= 0) throw new Error('الملف فارغ ولا يمكن رفعه.');
+  if (file.size > ATTACHMENTS_MAX_FILE_SIZE) throw new Error('حجم الملف يتجاوز 5 ميغابايت.');
+  if (!ATTACHMENTS_ALLOWED_MIME_TYPES.has(file.type)) throw new Error('نوع الملف غير مدعوم.');
+  const extensionByMime: Record<string, string> = {
+    'application/pdf': 'pdf',
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  };
+  const extension = extensionByMime[file.type];
   const uniqueId = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Date.now().toString(36)}`;
   const path = `${Date.now()}-${uniqueId}.${extension}`;
   const { error } = await supabase.storage

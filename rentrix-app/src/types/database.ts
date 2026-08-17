@@ -138,6 +138,38 @@ export type Database = {
           },
         ];
       };
+      ai_assistant_rate_limits: {
+        Row: {
+          company_id: string;
+          user_id: string;
+          window_started_at: string;
+          request_count: number;
+          updated_at: string;
+        };
+        Insert: {
+          company_id: string;
+          user_id: string;
+          window_started_at: string;
+          request_count: number;
+          updated_at?: string;
+        };
+        Update: {
+          company_id?: string;
+          user_id?: string;
+          window_started_at?: string;
+          request_count?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_assistant_rate_limits_company_id_fkey';
+            columns: ['company_id'];
+            isOneToOne: false;
+            referencedRelation: 'companies';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       app_notifications: {
         Row: {
           id: string;
@@ -8006,6 +8038,13 @@ export type Database = {
           p_rate: number | null;
         };
         Returns: number;
+      };
+      consume_ai_assistant_quota_atomic: {
+        Args: {
+          p_window_seconds?: number | null;
+          p_max_requests?: number | null;
+        };
+        Returns: Json;
       };
       contract_evidence_actor_can_operate: {
         Args: Record<PropertyKey, never>;

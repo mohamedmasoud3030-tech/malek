@@ -173,7 +173,9 @@ describe('Today workspace query boundary tests', () => {
     const onboardingSlot = container?.querySelector('[data-dashboard-onboarding-slot]');
     const workNow = container?.querySelector('[data-dashboard-section="work-now"]');
     expect(onboardingSlot).not.toBeNull();
-    expect(onboardingSlot?.compareDocumentPosition(workNow as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(workNow).not.toBeNull();
+    if (!onboardingSlot || !workNow) throw new Error('Dashboard setup/work slots are required');
+    expect(onboardingSlot.compareDocumentPosition(workNow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const sectionOrder = Array.from(container?.querySelectorAll('[data-dashboard-section]') ?? [])
       .map((section) => section.getAttribute('data-dashboard-section'));
     expect(sectionOrder).toEqual(['work-now', 'actions', 'office-state', 'analytics']);
