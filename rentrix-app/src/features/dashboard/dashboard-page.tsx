@@ -124,6 +124,12 @@ export function DashboardPage() {
 
         {snapshotUnavailable ? null : (
           <>
+            {canManageSetup ? (
+              <div data-dashboard-onboarding-slot className="dashboard-section">
+                <OnboardingChecklist progress={progress} canManageSetup />
+              </div>
+            ) : null}
+
             <section className="dashboard-section" aria-label="مطلوب منك الآن" data-dashboard-section="work-now">
               <SectionHeader
                 title="مطلوب منك الآن"
@@ -185,8 +191,6 @@ export function DashboardPage() {
                 <ArrearsBreakdown snapshot={snapshot} settings={settings} />
               </section>
             ) : null}
-
-            <OnboardingChecklist progress={progress} canManageSetup={canManageSetup} />
           </>
         )}
       </DashboardVisualScope>

@@ -21,14 +21,17 @@ vi.mock('@/hooks/use-auth', () => ({
     user: { email: 'admin@malek.test' },
   }),
 }));
+const setSyncStatusSpy = vi.fn();
+let mockSyncStatus: 'idle' | 'offline' = 'idle';
 vi.mock('@/store/ui-store', () => ({
   useUiStore: () => ({
     sidebarCollapsed: false,
     theme: 'light',
     toggleSidebar: vi.fn(),
     setTheme: vi.fn(),
-    syncStatus: 'idle',
+    syncStatus: mockSyncStatus,
     lastSyncedAt: null,
+    setSyncStatus: setSyncStatusSpy,
   }),
 }));
 vi.mock('./layout-navigation-view', () => ({
@@ -51,6 +54,8 @@ describe('AppShell — fixed global MALEK header', () => {
     document.body.appendChild(host);
     root = createRoot(host);
     document.title = '';
+    mockSyncStatus = 'idle';
+    setSyncStatusSpy.mockClear();
   });
 
   afterEach(() => {
@@ -83,6 +88,31 @@ describe('AppShell — fixed global MALEK header', () => {
     act(() => { root.render(<AppShell />); });
     // Sidebar + mobile drawer + global header all carry the fixed brand.
     expect(host.querySelectorAll('[data-malek-brand-lockup]').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders an announced global warning when the browser is offline', () => {
+    mockSyncStatus = 'offline';
+    act(() => { root.render(<AppShell />); });
+
+    const notice = host.querySelector<HTMLElement>('[data-global-offline-notice]');
+    expect(notice).not.toBeNull();
+    expect(notice?.getAttribute('role')).toBe('status');
+    expect(notice?.textContent).toContain('لا يوجد اتصال بالشبكة');
+    expect(notice?.textContent).toContain('الحفظ والتحديث قد يفشلان');
+  });
+
+  it('synchronizes the global connection state with browser online/offline events', () => {
+    const onlineSpy = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    try {
+      act(() => { root.render(<AppShell />); });
+      expect(setSyncStatusSpy).toHaveBeenCalledWith('offline');
+
+      onlineSpy.mockReturnValue(true);
+      act(() => { window.dispatchEvent(new Event('online')); });
+      expect(setSyncStatusSpy).toHaveBeenLastCalledWith('idle');
+    } finally {
+      onlineSpy.mockRestore();
+    }
   });
 
   it('exposes the ARIA contract for the two menu controls (dialog + expanded state)', () => {

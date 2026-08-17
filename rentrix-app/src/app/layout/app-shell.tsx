@@ -24,7 +24,7 @@ function statusLabel(status: SyncStatus) {
   if (status === 'syncing') return 'جارٍ التحديث';
   if (status === 'offline') return 'وضع دون اتصال';
   if (status === 'error') return 'تحتاج المزامنة إلى مراجعة';
-  return 'متصل';
+  return 'متصل بالشبكة';
 }
 
 function Brand({ expanded }: Readonly<{ expanded: boolean }>) {
@@ -241,7 +241,7 @@ export function AppShell() {
   const router = useRouter();
   const matches = useMatches();
   const { authorization, logout, user } = useAuth();
-  const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt } = useUiStore();
+  const { sidebarCollapsed, theme, toggleSidebar, setTheme, syncStatus, lastSyncedAt, setSyncStatus } = useUiStore();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const mobileNavTriggerRef = useRef<HTMLButtonElement | null>(null);
   const appLanguage = getAppLanguageState();
@@ -269,6 +269,17 @@ export function AppShell() {
   useEffect(() => {
     document.title = `${pageTitle} | ${APP_BRAND_NAME}`;
   }, [pageTitle]);
+
+  useEffect(() => {
+    const updateNetworkState = () => setSyncStatus(navigator.onLine ? 'idle' : 'offline');
+    updateNetworkState();
+    window.addEventListener('online', updateNetworkState);
+    window.addEventListener('offline', updateNetworkState);
+    return () => {
+      window.removeEventListener('online', updateNetworkState);
+      window.removeEventListener('offline', updateNetworkState);
+    };
+  }, [setSyncStatus]);
 
   const handleLogout = async () => {
     await logout();
@@ -412,6 +423,20 @@ export function AppShell() {
         </header>
 
         <main id="main-content" tabIndex={-1} className="min-w-0 overflow-x-hidden outline-none">
+          {syncStatus === 'offline' ? (
+            <div
+              data-global-offline-notice
+              role="status"
+              aria-live="polite"
+              className="mx-3 mt-3 flex items-start gap-3 rounded-xl border border-[hsl(var(--color-warning-text)/0.28)] bg-[hsl(var(--color-warning-bg)/0.12)] px-4 py-3 text-warning sm:mx-4"
+            >
+              <ShieldAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">لا يوجد اتصال بالشبكة</p>
+                <p className="mt-0.5 text-xs leading-5 text-warning/85">يمكنك مراجعة البيانات الظاهرة، لكن الحفظ والتحديث قد يفشلان حتى يعود الاتصال.</p>
+              </div>
+            </div>
+          ) : null}
           {writeAccessNotice ? (
             <div
               role="status"

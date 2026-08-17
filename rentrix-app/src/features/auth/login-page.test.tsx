@@ -6,6 +6,9 @@ import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/re
 import { LoginPage } from './login-page';
 
 const mockLogin = vi.fn();
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, to, ...props }: { children: React.ReactNode; to: string } & Record<string, unknown>) => <a href={to} {...props}>{children}</a>,
+}));
 vi.mock('@/hooks/use-auth', () => ({ useAuth: () => ({ login: mockLogin }) }));
 vi.mock('@/lib/runtime-diagnostics', () => ({ getEnvDiagnostics: () => [] }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -34,8 +37,8 @@ describe('LoginPage — minimal SaaS contract', () => {
     expect(html).toContain('autoComplete="current-password"');
     expect(html).toContain('safe-top-app');
     expect(html).toContain('safe-bottom-overlay');
-    expect(html).not.toContain('نسيت');
-    expect(html).not.toContain('reset-password');
+    expect(html).toContain('نسيت كلمة المرور؟');
+    expect(html).toContain('/forgot-password');
   });
 
   it('keeps support compact until requested', () => {

@@ -1,4 +1,6 @@
--- Roll back the GAP-004 atomic owner-agreement creation boundary.
+-- Manual emergency rollback — not auto-applied; run by hand only after review.
+-- Rollback for: 20260830000000_wp03_gap004_owner_agreement_version_ui_authority.sql
+-- Restores the earlier authenticated agreement-version kernel grant and removes the RC1 wrappers.
 begin;
 revoke all on function public.create_future_owner_agreement_version_atomic(uuid,jsonb) from public, anon, authenticated, service_role;
 drop function if exists public.create_future_owner_agreement_version_atomic(uuid,jsonb);

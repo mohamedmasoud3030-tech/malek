@@ -25,22 +25,23 @@ begin
 
   -- The first version is created in this same transaction. Any invalid terms
   -- roll back both records, so an unversioned agreement cannot escape.
-  select to_jsonb(public.create_owner_agreement_version_atomic(
-    (v_agreement->>'id')::uuid,
-    jsonb_build_object(
-      'operating_model', coalesce(nullif(payload->>'operating_model', ''), 'OWNER_AGENCY'),
-      'collection_role', nullif(payload->>'collection_role', ''),
-      'commission_type', payload->>'commission_type',
-      'commission_value', payload->>'commission_value',
-      'offset_allowed', coalesce(nullif(payload->>'offset_allowed', '')::boolean, false),
-      'reserve_amount', coalesce(nullif(payload->>'reserve_amount', '')::numeric, 0),
-      'deposit_beneficiary', nullif(payload->>'deposit_beneficiary', ''),
-      'deposit_custodian', nullif(payload->>'deposit_custodian', ''),
-      'effective_from', payload->>'starts_on',
-      'effective_to', nullif(payload->>'ends_on', ''),
-      'notes', nullif(payload->>'notes', '')
-    )
-  )) into v_version;
+  execute 'select to_jsonb(public.create_owner_agreement_version_atomic($1,$2))'
+    into v_version
+    using
+      (v_agreement->>'id')::uuid,
+      jsonb_build_object(
+        'operating_model', coalesce(nullif(payload->>'operating_model', ''), 'OWNER_AGENCY'),
+        'collection_role', nullif(payload->>'collection_role', ''),
+        'commission_type', payload->>'commission_type',
+        'commission_value', payload->>'commission_value',
+        'offset_allowed', coalesce(nullif(payload->>'offset_allowed', '')::boolean, false),
+        'reserve_amount', coalesce(nullif(payload->>'reserve_amount', '')::numeric, 0),
+        'deposit_beneficiary', nullif(payload->>'deposit_beneficiary', ''),
+        'deposit_custodian', nullif(payload->>'deposit_custodian', ''),
+        'effective_from', payload->>'starts_on',
+        'effective_to', nullif(payload->>'ends_on', ''),
+        'notes', nullif(payload->>'notes', '')
+      );
 
   if v_version->>'id' is null then
     raise exception 'OWNER_AGREEMENT_INITIAL_VERSION_REQUIRED' using errcode = '23514';
@@ -99,18 +100,19 @@ begin
     p_status, p_notes
   ) into v_result;
 
-  select to_jsonb(public.create_owner_agreement_version_atomic(
-    (v_result->>'agreement_id')::uuid,
-    jsonb_build_object(
-      'operating_model', 'OWNER_AGENCY',
-      'collection_role', p_collection_role,
-      'commission_type', p_commission_type,
-      'commission_value', p_commission_value,
-      'effective_from', p_agreement_starts_on,
-      'effective_to', p_agreement_ends_on,
-      'notes', p_notes
-    )
-  )) into v_version;
+  execute 'select to_jsonb(public.create_owner_agreement_version_atomic($1,$2))'
+    into v_version
+    using
+      (v_result->>'agreement_id')::uuid,
+      jsonb_build_object(
+        'operating_model', 'OWNER_AGENCY',
+        'collection_role', p_collection_role,
+        'commission_type', p_commission_type,
+        'commission_value', p_commission_value,
+        'effective_from', p_agreement_starts_on,
+        'effective_to', p_agreement_ends_on,
+        'notes', p_notes
+      );
 
   if v_version->>'id' is null then
     raise exception 'OWNER_AGREEMENT_INITIAL_VERSION_REQUIRED' using errcode = '23514';
@@ -143,6 +145,7 @@ declare
   v_company uuid := public.require_company_id();
   v_effective_from date := nullif(p_terms->>'effective_from', '')::date;
   v_has_current boolean;
+  v_result jsonb;
 begin
   select exists (
     select 1
@@ -159,12 +162,21 @@ begin
     raise exception 'OWNER_AGREEMENT_VERSION_MUST_BE_FUTURE' using errcode = '22023';
   end if;
 
-  return to_jsonb(public.create_owner_agreement_version_atomic(p_owner_agreement_id, p_terms));
+  execute 'select to_jsonb(public.create_owner_agreement_version_atomic($1,$2))'
+    into v_result
+    using p_owner_agreement_id, p_terms;
+  return v_result;
 end;
 $function$;
 
 alter function public.create_future_owner_agreement_version_atomic(uuid,jsonb) owner to postgres;
-revoke all on function public.create_owner_agreement_version_atomic(uuid,jsonb) from authenticated;
+do $revoke_legacy$
+begin
+  if to_regprocedure('public.create_owner_agreement_version_atomic(uuid,jsonb)') is not null then
+    execute 'revoke all on function public.create_owner_agreement_version_atomic(uuid,jsonb) from authenticated';
+  end if;
+end;
+$revoke_legacy$;
 revoke all on function public.create_future_owner_agreement_version_atomic(uuid,jsonb) from public, anon;
 grant execute on function public.create_future_owner_agreement_version_atomic(uuid,jsonb) to authenticated, service_role;
 

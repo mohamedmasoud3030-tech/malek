@@ -15,7 +15,7 @@ MALEK is Arabic-first, RTL and mobile-conscious, but desktop remains a first-cla
 | `UX-002` | Canonical navigation/routes follow `route-contract.ts` and `route-tree.ts`; aliases/views preserve compatibility instead of inventing duplicate page authorities. |
 | `UX-003` | Financial operations use the `/financials` hub plus canonical `/finance/*` section routes/view bindings; legacy `/invoices`, `/receipts`, `/expenses`, `/deposits`, etc. are compatibility surfaces, not separate information architectures. |
 | `UX-004` | `/reports` (Accounting & Reports) remains a distinct top-level workspace and must not be visually or conceptually collapsed into Financials. |
-| `UX-005` | People is the navigation root for people/owners/tenants and related interactions; owner/tenant dossiers may have first-class routes while remaining part of the People domain. |
+| `UX-005` | Party identities remain one coherent domain, while navigation follows the owning task: tenants/people/leads/communication are Leasing children and owners/ownership are Portfolio children; standalone dossiers remain first-class deep links. |
 | `UX-006` | Maintenance/Services is an operational root; Service Providers is a company-scoped subordinate workflow with its own list/detail/create/edit routes and permissions. |
 | `UX-007` | AI Assistant is a separate `/ai-assistant` route; it is not embedded as accounting authority or a Reports tab. |
 | `UX-008` | Shared design tokens/components, company-aware money/date formatting, accessible states, printing/document guards and consistent loading/empty/error/permission states form one design contract; parallel token systems and hidden unsafe handlers are not allowed. |
@@ -26,52 +26,46 @@ Evidence: `rentrix-app/src/app/navigation/route-contract.ts`.
 
 ### Top-level operational roots
 
-- `/dashboard`
-- `/people`
-- `/properties`
-- `/lands`
-- `/contracts`
-- `/maintenance` (conceptually Services)
-- `/financials`
-- `/commissions`
-- `/reports`
-- `/ai-assistant`
-- `/settings`
+The global IA is task-centric and intentionally limited to seven visible roots:
 
-Not every route above is equally release-critical. Presence in the route contract proves the implemented navigation surface, not completion of its business lifecycle.
+1. Today — `/dashboard`
+2. Portfolio — `/properties`
+3. Leasing — `/contracts`
+4. Money — `/financials`
+5. Services — `/maintenance`
+6. Reports — `/reports`
+7. Settings — `/settings`
+
+Entity registers and specialist tools remain deep-linkable canonical routes, but are exposed as permission-aware children of the workspace that owns the user's task. Presence in the route contract proves an implemented surface, not completion of its business lifecycle.
 
 ### Route disposition matrix
 
 | Surface | URL/behavior at baseline | Visible navigation owner | Disposition |
 |---|---|---|---|
 | Dashboard | `/dashboard` renders | Dashboard | CANONICAL |
-| People | `/people`; owner/tenant/leads/communication first-class child routes | People | CANONICAL |
-| Properties/Units | `/properties`; `/units` redirects to `/properties?section=units` | Properties | CANONICAL + COMPATIBILITY redirect |
-| Lands | `/lands` and detail route | Lands | CANONICAL but not automatically pilot-critical |
-| Contracts | `/contracts` and create/detail/edit | Contracts | CANONICAL; canonical DB approval path not fully wired in UI |
-| Financials | `/financials`; `/finance/*` and legacy finance URLs redirect/bind to section/view search | Financials | CANONICAL HUB + COMPATIBILITY routes |
+| People | `/people`; owner/tenant/leads/communication first-class child routes | Leasing | CANONICAL CHILD + deep links |
+| Properties/Units | `/properties`; units, lands and owners are permission-aware Portfolio children; compatibility URLs preserve deep links | Portfolio | CANONICAL WORKSPACE + COMPATIBILITY routes |
+| Lands | `/lands` and detail route | Portfolio child | CANONICAL but not automatically pilot-critical |
+| Contracts | `/contracts` and create/detail/edit; tenants/people/leads/communication are Leasing children | Leasing | CANONICAL; approval/activation chain is wired and repository-tested |
+| Financials | `/financials`; finance operations are Money children; `/finance/*` and legacy finance URLs bind to section/view search | Money | CANONICAL WORKSPACE + COMPATIBILITY routes |
 | Reports | `/reports`; `/accounting` redirects to Reports accounting view | Reports | CANONICAL + COMPATIBILITY redirect |
-| Services | `/maintenance`; `/utilities` redirects to maintenance view; Service Providers have first-class CRUD routes | Services | CANONICAL + COMPATIBILITY redirect |
-| Settings/admin | `/settings`; `/system`, `/audit-log`, `/data-integrity`, `/automation`, `/change-password` redirect to settings sections | Settings | CANONICAL HUB + COMPATIBILITY routes |
-| AI Assistant | `/ai-assistant` is a standalone separate route page | no primary nav item | VERIFIED_IMPLEMENTED (`GAP-023` unblocked) |
-| Documents Vault | `/documents-vault` redirects to `/maintenance?section=documents_vault`; `documents_vault` is a real Operations Hub section (embedded DocumentsVaultWorkspace) acting as the aggregate documents authority, while contextual entity-level panels on properties/owners/units/contracts/maintenance remain complementary | no primary nav item | CANONICAL HUB + COMPATIBILITY redirect (was CONFLICTING/legacy surface under `UX-008/GAP-020`) |
+| Services | `/maintenance`; maintenance/providers/utilities/documents are Services children | Services | CANONICAL WORKSPACE + COMPATIBILITY routes |
+| Settings/admin | `/settings`; company/users/cost-centers/automation/system are permission-aware Settings children | Settings | CANONICAL WORKSPACE + COMPATIBILITY routes |
+| AI Assistant | `/ai-assistant` is a standalone separate route reached through the global action/search | no primary nav root | VERIFIED_IMPLEMENTED (`GAP-023` unblocked) |
+| Documents Vault | `/documents-vault` redirects to `/maintenance?section=documents_vault`; `documents_vault` is a real Services child (embedded DocumentsVaultWorkspace) acting as the aggregate documents authority, while contextual entity-level panels remain complementary | Services child | CANONICAL WORKSPACE + COMPATIBILITY redirect |
 | Dev design system | `/dev/design-system`, DEV-only | none | HIDDEN development surface, not product IA |
 
-### People domain
+### Parties and relationships
 
-- `/people`
-- `/owners`, `/owners/$ownerId`, `/owners/$ownerId/edit`
-- `/tenants`, `/tenants/$tenantId`
-- `/leads`
-- `/communication`
-
-Owners and tenants remain dossiers/workspaces under the People navigation root rather than being treated as unrelated products.
+- `/people`, `/tenants`, `/leads` and `/communication` are discoverable Leasing children because their primary job is the rental relationship.
+- `/owners`, owner dossiers and ownership management are discoverable Portfolio children because their primary job is authority over managed assets.
+- The standalone URLs remain canonical deep links; this IA placement does not merge owner, tenant or generic person identities in the data model.
 
 ### Properties and assets
 
-- `/properties`, create/detail/edit
-- `/units` binds into the Properties section
-- `/lands` is a separate first-class asset route where implemented
+- `/properties`, create/detail/edit are owned by Portfolio.
+- units, lands and owners are expandable Portfolio children with route/search context preserved.
+- `/units`, `/lands` and owner URLs remain deep-linkable compatibility/entity surfaces.
 
 ### Services
 
@@ -124,7 +118,7 @@ Evidence includes `rentrix-app/src/index.css`, `rentrix-app/src/components/ui/**
 
 ## State contract
 
-Every protected/loaded surface must have intentional loading, empty, error and permission-denied states. A route must not render a blank screen merely because a query failed or data is absent.
+Every protected/loaded surface must have intentional loading, empty, error and permission-denied states. A route must not render a blank screen merely because a query failed or data is absent. The global shell reflects browser network loss on phone and desktop with an announced, honest warning; it must not describe `navigator.onLine` as successful backend synchronization or promise that a write was queued. Authentication recovery uses a neutral request result (no account enumeration), a public limited-life reset callback, explicit invalid/expired-link recovery and new-password autocomplete semantics; deployed email delivery and redirect allowlists still require hosted proof.
 
 ## Printing and documents
 

@@ -60,6 +60,8 @@ const requirePermission = (permission: AppPermission) => async () => {
 };
 
 const loginRoute = createRoute({ getParentRoute: () => authRoute, path: '/login', component: lazyRouteComponent(() => import('@/routes/_auth.login'), 'LoginRouteComponent'), staticData: { title: 'تسجيل الدخول' } });
+const forgotPasswordRoute = createRoute({ getParentRoute: () => authRoute, path: '/forgot-password', component: lazyRouteComponent(() => import('@/routes/_auth.forgot-password'), 'ForgotPasswordRouteComponent'), staticData: { title: 'استعادة كلمة المرور' } });
+const resetPasswordRoute = createRoute({ getParentRoute: () => rootRoute, path: '/reset-password', component: lazyRouteComponent(() => import('@/routes/reset-password'), 'ResetPasswordRouteComponent'), staticData: { title: 'تعيين كلمة مرور جديدة' } });
 const dashboardRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/dashboard', component: lazyRouteComponent(() => import('@/routes/_protected.index'), 'DashboardRouteComponent'), staticData: { title: 'لوحة التحكم' } });
 const propertiesRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties', component: lazyRouteComponent(() => import('@/routes/_protected.properties'), 'PropertiesRouteComponent'), staticData: { title: 'العقارات' } });
 const propertyNewRoute = createRoute({ getParentRoute: () => protectedRoute, path: '/properties/new', beforeLoad: requirePermission('properties.write'), component: lazyRouteComponent(() => import('@/routes/_protected.properties.new'), 'PropertyNewRouteComponent'), staticData: { title: 'إضافة عقار' } });
@@ -389,7 +391,8 @@ const designSystemRoute = createRoute({
 });
 
 export const routeTree = rootRoute.addChildren([
-  authRoute.addChildren([loginRoute]),
+  authRoute.addChildren([loginRoute, forgotPasswordRoute]),
+  resetPasswordRoute,
   landingRoute,
   landingCompatRoute,
   privacyRoute,

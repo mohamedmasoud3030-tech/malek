@@ -90,7 +90,7 @@ export function OnboardingChecklist({
   const requiredSteps = steps.filter((step) => !step.optional);
   const doneRequired = requiredSteps.filter((step) => step.done).length;
   const allRequiredDone = doneRequired === requiredSteps.length;
-  const progressPct = Math.round((doneRequired / requiredSteps.length) * 100);
+  const progressPct = requiredSteps.length === 0 ? 100 : Math.round((doneRequired / requiredSteps.length) * 100);
 
   const openWaiver = (step: Step) => {
     const requirement = requirements.find((req) => req.code === step.id);
@@ -113,7 +113,7 @@ export function OnboardingChecklist({
     return (
       <Card variant="default" className="border-border/60">
         <CardContent className="space-y-2">
-          <CardTitle className="text-base">إعداد حسابك</CardTitle>
+          <CardTitle className="text-base">جهّز مكتبك لأول عملية إيجار</CardTitle>
           <p className="text-xs text-muted-foreground">
             خطوات الإعداد غير متاحة حالياً — حاول مرة أخرى لاحقاً.
           </p>
@@ -131,13 +131,13 @@ export function OnboardingChecklist({
               <ListChecks className="size-5" aria-hidden="true" />
             </div>
             <div>
-              <CardTitle className="text-base">إعداد حسابك</CardTitle>
+              <CardTitle className="text-base">جهّز مكتبك لأول عملية إيجار</CardTitle>
               <p className="mt-1 text-xs font-bold text-muted-foreground">
-                اتبع الترتيب التشغيلي الصحيح: المالك ثم العقار والوحدة والعقد.
+                ابدأ بالمالك، ثم العقار والوحدة، وبعدها أنشئ مسودة العقد واعتمدها.
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" aria-label="إكمال الإعداد لاحقًا" onClick={onboarding.dismissLater}>
+          <Button variant="ghost" size="icon" aria-label="متابعة الإعداد لاحقًا" onClick={onboarding.dismissLater}>
             <X className="size-4" />
           </Button>
         </CardHeader>
@@ -214,7 +214,7 @@ export function OnboardingChecklist({
           <div className="flex justify-end pt-1">
             <Button size="sm" disabled={!allRequiredDone} onClick={onboarding.complete}>
               <CheckCircle2 className="me-2 size-4" />
-              {allRequiredDone ? 'تم، إنهاء' : 'أكمل الخطوات المطلوبة أولاً'}
+              {allRequiredDone ? 'اعتماد اكتمال الإعداد' : 'أكمل الخطوات المطلوبة أولاً'}
             </Button>
           </div>
         </CardContent>
