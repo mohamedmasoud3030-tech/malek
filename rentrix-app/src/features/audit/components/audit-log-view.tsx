@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ShieldCheck } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
-import { RouteLoadingState } from '@/components/loading-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Button } from '@/components/ui/button';
 import { EntityTable, type ColumnDef } from '@/components/ui/entity-table';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -23,7 +23,7 @@ function formatAuditDate(settings: CompanySettingsContract, value: string): stri
 
 export function AuditLogView({ state }: Readonly<{ state: AuditLogViewState }>) {
   const companySettings = useCompanySettingsContract();
-  if (state.status === 'loading') return <RouteLoadingState />;
+  if (state.status === 'loading') return <LoadingState variant="route" />;
   if (state.status === 'error') {
     return <DataErrorScreen title="تعذر تحميل سجل التدقيق" fallbackMessage="يمكن إعادة المحاولة لاحقاً دون تغيير أي بيانات." error={state.error} />;
   }

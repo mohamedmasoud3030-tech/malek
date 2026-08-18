@@ -4,7 +4,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { RouteLoadingState } from '@/components/loading-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { Input } from '@/components/ui/input';
@@ -558,7 +558,7 @@ function PropertyEditModal({
       headerExtra={form.formState.isDirty && !updateMutation.isPending ? <StatusBadge tone="warning">{translateSharedLabel('unsavedChanges', getAppLanguageState().language)}</StatusBadge> : undefined}
     >
       {propertyQuery.isLoading ? (
-        <RouteLoadingState />
+        <LoadingState variant="route" />
       ) : (
         <EntityForm.Root className="md:grid-cols-2" onSubmit={handleSubmit} aria-busy={updateMutation.isPending}>
           <EntityForm.ErrorSummary className="md:col-span-2" message={submitError} />

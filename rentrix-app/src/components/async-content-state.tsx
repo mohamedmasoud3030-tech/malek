@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { RouteLoadingState } from '@/components/loading-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
 
@@ -17,7 +17,7 @@ interface AsyncContentStateProps {
 
 /**
  * Unified loading/error/empty/ready wrapper for pages that fetch data.
- * Reuses the existing RouteLoadingState, DataErrorScreen, and EmptyState —
+ * Reuses the existing LoadingState (route variant), DataErrorScreen, and EmptyState —
  * it does not introduce a new visual treatment, only a single place to
  * decide which of the four states applies instead of re-deriving the same
  * `isLoading`/`isError`/`!data` chain on every page.
@@ -48,7 +48,7 @@ export function AsyncContentState({
   emptyAction,
   children,
 }: AsyncContentStateProps) {
-  if (status === 'loading') return <RouteLoadingState />;
+  if (status === 'loading') return <LoadingState variant="route" />;
   if (status === 'error') return <DataErrorScreen title={errorTitle} fallbackMessage={errorFallbackMessage} error={error} action={errorAction} />;
   if (status === 'empty') return <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />;
   return <>{children}</>;

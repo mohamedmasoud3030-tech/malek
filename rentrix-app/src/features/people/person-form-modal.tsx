@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { RouteLoadingState } from '@/components/loading-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EntityForm } from '@/components/ui/entity-form';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -127,7 +127,7 @@ export function PersonFormModal({ open, onClose, personId, defaultType = 'tenant
         ) : undefined}
       >
         {isEdit && personQuery.isLoading ? (
-          <RouteLoadingState />
+          <LoadingState variant="route" />
         ) : (
           <EntityForm.Root
             className="md:grid-cols-2"

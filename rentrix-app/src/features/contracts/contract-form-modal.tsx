@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { UserPlus } from 'lucide-react';
-import { RouteLoadingState } from '@/components/loading-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Button } from '@/components/ui/button';
 import { EntityForm } from '@/components/ui/entity-form';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -136,7 +136,7 @@ export function ContractFormModal({
         }
       >
         {isEdit && contractQuery.isLoading ? (
-          <RouteLoadingState />
+          <LoadingState variant="route" />
         ) : (
           <>
             {!isEdit && initialPropertyId && initialUnitId ? (

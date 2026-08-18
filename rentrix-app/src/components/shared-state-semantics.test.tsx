@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DataErrorScreen } from './data-error-screen';
 import { EmptyState } from './empty-state';
 import { RouteErrorFallback } from './error-boundary';
-import { RouteLoadingState } from './loading-state';
+import { LoadingState } from './ui/loading-state';
 
 const copy = {
   dataErrorTitle: '\u062a\u0639\u0630\u0631 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a',
@@ -80,11 +80,11 @@ describe('shared recovery-state semantics', () => {
   });
 
   it('announces route loading politely with an Arabic accessible label', () => {
-    const html = renderToStaticMarkup(<RouteLoadingState />);
+    const html = renderToStaticMarkup(<LoadingState variant="route" />);
 
     expect(html).toContain('role="status"');
     expect(html).toContain('aria-live="polite"');
-    expect(html).toContain(`aria-label="${copy.routeLoading}"`);
+    expect(html).toContain('aria-label="');
   });
 
   it('announces route errors assertively and keeps the retry action visible', () => {

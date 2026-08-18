@@ -1,7 +1,7 @@
 import { CheckCircle2, TriangleAlert } from 'lucide-react';
 import { DataErrorScreen } from '@/components/data-error-screen';
 import { EmptyState } from '@/components/empty-state';
-import { RouteLoadingState } from '@/components/loading-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCompanySettingsContract } from '@/features/settings/useCompanySettings';
 import { formatCompanyDateTime } from '@/lib/companyFormatters';
@@ -15,7 +15,7 @@ export type DataIntegrityViewState =
 export function DataIntegrityView({ state }: Readonly<{ state: DataIntegrityViewState }>) {
   const companySettings = useCompanySettingsContract();
 
-  if (state.status === 'loading') return <RouteLoadingState />;
+  if (state.status === 'loading') return <LoadingState variant="route" />;
 
   if (state.status === 'error') {
     return <DataErrorScreen title="تعذر تشغيل فحص سلامة البيانات" fallbackMessage="لم يتم تنفيذ أي تغييرات على البيانات. أعد المحاولة لاحقاً." error={state.error} />;

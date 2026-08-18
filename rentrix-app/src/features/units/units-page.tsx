@@ -13,7 +13,7 @@ import {
   getUnitPageStatus,
 } from "./use-units-list-controller";
 import { EmbeddableWorkspace } from "@/components/layout/embeddable-workspace";
-import { RouteLoadingState } from "@/components/loading-state";
+import { LoadingState } from "@/components/ui/loading-state";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -62,7 +62,7 @@ export type UnitsWorkspaceProps = Readonly<{
 
 export function UnitsWorkspace({ embedded = false }: UnitsWorkspaceProps) {
   const ctrl = useUnitsListController();
-  if (ctrl.isLoading) return <RouteLoadingState />;
+  if (ctrl.isLoading) return <LoadingState variant="route" />;
 
   const totalUnits = ctrl.units.length;
   const occupancyRate = totalUnits > 0
