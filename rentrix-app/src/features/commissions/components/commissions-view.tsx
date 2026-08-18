@@ -31,31 +31,12 @@ import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatMoney } from "@/hooks/useCompanyFormatters";
 import { CommissionSourceSelector } from "./CommissionSourceSelector";
+import { commissionStatusLabels, commissionTypeLabels, commissionStatusTone } from "../labels";
 import type {
   CommissionFilters,
   CommissionFormValues,
   CommissionRecord,
 } from "../types";
-
-const statusLabels: Record<string, string> = {
-  pending: "قيد المراجعة",
-  approved: "معتمدة للتتبع",
-  paid: "مسجلة كمدفوعة",
-  cancelled: "ملغاة",
-};
-const typeLabels: Record<string, string> = {
-  contract: "عقد",
-  payment: "تحصيل",
-  owner: "مالك",
-  lead: "عميل محتمل",
-  land: "أرض",
-};
-const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "neutral"> = {
-  pending: "warning",
-  approved: "info",
-  paid: "success",
-  cancelled: "danger",
-};
 
 function money(value: number | null) {
   if (value == null) return "—";
@@ -64,7 +45,7 @@ function money(value: number | null) {
 
 function formatSourceLabel(type: string | null, sourceId: string | null): string {
   if (!sourceId) return "بدون مصدر محدد";
-  const prefix = typeLabels[type ?? ""] ?? type ?? "مصدر";
+  const prefix = commissionTypeLabels[type ?? ""] ?? type ?? "مصدر";
   return sourceId ? `من ${prefix} مرتبط` : 'غير مرتبط بمصدر';
 }
 
@@ -150,10 +131,10 @@ export function CommissionsView(props: Props) {
     activeFilters.push({ key: "query", label: "بحث", value: filters.query, onRemove: () => onFiltersChange({ ...filters, query: "" }) });
   }
   if (filters.status !== "all") {
-    activeFilters.push({ key: "status", label: "الحالة", value: statusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: "all" }) });
+    activeFilters.push({ key: "status", label: "الحالة", value: commissionStatusLabels[filters.status] ?? filters.status, onRemove: () => onFiltersChange({ ...filters, status: "all" }) });
   }
   if (filters.type !== "all") {
-    activeFilters.push({ key: "type", label: "النوع", value: typeLabels[filters.type] ?? filters.type, onRemove: () => onFiltersChange({ ...filters, type: "all" }) });
+    activeFilters.push({ key: "type", label: "النوع", value: commissionTypeLabels[filters.type] ?? filters.type, onRemove: () => onFiltersChange({ ...filters, type: "all" }) });
   }
 
   const hasCalculatedAmount = Boolean(draft.amount.trim()) || (Boolean(draft.deal_value.trim()) && Number(draft.percentage) > 0);
@@ -206,11 +187,11 @@ export function CommissionsView(props: Props) {
             <>
               <Select value={filters.status} onChange={(event) => onFiltersChange({ ...filters, status: event.target.value })} aria-label="حالة العمولة" className="min-h-11 w-full sm:w-48">
                 <option value="all">كل الحالات</option>
-                {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                {Object.entries(commissionStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </Select>
               <Select value={filters.type} onChange={(event) => onFiltersChange({ ...filters, type: event.target.value })} aria-label="نوع العمولة" className="min-h-11 w-full sm:w-48">
                 <option value="all">كل الأنواع</option>
-                {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                {Object.entries(commissionTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </Select>
             </>
           }
@@ -269,12 +250,12 @@ export function CommissionsView(props: Props) {
           </EntityForm.Field>
           <EntityForm.Field label="نوع المصدر">
             <Select value={draft.type} onChange={(event) => onDraftChange({ ...draft, type: event.target.value })}>
-              {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              {Object.entries(commissionTypeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </EntityForm.Field>
           <EntityForm.Field label="الحالة">
             <Select value={draft.status} onChange={(event) => onDraftChange({ ...draft, status: event.target.value })}>
-              {Object.entries(statusLabels).filter(([val]) => val !== "paid").map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              {Object.entries(commissionStatusLabels).filter(([val]) => val !== "paid").map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </EntityForm.Field>
           <EntityForm.Field label="المصدر">
@@ -303,7 +284,7 @@ export function CommissionsView(props: Props) {
         open={archiveCandidate != null}
         onOpenChange={(open) => { if (!open && !isArchiving) setArchiveCandidate(null); }}
         title={`إلغاء العمولة لـ ${archiveCandidate?.staff_name ?? ""}؟`}
-        description={`سيتم إلغاء العمولة للموظف "${archiveCandidate?.staff_name ?? ""}" — المبلغ: ${money(archiveCandidate?.amount ?? 0)} — الحالة الحالية: ${archiveCandidate?.status ? statusLabels[archiveCandidate.status] ?? archiveCandidate.status : ''}. لن تُحتسب ضمن المبالغ النشطة ويمكن مراجعتها في الأرشيف.`}
+        description={`سيتم إلغاء العمولة للموظف "${archiveCandidate?.staff_name ?? ""}" — المبلغ: ${money(archiveCandidate?.amount ?? 0)} — الحالة الحالية: ${archiveCandidate?.status ? commissionStatusLabels[archiveCandidate.status] ?? archiveCandidate.status : ''}. لن تُحتسب ضمن المبالغ النشطة ويمكن مراجعتها في الأرشيف.`}
         confirmLabel="تأكيد الإلغاء"
         isLoading={isArchiving}
         onConfirm={async () => {
@@ -443,14 +424,14 @@ function CommissionRows({
             </span>
           ),
         },
-        { key: "type", priority: 'secondary' as const, header: "النوع", render: (row) => typeLabels[row.type ?? ""] ?? row.type ?? "—" },
+        { key: "type", priority: 'secondary' as const, header: "النوع", render: (row) => commissionTypeLabels[row.type ?? ""] ?? row.type ?? "—" },
         { key: "amount", priority: 'primary' as const, header: "المبلغ", render: (row) => <span dir="ltr" className="tabular-nums font-bold">{money(row.amount)}</span> },
         {
           key: "status", priority: 'secondary' as const,
           header: "الحالة",
           render: (row) => (
             <span className="flex flex-col items-start gap-1">
-              <StatusBadge tone={statusTone[row.status ?? ""] ?? "neutral"}>{statusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
+              <StatusBadge tone={commissionStatusTone[row.status ?? ""] ?? "neutral"}>{commissionStatusLabels[row.status ?? ""] ?? row.status ?? "—"}</StatusBadge>
               {nextActionLabels[row.status ?? ""] ? <span className="text-[10px] font-semibold text-muted-foreground">{nextActionLabels[row.status ?? ""]}</span> : null}
             </span>
           ),
