@@ -15,7 +15,13 @@ export function leadPayload(values: LeadFormValues): LeadInsert {
 }
 
 export async function listLeads(filters: LeadFilters) {
-  let query = supabase.from('leads').select('*').order('created_at', { ascending: false });
+  // Deterministic order (created_at + id) keeps paged/full reads stable when
+  // multiple leads share the same timestamp.
+  let query = supabase
+    .from('leads')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false });
   if (filters.status !== 'all') query = query.eq('status', filters.status);
   if (filters.source !== 'all') query = query.eq('source', filters.source);
   if (filters.query.trim()) {
@@ -50,10 +56,12 @@ export async function updateLead(id: string, values: LeadFormValues) {
     .from('leads')
     .select('status')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (currentError) handleSupabaseError(currentError, 'تعذر التحقق من حالة العميل المحتمل');
+  const currentRow = (Array.isArray(current) ? current[0] ?? null : current) as Pick<LeadRecord, 'status'> | null;
+  if (!currentRow) throw new Error('العميل المحتمل غير موجود أو غير متاح لصلاحياتك.');
   assertLeadStatusTransition(
-    leadStatusSchema.parse((current as Pick<LeadRecord, 'status'> | null)?.status),
+    leadStatusSchema.parse(currentRow.status),
     leadStatusSchema.parse(basePayload.status),
   );
 

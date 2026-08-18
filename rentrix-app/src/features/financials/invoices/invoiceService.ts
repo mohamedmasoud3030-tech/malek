@@ -89,11 +89,27 @@ export async function listInvoicesForProperty(propertyId: string): Promise<Invoi
 }
 
 export async function getInvoiceDetail(invoiceId: string): Promise<InvoiceDetail> {
-  const { data: invoice, error: invoiceError } = await supabase.from('invoices').select(invoiceSelect).eq('id', invoiceId).is('deleted_at', null).single().returns<InvoiceListItem>();
-  if (invoiceError || !invoice) throw invoiceError ?? new Error('Invoice not found');
-  const { data: payments, error: paymentsError } = await supabase.from('payments').select('*').eq('invoice_id', invoiceId).is('deleted_at', null).order('payment_date', { ascending: false }).returns<Payment[]>();
+  const { data: invoice, error: invoiceError } = await supabase
+    .from('invoices')
+    .select(invoiceSelect)
+    .eq('id', invoiceId)
+    .is('deleted_at', null)
+    .maybeSingle()
+    .returns<InvoiceListItem>();
+  if (invoiceError) throw invoiceError;
+  // Zero-row lookups must be an explicit not-found, not a PostgREST 406 from
+  // `.single()`. Also normalize a lenient 200+[] payload to null.
+  const invoiceRow = (Array.isArray(invoice) ? invoice[0] ?? null : invoice) as InvoiceListItem | null;
+  if (!invoiceRow) throw new Error('الفاتورة غير موجودة أو غير متاحة لصلاحياتك.');
+  const { data: payments, error: paymentsError } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('invoice_id', invoiceId)
+    .is('deleted_at', null)
+    .order('payment_date', { ascending: false })
+    .returns<Payment[]>();
   if (paymentsError) throw paymentsError;
-  return Object.assign(invoice as InvoiceListItem, { payments: payments ?? [] });
+  return Object.assign(invoiceRow, { payments: payments ?? [] });
 }
 
 export async function generateInvoicesFromActiveContracts(): Promise<number> {

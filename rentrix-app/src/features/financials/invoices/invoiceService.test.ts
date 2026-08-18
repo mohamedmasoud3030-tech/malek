@@ -17,7 +17,7 @@ type InvoiceSummaryFixture = Pick<Invoice, 'amount' | 'paid_amount'>;
 type InvoiceFixture = InvoiceSummaryFixture & Pick<Invoice, 'id' | 'status'> & { contracts: null };
 type PaymentFixture = Pick<Payment, 'id' | 'invoice_id' | 'amount' | 'payment_date' | 'deleted_at'>;
 type ChainMethod = 'select' | 'is' | 'eq' | 'in' | 'or' | 'order' | 'range';
-type QueryBuilder = Record<ChainMethod | 'single' | 'returns', ReturnType<typeof vi.fn>>;
+type QueryBuilder = Record<ChainMethod | 'single' | 'maybeSingle' | 'returns', ReturnType<typeof vi.fn>>;
 
 const chainMethods: ChainMethod[] = ['select', 'is', 'eq', 'in', 'or', 'order'];
 
@@ -65,6 +65,10 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
     log.push({ table, method: 'single', args: [] });
     return builder;
   });
+  builder.maybeSingle = vi.fn(() => {
+    log.push({ table, method: 'maybeSingle', args: [] });
+    return builder;
+  });
   builder.range = vi.fn(async (from: number, to: number) => {
     log.push({ table, method: 'range', args: [from, to] });
     const rows = responses[table as TableName] ?? [];
@@ -73,8 +77,10 @@ function createQueryBuilder(table: string, responses: TableResponses, log: Query
   builder.returns = vi.fn(async () => {
     log.push({ table, method: 'returns', args: [] });
     const rows = responses[table as TableName] ?? [];
+    const wantsSingle =
+      Boolean(builder.single?.mock.calls.length) || Boolean(builder.maybeSingle?.mock.calls.length);
     return {
-      data: table === 'invoices' && builder.single?.mock.calls.length ? rows[0] ?? null : rows,
+      data: table === 'invoices' && wantsSingle ? rows[0] ?? null : rows,
       error: null,
     };
   });
@@ -144,8 +150,15 @@ describe('invoiceService financial reconciliation', () => {
     expect(summarizeInvoices([invoice])).toMatchObject({ totalAmount: 1200, totalPaid: 700, totalRemaining: 500 });
     expect(log).toEqual(expect.arrayContaining([
       { table: 'invoices', method: 'eq', args: ['id', 'invoice_1'] },
+      { table: 'invoices', method: 'maybeSingle', args: [] },
       { table: 'payments', method: 'eq', args: ['invoice_id', 'invoice_1'] },
       { table: 'payments', method: 'is', args: ['deleted_at', null] },
     ]));
+  });
+
+  it('returns an explicit Arabic not-found for a missing invoice instead of a 406 single-row error', async () => {
+    mockSupabaseTables({ invoices: [] });
+    const { getInvoiceDetail } = await import('./invoiceService');
+    await expect(getInvoiceDetail('missing-invoice')).rejects.toThrow('الفاتورة غير موجودة');
   });
 });

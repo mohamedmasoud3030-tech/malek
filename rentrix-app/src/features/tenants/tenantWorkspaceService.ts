@@ -151,10 +151,12 @@ export async function getTenantDossier(tenantId: string, options: { includeFinan
     .eq('id', tenantId)
     .eq('type', 'tenant')
     .is('deleted_at', null)
-    .single()
+    .maybeSingle()
     .returns<TenantPerson>();
   if (personError) throw personError;
-  if (!person) throw new Error('المستأجر غير موجود أو غير متاح لصلاحياتك.');
+  // `.maybeSingle()` avoids 406 on missing tenants; normalize empty arrays too.
+  const personRow = (Array.isArray(person) ? person[0] ?? null : person) as TenantPerson | null;
+  if (!personRow) throw new Error('المستأجر غير موجود أو غير متاح لصلاحياتك.');
 
   const { data: contractsData, error: contractsError } = await (supabase as any)
     .from('contracts')
@@ -176,7 +178,7 @@ export async function getTenantDossier(tenantId: string, options: { includeFinan
   ]);
   if (invoiceResult.error) throw invoiceResult.error;
   if (activityResult.error) throw activityResult.error;
-  return { person, contracts, invoices: invoiceResult.data ?? [], latestActivity: activityResult.data ?? [] } as TenantDossier;
+  return { person: personRow, contracts, invoices: invoiceResult.data ?? [], latestActivity: activityResult.data ?? [] } as TenantDossier;
 }
 
 function getInvoicesByTenant(contractsByTenant: Record<string, TenantContract[]>, invoicesByContract: Record<string, TenantInvoice[]>) {

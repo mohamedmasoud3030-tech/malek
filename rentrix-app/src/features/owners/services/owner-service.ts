@@ -248,9 +248,14 @@ function getTodayLocalDate(): string {
 }
 
 export async function listOwners(): Promise<Owner[]> {
+  // Soft-deleted owners must not appear in the hub register. Operational
+  // selectors already filter deleted_at; the main list previously did not,
+  // which made archived owners look "alive" on Portfolio while detail/get
+  // paths (and property joins that filter deleted owners) disagreed.
   const { rows } = await fetchAllRows<Owner>(() => supabase
     .from('owners')
     .select('*')
+    .is('deleted_at', null)
     .order('full_name', { ascending: true })
     .order('id', { ascending: true })
     .returns<Owner[]>());
@@ -274,11 +279,16 @@ export async function getOwner(ownerId: string): Promise<Owner> {
     .from('owners')
     .select('*')
     .eq('id', ownerId)
-    .single()
+    .is('deleted_at', null)
+    .maybeSingle()
     .returns<Owner>();
 
   if (error) handleSupabaseError(error, 'تعذر تحميل بيانات المالك');
-  return requireSupabaseData(data, 'تعذر تحميل بيانات المالك');
+  // `.maybeSingle()` returns null for zero rows instead of PostgREST 406.
+  // Normalize a lenient 200+[] payload so callers never treat an empty array
+  // as a real owner record.
+  const row = Array.isArray(data) ? (data[0] ?? null) : data;
+  return requireSupabaseData(row, 'تعذر تحميل بيانات المالك');
 }
 
 export async function createOwner(payload: OwnerPayload): Promise<Owner> {

@@ -163,6 +163,15 @@ describe('owner service normalization helpers', () => {
     expect(ownerServiceSource).toContain(".is('deleted_at', null)");
     expect(ownerServiceSource).toContain(".eq('is_active', true)");
   });
+
+  it('keeps the owners hub register free of soft-deleted rows and uses maybeSingle on detail reads', () => {
+    const ownerServiceSource = readFileSync(new URL('./owner-service.ts', import.meta.url), 'utf8');
+    expect(ownerServiceSource).toContain('export async function listOwners');
+    // listOwners and getOwner both filter deleted_at so hub vs detail stay consistent.
+    expect(ownerServiceSource.match(/\.is\('deleted_at', null\)/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
+    expect(ownerServiceSource).toContain('.maybeSingle()');
+    expect(ownerServiceSource).toMatch(/export async function getOwner[\s\S]*?\.maybeSingle\(\)/);
+  });
 });
 
 describe('owner read helpers', () => {

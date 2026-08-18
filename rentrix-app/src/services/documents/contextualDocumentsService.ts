@@ -129,10 +129,17 @@ export async function uploadContextualDocument(params: {
 
 export async function replaceContextualDocument(documentId: string, file: File) {
   validateContextualDocumentFile(file);
-  const { data: existing, error: readError } = await (supabase as any).from('vault_documents').select('id,related_entity_type,related_entity_id,storage_path,metadata').eq('id', documentId).is('deleted_at', null).single();
-  if (readError || !existing) throw readError ?? new Error('المستند غير موجود.');
-  const entityType = existing.related_entity_type as DocumentEntityType;
-  const newStoragePath = buildStoragePath(entityType, existing.related_entity_id, file);
+  const { data: existing, error: readError } = await (supabase as any).from('vault_documents').select('id,related_entity_type,related_entity_id,storage_path,metadata').eq('id', documentId).is('deleted_at', null).maybeSingle();
+  if (readError) throw readError;
+  const existingRow = (Array.isArray(existing) ? existing[0] ?? null : existing) as {
+    related_entity_type: string;
+    related_entity_id: string;
+    storage_path: string | null;
+    metadata: unknown;
+  } | null;
+  if (!existingRow) throw new Error('المستند غير موجود.');
+  const entityType = existingRow.related_entity_type as DocumentEntityType;
+  const newStoragePath = buildStoragePath(entityType, existingRow.related_entity_id, file);
   const { error: uploadError } = await supabase.storage.from('attachments').upload(newStoragePath, file, { upsert: false, contentType: file.type });
   if (uploadError) throw uploadError;
   const replacedAt = new Date().toISOString();
@@ -143,7 +150,7 @@ export async function replaceContextualDocument(documentId: string, file: File) 
     file_size: file.size,
     mime_type: file.type,
     document_type: documentTypeFromMime(file.type),
-    metadata: typedMetadata(file, replacedAt, (existing.metadata ?? null) as DocumentTypedMetadata | null),
+    metadata: typedMetadata(file, replacedAt, (existingRow.metadata ?? null) as DocumentTypedMetadata | null),
     updated_at: replacedAt,
   }).eq('id', documentId).is('deleted_at', null).select('*').single();
   if (error) {
@@ -151,8 +158,8 @@ export async function replaceContextualDocument(documentId: string, file: File) 
     await supabase.storage.from('attachments').remove([newStoragePath]).catch(() => undefined);
     throw error;
   }
-  if (existing.storage_path && existing.storage_path !== newStoragePath) {
-    await supabase.storage.from('attachments').remove([existing.storage_path]).catch(() => undefined);
+  if (existingRow.storage_path && existingRow.storage_path !== newStoragePath) {
+    await supabase.storage.from('attachments').remove([existingRow.storage_path]).catch(() => undefined);
   }
   return data as ContextualDocumentRow;
 }
