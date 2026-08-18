@@ -337,6 +337,13 @@ export function buildAcceptanceSeed(mode: CompanySettingsMode): AcceptanceSeed {
   };
 
   const rpcs: Record<string, (args: Record<string, unknown>) => unknown> = {
+    get_contract_evidence_state: () => ({
+      registration_configuration_status: 'NOT_CONFIGURED',
+      registration_profile: null,
+      registration: null,
+      inspections: [],
+      inspection_templates: [],
+    }),
     rpt_trial_balance: (args) => buildTrialBalancePayload(typeof args.p_as_of === 'string' ? args.p_as_of : '2026-08-06'),
     rpt_tenant_statement: () => buildTenantStatementPayload(),
     rpt_owner_statement: (args) => buildOwnerStatementPayload(args),
